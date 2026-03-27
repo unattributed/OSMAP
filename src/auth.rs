@@ -581,7 +581,12 @@ where
         username: &str,
         password: &str,
     ) -> Result<PrimaryAuthVerdict, PrimaryAuthBackendError> {
-        let mut args = vec!["auth".to_string(), "test".to_string()];
+        let mut args = vec![
+            "-o".to_string(),
+            "stats_writer_socket_path=".to_string(),
+            "auth".to_string(),
+            "test".to_string(),
+        ];
 
         if let Some(auth_socket_path) = &self.auth_socket_path {
             args.push("-a".to_string());
@@ -1244,6 +1249,8 @@ mod tests {
         assert_eq!(
             recorded.args.as_ref().expect("args should be captured"),
             &vec![
+                "-o".to_string(),
+                "stats_writer_socket_path=".to_string(),
                 "auth".to_string(),
                 "test".to_string(),
                 "-a".to_string(),

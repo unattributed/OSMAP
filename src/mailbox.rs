@@ -582,6 +582,8 @@ where
         canonical_username: &str,
     ) -> Result<Vec<MailboxEntry>, MailboxBackendError> {
         let args = vec![
+            "-o".to_string(),
+            "stats_writer_socket_path=".to_string(),
             "mailbox".to_string(),
             "list".to_string(),
             "-u".to_string(),
@@ -642,6 +644,8 @@ where
         request: &MessageListRequest,
     ) -> Result<Vec<MessageSummary>, MailboxBackendError> {
         let args = vec![
+            "-o".to_string(),
+            "stats_writer_socket_path=".to_string(),
             "-f".to_string(),
             "flow".to_string(),
             "fetch".to_string(),
@@ -707,6 +711,8 @@ where
         request: &MessageViewRequest,
     ) -> Result<MessageView, MailboxBackendError> {
         let args = vec![
+            "-o".to_string(),
+            "stats_writer_socket_path=".to_string(),
             "-f".to_string(),
             "flow".to_string(),
             "fetch".to_string(),
@@ -1475,6 +1481,8 @@ mod tests {
         assert_eq!(
             recorded.args.as_ref().expect("args should be captured"),
             &vec![
+                "-o".to_string(),
+                "stats_writer_socket_path=".to_string(),
                 "mailbox".to_string(),
                 "list".to_string(),
                 "-u".to_string(),
@@ -1518,6 +1526,8 @@ mod tests {
         assert_eq!(
             recorded.args.as_ref().expect("args should be captured"),
             &vec![
+                "-o".to_string(),
+                "stats_writer_socket_path=".to_string(),
                 "-f".to_string(),
                 "flow".to_string(),
                 "fetch".to_string(),
@@ -1568,6 +1578,8 @@ mod tests {
         assert_eq!(
             recorded.args.as_ref().expect("args should be captured"),
             &vec![
+                "-o".to_string(),
+                "stats_writer_socket_path=".to_string(),
                 "-f".to_string(),
                 "flow".to_string(),
                 "fetch".to_string(),

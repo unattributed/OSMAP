@@ -109,6 +109,9 @@ Why this path was chosen:
 - it tests the actual Dovecot auth surface instead of a mock-only contract
 - it can receive the password over standard input, which avoids putting the
   password on the command line
+- it now suppresses the ancillary Dovecot stats-writer socket dependency in the
+  helper invocation so auth errors stay closer to the real credential or socket
+  boundary being exercised
 
 The implementation treats:
 
@@ -137,6 +140,16 @@ The host-side validation currently proves two bounded claims:
 
 That is intentionally narrower than claiming the full auth workflow is already
 validated in production-like conditions.
+
+The remaining live-host caveat is also clearer now than it was earlier in WP3:
+
+- the helper path no longer relies on the previous stats-writer socket behavior
+  for its basic failure mode
+- on `mail.blackbagsecurity.com`, the non-privileged runtime user still does
+  not have the right Dovecot auth-socket access for the browser-auth path to be
+  considered production-ready
+- that is a host/operator integration issue to solve deliberately, not a reason
+  to widen OSMAP's runtime privileges
 
 ## What Is Still Missing
 

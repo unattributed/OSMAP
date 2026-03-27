@@ -16,7 +16,7 @@
   service
 - The implementation now has a bounded browser slice with login, mailbox read,
   message view, compose, send, CSRF handling, and attachment download, but it
-  does not yet include concurrent request handling
+  still uses a sequential listener rather than concurrent request handling
 - The implementation now has a bounded message-view fetch path, plus
   MIME-aware classification and attachment metadata surfacing, but it does not
   yet provide preview-oriented attachment behavior or successful live-host
@@ -43,12 +43,13 @@
   compatibility view is still broader than the final target even after the
   first narrowing pass away from a blanket `/var` unveil
 - The current browser-driven invalid-login path on `mail.blackbagsecurity.com`
-  produces the same `doveadm` backend error with confinement disabled and
-  enabled, so that host-specific browser-auth path still needs refinement
+  still needs host-side refinement because the runtime user's accessible
+  Dovecot auth surface on that host is not yet aligned with the browser-auth
+  helper path
 - The current synthetic session-gated attachment request under enforced mode on
-  `mail.blackbagsecurity.com` reached the route and updated session state, but
-  the underlying `doveadm` helper still reported a Dovecot stats-writer socket
-  permission problem during the message-view step
+  `mail.blackbagsecurity.com` now reaches the route, validates the session, and
+  updates session state without the previous Dovecot stats-writer noise, but
+  successful live attachment-bearing reads are still not proven there
 - The SDLC and release rules are now defined, but they have not yet been proven
   against a full live implementation pipeline
 - The project now has an implementation plan and work breakdown, but there is

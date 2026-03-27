@@ -10,6 +10,7 @@ use std::io::{Read as _, Write as _};
 use std::net::{TcpListener, TcpStream};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::Duration;
 
 use crate::attachment::{
     AttachmentDownloadDecision, AttachmentDownloadPolicy, AttachmentDownloadPublicFailureReason,
@@ -58,6 +59,12 @@ pub const DEFAULT_HTTP_MAX_UPLOAD_BODY_BYTES: usize = 1024 * 1024;
 /// Conservative upper bound for parsed HTML form fields.
 pub const DEFAULT_HTTP_MAX_FORM_FIELDS: usize = 16;
 
+/// Conservative per-connection read timeout for the sequential HTTP listener.
+pub const DEFAULT_HTTP_READ_TIMEOUT_SECS: u64 = 5;
+
+/// Conservative per-connection write timeout for the sequential HTTP listener.
+pub const DEFAULT_HTTP_WRITE_TIMEOUT_SECS: u64 = 5;
+
 /// The fixed cookie name used by the current browser session slice.
 pub const DEFAULT_SESSION_COOKIE_NAME: &str = "osmap_session";
 
@@ -73,6 +80,8 @@ pub struct HttpPolicy {
     pub max_form_fields: usize,
     pub session_cookie_name: &'static str,
     pub secure_session_cookie: bool,
+    pub read_timeout_secs: u64,
+    pub write_timeout_secs: u64,
     pub authentication_policy: AuthenticationPolicy,
 }
 
@@ -87,6 +96,8 @@ impl HttpPolicy {
             max_form_fields: DEFAULT_HTTP_MAX_FORM_FIELDS,
             session_cookie_name: DEFAULT_SESSION_COOKIE_NAME,
             secure_session_cookie: config.environment != RuntimeEnvironment::Development,
+            read_timeout_secs: DEFAULT_HTTP_READ_TIMEOUT_SECS,
+            write_timeout_secs: DEFAULT_HTTP_WRITE_TIMEOUT_SECS,
             authentication_policy: AuthenticationPolicy {
                 required_second_factor: RequiredSecondFactor::Totp,
                 ..AuthenticationPolicy::default()
@@ -105,6 +116,8 @@ impl Default for HttpPolicy {
             max_form_fields: DEFAULT_HTTP_MAX_FORM_FIELDS,
             session_cookie_name: DEFAULT_SESSION_COOKIE_NAME,
             secure_session_cookie: false,
+            read_timeout_secs: DEFAULT_HTTP_READ_TIMEOUT_SECS,
+            write_timeout_secs: DEFAULT_HTTP_WRITE_TIMEOUT_SECS,
             authentication_policy: AuthenticationPolicy::default(),
         }
     }
@@ -1880,6 +1893,33 @@ where
         .peer_addr()
         .map(|addr| addr.to_string())
         .unwrap_or_else(|_| "<unknown>".to_string());
+
+    if let Err(error) = stream.set_read_timeout(Some(Duration::from_secs(app.policy().read_timeout_secs)))
+    {
+        logger.emit(
+            &LogEvent::new(
+                LogLevel::Warn,
+                EventCategory::Http,
+                "http_read_timeout_config_failed",
+                "http read timeout configuration failed",
+            )
+            .with_field("remote_addr", remote_addr.clone())
+            .with_field("reason", error.to_string()),
+        );
+    }
+    if let Err(error) = stream.set_write_timeout(Some(Duration::from_secs(app.policy().write_timeout_secs)))
+    {
+        logger.emit(
+            &LogEvent::new(
+                LogLevel::Warn,
+                EventCategory::Http,
+                "http_write_timeout_config_failed",
+                "http write timeout configuration failed",
+            )
+            .with_field("remote_addr", remote_addr.clone())
+            .with_field("reason", error.to_string()),
+        );
+    }
 
     let handled = match read_http_request(stream, app.policy()) {
         Ok(request) => app.handle_request(&request, &remote_addr),

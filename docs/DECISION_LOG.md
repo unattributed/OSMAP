@@ -476,3 +476,25 @@ validated and refreshed on disk under `enforce`, and that the attachment route
 itself is reachable under that boundary. The remaining `doveadm` stats-writer
 problem observed on `mail.blackbagsecurity.com` should be tracked as a helper
 integration caveat, not hand-waved away.
+
+### Suppress ancillary `doveadm` stats-writer dependencies in helper calls
+
+The current helper invocations now pass `-o stats_writer_socket_path=` for the
+auth and mailbox read paths. This keeps OSMAP closer to the credential and
+mailbox behavior it actually needs and removes avoidable stats-writer socket
+noise from live helper failures on the target host.
+
+### Add per-connection HTTP read and write timeouts before widening the listener
+
+The HTTP runtime is still sequential, so one slow client can matter
+operationally. The listener now configures conservative read and write
+timeouts on each connection to reduce the chance of an indefinitely stalled
+client pinning the process while broader HTTP hardening continues.
+
+### Treat the remaining live browser-auth caveat as a host auth-socket issue
+
+Current live-host diagnosis shows that the unresolved browser-auth caveat on
+`mail.blackbagsecurity.com` is now the Dovecot auth-socket accessibility
+boundary for the runtime user, not the old stats-writer behavior and not the
+OpenBSD confinement mode itself. OSMAP should not solve that by growing
+privileges; it should be addressed as deliberate host-side operator work.

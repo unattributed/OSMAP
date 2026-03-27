@@ -115,6 +115,9 @@ The enforced OpenBSD run logged:
 - confinement enabled
 - HTTP server started
 - successful health check handling
+- successful synthetic session validation and refresh under `enforce`
+- a bounded attachment-route failure for a missing user without the earlier
+  Dovecot stats-writer socket noise
 
 ## Observed Caveat And Fix On `mail.blackbagsecurity.com`
 
@@ -122,26 +125,43 @@ A browser-driven invalid login smoke test on `mail.blackbagsecurity.com`
 produced the same `doveadm auth test` backend failure both with confinement
 disabled and with confinement enforced.
 
-The observed error involved Dovecot's stats writer and `rip` handling, so it is
-currently being treated as an existing behavior of the browser-auth integration
-path on that host, not as a confinement regression introduced by this slice.
+Follow-up diagnosis narrowed that result more precisely:
+
+- OSMAP now passes `-o stats_writer_socket_path=` to the current `doveadm`
+  auth, mailbox-list, message-list, and message-view helper calls
+- live host validation now shows that this removes the previous
+  stats-writer-socket permission noise from the mailbox and message-view helper
+  paths under enforced confinement
+- the remaining live auth issue on the host is the Dovecot auth-socket access
+  boundary, not the stats writer and not the confinement mode itself
 
 That distinction matters:
 
 - confinement enforcement now exists and was exercised successfully
-- the exact live browser-auth path on that host still needs refinement before
-  it can be called production-ready
+- the remaining live browser-auth caveat is now understood as a host/runtime
+  user integration issue that still needs refinement before it can be called
+  production-ready
 
 Additional live validation also exposed and clarified two things:
 
 - the session layer updates file permissions on temp session records during
   save, which requires `fattr` in the steady-state promise set
-- a synthetic session-backed attachment request still hit a Dovecot
-  stats-writer Unix-socket permission problem inside the helper path on
-  `mail.blackbagsecurity.com`
+- the current host's accessible Dovecot auth surface for `foo` does not line up
+  with the runtime's non-privileged browser-auth path today
 
 The first point is already fixed in the promise set. The second remains an
 active helper-integration caveat to narrow and validate further.
+
+Today that auth caveat is understood this way:
+
+- `doveadm auth test` without privilege still depends on an auth socket the
+  runtime user can actually reach
+- on `mail.blackbagsecurity.com`, the currently configured
+  `/var/spool/postfix/private/auth` path is not accessible to an unprivileged
+  runtime user because the directory boundary remains closed
+- OSMAP should not solve that by widening its own privileges
+- the right follow-on path is host-side operator work such as a dedicated
+  accessible auth listener or a deliberate permission/layout change
 
 ## What This Baseline Does Not Yet Claim
 

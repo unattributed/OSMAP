@@ -31,6 +31,7 @@ The current browser runtime enforces:
 - bounded request header and body sizes
 - bounded query-field counts
 - bounded form field counts
+- per-connection read and write timeouts on the sequential listener
 - binary-safe multipart request parsing for the current upload path
 - cache suppression for sensitive pages and redirects
 - a restrictive content-security policy
@@ -42,6 +43,11 @@ The current browser runtime enforces:
 The current HTML rendering path stays deliberately small and keeps message
 content escaped or plain-text-first unless a later slice proves a broader
 policy safely.
+
+Because the current server remains sequential, those read/write timeouts are an
+important correctness control as well as a convenience feature. They do not
+make the listener concurrent, but they do reduce the risk that one slow or
+stalled client will hold the process open indefinitely.
 
 ## Current CSRF Strategy
 
@@ -151,6 +157,8 @@ This baseline does not mean:
 - public-internet exposure is now the default
 - nginx configuration is finalized for production
 - the current listener is concurrent or high-throughput
+- the current timeout values eliminate denial-of-service risk from a
+  single-process listener
 - attachment downloads are fully live-host-proven or fully helper-hardened
 - CSRF coverage exists beyond the currently implemented form routes
 - the current unveil view is narrow enough for final adoption
