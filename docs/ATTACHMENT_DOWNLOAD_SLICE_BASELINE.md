@@ -103,17 +103,24 @@ web-facing runtime to fall back to direct mailbox reads for attachment
 downloads after mailbox listing, message listing, and message view have already
 moved behind the helper boundary.
 
-## Observed Live-Host Caveat
+## Live-Host Proof Update
 
-The current enforced-host synthetic attachment request still exposed a real
-helper-path caveat on `mail.blackbagsecurity.com`.
+Follow-on validation on `mail.blackbagsecurity.com` now proves the attachment
+path more completely than the first synthetic-session check did.
 
-The request reached the session gate and the attachment route, but successful
-live attachment-bearing reads under the target `vmail` identity boundary remain
-unproven there.
+The current validated host shape now uses:
 
-That is being tracked as a live helper-integration caveat, not as proof that
-the attachment route itself is unsafe or that the session write path regressed.
+- `_osmap` plus `/var/run/osmap-auth` for browser auth
+- `vmail` plus `/var/run/osmap-userdb` for mailbox-helper userdb lookups
+- a helper-backed message-view fetch path under
+  `OSMAP_OPENBSD_CONFINEMENT_MODE=enforce`
+
+Using that shape, OSMAP now successfully:
+
+- listed mailboxes under a synthetic bounded session
+- listed messages in `INBOX`
+- rendered a message view for the attachment-bearing validation message
+- downloaded the attachment bytes successfully under enforced confinement
 
 ## What This Slice Proves
 
@@ -124,6 +131,8 @@ This slice now proves that:
 - the existing mailbox, message-view, and MIME layers are coherent enough to
   support one explicit download route
 - attachment download can remain bounded and auditable
+- the helper-backed read path is coherent enough to carry attachment downloads
+  under the target `vmail` boundary on the current host
 - the project can add real value without abandoning its low-dependency and
   reviewability posture
 
@@ -131,11 +140,11 @@ This slice now proves that:
 
 This slice does not yet include:
 
-- successful live-host download validation against a real attachment-bearing
-  mailbox under enforced confinement
 - original filename fidelity for RFC 2231 or encoded-word edge cases
 - attachment preview behavior
 - original-message attachment reattachment in reply or forward flows
 - attachment download rate controls beyond adjacent nginx and network controls
+- a dedicated helper-side attachment-byte operation separate from the current
+  helper-backed message-view fetch
 
 Those remain later hardening and live-integration work.

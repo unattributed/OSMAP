@@ -162,8 +162,8 @@ Current prototype-specific deployment guidance:
 - use `OSMAP_DOVEADM_USERDB_SOCKET_PATH` when the host provides a dedicated
   userdb listener for mailbox and message helpers
 - the current validated host shape on `mail.blackbagsecurity.com` uses
-  `_osmap` plus `/var/run/osmap-auth` and `/var/run/osmap-userdb` for those
-  dedicated Dovecot listeners
+  `_osmap` plus `/var/run/osmap-auth` for browser auth and `vmail` plus
+  `/var/run/osmap-userdb` for mailbox-helper lookups
 - use `OSMAP_OPENBSD_CONFINEMENT_MODE=log-only` or `enforce` when validating
   the OpenBSD serve runtime on hosts intended for real deployment
 
@@ -171,12 +171,9 @@ Current live validation on `mail.blackbagsecurity.com` now proves:
 
 - positive browser login plus TOTP-backed session issuance under `_osmap`
 - a working least-privilege auth-socket arrangement under `enforce`
-
-Current live validation there also shows one remaining host-side blocker:
-
-- mailbox and message helper execution still resolves to the virtual-mail
-  `vmail` uid/gid boundary, so successful least-privilege mailbox reads are not
-  yet proven for `_osmap`
+- helper-backed mailbox listing, message-list retrieval, message view, and
+  attachment download under `enforce` with the web runtime kept as `_osmap`
+  and the mailbox helper running at the `vmail` boundary
 
 The selected next-step deployment answer is therefore:
 
@@ -195,8 +192,8 @@ The first implementation slices of that answer now exist:
   route through that helper
 - attachment download now reuses the helper-backed message-view path when the
   helper socket is configured
-- helper-specific confinement now exists in code, but live-host validation
-  under the actual `vmail` boundary still remains
+- helper-specific confinement now exists in code and has live-host proof under
+  the actual `vmail` boundary
 
 This is more likely to produce a system that OpenBSD operators, and eventually
 potential downstream packagers, would consider credible.

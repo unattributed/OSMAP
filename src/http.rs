@@ -539,13 +539,13 @@ impl RuntimeBrowserGateway {
     /// mailbox helper is configured for read-path proxying.
     fn build_message_view_backend(&self) -> MessageViewRuntimeBackend {
         match &self.mailbox_helper_socket_path {
-            Some(socket_path) => MessageViewRuntimeBackend::Helper(
-                MailboxHelperMessageViewBackend::new(
+            Some(socket_path) => {
+                MessageViewRuntimeBackend::Helper(MailboxHelperMessageViewBackend::new(
                     socket_path,
                     MailboxHelperPolicy::default(),
                     MessageViewPolicy::default(),
-                ),
-            ),
+                ))
+            }
             None => MessageViewRuntimeBackend::Direct(
                 DoveadmMessageViewBackend::new(
                     MessageViewPolicy::default(),
@@ -790,13 +790,13 @@ impl BrowserGateway for RuntimeBrowserGateway {
         };
 
         let backend = match &self.mailbox_helper_socket_path {
-            Some(socket_path) => MessageListRuntimeBackend::Helper(
-                MailboxHelperMessageListBackend::new(
+            Some(socket_path) => {
+                MessageListRuntimeBackend::Helper(MailboxHelperMessageListBackend::new(
                     socket_path,
                     MailboxHelperPolicy::default(),
                     MessageListPolicy::default(),
-                ),
-            ),
+                ))
+            }
             None => MessageListRuntimeBackend::Direct(
                 DoveadmMessageListBackend::new(
                     MessageListPolicy::default(),
@@ -806,8 +806,11 @@ impl BrowserGateway for RuntimeBrowserGateway {
                 .with_userdb_socket_path(self.doveadm_userdb_socket_path.clone()),
             ),
         };
-        let outcome = MessageListService::new(backend)
-            .list_for_validated_session(context, validated_session, &request);
+        let outcome = MessageListService::new(backend).list_for_validated_session(
+            context,
+            validated_session,
+            &request,
+        );
 
         match outcome.decision {
             MessageListDecision::Listed {

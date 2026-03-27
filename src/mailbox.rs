@@ -589,10 +589,7 @@ where
         &self,
         canonical_username: &str,
     ) -> Result<Vec<MailboxEntry>, MailboxBackendError> {
-        let args = vec![
-            "-o".to_string(),
-            "stats_writer_socket_path=".to_string(),
-        ];
+        let args = vec!["-o".to_string(), "stats_writer_socket_path=".to_string()];
         let mut args = args;
         append_doveadm_auth_socket_override(&mut args, self.userdb_socket_path.as_ref());
         args.extend([
@@ -663,10 +660,7 @@ where
         canonical_username: &str,
         request: &MessageListRequest,
     ) -> Result<Vec<MessageSummary>, MailboxBackendError> {
-        let args = vec![
-            "-o".to_string(),
-            "stats_writer_socket_path=".to_string(),
-        ];
+        let args = vec!["-o".to_string(), "stats_writer_socket_path=".to_string()];
         let mut args = args;
         append_doveadm_auth_socket_override(&mut args, self.userdb_socket_path.as_ref());
         args.extend([
@@ -742,10 +736,7 @@ where
         canonical_username: &str,
         request: &MessageViewRequest,
     ) -> Result<MessageView, MailboxBackendError> {
-        let args = vec![
-            "-o".to_string(),
-            "stats_writer_socket_path=".to_string(),
-        ];
+        let args = vec!["-o".to_string(), "stats_writer_socket_path=".to_string()];
         let mut args = args;
         append_doveadm_auth_socket_override(&mut args, self.userdb_socket_path.as_ref());
         args.extend([
@@ -978,28 +969,15 @@ fn parse_doveadm_message_view_output(
         });
     }
 
-    let mut parsed = Vec::new();
-
-    for raw_line in execution.stdout.lines() {
-        let line = raw_line.trim();
-        if line.is_empty() {
-            continue;
-        }
-
-        parsed.push(parse_message_view_line(policy, line)?);
-    }
-
-    match parsed.len() {
-        0 => Err(MailboxBackendError {
+    let trimmed = execution.stdout.trim();
+    if trimmed.is_empty() {
+        return Err(MailboxBackendError {
             backend: "message-view-not-found",
             reason: "no message matched the request".to_string(),
-        }),
-        1 => Ok(parsed.remove(0)),
-        count => Err(MailboxBackendError {
-            backend: "message-view-parser",
-            reason: format!("expected one message record but received {count}"),
-        }),
+        });
     }
+
+    parse_message_view_record(policy, execution.stdout.trim_end())
 }
 
 /// Parses one flow-formatted message-summary line.
@@ -1160,6 +1138,44 @@ fn parse_message_view_line(
     })
 }
 
+/// Parses one single-message flow record, including Dovecot's multiline
+/// `hdr=` and `body=` output shape observed on the live host.
+fn parse_message_view_record(
+    policy: MessageViewPolicy,
+    record: &str,
+) -> Result<MessageView, MailboxBackendError> {
+    if let Some((prefix, remainder)) = record.split_once(" hdr=") {
+        if let Some((header_block, body_text)) = remainder
+            .split_once("\n body=")
+            .or_else(|| remainder.split_once("\nbody="))
+        {
+            let synthetic = format!(
+                "{prefix} hdr=\"{}\" body=\"{}\"",
+                escape_flow_quoted_value(header_block),
+                escape_flow_quoted_value(body_text),
+            );
+            return parse_message_view_line(policy, &synthetic);
+        }
+    }
+
+    let mut parsed = Vec::new();
+    for raw_line in record.lines() {
+        let line = raw_line.trim();
+        if line.is_empty() {
+            continue;
+        }
+        parsed.push(parse_message_view_line(policy, line)?);
+    }
+
+    match parsed.len() {
+        1 => Ok(parsed.remove(0)),
+        count => Err(MailboxBackendError {
+            backend: "message-view-parser",
+            reason: format!("expected one message record but received {count}"),
+        }),
+    }
+}
+
 /// Parses Dovecot flow-format key/value pairs from one output line.
 fn parse_flow_fields(
     line: &str,
@@ -1218,16 +1234,59 @@ fn parse_flow_fields(
             }
         } else {
             let value_start = index;
-            while index < chars.len() && !chars[index].is_whitespace() {
+            while index < chars.len() {
+                if chars[index].is_whitespace() && is_flow_field_boundary(&chars, index) {
+                    break;
+                }
                 index += 1;
             }
-            value = chars[value_start..index].iter().collect();
+            value = chars[value_start..index]
+                .iter()
+                .collect::<String>()
+                .trim_end()
+                .to_string();
         }
 
         fields.insert(key, value);
     }
 
     Ok(fields)
+}
+
+/// Escapes a raw flow value into the quoted form understood by the current
+/// parser so multiline host output can be normalized into one record.
+fn escape_flow_quoted_value(value: &str) -> String {
+    let mut escaped = String::new();
+    for ch in value.chars() {
+        match ch {
+            '\\' => escaped.push_str("\\\\"),
+            '"' => escaped.push_str("\\\""),
+            '\n' => escaped.push_str("\\n"),
+            '\r' => escaped.push_str("\\r"),
+            '\t' => escaped.push_str("\\t"),
+            other => escaped.push(other),
+        }
+    }
+    escaped
+}
+
+/// Returns whether the current whitespace position separates one flow field
+/// from the next `key=value` token.
+fn is_flow_field_boundary(chars: &[char], whitespace_index: usize) -> bool {
+    let mut probe = whitespace_index;
+    while probe < chars.len() && chars[probe].is_whitespace() {
+        probe += 1;
+    }
+    if probe >= chars.len() {
+        return true;
+    }
+
+    let key_start = probe;
+    while probe < chars.len() && !chars[probe].is_whitespace() && chars[probe] != '=' {
+        probe += 1;
+    }
+
+    probe > key_start && probe < chars.len() && chars[probe] == '='
 }
 
 /// Returns a required value from a parsed flow record.
@@ -1573,8 +1632,8 @@ mod tests {
             CommandExecution {
                 status_code: 0,
                 stdout: concat!(
-                    "uid=4 flags=\"\\\\Seen\" date.received=\"2026-03-27 09:00:00 +0000\" size.virtual=2048 mailbox=INBOX\n",
-                    "uid=5 flags=\"\\\\Seen \\\\Answered\" date.received=\"2026-03-27 10:15:00 +0000\" size.virtual=4096 mailbox=INBOX\n"
+                    "uid=4 flags=\"\\\\Seen\" date.received=2026-03-27 09:00:00 +0000 size.virtual=2048 mailbox=INBOX\n",
+                    "uid=5 flags=\"\\\\Seen \\\\Answered\" date.received=2026-03-27 10:15:00 +0000 size.virtual=4096 mailbox=INBOX\n"
                 )
                 .to_string(),
                 stderr: String::new(),
@@ -1626,7 +1685,7 @@ mod tests {
             CommandExecution {
                 status_code: 0,
                 stdout: concat!(
-                    "uid=9 flags=\"\\\\Seen\" date.received=\"2026-03-27 11:00:00 +0000\" size.virtual=512 mailbox=INBOX hdr=\"Subject: Test message\\nFrom: Alice <alice@example.com>\\n\" body=\"Hello world\\nSecond line\\n\"\n"
+                    "uid=9 flags=\"\\\\Seen\" date.received=2026-03-27 11:00:00 +0000 size.virtual=512 mailbox=INBOX hdr=\"Subject: Test message\\nFrom: Alice <alice@example.com>\\n\" body=\"Hello world\\nSecond line\\n\"\n"
                 )
                 .to_string(),
                 stderr: String::new(),
@@ -1671,6 +1730,43 @@ mod tests {
                 "9".to_string(),
             ]
         );
+    }
+
+    #[test]
+    fn parses_multiline_message_view_from_live_style_flow_output() {
+        let message = parse_doveadm_message_view_output(
+            MessageViewPolicy::default(),
+            &CommandExecution {
+                status_code: 0,
+                stdout: concat!(
+                    "uid=1 flags=\\Recent date.received=2026-03-28 01:00:32 size.virtual=606 mailbox=INBOX hdr=From: OSMAP Validation <osmap-helper-validation@blackbagsecurity.com>\n",
+                    "To: OSMAP Validation <osmap-helper-validation@blackbagsecurity.com>\n",
+                    "Subject: OSMAP helper attachment validation\n",
+                    "MIME-Version: 1.0\n",
+                    "Content-Type: multipart/mixed; boundary=\"osmap-boundary\"\n",
+                    "\n",
+                    " body=--osmap-boundary\n",
+                    "Content-Type: text/plain; charset=utf-8\n",
+                    "\n",
+                    "This is the helper validation message body.\n",
+                    "\n",
+                    "--osmap-boundary--\n",
+                )
+                .to_string(),
+                stderr: String::new(),
+            },
+        )
+        .expect("multiline flow output should parse");
+
+        assert_eq!(message.uid, 1);
+        assert_eq!(message.mailbox_name, "INBOX");
+        assert_eq!(message.size_virtual, 606);
+        assert!(message
+            .header_block
+            .contains("Subject: OSMAP helper attachment validation"));
+        assert!(message
+            .body_text
+            .contains("This is the helper validation message body."));
     }
 
     #[test]

@@ -44,13 +44,11 @@
   first narrowing pass away from a blanket `/var` unveil
 - `mail.blackbagsecurity.com` now has a dedicated least-privilege Dovecot auth
   listener for `_osmap`, and positive browser login plus TOTP-backed session
-  issuance are now validated there under `enforce`, but authenticated mailbox
-  and message reads are still not proven for `_osmap`
+  issuance are now validated there under `enforce`
 - `mail.blackbagsecurity.com` now also has a dedicated Dovecot userdb listener
-  for `_osmap`, and OSMAP supports `OSMAP_DOVEADM_USERDB_SOCKET_PATH`, but the
-  host's current Dovecot virtual-user model still resolves mailbox access to
-  `uid=2000(vmail)` and `gid=2000(vmail)`, which blocks least-privilege
-  mailbox helpers from running successfully as `_osmap`
+  for the `vmail` mailbox-helper path, and helper-backed mailbox listing,
+  message-list retrieval, message view, and attachment download are now proven
+  there under `enforce`
 - the current direct `doveadm` mailbox-read path remains a prototype bridge;
   the selected least-privilege next step is a dedicated local mailbox-read
   helper boundary, and mailbox listing, message-list retrieval, plus
@@ -58,12 +56,12 @@
   download now reuses the helper-backed message-view path instead of making the
   web runtime fetch directly, but the broader read-path migration is not
   complete
-- the mailbox helper is not yet live-host validated under the target OpenBSD
-  `vmail` boundary, even though helper-specific OpenBSD confinement now exists
-- The current synthetic session-gated attachment request under enforced mode on
-  `mail.blackbagsecurity.com` now reaches the route, validates the session, and
-  updates session state without the previous Dovecot stats-writer noise, but
-  successful live attachment-bearing reads are still not proven there
+- the current live-host helper proof uses a bounded synthetic session and a
+  disposable validation mailbox, not a full real-login-through-mailbox-read
+  browser trace in one run
+- attachment download is now proven against a real attachment-bearing mailbox
+  under enforced confinement, but a distinct helper-side attachment-byte
+  operation still does not exist
 - The SDLC and release rules are now defined, but they have not yet been proven
   against a full live implementation pipeline
 - The project now has an implementation plan and work breakdown, but there is

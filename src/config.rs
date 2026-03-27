@@ -282,11 +282,8 @@ impl AppConfig {
             totp_secret_dir,
         )?;
         validate_development_bindings(environment, &listen_addr)?;
-        let mailbox_helper_socket_path = parse_mailbox_helper_socket_path(
-            env_map,
-            run_mode,
-            &state_layout.runtime_dir,
-        )?;
+        let mailbox_helper_socket_path =
+            parse_mailbox_helper_socket_path(env_map, run_mode, &state_layout.runtime_dir)?;
 
         Ok(Self {
             run_mode,
@@ -552,7 +549,10 @@ mod tests {
         );
         assert_eq!(
             config.mailbox_helper_socket_path,
-            Some(std::path::Path::new("/var/lib/osmap-staging/run/mailbox-helper.sock").to_path_buf())
+            Some(
+                std::path::Path::new("/var/lib/osmap-staging/run/mailbox-helper.sock")
+                    .to_path_buf()
+            )
         );
         assert_eq!(
             config.state_root,
@@ -699,10 +699,8 @@ mod tests {
 
     #[test]
     fn helper_mode_defaults_mailbox_helper_socket_under_runtime_dir() {
-        let env_map = BTreeMap::from([(
-            "OSMAP_RUN_MODE".to_string(),
-            "mailbox-helper".to_string(),
-        )]);
+        let env_map =
+            BTreeMap::from([("OSMAP_RUN_MODE".to_string(), "mailbox-helper".to_string())]);
 
         let config = AppConfig::from_env_map(&env_map).expect("helper mode should parse");
 

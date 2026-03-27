@@ -617,3 +617,41 @@ The `mailbox-helper` run mode now has a distinct OpenBSD confinement plan with
 `unix` socket promises and without the sendmail and TCP listener allowances the
 browser-facing `serve` runtime still needs. That keeps the helper boundary
 explicit in both process layout and confinement policy.
+
+### Keep helper-owned socket creation create-capable under `unveil(2)`
+
+Live host validation showed that the helper could reach enforced confinement but
+still fail before serving requests because its own socket path had been
+unveiled as read/write rather than read/write/create. The helper runtime now
+keeps `rwc` on its explicit socket path while the web-facing runtime keeps the
+narrower connect-only view.
+
+### Keep helper-backed serve mode on `inet` plus `unix`, not `unix` alone
+
+When the browser-facing runtime uses the local mailbox helper, it still has to
+bind and serve loopback HTTP. The serve-mode promise set therefore now keeps
+both `inet` and `unix` instead of incorrectly switching to the helper-only
+`unix` profile.
+
+### Treat live `doveadm -f flow fetch` output as the parser truth
+
+Live host validation showed two real parser mismatches: unquoted
+`date.received` values in message-list output and multiline `hdr=` / `body=`
+output in single-message fetches. The bounded Dovecot flow parser now handles
+those live formats explicitly instead of only the idealized quoted forms used
+earlier in tests.
+
+### Prove the helper-backed read path under `enforce` on the target host
+
+Live validation on `mail.blackbagsecurity.com` now proves a narrower and more
+useful claim than earlier slices did:
+
+- `_osmap` can authenticate through `/var/run/osmap-auth`
+- the mailbox helper can resolve mailbox reads through `/var/run/osmap-userdb`
+  while running at the `vmail` boundary
+- mailbox listing, message-list retrieval, message view, and attachment
+  download all succeed under `OSMAP_OPENBSD_CONFINEMENT_MODE=enforce`
+
+This does not yet replace broader end-to-end browser coverage, but it does
+prove that the selected `_osmap` plus local helper plus `vmail` split works on
+the current host without teaching OSMAP to depend on `doas`.

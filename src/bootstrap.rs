@@ -147,7 +147,9 @@ mod tests {
             listen_addr: "127.0.0.1:8080".to_string(),
             doveadm_auth_socket_path: Some(PathBuf::from("/var/run/osmap/dovecot-auth")),
             doveadm_userdb_socket_path: Some(PathBuf::from("/var/run/osmap/dovecot-userdb")),
-            mailbox_helper_socket_path: Some(PathBuf::from("/var/lib/osmap/run/mailbox-helper.sock")),
+            mailbox_helper_socket_path: Some(PathBuf::from(
+                "/var/lib/osmap/run/mailbox-helper.sock",
+            )),
             openbsd_confinement_mode: crate::config::OpenbsdConfinementMode::Disabled,
             state_root: PathBuf::from("/var/lib/osmap"),
             log_level: LogLevel::Info,

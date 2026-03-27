@@ -65,7 +65,8 @@ This preserves a clear split between:
 
 ## Current Status
 
-As of March 27, 2026, the first in-repo helper slice now exists.
+As of March 28, 2026, the first in-repo helper slice exists and has live-host
+proof on `mail.blackbagsecurity.com`.
 
 What is implemented:
 
@@ -78,12 +79,18 @@ What is implemented:
 - helper-backed source-message fetches for the attachment-download route
 - mailbox-list, message-list, and message-view routing through the helper when
   `OSMAP_MAILBOX_HELPER_SOCKET_PATH` is configured
+- live helper-backed mailbox listing, message-list retrieval, message view, and
+  attachment download under `OSMAP_OPENBSD_CONFINEMENT_MODE=enforce` with the
+  web runtime kept as `_osmap` and the helper kept at the `vmail` boundary
+- a dedicated Dovecot auth listener for `_osmap` plus a dedicated Dovecot
+  userdb listener for the `vmail` helper path on the validated host
 
 What is not yet implemented:
 
 - a dedicated helper-side attachment-byte operation distinct from the current
   helper-backed message-view fetch path
-- live-host proof of the helper under the current `vmail` boundary
+- a single live browser proof that starts from real login and then carries the
+  same session into helper-backed mailbox reads without synthetic session setup
 
 ## Scope Of The Helper
 
@@ -196,8 +203,8 @@ That migration is now underway:
 
 ## What This Document Does Not Claim
 
-This document does not claim that the helper solves the live-host mailbox-read
-problem yet.
+This document does not claim that the helper is the final mailbox-read shape or
+that every end-to-end browser flow is already proven.
 
 It records the selected path and the first implemented slice so later work can
 extend the helper boundary without widening the authority of the web-facing

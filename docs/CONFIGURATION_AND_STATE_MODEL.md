@@ -184,13 +184,13 @@ The current validated example on `mail.blackbagsecurity.com` is:
 - `OSMAP_DOVEADM_AUTH_SOCKET_PATH=/var/run/osmap-auth`
 - `OSMAP_DOVEADM_USERDB_SOCKET_PATH=/var/run/osmap-userdb`
 
-for the `_osmap` runtime user.
+with `_osmap` using the auth listener and the `vmail` mailbox helper using the
+userdb listener.
 
-That does not yet mean mailbox reads are fully proven under `_osmap`. Live host
-validation now shows that positive browser auth works through the dedicated auth
-listener, while mailbox reads still hit Dovecot's virtual-mail identity
-boundary because the userdb lookup resolves to `uid=2000(vmail)` and
-`gid=2000(vmail)`.
+Live host validation now shows that positive browser auth works through the
+dedicated `_osmap` auth listener, while helper-backed mailbox listing,
+message-list retrieval, message view, and attachment download work through the
+dedicated `vmail` userdb listener.
 
 ## Mailbox Helper Socket Configuration
 

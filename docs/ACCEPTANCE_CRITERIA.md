@@ -169,7 +169,8 @@ Phase 6:
 - the selected next least-privilege mailbox-read path is now a dedicated local
   helper boundary rather than broader authority for the web-facing runtime
 - the current mailbox-helper slice now covers mailbox listing, message-list
-  retrieval, and message-view retrieval, but attachment-part retrieval and
-  live-host validation through that helper are still pending
+  retrieval, message-view retrieval, and helper-backed attachment downloads;
+  live-host validation through that helper now exists under `enforce`, but the
+  broader end-to-end browser coverage is still incomplete
 - the actual prototype now exists and Phase 6 execution is materially underway,
   but the implementation is still prototype-grade rather than production-ready

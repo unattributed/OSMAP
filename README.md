@@ -133,18 +133,20 @@ Each phase produces formal outputs to support traceability and auditability.
   operator-controlled `pledge(2)` / `unveil(2)` enforcement modes.
 - Positive browser authentication plus TOTP-backed session issuance are proven
   on `mail.blackbagsecurity.com` under `_osmap`.
-- The mailbox-read identity boundary is not fully solved on the live host yet:
-  the current Dovecot virtual-user model still resolves mailbox access to
-  `vmail`, so broader least-privilege live mailbox reads are not yet proven.
 - The mailbox-helper runtime now exists in-repo: a local Unix-socket helper
   plus helper-backed mailbox listing, message-list retrieval, and message-view
   retrieval, and the attachment route now reuses that helper-backed message
   fetch when configured.
+- The helper-backed read path is now also proven on `mail.blackbagsecurity.com`
+  under `OSMAP_OPENBSD_CONFINEMENT_MODE=enforce`: mailbox listing,
+  message-list retrieval, message view, and attachment download all succeeded
+  against an attachment-bearing validation mailbox with the web runtime kept as
+  `_osmap` and the mailbox helper running at the `vmail` boundary.
 - OSMAP is still prototype-grade, not production-ready, and does not yet have a
   public deployment.
-- Current priority work is live-host validation of the helper under the actual
-  `vmail` boundary, continued HTTP hardening, and tightening the OpenBSD
-  deployment and confinement model around the helper split.
+- Current priority work is continued HTTP hardening, tighter OpenBSD helper and
+  filesystem narrowing, and broader end-to-end live validation from real login
+  through authenticated mailbox reads.
 
 ---
 

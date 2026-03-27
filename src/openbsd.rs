@@ -20,14 +20,23 @@ const OPENBSD_SERVE_PROMISES_BEFORE_LOCK: &str =
 const OPENBSD_SERVE_PROMISES_AFTER_LOCK: &str = "stdio rpath wpath cpath fattr inet proc exec";
 
 /// The promise set used while `unveil(2)` calls are still permitted in the
+/// browser-facing runtime when it also connects to the local mailbox helper.
+const OPENBSD_SERVE_WITH_HELPER_PROMISES_BEFORE_LOCK: &str =
+    "stdio rpath wpath cpath fattr inet unix proc exec unveil";
+
+/// The narrower promise set kept after the filesystem view is locked in the
+/// browser-facing runtime when it also connects to the local mailbox helper.
+const OPENBSD_SERVE_WITH_HELPER_PROMISES_AFTER_LOCK: &str =
+    "stdio rpath wpath cpath fattr inet unix proc exec";
+
+/// The promise set used while `unveil(2)` calls are still permitted in the
 /// local mailbox-helper runtime.
 const OPENBSD_HELPER_PROMISES_BEFORE_LOCK: &str =
     "stdio rpath wpath cpath fattr unix proc exec unveil";
 
 /// The narrower promise set kept after the filesystem view is locked in the
 /// local mailbox-helper runtime.
-const OPENBSD_HELPER_PROMISES_AFTER_LOCK: &str =
-    "stdio rpath wpath cpath fattr unix proc exec";
+const OPENBSD_HELPER_PROMISES_AFTER_LOCK: &str = "stdio rpath wpath cpath fattr unix proc exec";
 
 /// One unveiled path plus the permissions granted to it.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -89,18 +98,21 @@ impl OpenbsdConfinementPlan {
                 }
 
                 if let Some(mailbox_helper_socket_path) = &config.mailbox_helper_socket_path {
+                    // The web-facing runtime only connects to the local
+                    // helper socket, so it keeps a narrower connect-only view
+                    // of that path.
                     add_rule(&mut rules, mailbox_helper_socket_path, "rw");
                     add_parent_dir_rules(&mut rules, mailbox_helper_socket_path);
                 }
 
                 Self {
                     promises_before_lock: if config.mailbox_helper_socket_path.is_some() {
-                        OPENBSD_HELPER_PROMISES_BEFORE_LOCK
+                        OPENBSD_SERVE_WITH_HELPER_PROMISES_BEFORE_LOCK
                     } else {
                         OPENBSD_SERVE_PROMISES_BEFORE_LOCK
                     },
                     promises_after_lock: if config.mailbox_helper_socket_path.is_some() {
-                        OPENBSD_HELPER_PROMISES_AFTER_LOCK
+                        OPENBSD_SERVE_WITH_HELPER_PROMISES_AFTER_LOCK
                     } else {
                         OPENBSD_SERVE_PROMISES_AFTER_LOCK
                     },
@@ -130,7 +142,11 @@ impl OpenbsdConfinementPlan {
                     add_parent_dir_rules(&mut rules, userdb_socket_path);
                 }
                 if let Some(mailbox_helper_socket_path) = &config.mailbox_helper_socket_path {
-                    add_rule(&mut rules, mailbox_helper_socket_path, "rw");
+                    // The helper binds and recreates its own Unix-domain
+                    // socket, so the explicit socket path must retain create
+                    // permission in helper mode instead of the narrower
+                    // connect-only view used by the web runtime.
+                    add_rule(&mut rules, mailbox_helper_socket_path, "rwc");
                     add_parent_dir_rules(&mut rules, mailbox_helper_socket_path);
                 }
 
@@ -360,7 +376,10 @@ mod tests {
         let plan =
             OpenbsdConfinementPlan::from_config(&config_fixture(OpenbsdConfinementMode::LogOnly));
 
-        assert_eq!(plan.promises_before_lock, OPENBSD_SERVE_PROMISES_BEFORE_LOCK);
+        assert_eq!(
+            plan.promises_before_lock,
+            OPENBSD_SERVE_PROMISES_BEFORE_LOCK
+        );
         assert_eq!(plan.promises_after_lock, OPENBSD_SERVE_PROMISES_AFTER_LOCK);
         assert!(plan
             .unveil_rules
@@ -428,7 +447,8 @@ mod tests {
     #[test]
     fn adds_mailbox_helper_socket_and_parent_dirs_when_configured() {
         let mut config = config_fixture(OpenbsdConfinementMode::LogOnly);
-        config.mailbox_helper_socket_path = Some(PathBuf::from("/var/lib/osmap/run/mailbox-helper.sock"));
+        config.mailbox_helper_socket_path =
+            Some(PathBuf::from("/var/lib/osmap/run/mailbox-helper.sock"));
 
         let plan = OpenbsdConfinementPlan::from_config(&config);
 
@@ -440,7 +460,8 @@ mod tests {
         assert!(plan
             .unveil_rules
             .iter()
-            .any(|rule| rule.path == PathBuf::from("/var/lib/osmap/run") && rule.permissions.contains('r')));
+            .any(|rule| rule.path == PathBuf::from("/var/lib/osmap/run")
+                && rule.permissions.contains('r')));
     }
 
     #[test]
@@ -453,7 +474,10 @@ mod tests {
 
         let plan = OpenbsdConfinementPlan::from_config(&config);
 
-        assert_eq!(plan.promises_before_lock, OPENBSD_HELPER_PROMISES_BEFORE_LOCK);
+        assert_eq!(
+            plan.promises_before_lock,
+            OPENBSD_HELPER_PROMISES_BEFORE_LOCK
+        );
         assert_eq!(plan.promises_after_lock, OPENBSD_HELPER_PROMISES_AFTER_LOCK);
         assert!(!plan
             .unveil_rules
@@ -484,8 +508,14 @@ mod tests {
 
         let plan = OpenbsdConfinementPlan::from_config(&config);
 
-        assert_eq!(plan.promises_before_lock, OPENBSD_HELPER_PROMISES_BEFORE_LOCK);
-        assert_eq!(plan.promises_after_lock, OPENBSD_HELPER_PROMISES_AFTER_LOCK);
+        assert_eq!(
+            plan.promises_before_lock,
+            OPENBSD_SERVE_WITH_HELPER_PROMISES_BEFORE_LOCK
+        );
+        assert_eq!(
+            plan.promises_after_lock,
+            OPENBSD_SERVE_WITH_HELPER_PROMISES_AFTER_LOCK
+        );
         assert!(plan.unveil_rules.iter().any(|rule| {
             rule.path == PathBuf::from("/var/lib/osmap/run/mailbox-helper.sock")
                 && rule.permissions.contains('r')

@@ -11,7 +11,7 @@ processes and filesystem visibility the current prototype still depends on.
 
 ## Status
 
-As of March 27, 2026, the runtime now recognizes:
+As of March 28, 2026, the runtime now recognizes:
 
 - `OSMAP_OPENBSD_CONFINEMENT_MODE=disabled`
 - `OSMAP_OPENBSD_CONFINEMENT_MODE=log-only`
@@ -37,10 +37,12 @@ This is the first enforced runtime boundary, not the final confinement story.
 
 The current enforced serve-mode process uses:
 
-- `stdio rpath wpath cpath fattr inet proc exec unveil` before the unveil table
-  is locked
-- `stdio rpath wpath cpath fattr inet proc exec` after the unveil table is
-  locked
+- without a mailbox helper socket:
+  `stdio rpath wpath cpath fattr inet proc exec unveil` before the unveil table
+  is locked, then `stdio rpath wpath cpath fattr inet proc exec`
+- with a mailbox helper socket:
+  `stdio rpath wpath cpath fattr inet unix proc exec unveil` before the unveil
+  table is locked, then `stdio rpath wpath cpath fattr inet unix proc exec`
 
 This reflects the current application truth:
 
@@ -120,6 +122,11 @@ The current confinement layer has been validated through:
   `mail.blackbagsecurity.com`
 - a synthetic session-gated attachment-route request under enforced confinement
   on `mail.blackbagsecurity.com`
+- helper runtime startup under enforced confinement on
+  `mail.blackbagsecurity.com`
+- helper-backed mailbox listing, message-list retrieval, message view, and
+  attachment download under enforced confinement on
+  `mail.blackbagsecurity.com`
 
 The enforced OpenBSD run logged:
 
@@ -133,10 +140,8 @@ The enforced OpenBSD run logged:
   `enforce`
 - successful health check handling
 - successful synthetic session validation and refresh under `enforce`
-- a bounded attachment-route failure for a missing user without the earlier
-  Dovecot stats-writer socket noise
-- a mailbox-list failure that now narrows to Dovecot's virtual-mail identity
-  boundary rather than to auth-socket reachability or confinement startup
+- successful helper-backed mailbox listing, message-list retrieval, message
+  view, and attachment download under `enforce`
 
 ## Observed Caveat And Fix On `mail.blackbagsecurity.com`
 
@@ -163,9 +168,8 @@ That distinction matters:
 - confinement enforcement now exists and was exercised successfully
 - the dedicated host-side auth-listener path is now proven viable without
   teaching OSMAP to depend on `doas`
-- the remaining live post-auth gap is mailbox and message helper execution
-  under the host's virtual-mail identity model, not raw auth-socket
-  reachability
+- the dedicated host-side userdb-listener path is now also proven viable for
+  the mailbox helper without widening the web-facing runtime
 
 Additional live validation also exposed and clarified two things:
 
@@ -188,9 +192,8 @@ Today that auth caveat is understood this way:
   owned by `_osmap`
 - mailbox and message helper paths can also be pointed at a dedicated userdb
   listener, now `/var/run/osmap-userdb` on `mail.blackbagsecurity.com`
-- even with that narrower socket arrangement, the current Dovecot userdb model
-  still resolves mailbox access to `uid=2000(vmail)` and `gid=2000(vmail)`,
-  which an unprivileged `_osmap` process cannot assume
+- on the validated host, that userdb listener is now owned for the `vmail`
+  helper path rather than for the `_osmap` web runtime
 
 The runtime now supports that operator path explicitly:
 
@@ -201,20 +204,14 @@ The runtime now supports that operator path explicitly:
 - when configured, the OpenBSD confinement plan now adds the explicit socket
   paths plus read-only parent-directory visibility for those paths
 
-That does not make the host issue disappear automatically, but it gives the
-deployment model a concrete least-privilege target instead of a vague future
-idea.
+That now gives the deployment model a concrete least-privilege target instead
+of a vague future idea, and the current host has live proof for it:
 
-The current live-host blocker is now specific and auditable. Dovecot reports:
-
-- `client doesn't have lookup permissions for this user: userdb uid (2000) doesn't match peer uid (1001)`
-
-and helper execution narrows further to failed `setgid(2000(vmail))` or
-`setuid(2000(vmail))` transitions when mailbox access is attempted as `_osmap`.
-
-That means the remaining work is not "make auth work under confinement." It is
-"define a mailbox-read integration path that preserves least privilege without
-teaching OSMAP to depend on `doas`."
+- `_osmap` handles browser auth through `/var/run/osmap-auth`
+- the local mailbox helper handles mailbox reads through
+  `/var/run/osmap-userdb` while running at the `vmail` boundary
+- helper-backed mailbox and attachment reads succeed under
+  `OSMAP_OPENBSD_CONFINEMENT_MODE=enforce`
 
 ## What This Baseline Does Not Yet Claim
 
@@ -224,9 +221,8 @@ This baseline does not mean:
 - helper-process dependencies have been eliminated
 - richer send helper execution is fully proven under enforced confinement
 - authenticated mailbox, message-view, and attachment-bearing live-host reads
-  are fully proven under `_osmap`
-- successful live attachment-bearing reads are fully proven under enforced
-  confinement
+  are proven in one continuous real-login browser flow without synthetic
+  session setup
 - QEMU and host confinement validation are complete for every user workflow
 
 The next confinement work should focus on narrowing the helper-compatible
@@ -248,6 +244,7 @@ Helper-specific OpenBSD confinement now also exists as a distinct runtime plan
 for `OSMAP_RUN_MODE=mailbox-helper`, with `unix` socket promises and a smaller
 filesystem view than the browser-facing `serve` runtime.
 
-That is still not the same thing as full live-host proof. The helper runtime
-has not yet been exercised end to end on `mail.blackbagsecurity.com` under the
-actual `vmail` boundary in this document's current validation set.
+That is still not the same thing as full live-browser coverage. The helper
+runtime has now been exercised successfully on `mail.blackbagsecurity.com`
+under the actual `vmail` boundary in this document's validation set, but
+broader end-to-end coverage and further narrowing remain.
