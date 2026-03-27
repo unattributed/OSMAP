@@ -70,3 +70,10 @@ monitoring, abuse controls, and incident readiness justify broader exposure.
 Later architecture work should favor designs that can practically use
 OpenBSD-specific hardening primitives such as `pledge(2)` and `unveil(2)`,
 especially in security-sensitive backend or session-handling components.
+
+### Aim for OpenBSD-native credibility, not just OpenBSD compatibility
+
+The project should be developed as software that could plausibly be respected by
+OpenBSD-oriented maintainers: small dependency surface, conservative hosting
+strategy, privilege-aware design, reproducible build discipline, and no
+Linux-first operational assumptions.

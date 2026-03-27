@@ -25,6 +25,8 @@ The replacement should be:
 - compatible with existing IMAP and submission services
 - realistic for a small team to operate
 - safe to stage behind the current VPN-first model before any broader exposure
+- credible as an OpenBSD-native deployment rather than a Linux-first web stack
+  awkwardly transplanted onto OpenBSD
 
 ## Proposed Shape For Later Phases
 
@@ -55,6 +57,8 @@ The likely architecture direction is:
   public-safe equivalent
 - Prefer architectures that can take advantage of OpenBSD-native confinement
   mechanisms such as `pledge(2)` and `unveil(2)` where practical
+- Prefer dependency and packaging choices that would not look unreasonable to an
+  OpenBSD ports maintainer
 
 ## Immediate Next Architectural Questions
 

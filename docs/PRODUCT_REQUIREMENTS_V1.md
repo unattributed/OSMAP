@@ -182,6 +182,8 @@ Version 1 must be:
 - auditable in deployment and behavior
 - compatible with reproducible build and release discipline in later phases
 - supportable without hidden local-only magic
+- designed with enough operational restraint that future OpenBSD-oriented
+  packaging and maintenance would remain plausible
 
 ## Constraints
 
@@ -196,6 +198,8 @@ Specific constraints:
 - no dependence on opaque third-party hosted security services for core
   operation
 - no promises of privacy properties that the architecture cannot actually prove
+- no dependency or toolchain growth that turns routine OpenBSD maintenance into
+  a packaging nightmare
 
 ## Explicit Exclusions
 
