@@ -25,6 +25,10 @@ use crate::mailbox::{
     MessageViewPolicy, MessageViewRequest, MessageViewService,
 };
 use crate::rendering::{PlainTextMessageRenderer, RenderedMessageView, RenderingPolicy};
+use crate::send::{
+    ComposePolicy, ComposeRequest, SendmailSubmissionBackend, SubmissionDecision,
+    SubmissionPublicFailureReason, SubmissionService,
+};
 use crate::session::{
     FileSessionStore, SessionError, SessionService, SessionToken, SystemRandomSource,
     ValidatedSession,
@@ -224,6 +228,15 @@ pub trait BrowserGateway {
         mailbox_name: &str,
         uid: u64,
     ) -> BrowserMessageViewOutcome;
+
+    fn send_message(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        recipients: &str,
+        subject: &str,
+        body: &str,
+    ) -> BrowserSendOutcome;
 }
 
 /// The result of a browser login attempt.
@@ -326,6 +339,22 @@ pub enum BrowserMessageViewDecision {
     },
 }
 
+/// The result of a browser send operation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BrowserSendOutcome {
+    pub decision: BrowserSendDecision,
+    pub audit_events: Vec<LogEvent>,
+}
+
+/// Send decisions visible to the browser layer.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BrowserSendDecision {
+    Submitted,
+    Denied {
+        public_reason: String,
+    },
+}
+
 /// The concrete runtime gateway built from the existing OSMAP services.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RuntimeBrowserGateway {
@@ -335,6 +364,7 @@ pub struct RuntimeBrowserGateway {
     session_dir: PathBuf,
     totp_secret_dir: PathBuf,
     doveadm_path: PathBuf,
+    sendmail_path: PathBuf,
     render_policy: RenderingPolicy,
 }
 
@@ -351,6 +381,7 @@ impl RuntimeBrowserGateway {
             session_dir: config.state_layout.session_dir.clone(),
             totp_secret_dir: config.state_layout.totp_secret_dir.clone(),
             doveadm_path: PathBuf::from("/usr/local/bin/doveadm"),
+            sendmail_path: PathBuf::from("/usr/sbin/sendmail"),
             render_policy: RenderingPolicy::default(),
         }
     }
@@ -394,6 +425,16 @@ impl RuntimeBrowserGateway {
             SystemRandomSource,
             self.session_lifetime_seconds,
         )
+    }
+
+    /// Builds the current send-path service around the local sendmail surface.
+    fn build_submission_service(
+        &self,
+    ) -> SubmissionService<SendmailSubmissionBackend<SystemCommandExecutor>> {
+        SubmissionService::new(SendmailSubmissionBackend::new(
+            SystemCommandExecutor,
+            self.sendmail_path.clone(),
+        ))
     }
 }
 
@@ -716,6 +757,56 @@ impl BrowserGateway for RuntimeBrowserGateway {
             },
         }
     }
+
+    fn send_message(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        recipients: &str,
+        subject: &str,
+        body: &str,
+    ) -> BrowserSendOutcome {
+        let request = match ComposeRequest::new(
+            ComposePolicy::default(),
+            recipients,
+            subject,
+            body,
+        ) {
+            Ok(request) => request,
+            Err(error) => {
+                return BrowserSendOutcome {
+                    decision: BrowserSendDecision::Denied {
+                        public_reason: SubmissionPublicFailureReason::InvalidRequest
+                            .as_str()
+                            .to_string(),
+                    },
+                    audit_events: vec![build_http_warning_event(
+                        "compose_request_rejected",
+                        "compose request validation failed",
+                        context,
+                    )
+                    .with_field("reason", error.reason)],
+                };
+            }
+        };
+
+        let outcome = self
+            .build_submission_service()
+            .submit_for_validated_session(context, validated_session, &request);
+
+        match outcome.decision {
+            SubmissionDecision::Submitted { .. } => BrowserSendOutcome {
+                decision: BrowserSendDecision::Submitted,
+                audit_events: vec![outcome.audit_event],
+            },
+            SubmissionDecision::Denied { public_reason } => BrowserSendOutcome {
+                decision: BrowserSendDecision::Denied {
+                    public_reason: public_reason.as_str().to_string(),
+                },
+                audit_events: vec![outcome.audit_event],
+            },
+        }
+    }
 }
 
 /// The browser application/router for the current HTTP slice.
@@ -803,6 +894,8 @@ where
             (HttpMethod::Get, "/mailboxes") => self.handle_mailboxes(request, &context),
             (HttpMethod::Get, "/mailbox") => self.handle_mailbox_messages(request, &context),
             (HttpMethod::Get, "/message") => self.handle_message_view(request, &context),
+            (HttpMethod::Get, "/compose") => self.handle_compose_form(request, &context),
+            (HttpMethod::Post, "/send") => self.handle_send(request, &context),
             (HttpMethod::Post, "/logout") => self.handle_logout(request, &context),
             _ => HandledHttpResponse {
                 response: html_response(
@@ -932,7 +1025,11 @@ where
                     200,
                     "OK",
                     "Mailboxes",
-                    &render_mailboxes_page(&canonical_username, &mailboxes),
+                    &render_mailboxes_page(
+                        &canonical_username,
+                        &validated_session.record.csrf_token,
+                        &mailboxes,
+                    ),
                 ),
                 audit_events,
             },
@@ -997,7 +1094,12 @@ where
                     200,
                     "OK",
                     "Mailbox Messages",
-                    &render_message_list_page(&canonical_username, &mailbox_name, &messages),
+                    &render_message_list_page(
+                        &canonical_username,
+                        &validated_session.record.csrf_token,
+                        &mailbox_name,
+                        &messages,
+                    ),
                 ),
                 audit_events,
             },
@@ -1083,7 +1185,11 @@ where
                     200,
                     "OK",
                     "Message View",
-                    &render_message_view_page(&canonical_username, &rendered),
+                    &render_message_view_page(
+                        &canonical_username,
+                        &validated_session.record.csrf_token,
+                        &rendered,
+                    ),
                 ),
                 audit_events,
             },
@@ -1102,14 +1208,171 @@ where
         }
     }
 
+    /// Handles the compose form for the validated browser session.
+    fn handle_compose_form(
+        &self,
+        request: &HttpRequest,
+        context: &AuthenticationContext,
+    ) -> HandledHttpResponse {
+        let (validated_session, audit_events) =
+            match self.require_validated_session(request, context) {
+                Ok(result) => result,
+                Err(response) => return response,
+            };
+
+        let success_message = if request.query_params.get("sent").map(String::as_str) == Some("1") {
+            Some("Message submission completed.")
+        } else {
+            None
+        };
+
+        HandledHttpResponse {
+            response: html_response(
+                200,
+                "OK",
+                "Compose",
+                &render_compose_page(
+                    &validated_session.record.canonical_username,
+                    &validated_session.record.csrf_token,
+                    success_message,
+                    None,
+                    "",
+                    "",
+                    "",
+                ),
+            ),
+            audit_events,
+        }
+    }
+
+    /// Handles the current compose/send form submission.
+    fn handle_send(
+        &self,
+        request: &HttpRequest,
+        context: &AuthenticationContext,
+    ) -> HandledHttpResponse {
+        let form = match parse_form_urlencoded(
+            &request.body,
+            self.policy.max_form_fields,
+            self.policy.max_body_bytes,
+        ) {
+            Ok(form) => form,
+            Err(error) => {
+                return HandledHttpResponse {
+                    response: html_response(
+                        400,
+                        "Bad Request",
+                        "Invalid Compose Request",
+                        "<p>The compose form could not be parsed.</p>",
+                    ),
+                    audit_events: vec![build_http_warning_event(
+                        "http_send_parse_failed",
+                        "compose form parsing failed",
+                        context,
+                    )
+                    .with_field("reason", error.reason)],
+                };
+            }
+        };
+
+        let (validated_session, mut audit_events) =
+            match self.require_validated_session(request, context) {
+                Ok(result) => result,
+                Err(response) => return response,
+            };
+        if let Some(response) = self.require_valid_csrf(
+            form.get("csrf_token").map(String::as_str),
+            &validated_session,
+            context,
+        ) {
+            return response;
+        }
+
+        let recipients = form.get("to").cloned().unwrap_or_default();
+        let subject = form.get("subject").cloned().unwrap_or_default();
+        let body = form.get("body").cloned().unwrap_or_default();
+        let outcome = self
+            .gateway
+            .send_message(context, &validated_session, &recipients, &subject, &body);
+        audit_events.extend(outcome.audit_events);
+
+        match outcome.decision {
+            BrowserSendDecision::Submitted => HandledHttpResponse {
+                response: redirect_response(303, "See Other", "/compose?sent=1"),
+                audit_events,
+            },
+            BrowserSendDecision::Denied { public_reason } => {
+                let status_code = if public_reason == "invalid_request" { 400 } else { 503 };
+                let reason_phrase = if public_reason == "invalid_request" {
+                    "Bad Request"
+                } else {
+                    "Service Unavailable"
+                };
+                HandledHttpResponse {
+                    response: html_response(
+                        status_code,
+                        reason_phrase,
+                        "Compose",
+                        &render_compose_page(
+                            &validated_session.record.canonical_username,
+                            &validated_session.record.csrf_token,
+                            None,
+                            Some(public_reason_message(&public_reason)),
+                            &recipients,
+                            &subject,
+                            &body,
+                        ),
+                    ),
+                    audit_events,
+                }
+            }
+        }
+    }
+
     /// Handles logout and clears the browser session cookie regardless of outcome.
     fn handle_logout(
         &self,
         request: &HttpRequest,
         context: &AuthenticationContext,
     ) -> HandledHttpResponse {
+        let form = match parse_form_urlencoded(
+            &request.body,
+            self.policy.max_form_fields,
+            self.policy.max_body_bytes,
+        ) {
+            Ok(form) => form,
+            Err(error) => {
+                return HandledHttpResponse {
+                    response: html_response(
+                        400,
+                        "Bad Request",
+                        "Invalid Logout Request",
+                        "<p>The logout request could not be parsed.</p>",
+                    ),
+                    audit_events: vec![build_http_warning_event(
+                        "http_logout_parse_failed",
+                        "logout form parsing failed",
+                        context,
+                    )
+                    .with_field("reason", error.reason)],
+                };
+            }
+        };
+
         let mut audit_events = Vec::new();
         if let Some(session_token) = session_cookie_value(request, self.policy.session_cookie_name) {
+            let validation = self.gateway.validate_session(context, &session_token);
+            audit_events.extend(validation.audit_events.clone());
+            if let BrowserSessionDecision::Valid { validated_session } = validation.decision {
+                if let Some(response) = self.require_valid_csrf(
+                    form.get("csrf_token").map(String::as_str),
+                    &validated_session,
+                    context,
+                ) {
+                    return response;
+                }
+            }
+
             let outcome = self.gateway.logout(context, &session_token);
             audit_events.extend(outcome.audit_events);
         }
@@ -1156,6 +1419,53 @@ where
                 audit_events: outcome.audit_events,
             }),
         }
+    }
+
+    /// Validates the CSRF token for authenticated state-changing routes.
+    fn require_valid_csrf(
+        &self,
+        submitted_token: Option<&str>,
+        validated_session: &ValidatedSession,
+        context: &AuthenticationContext,
+    ) -> Option<HandledHttpResponse> {
+        let Some(submitted_token) = submitted_token else {
+            return Some(HandledHttpResponse {
+                response: html_response(
+                    403,
+                    "Forbidden",
+                    "CSRF Validation Failed",
+                    "<p>The request did not include a valid CSRF token.</p>",
+                ),
+                audit_events: vec![build_http_warning_event(
+                    "http_csrf_missing",
+                    "csrf token missing from state-changing request",
+                    context,
+                )
+                .with_field("session_id", validated_session.record.session_id.clone())],
+            });
+        };
+
+        if !constant_time_eq(
+            submitted_token.as_bytes(),
+            validated_session.record.csrf_token.as_bytes(),
+        ) {
+            return Some(HandledHttpResponse {
+                response: html_response(
+                    403,
+                    "Forbidden",
+                    "CSRF Validation Failed",
+                    "<p>The request did not include a valid CSRF token.</p>",
+                ),
+                audit_events: vec![build_http_warning_event(
+                    "http_csrf_invalid",
+                    "csrf token validation failed",
+                    context,
+                )
+                .with_field("session_id", validated_session.record.session_id.clone())],
+            });
+        }
+
+        None
     }
 }
 
@@ -1572,7 +1882,7 @@ fn html_response(
         status_code,
         reason_phrase,
         format!(
-            "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>{}</title><style>body{{font-family:ui-monospace,monospace;max-width:72rem;margin:2rem auto;padding:0 1rem;line-height:1.5}}table{{border-collapse:collapse;width:100%}}th,td{{border:1px solid #444;padding:.5rem;text-align:left;vertical-align:top}}form{{margin:0}}input{{display:block;margin:.25rem 0 1rem;padding:.5rem;width:100%;max-width:28rem}}button{{padding:.5rem .9rem}}nav{{margin-bottom:1.5rem}}.muted{{color:#555}}</style></head><body>{}</body></html>",
+            "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>{}</title><style>body{{font-family:ui-monospace,monospace;max-width:72rem;margin:2rem auto;padding:0 1rem;line-height:1.5}}table{{border-collapse:collapse;width:100%}}th,td{{border:1px solid #444;padding:.5rem;text-align:left;vertical-align:top}}form{{margin:0}}input,textarea{{display:block;margin:.25rem 0 1rem;padding:.5rem;width:100%;max-width:48rem}}textarea{{min-height:16rem}}button{{padding:.5rem .9rem}}nav{{margin-bottom:1.5rem}}.muted{{color:#555}}</style></head><body>{}</body></html>",
             escape_html(title),
             body_html,
         ),
@@ -1656,7 +1966,11 @@ fn render_login_page(error_message: Option<&str>) -> String {
 }
 
 /// Renders the mailbox home page for the validated user.
-fn render_mailboxes_page(canonical_username: &str, mailboxes: &[MailboxEntry]) -> String {
+fn render_mailboxes_page(
+    canonical_username: &str,
+    csrf_token: &str,
+    mailboxes: &[MailboxEntry],
+) -> String {
     let mut items = String::new();
     for mailbox in mailboxes {
         let mailbox_name = escape_html(&mailbox.name);
@@ -1669,7 +1983,8 @@ fn render_mailboxes_page(canonical_username: &str, mailboxes: &[MailboxEntry]) -
     }
 
     format!(
-        "<nav><form method=\"post\" action=\"/logout\"><button type=\"submit\">Log Out</button></form></nav><h1>Mailboxes</h1><p>Signed in as <strong>{}</strong>.</p><ul>{}</ul>",
+        "<nav><a href=\"/compose\">Compose</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Mailboxes</h1><p>Signed in as <strong>{}</strong>.</p><ul>{}</ul>",
+        escape_html(csrf_token),
         escape_html(canonical_username),
         items,
     )
@@ -1678,6 +1993,7 @@ fn render_mailboxes_page(canonical_username: &str, mailboxes: &[MailboxEntry]) -
 /// Renders the message-list page for one mailbox.
 fn render_message_list_page(
     canonical_username: &str,
+    csrf_token: &str,
     mailbox_name: &str,
     messages: &[MessageSummary],
 ) -> String {
@@ -1699,7 +2015,8 @@ fn render_message_list_page(
     }
 
     format!(
-        "<nav><a href=\"/mailboxes\">Back to mailboxes</a></nav><h1>Mailbox: {}</h1><p>Signed in as <strong>{}</strong>.</p><table><thead><tr><th>UID</th><th>Received</th><th>Flags</th><th>Size</th></tr></thead><tbody>{}</tbody></table>",
+        "<nav><a href=\"/mailboxes\">Back to mailboxes</a> | <a href=\"/compose\">Compose</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Mailbox: {}</h1><p>Signed in as <strong>{}</strong>.</p><table><thead><tr><th>UID</th><th>Received</th><th>Flags</th><th>Size</th></tr></thead><tbody>{}</tbody></table>",
+        escape_html(csrf_token),
         escape_html(mailbox_name),
         escape_html(canonical_username),
         rows,
@@ -1707,7 +2024,11 @@ fn render_message_list_page(
 }
 
 /// Renders the message-view page using the existing safe renderer output.
-fn render_message_view_page(canonical_username: &str, rendered: &RenderedMessageView) -> String {
+fn render_message_view_page(
+    canonical_username: &str,
+    csrf_token: &str,
+    rendered: &RenderedMessageView,
+) -> String {
     let mut attachments = String::new();
     if rendered.attachments.is_empty() {
         attachments.push_str("<li>No attachment metadata surfaced for this message.</li>");
@@ -1725,8 +2046,9 @@ fn render_message_view_page(canonical_username: &str, rendered: &RenderedMessage
     }
 
     format!(
-        "<nav><a href=\"/mailbox?name={}\">Back to mailbox</a></nav><h1>Message View</h1><p>Signed in as <strong>{}</strong>.</p><dl><dt>Mailbox</dt><dd>{}</dd><dt>UID</dt><dd>{}</dd><dt>Subject</dt><dd>{}</dd><dt>From</dt><dd>{}</dd><dt>Received</dt><dd>{}</dd><dt>MIME Type</dt><dd>{}</dd><dt>Body Source</dt><dd>{}</dd><dt>HTML Present</dt><dd>{}</dd></dl><h2>Attachments</h2><ul>{}</ul><h2>Body</h2>{}",
+        "<nav><a href=\"/mailbox?name={}\">Back to mailbox</a> | <a href=\"/compose\">Compose</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Message View</h1><p>Signed in as <strong>{}</strong>.</p><dl><dt>Mailbox</dt><dd>{}</dd><dt>UID</dt><dd>{}</dd><dt>Subject</dt><dd>{}</dd><dt>From</dt><dd>{}</dd><dt>Received</dt><dd>{}</dd><dt>MIME Type</dt><dd>{}</dd><dt>Body Source</dt><dd>{}</dd><dt>HTML Present</dt><dd>{}</dd></dl><h2>Attachments</h2><ul>{}</ul><h2>Body</h2>{}",
         escape_html(&url_encode(&rendered.mailbox_name)),
+        escape_html(csrf_token),
         escape_html(canonical_username),
         escape_html(&rendered.mailbox_name),
         rendered.uid,
@@ -1738,6 +2060,44 @@ fn render_message_view_page(canonical_username: &str, rendered: &RenderedMessage
         if rendered.contains_html_body { "yes" } else { "no" },
         attachments,
         rendered.body_html,
+    )
+}
+
+/// Renders the compose page for the current user and CSRF-bound session.
+fn render_compose_page(
+    canonical_username: &str,
+    csrf_token: &str,
+    success_message: Option<&str>,
+    error_message: Option<&str>,
+    to_value: &str,
+    subject_value: &str,
+    body_value: &str,
+) -> String {
+    let success_banner = match success_message {
+        Some(success_message) => format!(
+            "<p><strong>Submission complete:</strong> {}</p>",
+            escape_html(success_message)
+        ),
+        None => String::new(),
+    };
+    let error_banner = match error_message {
+        Some(error_message) => format!(
+            "<p><strong>Request failed:</strong> {}</p>",
+            escape_html(error_message)
+        ),
+        None => String::new(),
+    };
+
+    format!(
+        "<nav><a href=\"/mailboxes\">Back to mailboxes</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Compose</h1><p>Signed in as <strong>{}</strong>.</p><p class=\"muted\">This first send slice uses the local submission surface and currently accepts a simple recipient list, subject, and plain-text body.</p>{}{}<form method=\"post\" action=\"/send\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><label>To<input type=\"text\" name=\"to\" value=\"{}\" autocomplete=\"off\"></label><label>Subject<input type=\"text\" name=\"subject\" value=\"{}\"></label><label>Body<textarea name=\"body\">{}</textarea></label><button type=\"submit\">Send Message</button></form>",
+        escape_html(csrf_token),
+        escape_html(canonical_username),
+        success_banner,
+        error_banner,
+        escape_html(csrf_token),
+        escape_html(to_value),
+        escape_html(subject_value),
+        escape_html(body_value),
     )
 }
 
@@ -1772,6 +2132,20 @@ fn url_encode(value: &str) -> String {
     encoded
 }
 
+/// Compares two byte slices without early exit for CSRF token validation.
+fn constant_time_eq(left: &[u8], right: &[u8]) -> bool {
+    if left.len() != right.len() {
+        return false;
+    }
+
+    let mut diff = 0_u8;
+    for (left_byte, right_byte) in left.iter().zip(right.iter()) {
+        diff |= left_byte ^ right_byte;
+    }
+
+    diff == 0
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1789,6 +2163,7 @@ mod tests {
             ValidatedSession {
                 record: SessionRecord {
                     session_id: "0123456789abcdef0123456789abcdef01234567".to_string(),
+                    csrf_token: "fedcba9876543210fedcba9876543210fedcba98".to_string(),
                     canonical_username: "alice@example.com".to_string(),
                     issued_at: 10,
                     expires_at: 100,
@@ -1999,6 +2374,39 @@ mod tests {
                 )],
             }
         }
+
+        fn send_message(
+            &self,
+            _context: &AuthenticationContext,
+            _validated_session: &ValidatedSession,
+            recipients: &str,
+            _subject: &str,
+            _body: &str,
+        ) -> BrowserSendOutcome {
+            if recipients == "bob@example.com" {
+                BrowserSendOutcome {
+                    decision: BrowserSendDecision::Submitted,
+                    audit_events: vec![LogEvent::new(
+                        LogLevel::Info,
+                        EventCategory::Submission,
+                        "stub_send_ok",
+                        "stub submission accepted",
+                    )],
+                }
+            } else {
+                BrowserSendOutcome {
+                    decision: BrowserSendDecision::Denied {
+                        public_reason: "invalid_request".to_string(),
+                    },
+                    audit_events: vec![LogEvent::new(
+                        LogLevel::Warn,
+                        EventCategory::Submission,
+                        "stub_send_denied",
+                        "stub submission denied",
+                    )],
+                }
+            }
+        }
     }
 
     fn app() -> BrowserApp<StubGateway> {
@@ -2127,6 +2535,77 @@ mod tests {
     }
 
     #[test]
+    fn compose_page_renders_csrf_bound_form() {
+        let response = app().handle_request(
+            &request(
+                "GET",
+                "/compose",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                ],
+                "",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 200);
+        assert!(response.response.body.contains("name=\"csrf_token\""));
+        assert!(response.response.body.contains("action=\"/send\""));
+    }
+
+    #[test]
+    fn send_route_requires_valid_csrf_token() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/send",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                ],
+                "to=bob%40example.com&subject=Test&body=Hello",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 403);
+        assert!(response.response.body.contains("CSRF Validation Failed"));
+    }
+
+    #[test]
+    fn send_route_redirects_after_successful_submission() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/send",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                ],
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba98&to=bob%40example.com&subject=Test&body=Hello",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 303);
+        assert!(response
+            .response
+            .headers
+            .iter()
+            .any(|(name, value)| name == "Location" && value == "/compose?sent=1"));
+    }
+
+    #[test]
     fn logout_clears_session_cookie() {
         let response = app().handle_request(
             &request(
@@ -2139,7 +2618,7 @@ mod tests {
                         "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                     ),
                 ],
-                "",
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba98",
             ),
             "127.0.0.1",
         );

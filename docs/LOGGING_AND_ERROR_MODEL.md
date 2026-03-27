@@ -14,7 +14,8 @@ The current logging model is designed to:
 
 - provide stable startup diagnostics
 - keep event shape explicit and reviewable
-- support later expansion into auth, session, and audit events
+- support later expansion into auth, session, HTTP, mailbox, and submission
+  audit events
 - remain dependency-light
 
 ## Current Event Shape
@@ -38,13 +39,14 @@ The early logger currently distinguishes:
 - `bootstrap`
 - `config`
 - `state`
+- `http`
 - `auth`
 - `session`
 - `mailbox`
+- `submission`
 
-This now covers the runtime foundation plus the first authentication and session
-layers. Later phases can add request, mailbox, and submission categories as
-real behavior appears.
+This now covers the runtime foundation plus real browser, auth, session,
+mailbox, and outbound-submission behavior.
 
 ## Error-Handling Posture
 
@@ -69,6 +71,12 @@ The current startup path follows these rules:
   of this slice
 - startup exits cleanly on invalid bootstrap state rather than attempting hidden
   fallback behavior
+
+Later runtime slices follow the same spirit:
+
+- browser-visible failures use small stable messages
+- audit events carry context without mirroring secrets or message bodies
+- backend execution failures are translated into bounded user-facing outcomes
 
 ## Logging Level Model
 
@@ -98,8 +106,8 @@ tooling complexity outrun the implementation.
 
 This model should evolve later to include:
 
-- richer request-to-action correlation across mail operations
-- mail-operation audit events
+- richer request-to-action correlation across mailbox and submission operations
 - deployment-specific output routing on OpenBSD
+- audit-log persistence and retention policy integration
 
 Those should be added when real behavior exists, not preemptively.

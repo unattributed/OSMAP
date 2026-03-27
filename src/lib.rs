@@ -13,6 +13,7 @@ pub mod logging;
 pub mod mailbox;
 pub mod mime;
 pub mod rendering;
+pub mod send;
 pub mod session;
 pub mod state;
 pub mod totp;

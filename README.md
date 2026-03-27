@@ -147,11 +147,16 @@ The next implementation step is now in place too: a dependency-light
 HTTP/browser slice with bounded request parsing, login/logout routes,
 session-gated mailbox pages, and message-view rendering over the existing
 runtime. The binary now supports `OSMAP_RUN_MODE=bootstrap` for fast startup
-validation and `OSMAP_RUN_MODE=serve` for the current listener path.
+validation and `OSMAP_RUN_MODE=serve` for the current listener path. The next
+implementation step is now in place too: a first compose/send browser slice
+with bounded outbound input validation, a local `sendmail` compatibility
+handoff, and submission audit events. The browser runtime now also has a first
+CSRF strategy for current state-changing form routes, plus explicit nginx-facing
+deployment guidance and an early OpenBSD confinement map.
 
-The next implementation step is to expand this browser slice toward outbound
-send behavior and early runtime hardening without weakening the security
-boundaries that are now in place.
+The next implementation step is to extend the send path toward reply, forward,
+attachment-aware behavior, and tested OpenBSD runtime confinement without
+weakening the security boundaries that are now in place.
 
 ---
 

@@ -353,3 +353,35 @@ The current browser slice uses `HttpOnly` and `SameSite=Strict` cookies, sets
 `Secure` outside development, suppresses cache storage on sensitive responses,
 and emits a restrictive content-security policy. This is the current minimum
 browser posture, not the endpoint of hardening work.
+
+### Use the local `sendmail` compatibility surface for the first outbound slice
+
+The first browser send path should hand a bounded plain-text message to the
+host's existing submission surface through `/usr/sbin/sendmail` rather than
+inventing a new SMTP client inside OSMAP.
+
+### Keep the first compose slice plain-text-only and attachment-free
+
+The initial outbound form should prove recipient validation, message handoff,
+and audit behavior first. Attachments, reply/forward helpers, and richer
+composition behavior remain later work.
+
+### Bind CSRF control to persisted session state
+
+The current browser runtime now stores a CSRF token with each session record
+and requires that token on the current state-changing form routes. This keeps
+browser write protection tied to the same explicit session lifecycle already
+used for auth and revocation.
+
+### Keep the first OSMAP HTTP deployment loopback-only behind nginx
+
+The current browser runtime should continue to assume `nginx` at the edge and
+OSMAP on a local-only TCP listener. This preserves the narrow deployment model
+and keeps public HTTP/TLS behavior out of the application process.
+
+### Treat `pledge(2)` and `unveil(2)` as implementation work driven by the real access graph
+
+The prototype is now concrete enough to map likely confinement boundaries:
+bounded state directories, one local listener, `doveadm`, and `sendmail`.
+Runtime enforcement should be added from that real surface, not from generic
+theory.

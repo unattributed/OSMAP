@@ -154,7 +154,13 @@ Phase 6:
   attachment-metadata surface for common mail layouts
 - WP6 now includes a dependency-light HTTP/browser slice with login, mailbox,
   message-list, message-view, logout, and health routes
-- attachment download behavior, HTML sanitization, CSRF strategy, and send-path
-  work are not complete yet
+- WP7 now includes a first compose/send browser slice with bounded input
+  validation, local submission handoff, and submission audit events
+- the browser slice now includes CSRF protection on current state-changing form
+  routes
+- nginx-facing deployment details and an early OpenBSD confinement map now
+  exist as implementation controls
+- attachment download behavior, reply/forward behavior, attachment upload, and
+  runtime `pledge(2)`/`unveil(2)` enforcement are not complete yet
 - the actual prototype has not yet been implemented, so Phase 6 execution is
   underway but not yet complete

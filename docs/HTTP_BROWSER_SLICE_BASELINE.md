@@ -19,9 +19,11 @@ The current slice provides:
 - a bounded HTTP/1.x request parser
 - a small sequential TCP listener with one-request-per-connection behavior
 - explicit `bootstrap` and `serve` run modes
-- browser routes for login, mailbox home, message lists, message view, logout,
-  and health checks
+- browser routes for login, mailbox home, message lists, message view, compose,
+  send, logout, and health checks
 - session cookies with `HttpOnly` and `SameSite=Strict`
+- CSRF tokens bound to persisted session state and required on current
+  state-changing browser routes
 - strict response headers for cache suppression and content-security policy
 - server-rendered HTML pages that consume the existing runtime layers instead
   of re-implementing them
@@ -57,6 +59,8 @@ The current browser layer provides:
 - `GET /mailboxes`
 - `GET /mailbox?name=...`
 - `GET /message?mailbox=...&uid=...`
+- `GET /compose`
+- `POST /send`
 - `POST /logout`
 
 The routes intentionally mirror the current runtime baseline:
@@ -65,6 +69,8 @@ The routes intentionally mirror the current runtime baseline:
 - mailbox home lists available mailboxes
 - mailbox view lists message summaries
 - message view consumes the existing safe renderer and attachment metadata
+- compose renders the current plain-text-first outbound form
+- send hands the composed message to the local submission surface
 - logout revokes the current session token
 
 ## Browser Security Posture
@@ -76,8 +82,12 @@ The current browser slice follows these rules:
 - keep the session cookie `HttpOnly`
 - keep the session cookie `SameSite=Strict`
 - set `Secure` on the session cookie outside development
+- require per-session CSRF tokens on current state-changing browser routes
 - use `Cache-Control: no-store` on sensitive responses
 - send a restrictive content-security policy
+- send `Referrer-Policy: no-referrer`
+- send `X-Content-Type-Options: nosniff`
+- send `X-Frame-Options: DENY`
 - avoid JavaScript as a dependency for the first flow
 
 This is not the final browser-security story, but it is an honest and useful
@@ -113,6 +123,10 @@ This slice now proves that:
   to support a small end-to-end HTML flow
 - the project can carry safe message rendering and attachment metadata all the
   way to a browser-facing page
+- the current outbound send path can be exposed through a bounded server-side
+  compose form without inventing an SMTP client or rich browser runtime
+- CSRF controls can be added to the browser slice without reworking the core
+  session model
 - a practical `serve` mode can exist without giving up the fast bootstrap-only
   validation path
 
@@ -121,12 +135,13 @@ This slice now proves that:
 This slice does not yet include:
 
 - TLS termination inside OSMAP
-- CSRF tokens
 - attachment download handlers
-- compose or send routes
+- reply or forward workflows
+- attachment upload handling
 - administrative routes
 - concurrent request handling
-- nginx integration templates
-- `pledge(2)` and `unveil(2)` application to the new runtime shape
+- runtime `pledge(2)` and `unveil(2)` enforcement
 
-Those remain later implementation and hardening work.
+The nginx-facing deployment model and early confinement plan now exist in the
+project documentation, but those controls are not yet enforced by the running
+binary itself.

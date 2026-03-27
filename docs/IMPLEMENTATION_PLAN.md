@@ -149,18 +149,21 @@ slice on top of that read-path baseline, a first plain-text rendering policy
 layer on top of the fetched message payload, and a dependency-light MIME-aware
 attachment-metadata baseline for common mail layouts. The first bounded
 HTTP/browser slice now exists too, including real request parsing, routing,
-server-rendered HTML, and session-cookie handling.
+server-rendered HTML, session-cookie handling, a first compose/send path, and
+CSRF enforcement on current state-changing routes. The deployment and hardening
+baseline now also includes explicit nginx-facing guidance and an early OpenBSD
+confinement map.
 
 The next active implementation work should focus on:
 
 - using the project-local QEMU lab wrappers and `mail.blackbagsecurity.com` for
   continued OpenBSD validation as the runtime broadens
-- expanding the browser slice carefully into compose/send behavior without
-  discarding the current narrow HTTP and rendering posture
-- hardening the new HTTP runtime shape with CSRF strategy, nginx integration
-  details, and early confinement planning
-- carrying the current session model into later cookie and browser-state
-  handling without collapsing the security boundaries that now exist
+- extending the send path toward reply, forward, and attachment-aware handling
+  without discarding the current narrow HTTP and rendering posture
+- validating the nginx-facing and OpenBSD confinement plan against real host and
+  QEMU deployment steps
+- carrying the current session model into broader browser-state handling
+  without collapsing the security boundaries that now exist
 
 ## Implementation Guardrails
 

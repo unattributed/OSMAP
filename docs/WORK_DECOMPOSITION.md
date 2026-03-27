@@ -174,6 +174,16 @@ Goal:
 Demonstrate outbound message composition and handoff through the existing
 submission path.
 
+Status on March 27, 2026:
+
+- started with the first compose-and-send browser slice
+- a server-rendered compose form and session-gated send action now exist
+- the first outbound handoff uses the local `sendmail` compatibility surface
+- CSRF protection now covers the current send form
+- submission success and failure are now emitted as structured audit-quality
+  log lines
+- recorded in `COMPOSE_AND_SEND_SLICE_BASELINE.md`
+
 Done means:
 
 - compose and submit flow exists
@@ -186,6 +196,14 @@ Done means:
 Goal:
 Shape the prototype into something that can run cleanly on OpenBSD with minimal
 privilege and clear filesystem boundaries.
+
+Status on March 27, 2026:
+
+- started with explicit nginx-facing deployment guidance for the current browser
+  runtime
+- started with an early `pledge(2)` and `unveil(2)` feasibility map based on
+  the real process access graph
+- recorded in `HTTP_HARDENING_BASELINE.md`
 
 Done means:
 

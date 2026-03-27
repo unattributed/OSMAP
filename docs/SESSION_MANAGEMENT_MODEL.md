@@ -18,6 +18,7 @@ That layer currently covers:
 - token validation against persisted session state
 - explicit revocation for logout-style and operator-driven paths
 - per-user session listing for visibility
+- per-session CSRF token state for the current browser runtime
 - structured session audit events
 
 This is the first usable session core, not the final browser/session design.
@@ -29,6 +30,7 @@ The current implementation uses:
 - a high-entropy random browser token
 - a SHA-1-derived persisted session identifier
 - one file-backed session record per active or historical session
+- one per-session CSRF token stored with the bounded session record
 - explicit `issued_at`, `expires_at`, `last_seen_at`, and `revoked_at` fields
 - the canonical username, second-factor type, remote address, and user-agent
   summary as operator-visible metadata
@@ -74,6 +76,7 @@ The current runtime enforces:
 - explicit expiration timestamps on issued sessions
 - validation failure for expired sessions
 - validation failure for revoked sessions
+- CSRF-token matching on the currently implemented state-changing browser routes
 - last-seen updates on successful validation
 
 These controls keep lifetime and revocation behavior explicit from the first
@@ -131,6 +134,7 @@ The current session slice deliberately favors explicitness over convenience:
 - session lifetime is bounded by configuration
 - logout is a real revocation path
 - raw bearer tokens are not written to the file-backed store
+- the browser runtime uses a strict cookie posture around the session token
 - session metadata is small enough to inspect and test directly
 - session issuance still depends on a completed primary-auth plus TOTP path
 
@@ -154,12 +158,11 @@ later browser and mailbox work increases integration risk.
 
 This slice does not yet include:
 
-- HTTP cookie transport and browser request handling
-- CSRF controls and cookie attribute policy
 - rate limiting for session creation or validation abuse
-- session fixation defenses tied to a real browser runtime
+- stronger session fixation defenses around future auth-flow refinements
 - persistent audit-log storage beyond the current structured event stream
 - user-facing session-management UI
+- operator-facing session revocation controls in the browser layer
 
 Those belong to the later HTTP and mailbox/runtime slices rather than to this
 state-and-lifecycle foundation.

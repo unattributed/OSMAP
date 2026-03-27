@@ -27,10 +27,14 @@ pub const MAX_SESSION_TOKEN_LEN: usize = 128;
 /// Fixed hex length for the SHA-1-derived persisted session identifier.
 pub const SESSION_ID_HEX_LEN: usize = 40;
 
+/// Fixed hex length for the persisted CSRF token format.
+pub const CSRF_TOKEN_HEX_LEN: usize = 40;
+
 /// Describes the persisted session metadata visible to operators.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SessionRecord {
     pub session_id: String,
+    pub csrf_token: String,
     pub canonical_username: String,
     pub issued_at: u64,
     pub expires_at: u64,
@@ -304,9 +308,11 @@ where
         let expires_at = issued_at.saturating_add(self.lifetime_seconds);
         let token = generate_session_token(&self.random_source)?;
         let session_id = session_id_from_token(token.as_str());
+        let csrf_token = csrf_token_from_session_token(token.as_str());
 
         let record = SessionRecord {
             session_id: session_id.clone(),
+            csrf_token,
             canonical_username: canonical_username.to_string(),
             issued_at,
             expires_at,
@@ -459,6 +465,12 @@ fn session_id_from_token(token: &str) -> String {
     hex_encode(&digest)
 }
 
+/// Derives a stable CSRF token from the issued bearer token.
+fn csrf_token_from_session_token(token: &str) -> String {
+    let digest = Sha1::digest(format!("csrf:{token}").as_bytes());
+    hex_encode(&digest)
+}
+
 /// Serializes a session record into a small line-oriented format.
 fn serialize_session_record(record: &SessionRecord) -> String {
     let revoked_at = record
@@ -467,8 +479,9 @@ fn serialize_session_record(record: &SessionRecord) -> String {
         .unwrap_or_default();
 
     format!(
-        "session_id={}\ncanonical_username={}\nissued_at={}\nexpires_at={}\nlast_seen_at={}\nrevoked_at={}\nremote_addr={}\nuser_agent={}\nfactor={}\n",
+        "session_id={}\ncsrf_token={}\ncanonical_username={}\nissued_at={}\nexpires_at={}\nlast_seen_at={}\nrevoked_at={}\nremote_addr={}\nuser_agent={}\nfactor={}\n",
         record.session_id,
+        record.csrf_token,
         record.canonical_username,
         record.issued_at,
         record.expires_at,
@@ -483,6 +496,7 @@ fn serialize_session_record(record: &SessionRecord) -> String {
 /// Parses a serialized session record.
 fn parse_session_record(content: &str) -> Result<Option<SessionRecord>, SessionError> {
     let mut session_id = None;
+    let mut csrf_token = None;
     let mut canonical_username = None;
     let mut issued_at = None;
     let mut expires_at = None;
@@ -513,6 +527,16 @@ fn parse_session_record(content: &str) -> Result<Option<SessionRecord>, SessionE
                 }
                 session_id = Some(value.to_string());
             }
+            "csrf_token" => {
+                if value.len() != CSRF_TOKEN_HEX_LEN
+                    || !value.chars().all(|ch| ch.is_ascii_hexdigit())
+                {
+                    return Err(SessionError::StoreFailure {
+                        reason: "invalid csrf_token field in session record".to_string(),
+                    });
+                }
+                csrf_token = Some(value.to_string());
+            }
             "canonical_username" => canonical_username = Some(value.to_string()),
             "issued_at" => issued_at = Some(parse_u64_field("issued_at", value)?),
             "expires_at" => expires_at = Some(parse_u64_field("expires_at", value)?),
@@ -541,6 +565,7 @@ fn parse_session_record(content: &str) -> Result<Option<SessionRecord>, SessionE
 
     Ok(Some(SessionRecord {
         session_id,
+        csrf_token: required_field("csrf_token", csrf_token)?,
         canonical_username: required_field("canonical_username", canonical_username)?,
         issued_at: required_field("issued_at", issued_at)?,
         expires_at: required_field("expires_at", expires_at)?,
@@ -701,6 +726,7 @@ mod tests {
         assert_eq!(issued.record.issued_at, 100);
         assert_eq!(issued.record.expires_at, 3700);
         assert_eq!(issued.record.factor, RequiredSecondFactor::Totp);
+        assert_eq!(issued.record.csrf_token.len(), CSRF_TOKEN_HEX_LEN);
         assert!(session_dir.join(format!("{}.session", issued.record.session_id)).exists());
     }
 
@@ -843,6 +869,7 @@ mod tests {
     fn parses_serialized_session_records() {
         let record = SessionRecord {
             session_id: "0123456789abcdef0123456789abcdef01234567".to_string(),
+            csrf_token: "fedcba9876543210fedcba9876543210fedcba98".to_string(),
             canonical_username: "alice@example.com".to_string(),
             issued_at: 1,
             expires_at: 2,
@@ -946,6 +973,7 @@ mod tests {
             .expect("session issuance should succeed");
 
         assert_eq!(issued.record.canonical_username, canonical_username);
+        assert_eq!(issued.record.csrf_token.len(), CSRF_TOKEN_HEX_LEN);
         assert_eq!(issued.record.factor, RequiredSecondFactor::Totp);
         assert_eq!(issued.record.issued_at, 59);
         assert_eq!(issued.record.expires_at, 3659);
