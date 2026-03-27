@@ -81,6 +81,10 @@ The project will proceed phase by phase:
 Each phase should leave behind reviewable artifacts before the project moves
 forward.
 
+`DECISION_LOG.md` is a required living artifact. Significant scope, boundary,
+assumption, and execution decisions should be recorded during the phase work
+that produces them, not deferred until afterward.
+
 ## Unknowns That Must Be Resolved After Phase 0
 
 - Which current Roundcube workflows are essential versus merely convenient

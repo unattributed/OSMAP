@@ -27,3 +27,22 @@ The current environment intentionally keeps webmail, IMAP, and authenticated
 submission behind WireGuard and nginx allowlisting. OSMAP should treat that as
 the baseline security posture and only relax it by explicit later-phase design
 decision.
+
+### Define Version 1 as a narrow mail-only replacement
+
+Phase 2 defines Version 1 as a browser-based mail product with strong
+authentication, core mailbox workflows, attachments, search, session management,
+and audit visibility. Groupware, plugin ecosystems, mobile apps, and broad
+administrative surfaces remain out of scope.
+
+### Preserve native-client coexistence
+
+The product definition explicitly keeps Thunderbird and other native clients as
+supported access paths. OSMAP is not intended to replace them or centralize all
+mail access in the browser.
+
+### Keep the decision log current during phase execution
+
+`docs/DECISION_LOG.md` should be updated as meaningful phase decisions are made.
+It is a live project control document, not an after-action summary written only
+at the end of a phase.

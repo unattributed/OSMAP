@@ -23,6 +23,20 @@ Phase 1 is acceptable when all of the following are true:
 - The analysis is detailed enough to support Product Definition and Security
   Model work without guessing
 
+## Phase 2 Acceptance Criteria
+
+Phase 2 is acceptable when all of the following are true:
+
+- Version 1 capabilities are described concretely enough for design work to
+  proceed
+- Required user workflows are enumerated
+- In-scope and out-of-scope features are explicit
+- Compatibility requirements with the existing mail stack are stated
+- Security, operational, and maintainability constraints are captured as
+  product requirements, not just implementation wishes
+- The operator can answer "what exactly does Version 1 include" without
+  ambiguity
+
 ## Current Status On March 27, 2026
 
 Phase 0:
@@ -37,3 +51,10 @@ Phase 1:
   bindings, and Roundcube integration points
 - The resulting current-state documents in `docs/` should now be treated as the
   baseline for Phase 1 review and refinement
+
+Phase 2:
+
+- Version 1 product scope, workflows, non-goals, and compatibility assumptions
+  are now defined in `PRODUCT_REQUIREMENTS_V1.md`
+- The remaining work for later phases is to validate those requirements against
+  the security model and architecture rather than continue product-scope drift

@@ -12,8 +12,11 @@
 ## Current Program Limitations
 
 - No implementation code exists yet for the replacement
-- No final product requirements are locked yet
+- The Version 1 product definition is now documented, but architecture and
+  threat-model choices are still pending
 - No formal migration plan has been completed
 - The current security model is still pre-threat-model and pre-control mapping
 - The existing host is multi-purpose, which constrains how aggressively the
   replacement can diverge from current operational patterns
+- Required user workflows are defined at product level, but detailed field-level
+  UX and edge-case behavior are still unspecified
