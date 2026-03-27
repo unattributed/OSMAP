@@ -143,14 +143,15 @@ WP0, WP1, and WP2 are now in place. WP3 now provides bounded credential
 handling, a real Dovecot-oriented primary-auth path, and a real TOTP-backed
 second-factor stage. WP4 now has a first real session-management baseline with
 issuance, validation, revocation, and per-user visibility behavior. WP5 now
-has its first mailbox-listing primitive behind the validated-session gate.
+has mailbox-listing and message-list retrieval primitives behind the
+validated-session gate.
 
 The next active implementation work should focus on:
 
 - using the project-local QEMU lab wrappers and `mail.blackbagsecurity.com` for
   continued OpenBSD validation as the runtime broadens
-- defining message-list retrieval on top of the completed auth, session, and
-  mailbox-listing baseline
+- defining the first message-view retrieval slice on top of the completed auth,
+  session, mailbox-listing, and message-list baseline
 - carrying the current session model into later HTTP and cookie handling
   without collapsing the security boundaries that now exist
 

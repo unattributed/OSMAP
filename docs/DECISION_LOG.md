@@ -260,3 +260,17 @@ The mailbox-listing success event records mailbox count plus identity and
 request context, but not the full mailbox-name list. That keeps audit output
 useful without turning mailbox activity logs into a content-heavy mirror of
 user state.
+
+### Use `doveadm -f flow fetch` for the first message-summary path
+
+The second WP5 slice uses `doveadm -f flow fetch` with a small field set
+(`uid`, `flags`, `date.received`, `size.virtual`, and `mailbox`) so the runtime
+can retrieve bounded message summaries without committing to a larger IMAP
+dependency before message-view work forces that choice.
+
+### Keep message-list summaries intentionally content-light
+
+The first message-list model records identifiers, flags, date, size, and
+mailbox membership, but not message subjects, snippets, or bodies. This keeps
+the runtime honest about what has actually been implemented and avoids turning
+the audit/event path into a message-content mirror.

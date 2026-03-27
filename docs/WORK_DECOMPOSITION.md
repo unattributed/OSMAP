@@ -124,9 +124,12 @@ Status on March 27, 2026:
 - started with the first mailbox-listing slice
 - mailbox listing is now implemented behind the validated-session gate
 - a real `doveadm mailbox list` backend path is now implemented
+- message-list retrieval is now implemented behind the validated-session gate
+- a real `doveadm -f flow fetch` message-summary path is now implemented
 - mailbox success and failure events are emitted as structured audit-quality
   log lines
 - recorded in `MAILBOX_LISTING_SLICE_BASELINE.md`
+- recorded in `MESSAGE_LIST_SLICE_BASELINE.md`
 
 Done means:
 

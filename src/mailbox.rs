@@ -4,8 +4,10 @@
 //! - session validation remains a separate gate handled before mailbox access
 //! - mailbox listing uses the existing Dovecot surface instead of a new mail
 //!   stack
-//! - mailbox results and failures are emitted as structured audit events
+//! - mailbox and message-list results/failures are emitted as structured audit
+//!   events
 
+use std::collections::BTreeMap;
 use std::path::PathBuf;
 
 use crate::auth::{
@@ -20,6 +22,15 @@ pub const DEFAULT_MAILBOX_NAME_MAX_LEN: usize = 255;
 
 /// Conservative upper bound for the number of mailboxes returned in one listing.
 pub const DEFAULT_MAX_MAILBOXES: usize = 1024;
+
+/// Conservative upper bound for the number of messages returned in one listing.
+pub const DEFAULT_MAX_MESSAGES: usize = 2000;
+
+/// Conservative maximum length for rendered date strings returned by the backend.
+pub const DEFAULT_MESSAGE_DATE_MAX_LEN: usize = 128;
+
+/// Conservative maximum length for rendered flag strings returned by the backend.
+pub const DEFAULT_MESSAGE_FLAG_STRING_MAX_LEN: usize = 256;
 
 /// Policy controlling mailbox-output bounds for the first read-path slice.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -37,10 +48,65 @@ impl Default for MailboxListingPolicy {
     }
 }
 
+/// Policy controlling message-list request and output bounds.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct MessageListPolicy {
+    pub mailbox_name_max_len: usize,
+    pub max_messages: usize,
+    pub message_date_max_len: usize,
+    pub message_flag_string_max_len: usize,
+}
+
+impl Default for MessageListPolicy {
+    fn default() -> Self {
+        Self {
+            mailbox_name_max_len: DEFAULT_MAILBOX_NAME_MAX_LEN,
+            max_messages: DEFAULT_MAX_MESSAGES,
+            message_date_max_len: DEFAULT_MESSAGE_DATE_MAX_LEN,
+            message_flag_string_max_len: DEFAULT_MESSAGE_FLAG_STRING_MAX_LEN,
+        }
+    }
+}
+
 /// A single mailbox visible to the authenticated user.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MailboxEntry {
     pub name: String,
+}
+
+/// A validated request for listing messages from a mailbox.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MessageListRequest {
+    pub mailbox_name: String,
+}
+
+impl MessageListRequest {
+    /// Validates the mailbox name used for message-list retrieval.
+    pub fn new(
+        policy: MessageListPolicy,
+        mailbox_name: impl Into<String>,
+    ) -> Result<Self, MailboxBackendError> {
+        let mailbox_name = mailbox_name.into();
+        let _ = MailboxEntry::new(
+            MailboxListingPolicy {
+                mailbox_name_max_len: policy.mailbox_name_max_len,
+                max_mailboxes: DEFAULT_MAX_MAILBOXES,
+            },
+            mailbox_name.clone(),
+        )?;
+
+        Ok(Self { mailbox_name })
+    }
+}
+
+/// A single summary row in a message list.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MessageSummary {
+    pub mailbox_name: String,
+    pub uid: u64,
+    pub flags: Vec<String>,
+    pub date_received: String,
+    pub size_virtual: u64,
 }
 
 impl MailboxEntry {
@@ -125,10 +191,31 @@ pub enum MailboxListingDecision {
     },
 }
 
+/// The outcome of a message-list request.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum MessageListDecision {
+    Denied {
+        public_reason: MailboxPublicFailureReason,
+    },
+    Listed {
+        canonical_username: String,
+        session_id: String,
+        mailbox_name: String,
+        messages: Vec<MessageSummary>,
+    },
+}
+
 /// The decision plus audit event emitted by mailbox listing.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MailboxListingOutcome {
     pub decision: MailboxListingDecision,
+    pub audit_event: LogEvent,
+}
+
+/// The decision plus audit event emitted by message-list retrieval.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MessageListOutcome {
+    pub decision: MessageListDecision,
     pub audit_event: LogEvent,
 }
 
@@ -145,6 +232,15 @@ pub trait MailboxBackend {
         &self,
         canonical_username: &str,
     ) -> Result<Vec<MailboxEntry>, MailboxBackendError>;
+}
+
+/// A backend capable of listing message summaries for a mailbox.
+pub trait MessageListBackend {
+    fn list_messages(
+        &self,
+        canonical_username: &str,
+        request: &MessageListRequest,
+    ) -> Result<Vec<MessageSummary>, MailboxBackendError>;
 }
 
 /// Lists mailboxes for an already validated session.
@@ -198,6 +294,69 @@ where
                     context,
                     &validated_session.record.canonical_username,
                     &validated_session.record.session_id,
+                    &error,
+                ),
+            },
+        }
+    }
+}
+
+/// Lists message summaries for an already validated session.
+pub struct MessageListService<B> {
+    backend: B,
+}
+
+impl<B> MessageListService<B>
+where
+    B: MessageListBackend,
+{
+    /// Creates a message-list service around the supplied backend.
+    pub fn new(backend: B) -> Self {
+        Self { backend }
+    }
+
+    /// Lists message summaries for the canonical user attached to the
+    /// validated session.
+    pub fn list_for_validated_session(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        request: &MessageListRequest,
+    ) -> MessageListOutcome {
+        let canonical_username = validated_session.record.canonical_username.clone();
+        let session_id = validated_session.record.session_id.clone();
+
+        match self.backend.list_messages(&canonical_username, request) {
+            Ok(messages) => MessageListOutcome {
+                decision: MessageListDecision::Listed {
+                    canonical_username: canonical_username.clone(),
+                    session_id: session_id.clone(),
+                    mailbox_name: request.mailbox_name.clone(),
+                    messages: messages.clone(),
+                },
+                audit_event: LogEvent::new(
+                    LogLevel::Info,
+                    EventCategory::Mailbox,
+                    "message_listed",
+                    "message list retrieval completed",
+                )
+                .with_field("canonical_username", canonical_username)
+                .with_field("session_id", session_id)
+                .with_field("mailbox_name", request.mailbox_name.clone())
+                .with_field("message_count", messages.len().to_string())
+                .with_field("request_id", context.request_id.clone())
+                .with_field("remote_addr", context.remote_addr.clone())
+                .with_field("user_agent", context.user_agent.clone()),
+            },
+            Err(error) => MessageListOutcome {
+                decision: MessageListDecision::Denied {
+                    public_reason: MailboxPublicFailureReason::TemporarilyUnavailable,
+                },
+                audit_event: build_message_list_failure_event(
+                    context,
+                    &validated_session.record.canonical_username,
+                    &validated_session.record.session_id,
+                    &request.mailbox_name,
                     &error,
                 ),
             },
@@ -264,6 +423,71 @@ where
     }
 }
 
+/// Lists message summaries through `doveadm fetch`.
+pub struct DoveadmMessageListBackend<E> {
+    policy: MessageListPolicy,
+    command_executor: E,
+    doveadm_path: PathBuf,
+}
+
+impl<E> DoveadmMessageListBackend<E> {
+    /// Builds a backend using the supplied command executor and `doveadm` path.
+    pub fn new(
+        policy: MessageListPolicy,
+        command_executor: E,
+        doveadm_path: impl Into<PathBuf>,
+    ) -> Self {
+        Self {
+            policy,
+            command_executor,
+            doveadm_path: doveadm_path.into(),
+        }
+    }
+}
+
+impl Default for DoveadmMessageListBackend<SystemCommandExecutor> {
+    fn default() -> Self {
+        Self::new(
+            MessageListPolicy::default(),
+            SystemCommandExecutor,
+            "/usr/local/bin/doveadm",
+        )
+    }
+}
+
+impl<E> MessageListBackend for DoveadmMessageListBackend<E>
+where
+    E: CommandExecutor,
+{
+    fn list_messages(
+        &self,
+        canonical_username: &str,
+        request: &MessageListRequest,
+    ) -> Result<Vec<MessageSummary>, MailboxBackendError> {
+        let args = vec![
+            "-f".to_string(),
+            "flow".to_string(),
+            "fetch".to_string(),
+            "-u".to_string(),
+            canonical_username.to_string(),
+            "uid flags date.received size.virtual mailbox".to_string(),
+            "mailbox".to_string(),
+            request.mailbox_name.clone(),
+            "all".to_string(),
+        ];
+
+        let execution = self
+            .command_executor
+            .run_with_stdin(self.doveadm_path.to_string_lossy().as_ref(), &args, "")
+            .map_err(|error| MailboxBackendError {
+                backend: "doveadm-message-list",
+                reason: error.reason,
+            })?;
+
+        parse_doveadm_message_list_output(self.policy, &execution)
+    }
+}
+
 /// Builds a bounded failure event for mailbox-listing problems.
 fn build_mailbox_failure_event(
     context: &AuthenticationContext,
@@ -285,6 +509,41 @@ fn build_mailbox_failure_event(
     )
     .with_field("canonical_username", canonical_username.to_string())
     .with_field("session_id", session_id.to_string())
+    .with_field(
+        "public_reason",
+        MailboxPublicFailureReason::TemporarilyUnavailable.as_str(),
+    )
+    .with_field("audit_reason", audit_reason.as_str())
+    .with_field("backend", error.backend)
+    .with_field("backend_reason", error.reason.clone())
+    .with_field("request_id", context.request_id.clone())
+    .with_field("remote_addr", context.remote_addr.clone())
+    .with_field("user_agent", context.user_agent.clone())
+}
+
+/// Builds a bounded failure event for message-list problems.
+fn build_message_list_failure_event(
+    context: &AuthenticationContext,
+    canonical_username: &str,
+    session_id: &str,
+    mailbox_name: &str,
+    error: &MailboxBackendError,
+) -> LogEvent {
+    let audit_reason = if error.backend == "message-list-parser" {
+        MailboxAuditFailureReason::OutputRejected
+    } else {
+        MailboxAuditFailureReason::BackendUnavailable
+    };
+
+    LogEvent::new(
+        LogLevel::Warn,
+        EventCategory::Mailbox,
+        "message_list_failed",
+        "message list retrieval failed",
+    )
+    .with_field("canonical_username", canonical_username.to_string())
+    .with_field("session_id", session_id.to_string())
+    .with_field("mailbox_name", mailbox_name.to_string())
     .with_field(
         "public_reason",
         MailboxPublicFailureReason::TemporarilyUnavailable.as_str(),
@@ -333,6 +592,213 @@ fn parse_doveadm_mailbox_list_output(
     }
 
     Ok(mailboxes)
+}
+
+/// Parses the output of `doveadm -f flow fetch` into bounded message summaries.
+fn parse_doveadm_message_list_output(
+    policy: MessageListPolicy,
+    execution: &CommandExecution,
+) -> Result<Vec<MessageSummary>, MailboxBackendError> {
+    if execution.status_code != 0 {
+        return Err(MailboxBackendError {
+            backend: "doveadm-message-list",
+            reason: format!(
+                "command exited with status {}: {}",
+                execution.status_code,
+                concise_command_diagnostics(&execution.stdout, &execution.stderr),
+            ),
+        });
+    }
+
+    let mut messages = Vec::new();
+
+    for raw_line in execution.stdout.lines() {
+        let line = raw_line.trim();
+        if line.is_empty() {
+            continue;
+        }
+
+        messages.push(parse_message_summary_line(policy, line)?);
+        if messages.len() > policy.max_messages {
+            return Err(MailboxBackendError {
+                backend: "message-list-parser",
+                reason: format!(
+                    "message listing exceeded maximum of {} entries",
+                    policy.max_messages
+                ),
+            });
+        }
+    }
+
+    Ok(messages)
+}
+
+/// Parses one flow-formatted message-summary line.
+fn parse_message_summary_line(
+    policy: MessageListPolicy,
+    line: &str,
+) -> Result<MessageSummary, MailboxBackendError> {
+    let fields = parse_flow_fields(line)?;
+    let mailbox_name = MailboxEntry::new(
+        MailboxListingPolicy {
+            mailbox_name_max_len: policy.mailbox_name_max_len,
+            max_mailboxes: DEFAULT_MAX_MAILBOXES,
+        },
+        required_flow_field(&fields, "mailbox")?,
+    )?
+    .name;
+    let uid = parse_u64_value("uid", required_flow_field(&fields, "uid")?)?;
+    let date_received = required_flow_field(&fields, "date.received")?.to_string();
+    validate_bounded_string(
+        "date.received",
+        &date_received,
+        policy.message_date_max_len,
+        "message-list-parser",
+    )?;
+
+    let flags_text = required_flow_field(&fields, "flags")?.to_string();
+    validate_bounded_string(
+        "flags",
+        &flags_text,
+        policy.message_flag_string_max_len,
+        "message-list-parser",
+    )?;
+    let flags = if flags_text.is_empty() {
+        Vec::new()
+    } else {
+        flags_text
+            .split_whitespace()
+            .map(ToString::to_string)
+            .collect()
+    };
+
+    let size_virtual = parse_u64_value(
+        "size.virtual",
+        required_flow_field(&fields, "size.virtual")?,
+    )?;
+
+    Ok(MessageSummary {
+        mailbox_name,
+        uid,
+        flags,
+        date_received,
+        size_virtual,
+    })
+}
+
+/// Parses Dovecot flow-format key/value pairs from one output line.
+fn parse_flow_fields(line: &str) -> Result<BTreeMap<String, String>, MailboxBackendError> {
+    let mut fields = BTreeMap::new();
+    let chars: Vec<char> = line.chars().collect();
+    let mut index = 0;
+
+    while index < chars.len() {
+        while index < chars.len() && chars[index].is_whitespace() {
+            index += 1;
+        }
+        if index >= chars.len() {
+            break;
+        }
+
+        let key_start = index;
+        while index < chars.len() && chars[index] != '=' {
+            index += 1;
+        }
+        if index >= chars.len() {
+            return Err(MailboxBackendError {
+                backend: "message-list-parser",
+                reason: format!("invalid flow field in line {line:?}"),
+            });
+        }
+
+        let key: String = chars[key_start..index].iter().collect();
+        index += 1;
+
+        let mut value = String::new();
+        if index < chars.len() && chars[index] == '"' {
+            index += 1;
+            while index < chars.len() {
+                let current = chars[index];
+                if current == '\\' {
+                    index += 1;
+                    if index < chars.len() {
+                        value.push(chars[index]);
+                        index += 1;
+                    }
+                    continue;
+                }
+                if current == '"' {
+                    index += 1;
+                    break;
+                }
+                value.push(current);
+                index += 1;
+            }
+        } else {
+            let value_start = index;
+            while index < chars.len() && !chars[index].is_whitespace() {
+                index += 1;
+            }
+            value = chars[value_start..index].iter().collect();
+        }
+
+        fields.insert(key, value);
+    }
+
+    Ok(fields)
+}
+
+/// Returns a required value from a parsed flow record.
+fn required_flow_field<'a>(
+    fields: &'a BTreeMap<String, String>,
+    field: &'static str,
+) -> Result<&'a str, MailboxBackendError> {
+    fields
+        .get(field)
+        .map(String::as_str)
+        .ok_or_else(|| MailboxBackendError {
+            backend: "message-list-parser",
+            reason: format!("missing required message-list field {field}"),
+        })
+}
+
+/// Parses an unsigned integer value from message-list output.
+fn parse_u64_value(field: &'static str, value: &str) -> Result<u64, MailboxBackendError> {
+    value.parse::<u64>().map_err(|error| MailboxBackendError {
+        backend: "message-list-parser",
+        reason: format!("failed parsing {field}: {error}"),
+    })
+}
+
+/// Rejects empty, oversized, or control-character-bearing strings.
+fn validate_bounded_string(
+    field: &'static str,
+    value: &str,
+    max_len: usize,
+    backend: &'static str,
+) -> Result<(), MailboxBackendError> {
+    if value.is_empty() {
+        return Err(MailboxBackendError {
+            backend,
+            reason: format!("{field} must not be empty"),
+        });
+    }
+
+    if value.len() > max_len {
+        return Err(MailboxBackendError {
+            backend,
+            reason: format!("{field} exceeded maximum length of {max_len} bytes"),
+        });
+    }
+
+    if value.chars().any(char::is_control) {
+        return Err(MailboxBackendError {
+            backend,
+            reason: format!("{field} contains control characters"),
+        });
+    }
+
+    Ok(())
 }
 
 /// Produces a compact single-line diagnostic from command output.
@@ -462,6 +928,21 @@ mod tests {
         }
     }
 
+    struct FailingMessageListBackend;
+
+    impl MessageListBackend for FailingMessageListBackend {
+        fn list_messages(
+            &self,
+            _canonical_username: &str,
+            _request: &MessageListRequest,
+        ) -> Result<Vec<MessageSummary>, MailboxBackendError> {
+            Err(MailboxBackendError {
+                backend: "test-message-backend",
+                reason: "message index unavailable".to_string(),
+            })
+        }
+    }
+
     fn test_context() -> AuthenticationContext {
         AuthenticationContext::new(
             AuthenticationPolicy::default(),
@@ -531,6 +1012,70 @@ mod tests {
                 "alice@example.com".to_string(),
             ]
         );
+    }
+
+    #[test]
+    fn parses_message_summaries_from_doveadm_flow_output() {
+        let executor = Rc::new(std::cell::RefCell::new(StubCommandExecutor::success(
+            CommandExecution {
+                status_code: 0,
+                stdout: concat!(
+                    "uid=4 flags=\"\\\\Seen\" date.received=\"2026-03-27 09:00:00 +0000\" size.virtual=2048 mailbox=INBOX\n",
+                    "uid=5 flags=\"\\\\Seen \\\\Answered\" date.received=\"2026-03-27 10:15:00 +0000\" size.virtual=4096 mailbox=INBOX\n"
+                )
+                .to_string(),
+                stderr: String::new(),
+            },
+        )));
+        let backend = DoveadmMessageListBackend::new(
+            MessageListPolicy::default(),
+            executor.clone(),
+            "/usr/local/bin/doveadm",
+        );
+        let request =
+            MessageListRequest::new(MessageListPolicy::default(), "INBOX").expect("request should be valid");
+
+        let messages = backend
+            .list_messages("alice@example.com", &request)
+            .expect("message list should succeed");
+
+        assert_eq!(messages.len(), 2);
+        assert_eq!(messages[0].uid, 4);
+        assert_eq!(messages[0].mailbox_name, "INBOX");
+        assert_eq!(messages[0].flags, vec!["\\Seen".to_string()]);
+        assert_eq!(messages[1].flags, vec!["\\Seen".to_string(), "\\Answered".to_string()]);
+
+        let recorded = executor.borrow();
+        assert_eq!(
+            recorded.args.as_ref().expect("args should be captured"),
+            &vec![
+                "-f".to_string(),
+                "flow".to_string(),
+                "fetch".to_string(),
+                "-u".to_string(),
+                "alice@example.com".to_string(),
+                "uid flags date.received size.virtual mailbox".to_string(),
+                "mailbox".to_string(),
+                "INBOX".to_string(),
+                "all".to_string(),
+            ]
+        );
+    }
+
+    #[test]
+    fn rejects_message_list_output_missing_required_fields() {
+        let error = parse_doveadm_message_list_output(
+            MessageListPolicy::default(),
+            &CommandExecution {
+                status_code: 0,
+                stdout: "uid=4 flags=\"\" size.virtual=2048 mailbox=INBOX\n".to_string(),
+                stderr: String::new(),
+            },
+        )
+        .expect_err("missing fields must fail");
+
+        assert_eq!(error.backend, "message-list-parser");
+        assert_eq!(error.reason, "missing required message-list field date.received");
     }
 
     #[test]
@@ -608,6 +1153,67 @@ mod tests {
             }
         );
         assert_eq!(outcome.audit_event.action, "mailbox_list_failed");
+        assert_eq!(outcome.audit_event.level, LogLevel::Warn);
+    }
+
+    #[test]
+    fn message_list_service_emits_audit_quality_success_events() {
+        let service = MessageListService::new(StaticMessageListBackend {
+            messages: vec![
+                MessageSummary {
+                    mailbox_name: "INBOX".to_string(),
+                    uid: 4,
+                    flags: vec!["\\Seen".to_string()],
+                    date_received: "2026-03-27 09:00:00 +0000".to_string(),
+                    size_virtual: 2048,
+                },
+                MessageSummary {
+                    mailbox_name: "INBOX".to_string(),
+                    uid: 5,
+                    flags: vec![],
+                    date_received: "2026-03-27 09:30:00 +0000".to_string(),
+                    size_virtual: 1024,
+                },
+            ],
+        });
+        let validated_session = validated_session_fixture();
+        let request =
+            MessageListRequest::new(MessageListPolicy::default(), "INBOX").expect("request should be valid");
+
+        let outcome =
+            service.list_for_validated_session(&test_context(), &validated_session, &request);
+
+        assert_eq!(outcome.audit_event.category, EventCategory::Mailbox);
+        assert_eq!(outcome.audit_event.action, "message_listed");
+
+        let logger = Logger::new(LogFormat::Text, LogLevel::Debug);
+        let rendered = logger.render_with_timestamp(&outcome.audit_event, 5252);
+        assert_eq!(
+            rendered,
+            format!(
+                "ts=5252 level=info category=mailbox action=message_listed msg=\"message list retrieval completed\" canonical_username=\"alice@example.com\" session_id=\"{}\" mailbox_name=\"INBOX\" message_count=\"2\" request_id=\"req-mailbox\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\"",
+                validated_session.record.session_id
+            )
+        );
+    }
+
+    #[test]
+    fn message_list_service_translates_backend_failures_into_bounded_events() {
+        let service = MessageListService::new(FailingMessageListBackend);
+        let validated_session = validated_session_fixture();
+        let request =
+            MessageListRequest::new(MessageListPolicy::default(), "INBOX").expect("request should be valid");
+
+        let outcome =
+            service.list_for_validated_session(&test_context(), &validated_session, &request);
+
+        assert_eq!(
+            outcome.decision,
+            MessageListDecision::Denied {
+                public_reason: MailboxPublicFailureReason::TemporarilyUnavailable,
+            }
+        );
+        assert_eq!(outcome.audit_event.action, "message_list_failed");
         assert_eq!(outcome.audit_event.level, LogLevel::Warn);
     }
 
@@ -711,6 +1317,122 @@ mod tests {
     }
 
     #[test]
+    fn full_auth_session_mailbox_and_message_list_flow_succeeds() {
+        let secret_dir = temp_dir("osmap-message-secret");
+        let session_dir = temp_dir("osmap-message-session");
+        let secret_store = FileTotpSecretStore::new(&secret_dir);
+        let secret_path = secret_store.secret_path_for_username("alice@example.com");
+        fs::write(
+            &secret_path,
+            "secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ\n",
+        )
+        .expect("secret file should be written");
+
+        let auth_service = AuthenticationService::new(
+            AuthenticationPolicy::default(),
+            AcceptingPrimaryBackend,
+        );
+        let auth_outcome = auth_service.authenticate(
+            &test_context(),
+            "alice@example.com",
+            "correct horse battery staple",
+        );
+        let canonical_username = match auth_outcome.decision {
+            AuthenticationDecision::MfaRequired {
+                canonical_username,
+                second_factor,
+            } => {
+                assert_eq!(second_factor, RequiredSecondFactor::Totp);
+                canonical_username
+            }
+            other => panic!("expected MFA-required decision, got {other:?}"),
+        };
+
+        let factor_service = SecondFactorService::new(
+            AuthenticationPolicy::default(),
+            TotpVerifier::new(
+                secret_store,
+                FixedTimeProvider::new(59),
+                TotpPolicy {
+                    digits: 8,
+                    period_seconds: 30,
+                    allowed_skew_steps: 0,
+                },
+            ),
+        );
+        let factor_outcome = factor_service.verify(
+            &test_context(),
+            canonical_username.clone(),
+            RequiredSecondFactor::Totp,
+            "94287082",
+        );
+        assert_eq!(
+            factor_outcome.decision,
+            AuthenticationDecision::AuthenticatedPendingSession {
+                canonical_username: canonical_username.clone(),
+            }
+        );
+
+        let session_service = SessionService::new(
+            FileSessionStore::new(&session_dir),
+            FixedTimeProvider::new(59),
+            StaticRandomSource {
+                bytes: vec![0x99; SESSION_TOKEN_BYTES],
+            },
+            3600,
+        );
+        let issued = session_service
+            .issue(&test_context(), &canonical_username, RequiredSecondFactor::Totp)
+            .expect("session issuance should succeed");
+        let validated = session_service
+            .validate(&test_context(), &issued.token)
+            .expect("session validation should succeed");
+
+        let mailbox_service = MailboxListingService::new(StaticMailboxBackend {
+            mailboxes: vec![MailboxEntry {
+                name: "INBOX".to_string(),
+            }],
+        });
+        let mailbox_outcome = mailbox_service.list_for_validated_session(&test_context(), &validated);
+        match mailbox_outcome.decision {
+            MailboxListingDecision::Listed { mailboxes, .. } => {
+                assert_eq!(mailboxes.len(), 1);
+                assert_eq!(mailboxes[0].name, "INBOX");
+            }
+            other => panic!("expected mailbox listing, got {other:?}"),
+        }
+
+        let request =
+            MessageListRequest::new(MessageListPolicy::default(), "INBOX").expect("request should be valid");
+        let message_service = MessageListService::new(StaticMessageListBackend {
+            messages: vec![MessageSummary {
+                mailbox_name: "INBOX".to_string(),
+                uid: 9,
+                flags: vec!["\\Seen".to_string()],
+                date_received: "2026-03-27 11:00:00 +0000".to_string(),
+                size_virtual: 512,
+            }],
+        });
+        let outcome =
+            message_service.list_for_validated_session(&test_context(), &validated, &request);
+
+        match outcome.decision {
+            MessageListDecision::Listed {
+                canonical_username,
+                mailbox_name,
+                messages,
+                ..
+            } => {
+                assert_eq!(canonical_username, "alice@example.com");
+                assert_eq!(mailbox_name, "INBOX");
+                assert_eq!(messages.len(), 1);
+                assert_eq!(messages[0].uid, 9);
+            }
+            other => panic!("expected message list, got {other:?}"),
+        }
+    }
+
+    #[test]
     #[ignore = "requires a host with doveadm configured against a live Dovecot mailbox surface"]
     fn live_doveadm_mailbox_list_rejects_missing_user() {
         if !Path::new("/usr/local/bin/doveadm").exists() {
@@ -726,6 +1448,24 @@ mod tests {
         assert!(error.reason.contains("status 67"));
     }
 
+    #[test]
+    #[ignore = "requires a host with doveadm configured against a live Dovecot mailbox surface"]
+    fn live_doveadm_message_list_rejects_missing_user() {
+        if !Path::new("/usr/local/bin/doveadm").exists() {
+            return;
+        }
+
+        let backend = DoveadmMessageListBackend::default();
+        let request =
+            MessageListRequest::new(MessageListPolicy::default(), "INBOX").expect("request should be valid");
+        let error = backend
+            .list_messages("osmap-no-such-user@example.invalid", &request)
+            .expect_err("missing users should not produce message listings");
+
+        assert_eq!(error.backend, "doveadm-message-list");
+        assert!(error.reason.contains("status 67"));
+    }
+
     #[derive(Debug, Clone)]
     struct StaticMailboxBackend {
         mailboxes: Vec<MailboxEntry>,
@@ -737,6 +1477,21 @@ mod tests {
             _canonical_username: &str,
         ) -> Result<Vec<MailboxEntry>, MailboxBackendError> {
             Ok(self.mailboxes.clone())
+        }
+    }
+
+    #[derive(Debug, Clone)]
+    struct StaticMessageListBackend {
+        messages: Vec<MessageSummary>,
+    }
+
+    impl MessageListBackend for StaticMessageListBackend {
+        fn list_messages(
+            &self,
+            _canonical_username: &str,
+            _request: &MessageListRequest,
+        ) -> Result<Vec<MessageSummary>, MailboxBackendError> {
+            Ok(self.messages.clone())
         }
     }
 

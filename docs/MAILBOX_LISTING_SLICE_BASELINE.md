@@ -24,6 +24,9 @@ The current slice provides:
 
 This is the first mailbox read primitive, not a full mail UI.
 
+The second WP5 slice now exists too: per-mailbox message-list retrieval is
+documented separately in `MESSAGE_LIST_SLICE_BASELINE.md`.
+
 ## Security Boundary
 
 Mailbox listing does not re-implement authentication or session validation.
@@ -113,12 +116,11 @@ This slice now proves that:
 
 This slice does not yet include:
 
-- message-list retrieval
 - message body retrieval
 - attachment metadata or download handling
 - HTML or MIME rendering policy
 - browser request handlers or templates
 - mailbox caching or pagination strategy
 
-Those belong to the later WP5 and WP6 slices rather than to this first
+Those belong to the later WP6 and browser-facing slices rather than to this
 mailbox-listing proof point.
