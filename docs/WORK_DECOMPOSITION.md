@@ -150,10 +150,13 @@ Status on March 27, 2026:
 - a real `doveadm -f flow fetch` message-view path is now implemented
 - a first plain-text-first rendering layer is now implemented on top of the
   fetched message payload
+- a MIME-aware and attachment-aware follow-on layer is now implemented for
+  common mail layouts without widening browser trust
 - message-view success, not-found, and failure events are emitted as structured
   audit-quality log lines
 - recorded in `MESSAGE_VIEW_SLICE_BASELINE.md`
 - recorded in `RENDERING_POLICY_BASELINE.md`
+- recorded in `MIME_AND_ATTACHMENT_POLICY_BASELINE.md`
 
 Done means:
 

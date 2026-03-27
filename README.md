@@ -139,10 +139,14 @@ is now present as well: per-mailbox message-list retrieval using a bounded
 Dovecot-backed message-summary path. The first WP6 slice is now in place too:
 bounded per-message retrieval using the same validated-session and Dovecot-backed
 read path. The next rendering step is now in place as well: a plain-text-first
-browser-safe rendering layer on top of the fetched message payload.
+browser-safe rendering layer on top of the fetched message payload. The next
+follow-on WP6 step is now in place too: a dependency-light MIME-aware and
+attachment-aware analysis layer that preserves the current plain-text safety
+posture while surfacing attachment metadata honestly.
 
-The next implementation step is MIME-aware and attachment-aware follow-on work
-that preserves the current plain-text safety posture.
+The next implementation step is to carry this runtime into actual HTTP/browser
+request handling without weakening the security boundaries that are now in
+place.
 
 ---
 

@@ -150,7 +150,9 @@ Phase 6:
   validated-session gate using the existing Dovecot surface
 - WP6 now includes a plain-text-first rendering policy layer for fetched
   messages
-- browser integration, MIME-aware rendering, attachment behavior, and send-path
-  work are not complete yet
+- WP6 now includes a dependency-light MIME-aware classification layer and an
+  attachment-metadata surface for common mail layouts
+- browser integration, attachment download behavior, HTML sanitization, and
+  send-path work are not complete yet
 - the actual prototype has not yet been implemented, so Phase 6 execution is
   underway but not yet complete

@@ -5,8 +5,8 @@
 This document records the first implemented WP6 message-view slice.
 
 The goal of this slice is to prove that OSMAP can retrieve one bounded message
-payload behind the validated-session boundary without pretending that MIME
-parsing, attachment handling, or browser rendering policy are already solved.
+payload behind the validated-session boundary without pretending that browser
+rendering policy is already solved.
 
 ## Status
 
@@ -27,8 +27,9 @@ The current slice provides:
 This is the first message-fetch substrate, not the final browser rendering
 pipeline.
 
-The next rendering step now exists too and is documented separately in
-`RENDERING_POLICY_BASELINE.md`.
+The follow-on rendering and MIME-aware steps now exist too and are documented
+separately in `RENDERING_POLICY_BASELINE.md` and
+`MIME_AND_ATTACHMENT_POLICY_BASELINE.md`.
 
 ## Current Data Shape
 
@@ -148,17 +149,15 @@ This slice now proves that:
 - the Dovecot toolchain can provide a bounded fetched message payload for the
   prototype
 - not-found and malformed-output conditions can be represented honestly
-- the project now has a real substrate for later rendering and attachment work
+- the project now has a real substrate for rendering and attachment policy work
 
 ## What Is Still Missing
 
-This slice does not yet include:
+This slice still does not include:
 
-- MIME structure parsing
-- attachment metadata or download handling
-- browser-safe transformation of hostile message content
+- attachment retrieval or download handling
+- HTML sanitization
 - inline image and external-resource policy
 - browser request handlers or templates
 
-Those belong to the later WP6 slices rather than to this first message-fetch
-baseline.
+Those remain later work on top of this first message-fetch baseline.

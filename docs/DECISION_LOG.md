@@ -307,3 +307,23 @@ The current renderer only extracts `Subject` and `From`, with conservative
 header unfolding and bounded values. Full header presentation and MIME-aware
 interpretation remain later work rather than hidden complexity in the first
 rendering step.
+
+### Keep MIME parsing as a small inspection layer instead of a rendering engine
+
+The next WP6 step adds MIME-aware classification, but it keeps that logic in a
+separate bounded analysis layer. The renderer consumes MIME decisions rather
+than parsing arbitrary structures ad hoc during browser transformation.
+
+### Prefer plain-text part selection over HTML interpretation
+
+When a message is multipart and includes both plain text and HTML, the current
+prototype should select the plain-text part and keep HTML content withheld.
+This preserves readability for common mail while keeping hostile markup out of
+the browser path.
+
+### Surface attachment metadata before attachment download behavior exists
+
+The current runtime now exposes part path, file name, content type,
+disposition, and a size hint for attachment-like parts. That gives later UI and
+download work an honest substrate without pretending attachment retrieval is
+already implemented.

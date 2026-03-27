@@ -14,9 +14,10 @@
 - The implementation now has runtime, auth, TOTP, and session foundations, but
   it is not yet a usable browser mail product
 - The implementation now has a mailbox-listing primitive, but it does not yet
-  retrieve message bodies or attachments
-- The implementation now has a bounded message-view fetch path, but it does not
-  yet define MIME handling or attachment behavior
+  support compose, send, or browser routing
+- The implementation now has a bounded message-view fetch path, plus
+  MIME-aware classification and attachment metadata surfacing, but it does not
+  yet provide attachment retrieval or download behavior
 - The implementation now has a plain-text-first rendering layer, but it does
   not yet define HTML mail sanitization, encoded-header handling, or inline
   resource policy

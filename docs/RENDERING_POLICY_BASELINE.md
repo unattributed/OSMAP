@@ -6,8 +6,8 @@ This document records the next WP6 step after bounded message retrieval:
 plain-text-first browser rendering.
 
 The goal of this slice is to transform a fetched message payload into something
-safe for browser presentation without claiming support for HTML mail, MIME
-trees, attachments, or rich client behavior.
+safe for browser presentation without claiming support for rich HTML mail or
+full client behavior.
 
 ## Status
 
@@ -21,6 +21,9 @@ The current slice provides:
 - browser-safe HTML escaping for fetched body text
 - a preformatted body presentation mode
 - structured audit events for rendering operations
+
+The follow-on MIME-aware and attachment-aware policy layer now exists too and
+is documented separately in `MIME_AND_ATTACHMENT_POLICY_BASELINE.md`.
 
 This is intentionally smaller than a full message renderer.
 
@@ -55,7 +58,8 @@ It does not yet attempt:
 - full header presentation
 - address parsing
 - encoded-word decoding
-- MIME header interpretation
+- encoded-word decoding
+- MIME header interpretation beyond the narrow follow-on classification layer
 
 Those are later refinements, not assumptions.
 
@@ -79,19 +83,17 @@ This slice now proves that:
 - the project can turn a fetched message into browser-safe plain-text output
 - header summary extraction can stay bounded and reviewable
 - rendering can be modeled as a separate layer after message retrieval
-- the system can move forward without pretending HTML, MIME, or attachment
-  behavior is already solved
+- the system can move forward without pretending safe HTML rendering is already
+  solved
 
 ## What Is Still Missing
 
-This slice does not yet include:
+This slice still does not yet include:
 
 - HTML mail sanitization policy
-- MIME part selection
-- attachment metadata or download behavior
+- attachment retrieval or download behavior
 - inline image policy
 - encoded header decoding
 - browser templates or request handlers
 
-Those belong to the later WP6 slices after the plain-text safety posture is
-established.
+Those remain later work after the plain-text safety posture is established.

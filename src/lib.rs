@@ -10,6 +10,7 @@ pub mod config;
 pub mod error;
 pub mod logging;
 pub mod mailbox;
+pub mod mime;
 pub mod rendering;
 pub mod session;
 pub mod state;
