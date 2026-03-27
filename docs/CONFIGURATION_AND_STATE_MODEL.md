@@ -27,6 +27,7 @@ The early runtime recognizes:
 - `OSMAP_RUN_MODE`
 - `OSMAP_ENV`
 - `OSMAP_LISTEN_ADDR`
+- `OSMAP_DOVEADM_AUTH_SOCKET_PATH`
 - `OSMAP_STATE_DIR`
 - `OSMAP_RUNTIME_DIR`
 - `OSMAP_SESSION_DIR`
@@ -55,6 +56,11 @@ The runtime now also uses `OSMAP_OPENBSD_CONFINEMENT_MODE` to separate:
 - no OpenBSD-specific runtime confinement
 - plan-only OpenBSD confinement logging
 - enforced OpenBSD confinement during serve mode
+
+The runtime now also recognizes an optional
+`OSMAP_DOVEADM_AUTH_SOCKET_PATH` setting for deployments that want OSMAP to use
+an explicitly chosen Dovecot auth socket rather than the default helper
+behavior.
 
 ## Environment Model
 
@@ -106,6 +112,8 @@ The bootstrap currently enforces:
 - run mode values must be recognized explicitly
 - required fields must not be empty
 - environment values must be recognized explicitly
+- the optional `OSMAP_DOVEADM_AUTH_SOCKET_PATH`, when present, must be an
+  absolute path
 - configured state paths must be absolute
 - derived mutable-state paths must stay under the state root
 - development listeners must remain on loopback
@@ -134,3 +142,16 @@ trying to ensure that later authentication, session, and mail-integration work
 lands on a disciplined runtime boundary instead of on a pile of ad hoc settings.
 
 That remains true now that the first browser-serving mode exists as well.
+
+## Least-Privilege Auth Socket Configuration
+
+The optional `OSMAP_DOVEADM_AUTH_SOCKET_PATH` exists to support a narrow host
+integration pattern:
+
+- the OSMAP runtime remains unprivileged
+- the host exposes a dedicated Dovecot auth listener for that runtime user
+- OSMAP points `doveadm auth test` at that explicit listener instead of
+  depending on a broader or privileged socket arrangement
+
+This is an operator-side deployment refinement, not a secret. It is safe to
+include in startup reporting and confinement planning.

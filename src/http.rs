@@ -47,6 +47,9 @@ use crate::totp::{FileTotpSecretStore, SystemTimeProvider, TotpPolicy, TotpVerif
 /// Conservative upper bound for the full header section of an inbound request.
 pub const DEFAULT_HTTP_MAX_HEADER_BYTES: usize = 16 * 1024;
 
+/// Conservative upper bound for one request target.
+pub const DEFAULT_HTTP_MAX_REQUEST_TARGET_BYTES: usize = 2048;
+
 /// Conservative upper bound for a small HTML form request body.
 pub const DEFAULT_HTTP_MAX_BODY_BYTES: usize = 8 * 1024;
 
@@ -58,6 +61,9 @@ pub const DEFAULT_HTTP_MAX_UPLOAD_BODY_BYTES: usize = 1024 * 1024;
 
 /// Conservative upper bound for parsed HTML form fields.
 pub const DEFAULT_HTTP_MAX_FORM_FIELDS: usize = 16;
+
+/// Conservative upper bound for header count in one request.
+pub const DEFAULT_HTTP_MAX_HEADER_COUNT: usize = 64;
 
 /// Conservative per-connection read timeout for the sequential HTTP listener.
 pub const DEFAULT_HTTP_READ_TIMEOUT_SECS: u64 = 5;
@@ -74,6 +80,8 @@ static REQUEST_COUNTER: AtomicU64 = AtomicU64::new(1);
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HttpPolicy {
     pub max_header_bytes: usize,
+    pub max_request_target_bytes: usize,
+    pub max_header_count: usize,
     pub max_query_fields: usize,
     pub max_body_bytes: usize,
     pub max_upload_body_bytes: usize,
@@ -90,6 +98,8 @@ impl HttpPolicy {
     pub fn from_config(config: &AppConfig) -> Self {
         Self {
             max_header_bytes: DEFAULT_HTTP_MAX_HEADER_BYTES,
+            max_request_target_bytes: DEFAULT_HTTP_MAX_REQUEST_TARGET_BYTES,
+            max_header_count: DEFAULT_HTTP_MAX_HEADER_COUNT,
             max_query_fields: DEFAULT_HTTP_MAX_QUERY_FIELDS,
             max_body_bytes: DEFAULT_HTTP_MAX_BODY_BYTES,
             max_upload_body_bytes: DEFAULT_HTTP_MAX_UPLOAD_BODY_BYTES,
@@ -110,6 +120,8 @@ impl Default for HttpPolicy {
     fn default() -> Self {
         Self {
             max_header_bytes: DEFAULT_HTTP_MAX_HEADER_BYTES,
+            max_request_target_bytes: DEFAULT_HTTP_MAX_REQUEST_TARGET_BYTES,
+            max_header_count: DEFAULT_HTTP_MAX_HEADER_COUNT,
             max_query_fields: DEFAULT_HTTP_MAX_QUERY_FIELDS,
             max_body_bytes: DEFAULT_HTTP_MAX_BODY_BYTES,
             max_upload_body_bytes: DEFAULT_HTTP_MAX_UPLOAD_BODY_BYTES,
@@ -435,6 +447,7 @@ pub struct RuntimeBrowserGateway {
     session_dir: PathBuf,
     totp_secret_dir: PathBuf,
     doveadm_path: PathBuf,
+    doveadm_auth_socket_path: Option<PathBuf>,
     sendmail_path: PathBuf,
     render_policy: RenderingPolicy,
 }
@@ -452,6 +465,7 @@ impl RuntimeBrowserGateway {
             session_dir: config.state_layout.session_dir.clone(),
             totp_secret_dir: config.state_layout.totp_secret_dir.clone(),
             doveadm_path: PathBuf::from("/usr/local/bin/doveadm"),
+            doveadm_auth_socket_path: config.doveadm_auth_socket_path.clone(),
             sendmail_path: PathBuf::from("/usr/sbin/sendmail"),
             render_policy: RenderingPolicy::default(),
         }
@@ -466,7 +480,7 @@ impl RuntimeBrowserGateway {
             DoveadmAuthTestBackend::new(
                 SystemCommandExecutor,
                 self.doveadm_path.clone(),
-                None,
+                self.doveadm_auth_socket_path.clone(),
                 "imap",
             ),
         )
@@ -2012,14 +2026,18 @@ fn read_http_request(
                     std::str::from_utf8(&buffer[..end]).map_err(|_| HttpRequestError {
                         reason: "http headers were not valid utf-8".to_string(),
                     })?;
-                content_length = Some(parse_content_length(header_text)?);
+                let headers = parse_headers(header_text, policy)?;
+                content_length = Some(parse_content_length_from_headers(&headers)?);
             }
         }
 
         if let (Some(end), Some(content_length)) = (header_end, content_length) {
             let expected_len = end + 4 + content_length;
             if content_length
-                > allowed_request_body_bytes(parse_content_type_header(&buffer[..end]), policy)
+                > allowed_request_body_bytes(
+                    parse_content_type_header_bytes(&buffer[..end]),
+                    policy,
+                )
             {
                 return Err(HttpRequestError {
                     reason: "http body exceeded maximum length".to_string(),
@@ -2062,7 +2080,10 @@ pub fn parse_http_request_bytes(
     })?;
     let body = &input[header_end + 4..];
     if body.len()
-        > allowed_request_body_bytes(parse_content_type_header(&input[..header_end]), policy)
+        > allowed_request_body_bytes(
+            parse_content_type_header_bytes(&input[..header_end]),
+            policy,
+        )
     {
         return Err(HttpRequestError {
             reason: "http body exceeded maximum length".to_string(),
@@ -2105,30 +2126,27 @@ pub fn parse_http_request_bytes(
         }
     };
 
-    let (path, query_params) = parse_request_target(target, policy.max_query_fields)?;
-    let mut headers = BTreeMap::new();
-    for line in lines {
-        let Some((name, value)) = line.split_once(':') else {
-            return Err(HttpRequestError {
-                reason: "malformed http header line".to_string(),
-            });
-        };
-        headers.insert(name.trim().to_ascii_lowercase(), value.trim().to_string());
+    let (path, query_params) = parse_request_target(
+        target,
+        policy.max_query_fields,
+        policy.max_request_target_bytes,
+    )?;
+    let headers = parse_headers(header_block, policy)?;
+
+    if version == "HTTP/1.1" && !headers.contains_key("host") {
+        return Err(HttpRequestError {
+            reason: "http/1.1 requests must include host".to_string(),
+        });
     }
 
-    if let Some(content_length_value) = headers.get("content-length") {
-        let content_length =
-            content_length_value
-                .parse::<usize>()
-                .map_err(|_| HttpRequestError {
-                    reason: "invalid content-length header".to_string(),
-                })?;
-        if content_length != body.len() {
-            return Err(HttpRequestError {
-                reason: "http body length did not match content-length".to_string(),
-            });
-        }
-    } else if method == HttpMethod::Post && !body.is_empty() {
+    let content_length = parse_content_length_from_headers(&headers)?;
+    if content_length != body.len() {
+        return Err(HttpRequestError {
+            reason: "http body length did not match content-length".to_string(),
+        });
+    }
+
+    if method == HttpMethod::Post && !headers.contains_key("content-length") && !body.is_empty() {
         return Err(HttpRequestError {
             reason: "post requests must send content-length".to_string(),
         });
@@ -2148,23 +2166,78 @@ fn find_header_end(buffer: &[u8]) -> Option<usize> {
     buffer.windows(4).position(|window| window == b"\r\n\r\n")
 }
 
-/// Parses the content-length header from a raw header block.
-fn parse_content_length(header_text: &str) -> Result<usize, HttpRequestError> {
-    for line in header_text.lines().skip(1) {
-        if let Some((name, value)) = line.split_once(':') {
-            if name.trim().eq_ignore_ascii_case("content-length") {
-                return value.trim().parse::<usize>().map_err(|_| HttpRequestError {
-                    reason: "invalid content-length header".to_string(),
-                });
-            }
+/// Parses headers into one bounded lower-case map and rejects ambiguity.
+fn parse_headers(
+    header_block: &str,
+    policy: &HttpPolicy,
+) -> Result<BTreeMap<String, String>, HttpRequestError> {
+    let mut headers = BTreeMap::new();
+
+    for (index, line) in header_block.lines().skip(1).enumerate() {
+        if index >= policy.max_header_count {
+            return Err(HttpRequestError {
+                reason: "http request contained too many headers".to_string(),
+            });
         }
+
+        let Some((name, value)) = line.split_once(':') else {
+            return Err(HttpRequestError {
+                reason: "malformed http header line".to_string(),
+            });
+        };
+
+        let normalized_name = name.trim().to_ascii_lowercase();
+        if normalized_name.is_empty() {
+            return Err(HttpRequestError {
+                reason: "http header name must not be empty".to_string(),
+            });
+        }
+        if !normalized_name
+            .chars()
+            .all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '-')
+        {
+            return Err(HttpRequestError {
+                reason: "http header name contained unsupported characters".to_string(),
+            });
+        }
+        if headers.contains_key(&normalized_name) {
+            return Err(HttpRequestError {
+                reason: format!("duplicate http header: {normalized_name}"),
+            });
+        }
+
+        let normalized_value = value.trim().to_string();
+        if normalized_value.chars().any(char::is_control) {
+            return Err(HttpRequestError {
+                reason: format!(
+                    "http header value for {normalized_name} contained control characters"
+                ),
+            });
+        }
+
+        headers.insert(normalized_name, normalized_value);
     }
 
-    Ok(0)
+    Ok(headers)
+}
+
+/// Parses the content-length header from parsed headers.
+fn parse_content_length_from_headers(
+    headers: &BTreeMap<String, String>,
+) -> Result<usize, HttpRequestError> {
+    headers
+        .get("content-length")
+        .map(|value| {
+            value.parse::<usize>().map_err(|_| HttpRequestError {
+                reason: "invalid content-length header".to_string(),
+            })
+        })
+        .transpose()
+        .map(|value| value.unwrap_or(0))
 }
 
 /// Extracts the raw content-type header from one raw header block when present.
-fn parse_content_type_header(header_bytes: &[u8]) -> Option<&str> {
+fn parse_content_type_header_bytes(header_bytes: &[u8]) -> Option<&str> {
     let header_text = std::str::from_utf8(header_bytes).ok()?;
     for line in header_text.lines().skip(1) {
         if let Some((name, value)) = line.split_once(':') {
@@ -2189,11 +2262,33 @@ fn allowed_request_body_bytes(content_type: Option<&str>, policy: &HttpPolicy) -
 fn parse_request_target(
     target: &str,
     max_query_fields: usize,
+    max_request_target_bytes: usize,
 ) -> Result<(String, BTreeMap<String, String>), HttpRequestError> {
+    if target.len() > max_request_target_bytes {
+        return Err(HttpRequestError {
+            reason: "request target exceeded maximum length".to_string(),
+        });
+    }
+    if target.chars().any(char::is_control) {
+        return Err(HttpRequestError {
+            reason: "request target contained control characters".to_string(),
+        });
+    }
+    if target.contains('#') {
+        return Err(HttpRequestError {
+            reason: "request target fragments are not supported".to_string(),
+        });
+    }
+
     let (path, query) = target.split_once('?').unwrap_or((target, ""));
     if path.is_empty() || !path.starts_with('/') {
         return Err(HttpRequestError {
             reason: "request target must start with '/'".to_string(),
+        });
+    }
+    if path.contains('\\') {
+        return Err(HttpRequestError {
+            reason: "request target contained unsupported path characters".to_string(),
         });
     }
 
@@ -3340,5 +3435,49 @@ mod tests {
             rendered,
             "ts=4242 level=info category=http action=http_login_form_served msg=\"login form served\" request_id=\"http-1\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\""
         );
+    }
+
+    #[test]
+    fn rejects_duplicate_http_headers() {
+        let error = parse_http_request(
+            "GET /mailboxes HTTP/1.1\r\nHost: localhost\r\nHost: duplicate\r\n\r\n",
+            &HttpPolicy::default(),
+        )
+        .expect_err("duplicate headers must be rejected");
+
+        assert_eq!(error.reason, "duplicate http header: host");
+    }
+
+    #[test]
+    fn rejects_http11_requests_without_host() {
+        let error = parse_http_request(
+            "GET /mailboxes HTTP/1.1\r\nUser-Agent: curl/8\r\n\r\n",
+            &HttpPolicy::default(),
+        )
+        .expect_err("hostless http/1.1 requests must be rejected");
+
+        assert_eq!(error.reason, "http/1.1 requests must include host");
+    }
+
+    #[test]
+    fn rejects_request_targets_with_fragments() {
+        let error = parse_http_request(
+            "GET /mailboxes#fragment HTTP/1.1\r\nHost: localhost\r\n\r\n",
+            &HttpPolicy::default(),
+        )
+        .expect_err("fragment targets must be rejected");
+
+        assert_eq!(error.reason, "request target fragments are not supported");
+    }
+
+    #[test]
+    fn rejects_request_targets_that_are_too_large() {
+        let oversized_target = format!("/{}", "a".repeat(DEFAULT_HTTP_MAX_REQUEST_TARGET_BYTES));
+        let raw = format!("GET {oversized_target} HTTP/1.1\r\nHost: localhost\r\n\r\n");
+
+        let error = parse_http_request(&raw, &HttpPolicy::default())
+            .expect_err("oversized targets must be rejected");
+
+        assert_eq!(error.reason, "request target exceeded maximum length");
     }
 }

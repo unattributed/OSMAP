@@ -155,6 +155,10 @@ Current prototype-specific deployment guidance:
 - keep the state tree owned narrowly enough that later `unveil(2)` policy can
   be practical
 - keep `doveadm` and `sendmail` execution paths explicit and reviewable
+- prefer a dedicated Dovecot auth listener for the OSMAP runtime user rather
+  than a privileged or broad auth-socket arrangement
+- use `OSMAP_DOVEADM_AUTH_SOCKET_PATH` when the host provides that dedicated
+  auth listener
 - use `OSMAP_OPENBSD_CONFINEMENT_MODE=log-only` or `enforce` when validating
   the OpenBSD serve runtime on hosts intended for real deployment
 

@@ -29,6 +29,8 @@ This is a useful baseline, not the final hardening endpoint.
 The current browser runtime enforces:
 
 - bounded request header and body sizes
+- bounded request-target length
+- bounded request-header count
 - bounded query-field counts
 - bounded form field counts
 - per-connection read and write timeouts on the sequential listener
@@ -39,6 +41,10 @@ The current browser runtime enforces:
 - `X-Content-Type-Options: nosniff`
 - `X-Frame-Options: DENY`
 - explicit logout revocation instead of cookie deletion alone
+- rejection of duplicate request headers instead of silently accepting the last
+  one
+- rejection of malformed HTTP/1.1 requests without `Host`
+- rejection of fragment-bearing or otherwise ambiguous request targets
 
 The current HTML rendering path stays deliberately small and keeps message
 content escaped or plain-text-first unless a later slice proves a broader

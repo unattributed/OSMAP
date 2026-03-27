@@ -168,8 +168,9 @@ headers and conservative transfer-decoding support.
 
 The next implementation steps are to keep tightening the helper-compatible
 OpenBSD view, investigate the remaining live `doveadm` helper caveats under
-`enforce`, and continue reducing correctness and denial-of-service risk in the
-custom HTTP/browser runtime.
+`enforce`, continue reducing correctness and denial-of-service risk in the
+custom HTTP/browser runtime, and move the host auth path toward a dedicated
+least-privilege Dovecot auth socket arrangement.
 
 ---
 

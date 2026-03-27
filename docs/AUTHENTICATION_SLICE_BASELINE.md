@@ -151,6 +151,10 @@ The remaining live-host caveat is also clearer now than it was earlier in WP3:
 - that is a host/operator integration issue to solve deliberately, not a reason
   to widen OSMAP's runtime privileges
 
+The runtime now supports an explicit `OSMAP_DOVEADM_AUTH_SOCKET_PATH` setting
+for hosts that provide a dedicated least-privilege Dovecot auth listener for
+the OSMAP service user.
+
 ## What Is Still Missing
 
 This slice does not yet include:

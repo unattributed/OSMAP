@@ -163,6 +163,17 @@ Today that auth caveat is understood this way:
 - the right follow-on path is host-side operator work such as a dedicated
   accessible auth listener or a deliberate permission/layout change
 
+The runtime now supports that operator path explicitly:
+
+- `OSMAP_DOVEADM_AUTH_SOCKET_PATH` can point OSMAP at a dedicated Dovecot auth
+  socket
+- when configured, the OpenBSD confinement plan now adds the explicit socket
+  path plus read-only parent-directory visibility for that path
+
+That does not make the host issue disappear automatically, but it gives the
+deployment model a concrete least-privilege target instead of a vague future
+idea.
+
 ## What This Baseline Does Not Yet Claim
 
 This baseline does not mean:

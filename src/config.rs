@@ -19,6 +19,7 @@ pub struct AppConfig {
     pub run_mode: AppRunMode,
     pub environment: RuntimeEnvironment,
     pub listen_addr: String,
+    pub doveadm_auth_socket_path: Option<PathBuf>,
     pub state_root: PathBuf,
     pub log_level: LogLevel,
     pub log_format: LogFormat,
@@ -210,6 +211,8 @@ impl AppConfig {
         let totp_skew_steps_value = read_value(env_map, "OSMAP_TOTP_ALLOWED_SKEW_STEPS", "1");
         let openbsd_confinement_mode_value =
             read_value(env_map, "OSMAP_OPENBSD_CONFINEMENT_MODE", "disabled");
+        let doveadm_auth_socket_path =
+            parse_optional_absolute_optional_path(env_map, "OSMAP_DOVEADM_AUTH_SOCKET_PATH")?;
 
         validate_non_empty("OSMAP_RUN_MODE", &run_mode_value)?;
         validate_non_empty("OSMAP_ENV", &environment_value)?;
@@ -277,6 +280,7 @@ impl AppConfig {
             run_mode,
             environment,
             listen_addr,
+            doveadm_auth_socket_path,
             log_level,
             log_format,
             state_root,
@@ -322,6 +326,17 @@ fn parse_optional_absolute_path(
     match env_map.get(field) {
         Some(value) => parse_absolute_path(field, value),
         None => Ok(default),
+    }
+}
+
+/// Parses an optional absolute path that may be omitted entirely.
+fn parse_optional_absolute_optional_path(
+    env_map: &BTreeMap<String, String>,
+    field: &'static str,
+) -> Result<Option<PathBuf>, BootstrapError> {
+    match env_map.get(field) {
+        Some(value) => Ok(Some(parse_absolute_path(field, value)?)),
+        None => Ok(None),
     }
 }
 
@@ -405,6 +420,7 @@ mod tests {
         assert_eq!(config.run_mode, AppRunMode::Bootstrap);
         assert_eq!(config.environment, RuntimeEnvironment::Development);
         assert_eq!(config.listen_addr, "127.0.0.1:8080");
+        assert_eq!(config.doveadm_auth_socket_path, None);
         assert_eq!(config.state_root, std::path::Path::new("/var/lib/osmap"));
         assert_eq!(
             config.state_layout.runtime_dir,
@@ -472,6 +488,10 @@ mod tests {
                 "OSMAP_OPENBSD_CONFINEMENT_MODE".to_string(),
                 "log-only".to_string(),
             ),
+            (
+                "OSMAP_DOVEADM_AUTH_SOCKET_PATH".to_string(),
+                "/var/run/osmap/dovecot-auth".to_string(),
+            ),
         ]);
 
         let config = AppConfig::from_env_map(&env_map).expect("explicit values should be valid");
@@ -479,6 +499,10 @@ mod tests {
         assert_eq!(config.run_mode, AppRunMode::Serve);
         assert_eq!(config.environment, RuntimeEnvironment::Staging);
         assert_eq!(config.listen_addr, "127.0.0.1:8443");
+        assert_eq!(
+            config.doveadm_auth_socket_path,
+            Some(std::path::Path::new("/var/run/osmap/dovecot-auth").to_path_buf())
+        );
         assert_eq!(
             config.state_root,
             std::path::Path::new("/var/lib/osmap-staging")
@@ -580,6 +604,25 @@ mod tests {
             BootstrapError::PathMustBeAbsolute {
                 field: "OSMAP_STATE_DIR",
                 value: "var/lib/osmap".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn rejects_relative_doveadm_auth_socket_path() {
+        let env_map = BTreeMap::from([(
+            "OSMAP_DOVEADM_AUTH_SOCKET_PATH".to_string(),
+            "var/run/osmap-auth".to_string(),
+        )]);
+
+        let error =
+            AppConfig::from_env_map(&env_map).expect_err("relative auth socket path must fail");
+
+        assert_eq!(
+            error,
+            BootstrapError::PathMustBeAbsolute {
+                field: "OSMAP_DOVEADM_AUTH_SOCKET_PATH",
+                value: "var/run/osmap-auth".to_string(),
             }
         );
     }

@@ -521,3 +521,17 @@ OSMAP's public repository now uses the ISC license. That is a deliberate fit
 for the project's OpenBSD-oriented goals: simple text, permissive reuse, and a
 low-friction licensing posture for conservative downstream operators and
 packagers.
+
+### Expose the auth socket path as explicit operator configuration
+
+OSMAP now supports an optional `OSMAP_DOVEADM_AUTH_SOCKET_PATH` setting instead
+of forcing the browser-auth path to depend on hidden host defaults. This keeps
+the least-privilege Dovecot auth listener arrangement explicit in deployment,
+startup reporting, and confinement planning.
+
+### Reject ambiguous HTTP request shapes earlier in the parser
+
+The HTTP runtime now fails closed on duplicate headers, oversized request
+targets, fragment-bearing targets, and HTTP/1.1 requests that omit `Host`.
+These checks reduce ambiguity in the custom parser before any additional
+browser-facing surface is added.

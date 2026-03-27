@@ -66,6 +66,11 @@ impl OpenbsdConfinementPlan {
         add_rule(&mut rules, Path::new("/var/spool/smtpd"), "rwc");
         add_rule(&mut rules, Path::new("/dev/null"), "rw");
 
+        if let Some(auth_socket_path) = &config.doveadm_auth_socket_path {
+            add_rule(&mut rules, auth_socket_path, "rw");
+            add_parent_dir_rules(&mut rules, auth_socket_path);
+        }
+
         Self {
             promises_before_lock: OPENBSD_PROMISES_BEFORE_LOCK,
             promises_after_lock: OPENBSD_PROMISES_AFTER_LOCK,
@@ -128,6 +133,18 @@ fn add_rule(rules: &mut BTreeMap<PathBuf, String>, path: &Path, permissions: &st
         if !entry.contains(permission) {
             entry.push(permission);
         }
+    }
+}
+
+/// Adds read-only unveil rules for parent directories of an explicit helper path.
+fn add_parent_dir_rules(rules: &mut BTreeMap<PathBuf, String>, path: &Path) {
+    let mut current = path.parent();
+    while let Some(parent) = current {
+        if parent == Path::new("/") {
+            break;
+        }
+        add_rule(rules, parent, "r");
+        current = parent.parent();
     }
 }
 
@@ -247,6 +264,7 @@ mod tests {
             run_mode: AppRunMode::Serve,
             environment: RuntimeEnvironment::Production,
             listen_addr: "127.0.0.1:8080".to_string(),
+            doveadm_auth_socket_path: None,
             state_root: PathBuf::from("/var/lib/osmap"),
             log_level: LogLevel::Info,
             log_format: LogFormat::Text,
@@ -289,6 +307,24 @@ mod tests {
             .unveil_rules
             .iter()
             .any(|rule| rule.path == PathBuf::from("/var")));
+    }
+
+    #[test]
+    fn adds_explicit_auth_socket_and_parent_dirs_when_configured() {
+        let mut config = config_fixture(OpenbsdConfinementMode::LogOnly);
+        config.doveadm_auth_socket_path = Some(PathBuf::from("/var/run/osmap/dovecot-auth"));
+
+        let plan = OpenbsdConfinementPlan::from_config(&config);
+
+        assert!(plan.unveil_rules.iter().any(|rule| {
+            rule.path == PathBuf::from("/var/run/osmap/dovecot-auth")
+                && rule.permissions.contains('r')
+                && rule.permissions.contains('w')
+        }));
+        assert!(plan
+            .unveil_rules
+            .iter()
+            .any(|rule| rule.path == PathBuf::from("/var/run/osmap") && rule.permissions == "r"));
     }
 
     #[test]
