@@ -139,7 +139,7 @@ Phase 6:
 - WP1 and WP2 now define the configuration/state boundary and the structured
   logging/error model for the prototype runtime
 - WP3 now includes a real primary-backend verification path and a second-factor
-  stage, but real TOTP verification, session issuance, and browser integration
-  are not complete yet
+  stage, plus a real TOTP backend and secret-store boundary, but session
+  issuance and browser integration are not complete yet
 - the actual prototype has not yet been implemented, so Phase 6 execution is
   underway but not yet complete

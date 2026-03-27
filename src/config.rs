@@ -22,6 +22,7 @@ pub struct AppConfig {
     pub log_level: LogLevel,
     pub log_format: LogFormat,
     pub state_layout: StateLayout,
+    pub totp_allowed_skew_steps: i64,
 }
 
 /// Enumerates the supported runtime environments for the early prototype.
@@ -139,6 +140,7 @@ impl AppConfig {
         let state_root_value = read_value(env_map, "OSMAP_STATE_DIR", "/var/lib/osmap");
         let log_level_value = read_value(env_map, "OSMAP_LOG_LEVEL", "info");
         let log_format_value = read_value(env_map, "OSMAP_LOG_FORMAT", "text");
+        let totp_skew_steps_value = read_value(env_map, "OSMAP_TOTP_ALLOWED_SKEW_STEPS", "1");
 
         validate_non_empty("OSMAP_ENV", &environment_value)?;
         let runtime_dir = parse_optional_absolute_path(
@@ -161,17 +163,32 @@ impl AppConfig {
             "OSMAP_CACHE_DIR",
             PathBuf::from(&state_root_value).join("cache"),
         )?;
+        let totp_secret_dir = parse_optional_absolute_path(
+            env_map,
+            "OSMAP_TOTP_SECRET_DIR",
+            PathBuf::from(&state_root_value).join("secrets").join("totp"),
+        )?;
         validate_non_empty("OSMAP_LOG_LEVEL", &log_level_value)?;
         validate_non_empty("OSMAP_LOG_FORMAT", &log_format_value)?;
         validate_non_empty("OSMAP_LISTEN_ADDR", &listen_addr)?;
+        validate_non_empty("OSMAP_TOTP_ALLOWED_SKEW_STEPS", &totp_skew_steps_value)?;
 
         let environment = RuntimeEnvironment::parse(&environment_value)?;
         let state_root = parse_absolute_path("OSMAP_STATE_DIR", &state_root_value)?;
         let log_level = LogLevel::parse(&log_level_value)?;
         let log_format = LogFormat::parse(&log_format_value)?;
+        let totp_allowed_skew_steps =
+            parse_i64("OSMAP_TOTP_ALLOWED_SKEW_STEPS", &totp_skew_steps_value)?;
 
         let state_layout =
-            StateLayout::new(state_root.clone(), runtime_dir, session_dir, audit_dir, cache_dir)?;
+            StateLayout::new(
+                state_root.clone(),
+                runtime_dir,
+                session_dir,
+                audit_dir,
+                cache_dir,
+                totp_secret_dir,
+            )?;
         validate_development_bindings(environment, &listen_addr)?;
 
         Ok(Self {
@@ -181,6 +198,7 @@ impl AppConfig {
             log_format,
             state_root,
             state_layout,
+            totp_allowed_skew_steps,
         })
     }
 }
@@ -223,6 +241,16 @@ fn parse_optional_absolute_path(
         Some(value) => parse_absolute_path(field, value),
         None => Ok(default),
     }
+}
+
+/// Parses a signed integer from configuration.
+fn parse_i64(field: &'static str, value: &str) -> Result<i64, BootstrapError> {
+    value
+        .parse::<i64>()
+        .map_err(|error| BootstrapError::InvalidConfig {
+            field,
+            reason: format!("value must be a signed integer: {error}"),
+        })
 }
 
 /// Rejects empty configuration values so later phases do not inherit silent
@@ -289,8 +317,13 @@ mod tests {
             config.state_layout.cache_dir,
             std::path::Path::new("/var/lib/osmap/cache")
         );
+        assert_eq!(
+            config.state_layout.totp_secret_dir,
+            std::path::Path::new("/var/lib/osmap/secrets/totp")
+        );
         assert_eq!(config.log_level, LogLevel::Info);
         assert_eq!(config.log_format, LogFormat::Text);
+        assert_eq!(config.totp_allowed_skew_steps, 1);
     }
 
     #[test]
@@ -307,8 +340,13 @@ mod tests {
                 "OSMAP_SESSION_DIR".to_string(),
                 "/var/lib/osmap-staging/session-store".to_string(),
             ),
+            (
+                "OSMAP_TOTP_SECRET_DIR".to_string(),
+                "/var/lib/osmap-staging/secure/totp".to_string(),
+            ),
             ("OSMAP_LOG_LEVEL".to_string(), "debug".to_string()),
             ("OSMAP_LOG_FORMAT".to_string(), "text".to_string()),
+            ("OSMAP_TOTP_ALLOWED_SKEW_STEPS".to_string(), "2".to_string()),
         ]);
 
         let config = AppConfig::from_env_map(&env_map).expect("explicit values should be valid");
@@ -327,8 +365,13 @@ mod tests {
             config.state_layout.session_dir,
             std::path::Path::new("/var/lib/osmap-staging/session-store")
         );
+        assert_eq!(
+            config.state_layout.totp_secret_dir,
+            std::path::Path::new("/var/lib/osmap-staging/secure/totp")
+        );
         assert_eq!(config.log_level, LogLevel::Debug);
         assert_eq!(config.log_format, LogFormat::Text);
+        assert_eq!(config.totp_allowed_skew_steps, 2);
     }
 
     #[test]

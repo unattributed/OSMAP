@@ -112,7 +112,8 @@ The implementation treats:
 - other command failures as backend errors
 
 This behavior is grounded in direct testing against `mail.blackbagsecurity.com`
-and should be revalidated in QEMU before wider integration use.
+and now has a project-local QEMU validation path prepared for broader isolated
+verification.
 
 ## Validation Status
 
@@ -120,8 +121,9 @@ The current validation state is:
 
 1. local unit and runtime verification completed
 2. narrow OpenBSD host validation completed on `mail.blackbagsecurity.com`
-3. broader isolated validation through the existing QEMU lab runner still
-   remains the preferred next step before higher-risk auth expansion
+3. project-local QEMU validation infrastructure is now present in
+   `maint/qemu/` and syntax-checked, but a full VM boot-and-test run still
+   remains pending in this workspace before higher-risk auth expansion
 
 The host-side validation currently proves two bounded claims:
 
@@ -135,7 +137,6 @@ validated in production-like conditions.
 
 This slice does not yet include:
 
-- a real TOTP secret store or TOTP algorithm backend
 - session issuance
 - auth rate limiting
 - persistent auth-audit storage

@@ -193,3 +193,21 @@ Once Rust was available on `mail.blackbagsecurity.com`, the project added an
 ignored test that safely validates the real `doveadm auth test` path with
 invalid credentials. This gives us a small real-host proof point without
 pretending broader auth behavior is already production-validated.
+
+### Add a real TOTP backend before session issuance
+
+WP3 now includes a real RFC 6238-style TOTP verifier and a file-backed secret
+store boundary under the configured state root. That lets the project prove
+factor verification before it takes on the higher-risk session layer.
+
+### Store TOTP secrets under the explicit state boundary
+
+The current secret-management model keeps TOTP secrets in a dedicated directory
+under the state root so permissions, backups, and later `unveil(2)` policy can
+reason about one bounded secret path.
+
+### Keep project-local QEMU validation infrastructure in this repository
+
+OSMAP now carries its own thin `maint/qemu/` wrapper layer around the upstream
+OpenBSD lab model so isolated validation is reusable from this repository
+instead of remaining tribal knowledge outside it.

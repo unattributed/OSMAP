@@ -17,8 +17,10 @@ pub struct BootstrapReport {
     pub session_dir: String,
     pub audit_dir: String,
     pub cache_dir: String,
+    pub totp_secret_dir: String,
     pub log_level: String,
     pub log_format: String,
+    pub totp_allowed_skew_steps: String,
 }
 
 impl BootstrapReport {
@@ -37,8 +39,10 @@ impl BootstrapReport {
         .with_field("session_dir", self.session_dir.clone())
         .with_field("audit_dir", self.audit_dir.clone())
         .with_field("cache_dir", self.cache_dir.clone())
+        .with_field("totp_secret_dir", self.totp_secret_dir.clone())
         .with_field("log_level", self.log_level.clone())
         .with_field("log_format", self.log_format.clone())
+        .with_field("totp_allowed_skew_steps", self.totp_allowed_skew_steps.clone())
     }
 }
 
@@ -73,8 +77,10 @@ fn report_from_config(config: &AppConfig) -> BootstrapReport {
         session_dir: config.state_layout.session_dir.display().to_string(),
         audit_dir: config.state_layout.audit_dir.display().to_string(),
         cache_dir: config.state_layout.cache_dir.display().to_string(),
+        totp_secret_dir: config.state_layout.totp_secret_dir.display().to_string(),
         log_level: config.log_level.as_str().to_string(),
         log_format: config.log_format.as_str().to_string(),
+        totp_allowed_skew_steps: config.totp_allowed_skew_steps.to_string(),
     }
 }
 
@@ -99,8 +105,10 @@ mod tests {
                 PathBuf::from("/var/lib/osmap/sessions"),
                 PathBuf::from("/var/lib/osmap/audit"),
                 PathBuf::from("/var/lib/osmap/cache"),
+                PathBuf::from("/var/lib/osmap/secrets/totp"),
             )
             .expect("layout should be valid"),
+            totp_allowed_skew_steps: 1,
         };
 
         let report = report_from_config(&config);
@@ -137,12 +145,20 @@ mod tests {
                     value: "/var/lib/osmap/cache".to_string(),
                 },
                 crate::logging::LogField {
+                    key: "totp_secret_dir",
+                    value: "/var/lib/osmap/secrets/totp".to_string(),
+                },
+                crate::logging::LogField {
                     key: "log_level",
                     value: "info".to_string(),
                 },
                 crate::logging::LogField {
                     key: "log_format",
                     value: "text".to_string(),
+                },
+                crate::logging::LogField {
+                    key: "totp_allowed_skew_steps",
+                    value: "1".to_string(),
                 },
             ]
         );

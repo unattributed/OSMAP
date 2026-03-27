@@ -129,12 +129,13 @@ explicit mutable-state layout, and a small structured logging/error baseline.
 
 The project is not yet production-ready and does not yet have a running public
 prototype. WP3 now includes bounded credential handling, a real
-Dovecot-oriented primary-auth path, a second-factor verification stage, and
-audit-quality auth events.
+Dovecot-oriented primary-auth path, a real TOTP backend with a bounded
+secret-store model, a second-factor verification stage, and audit-quality auth
+events.
 
 The next implementation step is to validate the auth path in isolated OpenBSD
-conditions, add a real TOTP verification backend, and only then move toward
-session issuance.
+conditions through the project-local QEMU workflow, then move toward session
+issuance.
 
 ---
 

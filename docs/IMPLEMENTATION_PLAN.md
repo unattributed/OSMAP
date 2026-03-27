@@ -145,10 +145,10 @@ verification stage.
 
 The next active WP3 work should focus on:
 
-- using the existing QEMU lab path for broader auth validation after the now
-  completed narrow host-side `doveadm` verification
-- adding a real TOTP verification backend
+- using the project-local QEMU lab wrappers for broader auth validation after
+  the now completed narrow host-side `doveadm` verification
 - keeping session issuance out of scope until factor verification is trustworthy
+- defining enrollment and provisioning mechanics for the TOTP secret store
 
 ## Implementation Guardrails
 

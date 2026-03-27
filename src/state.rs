@@ -16,6 +16,7 @@ pub struct StateLayout {
     pub session_dir: PathBuf,
     pub audit_dir: PathBuf,
     pub cache_dir: PathBuf,
+    pub totp_secret_dir: PathBuf,
 }
 
 impl StateLayout {
@@ -26,11 +27,13 @@ impl StateLayout {
         session_dir: PathBuf,
         audit_dir: PathBuf,
         cache_dir: PathBuf,
+        totp_secret_dir: PathBuf,
     ) -> Result<Self, BootstrapError> {
         validate_child_path("OSMAP_RUNTIME_DIR", &root_dir, &runtime_dir)?;
         validate_child_path("OSMAP_SESSION_DIR", &root_dir, &session_dir)?;
         validate_child_path("OSMAP_AUDIT_DIR", &root_dir, &audit_dir)?;
         validate_child_path("OSMAP_CACHE_DIR", &root_dir, &cache_dir)?;
+        validate_child_path("OSMAP_TOTP_SECRET_DIR", &root_dir, &totp_secret_dir)?;
 
         Ok(Self {
             root_dir,
@@ -38,6 +41,7 @@ impl StateLayout {
             session_dir,
             audit_dir,
             cache_dir,
+            totp_secret_dir,
         })
     }
 }
@@ -73,10 +77,15 @@ mod tests {
             PathBuf::from("/var/lib/osmap/sessions"),
             PathBuf::from("/var/lib/osmap/audit"),
             PathBuf::from("/var/lib/osmap/cache"),
+            PathBuf::from("/var/lib/osmap/secrets/totp"),
         )
         .expect("state children under the root should be accepted");
 
         assert_eq!(layout.runtime_dir, PathBuf::from("/var/lib/osmap/run"));
+        assert_eq!(
+            layout.totp_secret_dir,
+            PathBuf::from("/var/lib/osmap/secrets/totp")
+        );
     }
 
     #[test]
@@ -87,6 +96,7 @@ mod tests {
             PathBuf::from("/var/lib/osmap/sessions"),
             PathBuf::from("/var/lib/osmap/audit"),
             PathBuf::from("/var/lib/osmap/cache"),
+            PathBuf::from("/var/lib/osmap/secrets/totp"),
         )
         .expect_err("state paths outside the root must fail");
 

@@ -83,6 +83,8 @@ Status on March 27, 2026:
   auth events are now implemented
 - a real `doveadm auth test` primary-backend path and a second-factor
   verification stage are now implemented
+- a real TOTP backend and secret-store model are now implemented
+- project-local QEMU validation wrappers now exist under `maint/qemu/`
 - recorded in `AUTHENTICATION_SLICE_BASELINE.md`
 
 Done means:

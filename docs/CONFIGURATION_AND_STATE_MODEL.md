@@ -31,8 +31,10 @@ The early runtime recognizes:
 - `OSMAP_SESSION_DIR`
 - `OSMAP_AUDIT_DIR`
 - `OSMAP_CACHE_DIR`
+- `OSMAP_TOTP_SECRET_DIR`
 - `OSMAP_LOG_LEVEL`
 - `OSMAP_LOG_FORMAT`
+- `OSMAP_TOTP_ALLOWED_SKEW_STEPS`
 
 The committed example file under `config/osmap.env.example` is intentionally
 non-secret.
@@ -61,6 +63,7 @@ Subdirectories are then resolved beneath that root for:
 - session state
 - audit-oriented local state
 - cache data
+- TOTP secret files
 
 This model keeps the future OpenBSD deployment story easier to reason about,
 because state can later be owned, permissioned, unveiled, and backed up as one
@@ -88,6 +91,7 @@ The bootstrap currently enforces:
 - configured state paths must be absolute
 - derived mutable-state paths must stay under the state root
 - development listeners must remain on loopback
+- TOTP skew-step configuration must parse as a signed integer
 
 These validations are intentionally strict because the project should fail
 clearly when runtime assumptions drift.
