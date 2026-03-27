@@ -6,6 +6,9 @@
 //! issuance.
 
 use std::fmt;
+use std::path::PathBuf;
+use std::process::{Command, ExitStatus, Stdio};
+use std::str;
 
 use crate::config::LogLevel;
 use crate::logging::{EventCategory, LogEvent};
@@ -25,6 +28,9 @@ pub const DEFAULT_REMOTE_ADDR_MAX_LEN: usize = 128;
 /// Conservative maximum length for user-agent summaries in auth audit events.
 pub const DEFAULT_USER_AGENT_MAX_LEN: usize = 512;
 
+/// Conservative maximum length for submitted TOTP codes.
+pub const DEFAULT_FACTOR_CODE_MAX_LEN: usize = 16;
+
 /// Defines the bounds and mandatory second-factor policy for browser auth.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AuthenticationPolicy {
@@ -33,6 +39,7 @@ pub struct AuthenticationPolicy {
     pub request_id_max_len: usize,
     pub remote_addr_max_len: usize,
     pub user_agent_max_len: usize,
+    pub factor_code_max_len: usize,
     pub required_second_factor: RequiredSecondFactor,
 }
 
@@ -44,6 +51,7 @@ impl Default for AuthenticationPolicy {
             request_id_max_len: DEFAULT_REQUEST_ID_MAX_LEN,
             remote_addr_max_len: DEFAULT_REMOTE_ADDR_MAX_LEN,
             user_agent_max_len: DEFAULT_USER_AGENT_MAX_LEN,
+            factor_code_max_len: DEFAULT_FACTOR_CODE_MAX_LEN,
             required_second_factor: RequiredSecondFactor::Totp,
         }
     }
@@ -153,11 +161,37 @@ impl AuthenticationContext {
     }
 }
 
+/// Carries a bounded second-factor code after validation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SecondFactorInput {
+    code: String,
+}
+
+impl SecondFactorInput {
+    /// Validates a second-factor code against the authentication policy.
+    pub fn new(
+        policy: AuthenticationPolicy,
+        code: impl Into<String>,
+    ) -> Result<Self, CredentialValidationError> {
+        let code = code.into().trim().to_string();
+
+        validate_factor_code(&code, policy.factor_code_max_len)?;
+
+        Ok(Self { code })
+    }
+
+    /// Returns the validated second-factor code.
+    pub fn code(&self) -> &str {
+        &self.code
+    }
+}
+
 /// Describes why an auth attempt failed from a user-facing perspective.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PublicFailureReason {
     InvalidCredentials,
     InvalidRequest,
+    InvalidSecondFactor,
     TemporarilyUnavailable,
 }
 
@@ -167,6 +201,7 @@ impl PublicFailureReason {
         match self {
             Self::InvalidCredentials => "invalid_credentials",
             Self::InvalidRequest => "invalid_request",
+            Self::InvalidSecondFactor => "invalid_second_factor",
             Self::TemporarilyUnavailable => "temporarily_unavailable",
         }
     }
@@ -177,6 +212,7 @@ impl PublicFailureReason {
 pub enum AuditFailureReason {
     InputRejected,
     InvalidCredentials,
+    InvalidSecondFactor,
     BackendUnavailable,
 }
 
@@ -186,6 +222,7 @@ impl AuditFailureReason {
         match self {
             Self::InputRejected => "input_rejected",
             Self::InvalidCredentials => "invalid_credentials",
+            Self::InvalidSecondFactor => "invalid_second_factor",
             Self::BackendUnavailable => "backend_unavailable",
         }
     }
@@ -211,6 +248,7 @@ pub struct PrimaryAuthBackendError {
 pub trait PrimaryCredentialBackend {
     fn verify_primary(
         &self,
+        context: &AuthenticationContext,
         username: &str,
         password: &str,
     ) -> Result<PrimaryAuthVerdict, PrimaryAuthBackendError>;
@@ -226,6 +264,9 @@ pub enum AuthenticationDecision {
         canonical_username: String,
         second_factor: RequiredSecondFactor,
     },
+    AuthenticatedPendingSession {
+        canonical_username: String,
+    },
 }
 
 /// The combined auth decision and audit event emitted by the service.
@@ -233,6 +274,30 @@ pub enum AuthenticationDecision {
 pub struct AuthenticationOutcome {
     pub decision: AuthenticationDecision,
     pub audit_event: LogEvent,
+}
+
+/// Backend failures that should not leak as detailed user-facing factor errors.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SecondFactorBackendError {
+    pub backend: &'static str,
+    pub reason: String,
+}
+
+/// The result of checking a second factor.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SecondFactorVerdict {
+    Reject,
+    Accept,
+}
+
+/// A backend capable of validating the second factor for a canonical user.
+pub trait SecondFactorVerifier {
+    fn verify_second_factor(
+        &self,
+        canonical_username: &str,
+        factor: RequiredSecondFactor,
+        code: &str,
+    ) -> Result<SecondFactorVerdict, SecondFactorBackendError>;
 }
 
 /// The service responsible for bounded credential handling and primary auth.
@@ -278,7 +343,7 @@ where
 
         match self
             .backend
-            .verify_primary(credentials.username(), credentials.password())
+            .verify_primary(context, credentials.username(), credentials.password())
         {
             Ok(PrimaryAuthVerdict::Reject) => AuthenticationOutcome {
                 decision: AuthenticationDecision::Denied {
@@ -316,6 +381,227 @@ where
                 ),
             },
         }
+    }
+}
+
+/// The service responsible for validating the required second factor.
+pub struct SecondFactorService<V> {
+    policy: AuthenticationPolicy,
+    verifier: V,
+}
+
+impl<V> SecondFactorService<V>
+where
+    V: SecondFactorVerifier,
+{
+    /// Creates a new second-factor service around the supplied verifier.
+    pub fn new(policy: AuthenticationPolicy, verifier: V) -> Self {
+        Self { policy, verifier }
+    }
+
+    /// Verifies the required second factor for a canonical user.
+    pub fn verify(
+        &self,
+        context: &AuthenticationContext,
+        canonical_username: impl Into<String>,
+        second_factor: RequiredSecondFactor,
+        code: impl Into<String>,
+    ) -> AuthenticationOutcome {
+        let canonical_username = canonical_username.into();
+        let factor_input = match SecondFactorInput::new(self.policy, code) {
+            Ok(input) => input,
+            Err(error) => {
+                return AuthenticationOutcome {
+                    decision: AuthenticationDecision::Denied {
+                        public_reason: PublicFailureReason::InvalidRequest,
+                    },
+                    audit_event: build_factor_denied_event(
+                        context,
+                        canonical_username,
+                        second_factor,
+                        PublicFailureReason::InvalidRequest,
+                        AuditFailureReason::InputRejected,
+                        Some(error.as_str().to_string()),
+                    ),
+                };
+            }
+        };
+
+        match self
+            .verifier
+            .verify_second_factor(&canonical_username, second_factor, factor_input.code())
+        {
+            Ok(SecondFactorVerdict::Reject) => AuthenticationOutcome {
+                decision: AuthenticationDecision::Denied {
+                    public_reason: PublicFailureReason::InvalidSecondFactor,
+                },
+                audit_event: build_factor_denied_event(
+                    context,
+                    canonical_username,
+                    second_factor,
+                    PublicFailureReason::InvalidSecondFactor,
+                    AuditFailureReason::InvalidSecondFactor,
+                    None,
+                ),
+            },
+            Ok(SecondFactorVerdict::Accept) => AuthenticationOutcome {
+                decision: AuthenticationDecision::AuthenticatedPendingSession {
+                    canonical_username: canonical_username.clone(),
+                },
+                audit_event: build_factor_accepted_event(
+                    context,
+                    canonical_username,
+                    second_factor,
+                ),
+            },
+            Err(error) => AuthenticationOutcome {
+                decision: AuthenticationDecision::Denied {
+                    public_reason: PublicFailureReason::TemporarilyUnavailable,
+                },
+                audit_event: build_factor_backend_error_event(
+                    context,
+                    canonical_username,
+                    second_factor,
+                    &error,
+                ),
+            },
+        }
+    }
+}
+
+/// Provides the command result used by external auth backends.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CommandExecution {
+    pub status_code: i32,
+    pub stdout: String,
+    pub stderr: String,
+}
+
+/// Errors that can occur while invoking external auth backends.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CommandExecutionError {
+    pub reason: String,
+}
+
+/// Runs an external command with supplied standard input.
+pub trait CommandExecutor {
+    fn run_with_stdin(
+        &self,
+        program: &str,
+        args: &[String],
+        stdin_data: &str,
+    ) -> Result<CommandExecution, CommandExecutionError>;
+}
+
+/// Executes external commands via the system process API.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct SystemCommandExecutor;
+
+impl CommandExecutor for SystemCommandExecutor {
+    fn run_with_stdin(
+        &self,
+        program: &str,
+        args: &[String],
+        stdin_data: &str,
+    ) -> Result<CommandExecution, CommandExecutionError> {
+        let mut child = Command::new(program)
+            .args(args)
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .map_err(|error| CommandExecutionError {
+                reason: format!("failed to spawn command: {error}"),
+            })?;
+
+        if let Some(stdin) = child.stdin.as_mut() {
+            use std::io::Write as _;
+            stdin
+                .write_all(stdin_data.as_bytes())
+                .map_err(|error| CommandExecutionError {
+                    reason: format!("failed to write command stdin: {error}"),
+                })?;
+        }
+
+        let output = child
+            .wait_with_output()
+            .map_err(|error| CommandExecutionError {
+                reason: format!("failed waiting for command output: {error}"),
+            })?;
+
+        Ok(CommandExecution {
+            status_code: status_code_or_signal(output.status),
+            stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
+            stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
+        })
+    }
+}
+
+/// Connects primary credential verification to `doveadm auth test`.
+pub struct DoveadmAuthTestBackend<E> {
+    command_executor: E,
+    doveadm_path: PathBuf,
+    auth_socket_path: Option<PathBuf>,
+    service: &'static str,
+}
+
+impl<E> DoveadmAuthTestBackend<E> {
+    /// Builds a backend using the supplied command executor.
+    pub fn new(
+        command_executor: E,
+        doveadm_path: impl Into<PathBuf>,
+        auth_socket_path: Option<PathBuf>,
+        service: &'static str,
+    ) -> Self {
+        Self {
+            command_executor,
+            doveadm_path: doveadm_path.into(),
+            auth_socket_path,
+            service,
+        }
+    }
+}
+
+impl<E> PrimaryCredentialBackend for DoveadmAuthTestBackend<E>
+where
+    E: CommandExecutor,
+{
+    fn verify_primary(
+        &self,
+        context: &AuthenticationContext,
+        username: &str,
+        password: &str,
+    ) -> Result<PrimaryAuthVerdict, PrimaryAuthBackendError> {
+        let mut args = vec!["auth".to_string(), "test".to_string()];
+
+        if let Some(auth_socket_path) = &self.auth_socket_path {
+            args.push("-a".to_string());
+            args.push(auth_socket_path.display().to_string());
+        }
+
+        args.push("-x".to_string());
+        args.push(format!("service={}", self.service));
+
+        if !context.remote_addr.is_empty() {
+            args.push("-x".to_string());
+            args.push(format!("rip={}", context.remote_addr));
+        }
+
+        args.push(username.to_string());
+
+        let execution = self
+            .command_executor
+            .run_with_stdin(
+                self.doveadm_path.to_string_lossy().as_ref(),
+                &args,
+                &format!("{password}\n"),
+            )
+            .map_err(|error| PrimaryAuthBackendError {
+                backend: "doveadm-auth-test",
+                reason: error.reason,
+            })?;
+
+        parse_doveadm_auth_test_output(username, &execution)
     }
 }
 
@@ -380,6 +666,28 @@ fn validate_password(value: &str, max_len: usize) -> Result<(), CredentialValida
 
     if value.contains('\0') {
         return Err(CredentialValidationError::ControlCharacter { field: "password" });
+    }
+
+    Ok(())
+}
+
+/// Validates the submitted second-factor code.
+fn validate_factor_code(value: &str, max_len: usize) -> Result<(), CredentialValidationError> {
+    if value.is_empty() {
+        return Err(CredentialValidationError::EmptyField { field: "factor_code" });
+    }
+
+    if value.len() > max_len {
+        return Err(CredentialValidationError::TooLong {
+            field: "factor_code",
+            max_len,
+        });
+    }
+
+    if !value.chars().all(|ch| ch.is_ascii_digit()) {
+        return Err(CredentialValidationError::ControlCharacter {
+            field: "factor_code",
+        });
     }
 
     Ok(())
@@ -482,17 +790,140 @@ fn build_mfa_required_event(
     .with_field("user_agent", context.user_agent.clone())
 }
 
+/// Builds the audit event for a denied second-factor attempt.
+fn build_factor_denied_event(
+    context: &AuthenticationContext,
+    canonical_username: String,
+    second_factor: RequiredSecondFactor,
+    public_reason: PublicFailureReason,
+    audit_reason: AuditFailureReason,
+    detail: Option<String>,
+) -> LogEvent {
+    let mut event = LogEvent::new(
+        LogLevel::Warn,
+        EventCategory::Auth,
+        "second_factor_denied",
+        "second factor denied",
+    )
+    .with_field("stage", "second_factor")
+    .with_field("result", "denied")
+    .with_field("public_reason", public_reason.as_str())
+    .with_field("audit_reason", audit_reason.as_str())
+    .with_field("canonical_username", canonical_username)
+    .with_field("second_factor", second_factor.as_str())
+    .with_field("request_id", context.request_id.clone())
+    .with_field("remote_addr", context.remote_addr.clone())
+    .with_field("user_agent", context.user_agent.clone());
+
+    if let Some(detail) = detail {
+        event = event.with_field("detail", detail);
+    }
+
+    event
+}
+
+/// Builds the audit event for a backend failure during second-factor checking.
+fn build_factor_backend_error_event(
+    context: &AuthenticationContext,
+    canonical_username: String,
+    second_factor: RequiredSecondFactor,
+    error: &SecondFactorBackendError,
+) -> LogEvent {
+    LogEvent::new(
+        LogLevel::Error,
+        EventCategory::Auth,
+        "second_factor_backend_error",
+        "second factor backend failure",
+    )
+    .with_field("stage", "second_factor")
+    .with_field("result", "error")
+    .with_field("public_reason", PublicFailureReason::TemporarilyUnavailable.as_str())
+    .with_field("audit_reason", AuditFailureReason::BackendUnavailable.as_str())
+    .with_field("canonical_username", canonical_username)
+    .with_field("second_factor", second_factor.as_str())
+    .with_field("backend", error.backend)
+    .with_field("detail", error.reason.clone())
+    .with_field("request_id", context.request_id.clone())
+    .with_field("remote_addr", context.remote_addr.clone())
+    .with_field("user_agent", context.user_agent.clone())
+}
+
+/// Builds the audit event for an accepted second-factor check.
+fn build_factor_accepted_event(
+    context: &AuthenticationContext,
+    canonical_username: String,
+    second_factor: RequiredSecondFactor,
+) -> LogEvent {
+    LogEvent::new(
+        LogLevel::Info,
+        EventCategory::Auth,
+        "second_factor_accepted",
+        "second factor accepted, session issuance pending",
+    )
+    .with_field("stage", "second_factor")
+    .with_field("result", "accepted")
+    .with_field("canonical_username", canonical_username)
+    .with_field("second_factor", second_factor.as_str())
+    .with_field("request_id", context.request_id.clone())
+    .with_field("remote_addr", context.remote_addr.clone())
+    .with_field("user_agent", context.user_agent.clone())
+}
+
+/// Returns a numeric status code even when the process exited via signal.
+fn status_code_or_signal(status: ExitStatus) -> i32 {
+    status.code().unwrap_or(-1)
+}
+
+/// Parses the result of `doveadm auth test`.
+fn parse_doveadm_auth_test_output(
+    submitted_username: &str,
+    execution: &CommandExecution,
+) -> Result<PrimaryAuthVerdict, PrimaryAuthBackendError> {
+    let combined_output = format!("{}{}", execution.stdout, execution.stderr);
+
+    if execution.status_code == 0 && combined_output.contains("auth succeeded") {
+        return Ok(PrimaryAuthVerdict::Accept {
+            canonical_username: extract_doveadm_user_field(&combined_output)
+                .unwrap_or_else(|| submitted_username.to_string()),
+        });
+    }
+
+    if execution.status_code == 77 || combined_output.contains("auth failed") {
+        return Ok(PrimaryAuthVerdict::Reject);
+    }
+
+    Err(PrimaryAuthBackendError {
+        backend: "doveadm-auth-test",
+        reason: format!(
+            "unexpected doveadm result status={} output={:?}",
+            execution.status_code, combined_output
+        ),
+    })
+}
+
+/// Extracts the canonical user value from `doveadm auth test` output.
+fn extract_doveadm_user_field(output: &str) -> Option<String> {
+    output.lines().find_map(|line| {
+        let trimmed = line.trim();
+        trimmed
+            .strip_prefix("user=")
+            .map(|user| user.trim().to_string())
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::config::LogFormat;
     use crate::logging::Logger;
+    use std::rc::Rc;
 
     struct AcceptingBackend;
 
     impl PrimaryCredentialBackend for AcceptingBackend {
         fn verify_primary(
             &self,
+            _context: &AuthenticationContext,
             username: &str,
             password: &str,
         ) -> Result<PrimaryAuthVerdict, PrimaryAuthBackendError> {
@@ -511,6 +942,7 @@ mod tests {
     impl PrimaryCredentialBackend for FailingBackend {
         fn verify_primary(
             &self,
+            _context: &AuthenticationContext,
             _username: &str,
             _password: &str,
         ) -> Result<PrimaryAuthVerdict, PrimaryAuthBackendError> {
@@ -518,6 +950,76 @@ mod tests {
                 backend: "test-backend",
                 reason: "backend unavailable".to_string(),
             })
+        }
+    }
+
+    struct AcceptingSecondFactorVerifier;
+
+    impl SecondFactorVerifier for AcceptingSecondFactorVerifier {
+        fn verify_second_factor(
+            &self,
+            canonical_username: &str,
+            factor: RequiredSecondFactor,
+            code: &str,
+        ) -> Result<SecondFactorVerdict, SecondFactorBackendError> {
+            if canonical_username == "alice@example.com"
+                && factor == RequiredSecondFactor::Totp
+                && code == "123456"
+            {
+                return Ok(SecondFactorVerdict::Accept);
+            }
+
+            Ok(SecondFactorVerdict::Reject)
+        }
+    }
+
+    struct FailingSecondFactorVerifier;
+
+    impl SecondFactorVerifier for FailingSecondFactorVerifier {
+        fn verify_second_factor(
+            &self,
+            _canonical_username: &str,
+            _factor: RequiredSecondFactor,
+            _code: &str,
+        ) -> Result<SecondFactorVerdict, SecondFactorBackendError> {
+            Err(SecondFactorBackendError {
+                backend: "test-totp",
+                reason: "totp store unavailable".to_string(),
+            })
+        }
+    }
+
+    #[derive(Debug, Clone)]
+    struct StubCommandExecutor {
+        execution: Result<CommandExecution, CommandExecutionError>,
+        program: Option<String>,
+        args: Option<Vec<String>>,
+        stdin_data: Option<String>,
+    }
+
+    impl StubCommandExecutor {
+        fn success(execution: CommandExecution) -> Self {
+            Self {
+                execution: Ok(execution),
+                program: None,
+                args: None,
+                stdin_data: None,
+            }
+        }
+    }
+
+    impl CommandExecutor for Rc<std::cell::RefCell<StubCommandExecutor>> {
+        fn run_with_stdin(
+            &self,
+            program: &str,
+            args: &[String],
+            stdin_data: &str,
+        ) -> Result<CommandExecution, CommandExecutionError> {
+            let mut state = self.borrow_mut();
+            state.program = Some(program.to_string());
+            state.args = Some(args.to_vec());
+            state.stdin_data = Some(stdin_data.to_string());
+            state.execution.clone()
         }
     }
 
@@ -566,6 +1068,19 @@ mod tests {
     }
 
     #[test]
+    fn rejects_non_numeric_factor_codes() {
+        let error =
+            SecondFactorInput::new(AuthenticationPolicy::default(), "12a456").expect_err("must fail");
+
+        assert_eq!(
+            error,
+            CredentialValidationError::ControlCharacter {
+                field: "factor_code",
+            }
+        );
+    }
+
+    #[test]
     fn denies_invalid_primary_credentials() {
         let service = AuthenticationService::new(AuthenticationPolicy::default(), AcceptingBackend);
 
@@ -601,6 +1116,203 @@ mod tests {
             }
         );
         assert_eq!(outcome.audit_event.action, "login_mfa_required");
+    }
+
+    #[test]
+    fn second_factor_acceptance_becomes_authenticated_pending_session() {
+        let service = SecondFactorService::new(
+            AuthenticationPolicy::default(),
+            AcceptingSecondFactorVerifier,
+        );
+
+        let outcome = service.verify(
+            &test_context(),
+            "alice@example.com",
+            RequiredSecondFactor::Totp,
+            "123456",
+        );
+
+        assert_eq!(
+            outcome.decision,
+            AuthenticationDecision::AuthenticatedPendingSession {
+                canonical_username: "alice@example.com".to_string(),
+            }
+        );
+        assert_eq!(outcome.audit_event.action, "second_factor_accepted");
+    }
+
+    #[test]
+    fn second_factor_rejection_is_audited_cleanly() {
+        let service = SecondFactorService::new(
+            AuthenticationPolicy::default(),
+            AcceptingSecondFactorVerifier,
+        );
+
+        let outcome = service.verify(
+            &test_context(),
+            "alice@example.com",
+            RequiredSecondFactor::Totp,
+            "999999",
+        );
+
+        assert_eq!(
+            outcome.decision,
+            AuthenticationDecision::Denied {
+                public_reason: PublicFailureReason::InvalidSecondFactor,
+            }
+        );
+        assert_eq!(outcome.audit_event.action, "second_factor_denied");
+    }
+
+    #[test]
+    fn second_factor_backend_failures_become_operator_visible_events() {
+        let service = SecondFactorService::new(
+            AuthenticationPolicy::default(),
+            FailingSecondFactorVerifier,
+        );
+
+        let outcome = service.verify(
+            &test_context(),
+            "alice@example.com",
+            RequiredSecondFactor::Totp,
+            "123456",
+        );
+
+        assert_eq!(
+            outcome.decision,
+            AuthenticationDecision::Denied {
+                public_reason: PublicFailureReason::TemporarilyUnavailable,
+            }
+        );
+        assert_eq!(outcome.audit_event.action, "second_factor_backend_error");
+    }
+
+    #[test]
+    fn doveadm_backend_uses_stdin_and_contextual_auth_info() {
+        let executor = Rc::new(std::cell::RefCell::new(StubCommandExecutor::success(
+            CommandExecution {
+                status_code: 0,
+                stdout:
+                    "passdb: alice@example.com auth succeeded\nextra fields:\n  user=alice@example.com\n"
+                        .to_string(),
+                stderr: String::new(),
+            },
+        )));
+        let backend = DoveadmAuthTestBackend::new(
+            executor.clone(),
+            "/usr/local/bin/doveadm",
+            Some(PathBuf::from("/var/run/dovecot/auth-client")),
+            "imap",
+        );
+
+        let verdict = backend
+            .verify_primary(
+                &test_context(),
+                "alice@example.com",
+                "correct horse battery staple",
+            )
+            .expect("backend should succeed");
+
+        assert_eq!(
+            verdict,
+            PrimaryAuthVerdict::Accept {
+                canonical_username: "alice@example.com".to_string(),
+            }
+        );
+
+        let recorded = executor.borrow();
+        assert_eq!(
+            recorded.program.as_deref(),
+            Some("/usr/local/bin/doveadm")
+        );
+        assert_eq!(
+            recorded.stdin_data.as_deref(),
+            Some("correct horse battery staple\n")
+        );
+        assert_eq!(
+            recorded.args.as_ref().expect("args should be captured"),
+            &vec![
+                "auth".to_string(),
+                "test".to_string(),
+                "-a".to_string(),
+                "/var/run/dovecot/auth-client".to_string(),
+                "-x".to_string(),
+                "service=imap".to_string(),
+                "-x".to_string(),
+                "rip=127.0.0.1".to_string(),
+                "alice@example.com".to_string(),
+            ]
+        );
+    }
+
+    #[test]
+    fn doveadm_failure_exit_is_treated_as_invalid_credentials() {
+        let backend = DoveadmAuthTestBackend::new(
+            Rc::new(std::cell::RefCell::new(StubCommandExecutor::success(CommandExecution {
+                status_code: 77,
+                stdout: String::new(),
+                stderr: "passdb: alice@example.com auth failed\n".to_string(),
+            }))),
+            "/usr/local/bin/doveadm",
+            None,
+            "imap",
+        );
+
+        let verdict = backend
+            .verify_primary(&test_context(), "alice@example.com", "wrong password")
+            .expect("invalid credentials should not be treated as backend errors");
+
+        assert_eq!(verdict, PrimaryAuthVerdict::Reject);
+    }
+
+    #[test]
+    fn renders_audit_quality_log_lines_for_second_factor_events() {
+        let service = SecondFactorService::new(
+            AuthenticationPolicy::default(),
+            AcceptingSecondFactorVerifier,
+        );
+        let logger = Logger::new(LogFormat::Text, LogLevel::Debug);
+
+        let outcome = service.verify(
+            &test_context(),
+            "alice@example.com",
+            RequiredSecondFactor::Totp,
+            "123456",
+        );
+        let rendered = logger.render_with_timestamp(&outcome.audit_event, 888);
+
+        assert_eq!(
+            rendered,
+            "ts=888 level=info category=auth action=second_factor_accepted msg=\"second factor accepted, session issuance pending\" stage=\"second_factor\" result=\"accepted\" canonical_username=\"alice@example.com\" second_factor=\"totp\" request_id=\"req-123\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\""
+        );
+    }
+
+    #[test]
+    #[ignore = "requires a host with doveadm configured against a live Dovecot auth surface"]
+    fn live_doveadm_backend_rejects_invalid_credentials() {
+        if !PathBuf::from("/usr/local/bin/doveadm").exists() {
+            return;
+        }
+
+        let backend = DoveadmAuthTestBackend::new(
+            SystemCommandExecutor,
+            "/usr/local/bin/doveadm",
+            None,
+            "imap",
+        );
+        let context = AuthenticationContext::new(
+            AuthenticationPolicy::default(),
+            "live-invalid-auth",
+            "127.0.0.1",
+            "osmap-live-test",
+        )
+        .expect("live test context should be valid");
+
+        let verdict = backend
+            .verify_primary(&context, "nosuchuser@example.com", "wrongpassword")
+            .expect("invalid credentials should be a normal auth rejection");
+
+        assert_eq!(verdict, PrimaryAuthVerdict::Reject);
     }
 
     #[test]

@@ -81,6 +81,8 @@ Status on March 27, 2026:
 - started with the first authentication slice
 - bounded credential input, primary-auth decision handling, and audit-quality
   auth events are now implemented
+- a real `doveadm auth test` primary-backend path and a second-factor
+  verification stage are now implemented
 - recorded in `AUTHENTICATION_SLICE_BASELINE.md`
 
 Done means:

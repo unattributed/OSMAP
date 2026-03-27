@@ -139,9 +139,16 @@ The preferred sequence is:
 This sequence keeps the project on a thin vertical-slice path instead of a
 horizontal "build every subsystem halfway" path.
 
-WP0, WP1, and WP2 are now in place. The current active implementation slice is
-WP3, beginning with bounded credential handling, primary-auth decision flow,
-and structured auth events before backend and MFA verification are expanded.
+WP0, WP1, and WP2 are now in place. WP3 has advanced from bounded credential
+handling into a real Dovecot-oriented primary-auth path plus a second-factor
+verification stage.
+
+The next active WP3 work should focus on:
+
+- using the existing QEMU lab path for broader auth validation after the now
+  completed narrow host-side `doveadm` verification
+- adding a real TOTP verification backend
+- keeping session issuance out of scope until factor verification is trustworthy
 
 ## Implementation Guardrails
 
@@ -164,6 +171,7 @@ Expected evidence includes:
 - integration notes against the existing mail stack
 - documented constraints discovered during implementation
 - explicit updates to the decision log when major tradeoffs are made
+- isolated validation notes from the QEMU OpenBSD path before wider host use
 
 ## Exit Shape
 

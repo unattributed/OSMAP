@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document records the first WP3 implementation slice for authentication.
+This document records the current WP3 implementation state for authentication.
 
 The goal of this slice is not to complete the entire identity system. The goal
 is to establish bounded credential handling, a clear primary-auth decision flow,
@@ -16,8 +16,11 @@ The current authentication slice provides:
 - bounded validation for auth-audit context such as request identifiers and
   remote addresses
 - a primary credential backend interface
+- a real Dovecot-oriented backend path using `doveadm auth test`
 - a decision model that distinguishes denial from "MFA required"
+- a second-factor verification stage
 - structured auth events for successful and failed primary auth attempts
+- structured auth events for successful and failed second-factor attempts
 
 ## Important Constraint
 
@@ -44,6 +47,14 @@ The current primary-auth slice can produce:
 This is a more honest model than collapsing everything into "login success" or
 "login failure" too early.
 
+The current second-factor slice can produce:
+
+- request denied because the factor input was malformed
+- request denied because the factor check failed
+- request denied because the factor backend was unavailable
+- request accepted to the extent that the user is now authenticated pending
+  session issuance
+
 ## Logging Posture
 
 The current auth slice emits structured auth events that record:
@@ -59,6 +70,15 @@ The current auth slice emits structured auth events that record:
 These events are intended to support later investigation of credential attacks
 and unusual auth behavior.
 
+The event stream now includes separate actions for:
+
+- primary login denied
+- primary login backend failure
+- primary login accepted with MFA required
+- second factor denied
+- second factor backend failure
+- second factor accepted
+
 ## Security Posture
 
 The auth slice follows these rules:
@@ -70,13 +90,52 @@ The auth slice follows these rules:
   auth attempt was normal
 - primary auth acceptance leads to an MFA-required decision rather than an
   authenticated session
+- second-factor success leads to an authenticated-pending-session decision, not
+  a silent implicit session
+
+## Current Backend Integration
+
+The real primary credential verification path currently targets Dovecot through
+`doveadm auth test`.
+
+Why this path was chosen:
+
+- it exists on the live OpenBSD mail host today
+- it tests the actual Dovecot auth surface instead of a mock-only contract
+- it can receive the password over standard input, which avoids putting the
+  password on the command line
+
+The implementation treats:
+
+- exit status `0` plus success output as primary acceptance
+- exit status `77` or explicit auth-failure output as credential rejection
+- other command failures as backend errors
+
+This behavior is grounded in direct testing against `mail.blackbagsecurity.com`
+and should be revalidated in QEMU before wider integration use.
+
+## Validation Status
+
+The current validation state is:
+
+1. local unit and runtime verification completed
+2. narrow OpenBSD host validation completed on `mail.blackbagsecurity.com`
+3. broader isolated validation through the existing QEMU lab runner still
+   remains the preferred next step before higher-risk auth expansion
+
+The host-side validation currently proves two bounded claims:
+
+- the Rust auth slice builds and tests cleanly on the OpenBSD target host
+- the live `doveadm auth test` backend rejects invalid credentials as expected
+
+That is intentionally narrower than claiming the full auth workflow is already
+validated in production-like conditions.
 
 ## What Is Still Missing
 
 This slice does not yet include:
 
-- real Dovecot or mail-stack credential verification
-- TOTP verification
+- a real TOTP secret store or TOTP algorithm backend
 - session issuance
 - auth rate limiting
 - persistent auth-audit storage

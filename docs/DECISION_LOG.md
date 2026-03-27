@@ -168,3 +168,28 @@ auth.
 Username, password, request-id, remote-address, and user-agent inputs are now
 bounded and validated before backend verification so the auth surface starts
 from explicit limits rather than unbounded request data.
+
+### Use `doveadm auth test` as the first real primary-auth integration path
+
+WP3 connects primary credential verification to the Dovecot surface that exists
+today on the OpenBSD mail host. The implementation feeds the password through
+standard input so it is not exposed on the command line.
+
+### Keep second-factor verification separate from session issuance
+
+The current auth flow now has an explicit second-factor stage. Successful factor
+verification yields an authenticated-pending-session result rather than silently
+creating a session as part of the verifier itself.
+
+### Validate auth changes in QEMU before wider host use
+
+The existing OpenBSD QEMU lab path should be the first isolated integration
+target for auth-path validation before broader testing on
+`mail.blackbagsecurity.com`.
+
+### Use a narrow live-host auth rejection test as an early safety check
+
+Once Rust was available on `mail.blackbagsecurity.com`, the project added an
+ignored test that safely validates the real `doveadm auth test` path with
+invalid credentials. This gives us a small real-host proof point without
+pretending broader auth behavior is already production-validated.

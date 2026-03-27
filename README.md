@@ -128,11 +128,13 @@ WP1 and WP2 are now complete: the runtime has a typed configuration model, an
 explicit mutable-state layout, and a small structured logging/error baseline.
 
 The project is not yet production-ready and does not yet have a running public
-prototype. WP3 is now in progress with the first authentication slice: bounded
-credential handling, primary-auth decision flow, and audit-quality auth events.
+prototype. WP3 now includes bounded credential handling, a real
+Dovecot-oriented primary-auth path, a second-factor verification stage, and
+audit-quality auth events.
 
-The next implementation step is to finish WP3 with real backend verification and
-factor-check handling on top of the current runtime foundation.
+The next implementation step is to validate the auth path in isolated OpenBSD
+conditions, add a real TOTP verification backend, and only then move toward
+session issuance.
 
 ---
 
