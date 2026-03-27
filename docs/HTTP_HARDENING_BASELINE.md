@@ -29,7 +29,9 @@ This is a useful baseline, not the final hardening endpoint.
 The current browser runtime enforces:
 
 - bounded request header and body sizes
+- bounded query-field counts
 - bounded form field counts
+- binary-safe multipart request parsing for the current upload path
 - cache suppression for sensitive pages and redirects
 - a restrictive content-security policy
 - `Referrer-Policy: no-referrer`
@@ -67,7 +69,10 @@ keeps those flows inside the same narrow safety posture:
 - they use the plain-text compose projection, not live HTML message content
 - attachment context is surfaced as metadata and warnings, not as silent file
   reattachment
-- the actual outbound submission remains plain-text-first
+- bounded new file uploads are accepted only through the compose form and are
+  handed to the existing submission surface as MIME attachments
+- original-message attachments are still not silently reattached during reply
+  or forward generation
 
 ## nginx-Facing Deployment Shape
 
@@ -124,6 +129,7 @@ Today the process needs to:
 - read and write bounded state under the configured OSMAP state tree
 - execute `/usr/local/bin/doveadm` for auth and mailbox reads
 - execute `/usr/sbin/sendmail` for outbound submission
+- preserve restrictive permissions on session-state files as they are updated
 
 The enforced OpenBSD mode now applies:
 
@@ -132,9 +138,11 @@ The enforced OpenBSD mode now applies:
 - a locked unveil table before steady-state serving begins
 
 The current ruleset is still broader than the final target because the helper
-process model forces compatibility with existing libraries and `/var`-resident
-mail-stack paths. The important change is that confinement is no longer only a
-plan: it now exists as a tested runtime behavior on OpenBSD.
+process model forces compatibility with existing libraries and mail-stack
+runtime paths. The important change is that confinement is no longer only a
+plan: it now exists as a tested runtime behavior on OpenBSD, and the first
+narrowing pass has already replaced a blanket `/var` unveil with helper-specific
+paths.
 
 ## What This Baseline Does Not Yet Claim
 
@@ -143,7 +151,7 @@ This baseline does not mean:
 - public-internet exposure is now the default
 - nginx configuration is finalized for production
 - the current listener is concurrent or high-throughput
-- attachment downloads or uploads are hardened
+- attachment downloads are implemented or hardened
 - CSRF coverage exists beyond the currently implemented form routes
 - the current unveil view is narrow enough for final adoption
 - every live browser workflow is fully proven on the target host

@@ -61,7 +61,8 @@ Current primary documents:
 
 The intent of these documents is operational usefulness, not ceremony. Phase 0
 through Phase 6 documents should stay populated, current, and reviewable as the
-project moves into implementation.
+project moves through implementation, attachment handling, and OpenBSD
+hardening.
 
 Some later-phase or deferred documents remain placeholders so the intended
 documentation map is visible without publishing private notes prematurely.

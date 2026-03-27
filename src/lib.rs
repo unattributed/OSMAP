@@ -9,6 +9,7 @@ pub mod bootstrap;
 pub mod config;
 pub mod error;
 pub mod http;
+pub mod http_form;
 pub mod logging;
 pub mod mailbox;
 pub mod mime;

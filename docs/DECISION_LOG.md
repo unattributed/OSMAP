@@ -428,3 +428,31 @@ for TOTP compatibility. Persisted session identifiers and per-session CSRF
 tokens now use domain-separated SHA-256 derivation from the opaque bearer
 token, which improves the non-TOTP cryptographic baseline without widening the
 runtime design.
+
+### Add bounded new attachment upload before original-message reattachment
+
+The send path now accepts bounded new file uploads and submits them through the
+existing local `sendmail` surface as MIME attachments. That closes a real user
+workflow gap without pretending reply and forward can already reconstruct the
+source message's attachment set.
+
+### Keep multipart parsing separate from the router
+
+The browser runtime now uses a dedicated form-parsing module for URL-encoded
+and multipart compose inputs. This keeps `src/http.rs` from absorbing even more
+protocol and boundary-handling detail while the custom HTTP surface is still
+under active hardening.
+
+### Narrow OpenBSD helper paths based on live host evidence
+
+The enforced `unveil(2)` view no longer exposes all of `/var` and `/etc`.
+Instead it now uses helper-specific paths such as `/etc/dovecot`,
+`/etc/mailer.conf`, `/var/spool/postfix`, and `/var/dovecot`, which is a more
+honest and reviewable boundary for the current host-integrated prototype.
+
+### Add `fattr` to the steady-state OpenBSD promise set
+
+Live enforced-host testing showed that session refresh updates file permissions
+on temp session records during save. The confinement policy now includes
+`fattr` explicitly so the reviewed promise set matches the real file-state
+behavior instead of relying on an accidentally incomplete abstraction.

@@ -8,6 +8,8 @@
 
 use std::path::PathBuf;
 
+use sha2::{Digest, Sha256};
+
 use crate::auth::{
     AuthenticationContext, CommandExecutor, SystemCommandExecutor,
 };
@@ -29,6 +31,21 @@ pub const DEFAULT_SUBJECT_MAX_LEN: usize = 998;
 /// Conservative upper bound for one composed message body.
 pub const DEFAULT_BODY_MAX_LEN: usize = 65_536;
 
+/// Conservative upper bound for the number of uploaded attachments.
+pub const DEFAULT_MAX_ATTACHMENTS: usize = 3;
+
+/// Conservative upper bound for one uploaded attachment body.
+pub const DEFAULT_ATTACHMENT_MAX_BYTES: usize = 256 * 1024;
+
+/// Conservative upper bound for total uploaded attachment bytes.
+pub const DEFAULT_TOTAL_ATTACHMENT_MAX_BYTES: usize = 768 * 1024;
+
+/// Conservative upper bound for one uploaded attachment file name.
+pub const DEFAULT_ATTACHMENT_FILENAME_MAX_LEN: usize = 128;
+
+/// Conservative upper bound for one uploaded attachment content type.
+pub const DEFAULT_ATTACHMENT_CONTENT_TYPE_MAX_LEN: usize = 128;
+
 /// Conservative upper bound for one automatically generated compose notice.
 pub const DEFAULT_COMPOSE_NOTICE_MAX_LEN: usize = 512;
 
@@ -39,6 +56,11 @@ pub struct ComposePolicy {
     pub max_recipients: usize,
     pub subject_max_len: usize,
     pub body_max_len: usize,
+    pub max_attachments: usize,
+    pub attachment_max_bytes: usize,
+    pub total_attachment_max_bytes: usize,
+    pub attachment_filename_max_len: usize,
+    pub attachment_content_type_max_len: usize,
     pub compose_notice_max_len: usize,
 }
 
@@ -49,6 +71,11 @@ impl Default for ComposePolicy {
             max_recipients: DEFAULT_MAX_RECIPIENTS,
             subject_max_len: DEFAULT_SUBJECT_MAX_LEN,
             body_max_len: DEFAULT_BODY_MAX_LEN,
+            max_attachments: DEFAULT_MAX_ATTACHMENTS,
+            attachment_max_bytes: DEFAULT_ATTACHMENT_MAX_BYTES,
+            total_attachment_max_bytes: DEFAULT_TOTAL_ATTACHMENT_MAX_BYTES,
+            attachment_filename_max_len: DEFAULT_ATTACHMENT_FILENAME_MAX_LEN,
+            attachment_content_type_max_len: DEFAULT_ATTACHMENT_CONTENT_TYPE_MAX_LEN,
             compose_notice_max_len: DEFAULT_COMPOSE_NOTICE_MAX_LEN,
         }
     }
@@ -81,12 +108,51 @@ pub struct ComposeDraft {
     pub context_notice: Option<String>,
 }
 
+/// One uploaded attachment accepted by the current bounded compose slice.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct UploadedAttachment {
+    pub filename: String,
+    pub content_type: String,
+    pub body: Vec<u8>,
+}
+
+impl UploadedAttachment {
+    /// Validates and stores one uploaded attachment for later submission.
+    pub fn new(
+        policy: ComposePolicy,
+        filename: impl Into<String>,
+        content_type: impl Into<String>,
+        body: Vec<u8>,
+    ) -> Result<Self, ComposeError> {
+        let filename = filename.into();
+        let content_type = normalize_attachment_content_type(
+            policy,
+            &content_type.into(),
+        )?;
+
+        validate_attachment_filename(policy, &filename)?;
+        validate_attachment_body(policy, &body)?;
+
+        Ok(Self {
+            filename,
+            content_type,
+            body,
+        })
+    }
+
+    /// Returns the current attachment payload size in bytes.
+    pub fn size_bytes(&self) -> usize {
+        self.body.len()
+    }
+}
+
 /// A bounded compose request for the current outbound message slice.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ComposeRequest {
     pub recipients: Vec<String>,
     pub subject: String,
     pub body: String,
+    pub attachments: Vec<UploadedAttachment>,
 }
 
 impl ComposeRequest {
@@ -97,6 +163,17 @@ impl ComposeRequest {
         subject: impl Into<String>,
         body: impl Into<String>,
     ) -> Result<Self, ComposeError> {
+        Self::new_with_attachments(policy, recipients_text, subject, body, Vec::new())
+    }
+
+    /// Validates the compose request plus uploaded attachments.
+    pub fn new_with_attachments(
+        policy: ComposePolicy,
+        recipients_text: impl Into<String>,
+        subject: impl Into<String>,
+        body: impl Into<String>,
+        attachments: Vec<UploadedAttachment>,
+    ) -> Result<Self, ComposeError> {
         let recipients_text = recipients_text.into();
         let subject = subject.into();
         let body = body.into();
@@ -104,11 +181,13 @@ impl ComposeRequest {
         let recipients = parse_recipients(policy, &recipients_text)?;
         validate_subject(policy, &subject)?;
         validate_body(policy, &body)?;
+        validate_attachment_set(policy, &attachments)?;
 
         Ok(Self {
             recipients,
             subject,
             body,
+            attachments,
         })
     }
 }
@@ -245,9 +324,10 @@ where
         canonical_username: &str,
         request: &ComposeRequest,
     ) -> Result<(), SubmissionBackendError> {
+        let submission_message = build_submission_message(canonical_username, request);
         let execution = self
             .command_executor
-            .run_with_stdin(
+            .run_with_stdin_bytes(
                 self.sendmail_path.to_string_lossy().as_ref(),
                 &[
                     "-t".to_string(),
@@ -255,7 +335,7 @@ where
                     "-f".to_string(),
                     canonical_username.to_string(),
                 ],
-                &build_submission_message(canonical_username, request),
+                &submission_message,
             )
             .map_err(|error| SubmissionBackendError {
                 backend: "sendmail-submission",
@@ -319,6 +399,11 @@ where
                 )
                 .with_field("session_id", validated_session.record.session_id.clone())
                 .with_field("recipient_count", request.recipients.len().to_string())
+                .with_field("attachment_count", request.attachments.len().to_string())
+                .with_field(
+                    "attachment_bytes_total",
+                    total_attachment_bytes(&request.attachments).to_string(),
+                )
                 .with_field(
                     "has_subject",
                     if request.subject.is_empty() { "false" } else { "true" },
@@ -342,6 +427,7 @@ where
                     validated_session.record.canonical_username.clone(),
                 )
                 .with_field("session_id", validated_session.record.session_id.clone())
+                .with_field("attachment_count", request.attachments.len().to_string())
                 .with_field(
                     "public_reason",
                     SubmissionPublicFailureReason::TemporarilyUnavailable.as_str(),
@@ -479,6 +565,125 @@ fn validate_body(policy: ComposePolicy, body: &str) -> Result<(), ComposeError> 
     }
 
     Ok(())
+}
+
+/// Validates the current uploaded attachment set as one bounded group.
+fn validate_attachment_set(
+    policy: ComposePolicy,
+    attachments: &[UploadedAttachment],
+) -> Result<(), ComposeError> {
+    if attachments.len() > policy.max_attachments {
+        return Err(ComposeError {
+            reason: format!(
+                "attachment count exceeded maximum of {}",
+                policy.max_attachments
+            ),
+        });
+    }
+
+    let total_bytes = total_attachment_bytes(attachments);
+    if total_bytes > policy.total_attachment_max_bytes {
+        return Err(ComposeError {
+            reason: format!(
+                "attachment bytes exceeded maximum of {}",
+                policy.total_attachment_max_bytes
+            ),
+        });
+    }
+
+    Ok(())
+}
+
+/// Validates one uploaded attachment file name for header-safe transport.
+fn validate_attachment_filename(
+    policy: ComposePolicy,
+    filename: &str,
+) -> Result<(), ComposeError> {
+    if filename.is_empty() {
+        return Err(ComposeError {
+            reason: "attachment filename must not be empty".to_string(),
+        });
+    }
+
+    if filename.len() > policy.attachment_filename_max_len {
+        return Err(ComposeError {
+            reason: format!(
+                "attachment filename exceeded maximum length of {} bytes",
+                policy.attachment_filename_max_len
+            ),
+        });
+    }
+
+    if filename.chars().any(char::is_control) {
+        return Err(ComposeError {
+            reason: "attachment filename contained control characters".to_string(),
+        });
+    }
+
+    if filename.contains('/') || filename.contains('\\') {
+        return Err(ComposeError {
+            reason: "attachment filename must not contain path separators".to_string(),
+        });
+    }
+
+    if !filename.chars().all(is_allowed_attachment_filename_char) {
+        return Err(ComposeError {
+            reason: "attachment filename contained unsupported characters".to_string(),
+        });
+    }
+
+    Ok(())
+}
+
+/// Validates one uploaded attachment body against the configured byte budget.
+fn validate_attachment_body(
+    policy: ComposePolicy,
+    body: &[u8],
+) -> Result<(), ComposeError> {
+    if body.len() > policy.attachment_max_bytes {
+        return Err(ComposeError {
+            reason: format!(
+                "attachment body exceeded maximum length of {} bytes",
+                policy.attachment_max_bytes
+            ),
+        });
+    }
+
+    Ok(())
+}
+
+/// Normalizes and validates one uploaded attachment content type.
+fn normalize_attachment_content_type(
+    policy: ComposePolicy,
+    content_type: &str,
+) -> Result<String, ComposeError> {
+    let trimmed = content_type.trim().to_ascii_lowercase();
+    if trimmed.is_empty() {
+        return Ok("application/octet-stream".to_string());
+    }
+
+    if trimmed.len() > policy.attachment_content_type_max_len {
+        return Err(ComposeError {
+            reason: format!(
+                "attachment content type exceeded maximum length of {} bytes",
+                policy.attachment_content_type_max_len
+            ),
+        });
+    }
+
+    let mut parts = trimmed.split('/');
+    let top_level = parts.next().unwrap_or_default();
+    let subtype = parts.next().unwrap_or_default();
+    if top_level.is_empty()
+        || subtype.is_empty()
+        || parts.next().is_some()
+        || !top_level.chars().all(is_allowed_content_type_token_char)
+        || !subtype.chars().all(is_allowed_content_type_token_char)
+    {
+        return Ok("application/octet-stream".to_string());
+    }
+
+    Ok(trimmed)
 }
 
 /// Builds the first reply draft from a rendered message.
@@ -686,7 +891,16 @@ fn describe_attachment_for_forward(attachment: &AttachmentMetadata) -> String {
 }
 
 /// Builds the RFC 5322-ish message handed to the local sendmail surface.
-fn build_submission_message(canonical_username: &str, request: &ComposeRequest) -> String {
+fn build_submission_message(canonical_username: &str, request: &ComposeRequest) -> Vec<u8> {
+    if request.attachments.is_empty() {
+        return build_plain_text_submission_message(canonical_username, request).into_bytes();
+    }
+
+    build_multipart_submission_message(canonical_username, request).into_bytes()
+}
+
+/// Builds the plain-text-only message handed to the local sendmail surface.
+fn build_plain_text_submission_message(canonical_username: &str, request: &ComposeRequest) -> String {
     let body = normalize_body_line_endings(&request.body);
     format!(
         "From: {canonical_username}\r\nTo: {}\r\nSubject: {}\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n{}",
@@ -696,9 +910,128 @@ fn build_submission_message(canonical_username: &str, request: &ComposeRequest) 
     )
 }
 
+/// Builds the multipart/mixed submission body for attachment-bearing requests.
+fn build_multipart_submission_message(
+    canonical_username: &str,
+    request: &ComposeRequest,
+) -> String {
+    let boundary = build_multipart_boundary(canonical_username, request);
+    let mut output = String::new();
+    output.push_str(&format!(
+        "From: {canonical_username}\r\nTo: {}\r\nSubject: {}\r\nMIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary=\"{}\"\r\n\r\n",
+        request.recipients.join(", "),
+        request.subject,
+        boundary,
+    ));
+    output.push_str(&format!(
+        "--{}\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n{}\r\n",
+        boundary,
+        normalize_body_line_endings(&request.body),
+    ));
+
+    for attachment in &request.attachments {
+        output.push_str(&format!(
+            "--{}\r\nContent-Type: {}; name=\"{}\"\r\nContent-Disposition: attachment; filename=\"{}\"\r\nContent-Transfer-Encoding: base64\r\n\r\n{}\r\n",
+            boundary,
+            attachment.content_type,
+            escape_mime_parameter_value(&attachment.filename),
+            escape_mime_parameter_value(&attachment.filename),
+            base64_encode_wrapped(&attachment.body),
+        ));
+    }
+
+    output.push_str(&format!("--{}--\r\n", boundary));
+    output
+}
+
 /// Normalizes the body to CRLF so the submission surface sees stable text.
 fn normalize_body_line_endings(body: &str) -> String {
     body.replace("\r\n", "\n").replace('\r', "\n").replace('\n', "\r\n")
+}
+
+/// Builds a deterministic multipart boundary from the current submission.
+///
+/// The boundary is long and derived from the current message shape so it is
+/// unlikely to collide with ordinary message content while staying reviewable.
+fn build_multipart_boundary(canonical_username: &str, request: &ComposeRequest) -> String {
+    let mut digest = Sha256::new();
+    digest.update(canonical_username.as_bytes());
+    digest.update(b"\0");
+    for recipient in &request.recipients {
+        digest.update(recipient.as_bytes());
+        digest.update(b"\0");
+    }
+    digest.update(request.subject.as_bytes());
+    digest.update(b"\0");
+    digest.update(request.body.as_bytes());
+    digest.update(b"\0");
+    for attachment in &request.attachments {
+        digest.update(attachment.filename.as_bytes());
+        digest.update(b"\0");
+        digest.update(attachment.content_type.as_bytes());
+        digest.update(b"\0");
+        digest.update((attachment.body.len() as u64).to_be_bytes());
+    }
+
+    let digest = digest.finalize();
+    format!("osmap-mixed-{}", hex_encode(&digest[..12]))
+}
+
+/// Escapes a MIME parameter value for quoted-string transport.
+fn escape_mime_parameter_value(value: &str) -> String {
+    value.replace('\\', "\\\\").replace('\"', "\\\"")
+}
+
+/// Encodes one attachment body as MIME base64 wrapped at 76 characters.
+fn base64_encode_wrapped(bytes: &[u8]) -> String {
+    const BASE64: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut output = String::new();
+    let mut line_len = 0;
+
+    for chunk in bytes.chunks(3) {
+        let b0 = chunk[0];
+        let b1 = *chunk.get(1).unwrap_or(&0);
+        let b2 = *chunk.get(2).unwrap_or(&0);
+        let indices = [
+            (b0 >> 2) as usize,
+            (((b0 & 0x03) << 4) | (b1 >> 4)) as usize,
+            (((b1 & 0x0f) << 2) | (b2 >> 6)) as usize,
+            (b2 & 0x3f) as usize,
+        ];
+
+        let padding = 3 - chunk.len();
+        for (index, value) in indices.into_iter().enumerate() {
+            if line_len == 76 {
+                output.push_str("\r\n");
+                line_len = 0;
+            }
+
+            if index >= 4 - padding {
+                output.push('=');
+            } else {
+                output.push(BASE64[value] as char);
+            }
+            line_len += 1;
+        }
+    }
+
+    output
+}
+
+/// Returns the total attachment size for the current request.
+fn total_attachment_bytes(attachments: &[UploadedAttachment]) -> usize {
+    attachments.iter().map(UploadedAttachment::size_bytes).sum()
+}
+
+/// Encodes bytes as lower-case hex for stable MIME boundary construction.
+fn hex_encode(bytes: &[u8]) -> String {
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+    let mut output = String::with_capacity(bytes.len() * 2);
+    for byte in bytes {
+        output.push(HEX[(byte >> 4) as usize] as char);
+        output.push(HEX[(byte & 0x0f) as usize] as char);
+    }
+    output
 }
 
 /// Allowed characters for the local part in the current narrow mailbox parser.
@@ -733,6 +1066,16 @@ fn is_allowed_email_domain_char(ch: char) -> bool {
     ch.is_ascii_alphanumeric() || matches!(ch, '-' | '.')
 }
 
+/// Allowed characters for the current narrow uploaded-attachment file names.
+fn is_allowed_attachment_filename_char(ch: char) -> bool {
+    ch.is_ascii_alphanumeric() || matches!(ch, '.' | '_' | '-' | '+' | ' ' | '(' | ')')
+}
+
+/// Allowed token characters for a narrow MIME content type parser.
+fn is_allowed_content_type_token_char(ch: char) -> bool {
+    ch.is_ascii_alphanumeric() || matches!(ch, '!' | '#' | '$' | '&' | '^' | '_' | '.' | '+' | '-')
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -749,7 +1092,7 @@ mod tests {
         execution: Result<CommandExecution, CommandExecutionError>,
         program: Option<String>,
         args: Option<Vec<String>>,
-        stdin_data: Option<String>,
+        stdin_data: Option<Vec<u8>>,
     }
 
     impl StubCommandExecutor {
@@ -764,16 +1107,16 @@ mod tests {
     }
 
     impl CommandExecutor for Rc<RefCell<StubCommandExecutor>> {
-        fn run_with_stdin(
+        fn run_with_stdin_bytes(
             &self,
             program: &str,
             args: &[String],
-            stdin_data: &str,
+            stdin_data: &[u8],
         ) -> Result<CommandExecution, CommandExecutionError> {
             let mut state = self.borrow_mut();
             state.program = Some(program.to_string());
             state.args = Some(args.to_vec());
-            state.stdin_data = Some(stdin_data.to_string());
+            state.stdin_data = Some(stdin_data.to_vec());
             state.execution.clone()
         }
     }
@@ -908,6 +1251,46 @@ mod tests {
     }
 
     #[test]
+    fn accepts_bounded_uploaded_attachments() {
+        let request = ComposeRequest::new_with_attachments(
+            ComposePolicy::default(),
+            "bob@example.com",
+            "Quarterly report",
+            "Hello world",
+            vec![UploadedAttachment::new(
+                ComposePolicy::default(),
+                "report.txt",
+                "text/plain",
+                b"quarterly report body".to_vec(),
+            )
+            .expect("attachment should be valid")],
+        )
+        .expect("compose request with attachment should parse");
+
+        assert_eq!(request.attachments.len(), 1);
+        assert_eq!(request.attachments[0].filename, "report.txt");
+        assert_eq!(request.attachments[0].content_type, "text/plain");
+    }
+
+    #[test]
+    fn rejects_attachment_filenames_with_path_separators() {
+        let error = UploadedAttachment::new(
+            ComposePolicy::default(),
+            "../report.txt",
+            "text/plain",
+            b"report".to_vec(),
+        )
+        .expect_err("path-like attachment names must fail");
+
+        assert_eq!(
+            error,
+            ComposeError {
+                reason: "attachment filename must not contain path separators".to_string(),
+            }
+        );
+    }
+
+    #[test]
     fn builds_reply_draft_from_rendered_message() {
         let draft = ComposeDraft::from_rendered_message(
             ComposePolicy::default(),
@@ -983,12 +1366,54 @@ mod tests {
         );
         let stdin_data = recorded
             .stdin_data
-            .as_deref()
+            .as_ref()
             .expect("stdin data should be captured");
-        assert!(stdin_data.contains("From: alice@example.com\r\n"));
-        assert!(stdin_data.contains("To: bob@example.com\r\n"));
-        assert!(stdin_data.contains("Subject: Test message\r\n"));
-        assert!(stdin_data.ends_with("Hello world\r\nSecond line\r\n"));
+        let stdin_text =
+            String::from_utf8(stdin_data.clone()).expect("plain-text submission should be utf-8");
+        assert!(stdin_text.contains("From: alice@example.com\r\n"));
+        assert!(stdin_text.contains("To: bob@example.com\r\n"));
+        assert!(stdin_text.contains("Subject: Test message\r\n"));
+        assert!(stdin_text.ends_with("Hello world\r\nSecond line\r\n"));
+    }
+
+    #[test]
+    fn sendmail_backend_builds_multipart_message_for_uploaded_attachments() {
+        let executor = Rc::new(RefCell::new(StubCommandExecutor::success(CommandExecution {
+            status_code: 0,
+            stdout: String::new(),
+            stderr: String::new(),
+        })));
+        let backend = SendmailSubmissionBackend::new(executor.clone(), "/usr/sbin/sendmail");
+        let request = ComposeRequest::new_with_attachments(
+            ComposePolicy::default(),
+            "bob@example.com",
+            "Test attachment message",
+            "See attached report.",
+            vec![UploadedAttachment::new(
+                ComposePolicy::default(),
+                "report.bin",
+                "application/octet-stream",
+                vec![0x00, 0xff, 0x10, 0x41],
+            )
+            .expect("attachment should be valid")],
+        )
+        .expect("request should be valid");
+
+        backend
+            .submit_message("alice@example.com", &request)
+            .expect("multipart submission should succeed");
+
+        let stdin_data = executor
+            .borrow()
+            .stdin_data
+            .clone()
+            .expect("stdin data should be captured");
+        let stdin_text = String::from_utf8(stdin_data).expect("multipart body should be utf-8");
+
+        assert!(stdin_text.contains("Content-Type: multipart/mixed; boundary=\"osmap-mixed-"));
+        assert!(stdin_text.contains("filename=\"report.bin\""));
+        assert!(stdin_text.contains("Content-Transfer-Encoding: base64"));
+        assert!(stdin_text.contains("AP8QQQ=="));
     }
 
     #[test]
@@ -1023,7 +1448,7 @@ mod tests {
         let rendered = logger.render_with_timestamp(&outcome.audit_event, 8080);
         assert_eq!(
             rendered,
-            "ts=8080 level=info category=submission action=message_submitted msg=\"outbound message submission completed\" canonical_username=\"alice@example.com\" session_id=\"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\" recipient_count=\"1\" has_subject=\"true\" request_id=\"req-send\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\""
+            "ts=8080 level=info category=submission action=message_submitted msg=\"outbound message submission completed\" canonical_username=\"alice@example.com\" session_id=\"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\" recipient_count=\"1\" attachment_count=\"0\" attachment_bytes_total=\"0\" has_subject=\"true\" request_id=\"req-send\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\""
         );
     }
 

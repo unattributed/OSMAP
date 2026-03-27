@@ -20,8 +20,9 @@
   MIME-aware classification and attachment metadata surfacing, but it does not
   yet provide attachment retrieval or download behavior
 - The implementation now has a first outbound send path with reply and forward
-  draft generation, but it does not yet support draft persistence or
-  attachment-upload/submission behavior
+  draft generation plus bounded new attachment upload/submission behavior, but
+  it does not yet support draft persistence or original-message attachment
+  reattachment
 - The implementation now has a plain-text-first rendering layer, but it does
   not yet define HTML mail sanitization, encoded-header handling, or inline
   resource policy
@@ -37,12 +38,13 @@
   send-path, and confinement enforcement details still need proof through
   implementation
 - The OpenBSD runtime now has an enforced confinement mode, but its helper
-  compatibility view is still broader than the final target
+  compatibility view is still broader than the final target even after the
+  first narrowing pass away from a blanket `/var` unveil
 - The current browser-driven invalid-login path on `mail.blackbagsecurity.com`
   produces the same `doveadm` backend error with confinement disabled and
   enabled, so that host-specific browser-auth path still needs refinement
 - The SDLC and release rules are now defined, but they have not yet been proven
   against a full live implementation pipeline
 - The project now has an implementation plan and work breakdown, but there is
-  not yet a full browser proof of concept covering attachment submission and
+  not yet a full browser proof of concept covering attachment download and
   hardened deployment end to end

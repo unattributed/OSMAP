@@ -13,10 +13,10 @@ use crate::config::{AppConfig, LogLevel, OpenbsdConfinementMode};
 use crate::logging::{EventCategory, LogEvent, Logger};
 
 /// The promise set used while `unveil(2)` calls are still permitted.
-const OPENBSD_PROMISES_BEFORE_LOCK: &str = "stdio rpath wpath cpath inet proc exec unveil";
+const OPENBSD_PROMISES_BEFORE_LOCK: &str = "stdio rpath wpath cpath fattr inet proc exec unveil";
 
 /// The narrower promise set kept after the filesystem view is locked.
-const OPENBSD_PROMISES_AFTER_LOCK: &str = "stdio rpath wpath cpath inet proc exec";
+const OPENBSD_PROMISES_AFTER_LOCK: &str = "stdio rpath wpath cpath fattr inet proc exec";
 
 /// One unveiled path plus the permissions granted to it.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -48,15 +48,22 @@ impl OpenbsdConfinementPlan {
         add_rule(&mut rules, &config.state_layout.totp_secret_dir, "rwc");
 
         // The parent process still delegates to existing system tools, so the
-        // helper binaries and the common system paths they rely on must remain
-        // visible until those helpers are replaced with in-process code.
+        // helper binaries and the specific runtime/configuration paths they
+        // rely on must remain visible until those helpers are replaced with
+        // in-process code.
         add_rule(&mut rules, Path::new("/usr/local/bin/doveadm"), "x");
         add_rule(&mut rules, Path::new("/usr/sbin/sendmail"), "x");
+        add_rule(&mut rules, Path::new("/usr/local/sbin/sendmail"), "x");
         add_rule(&mut rules, Path::new("/usr/lib"), "rx");
         add_rule(&mut rules, Path::new("/usr/libexec"), "rx");
         add_rule(&mut rules, Path::new("/usr/local/lib"), "rx");
-        add_rule(&mut rules, Path::new("/etc"), "r");
-        add_rule(&mut rules, Path::new("/var"), "rwc");
+        add_rule(&mut rules, Path::new("/etc/dovecot"), "r");
+        add_rule(&mut rules, Path::new("/etc/mail"), "r");
+        add_rule(&mut rules, Path::new("/etc/mailer.conf"), "r");
+        add_rule(&mut rules, Path::new("/var/dovecot"), "rwc");
+        add_rule(&mut rules, Path::new("/var/log/dovecot.log"), "rw");
+        add_rule(&mut rules, Path::new("/var/spool/postfix"), "rwc");
+        add_rule(&mut rules, Path::new("/var/spool/smtpd"), "rwc");
         add_rule(&mut rules, Path::new("/dev/null"), "rw");
 
         Self {
@@ -281,6 +288,17 @@ mod tests {
                 .iter()
                 .any(|rule| rule.path == PathBuf::from("/var/lib/osmap/sessions")
                     && rule.permissions.contains('w'))
+        );
+        assert!(
+            plan.unveil_rules
+                .iter()
+                .any(|rule| rule.path == PathBuf::from("/usr/local/sbin/sendmail")
+                    && rule.permissions.contains('x'))
+        );
+        assert!(
+            !plan.unveil_rules
+                .iter()
+                .any(|rule| rule.path == PathBuf::from("/var"))
         );
     }
 

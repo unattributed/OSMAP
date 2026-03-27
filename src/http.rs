@@ -17,6 +17,9 @@ use crate::auth::{
     SystemCommandExecutor,
 };
 use crate::config::{AppConfig, AppRunMode, LogLevel, RuntimeEnvironment};
+use crate::http_form::{
+    is_multipart_form_data, parse_compose_form, parse_query_string, parse_urlencoded_form,
+};
 use crate::logging::{EventCategory, LogEvent, Logger};
 use crate::mailbox::{
     DoveadmMailboxListBackend, DoveadmMessageListBackend, DoveadmMessageViewBackend, MailboxEntry,
@@ -28,7 +31,7 @@ use crate::openbsd::apply_runtime_confinement;
 use crate::rendering::{PlainTextMessageRenderer, RenderedMessageView, RenderingPolicy};
 use crate::send::{
     ComposeDraft, ComposeIntent, ComposePolicy, ComposeRequest, SendmailSubmissionBackend,
-    SubmissionDecision, SubmissionPublicFailureReason, SubmissionService,
+    SubmissionDecision, SubmissionPublicFailureReason, SubmissionService, UploadedAttachment,
 };
 use crate::session::{
     FileSessionStore, SessionError, SessionService, SessionToken, SystemRandomSource,
@@ -42,6 +45,12 @@ pub const DEFAULT_HTTP_MAX_HEADER_BYTES: usize = 16 * 1024;
 /// Conservative upper bound for a small HTML form request body.
 pub const DEFAULT_HTTP_MAX_BODY_BYTES: usize = 8 * 1024;
 
+/// Conservative upper bound for query fields in one request target.
+pub const DEFAULT_HTTP_MAX_QUERY_FIELDS: usize = 16;
+
+/// Conservative upper bound for a multipart upload request body.
+pub const DEFAULT_HTTP_MAX_UPLOAD_BODY_BYTES: usize = 1024 * 1024;
+
 /// Conservative upper bound for parsed HTML form fields.
 pub const DEFAULT_HTTP_MAX_FORM_FIELDS: usize = 16;
 
@@ -54,7 +63,9 @@ static REQUEST_COUNTER: AtomicU64 = AtomicU64::new(1);
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HttpPolicy {
     pub max_header_bytes: usize,
+    pub max_query_fields: usize,
     pub max_body_bytes: usize,
+    pub max_upload_body_bytes: usize,
     pub max_form_fields: usize,
     pub session_cookie_name: &'static str,
     pub secure_session_cookie: bool,
@@ -66,7 +77,9 @@ impl HttpPolicy {
     pub fn from_config(config: &AppConfig) -> Self {
         Self {
             max_header_bytes: DEFAULT_HTTP_MAX_HEADER_BYTES,
+            max_query_fields: DEFAULT_HTTP_MAX_QUERY_FIELDS,
             max_body_bytes: DEFAULT_HTTP_MAX_BODY_BYTES,
+            max_upload_body_bytes: DEFAULT_HTTP_MAX_UPLOAD_BODY_BYTES,
             max_form_fields: DEFAULT_HTTP_MAX_FORM_FIELDS,
             session_cookie_name: DEFAULT_SESSION_COOKIE_NAME,
             secure_session_cookie: config.environment != RuntimeEnvironment::Development,
@@ -82,7 +95,9 @@ impl Default for HttpPolicy {
     fn default() -> Self {
         Self {
             max_header_bytes: DEFAULT_HTTP_MAX_HEADER_BYTES,
+            max_query_fields: DEFAULT_HTTP_MAX_QUERY_FIELDS,
             max_body_bytes: DEFAULT_HTTP_MAX_BODY_BYTES,
+            max_upload_body_bytes: DEFAULT_HTTP_MAX_UPLOAD_BODY_BYTES,
             max_form_fields: DEFAULT_HTTP_MAX_FORM_FIELDS,
             session_cookie_name: DEFAULT_SESSION_COOKIE_NAME,
             secure_session_cookie: false,
@@ -105,7 +120,7 @@ pub struct HttpRequest {
     pub path: String,
     pub query_params: BTreeMap<String, String>,
     pub headers: BTreeMap<String, String>,
-    pub body: String,
+    pub body: Vec<u8>,
 }
 
 /// A small HTTP response that can be written directly to a socket.
@@ -237,6 +252,7 @@ pub trait BrowserGateway {
         recipients: &str,
         subject: &str,
         body: &str,
+        attachments: &[UploadedAttachment],
     ) -> BrowserSendOutcome;
 }
 
@@ -766,12 +782,14 @@ impl BrowserGateway for RuntimeBrowserGateway {
         recipients: &str,
         subject: &str,
         body: &str,
+        attachments: &[UploadedAttachment],
     ) -> BrowserSendOutcome {
-        let request = match ComposeRequest::new(
+        let request = match ComposeRequest::new_with_attachments(
             ComposePolicy::default(),
             recipients,
             subject,
             body,
+            attachments.to_vec(),
         ) {
             Ok(request) => request,
             Err(error) => {
@@ -921,7 +939,7 @@ where
         request: &HttpRequest,
         context: &AuthenticationContext,
     ) -> HandledHttpResponse {
-        let form = match parse_form_urlencoded(
+        let form = match parse_urlencoded_form(
             &request.body,
             self.policy.max_form_fields,
             self.policy.max_body_bytes,
@@ -1336,10 +1354,12 @@ where
         request: &HttpRequest,
         context: &AuthenticationContext,
     ) -> HandledHttpResponse {
-        let form = match parse_form_urlencoded(
+        let parsed_form = match parse_compose_form(
             &request.body,
+            request.headers.get("content-type").map(String::as_str),
             self.policy.max_form_fields,
-            self.policy.max_body_bytes,
+            self.policy.max_upload_body_bytes,
+            ComposePolicy::default(),
         ) {
             Ok(form) => form,
             Err(error) => {
@@ -1359,6 +1379,8 @@ where
                 };
             }
         };
+        let form = parsed_form.fields;
+        let attachments = parsed_form.attachments;
 
         let (validated_session, mut audit_events) =
             match self.require_validated_session(request, context) {
@@ -1378,7 +1400,14 @@ where
         let body = form.get("body").cloned().unwrap_or_default();
         let outcome = self
             .gateway
-            .send_message(context, &validated_session, &recipients, &subject, &body);
+            .send_message(
+                context,
+                &validated_session,
+                &recipients,
+                &subject,
+                &body,
+                &attachments,
+            );
         audit_events.extend(outcome.audit_events);
 
         match outcome.decision {
@@ -1422,7 +1451,7 @@ where
         request: &HttpRequest,
         context: &AuthenticationContext,
     ) -> HandledHttpResponse {
-        let form = match parse_form_urlencoded(
+        let form = match parse_urlencoded_form(
             &request.body,
             self.policy.max_form_fields,
             self.policy.max_body_bytes,
@@ -1668,7 +1697,7 @@ fn read_http_request(stream: &mut TcpStream, policy: &HttpPolicy) -> Result<Http
         buffer.extend_from_slice(&chunk[..read]);
 
         if header_end.is_none() {
-            if buffer.len() > policy.max_header_bytes + policy.max_body_bytes {
+            if buffer.len() > policy.max_header_bytes + policy.max_upload_body_bytes {
                 return Err(HttpRequestError {
                     reason: "request exceeded maximum allowed size".to_string(),
                 });
@@ -1689,7 +1718,9 @@ fn read_http_request(stream: &mut TcpStream, policy: &HttpPolicy) -> Result<Http
 
         if let (Some(end), Some(content_length)) = (header_end, content_length) {
             let expected_len = end + 4 + content_length;
-            if content_length > policy.max_body_bytes {
+            if content_length
+                > allowed_request_body_bytes(parse_content_type_header(&buffer[..end]), policy)
+            {
                 return Err(HttpRequestError {
                     reason: "http body exceeded maximum length".to_string(),
                 });
@@ -1700,15 +1731,20 @@ fn read_http_request(stream: &mut TcpStream, policy: &HttpPolicy) -> Result<Http
         }
     }
 
-    let request_text = String::from_utf8(buffer).map_err(|_| HttpRequestError {
-        reason: "request bytes were not valid utf-8".to_string(),
-    })?;
-    parse_http_request(&request_text, policy)
+    parse_http_request_bytes(&buffer, policy)
 }
 
 /// Parses a raw HTTP request into the bounded request shape used by the router.
 pub fn parse_http_request(input: &str, policy: &HttpPolicy) -> Result<HttpRequest, HttpRequestError> {
-    let header_end = input.find("\r\n\r\n").ok_or_else(|| HttpRequestError {
+    parse_http_request_bytes(input.as_bytes(), policy)
+}
+
+/// Parses raw HTTP request bytes into the bounded request shape used by the router.
+pub fn parse_http_request_bytes(
+    input: &[u8],
+    policy: &HttpPolicy,
+) -> Result<HttpRequest, HttpRequestError> {
+    let header_end = find_header_end(input).ok_or_else(|| HttpRequestError {
         reason: "missing http header terminator".to_string(),
     })?;
 
@@ -1718,9 +1754,11 @@ pub fn parse_http_request(input: &str, policy: &HttpPolicy) -> Result<HttpReques
         });
     }
 
-    let header_block = &input[..header_end];
+    let header_block = std::str::from_utf8(&input[..header_end]).map_err(|_| HttpRequestError {
+        reason: "http headers were not valid utf-8".to_string(),
+    })?;
     let body = &input[header_end + 4..];
-    if body.len() > policy.max_body_bytes {
+    if body.len() > allowed_request_body_bytes(parse_content_type_header(&input[..header_end]), policy) {
         return Err(HttpRequestError {
             reason: "http body exceeded maximum length".to_string(),
         });
@@ -1762,7 +1800,7 @@ pub fn parse_http_request(input: &str, policy: &HttpPolicy) -> Result<HttpReques
         }
     };
 
-    let (path, query_params) = parse_request_target(target)?;
+    let (path, query_params) = parse_request_target(target, policy.max_query_fields)?;
     let mut headers = BTreeMap::new();
     for line in lines {
         let Some((name, value)) = line.split_once(':') else {
@@ -1793,7 +1831,7 @@ pub fn parse_http_request(input: &str, policy: &HttpPolicy) -> Result<HttpReques
         path,
         query_params,
         headers,
-        body: body.to_string(),
+        body: body.to_vec(),
     })
 }
 
@@ -1817,8 +1855,33 @@ fn parse_content_length(header_text: &str) -> Result<usize, HttpRequestError> {
     Ok(0)
 }
 
+/// Extracts the raw content-type header from one raw header block when present.
+fn parse_content_type_header(header_bytes: &[u8]) -> Option<&str> {
+    let header_text = std::str::from_utf8(header_bytes).ok()?;
+    for line in header_text.lines().skip(1) {
+        if let Some((name, value)) = line.split_once(':') {
+            if name.trim().eq_ignore_ascii_case("content-type") {
+                return Some(value.trim());
+            }
+        }
+    }
+
+    None
+}
+
+/// Returns the allowed request-body budget for the current content type.
+fn allowed_request_body_bytes(content_type: Option<&str>, policy: &HttpPolicy) -> usize {
+    match content_type {
+        Some(value) if is_multipart_form_data(value) => policy.max_upload_body_bytes,
+        _ => policy.max_body_bytes,
+    }
+}
+
 /// Parses the request target into a path and decoded query map.
-fn parse_request_target(target: &str) -> Result<(String, BTreeMap<String, String>), HttpRequestError> {
+fn parse_request_target(
+    target: &str,
+    max_query_fields: usize,
+) -> Result<(String, BTreeMap<String, String>), HttpRequestError> {
     let (path, query) = target.split_once('?').unwrap_or((target, ""));
     if path.is_empty() || !path.starts_with('/') {
         return Err(HttpRequestError {
@@ -1826,85 +1889,12 @@ fn parse_request_target(target: &str) -> Result<(String, BTreeMap<String, String
         });
     }
 
-    Ok((path.to_string(), parse_urlencoded_map(query, usize::MAX)?))
-}
-
-/// Parses a URL-encoded form body into a bounded key/value map.
-fn parse_form_urlencoded(
-    body: &str,
-    max_fields: usize,
-    max_bytes: usize,
-) -> Result<BTreeMap<String, String>, HttpRequestError> {
-    if body.len() > max_bytes {
-        return Err(HttpRequestError {
-            reason: "form body exceeded maximum length".to_string(),
-        });
-    }
-
-    parse_urlencoded_map(body, max_fields)
-}
-
-/// Parses a URL-encoded string into a key/value map.
-fn parse_urlencoded_map(
-    input: &str,
-    max_fields: usize,
-) -> Result<BTreeMap<String, String>, HttpRequestError> {
-    let mut output = BTreeMap::new();
-
-    if input.is_empty() {
-        return Ok(output);
-    }
-
-    for (index, pair) in input.split('&').enumerate() {
-        if index >= max_fields {
-            return Err(HttpRequestError {
-                reason: "form field count exceeded maximum".to_string(),
-            });
-        }
-
-        let (key, value) = pair.split_once('=').unwrap_or((pair, ""));
-        output.insert(percent_decode(key)?, percent_decode(value)?);
-    }
-
-    Ok(output)
-}
-
-/// Decodes one URL-encoded segment into UTF-8 text.
-fn percent_decode(input: &str) -> Result<String, HttpRequestError> {
-    let mut bytes = Vec::with_capacity(input.len());
-    let mut chars = input.as_bytes().iter().copied();
-
-    while let Some(byte) = chars.next() {
-        match byte {
-            b'+' => bytes.push(b' '),
-            b'%' => {
-                let high = chars.next().ok_or_else(|| HttpRequestError {
-                    reason: "truncated percent-encoded sequence".to_string(),
-                })?;
-                let low = chars.next().ok_or_else(|| HttpRequestError {
-                    reason: "truncated percent-encoded sequence".to_string(),
-                })?;
-                bytes.push((hex_value(high)? << 4) | hex_value(low)?);
-            }
-            _ => bytes.push(byte),
-        }
-    }
-
-    String::from_utf8(bytes).map_err(|_| HttpRequestError {
-        reason: "url-encoded field was not valid utf-8".to_string(),
-    })
-}
-
-/// Decodes one hexadecimal ASCII byte used in percent encoding.
-fn hex_value(byte: u8) -> Result<u8, HttpRequestError> {
-    match byte {
-        b'0'..=b'9' => Ok(byte - b'0'),
-        b'a'..=b'f' => Ok(byte - b'a' + 10),
-        b'A'..=b'F' => Ok(byte - b'A' + 10),
-        _ => Err(HttpRequestError {
-            reason: "invalid percent-encoded byte".to_string(),
-        }),
-    }
+    Ok((
+        path.to_string(),
+        parse_query_string(query, max_query_fields).map_err(|error| HttpRequestError {
+            reason: error.reason,
+        })?,
+    ))
 }
 
 /// Reads the current session cookie from the request if present.
@@ -2191,7 +2181,7 @@ fn render_compose_page(
     };
 
     format!(
-        "<nav><a href=\"/mailboxes\">Back to mailboxes</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>{}</h1><p>Signed in as <strong>{}</strong>.</p><p class=\"muted\">This send slice uses the local submission surface, keeps the browser body plain-text-first, and does not attach files automatically yet.</p>{}{}{}<form method=\"post\" action=\"/send\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><label>To<input type=\"text\" name=\"to\" value=\"{}\" autocomplete=\"off\"></label><label>Subject<input type=\"text\" name=\"subject\" value=\"{}\"></label><label>Body<textarea name=\"body\">{}</textarea></label><button type=\"submit\">Send Message</button></form>",
+        "<nav><a href=\"/mailboxes\">Back to mailboxes</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>{}</h1><p>Signed in as <strong>{}</strong>.</p><p class=\"muted\">This send slice uses the local submission surface, keeps the browser body plain-text-first, accepts bounded new file uploads, and still does not reattach files from the source message automatically.</p>{}{}{}<form method=\"post\" action=\"/send\" enctype=\"multipart/form-data\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><label>To<input type=\"text\" name=\"to\" value=\"{}\" autocomplete=\"off\"></label><label>Subject<input type=\"text\" name=\"subject\" value=\"{}\"></label><label>Body<textarea name=\"body\">{}</textarea></label><label>Attachments<input type=\"file\" name=\"attachment\" multiple></label><button type=\"submit\">Send Message</button></form>",
         escape_html(csrf_token),
         escape_html(heading),
         escape_html(canonical_username),
@@ -2522,8 +2512,9 @@ mod tests {
             recipients: &str,
             _subject: &str,
             _body: &str,
+            attachments: &[UploadedAttachment],
         ) -> BrowserSendOutcome {
-            if recipients == "bob@example.com" {
+            if recipients == "bob@example.com" && attachments.len() <= 1 {
                 BrowserSendOutcome {
                     decision: BrowserSendDecision::Submitted,
                     audit_events: vec![LogEvent::new(
@@ -2554,12 +2545,26 @@ mod tests {
     }
 
     fn request(method: &str, path: &str, headers: &[(&str, &str)], body: &str) -> HttpRequest {
+        request_bytes(method, path, headers, body.as_bytes())
+    }
+
+    fn request_bytes(
+        method: &str,
+        path: &str,
+        headers: &[(&str, &str)],
+        body: &[u8],
+    ) -> HttpRequest {
         let mut raw = format!("{method} {path} HTTP/1.1\r\nHost: localhost\r\n");
         for (name, value) in headers {
             raw.push_str(&format!("{name}: {value}\r\n"));
         }
-        raw.push_str(&format!("Content-Length: {}\r\n\r\n{}", body.len(), body));
-        parse_http_request(&raw, &HttpPolicy::default()).expect("request should parse")
+        raw.push_str(&format!("Content-Length: {}\r\n\r\n", body.len()));
+
+        let mut raw_bytes = raw.into_bytes();
+        raw_bytes.extend_from_slice(body);
+
+        parse_http_request_bytes(&raw_bytes, &HttpPolicy::default())
+            .expect("request should parse")
     }
 
     #[test]
@@ -2785,6 +2790,54 @@ mod tests {
                     ),
                 ],
                 "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&to=bob%40example.com&subject=Test&body=Hello",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 303);
+        assert!(response
+            .response
+            .headers
+            .iter()
+            .any(|(name, value)| name == "Location" && value == "/compose?sent=1"));
+    }
+
+    #[test]
+    fn send_route_accepts_bounded_multipart_attachment_upload() {
+        let body = concat!(
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"csrf_token\"\r\n\r\n",
+            "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"to\"\r\n\r\n",
+            "bob@example.com\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"subject\"\r\n\r\n",
+            "Quarterly report\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"body\"\r\n\r\n",
+            "See attachment.\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"attachment\"; filename=\"report.bin\"\r\n",
+            "Content-Type: application/octet-stream\r\n\r\n",
+        );
+        let mut multipart_body = body.as_bytes().to_vec();
+        multipart_body.extend_from_slice(&[0x00, 0xff, 0x10, 0x41]);
+        multipart_body.extend_from_slice(b"\r\n--test-boundary--\r\n");
+
+        let response = app().handle_request(
+            &request_bytes(
+                "POST",
+                "/send",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                    ("Content-Type", "multipart/form-data; boundary=test-boundary"),
+                ],
+                &multipart_body,
             ),
             "127.0.0.1",
         );

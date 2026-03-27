@@ -156,11 +156,15 @@ deployment guidance and an early OpenBSD confinement map. The next send-path
 step is now in place too: server-side reply and forward draft generation with
 attachment-aware notices built from the current message-view path. The runtime
 now also has an operator-controlled OpenBSD confinement mode with real
-`pledge(2)` and `unveil(2)` enforcement on OpenBSD.
+`pledge(2)` and `unveil(2)` enforcement on OpenBSD. The next send-path step is
+now in place too: bounded new attachment upload and multipart submission
+behavior. The OpenBSD confinement view has also had its first real narrowing
+pass away from a blanket `/var` unveil, and live-host validation exposed and
+closed a real `fattr` promise gap in the session-refresh path.
 
-The next implementation step is to extend this send path toward actual
-attachment upload and submission behavior, and to narrow the helper-compatible
-OpenBSD confinement view while validating more live browser flows.
+The next implementation step is to harden and verify attachment download
+behavior, keep tightening the helper-compatible OpenBSD view, and continue
+reducing risk in the custom HTTP/browser runtime.
 
 ---
 

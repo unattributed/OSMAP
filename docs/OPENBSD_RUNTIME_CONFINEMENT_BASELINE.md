@@ -37,14 +37,16 @@ This is the first enforced runtime boundary, not the final confinement story.
 
 The current enforced serve-mode process uses:
 
-- `stdio rpath wpath cpath inet proc exec unveil` before the unveil table is
+- `stdio rpath wpath cpath fattr inet proc exec unveil` before the unveil table
+  is locked
+- `stdio rpath wpath cpath fattr inet proc exec` after the unveil table is
   locked
-- `stdio rpath wpath cpath inet proc exec` after the unveil table is locked
 
 This reflects the current application truth:
 
 - serve HTTP on loopback TCP
 - read and write bounded local state
+- preserve restrictive permissions on session-state temp files during writes
 - fork and execute helper programs
 - keep the process small enough that the promise set remains reviewable
 
@@ -56,16 +58,22 @@ The current unveil plan includes:
 - configured runtime, session, audit, cache, and TOTP-secret directories
 - `/usr/local/bin/doveadm`
 - `/usr/sbin/sendmail`
+- `/usr/local/sbin/sendmail`
 - `/usr/lib`
 - `/usr/libexec`
 - `/usr/local/lib`
-- `/etc`
-- `/var`
+- `/etc/dovecot`
+- `/etc/mail`
+- `/etc/mailer.conf`
+- `/var/dovecot`
+- `/var/log/dovecot.log`
+- `/var/spool/postfix`
+- `/var/spool/smtpd`
 - `/dev/null`
 
-This is intentionally broader than the final target because the current
-prototype still delegates important work to external helper programs with their
-own library and host-integration expectations.
+This is still broader than the final target, but it is materially narrower than
+the previous blanket `/etc` plus `/var` view because the current prototype now
+has enough live-host evidence to describe helper dependencies more precisely.
 
 ## Why The View Is Still Broad
 
@@ -79,8 +87,8 @@ Those helpers inherit the parent process's unveiled filesystem view. That means
 the first enforced unveil policy must remain broad enough for:
 
 - system libraries
-- local configuration files
-- mail-stack runtime paths under `/var`
+- helper-specific configuration files
+- helper-specific runtime paths under `/var`
 
 This is not the end goal. It is the smallest honest enforcement layer that can
 be applied today without pretending the helper dependency problem is already
@@ -93,9 +101,10 @@ The current confinement layer has been validated through:
 - local Linux build and test verification, including the non-OpenBSD
   configuration path
 - OpenBSD host `cargo test` on `mail.blackbagsecurity.com`
-- OpenBSD host `cargo test -- --ignored` on `mail.blackbagsecurity.com`
 - OpenBSD host `serve` startup under `OSMAP_OPENBSD_CONFINEMENT_MODE=enforce`
 - OpenBSD host `GET /healthz` under enforced confinement
+- live invalid-login handling under enforced confinement on
+  `mail.blackbagsecurity.com`
 
 The enforced OpenBSD run logged:
 
@@ -105,7 +114,7 @@ The enforced OpenBSD run logged:
 - HTTP server started
 - successful health check handling
 
-## Observed Caveat On `mail.blackbagsecurity.com`
+## Observed Caveat And Fix On `mail.blackbagsecurity.com`
 
 A browser-driven invalid login smoke test on `mail.blackbagsecurity.com`
 produced the same `doveadm auth test` backend failure both with confinement
@@ -121,6 +130,12 @@ That distinction matters:
 - the exact live browser-auth path on that host still needs refinement before
   it can be called production-ready
 
+Additional live validation also exposed one real confinement gap: the session
+layer updates file permissions on temp session records during save, which
+requires `fattr` in the steady-state promise set. The current promise model now
+includes that capability explicitly rather than relying on an untested smaller
+set.
+
 ## What This Baseline Does Not Yet Claim
 
 This baseline does not mean:
@@ -128,7 +143,7 @@ This baseline does not mean:
 - the current unveil policy is narrow enough for final adoption
 - helper-process dependencies have been eliminated
 - browser auth is fully proven end to end on the target host
-- attachment upload or richer send behavior are confinement-tested
+- richer send helper execution is fully proven under enforced confinement
 - QEMU and host confinement validation are complete for every user workflow
 
 The next confinement work should focus on narrowing the helper-compatible

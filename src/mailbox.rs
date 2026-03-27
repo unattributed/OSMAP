@@ -1355,11 +1355,11 @@ mod tests {
     }
 
     impl CommandExecutor for Rc<std::cell::RefCell<StubCommandExecutor>> {
-        fn run_with_stdin(
+        fn run_with_stdin_bytes(
             &self,
             program: &str,
             args: &[String],
-            _stdin_data: &str,
+            _stdin_data: &[u8],
         ) -> Result<CommandExecution, CommandExecutionError> {
             let mut state = self.borrow_mut();
             state.program = Some(program.to_string());

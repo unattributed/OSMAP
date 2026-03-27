@@ -485,12 +485,21 @@ pub struct CommandExecutionError {
 
 /// Runs an external command with supplied standard input.
 pub trait CommandExecutor {
+    fn run_with_stdin_bytes(
+        &self,
+        program: &str,
+        args: &[String],
+        stdin_data: &[u8],
+    ) -> Result<CommandExecution, CommandExecutionError>;
+
     fn run_with_stdin(
         &self,
         program: &str,
         args: &[String],
         stdin_data: &str,
-    ) -> Result<CommandExecution, CommandExecutionError>;
+    ) -> Result<CommandExecution, CommandExecutionError> {
+        self.run_with_stdin_bytes(program, args, stdin_data.as_bytes())
+    }
 }
 
 /// Executes external commands via the system process API.
@@ -498,11 +507,11 @@ pub trait CommandExecutor {
 pub struct SystemCommandExecutor;
 
 impl CommandExecutor for SystemCommandExecutor {
-    fn run_with_stdin(
+    fn run_with_stdin_bytes(
         &self,
         program: &str,
         args: &[String],
-        stdin_data: &str,
+        stdin_data: &[u8],
     ) -> Result<CommandExecution, CommandExecutionError> {
         let mut child = Command::new(program)
             .args(args)
@@ -517,7 +526,7 @@ impl CommandExecutor for SystemCommandExecutor {
         if let Some(stdin) = child.stdin.as_mut() {
             use std::io::Write as _;
             stdin
-                .write_all(stdin_data.as_bytes())
+                .write_all(stdin_data)
                 .map_err(|error| CommandExecutionError {
                     reason: format!("failed to write command stdin: {error}"),
                 })?;
@@ -1009,16 +1018,19 @@ mod tests {
     }
 
     impl CommandExecutor for Rc<std::cell::RefCell<StubCommandExecutor>> {
-        fn run_with_stdin(
+        fn run_with_stdin_bytes(
             &self,
             program: &str,
             args: &[String],
-            stdin_data: &str,
+            stdin_data: &[u8],
         ) -> Result<CommandExecution, CommandExecutionError> {
             let mut state = self.borrow_mut();
             state.program = Some(program.to_string());
             state.args = Some(args.to_vec());
-            state.stdin_data = Some(stdin_data.to_string());
+            state.stdin_data = Some(
+                String::from_utf8(stdin_data.to_vec())
+                    .expect("auth test stdin should remain valid utf-8"),
+            );
             state.execution.clone()
         }
     }
