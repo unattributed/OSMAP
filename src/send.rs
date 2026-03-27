@@ -807,7 +807,9 @@ mod tests {
     fn validated_session_fixture() -> ValidatedSession {
         ValidatedSession {
             record: SessionRecord {
-                session_id: "0123456789abcdef0123456789abcdef01234567".to_string(),
+                session_id:
+                    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+                        .to_string(),
                 canonical_username: "alice@example.com".to_string(),
                 issued_at: 10,
                 expires_at: 100,
@@ -816,7 +818,9 @@ mod tests {
                 remote_addr: "127.0.0.1".to_string(),
                 user_agent: "Firefox/Test".to_string(),
                 factor: crate::auth::RequiredSecondFactor::Totp,
-                csrf_token: "fedcba9876543210fedcba9876543210fedcba98".to_string(),
+                csrf_token:
+                    "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
+                        .to_string(),
             },
             audit_event: LogEvent::new(
                 LogLevel::Info,
@@ -1019,7 +1023,7 @@ mod tests {
         let rendered = logger.render_with_timestamp(&outcome.audit_event, 8080);
         assert_eq!(
             rendered,
-            "ts=8080 level=info category=submission action=message_submitted msg=\"outbound message submission completed\" canonical_username=\"alice@example.com\" session_id=\"0123456789abcdef0123456789abcdef01234567\" recipient_count=\"1\" has_subject=\"true\" request_id=\"req-send\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\""
+            "ts=8080 level=info category=submission action=message_submitted msg=\"outbound message submission completed\" canonical_username=\"alice@example.com\" session_id=\"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\" recipient_count=\"1\" has_subject=\"true\" request_id=\"req-send\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\""
         );
     }
 

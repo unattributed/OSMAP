@@ -9,7 +9,7 @@ use std::io::Write as _;
 use std::path::PathBuf;
 
 use getrandom::getrandom;
-use sha1::{Digest, Sha1};
+use sha2::{Digest, Sha256};
 
 use crate::auth::{AuthenticationContext, RequiredSecondFactor};
 use crate::logging::{EventCategory, LogEvent};
@@ -24,11 +24,11 @@ pub const SESSION_TOKEN_HEX_LEN: usize = SESSION_TOKEN_BYTES * 2;
 /// Conservative maximum length for presented session tokens.
 pub const MAX_SESSION_TOKEN_LEN: usize = 128;
 
-/// Fixed hex length for the SHA-1-derived persisted session identifier.
-pub const SESSION_ID_HEX_LEN: usize = 40;
+/// Fixed hex length for the SHA-256-derived persisted session identifier.
+pub const SESSION_ID_HEX_LEN: usize = 64;
 
 /// Fixed hex length for the persisted CSRF token format.
-pub const CSRF_TOKEN_HEX_LEN: usize = 40;
+pub const CSRF_TOKEN_HEX_LEN: usize = 64;
 
 /// Describes the persisted session metadata visible to operators.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -461,14 +461,26 @@ where
 
 /// Derives the persisted session id from an opaque token.
 fn session_id_from_token(token: &str) -> String {
-    let digest = Sha1::digest(token.as_bytes());
-    hex_encode(&digest)
+    derive_session_hex("session-id", token)
 }
 
 /// Derives a stable CSRF token from the issued bearer token.
 fn csrf_token_from_session_token(token: &str) -> String {
-    let digest = Sha1::digest(format!("csrf:{token}").as_bytes());
-    hex_encode(&digest)
+    derive_session_hex("csrf", token)
+}
+
+/// Derives one stable SHA-256-based hex value from a session token.
+///
+/// The browser token is already high-entropy and opaque. This helper keeps the
+/// persisted identifiers deterministic without storing the raw bearer token on
+/// disk, and it domain-separates session and CSRF derivations so the values are
+/// not interchangeable.
+fn derive_session_hex(label: &str, token: &str) -> String {
+    let mut digest = Sha256::new();
+    digest.update(label.as_bytes());
+    digest.update(b":");
+    digest.update(token.as_bytes());
+    hex_encode(&digest.finalize())
 }
 
 /// Serializes a session record into a small line-oriented format.
@@ -868,8 +880,12 @@ mod tests {
     #[test]
     fn parses_serialized_session_records() {
         let record = SessionRecord {
-            session_id: "0123456789abcdef0123456789abcdef01234567".to_string(),
-            csrf_token: "fedcba9876543210fedcba9876543210fedcba98".to_string(),
+            session_id:
+                "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+                    .to_string(),
+            csrf_token:
+                "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
+                    .to_string(),
             canonical_username: "alice@example.com".to_string(),
             issued_at: 1,
             expires_at: 2,

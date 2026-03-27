@@ -28,7 +28,7 @@ This is the first usable session core, not the final browser/session design.
 The current implementation uses:
 
 - a high-entropy random browser token
-- a SHA-1-derived persisted session identifier
+- a SHA-256-derived persisted session identifier
 - one file-backed session record per active or historical session
 - one per-session CSRF token stored with the bounded session record
 - explicit `issued_at`, `expires_at`, `last_seen_at`, and `revoked_at` fields
@@ -46,7 +46,9 @@ The current token model follows these rules:
 - the browser token is hex-encoded for transport simplicity
 - presented tokens must match the exact expected format and length
 - debug output redacts the bearer token
-- the on-disk store keeps only the hash-derived session identifier
+- the on-disk store keeps only the SHA-256-derived session identifier
+- the CSRF token is derived from the same bearer token with a separate label so
+  it remains stable for the session without reusing the session identifier
 
 This does not make a stolen session harmless, but it does avoid casually
 storing raw bearer tokens in local files.
@@ -134,6 +136,7 @@ The current session slice deliberately favors explicitness over convenience:
 - session lifetime is bounded by configuration
 - logout is a real revocation path
 - raw bearer tokens are not written to the file-backed store
+- non-required SHA-1 is no longer used in session or CSRF derivation
 - the browser runtime uses a strict cookie posture around the session token
 - session metadata is small enough to inspect and test directly
 - session issuance still depends on a completed primary-auth plus TOTP path

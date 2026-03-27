@@ -2224,8 +2224,12 @@ mod tests {
     fn validated_session_fixture() -> ValidatedSession {
         ValidatedSession {
             record: crate::session::SessionRecord {
-                session_id: "0123456789abcdef0123456789abcdef01234567".to_string(),
-                csrf_token: "fedcba9876543210fedcba9876543210fedcba98".to_string(),
+                session_id:
+                    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+                        .to_string(),
+                csrf_token:
+                    "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
+                        .to_string(),
                 canonical_username: "alice@example.com".to_string(),
                 issued_at: 10,
                 expires_at: 100,

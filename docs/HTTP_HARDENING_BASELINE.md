@@ -52,6 +52,8 @@ That token is:
 - required for `POST /send`
 - required for `POST /logout`
 - compared with a constant-time byte comparison helper
+- derived with a separate SHA-256-based label from the bearer token so it does
+  not reuse the persisted session identifier value
 
 This model keeps CSRF tied to the existing session lifecycle instead of adding
 an unrelated browser-state store.

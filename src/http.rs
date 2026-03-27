@@ -2297,8 +2297,12 @@ mod tests {
         fn validated_session() -> ValidatedSession {
             ValidatedSession {
                 record: SessionRecord {
-                    session_id: "0123456789abcdef0123456789abcdef01234567".to_string(),
-                    csrf_token: "fedcba9876543210fedcba9876543210fedcba98".to_string(),
+                    session_id:
+                        "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+                            .to_string(),
+                    csrf_token:
+                        "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
+                            .to_string(),
                     canonical_username: "alice@example.com".to_string(),
                     issued_at: 10,
                     expires_at: 100,
@@ -2780,7 +2784,7 @@ mod tests {
                         "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                     ),
                 ],
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba98&to=bob%40example.com&subject=Test&body=Hello",
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&to=bob%40example.com&subject=Test&body=Hello",
             ),
             "127.0.0.1",
         );
@@ -2806,7 +2810,7 @@ mod tests {
                         "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                     ),
                 ],
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba98",
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210",
             ),
             "127.0.0.1",
         );

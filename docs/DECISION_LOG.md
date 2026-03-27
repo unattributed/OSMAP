@@ -420,3 +420,11 @@ The current browser-driven invalid-login path on `mail.blackbagsecurity.com`
 produced the same `doveadm` backend error with confinement disabled and
 enabled. That behavior should be tracked as a host/browser integration caveat,
 not misclassified as a confinement regression.
+
+### Remove non-required SHA-1 from session and CSRF derivation
+
+The browser session layer should keep HMAC-SHA1 only where standards require it
+for TOTP compatibility. Persisted session identifiers and per-session CSRF
+tokens now use domain-separated SHA-256 derivation from the opaque bearer
+token, which improves the non-TOTP cryptographic baseline without widening the
+runtime design.
