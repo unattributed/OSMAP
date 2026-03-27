@@ -53,6 +53,8 @@ The likely architecture direction is:
 - Do not trade maintainability for feature ambition
 - Do not couple design decisions to hidden private notes without creating a
   public-safe equivalent
+- Prefer architectures that can take advantage of OpenBSD-native confinement
+  mechanisms such as `pledge(2)` and `unveil(2)` where practical
 
 ## Immediate Next Architectural Questions
 

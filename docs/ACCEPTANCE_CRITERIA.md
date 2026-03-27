@@ -37,6 +37,19 @@ Phase 2 is acceptable when all of the following are true:
 - The operator can answer "what exactly does Version 1 include" without
   ambiguity
 
+## Phase 3 Acceptance Criteria
+
+Phase 3 is acceptable when all of the following are true:
+
+- adversary assumptions are stated explicitly
+- trust boundaries are documented clearly enough to constrain architecture work
+- abuse scenarios are identified for account takeover, submission abuse, and
+  content-driven attack paths
+- identity and session expectations are written down as design requirements
+- public exposure is treated as a controlled decision with prerequisites, not an
+  assumption
+- residual risks are acknowledged rather than hand-waved away
+
 ## Current Status On March 27, 2026
 
 Phase 0:
@@ -58,3 +71,10 @@ Phase 2:
   are now defined in `PRODUCT_REQUIREMENTS_V1.md`
 - The remaining work for later phases is to validate those requirements against
   the security model and architecture rather than continue product-scope drift
+
+Phase 3:
+
+- the repository now contains a formal security-model baseline, an identity and
+  authentication baseline, and an internet-exposure gate checklist
+- later phases should treat these as constraints to design against rather than
+  restarting threat-model debates from scratch

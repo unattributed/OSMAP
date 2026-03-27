@@ -46,3 +46,27 @@ mail access in the browser.
 `docs/DECISION_LOG.md` should be updated as meaningful phase decisions are made.
 It is a live project control document, not an after-action summary written only
 at the end of a phase.
+
+### Define Phase 3 around adversary-aware design
+
+Phase 3 treats credential attacks, account takeover, submission abuse, message
+content abuse, and local pivot risks as first-class design constraints. The goal
+is to prevent avoidable classes of security failure before architecture and code
+work begin.
+
+### Make identity and session handling a first-class subsystem
+
+Version 1 browser authentication is not treated as a cosmetic login screen. MFA,
+session lifecycle, revocation, and session visibility are now explicit security
+requirements that later phases must preserve.
+
+### Treat public exposure as an approval gate, not a default assumption
+
+The project keeps the VPN-first model as a valid deployment posture until
+monitoring, abuse controls, and incident readiness justify broader exposure.
+
+### Prefer designs that can leverage OpenBSD-native confinement
+
+Later architecture work should favor designs that can practically use
+OpenBSD-specific hardening primitives such as `pledge(2)` and `unveil(2)`,
+especially in security-sensitive backend or session-handling components.
