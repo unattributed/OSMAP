@@ -135,3 +135,8 @@ The current live-host outcome is intentionally mixed:
 This document describes the least-privilege operator path, the first live host
 that proves part of it, and the remaining identity-boundary problem that still
 needs a cleaner answer than `doas`.
+
+The selected next-step answer is now documented separately in
+`MAILBOX_READ_HELPER_MODEL.md`: keep auth-socket least privilege in place, but
+move mailbox reads behind a local-only helper boundary instead of widening the
+web-facing runtime.

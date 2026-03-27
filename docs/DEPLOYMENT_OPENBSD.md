@@ -178,5 +178,13 @@ Current live validation there also shows one remaining host-side blocker:
   `vmail` uid/gid boundary, so successful least-privilege mailbox reads are not
   yet proven for `_osmap`
 
+The selected next-step deployment answer is therefore:
+
+- keep the web-facing OSMAP runtime as `_osmap`
+- introduce a dedicated local-only mailbox-read helper boundary
+- let that helper hold the mailbox-read identity the host currently requires
+- expose the helper over a narrowly permissioned Unix socket instead of
+  widening the web-facing runtime
+
 This is more likely to produce a system that OpenBSD operators, and eventually
 potential downstream packagers, would consider credible.

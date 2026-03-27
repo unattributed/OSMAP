@@ -568,3 +568,17 @@ The current post-auth live-host blocker is no longer auth-socket reachability.
 It is Dovecot's virtual-mail identity model: mailbox helpers resolve to
 `uid=2000(vmail)` and `gid=2000(vmail)`, which an unprivileged `_osmap`
 process cannot assume without widening authority.
+
+### Keep the web-facing runtime unprivileged and move mailbox reads behind a helper boundary
+
+The selected next-step answer to the Dovecot mailbox identity boundary is not
+to run the web-facing OSMAP service as `vmail` and not to introduce `doas` into
+the request path. The web-facing runtime should remain unprivileged while
+mailbox reads move behind a dedicated local helper boundary.
+
+### Treat direct `doveadm` mailbox execution from the web process as a prototype bridge
+
+The current direct `doveadm` mailbox-read path remains useful for a bounded
+prototype because it already has validation, bounded parsing, and audit seams.
+It should no longer be treated as the likely final least-privilege shape on the
+current host.

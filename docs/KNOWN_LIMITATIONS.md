@@ -51,6 +51,9 @@
   host's current Dovecot virtual-user model still resolves mailbox access to
   `uid=2000(vmail)` and `gid=2000(vmail)`, which blocks least-privilege
   mailbox helpers from running successfully as `_osmap`
+- the current direct `doveadm` mailbox-read path remains a prototype bridge;
+  the selected least-privilege next step is a dedicated local mailbox-read
+  helper boundary, but that helper does not yet exist
 - The current synthetic session-gated attachment request under enforced mode on
   `mail.blackbagsecurity.com` now reaches the route, validates the session, and
   updates session state without the previous Dovecot stats-writer noise, but

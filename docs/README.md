@@ -47,6 +47,7 @@ Current primary documents:
 - `AUTHENTICATION_SLICE_BASELINE.md`
 - `SESSION_MANAGEMENT_MODEL.md`
 - `MAILBOX_LISTING_SLICE_BASELINE.md`
+- `MAILBOX_READ_HELPER_MODEL.md`
 - `MESSAGE_LIST_SLICE_BASELINE.md`
 - `MESSAGE_VIEW_SLICE_BASELINE.md`
 - `RENDERING_POLICY_BASELINE.md`
@@ -63,8 +64,8 @@ Current primary documents:
 
 The intent of these documents is operational usefulness, not ceremony. Phase 0
 through Phase 6 documents should stay populated, current, and reviewable as the
-project moves through implementation, attachment handling, and OpenBSD
-hardening.
+project moves through implementation, mailbox-helper refinement, attachment
+handling, and OpenBSD hardening.
 
 Some later-phase or deferred documents remain placeholders so the intended
 documentation map is visible without publishing private notes prematurely.

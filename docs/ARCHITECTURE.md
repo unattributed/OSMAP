@@ -44,6 +44,11 @@ This intentionally avoids:
 - a broad microservice architecture
 - replacing the current mail stack in Version 1
 
+One implementation refinement is now explicitly preferred inside the
+application-to-mail boundary: mailbox reads should move behind a dedicated
+local-only helper boundary rather than remain direct `doveadm` execution from
+the web-facing runtime.
+
 ## Component Diagram
 
 ```mermaid
@@ -100,6 +105,8 @@ Responsibilities:
 - request validation and authorization
 - audit event generation
 - safe rendering policy for HTML mail and attachments
+- orchestration of a local-only mailbox-read helper boundary when mailbox
+  operations require mail-storage authority the web process should not hold
 
 Non-responsibilities:
 
@@ -133,6 +140,23 @@ Responsibilities retained by the current stack:
 - IMAP mailbox access and auth-adjacent behavior in Dovecot
 - SMTP submission and outbound message flow in Postfix
 - existing anti-abuse and filtering paths in the broader mail environment
+
+### Mailbox Read Helper Boundary
+
+The current prototype still executes mailbox helpers directly from the web
+process. That is now treated as a prototype bridge, not the likely final
+least-privilege shape on the current host.
+
+The preferred next implementation step is:
+
+- keep the web-facing OSMAP runtime unprivileged
+- move mailbox-read execution behind a local-only helper boundary
+- let that helper hold only the mailbox-read authority the current host still
+  requires
+
+This preserves the architecture's "small app over existing mail substrate"
+direction while avoiding a broader privilege model for the browser-facing
+service.
 
 ## Service Boundaries
 
@@ -172,6 +196,8 @@ final code contracts.
 - a bounded IMAP-facing integration path for mailbox operations
 - a bounded submission-facing integration path for sending mail
 - no assumption that the browser app becomes the new canonical mail authority
+- for the current host, the likely mailbox-read path is now a local helper
+  boundary between the web runtime and the existing Dovecot-backed read surface
 
 ### Application To Local State
 
@@ -219,6 +245,12 @@ Integration principles:
 
 This means the app is effectively a controlled translation and policy layer
 between the browser and the existing mail services.
+
+For mailbox reads specifically, the next likely stable form is:
+
+- web runtime as policy and session authority
+- local mailbox-read helper as the holder of mail-storage execution authority
+- existing Dovecot-backed mail substrate remaining authoritative
 
 ## Deployment Topology
 

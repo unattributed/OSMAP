@@ -168,9 +168,11 @@ headers and conservative transfer-decoding support.
 
 The next implementation steps are to keep tightening the helper-compatible
 OpenBSD view, continue reducing correctness and denial-of-service risk in the
-custom HTTP/browser runtime, expand positive-login and post-auth live-host
-coverage, and keep narrowing the dedicated least-privilege Dovecot auth socket
-deployment path that is now validated on `mail.blackbagsecurity.com`.
+custom HTTP/browser runtime, implement the selected mailbox-read helper
+boundary so the web-facing runtime does not need mailbox-storage authority
+directly, expand positive post-auth live-host coverage through that helper, and
+keep narrowing the OpenBSD deployment shape that is now partially validated on
+`mail.blackbagsecurity.com`.
 
 ---
 

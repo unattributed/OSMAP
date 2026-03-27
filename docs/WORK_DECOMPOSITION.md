@@ -212,6 +212,8 @@ Status on March 27, 2026:
   exercised on `mail.blackbagsecurity.com`
 - recorded in `HTTP_HARDENING_BASELINE.md`
 - recorded in `OPENBSD_RUNTIME_CONFINEMENT_BASELINE.md`
+- the next least-privilege boundary refinement is now the mailbox-read helper
+  path documented in `MAILBOX_READ_HELPER_MODEL.md`
 
 Done means:
 
@@ -220,6 +222,8 @@ Done means:
 - reverse-proxy and listener assumptions are documented
 - `pledge(2)` and `unveil(2)` feasibility has been evaluated against the real
   code shape
+- the mailbox-read path no longer requires the web-facing runtime to hold
+  mailbox-storage execution authority directly
 
 ### WP9: Integration Validation
 

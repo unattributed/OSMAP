@@ -231,3 +231,12 @@ This baseline does not mean:
 
 The next confinement work should focus on narrowing the helper-compatible
 filesystem view and proving more real user flows under enforced mode.
+
+The now-selected next narrowing move is to stop treating direct mailbox helper
+execution from the web process as the likely final shape. A dedicated local
+mailbox-read helper boundary gives the confinement work a clearer target:
+
+- the web-facing runtime can keep a smaller execution and filesystem view
+- the mailbox helper can carry the narrower mail-storage authority it actually
+  needs
+- the two processes can be audited and confined separately

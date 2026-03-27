@@ -159,10 +159,11 @@ The next active implementation work should focus on:
 
 - using the project-local QEMU lab wrappers and `mail.blackbagsecurity.com` for
   continued OpenBSD validation as the runtime broadens
-- extending the send path from attachment-aware draft generation toward actual
-  attachment upload and submission behavior
+- defining and implementing a dedicated mailbox-read helper boundary so the
+  web-facing runtime does not need mailbox-storage authority directly
 - narrowing and validating the helper-compatible OpenBSD confinement view
-  against more real browser workflows
+  around that helper boundary rather than around long-term direct `doveadm`
+  execution from the web process
 - carrying the current session model into broader browser-state handling
   without collapsing the security boundaries that now exist
 
@@ -186,6 +187,8 @@ Expected evidence includes:
 - logs showing authentication and mailbox activity
 - integration notes against the existing mail stack
 - documented constraints discovered during implementation
+- documented proof of the selected least-privilege mailbox-read path on the
+  target host
 - explicit updates to the decision log when major tradeoffs are made
 - isolated validation notes from the QEMU OpenBSD path before wider host use
 
