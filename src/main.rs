@@ -8,8 +8,8 @@ use std::process::ExitCode;
 
 fn main() -> ExitCode {
     match osmap::bootstrap::bootstrap() {
-        Ok(report) => {
-            eprintln!("{}", report.as_log_line());
+        Ok(context) => {
+            context.logger.emit(&context.report.to_log_event());
             ExitCode::SUCCESS
         }
         Err(error) => {

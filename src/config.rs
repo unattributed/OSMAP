@@ -7,17 +7,117 @@
 
 use std::collections::BTreeMap;
 use std::env;
+use std::path::PathBuf;
 
 use crate::error::BootstrapError;
+use crate::state::StateLayout;
 
 /// Runtime configuration that is safe to print in operator-facing startup
 /// output because it excludes secret-bearing fields.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AppConfig {
-    pub environment: String,
+    pub environment: RuntimeEnvironment,
     pub listen_addr: String,
-    pub state_dir: String,
-    pub log_level: String,
+    pub state_root: PathBuf,
+    pub log_level: LogLevel,
+    pub log_format: LogFormat,
+    pub state_layout: StateLayout,
+}
+
+/// Enumerates the supported runtime environments for the early prototype.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RuntimeEnvironment {
+    Development,
+    Staging,
+    Production,
+}
+
+impl RuntimeEnvironment {
+    /// Parses the environment string from configuration.
+    fn parse(value: &str) -> Result<Self, BootstrapError> {
+        match value {
+            "development" => Ok(Self::Development),
+            "staging" => Ok(Self::Staging),
+            "production" => Ok(Self::Production),
+            _ => Err(BootstrapError::UnsupportedValue {
+                field: "OSMAP_ENV",
+                value: value.to_string(),
+                expected: "development, staging, or production",
+            }),
+        }
+    }
+
+    /// Returns the canonical string representation used in logs and docs.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Development => "development",
+            Self::Staging => "staging",
+            Self::Production => "production",
+        }
+    }
+}
+
+/// Controls the minimum event severity emitted by the application logger.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum LogLevel {
+    Debug,
+    Info,
+    Warn,
+    Error,
+}
+
+impl LogLevel {
+    /// Parses the log level string from configuration.
+    fn parse(value: &str) -> Result<Self, BootstrapError> {
+        match value {
+            "debug" => Ok(Self::Debug),
+            "info" => Ok(Self::Info),
+            "warn" => Ok(Self::Warn),
+            "error" => Ok(Self::Error),
+            _ => Err(BootstrapError::UnsupportedValue {
+                field: "OSMAP_LOG_LEVEL",
+                value: value.to_string(),
+                expected: "debug, info, warn, or error",
+            }),
+        }
+    }
+
+    /// Returns the canonical string representation used in logs.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Debug => "debug",
+            Self::Info => "info",
+            Self::Warn => "warn",
+            Self::Error => "error",
+        }
+    }
+}
+
+/// Describes the operator-facing log line encoding.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LogFormat {
+    Text,
+}
+
+impl LogFormat {
+    /// Parses the log format string from configuration.
+    fn parse(value: &str) -> Result<Self, BootstrapError> {
+        match value {
+            "text" => Ok(Self::Text),
+            _ => Err(BootstrapError::UnsupportedValue {
+                field: "OSMAP_LOG_FORMAT",
+                value: value.to_string(),
+                expected: "text",
+            }),
+        }
+    }
+
+    /// Returns the canonical string representation used in logs and docs.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Text => "text",
+        }
+    }
 }
 
 impl AppConfig {
@@ -34,21 +134,53 @@ impl AppConfig {
     pub fn from_env_map(
         env_map: &BTreeMap<String, String>,
     ) -> Result<Self, BootstrapError> {
-        let environment = read_value(env_map, "OSMAP_ENV", "development");
+        let environment_value = read_value(env_map, "OSMAP_ENV", "development");
         let listen_addr = read_value(env_map, "OSMAP_LISTEN_ADDR", "127.0.0.1:8080");
-        let state_dir = read_value(env_map, "OSMAP_STATE_DIR", "/var/lib/osmap");
-        let log_level = read_value(env_map, "OSMAP_LOG_LEVEL", "info");
+        let state_root_value = read_value(env_map, "OSMAP_STATE_DIR", "/var/lib/osmap");
+        let log_level_value = read_value(env_map, "OSMAP_LOG_LEVEL", "info");
+        let log_format_value = read_value(env_map, "OSMAP_LOG_FORMAT", "text");
 
-        validate_non_empty("OSMAP_ENV", &environment)?;
+        validate_non_empty("OSMAP_ENV", &environment_value)?;
+        let runtime_dir = parse_optional_absolute_path(
+            env_map,
+            "OSMAP_RUNTIME_DIR",
+            PathBuf::from(&state_root_value).join("run"),
+        )?;
+        let session_dir = parse_optional_absolute_path(
+            env_map,
+            "OSMAP_SESSION_DIR",
+            PathBuf::from(&state_root_value).join("sessions"),
+        )?;
+        let audit_dir = parse_optional_absolute_path(
+            env_map,
+            "OSMAP_AUDIT_DIR",
+            PathBuf::from(&state_root_value).join("audit"),
+        )?;
+        let cache_dir = parse_optional_absolute_path(
+            env_map,
+            "OSMAP_CACHE_DIR",
+            PathBuf::from(&state_root_value).join("cache"),
+        )?;
+        validate_non_empty("OSMAP_LOG_LEVEL", &log_level_value)?;
+        validate_non_empty("OSMAP_LOG_FORMAT", &log_format_value)?;
         validate_non_empty("OSMAP_LISTEN_ADDR", &listen_addr)?;
-        validate_non_empty("OSMAP_STATE_DIR", &state_dir)?;
-        validate_non_empty("OSMAP_LOG_LEVEL", &log_level)?;
+
+        let environment = RuntimeEnvironment::parse(&environment_value)?;
+        let state_root = parse_absolute_path("OSMAP_STATE_DIR", &state_root_value)?;
+        let log_level = LogLevel::parse(&log_level_value)?;
+        let log_format = LogFormat::parse(&log_format_value)?;
+
+        let state_layout =
+            StateLayout::new(state_root.clone(), runtime_dir, session_dir, audit_dir, cache_dir)?;
+        validate_development_bindings(environment, &listen_addr)?;
 
         Ok(Self {
             environment,
             listen_addr,
-            state_dir,
             log_level,
+            log_format,
+            state_root,
+            state_layout,
         })
     }
 }
@@ -62,17 +194,71 @@ fn read_value(env_map: &BTreeMap<String, String>, key: &str, default: &str) -> S
         .unwrap_or_else(|| default.to_string())
 }
 
+/// Parses a required absolute filesystem path from configuration.
+fn parse_absolute_path(
+    field: &'static str,
+    value: &str,
+) -> Result<PathBuf, BootstrapError> {
+    validate_non_empty(field, value)?;
+    let path = PathBuf::from(value);
+
+    if !path.is_absolute() {
+        return Err(BootstrapError::PathMustBeAbsolute {
+            field,
+            value: value.to_string(),
+        });
+    }
+
+    Ok(path)
+}
+
+/// Parses an optional absolute filesystem path, falling back to the supplied
+/// default when the environment variable is absent.
+fn parse_optional_absolute_path(
+    env_map: &BTreeMap<String, String>,
+    field: &'static str,
+    default: PathBuf,
+) -> Result<PathBuf, BootstrapError> {
+    match env_map.get(field) {
+        Some(value) => parse_absolute_path(field, value),
+        None => Ok(default),
+    }
+}
+
 /// Rejects empty configuration values so later phases do not inherit silent
 /// fallback behavior around important runtime paths.
 fn validate_non_empty(field: &'static str, value: &str) -> Result<(), BootstrapError> {
     if value.trim().is_empty() {
         return Err(BootstrapError::InvalidConfig {
             field,
-            reason: "value must not be empty",
+            reason: "value must not be empty".to_string(),
         });
     }
 
     Ok(())
+}
+
+/// Keeps development builds loopback-bound by default so local bootstrap work
+/// does not accidentally normalize broad listener exposure.
+fn validate_development_bindings(
+    environment: RuntimeEnvironment,
+    listen_addr: &str,
+) -> Result<(), BootstrapError> {
+    if environment == RuntimeEnvironment::Development && !is_loopback_listener(listen_addr) {
+        return Err(BootstrapError::InvalidConfig {
+            field: "OSMAP_LISTEN_ADDR",
+            reason: "development listeners must stay on loopback".to_string(),
+        });
+    }
+
+    Ok(())
+}
+
+/// Applies a conservative loopback test for the early prototype listener.
+fn is_loopback_listener(listen_addr: &str) -> bool {
+    listen_addr.starts_with("127.0.0.1:")
+        || listen_addr.starts_with("[::1]:")
+        || listen_addr.starts_with("localhost:")
 }
 
 #[cfg(test)]
@@ -84,10 +270,27 @@ mod tests {
         let env_map = BTreeMap::new();
         let config = AppConfig::from_env_map(&env_map).expect("defaults should be valid");
 
-        assert_eq!(config.environment, "development");
+        assert_eq!(config.environment, RuntimeEnvironment::Development);
         assert_eq!(config.listen_addr, "127.0.0.1:8080");
-        assert_eq!(config.state_dir, "/var/lib/osmap");
-        assert_eq!(config.log_level, "info");
+        assert_eq!(config.state_root, std::path::Path::new("/var/lib/osmap"));
+        assert_eq!(
+            config.state_layout.runtime_dir,
+            std::path::Path::new("/var/lib/osmap/run")
+        );
+        assert_eq!(
+            config.state_layout.session_dir,
+            std::path::Path::new("/var/lib/osmap/sessions")
+        );
+        assert_eq!(
+            config.state_layout.audit_dir,
+            std::path::Path::new("/var/lib/osmap/audit")
+        );
+        assert_eq!(
+            config.state_layout.cache_dir,
+            std::path::Path::new("/var/lib/osmap/cache")
+        );
+        assert_eq!(config.log_level, LogLevel::Info);
+        assert_eq!(config.log_format, LogFormat::Text);
     }
 
     #[test]
@@ -95,16 +298,37 @@ mod tests {
         let env_map = BTreeMap::from([
             ("OSMAP_ENV".to_string(), "staging".to_string()),
             ("OSMAP_LISTEN_ADDR".to_string(), "127.0.0.1:8443".to_string()),
-            ("OSMAP_STATE_DIR".to_string(), "/tmp/osmap-state".to_string()),
+            ("OSMAP_STATE_DIR".to_string(), "/var/lib/osmap-staging".to_string()),
+            (
+                "OSMAP_RUNTIME_DIR".to_string(),
+                "/var/lib/osmap-staging/run".to_string(),
+            ),
+            (
+                "OSMAP_SESSION_DIR".to_string(),
+                "/var/lib/osmap-staging/session-store".to_string(),
+            ),
             ("OSMAP_LOG_LEVEL".to_string(), "debug".to_string()),
+            ("OSMAP_LOG_FORMAT".to_string(), "text".to_string()),
         ]);
 
         let config = AppConfig::from_env_map(&env_map).expect("explicit values should be valid");
 
-        assert_eq!(config.environment, "staging");
+        assert_eq!(config.environment, RuntimeEnvironment::Staging);
         assert_eq!(config.listen_addr, "127.0.0.1:8443");
-        assert_eq!(config.state_dir, "/tmp/osmap-state");
-        assert_eq!(config.log_level, "debug");
+        assert_eq!(
+            config.state_root,
+            std::path::Path::new("/var/lib/osmap-staging")
+        );
+        assert_eq!(
+            config.state_layout.runtime_dir,
+            std::path::Path::new("/var/lib/osmap-staging/run")
+        );
+        assert_eq!(
+            config.state_layout.session_dir,
+            std::path::Path::new("/var/lib/osmap-staging/session-store")
+        );
+        assert_eq!(config.log_level, LogLevel::Debug);
+        assert_eq!(config.log_format, LogFormat::Text);
     }
 
     #[test]
@@ -117,8 +341,59 @@ mod tests {
             error,
             BootstrapError::InvalidConfig {
                 field: "OSMAP_LOG_LEVEL",
-                reason: "value must not be empty",
+                reason: "value must not be empty".to_string(),
             }
         );
+    }
+
+    #[test]
+    fn rejects_relative_state_root() {
+        let env_map = BTreeMap::from([(
+            "OSMAP_STATE_DIR".to_string(),
+            "var/lib/osmap".to_string(),
+        )]);
+
+        let error = AppConfig::from_env_map(&env_map).expect_err("relative paths must fail");
+
+        assert_eq!(
+            error,
+            BootstrapError::PathMustBeAbsolute {
+                field: "OSMAP_STATE_DIR",
+                value: "var/lib/osmap".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn rejects_non_loopback_development_listener() {
+        let env_map = BTreeMap::from([(
+            "OSMAP_LISTEN_ADDR".to_string(),
+            "0.0.0.0:8080".to_string(),
+        )]);
+
+        let error = AppConfig::from_env_map(&env_map)
+            .expect_err("development listeners must remain loopback-bound");
+
+        assert_eq!(
+            error,
+            BootstrapError::InvalidConfig {
+                field: "OSMAP_LISTEN_ADDR",
+                reason: "development listeners must stay on loopback".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn accepts_non_loopback_listener_outside_development() {
+        let env_map = BTreeMap::from([
+            ("OSMAP_ENV".to_string(), "staging".to_string()),
+            ("OSMAP_LISTEN_ADDR".to_string(), "0.0.0.0:8080".to_string()),
+        ]);
+
+        let config =
+            AppConfig::from_env_map(&env_map).expect("staging listeners may be broader");
+
+        assert_eq!(config.environment, RuntimeEnvironment::Staging);
+        assert_eq!(config.listen_addr, "0.0.0.0:8080");
     }
 }

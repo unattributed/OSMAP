@@ -136,5 +136,7 @@ Phase 6:
 - the repository now contains a concrete implementation plan, proof-of-concept
   scope, and work decomposition baseline
 - WP0 toolchain selection and repository skeleton are now in place
+- WP1 and WP2 now define the configuration/state boundary and the structured
+  logging/error model for the prototype runtime
 - the actual prototype has not yet been implemented, so Phase 6 execution is
   underway but not yet complete

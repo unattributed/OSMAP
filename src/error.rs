@@ -12,7 +12,18 @@ pub enum BootstrapError {
     /// A required configuration field was empty or semantically invalid.
     InvalidConfig {
         field: &'static str,
-        reason: &'static str,
+        reason: String,
+    },
+    /// A configuration field contained a value outside the accepted set.
+    UnsupportedValue {
+        field: &'static str,
+        value: String,
+        expected: &'static str,
+    },
+    /// A filesystem path was expected to be absolute but was not.
+    PathMustBeAbsolute {
+        field: &'static str,
+        value: String,
     },
 }
 
@@ -21,6 +32,22 @@ impl fmt::Display for BootstrapError {
         match self {
             Self::InvalidConfig { field, reason } => {
                 write!(f, "invalid configuration for {field}: {reason}")
+            }
+            Self::UnsupportedValue {
+                field,
+                value,
+                expected,
+            } => {
+                write!(
+                    f,
+                    "invalid configuration for {field}: unsupported value {value:?}, expected {expected}"
+                )
+            }
+            Self::PathMustBeAbsolute { field, value } => {
+                write!(
+                    f,
+                    "invalid configuration for {field}: path must be absolute, got {value:?}"
+                )
             }
         }
     }

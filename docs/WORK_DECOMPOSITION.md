@@ -41,6 +41,11 @@ Goal:
 Define how the application reads configuration and stores local state without
 mixing secrets, code, and mutable runtime data.
 
+Status on March 27, 2026:
+
+- completed with the first typed configuration parser and explicit state layout
+- recorded in `CONFIGURATION_AND_STATE_MODEL.md`
+
 Done means:
 
 - configuration paths are explicit
@@ -53,6 +58,12 @@ Done means:
 Goal:
 Establish a logging and error-handling model that supports security review and
 operator troubleshooting.
+
+Status on March 27, 2026:
+
+- completed with a dependency-light structured logger and explicit bootstrap
+  error types
+- recorded in `LOGGING_AND_ERROR_MODEL.md`
 
 Done means:
 

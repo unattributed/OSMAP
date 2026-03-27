@@ -5,60 +5,146 @@
 
 use crate::config::AppConfig;
 use crate::error::BootstrapError;
+use crate::logging::{EventCategory, LogEvent, Logger};
 
 /// A non-secret summary of the runtime state that can be emitted at startup.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BootstrapReport {
     pub environment: String,
     pub listen_addr: String,
-    pub state_dir: String,
+    pub state_root: String,
+    pub runtime_dir: String,
+    pub session_dir: String,
+    pub audit_dir: String,
+    pub cache_dir: String,
     pub log_level: String,
+    pub log_format: String,
 }
 
 impl BootstrapReport {
-    /// Formats the startup summary as a single operator-readable line.
-    pub fn as_log_line(&self) -> String {
-        format!(
-            "osmap bootstrap ready env={} listen_addr={} state_dir={} log_level={}",
-            self.environment, self.listen_addr, self.state_dir, self.log_level
+    /// Builds a structured startup event that excludes secret-bearing values.
+    pub fn to_log_event(&self) -> LogEvent {
+        LogEvent::new(
+            crate::config::LogLevel::Info,
+            EventCategory::Bootstrap,
+            "startup_ready",
+            "bootstrap completed",
         )
+        .with_field("env", self.environment.clone())
+        .with_field("listen_addr", self.listen_addr.clone())
+        .with_field("state_root", self.state_root.clone())
+        .with_field("runtime_dir", self.runtime_dir.clone())
+        .with_field("session_dir", self.session_dir.clone())
+        .with_field("audit_dir", self.audit_dir.clone())
+        .with_field("cache_dir", self.cache_dir.clone())
+        .with_field("log_level", self.log_level.clone())
+        .with_field("log_format", self.log_format.clone())
     }
 }
 
-/// Loads configuration and returns a report describing the runtime shape.
-pub fn bootstrap() -> Result<BootstrapReport, BootstrapError> {
+/// Holds the early runtime objects created during bootstrap.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BootstrapContext {
+    pub config: AppConfig,
+    pub logger: Logger,
+    pub report: BootstrapReport,
+}
+
+/// Loads configuration and runtime helpers for the current process.
+pub fn bootstrap() -> Result<BootstrapContext, BootstrapError> {
     let config = AppConfig::from_process_env()?;
-    Ok(report_from_config(&config))
+    let logger = Logger::new(config.log_format, config.log_level);
+    let report = report_from_config(&config);
+
+    Ok(BootstrapContext {
+        config,
+        logger,
+        report,
+    })
 }
 
 /// Converts validated configuration into the startup report used by the binary.
 fn report_from_config(config: &AppConfig) -> BootstrapReport {
     BootstrapReport {
-        environment: config.environment.clone(),
+        environment: config.environment.as_str().to_string(),
         listen_addr: config.listen_addr.clone(),
-        state_dir: config.state_dir.clone(),
-        log_level: config.log_level.clone(),
+        state_root: config.state_root.display().to_string(),
+        runtime_dir: config.state_layout.runtime_dir.display().to_string(),
+        session_dir: config.state_layout.session_dir.display().to_string(),
+        audit_dir: config.state_layout.audit_dir.display().to_string(),
+        cache_dir: config.state_layout.cache_dir.display().to_string(),
+        log_level: config.log_level.as_str().to_string(),
+        log_format: config.log_format.as_str().to_string(),
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::config::{LogFormat, LogLevel, RuntimeEnvironment};
+    use crate::state::StateLayout;
+    use std::path::PathBuf;
 
     #[test]
     fn startup_report_is_operator_readable() {
         let config = AppConfig {
-            environment: "development".to_string(),
+            environment: RuntimeEnvironment::Development,
             listen_addr: "127.0.0.1:8080".to_string(),
-            state_dir: "/var/lib/osmap".to_string(),
-            log_level: "info".to_string(),
+            state_root: PathBuf::from("/var/lib/osmap"),
+            log_level: LogLevel::Info,
+            log_format: LogFormat::Text,
+            state_layout: StateLayout::new(
+                PathBuf::from("/var/lib/osmap"),
+                PathBuf::from("/var/lib/osmap/run"),
+                PathBuf::from("/var/lib/osmap/sessions"),
+                PathBuf::from("/var/lib/osmap/audit"),
+                PathBuf::from("/var/lib/osmap/cache"),
+            )
+            .expect("layout should be valid"),
         };
 
         let report = report_from_config(&config);
 
         assert_eq!(
-            report.as_log_line(),
-            "osmap bootstrap ready env=development listen_addr=127.0.0.1:8080 state_dir=/var/lib/osmap log_level=info"
+            report.to_log_event().fields,
+            vec![
+                crate::logging::LogField {
+                    key: "env",
+                    value: "development".to_string(),
+                },
+                crate::logging::LogField {
+                    key: "listen_addr",
+                    value: "127.0.0.1:8080".to_string(),
+                },
+                crate::logging::LogField {
+                    key: "state_root",
+                    value: "/var/lib/osmap".to_string(),
+                },
+                crate::logging::LogField {
+                    key: "runtime_dir",
+                    value: "/var/lib/osmap/run".to_string(),
+                },
+                crate::logging::LogField {
+                    key: "session_dir",
+                    value: "/var/lib/osmap/sessions".to_string(),
+                },
+                crate::logging::LogField {
+                    key: "audit_dir",
+                    value: "/var/lib/osmap/audit".to_string(),
+                },
+                crate::logging::LogField {
+                    key: "cache_dir",
+                    value: "/var/lib/osmap/cache".to_string(),
+                },
+                crate::logging::LogField {
+                    key: "log_level",
+                    value: "info".to_string(),
+                },
+                crate::logging::LogField {
+                    key: "log_format",
+                    value: "text".to_string(),
+                },
+            ]
         );
     }
 }

@@ -143,3 +143,15 @@ small while the actual runtime shape is still being proven.
 The repository skeleton does not yet adopt a web framework, async runtime, or
 ORM. Those choices should be justified by the login, mailbox, and send-path
 requirements rather than assumed up front.
+
+### Keep mutable prototype data under one explicit state root
+
+WP1 defines one state root with bounded subdirectories for runtime, session,
+audit, and cache data so later OpenBSD deployment and confinement work has a
+clear filesystem boundary to operate on.
+
+### Start with a small structured logger instead of a large logging stack
+
+WP2 introduces stable structured text events and explicit bootstrap error types
+without adding a heavyweight logging framework before the runtime behavior is
+mature enough to justify it.
