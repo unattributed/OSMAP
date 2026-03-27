@@ -159,10 +159,24 @@ Current prototype-specific deployment guidance:
   than a privileged or broad auth-socket arrangement
 - use `OSMAP_DOVEADM_AUTH_SOCKET_PATH` when the host provides that dedicated
   auth listener
+- use `OSMAP_DOVEADM_USERDB_SOCKET_PATH` when the host provides a dedicated
+  userdb listener for mailbox and message helpers
 - the current validated host shape on `mail.blackbagsecurity.com` uses
-  `_osmap` plus `/var/run/osmap-auth` for that dedicated Dovecot auth listener
+  `_osmap` plus `/var/run/osmap-auth` and `/var/run/osmap-userdb` for those
+  dedicated Dovecot listeners
 - use `OSMAP_OPENBSD_CONFINEMENT_MODE=log-only` or `enforce` when validating
   the OpenBSD serve runtime on hosts intended for real deployment
+
+Current live validation on `mail.blackbagsecurity.com` now proves:
+
+- positive browser login plus TOTP-backed session issuance under `_osmap`
+- a working least-privilege auth-socket arrangement under `enforce`
+
+Current live validation there also shows one remaining host-side blocker:
+
+- mailbox and message helper execution still resolves to the virtual-mail
+  `vmail` uid/gid boundary, so successful least-privilege mailbox reads are not
+  yet proven for `_osmap`
 
 This is more likely to produce a system that OpenBSD operators, and eventually
 potential downstream packagers, would consider credible.

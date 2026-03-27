@@ -549,3 +549,22 @@ Live host validation exposed that `doveadm auth test` rejects `rip=` values
 that include a port. OSMAP now normalizes peer addresses to bare IP strings at
 the HTTP edge, which keeps auth-helper metadata valid and makes request audit
 logs more consistent.
+
+### Add an explicit Dovecot userdb socket path for mailbox helpers
+
+OSMAP now supports `OSMAP_DOVEADM_USERDB_SOCKET_PATH` so mailbox, message-list,
+and message-view helpers can target a dedicated least-privilege Dovecot userdb
+listener instead of inheriting a broader default path.
+
+### Treat positive live auth and mailbox reads as separate proof points
+
+Live validation on `mail.blackbagsecurity.com` now proves positive browser
+login, TOTP completion, and session issuance under `_osmap` with enforced
+confinement. It does not yet prove mailbox reads under `_osmap`.
+
+### Record the remaining live mailbox blocker as a Dovecot identity boundary
+
+The current post-auth live-host blocker is no longer auth-socket reachability.
+It is Dovecot's virtual-mail identity model: mailbox helpers resolve to
+`uid=2000(vmail)` and `gid=2000(vmail)`, which an unprivileged `_osmap`
+process cannot assume without widening authority.

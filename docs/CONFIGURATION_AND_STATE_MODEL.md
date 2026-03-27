@@ -28,6 +28,7 @@ The early runtime recognizes:
 - `OSMAP_ENV`
 - `OSMAP_LISTEN_ADDR`
 - `OSMAP_DOVEADM_AUTH_SOCKET_PATH`
+- `OSMAP_DOVEADM_USERDB_SOCKET_PATH`
 - `OSMAP_STATE_DIR`
 - `OSMAP_RUNTIME_DIR`
 - `OSMAP_SESSION_DIR`
@@ -61,6 +62,11 @@ The runtime now also recognizes an optional
 `OSMAP_DOVEADM_AUTH_SOCKET_PATH` setting for deployments that want OSMAP to use
 an explicitly chosen Dovecot auth socket rather than the default helper
 behavior.
+
+The runtime now also recognizes an optional
+`OSMAP_DOVEADM_USERDB_SOCKET_PATH` setting for deployments that want OSMAP to
+use an explicitly chosen Dovecot userdb socket for mailbox and message helper
+lookups instead of relying on a broader default surface.
 
 ## Environment Model
 
@@ -114,6 +120,8 @@ The bootstrap currently enforces:
 - environment values must be recognized explicitly
 - the optional `OSMAP_DOVEADM_AUTH_SOCKET_PATH`, when present, must be an
   absolute path
+- the optional `OSMAP_DOVEADM_USERDB_SOCKET_PATH`, when present, must be an
+  absolute path
 - configured state paths must be absolute
 - derived mutable-state paths must stay under the state root
 - development listeners must remain on loopback
@@ -143,18 +151,31 @@ lands on a disciplined runtime boundary instead of on a pile of ad hoc settings.
 
 That remains true now that the first browser-serving mode exists as well.
 
-## Least-Privilege Auth Socket Configuration
+## Least-Privilege Dovecot Socket Configuration
 
-The optional `OSMAP_DOVEADM_AUTH_SOCKET_PATH` exists to support a narrow host
-integration pattern:
+The optional Dovecot socket settings exist to support a narrow host integration
+pattern:
 
 - the OSMAP runtime remains unprivileged
 - the host exposes a dedicated Dovecot auth listener for that runtime user
-- OSMAP points `doveadm auth test` at that explicit listener instead of
-  depending on a broader or privileged socket arrangement
+- the host can also expose a dedicated Dovecot userdb listener for mailbox and
+  message helper lookups
+- OSMAP points `doveadm auth test` and mailbox/message helper calls at those
+  explicit listeners instead of depending on broader or privileged socket
+  arrangements
 
 This is an operator-side deployment refinement, not a secret. It is safe to
 include in startup reporting and confinement planning.
 
-The current validated example on `mail.blackbagsecurity.com` is
-`/var/run/osmap-auth` for the `_osmap` runtime user.
+The current validated example on `mail.blackbagsecurity.com` is:
+
+- `OSMAP_DOVEADM_AUTH_SOCKET_PATH=/var/run/osmap-auth`
+- `OSMAP_DOVEADM_USERDB_SOCKET_PATH=/var/run/osmap-userdb`
+
+for the `_osmap` runtime user.
+
+That does not yet mean mailbox reads are fully proven under `_osmap`. Live host
+validation now shows that positive browser auth works through the dedicated auth
+listener, while mailbox reads still hit Dovecot's virtual-mail identity
+boundary because the userdb lookup resolves to `uid=2000(vmail)` and
+`gid=2000(vmail)`.

@@ -546,6 +546,7 @@ pub struct DoveadmMailboxListBackend<E> {
     policy: MailboxListingPolicy,
     command_executor: E,
     doveadm_path: PathBuf,
+    userdb_socket_path: Option<PathBuf>,
 }
 
 impl<E> DoveadmMailboxListBackend<E> {
@@ -559,7 +560,14 @@ impl<E> DoveadmMailboxListBackend<E> {
             policy,
             command_executor,
             doveadm_path: doveadm_path.into(),
+            userdb_socket_path: None,
         }
+    }
+
+    /// Points mailbox lookups at an explicit Dovecot userdb-capable socket.
+    pub fn with_userdb_socket_path(mut self, userdb_socket_path: Option<PathBuf>) -> Self {
+        self.userdb_socket_path = userdb_socket_path;
+        self
     }
 }
 
@@ -584,11 +592,15 @@ where
         let args = vec![
             "-o".to_string(),
             "stats_writer_socket_path=".to_string(),
+        ];
+        let mut args = args;
+        append_doveadm_auth_socket_override(&mut args, self.userdb_socket_path.as_ref());
+        args.extend([
             "mailbox".to_string(),
             "list".to_string(),
             "-u".to_string(),
             canonical_username.to_string(),
-        ];
+        ]);
 
         let execution = self
             .command_executor
@@ -607,6 +619,7 @@ pub struct DoveadmMessageListBackend<E> {
     policy: MessageListPolicy,
     command_executor: E,
     doveadm_path: PathBuf,
+    userdb_socket_path: Option<PathBuf>,
 }
 
 impl<E> DoveadmMessageListBackend<E> {
@@ -620,7 +633,14 @@ impl<E> DoveadmMessageListBackend<E> {
             policy,
             command_executor,
             doveadm_path: doveadm_path.into(),
+            userdb_socket_path: None,
         }
+    }
+
+    /// Points message-list lookups at an explicit Dovecot userdb-capable socket.
+    pub fn with_userdb_socket_path(mut self, userdb_socket_path: Option<PathBuf>) -> Self {
+        self.userdb_socket_path = userdb_socket_path;
+        self
     }
 }
 
@@ -646,6 +666,10 @@ where
         let args = vec![
             "-o".to_string(),
             "stats_writer_socket_path=".to_string(),
+        ];
+        let mut args = args;
+        append_doveadm_auth_socket_override(&mut args, self.userdb_socket_path.as_ref());
+        args.extend([
             "-f".to_string(),
             "flow".to_string(),
             "fetch".to_string(),
@@ -655,7 +679,7 @@ where
             "mailbox".to_string(),
             request.mailbox_name.clone(),
             "all".to_string(),
-        ];
+        ]);
 
         let execution = self
             .command_executor
@@ -674,6 +698,7 @@ pub struct DoveadmMessageViewBackend<E> {
     policy: MessageViewPolicy,
     command_executor: E,
     doveadm_path: PathBuf,
+    userdb_socket_path: Option<PathBuf>,
 }
 
 impl<E> DoveadmMessageViewBackend<E> {
@@ -687,7 +712,14 @@ impl<E> DoveadmMessageViewBackend<E> {
             policy,
             command_executor,
             doveadm_path: doveadm_path.into(),
+            userdb_socket_path: None,
         }
+    }
+
+    /// Points message-view lookups at an explicit Dovecot userdb-capable socket.
+    pub fn with_userdb_socket_path(mut self, userdb_socket_path: Option<PathBuf>) -> Self {
+        self.userdb_socket_path = userdb_socket_path;
+        self
     }
 }
 
@@ -713,6 +745,10 @@ where
         let args = vec![
             "-o".to_string(),
             "stats_writer_socket_path=".to_string(),
+        ];
+        let mut args = args;
+        append_doveadm_auth_socket_override(&mut args, self.userdb_socket_path.as_ref());
+        args.extend([
             "-f".to_string(),
             "flow".to_string(),
             "fetch".to_string(),
@@ -723,7 +759,7 @@ where
             request.mailbox_name.clone(),
             "uid".to_string(),
             request.uid.to_string(),
-        ];
+        ]);
 
         let execution = self
             .command_executor
@@ -876,6 +912,15 @@ fn parse_doveadm_mailbox_list_output(
     }
 
     Ok(mailboxes)
+}
+
+/// Adds an explicit Dovecot auth socket override for userdb-capable helper work
+/// when the deployment provides one.
+fn append_doveadm_auth_socket_override(args: &mut Vec<String>, auth_socket_path: Option<&PathBuf>) {
+    if let Some(auth_socket_path) = auth_socket_path {
+        args.push("-o".to_string());
+        args.push(format!("auth_socket_path={}", auth_socket_path.display()));
+    }
 }
 
 /// Parses the output of `doveadm -f flow fetch` into bounded message summaries.
@@ -1478,6 +1523,42 @@ mod tests {
             &vec![
                 "-o".to_string(),
                 "stats_writer_socket_path=".to_string(),
+                "mailbox".to_string(),
+                "list".to_string(),
+                "-u".to_string(),
+                "alice@example.com".to_string(),
+            ]
+        );
+    }
+
+    #[test]
+    fn mailbox_list_uses_explicit_userdb_socket_when_configured() {
+        let executor = Rc::new(std::cell::RefCell::new(StubCommandExecutor::success(
+            CommandExecution {
+                status_code: 0,
+                stdout: "INBOX\n".to_string(),
+                stderr: String::new(),
+            },
+        )));
+        let backend = DoveadmMailboxListBackend::new(
+            MailboxListingPolicy::default(),
+            executor.clone(),
+            "/usr/local/bin/doveadm",
+        )
+        .with_userdb_socket_path(Some(PathBuf::from("/var/run/osmap-userdb")));
+
+        let _ = backend
+            .list_mailboxes("alice@example.com")
+            .expect("mailbox list should succeed");
+
+        let recorded = executor.borrow();
+        assert_eq!(
+            recorded.args.as_ref().expect("args should be captured"),
+            &vec![
+                "-o".to_string(),
+                "stats_writer_socket_path=".to_string(),
+                "-o".to_string(),
+                "auth_socket_path=/var/run/osmap-userdb".to_string(),
                 "mailbox".to_string(),
                 "list".to_string(),
                 "-u".to_string(),

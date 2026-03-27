@@ -1,13 +1,14 @@
-# Least-Privilege Auth Socket Model
+# Least-Privilege Dovecot Socket Model
 
 ## Purpose
 
-This document defines the preferred host-side authentication socket arrangement
-for OSMAP.
+This document defines the preferred host-side Dovecot socket arrangement for
+OSMAP.
 
-The goal is to let the OSMAP runtime use `doveadm auth test` without teaching
-the application to depend on `doas`, root privileges, or a broader mail-stack
-filesystem view than necessary.
+The goal is to let the OSMAP runtime use `doveadm auth test` plus the current
+mailbox and message helper commands without teaching the application to depend
+on `doas`, root privileges, or a broader mail-stack filesystem view than
+necessary.
 
 ## Problem Statement
 
@@ -27,7 +28,10 @@ The preferred deployment model is:
 
 - run OSMAP as a dedicated unprivileged service user
 - expose a dedicated Dovecot auth listener for that service user
+- expose a dedicated Dovecot userdb listener for that service user when mailbox
+  and message helper lookups need an explicit least-privilege path
 - point OSMAP at that listener with `OSMAP_DOVEADM_AUTH_SOCKET_PATH`
+- point OSMAP at the userdb listener with `OSMAP_DOVEADM_USERDB_SOCKET_PATH`
 - keep mailbox reads and submission on their existing authoritative surfaces
 
 This keeps the host integration explicit and least-privilege friendly.
@@ -50,6 +54,7 @@ Illustrative OSMAP-side environment:
 
 ```sh
 OSMAP_DOVEADM_AUTH_SOCKET_PATH=/var/run/osmap/dovecot-auth
+OSMAP_DOVEADM_USERDB_SOCKET_PATH=/var/run/osmap/dovecot-userdb
 ```
 
 The exact service user, group, and path can vary. The important property is
@@ -61,10 +66,15 @@ without privilege escalation.
 On `mail.blackbagsecurity.com`, the currently validated arrangement is:
 
 - runtime user: `_osmap`
-- listener path: `/var/run/osmap-auth`
+- auth listener path: `/var/run/osmap-auth`
+- userdb listener path: `/var/run/osmap-userdb`
 - socket owner/group: `_osmap:_osmap`
-- validation scope: browser-driven invalid login under both `log-only` and
-  `enforce`
+- validation scope:
+  - browser-driven invalid login under both `log-only` and `enforce`
+  - browser-driven positive login plus TOTP-backed session issuance under
+    `enforce`
+  - mailbox-list helper reachability narrowed to Dovecot's `vmail` uid/gid
+    boundary rather than to socket reachability
 
 That validated path is not the only acceptable deployment shape, but it is now
 real evidence that the least-privilege model works on the target OpenBSD host.
@@ -83,11 +93,12 @@ This model is preferred because it:
 
 ## Confinement Implications
 
-When `OSMAP_DOVEADM_AUTH_SOCKET_PATH` is configured, the OpenBSD confinement
+When the explicit Dovecot socket paths are configured, the OpenBSD confinement
 plan should include:
 
-- the explicit socket path with read/write access
-- read-only visibility for the socket's parent directory chain
+- the explicit auth socket path with read/write access
+- the explicit userdb socket path with read/write access
+- read-only visibility for each socket's parent directory chain
 
 That is still narrower and more honest than unveiling a broad mail-spool tree
 or teaching the app to depend on `doas`.
@@ -102,12 +113,25 @@ Operators should:
 - document the socket in service-management and rollback procedures
 - validate login behavior under `OSMAP_OPENBSD_CONFINEMENT_MODE=log-only` or
   `enforce`
+- validate mailbox helper behavior separately from login behavior, because
+  socket reachability and mailbox helper privilege requirements are not the
+  same problem
 
 ## Current Status
 
-As of March 27, 2026, OSMAP supports the explicit auth-socket path in runtime
-configuration and `mail.blackbagsecurity.com` now has a dedicated validated
-listener at `/var/run/osmap-auth` for `_osmap`.
+As of March 27, 2026, OSMAP supports both explicit Dovecot socket paths in
+runtime configuration and `mail.blackbagsecurity.com` now has dedicated
+validated listeners at `/var/run/osmap-auth` and `/var/run/osmap-userdb` for
+`_osmap`.
 
-This document describes the least-privilege operator path and the first live
-host that now proves it.
+The current live-host outcome is intentionally mixed:
+
+- least-privilege auth is proven for `_osmap`
+- least-privilege mailbox socket reachability is also proven
+- mailbox reads themselves still fail because the host Dovecot userdb resolves
+  the target mailbox to `uid=2000(vmail)` and `gid=2000(vmail)`, which the
+  `_osmap` process cannot assume without widening authority
+
+This document describes the least-privilege operator path, the first live host
+that proves part of it, and the remaining identity-boundary problem that still
+needs a cleaner answer than `doas`.

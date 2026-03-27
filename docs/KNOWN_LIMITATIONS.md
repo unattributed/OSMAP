@@ -43,9 +43,14 @@
   compatibility view is still broader than the final target even after the
   first narrowing pass away from a blanket `/var` unveil
 - `mail.blackbagsecurity.com` now has a dedicated least-privilege Dovecot auth
-  listener for `_osmap`, and invalid browser login is validated there under
-  both `log-only` and `enforce`, but successful positive-login and post-auth
-  live-host flows are still not proven
+  listener for `_osmap`, and positive browser login plus TOTP-backed session
+  issuance are now validated there under `enforce`, but authenticated mailbox
+  and message reads are still not proven for `_osmap`
+- `mail.blackbagsecurity.com` now also has a dedicated Dovecot userdb listener
+  for `_osmap`, and OSMAP supports `OSMAP_DOVEADM_USERDB_SOCKET_PATH`, but the
+  host's current Dovecot virtual-user model still resolves mailbox access to
+  `uid=2000(vmail)` and `gid=2000(vmail)`, which blocks least-privilege
+  mailbox helpers from running successfully as `_osmap`
 - The current synthetic session-gated attachment request under enforced mode on
   `mail.blackbagsecurity.com` now reaches the route, validates the session, and
   updates session state without the previous Dovecot stats-writer noise, but

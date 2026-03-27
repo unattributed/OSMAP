@@ -142,6 +142,9 @@ The host-side validation currently proves two bounded claims:
 - the browser-driven invalid-login path now returns a true
   `invalid_credentials` result under both `log-only` and `enforce` when OSMAP
   runs as `_osmap` against that dedicated listener
+- the browser-driven positive-login path now completes primary auth, TOTP, and
+  session issuance under `enforce` when OSMAP runs as `_osmap` against that
+  dedicated listener
 
 That is intentionally narrower than claiming the full auth workflow is already
 validated in production-like conditions.
@@ -153,9 +156,11 @@ The remaining live-host caveat is also clearer now than it was earlier in WP3:
 - the runtime now normalizes peer socket addresses to bare IP strings before
   passing `rip=` metadata to `doveadm auth test`, which was required for clean
   live-host auth helper behavior
-- successful positive-login validation, TOTP success under the dedicated host
-  runtime user, and post-auth mailbox flows are still not claimed as proven on
-  the live host
+- successful positive-login validation and TOTP success under the dedicated
+  host runtime user are now proven on the live host
+- post-auth mailbox flows are still not claimed as proven on the live host
+  because Dovecot mailbox helpers currently resolve to the virtual-mail
+  `vmail` uid/gid boundary on `mail.blackbagsecurity.com`
 - that remaining gap is now a narrower validation problem, not a reason to
   widen OSMAP's runtime privileges
 
@@ -169,9 +174,7 @@ This slice does not yet include:
 
 - auth rate limiting
 - persistent auth-audit storage
-- browser request handling
-- cookie and CSRF policy
 - recovery and enrollment UX
 
-Those belong to the later browser-facing pieces of WP4 and WP5 rather than to
-this authentication foundation slice.
+Browser request handling plus cookie and CSRF policy now exist elsewhere in the
+runtime. They remain outside the core authentication slice itself.

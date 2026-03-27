@@ -75,6 +75,13 @@ This is still broader than the final target, but it is materially narrower than
 the previous blanket `/etc` plus `/var` view because the current prototype now
 has enough live-host evidence to describe helper dependencies more precisely.
 
+When configured, the runtime also adds explicit read/write unveil rules for:
+
+- `OSMAP_DOVEADM_AUTH_SOCKET_PATH`
+- `OSMAP_DOVEADM_USERDB_SOCKET_PATH`
+
+plus read-only visibility for their parent directory chains.
+
 ## Why The View Is Still Broad
 
 The current prototype does not yet implement IMAP, auth, or SMTP submission in
@@ -109,6 +116,8 @@ The current confinement layer has been validated through:
   `mail.blackbagsecurity.com`
 - live invalid-login handling under enforced confinement on
   `mail.blackbagsecurity.com`
+- live successful browser login under enforced confinement on
+  `mail.blackbagsecurity.com`
 - a synthetic session-gated attachment-route request under enforced confinement
   on `mail.blackbagsecurity.com`
 
@@ -120,10 +129,14 @@ The enforced OpenBSD run logged:
 - HTTP server started
 - successful invalid-login handling under a dedicated least-privilege Dovecot
   auth listener in both `log-only` and `enforce`
+- successful positive browser login plus TOTP completion under `_osmap` in
+  `enforce`
 - successful health check handling
 - successful synthetic session validation and refresh under `enforce`
 - a bounded attachment-route failure for a missing user without the earlier
   Dovecot stats-writer socket noise
+- a mailbox-list failure that now narrows to Dovecot's virtual-mail identity
+  boundary rather than to auth-socket reachability or confinement startup
 
 ## Observed Caveat And Fix On `mail.blackbagsecurity.com`
 
@@ -150,8 +163,9 @@ That distinction matters:
 - confinement enforcement now exists and was exercised successfully
 - the dedicated host-side auth-listener path is now proven viable without
   teaching OSMAP to depend on `doas`
-- the remaining live browser-auth gap is now successful positive-login and
-  post-auth workflow validation, not raw auth-socket reachability
+- the remaining live post-auth gap is mailbox and message helper execution
+  under the host's virtual-mail identity model, not raw auth-socket
+  reachability
 
 Additional live validation also exposed and clarified two things:
 
@@ -161,7 +175,8 @@ Additional live validation also exposed and clarified two things:
   listener cleanly under confinement once the host configuration is aligned
 
 The first point is already fixed in the promise set. The second is now resolved
-for invalid-login validation on `mail.blackbagsecurity.com`.
+for both invalid-login and positive-login validation on
+`mail.blackbagsecurity.com`.
 
 Today that auth caveat is understood this way:
 
@@ -171,17 +186,35 @@ Today that auth caveat is understood this way:
   than widening OSMAP's privileges or reusing the Postfix-facing socket
 - on `mail.blackbagsecurity.com`, that listener is now `/var/run/osmap-auth`
   owned by `_osmap`
+- mailbox and message helper paths can also be pointed at a dedicated userdb
+  listener, now `/var/run/osmap-userdb` on `mail.blackbagsecurity.com`
+- even with that narrower socket arrangement, the current Dovecot userdb model
+  still resolves mailbox access to `uid=2000(vmail)` and `gid=2000(vmail)`,
+  which an unprivileged `_osmap` process cannot assume
 
 The runtime now supports that operator path explicitly:
 
 - `OSMAP_DOVEADM_AUTH_SOCKET_PATH` can point OSMAP at a dedicated Dovecot auth
   socket
+- `OSMAP_DOVEADM_USERDB_SOCKET_PATH` can point OSMAP at a dedicated Dovecot
+  userdb socket for mailbox and message helper lookups
 - when configured, the OpenBSD confinement plan now adds the explicit socket
-  path plus read-only parent-directory visibility for that path
+  paths plus read-only parent-directory visibility for those paths
 
 That does not make the host issue disappear automatically, but it gives the
 deployment model a concrete least-privilege target instead of a vague future
 idea.
+
+The current live-host blocker is now specific and auditable. Dovecot reports:
+
+- `client doesn't have lookup permissions for this user: userdb uid (2000) doesn't match peer uid (1001)`
+
+and helper execution narrows further to failed `setgid(2000(vmail))` or
+`setuid(2000(vmail))` transitions when mailbox access is attempted as `_osmap`.
+
+That means the remaining work is not "make auth work under confinement." It is
+"define a mailbox-read integration path that preserves least privilege without
+teaching OSMAP to depend on `doas`."
 
 ## What This Baseline Does Not Yet Claim
 
@@ -189,8 +222,9 @@ This baseline does not mean:
 
 - the current unveil policy is narrow enough for final adoption
 - helper-process dependencies have been eliminated
-- positive browser auth is fully proven end to end on the target host
 - richer send helper execution is fully proven under enforced confinement
+- authenticated mailbox, message-view, and attachment-bearing live-host reads
+  are fully proven under `_osmap`
 - successful live attachment-bearing reads are fully proven under enforced
   confinement
 - QEMU and host confinement validation are complete for every user workflow

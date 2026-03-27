@@ -448,6 +448,7 @@ pub struct RuntimeBrowserGateway {
     totp_secret_dir: PathBuf,
     doveadm_path: PathBuf,
     doveadm_auth_socket_path: Option<PathBuf>,
+    doveadm_userdb_socket_path: Option<PathBuf>,
     sendmail_path: PathBuf,
     render_policy: RenderingPolicy,
 }
@@ -466,6 +467,7 @@ impl RuntimeBrowserGateway {
             totp_secret_dir: config.state_layout.totp_secret_dir.clone(),
             doveadm_path: PathBuf::from("/usr/local/bin/doveadm"),
             doveadm_auth_socket_path: config.doveadm_auth_socket_path.clone(),
+            doveadm_userdb_socket_path: config.doveadm_userdb_socket_path.clone(),
             sendmail_path: PathBuf::from("/usr/sbin/sendmail"),
             render_policy: RenderingPolicy::default(),
         }
@@ -703,7 +705,8 @@ impl BrowserGateway for RuntimeBrowserGateway {
             MailboxListingPolicy::default(),
             SystemCommandExecutor,
             self.doveadm_path.clone(),
-        ))
+        )
+        .with_userdb_socket_path(self.doveadm_userdb_socket_path.clone()))
         .list_for_validated_session(context, validated_session);
 
         match outcome.decision {
@@ -754,7 +757,8 @@ impl BrowserGateway for RuntimeBrowserGateway {
             MessageListPolicy::default(),
             SystemCommandExecutor,
             self.doveadm_path.clone(),
-        ))
+        )
+        .with_userdb_socket_path(self.doveadm_userdb_socket_path.clone()))
         .list_for_validated_session(context, validated_session, &request);
 
         match outcome.decision {
@@ -809,7 +813,8 @@ impl BrowserGateway for RuntimeBrowserGateway {
             MessageViewPolicy::default(),
             SystemCommandExecutor,
             self.doveadm_path.clone(),
-        ))
+        )
+        .with_userdb_socket_path(self.doveadm_userdb_socket_path.clone()))
         .fetch_for_validated_session(context, validated_session, &request);
         let mut audit_events = vec![message_outcome.audit_event.clone()];
 
@@ -889,7 +894,8 @@ impl BrowserGateway for RuntimeBrowserGateway {
             MessageViewPolicy::default(),
             SystemCommandExecutor,
             self.doveadm_path.clone(),
-        ))
+        )
+        .with_userdb_socket_path(self.doveadm_userdb_socket_path.clone()))
         .fetch_for_validated_session(context, validated_session, &request);
         let mut audit_events = vec![message_outcome.audit_event.clone()];
 

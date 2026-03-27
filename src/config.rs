@@ -20,6 +20,7 @@ pub struct AppConfig {
     pub environment: RuntimeEnvironment,
     pub listen_addr: String,
     pub doveadm_auth_socket_path: Option<PathBuf>,
+    pub doveadm_userdb_socket_path: Option<PathBuf>,
     pub state_root: PathBuf,
     pub log_level: LogLevel,
     pub log_format: LogFormat,
@@ -213,6 +214,8 @@ impl AppConfig {
             read_value(env_map, "OSMAP_OPENBSD_CONFINEMENT_MODE", "disabled");
         let doveadm_auth_socket_path =
             parse_optional_absolute_optional_path(env_map, "OSMAP_DOVEADM_AUTH_SOCKET_PATH")?;
+        let doveadm_userdb_socket_path =
+            parse_optional_absolute_optional_path(env_map, "OSMAP_DOVEADM_USERDB_SOCKET_PATH")?;
 
         validate_non_empty("OSMAP_RUN_MODE", &run_mode_value)?;
         validate_non_empty("OSMAP_ENV", &environment_value)?;
@@ -281,6 +284,7 @@ impl AppConfig {
             environment,
             listen_addr,
             doveadm_auth_socket_path,
+            doveadm_userdb_socket_path,
             log_level,
             log_format,
             state_root,
@@ -421,6 +425,7 @@ mod tests {
         assert_eq!(config.environment, RuntimeEnvironment::Development);
         assert_eq!(config.listen_addr, "127.0.0.1:8080");
         assert_eq!(config.doveadm_auth_socket_path, None);
+        assert_eq!(config.doveadm_userdb_socket_path, None);
         assert_eq!(config.state_root, std::path::Path::new("/var/lib/osmap"));
         assert_eq!(
             config.state_layout.runtime_dir,
@@ -492,6 +497,10 @@ mod tests {
                 "OSMAP_DOVEADM_AUTH_SOCKET_PATH".to_string(),
                 "/var/run/osmap/dovecot-auth".to_string(),
             ),
+            (
+                "OSMAP_DOVEADM_USERDB_SOCKET_PATH".to_string(),
+                "/var/run/osmap/dovecot-userdb".to_string(),
+            ),
         ]);
 
         let config = AppConfig::from_env_map(&env_map).expect("explicit values should be valid");
@@ -502,6 +511,10 @@ mod tests {
         assert_eq!(
             config.doveadm_auth_socket_path,
             Some(std::path::Path::new("/var/run/osmap/dovecot-auth").to_path_buf())
+        );
+        assert_eq!(
+            config.doveadm_userdb_socket_path,
+            Some(std::path::Path::new("/var/run/osmap/dovecot-userdb").to_path_buf())
         );
         assert_eq!(
             config.state_root,
@@ -623,6 +636,25 @@ mod tests {
             BootstrapError::PathMustBeAbsolute {
                 field: "OSMAP_DOVEADM_AUTH_SOCKET_PATH",
                 value: "var/run/osmap-auth".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn rejects_relative_doveadm_userdb_socket_path() {
+        let env_map = BTreeMap::from([(
+            "OSMAP_DOVEADM_USERDB_SOCKET_PATH".to_string(),
+            "var/run/osmap-userdb".to_string(),
+        )]);
+
+        let error =
+            AppConfig::from_env_map(&env_map).expect_err("relative userdb socket path must fail");
+
+        assert_eq!(
+            error,
+            BootstrapError::PathMustBeAbsolute {
+                field: "OSMAP_DOVEADM_USERDB_SOCKET_PATH",
+                value: "var/run/osmap-userdb".to_string(),
             }
         );
     }

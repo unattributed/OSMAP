@@ -102,6 +102,17 @@ The host validation model remains deliberately conservative: prove narrow,
 safe claims first, then widen coverage as the browser and message-read paths
 appear.
 
+The live-host status is now more specific than it was when this slice was first
+written:
+
+- positive browser auth under `_osmap` is proven on `mail.blackbagsecurity.com`
+- mailbox listing under `_osmap` is still not proven there
+- the current blocker is Dovecot's virtual-mail identity model, not the auth
+  socket path
+- a dedicated userdb socket can be reached by `_osmap`, but the host's userdb
+  lookup still resolves mailbox access to `uid=2000(vmail)` and
+  `gid=2000(vmail)`, which an unprivileged `_osmap` process cannot assume
+
 ## What This Slice Proves
 
 This slice now proves that:
@@ -116,11 +127,10 @@ This slice now proves that:
 
 This slice does not yet include:
 
-- message body retrieval
-- attachment metadata or download handling
-- HTML or MIME rendering policy
-- richer browser presentation beyond the now-implemented bounded route set
 - mailbox caching or pagination strategy
+- a fully proven least-privilege mailbox-read path on
+  `mail.blackbagsecurity.com` under `_osmap`
 
-Those belong to the later WP6 and browser-facing slices rather than to this
-mailbox-listing proof point.
+Message body retrieval, attachment handling, MIME policy, and the bounded
+browser routes now exist elsewhere in the runtime. They remain outside this
+mailbox-listing slice itself.
