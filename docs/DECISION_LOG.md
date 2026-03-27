@@ -456,3 +456,23 @@ Live enforced-host testing showed that session refresh updates file permissions
 on temp session records during save. The confinement policy now includes
 `fattr` explicitly so the reviewed promise set matches the real file-state
 behavior instead of relying on an accidentally incomplete abstraction.
+
+### Reuse the existing message-view and MIME part-path model for downloads
+
+Attachment download now rides on top of the current mailbox-plus-UID message
+view and MIME part-path model. OSMAP is not adding a second attachment storage
+or retrieval namespace just to make browser downloads convenient.
+
+### Force attachment downloads instead of adding preview behavior
+
+The first attachment route uses forced-download headers, conservative filename
+sanitization, and `nosniff`. The project should not widen browser trust by
+normalizing inline preview behavior before the simpler download path is proven.
+
+### Treat enforced synthetic-session attachment results as real evidence
+
+Live OpenBSD validation now proves that a synthetic file-backed session can be
+validated and refreshed on disk under `enforce`, and that the attachment route
+itself is reachable under that boundary. The remaining `doveadm` stats-writer
+problem observed on `mail.blackbagsecurity.com` should be tracked as a helper
+integration caveat, not hand-waved away.

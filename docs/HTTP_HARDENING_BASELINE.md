@@ -151,7 +151,7 @@ This baseline does not mean:
 - public-internet exposure is now the default
 - nginx configuration is finalized for production
 - the current listener is concurrent or high-throughput
-- attachment downloads are implemented or hardened
+- attachment downloads are fully live-host-proven or fully helper-hardened
 - CSRF coverage exists beyond the currently implemented form routes
 - the current unveil view is narrow enough for final adoption
 - every live browser workflow is fully proven on the target host

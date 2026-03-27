@@ -119,7 +119,7 @@ This slice does not yet include:
 - message body retrieval
 - attachment metadata or download handling
 - HTML or MIME rendering policy
-- browser request handlers or templates
+- richer browser presentation beyond the now-implemented bounded route set
 - mailbox caching or pagination strategy
 
 Those belong to the later WP6 and browser-facing slices rather than to this

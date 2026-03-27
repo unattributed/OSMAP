@@ -22,7 +22,7 @@ The current slice provides:
 - bounded first-layer and nested multipart inspection
 - plain-text part selection for common multipart layouts
 - explicit HTML-withheld and structure-withheld placeholder behavior
-- attachment metadata surfacing without attachment retrieval
+- attachment metadata surfacing and bounded attachment-part resolution
 - rendering audit fields that now describe MIME type, body source, and
   attachment count
 
@@ -62,10 +62,10 @@ The current attachment metadata model includes:
 This is enough to support:
 
 - honest operator and developer reasoning about message structure
-- later attachment download design
+- bounded forced-download behavior for surfaced parts
 - later UI work that shows attachments without guessing
 
-It is not yet a download or preview contract.
+It is still not a preview contract or a full MIME-client contract.
 
 ## Security Posture
 
@@ -102,8 +102,7 @@ This slice now proves that:
 - OSMAP can classify common MIME message shapes without a large dependency
 - the browser-facing layer can preserve a plain-text-first posture even when
   the message is HTML or multipart
-- attachment metadata can be surfaced honestly before attachment download
-  behavior exists
+- surfaced attachment parts can be resolved without bypassing the MIME layer
 - the project can support common multipart mail without quietly becoming a rich
   HTML mail renderer
 
@@ -113,9 +112,9 @@ This slice does not yet include:
 
 - HTML sanitization and safe HTML rendering
 - encoded-word and RFC 2231 parameter decoding
-- attachment retrieval handlers or download authorization behavior
+- rich attachment preview behavior
 - inline image rendering
 - nested message/rfc822 presentation
-- browser templates or HTTP request handlers
+- full MIME-complete behavior beyond the current bounded browser route set
 
 Those remain later WP6 and post-WP6 work.

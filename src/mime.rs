@@ -120,6 +120,14 @@ pub struct MimeAnalysis {
     pub attachments: Vec<AttachmentMetadata>,
 }
 
+/// One surfaced attachment part plus the raw body text needed for decoding.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AttachmentPart {
+    pub metadata: AttachmentMetadata,
+    pub transfer_encoding: String,
+    pub body_text: String,
+}
+
 /// Errors raised while validating MIME metadata into bounded shapes.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MimeAnalysisError {
@@ -171,6 +179,46 @@ impl MimeAnalyzer {
             contains_html_body: observation.contains_html_body,
             attachments: observation.attachments,
         })
+    }
+
+    /// Finds one surfaced attachment part by dotted part path.
+    pub fn find_attachment_part(
+        &self,
+        message: &MessageView,
+        wanted_part_path: &str,
+    ) -> Result<Option<AttachmentPart>, MimeAnalysisError> {
+        let unfolded_headers = unfold_headers(&message.header_block);
+        let content_type = parse_header_value(
+            extract_header_value(
+                &unfolded_headers,
+                "Content-Type",
+                self.policy.header_value_max_len,
+            )?
+            .as_deref()
+            .unwrap_or("text/plain"),
+            self.policy,
+        )?;
+
+        find_attachment_part_in_entity(
+            self.policy,
+            &content_type,
+            extract_header_value(
+                &unfolded_headers,
+                "Content-Disposition",
+                self.policy.header_value_max_len,
+            )?
+            .as_deref(),
+            extract_header_value(
+                &unfolded_headers,
+                "Content-Transfer-Encoding",
+                self.policy.header_value_max_len,
+            )?
+            .as_deref(),
+            &message.body_text,
+            "1",
+            0,
+            wanted_part_path,
+        )
     }
 }
 
@@ -342,6 +390,89 @@ fn analyze_entity(
     })
 }
 
+/// Recursively locates one surfaced attachment part by its dotted path.
+fn find_attachment_part_in_entity(
+    policy: MimeAnalysisPolicy,
+    content_type: &ParsedHeaderValue,
+    disposition_header: Option<&str>,
+    transfer_encoding_header: Option<&str>,
+    body_text: &str,
+    part_path: &str,
+    depth: usize,
+    wanted_part_path: &str,
+) -> Result<Option<AttachmentPart>, MimeAnalysisError> {
+    let disposition = parse_header_value(disposition_header.unwrap_or(""), policy)?;
+    let filename = extract_filename(policy, content_type, &disposition)?;
+    let disposition_kind = classify_disposition(&disposition);
+
+    if content_type.value.starts_with("multipart/") {
+        if depth >= policy.max_depth {
+            return Ok(None);
+        }
+
+        let Some(boundary) = content_type.params.get("boundary") else {
+            return Ok(None);
+        };
+
+        for part in parse_multipart_parts(policy, boundary, body_text, part_path)? {
+            let unfolded_headers = unfold_headers(&part.header_block);
+            let part_content_type = parse_header_value(
+                extract_header_value(
+                    &unfolded_headers,
+                    "Content-Type",
+                    policy.header_value_max_len,
+                )?
+                .as_deref()
+                .unwrap_or("text/plain"),
+                policy,
+            )?;
+
+            if let Some(found) = find_attachment_part_in_entity(
+                policy,
+                &part_content_type,
+                extract_header_value(
+                    &unfolded_headers,
+                    "Content-Disposition",
+                    policy.header_value_max_len,
+                )?
+                .as_deref(),
+                extract_header_value(
+                    &unfolded_headers,
+                    "Content-Transfer-Encoding",
+                    policy.header_value_max_len,
+                )?
+                .as_deref(),
+                &part.body_text,
+                &part.part_path,
+                depth + 1,
+                wanted_part_path,
+            )? {
+                return Ok(Some(found));
+            }
+        }
+
+        return Ok(None);
+    }
+
+    if part_path == wanted_part_path
+        && should_surface_as_attachment(&content_type.value, disposition_kind, filename.as_deref())
+    {
+        return Ok(Some(AttachmentPart {
+            metadata: AttachmentMetadata {
+                part_path: part_path.to_string(),
+                filename,
+                content_type: content_type.value.clone(),
+                disposition: disposition_kind,
+                size_hint_bytes: body_text.len(),
+            },
+            transfer_encoding: normalize_transfer_encoding(transfer_encoding_header, policy)?,
+            body_text: body_text.to_string(),
+        }));
+    }
+
+    Ok(None)
+}
+
 /// Parses one structured MIME header value plus its semicolon parameters.
 fn parse_header_value(
     raw_value: &str,
@@ -405,6 +536,30 @@ fn parse_header_value(
     }
 
     Ok(ParsedHeaderValue { value, params })
+}
+
+/// Normalizes one transfer-encoding header to a small lower-case token.
+fn normalize_transfer_encoding(
+    raw_value: Option<&str>,
+    policy: MimeAnalysisPolicy,
+) -> Result<String, MimeAnalysisError> {
+    let value = raw_value.unwrap_or("").trim().to_ascii_lowercase();
+    if value.len() > policy.header_value_max_len {
+        return Err(MimeAnalysisError {
+            reason: format!(
+                "content-transfer-encoding exceeded maximum length of {} bytes",
+                policy.header_value_max_len
+            ),
+        });
+    }
+
+    if value.chars().any(|ch| ch.is_control() || ch.is_whitespace()) {
+        return Err(MimeAnalysisError {
+            reason: "content-transfer-encoding contained unsupported characters".to_string(),
+        });
+    }
+
+    Ok(value)
 }
 
 /// Extracts one unfolded header value from a header block by case-insensitive name.
@@ -795,5 +950,36 @@ mod tests {
             analysis.attachments[0].disposition,
             AttachmentDisposition::Inline
         );
+    }
+
+    #[test]
+    fn finds_attachment_part_by_path() {
+        let analyzer = MimeAnalyzer::new(MimeAnalysisPolicy::default());
+        let part = analyzer
+            .find_attachment_part(
+                &message_view(
+                    "Subject: Test\nContent-Type: multipart/mixed; boundary=\"mix-1\"\n",
+                    concat!(
+                        "--mix-1\n",
+                        "Content-Type: text/plain\n",
+                        "\n",
+                        "Hello\n",
+                        "--mix-1\n",
+                        "Content-Type: application/pdf\n",
+                        "Content-Transfer-Encoding: base64\n",
+                        "Content-Disposition: attachment; filename=\"report.pdf\"\n",
+                        "\n",
+                        "SGVsbG8=\n",
+                        "--mix-1--\n",
+                    ),
+                ),
+                "1.2",
+            )
+            .expect("lookup should succeed")
+            .expect("attachment should exist");
+
+        assert_eq!(part.metadata.filename.as_deref(), Some("report.pdf"));
+        assert_eq!(part.transfer_encoding, "base64");
+        assert_eq!(part.body_text, "SGVsbG8=");
     }
 }

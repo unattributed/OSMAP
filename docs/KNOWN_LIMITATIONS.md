@@ -12,13 +12,15 @@
 ## Current Program Limitations
 
 - The implementation now has runtime, auth, TOTP, and session foundations, but
-  it is not yet a usable browser mail product
+  it is still a prototype-grade browser mail product rather than a production
+  service
 - The implementation now has a bounded browser slice with login, mailbox read,
-  message view, compose, send, and CSRF handling, but it does not yet include
-  attachment download handlers or concurrent request handling
+  message view, compose, send, CSRF handling, and attachment download, but it
+  does not yet include concurrent request handling
 - The implementation now has a bounded message-view fetch path, plus
   MIME-aware classification and attachment metadata surfacing, but it does not
-  yet provide attachment retrieval or download behavior
+  yet provide preview-oriented attachment behavior or successful live-host
+  attachment reads under enforced confinement
 - The implementation now has a first outbound send path with reply and forward
   draft generation plus bounded new attachment upload/submission behavior, but
   it does not yet support draft persistence or original-message attachment
@@ -43,8 +45,12 @@
 - The current browser-driven invalid-login path on `mail.blackbagsecurity.com`
   produces the same `doveadm` backend error with confinement disabled and
   enabled, so that host-specific browser-auth path still needs refinement
+- The current synthetic session-gated attachment request under enforced mode on
+  `mail.blackbagsecurity.com` reached the route and updated session state, but
+  the underlying `doveadm` helper still reported a Dovecot stats-writer socket
+  permission problem during the message-view step
 - The SDLC and release rules are now defined, but they have not yet been proven
   against a full live implementation pipeline
 - The project now has an implementation plan and work breakdown, but there is
-  not yet a full browser proof of concept covering attachment download and
-  hardened deployment end to end
+  not yet a fully proven browser proof of concept covering hardened deployment
+  and successful live attachment workflows end to end

@@ -128,7 +128,8 @@ WP1 and WP2 are now complete: the runtime has a typed configuration model, an
 explicit mutable-state layout, and a small structured logging/error baseline.
 
 The project is not yet production-ready and does not yet have a running public
-prototype. WP3 now includes bounded credential handling, a real
+deployment, but it now has a real bounded browser prototype rather than only a
+design baseline. WP3 now includes bounded credential handling, a real
 Dovecot-oriented primary-auth path, a real TOTP backend with a bounded
 secret-store model, a second-factor verification stage, and audit-quality auth
 events. The runtime now also includes a first session-management baseline with
@@ -160,11 +161,15 @@ now also has an operator-controlled OpenBSD confinement mode with real
 now in place too: bounded new attachment upload and multipart submission
 behavior. The OpenBSD confinement view has also had its first real narrowing
 pass away from a blanket `/var` unveil, and live-host validation exposed and
-closed a real `fattr` promise gap in the session-refresh path.
+closed a real `fattr` promise gap in the session-refresh path. The next mailbox
+read step is now in place too: bounded attachment download using the existing
+session, message-view, and MIME part-path model, with forced-download browser
+headers and conservative transfer-decoding support.
 
-The next implementation step is to harden and verify attachment download
-behavior, keep tightening the helper-compatible OpenBSD view, and continue
-reducing risk in the custom HTTP/browser runtime.
+The next implementation steps are to keep tightening the helper-compatible
+OpenBSD view, investigate the remaining live `doveadm` helper caveats under
+`enforce`, and continue reducing correctness and denial-of-service risk in the
+custom HTTP/browser runtime.
 
 ---
 

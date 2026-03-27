@@ -165,7 +165,7 @@ Done means:
 
 - message view works for normal mail
 - HTML rendering follows the project safety posture
-- attachment access behavior is defined
+- attachment access behavior is implemented as a bounded forced-download route
 - browser request handling exists without a large framework
 
 ### WP7: Compose And Send

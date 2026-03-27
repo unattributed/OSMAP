@@ -105,6 +105,8 @@ The current confinement layer has been validated through:
 - OpenBSD host `GET /healthz` under enforced confinement
 - live invalid-login handling under enforced confinement on
   `mail.blackbagsecurity.com`
+- a synthetic session-gated attachment-route request under enforced confinement
+  on `mail.blackbagsecurity.com`
 
 The enforced OpenBSD run logged:
 
@@ -130,11 +132,16 @@ That distinction matters:
 - the exact live browser-auth path on that host still needs refinement before
   it can be called production-ready
 
-Additional live validation also exposed one real confinement gap: the session
-layer updates file permissions on temp session records during save, which
-requires `fattr` in the steady-state promise set. The current promise model now
-includes that capability explicitly rather than relying on an untested smaller
-set.
+Additional live validation also exposed and clarified two things:
+
+- the session layer updates file permissions on temp session records during
+  save, which requires `fattr` in the steady-state promise set
+- a synthetic session-backed attachment request still hit a Dovecot
+  stats-writer Unix-socket permission problem inside the helper path on
+  `mail.blackbagsecurity.com`
+
+The first point is already fixed in the promise set. The second remains an
+active helper-integration caveat to narrow and validate further.
 
 ## What This Baseline Does Not Yet Claim
 
@@ -144,6 +151,8 @@ This baseline does not mean:
 - helper-process dependencies have been eliminated
 - browser auth is fully proven end to end on the target host
 - richer send helper execution is fully proven under enforced confinement
+- successful live attachment-bearing reads are fully proven under enforced
+  confinement
 - QEMU and host confinement validation are complete for every user workflow
 
 The next confinement work should focus on narrowing the helper-compatible

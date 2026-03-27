@@ -91,9 +91,10 @@ This slice now proves that:
 This slice still does not yet include:
 
 - HTML mail sanitization policy
-- attachment retrieval or download behavior
+- attachment preview behavior
 - inline image policy
 - encoded header decoding
-- browser templates or request handlers
+- richer browser presentation beyond the current server-rendered route set
 
-Those remain later work after the plain-text safety posture is established.
+The first bounded attachment-download route now exists separately from the
+renderer, which preserves the current plain-text-first browser posture.

@@ -11,6 +11,10 @@ use std::net::{TcpListener, TcpStream};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
 
+use crate::attachment::{
+    AttachmentDownloadDecision, AttachmentDownloadPolicy, AttachmentDownloadPublicFailureReason,
+    AttachmentDownloadService, DownloadedAttachment,
+};
 use crate::auth::{
     AuthenticationContext, AuthenticationDecision, AuthenticationPolicy, AuthenticationService,
     DoveadmAuthTestBackend, PublicFailureReason, RequiredSecondFactor, SecondFactorService,
@@ -129,17 +133,27 @@ pub struct HttpResponse {
     pub status_code: u16,
     pub reason_phrase: &'static str,
     pub headers: Vec<(String, String)>,
-    pub body: String,
+    pub body: Vec<u8>,
 }
 
 impl HttpResponse {
-    /// Creates a response with the supplied status and body.
-    pub fn new(status_code: u16, reason_phrase: &'static str, body: impl Into<String>) -> Self {
+    /// Creates a text response with the supplied status and body.
+    pub fn text(status_code: u16, reason_phrase: &'static str, body: impl Into<String>) -> Self {
         Self {
             status_code,
             reason_phrase,
             headers: Vec::new(),
-            body: body.into(),
+            body: body.into().into_bytes(),
+        }
+    }
+
+    /// Creates a binary response with the supplied status and body.
+    pub fn binary(status_code: u16, reason_phrase: &'static str, body: Vec<u8>) -> Self {
+        Self {
+            status_code,
+            reason_phrase,
+            headers: Vec::new(),
+            body,
         }
     }
 
@@ -184,8 +198,9 @@ impl HttpResponse {
         }
 
         output.push_str("\r\n");
-        output.push_str(&self.body);
-        output.into_bytes()
+        let mut bytes = output.into_bytes();
+        bytes.extend_from_slice(&self.body);
+        bytes
     }
 }
 
@@ -244,6 +259,15 @@ pub trait BrowserGateway {
         mailbox_name: &str,
         uid: u64,
     ) -> BrowserMessageViewOutcome;
+
+    fn download_attachment(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        mailbox_name: &str,
+        uid: u64,
+        part_path: &str,
+    ) -> BrowserAttachmentDownloadOutcome;
 
     fn send_message(
         &self,
@@ -356,6 +380,25 @@ pub enum BrowserMessageViewDecision {
     },
 }
 
+/// The result of a browser attachment-download operation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BrowserAttachmentDownloadOutcome {
+    pub decision: BrowserAttachmentDownloadDecision,
+    pub audit_events: Vec<LogEvent>,
+}
+
+/// Attachment-download decisions visible to the browser layer.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BrowserAttachmentDownloadDecision {
+    Downloaded {
+        canonical_username: String,
+        attachment: DownloadedAttachment,
+    },
+    Denied {
+        public_reason: String,
+    },
+}
+
 /// The result of a browser send operation.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BrowserSendOutcome {
@@ -452,6 +495,11 @@ impl RuntimeBrowserGateway {
             SystemCommandExecutor,
             self.sendmail_path.clone(),
         ))
+    }
+
+    /// Builds the current attachment-download service from the MIME policy.
+    fn build_attachment_download_service(&self) -> AttachmentDownloadService {
+        AttachmentDownloadService::new(AttachmentDownloadPolicy::default())
     }
 }
 
@@ -775,6 +823,86 @@ impl BrowserGateway for RuntimeBrowserGateway {
         }
     }
 
+    fn download_attachment(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        mailbox_name: &str,
+        uid: u64,
+        part_path: &str,
+    ) -> BrowserAttachmentDownloadOutcome {
+        let request = match MessageViewRequest::new(MessageViewPolicy::default(), mailbox_name, uid) {
+            Ok(request) => request,
+            Err(error) => {
+                return BrowserAttachmentDownloadOutcome {
+                    decision: BrowserAttachmentDownloadDecision::Denied {
+                        public_reason:
+                            AttachmentDownloadPublicFailureReason::InvalidRequest
+                                .as_str()
+                                .to_string(),
+                    },
+                    audit_events: vec![build_http_warning_event(
+                        "attachment_download_request_rejected",
+                        "attachment download request validation failed",
+                        context,
+                    )
+                    .with_field("reason", error.reason)],
+                };
+            }
+        };
+
+        let message_outcome = MessageViewService::new(DoveadmMessageViewBackend::new(
+            MessageViewPolicy::default(),
+            SystemCommandExecutor,
+            self.doveadm_path.clone(),
+        ))
+        .fetch_for_validated_session(context, validated_session, &request);
+        let mut audit_events = vec![message_outcome.audit_event.clone()];
+
+        match message_outcome.decision {
+            MessageViewDecision::Retrieved {
+                canonical_username,
+                message,
+                ..
+            } => {
+                let attachment_outcome = self.build_attachment_download_service()
+                    .download_for_validated_session(
+                        context,
+                        validated_session,
+                        &message,
+                        part_path,
+                    );
+                audit_events.push(attachment_outcome.audit_event.clone());
+
+                match attachment_outcome.decision {
+                    AttachmentDownloadDecision::Downloaded { attachment, .. } => {
+                        BrowserAttachmentDownloadOutcome {
+                            decision: BrowserAttachmentDownloadDecision::Downloaded {
+                                canonical_username,
+                                attachment,
+                            },
+                            audit_events,
+                        }
+                    }
+                    AttachmentDownloadDecision::Denied { public_reason } => {
+                        BrowserAttachmentDownloadOutcome {
+                            decision: BrowserAttachmentDownloadDecision::Denied {
+                                public_reason: public_reason.as_str().to_string(),
+                            },
+                            audit_events,
+                        }
+                    }
+                }
+            }
+            MessageViewDecision::Denied { public_reason } => BrowserAttachmentDownloadOutcome {
+                decision: BrowserAttachmentDownloadDecision::Denied {
+                    public_reason: public_reason.as_str().to_string(),
+                },
+                audit_events,
+            },
+        }
+    }
+
     fn send_message(
         &self,
         context: &AuthenticationContext,
@@ -891,7 +1019,7 @@ where
 
         match (request.method, request.path.as_str()) {
             (HttpMethod::Get, "/healthz") => HandledHttpResponse {
-                response: HttpResponse::new(200, "OK", "ok\n")
+                response: HttpResponse::text(200, "OK", "ok\n")
                     .with_header("Content-Type", "text/plain; charset=utf-8")
                     .with_header("Cache-Control", "no-store"),
                 audit_events: vec![build_http_info_event(
@@ -913,6 +1041,7 @@ where
             (HttpMethod::Get, "/mailboxes") => self.handle_mailboxes(request, &context),
             (HttpMethod::Get, "/mailbox") => self.handle_mailbox_messages(request, &context),
             (HttpMethod::Get, "/message") => self.handle_message_view(request, &context),
+            (HttpMethod::Get, "/attachment") => self.handle_attachment_download(request, &context),
             (HttpMethod::Get, "/compose") => self.handle_compose_form(request, &context),
             (HttpMethod::Post, "/send") => self.handle_send(request, &context),
             (HttpMethod::Post, "/logout") => self.handle_logout(request, &context),
@@ -1224,6 +1353,120 @@ where
                 ),
                 audit_events,
             },
+        }
+    }
+
+    /// Handles one session-gated attachment download request.
+    fn handle_attachment_download(
+        &self,
+        request: &HttpRequest,
+        context: &AuthenticationContext,
+    ) -> HandledHttpResponse {
+        let mailbox_name = match request.query_params.get("mailbox") {
+            Some(mailbox_name) if !mailbox_name.is_empty() => mailbox_name.clone(),
+            _ => {
+                return HandledHttpResponse {
+                    response: html_response(
+                        400,
+                        "Bad Request",
+                        "Invalid Attachment Request",
+                        "<p>A mailbox name is required.</p>",
+                    ),
+                    audit_events: vec![build_http_warning_event(
+                        "http_attachment_mailbox_rejected",
+                        "attachment mailbox parameter missing",
+                        context,
+                    )],
+                };
+            }
+        };
+        let uid = match request
+            .query_params
+            .get("uid")
+            .and_then(|value| value.parse::<u64>().ok())
+        {
+            Some(uid) if uid > 0 => uid,
+            _ => {
+                return HandledHttpResponse {
+                    response: html_response(
+                        400,
+                        "Bad Request",
+                        "Invalid Attachment Request",
+                        "<p>A positive IMAP UID is required.</p>",
+                    ),
+                    audit_events: vec![build_http_warning_event(
+                        "http_attachment_uid_rejected",
+                        "attachment uid parameter invalid",
+                        context,
+                    )],
+                };
+            }
+        };
+        let part_path = match request.query_params.get("part") {
+            Some(part_path) if !part_path.is_empty() => part_path.clone(),
+            _ => {
+                return HandledHttpResponse {
+                    response: html_response(
+                        400,
+                        "Bad Request",
+                        "Invalid Attachment Request",
+                        "<p>An attachment part path is required.</p>",
+                    ),
+                    audit_events: vec![build_http_warning_event(
+                        "http_attachment_part_rejected",
+                        "attachment part parameter missing",
+                        context,
+                    )],
+                };
+            }
+        };
+
+        let (validated_session, mut audit_events) =
+            match self.require_validated_session(request, context) {
+                Ok(result) => result,
+                Err(response) => return response,
+            };
+
+        let outcome = self.gateway.download_attachment(
+            context,
+            &validated_session,
+            &mailbox_name,
+            uid,
+            &part_path,
+        );
+        audit_events.extend(outcome.audit_events);
+
+        match outcome.decision {
+            BrowserAttachmentDownloadDecision::Downloaded { attachment, .. } => {
+                HandledHttpResponse {
+                    response: attachment_download_response(&attachment),
+                    audit_events,
+                }
+            }
+            BrowserAttachmentDownloadDecision::Denied { public_reason } => {
+                let (status_code, reason_phrase, title) = match public_reason.as_str() {
+                    "invalid_request" => (400, "Bad Request", "Invalid Attachment Request"),
+                    "not_found" => (404, "Not Found", "Attachment Not Found"),
+                    _ => (
+                        503,
+                        "Service Unavailable",
+                        "Attachment Download Unavailable",
+                    ),
+                };
+
+                HandledHttpResponse {
+                    response: html_response(
+                        status_code,
+                        reason_phrase,
+                        title,
+                        &format!(
+                            "<p>{}</p>",
+                            escape_html(public_reason_message(&public_reason))
+                        ),
+                    ),
+                    audit_events,
+                }
+            }
         }
     }
 
@@ -1933,7 +2176,7 @@ fn clear_session_cookie(cookie_name: &str, secure: bool) -> String {
 
 /// Builds a redirect response with the current browser-security headers.
 fn redirect_response(status_code: u16, reason_phrase: &'static str, location: &str) -> HttpResponse {
-    HttpResponse::new(
+    HttpResponse::text(
         status_code,
         reason_phrase,
         format!(
@@ -1957,7 +2200,7 @@ fn html_response(
     title: &str,
     body_html: &str,
 ) -> HttpResponse {
-    HttpResponse::new(
+    HttpResponse::text(
         status_code,
         reason_phrase,
         format!(
@@ -1971,6 +2214,41 @@ fn html_response(
     .with_header("Referrer-Policy", "no-referrer")
     .with_header("X-Content-Type-Options", "nosniff")
     .with_header("X-Frame-Options", "DENY")
+}
+
+/// Builds a forced-download response for one resolved attachment payload.
+fn attachment_download_response(attachment: &DownloadedAttachment) -> HttpResponse {
+    HttpResponse::binary(200, "OK", attachment.body.clone())
+        .with_header("Content-Type", attachment.content_type.clone())
+        .with_header(
+            "Content-Disposition",
+            build_attachment_content_disposition(&attachment.filename),
+        )
+        .with_header("Cache-Control", "no-store")
+        .with_header("Referrer-Policy", "no-referrer")
+        .with_header("X-Content-Type-Options", "nosniff")
+        .with_header("X-Frame-Options", "DENY")
+}
+
+/// Builds a conservative attachment-style `Content-Disposition` header value.
+fn build_attachment_content_disposition(filename: &str) -> String {
+    format!(
+        "attachment; filename=\"{}\"",
+        escape_header_quoted_string(filename)
+    )
+}
+
+/// Escapes a response header quoted-string without widening filename syntax.
+fn escape_header_quoted_string(value: &str) -> String {
+    let mut escaped = String::with_capacity(value.len());
+    for ch in value.chars() {
+        match ch {
+            '"' => escaped.push_str("\\\""),
+            '\\' => escaped.push_str("\\\\"),
+            _ => escaped.push(ch),
+        }
+    }
+    escaped
 }
 
 /// Returns the current narrow content-security-policy for HTML responses.
@@ -2113,13 +2391,20 @@ fn render_message_view_page(
         attachments.push_str("<li>No attachment metadata surfaced for this message.</li>");
     } else {
         for attachment in &rendered.attachments {
+            let download_href = format!(
+                "/attachment?mailbox={}&uid={}&part={}",
+                url_encode(&rendered.mailbox_name),
+                rendered.uid,
+                url_encode(&attachment.part_path),
+            );
             attachments.push_str(&format!(
-                "<li>Part <strong>{}</strong>: {} ({}, {}, {} bytes)</li>",
+                "<li>Part <strong>{}</strong>: {} ({}, {}, {} bytes) [<a href=\"{}\">Download</a>]</li>",
                 escape_html(&attachment.part_path),
                 escape_html(attachment.filename.as_deref().unwrap_or("<unnamed>")),
                 escape_html(&attachment.content_type),
                 escape_html(attachment.disposition.as_str()),
                 attachment.size_hint_bytes,
+                escape_html(&download_href),
             ));
         }
     }
@@ -2538,6 +2823,49 @@ mod tests {
                 }
             }
         }
+
+        fn download_attachment(
+            &self,
+            _context: &AuthenticationContext,
+            validated_session: &ValidatedSession,
+            mailbox_name: &str,
+            uid: u64,
+            part_path: &str,
+        ) -> BrowserAttachmentDownloadOutcome {
+            if mailbox_name == "INBOX" && uid == 9 && part_path == "1.2" {
+                BrowserAttachmentDownloadOutcome {
+                    decision: BrowserAttachmentDownloadDecision::Downloaded {
+                        canonical_username: validated_session.record.canonical_username.clone(),
+                        attachment: DownloadedAttachment {
+                            mailbox_name: mailbox_name.to_string(),
+                            uid,
+                            part_path: part_path.to_string(),
+                            filename: "report.pdf".to_string(),
+                            content_type: "application/pdf".to_string(),
+                            body: b"%PDF-stub%".to_vec(),
+                        },
+                    },
+                    audit_events: vec![LogEvent::new(
+                        LogLevel::Info,
+                        EventCategory::Mailbox,
+                        "stub_attachment_download",
+                        "stub attachment download returned",
+                    )],
+                }
+            } else {
+                BrowserAttachmentDownloadOutcome {
+                    decision: BrowserAttachmentDownloadDecision::Denied {
+                        public_reason: "not_found".to_string(),
+                    },
+                    audit_events: vec![LogEvent::new(
+                        LogLevel::Warn,
+                        EventCategory::Mailbox,
+                        "stub_attachment_missing",
+                        "stub attachment missing",
+                    )],
+                }
+            }
+        }
     }
 
     fn app() -> BrowserApp<StubGateway> {
@@ -2567,6 +2895,10 @@ mod tests {
             .expect("request should parse")
     }
 
+    fn body_text(response: &HandledHttpResponse) -> String {
+        String::from_utf8_lossy(&response.response.body).into_owned()
+    }
+
     #[test]
     fn parses_basic_http_requests() {
         let request = parse_http_request(
@@ -2592,8 +2924,9 @@ mod tests {
         );
 
         assert_eq!(response.response.status_code, 200);
-        assert!(response.response.body.contains("OSMAP Login"));
-        assert!(response.response.body.contains("totp_code"));
+        let body = body_text(&response);
+        assert!(body.contains("OSMAP Login"));
+        assert!(body.contains("totp_code"));
     }
 
     #[test]
@@ -2651,8 +2984,9 @@ mod tests {
         );
 
         assert_eq!(response.response.status_code, 200);
-        assert!(response.response.body.contains("alice@example.com"));
-        assert!(response.response.body.contains("Archive/2026"));
+        let body = body_text(&response);
+        assert!(body.contains("alice@example.com"));
+        assert!(body.contains("Archive/2026"));
     }
 
     #[test]
@@ -2674,11 +3008,13 @@ mod tests {
         );
 
         assert_eq!(response.response.status_code, 200);
-        assert!(response.response.body.contains("multipart/mixed"));
-        assert!(response.response.body.contains("report.pdf"));
-        assert!(response.response.body.contains("<pre>Hello world</pre>"));
-        assert!(response.response.body.contains("mode=reply"));
-        assert!(response.response.body.contains("mode=forward"));
+        let body = body_text(&response);
+        assert!(body.contains("multipart/mixed"));
+        assert!(body.contains("report.pdf"));
+        assert!(body.contains("<pre>Hello world</pre>"));
+        assert!(body.contains("mode=reply"));
+        assert!(body.contains("mode=forward"));
+        assert!(body.contains("/attachment?mailbox=INBOX&amp;uid=9&amp;part=1.2"));
     }
 
     #[test]
@@ -2700,8 +3036,9 @@ mod tests {
         );
 
         assert_eq!(response.response.status_code, 200);
-        assert!(response.response.body.contains("name=\"csrf_token\""));
-        assert!(response.response.body.contains("action=\"/send\""));
+        let body = body_text(&response);
+        assert!(body.contains("name=\"csrf_token\""));
+        assert!(body.contains("action=\"/send\""));
     }
 
     #[test]
@@ -2723,10 +3060,11 @@ mod tests {
         );
 
         assert_eq!(response.response.status_code, 200);
-        assert!(response.response.body.contains("<h1>Reply</h1>"));
-        assert!(response.response.body.contains("alice@example.com"));
-        assert!(response.response.body.contains("Re: Example"));
-        assert!(response.response.body.contains("does not resend attachments automatically"));
+        let body = body_text(&response);
+        assert!(body.contains("<h1>Reply</h1>"));
+        assert!(body.contains("alice@example.com"));
+        assert!(body.contains("Re: Example"));
+        assert!(body.contains("does not resend attachments automatically"));
     }
 
     #[test]
@@ -2748,10 +3086,44 @@ mod tests {
         );
 
         assert_eq!(response.response.status_code, 200);
-        assert!(response.response.body.contains("<h1>Forward</h1>"));
-        assert!(response.response.body.contains("Fwd: Example"));
-        assert!(response.response.body.contains("report.pdf"));
-        assert!(response.response.body.contains("does not reattach files yet"));
+        let body = body_text(&response);
+        assert!(body.contains("<h1>Forward</h1>"));
+        assert!(body.contains("Fwd: Example"));
+        assert!(body.contains("report.pdf"));
+        assert!(body.contains("does not reattach files yet"));
+    }
+
+    #[test]
+    fn attachment_download_returns_forced_download_headers() {
+        let response = app().handle_request(
+            &request(
+                "GET",
+                "/attachment?mailbox=INBOX&uid=9&part=1.2",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                ],
+                "",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 200);
+        assert_eq!(response.response.body, b"%PDF-stub%".to_vec());
+        assert!(response
+            .response
+            .headers
+            .iter()
+            .any(|(name, value)| name == "Content-Disposition"
+                && value == "attachment; filename=\"report.pdf\""));
+        assert!(response
+            .response
+            .headers
+            .iter()
+            .any(|(name, value)| name == "X-Content-Type-Options" && value == "nosniff"));
     }
 
     #[test]
@@ -2773,7 +3145,7 @@ mod tests {
         );
 
         assert_eq!(response.response.status_code, 403);
-        assert!(response.response.body.contains("CSRF Validation Failed"));
+        assert!(body_text(&response).contains("CSRF Validation Failed"));
     }
 
     #[test]

@@ -152,7 +152,7 @@ This slice does not yet include:
 - HTML rendering policy
 - attachment metadata or download handling
 - pagination and sorting controls
-- browser request handlers or templates
+- richer browser presentation beyond the now-implemented bounded route set
 
 Those belong to the next WP6 and browser-facing slices rather than to this
 message-summary baseline.

@@ -162,7 +162,7 @@ This slice does not yet include:
 - message threading hints
 - outbound rate limiting
 - richer per-recipient validation policy
-- attachment download
 - operator-visible send queue or retry visibility
 
-Those remain later send-path and operational-hardening work.
+Attachment download now exists as a separate bounded mailbox-read slice rather
+than as part of outbound composition.

@@ -59,6 +59,7 @@ The current browser layer provides:
 - `GET /mailboxes`
 - `GET /mailbox?name=...`
 - `GET /message?mailbox=...&uid=...`
+- `GET /attachment?mailbox=...&uid=...&part=...`
 - `GET /compose`
 - `POST /send`
 - `POST /logout`
@@ -69,6 +70,8 @@ The routes intentionally mirror the current runtime baseline:
 - mailbox home lists available mailboxes
 - mailbox view lists message summaries
 - message view consumes the existing safe renderer and attachment metadata
+- attachment download reuses the existing session, message-view, and MIME
+  attachment-part model
 - compose renders the current plain-text-first outbound form, including
   reply/forward prefills when a source message is supplied
 - send hands the composed message to the local submission surface
@@ -138,12 +141,10 @@ This slice now proves that:
 This slice does not yet include:
 
 - TLS termination inside OSMAP
-- attachment download handlers
-- attachment upload handling
 - administrative routes
 - concurrent request handling
 - full end-to-end live browser workflow validation on the target host under
-  confinement
+  confinement, including successful attachment-bearing reads
 
 The nginx-facing deployment model now has a matching implemented confinement
 control, but broader live-browser validation still remains.

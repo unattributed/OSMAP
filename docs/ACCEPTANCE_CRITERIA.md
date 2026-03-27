@@ -162,7 +162,9 @@ Phase 6:
   routes
 - nginx-facing deployment details and an implemented OpenBSD confinement mode
   now exist as implementation controls
-- attachment download behavior, reply/forward behavior, attachment upload, and
-  broader live-browser validation under confinement are not complete yet
-- the actual prototype has not yet been implemented, so Phase 6 execution is
-  underway but not yet complete
+- the browser slice now includes bounded attachment download behavior alongside
+  reply/forward behavior and bounded attachment upload
+- broader live-browser validation under confinement, helper-boundary narrowing,
+  and successful live attachment reads under `enforce` are not complete yet
+- the actual prototype now exists and Phase 6 execution is materially underway,
+  but the implementation is still prototype-grade rather than production-ready
