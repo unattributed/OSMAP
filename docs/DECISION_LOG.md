@@ -294,3 +294,16 @@ The first message-view slice fetches metadata, full header text, and body text,
 but it does not claim to have solved MIME parsing, HTML transformation, or
 attachment policy. Rendering remains a separate follow-on step rather than an
 implicit side effect of retrieval.
+
+### Keep the first browser rendering mode plain-text-first
+
+The first rendering layer turns fetched body text into escaped browser-safe text
+inside a preformatted block. This keeps hostile HTML from becoming active
+markup while the project is still proving the message-read path.
+
+### Limit the first rendered header summary to a small safe subset
+
+The current renderer only extracts `Subject` and `From`, with conservative
+header unfolding and bounded values. Full header presentation and MIME-aware
+interpretation remain later work rather than hidden complexity in the first
+rendering step.

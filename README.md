@@ -138,10 +138,11 @@ validated-session gate using the existing Dovecot surface. The second WP5 slice
 is now present as well: per-mailbox message-list retrieval using a bounded
 Dovecot-backed message-summary path. The first WP6 slice is now in place too:
 bounded per-message retrieval using the same validated-session and Dovecot-backed
-read path.
+read path. The next rendering step is now in place as well: a plain-text-first
+browser-safe rendering layer on top of the fetched message payload.
 
-The next implementation step is the first conservative rendering-policy slice on
-top of the completed message-view retrieval baseline.
+The next implementation step is MIME-aware and attachment-aware follow-on work
+that preserves the current plain-text safety posture.
 
 ---
 

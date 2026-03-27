@@ -145,14 +145,15 @@ second-factor stage. WP4 now has a first real session-management baseline with
 issuance, validation, revocation, and per-user visibility behavior. WP5 now
 has mailbox-listing and message-list retrieval primitives behind the
 validated-session gate. WP6 now has a first bounded message-view retrieval
-slice on top of that read-path baseline.
+slice on top of that read-path baseline and a first plain-text rendering policy
+layer on top of the fetched message payload.
 
 The next active implementation work should focus on:
 
 - using the project-local QEMU lab wrappers and `mail.blackbagsecurity.com` for
   continued OpenBSD validation as the runtime broadens
-- defining the first conservative rendering policy and transformation layer on
-  top of the completed message-view retrieval baseline
+- defining MIME-aware and attachment-aware follow-on behavior without breaking
+  the current plain-text safety posture
 - carrying the current session model into later HTTP and cookie handling
   without collapsing the security boundaries that now exist
 

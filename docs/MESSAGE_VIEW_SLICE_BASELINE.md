@@ -27,6 +27,9 @@ The current slice provides:
 This is the first message-fetch substrate, not the final browser rendering
 pipeline.
 
+The next rendering step now exists too and is documented separately in
+`RENDERING_POLICY_BASELINE.md`.
+
 ## Current Data Shape
 
 The current bounded message payload includes:
@@ -152,11 +155,10 @@ This slice now proves that:
 This slice does not yet include:
 
 - MIME structure parsing
-- HTML rendering policy
 - attachment metadata or download handling
 - browser-safe transformation of hostile message content
 - inline image and external-resource policy
 - browser request handlers or templates
 
-Those belong to the next WP6 slices rather than to this first message-fetch
+Those belong to the later WP6 slices rather than to this first message-fetch
 baseline.

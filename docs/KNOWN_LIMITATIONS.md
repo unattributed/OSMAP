@@ -16,7 +16,10 @@
 - The implementation now has a mailbox-listing primitive, but it does not yet
   retrieve message bodies or attachments
 - The implementation now has a bounded message-view fetch path, but it does not
-  yet define MIME handling, HTML rendering policy, or attachment behavior
+  yet define MIME handling or attachment behavior
+- The implementation now has a plain-text-first rendering layer, but it does
+  not yet define HTML mail sanitization, encoded-header handling, or inline
+  resource policy
 - No formal migration plan has been completed
 - The existing host is multi-purpose, which constrains how aggressively the
   replacement can diverge from current operational patterns
