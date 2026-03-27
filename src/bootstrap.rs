@@ -10,6 +10,7 @@ use crate::logging::{EventCategory, LogEvent, Logger};
 /// A non-secret summary of the runtime state that can be emitted at startup.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BootstrapReport {
+    pub run_mode: String,
     pub environment: String,
     pub listen_addr: String,
     pub state_root: String,
@@ -33,6 +34,7 @@ impl BootstrapReport {
             "startup_ready",
             "bootstrap completed",
         )
+        .with_field("run_mode", self.run_mode.clone())
         .with_field("env", self.environment.clone())
         .with_field("listen_addr", self.listen_addr.clone())
         .with_field("state_root", self.state_root.clone())
@@ -72,6 +74,7 @@ pub fn bootstrap() -> Result<BootstrapContext, BootstrapError> {
 /// Converts validated configuration into the startup report used by the binary.
 fn report_from_config(config: &AppConfig) -> BootstrapReport {
     BootstrapReport {
+        run_mode: config.run_mode.as_str().to_string(),
         environment: config.environment.as_str().to_string(),
         listen_addr: config.listen_addr.clone(),
         state_root: config.state_root.display().to_string(),
@@ -90,13 +93,14 @@ fn report_from_config(config: &AppConfig) -> BootstrapReport {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::config::{LogFormat, LogLevel, RuntimeEnvironment};
+    use crate::config::{AppRunMode, LogFormat, LogLevel, RuntimeEnvironment};
     use crate::state::StateLayout;
     use std::path::PathBuf;
 
     #[test]
     fn startup_report_is_operator_readable() {
         let config = AppConfig {
+            run_mode: AppRunMode::Bootstrap,
             environment: RuntimeEnvironment::Development,
             listen_addr: "127.0.0.1:8080".to_string(),
             state_root: PathBuf::from("/var/lib/osmap"),
@@ -120,6 +124,10 @@ mod tests {
         assert_eq!(
             report.to_log_event().fields,
             vec![
+                crate::logging::LogField {
+                    key: "run_mode",
+                    value: "bootstrap".to_string(),
+                },
                 crate::logging::LogField {
                     key: "env",
                     value: "development".to_string(),

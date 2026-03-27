@@ -143,10 +143,15 @@ browser-safe rendering layer on top of the fetched message payload. The next
 follow-on WP6 step is now in place too: a dependency-light MIME-aware and
 attachment-aware analysis layer that preserves the current plain-text safety
 posture while surfacing attachment metadata honestly.
+The next implementation step is now in place too: a dependency-light
+HTTP/browser slice with bounded request parsing, login/logout routes,
+session-gated mailbox pages, and message-view rendering over the existing
+runtime. The binary now supports `OSMAP_RUN_MODE=bootstrap` for fast startup
+validation and `OSMAP_RUN_MODE=serve` for the current listener path.
 
-The next implementation step is to carry this runtime into actual HTTP/browser
-request handling without weakening the security boundaries that are now in
-place.
+The next implementation step is to expand this browser slice toward outbound
+send behavior and early runtime hardening without weakening the security
+boundaries that are now in place.
 
 ---
 

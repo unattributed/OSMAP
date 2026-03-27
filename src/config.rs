@@ -16,6 +16,7 @@ use crate::state::StateLayout;
 /// output because it excludes secret-bearing fields.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AppConfig {
+    pub run_mode: AppRunMode,
     pub environment: RuntimeEnvironment,
     pub listen_addr: String,
     pub state_root: PathBuf,
@@ -24,6 +25,36 @@ pub struct AppConfig {
     pub state_layout: StateLayout,
     pub session_lifetime_seconds: u64,
     pub totp_allowed_skew_steps: i64,
+}
+
+/// Controls whether the binary only validates startup or actually serves HTTP.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AppRunMode {
+    Bootstrap,
+    Serve,
+}
+
+impl AppRunMode {
+    /// Parses the run-mode string from configuration.
+    fn parse(value: &str) -> Result<Self, BootstrapError> {
+        match value {
+            "bootstrap" => Ok(Self::Bootstrap),
+            "serve" => Ok(Self::Serve),
+            _ => Err(BootstrapError::UnsupportedValue {
+                field: "OSMAP_RUN_MODE",
+                value: value.to_string(),
+                expected: "bootstrap or serve",
+            }),
+        }
+    }
+
+    /// Returns the canonical string representation used in logs and docs.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Bootstrap => "bootstrap",
+            Self::Serve => "serve",
+        }
+    }
 }
 
 /// Enumerates the supported runtime environments for the early prototype.
@@ -136,6 +167,7 @@ impl AppConfig {
     pub fn from_env_map(
         env_map: &BTreeMap<String, String>,
     ) -> Result<Self, BootstrapError> {
+        let run_mode_value = read_value(env_map, "OSMAP_RUN_MODE", "bootstrap");
         let environment_value = read_value(env_map, "OSMAP_ENV", "development");
         let listen_addr = read_value(env_map, "OSMAP_LISTEN_ADDR", "127.0.0.1:8080");
         let state_root_value = read_value(env_map, "OSMAP_STATE_DIR", "/var/lib/osmap");
@@ -144,6 +176,7 @@ impl AppConfig {
         let session_lifetime_value = read_value(env_map, "OSMAP_SESSION_LIFETIME_SECS", "43200");
         let totp_skew_steps_value = read_value(env_map, "OSMAP_TOTP_ALLOWED_SKEW_STEPS", "1");
 
+        validate_non_empty("OSMAP_RUN_MODE", &run_mode_value)?;
         validate_non_empty("OSMAP_ENV", &environment_value)?;
         let runtime_dir = parse_optional_absolute_path(
             env_map,
@@ -176,6 +209,7 @@ impl AppConfig {
         validate_non_empty("OSMAP_SESSION_LIFETIME_SECS", &session_lifetime_value)?;
         validate_non_empty("OSMAP_TOTP_ALLOWED_SKEW_STEPS", &totp_skew_steps_value)?;
 
+        let run_mode = AppRunMode::parse(&run_mode_value)?;
         let environment = RuntimeEnvironment::parse(&environment_value)?;
         let state_root = parse_absolute_path("OSMAP_STATE_DIR", &state_root_value)?;
         let log_level = LogLevel::parse(&log_level_value)?;
@@ -198,6 +232,7 @@ impl AppConfig {
         validate_development_bindings(environment, &listen_addr)?;
 
         Ok(Self {
+            run_mode,
             environment,
             listen_addr,
             log_level,
@@ -327,6 +362,7 @@ mod tests {
         let env_map = BTreeMap::new();
         let config = AppConfig::from_env_map(&env_map).expect("defaults should be valid");
 
+        assert_eq!(config.run_mode, AppRunMode::Bootstrap);
         assert_eq!(config.environment, RuntimeEnvironment::Development);
         assert_eq!(config.listen_addr, "127.0.0.1:8080");
         assert_eq!(config.state_root, std::path::Path::new("/var/lib/osmap"));
@@ -359,6 +395,7 @@ mod tests {
     #[test]
     fn accepts_explicit_environment_values() {
         let env_map = BTreeMap::from([
+            ("OSMAP_RUN_MODE".to_string(), "serve".to_string()),
             ("OSMAP_ENV".to_string(), "staging".to_string()),
             ("OSMAP_LISTEN_ADDR".to_string(), "127.0.0.1:8443".to_string()),
             ("OSMAP_STATE_DIR".to_string(), "/var/lib/osmap-staging".to_string()),
@@ -382,6 +419,7 @@ mod tests {
 
         let config = AppConfig::from_env_map(&env_map).expect("explicit values should be valid");
 
+        assert_eq!(config.run_mode, AppRunMode::Serve);
         assert_eq!(config.environment, RuntimeEnvironment::Staging);
         assert_eq!(config.listen_addr, "127.0.0.1:8443");
         assert_eq!(
@@ -417,6 +455,38 @@ mod tests {
             BootstrapError::InvalidConfig {
                 field: "OSMAP_LOG_LEVEL",
                 reason: "value must not be empty".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn rejects_empty_run_mode() {
+        let env_map = BTreeMap::from([("OSMAP_RUN_MODE".to_string(), "".to_string())]);
+
+        let error = AppConfig::from_env_map(&env_map).expect_err("empty values must fail");
+
+        assert_eq!(
+            error,
+            BootstrapError::InvalidConfig {
+                field: "OSMAP_RUN_MODE",
+                reason: "value must not be empty".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn rejects_unsupported_run_mode() {
+        let env_map = BTreeMap::from([("OSMAP_RUN_MODE".to_string(), "daemon".to_string())]);
+
+        let error =
+            AppConfig::from_env_map(&env_map).expect_err("unsupported run modes must fail");
+
+        assert_eq!(
+            error,
+            BootstrapError::UnsupportedValue {
+                field: "OSMAP_RUN_MODE",
+                value: "daemon".to_string(),
+                expected: "bootstrap or serve",
             }
         );
     }

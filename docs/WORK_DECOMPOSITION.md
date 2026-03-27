@@ -152,17 +152,21 @@ Status on March 27, 2026:
   fetched message payload
 - a MIME-aware and attachment-aware follow-on layer is now implemented for
   common mail layouts without widening browser trust
+- a first bounded HTTP/browser slice is now implemented on top of the existing
+  auth, session, mailbox, and rendering runtime
 - message-view success, not-found, and failure events are emitted as structured
   audit-quality log lines
 - recorded in `MESSAGE_VIEW_SLICE_BASELINE.md`
 - recorded in `RENDERING_POLICY_BASELINE.md`
 - recorded in `MIME_AND_ATTACHMENT_POLICY_BASELINE.md`
+- recorded in `HTTP_BROWSER_SLICE_BASELINE.md`
 
 Done means:
 
 - message view works for normal mail
 - HTML rendering follows the project safety posture
 - attachment access behavior is defined
+- browser request handling exists without a large framework
 
 ### WP7: Compose And Send
 

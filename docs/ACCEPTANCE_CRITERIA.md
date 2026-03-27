@@ -152,7 +152,9 @@ Phase 6:
   messages
 - WP6 now includes a dependency-light MIME-aware classification layer and an
   attachment-metadata surface for common mail layouts
-- browser integration, attachment download behavior, HTML sanitization, and
-  send-path work are not complete yet
+- WP6 now includes a dependency-light HTTP/browser slice with login, mailbox,
+  message-list, message-view, logout, and health routes
+- attachment download behavior, HTML sanitization, CSRF strategy, and send-path
+  work are not complete yet
 - the actual prototype has not yet been implemented, so Phase 6 execution is
   underway but not yet complete

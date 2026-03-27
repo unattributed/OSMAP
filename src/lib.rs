@@ -8,6 +8,7 @@ pub mod auth;
 pub mod bootstrap;
 pub mod config;
 pub mod error;
+pub mod http;
 pub mod logging;
 pub mod mailbox;
 pub mod mime;

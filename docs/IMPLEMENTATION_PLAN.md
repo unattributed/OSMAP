@@ -147,16 +147,20 @@ has mailbox-listing and message-list retrieval primitives behind the
 validated-session gate. WP6 now has a first bounded message-view retrieval
 slice on top of that read-path baseline, a first plain-text rendering policy
 layer on top of the fetched message payload, and a dependency-light MIME-aware
-attachment-metadata baseline for common mail layouts.
+attachment-metadata baseline for common mail layouts. The first bounded
+HTTP/browser slice now exists too, including real request parsing, routing,
+server-rendered HTML, and session-cookie handling.
 
 The next active implementation work should focus on:
 
 - using the project-local QEMU lab wrappers and `mail.blackbagsecurity.com` for
   continued OpenBSD validation as the runtime broadens
-- carrying MIME-aware classification forward into later HTTP and browser
-  handlers without collapsing the current plain-text safety posture
-- carrying the current session model into later HTTP and cookie handling
-  without collapsing the security boundaries that now exist
+- expanding the browser slice carefully into compose/send behavior without
+  discarding the current narrow HTTP and rendering posture
+- hardening the new HTTP runtime shape with CSRF strategy, nginx integration
+  details, and early confinement planning
+- carrying the current session model into later cookie and browser-state
+  handling without collapsing the security boundaries that now exist
 
 ## Implementation Guardrails
 

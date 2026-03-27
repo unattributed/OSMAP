@@ -24,6 +24,7 @@ That choice is deliberate for the early slice because it:
 
 The early runtime recognizes:
 
+- `OSMAP_RUN_MODE`
 - `OSMAP_ENV`
 - `OSMAP_LISTEN_ADDR`
 - `OSMAP_STATE_DIR`
@@ -39,6 +40,14 @@ The early runtime recognizes:
 
 The committed example file under `config/osmap.env.example` is intentionally
 non-secret.
+
+The runtime now uses `OSMAP_RUN_MODE` to separate:
+
+- fast bootstrap validation
+- actual HTTP serving
+
+That lets operators and tests exercise startup checks without always launching
+the listener.
 
 ## Environment Model
 
@@ -87,6 +96,7 @@ complex.
 
 The bootstrap currently enforces:
 
+- run mode values must be recognized explicitly
 - required fields must not be empty
 - environment values must be recognized explicitly
 - configured state paths must be absolute
@@ -114,3 +124,5 @@ The current posture is:
 WP1 is not trying to solve the final production configuration story. It is
 trying to ensure that later authentication, session, and mail-integration work
 lands on a disciplined runtime boundary instead of on a pile of ad hoc settings.
+
+That remains true now that the first browser-serving mode exists as well.

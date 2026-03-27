@@ -14,7 +14,10 @@
 - The implementation now has runtime, auth, TOTP, and session foundations, but
   it is not yet a usable browser mail product
 - The implementation now has a mailbox-listing primitive, but it does not yet
-  support compose, send, or browser routing
+  support compose or send behavior
+- The implementation now has a bounded browser slice, but it does not yet
+  include CSRF tokens, attachment download handlers, or concurrent request
+  handling
 - The implementation now has a bounded message-view fetch path, plus
   MIME-aware classification and attachment metadata surfacing, but it does not
   yet provide attachment retrieval or download behavior
@@ -34,5 +37,5 @@
 - The SDLC and release rules are now defined, but they have not yet been proven
   against a full live implementation pipeline
 - The project now has an implementation plan and work breakdown, but there is
-  not yet a running browser proof of concept validating the chosen integration
-  path end to end
+  not yet a full browser proof of concept covering send-path behavior and
+  hardened deployment end to end

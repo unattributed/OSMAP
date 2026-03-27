@@ -327,3 +327,29 @@ The current runtime now exposes part path, file name, content type,
 disposition, and a size hint for attachment-like parts. That gives later UI and
 download work an honest substrate without pretending attachment retrieval is
 already implemented.
+
+### Keep bootstrap validation and HTTP serving as separate run modes
+
+The binary now supports both `bootstrap` and `serve` modes. This keeps startup
+verification and fast test runs simple while allowing the first real HTTP slice
+to exist without making every invocation start a listener.
+
+### Keep the first browser slice framework-free and server-rendered
+
+The first HTTP/browser implementation uses a small handwritten request parser,
+router, and HTML rendering path instead of adopting a full web framework. That
+keeps the request boundary explicit while the product is still proving its
+shape.
+
+### Keep the first browser login flow single-step while preserving MFA layers
+
+The first browser login page accepts username, password, and TOTP in one form.
+This simplifies the HTML flow, but the runtime still executes separate primary
+credential, second-factor, and session-issuance stages underneath that form.
+
+### Start browser session cookies with strict transport and cache posture
+
+The current browser slice uses `HttpOnly` and `SameSite=Strict` cookies, sets
+`Secure` outside development, suppresses cache storage on sensitive responses,
+and emits a restrictive content-security policy. This is the current minimum
+browser posture, not the endpoint of hardening work.
