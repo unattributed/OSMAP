@@ -506,3 +506,18 @@ the OpenBSD host and project-local QEMU workflows should install
 `rust-clippy` and `rust-rustfmt` rather than normalizing silent tool absence.
 That keeps the validation story consistent for sysadmins and collaborating
 developers working on the real target platform.
+
+### Add explicit repository-level community standards files
+
+The public repository now carries explicit collaboration files for conduct,
+contributions, security reporting, support guidance, issue intake, pull request
+review, and licensing. Those files should reflect OSMAP's real project posture:
+bounded scope, security-first review, OpenBSD-friendly maintenance, and private
+handling of sensitive reports rather than generic open-source boilerplate.
+
+### Use an ISC license as the default public license posture
+
+OSMAP's public repository now uses the ISC license. That is a deliberate fit
+for the project's OpenBSD-oriented goals: simple text, permissive reuse, and a
+low-friction licensing posture for conservative downstream operators and
+packagers.

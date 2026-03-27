@@ -186,9 +186,18 @@ OSMAP is intended for:
 
 ## Contributing
 
-Contribution guidelines will be defined as the architecture stabilizes.
+Contribution guidance now lives in [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
-Security-relevant changes require careful review.
+The short version:
+
+- keep changes small and reviewable
+- preserve OSMAP's bounded scope and OpenBSD-first posture
+- update tests and docs with meaningful implementation changes
+- expect extra scrutiny for auth, session, HTTP, MIME, attachment, helper, and
+  confinement work
+
+Security-sensitive reports should follow [`SECURITY.md`](SECURITY.md), not
+public issues.
 
 ---
 
@@ -199,11 +208,13 @@ Improper deployment or modification may expose sensitive data or services.
 
 Always evaluate changes in a controlled environment before production use.
 
+Private vulnerability reporting guidance is in [`SECURITY.md`](SECURITY.md).
+
 ---
 
 ## License
 
-To be determined.
+OSMAP is licensed under the ISC license. See [`LICENSE`](LICENSE).
 
 ---
 
@@ -211,3 +222,15 @@ To be determined.
 
 OSMAP is provided without warranty.  
 Operators are responsible for secure configuration, deployment, and ongoing maintenance.
+
+## Community Files
+
+The repository now includes the expected public collaboration files for a
+healthy GitHub project:
+
+- [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md)
+- [`CONTRIBUTING.md`](CONTRIBUTING.md)
+- [`SECURITY.md`](SECURITY.md)
+- [`SUPPORT.md`](SUPPORT.md)
+- [`.github/ISSUE_TEMPLATE/`](.github/ISSUE_TEMPLATE)
+- [`.github/pull_request_template.md`](.github/pull_request_template.md)

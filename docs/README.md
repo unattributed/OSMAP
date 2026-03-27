@@ -67,3 +67,8 @@ hardening.
 
 Some later-phase or deferred documents remain placeholders so the intended
 documentation map is visible without publishing private notes prematurely.
+
+Repository-level collaboration files such as `CODE_OF_CONDUCT.md`,
+`CONTRIBUTING.md`, `SECURITY.md`, `SUPPORT.md`, and the `.github/` issue and
+pull request templates are intentionally kept at the repository root rather than
+inside `docs/` so GitHub can detect them as community-standard files.

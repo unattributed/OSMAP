@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Private security report
+    url: mailto:shopkeeper@unattributed.blog
+    about: Report suspected vulnerabilities privately instead of opening a public issue.
+  - name: Project documentation
+    url: https://github.com/unattributed/OSMAP/tree/main/docs
+    about: Review the public-safe architecture, security, and implementation documents before opening an issue.

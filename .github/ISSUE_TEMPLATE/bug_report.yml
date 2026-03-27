@@ -1,0 +1,79 @@
+name: Bug report
+description: Report a reproducible bug in OSMAP's current bounded implementation.
+title: "[bug] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve OSMAP.
+
+        Please do not use this form for private vulnerability reports or secrets exposure.
+        Use the process in `SECURITY.md` instead.
+  - type: input
+    id: commit
+    attributes:
+      label: Commit or version
+      description: Which commit, branch, or build did you test?
+      placeholder: 4c318d1 on main
+    validations:
+      required: true
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      description: Where did you reproduce the issue?
+      options:
+        - OpenBSD host
+        - OpenBSD QEMU lab
+        - Linux development environment
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What is the problem?
+      placeholder: Session validation fails after successful login when...
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Provide a minimal, reliable reproduction.
+      placeholder: |
+        1. Start OSMAP with...
+        2. Request...
+        3. Observe...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or diagnostics
+      description: Include bounded logs or command output with secrets removed.
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Confirmations
+      options:
+        - label: I removed secrets, credentials, and private user data from this report.
+          required: true
+        - label: I checked existing issues before opening this report.
+          required: true

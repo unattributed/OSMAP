@@ -1,0 +1,54 @@
+name: Scoped feature request
+description: Propose a change that fits OSMAP's bounded security and OpenBSD-first goals.
+title: "[proposal] "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        OSMAP favors bounded, reviewable improvements over feature sprawl.
+        Use this form for scoped proposals, not for broad "make it like other webmail" requests.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What concrete operator or user problem does this solve?
+      placeholder: Operators need...
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+      description: Describe the narrowest useful version of the change.
+    validations:
+      required: true
+  - type: textarea
+    id: security
+    attributes:
+      label: Security and trust-boundary impact
+      description: How does this affect browser trust, helper execution, dependencies, or exposed surface?
+    validations:
+      required: true
+  - type: textarea
+    id: openbsd
+    attributes:
+      label: OpenBSD and operations impact
+      description: Note any effect on packaging, deployment, `pledge(2)`, `unveil(2)`, or operational complexity.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Include simpler or narrower alternatives if you considered them.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Confirmations
+      options:
+        - label: This proposal does not require OSMAP to replace Postfix, Dovecot, or the rest of the mail stack.
+          required: true
+        - label: I believe this proposal fits the project's bounded scope and security posture.
+          required: true
