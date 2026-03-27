@@ -38,9 +38,12 @@ The early logger currently distinguishes:
 - `bootstrap`
 - `config`
 - `state`
+- `auth`
+- `session`
 
-These are enough for the runtime foundation slice. Later phases can add auth,
-session, request, and submission categories as real behavior appears.
+This now covers the runtime foundation plus the first authentication and session
+layers. Later phases can add request, mailbox, and submission categories as
+real behavior appears.
 
 ## Error-Handling Posture
 
@@ -94,9 +97,7 @@ tooling complexity outrun the implementation.
 
 This model should evolve later to include:
 
-- authentication and MFA events
-- session lifecycle events
-- request correlation or request identifiers
+- richer request-to-action correlation across mail operations
 - mail-operation audit events
 - deployment-specific output routing on OpenBSD
 

@@ -21,6 +21,8 @@ The current authentication slice provides:
 - a second-factor verification stage
 - structured auth events for successful and failed primary auth attempts
 - structured auth events for successful and failed second-factor attempts
+- a downstream session runtime that can consume authenticated-pending-session
+  outcomes without collapsing auth and session logic together
 
 ## Important Constraint
 
@@ -54,6 +56,9 @@ The current second-factor slice can produce:
 - request denied because the factor backend was unavailable
 - request accepted to the extent that the user is now authenticated pending
   session issuance
+
+The runtime now also has a session-management layer that can consume that
+authenticated-pending-session outcome and issue a bounded browser session.
 
 ## Logging Posture
 
@@ -137,10 +142,11 @@ validated in production-like conditions.
 
 This slice does not yet include:
 
-- session issuance
 - auth rate limiting
 - persistent auth-audit storage
 - browser request handling
+- cookie and CSRF policy
+- recovery and enrollment UX
 
-Those belong to the next pieces of WP3 and WP4 rather than to this foundation
-slice.
+Those belong to the later browser-facing pieces of WP4 and WP5 rather than to
+this authentication foundation slice.

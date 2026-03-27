@@ -211,3 +211,31 @@ reason about one bounded secret path.
 OSMAP now carries its own thin `maint/qemu/` wrapper layer around the upstream
 OpenBSD lab model so isolated validation is reusable from this repository
 instead of remaining tribal knowledge outside it.
+
+### Store only a derived session identifier on disk
+
+The browser-facing session token should remain an opaque bearer value, while
+the file-backed session store keeps only a hash-derived session identifier.
+This reduces casual local token exposure without introducing a large session
+framework at this stage.
+
+### Make logout and operator revocation explicit runtime behaviors
+
+The session layer now supports both token-driven logout revocation and
+session-id-driven operator revocation. Revocation is treated as a first-class
+state transition with audit events rather than as a UI afterthought.
+
+### Require bounded session lifetime from configuration
+
+Session lifetime is now an explicit positive runtime setting rather than an
+implicit default hidden in code. The bootstrap rejects zero-valued lifetimes so
+the runtime does not accidentally normalize non-expiring sessions during early
+development.
+
+### Keep session visibility in the core runtime model
+
+Per-user session listing, issuance timestamps, expiry, revocation state,
+remote-address summaries, and user-agent summaries are now part of the runtime
+session record. The project will build later UI and operator views on top of
+that explicit substrate instead of inventing visibility after the browser layer
+is already complex.

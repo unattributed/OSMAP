@@ -131,11 +131,11 @@ The project is not yet production-ready and does not yet have a running public
 prototype. WP3 now includes bounded credential handling, a real
 Dovecot-oriented primary-auth path, a real TOTP backend with a bounded
 secret-store model, a second-factor verification stage, and audit-quality auth
-events.
+events. The runtime now also includes a first session-management baseline with
+bounded token issuance, validation, revocation, and per-user session listing.
 
-The next implementation step is to validate the auth path in isolated OpenBSD
-conditions through the project-local QEMU workflow, then move toward session
-issuance.
+The next implementation step is the first mailbox read slice on top of the
+completed auth and session baseline.
 
 ---
 

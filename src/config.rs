@@ -22,6 +22,7 @@ pub struct AppConfig {
     pub log_level: LogLevel,
     pub log_format: LogFormat,
     pub state_layout: StateLayout,
+    pub session_lifetime_seconds: u64,
     pub totp_allowed_skew_steps: i64,
 }
 
@@ -140,6 +141,7 @@ impl AppConfig {
         let state_root_value = read_value(env_map, "OSMAP_STATE_DIR", "/var/lib/osmap");
         let log_level_value = read_value(env_map, "OSMAP_LOG_LEVEL", "info");
         let log_format_value = read_value(env_map, "OSMAP_LOG_FORMAT", "text");
+        let session_lifetime_value = read_value(env_map, "OSMAP_SESSION_LIFETIME_SECS", "43200");
         let totp_skew_steps_value = read_value(env_map, "OSMAP_TOTP_ALLOWED_SKEW_STEPS", "1");
 
         validate_non_empty("OSMAP_ENV", &environment_value)?;
@@ -171,14 +173,18 @@ impl AppConfig {
         validate_non_empty("OSMAP_LOG_LEVEL", &log_level_value)?;
         validate_non_empty("OSMAP_LOG_FORMAT", &log_format_value)?;
         validate_non_empty("OSMAP_LISTEN_ADDR", &listen_addr)?;
+        validate_non_empty("OSMAP_SESSION_LIFETIME_SECS", &session_lifetime_value)?;
         validate_non_empty("OSMAP_TOTP_ALLOWED_SKEW_STEPS", &totp_skew_steps_value)?;
 
         let environment = RuntimeEnvironment::parse(&environment_value)?;
         let state_root = parse_absolute_path("OSMAP_STATE_DIR", &state_root_value)?;
         let log_level = LogLevel::parse(&log_level_value)?;
         let log_format = LogFormat::parse(&log_format_value)?;
+        let session_lifetime_seconds =
+            parse_u64("OSMAP_SESSION_LIFETIME_SECS", &session_lifetime_value)?;
         let totp_allowed_skew_steps =
             parse_i64("OSMAP_TOTP_ALLOWED_SKEW_STEPS", &totp_skew_steps_value)?;
+        validate_positive_u64("OSMAP_SESSION_LIFETIME_SECS", session_lifetime_seconds)?;
 
         let state_layout =
             StateLayout::new(
@@ -198,6 +204,7 @@ impl AppConfig {
             log_format,
             state_root,
             state_layout,
+            session_lifetime_seconds,
             totp_allowed_skew_steps,
         })
     }
@@ -251,6 +258,28 @@ fn parse_i64(field: &'static str, value: &str) -> Result<i64, BootstrapError> {
             field,
             reason: format!("value must be a signed integer: {error}"),
         })
+}
+
+/// Parses an unsigned integer from configuration.
+fn parse_u64(field: &'static str, value: &str) -> Result<u64, BootstrapError> {
+    value
+        .parse::<u64>()
+        .map_err(|error| BootstrapError::InvalidConfig {
+            field,
+            reason: format!("value must be an unsigned integer: {error}"),
+        })
+}
+
+/// Rejects zero-valued unsigned integers for settings that must remain active.
+fn validate_positive_u64(field: &'static str, value: u64) -> Result<(), BootstrapError> {
+    if value == 0 {
+        return Err(BootstrapError::InvalidConfig {
+            field,
+            reason: "value must be greater than zero".to_string(),
+        });
+    }
+
+    Ok(())
 }
 
 /// Rejects empty configuration values so later phases do not inherit silent
@@ -323,6 +352,7 @@ mod tests {
         );
         assert_eq!(config.log_level, LogLevel::Info);
         assert_eq!(config.log_format, LogFormat::Text);
+        assert_eq!(config.session_lifetime_seconds, 43200);
         assert_eq!(config.totp_allowed_skew_steps, 1);
     }
 
@@ -346,6 +376,7 @@ mod tests {
             ),
             ("OSMAP_LOG_LEVEL".to_string(), "debug".to_string()),
             ("OSMAP_LOG_FORMAT".to_string(), "text".to_string()),
+            ("OSMAP_SESSION_LIFETIME_SECS".to_string(), "3600".to_string()),
             ("OSMAP_TOTP_ALLOWED_SKEW_STEPS".to_string(), "2".to_string()),
         ]);
 
@@ -371,6 +402,7 @@ mod tests {
         );
         assert_eq!(config.log_level, LogLevel::Debug);
         assert_eq!(config.log_format, LogFormat::Text);
+        assert_eq!(config.session_lifetime_seconds, 3600);
         assert_eq!(config.totp_allowed_skew_steps, 2);
     }
 
@@ -385,6 +417,24 @@ mod tests {
             BootstrapError::InvalidConfig {
                 field: "OSMAP_LOG_LEVEL",
                 reason: "value must not be empty".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn rejects_zero_session_lifetime() {
+        let env_map = BTreeMap::from([
+            ("OSMAP_SESSION_LIFETIME_SECS".to_string(), "0".to_string()),
+        ]);
+
+        let error = AppConfig::from_env_map(&env_map)
+            .expect_err("zero-valued session lifetime must fail");
+
+        assert_eq!(
+            error,
+            BootstrapError::InvalidConfig {
+                field: "OSMAP_SESSION_LIFETIME_SECS",
+                reason: "value must be greater than zero".to_string(),
             }
         );
     }

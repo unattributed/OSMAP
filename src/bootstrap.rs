@@ -20,6 +20,7 @@ pub struct BootstrapReport {
     pub totp_secret_dir: String,
     pub log_level: String,
     pub log_format: String,
+    pub session_lifetime_seconds: String,
     pub totp_allowed_skew_steps: String,
 }
 
@@ -42,6 +43,7 @@ impl BootstrapReport {
         .with_field("totp_secret_dir", self.totp_secret_dir.clone())
         .with_field("log_level", self.log_level.clone())
         .with_field("log_format", self.log_format.clone())
+        .with_field("session_lifetime_seconds", self.session_lifetime_seconds.clone())
         .with_field("totp_allowed_skew_steps", self.totp_allowed_skew_steps.clone())
     }
 }
@@ -80,6 +82,7 @@ fn report_from_config(config: &AppConfig) -> BootstrapReport {
         totp_secret_dir: config.state_layout.totp_secret_dir.display().to_string(),
         log_level: config.log_level.as_str().to_string(),
         log_format: config.log_format.as_str().to_string(),
+        session_lifetime_seconds: config.session_lifetime_seconds.to_string(),
         totp_allowed_skew_steps: config.totp_allowed_skew_steps.to_string(),
     }
 }
@@ -108,6 +111,7 @@ mod tests {
                 PathBuf::from("/var/lib/osmap/secrets/totp"),
             )
             .expect("layout should be valid"),
+            session_lifetime_seconds: 43200,
             totp_allowed_skew_steps: 1,
         };
 
@@ -155,6 +159,10 @@ mod tests {
                 crate::logging::LogField {
                     key: "log_format",
                     value: "text".to_string(),
+                },
+                crate::logging::LogField {
+                    key: "session_lifetime_seconds",
+                    value: "43200".to_string(),
                 },
                 crate::logging::LogField {
                     key: "totp_allowed_skew_steps",

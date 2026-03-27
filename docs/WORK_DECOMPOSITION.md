@@ -78,12 +78,12 @@ Implement the browser login path against the approved backend assumptions.
 
 Status on March 27, 2026:
 
-- started with the first authentication slice
+- completed as the runtime authentication foundation
 - bounded credential input, primary-auth decision handling, and audit-quality
-  auth events are now implemented
+  auth events are implemented
 - a real `doveadm auth test` primary-backend path and a second-factor
-  verification stage are now implemented
-- a real TOTP backend and secret-store model are now implemented
+  verification stage are implemented
+- a real TOTP backend and secret-store model are implemented
 - project-local QEMU validation wrappers now exist under `maint/qemu/`
 - recorded in `AUTHENTICATION_SLICE_BASELINE.md`
 
@@ -98,6 +98,14 @@ Done means:
 
 Goal:
 Implement session issuance, validation, invalidation, and visibility behavior.
+
+Status on March 27, 2026:
+
+- completed as the first runtime session-management baseline
+- bounded opaque token issuance is implemented
+- validation, revocation, and per-user session listing are implemented
+- session events are emitted as structured audit-quality log lines
+- recorded in `SESSION_MANAGEMENT_MODEL.md`
 
 Done means:
 

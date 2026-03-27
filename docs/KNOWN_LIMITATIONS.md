@@ -11,22 +11,20 @@
 
 ## Current Program Limitations
 
-- No implementation code exists yet for the replacement
-- The Version 1 product definition is now documented, but architecture and
-  threat-model choices are still pending
+- The implementation now has runtime, auth, TOTP, and session foundations, but
+  it is not yet a usable browser mail product
 - No formal migration plan has been completed
-- The security model is now defined at Phase 3 level, but control selection and
-  implementation details are still pending
 - The existing host is multi-purpose, which constrains how aggressively the
   replacement can diverge from current operational patterns
 - Required user workflows are defined at product level, but detailed field-level
   UX and edge-case behavior are still unspecified
-- The identity model intentionally stops short of a full implementation plan for
-  native-client coexistence, phishing-resistant MFA, or recovery design
-- The architecture now defines a clear system shape, but exact interface
-  contracts and the final backend language choice remain intentionally open
+- The identity model intentionally stops short of phishing-resistant MFA,
+  native-client coexistence refinement, recovery design, and browser cookie
+  policy
+- The architecture now defines a clear system shape, but mailbox, rendering,
+  send-path, and confinement details still need proof through implementation
 - The SDLC and release rules are now defined, but they have not yet been proven
-  against a live implementation pipeline
+  against a full live implementation pipeline
 - The project now has an implementation plan and work breakdown, but there is
-  not yet a running proof of concept validating the chosen runtime and
-  integration path
+  not yet a running browser proof of concept validating the chosen integration
+  path end to end

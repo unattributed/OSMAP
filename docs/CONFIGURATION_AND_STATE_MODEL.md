@@ -34,6 +34,7 @@ The early runtime recognizes:
 - `OSMAP_TOTP_SECRET_DIR`
 - `OSMAP_LOG_LEVEL`
 - `OSMAP_LOG_FORMAT`
+- `OSMAP_SESSION_LIFETIME_SECS`
 - `OSMAP_TOTP_ALLOWED_SKEW_STEPS`
 
 The committed example file under `config/osmap.env.example` is intentionally
@@ -91,6 +92,7 @@ The bootstrap currently enforces:
 - configured state paths must be absolute
 - derived mutable-state paths must stay under the state root
 - development listeners must remain on loopback
+- session lifetime must parse as a positive unsigned integer
 - TOTP skew-step configuration must parse as a signed integer
 
 These validations are intentionally strict because the project should fail

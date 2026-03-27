@@ -139,16 +139,19 @@ The preferred sequence is:
 This sequence keeps the project on a thin vertical-slice path instead of a
 horizontal "build every subsystem halfway" path.
 
-WP0, WP1, and WP2 are now in place. WP3 has advanced from bounded credential
-handling into a real Dovecot-oriented primary-auth path plus a second-factor
-verification stage.
+WP0, WP1, and WP2 are now in place. WP3 now provides bounded credential
+handling, a real Dovecot-oriented primary-auth path, and a real TOTP-backed
+second-factor stage. WP4 now has a first real session-management baseline with
+issuance, validation, revocation, and per-user visibility behavior.
 
-The next active WP3 work should focus on:
+The next active implementation work should focus on:
 
-- using the project-local QEMU lab wrappers for broader auth validation after
-  the now completed narrow host-side `doveadm` verification
-- keeping session issuance out of scope until factor verification is trustworthy
-- defining enrollment and provisioning mechanics for the TOTP secret store
+- using the project-local QEMU lab wrappers and `mail.blackbagsecurity.com` for
+  continued OpenBSD validation as the runtime broadens
+- defining the first mailbox-listing slice on top of the completed auth and
+  session baseline
+- carrying the current session model into later HTTP and cookie handling
+  without collapsing the security boundaries that now exist
 
 ## Implementation Guardrails
 
