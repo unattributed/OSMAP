@@ -10,9 +10,7 @@ use std::path::PathBuf;
 
 use sha2::{Digest, Sha256};
 
-use crate::auth::{
-    AuthenticationContext, CommandExecutor, SystemCommandExecutor,
-};
+use crate::auth::{AuthenticationContext, CommandExecutor, SystemCommandExecutor};
 use crate::config::LogLevel;
 use crate::logging::{EventCategory, LogEvent};
 use crate::mime::AttachmentMetadata;
@@ -125,10 +123,7 @@ impl UploadedAttachment {
         body: Vec<u8>,
     ) -> Result<Self, ComposeError> {
         let filename = filename.into();
-        let content_type = normalize_attachment_content_type(
-            policy,
-            &content_type.into(),
-        )?;
+        let content_type = normalize_attachment_content_type(policy, &content_type.into())?;
 
         validate_attachment_filename(policy, &filename)?;
         validate_attachment_body(policy, &body)?;
@@ -202,7 +197,9 @@ impl ComposeDraft {
         let attachment_notice = build_attachment_notice(policy, intent, &rendered.attachments)?;
 
         let (to, subject, body, note) = match intent {
-            ComposeIntent::Reply => build_reply_draft(policy, rendered, attachment_notice.as_deref())?,
+            ComposeIntent::Reply => {
+                build_reply_draft(policy, rendered, attachment_notice.as_deref())?
+            }
             ComposeIntent::Forward => {
                 build_forward_draft(policy, rendered, attachment_notice.as_deref())?
             }
@@ -406,7 +403,11 @@ where
                 )
                 .with_field(
                     "has_subject",
-                    if request.subject.is_empty() { "false" } else { "true" },
+                    if request.subject.is_empty() {
+                        "false"
+                    } else {
+                        "true"
+                    },
                 )
                 .with_field("request_id", context.request_id.clone())
                 .with_field("remote_addr", context.remote_addr.clone())
@@ -446,7 +447,10 @@ where
 }
 
 /// Parses the recipient list into a bounded list of plain mailbox addresses.
-fn parse_recipients(policy: ComposePolicy, recipients_text: &str) -> Result<Vec<String>, ComposeError> {
+fn parse_recipients(
+    policy: ComposePolicy,
+    recipients_text: &str,
+) -> Result<Vec<String>, ComposeError> {
     let mut recipients = Vec::new();
 
     for raw_recipient in recipients_text.split(',') {
@@ -526,10 +530,7 @@ fn validate_subject(policy: ComposePolicy, subject: &str) -> Result<(), ComposeE
         });
     }
 
-    if subject
-        .chars()
-        .any(|ch| ch.is_control() && ch != '\t')
-    {
+    if subject.chars().any(|ch| ch.is_control() && ch != '\t') {
         return Err(ComposeError {
             reason: "subject contained control characters".to_string(),
         });
@@ -595,10 +596,7 @@ fn validate_attachment_set(
 }
 
 /// Validates one uploaded attachment file name for header-safe transport.
-fn validate_attachment_filename(
-    policy: ComposePolicy,
-    filename: &str,
-) -> Result<(), ComposeError> {
+fn validate_attachment_filename(policy: ComposePolicy, filename: &str) -> Result<(), ComposeError> {
     if filename.is_empty() {
         return Err(ComposeError {
             reason: "attachment filename must not be empty".to_string(),
@@ -636,10 +634,7 @@ fn validate_attachment_filename(
 }
 
 /// Validates one uploaded attachment body against the configured byte budget.
-fn validate_attachment_body(
-    policy: ComposePolicy,
-    body: &[u8],
-) -> Result<(), ComposeError> {
+fn validate_attachment_body(policy: ComposePolicy, body: &[u8]) -> Result<(), ComposeError> {
     if body.len() > policy.attachment_max_bytes {
         return Err(ComposeError {
             reason: format!(
@@ -733,10 +728,7 @@ fn build_forward_draft(
         String::new(),
         String::new(),
         "---------- Forwarded message ----------".to_string(),
-        format!(
-            "From: {}",
-            rendered.from.as_deref().unwrap_or("<unknown>")
-        ),
+        format!("From: {}", rendered.from.as_deref().unwrap_or("<unknown>")),
         format!("Date: {}", rendered.date_received),
         format!(
             "Subject: {}",
@@ -751,10 +743,7 @@ fn build_forward_draft(
     } else {
         body_lines.push("Attachments:".to_string());
         for attachment in &rendered.attachments {
-            body_lines.push(format!(
-                "- {}",
-                describe_attachment_for_forward(attachment)
-            ));
+            body_lines.push(format!("- {}", describe_attachment_for_forward(attachment)));
         }
     }
 
@@ -872,10 +861,7 @@ fn quote_plain_text(body_text: &str) -> Vec<String> {
         return vec![">".to_string()];
     }
 
-    body_text
-        .lines()
-        .map(|line| format!("> {line}"))
-        .collect()
+    body_text.lines().map(|line| format!("> {line}")).collect()
 }
 
 /// Describes one surfaced attachment for the current forward draft.
@@ -900,7 +886,10 @@ fn build_submission_message(canonical_username: &str, request: &ComposeRequest) 
 }
 
 /// Builds the plain-text-only message handed to the local sendmail surface.
-fn build_plain_text_submission_message(canonical_username: &str, request: &ComposeRequest) -> String {
+fn build_plain_text_submission_message(
+    canonical_username: &str,
+    request: &ComposeRequest,
+) -> String {
     let body = normalize_body_line_endings(&request.body);
     format!(
         "From: {canonical_username}\r\nTo: {}\r\nSubject: {}\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n{}",
@@ -946,7 +935,9 @@ fn build_multipart_submission_message(
 
 /// Normalizes the body to CRLF so the submission surface sees stable text.
 fn normalize_body_line_endings(body: &str) -> String {
-    body.replace("\r\n", "\n").replace('\r', "\n").replace('\n', "\r\n")
+    body.replace("\r\n", "\n")
+        .replace('\r', "\n")
+        .replace('\n', "\r\n")
 }
 
 /// Builds a deterministic multipart boundary from the current submission.
@@ -1150,9 +1141,8 @@ mod tests {
     fn validated_session_fixture() -> ValidatedSession {
         ValidatedSession {
             record: SessionRecord {
-                session_id:
-                    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-                        .to_string(),
+                session_id: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+                    .to_string(),
                 canonical_username: "alice@example.com".to_string(),
                 issued_at: 10,
                 expires_at: 100,
@@ -1161,9 +1151,8 @@ mod tests {
                 remote_addr: "127.0.0.1".to_string(),
                 user_agent: "Firefox/Test".to_string(),
                 factor: crate::auth::RequiredSecondFactor::Totp,
-                csrf_token:
-                    "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
-                        .to_string(),
+                csrf_token: "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
+                    .to_string(),
             },
             audit_event: LogEvent::new(
                 LogLevel::Info,
@@ -1209,7 +1198,10 @@ mod tests {
 
         assert_eq!(
             request.recipients,
-            vec!["bob@example.com".to_string(), "carol@example.net".to_string()]
+            vec![
+                "bob@example.com".to_string(),
+                "carol@example.net".to_string()
+            ]
         );
         assert_eq!(request.subject, "Test message");
     }
@@ -1303,12 +1295,11 @@ mod tests {
         assert_eq!(draft.subject, "Re: Quarterly report");
         assert!(draft.body.contains("On 2026-03-27 12:00:00 +0000"));
         assert!(draft.body.contains("> Hello team"));
-        assert!(
-            draft.context_notice
-                .as_deref()
-                .unwrap_or_default()
-                .contains("does not resend attachments automatically")
-        );
+        assert!(draft
+            .context_notice
+            .as_deref()
+            .unwrap_or_default()
+            .contains("does not resend attachments automatically"));
     }
 
     #[test]
@@ -1322,24 +1313,27 @@ mod tests {
 
         assert_eq!(draft.to, "");
         assert_eq!(draft.subject, "Fwd: Quarterly report");
-        assert!(draft.body.contains("---------- Forwarded message ----------"));
+        assert!(draft
+            .body
+            .contains("---------- Forwarded message ----------"));
         assert!(draft.body.contains("report.pdf"));
         assert!(draft.body.contains("part 1.2"));
-        assert!(
-            draft.context_notice
-                .as_deref()
-                .unwrap_or_default()
-                .contains("does not reattach files yet")
-        );
+        assert!(draft
+            .context_notice
+            .as_deref()
+            .unwrap_or_default()
+            .contains("does not reattach files yet"));
     }
 
     #[test]
     fn sendmail_backend_uses_local_submission_surface() {
-        let executor = Rc::new(RefCell::new(StubCommandExecutor::success(CommandExecution {
-            status_code: 0,
-            stdout: String::new(),
-            stderr: String::new(),
-        })));
+        let executor = Rc::new(RefCell::new(StubCommandExecutor::success(
+            CommandExecution {
+                status_code: 0,
+                stdout: String::new(),
+                stderr: String::new(),
+            },
+        )));
         let backend = SendmailSubmissionBackend::new(executor.clone(), "/usr/sbin/sendmail");
         let request = ComposeRequest::new(
             ComposePolicy::default(),
@@ -1378,11 +1372,13 @@ mod tests {
 
     #[test]
     fn sendmail_backend_builds_multipart_message_for_uploaded_attachments() {
-        let executor = Rc::new(RefCell::new(StubCommandExecutor::success(CommandExecution {
-            status_code: 0,
-            stdout: String::new(),
-            stderr: String::new(),
-        })));
+        let executor = Rc::new(RefCell::new(StubCommandExecutor::success(
+            CommandExecution {
+                status_code: 0,
+                stdout: String::new(),
+                stderr: String::new(),
+            },
+        )));
         let backend = SendmailSubmissionBackend::new(executor.clone(), "/usr/sbin/sendmail");
         let request = ComposeRequest::new_with_attachments(
             ComposePolicy::default(),
@@ -1418,11 +1414,13 @@ mod tests {
 
     #[test]
     fn submission_service_emits_audit_quality_success_events() {
-        let executor = Rc::new(RefCell::new(StubCommandExecutor::success(CommandExecution {
-            status_code: 0,
-            stdout: String::new(),
-            stderr: String::new(),
-        })));
+        let executor = Rc::new(RefCell::new(StubCommandExecutor::success(
+            CommandExecution {
+                status_code: 0,
+                stdout: String::new(),
+                stderr: String::new(),
+            },
+        )));
         let service = SubmissionService::new(SendmailSubmissionBackend::new(
             executor,
             "/usr/sbin/sendmail",

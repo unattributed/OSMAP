@@ -10,10 +10,7 @@ use std::fmt;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BootstrapError {
     /// A required configuration field was empty or semantically invalid.
-    InvalidConfig {
-        field: &'static str,
-        reason: String,
-    },
+    InvalidConfig { field: &'static str, reason: String },
     /// A configuration field contained a value outside the accepted set.
     UnsupportedValue {
         field: &'static str,
@@ -21,10 +18,7 @@ pub enum BootstrapError {
         expected: &'static str,
     },
     /// A filesystem path was expected to be absolute but was not.
-    PathMustBeAbsolute {
-        field: &'static str,
-        value: String,
-    },
+    PathMustBeAbsolute { field: &'static str, value: String },
 }
 
 impl fmt::Display for BootstrapError {

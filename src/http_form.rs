@@ -206,14 +206,16 @@ fn parse_multipart_compose_form(
             });
         }
 
-        let header_end = find_subslice(&body[cursor..], b"\r\n\r\n").ok_or_else(|| FormParseError {
-            reason: "multipart part headers were not terminated correctly".to_string(),
-        })?;
-        let header_block = std::str::from_utf8(&body[cursor..cursor + header_end]).map_err(|_| {
-            FormParseError {
-                reason: "multipart part headers were not valid utf-8".to_string(),
-            }
-        })?;
+        let header_end =
+            find_subslice(&body[cursor..], b"\r\n\r\n").ok_or_else(|| FormParseError {
+                reason: "multipart part headers were not terminated correctly".to_string(),
+            })?;
+        let header_block =
+            std::str::from_utf8(&body[cursor..cursor + header_end]).map_err(|_| {
+                FormParseError {
+                    reason: "multipart part headers were not valid utf-8".to_string(),
+                }
+            })?;
         cursor += header_end + 4;
 
         let next_boundary_offset =
@@ -224,11 +226,12 @@ fn parse_multipart_compose_form(
         cursor += next_boundary_offset + 2;
 
         let part_headers = parse_header_block(header_block)?;
-        let disposition = part_headers
-            .get("content-disposition")
-            .ok_or_else(|| FormParseError {
-                reason: "multipart part was missing content-disposition".to_string(),
-            })?;
+        let disposition =
+            part_headers
+                .get("content-disposition")
+                .ok_or_else(|| FormParseError {
+                    reason: "multipart part was missing content-disposition".to_string(),
+                })?;
         let disposition = parse_header_parameters(disposition);
         if !disposition.value.eq_ignore_ascii_case("form-data") {
             return Err(FormParseError {
@@ -281,7 +284,10 @@ fn parse_multipart_compose_form(
         }
     }
 
-    Ok(ParsedComposeForm { fields, attachments })
+    Ok(ParsedComposeForm {
+        fields,
+        attachments,
+    })
 }
 
 /// Parses a multipart boundary parameter from the content-type header.
@@ -389,8 +395,7 @@ mod tests {
 
     #[test]
     fn parses_urlencoded_forms() {
-        let parsed = parse_urlencoded_form(b"name=INBOX&uid=9", 4, 64)
-            .expect("form should parse");
+        let parsed = parse_urlencoded_form(b"name=INBOX&uid=9", 4, 64).expect("form should parse");
 
         assert_eq!(parsed.get("name").map(String::as_str), Some("INBOX"));
         assert_eq!(parsed.get("uid").map(String::as_str), Some("9"));
@@ -418,7 +423,10 @@ mod tests {
         )
         .expect("multipart form should parse");
 
-        assert_eq!(parsed.fields.get("to").map(String::as_str), Some("bob@example.com"));
+        assert_eq!(
+            parsed.fields.get("to").map(String::as_str),
+            Some("bob@example.com")
+        );
         assert_eq!(parsed.attachments.len(), 1);
         assert_eq!(parsed.attachments[0].filename, "report.txt");
     }

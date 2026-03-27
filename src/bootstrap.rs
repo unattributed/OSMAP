@@ -50,8 +50,14 @@ impl BootstrapReport {
         .with_field("totp_secret_dir", self.totp_secret_dir.clone())
         .with_field("log_level", self.log_level.clone())
         .with_field("log_format", self.log_format.clone())
-        .with_field("session_lifetime_seconds", self.session_lifetime_seconds.clone())
-        .with_field("totp_allowed_skew_steps", self.totp_allowed_skew_steps.clone())
+        .with_field(
+            "session_lifetime_seconds",
+            self.session_lifetime_seconds.clone(),
+        )
+        .with_field(
+            "totp_allowed_skew_steps",
+            self.totp_allowed_skew_steps.clone(),
+        )
     }
 }
 

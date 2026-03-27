@@ -146,7 +146,10 @@ impl MimeAnalyzer {
     }
 
     /// Analyzes a fetched message without attempting browser rendering.
-    pub fn analyze_message(&self, message: &MessageView) -> Result<MimeAnalysis, MimeAnalysisError> {
+    pub fn analyze_message(
+        &self,
+        message: &MessageView,
+    ) -> Result<MimeAnalysis, MimeAnalysisError> {
         let unfolded_headers = unfold_headers(&message.header_block);
         let content_type = parse_header_value(
             extract_header_value(
@@ -201,21 +204,21 @@ impl MimeAnalyzer {
 
         find_attachment_part_in_entity(
             self.policy,
-            &content_type,
-            extract_header_value(
-                &unfolded_headers,
-                "Content-Disposition",
-                self.policy.header_value_max_len,
-            )?
-            .as_deref(),
-            extract_header_value(
-                &unfolded_headers,
-                "Content-Transfer-Encoding",
-                self.policy.header_value_max_len,
-            )?
-            .as_deref(),
-            &message.body_text,
-            "1",
+            EntitySearchInput {
+                content_type: &content_type,
+                disposition_header: extract_header_value(
+                    &unfolded_headers,
+                    "Content-Disposition",
+                    self.policy.header_value_max_len,
+                )?,
+                transfer_encoding_header: extract_header_value(
+                    &unfolded_headers,
+                    "Content-Transfer-Encoding",
+                    self.policy.header_value_max_len,
+                )?,
+                body_text: &message.body_text,
+                part_path: "1",
+            },
             0,
             wanted_part_path,
         )
@@ -246,6 +249,15 @@ struct ParsedPart {
     body_text: String,
 }
 
+/// Private recursive view of one MIME entity while searching for attachments.
+struct EntitySearchInput<'a> {
+    content_type: &'a ParsedHeaderValue,
+    disposition_header: Option<String>,
+    transfer_encoding_header: Option<String>,
+    body_text: &'a str,
+    part_path: &'a str,
+}
+
 /// Recursively analyzes one MIME entity while preserving conservative bounds.
 fn analyze_entity(
     policy: MimeAnalysisPolicy,
@@ -255,10 +267,7 @@ fn analyze_entity(
     part_path: &str,
     depth: usize,
 ) -> Result<EntityObservation, MimeAnalysisError> {
-    let disposition = parse_header_value(
-        disposition_header.unwrap_or(""),
-        policy,
-    )?;
+    let disposition = parse_header_value(disposition_header.unwrap_or(""), policy)?;
     let filename = extract_filename(policy, content_type, &disposition)?;
     let disposition_kind = classify_disposition(&disposition);
 
@@ -393,28 +402,25 @@ fn analyze_entity(
 /// Recursively locates one surfaced attachment part by its dotted path.
 fn find_attachment_part_in_entity(
     policy: MimeAnalysisPolicy,
-    content_type: &ParsedHeaderValue,
-    disposition_header: Option<&str>,
-    transfer_encoding_header: Option<&str>,
-    body_text: &str,
-    part_path: &str,
+    entity: EntitySearchInput<'_>,
     depth: usize,
     wanted_part_path: &str,
 ) -> Result<Option<AttachmentPart>, MimeAnalysisError> {
-    let disposition = parse_header_value(disposition_header.unwrap_or(""), policy)?;
-    let filename = extract_filename(policy, content_type, &disposition)?;
+    let disposition =
+        parse_header_value(entity.disposition_header.as_deref().unwrap_or(""), policy)?;
+    let filename = extract_filename(policy, entity.content_type, &disposition)?;
     let disposition_kind = classify_disposition(&disposition);
 
-    if content_type.value.starts_with("multipart/") {
+    if entity.content_type.value.starts_with("multipart/") {
         if depth >= policy.max_depth {
             return Ok(None);
         }
 
-        let Some(boundary) = content_type.params.get("boundary") else {
+        let Some(boundary) = entity.content_type.params.get("boundary") else {
             return Ok(None);
         };
 
-        for part in parse_multipart_parts(policy, boundary, body_text, part_path)? {
+        for part in parse_multipart_parts(policy, boundary, entity.body_text, entity.part_path)? {
             let unfolded_headers = unfold_headers(&part.header_block);
             let part_content_type = parse_header_value(
                 extract_header_value(
@@ -429,21 +435,21 @@ fn find_attachment_part_in_entity(
 
             if let Some(found) = find_attachment_part_in_entity(
                 policy,
-                &part_content_type,
-                extract_header_value(
-                    &unfolded_headers,
-                    "Content-Disposition",
-                    policy.header_value_max_len,
-                )?
-                .as_deref(),
-                extract_header_value(
-                    &unfolded_headers,
-                    "Content-Transfer-Encoding",
-                    policy.header_value_max_len,
-                )?
-                .as_deref(),
-                &part.body_text,
-                &part.part_path,
+                EntitySearchInput {
+                    content_type: &part_content_type,
+                    disposition_header: extract_header_value(
+                        &unfolded_headers,
+                        "Content-Disposition",
+                        policy.header_value_max_len,
+                    )?,
+                    transfer_encoding_header: extract_header_value(
+                        &unfolded_headers,
+                        "Content-Transfer-Encoding",
+                        policy.header_value_max_len,
+                    )?,
+                    body_text: &part.body_text,
+                    part_path: &part.part_path,
+                },
                 depth + 1,
                 wanted_part_path,
             )? {
@@ -454,19 +460,26 @@ fn find_attachment_part_in_entity(
         return Ok(None);
     }
 
-    if part_path == wanted_part_path
-        && should_surface_as_attachment(&content_type.value, disposition_kind, filename.as_deref())
+    if entity.part_path == wanted_part_path
+        && should_surface_as_attachment(
+            &entity.content_type.value,
+            disposition_kind,
+            filename.as_deref(),
+        )
     {
         return Ok(Some(AttachmentPart {
             metadata: AttachmentMetadata {
-                part_path: part_path.to_string(),
+                part_path: entity.part_path.to_string(),
                 filename,
-                content_type: content_type.value.clone(),
+                content_type: entity.content_type.value.clone(),
                 disposition: disposition_kind,
-                size_hint_bytes: body_text.len(),
+                size_hint_bytes: entity.body_text.len(),
             },
-            transfer_encoding: normalize_transfer_encoding(transfer_encoding_header, policy)?,
-            body_text: body_text.to_string(),
+            transfer_encoding: normalize_transfer_encoding(
+                entity.transfer_encoding_header.as_deref(),
+                policy,
+            )?,
+            body_text: entity.body_text.to_string(),
         }));
     }
 
@@ -553,7 +566,10 @@ fn normalize_transfer_encoding(
         });
     }
 
-    if value.chars().any(|ch| ch.is_control() || ch.is_whitespace()) {
+    if value
+        .chars()
+        .any(|ch| ch.is_control() || ch.is_whitespace())
+    {
         return Err(MimeAnalysisError {
             reason: "content-transfer-encoding contained unsupported characters".to_string(),
         });
@@ -727,7 +743,12 @@ fn parse_multipart_parts(
     for line in normalized.split('\n') {
         if line == delimiter {
             if inside_part && !current_lines.is_empty() {
-                parts.push(build_parsed_part(policy, parent_part_path, parts.len() + 1, &current_lines)?);
+                parts.push(build_parsed_part(
+                    policy,
+                    parent_part_path,
+                    parts.len() + 1,
+                    &current_lines,
+                )?);
                 current_lines.clear();
             }
             inside_part = true;
@@ -736,7 +757,12 @@ fn parse_multipart_parts(
 
         if line == closing_delimiter {
             if inside_part && !current_lines.is_empty() {
-                parts.push(build_parsed_part(policy, parent_part_path, parts.len() + 1, &current_lines)?);
+                parts.push(build_parsed_part(
+                    policy,
+                    parent_part_path,
+                    parts.len() + 1,
+                    &current_lines,
+                )?);
             }
             break;
         }
@@ -748,10 +774,7 @@ fn parse_multipart_parts(
 
     if parts.len() > policy.max_parts {
         return Err(MimeAnalysisError {
-            reason: format!(
-                "mime part count exceeded maximum of {}",
-                policy.max_parts
-            ),
+            reason: format!("mime part count exceeded maximum of {}", policy.max_parts),
         });
     }
 

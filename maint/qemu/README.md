@@ -26,7 +26,8 @@ pre-existing `/home/foo/VMs` layout.
   model.
 - `osmap-qemu-validate-auth.ksh`
   Boots an overlay from the base image, syncs the OSMAP repository into the VM,
-  and runs the Rust test suite with QEMU-safe Cargo paths.
+  installs `rust-clippy` and `rust-rustfmt` by default, and runs the repo
+  validation entrypoints with QEMU-safe Cargo paths.
 
 ## Requirements
 
@@ -42,6 +43,15 @@ Override that path with `OPENBSD_SELF_HOSTING_QEMU_DIR` if needed.
 ksh maint/qemu/osmap-qemu-build.ksh
 ksh maint/qemu/osmap-qemu-validate-auth.ksh
 ```
+
+By default, the validation wrapper installs these OpenBSD packages in the guest
+before running validation:
+
+- `rust-clippy`
+- `rust-rustfmt`
+
+Override `QEMU_RUST_TOOL_PACKAGES` if the package names need to change or if a
+future guest image already bakes them in.
 
 These scripts are intentionally narrow. They are here to validate OSMAP, not to
 replace the broader mail-lab orchestration in the upstream project.

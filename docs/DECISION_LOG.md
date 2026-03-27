@@ -498,3 +498,11 @@ Current live-host diagnosis shows that the unresolved browser-auth caveat on
 boundary for the runtime user, not the old stats-writer behavior and not the
 OpenBSD confinement mode itself. OSMAP should not solve that by growing
 privileges; it should be addressed as deliberate host-side operator work.
+
+### Treat `clippy` and `rustfmt` as part of the OpenBSD validation baseline
+
+The project's `Makefile` already exposes `make lint` and `make fmt-check`, so
+the OpenBSD host and project-local QEMU workflows should install
+`rust-clippy` and `rust-rustfmt` rather than normalizing silent tool absence.
+That keeps the validation story consistent for sysadmins and collaborating
+developers working on the real target platform.

@@ -992,8 +992,8 @@ fn parse_message_summary_line(
         false,
     )?;
 
-    let flags_text = required_flow_field(&fields, "flags", "message-list", "message-list-parser")?
-        .to_string();
+    let flags_text =
+        required_flow_field(&fields, "flags", "message-list", "message-list-parser")?.to_string();
     validate_bounded_string(
         "flags",
         &flags_text,
@@ -1059,8 +1059,8 @@ fn parse_message_view_line(
         false,
     )?;
 
-    let flags_text = required_flow_field(&fields, "flags", "message-view", "message-view-parser")?
-        .to_string();
+    let flags_text =
+        required_flow_field(&fields, "flags", "message-view", "message-view-parser")?.to_string();
     validate_bounded_string(
         "flags",
         &flags_text,
@@ -1082,8 +1082,8 @@ fn parse_message_view_line(
         "message-view-parser",
     )?;
 
-    let header_block = required_flow_field(&fields, "hdr", "message-view", "message-view-parser")?
-        .to_string();
+    let header_block =
+        required_flow_field(&fields, "hdr", "message-view", "message-view-parser")?.to_string();
     validate_bounded_string(
         "hdr",
         &header_block,
@@ -1093,8 +1093,8 @@ fn parse_message_view_line(
         true,
     )?;
 
-    let body_text = required_flow_field(&fields, "body", "message-view", "message-view-parser")?
-        .to_string();
+    let body_text =
+        required_flow_field(&fields, "body", "message-view", "message-view-parser")?.to_string();
     validate_bounded_string(
         "body",
         &body_text,
@@ -1237,8 +1237,7 @@ fn validate_bounded_string(
     }
 
     if value.chars().any(|ch| {
-        ch.is_control()
-            && !(allow_text_whitespace_controls && matches!(ch, '\n' | '\r' | '\t'))
+        ch.is_control() && !(allow_text_whitespace_controls && matches!(ch, '\n' | '\r' | '\t'))
     }) {
         return Err(MailboxBackendError {
             backend,
@@ -1263,15 +1262,14 @@ fn parse_flags(flags_text: &str) -> Vec<String> {
 
 /// Produces a compact single-line diagnostic from command output.
 fn concise_command_diagnostics(stdout: &str, stderr: &str) -> String {
-    let combined = format!("{} {}", stderr.trim(), stdout.trim()).trim().to_string();
+    let combined = format!("{} {}", stderr.trim(), stdout.trim())
+        .trim()
+        .to_string();
     if combined.is_empty() {
         return "no command diagnostics returned".to_string();
     }
 
-    combined
-        .split_whitespace()
-        .collect::<Vec<_>>()
-        .join(" ")
+    combined.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
 #[cfg(test)]
@@ -1474,10 +1472,7 @@ mod tests {
         );
 
         let recorded = executor.borrow();
-        assert_eq!(
-            recorded.program.as_deref(),
-            Some("/usr/local/bin/doveadm")
-        );
+        assert_eq!(recorded.program.as_deref(), Some("/usr/local/bin/doveadm"));
         assert_eq!(
             recorded.args.as_ref().expect("args should be captured"),
             &vec![
@@ -1509,8 +1504,8 @@ mod tests {
             executor.clone(),
             "/usr/local/bin/doveadm",
         );
-        let request =
-            MessageListRequest::new(MessageListPolicy::default(), "INBOX").expect("request should be valid");
+        let request = MessageListRequest::new(MessageListPolicy::default(), "INBOX")
+            .expect("request should be valid");
 
         let messages = backend
             .list_messages("alice@example.com", &request)
@@ -1520,7 +1515,10 @@ mod tests {
         assert_eq!(messages[0].uid, 4);
         assert_eq!(messages[0].mailbox_name, "INBOX");
         assert_eq!(messages[0].flags, vec!["\\Seen".to_string()]);
-        assert_eq!(messages[1].flags, vec!["\\Seen".to_string(), "\\Answered".to_string()]);
+        assert_eq!(
+            messages[1].flags,
+            vec!["\\Seen".to_string(), "\\Answered".to_string()]
+        );
 
         let recorded = executor.borrow();
         assert_eq!(
@@ -1607,7 +1605,10 @@ mod tests {
         .expect_err("missing fields must fail");
 
         assert_eq!(error.backend, "message-list-parser");
-        assert_eq!(error.reason, "missing required message-list field date.received");
+        assert_eq!(
+            error.reason,
+            "missing required message-list field date.received"
+        );
     }
 
     #[test]
@@ -1779,8 +1780,8 @@ mod tests {
             ],
         });
         let validated_session = validated_session_fixture();
-        let request =
-            MessageListRequest::new(MessageListPolicy::default(), "INBOX").expect("request should be valid");
+        let request = MessageListRequest::new(MessageListPolicy::default(), "INBOX")
+            .expect("request should be valid");
 
         let outcome =
             service.list_for_validated_session(&test_context(), &validated_session, &request);
@@ -1803,8 +1804,8 @@ mod tests {
     fn message_list_service_translates_backend_failures_into_bounded_events() {
         let service = MessageListService::new(FailingMessageListBackend);
         let validated_session = validated_session_fixture();
-        let request =
-            MessageListRequest::new(MessageListPolicy::default(), "INBOX").expect("request should be valid");
+        let request = MessageListRequest::new(MessageListPolicy::default(), "INBOX")
+            .expect("request should be valid");
 
         let outcome =
             service.list_for_validated_session(&test_context(), &validated_session, &request);
@@ -1825,16 +1826,11 @@ mod tests {
         let session_dir = temp_dir("osmap-mailbox-session");
         let secret_store = FileTotpSecretStore::new(&secret_dir);
         let secret_path = secret_store.secret_path_for_username("alice@example.com");
-        fs::write(
-            &secret_path,
-            "secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ\n",
-        )
-        .expect("secret file should be written");
+        fs::write(&secret_path, "secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ\n")
+            .expect("secret file should be written");
 
-        let auth_service = AuthenticationService::new(
-            AuthenticationPolicy::default(),
-            AcceptingPrimaryBackend,
-        );
+        let auth_service =
+            AuthenticationService::new(AuthenticationPolicy::default(), AcceptingPrimaryBackend);
         let auth_outcome = auth_service.authenticate(
             &test_context(),
             "alice@example.com",
@@ -1885,7 +1881,11 @@ mod tests {
             3600,
         );
         let issued = session_service
-            .issue(&test_context(), &canonical_username, RequiredSecondFactor::Totp)
+            .issue(
+                &test_context(),
+                &canonical_username,
+                RequiredSecondFactor::Totp,
+            )
             .expect("session issuance should succeed");
         let validated = session_service
             .validate(&test_context(), &issued.token)
@@ -1924,16 +1924,11 @@ mod tests {
         let session_dir = temp_dir("osmap-message-session");
         let secret_store = FileTotpSecretStore::new(&secret_dir);
         let secret_path = secret_store.secret_path_for_username("alice@example.com");
-        fs::write(
-            &secret_path,
-            "secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ\n",
-        )
-        .expect("secret file should be written");
+        fs::write(&secret_path, "secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ\n")
+            .expect("secret file should be written");
 
-        let auth_service = AuthenticationService::new(
-            AuthenticationPolicy::default(),
-            AcceptingPrimaryBackend,
-        );
+        let auth_service =
+            AuthenticationService::new(AuthenticationPolicy::default(), AcceptingPrimaryBackend);
         let auth_outcome = auth_service.authenticate(
             &test_context(),
             "alice@example.com",
@@ -1984,7 +1979,11 @@ mod tests {
             3600,
         );
         let issued = session_service
-            .issue(&test_context(), &canonical_username, RequiredSecondFactor::Totp)
+            .issue(
+                &test_context(),
+                &canonical_username,
+                RequiredSecondFactor::Totp,
+            )
             .expect("session issuance should succeed");
         let validated = session_service
             .validate(&test_context(), &issued.token)
@@ -1995,7 +1994,8 @@ mod tests {
                 name: "INBOX".to_string(),
             }],
         });
-        let mailbox_outcome = mailbox_service.list_for_validated_session(&test_context(), &validated);
+        let mailbox_outcome =
+            mailbox_service.list_for_validated_session(&test_context(), &validated);
         match mailbox_outcome.decision {
             MailboxListingDecision::Listed { mailboxes, .. } => {
                 assert_eq!(mailboxes.len(), 1);
@@ -2004,8 +2004,8 @@ mod tests {
             other => panic!("expected mailbox listing, got {other:?}"),
         }
 
-        let request =
-            MessageListRequest::new(MessageListPolicy::default(), "INBOX").expect("request should be valid");
+        let request = MessageListRequest::new(MessageListPolicy::default(), "INBOX")
+            .expect("request should be valid");
         let message_service = MessageListService::new(StaticMessageListBackend {
             messages: vec![MessageSummary {
                 mailbox_name: "INBOX".to_string(),
@@ -2040,16 +2040,11 @@ mod tests {
         let session_dir = temp_dir("osmap-view-session");
         let secret_store = FileTotpSecretStore::new(&secret_dir);
         let secret_path = secret_store.secret_path_for_username("alice@example.com");
-        fs::write(
-            &secret_path,
-            "secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ\n",
-        )
-        .expect("secret file should be written");
+        fs::write(&secret_path, "secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ\n")
+            .expect("secret file should be written");
 
-        let auth_service = AuthenticationService::new(
-            AuthenticationPolicy::default(),
-            AcceptingPrimaryBackend,
-        );
+        let auth_service =
+            AuthenticationService::new(AuthenticationPolicy::default(), AcceptingPrimaryBackend);
         let auth_outcome = auth_service.authenticate(
             &test_context(),
             "alice@example.com",
@@ -2100,7 +2095,11 @@ mod tests {
             3600,
         );
         let issued = session_service
-            .issue(&test_context(), &canonical_username, RequiredSecondFactor::Totp)
+            .issue(
+                &test_context(),
+                &canonical_username,
+                RequiredSecondFactor::Totp,
+            )
             .expect("session issuance should succeed");
         let validated = session_service
             .validate(&test_context(), &issued.token)
@@ -2119,8 +2118,7 @@ mod tests {
                 body_text: "Hello world\n".to_string(),
             },
         });
-        let outcome =
-            service.fetch_for_validated_session(&test_context(), &validated, &request);
+        let outcome = service.fetch_for_validated_session(&test_context(), &validated, &request);
 
         match outcome.decision {
             MessageViewDecision::Retrieved {
@@ -2161,8 +2159,8 @@ mod tests {
         }
 
         let backend = DoveadmMessageListBackend::default();
-        let request =
-            MessageListRequest::new(MessageListPolicy::default(), "INBOX").expect("request should be valid");
+        let request = MessageListRequest::new(MessageListPolicy::default(), "INBOX")
+            .expect("request should be valid");
         let error = backend
             .list_messages("osmap-no-such-user@example.invalid", &request)
             .expect_err("missing users should not produce message listings");
@@ -2236,12 +2234,10 @@ mod tests {
     fn validated_session_fixture() -> ValidatedSession {
         ValidatedSession {
             record: crate::session::SessionRecord {
-                session_id:
-                    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-                        .to_string(),
-                csrf_token:
-                    "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
-                        .to_string(),
+                session_id: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+                    .to_string(),
+                csrf_token: "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
+                    .to_string(),
                 canonical_username: "alice@example.com".to_string(),
                 issued_at: 10,
                 expires_at: 100,

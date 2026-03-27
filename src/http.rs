@@ -323,7 +323,7 @@ pub struct BrowserSessionValidationOutcome {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BrowserSessionDecision {
     Valid {
-        validated_session: ValidatedSession,
+        validated_session: Box<ValidatedSession>,
     },
     Invalid,
 }
@@ -386,7 +386,7 @@ pub struct BrowserMessageViewOutcome {
 pub enum BrowserMessageViewDecision {
     Rendered {
         canonical_username: String,
-        rendered: RenderedMessageView,
+        rendered: Box<RenderedMessageView>,
     },
     Denied {
         public_reason: String,
@@ -423,9 +423,7 @@ pub struct BrowserSendOutcome {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BrowserSendDecision {
     Submitted,
-    Denied {
-        public_reason: String,
-    },
+    Denied { public_reason: String },
 }
 
 /// The concrete runtime gateway built from the existing OSMAP services.
@@ -525,7 +523,9 @@ impl BrowserGateway for RuntimeBrowserGateway {
         totp_code: &str,
     ) -> BrowserLoginOutcome {
         let mut audit_events = Vec::new();
-        let auth_outcome = self.build_auth_service().authenticate(context, username, password);
+        let auth_outcome = self
+            .build_auth_service()
+            .authenticate(context, username, password);
         audit_events.push(auth_outcome.audit_event.clone());
 
         match auth_outcome.decision {
@@ -554,41 +554,42 @@ impl BrowserGateway for RuntimeBrowserGateway {
                         },
                         audit_events,
                     },
-                    AuthenticationDecision::AuthenticatedPendingSession {
-                        canonical_username,
-                    } => match self.build_session_service().issue(
-                        context,
-                        &canonical_username,
-                        second_factor,
-                    ) {
-                        Ok(issued_session) => {
-                            audit_events.push(issued_session.audit_event.clone());
-                            BrowserLoginOutcome {
-                                decision: BrowserLoginDecision::Authenticated {
-                                    canonical_username,
-                                    session_token: issued_session.token,
-                                },
-                                audit_events,
+                    AuthenticationDecision::AuthenticatedPendingSession { canonical_username } => {
+                        match self.build_session_service().issue(
+                            context,
+                            &canonical_username,
+                            second_factor,
+                        ) {
+                            Ok(issued_session) => {
+                                audit_events.push(issued_session.audit_event.clone());
+                                BrowserLoginOutcome {
+                                    decision: BrowserLoginDecision::Authenticated {
+                                        canonical_username,
+                                        session_token: issued_session.token,
+                                    },
+                                    audit_events,
+                                }
                             }
-                        }
-                        Err(error) => {
-                            audit_events.push(build_http_warning_event(
-                                "session_issue_failed",
-                                "session issuance failed during browser login",
-                                context,
-                            )
-                            .with_field("reason", session_error_label(&error)));
-                            BrowserLoginOutcome {
-                                decision: BrowserLoginDecision::Denied {
-                                    public_reason:
-                                        PublicFailureReason::TemporarilyUnavailable
+                            Err(error) => {
+                                audit_events.push(
+                                    build_http_warning_event(
+                                        "session_issue_failed",
+                                        "session issuance failed during browser login",
+                                        context,
+                                    )
+                                    .with_field("reason", session_error_label(&error)),
+                                );
+                                BrowserLoginOutcome {
+                                    decision: BrowserLoginDecision::Denied {
+                                        public_reason: PublicFailureReason::TemporarilyUnavailable
                                             .as_str()
                                             .to_string(),
-                                },
-                                audit_events,
+                                    },
+                                    audit_events,
+                                }
                             }
                         }
-                    },
+                    }
                     AuthenticationDecision::MfaRequired { .. } => BrowserLoginOutcome {
                         decision: BrowserLoginDecision::Denied {
                             public_reason: PublicFailureReason::TemporarilyUnavailable
@@ -628,7 +629,7 @@ impl BrowserGateway for RuntimeBrowserGateway {
         match self.build_session_service().validate(context, &token) {
             Ok(validated_session) => BrowserSessionValidationOutcome {
                 decision: BrowserSessionDecision::Valid {
-                    validated_session: validated_session.clone(),
+                    validated_session: Box::new(validated_session.clone()),
                 },
                 audit_events: vec![validated_session.audit_event],
             },
@@ -659,7 +660,10 @@ impl BrowserGateway for RuntimeBrowserGateway {
             }
         };
 
-        match self.build_session_service().revoke_by_token(context, &token) {
+        match self
+            .build_session_service()
+            .revoke_by_token(context, &token)
+        {
             Ok(revoked_session) => BrowserLogoutOutcome {
                 session_was_revoked: true,
                 audit_events: vec![revoked_session.audit_event],
@@ -769,7 +773,8 @@ impl BrowserGateway for RuntimeBrowserGateway {
         mailbox_name: &str,
         uid: u64,
     ) -> BrowserMessageViewOutcome {
-        let request = match MessageViewRequest::new(MessageViewPolicy::default(), mailbox_name, uid) {
+        let request = match MessageViewRequest::new(MessageViewPolicy::default(), mailbox_name, uid)
+        {
             Ok(request) => request,
             Err(error) => {
                 return BrowserMessageViewOutcome {
@@ -807,18 +812,20 @@ impl BrowserGateway for RuntimeBrowserGateway {
                     BrowserMessageViewOutcome {
                         decision: BrowserMessageViewDecision::Rendered {
                             canonical_username,
-                            rendered: rendered_outcome.rendered,
+                            rendered: Box::new(rendered_outcome.rendered),
                         },
                         audit_events,
                     }
                 }
                 Err(error) => {
-                    audit_events.push(build_http_warning_event(
-                        "message_render_failed",
-                        "message rendering failed",
-                        context,
-                    )
-                    .with_field("reason", error.reason));
+                    audit_events.push(
+                        build_http_warning_event(
+                            "message_render_failed",
+                            "message rendering failed",
+                            context,
+                        )
+                        .with_field("reason", error.reason),
+                    );
                     BrowserMessageViewOutcome {
                         decision: BrowserMessageViewDecision::Denied {
                             public_reason: "temporarily_unavailable".to_string(),
@@ -844,15 +851,15 @@ impl BrowserGateway for RuntimeBrowserGateway {
         uid: u64,
         part_path: &str,
     ) -> BrowserAttachmentDownloadOutcome {
-        let request = match MessageViewRequest::new(MessageViewPolicy::default(), mailbox_name, uid) {
+        let request = match MessageViewRequest::new(MessageViewPolicy::default(), mailbox_name, uid)
+        {
             Ok(request) => request,
             Err(error) => {
                 return BrowserAttachmentDownloadOutcome {
                     decision: BrowserAttachmentDownloadDecision::Denied {
-                        public_reason:
-                            AttachmentDownloadPublicFailureReason::InvalidRequest
-                                .as_str()
-                                .to_string(),
+                        public_reason: AttachmentDownloadPublicFailureReason::InvalidRequest
+                            .as_str()
+                            .to_string(),
                     },
                     audit_events: vec![build_http_warning_event(
                         "attachment_download_request_rejected",
@@ -878,7 +885,8 @@ impl BrowserGateway for RuntimeBrowserGateway {
                 message,
                 ..
             } => {
-                let attachment_outcome = self.build_attachment_download_service()
+                let attachment_outcome = self
+                    .build_attachment_download_service()
                     .download_for_validated_session(
                         context,
                         validated_session,
@@ -992,11 +1000,7 @@ where
     G: BrowserGateway,
 {
     /// Handles one parsed HTTP request from the supplied remote address.
-    pub fn handle_request(
-        &self,
-        request: &HttpRequest,
-        remote_addr: &str,
-    ) -> HandledHttpResponse {
+    pub fn handle_request(&self, request: &HttpRequest, remote_addr: &str) -> HandledHttpResponse {
         let context = match AuthenticationContext::new(
             self.policy.authentication_policy,
             next_request_id(),
@@ -1109,19 +1113,20 @@ where
         let password = form.get("password").cloned().unwrap_or_default();
         let totp_code = form.get("totp_code").cloned().unwrap_or_default();
 
-        let outcome = self.gateway.login(context, &username, &password, &totp_code);
+        let outcome = self
+            .gateway
+            .login(context, &username, &password, &totp_code);
 
         match outcome.decision {
             BrowserLoginDecision::Authenticated { session_token, .. } => HandledHttpResponse {
-                response: redirect_response(303, "See Other", "/mailboxes")
-                    .with_header(
-                        "Set-Cookie",
-                        build_session_cookie(
-                            self.policy.session_cookie_name,
-                            session_token.as_str(),
-                            self.policy.secure_session_cookie,
-                        ),
+                response: redirect_response(303, "See Other", "/mailboxes").with_header(
+                    "Set-Cookie",
+                    build_session_cookie(
+                        self.policy.session_cookie_name,
+                        session_token.as_str(),
+                        self.policy.secure_session_cookie,
                     ),
+                ),
                 audit_events: outcome.audit_events,
             },
             BrowserLoginDecision::Denied { public_reason } => HandledHttpResponse {
@@ -1142,7 +1147,8 @@ where
         request: &HttpRequest,
         context: &AuthenticationContext,
     ) -> HandledHttpResponse {
-        if let Some(session_token) = session_cookie_value(request, self.policy.session_cookie_name) {
+        if let Some(session_token) = session_cookie_value(request, self.policy.session_cookie_name)
+        {
             let outcome = self.gateway.validate_session(context, &session_token);
             if matches!(outcome.decision, BrowserSessionDecision::Valid { .. }) {
                 return HandledHttpResponse {
@@ -1588,17 +1594,17 @@ where
                 200,
                 "OK",
                 compose_heading,
-                &render_compose_page(
-                    compose_heading,
-                    &validated_session.record.canonical_username,
-                    &validated_session.record.csrf_token,
+                &render_compose_page(&ComposePageModel {
+                    heading: compose_heading,
+                    canonical_username: &validated_session.record.canonical_username,
+                    csrf_token: &validated_session.record.csrf_token,
                     success_message,
-                    None,
-                    context_notice.as_deref(),
-                    &to_value,
-                    &subject_value,
-                    &body_value,
-                ),
+                    error_message: None,
+                    context_notice: context_notice.as_deref(),
+                    to_value: &to_value,
+                    subject_value: &subject_value,
+                    body_value: &body_value,
+                }),
             ),
             audit_events,
         }
@@ -1654,16 +1660,14 @@ where
         let recipients = form.get("to").cloned().unwrap_or_default();
         let subject = form.get("subject").cloned().unwrap_or_default();
         let body = form.get("body").cloned().unwrap_or_default();
-        let outcome = self
-            .gateway
-            .send_message(
-                context,
-                &validated_session,
-                &recipients,
-                &subject,
-                &body,
-                &attachments,
-            );
+        let outcome = self.gateway.send_message(
+            context,
+            &validated_session,
+            &recipients,
+            &subject,
+            &body,
+            &attachments,
+        );
         audit_events.extend(outcome.audit_events);
 
         match outcome.decision {
@@ -1672,7 +1676,11 @@ where
                 audit_events,
             },
             BrowserSendDecision::Denied { public_reason } => {
-                let status_code = if public_reason == "invalid_request" { 400 } else { 503 };
+                let status_code = if public_reason == "invalid_request" {
+                    400
+                } else {
+                    503
+                };
                 let reason_phrase = if public_reason == "invalid_request" {
                     "Bad Request"
                 } else {
@@ -1683,17 +1691,17 @@ where
                         status_code,
                         reason_phrase,
                         "Compose",
-                        &render_compose_page(
-                            "Compose",
-                            &validated_session.record.canonical_username,
-                            &validated_session.record.csrf_token,
-                            None,
-                            Some(public_reason_message(&public_reason)),
-                            None,
-                            &recipients,
-                            &subject,
-                            &body,
-                        ),
+                        &render_compose_page(&ComposePageModel {
+                            heading: "Compose",
+                            canonical_username: &validated_session.record.canonical_username,
+                            csrf_token: &validated_session.record.csrf_token,
+                            success_message: None,
+                            error_message: Some(public_reason_message(&public_reason)),
+                            context_notice: None,
+                            to_value: &recipients,
+                            subject_value: &subject,
+                            body_value: &body,
+                        }),
                     ),
                     audit_events,
                 }
@@ -1732,13 +1740,14 @@ where
         };
 
         let mut audit_events = Vec::new();
-        if let Some(session_token) = session_cookie_value(request, self.policy.session_cookie_name) {
+        if let Some(session_token) = session_cookie_value(request, self.policy.session_cookie_name)
+        {
             let validation = self.gateway.validate_session(context, &session_token);
             audit_events.extend(validation.audit_events.clone());
             if let BrowserSessionDecision::Valid { validated_session } = validation.decision {
                 if let Some(response) = self.require_valid_csrf(
                     form.get("csrf_token").map(String::as_str),
-                    &validated_session,
+                    validated_session.as_ref(),
                     context,
                 ) {
                     return response;
@@ -1752,7 +1761,10 @@ where
         HandledHttpResponse {
             response: redirect_response(303, "See Other", "/login").with_header(
                 "Set-Cookie",
-                clear_session_cookie(self.policy.session_cookie_name, self.policy.secure_session_cookie),
+                clear_session_cookie(
+                    self.policy.session_cookie_name,
+                    self.policy.secure_session_cookie,
+                ),
             ),
             audit_events,
         }
@@ -1764,7 +1776,8 @@ where
         request: &HttpRequest,
         context: &AuthenticationContext,
     ) -> Result<(ValidatedSession, Vec<LogEvent>), HandledHttpResponse> {
-        let Some(session_token) = session_cookie_value(request, self.policy.session_cookie_name) else {
+        let Some(session_token) = session_cookie_value(request, self.policy.session_cookie_name)
+        else {
             return Err(HandledHttpResponse {
                 response: redirect_response(303, "See Other", "/login"),
                 audit_events: vec![build_http_info_event(
@@ -1778,7 +1791,7 @@ where
         let outcome = self.gateway.validate_session(context, &session_token);
         match outcome.decision {
             BrowserSessionDecision::Valid { validated_session } => {
-                Ok((validated_session, outcome.audit_events))
+                Ok((*validated_session, outcome.audit_events))
             }
             BrowserSessionDecision::Invalid => Err(HandledHttpResponse {
                 response: redirect_response(303, "See Other", "/login").with_header(
@@ -1842,10 +1855,7 @@ where
 }
 
 /// Runs the first sequential HTTP server for the current browser slice.
-pub fn run_http_server(
-    config: &AppConfig,
-    logger: &Logger,
-) -> Result<(), String> {
+pub fn run_http_server(config: &AppConfig, logger: &Logger) -> Result<(), String> {
     if config.run_mode != AppRunMode::Serve {
         return Ok(());
     }
@@ -1854,7 +1864,10 @@ pub fn run_http_server(
 
     let listener = TcpListener::bind(&config.listen_addr)
         .map_err(|error| format!("failed to bind {}: {error}", config.listen_addr))?;
-    let app = BrowserApp::new(HttpPolicy::from_config(config), RuntimeBrowserGateway::from_config(config));
+    let app = BrowserApp::new(
+        HttpPolicy::from_config(config),
+        RuntimeBrowserGateway::from_config(config),
+    );
     logger.emit(
         &LogEvent::new(
             LogLevel::Info,
@@ -1894,7 +1907,8 @@ where
         .map(|addr| addr.to_string())
         .unwrap_or_else(|_| "<unknown>".to_string());
 
-    if let Err(error) = stream.set_read_timeout(Some(Duration::from_secs(app.policy().read_timeout_secs)))
+    if let Err(error) =
+        stream.set_read_timeout(Some(Duration::from_secs(app.policy().read_timeout_secs)))
     {
         logger.emit(
             &LogEvent::new(
@@ -1907,7 +1921,8 @@ where
             .with_field("reason", error.to_string()),
         );
     }
-    if let Err(error) = stream.set_write_timeout(Some(Duration::from_secs(app.policy().write_timeout_secs)))
+    if let Err(error) =
+        stream.set_write_timeout(Some(Duration::from_secs(app.policy().write_timeout_secs)))
     {
         logger.emit(
             &LogEvent::new(
@@ -1961,18 +1976,19 @@ where
 }
 
 /// Reads one bounded HTTP request from the supplied stream.
-fn read_http_request(stream: &mut TcpStream, policy: &HttpPolicy) -> Result<HttpRequest, HttpRequestError> {
+fn read_http_request(
+    stream: &mut TcpStream,
+    policy: &HttpPolicy,
+) -> Result<HttpRequest, HttpRequestError> {
     let mut buffer = Vec::new();
     let mut content_length = None;
     let mut header_end = None;
 
     loop {
         let mut chunk = [0_u8; 2048];
-        let read = stream
-            .read(&mut chunk)
-            .map_err(|error| HttpRequestError {
-                reason: format!("failed reading request: {error}"),
-            })?;
+        let read = stream.read(&mut chunk).map_err(|error| HttpRequestError {
+            reason: format!("failed reading request: {error}"),
+        })?;
         if read == 0 {
             break;
         }
@@ -1992,9 +2008,10 @@ fn read_http_request(stream: &mut TcpStream, policy: &HttpPolicy) -> Result<Http
                         reason: "http headers exceeded maximum length".to_string(),
                     });
                 }
-                let header_text = std::str::from_utf8(&buffer[..end]).map_err(|_| HttpRequestError {
-                    reason: "http headers were not valid utf-8".to_string(),
-                })?;
+                let header_text =
+                    std::str::from_utf8(&buffer[..end]).map_err(|_| HttpRequestError {
+                        reason: "http headers were not valid utf-8".to_string(),
+                    })?;
                 content_length = Some(parse_content_length(header_text)?);
             }
         }
@@ -2018,7 +2035,10 @@ fn read_http_request(stream: &mut TcpStream, policy: &HttpPolicy) -> Result<Http
 }
 
 /// Parses a raw HTTP request into the bounded request shape used by the router.
-pub fn parse_http_request(input: &str, policy: &HttpPolicy) -> Result<HttpRequest, HttpRequestError> {
+pub fn parse_http_request(
+    input: &str,
+    policy: &HttpPolicy,
+) -> Result<HttpRequest, HttpRequestError> {
     parse_http_request_bytes(input.as_bytes(), policy)
 }
 
@@ -2041,7 +2061,9 @@ pub fn parse_http_request_bytes(
         reason: "http headers were not valid utf-8".to_string(),
     })?;
     let body = &input[header_end + 4..];
-    if body.len() > allowed_request_body_bytes(parse_content_type_header(&input[..header_end]), policy) {
+    if body.len()
+        > allowed_request_body_bytes(parse_content_type_header(&input[..header_end]), policy)
+    {
         return Err(HttpRequestError {
             reason: "http body exceeded maximum length".to_string(),
         });
@@ -2095,9 +2117,12 @@ pub fn parse_http_request_bytes(
     }
 
     if let Some(content_length_value) = headers.get("content-length") {
-        let content_length = content_length_value.parse::<usize>().map_err(|_| HttpRequestError {
-            reason: "invalid content-length header".to_string(),
-        })?;
+        let content_length =
+            content_length_value
+                .parse::<usize>()
+                .map_err(|_| HttpRequestError {
+                    reason: "invalid content-length header".to_string(),
+                })?;
         if content_length != body.len() {
             return Err(HttpRequestError {
                 reason: "http body length did not match content-length".to_string(),
@@ -2206,8 +2231,7 @@ fn build_session_cookie(cookie_name: &str, token: &str, secure: bool) -> String 
 
 /// Builds an expired session cookie used to clear browser session state.
 fn clear_session_cookie(cookie_name: &str, secure: bool) -> String {
-    let mut cookie =
-        format!("{cookie_name}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0");
+    let mut cookie = format!("{cookie_name}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0");
     if secure {
         cookie.push_str("; Secure");
     }
@@ -2215,7 +2239,11 @@ fn clear_session_cookie(cookie_name: &str, secure: bool) -> String {
 }
 
 /// Builds a redirect response with the current browser-security headers.
-fn redirect_response(status_code: u16, reason_phrase: &'static str, location: &str) -> HttpResponse {
+fn redirect_response(
+    status_code: u16,
+    reason_phrase: &'static str,
+    location: &str,
+) -> HttpResponse {
     HttpResponse::text(
         status_code,
         reason_phrase,
@@ -2471,33 +2499,36 @@ fn render_message_view_page(
     )
 }
 
+/// Small view model for the current server-rendered compose page.
+struct ComposePageModel<'a> {
+    heading: &'a str,
+    canonical_username: &'a str,
+    csrf_token: &'a str,
+    success_message: Option<&'a str>,
+    error_message: Option<&'a str>,
+    context_notice: Option<&'a str>,
+    to_value: &'a str,
+    subject_value: &'a str,
+    body_value: &'a str,
+}
+
 /// Renders the compose page for the current user and CSRF-bound session.
-fn render_compose_page(
-    heading: &str,
-    canonical_username: &str,
-    csrf_token: &str,
-    success_message: Option<&str>,
-    error_message: Option<&str>,
-    context_notice: Option<&str>,
-    to_value: &str,
-    subject_value: &str,
-    body_value: &str,
-) -> String {
-    let success_banner = match success_message {
+fn render_compose_page(model: &ComposePageModel<'_>) -> String {
+    let success_banner = match model.success_message {
         Some(success_message) => format!(
             "<p><strong>Submission complete:</strong> {}</p>",
             escape_html(success_message)
         ),
         None => String::new(),
     };
-    let error_banner = match error_message {
+    let error_banner = match model.error_message {
         Some(error_message) => format!(
             "<p><strong>Request failed:</strong> {}</p>",
             escape_html(error_message)
         ),
         None => String::new(),
     };
-    let context_banner = match context_notice {
+    let context_banner = match model.context_notice {
         Some(context_notice) => format!(
             "<p><strong>Context:</strong> {}</p>",
             escape_html(context_notice)
@@ -2507,16 +2538,16 @@ fn render_compose_page(
 
     format!(
         "<nav><a href=\"/mailboxes\">Back to mailboxes</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>{}</h1><p>Signed in as <strong>{}</strong>.</p><p class=\"muted\">This send slice uses the local submission surface, keeps the browser body plain-text-first, accepts bounded new file uploads, and still does not reattach files from the source message automatically.</p>{}{}{}<form method=\"post\" action=\"/send\" enctype=\"multipart/form-data\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><label>To<input type=\"text\" name=\"to\" value=\"{}\" autocomplete=\"off\"></label><label>Subject<input type=\"text\" name=\"subject\" value=\"{}\"></label><label>Body<textarea name=\"body\">{}</textarea></label><label>Attachments<input type=\"file\" name=\"attachment\" multiple></label><button type=\"submit\">Send Message</button></form>",
-        escape_html(csrf_token),
-        escape_html(heading),
-        escape_html(canonical_username),
+        escape_html(model.csrf_token),
+        escape_html(model.heading),
+        escape_html(model.canonical_username),
         success_banner,
         error_banner,
         context_banner,
-        escape_html(csrf_token),
-        escape_html(to_value),
-        escape_html(subject_value),
-        escape_html(body_value),
+        escape_html(model.csrf_token),
+        escape_html(model.to_value),
+        escape_html(model.subject_value),
+        escape_html(model.body_value),
     )
 }
 
@@ -2612,12 +2643,10 @@ mod tests {
         fn validated_session() -> ValidatedSession {
             ValidatedSession {
                 record: SessionRecord {
-                    session_id:
-                        "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-                            .to_string(),
-                    csrf_token:
-                        "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
-                            .to_string(),
+                    session_id: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+                        .to_string(),
+                    csrf_token: "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
+                        .to_string(),
                     canonical_username: "alice@example.com".to_string(),
                     issued_at: 10,
                     expires_at: 100,
@@ -2684,12 +2713,11 @@ mod tests {
             _context: &AuthenticationContext,
             presented_token: &str,
         ) -> BrowserSessionValidationOutcome {
-            if presented_token
-                == "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            if presented_token == "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
             {
                 BrowserSessionValidationOutcome {
                     decision: BrowserSessionDecision::Valid {
-                        validated_session: Self::validated_session(),
+                        validated_session: Box::new(Self::validated_session()),
                     },
                     audit_events: vec![LogEvent::new(
                         LogLevel::Info,
@@ -2800,7 +2828,7 @@ mod tests {
             BrowserMessageViewOutcome {
                 decision: BrowserMessageViewDecision::Rendered {
                     canonical_username: validated_session.record.canonical_username.clone(),
-                    rendered: RenderedMessageView {
+                    rendered: Box::new(RenderedMessageView {
                         mailbox_name: mailbox_name.to_string(),
                         uid,
                         subject: Some("Example".to_string()),
@@ -2819,7 +2847,7 @@ mod tests {
                             size_hint_bytes: 128,
                         }],
                         rendering_mode: RenderingMode::PlainTextPreformatted,
-                    },
+                    }),
                 },
                 audit_events: vec![LogEvent::new(
                     LogLevel::Info,
@@ -2931,8 +2959,7 @@ mod tests {
         let mut raw_bytes = raw.into_bytes();
         raw_bytes.extend_from_slice(body);
 
-        parse_http_request_bytes(&raw_bytes, &HttpPolicy::default())
-            .expect("request should parse")
+        parse_http_request_bytes(&raw_bytes, &HttpPolicy::default()).expect("request should parse")
     }
 
     fn body_text(response: &HandledHttpResponse) -> String {
@@ -2949,7 +2976,10 @@ mod tests {
 
         assert_eq!(request.method, HttpMethod::Get);
         assert_eq!(request.path, "/mailbox");
-        assert_eq!(request.query_params.get("name").map(String::as_str), Some("INBOX"));
+        assert_eq!(
+            request.query_params.get("name").map(String::as_str),
+            Some("INBOX")
+        );
         assert_eq!(
             session_cookie_value(&request, DEFAULT_SESSION_COOKIE_NAME).as_deref(),
             Some("abc")

@@ -199,9 +199,7 @@ impl AppConfig {
     ///
     /// This shape keeps the parser easy to unit test without mutating global
     /// process state.
-    pub fn from_env_map(
-        env_map: &BTreeMap<String, String>,
-    ) -> Result<Self, BootstrapError> {
+    pub fn from_env_map(env_map: &BTreeMap<String, String>) -> Result<Self, BootstrapError> {
         let run_mode_value = read_value(env_map, "OSMAP_RUN_MODE", "bootstrap");
         let environment_value = read_value(env_map, "OSMAP_ENV", "development");
         let listen_addr = read_value(env_map, "OSMAP_LISTEN_ADDR", "127.0.0.1:8080");
@@ -210,11 +208,8 @@ impl AppConfig {
         let log_format_value = read_value(env_map, "OSMAP_LOG_FORMAT", "text");
         let session_lifetime_value = read_value(env_map, "OSMAP_SESSION_LIFETIME_SECS", "43200");
         let totp_skew_steps_value = read_value(env_map, "OSMAP_TOTP_ALLOWED_SKEW_STEPS", "1");
-        let openbsd_confinement_mode_value = read_value(
-            env_map,
-            "OSMAP_OPENBSD_CONFINEMENT_MODE",
-            "disabled",
-        );
+        let openbsd_confinement_mode_value =
+            read_value(env_map, "OSMAP_OPENBSD_CONFINEMENT_MODE", "disabled");
 
         validate_non_empty("OSMAP_RUN_MODE", &run_mode_value)?;
         validate_non_empty("OSMAP_ENV", &environment_value)?;
@@ -241,7 +236,9 @@ impl AppConfig {
         let totp_secret_dir = parse_optional_absolute_path(
             env_map,
             "OSMAP_TOTP_SECRET_DIR",
-            PathBuf::from(&state_root_value).join("secrets").join("totp"),
+            PathBuf::from(&state_root_value)
+                .join("secrets")
+                .join("totp"),
         )?;
         validate_non_empty("OSMAP_LOG_LEVEL", &log_level_value)?;
         validate_non_empty("OSMAP_LOG_FORMAT", &log_format_value)?;
@@ -266,15 +263,14 @@ impl AppConfig {
             parse_i64("OSMAP_TOTP_ALLOWED_SKEW_STEPS", &totp_skew_steps_value)?;
         validate_positive_u64("OSMAP_SESSION_LIFETIME_SECS", session_lifetime_seconds)?;
 
-        let state_layout =
-            StateLayout::new(
-                state_root.clone(),
-                runtime_dir,
-                session_dir,
-                audit_dir,
-                cache_dir,
-                totp_secret_dir,
-            )?;
+        let state_layout = StateLayout::new(
+            state_root.clone(),
+            runtime_dir,
+            session_dir,
+            audit_dir,
+            cache_dir,
+            totp_secret_dir,
+        )?;
         validate_development_bindings(environment, &listen_addr)?;
 
         Ok(Self {
@@ -302,10 +298,7 @@ fn read_value(env_map: &BTreeMap<String, String>, key: &str, default: &str) -> S
 }
 
 /// Parses a required absolute filesystem path from configuration.
-fn parse_absolute_path(
-    field: &'static str,
-    value: &str,
-) -> Result<PathBuf, BootstrapError> {
+fn parse_absolute_path(field: &'static str, value: &str) -> Result<PathBuf, BootstrapError> {
     validate_non_empty(field, value)?;
     let path = PathBuf::from(value);
 
@@ -448,8 +441,14 @@ mod tests {
         let env_map = BTreeMap::from([
             ("OSMAP_RUN_MODE".to_string(), "serve".to_string()),
             ("OSMAP_ENV".to_string(), "staging".to_string()),
-            ("OSMAP_LISTEN_ADDR".to_string(), "127.0.0.1:8443".to_string()),
-            ("OSMAP_STATE_DIR".to_string(), "/var/lib/osmap-staging".to_string()),
+            (
+                "OSMAP_LISTEN_ADDR".to_string(),
+                "127.0.0.1:8443".to_string(),
+            ),
+            (
+                "OSMAP_STATE_DIR".to_string(),
+                "/var/lib/osmap-staging".to_string(),
+            ),
             (
                 "OSMAP_RUNTIME_DIR".to_string(),
                 "/var/lib/osmap-staging/run".to_string(),
@@ -464,7 +463,10 @@ mod tests {
             ),
             ("OSMAP_LOG_LEVEL".to_string(), "debug".to_string()),
             ("OSMAP_LOG_FORMAT".to_string(), "text".to_string()),
-            ("OSMAP_SESSION_LIFETIME_SECS".to_string(), "3600".to_string()),
+            (
+                "OSMAP_SESSION_LIFETIME_SECS".to_string(),
+                "3600".to_string(),
+            ),
             ("OSMAP_TOTP_ALLOWED_SKEW_STEPS".to_string(), "2".to_string()),
             (
                 "OSMAP_OPENBSD_CONFINEMENT_MODE".to_string(),
@@ -537,8 +539,7 @@ mod tests {
     fn rejects_unsupported_run_mode() {
         let env_map = BTreeMap::from([("OSMAP_RUN_MODE".to_string(), "daemon".to_string())]);
 
-        let error =
-            AppConfig::from_env_map(&env_map).expect_err("unsupported run modes must fail");
+        let error = AppConfig::from_env_map(&env_map).expect_err("unsupported run modes must fail");
 
         assert_eq!(
             error,
@@ -552,12 +553,11 @@ mod tests {
 
     #[test]
     fn rejects_zero_session_lifetime() {
-        let env_map = BTreeMap::from([
-            ("OSMAP_SESSION_LIFETIME_SECS".to_string(), "0".to_string()),
-        ]);
+        let env_map =
+            BTreeMap::from([("OSMAP_SESSION_LIFETIME_SECS".to_string(), "0".to_string())]);
 
-        let error = AppConfig::from_env_map(&env_map)
-            .expect_err("zero-valued session lifetime must fail");
+        let error =
+            AppConfig::from_env_map(&env_map).expect_err("zero-valued session lifetime must fail");
 
         assert_eq!(
             error,
@@ -570,10 +570,8 @@ mod tests {
 
     #[test]
     fn rejects_relative_state_root() {
-        let env_map = BTreeMap::from([(
-            "OSMAP_STATE_DIR".to_string(),
-            "var/lib/osmap".to_string(),
-        )]);
+        let env_map =
+            BTreeMap::from([("OSMAP_STATE_DIR".to_string(), "var/lib/osmap".to_string())]);
 
         let error = AppConfig::from_env_map(&env_map).expect_err("relative paths must fail");
 
@@ -588,10 +586,8 @@ mod tests {
 
     #[test]
     fn rejects_non_loopback_development_listener() {
-        let env_map = BTreeMap::from([(
-            "OSMAP_LISTEN_ADDR".to_string(),
-            "0.0.0.0:8080".to_string(),
-        )]);
+        let env_map =
+            BTreeMap::from([("OSMAP_LISTEN_ADDR".to_string(), "0.0.0.0:8080".to_string())]);
 
         let error = AppConfig::from_env_map(&env_map)
             .expect_err("development listeners must remain loopback-bound");
@@ -612,8 +608,7 @@ mod tests {
             ("OSMAP_LISTEN_ADDR".to_string(), "0.0.0.0:8080".to_string()),
         ]);
 
-        let config =
-            AppConfig::from_env_map(&env_map).expect("staging listeners may be broader");
+        let config = AppConfig::from_env_map(&env_map).expect("staging listeners may be broader");
 
         assert_eq!(config.environment, RuntimeEnvironment::Staging);
         assert_eq!(config.listen_addr, "0.0.0.0:8080");

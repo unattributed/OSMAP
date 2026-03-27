@@ -134,24 +134,14 @@ impl AuthenticationContext {
         let remote_addr = remote_addr.into();
         let user_agent = user_agent.into();
 
-        validate_context_field(
-            "request_id",
-            &request_id,
-            policy.request_id_max_len,
-            true,
-        )?;
+        validate_context_field("request_id", &request_id, policy.request_id_max_len, true)?;
         validate_context_field(
             "remote_addr",
             &remote_addr,
             policy.remote_addr_max_len,
             true,
         )?;
-        validate_context_field(
-            "user_agent",
-            &user_agent,
-            policy.user_agent_max_len,
-            false,
-        )?;
+        validate_context_field("user_agent", &user_agent, policy.user_agent_max_len, false)?;
 
         Ok(Self {
             request_id,
@@ -232,9 +222,7 @@ impl AuditFailureReason {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PrimaryAuthVerdict {
     Reject,
-    Accept {
-        canonical_username: String,
-    },
+    Accept { canonical_username: String },
 }
 
 /// Backend failures that should not leak as detailed user-facing auth messages.
@@ -357,19 +345,17 @@ where
                     None,
                 ),
             },
-            Ok(PrimaryAuthVerdict::Accept { canonical_username }) => {
-                AuthenticationOutcome {
-                    decision: AuthenticationDecision::MfaRequired {
-                        canonical_username: canonical_username.clone(),
-                        second_factor: self.policy.required_second_factor,
-                    },
-                    audit_event: build_mfa_required_event(
-                        context,
-                        canonical_username,
-                        self.policy.required_second_factor,
-                    ),
-                }
-            }
+            Ok(PrimaryAuthVerdict::Accept { canonical_username }) => AuthenticationOutcome {
+                decision: AuthenticationDecision::MfaRequired {
+                    canonical_username: canonical_username.clone(),
+                    second_factor: self.policy.required_second_factor,
+                },
+                audit_event: build_mfa_required_event(
+                    context,
+                    canonical_username,
+                    self.policy.required_second_factor,
+                ),
+            },
             Err(error) => AuthenticationOutcome {
                 decision: AuthenticationDecision::Denied {
                     public_reason: PublicFailureReason::TemporarilyUnavailable,
@@ -427,10 +413,11 @@ where
             }
         };
 
-        match self
-            .verifier
-            .verify_second_factor(&canonical_username, second_factor, factor_input.code())
-        {
+        match self.verifier.verify_second_factor(
+            &canonical_username,
+            second_factor,
+            factor_input.code(),
+        ) {
             Ok(SecondFactorVerdict::Reject) => AuthenticationOutcome {
                 decision: AuthenticationDecision::Denied {
                     public_reason: PublicFailureReason::InvalidSecondFactor,
@@ -622,16 +609,9 @@ where
 /// Describes validation failures on bounded auth inputs and audit context.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CredentialValidationError {
-    EmptyField {
-        field: &'static str,
-    },
-    TooLong {
-        field: &'static str,
-        max_len: usize,
-    },
-    ControlCharacter {
-        field: &'static str,
-    },
+    EmptyField { field: &'static str },
+    TooLong { field: &'static str, max_len: usize },
+    ControlCharacter { field: &'static str },
 }
 
 impl CredentialValidationError {
@@ -688,7 +668,9 @@ fn validate_password(value: &str, max_len: usize) -> Result<(), CredentialValida
 /// Validates the submitted second-factor code.
 fn validate_factor_code(value: &str, max_len: usize) -> Result<(), CredentialValidationError> {
     if value.is_empty() {
-        return Err(CredentialValidationError::EmptyField { field: "factor_code" });
+        return Err(CredentialValidationError::EmptyField {
+            field: "factor_code",
+        });
     }
 
     if value.len() > max_len {
@@ -773,8 +755,14 @@ fn build_backend_error_event(
     )
     .with_field("stage", "primary")
     .with_field("result", "error")
-    .with_field("public_reason", PublicFailureReason::TemporarilyUnavailable.as_str())
-    .with_field("audit_reason", AuditFailureReason::BackendUnavailable.as_str())
+    .with_field(
+        "public_reason",
+        PublicFailureReason::TemporarilyUnavailable.as_str(),
+    )
+    .with_field(
+        "audit_reason",
+        AuditFailureReason::BackendUnavailable.as_str(),
+    )
     .with_field("backend", error.backend)
     .with_field("detail", error.reason.clone())
     .with_field("submitted_username", submitted_username)
@@ -851,8 +839,14 @@ fn build_factor_backend_error_event(
     )
     .with_field("stage", "second_factor")
     .with_field("result", "error")
-    .with_field("public_reason", PublicFailureReason::TemporarilyUnavailable.as_str())
-    .with_field("audit_reason", AuditFailureReason::BackendUnavailable.as_str())
+    .with_field(
+        "public_reason",
+        PublicFailureReason::TemporarilyUnavailable.as_str(),
+    )
+    .with_field(
+        "audit_reason",
+        AuditFailureReason::BackendUnavailable.as_str(),
+    )
     .with_field("canonical_username", canonical_username)
     .with_field("second_factor", second_factor.as_str())
     .with_field("backend", error.backend)
@@ -1086,8 +1080,8 @@ mod tests {
 
     #[test]
     fn rejects_non_numeric_factor_codes() {
-        let error =
-            SecondFactorInput::new(AuthenticationPolicy::default(), "12a456").expect_err("must fail");
+        let error = SecondFactorInput::new(AuthenticationPolicy::default(), "12a456")
+            .expect_err("must fail");
 
         assert_eq!(
             error,
@@ -1101,8 +1095,7 @@ mod tests {
     fn denies_invalid_primary_credentials() {
         let service = AuthenticationService::new(AuthenticationPolicy::default(), AcceptingBackend);
 
-        let outcome =
-            service.authenticate(&test_context(), "alice@example.com", "wrong password");
+        let outcome = service.authenticate(&test_context(), "alice@example.com", "wrong password");
 
         assert_eq!(
             outcome.decision,
@@ -1183,10 +1176,8 @@ mod tests {
 
     #[test]
     fn second_factor_backend_failures_become_operator_visible_events() {
-        let service = SecondFactorService::new(
-            AuthenticationPolicy::default(),
-            FailingSecondFactorVerifier,
-        );
+        let service =
+            SecondFactorService::new(AuthenticationPolicy::default(), FailingSecondFactorVerifier);
 
         let outcome = service.verify(
             &test_context(),
@@ -1238,10 +1229,7 @@ mod tests {
         );
 
         let recorded = executor.borrow();
-        assert_eq!(
-            recorded.program.as_deref(),
-            Some("/usr/local/bin/doveadm")
-        );
+        assert_eq!(recorded.program.as_deref(), Some("/usr/local/bin/doveadm"));
         assert_eq!(
             recorded.stdin_data.as_deref(),
             Some("correct horse battery staple\n")
@@ -1267,11 +1255,13 @@ mod tests {
     #[test]
     fn doveadm_failure_exit_is_treated_as_invalid_credentials() {
         let backend = DoveadmAuthTestBackend::new(
-            Rc::new(std::cell::RefCell::new(StubCommandExecutor::success(CommandExecution {
-                status_code: 77,
-                stdout: String::new(),
-                stderr: "passdb: alice@example.com auth failed\n".to_string(),
-            }))),
+            Rc::new(std::cell::RefCell::new(StubCommandExecutor::success(
+                CommandExecution {
+                    status_code: 77,
+                    stdout: String::new(),
+                    stderr: "passdb: alice@example.com auth failed\n".to_string(),
+                },
+            ))),
             "/usr/local/bin/doveadm",
             None,
             "imap",
@@ -1338,8 +1328,7 @@ mod tests {
     fn converts_backend_failures_into_operator_visible_auth_events() {
         let service = AuthenticationService::new(AuthenticationPolicy::default(), FailingBackend);
 
-        let outcome =
-            service.authenticate(&test_context(), "alice@example.com", "anything");
+        let outcome = service.authenticate(&test_context(), "alice@example.com", "anything");
 
         assert_eq!(
             outcome.decision,

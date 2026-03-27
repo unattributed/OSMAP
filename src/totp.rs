@@ -13,7 +13,7 @@ use hmac::{Hmac, Mac};
 use sha1::Sha1;
 
 use crate::auth::{
-    RequiredSecondFactor, SecondFactorBackendError, SecondFactorVerifier, SecondFactorVerdict,
+    RequiredSecondFactor, SecondFactorBackendError, SecondFactorVerdict, SecondFactorVerifier,
 };
 
 type HmacSha1 = Hmac<Sha1>;
@@ -65,7 +65,10 @@ impl TimeProvider for SystemTimeProvider {
 
 /// Returns TOTP secrets for canonical users.
 pub trait TotpSecretStore {
-    fn load_secret(&self, canonical_username: &str) -> Result<Option<TotpSecret>, TotpSecretStoreError>;
+    fn load_secret(
+        &self,
+        canonical_username: &str,
+    ) -> Result<Option<TotpSecret>, TotpSecretStoreError>;
 }
 
 /// Errors raised while reading or parsing TOTP secrets.
@@ -128,11 +131,12 @@ where
 
         let timestamp = self.time_provider.unix_timestamp();
         for counter in counters_for_time(timestamp, self.policy) {
-            let expected = generate_totp_code(&secret.secret_bytes, counter, self.policy)
-                .map_err(|error| SecondFactorBackendError {
+            let expected = generate_totp_code(&secret.secret_bytes, counter, self.policy).map_err(
+                |error| SecondFactorBackendError {
                     backend: "totp",
                     reason: error,
-                })?;
+                },
+            )?;
 
             if constant_time_eq(expected.as_bytes(), code.as_bytes()) {
                 return Ok(SecondFactorVerdict::Accept);
@@ -158,8 +162,11 @@ impl FileTotpSecretStore {
 
     /// Returns the on-disk path for a user's secret file.
     pub fn secret_path_for_username(&self, canonical_username: &str) -> PathBuf {
-        self.secret_dir
-            .join(format!("{}.{}", hex_encode(canonical_username.as_bytes()), TOTP_SECRET_FILE_EXTENSION))
+        self.secret_dir.join(format!(
+            "{}.{}",
+            hex_encode(canonical_username.as_bytes()),
+            TOTP_SECRET_FILE_EXTENSION
+        ))
     }
 }
 
@@ -244,9 +251,8 @@ fn parse_secret_file(content: &str) -> Result<Option<TotpSecret>, TotpSecretStor
         return Ok(None);
     };
 
-    let secret_bytes = decode_base32(&secret_value).map_err(|error| TotpSecretStoreError {
-        reason: error,
-    })?;
+    let secret_bytes =
+        decode_base32(&secret_value).map_err(|error| TotpSecretStoreError { reason: error })?;
 
     Ok(Some(TotpSecret { secret_bytes }))
 }
@@ -350,8 +356,8 @@ mod tests {
 
     #[test]
     fn decodes_base32_secrets() {
-        let decoded = decode_base32("GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ")
-            .expect("secret should decode");
+        let decoded =
+            decode_base32("GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ").expect("secret should decode");
 
         assert_eq!(decoded, b"12345678901234567890");
     }
@@ -387,11 +393,9 @@ mod tests {
 
     #[test]
     fn parses_secret_files() {
-        let secret = parse_secret_file(
-            "# comment\nsecret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ\n",
-        )
-        .expect("secret file should parse")
-        .expect("secret should exist");
+        let secret = parse_secret_file("# comment\nsecret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ\n")
+            .expect("secret file should parse")
+            .expect("secret should exist");
 
         assert_eq!(secret.secret_bytes, b"12345678901234567890");
     }
@@ -411,11 +415,7 @@ mod tests {
         );
 
         let verdict = verifier
-            .verify_second_factor(
-                "alice@example.com",
-                RequiredSecondFactor::Totp,
-                "94287082",
-            )
+            .verify_second_factor("alice@example.com", RequiredSecondFactor::Totp, "94287082")
             .expect("verification should succeed");
 
         assert_eq!(verdict, SecondFactorVerdict::Accept);
@@ -436,11 +436,7 @@ mod tests {
         );
 
         let verdict = verifier
-            .verify_second_factor(
-                "alice@example.com",
-                RequiredSecondFactor::Totp,
-                "00000000",
-            )
+            .verify_second_factor("alice@example.com", RequiredSecondFactor::Totp, "00000000")
             .expect("verification should succeed");
 
         assert_eq!(verdict, SecondFactorVerdict::Reject);
@@ -461,11 +457,7 @@ mod tests {
         );
 
         let verdict = verifier
-            .verify_second_factor(
-                "alice@example.com",
-                RequiredSecondFactor::Totp,
-                "94287082",
-            )
+            .verify_second_factor("alice@example.com", RequiredSecondFactor::Totp, "94287082")
             .expect("verification should succeed");
 
         assert_eq!(verdict, SecondFactorVerdict::Accept);

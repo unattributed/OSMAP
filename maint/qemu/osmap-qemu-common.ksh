@@ -19,6 +19,7 @@ TMUX_SESSION="${TMUX_SESSION:-osmap-qemu}"
 VM_NAME="${VM_NAME:-osmap-auth-validation}"
 QEMU_MEM="${QEMU_MEM:-4096}"
 QEMU_SMP="${QEMU_SMP:-2}"
+QEMU_RUST_TOOL_PACKAGES="${QEMU_RUST_TOOL_PACKAGES:-rust-clippy rust-rustfmt}"
 
 mkdir -p "${LAB_ROOT}" "${ISO_DIR}"
 

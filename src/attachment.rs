@@ -204,7 +204,8 @@ impl AttachmentDownloadService {
             Err(error) => {
                 return AttachmentDownloadOutcome {
                     decision: AttachmentDownloadDecision::Denied {
-                        public_reason: AttachmentDownloadPublicFailureReason::TemporarilyUnavailable,
+                        public_reason:
+                            AttachmentDownloadPublicFailureReason::TemporarilyUnavailable,
                     },
                     audit_event: build_failure_event(
                         context,
@@ -233,7 +234,8 @@ impl AttachmentDownloadService {
 
                 return AttachmentDownloadOutcome {
                     decision: AttachmentDownloadDecision::Denied {
-                        public_reason: AttachmentDownloadPublicFailureReason::TemporarilyUnavailable,
+                        public_reason:
+                            AttachmentDownloadPublicFailureReason::TemporarilyUnavailable,
                     },
                     audit_event: build_failure_event(
                         context,
@@ -258,10 +260,7 @@ impl AttachmentDownloadService {
                 message.uid,
                 &request.part_path,
             ),
-            content_type: normalize_download_content_type(
-                self.policy,
-                &part.metadata.content_type,
-            ),
+            content_type: normalize_download_content_type(self.policy, &part.metadata.content_type),
             body,
         };
 
@@ -415,10 +414,7 @@ fn bounded_bytes(
 }
 
 /// Decodes base64 attachment content without adding another dependency.
-fn decode_base64_bytes(
-    input: &str,
-    max_bytes: usize,
-) -> Result<Vec<u8>, AttachmentDownloadError> {
+fn decode_base64_bytes(input: &str, max_bytes: usize) -> Result<Vec<u8>, AttachmentDownloadError> {
     let cleaned = input
         .bytes()
         .filter(|byte| !byte.is_ascii_whitespace())
@@ -564,10 +560,7 @@ fn hex_value(byte: u8) -> Result<u8, AttachmentDownloadError> {
 }
 
 /// Normalizes the surfaced MIME type into a safe HTTP response value.
-fn normalize_download_content_type(
-    policy: AttachmentDownloadPolicy,
-    content_type: &str,
-) -> String {
+fn normalize_download_content_type(policy: AttachmentDownloadPolicy, content_type: &str) -> String {
     let trimmed = content_type.trim().to_ascii_lowercase();
     if trimmed.is_empty()
         || trimmed.len() > policy.content_type_max_len
@@ -590,11 +583,13 @@ fn sanitize_download_filename(
 
     if let Some(original) = original {
         for ch in original.chars() {
-            sanitized.push(if ch.is_ascii_alphanumeric() || matches!(ch, '.' | '_' | '-') {
-                ch
-            } else {
-                '_'
-            });
+            sanitized.push(
+                if ch.is_ascii_alphanumeric() || matches!(ch, '.' | '_' | '-') {
+                    ch
+                } else {
+                    '_'
+                },
+            );
             if sanitized.len() >= policy.filename_max_len {
                 break;
             }
@@ -656,12 +651,10 @@ mod tests {
     fn validated_session_fixture() -> ValidatedSession {
         ValidatedSession {
             record: SessionRecord {
-                session_id:
-                    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-                        .to_string(),
-                csrf_token:
-                    "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
-                        .to_string(),
+                session_id: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+                    .to_string(),
+                csrf_token: "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
+                    .to_string(),
                 canonical_username: "alice@example.com".to_string(),
                 issued_at: 10,
                 expires_at: 100,

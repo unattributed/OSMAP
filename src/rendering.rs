@@ -159,12 +159,19 @@ impl PlainTextMessageRenderer {
             .with_field("session_id", validated_session.record.session_id.clone())
             .with_field("mailbox_name", rendered.mailbox_name.clone())
             .with_field("uid", rendered.uid.to_string())
-            .with_field("mime_top_level_content_type", rendered.mime_top_level_content_type.clone())
+            .with_field(
+                "mime_top_level_content_type",
+                rendered.mime_top_level_content_type.clone(),
+            )
             .with_field("body_source", rendered.body_source.as_str())
             .with_field("attachment_count", rendered.attachments.len().to_string())
             .with_field(
                 "contains_html_body",
-                if rendered.contains_html_body { "true" } else { "false" },
+                if rendered.contains_html_body {
+                    "true"
+                } else {
+                    "false"
+                },
             )
             .with_field("rendering_mode", rendered.rendering_mode.as_str())
             .with_field("request_id", context.request_id.clone())
@@ -208,7 +215,10 @@ fn render_body_from_analysis(
     match analysis.body_source {
         MimeBodySource::SinglePartPlainText | MimeBodySource::MultipartPlainTextPart => {
             render_plain_text_body(
-                analysis.selected_plain_text_body.as_deref().unwrap_or_default(),
+                analysis
+                    .selected_plain_text_body
+                    .as_deref()
+                    .unwrap_or_default(),
                 max_len,
             )
         }
@@ -232,10 +242,9 @@ fn render_body_from_analysis(
             "Multipart structure detected, but no safe plain-text preview is available.",
             max_len,
         ),
-        MimeBodySource::Empty => render_placeholder_body(
-            "Message has no renderable body content.",
-            max_len,
-        ),
+        MimeBodySource::Empty => {
+            render_placeholder_body("Message has no renderable body content.", max_len)
+        }
     }
 }
 
@@ -302,12 +311,10 @@ mod tests {
     fn validated_session_fixture() -> ValidatedSession {
         ValidatedSession {
             record: SessionRecord {
-                session_id:
-                    "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-                        .to_string(),
-                csrf_token:
-                    "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
-                        .to_string(),
+                session_id: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+                    .to_string(),
+                csrf_token: "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
+                    .to_string(),
                 canonical_username: "alice@example.com".to_string(),
                 issued_at: 10,
                 expires_at: 100,
@@ -402,18 +409,12 @@ mod tests {
     #[test]
     fn unfolds_headers_and_extracts_values() {
         let unfolded = unfold_headers(&plain_text_message_view_fixture().header_block);
-        let subject = extract_header_value(
-            &unfolded,
-            "Subject",
-            DEFAULT_RENDERED_HEADER_VALUE_MAX_LEN,
-        )
-        .expect("header extraction should succeed");
-        let folded = extract_header_value(
-            &unfolded,
-            "X-Long",
-            DEFAULT_RENDERED_HEADER_VALUE_MAX_LEN,
-        )
-        .expect("header extraction should succeed");
+        let subject =
+            extract_header_value(&unfolded, "Subject", DEFAULT_RENDERED_HEADER_VALUE_MAX_LEN)
+                .expect("header extraction should succeed");
+        let folded =
+            extract_header_value(&unfolded, "X-Long", DEFAULT_RENDERED_HEADER_VALUE_MAX_LEN)
+                .expect("header extraction should succeed");
 
         assert_eq!(subject.as_deref(), Some("Test message"));
         assert_eq!(folded.as_deref(), Some("folded continuation line"));
@@ -512,10 +513,7 @@ mod tests {
             MimeBodySource::MultipartPlainTextPart
         );
         assert!(outcome.rendered.contains_html_body);
-        assert_eq!(
-            outcome.rendered.body_html,
-            "<pre>Plain text preview</pre>"
-        );
+        assert_eq!(outcome.rendered.body_html, "<pre>Plain text preview</pre>");
         assert_eq!(outcome.rendered.attachments.len(), 1);
         assert_eq!(outcome.rendered.attachments[0].part_path, "1.2");
         assert_eq!(
@@ -530,12 +528,8 @@ mod tests {
 
     #[test]
     fn rejects_oversized_rendered_headers() {
-        let error = extract_header_value(
-            &format!("Subject: {}\n", "A".repeat(64)),
-            "Subject",
-            16,
-        )
-        .expect_err("oversized header values must fail");
+        let error = extract_header_value(&format!("Subject: {}\n", "A".repeat(64)), "Subject", 16)
+            .expect_err("oversized header values must fail");
 
         assert_eq!(
             error,

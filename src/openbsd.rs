@@ -78,10 +78,7 @@ impl OpenbsdConfinementPlan {
 }
 
 /// Applies the current OpenBSD confinement mode for the serve runtime.
-pub fn apply_runtime_confinement(
-    config: &AppConfig,
-    logger: &Logger,
-) -> Result<(), String> {
+pub fn apply_runtime_confinement(config: &AppConfig, logger: &Logger) -> Result<(), String> {
     match config.openbsd_confinement_mode {
         OpenbsdConfinementMode::Disabled => Ok(()),
         OpenbsdConfinementMode::LogOnly => {
@@ -125,11 +122,7 @@ pub fn apply_runtime_confinement(
 }
 
 /// Adds one unveil rule while preserving the strongest permissions per path.
-fn add_rule(
-    rules: &mut BTreeMap<PathBuf, String>,
-    path: &Path,
-    permissions: &str,
-) {
+fn add_rule(rules: &mut BTreeMap<PathBuf, String>, path: &Path, permissions: &str) {
     let entry = rules.entry(path.to_path_buf()).or_default();
     for permission in permissions.chars() {
         if !entry.contains(permission) {
@@ -233,7 +226,10 @@ mod imp {
     fn lock_unveil() -> Result<(), String> {
         let result = unsafe { unveil(std::ptr::null(), std::ptr::null()) };
         if result == -1 {
-            return Err(format!("unveil lock failed: {}", io::Error::last_os_error()));
+            return Err(format!(
+                "unveil lock failed: {}",
+                io::Error::last_os_error()
+            ));
         }
 
         Ok(())
@@ -271,35 +267,28 @@ mod tests {
 
     #[test]
     fn builds_concrete_plan_from_runtime_config() {
-        let plan = OpenbsdConfinementPlan::from_config(&config_fixture(
-            OpenbsdConfinementMode::LogOnly,
-        ));
+        let plan =
+            OpenbsdConfinementPlan::from_config(&config_fixture(OpenbsdConfinementMode::LogOnly));
 
         assert_eq!(plan.promises_before_lock, OPENBSD_PROMISES_BEFORE_LOCK);
         assert_eq!(plan.promises_after_lock, OPENBSD_PROMISES_AFTER_LOCK);
-        assert!(
-            plan.unveil_rules
-                .iter()
-                .any(|rule| rule.path == PathBuf::from("/usr/local/bin/doveadm")
-                    && rule.permissions.contains('x'))
-        );
-        assert!(
-            plan.unveil_rules
-                .iter()
-                .any(|rule| rule.path == PathBuf::from("/var/lib/osmap/sessions")
-                    && rule.permissions.contains('w'))
-        );
-        assert!(
-            plan.unveil_rules
-                .iter()
-                .any(|rule| rule.path == PathBuf::from("/usr/local/sbin/sendmail")
-                    && rule.permissions.contains('x'))
-        );
-        assert!(
-            !plan.unveil_rules
-                .iter()
-                .any(|rule| rule.path == PathBuf::from("/var"))
-        );
+        assert!(plan
+            .unveil_rules
+            .iter()
+            .any(|rule| rule.path == PathBuf::from("/usr/local/bin/doveadm")
+                && rule.permissions.contains('x')));
+        assert!(plan
+            .unveil_rules
+            .iter()
+            .any(|rule| rule.path == PathBuf::from("/var/lib/osmap/sessions")
+                && rule.permissions.contains('w')));
+        assert!(plan.unveil_rules.iter().any(|rule| rule.path
+            == PathBuf::from("/usr/local/sbin/sendmail")
+            && rule.permissions.contains('x')));
+        assert!(!plan
+            .unveil_rules
+            .iter()
+            .any(|rule| rule.path == PathBuf::from("/var")));
     }
 
     #[test]

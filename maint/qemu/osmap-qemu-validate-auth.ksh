@@ -59,7 +59,14 @@ tar -C "$(dirname "${PROJECT_ROOT}")" \
   -cf - "$(basename "${PROJECT_ROOT}")" | \
   ssh_guard_pipe_to_remote "rm -rf /home/foo/osmap-qemu-validation && tar -C /home/foo -xf - && mv /home/foo/$(basename "${PROJECT_ROOT}") /home/foo/osmap-qemu-validation"
 
-log "running Rust auth/TOTP validation suite inside the QEMU guest"
-ssh_guard_run "cd /home/foo/osmap-qemu-validation && CARGO_HOME=/tmp/osmap-cargo-home CARGO_TARGET_DIR=/tmp/osmap-target cargo test"
+if [ -n "${QEMU_RUST_TOOL_PACKAGES}" ]; then
+  log "installing Rust developer tooling inside the QEMU guest: ${QEMU_RUST_TOOL_PACKAGES}"
+  ssh_guard_run "doas pkg_add ${QEMU_RUST_TOOL_PACKAGES}"
+fi
+
+log "running OSMAP validation entrypoints inside the QEMU guest"
+ssh_guard_run "cd /home/foo/osmap-qemu-validation && CARGO_HOME=/tmp/osmap-cargo-home CARGO_TARGET_DIR=/tmp/osmap-target make test"
+ssh_guard_run "cd /home/foo/osmap-qemu-validation && CARGO_HOME=/tmp/osmap-cargo-home CARGO_TARGET_DIR=/tmp/osmap-target make lint"
+ssh_guard_run "cd /home/foo/osmap-qemu-validation && CARGO_HOME=/tmp/osmap-cargo-home CARGO_TARGET_DIR=/tmp/osmap-target make fmt-check"
 
 log "QEMU auth validation completed successfully"

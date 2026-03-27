@@ -124,18 +124,10 @@ pub struct RevokedSession {
 /// Errors raised by session issuance or store operations.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SessionError {
-    InvalidToken {
-        reason: String,
-    },
-    RandomSourceFailure {
-        reason: String,
-    },
-    StoreFailure {
-        reason: String,
-    },
-    SessionNotFound {
-        session_id: String,
-    },
+    InvalidToken { reason: String },
+    RandomSourceFailure { reason: String },
+    StoreFailure { reason: String },
+    SessionNotFound { session_id: String },
 }
 
 /// Provides high-entropy bytes for session token generation.
@@ -184,7 +176,10 @@ impl FileSessionStore {
 impl SessionStore for FileSessionStore {
     fn save(&self, record: &SessionRecord) -> Result<(), SessionError> {
         fs::create_dir_all(&self.session_dir).map_err(|error| SessionError::StoreFailure {
-            reason: format!("failed to create session directory {:?}: {error}", self.session_dir),
+            reason: format!(
+                "failed to create session directory {:?}: {error}",
+                self.session_dir
+            ),
         })?;
 
         let path = self.session_path(&record.session_id);
@@ -202,14 +197,14 @@ impl SessionStore for FileSessionStore {
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
-            fs::set_permissions(&tmp_path, fs::Permissions::from_mode(0o600)).map_err(
-                |error| SessionError::StoreFailure {
+            fs::set_permissions(&tmp_path, fs::Permissions::from_mode(0o600)).map_err(|error| {
+                SessionError::StoreFailure {
                     reason: format!(
                         "failed to set session temp permissions {:?}: {error}",
                         tmp_path
                     ),
-                },
-            )?;
+                }
+            })?;
         }
 
         fs::rename(&tmp_path, &path).map_err(|error| SessionError::StoreFailure {
@@ -240,12 +235,14 @@ impl SessionStore for FileSessionStore {
             return Ok(records);
         }
 
-        for entry in fs::read_dir(&self.session_dir).map_err(|error| SessionError::StoreFailure {
-            reason: format!(
-                "failed to read session directory {:?}: {error}",
-                self.session_dir
-            ),
-        })? {
+        for entry in
+            fs::read_dir(&self.session_dir).map_err(|error| SessionError::StoreFailure {
+                reason: format!(
+                    "failed to read session directory {:?}: {error}",
+                    self.session_dir
+                ),
+            })?
+        {
             let entry = entry.map_err(|error| SessionError::StoreFailure {
                 reason: format!("failed to read session directory entry: {error}"),
             })?;
@@ -281,7 +278,12 @@ pub struct SessionService<S, T, R> {
 
 impl<S, T, R> SessionService<S, T, R> {
     /// Creates a new session service.
-    pub fn new(session_store: S, time_provider: T, random_source: R, lifetime_seconds: u64) -> Self {
+    pub fn new(
+        session_store: S,
+        time_provider: T,
+        random_source: R,
+        lifetime_seconds: u64,
+    ) -> Self {
         Self {
             session_store,
             time_provider,
@@ -444,7 +446,10 @@ where
     }
 
     /// Returns the operator-visible session list for a canonical user.
-    pub fn list_for_user(&self, canonical_username: &str) -> Result<Vec<SessionRecord>, SessionError> {
+    pub fn list_for_user(
+        &self,
+        canonical_username: &str,
+    ) -> Result<Vec<SessionRecord>, SessionError> {
         self.session_store.list_for_user(canonical_username)
     }
 }
@@ -532,7 +537,9 @@ fn parse_session_record(content: &str) -> Result<Option<SessionRecord>, SessionE
 
         match key {
             "session_id" => {
-                if value.len() != SESSION_ID_HEX_LEN || !value.chars().all(|ch| ch.is_ascii_hexdigit()) {
+                if value.len() != SESSION_ID_HEX_LEN
+                    || !value.chars().all(|ch| ch.is_ascii_hexdigit())
+                {
                     return Err(SessionError::StoreFailure {
                         reason: "invalid session_id field in session record".to_string(),
                     });
@@ -591,9 +598,11 @@ fn parse_session_record(content: &str) -> Result<Option<SessionRecord>, SessionE
 
 /// Parses a required unsigned integer field from session metadata.
 fn parse_u64_field(field: &'static str, value: &str) -> Result<u64, SessionError> {
-    value.parse::<u64>().map_err(|error| SessionError::StoreFailure {
-        reason: format!("failed parsing {field}: {error}"),
-    })
+    value
+        .parse::<u64>()
+        .map_err(|error| SessionError::StoreFailure {
+            reason: format!("failed parsing {field}: {error}"),
+        })
 }
 
 /// Parses the factor string stored in session metadata.
@@ -628,11 +637,12 @@ fn hex_encode(bytes: &[u8]) -> String {
 mod tests {
     use super::*;
     use crate::auth::{
-        AuthenticationDecision, AuthenticationPolicy, AuthenticationService, PrimaryAuthBackendError,
-        PrimaryAuthVerdict, PrimaryCredentialBackend, RequiredSecondFactor, SecondFactorService,
+        AuthenticationDecision, AuthenticationPolicy, AuthenticationService,
+        PrimaryAuthBackendError, PrimaryAuthVerdict, PrimaryCredentialBackend,
+        RequiredSecondFactor, SecondFactorService,
     };
-    use crate::totp::{FileTotpSecretStore, TotpPolicy, TotpVerifier};
     use crate::totp::TimeProvider;
+    use crate::totp::{FileTotpSecretStore, TotpPolicy, TotpVerifier};
     use std::cell::Cell;
 
     #[derive(Debug)]
@@ -708,8 +718,8 @@ mod tests {
 
     #[test]
     fn token_debug_output_is_redacted() {
-        let token = SessionToken::new("a".repeat(SESSION_TOKEN_HEX_LEN))
-            .expect("token should be valid");
+        let token =
+            SessionToken::new("a".repeat(SESSION_TOKEN_HEX_LEN)).expect("token should be valid");
 
         let debug_output = format!("{token:?}");
 
@@ -731,7 +741,11 @@ mod tests {
         );
 
         let issued = service
-            .issue(&test_context(), "alice@example.com", RequiredSecondFactor::Totp)
+            .issue(
+                &test_context(),
+                "alice@example.com",
+                RequiredSecondFactor::Totp,
+            )
             .expect("session issuance should succeed");
 
         assert_eq!(issued.record.canonical_username, "alice@example.com");
@@ -739,7 +753,9 @@ mod tests {
         assert_eq!(issued.record.expires_at, 3700);
         assert_eq!(issued.record.factor, RequiredSecondFactor::Totp);
         assert_eq!(issued.record.csrf_token.len(), CSRF_TOKEN_HEX_LEN);
-        assert!(session_dir.join(format!("{}.session", issued.record.session_id)).exists());
+        assert!(session_dir
+            .join(format!("{}.session", issued.record.session_id))
+            .exists());
     }
 
     #[test]
@@ -757,7 +773,11 @@ mod tests {
         );
 
         let issued = service
-            .issue(&test_context(), "alice@example.com", RequiredSecondFactor::Totp)
+            .issue(
+                &test_context(),
+                "alice@example.com",
+                RequiredSecondFactor::Totp,
+            )
             .expect("session issuance should succeed");
         service.time_provider.unix_timestamp.set(200);
 
@@ -783,7 +803,11 @@ mod tests {
         );
 
         let issued = service
-            .issue(&test_context(), "alice@example.com", RequiredSecondFactor::Totp)
+            .issue(
+                &test_context(),
+                "alice@example.com",
+                RequiredSecondFactor::Totp,
+            )
             .expect("session issuance should succeed");
         service.time_provider.unix_timestamp.set(250);
 
@@ -809,7 +833,11 @@ mod tests {
         );
 
         let issued = service
-            .issue(&test_context(), "alice@example.com", RequiredSecondFactor::Totp)
+            .issue(
+                &test_context(),
+                "alice@example.com",
+                RequiredSecondFactor::Totp,
+            )
             .expect("session issuance should succeed");
         service.time_provider.unix_timestamp.set(300);
 
@@ -835,7 +863,11 @@ mod tests {
         );
 
         service
-            .issue(&test_context(), "alice@example.com", RequiredSecondFactor::Totp)
+            .issue(
+                &test_context(),
+                "alice@example.com",
+                RequiredSecondFactor::Totp,
+            )
             .expect("session issuance should succeed");
 
         let records = service
@@ -861,7 +893,11 @@ mod tests {
         );
 
         let issued = service
-            .issue(&test_context(), "alice@example.com", RequiredSecondFactor::Totp)
+            .issue(
+                &test_context(),
+                "alice@example.com",
+                RequiredSecondFactor::Totp,
+            )
             .expect("session issuance should succeed");
         service.time_provider.unix_timestamp.set(200);
 
@@ -880,12 +916,10 @@ mod tests {
     #[test]
     fn parses_serialized_session_records() {
         let record = SessionRecord {
-            session_id:
-                "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-                    .to_string(),
-            csrf_token:
-                "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
-                    .to_string(),
+            session_id: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+                .to_string(),
+            csrf_token: "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
+                .to_string(),
             canonical_username: "alice@example.com".to_string(),
             issued_at: 1,
             expires_at: 2,
@@ -923,16 +957,11 @@ mod tests {
         let session_dir = temp_dir("osmap-session-auth-session");
         let secret_store = FileTotpSecretStore::new(&secret_dir);
         let secret_path = secret_store.secret_path_for_username("alice@example.com");
-        fs::write(
-            &secret_path,
-            "secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ\n",
-        )
-        .expect("secret file should be written");
+        fs::write(&secret_path, "secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ\n")
+            .expect("secret file should be written");
 
-        let auth_service = AuthenticationService::new(
-            AuthenticationPolicy::default(),
-            AcceptingPrimaryBackend,
-        );
+        let auth_service =
+            AuthenticationService::new(AuthenticationPolicy::default(), AcceptingPrimaryBackend);
         let auth_outcome = auth_service.authenticate(
             &test_context(),
             "alice@example.com",
@@ -985,7 +1014,11 @@ mod tests {
             3600,
         );
         let issued = session_service
-            .issue(&test_context(), &canonical_username, RequiredSecondFactor::Totp)
+            .issue(
+                &test_context(),
+                &canonical_username,
+                RequiredSecondFactor::Totp,
+            )
             .expect("session issuance should succeed");
 
         assert_eq!(issued.record.canonical_username, canonical_username);
