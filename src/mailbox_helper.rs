@@ -21,9 +21,10 @@ use crate::auth::SystemCommandExecutor;
 use crate::config::{AppConfig, AppRunMode, LogLevel};
 use crate::logging::{EventCategory, LogEvent, Logger};
 use crate::mailbox::{
-    DoveadmMailboxListBackend, DoveadmMessageListBackend, MailboxBackend, MailboxBackendError,
-    MailboxEntry, MailboxListingPolicy, MessageListBackend, MessageListPolicy, MessageListRequest,
-    MessageSummary,
+    DoveadmMailboxListBackend, DoveadmMessageListBackend, DoveadmMessageViewBackend,
+    MailboxBackend, MailboxBackendError, MailboxEntry, MailboxListingPolicy, MessageListBackend,
+    MessageListPolicy, MessageListRequest, MessageSummary, MessageView, MessageViewBackend,
+    MessageViewPolicy, MessageViewRequest,
 };
 
 /// Conservative upper bound for one helper request payload.
@@ -127,6 +128,7 @@ impl MailboxBackend for MailboxHelperMailboxListBackend {
             let response = parse_response(
                 MailboxListingPolicy::default(),
                 MessageListPolicy::default(),
+                MessageViewPolicy::default(),
                 std::str::from_utf8(&response_bytes).map_err(|error| MailboxBackendError {
                     backend: "mailbox-helper-client",
                     reason: format!("helper response was not valid UTF-8: {error}"),
@@ -146,6 +148,11 @@ impl MailboxBackend for MailboxHelperMailboxListBackend {
                 MailboxHelperResponse::MessageListOk { .. } => Err(MailboxBackendError {
                     backend: "mailbox-helper-client",
                     reason: "helper returned message-list response for mailbox-list request"
+                        .to_string(),
+                }),
+                MailboxHelperResponse::MessageViewOk { .. } => Err(MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: "helper returned message-view response for mailbox-list request"
                         .to_string(),
                 }),
             }
@@ -231,6 +238,7 @@ impl MessageListBackend for MailboxHelperMessageListBackend {
             let response = parse_response(
                 MailboxListingPolicy::default(),
                 self.message_policy,
+                MessageViewPolicy::default(),
                 std::str::from_utf8(&response_bytes).map_err(|error| MailboxBackendError {
                     backend: "mailbox-helper-client",
                     reason: format!("helper response was not valid UTF-8: {error}"),
@@ -264,6 +272,142 @@ impl MessageListBackend for MailboxHelperMessageListBackend {
                 MailboxHelperResponse::MailboxListOk { .. } => Err(MailboxBackendError {
                     backend: "mailbox-helper-client",
                     reason: "helper returned mailbox-list response for message-list request"
+                        .to_string(),
+                }),
+                MailboxHelperResponse::MessageViewOk { .. } => Err(MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: "helper returned message-view response for message-list request"
+                        .to_string(),
+                }),
+            }
+        }
+    }
+}
+
+/// Client backend that proxies single-message retrieval through the local
+/// helper socket.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MailboxHelperMessageViewBackend {
+    socket_path: PathBuf,
+    policy: MailboxHelperPolicy,
+    message_view_policy: MessageViewPolicy,
+}
+
+impl MailboxHelperMessageViewBackend {
+    /// Creates a message-view client backend for the supplied helper socket.
+    pub fn new(
+        socket_path: impl Into<PathBuf>,
+        policy: MailboxHelperPolicy,
+        message_view_policy: MessageViewPolicy,
+    ) -> Self {
+        Self {
+            socket_path: socket_path.into(),
+            policy,
+            message_view_policy,
+        }
+    }
+}
+
+impl MessageViewBackend for MailboxHelperMessageViewBackend {
+    fn fetch_message(
+        &self,
+        canonical_username: &str,
+        request: &MessageViewRequest,
+    ) -> Result<MessageView, MailboxBackendError> {
+        let helper_request = MailboxHelperRequest::MessageView {
+            canonical_username: canonical_username.to_string(),
+            mailbox_name: request.mailbox_name.clone(),
+            uid: request.uid,
+        };
+        let request_bytes = encode_request(&helper_request).into_bytes();
+
+        #[cfg(not(unix))]
+        {
+            let _ = request_bytes;
+            return Err(MailboxBackendError {
+                backend: "mailbox-helper-client",
+                reason: "mailbox helper requires a Unix-domain socket platform".to_string(),
+            });
+        }
+
+        #[cfg(unix)]
+        {
+            let mut stream =
+                UnixStream::connect(&self.socket_path).map_err(|error| MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: format!(
+                        "failed to connect to mailbox helper {}: {error}",
+                        self.socket_path.display()
+                    ),
+                })?;
+
+            configure_stream_timeouts(&stream, self.policy);
+            stream
+                .write_all(&request_bytes)
+                .map_err(|error| MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: format!("failed to write helper request: {error}"),
+                })?;
+            stream
+                .shutdown(Shutdown::Write)
+                .map_err(|error| MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: format!("failed to finish helper request: {error}"),
+                })?;
+
+            let response_bytes = read_bounded_from_stream(&mut stream, self.policy.max_response_bytes)
+                .map_err(|reason| MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason,
+                })?;
+            let response = parse_response(
+                MailboxListingPolicy::default(),
+                MessageListPolicy::default(),
+                self.message_view_policy,
+                std::str::from_utf8(&response_bytes).map_err(|error| MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: format!("helper response was not valid UTF-8: {error}"),
+                })?,
+            )
+            .map_err(|reason| MailboxBackendError {
+                backend: "mailbox-helper-client",
+                reason,
+            })?;
+
+            match response {
+                MailboxHelperResponse::MessageViewOk { message } => {
+                    if message.mailbox_name != request.mailbox_name {
+                        return Err(MailboxBackendError {
+                            backend: "mailbox-helper-client",
+                            reason: format!(
+                                "helper response mailbox mismatch: expected {:?}, got {:?}",
+                                request.mailbox_name, message.mailbox_name
+                            ),
+                        });
+                    }
+                    if message.uid != request.uid {
+                        return Err(MailboxBackendError {
+                            backend: "mailbox-helper-client",
+                            reason: format!(
+                                "helper response uid mismatch: expected {}, got {}",
+                                request.uid, message.uid
+                            ),
+                        });
+                    }
+                    Ok(message)
+                }
+                MailboxHelperResponse::Error { backend, reason } => Err(MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: format!("{backend}: {reason}"),
+                }),
+                MailboxHelperResponse::MailboxListOk { .. } => Err(MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: "helper returned mailbox-list response for message-view request"
+                        .to_string(),
+                }),
+                MailboxHelperResponse::MessageListOk { .. } => Err(MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: "helper returned message-list response for message-view request"
                         .to_string(),
                 }),
             }
@@ -313,6 +457,12 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
             "/usr/local/bin/doveadm",
         )
         .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone());
+        let message_view_backend = DoveadmMessageViewBackend::new(
+            MessageViewPolicy::default(),
+            SystemCommandExecutor,
+            "/usr/local/bin/doveadm",
+        )
+        .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone());
         let policy = MailboxHelperPolicy::default();
 
         logger.emit(
@@ -331,6 +481,7 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
                 Ok(mut stream) => handle_helper_client(
                     &mailbox_backend,
                     &message_list_backend,
+                    &message_view_backend,
                     logger,
                     &mut stream,
                     policy,
@@ -359,6 +510,11 @@ enum MailboxHelperRequest {
         canonical_username: String,
         mailbox_name: String,
     },
+    MessageView {
+        canonical_username: String,
+        mailbox_name: String,
+        uid: u64,
+    },
 }
 
 /// Supported helper responses for the first mailbox-read slice.
@@ -369,19 +525,24 @@ enum MailboxHelperResponse {
         mailbox_name: String,
         messages: Vec<MessageSummary>,
     },
+    MessageViewOk {
+        message: MessageView,
+    },
     Error { backend: String, reason: String },
 }
 
 #[cfg(unix)]
-fn handle_helper_client<MB, MLB>(
+fn handle_helper_client<MB, MLB, MVB>(
     mailbox_backend: &MB,
     message_list_backend: &MLB,
+    message_view_backend: &MVB,
     logger: &Logger,
     stream: &mut UnixStream,
     policy: MailboxHelperPolicy,
 ) where
     MB: MailboxBackend,
     MLB: MessageListBackend,
+    MVB: MessageViewBackend,
 {
     configure_stream_timeouts(stream, policy);
 
@@ -443,6 +604,26 @@ fn handle_helper_client<MB, MLB>(
                 Err(error_response) => error_response,
             }
         }
+        MailboxHelperRequest::MessageView {
+            canonical_username,
+            mailbox_name,
+            uid,
+        } => match MessageViewRequest::new(MessageViewPolicy::default(), mailbox_name.clone(), *uid)
+            .map_err(|error| MailboxHelperResponse::Error {
+                backend: error.backend.to_string(),
+                reason: error.reason,
+            })
+            .and_then(|request| {
+                message_view_backend
+                    .fetch_message(canonical_username, &request)
+                    .map_err(|error| MailboxHelperResponse::Error {
+                        backend: error.backend.to_string(),
+                        reason: error.reason,
+                    })
+            }) {
+            Ok(message) => MailboxHelperResponse::MessageViewOk { message },
+            Err(error_response) => error_response,
+        },
     };
 
     let _ = write_response(stream, &response);
@@ -486,6 +667,13 @@ fn encode_request(request: &MailboxHelperRequest) -> String {
         } => format!(
             "operation=message_list\ncanonical_username={canonical_username}\nmailbox_name={mailbox_name}\n"
         ),
+        MailboxHelperRequest::MessageView {
+            canonical_username,
+            mailbox_name,
+            uid,
+        } => format!(
+            "operation=message_view\ncanonical_username={canonical_username}\nmailbox_name={mailbox_name}\nuid={uid}\n"
+        ),
     }
 }
 
@@ -504,6 +692,20 @@ fn parse_request(input: &str) -> Result<MailboxHelperRequest, String> {
             Ok(MailboxHelperRequest::MessageList {
                 canonical_username,
                 mailbox_name,
+            })
+        }
+        "message_view" => {
+            let mailbox_name = require_field(&fields, "mailbox_name")?.to_string();
+            let uid = require_field(&fields, "uid")?
+                .parse::<u64>()
+                .map_err(|error| format!("invalid helper uid: {error}"))?;
+            let request =
+                MessageViewRequest::new(MessageViewPolicy::default(), mailbox_name.clone(), uid)
+                    .map_err(|error| error.reason)?;
+            Ok(MailboxHelperRequest::MessageView {
+                canonical_username,
+                mailbox_name: request.mailbox_name,
+                uid: request.uid,
             })
         }
         _ => Err(format!("unsupported helper operation: {operation}")),
@@ -549,6 +751,16 @@ fn encode_response(response: &MailboxHelperResponse) -> String {
             }
             output
         }
+        MailboxHelperResponse::MessageViewOk { message } => format!(
+            "status=ok\noperation=message_view\nmessage_uid={}\nmessage_flags={}\nmessage_date_received={}\nmessage_size_virtual={}\nmessage_mailbox={}\nmessage_header_block_b64={}\nmessage_body_text_b64={}\n",
+            message.uid,
+            message.flags.join(","),
+            message.date_received,
+            message.size_virtual,
+            message.mailbox_name,
+            encode_base64(message.header_block.as_bytes()),
+            encode_base64(message.body_text.as_bytes()),
+        ),
         MailboxHelperResponse::Error { backend, reason } => {
             format!("status=error\nbackend={backend}\nreason={reason}\n")
         }
@@ -558,6 +770,7 @@ fn encode_response(response: &MailboxHelperResponse) -> String {
 fn parse_response(
     mailbox_policy: MailboxListingPolicy,
     message_policy: MessageListPolicy,
+    message_view_policy: MessageViewPolicy,
     input: &str,
 ) -> Result<MailboxHelperResponse, String> {
     let mut status = None::<String>;
@@ -591,7 +804,7 @@ fn parse_response(
             "mailbox_count" => {}
             "message_count" => {}
             "message_uid" | "message_flags" | "message_date_received" | "message_size_virtual"
-            | "message_mailbox" => {
+            | "message_mailbox" | "message_header_block_b64" | "message_body_text_b64" => {
                 if current_message_fields
                     .insert(key.to_string(), value.to_string())
                     .is_some()
@@ -613,7 +826,7 @@ fn parse_response(
         }
     }
 
-    if !current_message_fields.is_empty() {
+    if matches!(operation.as_deref(), Some("message_list")) && !current_message_fields.is_empty() {
         return Err("helper response ended before message_end marker".to_string());
     }
 
@@ -624,6 +837,9 @@ fn parse_response(
                 mailbox_name: mailbox_name
                     .unwrap_or_else(|| "unknown".to_string()),
                 messages,
+            }),
+            Some("message_view") => Ok(MailboxHelperResponse::MessageViewOk {
+                message: parse_message_view_fields(message_view_policy, &current_message_fields)?,
             }),
             Some(other) => Err(format!("unsupported helper response operation: {other}")),
             None => Err("helper response did not include an operation".to_string()),
@@ -743,6 +959,207 @@ fn parse_message_summary_fields(
     })
 }
 
+fn parse_message_view_fields(
+    policy: MessageViewPolicy,
+    fields: &BTreeMap<String, String>,
+) -> Result<MessageView, String> {
+    let mailbox_name = require_field(fields, "message_mailbox")?.to_string();
+    let _ = MailboxEntry::new(
+        MailboxListingPolicy {
+            mailbox_name_max_len: policy.mailbox_name_max_len,
+            max_mailboxes: 1,
+        },
+        mailbox_name.clone(),
+    )
+    .map_err(|error| error.reason)?;
+
+    let uid = require_field(fields, "message_uid")?
+        .parse::<u64>()
+        .map_err(|error| format!("invalid helper message uid: {error}"))?;
+    if uid == 0 {
+        return Err("helper message uid must be greater than zero".to_string());
+    }
+
+    let date_received = require_field(fields, "message_date_received")?.to_string();
+    validate_helper_string(
+        "message date_received",
+        &date_received,
+        policy.message_date_max_len,
+        false,
+        false,
+    )?;
+
+    let size_virtual = require_field(fields, "message_size_virtual")?
+        .parse::<u64>()
+        .map_err(|error| format!("invalid helper message size_virtual: {error}"))?;
+
+    let flags_text = require_field(fields, "message_flags")?.to_string();
+    validate_helper_string(
+        "message flags",
+        &flags_text,
+        policy.message_flag_string_max_len,
+        true,
+        false,
+    )?;
+    let flags = if flags_text.is_empty() {
+        Vec::new()
+    } else {
+        flags_text.split(',').map(|value| value.to_string()).collect()
+    };
+
+    let header_block = decode_base64_text(
+        require_field(fields, "message_header_block_b64")?,
+        policy.message_header_max_len,
+        "message header_block",
+    )?;
+    validate_helper_string(
+        "message header_block",
+        &header_block,
+        policy.message_header_max_len,
+        false,
+        true,
+    )?;
+
+    let body_text = decode_base64_text(
+        require_field(fields, "message_body_text_b64")?,
+        policy.message_body_max_len,
+        "message body_text",
+    )?;
+    validate_helper_string(
+        "message body_text",
+        &body_text,
+        policy.message_body_max_len,
+        true,
+        true,
+    )?;
+
+    Ok(MessageView {
+        mailbox_name,
+        uid,
+        flags,
+        date_received,
+        size_virtual,
+        header_block,
+        body_text,
+    })
+}
+
+fn validate_helper_string(
+    field: &str,
+    value: &str,
+    max_len: usize,
+    allow_empty: bool,
+    allow_text_whitespace_controls: bool,
+) -> Result<(), String> {
+    if value.is_empty() && !allow_empty {
+        return Err(format!("{field} must not be empty"));
+    }
+
+    if value.len() > max_len {
+        return Err(format!("{field} exceeded maximum length of {max_len} bytes"));
+    }
+
+    if value.chars().any(|ch| {
+        ch.is_control() && !(allow_text_whitespace_controls && matches!(ch, '\n' | '\r' | '\t'))
+    }) {
+        return Err(format!("{field} contains control characters"));
+    }
+
+    Ok(())
+}
+
+fn encode_base64(bytes: &[u8]) -> String {
+    const BASE64: &[u8; 64] =
+        b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+    if bytes.is_empty() {
+        return String::new();
+    }
+
+    let mut output = String::with_capacity(bytes.len().div_ceil(3) * 4);
+    for chunk in bytes.chunks(3) {
+        let byte0 = chunk[0];
+        let byte1 = chunk.get(1).copied().unwrap_or(0);
+        let byte2 = chunk.get(2).copied().unwrap_or(0);
+        let combined = ((byte0 as u32) << 16) | ((byte1 as u32) << 8) | (byte2 as u32);
+
+        output.push(BASE64[((combined >> 18) & 0x3f) as usize] as char);
+        output.push(BASE64[((combined >> 12) & 0x3f) as usize] as char);
+        if chunk.len() > 1 {
+            output.push(BASE64[((combined >> 6) & 0x3f) as usize] as char);
+        } else {
+            output.push('=');
+        }
+        if chunk.len() > 2 {
+            output.push(BASE64[(combined & 0x3f) as usize] as char);
+        } else {
+            output.push('=');
+        }
+    }
+
+    output
+}
+
+fn decode_base64_text(input: &str, max_len: usize, field: &str) -> Result<String, String> {
+    let bytes = decode_base64_bytes(input, max_len, field)?;
+    String::from_utf8(bytes).map_err(|error| format!("{field} was not valid UTF-8: {error}"))
+}
+
+fn decode_base64_bytes(input: &str, max_len: usize, field: &str) -> Result<Vec<u8>, String> {
+    if input.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    let sanitized: Vec<char> = input.chars().filter(|value| !value.is_ascii_whitespace()).collect();
+    if sanitized.len() % 4 != 0 {
+        return Err(format!("{field} base64 length was not a multiple of four"));
+    }
+
+    let mut output = Vec::with_capacity((sanitized.len() / 4) * 3);
+    for chunk in sanitized.chunks(4) {
+        let mut values = [0_u8; 4];
+        let mut padding = 0usize;
+
+        for (index, ch) in chunk.iter().enumerate() {
+            values[index] = match *ch {
+                'A'..='Z' => (*ch as u8) - b'A',
+                'a'..='z' => (*ch as u8) - b'a' + 26,
+                '0'..='9' => (*ch as u8) - b'0' + 52,
+                '+' => 62,
+                '/' => 63,
+                '=' => {
+                    padding += 1;
+                    0
+                }
+                _ => return Err(format!("{field} base64 contained invalid characters")),
+            };
+
+            if *ch == '=' && index < 2 {
+                return Err(format!("{field} base64 used invalid padding"));
+            }
+        }
+
+        let combined = ((values[0] as u32) << 18)
+            | ((values[1] as u32) << 12)
+            | ((values[2] as u32) << 6)
+            | values[3] as u32;
+
+        output.push(((combined >> 16) & 0xff) as u8);
+        if padding < 2 {
+            output.push(((combined >> 8) & 0xff) as u8);
+        }
+        if padding < 1 {
+            output.push((combined & 0xff) as u8);
+        }
+
+        if output.len() > max_len {
+            return Err(format!("{field} exceeded maximum length of {max_len} bytes"));
+        }
+    }
+
+    Ok(output)
+}
+
 #[cfg(unix)]
 fn write_response(stream: &mut UnixStream, response: &MailboxHelperResponse) -> Result<(), String> {
     stream
@@ -838,6 +1255,23 @@ fn log_helper_response(
             .with_field("mailbox_name", mailbox_name.clone())
             .with_field("message_count", messages.len().to_string()),
         ),
+        (
+            MailboxHelperResponse::MessageViewOk { message },
+            Some(MailboxHelperRequest::MessageView {
+                canonical_username,
+                ..
+            }),
+        ) => logger.emit(
+            &LogEvent::new(
+                LogLevel::Info,
+                EventCategory::Mailbox,
+                "mailbox_helper_message_viewed",
+                "mailbox helper retrieved one message",
+            )
+            .with_field("canonical_username", canonical_username.clone())
+            .with_field("mailbox_name", message.mailbox_name.clone())
+            .with_field("uid", message.uid.to_string()),
+        ),
         (MailboxHelperResponse::Error { backend, reason }, Some(request)) => {
             logger.emit(
                 &LogEvent::new(
@@ -870,6 +1304,7 @@ fn helper_operation_label(request: &MailboxHelperRequest) -> &'static str {
     match request {
         MailboxHelperRequest::MailboxList { .. } => "mailbox_list",
         MailboxHelperRequest::MessageList { .. } => "message_list",
+        MailboxHelperRequest::MessageView { .. } => "message_view",
     }
 }
 
@@ -885,6 +1320,7 @@ mod tests {
     struct StaticHelperBackend {
         mailbox_result: Arc<Result<Vec<MailboxEntry>, MailboxBackendError>>,
         message_list_result: Arc<Result<Vec<MessageSummary>, MailboxBackendError>>,
+        message_view_result: Arc<Result<MessageView, MailboxBackendError>>,
     }
 
     impl MailboxBackend for StaticHelperBackend {
@@ -903,6 +1339,16 @@ mod tests {
             _request: &MessageListRequest,
         ) -> Result<Vec<MessageSummary>, MailboxBackendError> {
             (*self.message_list_result).clone()
+        }
+    }
+
+    impl MessageViewBackend for StaticHelperBackend {
+        fn fetch_message(
+            &self,
+            _canonical_username: &str,
+            _request: &MessageViewRequest,
+        ) -> Result<MessageView, MailboxBackendError> {
+            (*self.message_view_result).clone()
         }
     }
 
@@ -946,10 +1392,28 @@ mod tests {
     }
 
     #[test]
+    fn parses_message_view_request() {
+        let request = parse_request(
+            "operation=message_view\ncanonical_username=alice@example.com\nmailbox_name=INBOX\nuid=9\n",
+        )
+        .expect("message-view request should parse");
+
+        assert_eq!(
+            request,
+            MailboxHelperRequest::MessageView {
+                canonical_username: "alice@example.com".to_string(),
+                mailbox_name: "INBOX".to_string(),
+                uid: 9,
+            }
+        );
+    }
+
+    #[test]
     fn parses_success_response() {
         let response = parse_response(
             MailboxListingPolicy::default(),
             MessageListPolicy::default(),
+            MessageViewPolicy::default(),
             "status=ok\noperation=mailbox_list\nmailbox_count=2\nmailbox=INBOX\nmailbox=Sent Items\n",
         )
         .expect("response should parse");
@@ -974,6 +1438,7 @@ mod tests {
         let response = parse_response(
             MailboxListingPolicy::default(),
             MessageListPolicy::default(),
+            MessageViewPolicy::default(),
             "status=error\nbackend=doveadm-mailbox-list\nreason=temporarily unavailable\n",
         )
         .expect("error response should parse");
@@ -992,6 +1457,7 @@ mod tests {
         let response = parse_response(
             MailboxListingPolicy::default(),
             MessageListPolicy::default(),
+            MessageViewPolicy::default(),
             "status=ok\noperation=message_list\nmailbox_name=INBOX\nmessage_count=2\nmessage_uid=7\nmessage_flags=\\Seen\nmessage_date_received=2026-03-27 12:00:00 +0000\nmessage_size_virtual=42\nmessage_mailbox=INBOX\nmessage_end=1\nmessage_uid=8\nmessage_flags=\nmessage_date_received=2026-03-27 13:00:00 +0000\nmessage_size_virtual=43\nmessage_mailbox=INBOX\nmessage_end=1\n",
         )
         .expect("message-list response should parse");
@@ -1020,6 +1486,32 @@ mod tests {
         );
     }
 
+    #[test]
+    fn parses_message_view_response() {
+        let response = parse_response(
+            MailboxListingPolicy::default(),
+            MessageListPolicy::default(),
+            MessageViewPolicy::default(),
+            "status=ok\noperation=message_view\nmessage_uid=9\nmessage_flags=\\Seen\nmessage_date_received=2026-03-27 14:00:00 +0000\nmessage_size_virtual=44\nmessage_mailbox=INBOX\nmessage_header_block_b64=U3ViamVjdDogVGVzdCBtZXNzYWdlCg==\nmessage_body_text_b64=SGVsbG8gd29ybGQK\n",
+        )
+        .expect("message-view response should parse");
+
+        assert_eq!(
+            response,
+            MailboxHelperResponse::MessageViewOk {
+                message: MessageView {
+                    mailbox_name: "INBOX".to_string(),
+                    uid: 9,
+                    flags: vec!["\\Seen".to_string()],
+                    date_received: "2026-03-27 14:00:00 +0000".to_string(),
+                    size_virtual: 44,
+                    header_block: "Subject: Test message\n".to_string(),
+                    body_text: "Hello world\n".to_string(),
+                },
+            }
+        );
+    }
+
     #[cfg(unix)]
     #[test]
     fn client_lists_mailboxes_over_helper_socket() {
@@ -1034,6 +1526,10 @@ mod tests {
                 },
             ])),
             message_list_result: Arc::new(Ok(Vec::new())),
+            message_view_result: Arc::new(Err(MailboxBackendError {
+                backend: "message-view-not-used",
+                reason: "unexpected message-view request".to_string(),
+            })),
         };
         let server = spawn_test_helper(socket_path.clone(), backend);
         wait_for_socket(&socket_path);
@@ -1069,6 +1565,10 @@ mod tests {
                 reason: "userdb denied lookup".to_string(),
             })),
             message_list_result: Arc::new(Ok(Vec::new())),
+            message_view_result: Arc::new(Err(MailboxBackendError {
+                backend: "message-view-not-used",
+                reason: "unexpected message-view request".to_string(),
+            })),
         };
         let server = spawn_test_helper(socket_path.clone(), backend);
         wait_for_socket(&socket_path);
@@ -1107,6 +1607,10 @@ mod tests {
                     size_virtual: 100,
                 },
             ])),
+            message_view_result: Arc::new(Err(MailboxBackendError {
+                backend: "message-view-not-used",
+                reason: "unexpected message-view request".to_string(),
+            })),
         };
         let server = spawn_test_helper(socket_path.clone(), backend);
         wait_for_socket(&socket_path);
@@ -1131,9 +1635,48 @@ mod tests {
     }
 
     #[cfg(unix)]
+    #[test]
+    fn client_fetches_message_view_over_helper_socket() {
+        let socket_path = temp_socket_path("message-view-helper-ok");
+        let backend = StaticHelperBackend {
+            mailbox_result: Arc::new(Ok(Vec::new())),
+            message_list_result: Arc::new(Ok(Vec::new())),
+            message_view_result: Arc::new(Ok(MessageView {
+                mailbox_name: "INBOX".to_string(),
+                uid: 12,
+                flags: vec!["\\Seen".to_string()],
+                date_received: "2026-03-27 14:00:00 +0000".to_string(),
+                size_virtual: 101,
+                header_block: "Subject: Test message\n".to_string(),
+                body_text: "Hello world\n".to_string(),
+            })),
+        };
+        let server = spawn_test_helper(socket_path.clone(), backend);
+        wait_for_socket(&socket_path);
+        let client = MailboxHelperMessageViewBackend::new(
+            &socket_path,
+            MailboxHelperPolicy::default(),
+            MessageViewPolicy::default(),
+        );
+        let request =
+            MessageViewRequest::new(MessageViewPolicy::default(), "INBOX", 12).expect("request should parse");
+
+        let message = client
+            .fetch_message("alice@example.com", &request)
+            .expect("helper-backed message view should succeed");
+
+        server.join().expect("helper thread should finish");
+        let _ = fs::remove_file(&socket_path);
+
+        assert_eq!(message.uid, 12);
+        assert_eq!(message.header_block, "Subject: Test message\n");
+        assert_eq!(message.body_text, "Hello world\n");
+    }
+
+    #[cfg(unix)]
     fn spawn_test_helper<B>(socket_path: PathBuf, backend: B) -> thread::JoinHandle<()>
     where
-        B: MailboxBackend + MessageListBackend + Send + 'static,
+        B: MailboxBackend + MessageListBackend + MessageViewBackend + Send + 'static,
     {
         thread::spawn(move || {
             let _ = remove_stale_socket_if_needed(&socket_path);
@@ -1141,6 +1684,7 @@ mod tests {
             let logger = Logger::new(crate::config::LogFormat::Text, LogLevel::Info);
             let (mut stream, _) = listener.accept().expect("test helper should accept");
             handle_helper_client(
+                &backend,
                 &backend,
                 &backend,
                 &logger,

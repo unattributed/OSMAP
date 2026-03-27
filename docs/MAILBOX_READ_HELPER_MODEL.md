@@ -74,12 +74,12 @@ What is implemented:
 - a small line-oriented request/response protocol
 - a helper-backed mailbox-list client backend in the web runtime
 - a helper-backed message-list client backend in the web runtime
-- mailbox-list and message-list routing through the helper when
+- a helper-backed message-view client backend in the web runtime
+- mailbox-list, message-list, and message-view routing through the helper when
   `OSMAP_MAILBOX_HELPER_SOCKET_PATH` is configured
 
 What is not yet implemented:
 
-- helper-backed message-view retrieval
 - helper-backed attachment retrieval
 - helper-specific OpenBSD confinement
 - live-host proof of the helper under the current `vmail` boundary
@@ -111,7 +111,8 @@ Current request properties in the first slice:
 
 - one explicit operation name
 - canonical username
-- mailbox name for message-list requests
+- mailbox name for message-list and message-view requests
+- UID for message-view requests
 
 Expected later request properties:
 
@@ -124,6 +125,7 @@ Current response properties:
 - success or denied/error status
 - bounded mailbox names for mailbox-list responses
 - bounded message summaries for message-list responses
+- one bounded message payload for message-view responses
 - operator-usable but bounded failure labels
 
 The current wire format is a small line-oriented key/value protocol over a
@@ -187,7 +189,8 @@ That migration is now underway:
 
 - mailbox listing uses the helper when configured
 - message-list retrieval uses the helper when configured
-- message-view and attachment retrieval still use the direct prototype path
+- message-view retrieval uses the helper when configured
+- attachment retrieval still uses the direct prototype path
 
 ## What This Document Does Not Claim
 

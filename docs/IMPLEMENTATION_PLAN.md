@@ -159,9 +159,9 @@ The next active implementation work should focus on:
 
 - using the project-local QEMU lab wrappers and `mail.blackbagsecurity.com` for
   continued OpenBSD validation as the runtime broadens
-- extending the current mailbox-helper slice beyond mailbox listing and
-  message-list retrieval toward message-view retrieval without widening the web-facing
-  runtime
+- extending the current mailbox-helper slice beyond mailbox listing,
+  message-list retrieval, and message-view retrieval toward attachment-part
+  retrieval without widening the web-facing runtime
 - narrowing and validating the helper-compatible OpenBSD confinement view
   around that helper boundary rather than around long-term direct `doveadm`
   execution from the web process

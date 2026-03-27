@@ -137,14 +137,14 @@ Each phase produces formal outputs to support traceability and auditability.
   the current Dovecot virtual-user model still resolves mailbox access to
   `vmail`, so broader least-privilege live mailbox reads are not yet proven.
 - The mailbox-helper runtime now exists in-repo: a local Unix-socket helper
-  plus helper-backed mailbox listing and message-list retrieval, intended to
-  move mailbox reads out of the web-facing runtime one operation family at a
-  time.
+  plus helper-backed mailbox listing, message-list retrieval, and message-view
+  retrieval, intended to move mailbox reads out of the web-facing runtime one
+  operation family at a time.
 - OSMAP is still prototype-grade, not production-ready, and does not yet have a
   public deployment.
-- Current priority work is to extend the mailbox helper across the broader read
-  path, continue hardening the custom HTTP runtime, and tighten the OpenBSD
-  deployment and confinement model around the new helper boundary.
+- Current priority work is to extend the mailbox helper to attachment-part
+  retrieval, continue hardening the custom HTTP runtime, and tighten the
+  OpenBSD deployment and confinement model around the new helper boundary.
 
 ---
 

@@ -33,7 +33,8 @@ use crate::mailbox::{
     MessageViewPolicy, MessageViewRequest, MessageViewService,
 };
 use crate::mailbox_helper::{
-    MailboxHelperMailboxListBackend, MailboxHelperMessageListBackend, MailboxHelperPolicy,
+    MailboxHelperMailboxListBackend, MailboxHelperMessageListBackend,
+    MailboxHelperMessageViewBackend, MailboxHelperPolicy,
 };
 use crate::openbsd::apply_runtime_confinement;
 use crate::rendering::{PlainTextMessageRenderer, RenderedMessageView, RenderingPolicy};
@@ -834,13 +835,25 @@ impl BrowserGateway for RuntimeBrowserGateway {
             }
         };
 
-        let message_outcome = MessageViewService::new(DoveadmMessageViewBackend::new(
-            MessageViewPolicy::default(),
-            SystemCommandExecutor,
-            self.doveadm_path.clone(),
-        )
-        .with_userdb_socket_path(self.doveadm_userdb_socket_path.clone()))
-        .fetch_for_validated_session(context, validated_session, &request);
+        let backend = match &self.mailbox_helper_socket_path {
+            Some(socket_path) => MessageViewRuntimeBackend::Helper(
+                MailboxHelperMessageViewBackend::new(
+                    socket_path,
+                    MailboxHelperPolicy::default(),
+                    MessageViewPolicy::default(),
+                ),
+            ),
+            None => MessageViewRuntimeBackend::Direct(
+                DoveadmMessageViewBackend::new(
+                    MessageViewPolicy::default(),
+                    SystemCommandExecutor,
+                    self.doveadm_path.clone(),
+                )
+                .with_userdb_socket_path(self.doveadm_userdb_socket_path.clone()),
+            ),
+        };
+        let message_outcome = MessageViewService::new(backend)
+            .fetch_for_validated_session(context, validated_session, &request);
         let mut audit_events = vec![message_outcome.audit_event.clone()];
 
         match message_outcome.decision {
@@ -1057,6 +1070,26 @@ impl crate::mailbox::MessageListBackend for MessageListRuntimeBackend {
         match self {
             Self::Direct(backend) => backend.list_messages(canonical_username, request),
             Self::Helper(backend) => backend.list_messages(canonical_username, request),
+        }
+    }
+}
+
+/// Selects the current message-view backend without widening the browser
+/// runtime's authority when a local helper is configured.
+enum MessageViewRuntimeBackend {
+    Direct(DoveadmMessageViewBackend<SystemCommandExecutor>),
+    Helper(MailboxHelperMessageViewBackend),
+}
+
+impl crate::mailbox::MessageViewBackend for MessageViewRuntimeBackend {
+    fn fetch_message(
+        &self,
+        canonical_username: &str,
+        request: &MessageViewRequest,
+    ) -> Result<crate::mailbox::MessageView, crate::mailbox::MailboxBackendError> {
+        match self {
+            Self::Direct(backend) => backend.fetch_message(canonical_username, request),
+            Self::Helper(backend) => backend.fetch_message(canonical_username, request),
         }
     }
 }

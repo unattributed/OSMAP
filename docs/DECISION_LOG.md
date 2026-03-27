@@ -595,3 +595,11 @@ instead of rewriting mailbox access in one large jump.
 The next helper-backed read operation is now in place too: message-list
 retrieval can use the local mailbox helper when configured. Message view and
 attachment retrieval remain on the direct prototype path for now.
+
+### Extend the mailbox helper migration to message-view retrieval
+
+The next helper-backed read operation is now in place as well: bounded
+single-message retrieval can use the local mailbox helper when configured. This
+finishes the core mailbox read-path migration through message view without yet
+claiming helper-backed attachment bytes or live-host proof under the `vmail`
+boundary.
