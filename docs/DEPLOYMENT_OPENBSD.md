@@ -186,12 +186,17 @@ The selected next-step deployment answer is therefore:
 - expose the helper over a narrowly permissioned Unix socket instead of
   widening the web-facing runtime
 
-The first implementation slice of that answer now exists for mailbox listing:
+The first implementation slices of that answer now exist:
 
 - `OSMAP_RUN_MODE=mailbox-helper` starts the local helper
 - `OSMAP_MAILBOX_HELPER_SOCKET_PATH` selects the Unix socket path used by the
   helper and by the web runtime
-- broader helper-backed read paths still remain to be implemented and validated
+- mailbox listing, message-list retrieval, and message-view retrieval can now
+  route through that helper
+- attachment download now reuses the helper-backed message-view path when the
+  helper socket is configured
+- helper-specific confinement now exists in code, but live-host validation
+  under the actual `vmail` boundary still remains
 
 This is more likely to produce a system that OpenBSD operators, and eventually
 potential downstream packagers, would consider credible.

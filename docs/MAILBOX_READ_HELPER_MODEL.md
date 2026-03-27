@@ -75,13 +75,14 @@ What is implemented:
 - a helper-backed mailbox-list client backend in the web runtime
 - a helper-backed message-list client backend in the web runtime
 - a helper-backed message-view client backend in the web runtime
+- helper-backed source-message fetches for the attachment-download route
 - mailbox-list, message-list, and message-view routing through the helper when
   `OSMAP_MAILBOX_HELPER_SOCKET_PATH` is configured
 
 What is not yet implemented:
 
-- helper-backed attachment retrieval
-- helper-specific OpenBSD confinement
+- a dedicated helper-side attachment-byte operation distinct from the current
+  helper-backed message-view fetch path
 - live-host proof of the helper under the current `vmail` boundary
 
 ## Scope Of The Helper
@@ -190,7 +191,8 @@ That migration is now underway:
 - mailbox listing uses the helper when configured
 - message-list retrieval uses the helper when configured
 - message-view retrieval uses the helper when configured
-- attachment retrieval still uses the direct prototype path
+- attachment download now reuses the helper-backed message-view fetch path when
+  configured, while attachment bytes are still decoded in the web runtime
 
 ## What This Document Does Not Claim
 

@@ -138,13 +138,13 @@ Each phase produces formal outputs to support traceability and auditability.
   `vmail`, so broader least-privilege live mailbox reads are not yet proven.
 - The mailbox-helper runtime now exists in-repo: a local Unix-socket helper
   plus helper-backed mailbox listing, message-list retrieval, and message-view
-  retrieval, intended to move mailbox reads out of the web-facing runtime one
-  operation family at a time.
+  retrieval, and the attachment route now reuses that helper-backed message
+  fetch when configured.
 - OSMAP is still prototype-grade, not production-ready, and does not yet have a
   public deployment.
-- Current priority work is to extend the mailbox helper to attachment-part
-  retrieval, continue hardening the custom HTTP runtime, and tighten the
-  OpenBSD deployment and confinement model around the new helper boundary.
+- Current priority work is live-host validation of the helper under the actual
+  `vmail` boundary, continued HTTP hardening, and tightening the OpenBSD
+  deployment and confinement model around the helper split.
 
 ---
 

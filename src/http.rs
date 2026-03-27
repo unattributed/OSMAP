@@ -534,6 +534,28 @@ impl RuntimeBrowserGateway {
     fn build_attachment_download_service(&self) -> AttachmentDownloadService {
         AttachmentDownloadService::new(AttachmentDownloadPolicy::default())
     }
+
+    /// Selects the current message-view backend based on whether the local
+    /// mailbox helper is configured for read-path proxying.
+    fn build_message_view_backend(&self) -> MessageViewRuntimeBackend {
+        match &self.mailbox_helper_socket_path {
+            Some(socket_path) => MessageViewRuntimeBackend::Helper(
+                MailboxHelperMessageViewBackend::new(
+                    socket_path,
+                    MailboxHelperPolicy::default(),
+                    MessageViewPolicy::default(),
+                ),
+            ),
+            None => MessageViewRuntimeBackend::Direct(
+                DoveadmMessageViewBackend::new(
+                    MessageViewPolicy::default(),
+                    SystemCommandExecutor,
+                    self.doveadm_path.clone(),
+                )
+                .with_userdb_socket_path(self.doveadm_userdb_socket_path.clone()),
+            ),
+        }
+    }
 }
 
 impl BrowserGateway for RuntimeBrowserGateway {
@@ -835,24 +857,7 @@ impl BrowserGateway for RuntimeBrowserGateway {
             }
         };
 
-        let backend = match &self.mailbox_helper_socket_path {
-            Some(socket_path) => MessageViewRuntimeBackend::Helper(
-                MailboxHelperMessageViewBackend::new(
-                    socket_path,
-                    MailboxHelperPolicy::default(),
-                    MessageViewPolicy::default(),
-                ),
-            ),
-            None => MessageViewRuntimeBackend::Direct(
-                DoveadmMessageViewBackend::new(
-                    MessageViewPolicy::default(),
-                    SystemCommandExecutor,
-                    self.doveadm_path.clone(),
-                )
-                .with_userdb_socket_path(self.doveadm_userdb_socket_path.clone()),
-            ),
-        };
-        let message_outcome = MessageViewService::new(backend)
+        let message_outcome = MessageViewService::new(self.build_message_view_backend())
             .fetch_for_validated_session(context, validated_session, &request);
         let mut audit_events = vec![message_outcome.audit_event.clone()];
 
@@ -928,13 +933,8 @@ impl BrowserGateway for RuntimeBrowserGateway {
             }
         };
 
-        let message_outcome = MessageViewService::new(DoveadmMessageViewBackend::new(
-            MessageViewPolicy::default(),
-            SystemCommandExecutor,
-            self.doveadm_path.clone(),
-        )
-        .with_userdb_socket_path(self.doveadm_userdb_socket_path.clone()))
-        .fetch_for_validated_session(context, validated_session, &request);
+        let message_outcome = MessageViewService::new(self.build_message_view_backend())
+            .fetch_for_validated_session(context, validated_session, &request);
         let mut audit_events = vec![message_outcome.audit_event.clone()];
 
         match message_outcome.decision {

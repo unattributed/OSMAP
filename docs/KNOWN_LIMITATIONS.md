@@ -54,11 +54,12 @@
 - the current direct `doveadm` mailbox-read path remains a prototype bridge;
   the selected least-privilege next step is a dedicated local mailbox-read
   helper boundary, and mailbox listing, message-list retrieval, plus
-  message-view retrieval now use that helper when configured, but the broader
-  read-path migration is not complete
+  message-view retrieval now use that helper when configured, while attachment
+  download now reuses the helper-backed message-view path instead of making the
+  web runtime fetch directly, but the broader read-path migration is not
+  complete
 - the mailbox helper is not yet live-host validated under the target OpenBSD
-  `vmail` boundary, and helper-specific OpenBSD confinement is not yet
-  implemented
+  `vmail` boundary, even though helper-specific OpenBSD confinement now exists
 - The current synthetic session-gated attachment request under enforced mode on
   `mail.blackbagsecurity.com` now reaches the route, validates the session, and
   updates session state without the previous Dovecot stats-writer noise, but

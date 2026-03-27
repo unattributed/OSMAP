@@ -241,7 +241,13 @@ mailbox-read helper boundary gives the confinement work a clearer target:
   needs
 - the two processes can be audited and confined separately
 
-The first helper slice now exists for mailbox listing, and the web runtime can
-be pointed at that boundary through `OSMAP_MAILBOX_HELPER_SOCKET_PATH`.
-Helper-specific OpenBSD confinement is still not implemented yet, so this is a
-runtime-seam improvement before it is a fully hardened OpenBSD deployment path.
+The helper-backed read-path migration now reaches mailbox listing,
+message-list retrieval, message-view retrieval, and attachment-route source
+message fetches when `OSMAP_MAILBOX_HELPER_SOCKET_PATH` is configured.
+Helper-specific OpenBSD confinement now also exists as a distinct runtime plan
+for `OSMAP_RUN_MODE=mailbox-helper`, with `unix` socket promises and a smaller
+filesystem view than the browser-facing `serve` runtime.
+
+That is still not the same thing as full live-host proof. The helper runtime
+has not yet been exercised end to end on `mail.blackbagsecurity.com` under the
+actual `vmail` boundary in this document's current validation set.

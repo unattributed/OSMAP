@@ -204,5 +204,6 @@ The runtime now also has a first mailbox-helper boundary:
   `<runtime_dir>/mailbox-helper.sock` when the run mode is `mailbox-helper`
 
 This slice currently applies to mailbox listing, message-list retrieval, and
-message-view retrieval. Attachment retrieval still uses the direct prototype
-path for now.
+message-view retrieval. Attachment download now reuses the helper-backed
+message-view path when configured, while MIME-part decoding remains in the
+browser-facing runtime for now.

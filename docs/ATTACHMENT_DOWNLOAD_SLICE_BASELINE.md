@@ -19,6 +19,8 @@ The current slice provides:
 - session-gated attachment download
 - mailbox-plus-UID-plus-part-path authorization reuse
 - MIME-part resolution through the existing bounded message-view payload
+- helper-backed source-message retrieval when
+  `OSMAP_MAILBOX_HELPER_SOCKET_PATH` is configured
 - forced-download HTTP responses rather than inline preview behavior
 - conservative `Content-Disposition` filename sanitization
 - conservative `Content-Type` normalization with `nosniff`
@@ -95,14 +97,20 @@ The enforced-host synthetic-session validation confirmed:
 - the attachment route returned the expected bounded failure response for a
   synthetic missing-user session
 
+The local runtime now also keeps the attachment route on the helper-backed
+read path when a mailbox helper socket is configured. This avoids teaching the
+web-facing runtime to fall back to direct mailbox reads for attachment
+downloads after mailbox listing, message listing, and message view have already
+moved behind the helper boundary.
+
 ## Observed Live-Host Caveat
 
 The current enforced-host synthetic attachment request still exposed a real
 helper-path caveat on `mail.blackbagsecurity.com`.
 
-The request reached the session gate and the attachment route, but the
-underlying `doveadm` message-view helper reported a Dovecot stats-writer Unix
-socket permission problem while handling the synthetic missing-user request.
+The request reached the session gate and the attachment route, but successful
+live attachment-bearing reads under the target `vmail` identity boundary remain
+unproven there.
 
 That is being tracked as a live helper-integration caveat, not as proof that
 the attachment route itself is unsafe or that the session write path regressed.

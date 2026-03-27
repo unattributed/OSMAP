@@ -26,6 +26,7 @@ use crate::mailbox::{
     MessageListPolicy, MessageListRequest, MessageSummary, MessageView, MessageViewBackend,
     MessageViewPolicy, MessageViewRequest,
 };
+use crate::openbsd::apply_runtime_confinement;
 
 /// Conservative upper bound for one helper request payload.
 pub const DEFAULT_MAILBOX_HELPER_MAX_REQUEST_BYTES: usize = 4096;
@@ -434,6 +435,7 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
 
     #[cfg(unix)]
     {
+        apply_runtime_confinement(config, logger)?;
         remove_stale_socket_if_needed(socket_path)?;
 
         let listener = UnixListener::bind(socket_path)

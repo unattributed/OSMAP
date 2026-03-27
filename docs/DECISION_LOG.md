@@ -603,3 +603,17 @@ single-message retrieval can use the local mailbox helper when configured. This
 finishes the core mailbox read-path migration through message view without yet
 claiming helper-backed attachment bytes or live-host proof under the `vmail`
 boundary.
+
+### Keep attachment downloads on the helper-backed read path when configured
+
+The attachment route now reuses the helper-backed message-view fetch path when
+`OSMAP_MAILBOX_HELPER_SOCKET_PATH` is configured. This avoids leaving one
+browser read path on direct `doveadm` execution after the rest of the mailbox
+read surface has moved behind the helper boundary.
+
+### Give the mailbox helper its own OpenBSD confinement shape
+
+The `mailbox-helper` run mode now has a distinct OpenBSD confinement plan with
+`unix` socket promises and without the sendmail and TCP listener allowances the
+browser-facing `serve` runtime still needs. That keeps the helper boundary
+explicit in both process layout and confinement policy.

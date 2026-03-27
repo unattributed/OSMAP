@@ -13,10 +13,21 @@ use crate::config::{AppConfig, LogLevel, OpenbsdConfinementMode};
 use crate::logging::{EventCategory, LogEvent, Logger};
 
 /// The promise set used while `unveil(2)` calls are still permitted.
-const OPENBSD_PROMISES_BEFORE_LOCK: &str = "stdio rpath wpath cpath fattr inet proc exec unveil";
+const OPENBSD_SERVE_PROMISES_BEFORE_LOCK: &str =
+    "stdio rpath wpath cpath fattr inet proc exec unveil";
 
 /// The narrower promise set kept after the filesystem view is locked.
-const OPENBSD_PROMISES_AFTER_LOCK: &str = "stdio rpath wpath cpath fattr inet proc exec";
+const OPENBSD_SERVE_PROMISES_AFTER_LOCK: &str = "stdio rpath wpath cpath fattr inet proc exec";
+
+/// The promise set used while `unveil(2)` calls are still permitted in the
+/// local mailbox-helper runtime.
+const OPENBSD_HELPER_PROMISES_BEFORE_LOCK: &str =
+    "stdio rpath wpath cpath fattr unix proc exec unveil";
+
+/// The narrower promise set kept after the filesystem view is locked in the
+/// local mailbox-helper runtime.
+const OPENBSD_HELPER_PROMISES_AFTER_LOCK: &str =
+    "stdio rpath wpath cpath fattr unix proc exec";
 
 /// One unveiled path plus the permissions granted to it.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -37,55 +48,106 @@ impl OpenbsdConfinementPlan {
     /// Builds the current confinement plan from validated runtime configuration.
     pub fn from_config(config: &AppConfig) -> Self {
         let mut rules = BTreeMap::<PathBuf, String>::new();
+        match config.run_mode {
+            crate::config::AppRunMode::Serve => {
+                // The browser runtime owns sessions, runtime sockets, cache,
+                // and TOTP secrets. Those explicit mutable paths remain
+                // writable instead of widening the tree above them.
+                add_rule(&mut rules, &config.state_root, "rwc");
+                add_rule(&mut rules, &config.state_layout.runtime_dir, "rwc");
+                add_rule(&mut rules, &config.state_layout.session_dir, "rwc");
+                add_rule(&mut rules, &config.state_layout.audit_dir, "rwc");
+                add_rule(&mut rules, &config.state_layout.cache_dir, "rwc");
+                add_rule(&mut rules, &config.state_layout.totp_secret_dir, "rwc");
 
-        // The app keeps its own mutable state in a bounded tree, so those paths
-        // get explicit write and create permissions rather than broad access.
-        add_rule(&mut rules, &config.state_root, "rwc");
-        add_rule(&mut rules, &config.state_layout.runtime_dir, "rwc");
-        add_rule(&mut rules, &config.state_layout.session_dir, "rwc");
-        add_rule(&mut rules, &config.state_layout.audit_dir, "rwc");
-        add_rule(&mut rules, &config.state_layout.cache_dir, "rwc");
-        add_rule(&mut rules, &config.state_layout.totp_secret_dir, "rwc");
+                add_rule(&mut rules, Path::new("/usr/local/bin/doveadm"), "x");
+                add_rule(&mut rules, Path::new("/usr/sbin/sendmail"), "x");
+                add_rule(&mut rules, Path::new("/usr/local/sbin/sendmail"), "x");
+                add_rule(&mut rules, Path::new("/usr/lib"), "rx");
+                add_rule(&mut rules, Path::new("/usr/libexec"), "rx");
+                add_rule(&mut rules, Path::new("/usr/local/lib"), "rx");
+                add_rule(&mut rules, Path::new("/etc/dovecot"), "r");
+                add_rule(&mut rules, Path::new("/etc/mail"), "r");
+                add_rule(&mut rules, Path::new("/etc/mailer.conf"), "r");
+                add_rule(&mut rules, Path::new("/var/dovecot"), "rwc");
+                add_rule(&mut rules, Path::new("/var/log/dovecot.log"), "rw");
+                add_rule(&mut rules, Path::new("/var/spool/postfix"), "rwc");
+                add_rule(&mut rules, Path::new("/var/spool/smtpd"), "rwc");
+                add_rule(&mut rules, Path::new("/dev/null"), "rw");
 
-        // The parent process still delegates to existing system tools, so the
-        // helper binaries and the specific runtime/configuration paths they
-        // rely on must remain visible until those helpers are replaced with
-        // in-process code.
-        add_rule(&mut rules, Path::new("/usr/local/bin/doveadm"), "x");
-        add_rule(&mut rules, Path::new("/usr/sbin/sendmail"), "x");
-        add_rule(&mut rules, Path::new("/usr/local/sbin/sendmail"), "x");
-        add_rule(&mut rules, Path::new("/usr/lib"), "rx");
-        add_rule(&mut rules, Path::new("/usr/libexec"), "rx");
-        add_rule(&mut rules, Path::new("/usr/local/lib"), "rx");
-        add_rule(&mut rules, Path::new("/etc/dovecot"), "r");
-        add_rule(&mut rules, Path::new("/etc/mail"), "r");
-        add_rule(&mut rules, Path::new("/etc/mailer.conf"), "r");
-        add_rule(&mut rules, Path::new("/var/dovecot"), "rwc");
-        add_rule(&mut rules, Path::new("/var/log/dovecot.log"), "rw");
-        add_rule(&mut rules, Path::new("/var/spool/postfix"), "rwc");
-        add_rule(&mut rules, Path::new("/var/spool/smtpd"), "rwc");
-        add_rule(&mut rules, Path::new("/dev/null"), "rw");
+                if let Some(auth_socket_path) = &config.doveadm_auth_socket_path {
+                    add_rule(&mut rules, auth_socket_path, "rw");
+                    add_parent_dir_rules(&mut rules, auth_socket_path);
+                }
 
-        if let Some(auth_socket_path) = &config.doveadm_auth_socket_path {
-            add_rule(&mut rules, auth_socket_path, "rw");
-            add_parent_dir_rules(&mut rules, auth_socket_path);
-        }
-        if let Some(userdb_socket_path) = &config.doveadm_userdb_socket_path {
-            add_rule(&mut rules, userdb_socket_path, "rw");
-            add_parent_dir_rules(&mut rules, userdb_socket_path);
-        }
-        if let Some(mailbox_helper_socket_path) = &config.mailbox_helper_socket_path {
-            add_rule(&mut rules, mailbox_helper_socket_path, "rw");
-            add_parent_dir_rules(&mut rules, mailbox_helper_socket_path);
-        }
+                let use_direct_mailbox_backends = config.mailbox_helper_socket_path.is_none();
+                if use_direct_mailbox_backends {
+                    if let Some(userdb_socket_path) = &config.doveadm_userdb_socket_path {
+                        add_rule(&mut rules, userdb_socket_path, "rw");
+                        add_parent_dir_rules(&mut rules, userdb_socket_path);
+                    }
+                }
 
-        Self {
-            promises_before_lock: OPENBSD_PROMISES_BEFORE_LOCK,
-            promises_after_lock: OPENBSD_PROMISES_AFTER_LOCK,
-            unveil_rules: rules
-                .into_iter()
-                .map(|(path, permissions)| OpenbsdUnveilRule { path, permissions })
-                .collect(),
+                if let Some(mailbox_helper_socket_path) = &config.mailbox_helper_socket_path {
+                    add_rule(&mut rules, mailbox_helper_socket_path, "rw");
+                    add_parent_dir_rules(&mut rules, mailbox_helper_socket_path);
+                }
+
+                Self {
+                    promises_before_lock: if config.mailbox_helper_socket_path.is_some() {
+                        OPENBSD_HELPER_PROMISES_BEFORE_LOCK
+                    } else {
+                        OPENBSD_SERVE_PROMISES_BEFORE_LOCK
+                    },
+                    promises_after_lock: if config.mailbox_helper_socket_path.is_some() {
+                        OPENBSD_HELPER_PROMISES_AFTER_LOCK
+                    } else {
+                        OPENBSD_SERVE_PROMISES_AFTER_LOCK
+                    },
+                    unveil_rules: rules
+                        .into_iter()
+                        .map(|(path, permissions)| OpenbsdUnveilRule { path, permissions })
+                        .collect(),
+                }
+            }
+            crate::config::AppRunMode::MailboxHelper => {
+                // The local helper only needs its own runtime socket plus the
+                // current doveadm and Dovecot surfaces required for bounded
+                // mailbox reads.
+                add_rule(&mut rules, &config.state_root, "rwc");
+                add_rule(&mut rules, &config.state_layout.runtime_dir, "rwc");
+                add_rule(&mut rules, Path::new("/usr/local/bin/doveadm"), "x");
+                add_rule(&mut rules, Path::new("/usr/lib"), "rx");
+                add_rule(&mut rules, Path::new("/usr/libexec"), "rx");
+                add_rule(&mut rules, Path::new("/usr/local/lib"), "rx");
+                add_rule(&mut rules, Path::new("/etc/dovecot"), "r");
+                add_rule(&mut rules, Path::new("/var/dovecot"), "rwc");
+                add_rule(&mut rules, Path::new("/var/log/dovecot.log"), "rw");
+                add_rule(&mut rules, Path::new("/dev/null"), "rw");
+
+                if let Some(userdb_socket_path) = &config.doveadm_userdb_socket_path {
+                    add_rule(&mut rules, userdb_socket_path, "rw");
+                    add_parent_dir_rules(&mut rules, userdb_socket_path);
+                }
+                if let Some(mailbox_helper_socket_path) = &config.mailbox_helper_socket_path {
+                    add_rule(&mut rules, mailbox_helper_socket_path, "rw");
+                    add_parent_dir_rules(&mut rules, mailbox_helper_socket_path);
+                }
+
+                Self {
+                    promises_before_lock: OPENBSD_HELPER_PROMISES_BEFORE_LOCK,
+                    promises_after_lock: OPENBSD_HELPER_PROMISES_AFTER_LOCK,
+                    unveil_rules: rules
+                        .into_iter()
+                        .map(|(path, permissions)| OpenbsdUnveilRule { path, permissions })
+                        .collect(),
+                }
+            }
+            crate::config::AppRunMode::Bootstrap => Self {
+                promises_before_lock: OPENBSD_SERVE_PROMISES_BEFORE_LOCK,
+                promises_after_lock: OPENBSD_SERVE_PROMISES_AFTER_LOCK,
+                unveil_rules: Vec::new(),
+            },
         }
     }
 }
@@ -298,8 +360,8 @@ mod tests {
         let plan =
             OpenbsdConfinementPlan::from_config(&config_fixture(OpenbsdConfinementMode::LogOnly));
 
-        assert_eq!(plan.promises_before_lock, OPENBSD_PROMISES_BEFORE_LOCK);
-        assert_eq!(plan.promises_after_lock, OPENBSD_PROMISES_AFTER_LOCK);
+        assert_eq!(plan.promises_before_lock, OPENBSD_SERVE_PROMISES_BEFORE_LOCK);
+        assert_eq!(plan.promises_after_lock, OPENBSD_SERVE_PROMISES_AFTER_LOCK);
         assert!(plan
             .unveil_rules
             .iter()
@@ -379,5 +441,59 @@ mod tests {
             .unveil_rules
             .iter()
             .any(|rule| rule.path == PathBuf::from("/var/lib/osmap/run") && rule.permissions.contains('r')));
+    }
+
+    #[test]
+    fn helper_mode_uses_unix_promises_and_skips_sendmail_paths() {
+        let mut config = config_fixture(OpenbsdConfinementMode::LogOnly);
+        config.run_mode = AppRunMode::MailboxHelper;
+        config.mailbox_helper_socket_path =
+            Some(PathBuf::from("/var/lib/osmap/run/mailbox-helper.sock"));
+        config.doveadm_userdb_socket_path = Some(PathBuf::from("/var/run/osmap-userdb"));
+
+        let plan = OpenbsdConfinementPlan::from_config(&config);
+
+        assert_eq!(plan.promises_before_lock, OPENBSD_HELPER_PROMISES_BEFORE_LOCK);
+        assert_eq!(plan.promises_after_lock, OPENBSD_HELPER_PROMISES_AFTER_LOCK);
+        assert!(!plan
+            .unveil_rules
+            .iter()
+            .any(|rule| rule.path == PathBuf::from("/usr/sbin/sendmail")));
+        assert!(!plan
+            .unveil_rules
+            .iter()
+            .any(|rule| rule.path == PathBuf::from("/var/spool/postfix")));
+        assert!(plan.unveil_rules.iter().any(|rule| {
+            rule.path == PathBuf::from("/var/run/osmap-userdb")
+                && rule.permissions.contains('r')
+                && rule.permissions.contains('w')
+        }));
+        assert!(plan.unveil_rules.iter().any(|rule| {
+            rule.path == PathBuf::from("/var/lib/osmap/run/mailbox-helper.sock")
+                && rule.permissions.contains('r')
+                && rule.permissions.contains('w')
+        }));
+    }
+
+    #[test]
+    fn serve_mode_with_helper_socket_uses_unix_promises_and_skips_userdb_socket() {
+        let mut config = config_fixture(OpenbsdConfinementMode::LogOnly);
+        config.mailbox_helper_socket_path =
+            Some(PathBuf::from("/var/lib/osmap/run/mailbox-helper.sock"));
+        config.doveadm_userdb_socket_path = Some(PathBuf::from("/var/run/osmap-userdb"));
+
+        let plan = OpenbsdConfinementPlan::from_config(&config);
+
+        assert_eq!(plan.promises_before_lock, OPENBSD_HELPER_PROMISES_BEFORE_LOCK);
+        assert_eq!(plan.promises_after_lock, OPENBSD_HELPER_PROMISES_AFTER_LOCK);
+        assert!(plan.unveil_rules.iter().any(|rule| {
+            rule.path == PathBuf::from("/var/lib/osmap/run/mailbox-helper.sock")
+                && rule.permissions.contains('r')
+                && rule.permissions.contains('w')
+        }));
+        assert!(!plan
+            .unveil_rules
+            .iter()
+            .any(|rule| rule.path == PathBuf::from("/var/run/osmap-userdb")));
     }
 }
