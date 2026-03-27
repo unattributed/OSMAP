@@ -67,6 +67,7 @@ pub struct RenderedMessageView {
     pub body_source: MimeBodySource,
     pub contains_html_body: bool,
     pub body_html: String,
+    pub body_text_for_compose: String,
     pub attachments: Vec<AttachmentMetadata>,
     pub rendering_mode: RenderingMode,
 }
@@ -76,6 +77,13 @@ pub struct RenderedMessageView {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RenderError {
     pub reason: String,
+}
+
+/// The paired browser-safe HTML and compose-friendly plain-text body output.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct RenderedBody {
+    body_html: String,
+    compose_text: String,
 }
 
 /// The rendered message plus the audit event emitted by the renderer.
@@ -119,7 +127,8 @@ impl PlainTextMessageRenderer {
             "From",
             self.policy.rendered_header_value_max_len,
         )?;
-        let body_html = render_body_from_analysis(&analysis, self.policy.rendered_body_html_max_len)?;
+        let rendered_body =
+            render_body_from_analysis(&analysis, self.policy.rendered_body_html_max_len)?;
 
         let rendered = RenderedMessageView {
             mailbox_name: message.mailbox_name.clone(),
@@ -130,7 +139,8 @@ impl PlainTextMessageRenderer {
             mime_top_level_content_type: analysis.top_level_content_type.clone(),
             body_source: analysis.body_source,
             contains_html_body: analysis.contains_html_body,
-            body_html,
+            body_html: rendered_body.body_html,
+            body_text_for_compose: rendered_body.compose_text,
             attachments: analysis.attachments.clone(),
             rendering_mode: RenderingMode::PlainTextPreformatted,
         };
@@ -194,7 +204,7 @@ fn extract_header_value(
 fn render_body_from_analysis(
     analysis: &MimeAnalysis,
     max_len: usize,
-) -> Result<String, RenderError> {
+) -> Result<RenderedBody, RenderError> {
     match analysis.body_source {
         MimeBodySource::SinglePartPlainText | MimeBodySource::MultipartPlainTextPart => {
             render_plain_text_body(
@@ -230,7 +240,7 @@ fn render_body_from_analysis(
 }
 
 /// Renders plain text for safe browser display using an escaped `<pre>` block.
-fn render_plain_text_body(body_text: &str, max_len: usize) -> Result<String, RenderError> {
+fn render_plain_text_body(body_text: &str, max_len: usize) -> Result<RenderedBody, RenderError> {
     let escaped = escape_html(body_text);
     let rendered = format!("<pre>{escaped}</pre>");
 
@@ -240,11 +250,14 @@ fn render_plain_text_body(body_text: &str, max_len: usize) -> Result<String, Ren
         });
     }
 
-    Ok(rendered)
+    Ok(RenderedBody {
+        body_html: rendered,
+        compose_text: body_text.to_string(),
+    })
 }
 
 /// Renders a bounded safe placeholder into the same preformatted container.
-fn render_placeholder_body(message: &str, max_len: usize) -> Result<String, RenderError> {
+fn render_placeholder_body(message: &str, max_len: usize) -> Result<RenderedBody, RenderError> {
     render_plain_text_body(&format!("[{message}]"), max_len)
 }
 
@@ -411,9 +424,10 @@ mod tests {
         .expect("rendering should succeed");
 
         assert_eq!(
-            rendered,
+            rendered.body_html,
             "<pre>Hello &lt;world&gt; &amp; &quot;friends&quot;\n</pre>"
         );
+        assert_eq!(rendered.compose_text, "Hello <world> & \"friends\"\n");
     }
 
     #[test]
@@ -440,6 +454,10 @@ mod tests {
         assert_eq!(
             outcome.rendered.body_html,
             "<pre>Hello &lt;world&gt;\nSecond line &amp; more\n</pre>"
+        );
+        assert_eq!(
+            outcome.rendered.body_text_for_compose,
+            "Hello <world>\nSecond line & more\n"
         );
         assert!(outcome.rendered.attachments.is_empty());
         assert_eq!(

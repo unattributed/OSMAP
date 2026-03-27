@@ -155,6 +155,8 @@ Current prototype-specific deployment guidance:
 - keep the state tree owned narrowly enough that later `unveil(2)` policy can
   be practical
 - keep `doveadm` and `sendmail` execution paths explicit and reviewable
+- use `OSMAP_OPENBSD_CONFINEMENT_MODE=log-only` or `enforce` when validating
+  the OpenBSD serve runtime on hosts intended for real deployment
 
 This is more likely to produce a system that OpenBSD operators, and eventually
 potential downstream packagers, would consider credible.

@@ -13,6 +13,7 @@ pub struct BootstrapReport {
     pub run_mode: String,
     pub environment: String,
     pub listen_addr: String,
+    pub openbsd_confinement_mode: String,
     pub state_root: String,
     pub runtime_dir: String,
     pub session_dir: String,
@@ -37,6 +38,10 @@ impl BootstrapReport {
         .with_field("run_mode", self.run_mode.clone())
         .with_field("env", self.environment.clone())
         .with_field("listen_addr", self.listen_addr.clone())
+        .with_field(
+            "openbsd_confinement_mode",
+            self.openbsd_confinement_mode.clone(),
+        )
         .with_field("state_root", self.state_root.clone())
         .with_field("runtime_dir", self.runtime_dir.clone())
         .with_field("session_dir", self.session_dir.clone())
@@ -77,6 +82,7 @@ fn report_from_config(config: &AppConfig) -> BootstrapReport {
         run_mode: config.run_mode.as_str().to_string(),
         environment: config.environment.as_str().to_string(),
         listen_addr: config.listen_addr.clone(),
+        openbsd_confinement_mode: config.openbsd_confinement_mode.as_str().to_string(),
         state_root: config.state_root.display().to_string(),
         runtime_dir: config.state_layout.runtime_dir.display().to_string(),
         session_dir: config.state_layout.session_dir.display().to_string(),
@@ -103,6 +109,7 @@ mod tests {
             run_mode: AppRunMode::Bootstrap,
             environment: RuntimeEnvironment::Development,
             listen_addr: "127.0.0.1:8080".to_string(),
+            openbsd_confinement_mode: crate::config::OpenbsdConfinementMode::Disabled,
             state_root: PathBuf::from("/var/lib/osmap"),
             log_level: LogLevel::Info,
             log_format: LogFormat::Text,
@@ -135,6 +142,10 @@ mod tests {
                 crate::logging::LogField {
                     key: "listen_addr",
                     value: "127.0.0.1:8080".to_string(),
+                },
+                crate::logging::LogField {
+                    key: "openbsd_confinement_mode",
+                    value: "disabled".to_string(),
                 },
                 crate::logging::LogField {
                     key: "state_root",

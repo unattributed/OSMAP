@@ -13,6 +13,8 @@ use crate::auth::{
 };
 use crate::config::LogLevel;
 use crate::logging::{EventCategory, LogEvent};
+use crate::mime::AttachmentMetadata;
+use crate::rendering::RenderedMessageView;
 use crate::session::ValidatedSession;
 
 /// Conservative upper bound for one recipient address.
@@ -27,6 +29,9 @@ pub const DEFAULT_SUBJECT_MAX_LEN: usize = 998;
 /// Conservative upper bound for one composed message body.
 pub const DEFAULT_BODY_MAX_LEN: usize = 65_536;
 
+/// Conservative upper bound for one automatically generated compose notice.
+pub const DEFAULT_COMPOSE_NOTICE_MAX_LEN: usize = 512;
+
 /// Policy controlling the first compose-and-send slice.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ComposePolicy {
@@ -34,6 +39,7 @@ pub struct ComposePolicy {
     pub max_recipients: usize,
     pub subject_max_len: usize,
     pub body_max_len: usize,
+    pub compose_notice_max_len: usize,
 }
 
 impl Default for ComposePolicy {
@@ -43,8 +49,36 @@ impl Default for ComposePolicy {
             max_recipients: DEFAULT_MAX_RECIPIENTS,
             subject_max_len: DEFAULT_SUBJECT_MAX_LEN,
             body_max_len: DEFAULT_BODY_MAX_LEN,
+            compose_notice_max_len: DEFAULT_COMPOSE_NOTICE_MAX_LEN,
         }
     }
+}
+
+/// The supported browser compose intents built from an existing message.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ComposeIntent {
+    Reply,
+    Forward,
+}
+
+impl ComposeIntent {
+    /// Returns the canonical string representation used in routes and docs.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Reply => "reply",
+            Self::Forward => "forward",
+        }
+    }
+}
+
+/// A bounded draft projection used to pre-fill the browser compose form.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ComposeDraft {
+    pub intent: ComposeIntent,
+    pub to: String,
+    pub subject: String,
+    pub body: String,
+    pub context_notice: Option<String>,
 }
 
 /// A bounded compose request for the current outbound message slice.
@@ -75,6 +109,32 @@ impl ComposeRequest {
             recipients,
             subject,
             body,
+        })
+    }
+}
+
+impl ComposeDraft {
+    /// Builds a reply or forward draft from the currently rendered message.
+    pub fn from_rendered_message(
+        policy: ComposePolicy,
+        intent: ComposeIntent,
+        rendered: &RenderedMessageView,
+    ) -> Result<Self, ComposeError> {
+        let attachment_notice = build_attachment_notice(policy, intent, &rendered.attachments)?;
+
+        let (to, subject, body, note) = match intent {
+            ComposeIntent::Reply => build_reply_draft(policy, rendered, attachment_notice.as_deref())?,
+            ComposeIntent::Forward => {
+                build_forward_draft(policy, rendered, attachment_notice.as_deref())?
+            }
+        };
+
+        Ok(Self {
+            intent,
+            to,
+            subject,
+            body,
+            context_notice: note.or(attachment_notice),
         })
     }
 }
@@ -421,6 +481,210 @@ fn validate_body(policy: ComposePolicy, body: &str) -> Result<(), ComposeError> 
     Ok(())
 }
 
+/// Builds the first reply draft from a rendered message.
+fn build_reply_draft(
+    policy: ComposePolicy,
+    rendered: &RenderedMessageView,
+    attachment_notice: Option<&str>,
+) -> Result<(String, String, String, Option<String>), ComposeError> {
+    let reply_target = extract_reply_recipient(policy, rendered.from.as_deref())?;
+    let subject = prefixed_subject(policy, rendered.subject.as_deref(), "Re: ")?;
+
+    let mut body_lines = vec![String::new(), String::new()];
+    if let Some(attachment_notice) = attachment_notice {
+        body_lines.push(format!("[{attachment_notice}]"));
+        body_lines.push(String::new());
+    }
+
+    body_lines.push(format!(
+        "On {}, {} wrote:",
+        rendered.date_received,
+        rendered.from.as_deref().unwrap_or("the original sender")
+    ));
+    body_lines.extend(quote_plain_text(&rendered.body_text_for_compose));
+
+    let body = bounded_generated_body(policy, &body_lines.join("\n"))?;
+    let context_notice = if reply_target.is_empty() {
+        Some(bounded_notice(
+            policy,
+            "Original From header could not be converted into a simple reply target; fill the recipient manually.",
+        )?)
+    } else {
+        None
+    };
+
+    Ok((reply_target, subject, body, context_notice))
+}
+
+/// Builds the first forward draft from a rendered message.
+fn build_forward_draft(
+    policy: ComposePolicy,
+    rendered: &RenderedMessageView,
+    attachment_notice: Option<&str>,
+) -> Result<(String, String, String, Option<String>), ComposeError> {
+    let subject = prefixed_subject(policy, rendered.subject.as_deref(), "Fwd: ")?;
+
+    let mut body_lines = vec![
+        String::new(),
+        String::new(),
+        "---------- Forwarded message ----------".to_string(),
+        format!(
+            "From: {}",
+            rendered.from.as_deref().unwrap_or("<unknown>")
+        ),
+        format!("Date: {}", rendered.date_received),
+        format!(
+            "Subject: {}",
+            rendered.subject.as_deref().unwrap_or("<none>")
+        ),
+        format!("Mailbox: {}", rendered.mailbox_name),
+        format!("UID: {}", rendered.uid),
+    ];
+
+    if rendered.attachments.is_empty() {
+        body_lines.push("Attachments: none surfaced by the current message policy".to_string());
+    } else {
+        body_lines.push("Attachments:".to_string());
+        for attachment in &rendered.attachments {
+            body_lines.push(format!(
+                "- {}",
+                describe_attachment_for_forward(attachment)
+            ));
+        }
+    }
+
+    body_lines.push(String::new());
+    body_lines.push(rendered.body_text_for_compose.clone());
+
+    let body = bounded_generated_body(policy, &body_lines.join("\n"))?;
+    let context_notice = attachment_notice
+        .map(|notice| bounded_notice(policy, notice))
+        .transpose()?;
+
+    Ok((String::new(), subject, body, context_notice))
+}
+
+/// Builds the operator-safe notice shown when attachments exist on the source
+/// message but the current send slice does not resend them.
+fn build_attachment_notice(
+    policy: ComposePolicy,
+    intent: ComposeIntent,
+    attachments: &[AttachmentMetadata],
+) -> Result<Option<String>, ComposeError> {
+    if attachments.is_empty() {
+        return Ok(None);
+    }
+
+    let notice = match intent {
+        ComposeIntent::Reply => format!(
+            "Original message included {} attachment(s); the current reply slice does not resend attachments automatically.",
+            attachments.len()
+        ),
+        ComposeIntent::Forward => format!(
+            "Original message included {} attachment(s); the current forward slice preserves attachment metadata in the draft but does not reattach files yet.",
+            attachments.len()
+        ),
+    };
+
+    Ok(Some(bounded_notice(policy, &notice)?))
+}
+
+/// Bounds one generated notice string before it reaches the browser form.
+fn bounded_notice(policy: ComposePolicy, notice: &str) -> Result<String, ComposeError> {
+    if notice.len() > policy.compose_notice_max_len {
+        return Err(ComposeError {
+            reason: format!(
+                "generated compose notice exceeded maximum length of {} bytes",
+                policy.compose_notice_max_len
+            ),
+        });
+    }
+
+    Ok(notice.to_string())
+}
+
+/// Normalizes and bounds one generated body before it reaches the browser form.
+fn bounded_generated_body(policy: ComposePolicy, body: &str) -> Result<String, ComposeError> {
+    let mut body = body.trim_end_matches('\n').to_string();
+    if body.len() > policy.body_max_len {
+        // The current draft builder trims oversized quoted content rather than
+        // rejecting reply/forward behavior for a long source message.
+        body.truncate(policy.body_max_len.saturating_sub(32));
+        body.push_str("\n[quoted content truncated]");
+    }
+
+    validate_body(policy, &body)?;
+    Ok(body)
+}
+
+/// Builds a reply or forward subject line without stacking duplicate prefixes.
+fn prefixed_subject(
+    policy: ComposePolicy,
+    subject: Option<&str>,
+    prefix: &str,
+) -> Result<String, ComposeError> {
+    let subject = subject.unwrap_or("<no subject>").trim();
+    let prefixed = if subject
+        .to_ascii_lowercase()
+        .starts_with(&prefix.trim_end().to_ascii_lowercase())
+    {
+        subject.to_string()
+    } else {
+        format!("{prefix}{subject}")
+    };
+
+    validate_subject(policy, &prefixed)?;
+    Ok(prefixed)
+}
+
+/// Extracts a conservative simple reply target from the rendered `From` value.
+fn extract_reply_recipient(
+    policy: ComposePolicy,
+    from_header: Option<&str>,
+) -> Result<String, ComposeError> {
+    let Some(from_header) = from_header.map(str::trim) else {
+        return Ok(String::new());
+    };
+
+    if let Some((_, address_and_rest)) = from_header.rsplit_once('<') {
+        if let Some((address, _)) = address_and_rest.split_once('>') {
+            let address = address.trim();
+            validate_recipient(policy, address)?;
+            return Ok(address.to_string());
+        }
+    }
+
+    if validate_recipient(policy, from_header).is_ok() {
+        return Ok(from_header.to_string());
+    }
+
+    Ok(String::new())
+}
+
+/// Quotes one plain-text body block for reply composition.
+fn quote_plain_text(body_text: &str) -> Vec<String> {
+    if body_text.is_empty() {
+        return vec![">".to_string()];
+    }
+
+    body_text
+        .lines()
+        .map(|line| format!("> {line}"))
+        .collect()
+}
+
+/// Describes one surfaced attachment for the current forward draft.
+fn describe_attachment_for_forward(attachment: &AttachmentMetadata) -> String {
+    format!(
+        "{} ({}, {}, {} bytes, part {})",
+        attachment.filename.as_deref().unwrap_or("<unnamed>"),
+        attachment.content_type,
+        attachment.disposition.as_str(),
+        attachment.size_hint_bytes,
+        attachment.part_path,
+    )
+}
+
 /// Builds the RFC 5322-ish message handed to the local sendmail surface.
 fn build_submission_message(canonical_username: &str, request: &ComposeRequest) -> String {
     let body = normalize_body_line_endings(&request.body);
@@ -475,6 +739,7 @@ mod tests {
     use crate::auth::{AuthenticationPolicy, CommandExecution, CommandExecutionError};
     use crate::config::LogFormat;
     use crate::logging::Logger;
+    use crate::mime::{AttachmentDisposition, MimeBodySource};
     use crate::session::SessionRecord;
     use std::cell::RefCell;
     use std::rc::Rc;
@@ -562,6 +827,29 @@ mod tests {
         }
     }
 
+    fn rendered_message_fixture() -> RenderedMessageView {
+        RenderedMessageView {
+            mailbox_name: "INBOX".to_string(),
+            uid: 42,
+            subject: Some("Quarterly report".to_string()),
+            from: Some("Alice Example <alice@example.com>".to_string()),
+            date_received: "2026-03-27 12:00:00 +0000".to_string(),
+            mime_top_level_content_type: "multipart/mixed".to_string(),
+            body_source: MimeBodySource::MultipartPlainTextPart,
+            contains_html_body: true,
+            body_html: "<pre>Hello team</pre>".to_string(),
+            body_text_for_compose: "Hello team\nPlease review the report.".to_string(),
+            attachments: vec![AttachmentMetadata {
+                part_path: "1.2".to_string(),
+                filename: Some("report.pdf".to_string()),
+                content_type: "application/pdf".to_string(),
+                disposition: AttachmentDisposition::Attachment,
+                size_hint_bytes: 4096,
+            }],
+            rendering_mode: crate::rendering::RenderingMode::PlainTextPreformatted,
+        }
+    }
+
     #[test]
     fn accepts_simple_compose_requests() {
         let request = ComposeRequest::new(
@@ -612,6 +900,49 @@ mod tests {
             ComposeError {
                 reason: "subject contained control characters".to_string(),
             }
+        );
+    }
+
+    #[test]
+    fn builds_reply_draft_from_rendered_message() {
+        let draft = ComposeDraft::from_rendered_message(
+            ComposePolicy::default(),
+            ComposeIntent::Reply,
+            &rendered_message_fixture(),
+        )
+        .expect("reply draft should be built");
+
+        assert_eq!(draft.to, "alice@example.com");
+        assert_eq!(draft.subject, "Re: Quarterly report");
+        assert!(draft.body.contains("On 2026-03-27 12:00:00 +0000"));
+        assert!(draft.body.contains("> Hello team"));
+        assert!(
+            draft.context_notice
+                .as_deref()
+                .unwrap_or_default()
+                .contains("does not resend attachments automatically")
+        );
+    }
+
+    #[test]
+    fn builds_forward_draft_with_attachment_summary() {
+        let draft = ComposeDraft::from_rendered_message(
+            ComposePolicy::default(),
+            ComposeIntent::Forward,
+            &rendered_message_fixture(),
+        )
+        .expect("forward draft should be built");
+
+        assert_eq!(draft.to, "");
+        assert_eq!(draft.subject, "Fwd: Quarterly report");
+        assert!(draft.body.contains("---------- Forwarded message ----------"));
+        assert!(draft.body.contains("report.pdf"));
+        assert!(draft.body.contains("part 1.2"));
+        assert!(
+            draft.context_notice
+                .as_deref()
+                .unwrap_or_default()
+                .contains("does not reattach files yet")
         );
     }
 

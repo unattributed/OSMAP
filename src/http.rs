@@ -24,10 +24,11 @@ use crate::mailbox::{
     MessageListPolicy, MessageListRequest, MessageListService, MessageSummary, MessageViewDecision,
     MessageViewPolicy, MessageViewRequest, MessageViewService,
 };
+use crate::openbsd::apply_runtime_confinement;
 use crate::rendering::{PlainTextMessageRenderer, RenderedMessageView, RenderingPolicy};
 use crate::send::{
-    ComposePolicy, ComposeRequest, SendmailSubmissionBackend, SubmissionDecision,
-    SubmissionPublicFailureReason, SubmissionService,
+    ComposeDraft, ComposeIntent, ComposePolicy, ComposeRequest, SendmailSubmissionBackend,
+    SubmissionDecision, SubmissionPublicFailureReason, SubmissionService,
 };
 use crate::session::{
     FileSessionStore, SessionError, SessionService, SessionToken, SystemRandomSource,
@@ -1214,7 +1215,7 @@ where
         request: &HttpRequest,
         context: &AuthenticationContext,
     ) -> HandledHttpResponse {
-        let (validated_session, audit_events) =
+        let (validated_session, mut audit_events) =
             match self.require_validated_session(request, context) {
                 Ok(result) => result,
                 Err(response) => return response,
@@ -1225,20 +1226,104 @@ where
         } else {
             None
         };
+        let mut compose_heading = "Compose";
+        let mut context_notice: Option<String> = None;
+        let mut to_value = String::new();
+        let mut subject_value = String::new();
+        let mut body_value = String::new();
+
+        match compose_source_from_request(request) {
+            Ok(Some((intent, mailbox_name, uid))) => {
+                let outcome =
+                    self.gateway
+                        .view_message(context, &validated_session, &mailbox_name, uid);
+                audit_events.extend(outcome.audit_events);
+
+                match outcome.decision {
+                    BrowserMessageViewDecision::Rendered { rendered, .. } => {
+                        let draft = match ComposeDraft::from_rendered_message(
+                            ComposePolicy::default(),
+                            intent,
+                            &rendered,
+                        ) {
+                            Ok(draft) => draft,
+                            Err(error) => {
+                                return HandledHttpResponse {
+                                    response: html_response(
+                                        503,
+                                        "Service Unavailable",
+                                        "Compose Unavailable",
+                                        "<p>The compose draft could not be prepared safely.</p>",
+                                    ),
+                                    audit_events: vec![build_http_warning_event(
+                                        "compose_draft_failed",
+                                        "compose draft generation failed",
+                                        context,
+                                    )
+                                    .with_field("reason", error.reason)],
+                                };
+                            }
+                        };
+
+                        compose_heading = match draft.intent {
+                            ComposeIntent::Reply => "Reply",
+                            ComposeIntent::Forward => "Forward",
+                        };
+                        context_notice = draft.context_notice;
+                        to_value = draft.to;
+                        subject_value = draft.subject;
+                        body_value = draft.body;
+                    }
+                    BrowserMessageViewDecision::Denied { public_reason } => {
+                        return HandledHttpResponse {
+                            response: html_response(
+                                503,
+                                "Service Unavailable",
+                                "Compose Unavailable",
+                                &format!(
+                                    "<p>{}</p>",
+                                    escape_html(public_reason_message(&public_reason))
+                                ),
+                            ),
+                            audit_events,
+                        };
+                    }
+                }
+            }
+            Ok(None) => {}
+            Err(reason) => {
+                return HandledHttpResponse {
+                    response: html_response(
+                        400,
+                        "Bad Request",
+                        "Invalid Compose Request",
+                        "<p>The compose reference was not valid.</p>",
+                    ),
+                    audit_events: vec![build_http_warning_event(
+                        "compose_reference_rejected",
+                        "compose reference validation failed",
+                        context,
+                    )
+                    .with_field("reason", reason)],
+                };
+            }
+        }
 
         HandledHttpResponse {
             response: html_response(
                 200,
                 "OK",
-                "Compose",
+                compose_heading,
                 &render_compose_page(
+                    compose_heading,
                     &validated_session.record.canonical_username,
                     &validated_session.record.csrf_token,
                     success_message,
                     None,
-                    "",
-                    "",
-                    "",
+                    context_notice.as_deref(),
+                    &to_value,
+                    &subject_value,
+                    &body_value,
                 ),
             ),
             audit_events,
@@ -1314,10 +1399,12 @@ where
                         reason_phrase,
                         "Compose",
                         &render_compose_page(
+                            "Compose",
                             &validated_session.record.canonical_username,
                             &validated_session.record.csrf_token,
                             None,
                             Some(public_reason_message(&public_reason)),
+                            None,
                             &recipients,
                             &subject,
                             &body,
@@ -1477,6 +1564,8 @@ pub fn run_http_server(
     if config.run_mode != AppRunMode::Serve {
         return Ok(());
     }
+
+    apply_runtime_confinement(config, logger)?;
 
     let listener = TcpListener::bind(&config.listen_addr)
         .map_err(|error| format!("failed to bind {}: {error}", config.listen_addr))?;
@@ -2046,8 +2135,12 @@ fn render_message_view_page(
     }
 
     format!(
-        "<nav><a href=\"/mailbox?name={}\">Back to mailbox</a> | <a href=\"/compose\">Compose</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Message View</h1><p>Signed in as <strong>{}</strong>.</p><dl><dt>Mailbox</dt><dd>{}</dd><dt>UID</dt><dd>{}</dd><dt>Subject</dt><dd>{}</dd><dt>From</dt><dd>{}</dd><dt>Received</dt><dd>{}</dd><dt>MIME Type</dt><dd>{}</dd><dt>Body Source</dt><dd>{}</dd><dt>HTML Present</dt><dd>{}</dd></dl><h2>Attachments</h2><ul>{}</ul><h2>Body</h2>{}",
+        "<nav><a href=\"/mailbox?name={}\">Back to mailbox</a> | <a href=\"/compose\">Compose</a> | <a href=\"/compose?mode=reply&mailbox={}&uid={}\">Reply</a> | <a href=\"/compose?mode=forward&mailbox={}&uid={}\">Forward</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Message View</h1><p>Signed in as <strong>{}</strong>.</p><dl><dt>Mailbox</dt><dd>{}</dd><dt>UID</dt><dd>{}</dd><dt>Subject</dt><dd>{}</dd><dt>From</dt><dd>{}</dd><dt>Received</dt><dd>{}</dd><dt>MIME Type</dt><dd>{}</dd><dt>Body Source</dt><dd>{}</dd><dt>HTML Present</dt><dd>{}</dd></dl><h2>Attachments</h2><ul>{}</ul><h2>Body</h2>{}",
         escape_html(&url_encode(&rendered.mailbox_name)),
+        escape_html(&url_encode(&rendered.mailbox_name)),
+        rendered.uid,
+        escape_html(&url_encode(&rendered.mailbox_name)),
+        rendered.uid,
         escape_html(csrf_token),
         escape_html(canonical_username),
         escape_html(&rendered.mailbox_name),
@@ -2065,10 +2158,12 @@ fn render_message_view_page(
 
 /// Renders the compose page for the current user and CSRF-bound session.
 fn render_compose_page(
+    heading: &str,
     canonical_username: &str,
     csrf_token: &str,
     success_message: Option<&str>,
     error_message: Option<&str>,
+    context_notice: Option<&str>,
     to_value: &str,
     subject_value: &str,
     body_value: &str,
@@ -2087,18 +2182,58 @@ fn render_compose_page(
         ),
         None => String::new(),
     };
+    let context_banner = match context_notice {
+        Some(context_notice) => format!(
+            "<p><strong>Context:</strong> {}</p>",
+            escape_html(context_notice)
+        ),
+        None => String::new(),
+    };
 
     format!(
-        "<nav><a href=\"/mailboxes\">Back to mailboxes</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Compose</h1><p>Signed in as <strong>{}</strong>.</p><p class=\"muted\">This first send slice uses the local submission surface and currently accepts a simple recipient list, subject, and plain-text body.</p>{}{}<form method=\"post\" action=\"/send\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><label>To<input type=\"text\" name=\"to\" value=\"{}\" autocomplete=\"off\"></label><label>Subject<input type=\"text\" name=\"subject\" value=\"{}\"></label><label>Body<textarea name=\"body\">{}</textarea></label><button type=\"submit\">Send Message</button></form>",
+        "<nav><a href=\"/mailboxes\">Back to mailboxes</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>{}</h1><p>Signed in as <strong>{}</strong>.</p><p class=\"muted\">This send slice uses the local submission surface, keeps the browser body plain-text-first, and does not attach files automatically yet.</p>{}{}{}<form method=\"post\" action=\"/send\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><label>To<input type=\"text\" name=\"to\" value=\"{}\" autocomplete=\"off\"></label><label>Subject<input type=\"text\" name=\"subject\" value=\"{}\"></label><label>Body<textarea name=\"body\">{}</textarea></label><button type=\"submit\">Send Message</button></form>",
         escape_html(csrf_token),
+        escape_html(heading),
         escape_html(canonical_username),
         success_banner,
         error_banner,
+        context_banner,
         escape_html(csrf_token),
         escape_html(to_value),
         escape_html(subject_value),
         escape_html(body_value),
     )
+}
+
+/// Parses the optional compose source reference from the current request.
+fn compose_source_from_request(
+    request: &HttpRequest,
+) -> Result<Option<(ComposeIntent, String, u64)>, String> {
+    let mode = request.query_params.get("mode").map(String::as_str);
+    let mailbox = request.query_params.get("mailbox").cloned();
+    let uid = request.query_params.get("uid").cloned();
+
+    match (mode, mailbox, uid) {
+        (None, None, None) => Ok(None),
+        (Some(mode), Some(mailbox), Some(uid)) => {
+            let intent = match mode {
+                "reply" => ComposeIntent::Reply,
+                "forward" => ComposeIntent::Forward,
+                _ => {
+                    return Err("compose mode must be reply or forward".to_string());
+                }
+            };
+            let uid = uid
+                .parse::<u64>()
+                .map_err(|_| "compose source uid must be a positive integer".to_string())?;
+            if uid == 0 {
+                return Err("compose source uid must be greater than zero".to_string());
+            }
+
+            Ok(Some((intent, mailbox, uid)))
+        }
+        _ => Err("compose source requires mode, mailbox, and uid together".to_string()),
+    }
 }
 
 /// Escapes HTML-significant characters for simple template insertion.
@@ -2356,6 +2491,7 @@ mod tests {
                         body_source: MimeBodySource::MultipartPlainTextPart,
                         contains_html_body: true,
                         body_html: "<pre>Hello world</pre>".to_string(),
+                        body_text_for_compose: "Hello world".to_string(),
                         attachments: vec![crate::mime::AttachmentMetadata {
                             part_path: "1.2".to_string(),
                             filename: Some("report.pdf".to_string()),
@@ -2532,6 +2668,8 @@ mod tests {
         assert!(response.response.body.contains("multipart/mixed"));
         assert!(response.response.body.contains("report.pdf"));
         assert!(response.response.body.contains("<pre>Hello world</pre>"));
+        assert!(response.response.body.contains("mode=reply"));
+        assert!(response.response.body.contains("mode=forward"));
     }
 
     #[test]
@@ -2555,6 +2693,56 @@ mod tests {
         assert_eq!(response.response.status_code, 200);
         assert!(response.response.body.contains("name=\"csrf_token\""));
         assert!(response.response.body.contains("action=\"/send\""));
+    }
+
+    #[test]
+    fn compose_reply_prefills_recipient_and_subject() {
+        let response = app().handle_request(
+            &request(
+                "GET",
+                "/compose?mode=reply&mailbox=INBOX&uid=9",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                ],
+                "",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 200);
+        assert!(response.response.body.contains("<h1>Reply</h1>"));
+        assert!(response.response.body.contains("alice@example.com"));
+        assert!(response.response.body.contains("Re: Example"));
+        assert!(response.response.body.contains("does not resend attachments automatically"));
+    }
+
+    #[test]
+    fn compose_forward_prefills_attachment_aware_context() {
+        let response = app().handle_request(
+            &request(
+                "GET",
+                "/compose?mode=forward&mailbox=INBOX&uid=9",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                ],
+                "",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 200);
+        assert!(response.response.body.contains("<h1>Forward</h1>"));
+        assert!(response.response.body.contains("Fwd: Example"));
+        assert!(response.response.body.contains("report.pdf"));
+        assert!(response.response.body.contains("does not reattach files yet"));
     }
 
     #[test]

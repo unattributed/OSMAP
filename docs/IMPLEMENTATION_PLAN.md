@@ -150,18 +150,19 @@ layer on top of the fetched message payload, and a dependency-light MIME-aware
 attachment-metadata baseline for common mail layouts. The first bounded
 HTTP/browser slice now exists too, including real request parsing, routing,
 server-rendered HTML, session-cookie handling, a first compose/send path, and
-CSRF enforcement on current state-changing routes. The deployment and hardening
-baseline now also includes explicit nginx-facing guidance and an early OpenBSD
-confinement map.
+CSRF enforcement on current state-changing routes. The send path now also has
+server-side reply and forward draft generation with attachment-aware notices.
+The deployment and hardening baseline now also includes explicit nginx-facing
+guidance plus an implemented OpenBSD confinement mode.
 
 The next active implementation work should focus on:
 
 - using the project-local QEMU lab wrappers and `mail.blackbagsecurity.com` for
   continued OpenBSD validation as the runtime broadens
-- extending the send path toward reply, forward, and attachment-aware handling
-  without discarding the current narrow HTTP and rendering posture
-- validating the nginx-facing and OpenBSD confinement plan against real host and
-  QEMU deployment steps
+- extending the send path from attachment-aware draft generation toward actual
+  attachment upload and submission behavior
+- narrowing and validating the helper-compatible OpenBSD confinement view
+  against more real browser workflows
 - carrying the current session model into broader browser-state handling
   without collapsing the security boundaries that now exist
 

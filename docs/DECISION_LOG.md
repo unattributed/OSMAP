@@ -385,3 +385,38 @@ The prototype is now concrete enough to map likely confinement boundaries:
 bounded state directories, one local listener, `doveadm`, and `sendmail`.
 Runtime enforcement should be added from that real surface, not from generic
 theory.
+
+### Build reply and forward as server-side draft generation first
+
+The next send-path step should reuse the existing message-view and plain-text
+rendering layers to generate reply and forward drafts on the server side. This
+keeps the browser simple and avoids trusting live HTML message content during
+outbound composition.
+
+### Make attachment handling explicit before real upload exists
+
+The current reply and forward flow should be attachment-aware even before file
+upload or reattachment exists. Drafts now carry attachment notices and forward
+metadata so the product does not silently drop attachment context while
+pretending the action is complete.
+
+### Introduce an operator-controlled OpenBSD confinement mode
+
+The runtime now exposes `disabled`, `log-only`, and `enforce` confinement
+modes. This lets operators validate the promise and unveil plan before they
+commit to enforcement on a live OpenBSD host.
+
+### Enforce a first helper-compatible `pledge(2)` and `unveil(2)` boundary now
+
+The current serve runtime now applies a real OpenBSD confinement boundary when
+enforcement is enabled. The unveiled filesystem view is still broader than the
+final target because `doveadm` and `sendmail` remain external helper
+dependencies, but the process is no longer relying on confinement as a future
+idea only.
+
+### Record live browser-auth caveats exactly as observed
+
+The current browser-driven invalid-login path on `mail.blackbagsecurity.com`
+produced the same `doveadm` backend error with confinement disabled and
+enabled. That behavior should be tracked as a host/browser integration caveat,
+not misclassified as a confinement regression.

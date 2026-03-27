@@ -125,7 +125,7 @@ surface:
 - execute `/usr/local/bin/doveadm`
 - execute `/usr/sbin/sendmail`
 
-That means later `pledge(2)` and `unveil(2)` work should be driven by the real
-access graph rather than by generic promises. The next hardening step is to
-turn this map into tested runtime enforcement on OpenBSD without breaking the
-current auth, mailbox, and submission slices.
+That map is now being used by a real OpenBSD confinement mode in the running
+code. The next hardening step is to narrow the helper-compatible filesystem
+view and prove more live browser workflows under enforcement without breaking
+the current auth, mailbox, and submission slices.

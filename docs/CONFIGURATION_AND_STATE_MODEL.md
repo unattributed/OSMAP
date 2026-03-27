@@ -37,6 +37,7 @@ The early runtime recognizes:
 - `OSMAP_LOG_FORMAT`
 - `OSMAP_SESSION_LIFETIME_SECS`
 - `OSMAP_TOTP_ALLOWED_SKEW_STEPS`
+- `OSMAP_OPENBSD_CONFINEMENT_MODE`
 
 The committed example file under `config/osmap.env.example` is intentionally
 non-secret.
@@ -48,6 +49,12 @@ The runtime now uses `OSMAP_RUN_MODE` to separate:
 
 That lets operators and tests exercise startup checks without always launching
 the listener.
+
+The runtime now also uses `OSMAP_OPENBSD_CONFINEMENT_MODE` to separate:
+
+- no OpenBSD-specific runtime confinement
+- plan-only OpenBSD confinement logging
+- enforced OpenBSD confinement during serve mode
 
 ## Environment Model
 
@@ -104,6 +111,7 @@ The bootstrap currently enforces:
 - development listeners must remain on loopback
 - session lifetime must parse as a positive unsigned integer
 - TOTP skew-step configuration must parse as a signed integer
+- OpenBSD confinement mode must be one of the explicitly recognized values
 
 These validations are intentionally strict because the project should fail
 clearly when runtime assumptions drift.

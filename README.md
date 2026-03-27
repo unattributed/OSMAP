@@ -152,11 +152,15 @@ implementation step is now in place too: a first compose/send browser slice
 with bounded outbound input validation, a local `sendmail` compatibility
 handoff, and submission audit events. The browser runtime now also has a first
 CSRF strategy for current state-changing form routes, plus explicit nginx-facing
-deployment guidance and an early OpenBSD confinement map.
+deployment guidance and an early OpenBSD confinement map. The next send-path
+step is now in place too: server-side reply and forward draft generation with
+attachment-aware notices built from the current message-view path. The runtime
+now also has an operator-controlled OpenBSD confinement mode with real
+`pledge(2)` and `unveil(2)` enforcement on OpenBSD.
 
-The next implementation step is to extend the send path toward reply, forward,
-attachment-aware behavior, and tested OpenBSD runtime confinement without
-weakening the security boundaries that are now in place.
+The next implementation step is to extend this send path toward actual
+attachment upload and submission behavior, and to narrow the helper-compatible
+OpenBSD confinement view while validating more live browser flows.
 
 ---
 

@@ -1,0 +1,135 @@
+# OpenBSD Runtime Confinement Baseline
+
+## Purpose
+
+This document records the first implemented OpenBSD-native runtime confinement
+baseline for OSMAP.
+
+The goal of this slice is to move confinement from design intent into a real,
+operator-controlled runtime behavior while staying honest about the helper
+processes and filesystem visibility the current prototype still depends on.
+
+## Status
+
+As of March 27, 2026, the runtime now recognizes:
+
+- `OSMAP_OPENBSD_CONFINEMENT_MODE=disabled`
+- `OSMAP_OPENBSD_CONFINEMENT_MODE=log-only`
+- `OSMAP_OPENBSD_CONFINEMENT_MODE=enforce`
+
+The `disabled` mode preserves the previous behavior.
+
+The `log-only` mode emits the current promise and unveil plan without changing
+runtime behavior.
+
+The `enforce` mode on OpenBSD now:
+
+- prepares a concrete `pledge(2)` promise set
+- prepares a concrete `unveil(2)` ruleset from the validated runtime config
+- applies the initial promise set that still allows `unveil(2)`
+- unveils the current runtime paths and helper paths
+- locks the unveil table
+- drops the `unveil` promise from the steady-state process
+
+This is the first enforced runtime boundary, not the final confinement story.
+
+## Current Promise Model
+
+The current enforced serve-mode process uses:
+
+- `stdio rpath wpath cpath inet proc exec unveil` before the unveil table is
+  locked
+- `stdio rpath wpath cpath inet proc exec` after the unveil table is locked
+
+This reflects the current application truth:
+
+- serve HTTP on loopback TCP
+- read and write bounded local state
+- fork and execute helper programs
+- keep the process small enough that the promise set remains reviewable
+
+## Current Filesystem View
+
+The current unveil plan includes:
+
+- the configured OSMAP state root
+- configured runtime, session, audit, cache, and TOTP-secret directories
+- `/usr/local/bin/doveadm`
+- `/usr/sbin/sendmail`
+- `/usr/lib`
+- `/usr/libexec`
+- `/usr/local/lib`
+- `/etc`
+- `/var`
+- `/dev/null`
+
+This is intentionally broader than the final target because the current
+prototype still delegates important work to external helper programs with their
+own library and host-integration expectations.
+
+## Why The View Is Still Broad
+
+The current prototype does not yet implement IMAP, auth, or SMTP submission in
+process. It still shells out to:
+
+- `doveadm`
+- `sendmail`
+
+Those helpers inherit the parent process's unveiled filesystem view. That means
+the first enforced unveil policy must remain broad enough for:
+
+- system libraries
+- local configuration files
+- mail-stack runtime paths under `/var`
+
+This is not the end goal. It is the smallest honest enforcement layer that can
+be applied today without pretending the helper dependency problem is already
+gone.
+
+## Validation Status
+
+The current confinement layer has been validated through:
+
+- local Linux build and test verification, including the non-OpenBSD
+  configuration path
+- OpenBSD host `cargo test` on `mail.blackbagsecurity.com`
+- OpenBSD host `cargo test -- --ignored` on `mail.blackbagsecurity.com`
+- OpenBSD host `serve` startup under `OSMAP_OPENBSD_CONFINEMENT_MODE=enforce`
+- OpenBSD host `GET /healthz` under enforced confinement
+
+The enforced OpenBSD run logged:
+
+- startup report
+- confinement plan
+- confinement enabled
+- HTTP server started
+- successful health check handling
+
+## Observed Caveat On `mail.blackbagsecurity.com`
+
+A browser-driven invalid login smoke test on `mail.blackbagsecurity.com`
+produced the same `doveadm auth test` backend failure both with confinement
+disabled and with confinement enforced.
+
+The observed error involved Dovecot's stats writer and `rip` handling, so it is
+currently being treated as an existing behavior of the browser-auth integration
+path on that host, not as a confinement regression introduced by this slice.
+
+That distinction matters:
+
+- confinement enforcement now exists and was exercised successfully
+- the exact live browser-auth path on that host still needs refinement before
+  it can be called production-ready
+
+## What This Baseline Does Not Yet Claim
+
+This baseline does not mean:
+
+- the current unveil policy is narrow enough for final adoption
+- helper-process dependencies have been eliminated
+- browser auth is fully proven end to end on the target host
+- attachment upload or richer send behavior are confinement-tested
+- QEMU and host confinement validation are complete for every user workflow
+
+The next confinement work should focus on narrowing the helper-compatible
+filesystem view and proving more real user flows under enforced mode.

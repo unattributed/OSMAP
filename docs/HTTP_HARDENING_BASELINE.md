@@ -20,6 +20,7 @@ round of HTTP-specific hardening controls:
 - session-bound CSRF tokens on current state-changing form routes
 - server-rendered HTML with escaped message rendering and no client-side
   scripting dependency
+- an operator-controlled OpenBSD confinement mode for serve runtime
 
 This is a useful baseline, not the final hardening endpoint.
 
@@ -54,6 +55,17 @@ That token is:
 
 This model keeps CSRF tied to the existing session lifecycle instead of adding
 an unrelated browser-state store.
+
+## Current Reply And Forward Posture
+
+The current browser layer now allows reply and forward draft generation, but it
+keeps those flows inside the same narrow safety posture:
+
+- drafts are generated server-side
+- they use the plain-text compose projection, not live HTML message content
+- attachment context is surfaced as metadata and warnings, not as silent file
+  reattachment
+- the actual outbound submission remains plain-text-first
 
 ## nginx-Facing Deployment Shape
 
@@ -95,10 +107,13 @@ Operators can tighten this further, but this shape matches the current runtime
 truthfully: small app, local listener, narrow method surface, and edge-owned
 TLS.
 
-## Early OpenBSD Confinement Feasibility
+## Current OpenBSD Confinement State
 
-The current runtime shape is now concrete enough to map its likely confinement
-needs.
+The current runtime now has a real OpenBSD confinement control:
+
+- `disabled`
+- `log-only`
+- `enforce`
 
 Today the process needs to:
 
@@ -108,16 +123,16 @@ Today the process needs to:
 - execute `/usr/local/bin/doveadm` for auth and mailbox reads
 - execute `/usr/sbin/sendmail` for outbound submission
 
-That means any future confinement work must account for both filesystem access
-and controlled process execution. A realistic early evaluation target is:
+The enforced OpenBSD mode now applies:
 
-- `unveil(2)` for the configured state tree plus the required executable paths
-- `pledge(2)` with a promise set that preserves local TCP serving, bounded file
-  I/O, and child-process execution
+- a concrete `pledge(2)` promise set for serve mode
+- a concrete `unveil(2)` ruleset derived from config and helper paths
+- a locked unveil table before steady-state serving begins
 
-The exact promise set is not being claimed as finished here, because the
-runtime still needs more live validation first. The important point is that the
-required access graph is now small enough to reason about concretely.
+The current ruleset is still broader than the final target because the helper
+process model forces compatibility with existing libraries and `/var`-resident
+mail-stack paths. The important change is that confinement is no longer only a
+plan: it now exists as a tested runtime behavior on OpenBSD.
 
 ## What This Baseline Does Not Yet Claim
 
@@ -126,8 +141,9 @@ This baseline does not mean:
 - public-internet exposure is now the default
 - nginx configuration is finalized for production
 - the current listener is concurrent or high-throughput
-- `pledge(2)` or `unveil(2)` are already enforced in code
 - attachment downloads or uploads are hardened
 - CSRF coverage exists beyond the currently implemented form routes
+- the current unveil view is narrow enough for final adoption
+- every live browser workflow is fully proven on the target host
 
 Those remain active hardening and integration work, not solved problems.

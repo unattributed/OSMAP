@@ -16,6 +16,8 @@ As of March 27, 2026, the prototype now includes:
 
 - a server-rendered compose page at `GET /compose`
 - a state-changing send action at `POST /send`
+- reply and forward draft generation from the message-view path
+- attachment-aware draft notices for reply and forward flows
 - bounded validation for recipients, subject, and body
 - a validated-session gate in front of the send path
 - CSRF enforcement on the send form
@@ -31,11 +33,12 @@ The current compose form accepts only:
 - a simple comma-separated recipient list
 - one subject line
 - one plain-text body
+- server-generated reply and forward prefills built from the current
+  message-rendering layer
 
 The current shape intentionally excludes:
 
-- attachments
-- reply or forward helpers
+- attachment upload or actual attachment re-submission
 - rich text
 - arbitrary custom headers
 - draft saving
@@ -52,9 +55,39 @@ submission surface:
 - recipient count is capped
 - subject length is capped and line breaks are rejected
 - body length is capped
+- generated notices and generated quoted bodies are bounded too
 
 These rules make the first send slice boring in a good way: small inputs,
 simple rejection paths, and no silent normalization of surprising values.
+
+## Reply And Forward Behavior
+
+The current browser slice now supports:
+
+- `Reply` links from message view
+- `Forward` links from message view
+- reply-prefilled recipient extraction from a conservative `From` parser
+- reply quoting from the plain-text compose projection of the rendered message
+- forward prefills that preserve message metadata and body text
+
+This behavior is intentionally simple and server-side. It does not depend on a
+client-side draft engine.
+
+## Attachment-Aware Draft Posture
+
+The current implementation is attachment-aware without pretending attachment
+resubmission exists.
+
+Today that means:
+
+- reply drafts warn when the source message had attachments
+- forward drafts include surfaced attachment metadata in the generated body
+- forward drafts warn that files are not actually reattached by the current
+  slice
+
+This keeps the send path honest. Operators and developers can see attachment
+context, but the code does not silently drop files while presenting the action
+as a complete forward implementation.
 
 ## Submission Model
 
@@ -110,7 +143,6 @@ still intentionally narrow.
 
 This slice does not yet include:
 
-- reply or forward behavior
 - attachment upload or submission
 - draft management
 - message threading hints

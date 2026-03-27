@@ -178,6 +178,10 @@ Status on March 27, 2026:
 
 - started with the first compose-and-send browser slice
 - a server-rendered compose form and session-gated send action now exist
+- reply and forward draft generation now exist through the current message-view
+  path
+- attachment-aware draft notices now exist for source messages that carried
+  attachment metadata
 - the first outbound handoff uses the local `sendmail` compatibility surface
 - CSRF protection now covers the current send form
 - submission success and failure are now emitted as structured audit-quality
@@ -201,9 +205,13 @@ Status on March 27, 2026:
 
 - started with explicit nginx-facing deployment guidance for the current browser
   runtime
-- started with an early `pledge(2)` and `unveil(2)` feasibility map based on
-  the real process access graph
+- now includes an operator-controlled OpenBSD confinement mode
+- now includes enforced `pledge(2)` and `unveil(2)` application for the current
+  serve runtime on OpenBSD
+- browser and health-check validation under enforced mode have now been
+  exercised on `mail.blackbagsecurity.com`
 - recorded in `HTTP_HARDENING_BASELINE.md`
+- recorded in `OPENBSD_RUNTIME_CONFINEMENT_BASELINE.md`
 
 Done means:
 

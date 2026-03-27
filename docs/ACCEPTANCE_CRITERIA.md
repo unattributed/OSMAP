@@ -156,11 +156,13 @@ Phase 6:
   message-list, message-view, logout, and health routes
 - WP7 now includes a first compose/send browser slice with bounded input
   validation, local submission handoff, and submission audit events
+- WP7 now includes server-side reply and forward draft generation with
+  attachment-aware notices
 - the browser slice now includes CSRF protection on current state-changing form
   routes
-- nginx-facing deployment details and an early OpenBSD confinement map now
-  exist as implementation controls
+- nginx-facing deployment details and an implemented OpenBSD confinement mode
+  now exist as implementation controls
 - attachment download behavior, reply/forward behavior, attachment upload, and
-  runtime `pledge(2)`/`unveil(2)` enforcement are not complete yet
+  broader live-browser validation under confinement are not complete yet
 - the actual prototype has not yet been implemented, so Phase 6 execution is
   underway but not yet complete

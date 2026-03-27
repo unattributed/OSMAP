@@ -69,7 +69,8 @@ The routes intentionally mirror the current runtime baseline:
 - mailbox home lists available mailboxes
 - mailbox view lists message summaries
 - message view consumes the existing safe renderer and attachment metadata
-- compose renders the current plain-text-first outbound form
+- compose renders the current plain-text-first outbound form, including
+  reply/forward prefills when a source message is supplied
 - send hands the composed message to the local submission surface
 - logout revokes the current session token
 
@@ -125,6 +126,8 @@ This slice now proves that:
   way to a browser-facing page
 - the current outbound send path can be exposed through a bounded server-side
   compose form without inventing an SMTP client or rich browser runtime
+- reply and forward behavior can be added as server-side draft generation
+  without widening browser trust to HTML content or attachment upload
 - CSRF controls can be added to the browser slice without reworking the core
   session model
 - a practical `serve` mode can exist without giving up the fast bootstrap-only
@@ -136,12 +139,11 @@ This slice does not yet include:
 
 - TLS termination inside OSMAP
 - attachment download handlers
-- reply or forward workflows
 - attachment upload handling
 - administrative routes
 - concurrent request handling
-- runtime `pledge(2)` and `unveil(2)` enforcement
+- full end-to-end live browser workflow validation on the target host under
+  confinement
 
-The nginx-facing deployment model and early confinement plan now exist in the
-project documentation, but those controls are not yet enforced by the running
-binary itself.
+The nginx-facing deployment model now has a matching implemented confinement
+control, but broader live-browser validation still remains.

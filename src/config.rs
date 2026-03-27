@@ -25,6 +25,7 @@ pub struct AppConfig {
     pub state_layout: StateLayout,
     pub session_lifetime_seconds: u64,
     pub totp_allowed_skew_steps: i64,
+    pub openbsd_confinement_mode: OpenbsdConfinementMode,
 }
 
 /// Controls whether the binary only validates startup or actually serves HTTP.
@@ -153,6 +154,40 @@ impl LogFormat {
     }
 }
 
+/// Controls whether OpenBSD-native runtime confinement is disabled, only
+/// described in logs, or actively enforced.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OpenbsdConfinementMode {
+    Disabled,
+    LogOnly,
+    Enforce,
+}
+
+impl OpenbsdConfinementMode {
+    /// Parses the confinement-mode string from configuration.
+    fn parse(value: &str) -> Result<Self, BootstrapError> {
+        match value {
+            "disabled" => Ok(Self::Disabled),
+            "log-only" => Ok(Self::LogOnly),
+            "enforce" => Ok(Self::Enforce),
+            _ => Err(BootstrapError::UnsupportedValue {
+                field: "OSMAP_OPENBSD_CONFINEMENT_MODE",
+                value: value.to_string(),
+                expected: "disabled, log-only, or enforce",
+            }),
+        }
+    }
+
+    /// Returns the canonical string representation used in logs and docs.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Disabled => "disabled",
+            Self::LogOnly => "log-only",
+            Self::Enforce => "enforce",
+        }
+    }
+}
+
 impl AppConfig {
     /// Loads configuration from the current process environment.
     pub fn from_process_env() -> Result<Self, BootstrapError> {
@@ -175,6 +210,11 @@ impl AppConfig {
         let log_format_value = read_value(env_map, "OSMAP_LOG_FORMAT", "text");
         let session_lifetime_value = read_value(env_map, "OSMAP_SESSION_LIFETIME_SECS", "43200");
         let totp_skew_steps_value = read_value(env_map, "OSMAP_TOTP_ALLOWED_SKEW_STEPS", "1");
+        let openbsd_confinement_mode_value = read_value(
+            env_map,
+            "OSMAP_OPENBSD_CONFINEMENT_MODE",
+            "disabled",
+        );
 
         validate_non_empty("OSMAP_RUN_MODE", &run_mode_value)?;
         validate_non_empty("OSMAP_ENV", &environment_value)?;
@@ -208,12 +248,18 @@ impl AppConfig {
         validate_non_empty("OSMAP_LISTEN_ADDR", &listen_addr)?;
         validate_non_empty("OSMAP_SESSION_LIFETIME_SECS", &session_lifetime_value)?;
         validate_non_empty("OSMAP_TOTP_ALLOWED_SKEW_STEPS", &totp_skew_steps_value)?;
+        validate_non_empty(
+            "OSMAP_OPENBSD_CONFINEMENT_MODE",
+            &openbsd_confinement_mode_value,
+        )?;
 
         let run_mode = AppRunMode::parse(&run_mode_value)?;
         let environment = RuntimeEnvironment::parse(&environment_value)?;
         let state_root = parse_absolute_path("OSMAP_STATE_DIR", &state_root_value)?;
         let log_level = LogLevel::parse(&log_level_value)?;
         let log_format = LogFormat::parse(&log_format_value)?;
+        let openbsd_confinement_mode =
+            OpenbsdConfinementMode::parse(&openbsd_confinement_mode_value)?;
         let session_lifetime_seconds =
             parse_u64("OSMAP_SESSION_LIFETIME_SECS", &session_lifetime_value)?;
         let totp_allowed_skew_steps =
@@ -241,6 +287,7 @@ impl AppConfig {
             state_layout,
             session_lifetime_seconds,
             totp_allowed_skew_steps,
+            openbsd_confinement_mode,
         })
     }
 }
@@ -390,6 +437,10 @@ mod tests {
         assert_eq!(config.log_format, LogFormat::Text);
         assert_eq!(config.session_lifetime_seconds, 43200);
         assert_eq!(config.totp_allowed_skew_steps, 1);
+        assert_eq!(
+            config.openbsd_confinement_mode,
+            OpenbsdConfinementMode::Disabled
+        );
     }
 
     #[test]
@@ -415,6 +466,10 @@ mod tests {
             ("OSMAP_LOG_FORMAT".to_string(), "text".to_string()),
             ("OSMAP_SESSION_LIFETIME_SECS".to_string(), "3600".to_string()),
             ("OSMAP_TOTP_ALLOWED_SKEW_STEPS".to_string(), "2".to_string()),
+            (
+                "OSMAP_OPENBSD_CONFINEMENT_MODE".to_string(),
+                "log-only".to_string(),
+            ),
         ]);
 
         let config = AppConfig::from_env_map(&env_map).expect("explicit values should be valid");
@@ -442,6 +497,10 @@ mod tests {
         assert_eq!(config.log_format, LogFormat::Text);
         assert_eq!(config.session_lifetime_seconds, 3600);
         assert_eq!(config.totp_allowed_skew_steps, 2);
+        assert_eq!(
+            config.openbsd_confinement_mode,
+            OpenbsdConfinementMode::LogOnly
+        );
     }
 
     #[test]
@@ -558,5 +617,24 @@ mod tests {
 
         assert_eq!(config.environment, RuntimeEnvironment::Staging);
         assert_eq!(config.listen_addr, "0.0.0.0:8080");
+    }
+
+    #[test]
+    fn rejects_unsupported_openbsd_confinement_mode() {
+        let env_map = BTreeMap::from([(
+            "OSMAP_OPENBSD_CONFINEMENT_MODE".to_string(),
+            "strict".to_string(),
+        )]);
+
+        let error = AppConfig::from_env_map(&env_map).expect_err("mode should be rejected");
+
+        assert_eq!(
+            error,
+            BootstrapError::UnsupportedValue {
+                field: "OSMAP_OPENBSD_CONFINEMENT_MODE",
+                value: "strict".to_string(),
+                expected: "disabled, log-only, or enforce",
+            }
+        );
     }
 }
