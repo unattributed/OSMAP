@@ -655,3 +655,24 @@ useful claim than earlier slices did:
 This does not yet replace broader end-to-end browser coverage, but it does
 prove that the selected `_osmap` plus local helper plus `vmail` split works on
 the current host without teaching OSMAP to depend on `doas`.
+
+### Treat real login plus helper-backed reads as the new live-proof baseline
+
+The current host proof no longer stops at synthetic session setup. On
+`mail.blackbagsecurity.com`, OSMAP now has a continuous enforced-confinement
+browser trace that starts with real password-plus-TOTP login and carries the
+issued session cookie through helper-backed mailbox listing, message view, and
+attachment download.
+
+That makes the authenticated read path a proven live behavior rather than only
+an inferred combination of smaller proofs.
+
+### Drop `/var/dovecot` and `/var/log/dovecot.log` from the confinement plan
+
+The earlier confinement plan kept those Dovecot paths because the helper
+dependency picture was still fuzzy. Follow-on live validation now shows the
+current auth socket, userdb socket, mailbox helper, and attachment-read flows
+work without direct unveil access to either path.
+
+The active OpenBSD confinement plan therefore removes both paths instead of
+keeping them as speculative helper allowances.

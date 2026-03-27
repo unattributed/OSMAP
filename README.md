@@ -142,11 +142,15 @@ Each phase produces formal outputs to support traceability and auditability.
   message-list retrieval, message view, and attachment download all succeeded
   against an attachment-bearing validation mailbox with the web runtime kept as
   `_osmap` and the mailbox helper running at the `vmail` boundary.
+- A full read-oriented browser trace is now also proven on
+  `mail.blackbagsecurity.com` under `enforce`: real password-plus-TOTP login,
+  issued browser session cookie, helper-backed mailbox listing, helper-backed
+  message view, and attachment download all succeeded in one continuous flow.
 - OSMAP is still prototype-grade, not production-ready, and does not yet have a
   public deployment.
 - Current priority work is continued HTTP hardening, tighter OpenBSD helper and
-  filesystem narrowing, and broader end-to-end live validation from real login
-  through authenticated mailbox reads.
+  filesystem narrowing, and broader end-to-end live validation beyond the now
+  proven authenticated read path.
 
 ---
 

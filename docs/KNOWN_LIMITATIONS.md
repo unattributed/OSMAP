@@ -19,8 +19,7 @@
   still uses a sequential listener rather than concurrent request handling
 - The implementation now has a bounded message-view fetch path, plus
   MIME-aware classification and attachment metadata surfacing, but it does not
-  yet provide preview-oriented attachment behavior or successful live-host
-  attachment reads under enforced confinement
+  yet provide preview-oriented attachment behavior
 - The implementation now has a first outbound send path with reply and forward
   draft generation plus bounded new attachment upload/submission behavior, but
   it does not yet support draft persistence or original-message attachment
@@ -41,7 +40,7 @@
   implementation
 - The OpenBSD runtime now has an enforced confinement mode, but its helper
   compatibility view is still broader than the final target even after the
-  first narrowing pass away from a blanket `/var` unveil
+  first narrowing passes away from blanket `/etc` and `/var` visibility
 - `mail.blackbagsecurity.com` now has a dedicated least-privilege Dovecot auth
   listener for `_osmap`, and positive browser login plus TOTP-backed session
   issuance are now validated there under `enforce`
@@ -56,9 +55,6 @@
   download now reuses the helper-backed message-view path instead of making the
   web runtime fetch directly, but the broader read-path migration is not
   complete
-- the current live-host helper proof uses a bounded synthetic session and a
-  disposable validation mailbox, not a full real-login-through-mailbox-read
-  browser trace in one run
 - attachment download is now proven against a real attachment-bearing mailbox
   under enforced confinement, but a distinct helper-side attachment-byte
   operation still does not exist
@@ -66,4 +62,4 @@
   against a full live implementation pipeline
 - The project now has an implementation plan and work breakdown, but there is
   not yet a fully proven browser proof of concept covering hardened deployment
-  and successful live attachment workflows end to end
+  and successful live mutation workflows end to end

@@ -85,11 +85,10 @@ This slice is currently validated through:
   entrypoints, with honest environment notes where tooling is absent
 - OpenBSD host `cargo test` on `mail.blackbagsecurity.com`
 - OpenBSD host ignored live `doveadm` tests on `mail.blackbagsecurity.com`
-- OpenBSD host enforced-serve validation with a synthetic file-backed session
-  under `/tmp`, including `GET /healthz` and a session-gated attachment-route
-  request
+- OpenBSD host enforced-serve validation with both a synthetic bounded session
+  and a later real browser login flow on `mail.blackbagsecurity.com`
 
-The enforced-host synthetic-session validation confirmed:
+The first enforced-host synthetic-session validation confirmed:
 
 - the server started under `OSMAP_OPENBSD_CONFINEMENT_MODE=enforce`
 - the synthetic session was accepted
@@ -121,6 +120,8 @@ Using that shape, OSMAP now successfully:
 - listed messages in `INBOX`
 - rendered a message view for the attachment-bearing validation message
 - downloaded the attachment bytes successfully under enforced confinement
+- repeated that same attachment-bearing read path after a real password-plus-
+  TOTP browser login that issued a new OSMAP session cookie
 
 ## What This Slice Proves
 

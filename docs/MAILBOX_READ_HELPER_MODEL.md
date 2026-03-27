@@ -89,8 +89,6 @@ What is not yet implemented:
 
 - a dedicated helper-side attachment-byte operation distinct from the current
   helper-backed message-view fetch path
-- a single live browser proof that starts from real login and then carries the
-  same session into helper-backed mailbox reads without synthetic session setup
 
 ## Scope Of The Helper
 
@@ -209,3 +207,15 @@ that every end-to-end browser flow is already proven.
 It records the selected path and the first implemented slice so later work can
 extend the helper boundary without widening the authority of the web-facing
 process.
+
+Follow-on live validation on `mail.blackbagsecurity.com` now also proves the
+missing real-browser step for the current read path:
+
+- real password-plus-TOTP login as the validation mailbox
+- issued OSMAP browser session cookie
+- helper-backed mailbox listing
+- helper-backed message view
+- helper-backed attachment download
+
+That proof was exercised with the web runtime under `_osmap`, the helper under
+`vmail`, and `OSMAP_OPENBSD_CONFINEMENT_MODE=enforce`.

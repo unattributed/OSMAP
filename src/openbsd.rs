@@ -78,8 +78,6 @@ impl OpenbsdConfinementPlan {
                 add_rule(&mut rules, Path::new("/etc/dovecot"), "r");
                 add_rule(&mut rules, Path::new("/etc/mail"), "r");
                 add_rule(&mut rules, Path::new("/etc/mailer.conf"), "r");
-                add_rule(&mut rules, Path::new("/var/dovecot"), "rwc");
-                add_rule(&mut rules, Path::new("/var/log/dovecot.log"), "rw");
                 add_rule(&mut rules, Path::new("/var/spool/postfix"), "rwc");
                 add_rule(&mut rules, Path::new("/var/spool/smtpd"), "rwc");
                 add_rule(&mut rules, Path::new("/dev/null"), "rw");
@@ -133,8 +131,6 @@ impl OpenbsdConfinementPlan {
                 add_rule(&mut rules, Path::new("/usr/libexec"), "rx");
                 add_rule(&mut rules, Path::new("/usr/local/lib"), "rx");
                 add_rule(&mut rules, Path::new("/etc/dovecot"), "r");
-                add_rule(&mut rules, Path::new("/var/dovecot"), "rwc");
-                add_rule(&mut rules, Path::new("/var/log/dovecot.log"), "rw");
                 add_rule(&mut rules, Path::new("/dev/null"), "rw");
 
                 if let Some(userdb_socket_path) = &config.doveadm_userdb_socket_path {
@@ -397,6 +393,14 @@ mod tests {
         assert!(!plan
             .unveil_rules
             .iter()
+            .any(|rule| rule.path == PathBuf::from("/var/dovecot")));
+        assert!(!plan
+            .unveil_rules
+            .iter()
+            .any(|rule| rule.path == PathBuf::from("/var/log/dovecot.log")));
+        assert!(!plan
+            .unveil_rules
+            .iter()
             .any(|rule| rule.path == PathBuf::from("/var")));
     }
 
@@ -497,6 +501,14 @@ mod tests {
                 && rule.permissions.contains('r')
                 && rule.permissions.contains('w')
         }));
+        assert!(!plan
+            .unveil_rules
+            .iter()
+            .any(|rule| rule.path == PathBuf::from("/var/dovecot")));
+        assert!(!plan
+            .unveil_rules
+            .iter()
+            .any(|rule| rule.path == PathBuf::from("/var/log/dovecot.log")));
     }
 
     #[test]
@@ -525,5 +537,13 @@ mod tests {
             .unveil_rules
             .iter()
             .any(|rule| rule.path == PathBuf::from("/var/run/osmap-userdb")));
+        assert!(!plan
+            .unveil_rules
+            .iter()
+            .any(|rule| rule.path == PathBuf::from("/var/dovecot")));
+        assert!(!plan
+            .unveil_rules
+            .iter()
+            .any(|rule| rule.path == PathBuf::from("/var/log/dovecot.log")));
     }
 }

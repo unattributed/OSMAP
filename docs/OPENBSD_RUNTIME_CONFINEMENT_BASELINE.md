@@ -67,8 +67,6 @@ The current unveil plan includes:
 - `/etc/dovecot`
 - `/etc/mail`
 - `/etc/mailer.conf`
-- `/var/dovecot`
-- `/var/log/dovecot.log`
 - `/var/spool/postfix`
 - `/var/spool/smtpd`
 - `/dev/null`
@@ -84,6 +82,11 @@ When configured, the runtime also adds explicit read/write unveil rules for:
 
 plus read-only visibility for their parent directory chains.
 
+Follow-on live validation now also shows that the serve and helper runtimes do
+not need direct unveil access to `/var/dovecot` or `/var/log/dovecot.log` for
+the current auth, mailbox, message-view, and attachment-read workflows. Those
+paths have therefore been removed from the active confinement plan.
+
 ## Why The View Is Still Broad
 
 The current prototype does not yet implement IMAP, auth, or SMTP submission in
@@ -93,11 +96,11 @@ process. It still shells out to:
 - `sendmail`
 
 Those helpers inherit the parent process's unveiled filesystem view. That means
-the first enforced unveil policy must remain broad enough for:
+the current enforced unveil policy must remain broad enough for:
 
 - system libraries
 - helper-specific configuration files
-- helper-specific runtime paths under `/var`
+- local submission spool paths
 
 This is not the end goal. It is the smallest honest enforcement layer that can
 be applied today without pretending the helper dependency problem is already
@@ -127,6 +130,9 @@ The current confinement layer has been validated through:
 - helper-backed mailbox listing, message-list retrieval, message view, and
   attachment download under enforced confinement on
   `mail.blackbagsecurity.com`
+- one continuous real browser flow under enforced confinement on
+  `mail.blackbagsecurity.com`, from password-plus-TOTP login through
+  helper-backed mailbox, message-view, and attachment reads
 
 The enforced OpenBSD run logged:
 
@@ -142,6 +148,8 @@ The enforced OpenBSD run logged:
 - successful synthetic session validation and refresh under `enforce`
 - successful helper-backed mailbox listing, message-list retrieval, message
   view, and attachment download under `enforce`
+- successful real browser session issuance followed by helper-backed mailbox,
+  message-view, and attachment reads under `enforce`
 
 ## Observed Caveat And Fix On `mail.blackbagsecurity.com`
 
@@ -212,6 +220,8 @@ of a vague future idea, and the current host has live proof for it:
   `/var/run/osmap-userdb` while running at the `vmail` boundary
 - helper-backed mailbox and attachment reads succeed under
   `OSMAP_OPENBSD_CONFINEMENT_MODE=enforce`
+- a real browser login can carry an issued session into those same helper-
+  backed reads under `OSMAP_OPENBSD_CONFINEMENT_MODE=enforce`
 
 ## What This Baseline Does Not Yet Claim
 
@@ -220,9 +230,6 @@ This baseline does not mean:
 - the current unveil policy is narrow enough for final adoption
 - helper-process dependencies have been eliminated
 - richer send helper execution is fully proven under enforced confinement
-- authenticated mailbox, message-view, and attachment-bearing live-host reads
-  are proven in one continuous real-login browser flow without synthetic
-  session setup
 - QEMU and host confinement validation are complete for every user workflow
 
 The next confinement work should focus on narrowing the helper-compatible
@@ -246,5 +253,6 @@ filesystem view than the browser-facing `serve` runtime.
 
 That is still not the same thing as full live-browser coverage. The helper
 runtime has now been exercised successfully on `mail.blackbagsecurity.com`
-under the actual `vmail` boundary in this document's validation set, but
-broader end-to-end coverage and further narrowing remain.
+under the actual `vmail` boundary in this document's validation set, and the
+core authenticated read path is now proven in one continuous browser flow, but
+broader workflow coverage and further narrowing remain.
