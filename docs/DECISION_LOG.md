@@ -112,3 +112,21 @@ OpenBSD-minded maintainers to understand, verify, and roll back.
 Phase documentation should be maintained as working project controls. Earlier
 phase documents should be corrected and expanded when later work exposes gaps,
 rather than being left as stale milestones.
+
+### Start implementation with a narrow proof-of-concept slice
+
+Phase 6 will begin with a constrained prototype that proves login, mailbox
+read, send, and session handling rather than attempting a broad feature-complete
+replacement immediately.
+
+### Prefer low-complexity browser behavior for the first implementation
+
+The first implementation path should favor server-rendered or otherwise minimal
+client behavior over a heavy frontend architecture. This keeps the browser
+surface smaller and the OpenBSD maintenance story more credible.
+
+### Keep OpenBSD confinement work close to implementation
+
+`pledge(2)`, `unveil(2)`, runtime-user separation, and listener scoping should
+be evaluated early in the implementation sequence rather than postponed until a
+large prototype already exists.

@@ -9,7 +9,7 @@ The repository deliberately separates:
   `PKCB/` and `AGENTS.md`
 
 As of March 27, 2026, the project has substantive public-safe documentation
-through Phase 5. The current baseline was built from:
+through Phase 6. The current baseline was built from:
 
 - private PKCB planning notes
 - repository phase control blocks
@@ -39,10 +39,13 @@ Current primary documents:
 - `SUPPLY_CHAIN_POLICY.md`
 - `TEST_STRATEGY.md`
 - `BUILD_AND_RELEASE_PROCESS.md`
+- `IMPLEMENTATION_PLAN.md`
+- `PROOF_OF_CONCEPT_PLAN.md`
+- `WORK_DECOMPOSITION.md`
 - `DECISION_LOG.md`
 
 The intent of these documents is operational usefulness, not ceremony. Phase 0
-through Phase 5 documents should stay populated, current, and reviewable as the
+through Phase 6 documents should stay populated, current, and reviewable as the
 project moves into implementation.
 
 Some later-phase or deferred documents remain placeholders so the intended

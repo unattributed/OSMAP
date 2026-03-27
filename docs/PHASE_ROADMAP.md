@@ -78,6 +78,19 @@ Primary outputs:
 - `SUPPLY_CHAIN_POLICY.md`
 - `TEST_STRATEGY.md`
 
+## Phase 6
+
+Objective:
+Translate the selected architecture into a controlled proof-of-concept plan and
+workable implementation slices without outrunning the project's security and
+OpenBSD constraints.
+
+Primary outputs:
+
+- `IMPLEMENTATION_PLAN.md`
+- `PROOF_OF_CONCEPT_PLAN.md`
+- `WORK_DECOMPOSITION.md`
+
 ## Later Phases
 
 Later phases cover implementation, validation, pilot deployment, migration, and

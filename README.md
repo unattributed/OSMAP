@@ -101,15 +101,15 @@ OSMAP focuses on:
 
 The project follows a structured, phased methodology:
 
-1. Charter and planning
+1. Charter and planning baseline
 2. Current system analysis
 3. Product definition
-4. Security model
+4. Security and trust model
 5. Architecture design
-6. Secure development lifecycle
-7. Implementation and validation
-8. Controlled deployment
-9. Migration and retirement of legacy components
+6. Secure SDLC and release governance
+7. Implementation planning and proof-of-concept definition
+8. Controlled implementation, validation, and hardening
+9. Deployment, migration, and legacy retirement
 
 Each phase produces formal outputs to support traceability and auditability.
 
@@ -117,8 +117,13 @@ Each phase produces formal outputs to support traceability and auditability.
 
 ## Status
 
-Early design and planning phase.  
-Not yet production-ready.
+Planning, architecture, security, and implementation-governance baselines are
+documented through the Phase 6 proof-of-concept planning layer.
+
+The project is not yet production-ready and does not yet have a running public
+prototype. The next implementation step is a constrained proof of concept that
+validates login, mailbox access, message viewing, message sending, and session
+tracking against the existing OpenBSD mail stack.
 
 ---
 

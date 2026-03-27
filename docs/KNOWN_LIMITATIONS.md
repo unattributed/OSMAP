@@ -27,3 +27,6 @@
   contracts and the final backend language choice remain intentionally open
 - The SDLC and release rules are now defined, but they have not yet been proven
   against a live implementation pipeline
+- The project now has an implementation plan and work breakdown, but there is
+  not yet a running proof of concept validating the chosen runtime and
+  integration path

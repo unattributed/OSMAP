@@ -75,6 +75,19 @@ Phase 5 is acceptable when all of the following are true:
 - change management, configuration management, and documentation standards are
   captured clearly enough to guide implementation work
 
+## Phase 6 Acceptance Criteria
+
+Phase 6 is acceptable when all of the following are true:
+
+- the proof-of-concept scope is explicitly bounded
+- implementation work is broken into small, reviewable packages
+- the planned sequence proves login, mailbox, send, and session behavior before
+  broad feature expansion
+- OpenBSD runtime and confinement concerns are incorporated into the work plan
+  rather than deferred indefinitely
+- the project can begin implementation without ambiguity about what should be
+  built first
+
 ## Current Status On March 27, 2026
 
 Phase 0:
@@ -117,3 +130,10 @@ Phase 5:
   strategy, and build/release process suitable for implementation governance
 - implementation can now be evaluated against explicit engineering and release
   rules instead of ad hoc judgment
+
+Phase 6:
+
+- the repository now contains a concrete implementation plan, proof-of-concept
+  scope, and work decomposition baseline
+- the actual prototype has not yet been implemented, so Phase 6 execution is
+  planned and constrained but not yet complete
