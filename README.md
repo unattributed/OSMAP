@@ -128,8 +128,11 @@ WP1 and WP2 are now complete: the runtime has a typed configuration model, an
 explicit mutable-state layout, and a small structured logging/error baseline.
 
 The project is not yet production-ready and does not yet have a running public
-prototype. The next implementation step is WP3: build the authentication flow
-on top of the current runtime foundation.
+prototype. WP3 is now in progress with the first authentication slice: bounded
+credential handling, primary-auth decision flow, and audit-quality auth events.
+
+The next implementation step is to finish WP3 with real backend verification and
+factor-check handling on top of the current runtime foundation.
 
 ---
 

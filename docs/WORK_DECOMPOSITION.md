@@ -76,6 +76,13 @@ Done means:
 Goal:
 Implement the browser login path against the approved backend assumptions.
 
+Status on March 27, 2026:
+
+- started with the first authentication slice
+- bounded credential input, primary-auth decision handling, and audit-quality
+  auth events are now implemented
+- recorded in `AUTHENTICATION_SLICE_BASELINE.md`
+
 Done means:
 
 - credential handling exists

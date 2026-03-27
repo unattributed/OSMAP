@@ -139,9 +139,9 @@ The preferred sequence is:
 This sequence keeps the project on a thin vertical-slice path instead of a
 horizontal "build every subsystem halfway" path.
 
-WP0 has now established the toolchain and repository skeleton. The next active
-implementation slice should be WP3: authentication flow, building on the now
-established configuration/state and logging/error foundation.
+WP0, WP1, and WP2 are now in place. The current active implementation slice is
+WP3, beginning with bounded credential handling, primary-auth decision flow,
+and structured auth events before backend and MFA verification are expanded.
 
 ## Implementation Guardrails
 

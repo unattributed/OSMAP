@@ -138,5 +138,7 @@ Phase 6:
 - WP0 toolchain selection and repository skeleton are now in place
 - WP1 and WP2 now define the configuration/state boundary and the structured
   logging/error model for the prototype runtime
+- WP3 has started with a real authentication core, but backend integration,
+  factor verification, and session issuance are not complete yet
 - the actual prototype has not yet been implemented, so Phase 6 execution is
   underway but not yet complete

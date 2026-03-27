@@ -155,3 +155,16 @@ clear filesystem boundary to operate on.
 WP2 introduces stable structured text events and explicit bootstrap error types
 without adding a heavyweight logging framework before the runtime behavior is
 mature enough to justify it.
+
+### Treat primary credential success as MFA-required, not login-complete
+
+The first WP3 auth slice does not mark the user fully authenticated after a
+successful primary credential check. It returns an explicit MFA-required
+decision so the codebase does not accidentally normalize password-only browser
+auth.
+
+### Bound auth inputs before backend integration
+
+Username, password, request-id, remote-address, and user-agent inputs are now
+bounded and validated before backend verification so the auth surface starts
+from explicit limits rather than unbounded request data.

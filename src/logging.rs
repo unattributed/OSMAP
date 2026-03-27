@@ -16,6 +16,7 @@ pub enum EventCategory {
     Bootstrap,
     Config,
     State,
+    Auth,
 }
 
 impl EventCategory {
@@ -25,6 +26,7 @@ impl EventCategory {
             Self::Bootstrap => "bootstrap",
             Self::Config => "config",
             Self::State => "state",
+            Self::Auth => "auth",
         }
     }
 }

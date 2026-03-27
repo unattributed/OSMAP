@@ -4,6 +4,7 @@
 //! goal is to prove a maintainable starting point before any mail-specific or
 //! browser-facing complexity is added.
 
+pub mod auth;
 pub mod bootstrap;
 pub mod config;
 pub mod error;
