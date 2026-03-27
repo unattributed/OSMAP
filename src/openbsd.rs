@@ -74,6 +74,10 @@ impl OpenbsdConfinementPlan {
             add_rule(&mut rules, userdb_socket_path, "rw");
             add_parent_dir_rules(&mut rules, userdb_socket_path);
         }
+        if let Some(mailbox_helper_socket_path) = &config.mailbox_helper_socket_path {
+            add_rule(&mut rules, mailbox_helper_socket_path, "rw");
+            add_parent_dir_rules(&mut rules, mailbox_helper_socket_path);
+        }
 
         Self {
             promises_before_lock: OPENBSD_PROMISES_BEFORE_LOCK,
@@ -270,6 +274,7 @@ mod tests {
             listen_addr: "127.0.0.1:8080".to_string(),
             doveadm_auth_socket_path: None,
             doveadm_userdb_socket_path: None,
+            mailbox_helper_socket_path: None,
             state_root: PathBuf::from("/var/lib/osmap"),
             log_level: LogLevel::Info,
             log_format: LogFormat::Text,
@@ -356,5 +361,23 @@ mod tests {
             .unveil_rules
             .iter()
             .any(|rule| rule.path == PathBuf::from("/var/run") && rule.permissions == "r"));
+    }
+
+    #[test]
+    fn adds_mailbox_helper_socket_and_parent_dirs_when_configured() {
+        let mut config = config_fixture(OpenbsdConfinementMode::LogOnly);
+        config.mailbox_helper_socket_path = Some(PathBuf::from("/var/lib/osmap/run/mailbox-helper.sock"));
+
+        let plan = OpenbsdConfinementPlan::from_config(&config);
+
+        assert!(plan.unveil_rules.iter().any(|rule| {
+            rule.path == PathBuf::from("/var/lib/osmap/run/mailbox-helper.sock")
+                && rule.permissions.contains('r')
+                && rule.permissions.contains('w')
+        }));
+        assert!(plan
+            .unveil_rules
+            .iter()
+            .any(|rule| rule.path == PathBuf::from("/var/lib/osmap/run") && rule.permissions.contains('r')));
     }
 }

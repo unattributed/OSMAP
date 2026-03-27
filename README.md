@@ -168,11 +168,10 @@ headers and conservative transfer-decoding support.
 
 The next implementation steps are to keep tightening the helper-compatible
 OpenBSD view, continue reducing correctness and denial-of-service risk in the
-custom HTTP/browser runtime, implement the selected mailbox-read helper
-boundary so the web-facing runtime does not need mailbox-storage authority
-directly, expand positive post-auth live-host coverage through that helper, and
-keep narrowing the OpenBSD deployment shape that is now partially validated on
-`mail.blackbagsecurity.com`.
+custom HTTP/browser runtime, extend the new mailbox-list helper slice across
+the broader read path, expand positive post-auth live-host coverage through
+that helper, and keep narrowing the OpenBSD deployment shape that is now
+partially validated on `mail.blackbagsecurity.com`.
 
 ---
 

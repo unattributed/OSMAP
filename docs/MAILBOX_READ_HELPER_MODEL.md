@@ -63,6 +63,27 @@ This preserves a clear split between:
 - the browser-facing policy and session service
 - the mailbox-read execution context that must touch mail-storage authority
 
+## Current Status
+
+As of March 27, 2026, the first in-repo helper slice now exists.
+
+What is implemented:
+
+- a dedicated `mailbox-helper` run mode
+- a local Unix-domain socket helper server
+- a small line-oriented request/response protocol
+- a helper-backed mailbox-list client backend in the web runtime
+- mailbox-list routing through the helper when
+  `OSMAP_MAILBOX_HELPER_SOCKET_PATH` is configured
+
+What is not yet implemented:
+
+- helper-backed message-list retrieval
+- helper-backed message-view retrieval
+- helper-backed attachment retrieval
+- helper-specific OpenBSD confinement
+- live-host proof of the helper under the current `vmail` boundary
+
 ## Scope Of The Helper
 
 The helper should be read-only in its first implementation slice.
@@ -86,25 +107,27 @@ It should not take over:
 
 The helper protocol should stay small and explicit.
 
-Expected request properties:
+Current request properties in the first slice:
 
 - one explicit operation name
 - canonical username
+
+Expected later request properties:
+
 - mailbox name where required
 - UID where required
 - MIME part path where required
 - bounded request identifier for audit correlation
 
-Expected response properties:
+Current response properties:
 
 - success or denied/error status
-- bounded mailbox names, message summaries, message payloads, or attachment
-  bytes depending on the operation
+- bounded mailbox names for the current mailbox-list operation
 - operator-usable but bounded failure labels
 
-The wire format should stay simple enough for security review. A small
-length-bounded JSON protocol over a Unix socket is acceptable if it stays
-minimal and explicit.
+The current wire format is a small line-oriented key/value protocol over a
+Unix-domain socket. That is intentionally simpler than introducing a general RPC
+framework in the first helper slice.
 
 ## Why A Helper Is Better Here
 
@@ -161,8 +184,9 @@ helper one operation family at a time rather than in one broad rewrite.
 
 ## What This Document Does Not Claim
 
-This document does not claim that the helper already exists.
+This document does not claim that the helper solves the live-host mailbox-read
+problem yet.
 
-It defines the selected next-step path so implementation can proceed without
-further ambiguity about whether OSMAP should widen the authority of the
-web-facing process.
+It records the selected path and the first implemented slice so later work can
+extend the helper boundary without widening the authority of the web-facing
+process.

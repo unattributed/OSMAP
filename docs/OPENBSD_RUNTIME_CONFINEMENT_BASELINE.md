@@ -240,3 +240,8 @@ mailbox-read helper boundary gives the confinement work a clearer target:
 - the mailbox helper can carry the narrower mail-storage authority it actually
   needs
 - the two processes can be audited and confined separately
+
+The first helper slice now exists for mailbox listing, and the web runtime can
+be pointed at that boundary through `OSMAP_MAILBOX_HELPER_SOCKET_PATH`.
+Helper-specific OpenBSD confinement is still not implemented yet, so this is a
+runtime-seam improvement before it is a fully hardened OpenBSD deployment path.

@@ -7,7 +7,7 @@
 
 use std::collections::BTreeMap;
 use std::env;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::error::BootstrapError;
 use crate::state::StateLayout;
@@ -21,6 +21,7 @@ pub struct AppConfig {
     pub listen_addr: String,
     pub doveadm_auth_socket_path: Option<PathBuf>,
     pub doveadm_userdb_socket_path: Option<PathBuf>,
+    pub mailbox_helper_socket_path: Option<PathBuf>,
     pub state_root: PathBuf,
     pub log_level: LogLevel,
     pub log_format: LogFormat,
@@ -35,6 +36,7 @@ pub struct AppConfig {
 pub enum AppRunMode {
     Bootstrap,
     Serve,
+    MailboxHelper,
 }
 
 impl AppRunMode {
@@ -43,10 +45,11 @@ impl AppRunMode {
         match value {
             "bootstrap" => Ok(Self::Bootstrap),
             "serve" => Ok(Self::Serve),
+            "mailbox-helper" => Ok(Self::MailboxHelper),
             _ => Err(BootstrapError::UnsupportedValue {
                 field: "OSMAP_RUN_MODE",
                 value: value.to_string(),
-                expected: "bootstrap or serve",
+                expected: "bootstrap, serve, or mailbox-helper",
             }),
         }
     }
@@ -56,6 +59,7 @@ impl AppRunMode {
         match self {
             Self::Bootstrap => "bootstrap",
             Self::Serve => "serve",
+            Self::MailboxHelper => "mailbox-helper",
         }
     }
 }
@@ -278,6 +282,11 @@ impl AppConfig {
             totp_secret_dir,
         )?;
         validate_development_bindings(environment, &listen_addr)?;
+        let mailbox_helper_socket_path = parse_mailbox_helper_socket_path(
+            env_map,
+            run_mode,
+            &state_layout.runtime_dir,
+        )?;
 
         Ok(Self {
             run_mode,
@@ -285,6 +294,7 @@ impl AppConfig {
             listen_addr,
             doveadm_auth_socket_path,
             doveadm_userdb_socket_path,
+            mailbox_helper_socket_path,
             log_level,
             log_format,
             state_root,
@@ -340,6 +350,25 @@ fn parse_optional_absolute_optional_path(
 ) -> Result<Option<PathBuf>, BootstrapError> {
     match env_map.get(field) {
         Some(value) => Ok(Some(parse_absolute_path(field, value)?)),
+        None => Ok(None),
+    }
+}
+
+/// Parses the mailbox-helper socket path and supplies a conservative default
+/// only when the helper itself is the selected run mode.
+fn parse_mailbox_helper_socket_path(
+    env_map: &BTreeMap<String, String>,
+    run_mode: AppRunMode,
+    runtime_dir: &Path,
+) -> Result<Option<PathBuf>, BootstrapError> {
+    match env_map.get("OSMAP_MAILBOX_HELPER_SOCKET_PATH") {
+        Some(value) => Ok(Some(parse_absolute_path(
+            "OSMAP_MAILBOX_HELPER_SOCKET_PATH",
+            value,
+        )?)),
+        None if run_mode == AppRunMode::MailboxHelper => {
+            Ok(Some(runtime_dir.join("mailbox-helper.sock")))
+        }
         None => Ok(None),
     }
 }
@@ -426,6 +455,7 @@ mod tests {
         assert_eq!(config.listen_addr, "127.0.0.1:8080");
         assert_eq!(config.doveadm_auth_socket_path, None);
         assert_eq!(config.doveadm_userdb_socket_path, None);
+        assert_eq!(config.mailbox_helper_socket_path, None);
         assert_eq!(config.state_root, std::path::Path::new("/var/lib/osmap"));
         assert_eq!(
             config.state_layout.runtime_dir,
@@ -501,6 +531,10 @@ mod tests {
                 "OSMAP_DOVEADM_USERDB_SOCKET_PATH".to_string(),
                 "/var/run/osmap/dovecot-userdb".to_string(),
             ),
+            (
+                "OSMAP_MAILBOX_HELPER_SOCKET_PATH".to_string(),
+                "/var/lib/osmap-staging/run/mailbox-helper.sock".to_string(),
+            ),
         ]);
 
         let config = AppConfig::from_env_map(&env_map).expect("explicit values should be valid");
@@ -515,6 +549,10 @@ mod tests {
         assert_eq!(
             config.doveadm_userdb_socket_path,
             Some(std::path::Path::new("/var/run/osmap/dovecot-userdb").to_path_buf())
+        );
+        assert_eq!(
+            config.mailbox_helper_socket_path,
+            Some(std::path::Path::new("/var/lib/osmap-staging/run/mailbox-helper.sock").to_path_buf())
         );
         assert_eq!(
             config.state_root,
@@ -583,7 +621,7 @@ mod tests {
             BootstrapError::UnsupportedValue {
                 field: "OSMAP_RUN_MODE",
                 value: "daemon".to_string(),
-                expected: "bootstrap or serve",
+                expected: "bootstrap, serve, or mailbox-helper",
             }
         );
     }
@@ -655,6 +693,41 @@ mod tests {
             BootstrapError::PathMustBeAbsolute {
                 field: "OSMAP_DOVEADM_USERDB_SOCKET_PATH",
                 value: "var/run/osmap-userdb".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn helper_mode_defaults_mailbox_helper_socket_under_runtime_dir() {
+        let env_map = BTreeMap::from([(
+            "OSMAP_RUN_MODE".to_string(),
+            "mailbox-helper".to_string(),
+        )]);
+
+        let config = AppConfig::from_env_map(&env_map).expect("helper mode should parse");
+
+        assert_eq!(config.run_mode, AppRunMode::MailboxHelper);
+        assert_eq!(
+            config.mailbox_helper_socket_path,
+            Some(std::path::Path::new("/var/lib/osmap/run/mailbox-helper.sock").to_path_buf())
+        );
+    }
+
+    #[test]
+    fn rejects_relative_mailbox_helper_socket_path() {
+        let env_map = BTreeMap::from([(
+            "OSMAP_MAILBOX_HELPER_SOCKET_PATH".to_string(),
+            "var/run/mailbox-helper.sock".to_string(),
+        )]);
+
+        let error = AppConfig::from_env_map(&env_map)
+            .expect_err("relative mailbox helper socket path must fail");
+
+        assert_eq!(
+            error,
+            BootstrapError::PathMustBeAbsolute {
+                field: "OSMAP_MAILBOX_HELPER_SOCKET_PATH",
+                value: "var/run/mailbox-helper.sock".to_string(),
             }
         );
     }

@@ -15,6 +15,7 @@ pub struct BootstrapReport {
     pub listen_addr: String,
     pub doveadm_auth_socket_path: String,
     pub doveadm_userdb_socket_path: String,
+    pub mailbox_helper_socket_path: String,
     pub openbsd_confinement_mode: String,
     pub state_root: String,
     pub runtime_dir: String,
@@ -47,6 +48,10 @@ impl BootstrapReport {
         .with_field(
             "doveadm_userdb_socket_path",
             self.doveadm_userdb_socket_path.clone(),
+        )
+        .with_field(
+            "mailbox_helper_socket_path",
+            self.mailbox_helper_socket_path.clone(),
         )
         .with_field(
             "openbsd_confinement_mode",
@@ -108,6 +113,11 @@ fn report_from_config(config: &AppConfig) -> BootstrapReport {
             .as_ref()
             .map(|path| path.display().to_string())
             .unwrap_or_default(),
+        mailbox_helper_socket_path: config
+            .mailbox_helper_socket_path
+            .as_ref()
+            .map(|path| path.display().to_string())
+            .unwrap_or_default(),
         openbsd_confinement_mode: config.openbsd_confinement_mode.as_str().to_string(),
         state_root: config.state_root.display().to_string(),
         runtime_dir: config.state_layout.runtime_dir.display().to_string(),
@@ -137,6 +147,7 @@ mod tests {
             listen_addr: "127.0.0.1:8080".to_string(),
             doveadm_auth_socket_path: Some(PathBuf::from("/var/run/osmap/dovecot-auth")),
             doveadm_userdb_socket_path: Some(PathBuf::from("/var/run/osmap/dovecot-userdb")),
+            mailbox_helper_socket_path: Some(PathBuf::from("/var/lib/osmap/run/mailbox-helper.sock")),
             openbsd_confinement_mode: crate::config::OpenbsdConfinementMode::Disabled,
             state_root: PathBuf::from("/var/lib/osmap"),
             log_level: LogLevel::Info,
@@ -178,6 +189,10 @@ mod tests {
                 crate::logging::LogField {
                     key: "doveadm_userdb_socket_path",
                     value: "/var/run/osmap/dovecot-userdb".to_string(),
+                },
+                crate::logging::LogField {
+                    key: "mailbox_helper_socket_path",
+                    value: "/var/lib/osmap/run/mailbox-helper.sock".to_string(),
                 },
                 crate::logging::LogField {
                     key: "openbsd_confinement_mode",

@@ -186,5 +186,12 @@ The selected next-step deployment answer is therefore:
 - expose the helper over a narrowly permissioned Unix socket instead of
   widening the web-facing runtime
 
+The first implementation slice of that answer now exists for mailbox listing:
+
+- `OSMAP_RUN_MODE=mailbox-helper` starts the local helper
+- `OSMAP_MAILBOX_HELPER_SOCKET_PATH` selects the Unix socket path used by the
+  helper and by the web runtime
+- broader helper-backed read paths still remain to be implemented and validated
+
 This is more likely to produce a system that OpenBSD operators, and eventually
 potential downstream packagers, would consider credible.

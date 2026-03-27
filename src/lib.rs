@@ -13,6 +13,7 @@ pub mod http;
 pub mod http_form;
 pub mod logging;
 pub mod mailbox;
+pub mod mailbox_helper;
 pub mod mime;
 pub mod openbsd;
 pub mod rendering;

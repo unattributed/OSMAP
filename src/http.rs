@@ -32,6 +32,7 @@ use crate::mailbox::{
     MessageListPolicy, MessageListRequest, MessageListService, MessageSummary, MessageViewDecision,
     MessageViewPolicy, MessageViewRequest, MessageViewService,
 };
+use crate::mailbox_helper::{MailboxHelperMailboxListBackend, MailboxHelperPolicy};
 use crate::openbsd::apply_runtime_confinement;
 use crate::rendering::{PlainTextMessageRenderer, RenderedMessageView, RenderingPolicy};
 use crate::send::{
@@ -449,6 +450,7 @@ pub struct RuntimeBrowserGateway {
     doveadm_path: PathBuf,
     doveadm_auth_socket_path: Option<PathBuf>,
     doveadm_userdb_socket_path: Option<PathBuf>,
+    mailbox_helper_socket_path: Option<PathBuf>,
     sendmail_path: PathBuf,
     render_policy: RenderingPolicy,
 }
@@ -468,6 +470,7 @@ impl RuntimeBrowserGateway {
             doveadm_path: PathBuf::from("/usr/local/bin/doveadm"),
             doveadm_auth_socket_path: config.doveadm_auth_socket_path.clone(),
             doveadm_userdb_socket_path: config.doveadm_userdb_socket_path.clone(),
+            mailbox_helper_socket_path: config.mailbox_helper_socket_path.clone(),
             sendmail_path: PathBuf::from("/usr/sbin/sendmail"),
             render_policy: RenderingPolicy::default(),
         }
@@ -701,13 +704,21 @@ impl BrowserGateway for RuntimeBrowserGateway {
         context: &AuthenticationContext,
         validated_session: &ValidatedSession,
     ) -> BrowserMailboxOutcome {
-        let outcome = MailboxListingService::new(DoveadmMailboxListBackend::new(
-            MailboxListingPolicy::default(),
-            SystemCommandExecutor,
-            self.doveadm_path.clone(),
-        )
-        .with_userdb_socket_path(self.doveadm_userdb_socket_path.clone()))
-        .list_for_validated_session(context, validated_session);
+        let backend = match &self.mailbox_helper_socket_path {
+            Some(socket_path) => MailboxListRuntimeBackend::Helper(
+                MailboxHelperMailboxListBackend::new(socket_path, MailboxHelperPolicy::default()),
+            ),
+            None => MailboxListRuntimeBackend::Direct(
+                DoveadmMailboxListBackend::new(
+                    MailboxListingPolicy::default(),
+                    SystemCommandExecutor,
+                    self.doveadm_path.clone(),
+                )
+                .with_userdb_socket_path(self.doveadm_userdb_socket_path.clone()),
+            ),
+        };
+        let outcome = MailboxListingService::new(backend)
+            .list_for_validated_session(context, validated_session);
 
         match outcome.decision {
             MailboxListingDecision::Listed {
@@ -993,6 +1004,25 @@ impl BrowserGateway for RuntimeBrowserGateway {
                 },
                 audit_events: vec![outcome.audit_event],
             },
+        }
+    }
+}
+
+/// Selects the current mailbox-list backend without widening the browser
+/// runtime's authority when a local helper is configured.
+enum MailboxListRuntimeBackend {
+    Direct(DoveadmMailboxListBackend<SystemCommandExecutor>),
+    Helper(MailboxHelperMailboxListBackend),
+}
+
+impl crate::mailbox::MailboxBackend for MailboxListRuntimeBackend {
+    fn list_mailboxes(
+        &self,
+        canonical_username: &str,
+    ) -> Result<Vec<MailboxEntry>, crate::mailbox::MailboxBackendError> {
+        match self {
+            Self::Direct(backend) => backend.list_mailboxes(canonical_username),
+            Self::Helper(backend) => backend.list_mailboxes(canonical_username),
         }
     }
 }

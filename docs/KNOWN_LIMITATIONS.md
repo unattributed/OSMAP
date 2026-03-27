@@ -53,7 +53,11 @@
   mailbox helpers from running successfully as `_osmap`
 - the current direct `doveadm` mailbox-read path remains a prototype bridge;
   the selected least-privilege next step is a dedicated local mailbox-read
-  helper boundary, but that helper does not yet exist
+  helper boundary, and the first mailbox-list helper slice now exists, but the
+  broader read-path migration is not complete
+- the mailbox helper is not yet live-host validated under the target OpenBSD
+  `vmail` boundary, and helper-specific OpenBSD confinement is not yet
+  implemented
 - The current synthetic session-gated attachment request under enforced mode on
   `mail.blackbagsecurity.com` now reaches the route, validates the session, and
   updates session state without the previous Dovecot stats-writer noise, but

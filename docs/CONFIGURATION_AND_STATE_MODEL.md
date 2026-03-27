@@ -29,6 +29,7 @@ The early runtime recognizes:
 - `OSMAP_LISTEN_ADDR`
 - `OSMAP_DOVEADM_AUTH_SOCKET_PATH`
 - `OSMAP_DOVEADM_USERDB_SOCKET_PATH`
+- `OSMAP_MAILBOX_HELPER_SOCKET_PATH`
 - `OSMAP_STATE_DIR`
 - `OSMAP_RUNTIME_DIR`
 - `OSMAP_SESSION_DIR`
@@ -48,6 +49,7 @@ The runtime now uses `OSMAP_RUN_MODE` to separate:
 
 - fast bootstrap validation
 - actual HTTP serving
+- local mailbox-helper serving
 
 That lets operators and tests exercise startup checks without always launching
 the listener.
@@ -67,6 +69,14 @@ The runtime now also recognizes an optional
 `OSMAP_DOVEADM_USERDB_SOCKET_PATH` setting for deployments that want OSMAP to
 use an explicitly chosen Dovecot userdb socket for mailbox and message helper
 lookups instead of relying on a broader default surface.
+
+The runtime now also recognizes an optional
+`OSMAP_MAILBOX_HELPER_SOCKET_PATH` setting for the first local mailbox-helper
+boundary. When the web runtime is configured with this socket, mailbox listing
+is proxied through the helper instead of being executed directly from the
+browser-facing process. When `OSMAP_RUN_MODE=mailbox-helper` is selected and the
+variable is absent, the helper defaults to
+`<runtime_dir>/mailbox-helper.sock`.
 
 ## Environment Model
 
@@ -121,6 +131,8 @@ The bootstrap currently enforces:
 - the optional `OSMAP_DOVEADM_AUTH_SOCKET_PATH`, when present, must be an
   absolute path
 - the optional `OSMAP_DOVEADM_USERDB_SOCKET_PATH`, when present, must be an
+  absolute path
+- the optional `OSMAP_MAILBOX_HELPER_SOCKET_PATH`, when present, must be an
   absolute path
 - configured state paths must be absolute
 - derived mutable-state paths must stay under the state root
@@ -179,3 +191,17 @@ validation now shows that positive browser auth works through the dedicated auth
 listener, while mailbox reads still hit Dovecot's virtual-mail identity
 boundary because the userdb lookup resolves to `uid=2000(vmail)` and
 `gid=2000(vmail)`.
+
+## Mailbox Helper Socket Configuration
+
+The runtime now also has a first mailbox-helper boundary:
+
+- the web-facing runtime can use `OSMAP_MAILBOX_HELPER_SOCKET_PATH` to proxy
+  mailbox listing through a local helper
+- `OSMAP_RUN_MODE=mailbox-helper` starts that helper instead of the HTTP
+  listener
+- the helper binds the configured Unix-domain socket, or defaults to
+  `<runtime_dir>/mailbox-helper.sock` when the run mode is `mailbox-helper`
+
+This slice currently applies to mailbox listing only. Message-list, message-view,
+and attachment retrieval still use the direct prototype path for now.

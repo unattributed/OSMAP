@@ -168,5 +168,8 @@ Phase 6:
   and successful live attachment reads under `enforce` are not complete yet
 - the selected next least-privilege mailbox-read path is now a dedicated local
   helper boundary rather than broader authority for the web-facing runtime
+- the first mailbox-helper slice now exists for mailbox listing, but broader
+  read-path migration and live-host validation through that helper are still
+  pending
 - the actual prototype now exists and Phase 6 execution is materially underway,
   but the implementation is still prototype-grade rather than production-ready

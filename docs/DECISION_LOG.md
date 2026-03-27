@@ -582,3 +582,10 @@ The current direct `doveadm` mailbox-read path remains useful for a bounded
 prototype because it already has validation, bounded parsing, and audit seams.
 It should no longer be treated as the likely final least-privilege shape on the
 current host.
+
+### Start the mailbox helper migration with mailbox listing only
+
+The first in-repo mailbox-helper slice now exists, but it is intentionally
+narrow: local Unix-domain socket transport plus mailbox listing only. The
+project will migrate the broader read path one operation family at a time
+instead of rewriting mailbox access in one large jump.
