@@ -73,12 +73,12 @@ What is implemented:
 - a local Unix-domain socket helper server
 - a small line-oriented request/response protocol
 - a helper-backed mailbox-list client backend in the web runtime
-- mailbox-list routing through the helper when
+- a helper-backed message-list client backend in the web runtime
+- mailbox-list and message-list routing through the helper when
   `OSMAP_MAILBOX_HELPER_SOCKET_PATH` is configured
 
 What is not yet implemented:
 
-- helper-backed message-list retrieval
 - helper-backed message-view retrieval
 - helper-backed attachment retrieval
 - helper-specific OpenBSD confinement
@@ -111,10 +111,10 @@ Current request properties in the first slice:
 
 - one explicit operation name
 - canonical username
+- mailbox name for message-list requests
 
 Expected later request properties:
 
-- mailbox name where required
 - UID where required
 - MIME part path where required
 - bounded request identifier for audit correlation
@@ -122,7 +122,8 @@ Expected later request properties:
 Current response properties:
 
 - success or denied/error status
-- bounded mailbox names for the current mailbox-list operation
+- bounded mailbox names for mailbox-list responses
+- bounded message summaries for message-list responses
 - operator-usable but bounded failure labels
 
 The current wire format is a small line-oriented key/value protocol over a
@@ -181,6 +182,12 @@ The first helper implementation should:
 
 The web-facing runtime should switch from direct `doveadm` execution to the
 helper one operation family at a time rather than in one broad rewrite.
+
+That migration is now underway:
+
+- mailbox listing uses the helper when configured
+- message-list retrieval uses the helper when configured
+- message-view and attachment retrieval still use the direct prototype path
 
 ## What This Document Does Not Claim
 

@@ -32,7 +32,9 @@ use crate::mailbox::{
     MessageListPolicy, MessageListRequest, MessageListService, MessageSummary, MessageViewDecision,
     MessageViewPolicy, MessageViewRequest, MessageViewService,
 };
-use crate::mailbox_helper::{MailboxHelperMailboxListBackend, MailboxHelperPolicy};
+use crate::mailbox_helper::{
+    MailboxHelperMailboxListBackend, MailboxHelperMessageListBackend, MailboxHelperPolicy,
+};
 use crate::openbsd::apply_runtime_confinement;
 use crate::rendering::{PlainTextMessageRenderer, RenderedMessageView, RenderingPolicy};
 use crate::send::{
@@ -764,13 +766,25 @@ impl BrowserGateway for RuntimeBrowserGateway {
             }
         };
 
-        let outcome = MessageListService::new(DoveadmMessageListBackend::new(
-            MessageListPolicy::default(),
-            SystemCommandExecutor,
-            self.doveadm_path.clone(),
-        )
-        .with_userdb_socket_path(self.doveadm_userdb_socket_path.clone()))
-        .list_for_validated_session(context, validated_session, &request);
+        let backend = match &self.mailbox_helper_socket_path {
+            Some(socket_path) => MessageListRuntimeBackend::Helper(
+                MailboxHelperMessageListBackend::new(
+                    socket_path,
+                    MailboxHelperPolicy::default(),
+                    MessageListPolicy::default(),
+                ),
+            ),
+            None => MessageListRuntimeBackend::Direct(
+                DoveadmMessageListBackend::new(
+                    MessageListPolicy::default(),
+                    SystemCommandExecutor,
+                    self.doveadm_path.clone(),
+                )
+                .with_userdb_socket_path(self.doveadm_userdb_socket_path.clone()),
+            ),
+        };
+        let outcome = MessageListService::new(backend)
+            .list_for_validated_session(context, validated_session, &request);
 
         match outcome.decision {
             MessageListDecision::Listed {
@@ -1023,6 +1037,26 @@ impl crate::mailbox::MailboxBackend for MailboxListRuntimeBackend {
         match self {
             Self::Direct(backend) => backend.list_mailboxes(canonical_username),
             Self::Helper(backend) => backend.list_mailboxes(canonical_username),
+        }
+    }
+}
+
+/// Selects the current message-list backend without widening the browser
+/// runtime's authority when a local helper is configured.
+enum MessageListRuntimeBackend {
+    Direct(DoveadmMessageListBackend<SystemCommandExecutor>),
+    Helper(MailboxHelperMessageListBackend),
+}
+
+impl crate::mailbox::MessageListBackend for MessageListRuntimeBackend {
+    fn list_messages(
+        &self,
+        canonical_username: &str,
+        request: &MessageListRequest,
+    ) -> Result<Vec<MessageSummary>, crate::mailbox::MailboxBackendError> {
+        match self {
+            Self::Direct(backend) => backend.list_messages(canonical_username, request),
+            Self::Helper(backend) => backend.list_messages(canonical_username, request),
         }
     }
 }

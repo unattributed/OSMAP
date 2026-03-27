@@ -203,5 +203,6 @@ The runtime now also has a first mailbox-helper boundary:
 - the helper binds the configured Unix-domain socket, or defaults to
   `<runtime_dir>/mailbox-helper.sock` when the run mode is `mailbox-helper`
 
-This slice currently applies to mailbox listing only. Message-list, message-view,
-and attachment retrieval still use the direct prototype path for now.
+This slice currently applies to mailbox listing and message-list retrieval.
+Message-view and attachment retrieval still use the direct prototype path for
+now.

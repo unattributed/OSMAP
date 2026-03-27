@@ -214,7 +214,8 @@ Status on March 27, 2026:
 - recorded in `OPENBSD_RUNTIME_CONFINEMENT_BASELINE.md`
 - the next least-privilege boundary refinement is now the mailbox-read helper
   path documented in `MAILBOX_READ_HELPER_MODEL.md`
-- the first mailbox-helper slice now exists for mailbox listing only
+- the current mailbox-helper slice now exists for mailbox listing and
+  message-list retrieval
 
 Done means:
 

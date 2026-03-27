@@ -589,3 +589,9 @@ The first in-repo mailbox-helper slice now exists, but it is intentionally
 narrow: local Unix-domain socket transport plus mailbox listing only. The
 project will migrate the broader read path one operation family at a time
 instead of rewriting mailbox access in one large jump.
+
+### Extend the mailbox helper migration to message-list retrieval
+
+The next helper-backed read operation is now in place too: message-list
+retrieval can use the local mailbox helper when configured. Message view and
+attachment retrieval remain on the direct prototype path for now.
