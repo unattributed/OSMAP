@@ -44,6 +44,8 @@ The project should maintain enough process to verify:
 - why a dependency was accepted
 - whether it introduces licensing, maintenance, or security concerns
 
+Dependencies should not be treated as "free" just because they build.
+
 ## Update Policy
 
 Dependency updates should be:
@@ -62,6 +64,8 @@ Releases should eventually produce a software bill of materials that identifies:
 - version information
 - build-relevant toolchain components
 
+Every release candidate should have a corresponding SBOM or equivalent manifest.
+
 ## License Considerations
 
 The project should prefer dependencies with licensing that is:
@@ -69,6 +73,17 @@ The project should prefer dependencies with licensing that is:
 - compatible with redistribution
 - understandable to operators and downstream packagers
 - unlikely to create adoption friction in conservative environments
+
+## Risk Evaluation Process
+
+Each new dependency should be evaluated against:
+
+- security relevance
+- maintenance quality
+- transitive dependency growth
+- licensing implications
+- OpenBSD packaging implications
+- whether the dependency adds complexity disproportionate to its value
 
 ## Ports-Friendly Packaging Posture
 

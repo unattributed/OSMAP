@@ -95,3 +95,20 @@ policy and access layer on top of the existing substrate.
 Rust remains attractive for security-sensitive backend code, but it is not being
 treated as an unquestionable requirement if it would materially undermine broad
 OpenBSD usability or future packaging credibility.
+
+### Treat implementation governance as part of the architecture
+
+Phase 5 defines review, dependency, testing, SBOM, signing, and release rules
+before implementation so the project does not drift into insecure build and
+deployment habits.
+
+### Require small, explainable release mechanics
+
+The build and release model should remain simple enough for operators and
+OpenBSD-minded maintainers to understand, verify, and roll back.
+
+### Keep phase artifacts useful as the project advances
+
+Phase documentation should be maintained as working project controls. Earlier
+phase documents should be corrected and expanded when later work exposes gaps,
+rather than being left as stale milestones.

@@ -62,6 +62,19 @@ Phase 4 is acceptable when all of the following are true:
 - technology rationale is documented honestly, including portability and
   packaging risks
 
+## Phase 5 Acceptance Criteria
+
+Phase 5 is acceptable when all of the following are true:
+
+- secure development expectations are documented as enforceable project rules
+- dependency approval, SBOM, and signing requirements are stated
+- testing expectations are defined in a way that matches the system's risk
+  profile
+- build and release expectations form a plausible path from source to deployable
+  artifact
+- change management, configuration management, and documentation standards are
+  captured clearly enough to guide implementation work
+
 ## Current Status On March 27, 2026
 
 Phase 0:
@@ -97,3 +110,10 @@ Phase 4:
   direction, and an observability baseline suitable for implementation planning
 - the remaining uncertainty is mostly in detailed implementation choices rather
   than in the top-level system shape
+
+Phase 5:
+
+- the repository now contains an SDLC baseline, supply-chain policy, test
+  strategy, and build/release process suitable for implementation governance
+- implementation can now be evaluated against explicit engineering and release
+  rules instead of ad hoc judgment

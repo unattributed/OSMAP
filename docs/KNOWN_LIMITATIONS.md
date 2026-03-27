@@ -25,3 +25,5 @@
   native-client coexistence, phishing-resistant MFA, or recovery design
 - The architecture now defines a clear system shape, but exact interface
   contracts and the final backend language choice remain intentionally open
+- The SDLC and release rules are now defined, but they have not yet been proven
+  against a live implementation pipeline
