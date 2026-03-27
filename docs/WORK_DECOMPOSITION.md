@@ -142,6 +142,16 @@ Done means:
 Goal:
 Demonstrate message retrieval and conservative browser rendering.
 
+Status on March 27, 2026:
+
+- started with the first message-view retrieval slice
+- bounded single-message retrieval is now implemented behind the
+  validated-session gate
+- a real `doveadm -f flow fetch` message-view path is now implemented
+- message-view success, not-found, and failure events are emitted as structured
+  audit-quality log lines
+- recorded in `MESSAGE_VIEW_SLICE_BASELINE.md`
+
 Done means:
 
 - message view works for normal mail

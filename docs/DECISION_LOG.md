@@ -274,3 +274,23 @@ The first message-list model records identifiers, flags, date, size, and
 mailbox membership, but not message subjects, snippets, or bodies. This keeps
 the runtime honest about what has actually been implemented and avoids turning
 the audit/event path into a message-content mirror.
+
+### Keep `nginx` as the planned edge layer for the browser service
+
+The current architecture continues to assume `nginx` at the edge with OSMAP
+behind it on a local listener or socket. This preserves the existing OpenBSD
+deployment posture and keeps public-facing HTTP/TLS concerns out of the
+application runtime.
+
+### Use mailbox plus UID as the first bounded message-view request key
+
+The first WP6 slice identifies a message by validated mailbox name plus IMAP
+UID. That is enough to retrieve one bounded message payload without inventing a
+larger browser-facing query model too early.
+
+### Keep the first fetched message payload honest and non-rendering-oriented
+
+The first message-view slice fetches metadata, full header text, and body text,
+but it does not claim to have solved MIME parsing, HTML transformation, or
+attachment policy. Rendering remains a separate follow-on step rather than an
+implicit side effect of retrieval.

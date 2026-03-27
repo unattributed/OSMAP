@@ -136,10 +136,12 @@ bounded token issuance, validation, revocation, and per-user session listing.
 The first mailbox read primitive is now present too: mailbox listing behind the
 validated-session gate using the existing Dovecot surface. The second WP5 slice
 is now present as well: per-mailbox message-list retrieval using a bounded
-Dovecot-backed message-summary path.
+Dovecot-backed message-summary path. The first WP6 slice is now in place too:
+bounded per-message retrieval using the same validated-session and Dovecot-backed
+read path.
 
-The next implementation step is the first message-view retrieval slice on top
-of the completed auth, session, mailbox-listing, and message-list baseline.
+The next implementation step is the first conservative rendering-policy slice on
+top of the completed message-view retrieval baseline.
 
 ---
 

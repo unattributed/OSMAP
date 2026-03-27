@@ -146,7 +146,9 @@ Phase 6:
   gate using the existing Dovecot surface
 - WP5 now includes a real message-list retrieval primitive behind the
   validated-session gate using the existing Dovecot surface
-- browser integration, message view, rendering, and send-path work are not
-  complete yet
+- WP6 now includes a real bounded message-view retrieval primitive behind the
+  validated-session gate using the existing Dovecot surface
+- browser integration, rendering policy, and send-path work are not complete
+  yet
 - the actual prototype has not yet been implemented, so Phase 6 execution is
   underway but not yet complete

@@ -15,6 +15,8 @@
   it is not yet a usable browser mail product
 - The implementation now has a mailbox-listing primitive, but it does not yet
   retrieve message bodies or attachments
+- The implementation now has a bounded message-view fetch path, but it does not
+  yet define MIME handling, HTML rendering policy, or attachment behavior
 - No formal migration plan has been completed
 - The existing host is multi-purpose, which constrains how aggressively the
   replacement can diverge from current operational patterns

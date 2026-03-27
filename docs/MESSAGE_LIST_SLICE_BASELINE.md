@@ -26,6 +26,9 @@ The current slice provides:
 
 This is the first message-list summary path, not a full message-view runtime.
 
+The first message-view retrieval slice now exists too and is documented
+separately in `MESSAGE_VIEW_SLICE_BASELINE.md`.
+
 ## Current Data Shape
 
 The current message summary model intentionally stays narrow.
@@ -145,12 +148,11 @@ This slice now proves that:
 
 This slice does not yet include:
 
-- message body retrieval
 - MIME structure handling
 - HTML rendering policy
 - attachment metadata or download handling
 - pagination and sorting controls
 - browser request handlers or templates
 
-Those belong to the later WP6 and browser-facing slices rather than to this
+Those belong to the next WP6 and browser-facing slices rather than to this
 message-summary baseline.

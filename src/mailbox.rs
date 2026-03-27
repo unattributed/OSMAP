@@ -4,8 +4,8 @@
 //! - session validation remains a separate gate handled before mailbox access
 //! - mailbox listing uses the existing Dovecot surface instead of a new mail
 //!   stack
-//! - mailbox and message-list results/failures are emitted as structured audit
-//!   events
+//! - mailbox, message-list, and message-view results/failures are emitted as
+//!   structured audit events
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -31,6 +31,12 @@ pub const DEFAULT_MESSAGE_DATE_MAX_LEN: usize = 128;
 
 /// Conservative maximum length for rendered flag strings returned by the backend.
 pub const DEFAULT_MESSAGE_FLAG_STRING_MAX_LEN: usize = 256;
+
+/// Conservative maximum length for fetched message headers.
+pub const DEFAULT_MESSAGE_HEADER_MAX_LEN: usize = 65_536;
+
+/// Conservative maximum length for fetched message bodies in the first view slice.
+pub const DEFAULT_MESSAGE_BODY_MAX_LEN: usize = 262_144;
 
 /// Policy controlling mailbox-output bounds for the first read-path slice.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -64,6 +70,28 @@ impl Default for MessageListPolicy {
             max_messages: DEFAULT_MAX_MESSAGES,
             message_date_max_len: DEFAULT_MESSAGE_DATE_MAX_LEN,
             message_flag_string_max_len: DEFAULT_MESSAGE_FLAG_STRING_MAX_LEN,
+        }
+    }
+}
+
+/// Policy controlling single-message retrieval request and output bounds.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct MessageViewPolicy {
+    pub mailbox_name_max_len: usize,
+    pub message_date_max_len: usize,
+    pub message_flag_string_max_len: usize,
+    pub message_header_max_len: usize,
+    pub message_body_max_len: usize,
+}
+
+impl Default for MessageViewPolicy {
+    fn default() -> Self {
+        Self {
+            mailbox_name_max_len: DEFAULT_MAILBOX_NAME_MAX_LEN,
+            message_date_max_len: DEFAULT_MESSAGE_DATE_MAX_LEN,
+            message_flag_string_max_len: DEFAULT_MESSAGE_FLAG_STRING_MAX_LEN,
+            message_header_max_len: DEFAULT_MESSAGE_HEADER_MAX_LEN,
+            message_body_max_len: DEFAULT_MESSAGE_BODY_MAX_LEN,
         }
     }
 }
@@ -109,6 +137,52 @@ pub struct MessageSummary {
     pub size_virtual: u64,
 }
 
+/// A validated request for retrieving one message from a mailbox.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MessageViewRequest {
+    pub mailbox_name: String,
+    pub uid: u64,
+}
+
+impl MessageViewRequest {
+    /// Validates the mailbox name and UID used for message retrieval.
+    pub fn new(
+        policy: MessageViewPolicy,
+        mailbox_name: impl Into<String>,
+        uid: u64,
+    ) -> Result<Self, MailboxBackendError> {
+        let mailbox_name = mailbox_name.into();
+        let _ = MailboxEntry::new(
+            MailboxListingPolicy {
+                mailbox_name_max_len: policy.mailbox_name_max_len,
+                max_mailboxes: DEFAULT_MAX_MAILBOXES,
+            },
+            mailbox_name.clone(),
+        )?;
+
+        if uid == 0 {
+            return Err(MailboxBackendError {
+                backend: "message-view-parser",
+                reason: "uid must be greater than zero".to_string(),
+            });
+        }
+
+        Ok(Self { mailbox_name, uid })
+    }
+}
+
+/// A bounded per-message payload for the first message-view slice.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MessageView {
+    pub mailbox_name: String,
+    pub uid: u64,
+    pub flags: Vec<String>,
+    pub date_received: String,
+    pub size_virtual: u64,
+    pub header_block: String,
+    pub body_text: String,
+}
+
 impl MailboxEntry {
     /// Validates a mailbox name so later UI and logging code does not inherit
     /// unbounded or ambiguous backend output.
@@ -149,6 +223,7 @@ impl MailboxEntry {
 /// The user-facing reason returned when mailbox listing fails.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MailboxPublicFailureReason {
+    NotFound,
     TemporarilyUnavailable,
 }
 
@@ -156,6 +231,7 @@ impl MailboxPublicFailureReason {
     /// Returns the canonical string representation used in logs.
     pub fn as_str(self) -> &'static str {
         match self {
+            Self::NotFound => "not_found",
             Self::TemporarilyUnavailable => "temporarily_unavailable",
         }
     }
@@ -164,6 +240,7 @@ impl MailboxPublicFailureReason {
 /// Internal audit reason used when mailbox listing fails.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MailboxAuditFailureReason {
+    NotFound,
     BackendUnavailable,
     OutputRejected,
 }
@@ -172,6 +249,7 @@ impl MailboxAuditFailureReason {
     /// Returns the canonical string representation used in logs.
     pub fn as_str(self) -> &'static str {
         match self {
+            Self::NotFound => "not_found",
             Self::BackendUnavailable => "backend_unavailable",
             Self::OutputRejected => "output_rejected",
         }
@@ -205,6 +283,19 @@ pub enum MessageListDecision {
     },
 }
 
+/// The outcome of a message-view request.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum MessageViewDecision {
+    Denied {
+        public_reason: MailboxPublicFailureReason,
+    },
+    Retrieved {
+        canonical_username: String,
+        session_id: String,
+        message: MessageView,
+    },
+}
+
 /// The decision plus audit event emitted by mailbox listing.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MailboxListingOutcome {
@@ -216,6 +307,13 @@ pub struct MailboxListingOutcome {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MessageListOutcome {
     pub decision: MessageListDecision,
+    pub audit_event: LogEvent,
+}
+
+/// The decision plus audit event emitted by message retrieval.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MessageViewOutcome {
+    pub decision: MessageViewDecision,
     pub audit_event: LogEvent,
 }
 
@@ -241,6 +339,15 @@ pub trait MessageListBackend {
         canonical_username: &str,
         request: &MessageListRequest,
     ) -> Result<Vec<MessageSummary>, MailboxBackendError>;
+}
+
+/// A backend capable of retrieving one message view for a mailbox and UID.
+pub trait MessageViewBackend {
+    fn fetch_message(
+        &self,
+        canonical_username: &str,
+        request: &MessageViewRequest,
+    ) -> Result<MessageView, MailboxBackendError>;
 }
 
 /// Lists mailboxes for an already validated session.
@@ -360,6 +467,76 @@ where
                     &error,
                 ),
             },
+        }
+    }
+}
+
+/// Retrieves one message view for an already validated session.
+pub struct MessageViewService<B> {
+    backend: B,
+}
+
+impl<B> MessageViewService<B>
+where
+    B: MessageViewBackend,
+{
+    /// Creates a message-view service around the supplied backend.
+    pub fn new(backend: B) -> Self {
+        Self { backend }
+    }
+
+    /// Retrieves a single bounded message payload for the canonical user
+    /// attached to the validated session.
+    pub fn fetch_for_validated_session(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        request: &MessageViewRequest,
+    ) -> MessageViewOutcome {
+        let canonical_username = validated_session.record.canonical_username.clone();
+        let session_id = validated_session.record.session_id.clone();
+
+        match self.backend.fetch_message(&canonical_username, request) {
+            Ok(message) => MessageViewOutcome {
+                decision: MessageViewDecision::Retrieved {
+                    canonical_username: canonical_username.clone(),
+                    session_id: session_id.clone(),
+                    message: message.clone(),
+                },
+                audit_event: LogEvent::new(
+                    LogLevel::Info,
+                    EventCategory::Mailbox,
+                    "message_viewed",
+                    "message retrieval completed",
+                )
+                .with_field("canonical_username", canonical_username)
+                .with_field("session_id", session_id)
+                .with_field("mailbox_name", message.mailbox_name.clone())
+                .with_field("uid", message.uid.to_string())
+                .with_field("request_id", context.request_id.clone())
+                .with_field("remote_addr", context.remote_addr.clone())
+                .with_field("user_agent", context.user_agent.clone()),
+            },
+            Err(error) => {
+                let public_reason = if error.backend == "message-view-not-found" {
+                    MailboxPublicFailureReason::NotFound
+                } else {
+                    MailboxPublicFailureReason::TemporarilyUnavailable
+                };
+
+                MessageViewOutcome {
+                    decision: MessageViewDecision::Denied { public_reason },
+                    audit_event: build_message_view_failure_event(
+                        context,
+                        &validated_session.record.canonical_username,
+                        &validated_session.record.session_id,
+                        &request.mailbox_name,
+                        request.uid,
+                        public_reason,
+                        &error,
+                    ),
+                }
+            }
         }
     }
 }
@@ -488,6 +665,72 @@ where
     }
 }
 
+/// Retrieves a bounded single-message payload through `doveadm fetch`.
+pub struct DoveadmMessageViewBackend<E> {
+    policy: MessageViewPolicy,
+    command_executor: E,
+    doveadm_path: PathBuf,
+}
+
+impl<E> DoveadmMessageViewBackend<E> {
+    /// Builds a backend using the supplied command executor and `doveadm` path.
+    pub fn new(
+        policy: MessageViewPolicy,
+        command_executor: E,
+        doveadm_path: impl Into<PathBuf>,
+    ) -> Self {
+        Self {
+            policy,
+            command_executor,
+            doveadm_path: doveadm_path.into(),
+        }
+    }
+}
+
+impl Default for DoveadmMessageViewBackend<SystemCommandExecutor> {
+    fn default() -> Self {
+        Self::new(
+            MessageViewPolicy::default(),
+            SystemCommandExecutor,
+            "/usr/local/bin/doveadm",
+        )
+    }
+}
+
+impl<E> MessageViewBackend for DoveadmMessageViewBackend<E>
+where
+    E: CommandExecutor,
+{
+    fn fetch_message(
+        &self,
+        canonical_username: &str,
+        request: &MessageViewRequest,
+    ) -> Result<MessageView, MailboxBackendError> {
+        let args = vec![
+            "-f".to_string(),
+            "flow".to_string(),
+            "fetch".to_string(),
+            "-u".to_string(),
+            canonical_username.to_string(),
+            "uid flags date.received size.virtual mailbox hdr body".to_string(),
+            "mailbox".to_string(),
+            request.mailbox_name.clone(),
+            "uid".to_string(),
+            request.uid.to_string(),
+        ];
+
+        let execution = self
+            .command_executor
+            .run_with_stdin(self.doveadm_path.to_string_lossy().as_ref(), &args, "")
+            .map_err(|error| MailboxBackendError {
+                backend: "doveadm-message-view",
+                reason: error.reason,
+            })?;
+
+        parse_doveadm_message_view_output(self.policy, &execution)
+    }
+}
+
 /// Builds a bounded failure event for mailbox-listing problems.
 fn build_mailbox_failure_event(
     context: &AuthenticationContext,
@@ -548,6 +791,41 @@ fn build_message_list_failure_event(
         "public_reason",
         MailboxPublicFailureReason::TemporarilyUnavailable.as_str(),
     )
+    .with_field("audit_reason", audit_reason.as_str())
+    .with_field("backend", error.backend)
+    .with_field("backend_reason", error.reason.clone())
+    .with_field("request_id", context.request_id.clone())
+    .with_field("remote_addr", context.remote_addr.clone())
+    .with_field("user_agent", context.user_agent.clone())
+}
+
+/// Builds a bounded failure event for single-message retrieval problems.
+fn build_message_view_failure_event(
+    context: &AuthenticationContext,
+    canonical_username: &str,
+    session_id: &str,
+    mailbox_name: &str,
+    uid: u64,
+    public_reason: MailboxPublicFailureReason,
+    error: &MailboxBackendError,
+) -> LogEvent {
+    let audit_reason = match error.backend {
+        "message-view-not-found" => MailboxAuditFailureReason::NotFound,
+        "message-view-parser" => MailboxAuditFailureReason::OutputRejected,
+        _ => MailboxAuditFailureReason::BackendUnavailable,
+    };
+
+    LogEvent::new(
+        LogLevel::Warn,
+        EventCategory::Mailbox,
+        "message_view_failed",
+        "message retrieval failed",
+    )
+    .with_field("canonical_username", canonical_username.to_string())
+    .with_field("session_id", session_id.to_string())
+    .with_field("mailbox_name", mailbox_name.to_string())
+    .with_field("uid", uid.to_string())
+    .with_field("public_reason", public_reason.as_str())
     .with_field("audit_reason", audit_reason.as_str())
     .with_field("backend", error.backend)
     .with_field("backend_reason", error.reason.clone())
@@ -633,48 +911,102 @@ fn parse_doveadm_message_list_output(
     Ok(messages)
 }
 
+/// Parses the output of `doveadm -f flow fetch` into one bounded message view.
+fn parse_doveadm_message_view_output(
+    policy: MessageViewPolicy,
+    execution: &CommandExecution,
+) -> Result<MessageView, MailboxBackendError> {
+    if execution.status_code != 0 {
+        return Err(MailboxBackendError {
+            backend: "doveadm-message-view",
+            reason: format!(
+                "command exited with status {}: {}",
+                execution.status_code,
+                concise_command_diagnostics(&execution.stdout, &execution.stderr),
+            ),
+        });
+    }
+
+    let mut parsed = Vec::new();
+
+    for raw_line in execution.stdout.lines() {
+        let line = raw_line.trim();
+        if line.is_empty() {
+            continue;
+        }
+
+        parsed.push(parse_message_view_line(policy, line)?);
+    }
+
+    match parsed.len() {
+        0 => Err(MailboxBackendError {
+            backend: "message-view-not-found",
+            reason: "no message matched the request".to_string(),
+        }),
+        1 => Ok(parsed.remove(0)),
+        count => Err(MailboxBackendError {
+            backend: "message-view-parser",
+            reason: format!("expected one message record but received {count}"),
+        }),
+    }
+}
+
 /// Parses one flow-formatted message-summary line.
 fn parse_message_summary_line(
     policy: MessageListPolicy,
     line: &str,
 ) -> Result<MessageSummary, MailboxBackendError> {
-    let fields = parse_flow_fields(line)?;
+    let fields = parse_flow_fields(line, "message-list-parser")?;
     let mailbox_name = MailboxEntry::new(
         MailboxListingPolicy {
             mailbox_name_max_len: policy.mailbox_name_max_len,
             max_mailboxes: DEFAULT_MAX_MAILBOXES,
         },
-        required_flow_field(&fields, "mailbox")?,
+        required_flow_field(&fields, "mailbox", "message-list", "message-list-parser")?,
     )?
     .name;
-    let uid = parse_u64_value("uid", required_flow_field(&fields, "uid")?)?;
-    let date_received = required_flow_field(&fields, "date.received")?.to_string();
+    let uid = parse_u64_value(
+        "uid",
+        required_flow_field(&fields, "uid", "message-list", "message-list-parser")?,
+        "message-list-parser",
+    )?;
+    let date_received = required_flow_field(
+        &fields,
+        "date.received",
+        "message-list",
+        "message-list-parser",
+    )?
+    .to_string();
     validate_bounded_string(
         "date.received",
         &date_received,
         policy.message_date_max_len,
         "message-list-parser",
+        false,
+        false,
     )?;
 
-    let flags_text = required_flow_field(&fields, "flags")?.to_string();
+    let flags_text = required_flow_field(&fields, "flags", "message-list", "message-list-parser")?
+        .to_string();
     validate_bounded_string(
         "flags",
         &flags_text,
         policy.message_flag_string_max_len,
         "message-list-parser",
+        true,
+        false,
     )?;
-    let flags = if flags_text.is_empty() {
-        Vec::new()
-    } else {
-        flags_text
-            .split_whitespace()
-            .map(ToString::to_string)
-            .collect()
-    };
+    let flags = parse_flags(&flags_text);
 
     let size_virtual = parse_u64_value(
         "size.virtual",
-        required_flow_field(&fields, "size.virtual")?,
+        required_flow_field(
+            &fields,
+            "size.virtual",
+            "message-list",
+            "message-list-parser",
+        )?,
+        "message-list-parser",
     )?;
 
     Ok(MessageSummary {
@@ -686,8 +1018,102 @@ fn parse_message_summary_line(
     })
 }
 
+/// Parses one flow-formatted single-message line.
+fn parse_message_view_line(
+    policy: MessageViewPolicy,
+    line: &str,
+) -> Result<MessageView, MailboxBackendError> {
+    let fields = parse_flow_fields(line, "message-view-parser")?;
+    let mailbox_name = MailboxEntry::new(
+        MailboxListingPolicy {
+            mailbox_name_max_len: policy.mailbox_name_max_len,
+            max_mailboxes: DEFAULT_MAX_MAILBOXES,
+        },
+        required_flow_field(&fields, "mailbox", "message-view", "message-view-parser")?,
+    )?
+    .name;
+    let uid = parse_u64_value(
+        "uid",
+        required_flow_field(&fields, "uid", "message-view", "message-view-parser")?,
+        "message-view-parser",
+    )?;
+    let date_received = required_flow_field(
+        &fields,
+        "date.received",
+        "message-view",
+        "message-view-parser",
+    )?
+    .to_string();
+    validate_bounded_string(
+        "date.received",
+        &date_received,
+        policy.message_date_max_len,
+        "message-view-parser",
+        false,
+        false,
+    )?;
+
+    let flags_text = required_flow_field(&fields, "flags", "message-view", "message-view-parser")?
+        .to_string();
+    validate_bounded_string(
+        "flags",
+        &flags_text,
+        policy.message_flag_string_max_len,
+        "message-view-parser",
+        true,
+        false,
+    )?;
+    let flags = parse_flags(&flags_text);
+
+    let size_virtual = parse_u64_value(
+        "size.virtual",
+        required_flow_field(
+            &fields,
+            "size.virtual",
+            "message-view",
+            "message-view-parser",
+        )?,
+        "message-view-parser",
+    )?;
+
+    let header_block = required_flow_field(&fields, "hdr", "message-view", "message-view-parser")?
+        .to_string();
+    validate_bounded_string(
+        "hdr",
+        &header_block,
+        policy.message_header_max_len,
+        "message-view-parser",
+        false,
+        true,
+    )?;
+
+    let body_text = required_flow_field(&fields, "body", "message-view", "message-view-parser")?
+        .to_string();
+    validate_bounded_string(
+        "body",
+        &body_text,
+        policy.message_body_max_len,
+        "message-view-parser",
+        true,
+        true,
+    )?;
+
+    Ok(MessageView {
+        mailbox_name,
+        uid,
+        flags,
+        date_received,
+        size_virtual,
+        header_block,
+        body_text,
+    })
+}
+
 /// Parses Dovecot flow-format key/value pairs from one output line.
-fn parse_flow_fields(line: &str) -> Result<BTreeMap<String, String>, MailboxBackendError> {
+fn parse_flow_fields(
+    line: &str,
+    backend: &'static str,
+) -> Result<BTreeMap<String, String>, MailboxBackendError> {
     let mut fields = BTreeMap::new();
     let chars: Vec<char> = line.chars().collect();
     let mut index = 0;
@@ -706,7 +1132,7 @@ fn parse_flow_fields(line: &str) -> Result<BTreeMap<String, String>, MailboxBack
         }
         if index >= chars.len() {
             return Err(MailboxBackendError {
-                backend: "message-list-parser",
+                backend,
                 reason: format!("invalid flow field in line {line:?}"),
             });
         }
@@ -722,7 +1148,12 @@ fn parse_flow_fields(line: &str) -> Result<BTreeMap<String, String>, MailboxBack
                 if current == '\\' {
                     index += 1;
                     if index < chars.len() {
-                        value.push(chars[index]);
+                        value.push(match chars[index] {
+                            'n' => '\n',
+                            'r' => '\r',
+                            't' => '\t',
+                            other => other,
+                        });
                         index += 1;
                     }
                     continue;
@@ -752,20 +1183,26 @@ fn parse_flow_fields(line: &str) -> Result<BTreeMap<String, String>, MailboxBack
 fn required_flow_field<'a>(
     fields: &'a BTreeMap<String, String>,
     field: &'static str,
+    subject: &'static str,
+    backend: &'static str,
 ) -> Result<&'a str, MailboxBackendError> {
     fields
         .get(field)
         .map(String::as_str)
         .ok_or_else(|| MailboxBackendError {
-            backend: "message-list-parser",
-            reason: format!("missing required message-list field {field}"),
+            backend,
+            reason: format!("missing required {subject} field {field}"),
         })
 }
 
 /// Parses an unsigned integer value from message-list output.
-fn parse_u64_value(field: &'static str, value: &str) -> Result<u64, MailboxBackendError> {
+fn parse_u64_value(
+    field: &'static str,
+    value: &str,
+    backend: &'static str,
+) -> Result<u64, MailboxBackendError> {
     value.parse::<u64>().map_err(|error| MailboxBackendError {
-        backend: "message-list-parser",
+        backend,
         reason: format!("failed parsing {field}: {error}"),
     })
 }
@@ -776,8 +1213,10 @@ fn validate_bounded_string(
     value: &str,
     max_len: usize,
     backend: &'static str,
+    allow_empty: bool,
+    allow_text_whitespace_controls: bool,
 ) -> Result<(), MailboxBackendError> {
-    if value.is_empty() {
+    if value.is_empty() && !allow_empty {
         return Err(MailboxBackendError {
             backend,
             reason: format!("{field} must not be empty"),
@@ -791,7 +1230,10 @@ fn validate_bounded_string(
         });
     }
 
-    if value.chars().any(char::is_control) {
+    if value.chars().any(|ch| {
+        ch.is_control()
+            && !(allow_text_whitespace_controls && matches!(ch, '\n' | '\r' | '\t'))
+    }) {
         return Err(MailboxBackendError {
             backend,
             reason: format!("{field} contains control characters"),
@@ -799,6 +1241,18 @@ fn validate_bounded_string(
     }
 
     Ok(())
+}
+
+/// Parses a whitespace-delimited IMAP flag string into individual flags.
+fn parse_flags(flags_text: &str) -> Vec<String> {
+    if flags_text.is_empty() {
+        return Vec::new();
+    }
+
+    flags_text
+        .split_whitespace()
+        .map(ToString::to_string)
+        .collect()
 }
 
 /// Produces a compact single-line diagnostic from command output.
@@ -943,6 +1397,21 @@ mod tests {
         }
     }
 
+    struct MissingMessageViewBackend;
+
+    impl MessageViewBackend for MissingMessageViewBackend {
+        fn fetch_message(
+            &self,
+            _canonical_username: &str,
+            _request: &MessageViewRequest,
+        ) -> Result<MessageView, MailboxBackendError> {
+            Err(MailboxBackendError {
+                backend: "message-view-not-found",
+                reason: "no message matched the request".to_string(),
+            })
+        }
+    }
+
     fn test_context() -> AuthenticationContext {
         AuthenticationContext::new(
             AuthenticationPolicy::default(),
@@ -1063,6 +1532,57 @@ mod tests {
     }
 
     #[test]
+    fn parses_message_view_from_doveadm_flow_output() {
+        let executor = Rc::new(std::cell::RefCell::new(StubCommandExecutor::success(
+            CommandExecution {
+                status_code: 0,
+                stdout: concat!(
+                    "uid=9 flags=\"\\\\Seen\" date.received=\"2026-03-27 11:00:00 +0000\" size.virtual=512 mailbox=INBOX hdr=\"Subject: Test message\\nFrom: Alice <alice@example.com>\\n\" body=\"Hello world\\nSecond line\\n\"\n"
+                )
+                .to_string(),
+                stderr: String::new(),
+            },
+        )));
+        let backend = DoveadmMessageViewBackend::new(
+            MessageViewPolicy::default(),
+            executor.clone(),
+            "/usr/local/bin/doveadm",
+        );
+        let request = MessageViewRequest::new(MessageViewPolicy::default(), "INBOX", 9)
+            .expect("request should be valid");
+
+        let message = backend
+            .fetch_message("alice@example.com", &request)
+            .expect("message retrieval should succeed");
+
+        assert_eq!(message.uid, 9);
+        assert_eq!(message.mailbox_name, "INBOX");
+        assert_eq!(message.flags, vec!["\\Seen".to_string()]);
+        assert_eq!(
+            message.header_block,
+            "Subject: Test message\nFrom: Alice <alice@example.com>\n"
+        );
+        assert_eq!(message.body_text, "Hello world\nSecond line\n");
+
+        let recorded = executor.borrow();
+        assert_eq!(
+            recorded.args.as_ref().expect("args should be captured"),
+            &vec![
+                "-f".to_string(),
+                "flow".to_string(),
+                "fetch".to_string(),
+                "-u".to_string(),
+                "alice@example.com".to_string(),
+                "uid flags date.received size.virtual mailbox hdr body".to_string(),
+                "mailbox".to_string(),
+                "INBOX".to_string(),
+                "uid".to_string(),
+                "9".to_string(),
+            ]
+        );
+    }
+
+    #[test]
     fn rejects_message_list_output_missing_required_fields() {
         let error = parse_doveadm_message_list_output(
             MessageListPolicy::default(),
@@ -1079,6 +1599,22 @@ mod tests {
     }
 
     #[test]
+    fn rejects_message_view_output_missing_required_fields() {
+        let error = parse_doveadm_message_view_output(
+            MessageViewPolicy::default(),
+            &CommandExecution {
+                status_code: 0,
+                stdout: "uid=9 flags=\"\\\\Seen\" date.received=\"2026-03-27 11:00:00 +0000\" size.virtual=512 mailbox=INBOX hdr=\"Subject: test\\n\"\n".to_string(),
+                stderr: String::new(),
+            },
+        )
+        .expect_err("missing body field must fail");
+
+        assert_eq!(error.backend, "message-view-parser");
+        assert_eq!(error.reason, "missing required message-view field body");
+    }
+
+    #[test]
     fn rejects_control_characters_in_mailbox_output() {
         let error = parse_doveadm_mailbox_list_output(
             MailboxListingPolicy::default(),
@@ -1092,6 +1628,60 @@ mod tests {
 
         assert_eq!(error.backend, "mailbox-parser");
         assert_eq!(error.reason, "mailbox name contains control characters");
+    }
+
+    #[test]
+    fn message_view_service_emits_audit_quality_success_events() {
+        let service = MessageViewService::new(StaticMessageViewBackend {
+            message: MessageView {
+                mailbox_name: "INBOX".to_string(),
+                uid: 9,
+                flags: vec!["\\Seen".to_string()],
+                date_received: "2026-03-27 11:00:00 +0000".to_string(),
+                size_virtual: 512,
+                header_block: "Subject: Test message\n".to_string(),
+                body_text: "Hello world\n".to_string(),
+            },
+        });
+        let validated_session = validated_session_fixture();
+        let request = MessageViewRequest::new(MessageViewPolicy::default(), "INBOX", 9)
+            .expect("request should be valid");
+
+        let outcome =
+            service.fetch_for_validated_session(&test_context(), &validated_session, &request);
+
+        assert_eq!(outcome.audit_event.category, EventCategory::Mailbox);
+        assert_eq!(outcome.audit_event.action, "message_viewed");
+
+        let logger = Logger::new(LogFormat::Text, LogLevel::Debug);
+        let rendered = logger.render_with_timestamp(&outcome.audit_event, 6262);
+        assert_eq!(
+            rendered,
+            format!(
+                "ts=6262 level=info category=mailbox action=message_viewed msg=\"message retrieval completed\" canonical_username=\"alice@example.com\" session_id=\"{}\" mailbox_name=\"INBOX\" uid=\"9\" request_id=\"req-mailbox\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\"",
+                validated_session.record.session_id
+            )
+        );
+    }
+
+    #[test]
+    fn message_view_service_maps_missing_messages_to_not_found() {
+        let service = MessageViewService::new(MissingMessageViewBackend);
+        let validated_session = validated_session_fixture();
+        let request = MessageViewRequest::new(MessageViewPolicy::default(), "INBOX", 9)
+            .expect("request should be valid");
+
+        let outcome =
+            service.fetch_for_validated_session(&test_context(), &validated_session, &request);
+
+        assert_eq!(
+            outcome.decision,
+            MessageViewDecision::Denied {
+                public_reason: MailboxPublicFailureReason::NotFound,
+            }
+        );
+        assert_eq!(outcome.audit_event.action, "message_view_failed");
+        assert_eq!(outcome.audit_event.level, LogLevel::Warn);
     }
 
     #[test]
@@ -1433,6 +2023,109 @@ mod tests {
     }
 
     #[test]
+    fn full_auth_session_message_view_flow_succeeds() {
+        let secret_dir = temp_dir("osmap-view-secret");
+        let session_dir = temp_dir("osmap-view-session");
+        let secret_store = FileTotpSecretStore::new(&secret_dir);
+        let secret_path = secret_store.secret_path_for_username("alice@example.com");
+        fs::write(
+            &secret_path,
+            "secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ\n",
+        )
+        .expect("secret file should be written");
+
+        let auth_service = AuthenticationService::new(
+            AuthenticationPolicy::default(),
+            AcceptingPrimaryBackend,
+        );
+        let auth_outcome = auth_service.authenticate(
+            &test_context(),
+            "alice@example.com",
+            "correct horse battery staple",
+        );
+        let canonical_username = match auth_outcome.decision {
+            AuthenticationDecision::MfaRequired {
+                canonical_username,
+                second_factor,
+            } => {
+                assert_eq!(second_factor, RequiredSecondFactor::Totp);
+                canonical_username
+            }
+            other => panic!("expected MFA-required decision, got {other:?}"),
+        };
+
+        let factor_service = SecondFactorService::new(
+            AuthenticationPolicy::default(),
+            TotpVerifier::new(
+                secret_store,
+                FixedTimeProvider::new(59),
+                TotpPolicy {
+                    digits: 8,
+                    period_seconds: 30,
+                    allowed_skew_steps: 0,
+                },
+            ),
+        );
+        let factor_outcome = factor_service.verify(
+            &test_context(),
+            canonical_username.clone(),
+            RequiredSecondFactor::Totp,
+            "94287082",
+        );
+        assert_eq!(
+            factor_outcome.decision,
+            AuthenticationDecision::AuthenticatedPendingSession {
+                canonical_username: canonical_username.clone(),
+            }
+        );
+
+        let session_service = SessionService::new(
+            FileSessionStore::new(&session_dir),
+            FixedTimeProvider::new(59),
+            StaticRandomSource {
+                bytes: vec![0xaa; SESSION_TOKEN_BYTES],
+            },
+            3600,
+        );
+        let issued = session_service
+            .issue(&test_context(), &canonical_username, RequiredSecondFactor::Totp)
+            .expect("session issuance should succeed");
+        let validated = session_service
+            .validate(&test_context(), &issued.token)
+            .expect("session validation should succeed");
+
+        let request = MessageViewRequest::new(MessageViewPolicy::default(), "INBOX", 9)
+            .expect("request should be valid");
+        let service = MessageViewService::new(StaticMessageViewBackend {
+            message: MessageView {
+                mailbox_name: "INBOX".to_string(),
+                uid: 9,
+                flags: vec!["\\Seen".to_string()],
+                date_received: "2026-03-27 11:00:00 +0000".to_string(),
+                size_virtual: 512,
+                header_block: "Subject: Test message\n".to_string(),
+                body_text: "Hello world\n".to_string(),
+            },
+        });
+        let outcome =
+            service.fetch_for_validated_session(&test_context(), &validated, &request);
+
+        match outcome.decision {
+            MessageViewDecision::Retrieved {
+                canonical_username,
+                message,
+                ..
+            } => {
+                assert_eq!(canonical_username, "alice@example.com");
+                assert_eq!(message.uid, 9);
+                assert_eq!(message.mailbox_name, "INBOX");
+                assert_eq!(message.body_text, "Hello world\n");
+            }
+            other => panic!("expected message view, got {other:?}"),
+        }
+    }
+
+    #[test]
     #[ignore = "requires a host with doveadm configured against a live Dovecot mailbox surface"]
     fn live_doveadm_mailbox_list_rejects_missing_user() {
         if !Path::new("/usr/local/bin/doveadm").exists() {
@@ -1466,6 +2159,24 @@ mod tests {
         assert!(error.reason.contains("status 67"));
     }
 
+    #[test]
+    #[ignore = "requires a host with doveadm configured against a live Dovecot mailbox surface"]
+    fn live_doveadm_message_view_rejects_missing_user() {
+        if !Path::new("/usr/local/bin/doveadm").exists() {
+            return;
+        }
+
+        let backend = DoveadmMessageViewBackend::default();
+        let request = MessageViewRequest::new(MessageViewPolicy::default(), "INBOX", 1)
+            .expect("request should be valid");
+        let error = backend
+            .fetch_message("osmap-no-such-user@example.invalid", &request)
+            .expect_err("missing users should not produce message retrieval");
+
+        assert_eq!(error.backend, "doveadm-message-view");
+        assert!(error.reason.contains("status 67"));
+    }
+
     #[derive(Debug, Clone)]
     struct StaticMailboxBackend {
         mailboxes: Vec<MailboxEntry>,
@@ -1492,6 +2203,21 @@ mod tests {
             _request: &MessageListRequest,
         ) -> Result<Vec<MessageSummary>, MailboxBackendError> {
             Ok(self.messages.clone())
+        }
+    }
+
+    #[derive(Debug, Clone)]
+    struct StaticMessageViewBackend {
+        message: MessageView,
+    }
+
+    impl MessageViewBackend for StaticMessageViewBackend {
+        fn fetch_message(
+            &self,
+            _canonical_username: &str,
+            _request: &MessageViewRequest,
+        ) -> Result<MessageView, MailboxBackendError> {
+            Ok(self.message.clone())
         }
     }
 
