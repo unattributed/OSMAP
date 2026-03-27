@@ -676,3 +676,16 @@ work without direct unveil access to either path.
 
 The active OpenBSD confinement plan therefore removes both paths instead of
 keeping them as speculative helper allowances.
+
+### Reject unsupported HTTP request framing instead of guessing
+
+The custom HTTP runtime now makes its request-framing boundary more explicit:
+
+- `Transfer-Encoding` is rejected because OSMAP does not implement chunked or
+  alternate body framing
+- GET requests with bodies are rejected instead of being accepted as undefined
+  edge cases
+- POST requests must carry an explicit `Content-Length`
+
+That keeps the sequential custom parser smaller and less ambiguous rather than
+trying to be liberal in ways that widen smuggling and malformed-request risk.

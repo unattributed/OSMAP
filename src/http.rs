@@ -2250,17 +2250,26 @@ pub fn parse_http_request_bytes(
             reason: "http/1.1 requests must include host".to_string(),
         });
     }
-
-    let content_length = parse_content_length_from_headers(&headers)?;
-    if content_length != body.len() {
+    if headers.contains_key("transfer-encoding") {
         return Err(HttpRequestError {
-            reason: "http body length did not match content-length".to_string(),
+            reason: "unsupported transfer-encoding header".to_string(),
         });
     }
 
-    if method == HttpMethod::Post && !headers.contains_key("content-length") && !body.is_empty() {
+    let content_length = parse_content_length_from_headers(&headers)?;
+    if method == HttpMethod::Post && !headers.contains_key("content-length") {
         return Err(HttpRequestError {
             reason: "post requests must send content-length".to_string(),
+        });
+    }
+    if method == HttpMethod::Get && (content_length != 0 || !body.is_empty()) {
+        return Err(HttpRequestError {
+            reason: "get requests must not send a request body".to_string(),
+        });
+    }
+    if content_length != body.len() {
+        return Err(HttpRequestError {
+            reason: "http body length did not match content-length".to_string(),
         });
     }
 
@@ -3591,6 +3600,39 @@ mod tests {
             .expect_err("oversized targets must be rejected");
 
         assert_eq!(error.reason, "request target exceeded maximum length");
+    }
+
+    #[test]
+    fn rejects_unsupported_transfer_encoding_headers() {
+        let error = parse_http_request(
+            "POST /login HTTP/1.1\r\nHost: localhost\r\nTransfer-Encoding: chunked\r\n\r\n",
+            &HttpPolicy::default(),
+        )
+        .expect_err("unsupported transfer-encoding must be rejected");
+
+        assert_eq!(error.reason, "unsupported transfer-encoding header");
+    }
+
+    #[test]
+    fn rejects_get_requests_with_bodies() {
+        let error = parse_http_request(
+            "GET /mailboxes HTTP/1.1\r\nHost: localhost\r\nContent-Length: 5\r\n\r\nhello",
+            &HttpPolicy::default(),
+        )
+        .expect_err("get requests with bodies must be rejected");
+
+        assert_eq!(error.reason, "get requests must not send a request body");
+    }
+
+    #[test]
+    fn rejects_post_requests_without_content_length_even_when_empty() {
+        let error = parse_http_request(
+            "POST /logout HTTP/1.1\r\nHost: localhost\r\n\r\n",
+            &HttpPolicy::default(),
+        )
+        .expect_err("post requests without content-length must be rejected");
+
+        assert_eq!(error.reason, "post requests must send content-length");
     }
 
     #[test]

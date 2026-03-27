@@ -44,6 +44,9 @@ The current browser runtime enforces:
 - rejection of duplicate request headers instead of silently accepting the last
   one
 - rejection of malformed HTTP/1.1 requests without `Host`
+- rejection of unsupported `Transfer-Encoding` request framing
+- rejection of GET request bodies instead of trying to interpret them
+- rejection of POST requests that omit `Content-Length`
 - rejection of fragment-bearing or otherwise ambiguous request targets
 - normalization of peer socket addresses to bare IP strings before they reach
   auth-helper metadata or structured request audit context
