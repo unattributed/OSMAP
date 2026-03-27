@@ -50,6 +50,18 @@ Phase 3 is acceptable when all of the following are true:
   assumption
 - residual risks are acknowledged rather than hand-waved away
 
+## Phase 4 Acceptance Criteria
+
+Phase 4 is acceptable when all of the following are true:
+
+- the component architecture is clear enough to guide implementation planning
+- service boundaries are explicit
+- data flows and integration paths with IMAP and submission are defined
+- the OpenBSD deployment model is concrete enough for operators to understand
+- observability expectations exist for the chosen architecture
+- technology rationale is documented honestly, including portability and
+  packaging risks
+
 ## Current Status On March 27, 2026
 
 Phase 0:
@@ -78,3 +90,10 @@ Phase 3:
   authentication baseline, and an internet-exposure gate checklist
 - later phases should treat these as constraints to design against rather than
   restarting threat-model debates from scratch
+
+Phase 4:
+
+- the repository now contains an architecture baseline, an OpenBSD deployment
+  direction, and an observability baseline suitable for implementation planning
+- the remaining uncertainty is mostly in detailed implementation choices rather
+  than in the top-level system shape

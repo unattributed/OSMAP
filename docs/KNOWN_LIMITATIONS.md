@@ -23,3 +23,5 @@
   UX and edge-case behavior are still unspecified
 - The identity model intentionally stops short of a full implementation plan for
   native-client coexistence, phishing-resistant MFA, or recovery design
+- The architecture now defines a clear system shape, but exact interface
+  contracts and the final backend language choice remain intentionally open

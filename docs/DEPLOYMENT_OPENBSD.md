@@ -60,6 +60,8 @@ The edge layer should:
 - forward only the minimum required headers and paths
 - avoid exposing unused routes
 - support staged deployment behind the existing VPN-first model
+- proxy to the application service over a local path such as loopback or a Unix
+  socket rather than exposing the app service directly
 
 The web edge should not become a dumping ground for unrelated convenience
 features.
@@ -102,6 +104,13 @@ The default hosting strategy should remain conservative:
 - preserve the existing VPN-first option until broader exposure is justified
 - keep the runtime and dependency model small enough that an operator can
   understand it end to end
+
+Preferred Phase 4 baseline:
+
+- nginx on the host edge
+- one small OSMAP application service behind nginx
+- existing Dovecot and Postfix services left authoritative
+- minimal app-local state stored separately from static assets and secrets
 
 This is more likely to produce a system that OpenBSD operators, and eventually
 potential downstream packagers, would consider credible.

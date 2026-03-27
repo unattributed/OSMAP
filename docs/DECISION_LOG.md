@@ -77,3 +77,21 @@ The project should be developed as software that could plausibly be respected by
 OpenBSD-oriented maintainers: small dependency surface, conservative hosting
 strategy, privilege-aware design, reproducible build discipline, and no
 Linux-first operational assumptions.
+
+### Select a small edge-plus-app architecture for Version 1
+
+Phase 4 selects a simple architecture: nginx at the edge, one small OSMAP
+application service behind it, and the existing mail stack left authoritative
+for IMAP and submission behavior.
+
+### Keep the browser product as a controlled consumer of the mail stack
+
+The architecture intentionally avoids direct browser-to-mail protocols and
+avoids turning OSMAP into a replacement mail transport platform. It is a narrow
+policy and access layer on top of the existing substrate.
+
+### Do not let toolchain preference override OpenBSD portability goals
+
+Rust remains attractive for security-sensitive backend code, but it is not being
+treated as an unquestionable requirement if it would materially undermine broad
+OpenBSD usability or future packaging credibility.
