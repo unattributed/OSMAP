@@ -117,61 +117,33 @@ Each phase produces formal outputs to support traceability and auditability.
 
 ## Status
 
-Planning, architecture, security, and implementation-governance baselines are
-documented through the Phase 6 proof-of-concept planning layer.
-
-WP0 is now complete: the repository has a dependency-minimal Rust toolchain
-baseline, a source tree, conservative build and test entrypoints, and a small
-bootstrap executable.
-
-WP1 and WP2 are now complete: the runtime has a typed configuration model, an
-explicit mutable-state layout, and a small structured logging/error baseline.
-
-The project is not yet production-ready and does not yet have a running public
-deployment, but it now has a real bounded browser prototype rather than only a
-design baseline. WP3 now includes bounded credential handling, a real
-Dovecot-oriented primary-auth path, a real TOTP backend with a bounded
-secret-store model, a second-factor verification stage, and audit-quality auth
-events. The runtime now also includes a first session-management baseline with
-bounded token issuance, validation, revocation, and per-user session listing.
-The first mailbox read primitive is now present too: mailbox listing behind the
-validated-session gate using the existing Dovecot surface. The second WP5 slice
-is now present as well: per-mailbox message-list retrieval using a bounded
-Dovecot-backed message-summary path. The first WP6 slice is now in place too:
-bounded per-message retrieval using the same validated-session and Dovecot-backed
-read path. The next rendering step is now in place as well: a plain-text-first
-browser-safe rendering layer on top of the fetched message payload. The next
-follow-on WP6 step is now in place too: a dependency-light MIME-aware and
-attachment-aware analysis layer that preserves the current plain-text safety
-posture while surfacing attachment metadata honestly.
-The next implementation step is now in place too: a dependency-light
-HTTP/browser slice with bounded request parsing, login/logout routes,
-session-gated mailbox pages, and message-view rendering over the existing
-runtime. The binary now supports `OSMAP_RUN_MODE=bootstrap` for fast startup
-validation and `OSMAP_RUN_MODE=serve` for the current listener path. The next
-implementation step is now in place too: a first compose/send browser slice
-with bounded outbound input validation, a local `sendmail` compatibility
-handoff, and submission audit events. The browser runtime now also has a first
-CSRF strategy for current state-changing form routes, plus explicit nginx-facing
-deployment guidance and an early OpenBSD confinement map. The next send-path
-step is now in place too: server-side reply and forward draft generation with
-attachment-aware notices built from the current message-view path. The runtime
-now also has an operator-controlled OpenBSD confinement mode with real
-`pledge(2)` and `unveil(2)` enforcement on OpenBSD. The next send-path step is
-now in place too: bounded new attachment upload and multipart submission
-behavior. The OpenBSD confinement view has also had its first real narrowing
-pass away from a blanket `/var` unveil, and live-host validation exposed and
-closed a real `fattr` promise gap in the session-refresh path. The next mailbox
-read step is now in place too: bounded attachment download using the existing
-session, message-view, and MIME part-path model, with forced-download browser
-headers and conservative transfer-decoding support.
-
-The next implementation steps are to keep tightening the helper-compatible
-OpenBSD view, continue reducing correctness and denial-of-service risk in the
-custom HTTP/browser runtime, extend the new mailbox-list helper slice across
-the broader read path, expand positive post-auth live-host coverage through
-that helper, and keep narrowing the OpenBSD deployment shape that is now
-partially validated on `mail.blackbagsecurity.com`.
+- OSMAP is now a working prototype with real Rust implementation, not only a
+  design repo.
+- Planning, architecture, security, SDLC, and implementation-control documents
+  are populated through the current Phase 6 baseline.
+- The runtime includes typed configuration, explicit state layout, structured
+  logging, bounded auth, TOTP, session issuance and revocation, CSRF handling,
+  mailbox browsing, message listing and viewing, MIME-aware inspection,
+  attachment upload and forced-download paths, compose/send, and reply/forward
+  draft generation.
+- The browser layer is server-rendered and dependency-light, with bounded HTTP
+  parsing and explicit separation from the underlying mail stack.
+- OpenBSD-specific work is already in the prototype: dedicated `_osmap`
+  runtime assumptions, explicit Dovecot socket configuration, and
+  operator-controlled `pledge(2)` / `unveil(2)` enforcement modes.
+- Positive browser authentication plus TOTP-backed session issuance are proven
+  on `mail.blackbagsecurity.com` under `_osmap`.
+- The mailbox-read identity boundary is not fully solved on the live host yet:
+  the current Dovecot virtual-user model still resolves mailbox access to
+  `vmail`, so broader least-privilege live mailbox reads are not yet proven.
+- The first mailbox-helper slice now exists in-repo: a local Unix-socket helper
+  plus helper-backed mailbox listing, intended to move mailbox reads out of the
+  web-facing runtime one operation family at a time.
+- OSMAP is still prototype-grade, not production-ready, and does not yet have a
+  public deployment.
+- Current priority work is to extend the mailbox helper across the broader read
+  path, continue hardening the custom HTTP runtime, and tighten the OpenBSD
+  deployment and confinement model around the new helper boundary.
 
 ---
 
