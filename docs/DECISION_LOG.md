@@ -239,3 +239,24 @@ remote-address summaries, and user-agent summaries are now part of the runtime
 session record. The project will build later UI and operator views on top of
 that explicit substrate instead of inventing visibility after the browser layer
 is already complex.
+
+### Use the validated-session boundary as the mailbox gate
+
+The first WP5 mailbox slice does not re-implement session logic. Mailbox
+listing consumes a previously validated session so the mailbox layer stays a
+consumer of the identity/session boundary rather than becoming its own access
+control system.
+
+### Use `doveadm mailbox list` for the first mailbox-read primitive
+
+The first mailbox-listing backend uses `doveadm mailbox list` because it keeps
+the prototype close to the Dovecot authority that already exists on the target
+OpenBSD host while avoiding a heavier IMAP dependency before message retrieval
+actually forces it.
+
+### Log mailbox counts, not mailbox-name dumps, on the success path
+
+The mailbox-listing success event records mailbox count plus identity and
+request context, but not the full mailbox-name list. That keeps audit output
+useful without turning mailbox activity logs into a content-heavy mirror of
+user state.

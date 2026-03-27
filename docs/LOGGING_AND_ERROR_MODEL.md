@@ -40,6 +40,7 @@ The early logger currently distinguishes:
 - `state`
 - `auth`
 - `session`
+- `mailbox`
 
 This now covers the runtime foundation plus the first authentication and session
 layers. Later phases can add request, mailbox, and submission categories as

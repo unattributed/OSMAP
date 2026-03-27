@@ -18,6 +18,7 @@ pub enum EventCategory {
     State,
     Auth,
     Session,
+    Mailbox,
 }
 
 impl EventCategory {
@@ -29,6 +30,7 @@ impl EventCategory {
             Self::State => "state",
             Self::Auth => "auth",
             Self::Session => "session",
+            Self::Mailbox => "mailbox",
         }
     }
 }

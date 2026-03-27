@@ -142,6 +142,9 @@ Phase 6:
   stage, plus a real TOTP backend and secret-store boundary
 - WP4 now includes a real session-management baseline with bounded issuance,
   validation, revocation, and operator-visible session metadata
-- browser integration, mailbox flows, and send-path work are not complete yet
+- WP5 now includes a real mailbox-listing primitive behind the validated-session
+  gate using the existing Dovecot surface
+- browser integration, message retrieval, rendering, and send-path work are not
+  complete yet
 - the actual prototype has not yet been implemented, so Phase 6 execution is
   underway but not yet complete

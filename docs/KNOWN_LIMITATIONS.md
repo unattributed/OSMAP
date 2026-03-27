@@ -13,6 +13,8 @@
 
 - The implementation now has runtime, auth, TOTP, and session foundations, but
   it is not yet a usable browser mail product
+- The implementation now has a mailbox-listing primitive, but it does not yet
+  retrieve message lists, message bodies, or attachments
 - No formal migration plan has been completed
 - The existing host is multi-purpose, which constrains how aggressively the
   replacement can diverge from current operational patterns

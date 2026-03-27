@@ -133,9 +133,11 @@ Dovecot-oriented primary-auth path, a real TOTP backend with a bounded
 secret-store model, a second-factor verification stage, and audit-quality auth
 events. The runtime now also includes a first session-management baseline with
 bounded token issuance, validation, revocation, and per-user session listing.
+The first mailbox read primitive is now present too: mailbox listing behind the
+validated-session gate using the existing Dovecot surface.
 
-The next implementation step is the first mailbox read slice on top of the
-completed auth and session baseline.
+The next implementation step is message-list retrieval on top of the completed
+auth, session, and mailbox-listing baseline.
 
 ---
 
