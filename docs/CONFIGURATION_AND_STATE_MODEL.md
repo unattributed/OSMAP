@@ -155,3 +155,6 @@ integration pattern:
 
 This is an operator-side deployment refinement, not a secret. It is safe to
 include in startup reporting and confinement planning.
+
+The current validated example on `mail.blackbagsecurity.com` is
+`/var/run/osmap-auth` for the `_osmap` runtime user.

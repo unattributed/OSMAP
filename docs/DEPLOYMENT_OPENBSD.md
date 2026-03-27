@@ -159,6 +159,8 @@ Current prototype-specific deployment guidance:
   than a privileged or broad auth-socket arrangement
 - use `OSMAP_DOVEADM_AUTH_SOCKET_PATH` when the host provides that dedicated
   auth listener
+- the current validated host shape on `mail.blackbagsecurity.com` uses
+  `_osmap` plus `/var/run/osmap-auth` for that dedicated Dovecot auth listener
 - use `OSMAP_OPENBSD_CONFINEMENT_MODE=log-only` or `enforce` when validating
   the OpenBSD serve runtime on hosts intended for real deployment
 

@@ -535,3 +535,17 @@ The HTTP runtime now fails closed on duplicate headers, oversized request
 targets, fragment-bearing targets, and HTTP/1.1 requests that omit `Host`.
 These checks reduce ambiguity in the custom parser before any additional
 browser-facing surface is added.
+
+### Configure a dedicated Dovecot auth listener for the OSMAP runtime user
+
+`mail.blackbagsecurity.com` now exposes a dedicated `/var/run/osmap-auth`
+listener owned by `_osmap` for OSMAP's browser-auth path. That keeps the host
+integration explicit and least-privilege friendly instead of teaching the app
+to depend on `doas` or on the Postfix-facing auth socket.
+
+### Normalize peer socket addresses to bare IP strings before auth-helper use
+
+Live host validation exposed that `doveadm auth test` rejects `rip=` values
+that include a port. OSMAP now normalizes peer addresses to bare IP strings at
+the HTTP edge, which keeps auth-helper metadata valid and makes request audit
+logs more consistent.

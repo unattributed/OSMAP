@@ -42,10 +42,10 @@
 - The OpenBSD runtime now has an enforced confinement mode, but its helper
   compatibility view is still broader than the final target even after the
   first narrowing pass away from a blanket `/var` unveil
-- The current browser-driven invalid-login path on `mail.blackbagsecurity.com`
-  still needs host-side refinement because the runtime user's accessible
-  Dovecot auth surface on that host is not yet aligned with the browser-auth
-  helper path
+- `mail.blackbagsecurity.com` now has a dedicated least-privilege Dovecot auth
+  listener for `_osmap`, and invalid browser login is validated there under
+  both `log-only` and `enforce`, but successful positive-login and post-auth
+  live-host flows are still not proven
 - The current synthetic session-gated attachment request under enforced mode on
   `mail.blackbagsecurity.com` now reaches the route, validates the session, and
   updates session state without the previous Dovecot stats-writer noise, but

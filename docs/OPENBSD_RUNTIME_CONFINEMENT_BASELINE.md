@@ -101,8 +101,12 @@ The current confinement layer has been validated through:
 - local Linux build and test verification, including the non-OpenBSD
   configuration path
 - OpenBSD host `cargo test` on `mail.blackbagsecurity.com`
+- OpenBSD host `log-only` serve startup under a dedicated `_osmap` runtime user
+  and dedicated Dovecot auth listener
 - OpenBSD host `serve` startup under `OSMAP_OPENBSD_CONFINEMENT_MODE=enforce`
 - OpenBSD host `GET /healthz` under enforced confinement
+- live invalid-login handling under `log-only` confinement on
+  `mail.blackbagsecurity.com`
 - live invalid-login handling under enforced confinement on
   `mail.blackbagsecurity.com`
 - a synthetic session-gated attachment-route request under enforced confinement
@@ -114,6 +118,8 @@ The enforced OpenBSD run logged:
 - confinement plan
 - confinement enabled
 - HTTP server started
+- successful invalid-login handling under a dedicated least-privilege Dovecot
+  auth listener in both `log-only` and `enforce`
 - successful health check handling
 - successful synthetic session validation and refresh under `enforce`
 - a bounded attachment-route failure for a missing user without the earlier
@@ -122,8 +128,8 @@ The enforced OpenBSD run logged:
 ## Observed Caveat And Fix On `mail.blackbagsecurity.com`
 
 A browser-driven invalid login smoke test on `mail.blackbagsecurity.com`
-produced the same `doveadm auth test` backend failure both with confinement
-disabled and with confinement enforced.
+originally produced the same `doveadm auth test` backend failure both with
+confinement disabled and with confinement enforced.
 
 Follow-up diagnosis narrowed that result more precisely:
 
@@ -132,36 +138,39 @@ Follow-up diagnosis narrowed that result more precisely:
 - live host validation now shows that this removes the previous
   stats-writer-socket permission noise from the mailbox and message-view helper
   paths under enforced confinement
-- the remaining live auth issue on the host is the Dovecot auth-socket access
-  boundary, not the stats writer and not the confinement mode itself
+- OSMAP now normalizes peer socket addresses to bare IP strings before building
+  auth-helper metadata, which fixes the live `rip: Invalid ip` failure mode
+- `mail.blackbagsecurity.com` now exposes a dedicated Dovecot auth listener at
+  `/var/run/osmap-auth` for the `_osmap` runtime user
+- live browser invalid-login validation now succeeds under both `log-only` and
+  `enforce` with a true `invalid_credentials` result instead of a backend error
 
 That distinction matters:
 
 - confinement enforcement now exists and was exercised successfully
-- the remaining live browser-auth caveat is now understood as a host/runtime
-  user integration issue that still needs refinement before it can be called
-  production-ready
+- the dedicated host-side auth-listener path is now proven viable without
+  teaching OSMAP to depend on `doas`
+- the remaining live browser-auth gap is now successful positive-login and
+  post-auth workflow validation, not raw auth-socket reachability
 
 Additional live validation also exposed and clarified two things:
 
 - the session layer updates file permissions on temp session records during
   save, which requires `fattr` in the steady-state promise set
-- the current host's accessible Dovecot auth surface for `foo` does not line up
-  with the runtime's non-privileged browser-auth path today
+- the target host's least-privilege runtime user can use a dedicated auth
+  listener cleanly under confinement once the host configuration is aligned
 
-The first point is already fixed in the promise set. The second remains an
-active helper-integration caveat to narrow and validate further.
+The first point is already fixed in the promise set. The second is now resolved
+for invalid-login validation on `mail.blackbagsecurity.com`.
 
 Today that auth caveat is understood this way:
 
 - `doveadm auth test` without privilege still depends on an auth socket the
   runtime user can actually reach
-- on `mail.blackbagsecurity.com`, the currently configured
-  `/var/spool/postfix/private/auth` path is not accessible to an unprivileged
-  runtime user because the directory boundary remains closed
-- OSMAP should not solve that by widening its own privileges
-- the right follow-on path is host-side operator work such as a dedicated
-  accessible auth listener or a deliberate permission/layout change
+- the validated host-side answer is a dedicated accessible auth listener rather
+  than widening OSMAP's privileges or reusing the Postfix-facing socket
+- on `mail.blackbagsecurity.com`, that listener is now `/var/run/osmap-auth`
+  owned by `_osmap`
 
 The runtime now supports that operator path explicitly:
 
@@ -180,7 +189,7 @@ This baseline does not mean:
 
 - the current unveil policy is narrow enough for final adoption
 - helper-process dependencies have been eliminated
-- browser auth is fully proven end to end on the target host
+- positive browser auth is fully proven end to end on the target host
 - richer send helper execution is fully proven under enforced confinement
 - successful live attachment-bearing reads are fully proven under enforced
   confinement

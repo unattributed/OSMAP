@@ -137,6 +137,11 @@ The host-side validation currently proves two bounded claims:
 
 - the Rust auth slice builds and tests cleanly on the OpenBSD target host
 - the live `doveadm auth test` backend rejects invalid credentials as expected
+- `mail.blackbagsecurity.com` now exposes a dedicated least-privilege Dovecot
+  auth listener for OSMAP at `/var/run/osmap-auth`, owned by `_osmap`
+- the browser-driven invalid-login path now returns a true
+  `invalid_credentials` result under both `log-only` and `enforce` when OSMAP
+  runs as `_osmap` against that dedicated listener
 
 That is intentionally narrower than claiming the full auth workflow is already
 validated in production-like conditions.
@@ -145,11 +150,14 @@ The remaining live-host caveat is also clearer now than it was earlier in WP3:
 
 - the helper path no longer relies on the previous stats-writer socket behavior
   for its basic failure mode
-- on `mail.blackbagsecurity.com`, the non-privileged runtime user still does
-  not have the right Dovecot auth-socket access for the browser-auth path to be
-  considered production-ready
-- that is a host/operator integration issue to solve deliberately, not a reason
-  to widen OSMAP's runtime privileges
+- the runtime now normalizes peer socket addresses to bare IP strings before
+  passing `rip=` metadata to `doveadm auth test`, which was required for clean
+  live-host auth helper behavior
+- successful positive-login validation, TOTP success under the dedicated host
+  runtime user, and post-auth mailbox flows are still not claimed as proven on
+  the live host
+- that remaining gap is now a narrower validation problem, not a reason to
+  widen OSMAP's runtime privileges
 
 The runtime now supports an explicit `OSMAP_DOVEADM_AUTH_SOCKET_PATH` setting
 for hosts that provide a dedicated least-privilege Dovecot auth listener for

@@ -45,6 +45,8 @@ The current browser runtime enforces:
   one
 - rejection of malformed HTTP/1.1 requests without `Host`
 - rejection of fragment-bearing or otherwise ambiguous request targets
+- normalization of peer socket addresses to bare IP strings before they reach
+  auth-helper metadata or structured request audit context
 
 The current HTML rendering path stays deliberately small and keeps message
 content escaped or plain-text-first unless a later slice proves a broader
@@ -155,6 +157,10 @@ runtime paths. The important change is that confinement is no longer only a
 plan: it now exists as a tested runtime behavior on OpenBSD, and the first
 narrowing pass has already replaced a blanket `/var` unveil with helper-specific
 paths.
+
+Live host validation now also proves that the current browser login route can
+deny invalid credentials cleanly through a dedicated least-privilege Dovecot
+auth socket under both `log-only` and `enforce`.
 
 ## What This Baseline Does Not Yet Claim
 

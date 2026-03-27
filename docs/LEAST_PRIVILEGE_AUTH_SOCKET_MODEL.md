@@ -56,6 +56,19 @@ The exact service user, group, and path can vary. The important property is
 that the socket is deliberate, narrow, and reachable by the OSMAP runtime user
 without privilege escalation.
 
+## Current Validated Host Shape
+
+On `mail.blackbagsecurity.com`, the currently validated arrangement is:
+
+- runtime user: `_osmap`
+- listener path: `/var/run/osmap-auth`
+- socket owner/group: `_osmap:_osmap`
+- validation scope: browser-driven invalid login under both `log-only` and
+  `enforce`
+
+That validated path is not the only acceptable deployment shape, but it is now
+real evidence that the least-privilege model works on the target OpenBSD host.
+
 ## Why This Is Better Than `doas`
 
 This model is preferred because it:
@@ -92,8 +105,9 @@ Operators should:
 
 ## Current Status
 
-As of March 27, 2026, OSMAP now supports the explicit auth-socket path in
-runtime configuration, but the repository does not claim that every target host
-already has this dedicated Dovecot listener configured.
+As of March 27, 2026, OSMAP supports the explicit auth-socket path in runtime
+configuration and `mail.blackbagsecurity.com` now has a dedicated validated
+listener at `/var/run/osmap-auth` for `_osmap`.
 
-This document describes the intended least-privilege operator path forward.
+This document describes the least-privilege operator path and the first live
+host that now proves it.

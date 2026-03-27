@@ -7,7 +7,7 @@
 
 use std::collections::BTreeMap;
 use std::io::{Read as _, Write as _};
-use std::net::{TcpListener, TcpStream};
+use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::Duration;
@@ -1918,7 +1918,7 @@ where
 {
     let remote_addr = stream
         .peer_addr()
-        .map(|addr| addr.to_string())
+        .map(normalize_peer_addr)
         .unwrap_or_else(|_| "<unknown>".to_string());
 
     if let Err(error) =
@@ -1987,6 +1987,12 @@ where
             .with_field("reason", error.to_string()),
         );
     }
+}
+
+/// Normalizes a peer socket address to the bare IP string used in audit
+/// context and auth-helper metadata.
+fn normalize_peer_addr(addr: SocketAddr) -> String {
+    addr.ip().to_string()
 }
 
 /// Reads one bounded HTTP request from the supplied stream.
@@ -3479,5 +3485,18 @@ mod tests {
             .expect_err("oversized targets must be rejected");
 
         assert_eq!(error.reason, "request target exceeded maximum length");
+    }
+
+    #[test]
+    fn normalizes_peer_addresses_to_bare_ip_strings() {
+        let ipv4 = "127.0.0.1:18091"
+            .parse::<SocketAddr>()
+            .expect("ipv4 socket addr should parse");
+        let ipv6 = "[::1]:18091"
+            .parse::<SocketAddr>()
+            .expect("ipv6 socket addr should parse");
+
+        assert_eq!(normalize_peer_addr(ipv4), "127.0.0.1");
+        assert_eq!(normalize_peer_addr(ipv6), "::1");
     }
 }

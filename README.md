@@ -167,10 +167,10 @@ session, message-view, and MIME part-path model, with forced-download browser
 headers and conservative transfer-decoding support.
 
 The next implementation steps are to keep tightening the helper-compatible
-OpenBSD view, investigate the remaining live `doveadm` helper caveats under
-`enforce`, continue reducing correctness and denial-of-service risk in the
-custom HTTP/browser runtime, and move the host auth path toward a dedicated
-least-privilege Dovecot auth socket arrangement.
+OpenBSD view, continue reducing correctness and denial-of-service risk in the
+custom HTTP/browser runtime, expand positive-login and post-auth live-host
+coverage, and keep narrowing the dedicated least-privilege Dovecot auth socket
+deployment path that is now validated on `mail.blackbagsecurity.com`.
 
 ---
 
