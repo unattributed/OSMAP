@@ -135,5 +135,6 @@ Phase 6:
 
 - the repository now contains a concrete implementation plan, proof-of-concept
   scope, and work decomposition baseline
+- WP0 toolchain selection and repository skeleton are now in place
 - the actual prototype has not yet been implemented, so Phase 6 execution is
-  planned and constrained but not yet complete
+  underway but not yet complete

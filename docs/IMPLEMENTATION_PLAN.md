@@ -139,6 +139,10 @@ The preferred sequence is:
 This sequence keeps the project on a thin vertical-slice path instead of a
 horizontal "build every subsystem halfway" path.
 
+WP0 has now established the toolchain and repository skeleton. The next active
+implementation slice should be WP1 and WP2 together: configuration/state
+discipline plus logging/error behavior.
+
 ## Implementation Guardrails
 
 The following behaviors should be treated as Phase 6 anti-patterns:

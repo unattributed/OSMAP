@@ -130,3 +130,16 @@ surface smaller and the OpenBSD maintenance story more credible.
 `pledge(2)`, `unveil(2)`, runtime-user separation, and listener scoping should
 be evaluated early in the implementation sequence rather than postponed until a
 large prototype already exists.
+
+### Start the proof of concept with a dependency-minimal Rust skeleton
+
+WP0 chooses Rust for the initial backend baseline because memory safety is
+valuable for a security-sensitive service, but the repository starts with a
+standard-library-only bootstrap so the dependency graph stays intentionally
+small while the actual runtime shape is still being proven.
+
+### Defer framework selection until the required flows force it
+
+The repository skeleton does not yet adopt a web framework, async runtime, or
+ORM. Those choices should be justified by the login, mailbox, and send-path
+requirements rather than assumed up front.

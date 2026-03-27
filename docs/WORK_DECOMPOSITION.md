@@ -23,6 +23,11 @@ Goal:
 Establish the repository structure, build entrypoints, lint hooks, and local
 development ergonomics needed for disciplined implementation.
 
+Status on March 27, 2026:
+
+- completed as the first implementation slice
+- recorded in `TOOLCHAIN_AND_REPOSITORY_BASELINE.md`
+
 Done means:
 
 - the chosen implementation language and build tooling are recorded

@@ -120,10 +120,14 @@ Each phase produces formal outputs to support traceability and auditability.
 Planning, architecture, security, and implementation-governance baselines are
 documented through the Phase 6 proof-of-concept planning layer.
 
+WP0 is now complete: the repository has a dependency-minimal Rust toolchain
+baseline, a source tree, conservative build and test entrypoints, and a small
+bootstrap executable.
+
 The project is not yet production-ready and does not yet have a running public
-prototype. The next implementation step is a constrained proof of concept that
-validates login, mailbox access, message viewing, message sending, and session
-tracking against the existing OpenBSD mail stack.
+prototype. The next implementation step is WP1 and WP2: configuration/state
+discipline plus logging and error behavior for the constrained proof of
+concept.
 
 ---
 
