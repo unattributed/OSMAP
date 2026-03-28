@@ -738,7 +738,7 @@ The repository now implements far more than an early design skeleton, but it
 still does not satisfy every Version 1 product requirement. The current docs
 should say that plainly.
 
-The active product gaps are now recorded explicitly as:
+At that point in the implementation, the active product gaps were recorded as:
 
 - message search
 - folder operations such as move or archive
@@ -804,3 +804,36 @@ The browser layer now includes:
 
 This closes the explicit browser-search gap while keeping the first search
 model mailbox-scoped and intentionally simple.
+
+### Treat mailbox-scoped search as implemented, not as a remaining Version 1 gap
+
+The repository now proves that mailbox-scoped search exists in the browser
+runtime, the helper path, and the tests. Product and status documents should no
+longer list search as wholly unimplemented.
+
+The honest current state is narrower:
+
+- mailbox-scoped backend-authoritative search is implemented
+- cross-mailbox or richer query ergonomics remain future refinement
+
+That keeps the repo aligned with what the code actually delivers instead of
+letting stale status language misdirect the next work.
+
+### Add a first helper-compatible one-message move slice
+
+The next meaningful ordinary-use gap after search and session self-management
+was folder organization. The smallest coherent slice was one-message move
+between existing mailboxes, not bulk actions or an archive abstraction.
+
+The browser and mailbox layers now include:
+
+- a validated one-message move request
+- backend-authoritative `doveadm move` execution
+- helper-backed move proxying when the mailbox helper socket is configured
+- a CSRF-protected `POST /message/move` route
+- a server-rendered move form on the message-view page
+- bounded audit events for move success and failure
+
+This closes the first folder-organization gap while preserving the helper
+boundary instead of teaching the web-facing runtime to own mailbox-write
+authority directly.

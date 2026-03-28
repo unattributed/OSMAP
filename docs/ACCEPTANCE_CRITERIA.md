@@ -172,13 +172,16 @@ Phase 6:
 - the current mailbox-helper slice now covers mailbox listing, message-list
   retrieval, message-view retrieval, and helper-backed attachment downloads;
   live-host validation through that helper now exists under `enforce`
-- the implementation still does not satisfy all Version 1 product goals:
-  message search, folder operations, safe HTML mail rendering, and a bounded
-  settings surface remain active product gaps
 - the browser layer now includes a first self-service session-management page
   backed by the existing persisted session metadata and revocation primitives
 - the browser-visible session-management slice is now also proven on
   `mail.blackbagsecurity.com` under `enforce` with the web runtime kept as
   `_osmap` and the helper kept at the `vmail` boundary
+- the browser layer now includes a first mailbox-scoped backend-authoritative
+  search path plus a first one-message move path between existing mailboxes
+- the implementation still does not satisfy all Version 1 product goals: safe
+  HTML mail rendering and a bounded settings surface remain active product
+  gaps, while broader ergonomics for folder organization remain later
+  refinements rather than blockers for the first move slice
 - the actual prototype now exists and Phase 6 execution is materially underway,
   but the implementation is still prototype-grade rather than production-ready

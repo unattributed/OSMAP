@@ -184,14 +184,18 @@ Status on March 27, 2026:
   attachment metadata
 - the first outbound handoff uses the local `sendmail` compatibility surface
 - CSRF protection now covers the current send form
+- the first folder-organization slice now exists as a one-message move path
+  between existing mailboxes
 - submission success and failure are now emitted as structured audit-quality
   log lines
 - recorded in `COMPOSE_AND_SEND_SLICE_BASELINE.md`
+- recorded in `FOLDER_ORGANIZATION_SLICE_BASELINE.md`
 
 Done means:
 
 - compose and submit flow exists
 - reply or forward behavior exists
+- one-message move between existing mailboxes exists
 - failure handling is understandable
 - outbound actions are logged appropriately
 

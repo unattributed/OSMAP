@@ -28,16 +28,18 @@ use crate::http_form::{
 };
 use crate::logging::{EventCategory, LogEvent, Logger};
 use crate::mailbox::{
-    DoveadmMailboxListBackend, DoveadmMessageListBackend, DoveadmMessageViewBackend, MailboxEntry,
-    MailboxListingDecision, MailboxListingPolicy, MailboxListingService, MessageListDecision,
-    MessageListPolicy, MessageListRequest, MessageListService, MessageSearchDecision,
-    MessageSearchPolicy, MessageSearchRequest, MessageSearchResult, MessageSearchService,
-    MessageSummary, MessageViewDecision, MessageViewPolicy, MessageViewRequest,
-    MessageViewService, DoveadmMessageSearchBackend,
+    DoveadmMailboxListBackend, DoveadmMessageListBackend, DoveadmMessageMoveBackend,
+    DoveadmMessageSearchBackend, DoveadmMessageViewBackend, MailboxEntry, MailboxListingDecision,
+    MailboxListingPolicy, MailboxListingService, MessageListDecision, MessageListPolicy,
+    MessageListRequest, MessageListService, MessageMoveDecision, MessageMovePolicy,
+    MessageMoveRequest, MessageMoveService, MessageSearchDecision, MessageSearchPolicy,
+    MessageSearchRequest, MessageSearchResult, MessageSearchService, MessageSummary,
+    MessageViewDecision, MessageViewPolicy, MessageViewRequest, MessageViewService,
 };
 use crate::mailbox_helper::{
     MailboxHelperMailboxListBackend, MailboxHelperMessageListBackend,
-    MailboxHelperMessageSearchBackend, MailboxHelperMessageViewBackend, MailboxHelperPolicy,
+    MailboxHelperMessageMoveBackend, MailboxHelperMessageSearchBackend,
+    MailboxHelperMessageViewBackend, MailboxHelperPolicy,
 };
 use crate::openbsd::apply_runtime_confinement;
 use crate::rendering::{PlainTextMessageRenderer, RenderedMessageView, RenderingPolicy};
@@ -331,6 +333,15 @@ pub trait BrowserGateway {
         part_path: &str,
     ) -> BrowserAttachmentDownloadOutcome;
 
+    fn move_message(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        source_mailbox_name: &str,
+        uid: u64,
+        destination_mailbox_name: &str,
+    ) -> BrowserMessageMoveOutcome;
+
     fn send_message(
         &self,
         context: &AuthenticationContext,
@@ -533,6 +544,26 @@ pub enum BrowserAttachmentDownloadDecision {
     },
 }
 
+/// The result of a browser message-move operation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BrowserMessageMoveOutcome {
+    pub decision: BrowserMessageMoveDecision,
+    pub audit_events: Vec<LogEvent>,
+}
+
+/// Message-move decisions visible to the browser layer.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BrowserMessageMoveDecision {
+    Moved {
+        source_mailbox_name: String,
+        destination_mailbox_name: String,
+        uid: u64,
+    },
+    Denied {
+        public_reason: String,
+    },
+}
+
 /// The result of a browser send operation.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BrowserSendOutcome {
@@ -694,6 +725,20 @@ impl RuntimeBrowserGateway {
                     self.doveadm_path.clone(),
                 )
                 .with_userdb_socket_path(self.doveadm_userdb_socket_path.clone()),
+            ),
+        }
+    }
+
+    /// Selects the current message-move backend based on whether the local
+    /// mailbox helper is configured for mailbox-authoritative operations.
+    fn build_message_move_backend(&self) -> MessageMoveRuntimeBackend {
+        match &self.mailbox_helper_socket_path {
+            Some(socket_path) => MessageMoveRuntimeBackend::Helper(
+                MailboxHelperMessageMoveBackend::new(socket_path, MailboxHelperPolicy::default()),
+            ),
+            None => MessageMoveRuntimeBackend::Direct(
+                DoveadmMessageMoveBackend::new(SystemCommandExecutor, self.doveadm_path.clone())
+                    .with_userdb_socket_path(self.doveadm_userdb_socket_path.clone()),
             ),
         }
     }
@@ -877,10 +922,7 @@ impl BrowserGateway for RuntimeBrowserGateway {
             Ok(records) => BrowserSessionListOutcome {
                 decision: BrowserSessionListDecision::Listed {
                     canonical_username: validated_session.record.canonical_username.clone(),
-                    sessions: records
-                        .into_iter()
-                        .map(Self::visible_session)
-                        .collect(),
+                    sessions: records.into_iter().map(Self::visible_session).collect(),
                 },
                 audit_events: vec![build_http_info_event(
                     "session_listed",
@@ -932,7 +974,9 @@ impl BrowserGateway for RuntimeBrowserGateway {
             .build_session_service()
             .list_for_user(&validated_session.record.canonical_username)
         {
-            Ok(records) => records.into_iter().any(|record| record.session_id == session_id),
+            Ok(records) => records
+                .into_iter()
+                .any(|record| record.session_id == session_id),
             Err(error) => {
                 return BrowserSessionRevokeOutcome {
                     decision: BrowserSessionRevokeDecision::Denied {
@@ -966,10 +1010,7 @@ impl BrowserGateway for RuntimeBrowserGateway {
             };
         }
 
-        match self
-            .build_session_service()
-            .revoke(context, session_id)
-        {
+        match self.build_session_service().revoke(context, session_id) {
             Ok(revoked_session) => BrowserSessionRevokeOutcome {
                 decision: BrowserSessionRevokeDecision::Revoked {
                     revoked_session_id: revoked_session.record.session_id.clone(),
@@ -1110,26 +1151,23 @@ impl BrowserGateway for RuntimeBrowserGateway {
         mailbox_name: &str,
         query: &str,
     ) -> BrowserMessageSearchOutcome {
-        let request = match MessageSearchRequest::new(
-            MessageSearchPolicy::default(),
-            mailbox_name,
-            query,
-        ) {
-            Ok(request) => request,
-            Err(error) => {
-                return BrowserMessageSearchOutcome {
-                    decision: BrowserMessageSearchDecision::Denied {
-                        public_reason: "invalid_request".to_string(),
-                    },
-                    audit_events: vec![build_http_warning_event(
-                        "message_search_request_rejected",
-                        "message search request validation failed",
-                        context,
-                    )
-                    .with_field("reason", error.reason)],
-                };
-            }
-        };
+        let request =
+            match MessageSearchRequest::new(MessageSearchPolicy::default(), mailbox_name, query) {
+                Ok(request) => request,
+                Err(error) => {
+                    return BrowserMessageSearchOutcome {
+                        decision: BrowserMessageSearchDecision::Denied {
+                            public_reason: "invalid_request".to_string(),
+                        },
+                        audit_events: vec![build_http_warning_event(
+                            "message_search_request_rejected",
+                            "message search request validation failed",
+                            context,
+                        )
+                        .with_field("reason", error.reason)],
+                    };
+                }
+            };
 
         let outcome = MessageSearchService::new(self.build_message_search_backend())
             .search_for_validated_session(context, validated_session, &request);
@@ -1360,6 +1398,62 @@ impl BrowserGateway for RuntimeBrowserGateway {
             },
         }
     }
+
+    fn move_message(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        source_mailbox_name: &str,
+        uid: u64,
+        destination_mailbox_name: &str,
+    ) -> BrowserMessageMoveOutcome {
+        let request = match MessageMoveRequest::new(
+            MessageMovePolicy::default(),
+            source_mailbox_name,
+            destination_mailbox_name,
+            uid,
+        ) {
+            Ok(request) => request,
+            Err(error) => {
+                return BrowserMessageMoveOutcome {
+                    decision: BrowserMessageMoveDecision::Denied {
+                        public_reason: "invalid_request".to_string(),
+                    },
+                    audit_events: vec![build_http_warning_event(
+                        "message_move_request_rejected",
+                        "message move request validation failed",
+                        context,
+                    )
+                    .with_field("reason", error.reason)],
+                };
+            }
+        };
+
+        let outcome = MessageMoveService::new(self.build_message_move_backend())
+            .move_for_validated_session(context, validated_session, &request);
+
+        match outcome.decision {
+            MessageMoveDecision::Moved {
+                source_mailbox_name,
+                destination_mailbox_name,
+                uid,
+                ..
+            } => BrowserMessageMoveOutcome {
+                decision: BrowserMessageMoveDecision::Moved {
+                    source_mailbox_name,
+                    destination_mailbox_name,
+                    uid,
+                },
+                audit_events: vec![outcome.audit_event],
+            },
+            MessageMoveDecision::Denied { public_reason } => BrowserMessageMoveOutcome {
+                decision: BrowserMessageMoveDecision::Denied {
+                    public_reason: public_reason.as_str().to_string(),
+                },
+                audit_events: vec![outcome.audit_event],
+            },
+        }
+    }
 }
 
 /// Selects the current mailbox-list backend without widening the browser
@@ -1417,6 +1511,26 @@ impl crate::mailbox::MessageSearchBackend for MessageSearchRuntimeBackend {
         match self {
             Self::Direct(backend) => backend.search_messages(canonical_username, request),
             Self::Helper(backend) => backend.search_messages(canonical_username, request),
+        }
+    }
+}
+
+/// Selects the current message-move backend without widening the browser
+/// runtime's authority when a local helper is configured.
+enum MessageMoveRuntimeBackend {
+    Direct(DoveadmMessageMoveBackend<SystemCommandExecutor>),
+    Helper(MailboxHelperMessageMoveBackend),
+}
+
+impl crate::mailbox::MessageMoveBackend for MessageMoveRuntimeBackend {
+    fn move_message(
+        &self,
+        canonical_username: &str,
+        request: &MessageMoveRequest,
+    ) -> Result<(), crate::mailbox::MailboxBackendError> {
+        match self {
+            Self::Direct(backend) => backend.move_message(canonical_username, request),
+            Self::Helper(backend) => backend.move_message(canonical_username, request),
         }
     }
 }
@@ -1526,6 +1640,7 @@ where
             (HttpMethod::Get, "/attachment") => self.handle_attachment_download(request, &context),
             (HttpMethod::Get, "/compose") => self.handle_compose_form(request, &context),
             (HttpMethod::Get, "/sessions") => self.handle_sessions_page(request, &context),
+            (HttpMethod::Post, "/message/move") => self.handle_message_move(request, &context),
             (HttpMethod::Post, "/send") => self.handle_send(request, &context),
             (HttpMethod::Post, "/sessions/revoke") => self.handle_session_revoke(request, &context),
             (HttpMethod::Post, "/logout") => self.handle_logout(request, &context),
@@ -1552,7 +1667,8 @@ where
         request: &HttpRequest,
         context: &AuthenticationContext,
     ) -> HandledHttpResponse {
-        if !allows_urlencoded_request_body(request.headers.get("content-type").map(String::as_str)) {
+        if !allows_urlencoded_request_body(request.headers.get("content-type").map(String::as_str))
+        {
             return HandledHttpResponse {
                 response: html_response(
                     400,
@@ -1728,6 +1844,13 @@ where
                 Ok(result) => result,
                 Err(response) => return response,
             };
+        let success_message = request.query_params.get("moved_to").and_then(|value| {
+            if value.is_empty() {
+                None
+            } else {
+                Some(format!("Message moved to {}.", value))
+            }
+        });
 
         let outcome = self
             .gateway
@@ -1749,6 +1872,7 @@ where
                         &validated_session.record.csrf_token,
                         &mailbox_name,
                         &messages,
+                        success_message.as_deref(),
                     ),
                 ),
                 audit_events,
@@ -1765,6 +1889,136 @@ where
                 ),
                 audit_events,
             },
+        }
+    }
+
+    /// Handles one CSRF-bound message-move request from the message view.
+    fn handle_message_move(
+        &self,
+        request: &HttpRequest,
+        context: &AuthenticationContext,
+    ) -> HandledHttpResponse {
+        if !allows_urlencoded_request_body(request.headers.get("content-type").map(String::as_str))
+        {
+            return HandledHttpResponse {
+                response: html_response(
+                    400,
+                    "Bad Request",
+                    "Invalid Message Move Request",
+                    "<p>The move form content type was not supported.</p>",
+                ),
+                audit_events: vec![build_http_warning_event(
+                    "http_message_move_content_type_rejected",
+                    "message move form content type was not supported",
+                    context,
+                )],
+            };
+        }
+
+        let form = match parse_urlencoded_form(
+            &request.body,
+            self.policy.max_form_fields,
+            self.policy.max_body_bytes,
+        ) {
+            Ok(form) => form,
+            Err(error) => {
+                return HandledHttpResponse {
+                    response: html_response(
+                        400,
+                        "Bad Request",
+                        "Invalid Message Move Request",
+                        "<p>The move form could not be parsed.</p>",
+                    ),
+                    audit_events: vec![build_http_warning_event(
+                        "http_message_move_parse_failed",
+                        "message move form parsing failed",
+                        context,
+                    )
+                    .with_field("reason", error.reason)],
+                };
+            }
+        };
+
+        let (validated_session, mut audit_events) =
+            match self.require_validated_session(request, context) {
+                Ok(result) => result,
+                Err(response) => return response,
+            };
+        if let Some(response) = self.require_valid_csrf(
+            form.get("csrf_token").map(String::as_str),
+            &validated_session,
+            context,
+        ) {
+            return response;
+        }
+
+        let source_mailbox_name = form.get("mailbox").cloned().unwrap_or_default();
+        let destination_mailbox_name = form.get("destination_mailbox").cloned().unwrap_or_default();
+        let uid = match form.get("uid").and_then(|value| value.parse::<u64>().ok()) {
+            Some(uid) => uid,
+            None => {
+                return HandledHttpResponse {
+                    response: html_response(
+                        400,
+                        "Bad Request",
+                        "Invalid Message Move Request",
+                        "<p>A positive IMAP UID is required.</p>",
+                    ),
+                    audit_events: vec![build_http_warning_event(
+                        "http_message_move_uid_rejected",
+                        "message move uid parameter invalid",
+                        context,
+                    )],
+                };
+            }
+        };
+
+        let outcome = self.gateway.move_message(
+            context,
+            &validated_session,
+            &source_mailbox_name,
+            uid,
+            &destination_mailbox_name,
+        );
+        audit_events.extend(outcome.audit_events);
+
+        match outcome.decision {
+            BrowserMessageMoveDecision::Moved {
+                source_mailbox_name,
+                destination_mailbox_name,
+                ..
+            } => HandledHttpResponse {
+                response: redirect_response(
+                    303,
+                    "See Other",
+                    &format!(
+                        "/mailbox?name={}&moved_to={}",
+                        url_encode(&source_mailbox_name),
+                        url_encode(&destination_mailbox_name)
+                    ),
+                ),
+                audit_events,
+            },
+            BrowserMessageMoveDecision::Denied { public_reason } => {
+                let (status_code, reason_phrase, title) = match public_reason.as_str() {
+                    "invalid_request" => (400, "Bad Request", "Invalid Message Move Request"),
+                    "not_found" => (404, "Not Found", "Message Move Not Available"),
+                    _ => (503, "Service Unavailable", "Message Move Unavailable"),
+                };
+
+                HandledHttpResponse {
+                    response: html_response(
+                        status_code,
+                        reason_phrase,
+                        title,
+                        &format!(
+                            "<p>{}</p>",
+                            escape_html(public_reason_message(&public_reason))
+                        ),
+                    ),
+                    audit_events,
+                }
+            }
         }
     }
 
@@ -2074,12 +2328,12 @@ where
                 Err(response) => return response,
             };
 
-        let success_message = if request.query_params.get("revoked").map(String::as_str) == Some("1")
-        {
-            Some("The selected session was revoked.")
-        } else {
-            None
-        };
+        let success_message =
+            if request.query_params.get("revoked").map(String::as_str) == Some("1") {
+                Some("The selected session was revoked.")
+            } else {
+                None
+            };
 
         let outcome = self.gateway.list_sessions(context, &validated_session);
         audit_events.extend(outcome.audit_events);
@@ -2344,7 +2598,8 @@ where
         request: &HttpRequest,
         context: &AuthenticationContext,
     ) -> HandledHttpResponse {
-        if !allows_urlencoded_request_body(request.headers.get("content-type").map(String::as_str)) {
+        if !allows_urlencoded_request_body(request.headers.get("content-type").map(String::as_str))
+        {
             return HandledHttpResponse {
                 response: html_response(
                     400,
@@ -2484,7 +2739,8 @@ where
         request: &HttpRequest,
         context: &AuthenticationContext,
     ) -> HandledHttpResponse {
-        if !allows_urlencoded_request_body(request.headers.get("content-type").map(String::as_str)) {
+        if !allows_urlencoded_request_body(request.headers.get("content-type").map(String::as_str))
+        {
             return HandledHttpResponse {
                 response: html_response(
                     400,
@@ -3391,7 +3647,15 @@ fn render_message_list_page(
     csrf_token: &str,
     mailbox_name: &str,
     messages: &[MessageSummary],
+    success_message: Option<&str>,
 ) -> String {
+    let success_banner = match success_message {
+        Some(success_message) => format!(
+            "<p><strong>Update complete:</strong> {}</p>",
+            escape_html(success_message)
+        ),
+        None => String::new(),
+    };
     let mut rows = String::new();
     for message in messages {
         let message_href = format!(
@@ -3410,10 +3674,11 @@ fn render_message_list_page(
     }
 
     format!(
-        "<nav><a href=\"/mailboxes\">Back to mailboxes</a> | <a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Mailbox: {}</h1><p>Signed in as <strong>{}</strong>.</p><form method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><label>Search this mailbox<input type=\"text\" name=\"q\" autocomplete=\"off\"></label><button type=\"submit\">Search</button></form><table><thead><tr><th>UID</th><th>Received</th><th>Flags</th><th>Size</th></tr></thead><tbody>{}</tbody></table>",
+        "<nav><a href=\"/mailboxes\">Back to mailboxes</a> | <a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Mailbox: {}</h1><p>Signed in as <strong>{}</strong>.</p>{}<form method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><label>Search this mailbox<input type=\"text\" name=\"q\" autocomplete=\"off\"></label><button type=\"submit\">Search</button></form><table><thead><tr><th>UID</th><th>Received</th><th>Flags</th><th>Size</th></tr></thead><tbody>{}</tbody></table>",
         escape_html(csrf_token),
         escape_html(mailbox_name),
         escape_html(canonical_username),
+        success_banner,
         escape_html(mailbox_name),
         rows,
     )
@@ -3495,8 +3760,15 @@ fn render_message_view_page(
         }
     }
 
+    let move_form = format!(
+        "<h2>Move Message</h2><p class=\"muted\">This first folder-organization slice moves one message into an existing mailbox. Archive behavior uses the same path by selecting your archive mailbox name.</p><form method=\"post\" action=\"/message/move\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"uid\" value=\"{}\"><label>Destination Mailbox<input type=\"text\" name=\"destination_mailbox\" autocomplete=\"off\"></label><button type=\"submit\">Move Message</button></form>",
+        escape_html(csrf_token),
+        escape_html(&rendered.mailbox_name),
+        rendered.uid,
+    );
+
     format!(
-        "<nav><a href=\"/mailbox?name={}\">Back to mailbox</a> | <a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <a href=\"/compose?mode=reply&mailbox={}&uid={}\">Reply</a> | <a href=\"/compose?mode=forward&mailbox={}&uid={}\">Forward</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Message View</h1><p>Signed in as <strong>{}</strong>.</p><dl><dt>Mailbox</dt><dd>{}</dd><dt>UID</dt><dd>{}</dd><dt>Subject</dt><dd>{}</dd><dt>From</dt><dd>{}</dd><dt>Received</dt><dd>{}</dd><dt>MIME Type</dt><dd>{}</dd><dt>Body Source</dt><dd>{}</dd><dt>HTML Present</dt><dd>{}</dd></dl><h2>Attachments</h2><ul>{}</ul><h2>Body</h2>{}",
+        "<nav><a href=\"/mailbox?name={}\">Back to mailbox</a> | <a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <a href=\"/compose?mode=reply&mailbox={}&uid={}\">Reply</a> | <a href=\"/compose?mode=forward&mailbox={}&uid={}\">Forward</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Message View</h1><p>Signed in as <strong>{}</strong>.</p><dl><dt>Mailbox</dt><dd>{}</dd><dt>UID</dt><dd>{}</dd><dt>Subject</dt><dd>{}</dd><dt>From</dt><dd>{}</dd><dt>Received</dt><dd>{}</dd><dt>MIME Type</dt><dd>{}</dd><dt>Body Source</dt><dd>{}</dd><dt>HTML Present</dt><dd>{}</dd></dl>{}<h2>Attachments</h2><ul>{}</ul><h2>Body</h2>{}",
         escape_html(&url_encode(&rendered.mailbox_name)),
         escape_html(&url_encode(&rendered.mailbox_name)),
         rendered.uid,
@@ -3512,6 +3784,7 @@ fn render_message_view_page(
         escape_html(&rendered.mime_top_level_content_type),
         escape_html(rendered.body_source.as_str()),
         if rendered.contains_html_body { "yes" } else { "no" },
+        move_form,
         attachments,
         rendered.body_html,
     )
@@ -3860,8 +4133,9 @@ mod tests {
                             factor: validated_session.record.factor,
                         },
                         BrowserVisibleSession {
-                            session_id: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-                                .to_string(),
+                            session_id:
+                                "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+                                    .to_string(),
                             issued_at: 5,
                             expires_at: 95,
                             last_seen_at: 15,
@@ -4140,6 +4414,43 @@ mod tests {
                 }
             }
         }
+
+        fn move_message(
+            &self,
+            _context: &AuthenticationContext,
+            _validated_session: &ValidatedSession,
+            source_mailbox_name: &str,
+            uid: u64,
+            destination_mailbox_name: &str,
+        ) -> BrowserMessageMoveOutcome {
+            if source_mailbox_name == "INBOX" && uid == 9 && !destination_mailbox_name.is_empty() {
+                BrowserMessageMoveOutcome {
+                    decision: BrowserMessageMoveDecision::Moved {
+                        source_mailbox_name: source_mailbox_name.to_string(),
+                        destination_mailbox_name: destination_mailbox_name.to_string(),
+                        uid,
+                    },
+                    audit_events: vec![LogEvent::new(
+                        LogLevel::Info,
+                        EventCategory::Mailbox,
+                        "stub_message_move",
+                        "stub message move completed",
+                    )],
+                }
+            } else {
+                BrowserMessageMoveOutcome {
+                    decision: BrowserMessageMoveDecision::Denied {
+                        public_reason: "invalid_request".to_string(),
+                    },
+                    audit_events: vec![LogEvent::new(
+                        LogLevel::Warn,
+                        EventCategory::Mailbox,
+                        "stub_message_move_denied",
+                        "stub message move denied",
+                    )],
+                }
+            }
+        }
     }
 
     fn app() -> BrowserApp<StubGateway> {
@@ -4393,7 +4704,55 @@ mod tests {
         assert!(body.contains("<pre>Hello world</pre>"));
         assert!(body.contains("mode=reply"));
         assert!(body.contains("mode=forward"));
+        assert!(body.contains("action=\"/message/move\""));
+        assert!(body.contains("name=\"destination_mailbox\""));
         assert!(body.contains("/attachment?mailbox=INBOX&amp;uid=9&amp;part=1.2"));
+    }
+
+    #[test]
+    fn message_move_redirects_back_to_mailbox_after_success() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/message/move",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                ],
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=9&destination_mailbox=Archive%2F2026",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 303);
+        assert!(response.response.headers.iter().any(|(name, value)| {
+            name == "Location" && value == "/mailbox?name=INBOX&moved_to=Archive%2F2026"
+        }));
+    }
+
+    #[test]
+    fn mailbox_page_renders_move_success_notice() {
+        let response = app().handle_request(
+            &request(
+                "GET",
+                "/mailbox?name=INBOX&moved_to=Archive%2F2026",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                ],
+                "",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 200);
+        assert!(body_text(&response).contains("Message moved to Archive/2026."));
     }
 
     #[test]
@@ -4532,8 +4891,7 @@ mod tests {
             .response
             .headers
             .iter()
-            .any(|(name, value)| name == "Cross-Origin-Resource-Policy"
-                && value == "same-origin"));
+            .any(|(name, value)| name == "Cross-Origin-Resource-Policy" && value == "same-origin"));
     }
 
     #[test]
@@ -4797,7 +5155,10 @@ mod tests {
 
     #[test]
     fn rejects_oversized_cookie_headers() {
-        let oversized_cookie = format!("Cookie: {}\r\n", "a".repeat(DEFAULT_HTTP_MAX_COOKIE_HEADER_BYTES + 1));
+        let oversized_cookie = format!(
+            "Cookie: {}\r\n",
+            "a".repeat(DEFAULT_HTTP_MAX_COOKIE_HEADER_BYTES + 1)
+        );
         let raw = format!("GET /mailboxes HTTP/1.1\r\nHost: localhost\r\n{oversized_cookie}\r\n");
 
         let error = parse_http_request(&raw, &HttpPolicy::default())
@@ -4858,7 +5219,10 @@ mod tests {
         )
         .expect_err("dot-segment request paths must be rejected");
 
-        assert_eq!(error.reason, "request target path must not contain dot segments");
+        assert_eq!(
+            error.reason,
+            "request target path must not contain dot segments"
+        );
     }
 
     #[test]

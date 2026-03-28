@@ -269,6 +269,68 @@ impl MessageViewRequest {
     }
 }
 
+/// Policy controlling one-message move request validation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct MessageMovePolicy {
+    pub mailbox_name_max_len: usize,
+}
+
+impl Default for MessageMovePolicy {
+    fn default() -> Self {
+        Self {
+            mailbox_name_max_len: DEFAULT_MAILBOX_NAME_MAX_LEN,
+        }
+    }
+}
+
+/// A validated request for moving one message between existing mailboxes.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MessageMoveRequest {
+    pub source_mailbox_name: String,
+    pub destination_mailbox_name: String,
+    pub uid: u64,
+}
+
+impl MessageMoveRequest {
+    /// Validates the source mailbox, destination mailbox, and UID for a
+    /// one-message move operation.
+    pub fn new(
+        policy: MessageMovePolicy,
+        source_mailbox_name: impl Into<String>,
+        destination_mailbox_name: impl Into<String>,
+        uid: u64,
+    ) -> Result<Self, MailboxBackendError> {
+        let mailbox_policy = MailboxListingPolicy {
+            mailbox_name_max_len: policy.mailbox_name_max_len,
+            max_mailboxes: DEFAULT_MAX_MAILBOXES,
+        };
+        let source_mailbox_name =
+            MailboxEntry::new(mailbox_policy, source_mailbox_name.into())?.name;
+        let destination_mailbox_name =
+            MailboxEntry::new(mailbox_policy, destination_mailbox_name.into())?.name;
+
+        if source_mailbox_name == destination_mailbox_name {
+            return Err(MailboxBackendError {
+                backend: "message-move-parser",
+                reason: "destination mailbox must differ from source mailbox".to_string(),
+            });
+        }
+
+        if uid == 0 {
+            return Err(MailboxBackendError {
+                backend: "message-move-parser",
+                reason: "uid must be greater than zero".to_string(),
+            });
+        }
+
+        Ok(Self {
+            source_mailbox_name,
+            destination_mailbox_name,
+            uid,
+        })
+    }
+}
+
 /// A bounded per-message payload for the first message-view slice.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MessageView {
@@ -409,6 +471,21 @@ pub enum MessageSearchDecision {
     },
 }
 
+/// The outcome of a one-message move request.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum MessageMoveDecision {
+    Denied {
+        public_reason: MailboxPublicFailureReason,
+    },
+    Moved {
+        canonical_username: String,
+        session_id: String,
+        source_mailbox_name: String,
+        destination_mailbox_name: String,
+        uid: u64,
+    },
+}
+
 /// The decision plus audit event emitted by mailbox listing.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MailboxListingOutcome {
@@ -434,6 +511,13 @@ pub struct MessageViewOutcome {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MessageSearchOutcome {
     pub decision: MessageSearchDecision,
+    pub audit_event: LogEvent,
+}
+
+/// The decision plus audit event emitted by one-message move.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MessageMoveOutcome {
+    pub decision: MessageMoveDecision,
     pub audit_event: LogEvent,
 }
 
@@ -477,6 +561,15 @@ pub trait MessageSearchBackend {
         canonical_username: &str,
         request: &MessageSearchRequest,
     ) -> Result<Vec<MessageSearchResult>, MailboxBackendError>;
+}
+
+/// A backend capable of moving one message between existing mailboxes.
+pub trait MessageMoveBackend {
+    fn move_message(
+        &self,
+        canonical_username: &str,
+        request: &MessageMoveRequest,
+    ) -> Result<(), MailboxBackendError>;
 }
 
 /// Lists mailboxes for an already validated session.
@@ -729,6 +822,76 @@ where
                     &validated_session.record.session_id,
                     &request.mailbox_name,
                     &request.query,
+                    &error,
+                ),
+            },
+        }
+    }
+}
+
+/// Moves one message for an already validated session.
+pub struct MessageMoveService<B> {
+    backend: B,
+}
+
+impl<B> MessageMoveService<B>
+where
+    B: MessageMoveBackend,
+{
+    /// Creates a message-move service around the supplied backend.
+    pub fn new(backend: B) -> Self {
+        Self { backend }
+    }
+
+    /// Moves one message for the canonical user attached to the validated
+    /// session.
+    pub fn move_for_validated_session(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        request: &MessageMoveRequest,
+    ) -> MessageMoveOutcome {
+        let canonical_username = validated_session.record.canonical_username.clone();
+        let session_id = validated_session.record.session_id.clone();
+
+        match self.backend.move_message(&canonical_username, request) {
+            Ok(()) => MessageMoveOutcome {
+                decision: MessageMoveDecision::Moved {
+                    canonical_username: canonical_username.clone(),
+                    session_id: session_id.clone(),
+                    source_mailbox_name: request.source_mailbox_name.clone(),
+                    destination_mailbox_name: request.destination_mailbox_name.clone(),
+                    uid: request.uid,
+                },
+                audit_event: LogEvent::new(
+                    LogLevel::Info,
+                    EventCategory::Mailbox,
+                    "message_moved",
+                    "message move completed",
+                )
+                .with_field("canonical_username", canonical_username)
+                .with_field("session_id", session_id)
+                .with_field("source_mailbox_name", request.source_mailbox_name.clone())
+                .with_field(
+                    "destination_mailbox_name",
+                    request.destination_mailbox_name.clone(),
+                )
+                .with_field("uid", request.uid.to_string())
+                .with_field("request_id", context.request_id.clone())
+                .with_field("remote_addr", context.remote_addr.clone())
+                .with_field("user_agent", context.user_agent.clone()),
+            },
+            Err(error) => MessageMoveOutcome {
+                decision: MessageMoveDecision::Denied {
+                    public_reason: MailboxPublicFailureReason::TemporarilyUnavailable,
+                },
+                audit_event: build_message_move_failure_event(
+                    context,
+                    &validated_session.record.canonical_username,
+                    &validated_session.record.session_id,
+                    &request.source_mailbox_name,
+                    &request.destination_mailbox_name,
+                    request.uid,
                     &error,
                 ),
             },
@@ -1037,6 +1200,83 @@ where
     }
 }
 
+/// Moves one message through `doveadm move`.
+pub struct DoveadmMessageMoveBackend<E> {
+    command_executor: E,
+    doveadm_path: PathBuf,
+    userdb_socket_path: Option<PathBuf>,
+}
+
+impl<E> DoveadmMessageMoveBackend<E> {
+    /// Builds a backend using the supplied command executor and `doveadm` path.
+    pub fn new(command_executor: E, doveadm_path: impl Into<PathBuf>) -> Self {
+        Self {
+            command_executor,
+            doveadm_path: doveadm_path.into(),
+            userdb_socket_path: None,
+        }
+    }
+
+    /// Points message-move operations at an explicit Dovecot userdb-capable
+    /// socket.
+    pub fn with_userdb_socket_path(mut self, userdb_socket_path: Option<PathBuf>) -> Self {
+        self.userdb_socket_path = userdb_socket_path;
+        self
+    }
+}
+
+impl Default for DoveadmMessageMoveBackend<SystemCommandExecutor> {
+    fn default() -> Self {
+        Self::new(SystemCommandExecutor, "/usr/local/bin/doveadm")
+    }
+}
+
+impl<E> MessageMoveBackend for DoveadmMessageMoveBackend<E>
+where
+    E: CommandExecutor,
+{
+    fn move_message(
+        &self,
+        canonical_username: &str,
+        request: &MessageMoveRequest,
+    ) -> Result<(), MailboxBackendError> {
+        let args = vec!["-o".to_string(), "stats_writer_socket_path=".to_string()];
+        let mut args = args;
+        append_doveadm_auth_socket_override(&mut args, self.userdb_socket_path.as_ref());
+        args.extend([
+            "move".to_string(),
+            "-u".to_string(),
+            canonical_username.to_string(),
+            request.destination_mailbox_name.clone(),
+            "mailbox".to_string(),
+            request.source_mailbox_name.clone(),
+            "uid".to_string(),
+            request.uid.to_string(),
+        ]);
+
+        let execution = self
+            .command_executor
+            .run_with_stdin(self.doveadm_path.to_string_lossy().as_ref(), &args, "")
+            .map_err(|error| MailboxBackendError {
+                backend: "doveadm-message-move",
+                reason: error.reason,
+            })?;
+
+        if execution.status_code != 0 {
+            return Err(MailboxBackendError {
+                backend: "doveadm-message-move",
+                reason: format!(
+                    "command exited with status {}: {}",
+                    execution.status_code,
+                    concise_command_diagnostics(&execution.stdout, &execution.stderr),
+                ),
+            });
+        }
+
+        Ok(())
+    }
+}
+
 /// Builds a bounded failure event for mailbox-listing problems.
 fn build_mailbox_failure_event(
     context: &AuthenticationContext,
@@ -1170,6 +1410,45 @@ fn build_message_search_failure_event(
         MailboxPublicFailureReason::TemporarilyUnavailable.as_str(),
     )
     .with_field("audit_reason", audit_reason.as_str())
+    .with_field("backend", error.backend)
+    .with_field("backend_reason", error.reason.clone())
+    .with_field("request_id", context.request_id.clone())
+    .with_field("remote_addr", context.remote_addr.clone())
+    .with_field("user_agent", context.user_agent.clone())
+}
+
+/// Builds a bounded failure event for one-message move problems.
+fn build_message_move_failure_event(
+    context: &AuthenticationContext,
+    canonical_username: &str,
+    session_id: &str,
+    source_mailbox_name: &str,
+    destination_mailbox_name: &str,
+    uid: u64,
+    error: &MailboxBackendError,
+) -> LogEvent {
+    LogEvent::new(
+        LogLevel::Warn,
+        EventCategory::Mailbox,
+        "message_move_failed",
+        "message move failed",
+    )
+    .with_field("canonical_username", canonical_username.to_string())
+    .with_field("session_id", session_id.to_string())
+    .with_field("source_mailbox_name", source_mailbox_name.to_string())
+    .with_field(
+        "destination_mailbox_name",
+        destination_mailbox_name.to_string(),
+    )
+    .with_field("uid", uid.to_string())
+    .with_field(
+        "public_reason",
+        MailboxPublicFailureReason::TemporarilyUnavailable.as_str(),
+    )
+    .with_field(
+        "audit_reason",
+        MailboxAuditFailureReason::BackendUnavailable.as_str(),
+    )
     .with_field("backend", error.backend)
     .with_field("backend_reason", error.reason.clone())
     .with_field("request_id", context.request_id.clone())
@@ -1498,7 +1777,12 @@ fn parse_message_search_result_line(
             mailbox_name_max_len: policy.mailbox_name_max_len,
             max_mailboxes: DEFAULT_MAX_MAILBOXES,
         },
-        required_flow_field(&fields, "mailbox", "message-search", "message-search-parser")?,
+        required_flow_field(
+            &fields,
+            "mailbox",
+            "message-search",
+            "message-search-parser",
+        )?,
     )?
     .name;
     let uid = parse_u64_value(
@@ -1522,13 +1806,9 @@ fn parse_message_search_result_line(
         false,
     )?;
 
-    let flags_text = required_flow_field(
-        &fields,
-        "flags",
-        "message-search",
-        "message-search-parser",
-    )?
-    .to_string();
+    let flags_text =
+        required_flow_field(&fields, "flags", "message-search", "message-search-parser")?
+            .to_string();
     validate_bounded_string(
         "flags",
         &flags_text,
@@ -1995,6 +2275,21 @@ mod tests {
         }
     }
 
+    struct FailingMessageMoveBackend;
+
+    impl MessageMoveBackend for FailingMessageMoveBackend {
+        fn move_message(
+            &self,
+            _canonical_username: &str,
+            _request: &MessageMoveRequest,
+        ) -> Result<(), MailboxBackendError> {
+            Err(MailboxBackendError {
+                backend: "test-message-move-backend",
+                reason: "move operation unavailable".to_string(),
+            })
+        }
+    }
+
     fn test_context() -> AuthenticationContext {
         AuthenticationContext::new(
             AuthenticationPolicy::default(),
@@ -2225,12 +2520,9 @@ mod tests {
             executor.clone(),
             "/usr/local/bin/doveadm",
         );
-        let request = MessageSearchRequest::new(
-            MessageSearchPolicy::default(),
-            "INBOX",
-            "quarterly report",
-        )
-        .expect("request should be valid");
+        let request =
+            MessageSearchRequest::new(MessageSearchPolicy::default(), "INBOX", "quarterly report")
+                .expect("request should be valid");
 
         let results = backend
             .search_messages("alice@example.com", &request)
@@ -2239,7 +2531,10 @@ mod tests {
         assert_eq!(results.len(), 2);
         assert_eq!(results[0].uid, 14);
         assert_eq!(results[0].subject.as_deref(), Some("Quarterly report"));
-        assert_eq!(results[0].from.as_deref(), Some("Alice <alice@example.com>"));
+        assert_eq!(
+            results[0].from.as_deref(),
+            Some("Alice <alice@example.com>")
+        );
         assert_eq!(results[1].uid, 15);
 
         let recorded = executor.borrow();
@@ -2258,6 +2553,45 @@ mod tests {
                 "INBOX".to_string(),
                 "TEXT".to_string(),
                 "quarterly report".to_string(),
+            ]
+        );
+    }
+
+    #[test]
+    fn message_move_uses_doveadm_move_command_shape() {
+        let executor = Rc::new(std::cell::RefCell::new(StubCommandExecutor::success(
+            CommandExecution {
+                status_code: 0,
+                stdout: String::new(),
+                stderr: String::new(),
+            },
+        )));
+        let backend = DoveadmMessageMoveBackend::new(executor.clone(), "/usr/local/bin/doveadm")
+            .with_userdb_socket_path(Some(PathBuf::from("/var/run/osmap-userdb")));
+        let request =
+            MessageMoveRequest::new(MessageMovePolicy::default(), "INBOX", "Archive/2026", 9)
+                .expect("request should be valid");
+
+        backend
+            .move_message("alice@example.com", &request)
+            .expect("message move should succeed");
+
+        let recorded = executor.borrow();
+        assert_eq!(
+            recorded.args.as_ref().expect("args should be captured"),
+            &vec![
+                "-o".to_string(),
+                "stats_writer_socket_path=".to_string(),
+                "-o".to_string(),
+                "auth_socket_path=/var/run/osmap-userdb".to_string(),
+                "move".to_string(),
+                "-u".to_string(),
+                "alice@example.com".to_string(),
+                "Archive/2026".to_string(),
+                "mailbox".to_string(),
+                "INBOX".to_string(),
+                "uid".to_string(),
+                "9".to_string(),
             ]
         );
     }
@@ -2360,6 +2694,18 @@ mod tests {
         assert_eq!(
             error.reason,
             "missing required message-search field date.received"
+        );
+    }
+
+    #[test]
+    fn rejects_message_move_with_same_source_and_destination() {
+        let error = MessageMoveRequest::new(MessageMovePolicy::default(), "INBOX", "INBOX", 9)
+            .expect_err("identical source and destination must fail");
+
+        assert_eq!(error.backend, "message-move-parser");
+        assert_eq!(
+            error.reason,
+            "destination mailbox must differ from source mailbox"
         );
     }
 
@@ -2581,12 +2927,9 @@ mod tests {
             ],
         });
         let validated_session = validated_session_fixture();
-        let request = MessageSearchRequest::new(
-            MessageSearchPolicy::default(),
-            "INBOX",
-            "quarterly report",
-        )
-        .expect("request should be valid");
+        let request =
+            MessageSearchRequest::new(MessageSearchPolicy::default(), "INBOX", "quarterly report")
+                .expect("request should be valid");
 
         let outcome =
             service.search_for_validated_session(&test_context(), &validated_session, &request);
@@ -2609,12 +2952,9 @@ mod tests {
     fn message_search_service_translates_backend_failures_into_bounded_events() {
         let service = MessageSearchService::new(FailingMessageSearchBackend);
         let validated_session = validated_session_fixture();
-        let request = MessageSearchRequest::new(
-            MessageSearchPolicy::default(),
-            "INBOX",
-            "quarterly report",
-        )
-        .expect("request should be valid");
+        let request =
+            MessageSearchRequest::new(MessageSearchPolicy::default(), "INBOX", "quarterly report")
+                .expect("request should be valid");
 
         let outcome =
             service.search_for_validated_session(&test_context(), &validated_session, &request);
@@ -2626,6 +2966,52 @@ mod tests {
             }
         );
         assert_eq!(outcome.audit_event.action, "message_search_failed");
+        assert_eq!(outcome.audit_event.level, LogLevel::Warn);
+    }
+
+    #[test]
+    fn message_move_service_emits_audit_quality_success_events() {
+        let service = MessageMoveService::new(StaticMessageMoveBackend);
+        let validated_session = validated_session_fixture();
+        let request =
+            MessageMoveRequest::new(MessageMovePolicy::default(), "INBOX", "Archive/2026", 9)
+                .expect("request should be valid");
+
+        let outcome =
+            service.move_for_validated_session(&test_context(), &validated_session, &request);
+
+        assert_eq!(outcome.audit_event.category, EventCategory::Mailbox);
+        assert_eq!(outcome.audit_event.action, "message_moved");
+
+        let logger = Logger::new(LogFormat::Text, LogLevel::Debug);
+        let rendered = logger.render_with_timestamp(&outcome.audit_event, 5454);
+        assert_eq!(
+            rendered,
+            format!(
+                "ts=5454 level=info category=mailbox action=message_moved msg=\"message move completed\" canonical_username=\"alice@example.com\" session_id=\"{}\" source_mailbox_name=\"INBOX\" destination_mailbox_name=\"Archive/2026\" uid=\"9\" request_id=\"req-mailbox\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\"",
+                validated_session.record.session_id
+            )
+        );
+    }
+
+    #[test]
+    fn message_move_service_translates_backend_failures_into_bounded_events() {
+        let service = MessageMoveService::new(FailingMessageMoveBackend);
+        let validated_session = validated_session_fixture();
+        let request =
+            MessageMoveRequest::new(MessageMovePolicy::default(), "INBOX", "Archive/2026", 9)
+                .expect("request should be valid");
+
+        let outcome =
+            service.move_for_validated_session(&test_context(), &validated_session, &request);
+
+        assert_eq!(
+            outcome.decision,
+            MessageMoveDecision::Denied {
+                public_reason: MailboxPublicFailureReason::TemporarilyUnavailable,
+            }
+        );
+        assert_eq!(outcome.audit_event.action, "message_move_failed");
         assert_eq!(outcome.audit_event.level, LogLevel::Warn);
     }
 
@@ -3052,6 +3438,19 @@ mod tests {
             _request: &MessageViewRequest,
         ) -> Result<MessageView, MailboxBackendError> {
             Ok(self.message.clone())
+        }
+    }
+
+    #[derive(Debug, Clone)]
+    struct StaticMessageMoveBackend;
+
+    impl MessageMoveBackend for StaticMessageMoveBackend {
+        fn move_message(
+            &self,
+            _canonical_username: &str,
+            _request: &MessageMoveRequest,
+        ) -> Result<(), MailboxBackendError> {
+            Ok(())
         }
     }
 

@@ -2,9 +2,9 @@
 //!
 //! The first helper slice stays intentionally narrow:
 //! - one local Unix-domain socket listener
-//! - one small set of read-only mailbox operations
+//! - one small set of mailbox operations
 //! - one small line-oriented protocol that is easy to review
-//! - no new RPC framework or mailbox mutation behavior
+//! - no new RPC framework and only one bounded mailbox mutation behavior
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -21,11 +21,12 @@ use crate::auth::SystemCommandExecutor;
 use crate::config::{AppConfig, AppRunMode, LogLevel};
 use crate::logging::{EventCategory, LogEvent, Logger};
 use crate::mailbox::{
-    DoveadmMailboxListBackend, DoveadmMessageListBackend, DoveadmMessageSearchBackend,
-    DoveadmMessageViewBackend, MailboxBackend, MailboxBackendError, MailboxEntry,
-    MailboxListingPolicy, MessageListBackend, MessageListPolicy, MessageListRequest,
-    MessageSearchBackend, MessageSearchPolicy, MessageSearchRequest, MessageSearchResult,
-    MessageSummary, MessageView, MessageViewBackend, MessageViewPolicy, MessageViewRequest,
+    DoveadmMailboxListBackend, DoveadmMessageListBackend, DoveadmMessageMoveBackend,
+    DoveadmMessageSearchBackend, DoveadmMessageViewBackend, MailboxBackend, MailboxBackendError,
+    MailboxEntry, MailboxListingPolicy, MessageListBackend, MessageListPolicy, MessageListRequest,
+    MessageMoveBackend, MessageMovePolicy, MessageMoveRequest, MessageSearchBackend,
+    MessageSearchPolicy, MessageSearchRequest, MessageSearchResult, MessageSummary, MessageView,
+    MessageViewBackend, MessageViewPolicy, MessageViewRequest,
 };
 use crate::openbsd::apply_runtime_confinement;
 
@@ -165,6 +166,11 @@ impl MailboxBackend for MailboxHelperMailboxListBackend {
                     reason: "helper returned message-view response for mailbox-list request"
                         .to_string(),
                 }),
+                MailboxHelperResponse::MessageMoveOk { .. } => Err(MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: "helper returned message-move response for mailbox-list request"
+                        .to_string(),
+                }),
             }
         }
     }
@@ -295,6 +301,11 @@ impl MessageListBackend for MailboxHelperMessageListBackend {
                 MailboxHelperResponse::MessageViewOk { .. } => Err(MailboxBackendError {
                     backend: "mailbox-helper-client",
                     reason: "helper returned message-view response for message-list request"
+                        .to_string(),
+                }),
+                MailboxHelperResponse::MessageMoveOk { .. } => Err(MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: "helper returned message-move response for message-list request"
                         .to_string(),
                 }),
             }
@@ -440,6 +451,11 @@ impl MessageSearchBackend for MailboxHelperMessageSearchBackend {
                     reason: "helper returned message-view response for message-search request"
                         .to_string(),
                 }),
+                MailboxHelperResponse::MessageMoveOk { .. } => Err(MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: "helper returned message-move response for message-search request"
+                        .to_string(),
+                }),
             }
         }
     }
@@ -579,6 +595,162 @@ impl MessageViewBackend for MailboxHelperMessageViewBackend {
                     reason: "helper returned message-search response for message-view request"
                         .to_string(),
                 }),
+                MailboxHelperResponse::MessageMoveOk { .. } => Err(MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: "helper returned message-move response for message-view request"
+                        .to_string(),
+                }),
+            }
+        }
+    }
+}
+
+/// Client backend that proxies one-message move through the local helper socket.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MailboxHelperMessageMoveBackend {
+    socket_path: PathBuf,
+    policy: MailboxHelperPolicy,
+}
+
+impl MailboxHelperMessageMoveBackend {
+    /// Creates a message-move client backend for the supplied helper socket.
+    pub fn new(socket_path: impl Into<PathBuf>, policy: MailboxHelperPolicy) -> Self {
+        Self {
+            socket_path: socket_path.into(),
+            policy,
+        }
+    }
+}
+
+impl MessageMoveBackend for MailboxHelperMessageMoveBackend {
+    fn move_message(
+        &self,
+        canonical_username: &str,
+        request: &MessageMoveRequest,
+    ) -> Result<(), MailboxBackendError> {
+        let helper_request = MailboxHelperRequest::MessageMove {
+            canonical_username: canonical_username.to_string(),
+            source_mailbox_name: request.source_mailbox_name.clone(),
+            destination_mailbox_name: request.destination_mailbox_name.clone(),
+            uid: request.uid,
+        };
+        let request_bytes = encode_request(&helper_request).into_bytes();
+
+        #[cfg(not(unix))]
+        {
+            let _ = request_bytes;
+            return Err(MailboxBackendError {
+                backend: "mailbox-helper-client",
+                reason: "mailbox helper requires a Unix-domain socket platform".to_string(),
+            });
+        }
+
+        #[cfg(unix)]
+        {
+            let mut stream =
+                UnixStream::connect(&self.socket_path).map_err(|error| MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: format!(
+                        "failed to connect to mailbox helper {}: {error}",
+                        self.socket_path.display()
+                    ),
+                })?;
+
+            configure_stream_timeouts(&stream, self.policy);
+            stream
+                .write_all(&request_bytes)
+                .map_err(|error| MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: format!("failed to write helper request: {error}"),
+                })?;
+            stream
+                .shutdown(Shutdown::Write)
+                .map_err(|error| MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: format!("failed to finish helper request: {error}"),
+                })?;
+
+            let response_bytes =
+                read_bounded_from_stream(&mut stream, self.policy.max_response_bytes).map_err(
+                    |reason| MailboxBackendError {
+                        backend: "mailbox-helper-client",
+                        reason,
+                    },
+                )?;
+            let response = parse_response(
+                MailboxListingPolicy::default(),
+                MessageListPolicy::default(),
+                MessageSearchPolicy::default(),
+                MessageViewPolicy::default(),
+                std::str::from_utf8(&response_bytes).map_err(|error| MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: format!("helper response was not valid UTF-8: {error}"),
+                })?,
+            )
+            .map_err(|reason| MailboxBackendError {
+                backend: "mailbox-helper-client",
+                reason,
+            })?;
+
+            match response {
+                MailboxHelperResponse::MessageMoveOk {
+                    source_mailbox_name,
+                    destination_mailbox_name,
+                    uid,
+                } => {
+                    if source_mailbox_name != request.source_mailbox_name {
+                        return Err(MailboxBackendError {
+                            backend: "mailbox-helper-client",
+                            reason: format!(
+                                "helper response source mailbox mismatch: expected {:?}, got {:?}",
+                                request.source_mailbox_name, source_mailbox_name
+                            ),
+                        });
+                    }
+                    if destination_mailbox_name != request.destination_mailbox_name {
+                        return Err(MailboxBackendError {
+                            backend: "mailbox-helper-client",
+                            reason: format!(
+                                "helper response destination mailbox mismatch: expected {:?}, got {:?}",
+                                request.destination_mailbox_name, destination_mailbox_name
+                            ),
+                        });
+                    }
+                    if uid != request.uid {
+                        return Err(MailboxBackendError {
+                            backend: "mailbox-helper-client",
+                            reason: format!(
+                                "helper response uid mismatch: expected {}, got {}",
+                                request.uid, uid
+                            ),
+                        });
+                    }
+                    Ok(())
+                }
+                MailboxHelperResponse::Error { backend, reason } => Err(MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: format!("{backend}: {reason}"),
+                }),
+                MailboxHelperResponse::MailboxListOk { .. } => Err(MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: "helper returned mailbox-list response for message-move request"
+                        .to_string(),
+                }),
+                MailboxHelperResponse::MessageListOk { .. } => Err(MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: "helper returned message-list response for message-move request"
+                        .to_string(),
+                }),
+                MailboxHelperResponse::MessageSearchOk { .. } => Err(MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: "helper returned message-search response for message-move request"
+                        .to_string(),
+                }),
+                MailboxHelperResponse::MessageViewOk { .. } => Err(MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: "helper returned message-view response for message-move request"
+                        .to_string(),
+                }),
             }
         }
     }
@@ -643,6 +815,9 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
             "/usr/local/bin/doveadm",
         )
         .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone());
+        let message_move_backend =
+            DoveadmMessageMoveBackend::new(SystemCommandExecutor, "/usr/local/bin/doveadm")
+                .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone());
         let policy = MailboxHelperPolicy::default();
 
         logger.emit(
@@ -659,10 +834,13 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
         for stream in listener.incoming() {
             match stream {
                 Ok(mut stream) => handle_helper_client(
-                    &mailbox_backend,
-                    &message_list_backend,
-                    &message_search_backend,
-                    &message_view_backend,
+                    HelperBackends {
+                        mailbox_backend: &mailbox_backend,
+                        message_list_backend: &message_list_backend,
+                        message_search_backend: &message_search_backend,
+                        message_view_backend: &message_view_backend,
+                        message_move_backend: &message_move_backend,
+                    },
                     logger,
                     &mut stream,
                     policy,
@@ -703,6 +881,12 @@ enum MailboxHelperRequest {
         mailbox_name: String,
         uid: u64,
     },
+    MessageMove {
+        canonical_username: String,
+        source_mailbox_name: String,
+        destination_mailbox_name: String,
+        uid: u64,
+    },
 }
 
 /// Supported helper responses for the first mailbox-read slice.
@@ -723,6 +907,11 @@ enum MailboxHelperResponse {
     MessageViewOk {
         message: MessageView,
     },
+    MessageMoveOk {
+        source_mailbox_name: String,
+        destination_mailbox_name: String,
+        uid: u64,
+    },
     Error {
         backend: String,
         reason: String,
@@ -730,11 +919,17 @@ enum MailboxHelperResponse {
 }
 
 #[cfg(unix)]
-fn handle_helper_client<MB, MLB, MSB, MVB>(
-    mailbox_backend: &MB,
-    message_list_backend: &MLB,
-    message_search_backend: &MSB,
-    message_view_backend: &MVB,
+struct HelperBackends<'a, MB, MLB, MSB, MVB, MMB> {
+    mailbox_backend: &'a MB,
+    message_list_backend: &'a MLB,
+    message_search_backend: &'a MSB,
+    message_view_backend: &'a MVB,
+    message_move_backend: &'a MMB,
+}
+
+#[cfg(unix)]
+fn handle_helper_client<MB, MLB, MSB, MVB, MMB>(
+    backends: HelperBackends<'_, MB, MLB, MSB, MVB, MMB>,
     logger: &Logger,
     stream: &mut UnixStream,
     policy: MailboxHelperPolicy,
@@ -743,6 +938,7 @@ fn handle_helper_client<MB, MLB, MSB, MVB>(
     MLB: MessageListBackend,
     MSB: MessageSearchBackend,
     MVB: MessageViewBackend,
+    MMB: MessageMoveBackend,
 {
     configure_stream_timeouts(stream, policy);
 
@@ -774,7 +970,7 @@ fn handle_helper_client<MB, MLB, MSB, MVB>(
 
     let response = match &request {
         MailboxHelperRequest::MailboxList { canonical_username } => {
-            match mailbox_backend.list_mailboxes(canonical_username) {
+            match backends.mailbox_backend.list_mailboxes(canonical_username) {
                 Ok(mailboxes) => MailboxHelperResponse::MailboxListOk { mailboxes },
                 Err(error) => MailboxHelperResponse::Error {
                     backend: error.backend.to_string(),
@@ -792,7 +988,8 @@ fn handle_helper_client<MB, MLB, MSB, MVB>(
                     reason: error.reason,
                 })
                 .and_then(|request| {
-                    message_list_backend
+                    backends
+                        .message_list_backend
                         .list_messages(canonical_username, &request)
                         .map_err(|error| MailboxHelperResponse::Error {
                             backend: error.backend.to_string(),
@@ -821,7 +1018,8 @@ fn handle_helper_client<MB, MLB, MSB, MVB>(
                 reason: error.reason,
             })
             .and_then(|request| {
-                message_search_backend
+                backends
+                    .message_search_backend
                     .search_messages(canonical_username, &request)
                     .map_err(|error| MailboxHelperResponse::Error {
                         backend: error.backend.to_string(),
@@ -847,7 +1045,8 @@ fn handle_helper_client<MB, MLB, MSB, MVB>(
                     reason: error.reason,
                 })
                 .and_then(|request| {
-                    message_view_backend
+                    backends
+                        .message_view_backend
                         .fetch_message(canonical_username, &request)
                         .map_err(|error| MailboxHelperResponse::Error {
                             backend: error.backend.to_string(),
@@ -855,6 +1054,39 @@ fn handle_helper_client<MB, MLB, MSB, MVB>(
                         })
                 }) {
                 Ok(message) => MailboxHelperResponse::MessageViewOk { message },
+                Err(error_response) => error_response,
+            }
+        }
+        MailboxHelperRequest::MessageMove {
+            canonical_username,
+            source_mailbox_name,
+            destination_mailbox_name,
+            uid,
+        } => {
+            match MessageMoveRequest::new(
+                MessageMovePolicy::default(),
+                source_mailbox_name.clone(),
+                destination_mailbox_name.clone(),
+                *uid,
+            )
+            .map_err(|error| MailboxHelperResponse::Error {
+                backend: error.backend.to_string(),
+                reason: error.reason,
+            })
+            .and_then(|request| {
+                backends
+                    .message_move_backend
+                    .move_message(canonical_username, &request)
+                    .map_err(|error| MailboxHelperResponse::Error {
+                        backend: error.backend.to_string(),
+                        reason: error.reason,
+                    })
+            }) {
+                Ok(()) => MailboxHelperResponse::MessageMoveOk {
+                    source_mailbox_name: source_mailbox_name.clone(),
+                    destination_mailbox_name: destination_mailbox_name.clone(),
+                    uid: *uid,
+                },
                 Err(error_response) => error_response,
             }
         }
@@ -915,6 +1147,14 @@ fn encode_request(request: &MailboxHelperRequest) -> String {
         } => format!(
             "operation=message_view\ncanonical_username={canonical_username}\nmailbox_name={mailbox_name}\nuid={uid}\n"
         ),
+        MailboxHelperRequest::MessageMove {
+            canonical_username,
+            source_mailbox_name,
+            destination_mailbox_name,
+            uid,
+        } => format!(
+            "operation=message_move\ncanonical_username={canonical_username}\nsource_mailbox_name={source_mailbox_name}\ndestination_mailbox_name={destination_mailbox_name}\nuid={uid}\n"
+        ),
     }
 }
 
@@ -938,9 +1178,12 @@ fn parse_request(input: &str) -> Result<MailboxHelperRequest, String> {
         "message_search" => {
             let mailbox_name = require_field(&fields, "mailbox_name")?.to_string();
             let query = require_field(&fields, "query")?.to_string();
-            let request =
-                MessageSearchRequest::new(MessageSearchPolicy::default(), mailbox_name.clone(), query)
-                    .map_err(|error| error.reason)?;
+            let request = MessageSearchRequest::new(
+                MessageSearchPolicy::default(),
+                mailbox_name.clone(),
+                query,
+            )
+            .map_err(|error| error.reason)?;
             Ok(MailboxHelperRequest::MessageSearch {
                 canonical_username,
                 mailbox_name: request.mailbox_name,
@@ -958,6 +1201,27 @@ fn parse_request(input: &str) -> Result<MailboxHelperRequest, String> {
             Ok(MailboxHelperRequest::MessageView {
                 canonical_username,
                 mailbox_name: request.mailbox_name,
+                uid: request.uid,
+            })
+        }
+        "message_move" => {
+            let source_mailbox_name = require_field(&fields, "source_mailbox_name")?.to_string();
+            let destination_mailbox_name =
+                require_field(&fields, "destination_mailbox_name")?.to_string();
+            let uid = require_field(&fields, "uid")?
+                .parse::<u64>()
+                .map_err(|error| format!("invalid helper uid: {error}"))?;
+            let request = MessageMoveRequest::new(
+                MessageMovePolicy::default(),
+                source_mailbox_name,
+                destination_mailbox_name,
+                uid,
+            )
+            .map_err(|error| error.reason)?;
+            Ok(MailboxHelperRequest::MessageMove {
+                canonical_username,
+                source_mailbox_name: request.source_mailbox_name,
+                destination_mailbox_name: request.destination_mailbox_name,
                 uid: request.uid,
             })
         }
@@ -1049,6 +1313,13 @@ fn encode_response(response: &MailboxHelperResponse) -> String {
             encode_base64(message.header_block.as_bytes()),
             encode_base64(message.body_text.as_bytes()),
         ),
+        MailboxHelperResponse::MessageMoveOk {
+            source_mailbox_name,
+            destination_mailbox_name,
+            uid,
+        } => format!(
+            "status=ok\noperation=message_move\nsource_mailbox_name={source_mailbox_name}\ndestination_mailbox_name={destination_mailbox_name}\nuid={uid}\n"
+        ),
         MailboxHelperResponse::Error { backend, reason } => {
             format!("status=error\nbackend={backend}\nreason={reason}\n")
         }
@@ -1072,6 +1343,9 @@ fn parse_response(
     let mut messages = Vec::<MessageSummary>::new();
     let mut search_results = Vec::<MessageSearchResult>::new();
     let mut current_message_fields = BTreeMap::<String, String>::new();
+    let mut source_mailbox_name = None::<String>;
+    let mut destination_mailbox_name = None::<String>;
+    let mut moved_uid = None::<u64>;
 
     for raw_line in input.lines() {
         if raw_line.is_empty() {
@@ -1087,6 +1361,15 @@ fn parse_response(
             "reason" => reason = Some(value.to_string()),
             "mailbox_name" => mailbox_name = Some(value.to_string()),
             "query" => query = Some(value.to_string()),
+            "source_mailbox_name" => source_mailbox_name = Some(value.to_string()),
+            "destination_mailbox_name" => destination_mailbox_name = Some(value.to_string()),
+            "uid" => {
+                moved_uid = Some(
+                    value
+                        .parse::<u64>()
+                        .map_err(|error| format!("invalid helper move uid: {error}"))?,
+                )
+            }
             "mailbox" => {
                 mailboxes.push(
                     MailboxEntry::new(mailbox_policy, value.to_string()).map_err(|error| {
@@ -1125,7 +1408,12 @@ fn parse_response(
                         search_policy,
                         &current_message_fields,
                     )?),
-                    _ => return Err("helper response emitted message_end for unsupported operation".to_string()),
+                    _ => {
+                        return Err(
+                            "helper response emitted message_end for unsupported operation"
+                                .to_string(),
+                        )
+                    }
                 }
                 current_message_fields.clear();
             }
@@ -1133,8 +1421,10 @@ fn parse_response(
         }
     }
 
-    if matches!(operation.as_deref(), Some("message_list" | "message_search"))
-        && !current_message_fields.is_empty()
+    if matches!(
+        operation.as_deref(),
+        Some("message_list" | "message_search")
+    ) && !current_message_fields.is_empty()
     {
         return Err("helper response ended before message_end marker".to_string());
     }
@@ -1153,6 +1443,15 @@ fn parse_response(
             }),
             Some("message_view") => Ok(MailboxHelperResponse::MessageViewOk {
                 message: parse_message_view_fields(message_view_policy, &current_message_fields)?,
+            }),
+            Some("message_move") => Ok(MailboxHelperResponse::MessageMoveOk {
+                source_mailbox_name: source_mailbox_name.ok_or_else(|| {
+                    "helper response did not include source_mailbox_name".to_string()
+                })?,
+                destination_mailbox_name: destination_mailbox_name.ok_or_else(|| {
+                    "helper response did not include destination_mailbox_name".to_string()
+                })?,
+                uid: moved_uid.ok_or_else(|| "helper response did not include uid".to_string())?,
             }),
             Some(other) => Err(format!("unsupported helper response operation: {other}")),
             None => Err("helper response did not include an operation".to_string()),
@@ -1707,6 +2006,27 @@ fn log_helper_response(
             .with_field("mailbox_name", message.mailbox_name.clone())
             .with_field("uid", message.uid.to_string()),
         ),
+        (
+            MailboxHelperResponse::MessageMoveOk {
+                source_mailbox_name,
+                destination_mailbox_name,
+                uid,
+            },
+            Some(MailboxHelperRequest::MessageMove {
+                canonical_username, ..
+            }),
+        ) => logger.emit(
+            &LogEvent::new(
+                LogLevel::Info,
+                EventCategory::Mailbox,
+                "mailbox_helper_message_moved",
+                "mailbox helper moved one message",
+            )
+            .with_field("canonical_username", canonical_username.clone())
+            .with_field("source_mailbox_name", source_mailbox_name.clone())
+            .with_field("destination_mailbox_name", destination_mailbox_name.clone())
+            .with_field("uid", uid.to_string()),
+        ),
         (MailboxHelperResponse::Error { backend, reason }, Some(request)) => logger.emit(
             &LogEvent::new(
                 LogLevel::Warn,
@@ -1739,6 +2059,7 @@ fn helper_operation_label(request: &MailboxHelperRequest) -> &'static str {
         MailboxHelperRequest::MessageList { .. } => "message_list",
         MailboxHelperRequest::MessageSearch { .. } => "message_search",
         MailboxHelperRequest::MessageView { .. } => "message_view",
+        MailboxHelperRequest::MessageMove { .. } => "message_move",
     }
 }
 
@@ -1756,6 +2077,7 @@ mod tests {
         message_list_result: Arc<Result<Vec<MessageSummary>, MailboxBackendError>>,
         message_search_result: Arc<Result<Vec<MessageSearchResult>, MailboxBackendError>>,
         message_view_result: Arc<Result<MessageView, MailboxBackendError>>,
+        message_move_result: Arc<Result<(), MailboxBackendError>>,
     }
 
     impl MailboxBackend for StaticHelperBackend {
@@ -1794,6 +2116,16 @@ mod tests {
             _request: &MessageViewRequest,
         ) -> Result<MessageView, MailboxBackendError> {
             (*self.message_view_result).clone()
+        }
+    }
+
+    impl MessageMoveBackend for StaticHelperBackend {
+        fn move_message(
+            &self,
+            _canonical_username: &str,
+            _request: &MessageMoveRequest,
+        ) -> Result<(), MailboxBackendError> {
+            (*self.message_move_result).clone()
         }
     }
 
@@ -1867,6 +2199,24 @@ mod tests {
                 canonical_username: "alice@example.com".to_string(),
                 mailbox_name: "INBOX".to_string(),
                 query: "quarterly report".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn parses_message_move_request() {
+        let request = parse_request(
+            "operation=message_move\ncanonical_username=alice@example.com\nsource_mailbox_name=INBOX\ndestination_mailbox_name=Archive/2026\nuid=9\n",
+        )
+        .expect("message-move request should parse");
+
+        assert_eq!(
+            request,
+            MailboxHelperRequest::MessageMove {
+                canonical_username: "alice@example.com".to_string(),
+                source_mailbox_name: "INBOX".to_string(),
+                destination_mailbox_name: "Archive/2026".to_string(),
+                uid: 9,
             }
         );
     }
@@ -2008,6 +2358,27 @@ mod tests {
         );
     }
 
+    #[test]
+    fn parses_message_move_response() {
+        let response = parse_response(
+            MailboxListingPolicy::default(),
+            MessageListPolicy::default(),
+            MessageSearchPolicy::default(),
+            MessageViewPolicy::default(),
+            "status=ok\noperation=message_move\nsource_mailbox_name=INBOX\ndestination_mailbox_name=Archive/2026\nuid=9\n",
+        )
+        .expect("message-move response should parse");
+
+        assert_eq!(
+            response,
+            MailboxHelperResponse::MessageMoveOk {
+                source_mailbox_name: "INBOX".to_string(),
+                destination_mailbox_name: "Archive/2026".to_string(),
+                uid: 9,
+            }
+        );
+    }
+
     #[cfg(unix)]
     #[test]
     fn client_lists_mailboxes_over_helper_socket() {
@@ -2027,6 +2398,7 @@ mod tests {
                 backend: "message-view-not-used",
                 reason: "unexpected message-view request".to_string(),
             })),
+            message_move_result: Arc::new(Ok(())),
         };
         let server = spawn_test_helper(socket_path.clone(), backend);
         wait_for_socket(&socket_path);
@@ -2068,6 +2440,7 @@ mod tests {
                 backend: "message-view-not-used",
                 reason: "unexpected message-view request".to_string(),
             })),
+            message_move_result: Arc::new(Ok(())),
         };
         let server = spawn_test_helper(socket_path.clone(), backend);
         wait_for_socket(&socket_path);
@@ -2112,6 +2485,7 @@ mod tests {
                 backend: "message-view-not-used",
                 reason: "unexpected message-view request".to_string(),
             })),
+            message_move_result: Arc::new(Ok(())),
         };
         let server = spawn_test_helper(socket_path.clone(), backend);
         wait_for_socket(&socket_path);
@@ -2155,6 +2529,7 @@ mod tests {
                 backend: "message-view-not-used",
                 reason: "unexpected message-view request".to_string(),
             })),
+            message_move_result: Arc::new(Ok(())),
         };
         let server = spawn_test_helper(socket_path.clone(), backend);
         wait_for_socket(&socket_path);
@@ -2163,12 +2538,9 @@ mod tests {
             MailboxHelperPolicy::default(),
             MessageSearchPolicy::default(),
         );
-        let request = MessageSearchRequest::new(
-            MessageSearchPolicy::default(),
-            "INBOX",
-            "quarterly report",
-        )
-        .expect("request should parse");
+        let request =
+            MessageSearchRequest::new(MessageSearchPolicy::default(), "INBOX", "quarterly report")
+                .expect("request should parse");
 
         let results = client
             .search_messages("alice@example.com", &request)
@@ -2199,6 +2571,7 @@ mod tests {
                 header_block: "Subject: Test message\n".to_string(),
                 body_text: "Hello world\n".to_string(),
             })),
+            message_move_result: Arc::new(Ok(())),
         };
         let server = spawn_test_helper(socket_path.clone(), backend);
         wait_for_socket(&socket_path);
@@ -2223,12 +2596,43 @@ mod tests {
     }
 
     #[cfg(unix)]
+    #[test]
+    fn client_moves_message_over_helper_socket() {
+        let socket_path = temp_socket_path("message-move-helper-ok");
+        let backend = StaticHelperBackend {
+            mailbox_result: Arc::new(Ok(Vec::new())),
+            message_list_result: Arc::new(Ok(Vec::new())),
+            message_search_result: Arc::new(Ok(Vec::new())),
+            message_view_result: Arc::new(Err(MailboxBackendError {
+                backend: "message-view-not-used",
+                reason: "unexpected message-view request".to_string(),
+            })),
+            message_move_result: Arc::new(Ok(())),
+        };
+        let server = spawn_test_helper(socket_path.clone(), backend);
+        wait_for_socket(&socket_path);
+        let client =
+            MailboxHelperMessageMoveBackend::new(&socket_path, MailboxHelperPolicy::default());
+        let request =
+            MessageMoveRequest::new(MessageMovePolicy::default(), "INBOX", "Archive/2026", 9)
+                .expect("request should parse");
+
+        client
+            .move_message("alice@example.com", &request)
+            .expect("helper-backed message move should succeed");
+
+        server.join().expect("helper thread should finish");
+        let _ = fs::remove_file(&socket_path);
+    }
+
+    #[cfg(unix)]
     fn spawn_test_helper<B>(socket_path: PathBuf, backend: B) -> thread::JoinHandle<()>
     where
         B: MailboxBackend
             + MessageListBackend
             + MessageSearchBackend
             + MessageViewBackend
+            + MessageMoveBackend
             + Send
             + 'static,
     {
@@ -2238,10 +2642,13 @@ mod tests {
             let logger = Logger::new(crate::config::LogFormat::Text, LogLevel::Info);
             let (mut stream, _) = listener.accept().expect("test helper should accept");
             handle_helper_client(
-                &backend,
-                &backend,
-                &backend,
-                &backend,
+                HelperBackends {
+                    mailbox_backend: &backend,
+                    message_list_backend: &backend,
+                    message_search_backend: &backend,
+                    message_view_backend: &backend,
+                    message_move_backend: &backend,
+                },
                 &logger,
                 &mut stream,
                 MailboxHelperPolicy::default(),

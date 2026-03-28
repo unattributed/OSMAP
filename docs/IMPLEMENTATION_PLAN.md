@@ -174,9 +174,18 @@ The next active implementation work should focus on:
 
 At the moment, the highest-confidence unimplemented Version 1 product gaps are:
 
-- folder operations such as move or archive
 - safe HTML email rendering beyond the current plain-text-first posture
 - a bounded first-release user settings surface
+
+The current implementation now also includes:
+
+- a mailbox-scoped backend-authoritative search slice
+- a browser-visible session-management slice
+- a first one-message move path between existing mailboxes
+
+Broader ergonomics around folder organization, such as bulk actions or archive
+shortcuts from list views, remain later refinements rather than the first move
+slice itself.
 
 ## Implementation Guardrails
 

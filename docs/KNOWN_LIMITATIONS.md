@@ -30,8 +30,9 @@
 - The implementation now provides a first mailbox-scoped, backend-authoritative
   browser search path, but it does not yet provide cross-mailbox or advanced
   search behavior
-- The implementation does not yet provide folder-organization workflows such as
-  move or archive
+- The implementation now provides a first one-message move path between
+  existing mailboxes, but it does not yet provide bulk move, mailbox-list
+  selection actions, or dedicated archive shortcuts
 - The implementation now provides a first browser-visible session list and
   self-service revocation path, but it does not yet provide richer device
   labeling or anomaly-oriented session analysis

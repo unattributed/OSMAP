@@ -29,11 +29,15 @@ the Version 1 boundary:
 The following Version 1 requirements remain product targets rather than
 implemented features:
 
-- message search
-- folder operations such as move or archive
 - safe HTML email rendering beyond the current plain-text-first withholding
   policy
 - a clearly bounded first-release user settings surface
+
+The current implementation also includes first bounded slices for:
+
+- mailbox-scoped backend-authoritative search
+- browser-visible session self-management
+- one-message move between existing mailboxes
 
 This document remains the target product contract, but implementation planning
 and status reporting should treat the missing items above as active gaps rather

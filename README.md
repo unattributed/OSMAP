@@ -123,9 +123,10 @@ Each phase produces formal outputs to support traceability and auditability.
   are populated through the current Phase 6 baseline.
 - The runtime includes typed configuration, explicit state layout, structured
   logging, bounded auth, TOTP, session issuance and revocation, CSRF handling,
-  mailbox browsing, message listing and viewing, MIME-aware inspection,
-  attachment upload and forced-download paths, compose/send, and reply/forward
-  draft generation.
+  mailbox browsing, message listing and viewing, mailbox-scoped search,
+  MIME-aware inspection, attachment upload and forced-download paths,
+  compose/send, reply/forward draft generation, and a first one-message move
+  path between existing mailboxes.
 - The browser layer now includes a first self-service session-management page
   backed by the persisted session metadata and revocation primitives already in
   the runtime.
@@ -155,10 +156,9 @@ Each phase produces formal outputs to support traceability and auditability.
   message view, and attachment download all succeeded in one continuous flow.
 - OSMAP is still prototype-grade, not production-ready, and does not yet have a
   public deployment.
-- Several Version 1 product requirements are still not implemented: message
-  search is now present in a first mailbox-scoped backend-authoritative slice,
-  but folder-organization workflows such as move/archive, safe HTML mail
-  rendering, and a bounded settings surface are still missing.
+- The remaining clear Version 1 product gaps are safe HTML mail rendering and a
+  bounded settings surface. Broader folder-organization ergonomics still
+  remain, but the first backend-authoritative move workflow is now present.
 - Current priority work is continued HTTP hardening, tighter OpenBSD helper and
   filesystem narrowing, and broader end-to-end live validation beyond the now
   proven authenticated read path.
