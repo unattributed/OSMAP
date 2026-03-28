@@ -898,3 +898,22 @@ That failure was resolved by fixing the Rust code to satisfy the stricter gate,
 not by weakening the workflow. OSMAP should continue to treat runner-side
 `cargo clippy --all-targets -- -D warnings` and `cargo fmt --check` as part of
 the authoritative backend quality bar.
+
+### Investigate GitHub Actions failures from live workflow state before
+changing workflow files
+
+The recent GitHub Actions failure around commit `6b3778b` looked at first like
+a workflow-definition problem, but direct review of the live workflow runs
+showed the actual failing job was the repo-owned `security-check` gate rather
+than CodeQL.
+
+That distinction mattered. The correct fix was:
+
+- inspect the live workflow set and run outcomes on GitHub first
+- reproduce the stricter runner-side Rust toolchain locally
+- fix the Rust lint and formatting debt the runner exposed
+- only keep workflow edits that improve the long-term repository posture
+
+OSMAP should continue to treat GitHub-hosted workflow state as the source of
+truth for CI failure diagnosis, then reconcile local reproduction against that
+evidence before changing YAML.
