@@ -716,3 +716,18 @@ The browser runtime now treats form parsing more strictly as well:
 
 That keeps the browser boundary smaller and more reviewable by refusing body
 shapes the current routes do not need.
+
+### Bound high-risk header values and keep browser responses same-origin
+
+The browser runtime now treats a few request and response headers more
+conservatively:
+
+- `Host`, `Cookie`, and `Content-Type` now have explicit smaller bounds instead
+  of inheriting only the total header-budget limit
+- empty or obviously malformed `Host` values are rejected before routing
+- the current HTML, redirect, and attachment responses now carry
+  `Cross-Origin-Resource-Policy: same-origin`
+
+That reduces request-boundary trust in attacker-controlled headers and keeps
+browser-visible responses more consistent without changing the current route
+surface.

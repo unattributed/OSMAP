@@ -29,6 +29,8 @@ This is a useful baseline, not the final hardening endpoint.
 The current browser runtime enforces:
 
 - bounded request header and body sizes
+- bounded high-risk request-header values such as `Host`, `Cookie`, and
+  `Content-Type`
 - bounded request-target length
 - bounded request-header count
 - bounded query-field counts
@@ -39,6 +41,8 @@ The current browser runtime enforces:
 - binary-safe multipart request parsing for the current upload path
 - cache suppression for sensitive pages and redirects
 - a restrictive content-security policy
+- `Cross-Origin-Resource-Policy: same-origin` on the current browser and
+  attachment responses
 - `Referrer-Policy: no-referrer`
 - `X-Content-Type-Options: nosniff`
 - `X-Frame-Options: DENY`
@@ -47,6 +51,7 @@ The current browser runtime enforces:
 - rejection of duplicate request headers instead of silently accepting the last
   one
 - rejection of malformed HTTP/1.1 requests without `Host`
+- rejection of empty or obviously malformed `Host` header values
 - rejection of unsupported `Transfer-Encoding` request framing
 - rejection of GET request bodies instead of trying to interpret them
 - rejection of POST requests that omit `Content-Length`

@@ -70,6 +70,15 @@ pub const DEFAULT_HTTP_MAX_FORM_FIELDS: usize = 16;
 /// Conservative upper bound for header count in one request.
 pub const DEFAULT_HTTP_MAX_HEADER_COUNT: usize = 64;
 
+/// Conservative upper bound for the `Host` header value.
+pub const DEFAULT_HTTP_MAX_HOST_HEADER_BYTES: usize = 512;
+
+/// Conservative upper bound for one browser `Cookie` header value.
+pub const DEFAULT_HTTP_MAX_COOKIE_HEADER_BYTES: usize = 4096;
+
+/// Conservative upper bound for one `Content-Type` header value.
+pub const DEFAULT_HTTP_MAX_CONTENT_TYPE_HEADER_BYTES: usize = 256;
+
 /// Conservative per-connection read timeout for the sequential HTTP listener.
 pub const DEFAULT_HTTP_READ_TIMEOUT_SECS: u64 = 5;
 
@@ -2368,11 +2377,60 @@ fn parse_headers(
                 ),
             });
         }
+        validate_known_header_value(&normalized_name, &normalized_value)?;
 
         headers.insert(normalized_name, normalized_value);
     }
 
     Ok(headers)
+}
+
+/// Applies small per-header constraints for the current browser surface.
+fn validate_known_header_value(name: &str, value: &str) -> Result<(), HttpRequestError> {
+    match name {
+        "host" => validate_host_header_value(value),
+        "cookie" => {
+            if value.len() > DEFAULT_HTTP_MAX_COOKIE_HEADER_BYTES {
+                return Err(HttpRequestError {
+                    reason: "cookie header exceeded maximum length".to_string(),
+                });
+            }
+            Ok(())
+        }
+        "content-type" => {
+            if value.len() > DEFAULT_HTTP_MAX_CONTENT_TYPE_HEADER_BYTES {
+                return Err(HttpRequestError {
+                    reason: "content-type header exceeded maximum length".to_string(),
+                });
+            }
+            Ok(())
+        }
+        _ => Ok(()),
+    }
+}
+
+/// Rejects obviously malformed host headers instead of routing through them.
+fn validate_host_header_value(value: &str) -> Result<(), HttpRequestError> {
+    if value.is_empty() {
+        return Err(HttpRequestError {
+            reason: "host header must not be empty".to_string(),
+        });
+    }
+    if value.len() > DEFAULT_HTTP_MAX_HOST_HEADER_BYTES {
+        return Err(HttpRequestError {
+            reason: "host header exceeded maximum length".to_string(),
+        });
+    }
+    if value
+        .chars()
+        .any(|ch| matches!(ch, '/' | '\\' | '?' | '#' | '@'))
+    {
+        return Err(HttpRequestError {
+            reason: "host header contained unsupported characters".to_string(),
+        });
+    }
+
+    Ok(())
 }
 
 /// Parses the content-length header from parsed headers.
@@ -2542,6 +2600,7 @@ fn redirect_response(
     .with_header("Location", location)
     .with_header("Cache-Control", "no-store")
     .with_header("Content-Security-Policy", browser_csp())
+    .with_header("Cross-Origin-Resource-Policy", "same-origin")
     .with_header("Referrer-Policy", "no-referrer")
     .with_header("X-Content-Type-Options", "nosniff")
     .with_header("X-Frame-Options", "DENY")
@@ -2565,6 +2624,7 @@ fn html_response(
     )
     .with_header("Cache-Control", "no-store")
     .with_header("Content-Security-Policy", browser_csp())
+    .with_header("Cross-Origin-Resource-Policy", "same-origin")
     .with_header("Referrer-Policy", "no-referrer")
     .with_header("X-Content-Type-Options", "nosniff")
     .with_header("X-Frame-Options", "DENY")
@@ -2579,6 +2639,7 @@ fn attachment_download_response(attachment: &DownloadedAttachment) -> HttpRespon
             build_attachment_content_disposition(&attachment.filename),
         )
         .with_header("Cache-Control", "no-store")
+        .with_header("Cross-Origin-Resource-Policy", "same-origin")
         .with_header("Referrer-Policy", "no-referrer")
         .with_header("X-Content-Type-Options", "nosniff")
         .with_header("X-Frame-Options", "DENY")
@@ -3510,6 +3571,12 @@ mod tests {
             .headers
             .iter()
             .any(|(name, value)| name == "X-Content-Type-Options" && value == "nosniff"));
+        assert!(response
+            .response
+            .headers
+            .iter()
+            .any(|(name, value)| name == "Cross-Origin-Resource-Policy"
+                && value == "same-origin"));
     }
 
     #[test]
@@ -3690,6 +3757,39 @@ mod tests {
         .expect_err("duplicate headers must be rejected");
 
         assert_eq!(error.reason, "duplicate http header: host");
+    }
+
+    #[test]
+    fn rejects_empty_host_headers() {
+        let error = parse_http_request(
+            "GET /mailboxes HTTP/1.1\r\nHost: \r\n\r\n",
+            &HttpPolicy::default(),
+        )
+        .expect_err("empty host headers must be rejected");
+
+        assert_eq!(error.reason, "host header must not be empty");
+    }
+
+    #[test]
+    fn rejects_host_headers_with_path_characters() {
+        let error = parse_http_request(
+            "GET /mailboxes HTTP/1.1\r\nHost: localhost/example\r\n\r\n",
+            &HttpPolicy::default(),
+        )
+        .expect_err("host headers with path characters must be rejected");
+
+        assert_eq!(error.reason, "host header contained unsupported characters");
+    }
+
+    #[test]
+    fn rejects_oversized_cookie_headers() {
+        let oversized_cookie = format!("Cookie: {}\r\n", "a".repeat(DEFAULT_HTTP_MAX_COOKIE_HEADER_BYTES + 1));
+        let raw = format!("GET /mailboxes HTTP/1.1\r\nHost: localhost\r\n{oversized_cookie}\r\n");
+
+        let error = parse_http_request(&raw, &HttpPolicy::default())
+            .expect_err("oversized cookie headers must be rejected");
+
+        assert_eq!(error.reason, "cookie header exceeded maximum length");
     }
 
     #[test]
