@@ -30,12 +30,14 @@ use crate::logging::{EventCategory, LogEvent, Logger};
 use crate::mailbox::{
     DoveadmMailboxListBackend, DoveadmMessageListBackend, DoveadmMessageViewBackend, MailboxEntry,
     MailboxListingDecision, MailboxListingPolicy, MailboxListingService, MessageListDecision,
-    MessageListPolicy, MessageListRequest, MessageListService, MessageSummary, MessageViewDecision,
-    MessageViewPolicy, MessageViewRequest, MessageViewService,
+    MessageListPolicy, MessageListRequest, MessageListService, MessageSearchDecision,
+    MessageSearchPolicy, MessageSearchRequest, MessageSearchResult, MessageSearchService,
+    MessageSummary, MessageViewDecision, MessageViewPolicy, MessageViewRequest,
+    MessageViewService, DoveadmMessageSearchBackend,
 };
 use crate::mailbox_helper::{
     MailboxHelperMailboxListBackend, MailboxHelperMessageListBackend,
-    MailboxHelperMessageViewBackend, MailboxHelperPolicy,
+    MailboxHelperMessageSearchBackend, MailboxHelperMessageViewBackend, MailboxHelperPolicy,
 };
 use crate::openbsd::apply_runtime_confinement;
 use crate::rendering::{PlainTextMessageRenderer, RenderedMessageView, RenderingPolicy};
@@ -304,6 +306,14 @@ pub trait BrowserGateway {
         mailbox_name: &str,
     ) -> BrowserMessageListOutcome;
 
+    fn search_messages(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        mailbox_name: &str,
+        query: &str,
+    ) -> BrowserMessageSearchOutcome;
+
     fn view_message(
         &self,
         context: &AuthenticationContext,
@@ -458,6 +468,27 @@ pub enum BrowserMessageListDecision {
         canonical_username: String,
         mailbox_name: String,
         messages: Vec<MessageSummary>,
+    },
+    Denied {
+        public_reason: String,
+    },
+}
+
+/// The result of a message-search browser operation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BrowserMessageSearchOutcome {
+    pub decision: BrowserMessageSearchDecision,
+    pub audit_events: Vec<LogEvent>,
+}
+
+/// Message-search decisions visible to the browser layer.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BrowserMessageSearchDecision {
+    Listed {
+        canonical_username: String,
+        mailbox_name: String,
+        query: String,
+        results: Vec<MessageSearchResult>,
     },
     Denied {
         public_reason: String,
@@ -620,6 +651,28 @@ impl RuntimeBrowserGateway {
             remote_addr: record.remote_addr,
             user_agent: record.user_agent,
             factor: record.factor,
+        }
+    }
+
+    /// Selects the current message-view backend based on whether the local
+    /// mailbox helper is configured for read-path proxying.
+    fn build_message_search_backend(&self) -> MessageSearchRuntimeBackend {
+        match &self.mailbox_helper_socket_path {
+            Some(socket_path) => {
+                MessageSearchRuntimeBackend::Helper(MailboxHelperMessageSearchBackend::new(
+                    socket_path,
+                    MailboxHelperPolicy::default(),
+                    MessageSearchPolicy::default(),
+                ))
+            }
+            None => MessageSearchRuntimeBackend::Direct(
+                DoveadmMessageSearchBackend::new(
+                    MessageSearchPolicy::default(),
+                    SystemCommandExecutor,
+                    self.doveadm_path.clone(),
+                )
+                .with_userdb_socket_path(self.doveadm_userdb_socket_path.clone()),
+            ),
         }
     }
 
@@ -1050,6 +1103,62 @@ impl BrowserGateway for RuntimeBrowserGateway {
         }
     }
 
+    fn search_messages(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        mailbox_name: &str,
+        query: &str,
+    ) -> BrowserMessageSearchOutcome {
+        let request = match MessageSearchRequest::new(
+            MessageSearchPolicy::default(),
+            mailbox_name,
+            query,
+        ) {
+            Ok(request) => request,
+            Err(error) => {
+                return BrowserMessageSearchOutcome {
+                    decision: BrowserMessageSearchDecision::Denied {
+                        public_reason: "invalid_request".to_string(),
+                    },
+                    audit_events: vec![build_http_warning_event(
+                        "message_search_request_rejected",
+                        "message search request validation failed",
+                        context,
+                    )
+                    .with_field("reason", error.reason)],
+                };
+            }
+        };
+
+        let outcome = MessageSearchService::new(self.build_message_search_backend())
+            .search_for_validated_session(context, validated_session, &request);
+
+        match outcome.decision {
+            MessageSearchDecision::Listed {
+                canonical_username,
+                mailbox_name,
+                query,
+                results,
+                ..
+            } => BrowserMessageSearchOutcome {
+                decision: BrowserMessageSearchDecision::Listed {
+                    canonical_username,
+                    mailbox_name,
+                    query,
+                    results,
+                },
+                audit_events: vec![outcome.audit_event],
+            },
+            MessageSearchDecision::Denied { public_reason } => BrowserMessageSearchOutcome {
+                decision: BrowserMessageSearchDecision::Denied {
+                    public_reason: public_reason.as_str().to_string(),
+                },
+                audit_events: vec![outcome.audit_event],
+            },
+        }
+    }
+
     fn view_message(
         &self,
         context: &AuthenticationContext,
@@ -1292,6 +1401,26 @@ impl crate::mailbox::MessageListBackend for MessageListRuntimeBackend {
     }
 }
 
+/// Selects the current message-search backend without widening the browser
+/// runtime's authority when a local helper is configured.
+enum MessageSearchRuntimeBackend {
+    Direct(DoveadmMessageSearchBackend<SystemCommandExecutor>),
+    Helper(MailboxHelperMessageSearchBackend),
+}
+
+impl crate::mailbox::MessageSearchBackend for MessageSearchRuntimeBackend {
+    fn search_messages(
+        &self,
+        canonical_username: &str,
+        request: &MessageSearchRequest,
+    ) -> Result<Vec<MessageSearchResult>, crate::mailbox::MailboxBackendError> {
+        match self {
+            Self::Direct(backend) => backend.search_messages(canonical_username, request),
+            Self::Helper(backend) => backend.search_messages(canonical_username, request),
+        }
+    }
+}
+
 /// Selects the current message-view backend without widening the browser
 /// runtime's authority when a local helper is configured.
 enum MessageViewRuntimeBackend {
@@ -1392,6 +1521,7 @@ where
             (HttpMethod::Get, "/") => self.handle_root_redirect(request, &context),
             (HttpMethod::Get, "/mailboxes") => self.handle_mailboxes(request, &context),
             (HttpMethod::Get, "/mailbox") => self.handle_mailbox_messages(request, &context),
+            (HttpMethod::Get, "/search") => self.handle_message_search(request, &context),
             (HttpMethod::Get, "/message") => self.handle_message_view(request, &context),
             (HttpMethod::Get, "/attachment") => self.handle_attachment_download(request, &context),
             (HttpMethod::Get, "/compose") => self.handle_compose_form(request, &context),
@@ -1628,6 +1758,96 @@ where
                     503,
                     "Service Unavailable",
                     "Message List Unavailable",
+                    &format!(
+                        "<p>{}</p>",
+                        escape_html(public_reason_message(&public_reason))
+                    ),
+                ),
+                audit_events,
+            },
+        }
+    }
+
+    /// Handles mailbox-scoped message-search requests.
+    fn handle_message_search(
+        &self,
+        request: &HttpRequest,
+        context: &AuthenticationContext,
+    ) -> HandledHttpResponse {
+        let mailbox_name = match request.query_params.get("mailbox") {
+            Some(mailbox_name) if !mailbox_name.is_empty() => mailbox_name.clone(),
+            _ => {
+                return HandledHttpResponse {
+                    response: html_response(
+                        400,
+                        "Bad Request",
+                        "Invalid Search Request",
+                        "<p>A mailbox name is required.</p>",
+                    ),
+                    audit_events: vec![build_http_warning_event(
+                        "http_search_mailbox_rejected",
+                        "search mailbox parameter missing",
+                        context,
+                    )],
+                };
+            }
+        };
+        let query = match request.query_params.get("q") {
+            Some(query) if !query.trim().is_empty() => query.clone(),
+            _ => {
+                return HandledHttpResponse {
+                    response: html_response(
+                        400,
+                        "Bad Request",
+                        "Invalid Search Request",
+                        "<p>A search query is required.</p>",
+                    ),
+                    audit_events: vec![build_http_warning_event(
+                        "http_search_query_rejected",
+                        "search query parameter missing",
+                        context,
+                    )],
+                };
+            }
+        };
+
+        let (validated_session, mut audit_events) =
+            match self.require_validated_session(request, context) {
+                Ok(result) => result,
+                Err(response) => return response,
+            };
+
+        let outcome =
+            self.gateway
+                .search_messages(context, &validated_session, &mailbox_name, &query);
+        audit_events.extend(outcome.audit_events);
+
+        match outcome.decision {
+            BrowserMessageSearchDecision::Listed {
+                canonical_username,
+                mailbox_name,
+                query,
+                results,
+            } => HandledHttpResponse {
+                response: html_response(
+                    200,
+                    "OK",
+                    "Message Search",
+                    &render_message_search_page(
+                        &canonical_username,
+                        &validated_session.record.csrf_token,
+                        &mailbox_name,
+                        &query,
+                        &results,
+                    ),
+                ),
+                audit_events,
+            },
+            BrowserMessageSearchDecision::Denied { public_reason } => HandledHttpResponse {
+                response: html_response(
+                    503,
+                    "Service Unavailable",
+                    "Message Search Unavailable",
                     &format!(
                         "<p>{}</p>",
                         escape_html(public_reason_message(&public_reason))
@@ -3190,10 +3410,58 @@ fn render_message_list_page(
     }
 
     format!(
-        "<nav><a href=\"/mailboxes\">Back to mailboxes</a> | <a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Mailbox: {}</h1><p>Signed in as <strong>{}</strong>.</p><table><thead><tr><th>UID</th><th>Received</th><th>Flags</th><th>Size</th></tr></thead><tbody>{}</tbody></table>",
+        "<nav><a href=\"/mailboxes\">Back to mailboxes</a> | <a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Mailbox: {}</h1><p>Signed in as <strong>{}</strong>.</p><form method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><label>Search this mailbox<input type=\"text\" name=\"q\" autocomplete=\"off\"></label><button type=\"submit\">Search</button></form><table><thead><tr><th>UID</th><th>Received</th><th>Flags</th><th>Size</th></tr></thead><tbody>{}</tbody></table>",
         escape_html(csrf_token),
         escape_html(mailbox_name),
         escape_html(canonical_username),
+        escape_html(mailbox_name),
+        rows,
+    )
+}
+
+/// Renders a mailbox-scoped search-results page.
+fn render_message_search_page(
+    canonical_username: &str,
+    csrf_token: &str,
+    mailbox_name: &str,
+    query: &str,
+    results: &[MessageSearchResult],
+) -> String {
+    let mut rows = String::new();
+    if results.is_empty() {
+        rows.push_str(
+            "<tr><td colspan=\"6\">No messages matched this mailbox-scoped search.</td></tr>",
+        );
+    } else {
+        for result in results {
+            let message_href = format!(
+                "/message?mailbox={}&uid={}",
+                url_encode(mailbox_name),
+                result.uid
+            );
+            rows.push_str(&format!(
+                "<tr><td><a href=\"{}\">{}</a></td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>",
+                escape_html(&message_href),
+                result.uid,
+                escape_html(result.subject.as_deref().unwrap_or("<none>")),
+                escape_html(result.from.as_deref().unwrap_or("<none>")),
+                escape_html(&result.date_received),
+                escape_html(&result.flags.join(" ")),
+                result.size_virtual,
+            ));
+        }
+    }
+
+    format!(
+        "<nav><a href=\"/mailbox?name={}\">Back to mailbox</a> | <a href=\"/mailboxes\">All mailboxes</a> | <a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Search Results</h1><p>Signed in as <strong>{}</strong>.</p><p class=\"muted\">This first search slice stays mailbox-scoped and backend-authoritative: Dovecot evaluates the query and the browser only renders bounded results.</p><form method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><label>Search this mailbox<input type=\"text\" name=\"q\" value=\"{}\" autocomplete=\"off\"></label><button type=\"submit\">Search</button></form><p><strong>Mailbox:</strong> {}<br><strong>Query:</strong> {}<br><strong>Results:</strong> {}</p><table><thead><tr><th>UID</th><th>Subject</th><th>From</th><th>Received</th><th>Flags</th><th>Size</th></tr></thead><tbody>{}</tbody></table>",
+        escape_html(&url_encode(mailbox_name)),
+        escape_html(csrf_token),
+        escape_html(canonical_username),
+        escape_html(mailbox_name),
+        escape_html(query),
+        escape_html(mailbox_name),
+        escape_html(query),
+        results.len(),
         rows,
     )
 }
@@ -3715,6 +3983,37 @@ mod tests {
             }
         }
 
+        fn search_messages(
+            &self,
+            _context: &AuthenticationContext,
+            validated_session: &ValidatedSession,
+            mailbox_name: &str,
+            query: &str,
+        ) -> BrowserMessageSearchOutcome {
+            BrowserMessageSearchOutcome {
+                decision: BrowserMessageSearchDecision::Listed {
+                    canonical_username: validated_session.record.canonical_username.clone(),
+                    mailbox_name: mailbox_name.to_string(),
+                    query: query.trim().to_string(),
+                    results: vec![MessageSearchResult {
+                        mailbox_name: mailbox_name.to_string(),
+                        uid: 17,
+                        flags: vec!["\\Seen".to_string()],
+                        date_received: "2026-03-27 17:00:00 +0000".to_string(),
+                        size_virtual: 2048,
+                        subject: Some("Quarterly report".to_string()),
+                        from: Some("Alice <alice@example.com>".to_string()),
+                    }],
+                },
+                audit_events: vec![LogEvent::new(
+                    LogLevel::Info,
+                    EventCategory::Mailbox,
+                    "stub_message_search",
+                    "stub message search returned",
+                )],
+            }
+        }
+
         fn view_message(
             &self,
             _context: &AuthenticationContext,
@@ -3994,6 +4293,79 @@ mod tests {
         let body = body_text(&response);
         assert!(body.contains("alice@example.com"));
         assert!(body.contains("Archive/2026"));
+    }
+
+    #[test]
+    fn mailbox_message_list_renders_search_form() {
+        let response = app().handle_request(
+            &request(
+                "GET",
+                "/mailbox?name=INBOX",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                ],
+                "",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 200);
+        let body = body_text(&response);
+        assert!(body.contains("Search this mailbox"));
+        assert!(body.contains("action=\"/search\""));
+        assert!(body.contains("name=\"mailbox\" value=\"INBOX\""));
+    }
+
+    #[test]
+    fn search_page_renders_backend_results_for_valid_session() {
+        let response = app().handle_request(
+            &request(
+                "GET",
+                "/search?mailbox=INBOX&q=quarterly+report",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                ],
+                "",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 200);
+        let body = body_text(&response);
+        assert!(body.contains("<h1>Search Results</h1>"));
+        assert!(body.contains("Quarterly report"));
+        assert!(body.contains("Alice &lt;alice@example.com&gt;"));
+        assert!(body.contains("/message?mailbox=INBOX&amp;uid=17"));
+    }
+
+    #[test]
+    fn search_page_rejects_missing_query() {
+        let response = app().handle_request(
+            &request(
+                "GET",
+                "/search?mailbox=INBOX",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                ],
+                "",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 400);
+        assert!(body_text(&response).contains("A search query is required."));
     }
 
     #[test]

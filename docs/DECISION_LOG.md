@@ -784,3 +784,23 @@ session-management routes themselves:
 
 This keeps the live proof narrow and high-confidence while still exercising the
 real deployment split and confinement mode.
+
+### Add a first mailbox-scoped backend-authoritative search slice
+
+The next Version 1 gap to close should widen end-user capability, not just
+browser hardening. Search is useful, but the first slice should stay narrow and
+reuse the existing authority boundaries.
+
+The browser layer now includes:
+
+- a `GET /search` route that requires an authenticated session and a mailbox
+  scope plus one free-text query
+- backend-authoritative search execution through Dovecot rather than
+  browser-side filtering
+- helper-backed search proxying when the mailbox helper socket is configured,
+  preserving the lower-authority web runtime shape
+- bounded search result rendering that surfaces enough metadata to navigate to
+  the matching message without inventing a broader query DSL
+
+This closes the explicit browser-search gap while keeping the first search
+model mailbox-scoped and intentionally simple.

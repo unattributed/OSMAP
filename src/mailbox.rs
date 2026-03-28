@@ -26,11 +26,20 @@ pub const DEFAULT_MAX_MAILBOXES: usize = 1024;
 /// Conservative upper bound for the number of messages returned in one listing.
 pub const DEFAULT_MAX_MESSAGES: usize = 2000;
 
+/// Conservative upper bound for the number of messages returned in one search.
+pub const DEFAULT_MAX_SEARCH_RESULTS: usize = 250;
+
 /// Conservative maximum length for rendered date strings returned by the backend.
 pub const DEFAULT_MESSAGE_DATE_MAX_LEN: usize = 128;
 
 /// Conservative maximum length for rendered flag strings returned by the backend.
 pub const DEFAULT_MESSAGE_FLAG_STRING_MAX_LEN: usize = 256;
+
+/// Conservative maximum length for one free-text mailbox search query.
+pub const DEFAULT_SEARCH_QUERY_MAX_LEN: usize = 256;
+
+/// Conservative maximum length for a surfaced header field in search results.
+pub const DEFAULT_SEARCH_HEADER_VALUE_MAX_LEN: usize = 512;
 
 /// Conservative maximum length for fetched message headers.
 pub const DEFAULT_MESSAGE_HEADER_MAX_LEN: usize = 65_536;
@@ -96,6 +105,30 @@ impl Default for MessageViewPolicy {
     }
 }
 
+/// Policy controlling mailbox-scoped search request and output bounds.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct MessageSearchPolicy {
+    pub mailbox_name_max_len: usize,
+    pub max_results: usize,
+    pub query_max_len: usize,
+    pub message_date_max_len: usize,
+    pub message_flag_string_max_len: usize,
+    pub header_value_max_len: usize,
+}
+
+impl Default for MessageSearchPolicy {
+    fn default() -> Self {
+        Self {
+            mailbox_name_max_len: DEFAULT_MAILBOX_NAME_MAX_LEN,
+            max_results: DEFAULT_MAX_SEARCH_RESULTS,
+            query_max_len: DEFAULT_SEARCH_QUERY_MAX_LEN,
+            message_date_max_len: DEFAULT_MESSAGE_DATE_MAX_LEN,
+            message_flag_string_max_len: DEFAULT_MESSAGE_FLAG_STRING_MAX_LEN,
+            header_value_max_len: DEFAULT_SEARCH_HEADER_VALUE_MAX_LEN,
+        }
+    }
+}
+
 /// A single mailbox visible to the authenticated user.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MailboxEntry {
@@ -135,6 +168,71 @@ pub struct MessageSummary {
     pub flags: Vec<String>,
     pub date_received: String,
     pub size_virtual: u64,
+}
+
+/// A validated mailbox-scoped search request.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MessageSearchRequest {
+    pub mailbox_name: String,
+    pub query: String,
+}
+
+impl MessageSearchRequest {
+    /// Validates the mailbox name and free-text query used for message search.
+    pub fn new(
+        policy: MessageSearchPolicy,
+        mailbox_name: impl Into<String>,
+        query: impl Into<String>,
+    ) -> Result<Self, MailboxBackendError> {
+        let mailbox_name = mailbox_name.into();
+        let _ = MailboxEntry::new(
+            MailboxListingPolicy {
+                mailbox_name_max_len: policy.mailbox_name_max_len,
+                max_mailboxes: DEFAULT_MAX_MAILBOXES,
+            },
+            mailbox_name.clone(),
+        )?;
+
+        let query = query.into().trim().to_string();
+        if query.is_empty() {
+            return Err(MailboxBackendError {
+                backend: "message-search-parser",
+                reason: "search query must not be empty".to_string(),
+            });
+        }
+        if query.len() > policy.query_max_len {
+            return Err(MailboxBackendError {
+                backend: "message-search-parser",
+                reason: format!(
+                    "search query exceeded maximum length of {} bytes",
+                    policy.query_max_len
+                ),
+            });
+        }
+        if query.chars().any(char::is_control) {
+            return Err(MailboxBackendError {
+                backend: "message-search-parser",
+                reason: "search query contains control characters".to_string(),
+            });
+        }
+
+        Ok(Self {
+            mailbox_name,
+            query,
+        })
+    }
+}
+
+/// A single summary row returned from a mailbox-scoped search.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MessageSearchResult {
+    pub mailbox_name: String,
+    pub uid: u64,
+    pub flags: Vec<String>,
+    pub date_received: String,
+    pub size_virtual: u64,
+    pub subject: Option<String>,
+    pub from: Option<String>,
 }
 
 /// A validated request for retrieving one message from a mailbox.
@@ -296,6 +394,21 @@ pub enum MessageViewDecision {
     },
 }
 
+/// The outcome of a message-search request.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum MessageSearchDecision {
+    Denied {
+        public_reason: MailboxPublicFailureReason,
+    },
+    Listed {
+        canonical_username: String,
+        session_id: String,
+        mailbox_name: String,
+        query: String,
+        results: Vec<MessageSearchResult>,
+    },
+}
+
 /// The decision plus audit event emitted by mailbox listing.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MailboxListingOutcome {
@@ -314,6 +427,13 @@ pub struct MessageListOutcome {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MessageViewOutcome {
     pub decision: MessageViewDecision,
+    pub audit_event: LogEvent,
+}
+
+/// The decision plus audit event emitted by message search.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MessageSearchOutcome {
+    pub decision: MessageSearchDecision,
     pub audit_event: LogEvent,
 }
 
@@ -348,6 +468,15 @@ pub trait MessageViewBackend {
         canonical_username: &str,
         request: &MessageViewRequest,
     ) -> Result<MessageView, MailboxBackendError>;
+}
+
+/// A backend capable of searching for messages within one mailbox.
+pub trait MessageSearchBackend {
+    fn search_messages(
+        &self,
+        canonical_username: &str,
+        request: &MessageSearchRequest,
+    ) -> Result<Vec<MessageSearchResult>, MailboxBackendError>;
 }
 
 /// Lists mailboxes for an already validated session.
@@ -541,6 +670,72 @@ where
     }
 }
 
+/// Searches messages for an already validated session.
+pub struct MessageSearchService<B> {
+    backend: B,
+}
+
+impl<B> MessageSearchService<B>
+where
+    B: MessageSearchBackend,
+{
+    /// Creates a message-search service around the supplied backend.
+    pub fn new(backend: B) -> Self {
+        Self { backend }
+    }
+
+    /// Searches message summaries for the canonical user attached to the
+    /// validated session.
+    pub fn search_for_validated_session(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        request: &MessageSearchRequest,
+    ) -> MessageSearchOutcome {
+        let canonical_username = validated_session.record.canonical_username.clone();
+        let session_id = validated_session.record.session_id.clone();
+
+        match self.backend.search_messages(&canonical_username, request) {
+            Ok(results) => MessageSearchOutcome {
+                decision: MessageSearchDecision::Listed {
+                    canonical_username: canonical_username.clone(),
+                    session_id: session_id.clone(),
+                    mailbox_name: request.mailbox_name.clone(),
+                    query: request.query.clone(),
+                    results: results.clone(),
+                },
+                audit_event: LogEvent::new(
+                    LogLevel::Info,
+                    EventCategory::Mailbox,
+                    "message_searched",
+                    "message search completed",
+                )
+                .with_field("canonical_username", canonical_username)
+                .with_field("session_id", session_id)
+                .with_field("mailbox_name", request.mailbox_name.clone())
+                .with_field("query", request.query.clone())
+                .with_field("result_count", results.len().to_string())
+                .with_field("request_id", context.request_id.clone())
+                .with_field("remote_addr", context.remote_addr.clone())
+                .with_field("user_agent", context.user_agent.clone()),
+            },
+            Err(error) => MessageSearchOutcome {
+                decision: MessageSearchDecision::Denied {
+                    public_reason: MailboxPublicFailureReason::TemporarilyUnavailable,
+                },
+                audit_event: build_message_search_failure_event(
+                    context,
+                    &validated_session.record.canonical_username,
+                    &validated_session.record.session_id,
+                    &request.mailbox_name,
+                    &request.query,
+                    &error,
+                ),
+            },
+        }
+    }
+}
+
 /// Lists mailboxes through `doveadm mailbox list`.
 pub struct DoveadmMailboxListBackend<E> {
     policy: MailboxListingPolicy,
@@ -717,6 +912,84 @@ impl<E> DoveadmMessageViewBackend<E> {
     }
 }
 
+/// Searches message summaries through `doveadm fetch` using a mailbox-scoped
+/// Dovecot `TEXT` search term.
+pub struct DoveadmMessageSearchBackend<E> {
+    policy: MessageSearchPolicy,
+    command_executor: E,
+    doveadm_path: PathBuf,
+    userdb_socket_path: Option<PathBuf>,
+}
+
+impl<E> DoveadmMessageSearchBackend<E> {
+    /// Builds a backend using the supplied command executor and `doveadm` path.
+    pub fn new(
+        policy: MessageSearchPolicy,
+        command_executor: E,
+        doveadm_path: impl Into<PathBuf>,
+    ) -> Self {
+        Self {
+            policy,
+            command_executor,
+            doveadm_path: doveadm_path.into(),
+            userdb_socket_path: None,
+        }
+    }
+
+    /// Points message-search lookups at an explicit Dovecot userdb-capable socket.
+    pub fn with_userdb_socket_path(mut self, userdb_socket_path: Option<PathBuf>) -> Self {
+        self.userdb_socket_path = userdb_socket_path;
+        self
+    }
+}
+
+impl Default for DoveadmMessageSearchBackend<SystemCommandExecutor> {
+    fn default() -> Self {
+        Self::new(
+            MessageSearchPolicy::default(),
+            SystemCommandExecutor,
+            "/usr/local/bin/doveadm",
+        )
+    }
+}
+
+impl<E> MessageSearchBackend for DoveadmMessageSearchBackend<E>
+where
+    E: CommandExecutor,
+{
+    fn search_messages(
+        &self,
+        canonical_username: &str,
+        request: &MessageSearchRequest,
+    ) -> Result<Vec<MessageSearchResult>, MailboxBackendError> {
+        let args = vec!["-o".to_string(), "stats_writer_socket_path=".to_string()];
+        let mut args = args;
+        append_doveadm_auth_socket_override(&mut args, self.userdb_socket_path.as_ref());
+        args.extend([
+            "-f".to_string(),
+            "flow".to_string(),
+            "fetch".to_string(),
+            "-u".to_string(),
+            canonical_username.to_string(),
+            "uid flags date.received size.virtual mailbox hdr.subject hdr.from".to_string(),
+            "mailbox".to_string(),
+            request.mailbox_name.clone(),
+            "TEXT".to_string(),
+            request.query.clone(),
+        ]);
+
+        let execution = self
+            .command_executor
+            .run_with_stdin(self.doveadm_path.to_string_lossy().as_ref(), &args, "")
+            .map_err(|error| MailboxBackendError {
+                backend: "doveadm-message-search",
+                reason: error.reason,
+            })?;
+
+        parse_doveadm_message_search_output(self.policy, &execution)
+    }
+}
+
 impl Default for DoveadmMessageViewBackend<SystemCommandExecutor> {
     fn default() -> Self {
         Self::new(
@@ -867,6 +1140,43 @@ fn build_message_view_failure_event(
     .with_field("user_agent", context.user_agent.clone())
 }
 
+/// Builds a bounded failure event for message-search problems.
+fn build_message_search_failure_event(
+    context: &AuthenticationContext,
+    canonical_username: &str,
+    session_id: &str,
+    mailbox_name: &str,
+    query: &str,
+    error: &MailboxBackendError,
+) -> LogEvent {
+    let audit_reason = if error.backend == "message-search-parser" {
+        MailboxAuditFailureReason::OutputRejected
+    } else {
+        MailboxAuditFailureReason::BackendUnavailable
+    };
+
+    LogEvent::new(
+        LogLevel::Warn,
+        EventCategory::Mailbox,
+        "message_search_failed",
+        "message search failed",
+    )
+    .with_field("canonical_username", canonical_username.to_string())
+    .with_field("session_id", session_id.to_string())
+    .with_field("mailbox_name", mailbox_name.to_string())
+    .with_field("query", query.to_string())
+    .with_field(
+        "public_reason",
+        MailboxPublicFailureReason::TemporarilyUnavailable.as_str(),
+    )
+    .with_field("audit_reason", audit_reason.as_str())
+    .with_field("backend", error.backend)
+    .with_field("backend_reason", error.reason.clone())
+    .with_field("request_id", context.request_id.clone())
+    .with_field("remote_addr", context.remote_addr.clone())
+    .with_field("user_agent", context.user_agent.clone())
+}
+
 /// Parses the output of `doveadm mailbox list` into bounded mailbox entries.
 fn parse_doveadm_mailbox_list_output(
     policy: MailboxListingPolicy,
@@ -978,6 +1288,45 @@ fn parse_doveadm_message_view_output(
     }
 
     parse_message_view_record(policy, execution.stdout.trim_end())
+}
+
+/// Parses the output of `doveadm -f flow fetch` into bounded search results.
+fn parse_doveadm_message_search_output(
+    policy: MessageSearchPolicy,
+    execution: &CommandExecution,
+) -> Result<Vec<MessageSearchResult>, MailboxBackendError> {
+    if execution.status_code != 0 {
+        return Err(MailboxBackendError {
+            backend: "doveadm-message-search",
+            reason: format!(
+                "command exited with status {}: {}",
+                execution.status_code,
+                concise_command_diagnostics(&execution.stdout, &execution.stderr),
+            ),
+        });
+    }
+
+    let mut results = Vec::new();
+
+    for raw_line in execution.stdout.lines() {
+        let line = raw_line.trim();
+        if line.is_empty() {
+            continue;
+        }
+
+        results.push(parse_message_search_result_line(policy, line)?);
+        if results.len() > policy.max_results {
+            return Err(MailboxBackendError {
+                backend: "message-search-parser",
+                reason: format!(
+                    "message search exceeded maximum of {} entries",
+                    policy.max_results
+                ),
+            });
+        }
+    }
+
+    Ok(results)
 }
 
 /// Parses one flow-formatted message-summary line.
@@ -1135,6 +1484,109 @@ fn parse_message_view_line(
         size_virtual,
         header_block,
         body_text,
+    })
+}
+
+/// Parses one flow-formatted message-search line.
+fn parse_message_search_result_line(
+    policy: MessageSearchPolicy,
+    line: &str,
+) -> Result<MessageSearchResult, MailboxBackendError> {
+    let fields = parse_flow_fields(line, "message-search-parser")?;
+    let mailbox_name = MailboxEntry::new(
+        MailboxListingPolicy {
+            mailbox_name_max_len: policy.mailbox_name_max_len,
+            max_mailboxes: DEFAULT_MAX_MAILBOXES,
+        },
+        required_flow_field(&fields, "mailbox", "message-search", "message-search-parser")?,
+    )?
+    .name;
+    let uid = parse_u64_value(
+        "uid",
+        required_flow_field(&fields, "uid", "message-search", "message-search-parser")?,
+        "message-search-parser",
+    )?;
+    let date_received = required_flow_field(
+        &fields,
+        "date.received",
+        "message-search",
+        "message-search-parser",
+    )?
+    .to_string();
+    validate_bounded_string(
+        "date.received",
+        &date_received,
+        policy.message_date_max_len,
+        "message-search-parser",
+        false,
+        false,
+    )?;
+
+    let flags_text = required_flow_field(
+        &fields,
+        "flags",
+        "message-search",
+        "message-search-parser",
+    )?
+    .to_string();
+    validate_bounded_string(
+        "flags",
+        &flags_text,
+        policy.message_flag_string_max_len,
+        "message-search-parser",
+        true,
+        false,
+    )?;
+    let flags = parse_flags(&flags_text);
+
+    let size_virtual = parse_u64_value(
+        "size.virtual",
+        required_flow_field(
+            &fields,
+            "size.virtual",
+            "message-search",
+            "message-search-parser",
+        )?,
+        "message-search-parser",
+    )?;
+
+    let subject = optional_flow_field(&fields, "hdr.subject")
+        .filter(|value| !value.is_empty())
+        .map(|value| {
+            validate_bounded_string(
+                "hdr.subject",
+                value,
+                policy.header_value_max_len,
+                "message-search-parser",
+                true,
+                false,
+            )?;
+            Ok(value.to_string())
+        })
+        .transpose()?;
+    let from = optional_flow_field(&fields, "hdr.from")
+        .filter(|value| !value.is_empty())
+        .map(|value| {
+            validate_bounded_string(
+                "hdr.from",
+                value,
+                policy.header_value_max_len,
+                "message-search-parser",
+                true,
+                false,
+            )?;
+            Ok(value.to_string())
+        })
+        .transpose()?;
+
+    Ok(MessageSearchResult {
+        mailbox_name,
+        uid,
+        flags,
+        date_received,
+        size_virtual,
+        subject,
+        from,
     })
 }
 
@@ -1303,6 +1755,14 @@ fn required_flow_field<'a>(
             backend,
             reason: format!("missing required {subject} field {field}"),
         })
+}
+
+/// Returns an optional value from a parsed flow record.
+fn optional_flow_field<'a>(
+    fields: &'a BTreeMap<String, String>,
+    field: &'static str,
+) -> Option<&'a str> {
+    fields.get(field).map(String::as_str)
 }
 
 /// Parses an unsigned integer value from message-list output.
@@ -1501,6 +1961,21 @@ mod tests {
             Err(MailboxBackendError {
                 backend: "test-message-backend",
                 reason: "message index unavailable".to_string(),
+            })
+        }
+    }
+
+    struct FailingMessageSearchBackend;
+
+    impl MessageSearchBackend for FailingMessageSearchBackend {
+        fn search_messages(
+            &self,
+            _canonical_username: &str,
+            _request: &MessageSearchRequest,
+        ) -> Result<Vec<MessageSearchResult>, MailboxBackendError> {
+            Err(MailboxBackendError {
+                backend: "test-message-search-backend",
+                reason: "message search unavailable".to_string(),
             })
         }
     }
@@ -1733,6 +2208,61 @@ mod tests {
     }
 
     #[test]
+    fn parses_message_search_results_from_doveadm_flow_output() {
+        let executor = Rc::new(std::cell::RefCell::new(StubCommandExecutor::success(
+            CommandExecution {
+                status_code: 0,
+                stdout: concat!(
+                    "uid=14 flags=\"\\\\Seen\" date.received=2026-03-27 15:00:00 +0000 size.virtual=2048 mailbox=INBOX hdr.subject=\"Quarterly report\" hdr.from=\"Alice <alice@example.com>\"\n",
+                    "uid=15 flags=\"\" date.received=2026-03-27 16:00:00 +0000 size.virtual=1024 mailbox=INBOX hdr.subject=\"Follow-up\" hdr.from=\"Bob <bob@example.com>\"\n"
+                )
+                .to_string(),
+                stderr: String::new(),
+            },
+        )));
+        let backend = DoveadmMessageSearchBackend::new(
+            MessageSearchPolicy::default(),
+            executor.clone(),
+            "/usr/local/bin/doveadm",
+        );
+        let request = MessageSearchRequest::new(
+            MessageSearchPolicy::default(),
+            "INBOX",
+            "quarterly report",
+        )
+        .expect("request should be valid");
+
+        let results = backend
+            .search_messages("alice@example.com", &request)
+            .expect("message search should succeed");
+
+        assert_eq!(results.len(), 2);
+        assert_eq!(results[0].uid, 14);
+        assert_eq!(results[0].subject.as_deref(), Some("Quarterly report"));
+        assert_eq!(results[0].from.as_deref(), Some("Alice <alice@example.com>"));
+        assert_eq!(results[1].uid, 15);
+
+        let recorded = executor.borrow();
+        assert_eq!(
+            recorded.args.as_ref().expect("args should be captured"),
+            &vec![
+                "-o".to_string(),
+                "stats_writer_socket_path=".to_string(),
+                "-f".to_string(),
+                "flow".to_string(),
+                "fetch".to_string(),
+                "-u".to_string(),
+                "alice@example.com".to_string(),
+                "uid flags date.received size.virtual mailbox hdr.subject hdr.from".to_string(),
+                "mailbox".to_string(),
+                "INBOX".to_string(),
+                "TEXT".to_string(),
+                "quarterly report".to_string(),
+            ]
+        );
+    }
+
+    #[test]
     fn parses_multiline_message_view_from_live_style_flow_output() {
         let message = parse_doveadm_message_view_output(
             MessageViewPolicy::default(),
@@ -1802,6 +2332,35 @@ mod tests {
 
         assert_eq!(error.backend, "message-view-parser");
         assert_eq!(error.reason, "missing required message-view field body");
+    }
+
+    #[test]
+    fn rejects_message_search_with_empty_query() {
+        let error = MessageSearchRequest::new(MessageSearchPolicy::default(), "INBOX", "   ")
+            .expect_err("empty query must fail");
+
+        assert_eq!(error.backend, "message-search-parser");
+        assert_eq!(error.reason, "search query must not be empty");
+    }
+
+    #[test]
+    fn rejects_message_search_output_missing_required_fields() {
+        let error = parse_doveadm_message_search_output(
+            MessageSearchPolicy::default(),
+            &CommandExecution {
+                status_code: 0,
+                stdout: "uid=4 flags=\"\" size.virtual=2048 mailbox=INBOX hdr.subject=\"Test\"\n"
+                    .to_string(),
+                stderr: String::new(),
+            },
+        )
+        .expect_err("missing fields must fail");
+
+        assert_eq!(error.backend, "message-search-parser");
+        assert_eq!(
+            error.reason,
+            "missing required message-search field date.received"
+        );
     }
 
     #[test]
@@ -1994,6 +2553,79 @@ mod tests {
             }
         );
         assert_eq!(outcome.audit_event.action, "message_list_failed");
+        assert_eq!(outcome.audit_event.level, LogLevel::Warn);
+    }
+
+    #[test]
+    fn message_search_service_emits_audit_quality_success_events() {
+        let service = MessageSearchService::new(StaticMessageSearchBackend {
+            results: vec![
+                MessageSearchResult {
+                    mailbox_name: "INBOX".to_string(),
+                    uid: 14,
+                    flags: vec!["\\Seen".to_string()],
+                    date_received: "2026-03-27 15:00:00 +0000".to_string(),
+                    size_virtual: 2048,
+                    subject: Some("Quarterly report".to_string()),
+                    from: Some("Alice <alice@example.com>".to_string()),
+                },
+                MessageSearchResult {
+                    mailbox_name: "INBOX".to_string(),
+                    uid: 15,
+                    flags: Vec::new(),
+                    date_received: "2026-03-27 16:00:00 +0000".to_string(),
+                    size_virtual: 1024,
+                    subject: Some("Follow-up".to_string()),
+                    from: Some("Bob <bob@example.com>".to_string()),
+                },
+            ],
+        });
+        let validated_session = validated_session_fixture();
+        let request = MessageSearchRequest::new(
+            MessageSearchPolicy::default(),
+            "INBOX",
+            "quarterly report",
+        )
+        .expect("request should be valid");
+
+        let outcome =
+            service.search_for_validated_session(&test_context(), &validated_session, &request);
+
+        assert_eq!(outcome.audit_event.category, EventCategory::Mailbox);
+        assert_eq!(outcome.audit_event.action, "message_searched");
+
+        let logger = Logger::new(LogFormat::Text, LogLevel::Debug);
+        let rendered = logger.render_with_timestamp(&outcome.audit_event, 5353);
+        assert_eq!(
+            rendered,
+            format!(
+                "ts=5353 level=info category=mailbox action=message_searched msg=\"message search completed\" canonical_username=\"alice@example.com\" session_id=\"{}\" mailbox_name=\"INBOX\" query=\"quarterly report\" result_count=\"2\" request_id=\"req-mailbox\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\"",
+                validated_session.record.session_id
+            )
+        );
+    }
+
+    #[test]
+    fn message_search_service_translates_backend_failures_into_bounded_events() {
+        let service = MessageSearchService::new(FailingMessageSearchBackend);
+        let validated_session = validated_session_fixture();
+        let request = MessageSearchRequest::new(
+            MessageSearchPolicy::default(),
+            "INBOX",
+            "quarterly report",
+        )
+        .expect("request should be valid");
+
+        let outcome =
+            service.search_for_validated_session(&test_context(), &validated_session, &request);
+
+        assert_eq!(
+            outcome.decision,
+            MessageSearchDecision::Denied {
+                public_reason: MailboxPublicFailureReason::TemporarilyUnavailable,
+            }
+        );
+        assert_eq!(outcome.audit_event.action, "message_search_failed");
         assert_eq!(outcome.audit_event.level, LogLevel::Warn);
     }
 
@@ -2390,6 +3022,21 @@ mod tests {
             _request: &MessageListRequest,
         ) -> Result<Vec<MessageSummary>, MailboxBackendError> {
             Ok(self.messages.clone())
+        }
+    }
+
+    #[derive(Debug, Clone)]
+    struct StaticMessageSearchBackend {
+        results: Vec<MessageSearchResult>,
+    }
+
+    impl MessageSearchBackend for StaticMessageSearchBackend {
+        fn search_messages(
+            &self,
+            _canonical_username: &str,
+            _request: &MessageSearchRequest,
+        ) -> Result<Vec<MessageSearchResult>, MailboxBackendError> {
+            Ok(self.results.clone())
         }
     }
 

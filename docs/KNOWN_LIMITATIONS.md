@@ -27,7 +27,9 @@
 - The implementation now has a plain-text-first rendering layer, but it does
   not yet define HTML mail sanitization, encoded-header handling, or inline
   resource policy
-- The implementation does not yet provide browser message search
+- The implementation now provides a first mailbox-scoped, backend-authoritative
+  browser search path, but it does not yet provide cross-mailbox or advanced
+  search behavior
 - The implementation does not yet provide folder-organization workflows such as
   move or archive
 - The implementation now provides a first browser-visible session list and
