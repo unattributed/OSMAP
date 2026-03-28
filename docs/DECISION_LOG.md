@@ -862,3 +862,20 @@ Rust validation entrypoints and also fails if:
 This does not claim that OSMAP is free of all dangerous weakness classes. It
 does establish a repeatable, repo-owned security review baseline so future Rust
 changes are vetted more systematically before commit.
+
+### Keep GitHub default CodeQL setup authoritative until the repository
+explicitly transitions to advanced setup
+
+The repository previously carried an always-on advanced CodeQL workflow. That
+configuration conflicted with GitHub default CodeQL setup and caused SARIF
+processing failures instead of useful alerts.
+
+OSMAP now treats GitHub default CodeQL setup as the authoritative CodeQL
+scanner while that repository setting remains enabled. The repo-owned
+authoritative CI workflow is now the GitHub Actions `security-check` job, which
+mirrors `make security-check`.
+
+The repository still keeps a manual `codeql-advanced` workflow template, but it
+is an explicit future-transition path, not the active CodeQL authority. It
+should only be used after maintainers intentionally disable default CodeQL
+setup in repository settings.

@@ -79,6 +79,12 @@ Use the repo entrypoints where available:
 If you cannot run one of them in your environment, say so clearly in the pull
 request. Do not claim a check passed if it was not run.
 
+GitHub Actions mirrors the Rust backend gate with the repo-owned
+`security-check` workflow. That workflow is the authoritative CI job for the
+Rust backend. GitHub default CodeQL setup remains the repository's
+authoritative CodeQL scanner unless maintainers deliberately disable default
+setup and switch to advanced CodeQL configuration.
+
 To enable the repo-owned pre-commit hook path for this checkout, run:
 
 - `make install-hooks`

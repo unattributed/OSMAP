@@ -1,0 +1,38 @@
+name: security-check
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+concurrency:
+  group: security-check-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  rust-security-check:
+    name: security-check / rust
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v5
+
+      - name: install rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: run repo security gate
+        run: make security-check

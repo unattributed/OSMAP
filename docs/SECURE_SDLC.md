@@ -94,6 +94,8 @@ Guidance:
 - keep a repo-owned security gate for the current Rust backend, including the
   shared `make security-check` workflow and the current CWE Top 25 review
   baseline
+- keep GitHub default CodeQL setup or a consciously chosen advanced CodeQL
+  replacement aligned with the repository's actual GitHub scanning posture
 
 ## Dependency Controls
 

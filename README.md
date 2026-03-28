@@ -162,6 +162,11 @@ Each phase produces formal outputs to support traceability and auditability.
 - Current priority work is continued HTTP hardening, tighter OpenBSD helper and
   filesystem narrowing, and broader end-to-end live validation beyond the now
   proven authenticated read path.
+- GitHub-side security validation now has two explicit lanes:
+  GitHub default CodeQL setup remains the authoritative CodeQL scanner for this
+  repository, while the repo-owned `security-check` workflow is the
+  authoritative CI gate for Rust checks, tests, clippy, formatting, and the
+  current CWE-oriented shell guards.
 
 ---
 
@@ -188,6 +193,8 @@ The short version:
 - run `make security-check` before commit when working on the Rust backend
 - install the repo-owned hook path with `make install-hooks` if you want that
   gate to run automatically on each commit
+- expect GitHub Actions to enforce the same repo-owned `make security-check`
+  gate on pushes and pull requests to `main`
 - expect extra scrutiny for auth, session, HTTP, MIME, attachment, helper, and
   confinement work
 

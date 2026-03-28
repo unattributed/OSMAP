@@ -82,6 +82,11 @@ newly discovered injection or memory-safety defect.
 The repository now includes a shared `make security-check` entrypoint and a
 repo-owned pre-commit hook path.
 
+The repository also carries a GitHub Actions `security-check` workflow that
+mirrors the same gate on pushes and pull requests. GitHub default CodeQL setup
+remains the authoritative CodeQL scanner for this repository while default
+setup is enabled.
+
 That workflow currently does all of the following:
 
 - `cargo check`
@@ -100,6 +105,21 @@ make install-hooks
 
 That sets `core.hooksPath` to `.githooks` for the local checkout so commits run
 the repo-owned security gate automatically.
+
+## GitHub Code Scanning Posture
+
+OSMAP now separates two concerns clearly:
+
+- repo-owned Rust quality and security gating runs through `make security-check`
+  locally, through the repo-owned pre-commit hook, and through the GitHub
+  Actions `security-check` workflow
+- CodeQL alert generation remains the responsibility of GitHub default CodeQL
+  setup while that repository setting is enabled
+
+The repository also carries a manual `codeql-advanced` workflow template for a
+future deliberate move to advanced CodeQL configuration. It must not be treated
+as the active CodeQL path until GitHub default setup is intentionally disabled
+in repository settings.
 
 ## What This Does Not Claim
 
