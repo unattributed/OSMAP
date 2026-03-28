@@ -703,3 +703,16 @@ strictly:
 
 That reduces ambiguity at the request boundary without changing any legitimate
 browser path OSMAP currently emits.
+
+### Reject ambiguous form fields and unsupported login/logout body types
+
+The browser runtime now treats form parsing more strictly as well:
+
+- duplicate query or form field names are rejected instead of silently
+  overwriting earlier values
+- empty field names are rejected instead of being treated as unnamed input
+- `POST /login` and `POST /logout` accept only URL-encoded form bodies instead
+  of guessing at other content types
+
+That keeps the browser boundary smaller and more reviewable by refusing body
+shapes the current routes do not need.

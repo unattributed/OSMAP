@@ -23,7 +23,8 @@ use crate::auth::{
 };
 use crate::config::{AppConfig, AppRunMode, LogLevel, RuntimeEnvironment};
 use crate::http_form::{
-    is_multipart_form_data, parse_compose_form, parse_query_string, parse_urlencoded_form,
+    is_multipart_form_data, is_urlencoded_form_content_type, parse_compose_form,
+    parse_query_string, parse_urlencoded_form,
 };
 use crate::logging::{EventCategory, LogEvent, Logger};
 use crate::mailbox::{
@@ -1205,6 +1206,22 @@ where
         request: &HttpRequest,
         context: &AuthenticationContext,
     ) -> HandledHttpResponse {
+        if !allows_urlencoded_request_body(request.headers.get("content-type").map(String::as_str)) {
+            return HandledHttpResponse {
+                response: html_response(
+                    400,
+                    "Bad Request",
+                    "Invalid Login Request",
+                    "<p>The login form content type was not supported.</p>",
+                ),
+                audit_events: vec![build_http_warning_event(
+                    "http_login_content_type_rejected",
+                    "login form content type was not supported",
+                    context,
+                )],
+            };
+        }
+
         let form = match parse_urlencoded_form(
             &request.body,
             self.policy.max_form_fields,
@@ -1835,6 +1852,22 @@ where
         request: &HttpRequest,
         context: &AuthenticationContext,
     ) -> HandledHttpResponse {
+        if !allows_urlencoded_request_body(request.headers.get("content-type").map(String::as_str)) {
+            return HandledHttpResponse {
+                response: html_response(
+                    400,
+                    "Bad Request",
+                    "Invalid Logout Request",
+                    "<p>The logout form content type was not supported.</p>",
+                ),
+                audit_events: vec![build_http_warning_event(
+                    "http_logout_content_type_rejected",
+                    "logout form content type was not supported",
+                    context,
+                )],
+            };
+        }
+
         let form = match parse_urlencoded_form(
             &request.body,
             self.policy.max_form_fields,
@@ -2463,6 +2496,14 @@ fn session_cookie_value(request: &HttpRequest, cookie_name: &str) -> Option<Stri
     }
 
     matched_value
+}
+
+/// Returns true when the route may safely interpret the body as URL-encoded.
+fn allows_urlencoded_request_body(content_type: Option<&str>) -> bool {
+    match content_type.map(str::trim) {
+        None | Some("") => true,
+        Some(value) => is_urlencoded_form_content_type(value),
+    }
 }
 
 /// Builds the current session cookie for successful login responses.
@@ -3277,6 +3318,25 @@ mod tests {
     }
 
     #[test]
+    fn login_rejects_unsupported_form_content_type() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/login",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    ("Content-Type", "application/json"),
+                ],
+                "{\"username\":\"alice@example.com\"}",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 400);
+        assert!(body_text(&response).contains("content type was not supported"));
+    }
+
+    #[test]
     fn mailbox_page_requires_valid_session() {
         let response = app().handle_request(
             &request("GET", "/mailboxes", &[("User-Agent", "Firefox/Test")], ""),
@@ -3575,6 +3635,29 @@ mod tests {
     }
 
     #[test]
+    fn logout_rejects_unsupported_form_content_type() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/logout",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                    ("Content-Type", "multipart/form-data; boundary=test-boundary"),
+                ],
+                "--test-boundary--\r\n",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 400);
+        assert!(body_text(&response).contains("content type was not supported"));
+    }
+
+    #[test]
     fn logger_renders_http_events_stably() {
         let logger = Logger::new(crate::config::LogFormat::Text, LogLevel::Debug);
         let rendered = logger.render_with_timestamp(
@@ -3662,6 +3745,17 @@ mod tests {
         .expect_err("dot-segment request paths must be rejected");
 
         assert_eq!(error.reason, "request target path must not contain dot segments");
+    }
+
+    #[test]
+    fn rejects_duplicate_query_parameters() {
+        let error = parse_http_request(
+            "GET /mailbox?name=INBOX&name=Archive HTTP/1.1\r\nHost: localhost\r\n\r\n",
+            &HttpPolicy::default(),
+        )
+        .expect_err("duplicate query fields must be rejected");
+
+        assert_eq!(error.reason, "duplicate form field: name");
     }
 
     #[test]

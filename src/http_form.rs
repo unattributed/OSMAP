@@ -47,6 +47,16 @@ pub fn parse_urlencoded_form(
     parse_urlencoded_map(body, max_fields)
 }
 
+/// Returns true when the content type names a URL-encoded form body.
+pub fn is_urlencoded_form_content_type(content_type: &str) -> bool {
+    content_type
+        .split(';')
+        .next()
+        .map(str::trim)
+        .map(|value| value.eq_ignore_ascii_case("application/x-www-form-urlencoded"))
+        .unwrap_or(false)
+}
+
 /// Parses the compose submission body in either URL-encoded or multipart form.
 pub fn parse_compose_form(
     body: &[u8],
@@ -98,7 +108,18 @@ fn parse_urlencoded_map(
         }
 
         let (key, value) = pair.split_once('=').unwrap_or((pair, ""));
-        output.insert(percent_decode(key)?, percent_decode(value)?);
+        let key = percent_decode(key)?;
+        if key.is_empty() {
+            return Err(FormParseError {
+                reason: "form field name must not be empty".to_string(),
+            });
+        }
+        if output.contains_key(&key) {
+            return Err(FormParseError {
+                reason: format!("duplicate form field: {key}"),
+            });
+        }
+        output.insert(key, percent_decode(value)?);
     }
 
     Ok(output)
@@ -246,6 +267,11 @@ fn parse_multipart_compose_form(
             .ok_or_else(|| FormParseError {
                 reason: "multipart part was missing a field name".to_string(),
             })?;
+        if field_name.is_empty() {
+            return Err(FormParseError {
+                reason: "multipart part field name must not be empty".to_string(),
+            });
+        }
         let filename = disposition.params.get("filename").cloned();
 
         match filename {
@@ -279,6 +305,11 @@ fn parse_multipart_compose_form(
                 let value = String::from_utf8(part_body.to_vec()).map_err(|_| FormParseError {
                     reason: "multipart text field was not valid utf-8".to_string(),
                 })?;
+                if fields.contains_key(&field_name) {
+                    return Err(FormParseError {
+                        reason: format!("duplicate form field: {field_name}"),
+                    });
+                }
                 fields.insert(field_name, value);
             }
         }
@@ -325,7 +356,13 @@ fn parse_header_block(header_block: &str) -> Result<BTreeMap<String, String>, Fo
                 reason: "multipart part header line was malformed".to_string(),
             });
         };
-        headers.insert(name.trim().to_ascii_lowercase(), value.trim().to_string());
+        let normalized_name = name.trim().to_ascii_lowercase();
+        if headers.contains_key(&normalized_name) {
+            return Err(FormParseError {
+                reason: format!("duplicate multipart header: {normalized_name}"),
+            });
+        }
+        headers.insert(normalized_name, value.trim().to_string());
     }
 
     Ok(headers)
@@ -402,6 +439,22 @@ mod tests {
     }
 
     #[test]
+    fn rejects_duplicate_urlencoded_fields() {
+        let error = parse_urlencoded_form(b"name=INBOX&name=Archive", 4, 64)
+            .expect_err("duplicate fields must be rejected");
+
+        assert_eq!(error.reason, "duplicate form field: name");
+    }
+
+    #[test]
+    fn rejects_empty_urlencoded_field_names() {
+        let error = parse_urlencoded_form(b"=value", 4, 64)
+            .expect_err("empty field names must be rejected");
+
+        assert_eq!(error.reason, "form field name must not be empty");
+    }
+
+    #[test]
     fn parses_multipart_compose_forms_with_attachment() {
         let body = concat!(
             "--test-boundary\r\n",
@@ -448,5 +501,29 @@ mod tests {
                 reason: "unsupported compose content-type".to_string(),
             }
         );
+    }
+
+    #[test]
+    fn rejects_duplicate_multipart_fields() {
+        let body = concat!(
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"to\"\r\n\r\n",
+            "bob@example.com\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"to\"\r\n\r\n",
+            "alice@example.com\r\n",
+            "--test-boundary--\r\n"
+        );
+
+        let error = parse_compose_form(
+            body.as_bytes(),
+            Some("multipart/form-data; boundary=test-boundary"),
+            8,
+            1024,
+            ComposePolicy::default(),
+        )
+        .expect_err("duplicate multipart fields must be rejected");
+
+        assert_eq!(error.reason, "duplicate form field: to");
     }
 }

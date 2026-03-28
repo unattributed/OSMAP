@@ -33,6 +33,8 @@ The current browser runtime enforces:
 - bounded request-header count
 - bounded query-field counts
 - bounded form field counts
+- rejection of duplicate or empty query/form field names instead of silently
+  overwriting earlier values
 - per-connection read and write timeouts on the sequential listener
 - binary-safe multipart request parsing for the current upload path
 - cache suppression for sensitive pages and redirects
@@ -48,6 +50,8 @@ The current browser runtime enforces:
 - rejection of unsupported `Transfer-Encoding` request framing
 - rejection of GET request bodies instead of trying to interpret them
 - rejection of POST requests that omit `Content-Length`
+- rejection of unsupported login/logout form content types instead of guessing
+  at non-URL-encoded bodies
 - rejection of non-canonical request-path forms such as repeated slashes,
   trailing-slash aliases, and dot segments
 - rejection of fragment-bearing or otherwise ambiguous request targets
