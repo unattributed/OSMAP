@@ -765,3 +765,22 @@ The browser layer now includes:
 
 That closes one real Version 1 gap with minimal new trust surface and without
 inventing a heavier device-management subsystem.
+
+### Prove the session-management browser slice on the live OpenBSD host
+
+The first `/sessions` and `POST /sessions/revoke` slice is now validated on
+`mail.blackbagsecurity.com` under the real `_osmap` plus `vmail` split with
+`OSMAP_OPENBSD_CONFINEMENT_MODE=enforce`.
+
+That proof used a synthetic persisted session store rather than live mailbox
+credentials, because the goal of this slice was to validate the new
+session-management routes themselves:
+
+- `GET /sessions` returned `200`
+- revoking a non-current session returned `303` to `/sessions?revoked=1`
+- revoking the current session returned `303` to `/login` and cleared the
+  browser cookie
+- both targeted session records were updated with `revoked_at`
+
+This keeps the live proof narrow and high-confidence while still exercising the
+real deployment split and confinement mode.

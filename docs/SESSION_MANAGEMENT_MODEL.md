@@ -154,8 +154,13 @@ The current validation state is:
 1. local Rust unit and runtime verification completed
 2. an end-to-end test now exercises primary auth, real TOTP verification, and
    session issuance together
-3. OpenBSD host validation on `mail.blackbagsecurity.com` remains part of the
-   implementation workflow for this slice
+3. OpenBSD host validation on `mail.blackbagsecurity.com` now includes the
+   browser-visible `/sessions` page and `POST /sessions/revoke` flow under the
+   real `_osmap` plus `vmail` helper split with
+   `OSMAP_OPENBSD_CONFINEMENT_MODE=enforce`
+4. that live proof used a synthetic persisted session store so the session UI
+   could be validated without widening the harness to depend on live mailbox
+   credentials for this slice
 
 The QEMU wrapper layer remains available for broader isolated OpenBSD testing as
 later browser and mailbox work increases integration risk.

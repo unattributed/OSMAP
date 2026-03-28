@@ -177,5 +177,8 @@ Phase 6:
   settings surface remain active product gaps
 - the browser layer now includes a first self-service session-management page
   backed by the existing persisted session metadata and revocation primitives
+- the browser-visible session-management slice is now also proven on
+  `mail.blackbagsecurity.com` under `enforce` with the web runtime kept as
+  `_osmap` and the helper kept at the `vmail` boundary
 - the actual prototype now exists and Phase 6 execution is materially underway,
   but the implementation is still prototype-grade rather than production-ready

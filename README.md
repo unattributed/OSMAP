@@ -129,6 +129,10 @@ Each phase produces formal outputs to support traceability and auditability.
 - The browser layer now includes a first self-service session-management page
   backed by the persisted session metadata and revocation primitives already in
   the runtime.
+- That session-management slice is now also proven on
+  `mail.blackbagsecurity.com` under `enforce` with the web runtime kept as
+  `_osmap` and the helper kept at the `vmail` boundary, using a synthetic
+  session store to validate `/sessions` and `POST /sessions/revoke`.
 - The browser layer is server-rendered and dependency-light, with bounded HTTP
   parsing and explicit separation from the underlying mail stack.
 - OpenBSD-specific work is already in the prototype: dedicated `_osmap`
