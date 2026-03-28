@@ -74,9 +74,14 @@ Use the repo entrypoints where available:
 - `make test`
 - `make lint`
 - `make fmt-check`
+- `make security-check`
 
 If you cannot run one of them in your environment, say so clearly in the pull
 request. Do not claim a check passed if it was not run.
+
+To enable the repo-owned pre-commit hook path for this checkout, run:
+
+- `make install-hooks`
 
 For OpenBSD-facing work, maintainers may also validate changes on:
 

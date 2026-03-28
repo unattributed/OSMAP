@@ -185,6 +185,9 @@ The short version:
 - keep changes small and reviewable
 - preserve OSMAP's bounded scope and OpenBSD-first posture
 - update tests and docs with meaningful implementation changes
+- run `make security-check` before commit when working on the Rust backend
+- install the repo-owned hook path with `make install-hooks` if you want that
+  gate to run automatically on each commit
 - expect extra scrutiny for auth, session, HTTP, MIME, attachment, helper, and
   confinement work
 

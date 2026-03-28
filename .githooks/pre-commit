@@ -1,0 +1,9 @@
+#!/bin/sh
+
+set -eu
+
+repo_root=$(git rev-parse --show-toplevel)
+cd "$repo_root"
+
+echo "Running OSMAP pre-commit security check"
+exec make security-check

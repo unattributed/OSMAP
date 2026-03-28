@@ -53,12 +53,13 @@ predictable.
 The release flow should eventually look like:
 
 1. Source and dependency review
-2. Build
-3. Static analysis and required tests
-4. SBOM generation
-5. Artifact signing
-6. Staged deployment validation
-7. Controlled production rollout
+2. Shared security gate such as `make security-check`
+3. Build
+4. Static analysis and required tests
+5. SBOM generation
+6. Artifact signing
+7. Staged deployment validation
+8. Controlled production rollout
 
 ## Rollback Strategy
 

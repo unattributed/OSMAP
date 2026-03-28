@@ -837,3 +837,28 @@ The browser and mailbox layers now include:
 This closes the first folder-organization gap while preserving the helper
 boundary instead of teaching the web-facing runtime to own mailbox-write
 authority directly.
+
+### Add a repo-owned CWE Top 25 security-check workflow for the Rust backend
+
+The Rust backend now has enough real implementation depth that informal
+"remember to review it carefully" guidance is no longer a sufficient security
+gate.
+
+The repository now includes:
+
+- a shared `make security-check` entrypoint
+- a repo-owned pre-commit hook path under `.githooks/`
+- a current `CWE_TOP25_REVIEW_BASELINE.md` document tied to the actual code and
+  current MITRE Top 25 list
+
+The current gate is intentionally narrow and concrete. It runs the standard
+Rust validation entrypoints and also fails if:
+
+- new `unsafe` code appears outside the reviewed OpenBSD FFI boundary
+- shell-based command execution appears in the Rust backend
+- new direct `Command::new` call sites appear outside the reviewed auth
+  command-execution boundary
+
+This does not claim that OSMAP is free of all dangerous weakness classes. It
+does establish a repeatable, repo-owned security review baseline so future Rust
+changes are vetted more systematically before commit.

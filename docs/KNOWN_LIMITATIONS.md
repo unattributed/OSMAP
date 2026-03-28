@@ -37,6 +37,9 @@
   self-service revocation path, but it does not yet provide richer device
   labeling or anomaly-oriented session analysis
 - The implementation does not yet provide a bounded end-user settings surface
+- The Rust backend still does not implement application-layer login throttling
+  or broader request-abuse controls, so that layer still depends on adjacent
+  defenses such as nginx, PF, and operator monitoring
 - No formal migration plan has been completed
 - The existing host is multi-purpose, which constrains how aggressively the
   replacement can diverge from current operational patterns

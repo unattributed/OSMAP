@@ -1,7 +1,7 @@
 # Keep developer entrypoints obvious and conservative so operators and
 # collaborating developers do not have to memorize cargo subcommands.
 
-.PHONY: build check test lint fmt-check run
+.PHONY: build check test lint fmt-check security-check install-hooks run
 
 build:
 	cargo build
@@ -26,6 +26,13 @@ fmt-check:
 	else \
 		printf '%s\n' 'note: rustfmt is not installed in this environment; formatting check skipped'; \
 	fi
+
+security-check:
+	sh maint/security/osmap-security-check.sh
+
+install-hooks:
+	chmod +x .githooks/pre-commit maint/security/osmap-security-check.sh
+	git config core.hooksPath .githooks
 
 run:
 	cargo run

@@ -91,6 +91,9 @@ Guidance:
 - add focused security-oriented analysis for high-risk code paths where useful
 - treat analysis findings in auth, session, parser, and privilege code as high
   priority
+- keep a repo-owned security gate for the current Rust backend, including the
+  shared `make security-check` workflow and the current CWE Top 25 review
+  baseline
 
 ## Dependency Controls
 
