@@ -148,6 +148,10 @@ Each phase produces formal outputs to support traceability and auditability.
   message view, and attachment download all succeeded in one continuous flow.
 - OSMAP is still prototype-grade, not production-ready, and does not yet have a
   public deployment.
+- Several Version 1 product requirements are still not implemented: message
+  search, folder-organization workflows such as move/archive, browser-visible
+  session or device management, safe HTML mail rendering, and a bounded
+  settings surface.
 - Current priority work is continued HTTP hardening, tighter OpenBSD helper and
   filesystem narrowing, and broader end-to-end live validation beyond the now
   proven authenticated read path.

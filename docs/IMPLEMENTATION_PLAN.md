@@ -159,6 +159,10 @@ The next active implementation work should focus on:
 
 - using the project-local QEMU lab wrappers and `mail.blackbagsecurity.com` for
   continued OpenBSD validation as the runtime broadens
+- keeping the custom HTTP runtime on a narrow hardening track before widening
+  browser feature surface further
+- reconciling the remaining Version 1 gaps against the actual repo state so the
+  next work is driven by real product deficits rather than stale assumptions
 - extending the current mailbox-helper slice beyond mailbox listing,
   message-list retrieval, and message-view retrieval toward attachment-part
   retrieval without widening the web-facing runtime
@@ -167,6 +171,14 @@ The next active implementation work should focus on:
   execution from the web process
 - carrying the current session model into broader browser-state handling
   without collapsing the security boundaries that now exist
+
+At the moment, the highest-confidence unimplemented Version 1 product gaps are:
+
+- message search
+- folder operations such as move or archive
+- browser-visible session or device management
+- safe HTML email rendering beyond the current plain-text-first posture
+- a bounded first-release user settings surface
 
 ## Implementation Guardrails
 

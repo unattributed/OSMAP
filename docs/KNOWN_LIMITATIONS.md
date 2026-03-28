@@ -27,6 +27,13 @@
 - The implementation now has a plain-text-first rendering layer, but it does
   not yet define HTML mail sanitization, encoded-header handling, or inline
   resource policy
+- The implementation does not yet provide browser message search
+- The implementation does not yet provide folder-organization workflows such as
+  move or archive
+- The implementation has persisted session metadata and revocation primitives,
+  but it does not yet provide a browser-visible session or device management
+  view
+- The implementation does not yet provide a bounded end-user settings surface
 - No formal migration plan has been completed
 - The existing host is multi-purpose, which constrains how aggressively the
   replacement can diverge from current operational patterns

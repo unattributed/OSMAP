@@ -11,6 +11,35 @@ This document defines the target Version 1 product boundary for OSMAP based on:
 It is a planning document only. It does not imply architecture lock or
 implementation completion.
 
+## Current Implementation Status
+
+As of March 28, 2026, the repository already implements a substantial subset of
+the Version 1 boundary:
+
+- secure browser login with password plus TOTP
+- bounded browser sessions with revocation and persisted session metadata
+- mailbox browsing, message-list retrieval, message view, and attachment
+  download
+- compose, reply, forward, bounded attachment upload, and local submission
+- server-rendered browser flows with CSRF protection and explicit HTTP
+  hardening
+- OpenBSD confinement controls plus a least-privilege mailbox-helper path for
+  read operations
+
+The following Version 1 requirements remain product targets rather than
+implemented features:
+
+- message search
+- folder operations such as move or archive
+- browser-visible session or device management
+- safe HTML email rendering beyond the current plain-text-first withholding
+  policy
+- a clearly bounded first-release user settings surface
+
+This document remains the target product contract, but implementation planning
+and status reporting should treat the missing items above as active gaps rather
+than implying that Version 1 is already feature-complete.
+
 ## Overview
 
 Version 1 of OSMAP is a secure, browser-based mail access application for an

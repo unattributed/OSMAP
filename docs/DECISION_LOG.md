@@ -731,3 +731,20 @@ conservatively:
 That reduces request-boundary trust in attacker-controlled headers and keeps
 browser-visible responses more consistent without changing the current route
 surface.
+
+### Reconcile Version 1 targets against the actual repository state
+
+The repository now implements far more than an early design skeleton, but it
+still does not satisfy every Version 1 product requirement. The current docs
+should say that plainly.
+
+The active product gaps are now recorded explicitly as:
+
+- message search
+- folder operations such as move or archive
+- browser-visible session or device management
+- safe HTML email rendering beyond the current plain-text-first posture
+- a bounded first-release settings surface
+
+That keeps execution priorities honest and avoids letting implementation depth
+in some areas imply that Version 1 is feature-complete when it is not.

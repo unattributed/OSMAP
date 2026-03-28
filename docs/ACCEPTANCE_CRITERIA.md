@@ -88,7 +88,7 @@ Phase 6 is acceptable when all of the following are true:
 - the project can begin implementation without ambiguity about what should be
   built first
 
-## Current Status On March 27, 2026
+## Current Status On March 28, 2026
 
 Phase 0:
 
@@ -164,13 +164,17 @@ Phase 6:
   now exist as implementation controls
 - the browser slice now includes bounded attachment download behavior alongside
   reply/forward behavior and bounded attachment upload
-- broader live-browser validation under confinement, helper-boundary narrowing,
-  and successful live attachment reads under `enforce` are not complete yet
+- successful live authenticated read flows are now proven under `enforce`,
+  including real password-plus-TOTP login, helper-backed mailbox reads, and
+  attachment download
 - the selected next least-privilege mailbox-read path is now a dedicated local
   helper boundary rather than broader authority for the web-facing runtime
 - the current mailbox-helper slice now covers mailbox listing, message-list
   retrieval, message-view retrieval, and helper-backed attachment downloads;
-  live-host validation through that helper now exists under `enforce`, but the
-  broader end-to-end browser coverage is still incomplete
+  live-host validation through that helper now exists under `enforce`
+- the implementation still does not satisfy all Version 1 product goals:
+  message search, folder operations, browser-visible session/device
+  management, safe HTML mail rendering, and a bounded settings surface remain
+  active product gaps
 - the actual prototype now exists and Phase 6 execution is materially underway,
   but the implementation is still prototype-grade rather than production-ready
