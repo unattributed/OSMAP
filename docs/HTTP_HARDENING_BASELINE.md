@@ -10,7 +10,7 @@ the OpenBSD deployment strategy already selected for the project.
 
 ## Status
 
-As of March 27, 2026, the runtime now has a real browser surface plus the first
+As of March 28, 2026, the runtime now has a real browser surface plus the first
 round of HTTP-specific hardening controls:
 
 - loopback-only listener defaults in development
@@ -41,12 +41,15 @@ The current browser runtime enforces:
 - `X-Content-Type-Options: nosniff`
 - `X-Frame-Options: DENY`
 - explicit logout revocation instead of cookie deletion alone
+- strict session-cookie parsing for the bearer token the runtime actually uses
 - rejection of duplicate request headers instead of silently accepting the last
   one
 - rejection of malformed HTTP/1.1 requests without `Host`
 - rejection of unsupported `Transfer-Encoding` request framing
 - rejection of GET request bodies instead of trying to interpret them
 - rejection of POST requests that omit `Content-Length`
+- rejection of non-canonical request-path forms such as repeated slashes,
+  trailing-slash aliases, and dot segments
 - rejection of fragment-bearing or otherwise ambiguous request targets
 - normalization of peer socket addresses to bare IP strings before they reach
   auth-helper metadata or structured request audit context

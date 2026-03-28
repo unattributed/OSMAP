@@ -689,3 +689,17 @@ The custom HTTP runtime now makes its request-framing boundary more explicit:
 
 That keeps the sequential custom parser smaller and less ambiguous rather than
 trying to be liberal in ways that widen smuggling and malformed-request risk.
+
+### Accept only one valid session cookie and one canonical route form
+
+The browser runtime now treats the session cookie and request path more
+strictly:
+
+- the session cookie parser now accepts only one valid OSMAP session token
+- malformed or duplicate session-cookie candidates are ignored instead of being
+  guessed at
+- non-canonical path forms such as repeated slashes, trailing-slash aliases,
+  `.` segments, and `..` segments are rejected before routing
+
+That reduces ambiguity at the request boundary without changing any legitimate
+browser path OSMAP currently emits.

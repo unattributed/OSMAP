@@ -2412,28 +2412,57 @@ fn parse_request_target(
             reason: "request target contained unsupported path characters".to_string(),
         });
     }
+    let normalized_path = normalize_request_path(path)?;
 
     Ok((
-        path.to_string(),
+        normalized_path,
         parse_query_string(query, max_query_fields).map_err(|error| HttpRequestError {
             reason: error.reason,
         })?,
     ))
 }
 
+/// Rejects ambiguous request-path forms instead of routing aliases.
+fn normalize_request_path(path: &str) -> Result<String, HttpRequestError> {
+    if path == "/" {
+        return Ok(path.to_string());
+    }
+
+    for segment in path.split('/').skip(1) {
+        if segment.is_empty() {
+            return Err(HttpRequestError {
+                reason: "request target path must be normalized".to_string(),
+            });
+        }
+        if segment == "." || segment == ".." {
+            return Err(HttpRequestError {
+                reason: "request target path must not contain dot segments".to_string(),
+            });
+        }
+    }
+
+    Ok(path.to_string())
+}
+
 /// Reads the current session cookie from the request if present.
 fn session_cookie_value(request: &HttpRequest, cookie_name: &str) -> Option<String> {
     let cookie_header = request.headers.get("cookie")?;
+    let mut matched_value = None;
     for cookie in cookie_header.split(';') {
         let trimmed = cookie.trim();
         if let Some((name, value)) = trimmed.split_once('=') {
             if name.trim() == cookie_name {
-                return Some(value.trim().to_string());
+                let candidate = value.trim();
+                if matched_value.is_some() {
+                    return None;
+                }
+                let token = SessionToken::new(candidate.to_string()).ok()?;
+                matched_value = Some(token.as_str().to_string());
             }
         }
     }
 
-    None
+    matched_value
 }
 
 /// Builds the current session cookie for successful login responses.
@@ -3188,6 +3217,17 @@ mod tests {
             "GET /mailbox?name=INBOX HTTP/1.1\r\nHost: localhost\r\nUser-Agent: Firefox/Test\r\nCookie: osmap_session=abc\r\n\r\n",
             &HttpPolicy::default(),
         )
+        .expect("request should parse even with an unusable session cookie");
+
+        assert_eq!(
+            session_cookie_value(&request, DEFAULT_SESSION_COOKIE_NAME),
+            None
+        );
+
+        let request = parse_http_request(
+            "GET /mailbox?name=INBOX HTTP/1.1\r\nHost: localhost\r\nUser-Agent: Firefox/Test\r\nCookie: osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\r\n\r\n",
+            &HttpPolicy::default(),
+        )
         .expect("request should parse");
 
         assert_eq!(request.method, HttpMethod::Get);
@@ -3198,7 +3238,7 @@ mod tests {
         );
         assert_eq!(
             session_cookie_value(&request, DEFAULT_SESSION_COOKIE_NAME).as_deref(),
-            Some("abc")
+            Some("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
         );
     }
 
@@ -3603,6 +3643,28 @@ mod tests {
     }
 
     #[test]
+    fn rejects_request_targets_with_non_normalized_slashes() {
+        let error = parse_http_request(
+            "GET //mailboxes HTTP/1.1\r\nHost: localhost\r\n\r\n",
+            &HttpPolicy::default(),
+        )
+        .expect_err("non-normalized request paths must be rejected");
+
+        assert_eq!(error.reason, "request target path must be normalized");
+    }
+
+    #[test]
+    fn rejects_request_targets_with_dot_segments() {
+        let error = parse_http_request(
+            "GET /mailboxes/../login HTTP/1.1\r\nHost: localhost\r\n\r\n",
+            &HttpPolicy::default(),
+        )
+        .expect_err("dot-segment request paths must be rejected");
+
+        assert_eq!(error.reason, "request target path must not contain dot segments");
+    }
+
+    #[test]
     fn rejects_unsupported_transfer_encoding_headers() {
         let error = parse_http_request(
             "POST /login HTTP/1.1\r\nHost: localhost\r\nTransfer-Encoding: chunked\r\n\r\n",
@@ -3633,6 +3695,34 @@ mod tests {
         .expect_err("post requests without content-length must be rejected");
 
         assert_eq!(error.reason, "post requests must send content-length");
+    }
+
+    #[test]
+    fn rejects_duplicate_session_cookies() {
+        let request = parse_http_request(
+            "GET /mailboxes HTTP/1.1\r\nHost: localhost\r\nCookie: osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; osmap_session=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\r\n\r\n",
+            &HttpPolicy::default(),
+        )
+        .expect("request should parse");
+
+        assert_eq!(
+            session_cookie_value(&request, DEFAULT_SESSION_COOKIE_NAME),
+            None
+        );
+    }
+
+    #[test]
+    fn rejects_invalid_session_cookie_values() {
+        let request = parse_http_request(
+            "GET /mailboxes HTTP/1.1\r\nHost: localhost\r\nCookie: osmap_session=\"quoted\"\r\n\r\n",
+            &HttpPolicy::default(),
+        )
+        .expect("request should parse");
+
+        assert_eq!(
+            session_cookie_value(&request, DEFAULT_SESSION_COOKIE_NAME),
+            None
+        );
     }
 
     #[test]
