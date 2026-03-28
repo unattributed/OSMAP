@@ -960,3 +960,11 @@ sources rather than remain generic. For current design and SDLC judgment,
 OSMAP now explicitly treats OpenBSD `pledge(2)` and `unveil(2)`, Rust API
 Guidelines and RustSec guidance, OWASP ASVS, and current GitHub code-scanning
 documentation as the primary external reference set.
+
+### Treat `docs/` as the source of truth for project documentation
+
+OSMAP should keep project, architecture, security, operational, and
+implementation documents under `docs/` by default. The main exceptions are the
+repository `README.md`, licensing or build metadata, and the small set of
+root-level or `.github/` files that GitHub detects specially for community and
+workflow behavior.

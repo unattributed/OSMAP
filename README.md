@@ -188,6 +188,9 @@ OSMAP is intended for:
 ## Contributing
 
 Contribution guidance now lives in [`CONTRIBUTING.md`](CONTRIBUTING.md).
+The main project documentation set lives under [`docs/`](docs/README.md); the
+repository root is intentionally kept for the main project README, build files,
+license, and GitHub-detected community files.
 
 The short version:
 

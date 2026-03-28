@@ -2,6 +2,10 @@
 
 This directory holds the public-safe documentation set for OSMAP.
 
+`docs/` is the source-of-truth location for project, architecture, security,
+operational, and implementation documents unless a file needs to live
+elsewhere for repository-platform reasons.
+
 The repository deliberately separates:
 
 - Public, reviewable planning and architecture documents under `docs/`
@@ -78,3 +82,12 @@ Repository-level collaboration files such as `CODE_OF_CONDUCT.md`,
 `CONTRIBUTING.md`, `SECURITY.md`, `SUPPORT.md`, and the `.github/` issue and
 pull request templates are intentionally kept at the repository root rather than
 inside `docs/` so GitHub can detect them as community-standard files.
+
+In practice, the repository should follow this policy:
+
+- keep project and technical documentation under `docs/`
+- keep the repository root limited to the main `README.md`, build metadata,
+  licensing, and GitHub/community-standard files
+- keep workflow definitions and issue or pull-request templates under `.github/`
+- add new narrative or design documents under `docs/` by default unless there
+  is a clear platform-specific reason not to
