@@ -10,7 +10,7 @@ rendering policy is already solved.
 
 ## Status
 
-As of March 27, 2026, the runtime now includes a single-message retrieval layer
+As of March 28, 2026, the runtime now includes a single-message retrieval layer
 on top of the completed auth, TOTP, session, mailbox-listing, and message-list
 baselines.
 

@@ -119,7 +119,7 @@ Operators should:
 
 ## Current Status
 
-As of March 27, 2026, OSMAP supports both explicit Dovecot socket paths in
+As of March 28, 2026, OSMAP supports both explicit Dovecot socket paths in
 runtime configuration and `mail.blackbagsecurity.com` now has dedicated
 validated listeners at `/var/run/osmap-auth` and `/var/run/osmap-userdb` for
 `_osmap`.

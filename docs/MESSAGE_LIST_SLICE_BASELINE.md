@@ -11,7 +11,7 @@ client stack.
 
 ## Status
 
-As of March 27, 2026, the runtime now includes a message-list layer on top of
+As of March 28, 2026, the runtime now includes a message-list layer on top of
 the completed auth, TOTP, session, and mailbox-listing baselines.
 
 The current slice provides:

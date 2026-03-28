@@ -23,6 +23,9 @@ The architecture should:
 - preserve compatibility with current IMAP and submission services
 - be operable by a small team
 - remain plausible for future OpenBSD-oriented packaging and maintenance
+- prefer the strongest defensible design choice supported by current security,
+  Rust, and OpenBSD best practice rather than the most convenient short-term
+  implementation
 
 ## Selected High-Level Architecture
 

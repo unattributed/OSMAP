@@ -12,7 +12,7 @@ and without pretending rich mail composition is already solved.
 
 ## Status
 
-As of March 27, 2026, the prototype now includes:
+As of March 28, 2026, the prototype now includes:
 
 - a server-rendered compose page at `GET /compose`
 - a state-changing send action at `POST /send`

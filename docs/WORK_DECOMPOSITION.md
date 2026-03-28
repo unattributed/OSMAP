@@ -23,7 +23,7 @@ Goal:
 Establish the repository structure, build entrypoints, lint hooks, and local
 development ergonomics needed for disciplined implementation.
 
-Status on March 27, 2026:
+Status on March 28, 2026:
 
 - completed as the first implementation slice
 - recorded in `TOOLCHAIN_AND_REPOSITORY_BASELINE.md`
@@ -41,7 +41,7 @@ Goal:
 Define how the application reads configuration and stores local state without
 mixing secrets, code, and mutable runtime data.
 
-Status on March 27, 2026:
+Status on March 28, 2026:
 
 - completed with the first typed configuration parser and explicit state layout
 - recorded in `CONFIGURATION_AND_STATE_MODEL.md`
@@ -59,7 +59,7 @@ Goal:
 Establish a logging and error-handling model that supports security review and
 operator troubleshooting.
 
-Status on March 27, 2026:
+Status on March 28, 2026:
 
 - completed with a dependency-light structured logger and explicit bootstrap
   error types
@@ -76,7 +76,7 @@ Done means:
 Goal:
 Implement the browser login path against the approved backend assumptions.
 
-Status on March 27, 2026:
+Status on March 28, 2026:
 
 - completed as the runtime authentication foundation
 - bounded credential input, primary-auth decision handling, and audit-quality
@@ -99,7 +99,7 @@ Done means:
 Goal:
 Implement session issuance, validation, invalidation, and visibility behavior.
 
-Status on March 27, 2026:
+Status on March 28, 2026:
 
 - completed as the first runtime session-management baseline
 - bounded opaque token issuance is implemented
@@ -119,7 +119,7 @@ Done means:
 Goal:
 Demonstrate safe retrieval and presentation of mailbox and message-list data.
 
-Status on March 27, 2026:
+Status on March 28, 2026:
 
 - started with the first mailbox-listing slice
 - mailbox listing is now implemented behind the validated-session gate
@@ -142,7 +142,7 @@ Done means:
 Goal:
 Demonstrate message retrieval and conservative browser rendering.
 
-Status on March 27, 2026:
+Status on March 28, 2026:
 
 - started with the first message-view retrieval slice
 - bounded single-message retrieval is now implemented behind the
@@ -154,6 +154,8 @@ Status on March 27, 2026:
   common mail layouts without widening browser trust
 - a first bounded HTTP/browser slice is now implemented on top of the existing
   auth, session, mailbox, and rendering runtime
+- the browser slice now includes mailbox-scoped search plus a first
+  browser-visible session-management page with self-service revocation
 - message-view success, not-found, and failure events are emitted as structured
   audit-quality log lines
 - recorded in `MESSAGE_VIEW_SLICE_BASELINE.md`
@@ -174,7 +176,7 @@ Goal:
 Demonstrate outbound message composition and handoff through the existing
 submission path.
 
-Status on March 27, 2026:
+Status on March 28, 2026:
 
 - started with the first compose-and-send browser slice
 - a server-rendered compose form and session-gated send action now exist
@@ -186,6 +188,8 @@ Status on March 27, 2026:
 - CSRF protection now covers the current send form
 - the first folder-organization slice now exists as a one-message move path
   between existing mailboxes
+- attachment upload and forced-download behavior are now both implemented as
+  bounded browser-visible paths
 - submission success and failure are now emitted as structured audit-quality
   log lines
 - recorded in `COMPOSE_AND_SEND_SLICE_BASELINE.md`
@@ -205,7 +209,7 @@ Goal:
 Shape the prototype into something that can run cleanly on OpenBSD with minimal
 privilege and clear filesystem boundaries.
 
-Status on March 27, 2026:
+Status on March 28, 2026:
 
 - started with explicit nginx-facing deployment guidance for the current browser
   runtime
@@ -220,6 +224,9 @@ Status on March 27, 2026:
   path documented in `MAILBOX_READ_HELPER_MODEL.md`
 - the current mailbox-helper slice now exists for mailbox listing,
   message-list retrieval, and message-view retrieval
+- helper-backed attachment download is now proven under `enforce`
+- a full read-oriented browser trace is now proven under `enforce`, including
+  real password-plus-TOTP login and helper-backed mailbox reads
 
 Done means:
 

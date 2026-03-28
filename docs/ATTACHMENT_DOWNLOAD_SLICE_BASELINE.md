@@ -11,7 +11,7 @@ retrieval model beside the one that already exists.
 
 ## Status
 
-As of March 27, 2026, the runtime now includes a bounded attachment-download
+As of March 28, 2026, the runtime now includes a bounded attachment-download
 route at `GET /attachment`.
 
 The current slice provides:

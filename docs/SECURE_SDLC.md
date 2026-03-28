@@ -6,6 +6,25 @@ This document establishes the secure software development expectations for
 OSMAP. The project is security-led, so SDLC discipline is not optional and
 should begin before implementation.
 
+## External Reference Posture
+
+When the repository must choose between convenience and stronger current
+practice, project judgment should prefer the most defensible guidance available
+from:
+
+- OpenBSD manual pages for confinement and privilege-boundary behavior,
+  especially `pledge(2)` and `unveil(2)`
+- Rust community guidance for reviewable APIs, linting, formatting, and
+  dependency hygiene, especially the Rust API Guidelines and RustSec advisory
+  ecosystem
+- established application-security guidance for web behavior and verification,
+  especially OWASP ASVS
+- current GitHub code-scanning guidance when choosing between GitHub default
+  CodeQL setup and repository-owned CI gates
+
+Those sources should inform project decisions without replacing repository-local
+verification, tests, or design review.
+
 ## Development Principles
 
 OSMAP development should prioritize:
@@ -16,6 +35,8 @@ OSMAP development should prioritize:
 - maintainability over novelty
 - documentation that stays current with meaningful changes
 - engineering choices compatible with OpenBSD operational culture
+- the strongest defensible practice available from the relevant security, Rust,
+  and OpenBSD communities when convenience and best practice conflict
 
 ## Code Quality Direction
 

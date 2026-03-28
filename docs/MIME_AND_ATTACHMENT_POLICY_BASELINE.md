@@ -11,7 +11,7 @@ without turning the prototype into a rich HTML client prematurely.
 
 ## Status
 
-As of March 27, 2026, the runtime now includes a dependency-light MIME analysis
+As of March 28, 2026, the runtime now includes a dependency-light MIME analysis
 layer and attachment metadata surface on top of the completed message-view and
 plain-text rendering baselines.
 

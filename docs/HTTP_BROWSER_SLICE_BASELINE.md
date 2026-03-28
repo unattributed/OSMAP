@@ -11,8 +11,8 @@ those capabilities as library-only primitives.
 
 ## Status
 
-As of March 27, 2026, the runtime now includes a dependency-light HTTP server
-and browser router that can be started in `serve` mode.
+As of March 28, 2026, the runtime includes a dependency-light HTTP server and
+browser router that can be started in `serve` mode.
 
 The current slice provides:
 
@@ -37,6 +37,10 @@ The runtime now recognizes:
 - `OSMAP_RUN_MODE=bootstrap`
 - `OSMAP_RUN_MODE=serve`
 
+The mailbox-read helper is documented separately in
+`MAILBOX_READ_HELPER_MODEL.md` because it is a local support runtime rather
+than a browser-facing mode.
+
 `bootstrap` keeps the old behavior:
 
 - validate configuration
@@ -60,8 +64,12 @@ The current browser layer provides:
 - `GET /mailbox?name=...`
 - `GET /message?mailbox=...&uid=...`
 - `GET /attachment?mailbox=...&uid=...&part=...`
+- `GET /search?mailbox=...&q=...`
 - `GET /compose`
+- `GET /sessions`
 - `POST /send`
+- `POST /message/move`
+- `POST /sessions/revoke`
 - `POST /logout`
 
 The routes intentionally mirror the current runtime baseline:
@@ -72,8 +80,14 @@ The routes intentionally mirror the current runtime baseline:
 - message view consumes the existing safe renderer and attachment metadata
 - attachment download reuses the existing session, message-view, and MIME
   attachment-part model
+- search executes through the backend-authoritative mailbox search path instead
+  of browser-side filtering
 - compose renders the current plain-text-first outbound form, including
   reply/forward prefills when a source message is supplied
+- the sessions page surfaces the current persisted-session metadata through a
+  browser-safe view and allows self-service revocation
+- the message move route performs the current one-message folder-organization
+  slice through the existing mailbox runtime
 - send hands the composed message to the local submission surface
 - logout revokes the current session token
 
@@ -92,6 +106,8 @@ The current browser slice follows these rules:
 - send `Referrer-Policy: no-referrer`
 - send `X-Content-Type-Options: nosniff`
 - send `X-Frame-Options: DENY`
+- send `Cross-Origin-Resource-Policy: same-origin` on current HTML, redirect,
+  and attachment responses
 - avoid JavaScript as a dependency for the first flow
 
 This is not the final browser-security story, but it is an honest and useful
@@ -133,6 +149,11 @@ This slice now proves that:
   without widening browser trust to HTML content or attachment upload
 - CSRF controls can be added to the browser slice without reworking the core
   session model
+- browser-visible session listing and revocation can be layered onto the
+  existing persisted-session runtime without introducing a separate browser
+  session subsystem
+- mailbox-scoped search and one-message move can be added as bounded,
+  server-rendered browser routes without widening the client model
 - a practical `serve` mode can exist without giving up the fast bootstrap-only
   validation path
 
@@ -143,8 +164,13 @@ This slice does not yet include:
 - TLS termination inside OSMAP
 - administrative routes
 - concurrent request handling
-- full end-to-end live browser workflow validation on the target host under
-  confinement, including successful attachment-bearing reads
+- safe HTML mail rendering beyond the current plain-text-first policy
+- a bounded end-user settings surface
+- application-layer login throttling inside OSMAP
+- fully proven live mutation workflows on the target host under confinement,
+  including successful message moves through the browser path
 
 The nginx-facing deployment model now has a matching implemented confinement
-control, but broader live-browser validation still remains.
+control. Live enforced-host proof now exists for the authenticated read path
+plus the synthetic session-management routes, but broader live-browser mutation
+validation still remains.

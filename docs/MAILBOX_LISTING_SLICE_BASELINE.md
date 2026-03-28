@@ -10,7 +10,7 @@ or introducing a large IMAP framework before the prototype actually needs one.
 
 ## Status
 
-As of March 27, 2026, the runtime now includes a mailbox-listing layer that
+As of March 28, 2026, the runtime now includes a mailbox-listing layer that
 operates behind the existing validated-session gate.
 
 The current slice provides:

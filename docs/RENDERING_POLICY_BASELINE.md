@@ -11,7 +11,7 @@ full client behavior.
 
 ## Status
 
-As of March 27, 2026, the runtime now includes a conservative rendering layer on
+As of March 28, 2026, the runtime now includes a conservative rendering layer on
 top of the completed message-view fetch baseline.
 
 The current slice provides:

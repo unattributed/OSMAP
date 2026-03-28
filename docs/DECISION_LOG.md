@@ -917,3 +917,46 @@ That distinction mattered. The correct fix was:
 OSMAP should continue to treat GitHub-hosted workflow state as the source of
 truth for CI failure diagnosis, then reconcile local reproduction against that
 evidence before changing YAML.
+
+### Keep public status documents synchronized with the current browser,
+helper, and CI reality
+
+By late Phase 6, the project had accumulated enough real implementation depth
+that several public-facing documents were at risk of lagging behind the code.
+In particular, the docs index, HTTP/browser baseline, and work decomposition
+needed to reflect:
+
+- browser-visible session management
+- mailbox-scoped search and one-message move in the browser layer
+- helper-backed attachment-read behavior
+- live enforced-host proof for the authenticated read path
+- the repo-owned GitHub `security-check` lane as part of the operational
+  documentation set
+
+Status-facing documents should continue to be corrected as soon as the repo
+proves a new reality, rather than being left at an earlier phase milestone.
+
+### Let security, Rust, and OpenBSD best practice win over convenience
+
+OSMAP should not treat "it works" as a sufficient design standard when a
+clearer or safer option is established practice in the security, Rust, or
+OpenBSD communities.
+
+When those communities offer relevant best practice, the project should bias
+toward:
+
+- explicit trust boundaries over convenience shortcuts
+- reviewable memory-safe and parser-safe design over cleverness
+- OpenBSD-native operational discipline over cross-platform convenience hacks
+
+That principle does not eliminate engineering judgment, but it does set the
+default direction: convenience should justify itself against stronger practice,
+not the other way around.
+
+### Anchor best-practice language to current upstream guidance
+
+The project's "best practices win" rule should point to concrete, current
+sources rather than remain generic. For current design and SDLC judgment,
+OSMAP now explicitly treats OpenBSD `pledge(2)` and `unveil(2)`, Rust API
+Guidelines and RustSec guidance, OWASP ASVS, and current GitHub code-scanning
+documentation as the primary external reference set.

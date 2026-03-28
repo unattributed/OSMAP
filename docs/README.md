@@ -8,12 +8,13 @@ The repository deliberately separates:
 - Private operator notes and working material under ignored paths such as
   `PKCB/` and `AGENTS.md`
 
-As of March 27, 2026, the project has substantive public-safe documentation
-through Phase 6. The current baseline was built from:
+As of March 28, 2026, the project has substantive public-safe documentation
+through active Phase 6 implementation. The current baseline was built from:
 
 - private PKCB planning notes
 - repository phase control blocks
 - read-only inspection of `mail.blackbagsecurity.com`
+- current in-repo Rust implementation and validation evidence
 
 The documents in this folder are written for two audiences:
 
@@ -67,7 +68,8 @@ Current primary documents:
 The intent of these documents is operational usefulness, not ceremony. Phase 0
 through Phase 6 documents should stay populated, current, and reviewable as the
 project moves through implementation, mailbox-helper refinement, attachment
-handling, and OpenBSD hardening.
+handling, OpenBSD hardening, GitHub-side security gating, and the remaining
+Version 1 gap closure around HTML handling, settings, and abuse resistance.
 
 Some later-phase or deferred documents remain placeholders so the intended
 documentation map is visible without publishing private notes prematurely.
