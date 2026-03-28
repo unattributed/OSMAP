@@ -380,28 +380,30 @@ mod tests {
         assert!(plan
             .unveil_rules
             .iter()
-            .any(|rule| rule.path == PathBuf::from("/usr/local/bin/doveadm")
+            .any(|rule| rule.path == Path::new("/usr/local/bin/doveadm")
                 && rule.permissions.contains('x')));
         assert!(plan
             .unveil_rules
             .iter()
-            .any(|rule| rule.path == PathBuf::from("/var/lib/osmap/sessions")
+            .any(|rule| rule.path == Path::new("/var/lib/osmap/sessions")
                 && rule.permissions.contains('w')));
-        assert!(plan.unveil_rules.iter().any(|rule| rule.path
-            == PathBuf::from("/usr/local/sbin/sendmail")
-            && rule.permissions.contains('x')));
+        assert!(plan
+            .unveil_rules
+            .iter()
+            .any(|rule| rule.path == Path::new("/usr/local/sbin/sendmail")
+                && rule.permissions.contains('x')));
         assert!(!plan
             .unveil_rules
             .iter()
-            .any(|rule| rule.path == PathBuf::from("/var/dovecot")));
+            .any(|rule| rule.path == Path::new("/var/dovecot")));
         assert!(!plan
             .unveil_rules
             .iter()
-            .any(|rule| rule.path == PathBuf::from("/var/log/dovecot.log")));
+            .any(|rule| rule.path == Path::new("/var/log/dovecot.log")));
         assert!(!plan
             .unveil_rules
             .iter()
-            .any(|rule| rule.path == PathBuf::from("/var")));
+            .any(|rule| rule.path == Path::new("/var")));
     }
 
     #[test]
@@ -412,14 +414,14 @@ mod tests {
         let plan = OpenbsdConfinementPlan::from_config(&config);
 
         assert!(plan.unveil_rules.iter().any(|rule| {
-            rule.path == PathBuf::from("/var/run/osmap/dovecot-auth")
+            rule.path == Path::new("/var/run/osmap/dovecot-auth")
                 && rule.permissions.contains('r')
                 && rule.permissions.contains('w')
         }));
         assert!(plan
             .unveil_rules
             .iter()
-            .any(|rule| rule.path == PathBuf::from("/var/run/osmap") && rule.permissions == "r"));
+            .any(|rule| rule.path == Path::new("/var/run/osmap") && rule.permissions == "r"));
     }
 
     #[test]
@@ -438,14 +440,14 @@ mod tests {
         let plan = OpenbsdConfinementPlan::from_config(&config);
 
         assert!(plan.unveil_rules.iter().any(|rule| {
-            rule.path == PathBuf::from("/var/run/osmap-userdb")
+            rule.path == Path::new("/var/run/osmap-userdb")
                 && rule.permissions.contains('r')
                 && rule.permissions.contains('w')
         }));
         assert!(plan
             .unveil_rules
             .iter()
-            .any(|rule| rule.path == PathBuf::from("/var/run") && rule.permissions == "r"));
+            .any(|rule| rule.path == Path::new("/var/run") && rule.permissions == "r"));
     }
 
     #[test]
@@ -457,14 +459,14 @@ mod tests {
         let plan = OpenbsdConfinementPlan::from_config(&config);
 
         assert!(plan.unveil_rules.iter().any(|rule| {
-            rule.path == PathBuf::from("/var/lib/osmap/run/mailbox-helper.sock")
+            rule.path == Path::new("/var/lib/osmap/run/mailbox-helper.sock")
                 && rule.permissions.contains('r')
                 && rule.permissions.contains('w')
         }));
         assert!(plan
             .unveil_rules
             .iter()
-            .any(|rule| rule.path == PathBuf::from("/var/lib/osmap/run")
+            .any(|rule| rule.path == Path::new("/var/lib/osmap/run")
                 && rule.permissions.contains('r')));
     }
 
@@ -486,29 +488,29 @@ mod tests {
         assert!(!plan
             .unveil_rules
             .iter()
-            .any(|rule| rule.path == PathBuf::from("/usr/sbin/sendmail")));
+            .any(|rule| rule.path == Path::new("/usr/sbin/sendmail")));
         assert!(!plan
             .unveil_rules
             .iter()
-            .any(|rule| rule.path == PathBuf::from("/var/spool/postfix")));
+            .any(|rule| rule.path == Path::new("/var/spool/postfix")));
         assert!(plan.unveil_rules.iter().any(|rule| {
-            rule.path == PathBuf::from("/var/run/osmap-userdb")
+            rule.path == Path::new("/var/run/osmap-userdb")
                 && rule.permissions.contains('r')
                 && rule.permissions.contains('w')
         }));
         assert!(plan.unveil_rules.iter().any(|rule| {
-            rule.path == PathBuf::from("/var/lib/osmap/run/mailbox-helper.sock")
+            rule.path == Path::new("/var/lib/osmap/run/mailbox-helper.sock")
                 && rule.permissions.contains('r')
                 && rule.permissions.contains('w')
         }));
         assert!(!plan
             .unveil_rules
             .iter()
-            .any(|rule| rule.path == PathBuf::from("/var/dovecot")));
+            .any(|rule| rule.path == Path::new("/var/dovecot")));
         assert!(!plan
             .unveil_rules
             .iter()
-            .any(|rule| rule.path == PathBuf::from("/var/log/dovecot.log")));
+            .any(|rule| rule.path == Path::new("/var/log/dovecot.log")));
     }
 
     #[test]
@@ -529,21 +531,21 @@ mod tests {
             OPENBSD_SERVE_WITH_HELPER_PROMISES_AFTER_LOCK
         );
         assert!(plan.unveil_rules.iter().any(|rule| {
-            rule.path == PathBuf::from("/var/lib/osmap/run/mailbox-helper.sock")
+            rule.path == Path::new("/var/lib/osmap/run/mailbox-helper.sock")
                 && rule.permissions.contains('r')
                 && rule.permissions.contains('w')
         }));
         assert!(!plan
             .unveil_rules
             .iter()
-            .any(|rule| rule.path == PathBuf::from("/var/run/osmap-userdb")));
+            .any(|rule| rule.path == Path::new("/var/run/osmap-userdb")));
         assert!(!plan
             .unveil_rules
             .iter()
-            .any(|rule| rule.path == PathBuf::from("/var/dovecot")));
+            .any(|rule| rule.path == Path::new("/var/dovecot")));
         assert!(!plan
             .unveil_rules
             .iter()
-            .any(|rule| rule.path == PathBuf::from("/var/log/dovecot.log")));
+            .any(|rule| rule.path == Path::new("/var/log/dovecot.log")));
     }
 }

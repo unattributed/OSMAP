@@ -879,3 +879,16 @@ The repository still keeps a manual `codeql-advanced` workflow template, but it
 is an explicit future-transition path, not the active CodeQL authority. It
 should only be used after maintainers intentionally disable default CodeQL
 setup in repository settings.
+
+### Treat runner-side clippy and rustfmt as part of the authoritative Rust
+security gate
+
+The first `security-check` GitHub Actions run failed even though the local
+pre-commit path had passed, because the runner had `clippy` and `rustfmt`
+installed and surfaced real lint debt that the stripped-down local cargo
+environment did not exercise.
+
+That failure was resolved by fixing the Rust code to satisfy the stricter gate,
+not by weakening the workflow. OSMAP should continue to treat runner-side
+`cargo clippy --all-targets -- -D warnings` and `cargo fmt --check` as part of
+the authoritative backend quality bar.

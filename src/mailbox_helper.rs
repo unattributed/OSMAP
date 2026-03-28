@@ -574,7 +574,7 @@ impl MessageViewBackend for MailboxHelperMessageViewBackend {
                             ),
                         });
                     }
-                    Ok(message)
+                    Ok(*message)
                 }
                 MailboxHelperResponse::Error { backend, reason } => Err(MailboxBackendError {
                     backend: "mailbox-helper-client",
@@ -905,7 +905,7 @@ enum MailboxHelperResponse {
         results: Vec<MessageSearchResult>,
     },
     MessageViewOk {
-        message: MessageView,
+        message: Box<MessageView>,
     },
     MessageMoveOk {
         source_mailbox_name: String,
@@ -1053,7 +1053,9 @@ fn handle_helper_client<MB, MLB, MSB, MVB, MMB>(
                             reason: error.reason,
                         })
                 }) {
-                Ok(message) => MailboxHelperResponse::MessageViewOk { message },
+                Ok(message) => MailboxHelperResponse::MessageViewOk {
+                    message: Box::new(message),
+                },
                 Err(error_response) => error_response,
             }
         }
@@ -1442,7 +1444,10 @@ fn parse_response(
                 results: search_results,
             }),
             Some("message_view") => Ok(MailboxHelperResponse::MessageViewOk {
-                message: parse_message_view_fields(message_view_policy, &current_message_fields)?,
+                message: Box::new(parse_message_view_fields(
+                    message_view_policy,
+                    &current_message_fields,
+                )?),
             }),
             Some("message_move") => Ok(MailboxHelperResponse::MessageMoveOk {
                 source_mailbox_name: source_mailbox_name.ok_or_else(|| {
@@ -1824,7 +1829,7 @@ fn decode_base64_bytes(input: &str, max_len: usize, field: &str) -> Result<Vec<u
         .chars()
         .filter(|value| !value.is_ascii_whitespace())
         .collect();
-    if sanitized.len() % 4 != 0 {
+    if (sanitized.len() & 3) != 0 {
         return Err(format!("{field} base64 length was not a multiple of four"));
     }
 
@@ -2345,7 +2350,7 @@ mod tests {
         assert_eq!(
             response,
             MailboxHelperResponse::MessageViewOk {
-                message: MessageView {
+                message: Box::new(MessageView {
                     mailbox_name: "INBOX".to_string(),
                     uid: 9,
                     flags: vec!["\\Seen".to_string()],
@@ -2353,7 +2358,7 @@ mod tests {
                     size_virtual: 44,
                     header_block: "Subject: Test message\n".to_string(),
                     body_text: "Hello world\n".to_string(),
-                },
+                }),
             }
         );
     }

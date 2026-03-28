@@ -2454,10 +2454,7 @@ mod tests {
         let executor = Rc::new(std::cell::RefCell::new(StubCommandExecutor::success(
             CommandExecution {
                 status_code: 0,
-                stdout: concat!(
-                    "uid=9 flags=\"\\\\Seen\" date.received=2026-03-27 11:00:00 +0000 size.virtual=512 mailbox=INBOX hdr=\"Subject: Test message\\nFrom: Alice <alice@example.com>\\n\" body=\"Hello world\\nSecond line\\n\"\n"
-                )
-                .to_string(),
+                stdout: "uid=9 flags=\"\\\\Seen\" date.received=2026-03-27 11:00:00 +0000 size.virtual=512 mailbox=INBOX hdr=\"Subject: Test message\\nFrom: Alice <alice@example.com>\\n\" body=\"Hello world\\nSecond line\\n\"\n".to_string(),
                 stderr: String::new(),
             },
         )));
