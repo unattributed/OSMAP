@@ -176,7 +176,6 @@ At the moment, the highest-confidence unimplemented Version 1 product gaps are:
 
 - message search
 - folder operations such as move or archive
-- browser-visible session or device management
 - safe HTML email rendering beyond the current plain-text-first posture
 - a bounded first-release user settings surface
 

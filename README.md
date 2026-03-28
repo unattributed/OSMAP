@@ -126,6 +126,9 @@ Each phase produces formal outputs to support traceability and auditability.
   mailbox browsing, message listing and viewing, MIME-aware inspection,
   attachment upload and forced-download paths, compose/send, and reply/forward
   draft generation.
+- The browser layer now includes a first self-service session-management page
+  backed by the persisted session metadata and revocation primitives already in
+  the runtime.
 - The browser layer is server-rendered and dependency-light, with bounded HTTP
   parsing and explicit separation from the underlying mail stack.
 - OpenBSD-specific work is already in the prototype: dedicated `_osmap`
@@ -149,9 +152,8 @@ Each phase produces formal outputs to support traceability and auditability.
 - OSMAP is still prototype-grade, not production-ready, and does not yet have a
   public deployment.
 - Several Version 1 product requirements are still not implemented: message
-  search, folder-organization workflows such as move/archive, browser-visible
-  session or device management, safe HTML mail rendering, and a bounded
-  settings surface.
+  search, folder-organization workflows such as move/archive, safe HTML mail
+  rendering, and a bounded settings surface.
 - Current priority work is continued HTTP hardening, tighter OpenBSD helper and
   filesystem narrowing, and broader end-to-end live validation beyond the now
   proven authenticated read path.

@@ -45,7 +45,7 @@ use crate::send::{
 };
 use crate::session::{
     FileSessionStore, SessionError, SessionService, SessionToken, SystemRandomSource,
-    ValidatedSession,
+    ValidatedSession, SESSION_ID_HEX_LEN,
 };
 use crate::totp::{FileTotpSecretStore, SystemTimeProvider, TotpPolicy, TotpVerifier};
 
@@ -278,6 +278,19 @@ pub trait BrowserGateway {
         presented_token: &str,
     ) -> BrowserLogoutOutcome;
 
+    fn list_sessions(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+    ) -> BrowserSessionListOutcome;
+
+    fn revoke_session(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        session_id: &str,
+    ) -> BrowserSessionRevokeOutcome;
+
     fn list_mailboxes(
         &self,
         context: &AuthenticationContext,
@@ -359,6 +372,57 @@ pub enum BrowserSessionDecision {
 pub struct BrowserLogoutOutcome {
     pub session_was_revoked: bool,
     pub audit_events: Vec<LogEvent>,
+}
+
+/// Safe browser-visible session metadata.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BrowserVisibleSession {
+    pub session_id: String,
+    pub issued_at: u64,
+    pub expires_at: u64,
+    pub last_seen_at: u64,
+    pub revoked_at: Option<u64>,
+    pub remote_addr: String,
+    pub user_agent: String,
+    pub factor: RequiredSecondFactor,
+}
+
+/// The result of a browser-visible session listing operation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BrowserSessionListOutcome {
+    pub decision: BrowserSessionListDecision,
+    pub audit_events: Vec<LogEvent>,
+}
+
+/// Session-list decisions visible to the browser layer.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BrowserSessionListDecision {
+    Listed {
+        canonical_username: String,
+        sessions: Vec<BrowserVisibleSession>,
+    },
+    Denied {
+        public_reason: String,
+    },
+}
+
+/// The result of a browser-driven session revocation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BrowserSessionRevokeOutcome {
+    pub decision: BrowserSessionRevokeDecision,
+    pub audit_events: Vec<LogEvent>,
+}
+
+/// Session-revocation decisions visible to the browser layer.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BrowserSessionRevokeDecision {
+    Revoked {
+        revoked_session_id: String,
+        revoked_current_session: bool,
+    },
+    Denied {
+        public_reason: String,
+    },
 }
 
 /// The result of a mailbox-listing browser operation.
@@ -545,6 +609,20 @@ impl RuntimeBrowserGateway {
         AttachmentDownloadService::new(AttachmentDownloadPolicy::default())
     }
 
+    /// Projects persisted session metadata into a browser-safe summary.
+    fn visible_session(record: crate::session::SessionRecord) -> BrowserVisibleSession {
+        BrowserVisibleSession {
+            session_id: record.session_id,
+            issued_at: record.issued_at,
+            expires_at: record.expires_at,
+            last_seen_at: record.last_seen_at,
+            revoked_at: record.revoked_at,
+            remote_addr: record.remote_addr,
+            user_agent: record.user_agent,
+            factor: record.factor,
+        }
+    }
+
     /// Selects the current message-view backend based on whether the local
     /// mailbox helper is configured for read-path proxying.
     fn build_message_view_backend(&self) -> MessageViewRuntimeBackend {
@@ -727,6 +805,133 @@ impl BrowserGateway for RuntimeBrowserGateway {
                 audit_events: vec![build_http_warning_event(
                     "session_revoke_failed",
                     "browser session revocation failed",
+                    context,
+                )
+                .with_field("reason", session_error_label(&error))],
+            },
+        }
+    }
+
+    fn list_sessions(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+    ) -> BrowserSessionListOutcome {
+        match self
+            .build_session_service()
+            .list_for_user(&validated_session.record.canonical_username)
+        {
+            Ok(records) => BrowserSessionListOutcome {
+                decision: BrowserSessionListDecision::Listed {
+                    canonical_username: validated_session.record.canonical_username.clone(),
+                    sessions: records
+                        .into_iter()
+                        .map(Self::visible_session)
+                        .collect(),
+                },
+                audit_events: vec![build_http_info_event(
+                    "session_listed",
+                    "browser session list returned",
+                    context,
+                )
+                .with_field(
+                    "canonical_username",
+                    validated_session.record.canonical_username.clone(),
+                )],
+            },
+            Err(error) => BrowserSessionListOutcome {
+                decision: BrowserSessionListDecision::Denied {
+                    public_reason: "temporarily_unavailable".to_string(),
+                },
+                audit_events: vec![build_http_warning_event(
+                    "session_list_failed",
+                    "browser session listing failed",
+                    context,
+                )
+                .with_field("reason", session_error_label(&error))],
+            },
+        }
+    }
+
+    fn revoke_session(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        session_id: &str,
+    ) -> BrowserSessionRevokeOutcome {
+        if session_id.len() != SESSION_ID_HEX_LEN
+            || !session_id.chars().all(|ch| ch.is_ascii_hexdigit())
+        {
+            return BrowserSessionRevokeOutcome {
+                decision: BrowserSessionRevokeDecision::Denied {
+                    public_reason: "invalid_request".to_string(),
+                },
+                audit_events: vec![build_http_warning_event(
+                    "session_revoke_request_rejected",
+                    "browser session revoke request validation failed",
+                    context,
+                )
+                .with_field("reason", "invalid_session_id")],
+            };
+        }
+
+        let owned_session = match self
+            .build_session_service()
+            .list_for_user(&validated_session.record.canonical_username)
+        {
+            Ok(records) => records.into_iter().any(|record| record.session_id == session_id),
+            Err(error) => {
+                return BrowserSessionRevokeOutcome {
+                    decision: BrowserSessionRevokeDecision::Denied {
+                        public_reason: "temporarily_unavailable".to_string(),
+                    },
+                    audit_events: vec![build_http_warning_event(
+                        "session_revoke_lookup_failed",
+                        "browser session ownership lookup failed",
+                        context,
+                    )
+                    .with_field("reason", session_error_label(&error))],
+                };
+            }
+        };
+
+        if !owned_session {
+            return BrowserSessionRevokeOutcome {
+                decision: BrowserSessionRevokeDecision::Denied {
+                    public_reason: "not_found".to_string(),
+                },
+                audit_events: vec![build_http_warning_event(
+                    "session_revoke_denied",
+                    "browser session revoke target not found for user",
+                    context,
+                )
+                .with_field(
+                    "canonical_username",
+                    validated_session.record.canonical_username.clone(),
+                )
+                .with_field("session_id", session_id.to_string())],
+            };
+        }
+
+        match self
+            .build_session_service()
+            .revoke(context, session_id)
+        {
+            Ok(revoked_session) => BrowserSessionRevokeOutcome {
+                decision: BrowserSessionRevokeDecision::Revoked {
+                    revoked_session_id: revoked_session.record.session_id.clone(),
+                    revoked_current_session: revoked_session.record.session_id
+                        == validated_session.record.session_id,
+                },
+                audit_events: vec![revoked_session.audit_event],
+            },
+            Err(error) => BrowserSessionRevokeOutcome {
+                decision: BrowserSessionRevokeDecision::Denied {
+                    public_reason: "temporarily_unavailable".to_string(),
+                },
+                audit_events: vec![build_http_warning_event(
+                    "session_revoke_failed",
+                    "browser session revoke failed",
                     context,
                 )
                 .with_field("reason", session_error_label(&error))],
@@ -1190,7 +1395,9 @@ where
             (HttpMethod::Get, "/message") => self.handle_message_view(request, &context),
             (HttpMethod::Get, "/attachment") => self.handle_attachment_download(request, &context),
             (HttpMethod::Get, "/compose") => self.handle_compose_form(request, &context),
+            (HttpMethod::Get, "/sessions") => self.handle_sessions_page(request, &context),
             (HttpMethod::Post, "/send") => self.handle_send(request, &context),
+            (HttpMethod::Post, "/sessions/revoke") => self.handle_session_revoke(request, &context),
             (HttpMethod::Post, "/logout") => self.handle_logout(request, &context),
             _ => HandledHttpResponse {
                 response: html_response(
@@ -1635,6 +1842,62 @@ where
         }
     }
 
+    /// Handles the browser-visible session-management page.
+    fn handle_sessions_page(
+        &self,
+        request: &HttpRequest,
+        context: &AuthenticationContext,
+    ) -> HandledHttpResponse {
+        let (validated_session, mut audit_events) =
+            match self.require_validated_session(request, context) {
+                Ok(result) => result,
+                Err(response) => return response,
+            };
+
+        let success_message = if request.query_params.get("revoked").map(String::as_str) == Some("1")
+        {
+            Some("The selected session was revoked.")
+        } else {
+            None
+        };
+
+        let outcome = self.gateway.list_sessions(context, &validated_session);
+        audit_events.extend(outcome.audit_events);
+
+        match outcome.decision {
+            BrowserSessionListDecision::Listed {
+                canonical_username,
+                sessions,
+            } => HandledHttpResponse {
+                response: html_response(
+                    200,
+                    "OK",
+                    "Sessions",
+                    &render_sessions_page(
+                        &canonical_username,
+                        &validated_session.record.session_id,
+                        &validated_session.record.csrf_token,
+                        &sessions,
+                        success_message,
+                    ),
+                ),
+                audit_events,
+            },
+            BrowserSessionListDecision::Denied { public_reason } => HandledHttpResponse {
+                response: html_response(
+                    503,
+                    "Service Unavailable",
+                    "Sessions Unavailable",
+                    &format!(
+                        "<p>{}</p>",
+                        escape_html(public_reason_message(&public_reason))
+                    ),
+                ),
+                audit_events,
+            },
+        }
+    }
+
     /// Handles the compose form for the validated browser session.
     fn handle_compose_form(
         &self,
@@ -1848,6 +2111,146 @@ where
                             subject_value: &subject,
                             body_value: &body,
                         }),
+                    ),
+                    audit_events,
+                }
+            }
+        }
+    }
+
+    /// Handles CSRF-bound self-service session revocation.
+    fn handle_session_revoke(
+        &self,
+        request: &HttpRequest,
+        context: &AuthenticationContext,
+    ) -> HandledHttpResponse {
+        if !allows_urlencoded_request_body(request.headers.get("content-type").map(String::as_str)) {
+            return HandledHttpResponse {
+                response: html_response(
+                    400,
+                    "Bad Request",
+                    "Invalid Session Request",
+                    "<p>The session form content type was not supported.</p>",
+                ),
+                audit_events: vec![build_http_warning_event(
+                    "http_session_revoke_content_type_rejected",
+                    "session revoke form content type was not supported",
+                    context,
+                )],
+            };
+        }
+
+        let form = match parse_urlencoded_form(
+            &request.body,
+            self.policy.max_form_fields,
+            self.policy.max_body_bytes,
+        ) {
+            Ok(form) => form,
+            Err(error) => {
+                return HandledHttpResponse {
+                    response: html_response(
+                        400,
+                        "Bad Request",
+                        "Invalid Session Request",
+                        "<p>The session revoke request could not be parsed.</p>",
+                    ),
+                    audit_events: vec![build_http_warning_event(
+                        "http_session_revoke_parse_failed",
+                        "session revoke form parsing failed",
+                        context,
+                    )
+                    .with_field("reason", error.reason)],
+                };
+            }
+        };
+
+        let (validated_session, mut audit_events) =
+            match self.require_validated_session(request, context) {
+                Ok(result) => result,
+                Err(response) => return response,
+            };
+        if let Some(response) = self.require_valid_csrf(
+            form.get("csrf_token").map(String::as_str),
+            &validated_session,
+            context,
+        ) {
+            return response;
+        }
+
+        let Some(session_id) = form.get("session_id").cloned() else {
+            return HandledHttpResponse {
+                response: html_response(
+                    400,
+                    "Bad Request",
+                    "Invalid Session Request",
+                    "<p>A session identifier is required.</p>",
+                ),
+                audit_events: vec![build_http_warning_event(
+                    "http_session_revoke_missing_target",
+                    "session revoke target missing",
+                    context,
+                )],
+            };
+        };
+
+        let outcome = self
+            .gateway
+            .revoke_session(context, &validated_session, &session_id);
+        audit_events.extend(outcome.audit_events);
+
+        match outcome.decision {
+            BrowserSessionRevokeDecision::Revoked {
+                revoked_current_session,
+                ..
+            } => {
+                let mut response = redirect_response(
+                    303,
+                    "See Other",
+                    if revoked_current_session {
+                        "/login"
+                    } else {
+                        "/sessions?revoked=1"
+                    },
+                );
+                if revoked_current_session {
+                    response = response.with_header(
+                        "Set-Cookie",
+                        clear_session_cookie(
+                            self.policy.session_cookie_name,
+                            self.policy.secure_session_cookie,
+                        ),
+                    );
+                }
+
+                HandledHttpResponse {
+                    response,
+                    audit_events,
+                }
+            }
+            BrowserSessionRevokeDecision::Denied { public_reason } => {
+                let status_code = if public_reason == "invalid_request" {
+                    400
+                } else if public_reason == "not_found" {
+                    404
+                } else {
+                    503
+                };
+                let reason_phrase = if public_reason == "invalid_request" {
+                    "Bad Request"
+                } else if public_reason == "not_found" {
+                    "Not Found"
+                } else {
+                    "Service Unavailable"
+                };
+                HandledHttpResponse {
+                    response: html_response(
+                        status_code,
+                        reason_phrase,
+                        "Session Revocation Failed",
+                        &format!(
+                            "<p>{}</p>",
+                            escape_html(public_reason_message(&public_reason))
+                        ),
                     ),
                     audit_events,
                 }
@@ -2755,7 +3158,7 @@ fn render_mailboxes_page(
     }
 
     format!(
-        "<nav><a href=\"/compose\">Compose</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Mailboxes</h1><p>Signed in as <strong>{}</strong>.</p><ul>{}</ul>",
+        "<nav><a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Mailboxes</h1><p>Signed in as <strong>{}</strong>.</p><ul>{}</ul>",
         escape_html(csrf_token),
         escape_html(canonical_username),
         items,
@@ -2787,7 +3190,7 @@ fn render_message_list_page(
     }
 
     format!(
-        "<nav><a href=\"/mailboxes\">Back to mailboxes</a> | <a href=\"/compose\">Compose</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Mailbox: {}</h1><p>Signed in as <strong>{}</strong>.</p><table><thead><tr><th>UID</th><th>Received</th><th>Flags</th><th>Size</th></tr></thead><tbody>{}</tbody></table>",
+        "<nav><a href=\"/mailboxes\">Back to mailboxes</a> | <a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Mailbox: {}</h1><p>Signed in as <strong>{}</strong>.</p><table><thead><tr><th>UID</th><th>Received</th><th>Flags</th><th>Size</th></tr></thead><tbody>{}</tbody></table>",
         escape_html(csrf_token),
         escape_html(mailbox_name),
         escape_html(canonical_username),
@@ -2825,7 +3228,7 @@ fn render_message_view_page(
     }
 
     format!(
-        "<nav><a href=\"/mailbox?name={}\">Back to mailbox</a> | <a href=\"/compose\">Compose</a> | <a href=\"/compose?mode=reply&mailbox={}&uid={}\">Reply</a> | <a href=\"/compose?mode=forward&mailbox={}&uid={}\">Forward</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Message View</h1><p>Signed in as <strong>{}</strong>.</p><dl><dt>Mailbox</dt><dd>{}</dd><dt>UID</dt><dd>{}</dd><dt>Subject</dt><dd>{}</dd><dt>From</dt><dd>{}</dd><dt>Received</dt><dd>{}</dd><dt>MIME Type</dt><dd>{}</dd><dt>Body Source</dt><dd>{}</dd><dt>HTML Present</dt><dd>{}</dd></dl><h2>Attachments</h2><ul>{}</ul><h2>Body</h2>{}",
+        "<nav><a href=\"/mailbox?name={}\">Back to mailbox</a> | <a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <a href=\"/compose?mode=reply&mailbox={}&uid={}\">Reply</a> | <a href=\"/compose?mode=forward&mailbox={}&uid={}\">Forward</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Message View</h1><p>Signed in as <strong>{}</strong>.</p><dl><dt>Mailbox</dt><dd>{}</dd><dt>UID</dt><dd>{}</dd><dt>Subject</dt><dd>{}</dd><dt>From</dt><dd>{}</dd><dt>Received</dt><dd>{}</dd><dt>MIME Type</dt><dd>{}</dd><dt>Body Source</dt><dd>{}</dd><dt>HTML Present</dt><dd>{}</dd></dl><h2>Attachments</h2><ul>{}</ul><h2>Body</h2>{}",
         escape_html(&url_encode(&rendered.mailbox_name)),
         escape_html(&url_encode(&rendered.mailbox_name)),
         rendered.uid,
@@ -2843,6 +3246,73 @@ fn render_message_view_page(
         if rendered.contains_html_body { "yes" } else { "no" },
         attachments,
         rendered.body_html,
+    )
+}
+
+/// Renders the browser-visible session-management page.
+fn render_sessions_page(
+    canonical_username: &str,
+    current_session_id: &str,
+    csrf_token: &str,
+    sessions: &[BrowserVisibleSession],
+    success_message: Option<&str>,
+) -> String {
+    let success_banner = match success_message {
+        Some(success_message) => format!(
+            "<p><strong>Update complete:</strong> {}</p>",
+            escape_html(success_message)
+        ),
+        None => String::new(),
+    };
+
+    let mut rows = String::new();
+    for session in sessions {
+        let state = if session.revoked_at.is_some() {
+            "revoked"
+        } else if session.session_id == current_session_id {
+            "current"
+        } else {
+            "active"
+        };
+        let action = if session.revoked_at.is_some() {
+            "<span class=\"muted\">Already revoked</span>".to_string()
+        } else {
+            format!(
+                "<form method=\"post\" action=\"/sessions/revoke\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"session_id\" value=\"{}\"><button type=\"submit\">{}</button></form>",
+                escape_html(csrf_token),
+                escape_html(&session.session_id),
+                if session.session_id == current_session_id {
+                    "Revoke This Session"
+                } else {
+                    "Revoke"
+                }
+            )
+        };
+        let revoked_at = session
+            .revoked_at
+            .map(|value| value.to_string())
+            .unwrap_or_else(|| "-".to_string());
+
+        rows.push_str(&format!(
+            "<tr><td><code>{}</code></td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>",
+            escape_html(&session.session_id),
+            escape_html(state),
+            session.issued_at,
+            session.last_seen_at,
+            session.expires_at,
+            escape_html(&revoked_at),
+            escape_html(&session.remote_addr),
+            escape_html(&session.user_agent),
+            action,
+        ));
+    }
+
+    format!(
+        "<nav><a href=\"/mailboxes\">Back to mailboxes</a> | <a href=\"/compose\">Compose</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Sessions</h1><p>Signed in as <strong>{}</strong>.</p><p class=\"muted\">This first self-service session view exposes the persisted session metadata already tracked by the runtime so users can see and revoke their own browser sessions without introducing a heavier device-management model.</p>{}<table><thead><tr><th>Session ID</th><th>Status</th><th>Issued</th><th>Last Seen</th><th>Expires</th><th>Revoked</th><th>Remote Address</th><th>User Agent</th><th>Action</th></tr></thead><tbody>{}</tbody></table>",
+        escape_html(csrf_token),
+        escape_html(canonical_username),
+        success_banner,
+        rows,
     )
 }
 
@@ -2884,7 +3354,7 @@ fn render_compose_page(model: &ComposePageModel<'_>) -> String {
     };
 
     format!(
-        "<nav><a href=\"/mailboxes\">Back to mailboxes</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>{}</h1><p>Signed in as <strong>{}</strong>.</p><p class=\"muted\">This send slice uses the local submission surface, keeps the browser body plain-text-first, accepts bounded new file uploads, and still does not reattach files from the source message automatically.</p>{}{}{}<form method=\"post\" action=\"/send\" enctype=\"multipart/form-data\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><label>To<input type=\"text\" name=\"to\" value=\"{}\" autocomplete=\"off\"></label><label>Subject<input type=\"text\" name=\"subject\" value=\"{}\"></label><label>Body<textarea name=\"body\">{}</textarea></label><label>Attachments<input type=\"file\" name=\"attachment\" multiple></label><button type=\"submit\">Send Message</button></form>",
+        "<nav><a href=\"/mailboxes\">Back to mailboxes</a> | <a href=\"/sessions\">Sessions</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>{}</h1><p>Signed in as <strong>{}</strong>.</p><p class=\"muted\">This send slice uses the local submission surface, keeps the browser body plain-text-first, accepts bounded new file uploads, and still does not reattach files from the source message automatically.</p>{}{}{}<form method=\"post\" action=\"/send\" enctype=\"multipart/form-data\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><label>To<input type=\"text\" name=\"to\" value=\"{}\" autocomplete=\"off\"></label><label>Subject<input type=\"text\" name=\"subject\" value=\"{}\"></label><label>Body<textarea name=\"body\">{}</textarea></label><label>Attachments<input type=\"file\" name=\"attachment\" multiple></label><button type=\"submit\">Send Message</button></form>",
         escape_html(model.csrf_token),
         escape_html(model.heading),
         escape_html(model.canonical_username),
@@ -3099,6 +3569,96 @@ mod tests {
                     "stub_logout",
                     "stub logout completed",
                 )],
+            }
+        }
+
+        fn list_sessions(
+            &self,
+            _context: &AuthenticationContext,
+            validated_session: &ValidatedSession,
+        ) -> BrowserSessionListOutcome {
+            BrowserSessionListOutcome {
+                decision: BrowserSessionListDecision::Listed {
+                    canonical_username: validated_session.record.canonical_username.clone(),
+                    sessions: vec![
+                        BrowserVisibleSession {
+                            session_id: validated_session.record.session_id.clone(),
+                            issued_at: validated_session.record.issued_at,
+                            expires_at: validated_session.record.expires_at,
+                            last_seen_at: validated_session.record.last_seen_at,
+                            revoked_at: None,
+                            remote_addr: validated_session.record.remote_addr.clone(),
+                            user_agent: validated_session.record.user_agent.clone(),
+                            factor: validated_session.record.factor,
+                        },
+                        BrowserVisibleSession {
+                            session_id: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+                                .to_string(),
+                            issued_at: 5,
+                            expires_at: 95,
+                            last_seen_at: 15,
+                            revoked_at: None,
+                            remote_addr: "203.0.113.9".to_string(),
+                            user_agent: "Firefox/Secondary".to_string(),
+                            factor: RequiredSecondFactor::Totp,
+                        },
+                    ],
+                },
+                audit_events: vec![LogEvent::new(
+                    LogLevel::Info,
+                    EventCategory::Session,
+                    "stub_session_list",
+                    "stub session list returned",
+                )],
+            }
+        }
+
+        fn revoke_session(
+            &self,
+            _context: &AuthenticationContext,
+            validated_session: &ValidatedSession,
+            session_id: &str,
+        ) -> BrowserSessionRevokeOutcome {
+            if session_id == validated_session.record.session_id {
+                BrowserSessionRevokeOutcome {
+                    decision: BrowserSessionRevokeDecision::Revoked {
+                        revoked_session_id: session_id.to_string(),
+                        revoked_current_session: true,
+                    },
+                    audit_events: vec![LogEvent::new(
+                        LogLevel::Info,
+                        EventCategory::Session,
+                        "stub_session_revoke_current",
+                        "stub current session revoked",
+                    )],
+                }
+            } else if session_id
+                == "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            {
+                BrowserSessionRevokeOutcome {
+                    decision: BrowserSessionRevokeDecision::Revoked {
+                        revoked_session_id: session_id.to_string(),
+                        revoked_current_session: false,
+                    },
+                    audit_events: vec![LogEvent::new(
+                        LogLevel::Info,
+                        EventCategory::Session,
+                        "stub_session_revoke_other",
+                        "stub non-current session revoked",
+                    )],
+                }
+            } else {
+                BrowserSessionRevokeOutcome {
+                    decision: BrowserSessionRevokeDecision::Denied {
+                        public_reason: "not_found".to_string(),
+                    },
+                    audit_events: vec![LogEvent::new(
+                        LogLevel::Warn,
+                        EventCategory::Session,
+                        "stub_session_revoke_denied",
+                        "stub session revoke denied",
+                    )],
+                }
             }
         }
 
@@ -3489,6 +4049,31 @@ mod tests {
     }
 
     #[test]
+    fn sessions_page_renders_for_valid_session() {
+        let response = app().handle_request(
+            &request(
+                "GET",
+                "/sessions",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                ],
+                "",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 200);
+        let body = body_text(&response);
+        assert!(body.contains("<h1>Sessions</h1>"));
+        assert!(body.contains("203.0.113.9"));
+        assert!(body.contains("Revoke This Session"));
+    }
+
+    #[test]
     fn compose_reply_prefills_recipient_and_subject() {
         let response = app().handle_request(
             &request(
@@ -3625,6 +4210,63 @@ mod tests {
             .headers
             .iter()
             .any(|(name, value)| name == "Location" && value == "/compose?sent=1"));
+    }
+
+    #[test]
+    fn session_revoke_redirects_back_to_sessions_for_non_current_target() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/sessions/revoke",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                ],
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&session_id=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 303);
+        assert!(response
+            .response
+            .headers
+            .iter()
+            .any(|(name, value)| name == "Location" && value == "/sessions?revoked=1"));
+    }
+
+    #[test]
+    fn session_revoke_clears_cookie_when_current_session_is_revoked() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/sessions/revoke",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                ],
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&session_id=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 303);
+        assert!(response
+            .response
+            .headers
+            .iter()
+            .any(|(name, value)| name == "Location" && value == "/login"));
+        assert!(response
+            .response
+            .headers
+            .iter()
+            .any(|(name, value)| name == "Set-Cookie" && value.contains("Max-Age=0")));
     }
 
     #[test]

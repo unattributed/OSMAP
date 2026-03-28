@@ -748,3 +748,20 @@ The active product gaps are now recorded explicitly as:
 
 That keeps execution priorities honest and avoids letting implementation depth
 in some areas imply that Version 1 is feature-complete when it is not.
+
+### Add a first browser-visible session-management page before broader feature work
+
+The session core already tracked issuance, expiry, last-seen, revocation,
+remote address, and user-agent metadata. The next useful slice was therefore
+not a bigger mail feature, but a thin browser view over those existing
+primitives.
+
+The browser layer now includes:
+
+- a `/sessions` view backed by the existing per-user session listing primitive
+- CSRF-bound self-service revocation by persisted session identifier
+- explicit ownership checks so a user can revoke only their own session
+  records
+
+That closes one real Version 1 gap with minimal new trust surface and without
+inventing a heavier device-management subsystem.

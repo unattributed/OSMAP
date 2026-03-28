@@ -31,7 +31,6 @@ implemented features:
 
 - message search
 - folder operations such as move or archive
-- browser-visible session or device management
 - safe HTML email rendering beyond the current plain-text-first withholding
   policy
 - a clearly bounded first-release user settings surface

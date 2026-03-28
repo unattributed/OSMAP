@@ -10,7 +10,8 @@ or hiding important state in implicit runtime behavior.
 
 ## Status
 
-As of March 27, 2026, the prototype now includes a real runtime session layer.
+As of March 28, 2026, the prototype now includes a real runtime session layer
+plus a first browser-visible session-management page.
 
 That layer currently covers:
 
@@ -19,6 +20,8 @@ That layer currently covers:
 - explicit revocation for logout-style and operator-driven paths
 - per-user session listing for visibility
 - per-session CSRF token state for the current browser runtime
+- a browser-visible session list for the current user
+- self-service revocation of persisted session records from the browser
 - structured session audit events
 
 This is the first usable session core, not the final browser/session design.
@@ -105,7 +108,7 @@ The current visibility model is intentionally narrow but useful:
   user-agent summary
 - the records are sorted by newest issuance first
 
-This gives operators and later UI code a concrete substrate for session
+This gives operators and browser-facing code a concrete substrate for session
 visibility without inventing a heavy device-management system too early.
 
 ## Logging And Audit Posture
@@ -164,7 +167,8 @@ This slice does not yet include:
 - rate limiting for session creation or validation abuse
 - stronger session fixation defenses around future auth-flow refinements
 - persistent audit-log storage beyond the current structured event stream
-- user-facing session-management UI
+- richer device interpretation, geolocation, or anomaly scoring around the
+  current session metadata
 - operator-facing session revocation controls in the browser layer
 
 Those belong to the later HTTP and mailbox/runtime slices rather than to this

@@ -30,9 +30,9 @@
 - The implementation does not yet provide browser message search
 - The implementation does not yet provide folder-organization workflows such as
   move or archive
-- The implementation has persisted session metadata and revocation primitives,
-  but it does not yet provide a browser-visible session or device management
-  view
+- The implementation now provides a first browser-visible session list and
+  self-service revocation path, but it does not yet provide richer device
+  labeling or anomaly-oriented session analysis
 - The implementation does not yet provide a bounded end-user settings surface
 - No formal migration plan has been completed
 - The existing host is multi-purpose, which constrains how aggressively the
