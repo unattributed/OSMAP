@@ -880,6 +880,12 @@ is an explicit future-transition path, not the active CodeQL authority. It
 should only be used after maintainers intentionally disable default CodeQL
 setup in repository settings.
 
+The workflow files should prefer Node 24-capable action versions directly over
+the temporary `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` compatibility switch.
+That keeps the repository on the cleaner long-term pattern instead of carrying
+an unnecessary migration flag once the referenced actions have current Node 24
+support.
+
 ### Treat runner-side clippy and rustfmt as part of the authoritative Rust
 security gate
 
