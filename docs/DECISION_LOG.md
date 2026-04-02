@@ -1320,3 +1320,31 @@ internal child module of `src/http_gateway.rs`. This keeps the gateway root
 much closer to a thin runtime-configuration and delegation shell, while making
 the mailbox and submission browser-flow boundary easier to review separately
 from auth/session and helper-aware backend selection.
+
+### Reassess remaining real Version 1 and security gaps after the gateway refactors
+
+After the latest browser-boundary and mailbox-boundary maintainability work,
+the repository no longer needs to treat internal decomposition as the default
+next priority. A fresh repo-grounded review now confirms:
+
+- message search is implemented
+- browser-visible session self-management is implemented
+- the first one-message move workflow is implemented
+- the live authenticated read path is proven on `mail.blackbagsecurity.com`
+
+The remaining highest-confidence Version 1 product gaps are now:
+
+- safe HTML mail rendering beyond the current plain-text-first withholding
+  policy
+- a bounded first-release end-user settings surface
+
+The remaining highest-confidence active security and hardening gaps are now:
+
+- broader auth-abuse and request-abuse resistance beyond the first browser
+  login-throttling slice
+- the correctness and availability constraints of the current sequential HTTP
+  runtime
+- broader live-host proof for mutation workflows such as send and move
+
+Until a new hotspot materially harms auditability again, those product and
+security gaps should outrank additional internal refactor work.

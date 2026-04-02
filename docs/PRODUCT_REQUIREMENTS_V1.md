@@ -13,7 +13,7 @@ implementation completion.
 
 ## Current Implementation Status
 
-As of March 28, 2026, the repository already implements a substantial subset of
+As of April 2, 2026, the repository already implements a substantial subset of
 the Version 1 boundary:
 
 - secure browser login with password plus TOTP
@@ -38,6 +38,13 @@ The current implementation also includes first bounded slices for:
 - mailbox-scoped backend-authoritative search
 - browser-visible session self-management
 - one-message move between existing mailboxes
+
+The current implementation should therefore be treated as:
+
+- functionally beyond the original mailbox-read prototype baseline
+- still incomplete against the full Version 1 product contract
+- still carrying active security and hardening gaps around broader auth-abuse
+  resistance, sequential-runtime posture, and live mutation-path proof
 
 This document remains the target product contract, but implementation planning
 and status reporting should treat the missing items above as active gaps rather

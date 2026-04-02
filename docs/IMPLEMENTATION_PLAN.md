@@ -189,6 +189,20 @@ Broader ergonomics around folder organization, such as bulk actions or archive
 shortcuts from list views, remain later refinements rather than the first move
 slice itself.
 
+The current highest-confidence active hardening gaps are:
+
+- broader auth-abuse and request-abuse resistance beyond the first browser-login
+  throttle slice
+- the correctness and availability constraints of the current sequential HTTP
+  runtime
+- broader live-host proof for mutation workflows such as send and move
+
+The recent maintainability refactors in the browser and mailbox layers have
+reduced the largest implementation hotspots enough that internal decomposition
+is no longer the first active priority. The next implementation decisions
+should be driven by the product and security gaps above unless a new review
+finds a concentrated hotspot that materially harms auditability again.
+
 ## Implementation Guardrails
 
 The following behaviors should be treated as Phase 6 anti-patterns:

@@ -162,21 +162,29 @@ Each phase produces formal outputs to support traceability and auditability.
   public deployment.
 - The remaining clear Version 1 product gaps are safe HTML mail rendering and a
   bounded settings surface. Broader folder-organization ergonomics still
-  remain, but the first backend-authoritative move workflow is now present.
+  remain later refinements, but the first backend-authoritative move workflow
+  is now present.
 - The backend now includes a first bounded application-layer login-throttling
-  slice for the browser auth path. Broader auth-abuse resistance and
+  slice for the browser auth path, but broader auth-abuse resistance and
   request-abuse controls still remain active hardening work, and the service
   still depends on adjacent controls such as nginx, PF, and operator
   monitoring.
+- The current HTTP runtime remains sequential. That is acceptable for the
+  current prototype stage, but it remains an active correctness and
+  availability constraint rather than a solved production posture.
+- The authenticated read path is live-proven on `mail.blackbagsecurity.com`,
+  but broader mutation-path proof remains incomplete. Send and move behavior
+  are implemented, yet not all live end-to-end mutation workflows are proven
+  on the target host.
 - The largest Rust hotspots are also being reduced with behavior-preserving
   internal refactors. The browser layer has been split across dedicated
   `http_runtime`, `http_gateway`, and `http_browser` modules, and the mailbox
   layer now has dedicated parser, backend, service, and model modules to make
   security review and future maintenance easier.
-- Current priority work is continued HTTP hardening, tighter OpenBSD helper and
-  filesystem narrowing, broader end-to-end live validation beyond the now
-  proven authenticated read path, and continued behavior-preserving reduction
-  of oversized implementation hotspots where that improves auditability.
+- Current priority work is safe HTML rendering design and implementation, a
+  bounded first-release settings surface, broader auth/request abuse
+  resistance, sequential-runtime hardening, and live mutation-path validation
+  on `mail.blackbagsecurity.com`.
 - GitHub-side security validation now has two explicit lanes:
   GitHub default CodeQL setup remains the authoritative CodeQL scanner for this
   repository, while the repo-owned `security-check` workflow is the
