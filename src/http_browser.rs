@@ -367,5 +367,8 @@ pub struct BrowserSendOutcome {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BrowserSendDecision {
     Submitted,
-    Denied { public_reason: String },
+    Denied {
+        public_reason: String,
+        retry_after_seconds: Option<u64>,
+    },
 }

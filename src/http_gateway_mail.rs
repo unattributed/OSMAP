@@ -1,6 +1,20 @@
 use super::*;
 
+use crate::config::LogLevel;
+use crate::logging::EventCategory;
+
 impl RuntimeBrowserGateway {
+    /// Builds the current file-backed submission-throttle service.
+    pub(super) fn build_submission_throttle_service(
+        &self,
+    ) -> SubmissionThrottleService<FileLoginThrottleStore, SystemTimeProvider> {
+        SubmissionThrottleService::new(
+            FileLoginThrottleStore::new(self.submission_throttle_dir.clone()),
+            SystemTimeProvider,
+            self.submission_throttle_policy,
+        )
+    }
+
     /// Builds the current send-path service around the local sendmail surface.
     pub(super) fn build_submission_service(
         &self,
@@ -14,6 +28,22 @@ impl RuntimeBrowserGateway {
     /// Builds the current attachment-download service from the MIME policy.
     pub(super) fn build_attachment_download_service(&self) -> AttachmentDownloadService {
         AttachmentDownloadService::new(AttachmentDownloadPolicy::default())
+    }
+
+    /// Records a non-fatal throttle-store failure so operators can diagnose
+    /// missing submission-abuse resistance without crashing the send path.
+    pub(super) fn build_submission_throttle_store_error_event(
+        &self,
+        action: &'static str,
+        message: &'static str,
+        context: &AuthenticationContext,
+        error: &LoginThrottleError,
+    ) -> LogEvent {
+        LogEvent::new(LogLevel::Warn, EventCategory::Submission, action, message)
+            .with_field("reason", throttle_store_error_label(error))
+            .with_field("request_id", context.request_id.clone())
+            .with_field("remote_addr", context.remote_addr.clone())
+            .with_field("user_agent", context.user_agent.clone())
     }
 
     pub(super) fn list_mailboxes_impl(
@@ -329,6 +359,8 @@ impl RuntimeBrowserGateway {
         body: &str,
         attachments: &[UploadedAttachment],
     ) -> BrowserSendOutcome {
+        let throttle_service = self.build_submission_throttle_service();
+        let mut audit_events = Vec::new();
         let request = match ComposeRequest::new_with_attachments(
             ComposePolicy::default(),
             recipients,
@@ -343,6 +375,7 @@ impl RuntimeBrowserGateway {
                         public_reason: SubmissionPublicFailureReason::InvalidRequest
                             .as_str()
                             .to_string(),
+                        retry_after_seconds: None,
                     },
                     audit_events: vec![build_http_warning_event(
                         "compose_request_rejected",
@@ -354,20 +387,67 @@ impl RuntimeBrowserGateway {
             }
         };
 
+        match throttle_service.check(context, &validated_session.record.canonical_username) {
+            Ok(check) => {
+                audit_events.extend(check.audit_events);
+
+                if let SubmissionThrottleDecision::Throttled {
+                    retry_after_seconds,
+                } = check.decision
+                {
+                    return BrowserSendOutcome {
+                        decision: BrowserSendDecision::Denied {
+                            public_reason: TOO_MANY_SUBMISSIONS_PUBLIC_REASON.to_string(),
+                            retry_after_seconds: Some(retry_after_seconds),
+                        },
+                        audit_events,
+                    };
+                }
+            }
+            Err(error) => audit_events.push(self.build_submission_throttle_store_error_event(
+                "submission_throttle_check_failed",
+                "submission throttle check failed",
+                context,
+                &error,
+            )),
+        }
+
         let outcome = self
             .build_submission_service()
             .submit_for_validated_session(context, validated_session, &request);
+        let SubmissionOutcome {
+            decision,
+            audit_event,
+        } = outcome;
+        audit_events.push(audit_event);
 
-        match outcome.decision {
-            SubmissionDecision::Submitted { .. } => BrowserSendOutcome {
-                decision: BrowserSendDecision::Submitted,
-                audit_events: vec![outcome.audit_event],
-            },
+        match decision {
+            SubmissionDecision::Submitted { .. } => {
+                match throttle_service
+                    .record_submission(context, &validated_session.record.canonical_username)
+                {
+                    Ok(record) => audit_events.extend(record.audit_events),
+                    Err(error) => {
+                        audit_events.push(self.build_submission_throttle_store_error_event(
+                            "submission_throttle_record_failed",
+                            "submission throttle recording failed",
+                            context,
+                            &error,
+                        ))
+                    }
+                }
+
+                BrowserSendOutcome {
+                    decision: BrowserSendDecision::Submitted,
+                    audit_events,
+                }
+            }
             SubmissionDecision::Denied { public_reason } => BrowserSendOutcome {
                 decision: BrowserSendDecision::Denied {
                     public_reason: public_reason.as_str().to_string(),
+                    retry_after_seconds: None,
                 },
-                audit_events: vec![outcome.audit_event],
+                audit_events,
             },
         }
     }

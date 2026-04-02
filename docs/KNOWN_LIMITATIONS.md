@@ -41,7 +41,8 @@
   but it currently exposes only one user-facing preference rather than a broad
   settings platform
 - The Rust backend now implements a bounded dual-bucket file-backed login
-  throttle for browser authentication, but broader request-abuse controls and
+  throttle for browser authentication plus a bounded dual-bucket submission
+  throttle for the browser send path, but broader request-abuse controls and
   richer anomaly handling still depend on adjacent defenses such as nginx, PF,
   and operator monitoring
 - No formal migration plan has been completed

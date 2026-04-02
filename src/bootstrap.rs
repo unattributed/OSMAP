@@ -32,6 +32,10 @@ pub struct BootstrapReport {
     pub login_throttle_remote_max_failures: String,
     pub login_throttle_window_seconds: String,
     pub login_throttle_lockout_seconds: String,
+    pub submission_throttle_max_submissions: String,
+    pub submission_throttle_remote_max_submissions: String,
+    pub submission_throttle_window_seconds: String,
+    pub submission_throttle_lockout_seconds: String,
 }
 
 impl BootstrapReport {
@@ -95,6 +99,22 @@ impl BootstrapReport {
             "login_throttle_lockout_seconds",
             self.login_throttle_lockout_seconds.clone(),
         )
+        .with_field(
+            "submission_throttle_max_submissions",
+            self.submission_throttle_max_submissions.clone(),
+        )
+        .with_field(
+            "submission_throttle_remote_max_submissions",
+            self.submission_throttle_remote_max_submissions.clone(),
+        )
+        .with_field(
+            "submission_throttle_window_seconds",
+            self.submission_throttle_window_seconds.clone(),
+        )
+        .with_field(
+            "submission_throttle_lockout_seconds",
+            self.submission_throttle_lockout_seconds.clone(),
+        )
     }
 }
 
@@ -156,6 +176,12 @@ fn report_from_config(config: &AppConfig) -> BootstrapReport {
         login_throttle_remote_max_failures: config.login_throttle_remote_max_failures.to_string(),
         login_throttle_window_seconds: config.login_throttle_window_seconds.to_string(),
         login_throttle_lockout_seconds: config.login_throttle_lockout_seconds.to_string(),
+        submission_throttle_max_submissions: config.submission_throttle_max_submissions.to_string(),
+        submission_throttle_remote_max_submissions: config
+            .submission_throttle_remote_max_submissions
+            .to_string(),
+        submission_throttle_window_seconds: config.submission_throttle_window_seconds.to_string(),
+        submission_throttle_lockout_seconds: config.submission_throttle_lockout_seconds.to_string(),
     }
 }
 
@@ -197,6 +223,10 @@ mod tests {
             login_throttle_remote_max_failures: 12,
             login_throttle_window_seconds: 300,
             login_throttle_lockout_seconds: 900,
+            submission_throttle_max_submissions: 10,
+            submission_throttle_remote_max_submissions: 25,
+            submission_throttle_window_seconds: 300,
+            submission_throttle_lockout_seconds: 900,
         };
 
         let report = report_from_config(&config);
@@ -290,6 +320,22 @@ mod tests {
                 },
                 crate::logging::LogField {
                     key: "login_throttle_lockout_seconds",
+                    value: "900".to_string(),
+                },
+                crate::logging::LogField {
+                    key: "submission_throttle_max_submissions",
+                    value: "10".to_string(),
+                },
+                crate::logging::LogField {
+                    key: "submission_throttle_remote_max_submissions",
+                    value: "25".to_string(),
+                },
+                crate::logging::LogField {
+                    key: "submission_throttle_window_seconds",
+                    value: "300".to_string(),
+                },
+                crate::logging::LogField {
+                    key: "submission_throttle_lockout_seconds",
                     value: "900".to_string(),
                 },
             ]

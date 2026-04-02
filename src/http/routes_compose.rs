@@ -196,34 +196,38 @@ where
                 response: redirect_response(303, "See Other", "/compose?sent=1"),
                 audit_events,
             },
-            BrowserSendDecision::Denied { public_reason } => {
-                let status_code = if public_reason == "invalid_request" {
-                    400
+            BrowserSendDecision::Denied {
+                public_reason,
+                retry_after_seconds,
+            } => {
+                let (status_code, reason_phrase) = if public_reason == "invalid_request" {
+                    (400, "Bad Request")
+                } else if public_reason == TOO_MANY_SUBMISSIONS_PUBLIC_REASON {
+                    (429, "Too Many Requests")
                 } else {
-                    503
+                    (503, "Service Unavailable")
                 };
-                let reason_phrase = if public_reason == "invalid_request" {
-                    "Bad Request"
-                } else {
-                    "Service Unavailable"
-                };
+                let mut response = html_response(
+                    status_code,
+                    reason_phrase,
+                    "Compose",
+                    &render_compose_page(&ComposePageModel {
+                        heading: "Compose",
+                        canonical_username: &validated_session.record.canonical_username,
+                        csrf_token: &validated_session.record.csrf_token,
+                        success_message: None,
+                        error_message: Some(public_reason_message(&public_reason)),
+                        context_notice: None,
+                        to_value: &recipients,
+                        subject_value: &subject,
+                        body_value: &body,
+                    }),
+                );
+                if let Some(retry_after_seconds) = retry_after_seconds {
+                    response = response.with_header("Retry-After", retry_after_seconds.to_string());
+                }
                 HandledHttpResponse {
-                    response: html_response(
-                        status_code,
-                        reason_phrase,
-                        "Compose",
-                        &render_compose_page(&ComposePageModel {
-                            heading: "Compose",
-                            canonical_username: &validated_session.record.canonical_username,
-                            csrf_token: &validated_session.record.csrf_token,
-                            success_message: None,
-                            error_message: Some(public_reason_message(&public_reason)),
-                            context_notice: None,
-                            to_value: &recipients,
-                            subject_value: &subject,
-                            body_value: &body,
-                        }),
-                    ),
+                    response,
                     audit_events,
                 }
             }

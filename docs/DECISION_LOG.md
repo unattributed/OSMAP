@@ -1505,3 +1505,22 @@ That keeps the developer workflow honest:
 - local shell-based safety guards still run everywhere
 - contributors are not encouraged to treat an outdated local toolchain as a
   meaningful validation environment
+
+### Add a bounded submission throttle before widening broader request-abuse work
+
+The next request-abuse slice should not start with a generic global limiter.
+The highest-value unclosed gap after login throttling was submission abuse on
+`POST /send`, because that path can be exercised repeatedly by a compromised
+browser session and maps directly to an existing threat called out in the
+security model.
+
+OSMAP now applies a bounded file-backed submission throttle on the browser send
+path with:
+
+- a tighter canonical-user-plus-remote bucket
+- a higher-threshold remote-only bucket
+
+The send route now returns `429 Too Many Requests` with `Retry-After` when that
+throttle is active. This keeps the control narrow, auditable, and aligned with
+the existing state boundary instead of introducing a general-purpose rate-limit
+framework too early.

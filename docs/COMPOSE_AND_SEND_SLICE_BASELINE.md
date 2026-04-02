@@ -24,6 +24,7 @@ As of March 28, 2026, the prototype now includes:
 - bounded validation for recipients, subject, and body
 - a validated-session gate in front of the send path
 - CSRF enforcement on the send form
+- bounded application-layer submission throttling on the send path
 - a local `sendmail` compatibility backend for handoff to the host mail stack
 - structured submission audit events for success and failure
 
@@ -119,6 +120,9 @@ The current send path preserves the existing browser/runtime security model:
 - only an already validated session can reach compose or send behavior
 - the send form includes a per-session CSRF token
 - the send action rejects missing or invalid CSRF values
+- the send action now also applies bounded canonical-user-plus-remote and
+  remote-only submission throttle checks before handing the message to the host
+  submission surface
 - the response remains server-rendered and dependency-light
 - the composed body is treated as plain text, not browser markup
 - attachment uploads remain bounded and file names are validated before
@@ -134,6 +138,7 @@ The submission layer emits structured `submission` events for:
 
 - accepted message handoff
 - input rejection
+- submission-throttle rejection
 - backend unavailability or execution failure
 
 The success path records the canonical username, recipient count, and attachment
@@ -170,9 +175,11 @@ This slice does not yet include:
 - draft management
 - original-message attachment re-submission
 - message threading hints
-- outbound rate limiting
 - richer per-recipient validation policy
 - operator-visible send queue or retry visibility
+
+The current send path now includes a first bounded submission-throttling slice,
+but it is still not a full outbound abuse-management system.
 
 Attachment download now exists as a separate bounded mailbox-read slice rather
 than as part of outbound composition.

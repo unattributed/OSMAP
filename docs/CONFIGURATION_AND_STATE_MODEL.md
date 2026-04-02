@@ -42,8 +42,13 @@ The early runtime recognizes:
 - `OSMAP_SESSION_LIFETIME_SECS`
 - `OSMAP_TOTP_ALLOWED_SKEW_STEPS`
 - `OSMAP_LOGIN_THROTTLE_MAX_FAILURES`
+- `OSMAP_LOGIN_THROTTLE_REMOTE_MAX_FAILURES`
 - `OSMAP_LOGIN_THROTTLE_WINDOW_SECS`
 - `OSMAP_LOGIN_THROTTLE_LOCKOUT_SECS`
+- `OSMAP_SUBMISSION_THROTTLE_MAX_SUBMISSIONS`
+- `OSMAP_SUBMISSION_THROTTLE_REMOTE_MAX_SUBMISSIONS`
+- `OSMAP_SUBMISSION_THROTTLE_WINDOW_SECS`
+- `OSMAP_SUBMISSION_THROTTLE_LOCKOUT_SECS`
 - `OSMAP_OPENBSD_CONFINEMENT_MODE`
 
 The committed example file under `config/osmap.env.example` is intentionally
@@ -96,6 +101,20 @@ model under the existing cache boundary:
 - a tighter credential-plus-remote bucket
 - a higher-threshold remote-only bucket
 
+The runtime now also recognizes explicit submission-throttle settings for the
+browser send path:
+
+- `OSMAP_SUBMISSION_THROTTLE_MAX_SUBMISSIONS`
+- `OSMAP_SUBMISSION_THROTTLE_REMOTE_MAX_SUBMISSIONS`
+- `OSMAP_SUBMISSION_THROTTLE_WINDOW_SECS`
+- `OSMAP_SUBMISSION_THROTTLE_LOCKOUT_SECS`
+
+Those settings control the current file-backed application-layer throttling
+model for accepted outbound submissions under the existing cache boundary:
+
+- a tighter canonical-user-plus-remote bucket
+- a higher-threshold remote-only bucket
+
 ## Environment Model
 
 The current runtime supports three explicit environments:
@@ -123,6 +142,7 @@ Subdirectories are then resolved beneath that root for:
 - cache data
 - TOTP secret files
 - login-throttle state under the cache tree
+- submission-throttle state under the cache tree
 
 This model keeps the future OpenBSD deployment story easier to reason about,
 because state can later be owned, permissioned, unveiled, and backed up as one
@@ -161,6 +181,8 @@ The bootstrap currently enforces:
 - TOTP skew-step configuration must parse as a signed integer
 - login-throttle threshold, window, and lockout settings must parse as positive
   unsigned integers
+- submission-throttle threshold, window, and lockout settings must parse as
+  positive unsigned integers
 - OpenBSD confinement mode must be one of the explicitly recognized values
 
 These validations are intentionally strict because the project should fail

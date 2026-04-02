@@ -40,9 +40,8 @@ use crate::http_parse::{
 };
 use crate::http_support::{
     attachment_download_response, build_auth_warning_event, build_http_info_event,
-    build_http_warning_event, constant_time_eq, escape_html, html_response,
-    login_throttle_error_label, public_reason_message, redirect_response, session_error_label,
-    url_encode,
+    build_http_warning_event, constant_time_eq, escape_html, html_response, public_reason_message,
+    redirect_response, session_error_label, throttle_store_error_label, url_encode,
 };
 use crate::http_ui::{
     render_compose_page, render_login_page, render_mailboxes_page, render_message_list_page,
@@ -71,7 +70,8 @@ use crate::rendering::{
 };
 use crate::send::{
     ComposeDraft, ComposeIntent, ComposePolicy, ComposeRequest, SendmailSubmissionBackend,
-    SubmissionDecision, SubmissionPublicFailureReason, SubmissionService, UploadedAttachment,
+    SubmissionDecision, SubmissionOutcome, SubmissionPublicFailureReason, SubmissionService,
+    UploadedAttachment,
 };
 use crate::session::{
     FileSessionStore, SessionService, SessionToken, SystemRandomSource, ValidatedSession,
@@ -79,7 +79,8 @@ use crate::session::{
 };
 use crate::throttle::{
     FileLoginThrottleStore, LoginThrottleDecision, LoginThrottleError, LoginThrottlePolicy,
-    LoginThrottleService, TOO_MANY_ATTEMPTS_PUBLIC_REASON,
+    LoginThrottleService, SubmissionThrottleDecision, SubmissionThrottlePolicy,
+    SubmissionThrottleService, TOO_MANY_ATTEMPTS_PUBLIC_REASON, TOO_MANY_SUBMISSIONS_PUBLIC_REASON,
 };
 use crate::totp::{FileTotpSecretStore, SystemTimeProvider, TotpPolicy, TotpVerifier};
 
@@ -730,7 +731,20 @@ mod tests {
             _body: &str,
             attachments: &[UploadedAttachment],
         ) -> BrowserSendOutcome {
-            if recipients == "bob@example.com" && attachments.len() <= 1 {
+            if recipients == "locked@example.com" {
+                BrowserSendOutcome {
+                    decision: BrowserSendDecision::Denied {
+                        public_reason: TOO_MANY_SUBMISSIONS_PUBLIC_REASON.to_string(),
+                        retry_after_seconds: Some(120),
+                    },
+                    audit_events: vec![LogEvent::new(
+                        LogLevel::Warn,
+                        EventCategory::Submission,
+                        "stub_send_throttled",
+                        "stub submission throttled",
+                    )],
+                }
+            } else if recipients == "bob@example.com" && attachments.len() <= 1 {
                 BrowserSendOutcome {
                     decision: BrowserSendDecision::Submitted,
                     audit_events: vec![LogEvent::new(
@@ -744,6 +758,7 @@ mod tests {
                 BrowserSendOutcome {
                     decision: BrowserSendDecision::Denied {
                         public_reason: "invalid_request".to_string(),
+                        retry_after_seconds: None,
                     },
                     audit_events: vec![LogEvent::new(
                         LogLevel::Warn,
@@ -969,6 +984,82 @@ mod tests {
             .audit_events
             .iter()
             .any(|event| event.action == "login_throttled"));
+    }
+
+    #[test]
+    fn runtime_gateway_denies_prelocked_submission_attempts() {
+        let temp_root = temp_dir("osmap-http-submission-throttle");
+        let context = AuthenticationContext::new(
+            AuthenticationPolicy::default(),
+            "req-send-throttle",
+            "127.0.0.1",
+            "Firefox/Test",
+        )
+        .expect("context should be valid");
+        let throttle_store =
+            FileLoginThrottleStore::new(temp_root.join("cache").join("submission-throttle"));
+        let throttle_key =
+            crate::throttle::SubmissionThrottleKey::for_canonical_user_and_remote_addr(
+                "alice@example.com",
+                &context.remote_addr,
+            );
+        throttle_store
+            .save(
+                &throttle_key.key_id,
+                &crate::throttle::LoginThrottleRecord {
+                    failure_count: 10,
+                    window_started_at: 100,
+                    last_failure_at: 120,
+                    locked_until: Some(10_000_000_000),
+                },
+            )
+            .expect("prelocked submission throttle record should save");
+        let gateway = RuntimeBrowserGateway::for_test(&temp_root);
+        let validated_session = ValidatedSession {
+            record: crate::session::SessionRecord {
+                session_id: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+                    .to_string(),
+                csrf_token: "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
+                    .to_string(),
+                canonical_username: "alice@example.com".to_string(),
+                issued_at: 100,
+                expires_at: 200,
+                last_seen_at: 100,
+                revoked_at: None,
+                remote_addr: "127.0.0.1".to_string(),
+                user_agent: "Firefox/Test".to_string(),
+                factor: RequiredSecondFactor::Totp,
+            },
+            audit_event: LogEvent::new(
+                LogLevel::Info,
+                EventCategory::Session,
+                "stub_session_validated",
+                "stub session validated",
+            ),
+        };
+
+        let outcome = gateway.send_message(
+            &context,
+            &validated_session,
+            "bob@example.com",
+            "Test",
+            "Hello",
+            &[],
+        );
+        match outcome.decision {
+            BrowserSendDecision::Denied {
+                public_reason,
+                retry_after_seconds: Some(retry_after_seconds),
+            } => {
+                assert_eq!(public_reason, TOO_MANY_SUBMISSIONS_PUBLIC_REASON);
+                assert!(retry_after_seconds > 0);
+            }
+            other => panic!("unexpected send decision: {other:?}"),
+        }
+        assert!(outcome
+            .audit_events
+            .iter()
+            .any(|event| event.action == "submission_throttled"));
     }
 
     #[test]
@@ -1388,6 +1479,33 @@ mod tests {
             .headers
             .iter()
             .any(|(name, value)| name == "Location" && value == "/compose?sent=1"));
+    }
+
+    #[test]
+    fn send_route_returns_retry_after_when_submission_is_throttled() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/send",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                ],
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&to=locked%40example.com&subject=Test&body=Hello",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 429);
+        assert!(body_text(&response).contains("Too many outbound submissions were observed."));
+        assert!(response
+            .response
+            .headers
+            .iter()
+            .any(|(name, value)| name == "Retry-After" && value == "120"));
     }
 
     #[test]

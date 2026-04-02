@@ -164,6 +164,16 @@ Required defensive implications:
 - abuse monitoring and alerting
 - coordination with existing mail-side anti-abuse controls
 
+The current implementation now includes a bounded application-layer
+submission-throttling model on the browser send path. It applies both:
+
+- a tighter canonical-user-plus-remote bucket
+- a higher-threshold remote-only bucket
+
+That makes rapid outbound abuse through one source materially harder, but it
+still does not replace adjacent mail-side anti-abuse controls, PF, nginx, or
+operator monitoring.
+
 ### Content-Driven Browser Attack
 
 An attacker delivers hostile message content or attachments designed to exploit

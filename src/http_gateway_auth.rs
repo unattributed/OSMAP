@@ -77,7 +77,7 @@ impl RuntimeBrowserGateway {
         error: &LoginThrottleError,
     ) -> LogEvent {
         build_auth_warning_event(action, message, context)
-            .with_field("reason", login_throttle_error_label(error))
+            .with_field("reason", throttle_store_error_label(error))
     }
 
     pub(super) fn login_impl(

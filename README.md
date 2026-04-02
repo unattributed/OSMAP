@@ -175,9 +175,13 @@ Each phase produces formal outputs to support traceability and auditability.
   message then falls back to plain-text rendering.
 - The backend now applies two bounded file-backed login-throttle buckets on the
   browser auth path: a tighter credential-plus-remote bucket and a higher
-  threshold remote-only bucket. Broader auth-abuse resistance and request-abuse
-  controls still remain active hardening work, and the service still depends
-  on adjacent controls such as nginx, PF, and operator monitoring.
+  threshold remote-only bucket.
+- The backend now also applies two bounded file-backed submission-throttle
+  buckets on the browser send path: a tighter canonical-user-plus-remote
+  bucket and a higher threshold remote-only bucket.
+- Broader auth-abuse resistance and request-abuse controls still remain active
+  hardening work, and the service still depends on adjacent controls such as
+  nginx, PF, and operator monitoring.
 - The current HTTP runtime remains sequential. That is acceptable for the
   current prototype stage, but it remains an active correctness and
   availability constraint rather than a solved production posture.
@@ -194,7 +198,7 @@ Each phase produces formal outputs to support traceability and auditability.
   layer now has dedicated parser, backend, service, and model modules to make
   security review and future maintenance easier.
 - Current priority work is still broader auth/request abuse resistance beyond
-  the now-expanded browser-login throttle, sequential-runtime hardening,
+  the current login and send throttle slices, sequential-runtime hardening,
   broader live mutation-path coverage on `mail.blackbagsecurity.com`, and
   remaining workflow refinements such as broader folder-organization
   ergonomics.

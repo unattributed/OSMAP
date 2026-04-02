@@ -129,7 +129,7 @@ pub(crate) fn session_error_label(error: &SessionError) -> &'static str {
 }
 
 /// Maps throttle-store errors into small stable labels for auth-abuse logs.
-pub(crate) fn login_throttle_error_label(error: &LoginThrottleError) -> &'static str {
+pub(crate) fn throttle_store_error_label(error: &LoginThrottleError) -> &'static str {
     match error {
         LoginThrottleError::StoreFailure { .. } => "store_failure",
     }
@@ -142,6 +142,9 @@ pub(crate) fn public_reason_message(reason: &str) -> &'static str {
         "invalid_request" => "The submitted request was not valid.",
         "invalid_second_factor" => "The submitted second-factor code was not accepted.",
         "too_many_attempts" => "Too many login attempts were observed. Please try again later.",
+        "too_many_submissions" => {
+            "Too many outbound submissions were observed. Please try again later."
+        }
         "not_found" => "The requested item was not found.",
         _ => "The service could not complete the request at this time.",
     }

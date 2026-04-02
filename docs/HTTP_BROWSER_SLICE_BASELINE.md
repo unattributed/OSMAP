@@ -116,6 +116,8 @@ The current browser slice follows these rules:
   and attachment responses
 - apply server-side credential-plus-remote and remote-only throttle checks
   before the auth backend is reached
+- apply server-side canonical-user-plus-remote and remote-only throttle checks
+  before the host submission surface is reached
 - avoid JavaScript as a dependency for the first flow
 
 This is not the final browser-security story, but it is an honest and useful
@@ -174,8 +176,8 @@ This slice does not yet include:
 - TLS termination inside OSMAP
 - administrative routes
 - concurrent request handling
-- broader auth-abuse and request-abuse controls beyond the first login
-  throttling slice
+- broader auth-abuse and request-abuse controls beyond the current login and
+  send throttling slices
 - broader live mutation-workflow coverage on the target host under confinement
 - rich HTML mail behavior such as external resources, inline image rendering,
   or permissive styling support
