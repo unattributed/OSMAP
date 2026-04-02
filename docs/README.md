@@ -12,7 +12,7 @@ The repository deliberately separates:
 - Private operator notes and working material under ignored paths such as
   `PKCB/` and `AGENTS.md`
 
-As of March 28, 2026, the project has substantive public-safe documentation
+As of April 2, 2026, the project has substantive public-safe documentation
 through active Phase 6 implementation. The current baseline was built from:
 
 - private PKCB planning notes
@@ -77,7 +77,8 @@ Version 1 gap closure around HTML handling, settings, and broader abuse
 resistance beyond the now-implemented first login-throttling slice. They should
 also stay current with behavior-preserving internal refactors that reduce
 review hotspots in the Rust implementation, especially around the HTTP and
-mailbox boundaries.
+mailbox boundaries, including the ongoing decomposition of `http.rs`,
+`mailbox.rs`, and `mailbox_helper.rs` into smaller reviewable modules.
 
 Some later-phase or deferred documents remain placeholders so the intended
 documentation map is visible without publishing private notes prematurely.

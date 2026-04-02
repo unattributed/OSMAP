@@ -1252,3 +1252,20 @@ backends, services, helper code, routes, and tests. This keeps `mailbox.rs`
 closer to the narrower role it has after the earlier parser and service splits,
 and makes the mailbox domain surface easier to audit independently from parser
 and backend execution code.
+
+### Split helper client backends out of `mailbox_helper.rs`
+
+After moving the helper protocol into `src/mailbox_helper_protocol.rs` and the
+server-side dispatch into `src/mailbox_helper_dispatch.rs`,
+`src/mailbox_helper.rs` still combined:
+
+- helper Unix-socket listener and bounded transport helpers
+- client backend adapters used by the web-facing runtime
+- helper test harness code
+
+The repeated client-side Unix-socket request/response adapters now live in
+`src/mailbox_helper_client.rs`, with the existing
+`MailboxHelper*Backend` types re-exported from `src/mailbox_helper.rs` so the
+public helper-backed mailbox API stays stable. This keeps the least-privilege
+helper transport boundary easier to review by separating client proxy behavior
+from listener lifecycle and server plumbing.

@@ -130,6 +130,10 @@ Each phase produces formal outputs to support traceability and auditability.
 - The browser layer now includes a first self-service session-management page
   backed by the persisted session metadata and revocation primitives already in
   the runtime.
+- The largest Rust implementation hotspots are being reduced through
+  behavior-preserving internal splits across the HTTP, mailbox, and mailbox
+  helper layers so the browser boundary and helper boundary stay easier to
+  audit as the prototype matures.
 - That session-management slice is now also proven on
   `mail.blackbagsecurity.com` under `enforce` with the web runtime kept as
   `_osmap` and the helper kept at the `vmail` boundary, using a synthetic
