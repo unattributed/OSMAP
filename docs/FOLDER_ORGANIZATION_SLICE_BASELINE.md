@@ -92,6 +92,13 @@ That host proof confirms:
 - the helper-backed mailbox authority split remains intact under the `_osmap`
   plus `vmail` runtime boundary
 - the controlled message is removed from `INBOX` and appears in `Junk`
+- the bounded move throttle now also has live-host proof on the same target:
+  one accepted move followed by `429 Too Many Requests` with `Retry-After` on
+  the second matching move attempt
+
+The repository now includes a reusable live-host harness for that proof at:
+
+- `maint/live/osmap-live-validate-move-throttle.ksh`
 
 ## What Is Still Missing
 

@@ -187,6 +187,10 @@ Each phase produces formal outputs to support traceability and auditability.
   using a synthetic validated session confirmed one accepted `POST /send`
   followed by `429 Too Many Requests` with `Retry-After` on the second matching
   submission.
+- The bounded message-move throttle is now also live-proven on
+  `mail.blackbagsecurity.com` under `enforce`: a controlled message injected
+  into `INBOX` was moved once through `POST /message/move`, then the second
+  matching move attempt returned `429 Too Many Requests` with `Retry-After`.
 - Broader auth-abuse resistance and request-abuse controls still remain active
   hardening work, and the service still depends on adjacent controls such as
   nginx, PF, and operator monitoring.

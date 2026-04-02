@@ -199,6 +199,10 @@ Phase 6:
   `mail.blackbagsecurity.com` under `enforce`: one accepted `POST /send`
   followed by `429 Too Many Requests` and `Retry-After` on the second matching
   submission
+- the bounded browser message-move throttle path is now also live-proven on
+  `mail.blackbagsecurity.com` under `enforce`: one accepted
+  `POST /message/move` followed by `429 Too Many Requests` and `Retry-After`
+  on the second matching move
 - broader ergonomics for folder organization remain later refinements rather
   than blockers for the first move slice
 - the current repo-grounded reassessment also confirms active hardening gaps

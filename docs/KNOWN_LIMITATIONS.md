@@ -79,8 +79,9 @@
   operation still does not exist
 - sanitized HTML rendering and the first settings-driven plain-text fallback
   are now proven on `mail.blackbagsecurity.com`, and the first live mutation
-  proof for one-message move plus bounded send now exists there too, but
-  broader mutation coverage is still incomplete
+  proof for one-message move plus bounded send now exists there too, and the
+  bounded move-throttle plus send-throttle behaviors are both now proven there,
+  but broader mutation coverage is still incomplete
 - The SDLC and release rules are now defined, but they have not yet been proven
   against a full live implementation pipeline
 - The project now has an implementation plan and work breakdown, but there is

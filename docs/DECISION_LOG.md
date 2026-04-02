@@ -1565,3 +1565,32 @@ throttle engagement and rejected move attempts.
 This keeps abuse resistance focused on the highest-risk authenticated mutation
 path that currently exists, rather than introducing a generic global limiter
 before the rest of the mutation surface is even present.
+
+### Prove message-move throttling through the live browser route with a reusable host harness
+
+The bounded message-move throttle slice is now also grounded in repeatable
+OpenBSD host evidence, not only in unit coverage. The repository now carries a
+reusable live-host validation script at:
+
+- `maint/live/osmap-live-validate-move-throttle.ksh`
+
+On `mail.blackbagsecurity.com` under
+`OSMAP_OPENBSD_CONFINEMENT_MODE=enforce`, that harness proves:
+
+- one accepted `POST /message/move` through the real browser route
+- `303 See Other` to `/mailbox?name=INBOX&moved_to=Junk` on the first move
+- `429 Too Many Requests` with `Retry-After` on the second matching move
+- emitted `message_move_throttle_engaged` and `message_move_throttled` runtime
+  log events
+
+The proof uses:
+
+- a disposable validation mailbox
+- a synthetic validated browser session
+- the real `_osmap` plus `vmail` runtime split
+- the helper-backed mailbox authority boundary under enforced OpenBSD
+  confinement
+
+This keeps the folder-organization abuse-resistance claim tied to repeatable
+target-host evidence rather than only to library tests or ad hoc operator
+validation.

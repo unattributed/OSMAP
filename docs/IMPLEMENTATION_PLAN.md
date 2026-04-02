@@ -190,6 +190,8 @@ The current implementation now also includes:
   `mail.blackbagsecurity.com`
 - live-host proof for the first bounded browser mutation flows on
   `mail.blackbagsecurity.com`, including one-message move and send
+- live-host proof for the current bounded message-move throttle on
+  `mail.blackbagsecurity.com`
 
 Broader ergonomics around folder organization, such as bulk actions or archive
 shortcuts from list views, remain later refinements rather than the first move
