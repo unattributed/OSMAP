@@ -9,10 +9,13 @@ use std::io::Read as _;
 use std::net::{SocketAddr, TcpStream};
 
 use crate::http::{
-    HttpMethod, HttpPolicy, HttpRequest, HttpRequestError, DEFAULT_HTTP_MAX_CONTENT_TYPE_HEADER_BYTES,
-    DEFAULT_HTTP_MAX_COOKIE_HEADER_BYTES, DEFAULT_HTTP_MAX_HOST_HEADER_BYTES,
+    HttpMethod, HttpPolicy, HttpRequest, HttpRequestError,
+    DEFAULT_HTTP_MAX_CONTENT_TYPE_HEADER_BYTES, DEFAULT_HTTP_MAX_COOKIE_HEADER_BYTES,
+    DEFAULT_HTTP_MAX_HOST_HEADER_BYTES,
 };
-use crate::http_form::{is_multipart_form_data, is_urlencoded_form_content_type, parse_query_string};
+use crate::http_form::{
+    is_multipart_form_data, is_urlencoded_form_content_type, parse_query_string,
+};
 use crate::send::ComposeIntent;
 use crate::session::SessionToken;
 

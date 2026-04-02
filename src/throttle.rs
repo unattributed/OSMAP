@@ -11,9 +11,7 @@ use std::path::PathBuf;
 
 use sha2::{Digest, Sha256};
 
-use crate::auth::{
-    AuthenticationContext, DEFAULT_REMOTE_ADDR_MAX_LEN, DEFAULT_USERNAME_MAX_LEN,
-};
+use crate::auth::{AuthenticationContext, DEFAULT_REMOTE_ADDR_MAX_LEN, DEFAULT_USERNAME_MAX_LEN};
 use crate::config::LogLevel;
 use crate::logging::{EventCategory, LogEvent};
 use crate::totp::TimeProvider;
@@ -139,19 +137,22 @@ impl LoginThrottleStore for FileLoginThrottleStore {
             return Ok(None);
         }
 
-        let content = fs::read_to_string(&path).map_err(|error| LoginThrottleError::StoreFailure {
-            reason: format!("failed to read login throttle record {:?}: {error}", path),
-        })?;
+        let content =
+            fs::read_to_string(&path).map_err(|error| LoginThrottleError::StoreFailure {
+                reason: format!("failed to read login throttle record {:?}: {error}", path),
+            })?;
 
         parse_throttle_record(&content)
     }
 
     fn save(&self, key_id: &str, record: &LoginThrottleRecord) -> Result<(), LoginThrottleError> {
-        fs::create_dir_all(&self.throttle_dir).map_err(|error| LoginThrottleError::StoreFailure {
-            reason: format!(
-                "failed to create login throttle directory {:?}: {error}",
-                self.throttle_dir
-            ),
+        fs::create_dir_all(&self.throttle_dir).map_err(|error| {
+            LoginThrottleError::StoreFailure {
+                reason: format!(
+                    "failed to create login throttle directory {:?}: {error}",
+                    self.throttle_dir
+                ),
+            }
         })?;
 
         let path = self.record_path(key_id);
@@ -187,7 +188,10 @@ impl LoginThrottleStore for FileLoginThrottleStore {
         }
 
         fs::rename(&tmp_path, &path).map_err(|error| LoginThrottleError::StoreFailure {
-            reason: format!("failed to finalize login throttle record {:?}: {error}", path),
+            reason: format!(
+                "failed to finalize login throttle record {:?}: {error}",
+                path
+            ),
         })?;
 
         Ok(())
@@ -270,7 +274,9 @@ where
         if let Some(locked_until) = record.locked_until.filter(|until| *until > now) {
             let retry_after_seconds = locked_until.saturating_sub(now);
             return Ok(LoginThrottleCheck {
-                decision: LoginThrottleDecision::Throttled { retry_after_seconds },
+                decision: LoginThrottleDecision::Throttled {
+                    retry_after_seconds,
+                },
                 audit_event: Some(build_throttled_event(
                     context,
                     &key,
@@ -633,7 +639,10 @@ mod tests {
             }
         );
         assert_eq!(
-            check.audit_event.expect("throttle hit should be logged").action,
+            check
+                .audit_event
+                .expect("throttle hit should be logged")
+                .action,
             "login_throttled"
         );
     }

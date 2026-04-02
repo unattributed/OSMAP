@@ -1037,3 +1037,21 @@ Those handlers now live in `src/http/routes_mail.rs` as an internal child
 module. This keeps the dispatch table and transport loop stable while reducing
 the amount of mailbox-specific browser logic mixed into compose/send and server
 infrastructure code.
+
+### Treat GitHub runner-side rustfmt as authoritative for style drift
+
+The recent `http.rs` decomposition commits passed the local repo gate here, but
+the GitHub `security-check / rust` workflow still failed on `main`. The root
+cause was not a workflow bug and not a Rust logic regression. It was style
+drift:
+
+- local `make security-check` skipped `cargo fmt --check` because `rustfmt` was
+  not installed in this environment
+- the GitHub runner and the OpenBSD validation host did have `rustfmt`
+- the extracted route and parser files were therefore functionally correct but
+  not yet rustfmt-normalized
+
+For this project, runner-side `cargo fmt --check` should be treated as an
+authoritative CI signal. When the local environment lacks `rustfmt`, OSMAP
+should prefer formatting from a toolchain-complete validation host before
+assuming the workflow itself is broken.

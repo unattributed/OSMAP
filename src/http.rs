@@ -849,14 +849,14 @@ impl BrowserGateway for RuntimeBrowserGateway {
                                     TOO_MANY_ATTEMPTS_PUBLIC_REASON.to_string();
                             }
                         }
-                        Err(error) => audit_events.push(
-                            self.build_login_throttle_store_error_event(
+                        Err(error) => {
+                            audit_events.push(self.build_login_throttle_store_error_event(
                                 "login_throttle_record_failed",
                                 "login throttle failure recording failed",
                                 context,
                                 &error,
-                            ),
-                        ),
+                            ))
+                        }
                     }
                 }
 
@@ -893,14 +893,14 @@ impl BrowserGateway for RuntimeBrowserGateway {
                                             TOO_MANY_ATTEMPTS_PUBLIC_REASON.to_string();
                                     }
                                 }
-                                Err(error) => audit_events.push(
-                                    self.build_login_throttle_store_error_event(
+                                Err(error) => {
+                                    audit_events.push(self.build_login_throttle_store_error_event(
                                         "login_throttle_record_failed",
                                         "login throttle failure recording failed",
                                         context,
                                         &error,
-                                    ),
-                                ),
+                                    ))
+                                }
                             }
                         }
 
@@ -2012,7 +2012,6 @@ where
             }
         }
     }
-
 }
 
 /// Runs the first sequential HTTP server for the current browser slice.
@@ -2142,7 +2141,6 @@ fn next_request_id() -> String {
     let id = REQUEST_COUNTER.fetch_add(1, Ordering::Relaxed);
     format!("http-{id}")
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -2721,8 +2719,10 @@ mod tests {
             "Firefox/Test",
         )
         .expect("context should be valid");
-        let throttle_store = FileLoginThrottleStore::new(temp_root.join("cache").join("login-throttle"));
-        let throttle_key = crate::throttle::LoginThrottleKey::new("alice@example.com", &context.remote_addr);
+        let throttle_store =
+            FileLoginThrottleStore::new(temp_root.join("cache").join("login-throttle"));
+        let throttle_key =
+            crate::throttle::LoginThrottleKey::new("alice@example.com", &context.remote_addr);
         throttle_store
             .save(
                 &throttle_key.key_id,

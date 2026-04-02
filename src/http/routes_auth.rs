@@ -11,10 +11,7 @@ where
     G: BrowserGateway,
 {
     /// Serves the current login form.
-    pub(super) fn handle_login_form(
-        &self,
-        context: &AuthenticationContext,
-    ) -> HandledHttpResponse {
+    pub(super) fn handle_login_form(&self, context: &AuthenticationContext) -> HandledHttpResponse {
         HandledHttpResponse {
             response: html_response(200, "OK", "OSMAP Login", &render_login_page(None)),
             audit_events: vec![build_http_info_event(
