@@ -189,11 +189,14 @@ Phase 6:
 - the safe-HTML rendering and settings slice is now also live-proven on
   `mail.blackbagsecurity.com` under `enforce` against a controlled HTML-bearing
   mailbox message and a settings update through the browser route
+- the first live browser mutation proof now also exists on
+  `mail.blackbagsecurity.com` under `enforce`: a controlled one-message move
+  and a bounded send flow both succeeded end to end through the browser routes
 - broader ergonomics for folder organization remain later refinements rather
   than blockers for the first move slice
 - the current repo-grounded reassessment also confirms active hardening gaps
   beyond product features: broader auth/request abuse resistance, the
   correctness and availability limits of the sequential HTTP runtime, and the
-  lack of broader live-host proof for mutation workflows
+  lack of broader live-host proof beyond the first mutation workflows
 - the actual prototype now exists and Phase 6 execution is materially underway,
   but the implementation is still prototype-grade rather than production-ready

@@ -85,6 +85,13 @@ Rust backend. GitHub default CodeQL setup remains the repository's
 authoritative CodeQL scanner unless maintainers deliberately disable default
 setup and switch to advanced CodeQL configuration.
 
+The repository now declares its minimum supported Rust toolchain in
+[`Cargo.toml`](Cargo.toml). If your local `rustc` is older than that minimum,
+the repo-owned `security-check` script will skip the cargo-based phases
+locally and still run the shell guards. In that case, use CI or a compatible
+host such as `mail.blackbagsecurity.com` for the full Rust gate instead of
+claiming a local pass you did not actually have.
+
 To enable the repo-owned pre-commit hook path for this checkout, run:
 
 - `make install-hooks`

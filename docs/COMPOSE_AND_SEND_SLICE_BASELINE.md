@@ -149,6 +149,16 @@ This slice is currently validated through:
 - local runtime verification through the existing `cargo` and `make lint`
   workflow
 - OpenBSD host validation on `mail.blackbagsecurity.com`
+- live-host browser proof on `mail.blackbagsecurity.com` under
+  `OSMAP_OPENBSD_CONFINEMENT_MODE=enforce` using a disposable validation
+  mailbox and a synthetic validated browser session
+
+The current host proof confirms:
+
+- `POST /send` succeeds through the real browser route
+- the browser receives the expected `303` redirect to `/compose?sent=1`
+- the server-rendered compose success page is reachable after the redirect
+- the controlled outbound message reaches the validation mailbox `INBOX`
 
 The first send slice is therefore both implemented and exercised, but it is
 still intentionally narrow.

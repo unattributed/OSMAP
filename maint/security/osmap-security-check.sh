@@ -12,24 +12,81 @@ cd "$repo_root"
 mkdir -p "$TMPDIR" "$CARGO_HOME" "$CARGO_TARGET_DIR"
 export TMPDIR CARGO_HOME CARGO_TARGET_DIR
 
-echo "==> cargo check"
-cargo check
+version_lt() {
+	left=$1
+	right=$2
 
-echo "==> cargo test"
-cargo test
+	old_ifs=$IFS
+	IFS=.
+	set -- $left
+	IFS=$old_ifs
+	left_major=${1:-0}
+	left_minor=${2:-0}
+	left_patch=${3:-0}
 
-if cargo clippy --version >/dev/null 2>&1; then
-	echo "==> cargo clippy --all-targets -- -D warnings"
-	cargo clippy --all-targets -- -D warnings
+	IFS=.
+	set -- $right
+	IFS=$old_ifs
+	right_major=${1:-0}
+	right_minor=${2:-0}
+	right_patch=${3:-0}
+
+	if [ "$left_major" -lt "$right_major" ]; then
+		return 0
+	fi
+	if [ "$left_major" -gt "$right_major" ]; then
+		return 1
+	fi
+	if [ "$left_minor" -lt "$right_minor" ]; then
+		return 0
+	fi
+	if [ "$left_minor" -gt "$right_minor" ]; then
+		return 1
+	fi
+	if [ "$left_patch" -lt "$right_patch" ]; then
+		return 0
+	fi
+	return 1
+}
+
+required_rust_version=$(awk -F'"' '/^rust-version[[:space:]]*=/ { print $2; exit }' Cargo.toml)
+run_cargo_phases=1
+
+if ! command -v cargo >/dev/null 2>&1; then
+	echo "note: cargo is not installed in this environment; skipping cargo-based security-check phases"
+	run_cargo_phases=0
 else
-	echo "note: cargo-clippy is not installed in this environment; skipping clippy phase"
+	current_rust_version=$(rustc --version 2>/dev/null | awk '{ print $2 }' || true)
+	if [ -z "$current_rust_version" ]; then
+		echo "note: rustc is not available in this environment; skipping cargo-based security-check phases"
+		run_cargo_phases=0
+	elif [ -n "$required_rust_version" ] && version_lt "$current_rust_version" "$required_rust_version"; then
+		echo "note: rustc $current_rust_version is older than the repo minimum $required_rust_version; skipping cargo-based security-check phases in this environment"
+		echo "note: run the full gate in CI or on a compatible host such as mail.blackbagsecurity.com"
+		run_cargo_phases=0
+	fi
 fi
 
-if cargo fmt --version >/dev/null 2>&1; then
-	echo "==> cargo fmt --check"
-	cargo fmt --check
-else
-	echo "note: rustfmt is not installed in this environment; skipping fmt-check phase"
+if [ "$run_cargo_phases" -eq 1 ]; then
+	echo "==> cargo check"
+	cargo check
+
+	echo "==> cargo test"
+	cargo test
+
+	if cargo clippy --version >/dev/null 2>&1; then
+		echo "==> cargo clippy --all-targets -- -D warnings"
+		cargo clippy --all-targets -- -D warnings
+	else
+		echo "note: cargo-clippy is not installed in this environment; skipping clippy phase"
+	fi
+
+	if cargo fmt --version >/dev/null 2>&1; then
+		echo "==> cargo fmt --check"
+		cargo fmt --check
+	else
+		echo "note: rustfmt is not installed in this environment; skipping fmt-check phase"
+	fi
 fi
 
 echo "==> scanning for disallowed unsafe outside src/openbsd.rs"

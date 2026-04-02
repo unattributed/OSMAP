@@ -184,6 +184,8 @@ The current implementation now also includes:
 - a first bounded end-user settings slice for HTML display preference
 - live-host proof for the safe-HTML rendering and settings slice on
   `mail.blackbagsecurity.com`
+- live-host proof for the first bounded browser mutation flows on
+  `mail.blackbagsecurity.com`, including one-message move and send
 
 Broader ergonomics around folder organization, such as bulk actions or archive
 shortcuts from list views, remain later refinements rather than the first move
@@ -195,7 +197,7 @@ The current highest-confidence active hardening gaps are:
   browser-login throttle model
 - the correctness and availability constraints of the current sequential HTTP
   runtime
-- broader live-host proof for mutation workflows such as send and move
+- broader live-host proof beyond the first bounded mutation workflows
 
 The recent maintainability refactors in the browser and mailbox layers have
 reduced the largest implementation hotspots enough that internal decomposition

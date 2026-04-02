@@ -78,10 +78,18 @@ The current validation state is:
    client execution
 2. browser-route tests cover the message-view move form, successful redirect,
    and source-mailbox success banner
+3. live-host mutation proof now exists on `mail.blackbagsecurity.com` under
+   `OSMAP_OPENBSD_CONFINEMENT_MODE=enforce` using a disposable validation
+   mailbox, a synthetic validated browser session, and a controlled message
+   injected into `INBOX`
 
-Live-host mutation proof is still deferred. That should wait for a disposable
-validation mailbox or other clearly safe host-side mutation harness rather than
-touching ordinary user mail opportunistically.
+That host proof confirms:
+
+- the browser message-view page exposes the move form on the target host
+- `POST /message/move` succeeds through the real browser route
+- the helper-backed mailbox authority split remains intact under the `_osmap`
+  plus `vmail` runtime boundary
+- the controlled message is removed from `INBOX` and appears in `Junk`
 
 ## What Is Still Missing
 
@@ -92,7 +100,6 @@ This slice does not yet include:
 - drag-and-drop or richer browser-side mailbox actions
 - mailbox creation, rename, or deletion
 - move-history visibility beyond the current audit log
-- live-host move validation under `enforce`
 
 Those belong to later workflow refinement rather than to this first bounded
 folder-organization baseline.

@@ -176,12 +176,13 @@ This slice does not yet include:
 - concurrent request handling
 - broader auth-abuse and request-abuse controls beyond the first login
   throttling slice
-- fully proven live mutation workflows on the target host under confinement,
-  including successful message moves through the browser path
+- broader live mutation-workflow coverage on the target host under confinement
 - rich HTML mail behavior such as external resources, inline image rendering,
   or permissive styling support
 
 The nginx-facing deployment model now has a matching implemented confinement
 control. Live enforced-host proof now exists for the authenticated read path
-plus the synthetic session-management routes, but broader live-browser mutation
-validation still remains.
+plus the synthetic session-management routes, and the first bounded mutation
+flows are now proven too: a one-message move and a send flow both succeeded on
+`mail.blackbagsecurity.com` under `enforce`. Broader live-browser mutation
+coverage still remains.

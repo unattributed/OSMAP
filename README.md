@@ -181,19 +181,23 @@ Each phase produces formal outputs to support traceability and auditability.
 - The current HTTP runtime remains sequential. That is acceptable for the
   current prototype stage, but it remains an active correctness and
   availability constraint rather than a solved production posture.
-- The authenticated read path is live-proven on `mail.blackbagsecurity.com`,
-  but broader mutation-path proof remains incomplete. Send and move behavior
-  are implemented, yet not all live end-to-end mutation workflows are proven
-  on the target host.
+- The first live mutation-path proof now also exists on
+  `mail.blackbagsecurity.com` under `enforce`: a controlled one-message move
+  from `INBOX` to `Junk` and a bounded send flow both succeeded through the
+  real browser routes with the `_osmap` plus `vmail` runtime split.
+- The authenticated read and first mutation paths are therefore both proven on
+  the target host, but broader mutation coverage and operational-hardening
+  work still remain.
 - The largest Rust hotspots are also being reduced with behavior-preserving
   internal refactors. The browser layer has been split across dedicated
   `http_runtime`, `http_gateway`, and `http_browser` modules, and the mailbox
   layer now has dedicated parser, backend, service, and model modules to make
   security review and future maintenance easier.
 - Current priority work is still broader auth/request abuse resistance beyond
-  the now-expanded browser-login throttle, sequential-runtime hardening, and
-  live mutation-path validation on `mail.blackbagsecurity.com`, plus remaining
-  workflow refinements such as broader folder-organization ergonomics.
+  the now-expanded browser-login throttle, sequential-runtime hardening,
+  broader live mutation-path coverage on `mail.blackbagsecurity.com`, and
+  remaining workflow refinements such as broader folder-organization
+  ergonomics.
 - GitHub-side security validation now has two explicit lanes:
   GitHub default CodeQL setup remains the authoritative CodeQL scanner for this
   repository, while the repo-owned `security-check` workflow is the

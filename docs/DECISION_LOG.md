@@ -1466,3 +1466,42 @@ This keeps the implementation small and reviewable while making repeated
 credential rotation from one source materially more expensive. It does not
 replace adjacent controls such as nginx, PF, or monitoring, but it is a better
 default abuse-resistance posture than a single credential-keyed bucket alone.
+
+### Treat the first live browser mutation proof as complete on the target host
+
+The target-host proof gap is now narrower than "send and move are unproven."
+On `mail.blackbagsecurity.com` under
+`OSMAP_OPENBSD_CONFINEMENT_MODE=enforce`, OSMAP now has live proof for:
+
+- a controlled one-message move from `INBOX` to `Junk`
+- a bounded send flow through `POST /send`
+
+That proof used:
+
+- the disposable validation mailbox
+- a synthetic validated browser session
+- the real `_osmap` plus `vmail` runtime split
+- helper-backed mailbox authority under the same confinement posture used for
+  earlier read-path validation
+
+This matters because it moves the project from "implemented but not host-proven"
+to "first bounded mutation routes proven on the real OpenBSD target host"
+without widening the browser trust model or touching ordinary user mail.
+
+### Declare the minimum Rust toolchain and make the local gate honest about it
+
+The repository now declares `rust-version = "1.86"` in `Cargo.toml` because
+the current dependency set already requires that level in practice.
+
+The repo-owned `security-check` script now reads that declared minimum and, if
+the local environment is older, skips the cargo-based phases with an explicit
+note instead of failing for the wrong reason or pretending the full Rust gate
+ran locally.
+
+That keeps the developer workflow honest:
+
+- the full Rust gate still runs in CI and on compatible hosts such as
+  `mail.blackbagsecurity.com`
+- local shell-based safety guards still run everywhere
+- contributors are not encouraged to treat an outdated local toolchain as a
+  meaningful validation environment
