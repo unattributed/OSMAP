@@ -1134,3 +1134,18 @@ treated as a formatting synchronization issue, not as evidence that CodeQL or
 the workflow design itself is broken. When the local workstation lacks
 `rustfmt`, OSMAP should normalize Rust formatting from a toolchain-complete
 validation host before pushing structural refactors.
+
+### Prefer Linux-runner formatting reproduction for persistent `fmt` drift
+
+The remaining red `security-check / rust` status after the first April 2
+format-normalization commit was not a new logic defect. Reproducing the gate
+with an isolated Linux `rustup` toolchain showed the concrete mismatch:
+
+- one extra blank line in `src/http.rs`
+- `cargo fmt --check` on Linux was still red
+- `cargo clippy --all-targets -- -D warnings` was already green
+
+For this project, when OpenBSD-side formatting looks clean but GitHub's Linux
+runner still fails `cargo fmt --check`, the authoritative reproduction should
+be a Linux toolchain that matches the runner's Rust formatting path. That
+keeps CI fixes narrow and prevents unnecessary workflow churn.
