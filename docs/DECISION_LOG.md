@@ -1010,3 +1010,14 @@ That code now lives in `src/http_parse.rs`, while `src/http.rs` re-exports the
 public parse entrypoints and keeps routing behavior unchanged. This keeps the
 observable request surface stable while making the custom HTTP boundary easier
 to review in smaller, purpose-specific units.
+
+### Split auth and session route handlers out of `http.rs`
+
+The next concentrated concern inside `src/http.rs` was auth and session route
+handling: login, logout, root redirect, session listing, session revocation,
+and the validated-session / CSRF helpers those routes depend on.
+
+Those handlers now live in `src/http/routes_auth.rs` as an internal child
+module. That keeps the routing table in `src/http.rs` stable while reducing the
+amount of authentication and session logic mixed into mail and compose route
+code.
