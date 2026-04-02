@@ -1183,3 +1183,18 @@ The server-side request dispatch and helper-response logging now live in
 socket transport and helper client plumbing. This reduces reviewer load at the
 least-privilege mailbox helper boundary without changing helper protocol or
 runtime behavior.
+
+### Split HTTP transport and top-level dispatch out of `http.rs`
+
+After moving parser helpers, UI helpers, and route families out of
+`src/http.rs`, the module still combined:
+
+- the top-level `BrowserApp` request dispatch match
+- the sequential listener startup path
+- per-connection request/response transport handling
+- the synthetic HTTP request-id counter
+
+Those pieces now live in `src/http_runtime.rs`, with `run_http_server` still
+re-exported from `src/http.rs` so the external interface stays stable. This
+keeps the browser-boundary runtime flow easier to review separately from the
+HTTP types, browser gateway contracts, and runtime gateway wiring.
