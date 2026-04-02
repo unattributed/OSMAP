@@ -1216,3 +1216,20 @@ Those pieces now live in `src/http_gateway.rs`, with
 browser-layer interface stays stable. This keeps `http.rs` closer to its
 intended role as the home for HTTP types and browser contracts rather than the
 full runtime assembly point.
+
+### Split browser contracts out of `http.rs`
+
+After moving parser helpers, route families, the transport/runtime loop, and
+the runtime gateway assembly out of `src/http.rs`, the module still carried a
+large cluster of browser-facing contract definitions:
+
+- the `BrowserGateway` trait
+- browser-visible outcome and decision types for login, session, mailbox,
+  message, attachment, move, and send flows
+- browser-safe session metadata shared between runtime adapters and routes
+
+Those browser-layer contracts now live in `src/http_browser.rs`, with the
+existing public types re-exported from `src/http.rs` so route modules and tests
+continue to use the same interface. This keeps `http.rs` more focused on core
+HTTP types and the browser application shell while making the browser contract
+surface easier to audit independently.
