@@ -1198,3 +1198,21 @@ Those pieces now live in `src/http_runtime.rs`, with `run_http_server` still
 re-exported from `src/http.rs` so the external interface stays stable. This
 keeps the browser-boundary runtime flow easier to review separately from the
 HTTP types, browser gateway contracts, and runtime gateway wiring.
+
+### Split HTTP runtime gateway wiring out of `http.rs`
+
+After moving parser helpers, route families, and the transport/runtime loop out
+of `src/http.rs`, the module still combined:
+
+- runtime gateway construction from validated configuration
+- browser-gateway adapter wiring across auth, session, mailbox, send, and
+  attachment services
+- helper-aware backend selection for read and move operations
+- the concrete runtime backend enums that bridge direct and helper-backed
+  mailbox flows
+
+Those pieces now live in `src/http_gateway.rs`, with
+`RuntimeBrowserGateway` still re-exported from `src/http.rs` so the public
+browser-layer interface stays stable. This keeps `http.rs` closer to its
+intended role as the home for HTTP types and browser contracts rather than the
+full runtime assembly point.
