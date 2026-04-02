@@ -1021,3 +1021,19 @@ Those handlers now live in `src/http/routes_auth.rs` as an internal child
 module. That keeps the routing table in `src/http.rs` stable while reducing the
 amount of authentication and session logic mixed into mail and compose route
 code.
+
+### Split mailbox and content routes out of `http.rs`
+
+After separating auth and session flows, the next largest browser concern in
+`src/http.rs` was the mailbox and content route set:
+
+- mailbox home and mailbox message listing
+- mailbox-scoped search
+- message view
+- attachment download
+- first message move workflow
+
+Those handlers now live in `src/http/routes_mail.rs` as an internal child
+module. This keeps the dispatch table and transport loop stable while reducing
+the amount of mailbox-specific browser logic mixed into compose/send and server
+infrastructure code.
