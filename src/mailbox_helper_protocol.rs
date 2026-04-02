@@ -322,8 +322,9 @@ pub(super) fn parse_response(
             }
             "mailbox" => {
                 mailboxes.push(
-                    MailboxEntry::new(mailbox_policy, value.to_string())
-                        .map_err(|error| format!("invalid helper mailbox entry: {}", error.reason))?,
+                    MailboxEntry::new(mailbox_policy, value.to_string()).map_err(|error| {
+                        format!("invalid helper mailbox entry: {}", error.reason)
+                    })?,
                 );
             }
             "mailbox_count" => {}
@@ -370,8 +371,10 @@ pub(super) fn parse_response(
         }
     }
 
-    if matches!(operation.as_deref(), Some("message_list" | "message_search"))
-        && !current_message_fields.is_empty()
+    if matches!(
+        operation.as_deref(),
+        Some("message_list" | "message_search")
+    ) && !current_message_fields.is_empty()
     {
         return Err("helper response ended before message_end marker".to_string());
     }
@@ -715,7 +718,9 @@ fn validate_helper_string(
     }
 
     if value.len() > max_len {
-        return Err(format!("{field} exceeded maximum length of {max_len} bytes"));
+        return Err(format!(
+            "{field} exceeded maximum length of {max_len} bytes"
+        ));
     }
 
     if value.chars().any(|ch| {
@@ -728,8 +733,7 @@ fn validate_helper_string(
 }
 
 fn encode_base64(bytes: &[u8]) -> String {
-    const BASE64: &[u8; 64] =
-        b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    const BASE64: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
     if bytes.is_empty() {
         return String::new();
@@ -815,7 +819,9 @@ fn decode_base64_bytes(input: &str, max_len: usize, field: &str) -> Result<Vec<u
         }
 
         if output.len() > max_len {
-            return Err(format!("{field} exceeded maximum length of {max_len} bytes"));
+            return Err(format!(
+                "{field} exceeded maximum length of {max_len} bytes"
+            ));
         }
     }
 

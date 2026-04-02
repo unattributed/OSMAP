@@ -14,12 +14,6 @@ mod mailbox_parse;
 #[path = "mailbox_service.rs"]
 mod mailbox_service;
 
-use crate::auth::{
-    AuthenticationContext, CommandExecution, CommandExecutor, SystemCommandExecutor,
-};
-use crate::config::LogLevel;
-use crate::logging::{EventCategory, LogEvent};
-use crate::session::ValidatedSession;
 use self::mailbox_parse::{
     parse_doveadm_mailbox_list_output, parse_doveadm_message_list_output,
     parse_doveadm_message_search_output, parse_doveadm_message_view_output,
@@ -28,6 +22,12 @@ pub use self::mailbox_service::{
     MailboxListingService, MessageListService, MessageMoveService, MessageSearchService,
     MessageViewService,
 };
+use crate::auth::{
+    AuthenticationContext, CommandExecution, CommandExecutor, SystemCommandExecutor,
+};
+use crate::config::LogLevel;
+use crate::logging::{EventCategory, LogEvent};
+use crate::session::ValidatedSession;
 
 /// Conservative maximum length for a mailbox name returned by the backend.
 pub const DEFAULT_MAILBOX_NAME_MAX_LEN: usize = 255;

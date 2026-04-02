@@ -19,6 +19,10 @@ use std::time::Duration;
 #[path = "mailbox_helper_protocol.rs"]
 mod mailbox_helper_protocol;
 
+use self::mailbox_helper_protocol::{
+    encode_request, encode_response, parse_request, parse_response, MailboxHelperRequest,
+    MailboxHelperResponse,
+};
 use crate::auth::SystemCommandExecutor;
 use crate::config::{AppConfig, AppRunMode, LogLevel};
 use crate::logging::{EventCategory, LogEvent, Logger};
@@ -31,10 +35,6 @@ use crate::mailbox::{
     MessageViewBackend, MessageViewPolicy, MessageViewRequest,
 };
 use crate::openbsd::apply_runtime_confinement;
-use self::mailbox_helper_protocol::{
-    encode_request, encode_response, parse_request, parse_response, MailboxHelperRequest,
-    MailboxHelperResponse,
-};
 
 /// Conservative upper bound for one helper request payload.
 pub const DEFAULT_MAILBOX_HELPER_MAX_REQUEST_BYTES: usize = 4096;

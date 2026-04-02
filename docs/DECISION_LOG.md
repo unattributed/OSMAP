@@ -1116,3 +1116,21 @@ live in `src/mailbox_service.rs` as an internal child module of
 `src/mailbox.rs`, with the service types re-exported so the public mailbox API
 stays stable. This keeps service logic easier to review separately from command
 construction and backend execution details.
+
+### Treat repeated GitHub security-check failures as runner-side rustfmt drift
+
+The current April 2 refactor commits continued to show red commit badges on
+GitHub even after the code and tests stayed behaviorally sound. Direct
+inspection of the live checks confirmed:
+
+- `security-check / rust` was the failing check
+- both CodeQL `Analyze` jobs were green for those same commits
+- the failing step was still `run repo security gate`
+- the concrete failure was repeated `cargo fmt --check` drift on extracted Rust
+  modules, while `cargo clippy --all-targets -- -D warnings` remained clean
+
+For this project, repeated GitHub Actions failures of that shape should be
+treated as a formatting synchronization issue, not as evidence that CodeQL or
+the workflow design itself is broken. When the local workstation lacks
+`rustfmt`, OSMAP should normalize Rust formatting from a toolchain-complete
+validation host before pushing structural refactors.
