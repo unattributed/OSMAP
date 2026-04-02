@@ -209,11 +209,15 @@ Each phase produces formal outputs to support traceability and auditability.
   `http_runtime`, `http_gateway`, and `http_browser` modules, and the mailbox
   layer now has dedicated parser, backend, service, and model modules to make
   security review and future maintenance easier.
-- Current priority work is still broader auth/request abuse resistance beyond
-  the current login, send, and one-message move throttle slices,
-  sequential-runtime hardening, broader live mutation-path coverage on
+- A fresh repo-grounded reassessment now shows no equally strong candidate for
+  another narrow per-route throttle right now: the remaining authenticated POST
+  routes are settings update, session revoke, and logout, and they are
+  lower-volume, CSRF-bound, and lower abuse value than login, send, or message
+  move.
+- Current priority work is therefore shifting toward sequential-runtime
+  hardening, broader live mutation-path coverage on
   `mail.blackbagsecurity.com`, and remaining workflow refinements such as
-  broader folder-organization ergonomics.
+  broader folder-organization ergonomics and richer search behavior.
 - GitHub-side security validation now has two explicit lanes:
   GitHub default CodeQL setup remains the authoritative CodeQL scanner for this
   repository, while the repo-owned `security-check` workflow is the

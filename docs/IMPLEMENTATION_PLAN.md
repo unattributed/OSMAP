@@ -197,13 +197,25 @@ Broader ergonomics around folder organization, such as bulk actions or archive
 shortcuts from list views, remain later refinements rather than the first move
 slice itself.
 
-The current highest-confidence active hardening gaps are:
+The current highest-confidence active hardening and Version 1 gaps are:
 
-- broader auth-abuse and request-abuse resistance beyond the current browser
-  login, send, and one-message move throttle models
 - the correctness and availability constraints of the current sequential HTTP
   runtime
 - broader live-host proof beyond the first bounded mutation workflows
+- broader folder ergonomics such as bulk move or archive shortcuts from list
+  views
+- richer search behavior beyond the current mailbox-scoped baseline
+
+The recent route review also found that the remaining authenticated POST routes
+in the current browser surface are:
+
+- `POST /settings`
+- `POST /sessions/revoke`
+- `POST /logout`
+
+Those routes are CSRF-bound, low-volume, and lower abuse value than login,
+send, or message move, so there is not yet a comparably strong case for
+another narrow per-route throttle slice.
 
 The recent maintainability refactors in the browser and mailbox layers have
 reduced the largest implementation hotspots enough that internal decomposition

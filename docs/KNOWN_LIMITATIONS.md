@@ -46,6 +46,10 @@
   throttle for the first folder-organization path, but broader request-abuse
   controls and richer anomaly handling still depend on adjacent defenses such
   as nginx, PF, and operator monitoring
+- The remaining authenticated POST routes in the current browser surface
+  (`/settings`, `/sessions/revoke`, and `/logout`) are CSRF-bound and much
+  lower abuse value than login, send, or message move, so the next hardening
+  win is unlikely to be another narrow per-route throttle
 - No formal migration plan has been completed
 - The existing host is multi-purpose, which constrains how aggressively the
   replacement can diverge from current operational patterns

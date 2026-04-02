@@ -77,7 +77,7 @@ handling, safe HTML rendering, bounded user settings, OpenBSD hardening,
 GitHub-side security gating, and the remaining hardening and workflow work
 around broader abuse resistance, live mutation-path proof, and
 folder-organization refinement beyond the now-implemented first
-login-throttle model. They should also stay current with behavior-preserving
+login, send, and message-move throttle slices. They should also stay current with behavior-preserving
 internal refactors that reduce review hotspots in the Rust implementation,
 especially around the HTTP and mailbox boundaries, including the ongoing
 decomposition of `http.rs`, `mailbox.rs`, and `mailbox_helper.rs` into smaller

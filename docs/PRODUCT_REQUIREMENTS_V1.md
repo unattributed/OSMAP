@@ -43,10 +43,10 @@ The current implementation should therefore be treated as:
   resistance, sequential-runtime posture, and live mutation-path proof
 
 This document remains the target product contract, but implementation planning
-and status reporting should now treat broader folder ergonomics, richer
-auth/request abuse resistance, sequential-runtime hardening, and live
-mutation-path proof as the clearest remaining gaps rather than continuing to
-describe HTML rendering or first-release settings as absent.
+and status reporting should now treat broader folder ergonomics, richer search
+behavior, sequential-runtime hardening, and broader live mutation-path proof as
+the clearest remaining gaps rather than continuing to describe HTML rendering,
+first-release settings, or the first request-abuse slices as absent.
 
 ## Overview
 

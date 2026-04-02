@@ -1594,3 +1594,29 @@ The proof uses:
 This keeps the folder-organization abuse-resistance claim tied to repeatable
 target-host evidence rather than only to library tests or ad hoc operator
 validation.
+
+### Pause narrow per-route throttling after login, send, and message move
+
+A fresh repo-grounded reassessment of the current browser surface shows that
+OSMAP now has three high-value route-specific abuse controls in place:
+
+- login throttling on `POST /login`
+- submission throttling on `POST /send`
+- message-move throttling on `POST /message/move`
+
+The remaining authenticated POST routes are currently:
+
+- `POST /settings`
+- `POST /sessions/revoke`
+- `POST /logout`
+
+Those routes are CSRF-bound, low-volume, and lower abuse value than login,
+send, or mailbox mutation. There is therefore not yet a comparably strong case
+for another narrow per-route throttle slice.
+
+The better next priorities after this reassessment are:
+
+- sequential HTTP/runtime hardening
+- broader live-host proof beyond the first bounded mutation workflows
+- remaining Version 1 workflow gaps such as richer search behavior and broader
+  folder ergonomics
