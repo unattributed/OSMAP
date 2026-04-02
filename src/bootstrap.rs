@@ -20,6 +20,7 @@ pub struct BootstrapReport {
     pub state_root: String,
     pub runtime_dir: String,
     pub session_dir: String,
+    pub settings_dir: String,
     pub audit_dir: String,
     pub cache_dir: String,
     pub totp_secret_dir: String,
@@ -63,6 +64,7 @@ impl BootstrapReport {
         .with_field("state_root", self.state_root.clone())
         .with_field("runtime_dir", self.runtime_dir.clone())
         .with_field("session_dir", self.session_dir.clone())
+        .with_field("settings_dir", self.settings_dir.clone())
         .with_field("audit_dir", self.audit_dir.clone())
         .with_field("cache_dir", self.cache_dir.clone())
         .with_field("totp_secret_dir", self.totp_secret_dir.clone())
@@ -137,6 +139,7 @@ fn report_from_config(config: &AppConfig) -> BootstrapReport {
         state_root: config.state_root.display().to_string(),
         runtime_dir: config.state_layout.runtime_dir.display().to_string(),
         session_dir: config.state_layout.session_dir.display().to_string(),
+        settings_dir: config.state_layout.settings_dir.display().to_string(),
         audit_dir: config.state_layout.audit_dir.display().to_string(),
         cache_dir: config.state_layout.cache_dir.display().to_string(),
         totp_secret_dir: config.state_layout.totp_secret_dir.display().to_string(),
@@ -176,6 +179,7 @@ mod tests {
                 PathBuf::from("/var/lib/osmap"),
                 PathBuf::from("/var/lib/osmap/run"),
                 PathBuf::from("/var/lib/osmap/sessions"),
+                PathBuf::from("/var/lib/osmap/settings"),
                 PathBuf::from("/var/lib/osmap/audit"),
                 PathBuf::from("/var/lib/osmap/cache"),
                 PathBuf::from("/var/lib/osmap/secrets/totp"),
@@ -232,6 +236,10 @@ mod tests {
                 crate::logging::LogField {
                     key: "session_dir",
                     value: "/var/lib/osmap/sessions".to_string(),
+                },
+                crate::logging::LogField {
+                    key: "settings_dir",
+                    value: "/var/lib/osmap/settings".to_string(),
                 },
                 crate::logging::LogField {
                     key: "audit_dir",

@@ -20,7 +20,7 @@ round of HTTP-specific hardening controls:
 - session-bound CSRF tokens on current state-changing form routes
 - a file-backed application-layer login-throttling check before the current
   auth backend is reached
-- server-rendered HTML with escaped message rendering and no client-side
+- server-rendered HTML with conservative message rendering and no client-side
   scripting dependency
 - an operator-controlled OpenBSD confinement mode for serve runtime
 
@@ -65,9 +65,10 @@ The current browser runtime enforces:
 - normalization of peer socket addresses to bare IP strings before they reach
   auth-helper metadata or structured request audit context
 
-The current HTML rendering path stays deliberately small and keeps message
-content escaped or plain-text-first unless a later slice proves a broader
-policy safely.
+The current HTML rendering path stays deliberately small and uses either
+escaped plain text or a narrow allowlist sanitizer. It still blocks external
+fetches, scriptable markup, relative URLs, and richer client-side HTML
+behavior.
 
 Because the current server remains sequential, those read/write timeouts are an
 important correctness control as well as a convenience feature. They do not

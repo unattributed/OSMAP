@@ -69,9 +69,11 @@ The current browser layer provides:
 - `GET /search?mailbox=...&q=...`
 - `GET /compose`
 - `GET /sessions`
+- `GET /settings`
 - `POST /send`
 - `POST /message/move`
 - `POST /sessions/revoke`
+- `POST /settings`
 - `POST /logout`
 
 The routes intentionally mirror the current runtime baseline:
@@ -88,6 +90,8 @@ The routes intentionally mirror the current runtime baseline:
   reply/forward prefills when a source message is supplied
 - the sessions page surfaces the current persisted-session metadata through a
   browser-safe view and allows self-service revocation
+- the settings page surfaces the current bounded user preference for HTML
+  display mode and allows CSRF-bound updates
 - the message move route performs the current one-message folder-organization
   slice through the existing mailbox runtime
 - send hands the composed message to the local submission surface
@@ -156,6 +160,8 @@ This slice now proves that:
 - browser-visible session listing and revocation can be layered onto the
   existing persisted-session runtime without introducing a separate browser
   session subsystem
+- a bounded end-user settings page can be layered onto the current runtime
+  without becoming a broad preference platform
 - mailbox-scoped search and one-message move can be added as bounded,
   server-rendered browser routes without widening the client model
 - a practical `serve` mode can exist without giving up the fast bootstrap-only
@@ -168,12 +174,12 @@ This slice does not yet include:
 - TLS termination inside OSMAP
 - administrative routes
 - concurrent request handling
-- safe HTML mail rendering beyond the current plain-text-first policy
-- a bounded end-user settings surface
 - broader auth-abuse and request-abuse controls beyond the first login
   throttling slice
 - fully proven live mutation workflows on the target host under confinement,
   including successful message moves through the browser path
+- rich HTML mail behavior such as external resources, inline image rendering,
+  or permissive styling support
 
 The nginx-facing deployment model now has a matching implemented confinement
 control. Live enforced-host proof now exists for the authenticated read path

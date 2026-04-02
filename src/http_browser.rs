@@ -35,6 +35,19 @@ pub trait BrowserGateway {
         session_id: &str,
     ) -> BrowserSessionRevokeOutcome;
 
+    fn load_settings(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+    ) -> BrowserSettingsOutcome;
+
+    fn update_settings(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        html_display_preference: HtmlDisplayPreference,
+    ) -> BrowserSettingsUpdateOutcome;
+
     fn list_mailboxes(
         &self,
         context: &AuthenticationContext,
@@ -148,6 +161,12 @@ pub struct BrowserVisibleSession {
     pub factor: RequiredSecondFactor,
 }
 
+/// Safe browser-visible end-user settings.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BrowserVisibleSettings {
+    pub html_display_preference: HtmlDisplayPreference,
+}
+
 /// The result of a browser-visible session listing operation.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BrowserSessionListOutcome {
@@ -184,6 +203,39 @@ pub enum BrowserSessionRevokeDecision {
     Denied {
         public_reason: String,
     },
+}
+
+/// The result of loading the browser-visible settings page.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BrowserSettingsOutcome {
+    pub decision: BrowserSettingsDecision,
+    pub audit_events: Vec<LogEvent>,
+}
+
+/// Settings-page decisions visible to the browser layer.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BrowserSettingsDecision {
+    Loaded {
+        canonical_username: String,
+        settings: BrowserVisibleSettings,
+    },
+    Denied {
+        public_reason: String,
+    },
+}
+
+/// The result of one browser-driven settings update.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BrowserSettingsUpdateOutcome {
+    pub decision: BrowserSettingsUpdateDecision,
+    pub audit_events: Vec<LogEvent>,
+}
+
+/// Settings-update decisions visible to the browser layer.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BrowserSettingsUpdateDecision {
+    Updated,
+    Denied { public_reason: String },
 }
 
 /// The result of a mailbox-listing browser operation.

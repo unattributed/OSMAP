@@ -77,9 +77,11 @@ where
             (HttpMethod::Get, "/attachment") => self.handle_attachment_download(request, &context),
             (HttpMethod::Get, "/compose") => self.handle_compose_form(request, &context),
             (HttpMethod::Get, "/sessions") => self.handle_sessions_page(request, &context),
+            (HttpMethod::Get, "/settings") => self.handle_settings_page(request, &context),
             (HttpMethod::Post, "/message/move") => self.handle_message_move(request, &context),
             (HttpMethod::Post, "/send") => self.handle_send(request, &context),
             (HttpMethod::Post, "/sessions/revoke") => self.handle_session_revoke(request, &context),
+            (HttpMethod::Post, "/settings") => self.handle_settings_update(request, &context),
             (HttpMethod::Post, "/logout") => self.handle_logout(request, &context),
             _ => HandledHttpResponse {
                 response: html_response(

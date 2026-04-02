@@ -65,6 +65,7 @@ impl OpenbsdConfinementPlan {
                 add_rule(&mut rules, &config.state_root, "rwc");
                 add_rule(&mut rules, &config.state_layout.runtime_dir, "rwc");
                 add_rule(&mut rules, &config.state_layout.session_dir, "rwc");
+                add_rule(&mut rules, &config.state_layout.settings_dir, "rwc");
                 add_rule(&mut rules, &config.state_layout.audit_dir, "rwc");
                 add_rule(&mut rules, &config.state_layout.cache_dir, "rwc");
                 add_rule(&mut rules, &config.state_layout.totp_secret_dir, "rwc");
@@ -356,6 +357,7 @@ mod tests {
                 PathBuf::from("/var/lib/osmap"),
                 PathBuf::from("/var/lib/osmap/run"),
                 PathBuf::from("/var/lib/osmap/sessions"),
+                PathBuf::from("/var/lib/osmap/settings"),
                 PathBuf::from("/var/lib/osmap/audit"),
                 PathBuf::from("/var/lib/osmap/cache"),
                 PathBuf::from("/var/lib/osmap/secrets/totp"),
@@ -389,6 +391,11 @@ mod tests {
             .unveil_rules
             .iter()
             .any(|rule| rule.path == Path::new("/var/lib/osmap/sessions")
+                && rule.permissions.contains('w')));
+        assert!(plan
+            .unveil_rules
+            .iter()
+            .any(|rule| rule.path == Path::new("/var/lib/osmap/settings")
                 && rule.permissions.contains('w')));
         assert!(plan
             .unveil_rules

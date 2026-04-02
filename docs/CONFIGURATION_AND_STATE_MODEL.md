@@ -33,6 +33,7 @@ The early runtime recognizes:
 - `OSMAP_STATE_DIR`
 - `OSMAP_RUNTIME_DIR`
 - `OSMAP_SESSION_DIR`
+- `OSMAP_SETTINGS_DIR`
 - `OSMAP_AUDIT_DIR`
 - `OSMAP_CACHE_DIR`
 - `OSMAP_TOTP_SECRET_DIR`
@@ -113,6 +114,7 @@ Subdirectories are then resolved beneath that root for:
 
 - runtime files
 - session state
+- user settings state
 - audit-oriented local state
 - cache data
 - TOTP secret files
@@ -223,3 +225,25 @@ This slice currently applies to mailbox listing, message-list retrieval, and
 message-view retrieval. Attachment download now reuses the helper-backed
 message-view path when configured, while MIME-part decoding remains in the
 browser-facing runtime for now.
+
+## User Settings State
+
+The runtime now also includes a first bounded user-settings surface under:
+
+- `OSMAP_SETTINGS_DIR`
+
+That state currently stores one persisted per-user preference:
+
+- `html_display_preference`
+
+The current file-backed store:
+
+- keeps one settings file per canonical username
+- derives the filename from a SHA-256 hash of the canonical username with a
+  stable domain-separation prefix
+- writes line-oriented content with atomic replacement semantics
+- uses `0600` permissions on Unix-like systems
+
+This keeps the first end-user settings slice inside the same explicit state
+boundary as sessions, audit files, TOTP secrets, and throttle state rather
+than introducing a separate browser-local or database-local preference store.

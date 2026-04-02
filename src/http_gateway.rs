@@ -4,6 +4,8 @@ use super::*;
 mod http_gateway_auth;
 #[path = "http_gateway_mail.rs"]
 mod http_gateway_mail;
+#[path = "http_gateway_settings.rs"]
+mod http_gateway_settings;
 #[path = "http_mailbox_backends.rs"]
 mod http_mailbox_backends;
 
@@ -15,6 +17,7 @@ pub struct RuntimeBrowserGateway {
     login_throttle_policy: LoginThrottlePolicy,
     session_lifetime_seconds: u64,
     session_dir: PathBuf,
+    settings_dir: PathBuf,
     login_throttle_dir: PathBuf,
     totp_secret_dir: PathBuf,
     doveadm_path: PathBuf,
@@ -41,6 +44,7 @@ impl RuntimeBrowserGateway {
             },
             session_lifetime_seconds: config.session_lifetime_seconds,
             session_dir: config.state_layout.session_dir.clone(),
+            settings_dir: config.state_layout.settings_dir.clone(),
             login_throttle_dir: config.state_layout.cache_dir.join("login-throttle"),
             totp_secret_dir: config.state_layout.totp_secret_dir.clone(),
             doveadm_path: PathBuf::from("/usr/local/bin/doveadm"),
@@ -64,6 +68,7 @@ impl RuntimeBrowserGateway {
             },
             session_lifetime_seconds: 3600,
             session_dir: temp_root.join("sessions"),
+            settings_dir: temp_root.join("settings"),
             login_throttle_dir: temp_root.join("cache").join("login-throttle"),
             totp_secret_dir: temp_root.join("totp"),
             doveadm_path: PathBuf::from("/nonexistent/doveadm"),
@@ -118,6 +123,23 @@ impl BrowserGateway for RuntimeBrowserGateway {
         session_id: &str,
     ) -> BrowserSessionRevokeOutcome {
         self.revoke_session_impl(context, validated_session, session_id)
+    }
+
+    fn load_settings(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+    ) -> BrowserSettingsOutcome {
+        self.load_settings_impl(context, validated_session)
+    }
+
+    fn update_settings(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        html_display_preference: HtmlDisplayPreference,
+    ) -> BrowserSettingsUpdateOutcome {
+        self.update_settings_impl(context, validated_session, html_display_preference)
     }
 
     fn list_mailboxes(

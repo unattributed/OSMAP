@@ -255,6 +255,11 @@ impl AppConfig {
             "OSMAP_SESSION_DIR",
             PathBuf::from(&state_root_value).join("sessions"),
         )?;
+        let settings_dir = parse_optional_absolute_path(
+            env_map,
+            "OSMAP_SETTINGS_DIR",
+            PathBuf::from(&state_root_value).join("settings"),
+        )?;
         let audit_dir = parse_optional_absolute_path(
             env_map,
             "OSMAP_AUDIT_DIR",
@@ -335,6 +340,7 @@ impl AppConfig {
             state_root.clone(),
             runtime_dir,
             session_dir,
+            settings_dir,
             audit_dir,
             cache_dir,
             totp_secret_dir,

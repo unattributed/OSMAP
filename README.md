@@ -130,6 +130,10 @@ Each phase produces formal outputs to support traceability and auditability.
 - The browser layer now includes a first self-service session-management page
   backed by the persisted session metadata and revocation primitives already in
   the runtime.
+- The browser layer now also includes a first bounded settings page and a safe
+  HTML rendering path: HTML-capable messages can be rendered through a narrow
+  allowlist sanitizer, and users can choose between sanitized HTML and
+  plain-text fallback.
 - The largest Rust implementation hotspots are being reduced through
   behavior-preserving internal splits across the HTTP, mailbox, and mailbox
   helper layers so the browser boundary and helper boundary stay easier to
@@ -160,10 +164,10 @@ Each phase produces formal outputs to support traceability and auditability.
   message view, and attachment download all succeeded in one continuous flow.
 - OSMAP is still prototype-grade, not production-ready, and does not yet have a
   public deployment.
-- The remaining clear Version 1 product gaps are safe HTML mail rendering and a
-  bounded settings surface. Broader folder-organization ergonomics still
-  remain later refinements, but the first backend-authoritative move workflow
-  is now present.
+- The previous top-level Version 1 product gaps around safe HTML rendering and
+  a bounded settings surface are now closed in first-release form. Broader
+  folder-organization ergonomics still remain later refinements, but the first
+  backend-authoritative move workflow is now present.
 - The backend now includes a first bounded application-layer login-throttling
   slice for the browser auth path, but broader auth-abuse resistance and
   request-abuse controls still remain active hardening work, and the service
@@ -181,10 +185,10 @@ Each phase produces formal outputs to support traceability and auditability.
   `http_runtime`, `http_gateway`, and `http_browser` modules, and the mailbox
   layer now has dedicated parser, backend, service, and model modules to make
   security review and future maintenance easier.
-- Current priority work is safe HTML rendering design and implementation, a
-  bounded first-release settings surface, broader auth/request abuse
-  resistance, sequential-runtime hardening, and live mutation-path validation
-  on `mail.blackbagsecurity.com`.
+- Current priority work is broader auth/request abuse resistance,
+  sequential-runtime hardening, and live mutation-path validation on
+  `mail.blackbagsecurity.com`, plus remaining workflow refinements such as
+  broader folder-organization ergonomics.
 - GitHub-side security validation now has two explicit lanes:
   GitHub default CodeQL setup remains the authoritative CodeQL scanner for this
   repository, while the repo-owned `security-check` workflow is the

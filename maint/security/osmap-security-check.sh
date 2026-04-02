@@ -33,7 +33,7 @@ else
 fi
 
 echo "==> scanning for disallowed unsafe outside src/openbsd.rs"
-unsafe_hits=$(grep -RInE 'unsafe[[:space:]]|unsafe\{' src 2>/dev/null || true)
+unsafe_hits=$(grep -RInE 'unsafe[[:space:]]*(fn|impl|trait|\{)' src 2>/dev/null || true)
 disallowed_unsafe=$(printf '%s\n' "$unsafe_hits" | grep -v 'src/openbsd.rs:' | sed '/^$/d' || true)
 if [ -n "$disallowed_unsafe" ]; then
 	echo "error: found unsafe outside the reviewed OpenBSD FFI boundary"

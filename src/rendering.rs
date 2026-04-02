@@ -14,6 +14,9 @@ use crate::mime::{
     unfold_headers, AttachmentMetadata, MimeAnalysis, MimeAnalysisPolicy, MimeAnalyzer,
     MimeBodySource,
 };
+use crate::rendering_html::{
+    sanitize_html_body, HtmlRenderingPolicy, DEFAULT_HTML_BODY_INPUT_MAX_LEN,
+};
 use crate::session::ValidatedSession;
 
 /// Conservative upper bound for one rendered header-summary value.
@@ -27,6 +30,8 @@ pub const DEFAULT_RENDERED_BODY_HTML_MAX_LEN: usize = 1_048_576;
 pub struct RenderingPolicy {
     pub rendered_header_value_max_len: usize,
     pub rendered_body_html_max_len: usize,
+    pub html_display_preference: HtmlDisplayPreference,
+    pub html_rendering_policy: HtmlRenderingPolicy,
     pub mime_analysis_policy: MimeAnalysisPolicy,
 }
 
@@ -35,6 +40,10 @@ impl Default for RenderingPolicy {
         Self {
             rendered_header_value_max_len: DEFAULT_RENDERED_HEADER_VALUE_MAX_LEN,
             rendered_body_html_max_len: DEFAULT_RENDERED_BODY_HTML_MAX_LEN,
+            html_display_preference: HtmlDisplayPreference::PreferSanitizedHtml,
+            html_rendering_policy: HtmlRenderingPolicy {
+                html_body_input_max_len: DEFAULT_HTML_BODY_INPUT_MAX_LEN,
+            },
             mime_analysis_policy: MimeAnalysisPolicy::default(),
         }
     }
@@ -44,6 +53,7 @@ impl Default for RenderingPolicy {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RenderingMode {
     PlainTextPreformatted,
+    SanitizedHtml,
 }
 
 impl RenderingMode {
@@ -51,6 +61,36 @@ impl RenderingMode {
     pub fn as_str(self) -> &'static str {
         match self {
             Self::PlainTextPreformatted => "plain_text_preformatted",
+            Self::SanitizedHtml => "sanitized_html",
+        }
+    }
+}
+
+/// User-visible preference controlling how HTML-capable messages are rendered.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum HtmlDisplayPreference {
+    #[default]
+    PreferSanitizedHtml,
+    PreferPlainText,
+}
+
+impl HtmlDisplayPreference {
+    /// Returns the stable string representation used in settings and docs.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::PreferSanitizedHtml => "prefer_sanitized_html",
+            Self::PreferPlainText => "prefer_plain_text",
+        }
+    }
+
+    /// Parses the stable string representation used in settings storage.
+    pub fn parse(value: &str) -> Result<Self, RenderError> {
+        match value {
+            "prefer_sanitized_html" => Ok(Self::PreferSanitizedHtml),
+            "prefer_plain_text" => Ok(Self::PreferPlainText),
+            _ => Err(RenderError {
+                reason: "unsupported html display preference".to_string(),
+            }),
         }
     }
 }
@@ -84,6 +124,8 @@ pub struct RenderError {
 struct RenderedBody {
     body_html: String,
     compose_text: String,
+    body_source: MimeBodySource,
+    rendering_mode: RenderingMode,
 }
 
 /// The rendered message plus the audit event emitted by the renderer.
@@ -127,8 +169,21 @@ impl PlainTextMessageRenderer {
             "From",
             self.policy.rendered_header_value_max_len,
         )?;
-        let rendered_body =
-            render_body_from_analysis(&analysis, self.policy.rendered_body_html_max_len)?;
+        let rendered_body = render_body_from_analysis(
+            &analysis,
+            self.policy.html_display_preference,
+            self.policy.html_rendering_policy,
+            self.policy.rendered_body_html_max_len,
+        )?;
+
+        let render_action = match rendered_body.rendering_mode {
+            RenderingMode::PlainTextPreformatted => "message_rendered_plain_text",
+            RenderingMode::SanitizedHtml => "message_rendered_sanitized_html",
+        };
+        let render_message = match rendered_body.rendering_mode {
+            RenderingMode::PlainTextPreformatted => "message rendered with plain-text policy",
+            RenderingMode::SanitizedHtml => "message rendered with sanitized-html policy",
+        };
 
         let rendered = RenderedMessageView {
             mailbox_name: message.mailbox_name.clone(),
@@ -137,20 +192,20 @@ impl PlainTextMessageRenderer {
             from,
             date_received: message.date_received.clone(),
             mime_top_level_content_type: analysis.top_level_content_type.clone(),
-            body_source: analysis.body_source,
+            body_source: rendered_body.body_source,
             contains_html_body: analysis.contains_html_body,
             body_html: rendered_body.body_html,
             body_text_for_compose: rendered_body.compose_text,
             attachments: analysis.attachments.clone(),
-            rendering_mode: RenderingMode::PlainTextPreformatted,
+            rendering_mode: rendered_body.rendering_mode,
         };
 
         Ok(RenderOutcome {
             audit_event: LogEvent::new(
                 LogLevel::Info,
                 EventCategory::Mailbox,
-                "message_rendered_plain_text",
-                "message rendered with plain-text policy",
+                render_action,
+                render_message,
             )
             .with_field(
                 "canonical_username",
@@ -210,42 +265,96 @@ fn extract_header_value(
 /// Renders the selected body or a safe placeholder from MIME analysis.
 fn render_body_from_analysis(
     analysis: &MimeAnalysis,
+    html_display_preference: HtmlDisplayPreference,
+    html_rendering_policy: HtmlRenderingPolicy,
     max_len: usize,
 ) -> Result<RenderedBody, RenderError> {
+    if html_display_preference == HtmlDisplayPreference::PreferSanitizedHtml {
+        if let Some(rendered_html) =
+            render_sanitized_html_body(analysis, html_rendering_policy, max_len)?
+        {
+            return Ok(rendered_html);
+        }
+    }
+
     match analysis.body_source {
         MimeBodySource::SinglePartPlainText | MimeBodySource::MultipartPlainTextPart => {
-            render_plain_text_body(
+            let mut rendered = render_plain_text_body(
                 analysis
                     .selected_plain_text_body
                     .as_deref()
                     .unwrap_or_default(),
                 max_len,
-            )
+            )?;
+            rendered.body_source = analysis.body_source;
+            Ok(rendered)
         }
         MimeBodySource::HtmlWithheld => render_placeholder_body(
             "HTML-only message withheld by current plain-text policy.",
             max_len,
+            MimeBodySource::HtmlWithheld,
         ),
         MimeBodySource::MultipartHtmlWithheld => render_placeholder_body(
             "Multipart message contains HTML content, but no safe plain-text part was selected.",
             max_len,
+            MimeBodySource::MultipartHtmlWithheld,
         ),
         MimeBodySource::AttachmentOnlyWithheld => render_placeholder_body(
             "Message content is attachment-oriented under the current plain-text policy.",
             max_len,
+            MimeBodySource::AttachmentOnlyWithheld,
         ),
         MimeBodySource::BinaryWithheld => render_placeholder_body(
             "Non-text message content withheld by current plain-text policy.",
             max_len,
+            MimeBodySource::BinaryWithheld,
         ),
         MimeBodySource::MultipartStructureWithheld => render_placeholder_body(
             "Multipart structure detected, but no safe plain-text preview is available.",
             max_len,
+            MimeBodySource::MultipartStructureWithheld,
         ),
-        MimeBodySource::Empty => {
-            render_placeholder_body("Message has no renderable body content.", max_len)
+        MimeBodySource::Empty => render_placeholder_body(
+            "Message has no renderable body content.",
+            max_len,
+            MimeBodySource::Empty,
+        ),
+        MimeBodySource::HtmlSanitized | MimeBodySource::MultipartHtmlSanitized => {
+            unreachable!("sanitized html body sources are introduced by the rendering layer")
         }
     }
+}
+
+/// Renders sanitized HTML when the MIME layer selected an HTML body.
+fn render_sanitized_html_body(
+    analysis: &MimeAnalysis,
+    html_rendering_policy: HtmlRenderingPolicy,
+    max_len: usize,
+) -> Result<Option<RenderedBody>, RenderError> {
+    let Some(selected_html_body) = analysis.selected_html_body.as_deref() else {
+        return Ok(None);
+    };
+
+    let Some(sanitized_html) = sanitize_html_body(
+        html_rendering_policy,
+        selected_html_body,
+        analysis.selected_plain_text_body.as_deref(),
+        max_len,
+    )?
+    else {
+        return Ok(None);
+    };
+
+    Ok(Some(RenderedBody {
+        body_html: sanitized_html.body_html,
+        compose_text: sanitized_html.compose_text,
+        body_source: if analysis.top_level_content_type.starts_with("multipart/") {
+            MimeBodySource::MultipartHtmlSanitized
+        } else {
+            MimeBodySource::HtmlSanitized
+        },
+        rendering_mode: RenderingMode::SanitizedHtml,
+    }))
 }
 
 /// Renders plain text for safe browser display using an escaped `<pre>` block.
@@ -262,12 +371,20 @@ fn render_plain_text_body(body_text: &str, max_len: usize) -> Result<RenderedBod
     Ok(RenderedBody {
         body_html: rendered,
         compose_text: body_text.to_string(),
+        body_source: MimeBodySource::SinglePartPlainText,
+        rendering_mode: RenderingMode::PlainTextPreformatted,
     })
 }
 
 /// Renders a bounded safe placeholder into the same preformatted container.
-fn render_placeholder_body(message: &str, max_len: usize) -> Result<RenderedBody, RenderError> {
-    render_plain_text_body(&format!("[{message}]"), max_len)
+fn render_placeholder_body(
+    message: &str,
+    max_len: usize,
+    body_source: MimeBodySource,
+) -> Result<RenderedBody, RenderError> {
+    let mut rendered = render_plain_text_body(&format!("[{message}]"), max_len)?;
+    rendered.body_source = body_source;
+    Ok(rendered)
 }
 
 /// Escapes HTML-significant characters without adding a dependency.
@@ -433,6 +550,11 @@ mod tests {
             "<pre>Hello &lt;world&gt; &amp; &quot;friends&quot;\n</pre>"
         );
         assert_eq!(rendered.compose_text, "Hello <world> & \"friends\"\n");
+        assert_eq!(rendered.body_source, MimeBodySource::SinglePartPlainText);
+        assert_eq!(
+            rendered.rendering_mode,
+            RenderingMode::PlainTextPreformatted
+        );
     }
 
     #[test]
@@ -479,7 +601,7 @@ mod tests {
     }
 
     #[test]
-    fn renders_html_only_messages_as_safe_placeholders() {
+    fn renders_html_only_messages_with_sanitized_html() {
         let renderer = PlainTextMessageRenderer::new(RenderingPolicy::default());
         let outcome = renderer
             .render_for_validated_session(
@@ -489,11 +611,16 @@ mod tests {
             )
             .expect("rendering should succeed");
 
-        assert_eq!(outcome.rendered.body_source, MimeBodySource::HtmlWithheld);
+        assert_eq!(outcome.rendered.body_source, MimeBodySource::HtmlSanitized);
         assert!(outcome.rendered.contains_html_body);
+        assert!(outcome.rendered.body_html.contains("message-html"));
+        assert!(outcome.rendered.body_html.contains("Hello"));
+        assert!(outcome.rendered.body_html.contains("<b>world</b>"));
+        assert!(outcome.rendered.body_text_for_compose.contains("Hello"));
+        assert!(outcome.rendered.body_text_for_compose.contains("world"));
         assert_eq!(
-            outcome.rendered.body_html,
-            "<pre>[HTML-only message withheld by current plain-text policy.]</pre>"
+            outcome.rendered.rendering_mode,
+            RenderingMode::SanitizedHtml
         );
     }
 
@@ -510,10 +637,12 @@ mod tests {
 
         assert_eq!(
             outcome.rendered.body_source,
-            MimeBodySource::MultipartPlainTextPart
+            MimeBodySource::MultipartHtmlSanitized
         );
         assert!(outcome.rendered.contains_html_body);
-        assert_eq!(outcome.rendered.body_html, "<pre>Plain text preview</pre>");
+        assert!(outcome.rendered.body_html.contains("message-html"));
+        assert!(outcome.rendered.body_html.contains("HTML body"));
+        assert_eq!(outcome.rendered.body_text_for_compose, "Plain text preview");
         assert_eq!(outcome.rendered.attachments.len(), 1);
         assert_eq!(outcome.rendered.attachments[0].part_path, "1.2");
         assert_eq!(
@@ -523,6 +652,10 @@ mod tests {
         assert_eq!(
             outcome.rendered.attachments[0].content_type,
             "application/pdf"
+        );
+        assert_eq!(
+            outcome.rendered.rendering_mode,
+            RenderingMode::SanitizedHtml
         );
     }
 

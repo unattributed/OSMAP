@@ -56,6 +56,7 @@ Current primary documents:
 - `MESSAGE_LIST_SLICE_BASELINE.md`
 - `MESSAGE_VIEW_SLICE_BASELINE.md`
 - `RENDERING_POLICY_BASELINE.md`
+- `SETTINGS_SURFACE_BASELINE.md`
 - `MIME_AND_ATTACHMENT_POLICY_BASELINE.md`
 - `ATTACHMENT_DOWNLOAD_SLICE_BASELINE.md`
 - `FOLDER_ORGANIZATION_SLICE_BASELINE.md`
@@ -72,13 +73,15 @@ Current primary documents:
 The intent of these documents is operational usefulness, not ceremony. Phase 0
 through Phase 6 documents should stay populated, current, and reviewable as the
 project moves through implementation, mailbox-helper refinement, attachment
-handling, OpenBSD hardening, GitHub-side security gating, and the remaining
-Version 1 gap closure around HTML handling, settings, and broader abuse
-resistance beyond the now-implemented first login-throttling slice. They should
-also stay current with behavior-preserving internal refactors that reduce
-review hotspots in the Rust implementation, especially around the HTTP and
-mailbox boundaries, including the ongoing decomposition of `http.rs`,
-`mailbox.rs`, and `mailbox_helper.rs` into smaller reviewable modules.
+handling, safe HTML rendering, bounded user settings, OpenBSD hardening,
+GitHub-side security gating, and the remaining hardening and workflow work
+around broader abuse resistance, live mutation-path proof, and
+folder-organization refinement beyond the now-implemented first
+login-throttling slice. They should also stay current with behavior-preserving
+internal refactors that reduce review hotspots in the Rust implementation,
+especially around the HTTP and mailbox boundaries, including the ongoing
+decomposition of `http.rs`, `mailbox.rs`, and `mailbox_helper.rs` into smaller
+reviewable modules.
 
 Some later-phase or deferred documents remain placeholders so the intended
 documentation map is visible without publishing private notes prematurely.

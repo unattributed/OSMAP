@@ -172,11 +172,6 @@ The next active implementation work should focus on:
 - carrying the current session model into broader browser-state handling
   without collapsing the security boundaries that now exist
 
-At the moment, the highest-confidence unimplemented Version 1 product gaps are:
-
-- safe HTML email rendering beyond the current plain-text-first posture
-- a bounded first-release user settings surface
-
 The current implementation now also includes:
 
 - a mailbox-scoped backend-authoritative search slice
@@ -184,6 +179,9 @@ The current implementation now also includes:
 - a first one-message move path between existing mailboxes
 - a first bounded application-layer login-throttling slice for the browser auth
   path
+- a first bounded safe-HTML rendering slice with allowlist sanitization and
+  plain-text fallback
+- a first bounded end-user settings slice for HTML display preference
 
 Broader ergonomics around folder organization, such as bulk actions or archive
 shortcuts from list views, remain later refinements rather than the first move
@@ -196,6 +194,8 @@ The current highest-confidence active hardening gaps are:
 - the correctness and availability constraints of the current sequential HTTP
   runtime
 - broader live-host proof for mutation workflows such as send and move
+- richer HTML-content validation and live-host proof for the new rendering path
+  on real mail content
 
 The recent maintainability refactors in the browser and mailbox layers have
 reduced the largest implementation hotspots enough that internal decomposition

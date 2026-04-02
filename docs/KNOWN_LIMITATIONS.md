@@ -24,9 +24,10 @@
   draft generation plus bounded new attachment upload/submission behavior, but
   it does not yet support draft persistence or original-message attachment
   reattachment
-- The implementation now has a plain-text-first rendering layer, but it does
-  not yet define HTML mail sanitization, encoded-header handling, or inline
-  resource policy
+- The implementation now has a conservative rendering layer with both
+  plain-text and sanitized-HTML modes, but it still does not provide
+  encoded-header handling, inline image rendering, or any external-resource
+  loading
 - The implementation now provides a first mailbox-scoped, backend-authoritative
   browser search path, but it does not yet provide cross-mailbox or advanced
   search behavior
@@ -36,7 +37,9 @@
 - The implementation now provides a first browser-visible session list and
   self-service revocation path, but it does not yet provide richer device
   labeling or anomaly-oriented session analysis
-- The implementation does not yet provide a bounded end-user settings surface
+- The implementation now provides a first bounded end-user settings surface,
+  but it currently exposes only one user-facing preference rather than a broad
+  settings platform
 - The Rust backend now implements a first file-backed application-layer login
   throttling slice for browser authentication, but broader request-abuse
   controls and richer anomaly handling still depend on adjacent defenses such

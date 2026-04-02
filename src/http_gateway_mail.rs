@@ -181,36 +181,59 @@ impl RuntimeBrowserGateway {
                 canonical_username,
                 message,
                 ..
-            } => match PlainTextMessageRenderer::new(self.render_policy)
-                .render_for_validated_session(context, validated_session, &message)
-            {
-                Ok(rendered_outcome) => {
-                    audit_events.push(rendered_outcome.audit_event.clone());
-                    BrowserMessageViewOutcome {
-                        decision: BrowserMessageViewDecision::Rendered {
-                            canonical_username,
-                            rendered: Box::new(rendered_outcome.rendered),
-                        },
-                        audit_events,
+            } => {
+                let html_display_preference = match self
+                    .build_user_settings_service()
+                    .load_for_validated_session(context, validated_session)
+                {
+                    Ok(loaded_settings) => {
+                        audit_events.push(loaded_settings.audit_event);
+                        loaded_settings.settings.html_display_preference
                     }
-                }
-                Err(error) => {
-                    audit_events.push(
-                        build_http_warning_event(
-                            "message_render_failed",
-                            "message rendering failed",
+                    Err(error) => {
+                        audit_events.push(self.build_user_settings_store_error_event(
+                            "user_settings_load_failed_for_rendering",
+                            "user settings load failed during message rendering",
                             context,
-                        )
-                        .with_field("reason", error.reason),
-                    );
-                    BrowserMessageViewOutcome {
-                        decision: BrowserMessageViewDecision::Denied {
-                            public_reason: "temporarily_unavailable".to_string(),
-                        },
-                        audit_events,
+                            &error,
+                        ));
+                        HtmlDisplayPreference::PreferPlainText
+                    }
+                };
+
+                match PlainTextMessageRenderer::new(
+                    self.render_policy_for_html_preference(html_display_preference),
+                )
+                .render_for_validated_session(context, validated_session, &message)
+                {
+                    Ok(rendered_outcome) => {
+                        audit_events.push(rendered_outcome.audit_event.clone());
+                        BrowserMessageViewOutcome {
+                            decision: BrowserMessageViewDecision::Rendered {
+                                canonical_username,
+                                rendered: Box::new(rendered_outcome.rendered),
+                            },
+                            audit_events,
+                        }
+                    }
+                    Err(error) => {
+                        audit_events.push(
+                            build_http_warning_event(
+                                "message_render_failed",
+                                "message rendering failed",
+                                context,
+                            )
+                            .with_field("reason", error.reason),
+                        );
+                        BrowserMessageViewOutcome {
+                            decision: BrowserMessageViewDecision::Denied {
+                                public_reason: "temporarily_unavailable".to_string(),
+                            },
+                            audit_events,
+                        }
                     }
                 }
-            },
+            }
             MessageViewDecision::Denied { public_reason } => BrowserMessageViewOutcome {
                 decision: BrowserMessageViewDecision::Denied {
                     public_reason: public_reason.as_str().to_string(),

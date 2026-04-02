@@ -11,9 +11,9 @@ without turning the prototype into a rich HTML client prematurely.
 
 ## Status
 
-As of March 28, 2026, the runtime now includes a dependency-light MIME analysis
+As of April 2, 2026, the runtime now includes a dependency-light MIME analysis
 layer and attachment metadata surface on top of the completed message-view and
-plain-text rendering baselines.
+rendering baselines.
 
 The current slice provides:
 
@@ -21,7 +21,9 @@ The current slice provides:
 - bounded parsing of `Content-Type` and `Content-Disposition`
 - bounded first-layer and nested multipart inspection
 - plain-text part selection for common multipart layouts
-- explicit HTML-withheld and structure-withheld placeholder behavior
+- selected HTML-body extraction for the rendering layer
+- explicit structure-withheld placeholder behavior when no bounded renderable
+  body exists
 - attachment metadata surfacing and bounded attachment-part resolution
 - rendering audit fields that now describe MIME type, body source, and
   attachment count
@@ -38,14 +40,15 @@ The runtime now distinguishes between:
 - multipart messages that contain only HTML or non-renderable parts
 - attachment-oriented or binary-only content
 
-The current renderer still exposes only browser-safe preformatted text.
+The current renderer still stays conservative.
 
 That means:
 
-- selected plain-text bodies are escaped and wrapped in `<pre>`
-- HTML-only content is withheld behind an explicit placeholder
-- multipart messages without a safe plain-text preview are withheld behind an
-  explicit placeholder
+- selected plain-text bodies can be escaped and wrapped in `<pre>`
+- selected HTML bodies can be handed to the narrow allowlist sanitizer used by
+  the rendering layer
+- multipart messages without a safe bounded text or sanitizable HTML preview
+  still fall back to an explicit placeholder
 - attachment-bearing messages now expose attachment metadata without exposing
   attachment content
 
@@ -72,8 +75,10 @@ It is still not a preview contract or a full MIME-client contract.
 This slice follows these rules:
 
 - MIME inspection is separate from browser rendering
-- only selected plain text is rendered for the browser
-- HTML presence is recorded, not interpreted
+- only selected plain text or a selected sanitized HTML body is rendered for
+  the browser
+- HTML presence is classified and surfaced to the rendering layer, not trusted
+  as browser-ready markup
 - multipart traversal is bounded by depth, part count, and boundary length
 - attachment metadata is surfaced without exposing attachment bodies
 - malformed or incomplete structures fall back to explicit withheld states
@@ -100,8 +105,8 @@ reviewable.
 This slice now proves that:
 
 - OSMAP can classify common MIME message shapes without a large dependency
-- the browser-facing layer can preserve a plain-text-first posture even when
-  the message is HTML or multipart
+- the browser-facing layer can preserve a conservative rendering posture even
+  when the message is HTML or multipart
 - surfaced attachment parts can be resolved without bypassing the MIME layer
 - the project can support common multipart mail without quietly becoming a rich
   HTML mail renderer
@@ -110,7 +115,6 @@ This slice now proves that:
 
 This slice does not yet include:
 
-- HTML sanitization and safe HTML rendering
 - encoded-word and RFC 2231 parameter decoding
 - rich attachment preview behavior
 - inline image rendering

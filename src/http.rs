@@ -14,6 +14,7 @@ mod http_runtime;
 mod routes_auth;
 mod routes_compose;
 mod routes_mail;
+mod routes_settings;
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -45,7 +46,8 @@ use crate::http_support::{
 };
 use crate::http_ui::{
     render_compose_page, render_login_page, render_mailboxes_page, render_message_list_page,
-    render_message_search_page, render_message_view_page, render_sessions_page, ComposePageModel,
+    render_message_search_page, render_message_view_page, render_sessions_page,
+    render_settings_page, ComposePageModel, SettingsPageModel,
 };
 use crate::logging::LogEvent;
 #[cfg(test)]
@@ -64,7 +66,9 @@ use crate::mailbox_helper::{
     MailboxHelperMessageMoveBackend, MailboxHelperMessageSearchBackend,
     MailboxHelperMessageViewBackend, MailboxHelperPolicy,
 };
-use crate::rendering::{PlainTextMessageRenderer, RenderedMessageView, RenderingPolicy};
+use crate::rendering::{
+    HtmlDisplayPreference, PlainTextMessageRenderer, RenderedMessageView, RenderingPolicy,
+};
 use crate::send::{
     ComposeDraft, ComposeIntent, ComposePolicy, ComposeRequest, SendmailSubmissionBackend,
     SubmissionDecision, SubmissionPublicFailureReason, SubmissionService, UploadedAttachment,
@@ -312,7 +316,9 @@ pub use self::http_browser::{
     BrowserMessageSearchOutcome, BrowserMessageViewDecision, BrowserMessageViewOutcome,
     BrowserSendDecision, BrowserSendOutcome, BrowserSessionDecision, BrowserSessionListDecision,
     BrowserSessionListOutcome, BrowserSessionRevokeDecision, BrowserSessionRevokeOutcome,
-    BrowserSessionValidationOutcome, BrowserVisibleSession,
+    BrowserSessionValidationOutcome, BrowserSettingsDecision, BrowserSettingsOutcome,
+    BrowserSettingsUpdateDecision, BrowserSettingsUpdateOutcome, BrowserVisibleSession,
+    BrowserVisibleSettings,
 };
 pub use self::http_gateway::RuntimeBrowserGateway;
 pub use self::http_runtime::run_http_server;
@@ -537,6 +543,47 @@ mod tests {
                         "stub session revoke denied",
                     )],
                 }
+            }
+        }
+
+        fn load_settings(
+            &self,
+            _context: &AuthenticationContext,
+            validated_session: &ValidatedSession,
+        ) -> BrowserSettingsOutcome {
+            BrowserSettingsOutcome {
+                decision: BrowserSettingsDecision::Loaded {
+                    canonical_username: validated_session.record.canonical_username.clone(),
+                    settings: BrowserVisibleSettings {
+                        html_display_preference: HtmlDisplayPreference::PreferSanitizedHtml,
+                    },
+                },
+                audit_events: vec![LogEvent::new(
+                    LogLevel::Info,
+                    EventCategory::Session,
+                    "stub_settings_load",
+                    "stub settings loaded",
+                )],
+            }
+        }
+
+        fn update_settings(
+            &self,
+            _context: &AuthenticationContext,
+            _validated_session: &ValidatedSession,
+            html_display_preference: HtmlDisplayPreference,
+        ) -> BrowserSettingsUpdateOutcome {
+            match html_display_preference {
+                HtmlDisplayPreference::PreferSanitizedHtml
+                | HtmlDisplayPreference::PreferPlainText => BrowserSettingsUpdateOutcome {
+                    decision: BrowserSettingsUpdateDecision::Updated,
+                    audit_events: vec![LogEvent::new(
+                        LogLevel::Info,
+                        EventCategory::Session,
+                        "stub_settings_update",
+                        "stub settings updated",
+                    )],
+                },
             }
         }
 
@@ -1181,6 +1228,31 @@ mod tests {
     }
 
     #[test]
+    fn settings_page_renders_for_valid_session() {
+        let response = app().handle_request(
+            &request(
+                "GET",
+                "/settings",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                ],
+                "",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 200);
+        let body = body_text(&response);
+        assert!(body.contains("<h1>Settings</h1>"));
+        assert!(body.contains("prefer_sanitized_html"));
+        assert!(body.contains("Save Settings"));
+    }
+
+    #[test]
     fn compose_reply_prefills_recipient_and_subject() {
         let response = app().handle_request(
             &request(
@@ -1373,6 +1445,32 @@ mod tests {
             .headers
             .iter()
             .any(|(name, value)| name == "Set-Cookie" && value.contains("Max-Age=0")));
+    }
+
+    #[test]
+    fn settings_update_redirects_after_successful_save() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/settings",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                ],
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&html_display_preference=prefer_plain_text",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 303);
+        assert!(response
+            .response
+            .headers
+            .iter()
+            .any(|(name, value)| name == "Location" && value == "/settings?updated=1"));
     }
 
     #[test]

@@ -6,7 +6,7 @@
 use crate::http::BrowserVisibleSession;
 use crate::http_support::{escape_html, url_encode};
 use crate::mailbox::{MailboxEntry, MessageSearchResult, MessageSummary};
-use crate::rendering::RenderedMessageView;
+use crate::rendering::{HtmlDisplayPreference, RenderedMessageView};
 
 /// Small view model for the current server-rendered compose page.
 pub(crate) struct ComposePageModel<'a> {
@@ -19,6 +19,15 @@ pub(crate) struct ComposePageModel<'a> {
     pub to_value: &'a str,
     pub subject_value: &'a str,
     pub body_value: &'a str,
+}
+
+/// Small view model for the first bounded settings page.
+pub(crate) struct SettingsPageModel<'a> {
+    pub canonical_username: &'a str,
+    pub csrf_token: &'a str,
+    pub success_message: Option<&'a str>,
+    pub error_message: Option<&'a str>,
+    pub html_display_preference: HtmlDisplayPreference,
 }
 
 /// Renders the current login page with an optional operator-safe error banner.
@@ -54,7 +63,7 @@ pub(crate) fn render_mailboxes_page(
     }
 
     format!(
-        "<nav><a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Mailboxes</h1><p>Signed in as <strong>{}</strong>.</p><ul>{}</ul>",
+        "<nav><a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <a href=\"/settings\">Settings</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Mailboxes</h1><p>Signed in as <strong>{}</strong>.</p><ul>{}</ul>",
         escape_html(csrf_token),
         escape_html(canonical_username),
         items,
@@ -94,7 +103,7 @@ pub(crate) fn render_message_list_page(
     }
 
     format!(
-        "<nav><a href=\"/mailboxes\">Back to mailboxes</a> | <a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Mailbox: {}</h1><p>Signed in as <strong>{}</strong>.</p>{}<form method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><label>Search this mailbox<input type=\"text\" name=\"q\" autocomplete=\"off\"></label><button type=\"submit\">Search</button></form><table><thead><tr><th>UID</th><th>Received</th><th>Flags</th><th>Size</th></tr></thead><tbody>{}</tbody></table>",
+        "<nav><a href=\"/mailboxes\">Back to mailboxes</a> | <a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <a href=\"/settings\">Settings</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Mailbox: {}</h1><p>Signed in as <strong>{}</strong>.</p>{}<form method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><label>Search this mailbox<input type=\"text\" name=\"q\" autocomplete=\"off\"></label><button type=\"submit\">Search</button></form><table><thead><tr><th>UID</th><th>Received</th><th>Flags</th><th>Size</th></tr></thead><tbody>{}</tbody></table>",
         escape_html(csrf_token),
         escape_html(mailbox_name),
         escape_html(canonical_username),
@@ -138,7 +147,7 @@ pub(crate) fn render_message_search_page(
     }
 
     format!(
-        "<nav><a href=\"/mailbox?name={}\">Back to mailbox</a> | <a href=\"/mailboxes\">All mailboxes</a> | <a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Search Results</h1><p>Signed in as <strong>{}</strong>.</p><p class=\"muted\">This first search slice stays mailbox-scoped and backend-authoritative: Dovecot evaluates the query and the browser only renders bounded results.</p><form method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><label>Search this mailbox<input type=\"text\" name=\"q\" value=\"{}\" autocomplete=\"off\"></label><button type=\"submit\">Search</button></form><p><strong>Mailbox:</strong> {}<br><strong>Query:</strong> {}<br><strong>Results:</strong> {}</p><table><thead><tr><th>UID</th><th>Subject</th><th>From</th><th>Received</th><th>Flags</th><th>Size</th></tr></thead><tbody>{}</tbody></table>",
+        "<nav><a href=\"/mailbox?name={}\">Back to mailbox</a> | <a href=\"/mailboxes\">All mailboxes</a> | <a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <a href=\"/settings\">Settings</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Search Results</h1><p>Signed in as <strong>{}</strong>.</p><p class=\"muted\">This first search slice stays mailbox-scoped and backend-authoritative: Dovecot evaluates the query and the browser only renders bounded results.</p><form method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><label>Search this mailbox<input type=\"text\" name=\"q\" value=\"{}\" autocomplete=\"off\"></label><button type=\"submit\">Search</button></form><p><strong>Mailbox:</strong> {}<br><strong>Query:</strong> {}<br><strong>Results:</strong> {}</p><table><thead><tr><th>UID</th><th>Subject</th><th>From</th><th>Received</th><th>Flags</th><th>Size</th></tr></thead><tbody>{}</tbody></table>",
         escape_html(&url_encode(mailbox_name)),
         escape_html(csrf_token),
         escape_html(canonical_username),
@@ -186,9 +195,13 @@ pub(crate) fn render_message_view_page(
         escape_html(&rendered.mailbox_name),
         rendered.uid,
     );
+    let rendering_notice = match rendered.rendering_mode.as_str() {
+        "sanitized_html" => "<p class=\"muted\">HTML content is shown through the current allowlist sanitization policy. Active content, external fetches, and unsafe URLs are removed.</p>",
+        _ => "",
+    };
 
     format!(
-        "<nav><a href=\"/mailbox?name={}\">Back to mailbox</a> | <a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <a href=\"/compose?mode=reply&mailbox={}&uid={}\">Reply</a> | <a href=\"/compose?mode=forward&mailbox={}&uid={}\">Forward</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Message View</h1><p>Signed in as <strong>{}</strong>.</p><dl><dt>Mailbox</dt><dd>{}</dd><dt>UID</dt><dd>{}</dd><dt>Subject</dt><dd>{}</dd><dt>From</dt><dd>{}</dd><dt>Received</dt><dd>{}</dd><dt>MIME Type</dt><dd>{}</dd><dt>Body Source</dt><dd>{}</dd><dt>HTML Present</dt><dd>{}</dd></dl>{}<h2>Attachments</h2><ul>{}</ul><h2>Body</h2>{}",
+        "<nav><a href=\"/mailbox?name={}\">Back to mailbox</a> | <a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <a href=\"/settings\">Settings</a> | <a href=\"/compose?mode=reply&mailbox={}&uid={}\">Reply</a> | <a href=\"/compose?mode=forward&mailbox={}&uid={}\">Forward</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Message View</h1><p>Signed in as <strong>{}</strong>.</p><dl><dt>Mailbox</dt><dd>{}</dd><dt>UID</dt><dd>{}</dd><dt>Subject</dt><dd>{}</dd><dt>From</dt><dd>{}</dd><dt>Received</dt><dd>{}</dd><dt>MIME Type</dt><dd>{}</dd><dt>Body Source</dt><dd>{}</dd><dt>Rendering Mode</dt><dd>{}</dd><dt>HTML Present</dt><dd>{}</dd></dl>{}{}<h2>Attachments</h2><ul>{}</ul><h2>Body</h2>{}",
         escape_html(&url_encode(&rendered.mailbox_name)),
         escape_html(&url_encode(&rendered.mailbox_name)),
         rendered.uid,
@@ -203,7 +216,9 @@ pub(crate) fn render_message_view_page(
         escape_html(&rendered.date_received),
         escape_html(&rendered.mime_top_level_content_type),
         escape_html(rendered.body_source.as_str()),
+        escape_html(rendered.rendering_mode.as_str()),
         if rendered.contains_html_body { "yes" } else { "no" },
+        rendering_notice,
         move_form,
         attachments,
         rendered.body_html,
@@ -269,7 +284,7 @@ pub(crate) fn render_sessions_page(
     }
 
     format!(
-        "<nav><a href=\"/mailboxes\">Back to mailboxes</a> | <a href=\"/compose\">Compose</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Sessions</h1><p>Signed in as <strong>{}</strong>.</p><p class=\"muted\">This first self-service session view exposes the persisted session metadata already tracked by the runtime so users can see and revoke their own browser sessions without introducing a heavier device-management model.</p>{}<table><thead><tr><th>Session ID</th><th>Status</th><th>Issued</th><th>Last Seen</th><th>Expires</th><th>Revoked</th><th>Remote Address</th><th>User Agent</th><th>Action</th></tr></thead><tbody>{}</tbody></table>",
+        "<nav><a href=\"/mailboxes\">Back to mailboxes</a> | <a href=\"/compose\">Compose</a> | <a href=\"/settings\">Settings</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Sessions</h1><p>Signed in as <strong>{}</strong>.</p><p class=\"muted\">This first self-service session view exposes the persisted session metadata already tracked by the runtime so users can see and revoke their own browser sessions without introducing a heavier device-management model.</p>{}<table><thead><tr><th>Session ID</th><th>Status</th><th>Issued</th><th>Last Seen</th><th>Expires</th><th>Revoked</th><th>Remote Address</th><th>User Agent</th><th>Action</th></tr></thead><tbody>{}</tbody></table>",
         escape_html(csrf_token),
         escape_html(canonical_username),
         success_banner,
@@ -302,7 +317,7 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> String {
     };
 
     format!(
-        "<nav><a href=\"/mailboxes\">Back to mailboxes</a> | <a href=\"/sessions\">Sessions</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>{}</h1><p>Signed in as <strong>{}</strong>.</p><p class=\"muted\">This send slice uses the local submission surface, keeps the browser body plain-text-first, accepts bounded new file uploads, and still does not reattach files from the source message automatically.</p>{}{}{}<form method=\"post\" action=\"/send\" enctype=\"multipart/form-data\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><label>To<input type=\"text\" name=\"to\" value=\"{}\" autocomplete=\"off\"></label><label>Subject<input type=\"text\" name=\"subject\" value=\"{}\"></label><label>Body<textarea name=\"body\">{}</textarea></label><label>Attachments<input type=\"file\" name=\"attachment\" multiple></label><button type=\"submit\">Send Message</button></form>",
+        "<nav><a href=\"/mailboxes\">Back to mailboxes</a> | <a href=\"/sessions\">Sessions</a> | <a href=\"/settings\">Settings</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>{}</h1><p>Signed in as <strong>{}</strong>.</p><p class=\"muted\">This send slice uses the local submission surface, keeps the browser body plain-text-first, accepts bounded new file uploads, and still does not reattach files from the source message automatically.</p>{}{}{}<form method=\"post\" action=\"/send\" enctype=\"multipart/form-data\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><label>To<input type=\"text\" name=\"to\" value=\"{}\" autocomplete=\"off\"></label><label>Subject<input type=\"text\" name=\"subject\" value=\"{}\"></label><label>Body<textarea name=\"body\">{}</textarea></label><label>Attachments<input type=\"file\" name=\"attachment\" multiple></label><button type=\"submit\">Send Message</button></form>",
         escape_html(model.csrf_token),
         escape_html(model.heading),
         escape_html(model.canonical_username),
@@ -313,5 +328,46 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> String {
         escape_html(model.to_value),
         escape_html(model.subject_value),
         escape_html(model.body_value),
+    )
+}
+
+/// Renders the first bounded end-user settings page.
+pub(crate) fn render_settings_page(model: &SettingsPageModel<'_>) -> String {
+    let success_banner = match model.success_message {
+        Some(success_message) => format!(
+            "<p><strong>Update complete:</strong> {}</p>",
+            escape_html(success_message)
+        ),
+        None => String::new(),
+    };
+    let error_banner = match model.error_message {
+        Some(error_message) => format!(
+            "<p><strong>Request failed:</strong> {}</p>",
+            escape_html(error_message)
+        ),
+        None => String::new(),
+    };
+    let prefer_sanitized_html_checked =
+        if model.html_display_preference == HtmlDisplayPreference::PreferSanitizedHtml {
+            " checked"
+        } else {
+            ""
+        };
+    let prefer_plain_text_checked =
+        if model.html_display_preference == HtmlDisplayPreference::PreferPlainText {
+            " checked"
+        } else {
+            ""
+        };
+
+    format!(
+        "<nav><a href=\"/mailboxes\">Mailboxes</a> | <a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Settings</h1><p>Signed in as <strong>{}</strong>.</p>{}{}<p class=\"muted\">This first settings slice is intentionally small. It controls whether HTML-capable messages prefer sanitized HTML or plain-text fallback during browser rendering.</p><form method=\"post\" action=\"/settings\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><fieldset><legend>HTML Message Display</legend><label><input type=\"radio\" name=\"html_display_preference\" value=\"prefer_sanitized_html\"{}> Prefer sanitized HTML when available</label><label><input type=\"radio\" name=\"html_display_preference\" value=\"prefer_plain_text\"{}> Prefer plain text when available</label></fieldset><button type=\"submit\">Save Settings</button></form>",
+        escape_html(model.csrf_token),
+        escape_html(model.canonical_username),
+        success_banner,
+        error_banner,
+        escape_html(model.csrf_token),
+        prefer_sanitized_html_checked,
+        prefer_plain_text_checked,
     )
 }

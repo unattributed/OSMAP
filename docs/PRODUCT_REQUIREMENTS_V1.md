@@ -26,18 +26,14 @@ the Version 1 boundary:
 - OpenBSD confinement controls plus a least-privilege mailbox-helper path for
   read operations
 
-The following Version 1 requirements remain product targets rather than
-implemented features:
-
-- safe HTML email rendering beyond the current plain-text-first withholding
-  policy
-- a clearly bounded first-release user settings surface
-
 The current implementation also includes first bounded slices for:
 
 - mailbox-scoped backend-authoritative search
 - browser-visible session self-management
 - one-message move between existing mailboxes
+- safe HTML email rendering through a narrow allowlist sanitizer with
+  plain-text fallback
+- a bounded first-release user settings surface for HTML display preference
 
 The current implementation should therefore be treated as:
 
@@ -47,8 +43,10 @@ The current implementation should therefore be treated as:
   resistance, sequential-runtime posture, and live mutation-path proof
 
 This document remains the target product contract, but implementation planning
-and status reporting should treat the missing items above as active gaps rather
-than implying that Version 1 is already feature-complete.
+and status reporting should now treat broader folder ergonomics, richer
+auth/request abuse resistance, sequential-runtime hardening, and live
+mutation-path proof as the clearest remaining gaps rather than continuing to
+describe HTML rendering or first-release settings as absent.
 
 ## Overview
 
@@ -155,6 +153,10 @@ The user can:
 
 Version 1 should avoid turning settings into a broad preference platform.
 
+The current first-release settings slice now includes one such setting:
+
+- HTML display preference between sanitized HTML and plain-text fallback
+
 ## Required Features
 
 The first release must include:
@@ -171,6 +173,7 @@ The first release must include:
 - visibility into sensitive session activity or device activity
 - audit logging of sensitive actions
 - safe HTML email rendering
+- a bounded first-release user settings surface
 - compatibility with the existing IMAP and SMTP submission services
 
 ## Compatibility Requirements

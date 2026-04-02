@@ -2,43 +2,49 @@
 
 ## Purpose
 
-This document records the next WP6 step after bounded message retrieval:
-plain-text-first browser rendering.
+This document records the bounded browser-rendering policy for fetched
+messages.
 
 The goal of this slice is to transform a fetched message payload into something
-safe for browser presentation without claiming support for rich HTML mail or
-full client behavior.
+safe for browser presentation without turning OSMAP into a rich HTML mail
+client or a browser-trusting rendering engine.
 
 ## Status
 
-As of March 28, 2026, the runtime now includes a conservative rendering layer on
+As of April 2, 2026, the runtime now includes a conservative rendering layer on
 top of the completed message-view fetch baseline.
 
 The current slice provides:
 
-- a plain-text-first rendering policy
+- a plain-text-first rendering policy with bounded safe-HTML support
 - header extraction for a small summary surface
-- browser-safe HTML escaping for fetched body text
-- a preformatted body presentation mode
+- browser-safe HTML escaping for plain-text rendering
+- a narrow allowlist sanitizer for HTML-capable messages
+- two explicit rendering modes: preformatted plain text and sanitized HTML
 - structured audit events for rendering operations
 
 The follow-on MIME-aware and attachment-aware policy layer now exists too and
-is documented separately in `MIME_AND_ATTACHMENT_POLICY_BASELINE.md`.
+is documented separately in `MIME_AND_ATTACHMENT_POLICY_BASELINE.md`. The
+first bounded end-user rendering preference is documented separately in
+`SETTINGS_SURFACE_BASELINE.md`.
 
 This is intentionally smaller than a full message renderer.
 
-## Current Rendering Mode
+## Current Rendering Modes
 
-The current rendering mode is:
+The current rendering modes are:
 
 - `plain_text_preformatted`
+- `sanitized_html`
 
 That means:
 
-- fetched body text is HTML-escaped
-- the escaped text is wrapped in a `<pre>` block
-- line breaks are preserved by the browser naturally
-- no HTML mail is interpreted as active markup
+- plain-text bodies are HTML-escaped and wrapped in a `<pre>` block
+- sanitized HTML bodies are wrapped in a small container and rendered through a
+  restrictive allowlist policy
+- the message view now shows the active rendering mode to the user
+- compose/reply/forward body generation still uses plain-text content, even
+  when sanitized HTML is rendered for browser reading
 
 This is intentionally conservative. The first goal is safe readable output, not
 feature parity with legacy webmail.
@@ -58,7 +64,6 @@ It does not yet attempt:
 - full header presentation
 - address parsing
 - encoded-word decoding
-- encoded-word decoding
 - MIME header interpretation beyond the narrow follow-on classification layer
 
 Those are later refinements, not assumptions.
@@ -68,8 +73,12 @@ Those are later refinements, not assumptions.
 The rendering slice follows these rules:
 
 - consume only already-fetched message data
-- escape HTML-significant characters before browser presentation
-- avoid any attempt to execute or preserve active HTML mail
+- escape HTML-significant characters before plain-text browser presentation
+- sanitize HTML through a dedicated allowlist policy instead of preserving
+  arbitrary markup
+- deny relative URLs and limit link schemes to `http`, `https`, and `mailto`
+- strip comments and remove scriptable or external-fetch oriented tags such as
+  `script`, `style`, `iframe`, `object`, `embed`, and `svg`
 - keep rendering output bounded
 - log rendering activity by identifiers and context, not message content
 
@@ -80,21 +89,23 @@ mail-content threat model.
 
 This slice now proves that:
 
-- the project can turn a fetched message into browser-safe plain-text output
+- the project can turn a fetched message into browser-safe output without
+  trusting live message HTML
 - header summary extraction can stay bounded and reviewable
 - rendering can be modeled as a separate layer after message retrieval
-- the system can move forward without pretending safe HTML rendering is already
-  solved
+- the system can offer a first-release safe-HTML path without becoming a rich
+  HTML mail client
 
 ## What Is Still Missing
 
 This slice still does not yet include:
 
-- HTML mail sanitization policy
 - attachment preview behavior
 - inline image policy
 - encoded header decoding
 - richer browser presentation beyond the current server-rendered route set
+- permissive HTML layout support, broad inline styling, or any external
+  resource loading
 
 The first bounded attachment-download route now exists separately from the
-renderer, which preserves the current plain-text-first browser posture.
+renderer, which preserves the current conservative browser posture.

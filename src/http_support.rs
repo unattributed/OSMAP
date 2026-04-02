@@ -47,7 +47,7 @@ pub(crate) fn html_response(
         status_code,
         reason_phrase,
         format!(
-            "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>{}</title><style>body{{font-family:ui-monospace,monospace;max-width:72rem;margin:2rem auto;padding:0 1rem;line-height:1.5}}table{{border-collapse:collapse;width:100%}}th,td{{border:1px solid #444;padding:.5rem;text-align:left;vertical-align:top}}form{{margin:0}}input,textarea{{display:block;margin:.25rem 0 1rem;padding:.5rem;width:100%;max-width:48rem}}textarea{{min-height:16rem}}button{{padding:.5rem .9rem}}nav{{margin-bottom:1.5rem}}.muted{{color:#555}}</style></head><body>{}</body></html>",
+            "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>{}</title><style>body{{font-family:ui-monospace,monospace;max-width:72rem;margin:2rem auto;padding:0 1rem;line-height:1.5}}table{{border-collapse:collapse;width:100%}}th,td{{border:1px solid #444;padding:.5rem;text-align:left;vertical-align:top}}form{{margin:0}}input,textarea{{display:block;margin:.25rem 0 1rem;padding:.5rem;width:100%;max-width:48rem}}textarea{{min-height:16rem}}button{{padding:.5rem .9rem}}nav{{margin-bottom:1.5rem}}.muted{{color:#555}}.message-html{{overflow-wrap:anywhere}}.message-html p,.message-html ul,.message-html ol,.message-html blockquote,.message-html pre,.message-html table{{margin:.75rem 0}}.message-html pre{{white-space:pre-wrap}}.message-html a{{word-break:break-word}}</style></head><body>{}</body></html>",
             escape_html(title),
             body_html,
         ),

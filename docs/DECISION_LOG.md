@@ -1348,3 +1348,89 @@ The remaining highest-confidence active security and hardening gaps are now:
 
 Until a new hotspot materially harms auditability again, those product and
 security gaps should outrank additional internal refactor work.
+
+### Use an allowlist sanitizer for safe HTML rendering instead of a hand-rolled HTML filter
+
+The first-release HTML rendering slice should not invent its own HTML parser or
+sanitizer rules. OSMAP now uses a dedicated sanitizer crate with an explicit
+allowlist policy and a narrow browser contract:
+
+- only a small set of presentational tags is allowed
+- only a narrow set of attributes is allowed
+- only `http`, `https`, and `mailto` link schemes are allowed
+- relative URLs are denied
+- scriptable or external-fetch oriented tags such as `script`, `style`,
+  `iframe`, `object`, `embed`, and `svg` are removed
+
+This keeps the hostile-content boundary explicit and reviewable while avoiding
+the long-term risk of a hand-rolled sanitizer.
+
+### Keep plain-text fallback even when sanitized HTML is available
+
+The safe-HTML rendering slice does not replace the existing plain-text-first
+posture. Instead, OSMAP now supports two explicit rendering modes:
+
+- `plain_text_preformatted`
+- `sanitized_html`
+
+When plain text exists, compose, reply, and forward generation still stay on
+plain text. Even when HTML is rendered for browser reading, the browser and
+outbound composition boundary does not start trusting HTML as the canonical
+message body.
+
+### Use the first bounded settings surface only for HTML display preference
+
+The first bounded settings slice should expose one meaningful user-facing
+control without becoming a broad preference platform. OSMAP now exposes a
+session-gated, CSRF-bound settings page that currently stores one preference:
+
+- whether HTML-capable messages prefer sanitized HTML rendering
+- or prefer plain-text fallback when plain text is available
+
+This closes the first-release settings gap in a way that fits the existing
+threat model instead of opening a broad browser-local preference surface.
+
+### Store end-user settings under the explicit state boundary
+
+End-user settings should live under the same explicit state model as sessions,
+TOTP secrets, audit files, and cache data. OSMAP now stores user settings
+under `OSMAP_SETTINGS_DIR` with:
+
+- one file per canonical username
+- a SHA-256-derived filename with stable domain separation
+- atomic replacement semantics
+- `0600` permissions on Unix-like systems
+
+That keeps the first settings slice compatible with the existing OpenBSD state
+ownership and confinement model.
+
+### Validate the HTML rendering and settings slice through the repo-owned gate locally and on `mail.blackbagsecurity.com`
+
+The safe-HTML and settings slice was validated through the repo-owned
+`make security-check` gate in two environments:
+
+- a strict local Rust toolchain environment with `cargo test`, `clippy`, and
+  `fmt --check`
+- `mail.blackbagsecurity.com` under the host-local OpenBSD Rust toolchain
+
+That validation covered the new sanitizer-backed rendering path, the bounded
+settings surface, the settings-backed browser gateway integration, and the
+updated route surface under the same gate the repository expects for normal
+development.
+
+### Tighten the repo-owned `unsafe` scan to match Rust syntax instead of prose
+
+The repo-owned `security-check` script originally matched any line containing
+`unsafe` followed by whitespace. The new HTML rendering notice text included
+the phrase "unsafe URLs", which triggered a false positive even though no new
+Rust `unsafe` block existed outside `src/openbsd.rs`.
+
+The guard now looks for Rust syntax forms instead:
+
+- `unsafe {`
+- `unsafe fn`
+- `unsafe impl`
+- `unsafe trait`
+
+This keeps the gate aligned with the project's real safety goal: catch
+unreviewed Rust `unsafe`, not user-facing prose.

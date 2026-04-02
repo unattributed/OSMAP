@@ -76,6 +76,8 @@ impl AttachmentDisposition {
 pub enum MimeBodySource {
     SinglePartPlainText,
     MultipartPlainTextPart,
+    HtmlSanitized,
+    MultipartHtmlSanitized,
     HtmlWithheld,
     MultipartHtmlWithheld,
     AttachmentOnlyWithheld,
@@ -90,6 +92,8 @@ impl MimeBodySource {
         match self {
             Self::SinglePartPlainText => "singlepart_plain_text",
             Self::MultipartPlainTextPart => "multipart_plain_text_part",
+            Self::HtmlSanitized => "html_sanitized",
+            Self::MultipartHtmlSanitized => "multipart_html_sanitized",
             Self::HtmlWithheld => "html_withheld",
             Self::MultipartHtmlWithheld => "multipart_html_withheld",
             Self::AttachmentOnlyWithheld => "attachment_only_withheld",
@@ -116,6 +120,7 @@ pub struct MimeAnalysis {
     pub top_level_content_type: String,
     pub body_source: MimeBodySource,
     pub selected_plain_text_body: Option<String>,
+    pub selected_html_body: Option<String>,
     pub contains_html_body: bool,
     pub attachments: Vec<AttachmentMetadata>,
 }
@@ -179,6 +184,7 @@ impl MimeAnalyzer {
             top_level_content_type: content_type.value,
             body_source: observation.body_source,
             selected_plain_text_body: observation.selected_plain_text_body,
+            selected_html_body: observation.selected_html_body,
             contains_html_body: observation.contains_html_body,
             attachments: observation.attachments,
         })
@@ -237,6 +243,7 @@ struct ParsedHeaderValue {
 struct EntityObservation {
     body_source: MimeBodySource,
     selected_plain_text_body: Option<String>,
+    selected_html_body: Option<String>,
     contains_html_body: bool,
     attachments: Vec<AttachmentMetadata>,
 }
@@ -278,6 +285,7 @@ fn analyze_entity(
             return Ok(EntityObservation {
                 body_source: MimeBodySource::MultipartStructureWithheld,
                 selected_plain_text_body: None,
+                selected_html_body: None,
                 contains_html_body: false,
                 attachments: Vec::new(),
             });
@@ -287,6 +295,7 @@ fn analyze_entity(
             return Ok(EntityObservation {
                 body_source: MimeBodySource::MultipartStructureWithheld,
                 selected_plain_text_body: None,
+                selected_html_body: None,
                 contains_html_body: false,
                 attachments: Vec::new(),
             });
@@ -294,6 +303,7 @@ fn analyze_entity(
 
         let parts = parse_multipart_parts(policy, boundary, body_text, part_path)?;
         let mut selected_plain_text_body = None;
+        let mut selected_html_body = None;
         let mut contains_html_body = false;
         let mut attachments = Vec::new();
 
@@ -326,6 +336,9 @@ fn analyze_entity(
             if selected_plain_text_body.is_none() {
                 selected_plain_text_body = part_observation.selected_plain_text_body.clone();
             }
+            if selected_html_body.is_none() {
+                selected_html_body = part_observation.selected_html_body.clone();
+            }
 
             contains_html_body |= part_observation.contains_html_body;
             attachments.extend(part_observation.attachments);
@@ -344,6 +357,7 @@ fn analyze_entity(
         return Ok(EntityObservation {
             body_source,
             selected_plain_text_body,
+            selected_html_body,
             contains_html_body,
             attachments,
         });
@@ -353,6 +367,7 @@ fn analyze_entity(
         return Ok(EntityObservation {
             body_source: MimeBodySource::AttachmentOnlyWithheld,
             selected_plain_text_body: None,
+            selected_html_body: None,
             contains_html_body: false,
             attachments: vec![AttachmentMetadata {
                 part_path: part_path.to_string(),
@@ -368,6 +383,7 @@ fn analyze_entity(
         return Ok(EntityObservation {
             body_source: MimeBodySource::SinglePartPlainText,
             selected_plain_text_body: Some(body_text.to_string()),
+            selected_html_body: None,
             contains_html_body: false,
             attachments: Vec::new(),
         });
@@ -377,6 +393,7 @@ fn analyze_entity(
         return Ok(EntityObservation {
             body_source: MimeBodySource::HtmlWithheld,
             selected_plain_text_body: None,
+            selected_html_body: Some(body_text.to_string()),
             contains_html_body: true,
             attachments: Vec::new(),
         });
@@ -386,6 +403,7 @@ fn analyze_entity(
         return Ok(EntityObservation {
             body_source: MimeBodySource::Empty,
             selected_plain_text_body: None,
+            selected_html_body: None,
             contains_html_body: false,
             attachments: Vec::new(),
         });
@@ -394,6 +412,7 @@ fn analyze_entity(
     Ok(EntityObservation {
         body_source: MimeBodySource::BinaryWithheld,
         selected_plain_text_body: None,
+        selected_html_body: None,
         contains_html_body: false,
         attachments: Vec::new(),
     })
@@ -851,6 +870,7 @@ mod tests {
             analysis.selected_plain_text_body.as_deref(),
             Some("Hello world\n")
         );
+        assert!(analysis.selected_html_body.is_none());
         assert!(analysis.attachments.is_empty());
     }
 
@@ -866,6 +886,10 @@ mod tests {
 
         assert_eq!(analysis.body_source, MimeBodySource::HtmlWithheld);
         assert!(analysis.selected_plain_text_body.is_none());
+        assert_eq!(
+            analysis.selected_html_body.as_deref(),
+            Some("<html><body>Hello</body></html>\n")
+        );
         assert!(analysis.contains_html_body);
     }
 
@@ -894,6 +918,10 @@ mod tests {
         assert_eq!(
             analysis.selected_plain_text_body.as_deref(),
             Some("Hello from text part")
+        );
+        assert_eq!(
+            analysis.selected_html_body.as_deref(),
+            Some("<html><body>Hello from html part</body></html>")
         );
         assert!(analysis.contains_html_body);
     }
@@ -965,6 +993,10 @@ mod tests {
         assert_eq!(
             analysis.selected_plain_text_body.as_deref(),
             Some("Plain text body")
+        );
+        assert_eq!(
+            analysis.selected_html_body.as_deref(),
+            Some("<html><body>HTML body</body></html>")
         );
         assert!(analysis.contains_html_body);
         assert_eq!(analysis.attachments.len(), 1);

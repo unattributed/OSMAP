@@ -14,6 +14,7 @@ pub struct StateLayout {
     pub root_dir: PathBuf,
     pub runtime_dir: PathBuf,
     pub session_dir: PathBuf,
+    pub settings_dir: PathBuf,
     pub audit_dir: PathBuf,
     pub cache_dir: PathBuf,
     pub totp_secret_dir: PathBuf,
@@ -25,12 +26,14 @@ impl StateLayout {
         root_dir: PathBuf,
         runtime_dir: PathBuf,
         session_dir: PathBuf,
+        settings_dir: PathBuf,
         audit_dir: PathBuf,
         cache_dir: PathBuf,
         totp_secret_dir: PathBuf,
     ) -> Result<Self, BootstrapError> {
         validate_child_path("OSMAP_RUNTIME_DIR", &root_dir, &runtime_dir)?;
         validate_child_path("OSMAP_SESSION_DIR", &root_dir, &session_dir)?;
+        validate_child_path("OSMAP_SETTINGS_DIR", &root_dir, &settings_dir)?;
         validate_child_path("OSMAP_AUDIT_DIR", &root_dir, &audit_dir)?;
         validate_child_path("OSMAP_CACHE_DIR", &root_dir, &cache_dir)?;
         validate_child_path("OSMAP_TOTP_SECRET_DIR", &root_dir, &totp_secret_dir)?;
@@ -39,6 +42,7 @@ impl StateLayout {
             root_dir,
             runtime_dir,
             session_dir,
+            settings_dir,
             audit_dir,
             cache_dir,
             totp_secret_dir,
@@ -75,6 +79,7 @@ mod tests {
             PathBuf::from("/var/lib/osmap"),
             PathBuf::from("/var/lib/osmap/run"),
             PathBuf::from("/var/lib/osmap/sessions"),
+            PathBuf::from("/var/lib/osmap/settings"),
             PathBuf::from("/var/lib/osmap/audit"),
             PathBuf::from("/var/lib/osmap/cache"),
             PathBuf::from("/var/lib/osmap/secrets/totp"),
@@ -82,6 +87,10 @@ mod tests {
         .expect("state children under the root should be accepted");
 
         assert_eq!(layout.runtime_dir, PathBuf::from("/var/lib/osmap/run"));
+        assert_eq!(
+            layout.settings_dir,
+            PathBuf::from("/var/lib/osmap/settings")
+        );
         assert_eq!(
             layout.totp_secret_dir,
             PathBuf::from("/var/lib/osmap/secrets/totp")
@@ -94,6 +103,7 @@ mod tests {
             PathBuf::from("/var/lib/osmap"),
             PathBuf::from("/var/run/osmap"),
             PathBuf::from("/var/lib/osmap/sessions"),
+            PathBuf::from("/var/lib/osmap/settings"),
             PathBuf::from("/var/lib/osmap/audit"),
             PathBuf::from("/var/lib/osmap/cache"),
             PathBuf::from("/var/lib/osmap/secrets/totp"),

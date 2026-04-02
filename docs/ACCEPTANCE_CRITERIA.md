@@ -182,10 +182,12 @@ Phase 6:
 - the browser auth path now includes a first bounded application-layer login
   throttling slice backed by explicit runtime configuration and file-backed
   cache state
-- the implementation still does not satisfy all Version 1 product goals: safe
-  HTML mail rendering and a bounded settings surface remain active product
-  gaps, while broader ergonomics for folder organization remain later
-  refinements rather than blockers for the first move slice
+- the browser layer now includes a conservative safe-HTML rendering path plus a
+  first bounded settings page for HTML display preference, which closes the
+  previous top-level Version 1 product gaps around HTML handling and end-user
+  settings in first-release form
+- broader ergonomics for folder organization remain later refinements rather
+  than blockers for the first move slice
 - the current repo-grounded reassessment also confirms active hardening gaps
   beyond product features: broader auth/request abuse resistance, the
   correctness and availability limits of the sequential HTTP runtime, and the
