@@ -11,6 +11,10 @@ use std::path::{Path, PathBuf};
 
 use crate::error::BootstrapError;
 use crate::state::StateLayout;
+use crate::throttle::{
+    DEFAULT_LOGIN_THROTTLE_LOCKOUT_SECONDS, DEFAULT_LOGIN_THROTTLE_MAX_FAILURES,
+    DEFAULT_LOGIN_THROTTLE_WINDOW_SECONDS,
+};
 
 /// Runtime configuration that is safe to print in operator-facing startup
 /// output because it excludes secret-bearing fields.
@@ -28,6 +32,9 @@ pub struct AppConfig {
     pub state_layout: StateLayout,
     pub session_lifetime_seconds: u64,
     pub totp_allowed_skew_steps: i64,
+    pub login_throttle_max_failures: u64,
+    pub login_throttle_window_seconds: u64,
+    pub login_throttle_lockout_seconds: u64,
     pub openbsd_confinement_mode: OpenbsdConfinementMode,
 }
 
@@ -214,6 +221,21 @@ impl AppConfig {
         let log_format_value = read_value(env_map, "OSMAP_LOG_FORMAT", "text");
         let session_lifetime_value = read_value(env_map, "OSMAP_SESSION_LIFETIME_SECS", "43200");
         let totp_skew_steps_value = read_value(env_map, "OSMAP_TOTP_ALLOWED_SKEW_STEPS", "1");
+        let login_throttle_max_failures_value = read_value(
+            env_map,
+            "OSMAP_LOGIN_THROTTLE_MAX_FAILURES",
+            &DEFAULT_LOGIN_THROTTLE_MAX_FAILURES.to_string(),
+        );
+        let login_throttle_window_value = read_value(
+            env_map,
+            "OSMAP_LOGIN_THROTTLE_WINDOW_SECS",
+            &DEFAULT_LOGIN_THROTTLE_WINDOW_SECONDS.to_string(),
+        );
+        let login_throttle_lockout_value = read_value(
+            env_map,
+            "OSMAP_LOGIN_THROTTLE_LOCKOUT_SECS",
+            &DEFAULT_LOGIN_THROTTLE_LOCKOUT_SECONDS.to_string(),
+        );
         let openbsd_confinement_mode_value =
             read_value(env_map, "OSMAP_OPENBSD_CONFINEMENT_MODE", "disabled");
         let doveadm_auth_socket_path =
@@ -256,6 +278,18 @@ impl AppConfig {
         validate_non_empty("OSMAP_SESSION_LIFETIME_SECS", &session_lifetime_value)?;
         validate_non_empty("OSMAP_TOTP_ALLOWED_SKEW_STEPS", &totp_skew_steps_value)?;
         validate_non_empty(
+            "OSMAP_LOGIN_THROTTLE_MAX_FAILURES",
+            &login_throttle_max_failures_value,
+        )?;
+        validate_non_empty(
+            "OSMAP_LOGIN_THROTTLE_WINDOW_SECS",
+            &login_throttle_window_value,
+        )?;
+        validate_non_empty(
+            "OSMAP_LOGIN_THROTTLE_LOCKOUT_SECS",
+            &login_throttle_lockout_value,
+        )?;
+        validate_non_empty(
             "OSMAP_OPENBSD_CONFINEMENT_MODE",
             &openbsd_confinement_mode_value,
         )?;
@@ -271,7 +305,31 @@ impl AppConfig {
             parse_u64("OSMAP_SESSION_LIFETIME_SECS", &session_lifetime_value)?;
         let totp_allowed_skew_steps =
             parse_i64("OSMAP_TOTP_ALLOWED_SKEW_STEPS", &totp_skew_steps_value)?;
+        let login_throttle_max_failures = parse_u64(
+            "OSMAP_LOGIN_THROTTLE_MAX_FAILURES",
+            &login_throttle_max_failures_value,
+        )?;
+        let login_throttle_window_seconds = parse_u64(
+            "OSMAP_LOGIN_THROTTLE_WINDOW_SECS",
+            &login_throttle_window_value,
+        )?;
+        let login_throttle_lockout_seconds = parse_u64(
+            "OSMAP_LOGIN_THROTTLE_LOCKOUT_SECS",
+            &login_throttle_lockout_value,
+        )?;
         validate_positive_u64("OSMAP_SESSION_LIFETIME_SECS", session_lifetime_seconds)?;
+        validate_positive_u64(
+            "OSMAP_LOGIN_THROTTLE_MAX_FAILURES",
+            login_throttle_max_failures,
+        )?;
+        validate_positive_u64(
+            "OSMAP_LOGIN_THROTTLE_WINDOW_SECS",
+            login_throttle_window_seconds,
+        )?;
+        validate_positive_u64(
+            "OSMAP_LOGIN_THROTTLE_LOCKOUT_SECS",
+            login_throttle_lockout_seconds,
+        )?;
 
         let state_layout = StateLayout::new(
             state_root.clone(),
@@ -298,6 +356,9 @@ impl AppConfig {
             state_layout,
             session_lifetime_seconds,
             totp_allowed_skew_steps,
+            login_throttle_max_failures,
+            login_throttle_window_seconds,
+            login_throttle_lockout_seconds,
             openbsd_confinement_mode,
         })
     }
@@ -478,6 +539,9 @@ mod tests {
         assert_eq!(config.log_format, LogFormat::Text);
         assert_eq!(config.session_lifetime_seconds, 43200);
         assert_eq!(config.totp_allowed_skew_steps, 1);
+        assert_eq!(config.login_throttle_max_failures, 5);
+        assert_eq!(config.login_throttle_window_seconds, 300);
+        assert_eq!(config.login_throttle_lockout_seconds, 900);
         assert_eq!(
             config.openbsd_confinement_mode,
             OpenbsdConfinementMode::Disabled
@@ -519,6 +583,18 @@ mod tests {
             (
                 "OSMAP_OPENBSD_CONFINEMENT_MODE".to_string(),
                 "log-only".to_string(),
+            ),
+            (
+                "OSMAP_LOGIN_THROTTLE_MAX_FAILURES".to_string(),
+                "4".to_string(),
+            ),
+            (
+                "OSMAP_LOGIN_THROTTLE_WINDOW_SECS".to_string(),
+                "120".to_string(),
+            ),
+            (
+                "OSMAP_LOGIN_THROTTLE_LOCKOUT_SECS".to_string(),
+                "600".to_string(),
             ),
             (
                 "OSMAP_DOVEADM_AUTH_SOCKET_PATH".to_string(),
@@ -574,6 +650,9 @@ mod tests {
         assert_eq!(config.log_format, LogFormat::Text);
         assert_eq!(config.session_lifetime_seconds, 3600);
         assert_eq!(config.totp_allowed_skew_steps, 2);
+        assert_eq!(config.login_throttle_max_failures, 4);
+        assert_eq!(config.login_throttle_window_seconds, 120);
+        assert_eq!(config.login_throttle_lockout_seconds, 600);
         assert_eq!(
             config.openbsd_confinement_mode,
             OpenbsdConfinementMode::LogOnly
@@ -638,6 +717,25 @@ mod tests {
             error,
             BootstrapError::InvalidConfig {
                 field: "OSMAP_SESSION_LIFETIME_SECS",
+                reason: "value must be greater than zero".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn rejects_zero_login_throttle_threshold() {
+        let env_map = BTreeMap::from([(
+            "OSMAP_LOGIN_THROTTLE_MAX_FAILURES".to_string(),
+            "0".to_string(),
+        )]);
+
+        let error = AppConfig::from_env_map(&env_map)
+            .expect_err("zero-valued login throttle threshold must fail");
+
+        assert_eq!(
+            error,
+            BootstrapError::InvalidConfig {
+                field: "OSMAP_LOGIN_THROTTLE_MAX_FAILURES",
                 reason: "value must be greater than zero".to_string(),
             }
         );

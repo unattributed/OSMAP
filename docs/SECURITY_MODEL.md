@@ -4,7 +4,9 @@
 
 This document is the Phase 3 security and trust-model baseline for OSMAP.
 
-It is still pre-implementation, but it now defines:
+It began as a pre-implementation control document, but it now also serves as a
+constraint set for the implemented browser, auth, session, helper, and
+confinement slices. It defines:
 
 - the attacker model
 - the trust boundaries
@@ -128,6 +130,11 @@ Required defensive implications:
 - useful auth logging
 - careful failure behavior that does not leak unnecessary detail
 
+The current implementation now includes a first bounded application-layer
+login-throttling slice on top of the browser auth path. That reduces brute
+force exposure materially, but it does not eliminate the need for adjacent
+controls or broader anomaly detection.
+
 ### Account Takeover After Credential Theft
 
 An attacker successfully authenticates with stolen credentials and attempts to
@@ -222,6 +229,7 @@ expectations:
 
 - MFA required for browser access, initially TOTP
 - strong credential handling and transport security
+- application-layer login throttling or equivalent anti-automation friction
 - no assumption that VPN location alone is sufficient trust
 - compatibility-conscious design for existing native-client realities
 

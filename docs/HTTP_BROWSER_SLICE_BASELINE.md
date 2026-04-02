@@ -11,7 +11,7 @@ those capabilities as library-only primitives.
 
 ## Status
 
-As of March 28, 2026, the runtime includes a dependency-light HTTP server and
+As of April 2, 2026, the runtime includes a dependency-light HTTP server and
 browser router that can be started in `serve` mode.
 
 The current slice provides:
@@ -24,6 +24,8 @@ The current slice provides:
 - session cookies with `HttpOnly` and `SameSite=Strict`
 - CSRF tokens bound to persisted session state and required on current
   state-changing browser routes
+- a first file-backed application-layer login-throttling slice for repeated
+  browser auth failures
 - strict response headers for cache suppression and content-security policy
 - server-rendered HTML pages that consume the existing runtime layers instead
   of re-implementing them
@@ -108,6 +110,8 @@ The current browser slice follows these rules:
 - send `X-Frame-Options: DENY`
 - send `Cross-Origin-Resource-Policy: same-origin` on current HTML, redirect,
   and attachment responses
+- apply a first server-side login-throttle check before the auth backend is
+  reached
 - avoid JavaScript as a dependency for the first flow
 
 This is not the final browser-security story, but it is an honest and useful
@@ -166,7 +170,8 @@ This slice does not yet include:
 - concurrent request handling
 - safe HTML mail rendering beyond the current plain-text-first policy
 - a bounded end-user settings surface
-- application-layer login throttling inside OSMAP
+- broader auth-abuse and request-abuse controls beyond the first login
+  throttling slice
 - fully proven live mutation workflows on the target host under confinement,
   including successful message moves through the browser path
 

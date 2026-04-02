@@ -40,6 +40,9 @@ The early runtime recognizes:
 - `OSMAP_LOG_FORMAT`
 - `OSMAP_SESSION_LIFETIME_SECS`
 - `OSMAP_TOTP_ALLOWED_SKEW_STEPS`
+- `OSMAP_LOGIN_THROTTLE_MAX_FAILURES`
+- `OSMAP_LOGIN_THROTTLE_WINDOW_SECS`
+- `OSMAP_LOGIN_THROTTLE_LOCKOUT_SECS`
 - `OSMAP_OPENBSD_CONFINEMENT_MODE`
 
 The committed example file under `config/osmap.env.example` is intentionally
@@ -78,6 +81,16 @@ browser-facing process. When `OSMAP_RUN_MODE=mailbox-helper` is selected and the
 variable is absent, the helper defaults to
 `<runtime_dir>/mailbox-helper.sock`.
 
+The runtime now also recognizes explicit login-throttle settings for the
+browser authentication path:
+
+- `OSMAP_LOGIN_THROTTLE_MAX_FAILURES`
+- `OSMAP_LOGIN_THROTTLE_WINDOW_SECS`
+- `OSMAP_LOGIN_THROTTLE_LOCKOUT_SECS`
+
+Those settings control the first file-backed application-layer throttling slice
+under the existing cache boundary.
+
 ## Environment Model
 
 The current runtime supports three explicit environments:
@@ -103,6 +116,7 @@ Subdirectories are then resolved beneath that root for:
 - audit-oriented local state
 - cache data
 - TOTP secret files
+- login-throttle state under the cache tree
 
 This model keeps the future OpenBSD deployment story easier to reason about,
 because state can later be owned, permissioned, unveiled, and backed up as one
@@ -139,6 +153,8 @@ The bootstrap currently enforces:
 - development listeners must remain on loopback
 - session lifetime must parse as a positive unsigned integer
 - TOTP skew-step configuration must parse as a signed integer
+- login-throttle threshold, window, and lockout settings must parse as positive
+  unsigned integers
 - OpenBSD confinement mode must be one of the explicitly recognized values
 
 These validations are intentionally strict because the project should fail

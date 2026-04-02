@@ -73,7 +73,8 @@ The intent of these documents is operational usefulness, not ceremony. Phase 0
 through Phase 6 documents should stay populated, current, and reviewable as the
 project moves through implementation, mailbox-helper refinement, attachment
 handling, OpenBSD hardening, GitHub-side security gating, and the remaining
-Version 1 gap closure around HTML handling, settings, and abuse resistance.
+Version 1 gap closure around HTML handling, settings, and broader abuse
+resistance beyond the now-implemented first login-throttling slice.
 
 Some later-phase or deferred documents remain placeholders so the intended
 documentation map is visible without publishing private notes prematurely.

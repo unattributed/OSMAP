@@ -159,8 +159,9 @@ Each phase produces formal outputs to support traceability and auditability.
 - The remaining clear Version 1 product gaps are safe HTML mail rendering and a
   bounded settings surface. Broader folder-organization ergonomics still
   remain, but the first backend-authoritative move workflow is now present.
-- The clearest confirmed backend security gap is still application-layer login
-  throttling and broader auth-abuse resistance inside OSMAP itself; that layer
+- The backend now includes a first bounded application-layer login-throttling
+  slice for the browser auth path. Broader auth-abuse resistance and
+  request-abuse controls still remain active hardening work, and the service
   still depends on adjacent controls such as nginx, PF, and operator
   monitoring.
 - Current priority work is continued HTTP hardening, tighter OpenBSD helper and

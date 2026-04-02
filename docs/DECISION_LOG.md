@@ -968,3 +968,19 @@ implementation documents under `docs/` by default. The main exceptions are the
 repository `README.md`, licensing or build metadata, and the small set of
 root-level or `.github/` files that GitHub detects specially for community and
 workflow behavior.
+
+## 2026-04-02
+
+### Add a first bounded application-layer login-throttling slice
+
+The browser auth path now applies a small file-backed login throttle before the
+auth backend is reached. The first slice is intentionally narrow:
+
+- keyed by presented username plus remote address
+- bounded by explicit threshold, window, and lockout settings
+- stored under the existing cache boundary
+- integrated into the current server-rendered browser login flow
+
+This does not claim that auth abuse resistance is fully solved. It does mean
+OSMAP no longer depends entirely on external rate limiting for the first layer
+of browser-login brute-force friction.

@@ -51,6 +51,10 @@ use crate::session::{
     FileSessionStore, SessionError, SessionService, SessionToken, SystemRandomSource,
     ValidatedSession, SESSION_ID_HEX_LEN,
 };
+use crate::throttle::{
+    FileLoginThrottleStore, LoginThrottleDecision, LoginThrottleError, LoginThrottlePolicy,
+    LoginThrottleService, TOO_MANY_ATTEMPTS_PUBLIC_REASON,
+};
 use crate::totp::{FileTotpSecretStore, SystemTimeProvider, TotpPolicy, TotpVerifier};
 
 /// Conservative upper bound for the full header section of an inbound request.
@@ -583,8 +587,10 @@ pub enum BrowserSendDecision {
 pub struct RuntimeBrowserGateway {
     authentication_policy: AuthenticationPolicy,
     totp_policy: TotpPolicy,
+    login_throttle_policy: LoginThrottlePolicy,
     session_lifetime_seconds: u64,
     session_dir: PathBuf,
+    login_throttle_dir: PathBuf,
     totp_secret_dir: PathBuf,
     doveadm_path: PathBuf,
     doveadm_auth_socket_path: Option<PathBuf>,
@@ -603,8 +609,14 @@ impl RuntimeBrowserGateway {
                 allowed_skew_steps: config.totp_allowed_skew_steps,
                 ..TotpPolicy::default()
             },
+            login_throttle_policy: LoginThrottlePolicy {
+                max_failures: config.login_throttle_max_failures,
+                failure_window_seconds: config.login_throttle_window_seconds,
+                lockout_seconds: config.login_throttle_lockout_seconds,
+            },
             session_lifetime_seconds: config.session_lifetime_seconds,
             session_dir: config.state_layout.session_dir.clone(),
+            login_throttle_dir: config.state_layout.cache_dir.join("login-throttle"),
             totp_secret_dir: config.state_layout.totp_secret_dir.clone(),
             doveadm_path: PathBuf::from("/usr/local/bin/doveadm"),
             doveadm_auth_socket_path: config.doveadm_auth_socket_path.clone(),
@@ -653,6 +665,17 @@ impl RuntimeBrowserGateway {
             SystemTimeProvider,
             SystemRandomSource,
             self.session_lifetime_seconds,
+        )
+    }
+
+    /// Builds the current file-backed login-throttle service.
+    fn build_login_throttle_service(
+        &self,
+    ) -> LoginThrottleService<FileLoginThrottleStore, SystemTimeProvider> {
+        LoginThrottleService::new(
+            FileLoginThrottleStore::new(self.login_throttle_dir.clone()),
+            SystemTimeProvider,
+            self.login_throttle_policy,
         )
     }
 
@@ -742,6 +765,19 @@ impl RuntimeBrowserGateway {
             ),
         }
     }
+
+    /// Records a non-fatal throttle-store failure so operators can diagnose
+    /// missing abuse resistance without crashing the login path.
+    fn build_login_throttle_store_error_event(
+        &self,
+        action: &'static str,
+        message: &'static str,
+        context: &AuthenticationContext,
+        error: &LoginThrottleError,
+    ) -> LogEvent {
+        build_auth_warning_event(action, message, context)
+            .with_field("reason", login_throttle_error_label(error))
+    }
 }
 
 impl BrowserGateway for RuntimeBrowserGateway {
@@ -753,18 +789,68 @@ impl BrowserGateway for RuntimeBrowserGateway {
         totp_code: &str,
     ) -> BrowserLoginOutcome {
         let mut audit_events = Vec::new();
+        let throttle_service = self.build_login_throttle_service();
+
+        match throttle_service.check(context, username) {
+            Ok(check) => {
+                if let Some(audit_event) = check.audit_event {
+                    audit_events.push(audit_event);
+                }
+
+                if let LoginThrottleDecision::Throttled { .. } = check.decision {
+                    return BrowserLoginOutcome {
+                        decision: BrowserLoginDecision::Denied {
+                            public_reason: TOO_MANY_ATTEMPTS_PUBLIC_REASON.to_string(),
+                        },
+                        audit_events,
+                    };
+                }
+            }
+            Err(error) => audit_events.push(self.build_login_throttle_store_error_event(
+                "login_throttle_check_failed",
+                "login throttle check failed",
+                context,
+                &error,
+            )),
+        }
+
         let auth_outcome = self
             .build_auth_service()
             .authenticate(context, username, password);
         audit_events.push(auth_outcome.audit_event.clone());
 
         match auth_outcome.decision {
-            AuthenticationDecision::Denied { public_reason } => BrowserLoginOutcome {
-                decision: BrowserLoginDecision::Denied {
-                    public_reason: public_reason.as_str().to_string(),
-                },
-                audit_events,
-            },
+            AuthenticationDecision::Denied { public_reason } => {
+                let mut effective_public_reason = public_reason.as_str().to_string();
+                if public_reason == PublicFailureReason::InvalidCredentials {
+                    match throttle_service.record_failure(context, username) {
+                        Ok(record) => {
+                            if let Some(audit_event) = record.audit_event {
+                                audit_events.push(audit_event);
+                            }
+                            if record.lockout_engaged {
+                                effective_public_reason =
+                                    TOO_MANY_ATTEMPTS_PUBLIC_REASON.to_string();
+                            }
+                        }
+                        Err(error) => audit_events.push(
+                            self.build_login_throttle_store_error_event(
+                                "login_throttle_record_failed",
+                                "login throttle failure recording failed",
+                                context,
+                                &error,
+                            ),
+                        ),
+                    }
+                }
+
+                BrowserLoginOutcome {
+                    decision: BrowserLoginDecision::Denied {
+                        public_reason: effective_public_reason,
+                    },
+                    audit_events,
+                }
+            }
             AuthenticationDecision::MfaRequired {
                 canonical_username,
                 second_factor,
@@ -778,12 +864,37 @@ impl BrowserGateway for RuntimeBrowserGateway {
                 audit_events.push(factor_outcome.audit_event.clone());
 
                 match factor_outcome.decision {
-                    AuthenticationDecision::Denied { public_reason } => BrowserLoginOutcome {
-                        decision: BrowserLoginDecision::Denied {
-                            public_reason: public_reason.as_str().to_string(),
-                        },
-                        audit_events,
-                    },
+                    AuthenticationDecision::Denied { public_reason } => {
+                        let mut effective_public_reason = public_reason.as_str().to_string();
+                        if public_reason == PublicFailureReason::InvalidSecondFactor {
+                            match throttle_service.record_failure(context, username) {
+                                Ok(record) => {
+                                    if let Some(audit_event) = record.audit_event {
+                                        audit_events.push(audit_event);
+                                    }
+                                    if record.lockout_engaged {
+                                        effective_public_reason =
+                                            TOO_MANY_ATTEMPTS_PUBLIC_REASON.to_string();
+                                    }
+                                }
+                                Err(error) => audit_events.push(
+                                    self.build_login_throttle_store_error_event(
+                                        "login_throttle_record_failed",
+                                        "login throttle failure recording failed",
+                                        context,
+                                        &error,
+                                    ),
+                                ),
+                            }
+                        }
+
+                        BrowserLoginOutcome {
+                            decision: BrowserLoginDecision::Denied {
+                                public_reason: effective_public_reason,
+                            },
+                            audit_events,
+                        }
+                    }
                     AuthenticationDecision::AuthenticatedPendingSession { canonical_username } => {
                         match self.build_session_service().issue(
                             context,
@@ -792,6 +903,18 @@ impl BrowserGateway for RuntimeBrowserGateway {
                         ) {
                             Ok(issued_session) => {
                                 audit_events.push(issued_session.audit_event.clone());
+                                match throttle_service.clear_success(context, username) {
+                                    Ok(Some(audit_event)) => audit_events.push(audit_event),
+                                    Ok(None) => {}
+                                    Err(error) => audit_events.push(
+                                        self.build_login_throttle_store_error_event(
+                                            "login_throttle_clear_failed",
+                                            "login throttle clear failed after successful authentication",
+                                            context,
+                                            &error,
+                                        ),
+                                    ),
+                                }
                                 BrowserLoginOutcome {
                                     decision: BrowserLoginDecision::Authenticated {
                                         canonical_username,
@@ -3574,6 +3697,19 @@ fn build_http_warning_event(
         .with_field("user_agent", context.user_agent.clone())
 }
 
+/// Builds a structured auth warning event with the shared request fields
+/// attached.
+fn build_auth_warning_event(
+    action: &'static str,
+    message: &str,
+    context: &AuthenticationContext,
+) -> LogEvent {
+    LogEvent::new(LogLevel::Warn, EventCategory::Auth, action, message)
+        .with_field("request_id", context.request_id.clone())
+        .with_field("remote_addr", context.remote_addr.clone())
+        .with_field("user_agent", context.user_agent.clone())
+}
+
 /// Maps session errors into small stable labels for browser-operation logs.
 fn session_error_label(error: &SessionError) -> &'static str {
     match error {
@@ -3581,6 +3717,13 @@ fn session_error_label(error: &SessionError) -> &'static str {
         SessionError::RandomSourceFailure { .. } => "random_source_failure",
         SessionError::StoreFailure { .. } => "store_failure",
         SessionError::SessionNotFound { .. } => "session_not_found",
+    }
+}
+
+/// Maps throttle-store errors into small stable labels for auth-abuse logs.
+fn login_throttle_error_label(error: &LoginThrottleError) -> &'static str {
+    match error {
+        LoginThrottleError::StoreFailure { .. } => "store_failure",
     }
 }
 
@@ -3596,6 +3739,7 @@ fn public_reason_message(reason: &str) -> &'static str {
         "invalid_credentials" => "The supplied credentials were not accepted.",
         "invalid_request" => "The submitted request was not valid.",
         "invalid_second_factor" => "The submitted second-factor code was not accepted.",
+        "too_many_attempts" => "Too many login attempts were observed. Please try again later.",
         "not_found" => "The requested item was not found.",
         _ => "The service could not complete the request at this time.",
     }
@@ -3993,6 +4137,9 @@ mod tests {
     use crate::mime::{AttachmentDisposition, MimeBodySource};
     use crate::rendering::RenderingMode;
     use crate::session::SessionRecord;
+    use crate::throttle::LoginThrottleStore;
+    use std::fs;
+    use std::path::PathBuf;
 
     #[derive(Debug, Clone)]
     struct StubGateway;
@@ -4546,6 +4693,62 @@ mod tests {
             .iter()
             .any(|(name, value)| name == "Set-Cookie"
                 && value.contains("osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")));
+    }
+
+    #[test]
+    fn runtime_gateway_denies_prelocked_login_attempts() {
+        let temp_root = temp_dir("osmap-http-login-throttle");
+        let context = AuthenticationContext::new(
+            AuthenticationPolicy::default(),
+            "req-throttle",
+            "127.0.0.1",
+            "Firefox/Test",
+        )
+        .expect("context should be valid");
+        let throttle_store = FileLoginThrottleStore::new(temp_root.join("cache").join("login-throttle"));
+        let throttle_key = crate::throttle::LoginThrottleKey::new("alice@example.com", &context.remote_addr);
+        throttle_store
+            .save(
+                &throttle_key.key_id,
+                &crate::throttle::LoginThrottleRecord {
+                    failure_count: 5,
+                    window_started_at: 100,
+                    last_failure_at: 120,
+                    locked_until: Some(10_000_000_000),
+                },
+            )
+            .expect("prelocked throttle record should save");
+        let gateway = RuntimeBrowserGateway {
+            authentication_policy: AuthenticationPolicy::default(),
+            totp_policy: TotpPolicy::default(),
+            login_throttle_policy: LoginThrottlePolicy {
+                max_failures: 5,
+                failure_window_seconds: 300,
+                lockout_seconds: 600,
+            },
+            session_lifetime_seconds: 3600,
+            session_dir: temp_root.join("sessions"),
+            login_throttle_dir: temp_root.join("cache").join("login-throttle"),
+            totp_secret_dir: temp_root.join("totp"),
+            doveadm_path: PathBuf::from("/nonexistent/doveadm"),
+            doveadm_auth_socket_path: None,
+            doveadm_userdb_socket_path: None,
+            mailbox_helper_socket_path: None,
+            sendmail_path: PathBuf::from("/usr/sbin/sendmail"),
+            render_policy: RenderingPolicy::default(),
+        };
+
+        let outcome = gateway.login(&context, "alice@example.com", "wrong password", "123456");
+        assert_eq!(
+            outcome.decision,
+            BrowserLoginDecision::Denied {
+                public_reason: TOO_MANY_ATTEMPTS_PUBLIC_REASON.to_string(),
+            }
+        );
+        assert!(outcome
+            .audit_events
+            .iter()
+            .any(|event| event.action == "login_throttled"));
     }
 
     #[test]
@@ -5308,5 +5511,12 @@ mod tests {
 
         assert_eq!(normalize_peer_addr(ipv4), "127.0.0.1");
         assert_eq!(normalize_peer_addr(ipv6), "::1");
+    }
+
+    fn temp_dir(prefix: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("{prefix}-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&dir);
+        fs::create_dir_all(&dir).expect("temp dir should be created");
+        dir
     }
 }

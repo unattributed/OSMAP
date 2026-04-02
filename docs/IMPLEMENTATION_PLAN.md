@@ -182,6 +182,8 @@ The current implementation now also includes:
 - a mailbox-scoped backend-authoritative search slice
 - a browser-visible session-management slice
 - a first one-message move path between existing mailboxes
+- a first bounded application-layer login-throttling slice for the browser auth
+  path
 
 Broader ergonomics around folder organization, such as bulk actions or archive
 shortcuts from list views, remain later refinements rather than the first move

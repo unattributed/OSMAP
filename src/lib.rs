@@ -20,4 +20,5 @@ pub mod rendering;
 pub mod send;
 pub mod session;
 pub mod state;
+pub mod throttle;
 pub mod totp;

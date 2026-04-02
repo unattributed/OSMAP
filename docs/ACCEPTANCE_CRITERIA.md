@@ -88,7 +88,7 @@ Phase 6 is acceptable when all of the following are true:
 - the project can begin implementation without ambiguity about what should be
   built first
 
-## Current Status On March 28, 2026
+## Current Status On April 2, 2026
 
 Phase 0:
 
@@ -179,6 +179,9 @@ Phase 6:
   `_osmap` and the helper kept at the `vmail` boundary
 - the browser layer now includes a first mailbox-scoped backend-authoritative
   search path plus a first one-message move path between existing mailboxes
+- the browser auth path now includes a first bounded application-layer login
+  throttling slice backed by explicit runtime configuration and file-backed
+  cache state
 - the implementation still does not satisfy all Version 1 product goals: safe
   HTML mail rendering and a bounded settings surface remain active product
   gaps, while broader ergonomics for folder organization remain later

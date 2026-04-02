@@ -10,7 +10,7 @@ the OpenBSD deployment strategy already selected for the project.
 
 ## Status
 
-As of March 28, 2026, the runtime now has a real browser surface plus the first
+As of April 2, 2026, the runtime now has a real browser surface plus the first
 round of HTTP-specific hardening controls:
 
 - loopback-only listener defaults in development
@@ -18,6 +18,8 @@ round of HTTP-specific hardening controls:
 - `HttpOnly` and `SameSite=Strict` session cookies
 - `Secure` cookies outside development
 - session-bound CSRF tokens on current state-changing form routes
+- a file-backed application-layer login-throttling check before the current
+  auth backend is reached
 - server-rendered HTML with escaped message rendering and no client-side
   scripting dependency
 - an operator-controlled OpenBSD confinement mode for serve runtime
