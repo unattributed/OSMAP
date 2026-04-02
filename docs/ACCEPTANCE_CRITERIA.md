@@ -213,3 +213,30 @@ Phase 6:
   behavior
 - the actual prototype now exists and Phase 6 execution is materially underway,
   but the implementation is still prototype-grade rather than production-ready
+
+## Current Version 1 Release Gate
+
+Version 1 should not be declared complete until all of the following are true:
+
+- the bounded-concurrency HTTP runtime has no remaining obvious correctness or
+  availability gap that still outweighs user-workflow work
+- the folder-organization workflow is practical enough for ordinary daily use
+  rather than only technically present
+- the search workflow is sufficient to replace normal Roundcube-era retrieval
+  behavior for the target users
+- live-host proof on `mail.blackbagsecurity.com` covers the already-
+  implemented browser surface broadly enough that the release posture is based
+  on evidence rather than unit tests alone
+- the helper and OpenBSD confinement boundary are documented as a deliberate
+  Version 1 stopping point instead of an unfinished direction
+- `README.md`, `PRODUCT_REQUIREMENTS_V1.md`, `KNOWN_LIMITATIONS.md`, and the
+  relevant slice baselines all describe the real shipping boundary honestly
+
+The following should not block Version 1 unless a narrower first-release need
+is proven:
+
+- richer search behavior beyond ordinary daily-use needs
+- broader folder ergonomics beyond the first practical baseline
+- richer session or device intelligence
+- broader settings surface
+- deeper runtime redesign beyond the current bounded-concurrency model

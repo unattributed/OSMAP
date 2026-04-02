@@ -234,6 +234,34 @@ Each phase produces formal outputs to support traceability and auditability.
   authoritative CI gate for Rust checks, tests, clippy, formatting, and the
   current CWE-oriented shell guards.
 
+## V1 Closeout Priorities
+
+The current repo-grounded path to Version 1 is now:
+
+1. Continue narrow HTTP/runtime hardening until the current bounded-concurrency
+   server posture is explicit, observable, and boring to operate.
+2. Finish minimum user-facing mail ergonomics that still limit ordinary daily
+   use, especially folder organization and search usability.
+3. Broaden live host proof on `mail.blackbagsecurity.com` so more of the
+   already-implemented browser surface is proven under the real `_osmap` plus
+   `vmail` split and `enforce`.
+4. Tighten the helper and OpenBSD confinement boundary to a clear V1 stopping
+   point rather than leaving it as an open-ended hardening thread.
+5. Freeze the Version 1 contract and keep the docs honest about what ships and
+   what is deferred.
+
+## V2 Direction
+
+The repo now treats the following as Version 2 work unless a narrower V1 need
+is proven:
+
+- broader folder ergonomics beyond the first useful move/archive baseline
+- richer search behavior beyond what normal daily use strictly requires
+- richer session or device intelligence beyond first self-service visibility
+- more attachment convenience behavior that would widen browser trust
+- broader settings surface beyond the first bounded user preference
+- deeper runtime redesign such as worker-pool or async server architecture
+
 ---
 
 ## Target Users

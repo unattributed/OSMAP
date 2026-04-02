@@ -244,6 +244,39 @@ is no longer the first active priority. The next implementation decisions
 should be driven by the product and security gaps above unless a new review
 finds a concentrated hotspot that materially harms auditability again.
 
+## Current V1 Closeout Sequence
+
+The current official closeout sequence for Version 1 is:
+
+1. continue narrow HTTP/runtime hardening until the bounded-concurrency
+   listener is explicit, observable, and no longer the most obvious production
+   risk in the system
+2. finish the minimum folder-organization ergonomics still required for normal
+   daily use
+3. improve search only enough to replace ordinary Roundcube-era retrieval
+   workflows rather than broadening it into a feature project
+4. broaden live-host proof on `mail.blackbagsecurity.com` for the already-
+   implemented browser surface
+5. tighten the helper and OpenBSD confinement boundary to a clear Version 1
+   stopping point
+6. freeze the Version 1 contract and shift further ergonomics or convenience
+   work behind a Version 2 boundary
+
+The current implementation should not widen browser scope casually while these
+items remain open.
+
+## Defer To V2
+
+Unless a narrower first-release requirement is proven, the following should be
+treated as Version 2 work:
+
+- broader folder ergonomics beyond the first practical move/archive baseline
+- richer search behavior beyond ordinary daily-use needs
+- richer session or device intelligence beyond first self-service visibility
+- broader attachment convenience behavior such as preview-heavy workflows
+- broader settings surface beyond the first bounded preference
+- deeper runtime redesign such as worker-pool or async server architecture
+
 ## Implementation Guardrails
 
 The following behaviors should be treated as Phase 6 anti-patterns:

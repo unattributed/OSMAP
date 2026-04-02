@@ -1717,3 +1717,31 @@ OSMAP now:
 This was chosen over broader queueing or worker-pool work because it gives
 operators more actionable signals about runtime pressure and partial failure
 without changing the current trust boundary or transport model.
+
+### Turn the repo-grounded reassessment into an explicit V1 closeout and V2 defer map
+
+The project is now far enough along that the main risk is no longer missing
+basic product shape. The bigger risk is drifting into convenient extra work
+before the first release boundary is finished and frozen.
+
+The current official Version 1 closeout order is now:
+
+1. narrow HTTP/runtime hardening
+2. minimum folder-organization ergonomics for ordinary use
+3. search usability only to the point of replacing normal current workflows
+4. broader live-host proof on `mail.blackbagsecurity.com`
+5. helper and OpenBSD confinement tightening to a clear V1 stopping point
+6. Version 1 boundary freeze and documentation alignment
+
+The project should now treat the following as Version 2 work unless a narrower
+first-release requirement is proven:
+
+- broader ergonomics beyond the first practical folder/search baseline
+- richer session or device intelligence
+- broader attachment convenience behavior
+- broader settings surface
+- deeper runtime redesign beyond the current bounded-concurrency model
+
+This decision keeps the project focused on a defensible first release instead
+of continuing feature or architectural drift once the core browser and mail
+flows already exist.
