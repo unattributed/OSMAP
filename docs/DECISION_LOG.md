@@ -1620,3 +1620,28 @@ The better next priorities after this reassessment are:
 - broader live-host proof beyond the first bounded mutation workflows
 - remaining Version 1 workflow gaps such as richer search behavior and broader
   folder ergonomics
+
+### Distinguish empty, truncated, and timed-out HTTP connections from real malformed requests
+
+The sequential HTTP runtime previously normalized too many connection-lifecycle
+failures into the same generic `400 Bad Request` path. That was too coarse for
+a small custom listener because it blurred together three materially different
+cases:
+
+- an empty connection that closes before any bytes arrive
+- a truncated request that ends before headers or body are complete
+- a read timeout where the client stalls before finishing the request
+
+The runtime now treats those separately:
+
+- empty connections are logged and closed without emitting an HTTP response
+- truncated requests are logged as incomplete and closed without emitting an
+  HTTP response
+- read timeouts now return `408 Request Timeout`
+
+Actual malformed requests still use the `400 Bad Request` path.
+
+This is a narrow correctness and resilience improvement for the current
+sequential listener. It does not change the listener model, but it does make
+transport failure handling more explicit and easier to reason about during
+review and later hardening.

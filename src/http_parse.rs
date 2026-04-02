@@ -5,11 +5,12 @@
 //! current behavior or accepted request surface.
 
 use std::collections::BTreeMap;
+use std::io::ErrorKind;
 use std::io::Read as _;
 use std::net::{SocketAddr, TcpStream};
 
 use crate::http::{
-    HttpMethod, HttpPolicy, HttpRequest, HttpRequestError,
+    HttpMethod, HttpPolicy, HttpRequest, HttpRequestError, HttpRequestErrorKind,
     DEFAULT_HTTP_MAX_CONTENT_TYPE_HEADER_BYTES, DEFAULT_HTTP_MAX_COOKIE_HEADER_BYTES,
     DEFAULT_HTTP_MAX_HOST_HEADER_BYTES,
 };
@@ -36,32 +37,46 @@ pub(crate) fn read_http_request(
 
     loop {
         let mut chunk = [0_u8; 2048];
-        let read = stream.read(&mut chunk).map_err(|error| HttpRequestError {
-            reason: format!("failed reading request: {error}"),
-        })?;
+        let read = stream
+            .read(&mut chunk)
+            .map_err(|error| match error.kind() {
+                ErrorKind::TimedOut | ErrorKind::WouldBlock => {
+                    timeout_error("http request read timed out")
+                }
+                _ => parse_error(format!("failed reading request: {error}")),
+            })?;
         if read == 0 {
-            break;
+            return match (buffer.is_empty(), header_end, content_length) {
+                (true, _, _) => Err(empty_request_error(
+                    "connection closed before request bytes were received",
+                )),
+                (false, None, _) => Err(truncated_error(
+                    "connection closed before complete http headers were received",
+                )),
+                (false, Some(end), Some(content_length))
+                    if buffer.len() < end + 4 + content_length =>
+                {
+                    Err(truncated_error(
+                        "connection closed before complete http body was received",
+                    ))
+                }
+                _ => break,
+            };
         }
 
         buffer.extend_from_slice(&chunk[..read]);
 
         if header_end.is_none() {
             if buffer.len() > policy.max_header_bytes + policy.max_upload_body_bytes {
-                return Err(HttpRequestError {
-                    reason: "request exceeded maximum allowed size".to_string(),
-                });
+                return Err(parse_error("request exceeded maximum allowed size"));
             }
             header_end = find_header_end(&buffer);
             if let Some(end) = header_end {
                 if end > policy.max_header_bytes {
-                    return Err(HttpRequestError {
-                        reason: "http headers exceeded maximum length".to_string(),
-                    });
+                    return Err(parse_error("http headers exceeded maximum length"));
                 }
-                let header_text =
-                    std::str::from_utf8(&buffer[..end]).map_err(|_| HttpRequestError {
-                        reason: "http headers were not valid utf-8".to_string(),
-                    })?;
+                let header_text = std::str::from_utf8(&buffer[..end])
+                    .map_err(|_| parse_error("http headers were not valid utf-8"))?;
                 let headers = parse_headers(header_text, policy)?;
                 content_length = Some(parse_content_length_from_headers(&headers)?);
             }
@@ -75,9 +90,7 @@ pub(crate) fn read_http_request(
                     policy,
                 )
             {
-                return Err(HttpRequestError {
-                    reason: "http body exceeded maximum length".to_string(),
-                });
+                return Err(parse_error("http body exceeded maximum length"));
             }
             if buffer.len() >= expected_len {
                 break;
@@ -102,19 +115,15 @@ pub fn parse_http_request_bytes(
     input: &[u8],
     policy: &HttpPolicy,
 ) -> Result<HttpRequest, HttpRequestError> {
-    let header_end = find_header_end(input).ok_or_else(|| HttpRequestError {
-        reason: "missing http header terminator".to_string(),
-    })?;
+    let header_end =
+        find_header_end(input).ok_or_else(|| parse_error("missing http header terminator"))?;
 
     if header_end > policy.max_header_bytes {
-        return Err(HttpRequestError {
-            reason: "http headers exceeded maximum length".to_string(),
-        });
+        return Err(parse_error("http headers exceeded maximum length"));
     }
 
-    let header_block = std::str::from_utf8(&input[..header_end]).map_err(|_| HttpRequestError {
-        reason: "http headers were not valid utf-8".to_string(),
-    })?;
+    let header_block = std::str::from_utf8(&input[..header_end])
+        .map_err(|_| parse_error("http headers were not valid utf-8"))?;
     let body = &input[header_end + 4..];
     if body.len()
         > allowed_request_body_bytes(
@@ -122,45 +131,35 @@ pub fn parse_http_request_bytes(
             policy,
         )
     {
-        return Err(HttpRequestError {
-            reason: "http body exceeded maximum length".to_string(),
-        });
+        return Err(parse_error("http body exceeded maximum length"));
     }
 
     let mut lines = header_block.split("\r\n");
-    let request_line = lines.next().ok_or_else(|| HttpRequestError {
-        reason: "missing http request line".to_string(),
-    })?;
+    let request_line = lines
+        .next()
+        .ok_or_else(|| parse_error("missing http request line"))?;
     let mut request_line_parts = request_line.split_whitespace();
-    let method_text = request_line_parts.next().ok_or_else(|| HttpRequestError {
-        reason: "http request line missing method".to_string(),
-    })?;
-    let target = request_line_parts.next().ok_or_else(|| HttpRequestError {
-        reason: "http request line missing target".to_string(),
-    })?;
-    let version = request_line_parts.next().ok_or_else(|| HttpRequestError {
-        reason: "http request line missing version".to_string(),
-    })?;
+    let method_text = request_line_parts
+        .next()
+        .ok_or_else(|| parse_error("http request line missing method"))?;
+    let target = request_line_parts
+        .next()
+        .ok_or_else(|| parse_error("http request line missing target"))?;
+    let version = request_line_parts
+        .next()
+        .ok_or_else(|| parse_error("http request line missing version"))?;
     if request_line_parts.next().is_some() {
-        return Err(HttpRequestError {
-            reason: "http request line contained unexpected fields".to_string(),
-        });
+        return Err(parse_error("http request line contained unexpected fields"));
     }
 
     if version != "HTTP/1.1" && version != "HTTP/1.0" {
-        return Err(HttpRequestError {
-            reason: "unsupported http version".to_string(),
-        });
+        return Err(parse_error("unsupported http version"));
     }
 
     let method = match method_text {
         "GET" => HttpMethod::Get,
         "POST" => HttpMethod::Post,
-        _ => {
-            return Err(HttpRequestError {
-                reason: "unsupported http method".to_string(),
-            });
-        }
+        _ => return Err(parse_error("unsupported http method")),
     };
 
     let (path, query_params) = parse_request_target(
@@ -171,31 +170,21 @@ pub fn parse_http_request_bytes(
     let headers = parse_headers(header_block, policy)?;
 
     if version == "HTTP/1.1" && !headers.contains_key("host") {
-        return Err(HttpRequestError {
-            reason: "http/1.1 requests must include host".to_string(),
-        });
+        return Err(parse_error("http/1.1 requests must include host"));
     }
     if headers.contains_key("transfer-encoding") {
-        return Err(HttpRequestError {
-            reason: "unsupported transfer-encoding header".to_string(),
-        });
+        return Err(parse_error("unsupported transfer-encoding header"));
     }
 
     let content_length = parse_content_length_from_headers(&headers)?;
     if method == HttpMethod::Post && !headers.contains_key("content-length") {
-        return Err(HttpRequestError {
-            reason: "post requests must send content-length".to_string(),
-        });
+        return Err(parse_error("post requests must send content-length"));
     }
     if method == HttpMethod::Get && (content_length != 0 || !body.is_empty()) {
-        return Err(HttpRequestError {
-            reason: "get requests must not send a request body".to_string(),
-        });
+        return Err(parse_error("get requests must not send a request body"));
     }
     if content_length != body.len() {
-        return Err(HttpRequestError {
-            reason: "http body length did not match content-length".to_string(),
-        });
+        return Err(parse_error("http body length did not match content-length"));
     }
 
     Ok(HttpRequest {
@@ -299,44 +288,36 @@ fn parse_headers(
 
     for (index, line) in header_block.lines().skip(1).enumerate() {
         if index >= policy.max_header_count {
-            return Err(HttpRequestError {
-                reason: "http request contained too many headers".to_string(),
-            });
+            return Err(parse_error("http request contained too many headers"));
         }
 
         let Some((name, value)) = line.split_once(':') else {
-            return Err(HttpRequestError {
-                reason: "malformed http header line".to_string(),
-            });
+            return Err(parse_error("malformed http header line"));
         };
 
         let normalized_name = name.trim().to_ascii_lowercase();
         if normalized_name.is_empty() {
-            return Err(HttpRequestError {
-                reason: "http header name must not be empty".to_string(),
-            });
+            return Err(parse_error("http header name must not be empty"));
         }
         if !normalized_name
             .chars()
             .all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '-')
         {
-            return Err(HttpRequestError {
-                reason: "http header name contained unsupported characters".to_string(),
-            });
+            return Err(parse_error(
+                "http header name contained unsupported characters",
+            ));
         }
         if headers.contains_key(&normalized_name) {
-            return Err(HttpRequestError {
-                reason: format!("duplicate http header: {normalized_name}"),
-            });
+            return Err(parse_error(format!(
+                "duplicate http header: {normalized_name}"
+            )));
         }
 
         let normalized_value = value.trim().to_string();
         if normalized_value.chars().any(char::is_control) {
-            return Err(HttpRequestError {
-                reason: format!(
-                    "http header value for {normalized_name} contained control characters"
-                ),
-            });
+            return Err(parse_error(format!(
+                "http header value for {normalized_name} contained control characters"
+            )));
         }
         validate_known_header_value(&normalized_name, &normalized_value)?;
 
@@ -352,17 +333,13 @@ fn validate_known_header_value(name: &str, value: &str) -> Result<(), HttpReques
         "host" => validate_host_header_value(value),
         "cookie" => {
             if value.len() > DEFAULT_HTTP_MAX_COOKIE_HEADER_BYTES {
-                return Err(HttpRequestError {
-                    reason: "cookie header exceeded maximum length".to_string(),
-                });
+                return Err(parse_error("cookie header exceeded maximum length"));
             }
             Ok(())
         }
         "content-type" => {
             if value.len() > DEFAULT_HTTP_MAX_CONTENT_TYPE_HEADER_BYTES {
-                return Err(HttpRequestError {
-                    reason: "content-type header exceeded maximum length".to_string(),
-                });
+                return Err(parse_error("content-type header exceeded maximum length"));
             }
             Ok(())
         }
@@ -373,22 +350,16 @@ fn validate_known_header_value(name: &str, value: &str) -> Result<(), HttpReques
 /// Rejects obviously malformed host headers instead of routing through them.
 fn validate_host_header_value(value: &str) -> Result<(), HttpRequestError> {
     if value.is_empty() {
-        return Err(HttpRequestError {
-            reason: "host header must not be empty".to_string(),
-        });
+        return Err(parse_error("host header must not be empty"));
     }
     if value.len() > DEFAULT_HTTP_MAX_HOST_HEADER_BYTES {
-        return Err(HttpRequestError {
-            reason: "host header exceeded maximum length".to_string(),
-        });
+        return Err(parse_error("host header exceeded maximum length"));
     }
     if value
         .chars()
         .any(|ch| matches!(ch, '/' | '\\' | '?' | '#' | '@'))
     {
-        return Err(HttpRequestError {
-            reason: "host header contained unsupported characters".to_string(),
-        });
+        return Err(parse_error("host header contained unsupported characters"));
     }
 
     Ok(())
@@ -401,9 +372,9 @@ fn parse_content_length_from_headers(
     headers
         .get("content-length")
         .map(|value| {
-            value.parse::<usize>().map_err(|_| HttpRequestError {
-                reason: "invalid content-length header".to_string(),
-            })
+            value
+                .parse::<usize>()
+                .map_err(|_| parse_error("invalid content-length header"))
         })
         .transpose()
         .map(|value| value.unwrap_or(0))
@@ -438,37 +409,30 @@ fn parse_request_target(
     max_request_target_bytes: usize,
 ) -> Result<(String, BTreeMap<String, String>), HttpRequestError> {
     if target.len() > max_request_target_bytes {
-        return Err(HttpRequestError {
-            reason: "request target exceeded maximum length".to_string(),
-        });
+        return Err(parse_error("request target exceeded maximum length"));
     }
     if target.chars().any(char::is_control) {
-        return Err(HttpRequestError {
-            reason: "request target contained control characters".to_string(),
-        });
+        return Err(parse_error("request target contained control characters"));
     }
     if target.contains('#') {
-        return Err(HttpRequestError {
-            reason: "request target fragments are not supported".to_string(),
-        });
+        return Err(parse_error("request target fragments are not supported"));
     }
 
     let (path, query) = target.split_once('?').unwrap_or((target, ""));
     if path.is_empty() || !path.starts_with('/') {
-        return Err(HttpRequestError {
-            reason: "request target must start with '/'".to_string(),
-        });
+        return Err(parse_error("request target must start with '/'"));
     }
     if path.contains('\\') {
-        return Err(HttpRequestError {
-            reason: "request target contained unsupported path characters".to_string(),
-        });
+        return Err(parse_error(
+            "request target contained unsupported path characters",
+        ));
     }
     let normalized_path = normalize_request_path(path)?;
 
     Ok((
         normalized_path,
         parse_query_string(query, max_query_fields).map_err(|error| HttpRequestError {
+            kind: HttpRequestErrorKind::Parse,
             reason: error.reason,
         })?,
     ))
@@ -482,16 +446,42 @@ fn normalize_request_path(path: &str) -> Result<String, HttpRequestError> {
 
     for segment in path.split('/').skip(1) {
         if segment.is_empty() {
-            return Err(HttpRequestError {
-                reason: "request target path must be normalized".to_string(),
-            });
+            return Err(parse_error("request target path must be normalized"));
         }
         if segment == "." || segment == ".." {
-            return Err(HttpRequestError {
-                reason: "request target path must not contain dot segments".to_string(),
-            });
+            return Err(parse_error(
+                "request target path must not contain dot segments",
+            ));
         }
     }
 
     Ok(path.to_string())
+}
+
+fn parse_error(reason: impl Into<String>) -> HttpRequestError {
+    HttpRequestError {
+        kind: HttpRequestErrorKind::Parse,
+        reason: reason.into(),
+    }
+}
+
+fn timeout_error(reason: impl Into<String>) -> HttpRequestError {
+    HttpRequestError {
+        kind: HttpRequestErrorKind::Timeout,
+        reason: reason.into(),
+    }
+}
+
+fn truncated_error(reason: impl Into<String>) -> HttpRequestError {
+    HttpRequestError {
+        kind: HttpRequestErrorKind::Truncated,
+        reason: reason.into(),
+    }
+}
+
+fn empty_request_error(reason: impl Into<String>) -> HttpRequestError {
+    HttpRequestError {
+        kind: HttpRequestErrorKind::Empty,
+        reason: reason.into(),
+    }
 }

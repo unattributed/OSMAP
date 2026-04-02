@@ -12,7 +12,7 @@ use crate::openbsd::apply_runtime_confinement;
 
 use super::{
     BrowserApp, BrowserGateway, HandledHttpResponse, HttpMethod, HttpPolicy, HttpRequest,
-    HttpResponse, RuntimeBrowserGateway,
+    HttpRequestErrorKind, HttpResponse, RuntimeBrowserGateway,
 };
 
 static REQUEST_COUNTER: AtomicU64 = AtomicU64::new(1);
@@ -145,7 +145,7 @@ pub fn run_http_server(config: &AppConfig, logger: &Logger) -> Result<(), String
 }
 
 /// Handles one accepted client connection and closes it after one response.
-fn handle_client_stream<G>(app: &BrowserApp<G>, logger: &Logger, stream: &mut TcpStream)
+pub(super) fn handle_client_stream<G>(app: &BrowserApp<G>, logger: &Logger, stream: &mut TcpStream)
 where
     G: BrowserGateway,
 {
@@ -185,21 +185,64 @@ where
 
     let handled = match read_http_request(stream, app.policy()) {
         Ok(request) => app.handle_request(&request, &remote_addr),
-        Err(error) => HandledHttpResponse {
-            response: html_response(
-                400,
-                "Bad Request",
-                "Invalid Request",
-                "<p>The request could not be parsed safely.</p>",
-            ),
-            audit_events: vec![LogEvent::new(
-                LogLevel::Warn,
-                EventCategory::Http,
-                "http_request_rejected",
-                "http request rejected before routing",
-            )
-            .with_field("remote_addr", remote_addr.clone())
-            .with_field("reason", error.reason)],
+        Err(error) => match error.kind {
+            HttpRequestErrorKind::Empty => {
+                logger.emit(
+                    &LogEvent::new(
+                        LogLevel::Info,
+                        EventCategory::Http,
+                        "http_connection_closed_without_request",
+                        "http connection closed before request bytes were received",
+                    )
+                    .with_field("remote_addr", remote_addr),
+                );
+                return;
+            }
+            HttpRequestErrorKind::Truncated => {
+                logger.emit(
+                    &LogEvent::new(
+                        LogLevel::Warn,
+                        EventCategory::Http,
+                        "http_request_incomplete",
+                        "http request ended before a complete request was received",
+                    )
+                    .with_field("remote_addr", remote_addr)
+                    .with_field("reason", error.reason),
+                );
+                return;
+            }
+            HttpRequestErrorKind::Timeout => HandledHttpResponse {
+                response: html_response(
+                    408,
+                    "Request Timeout",
+                    "Request Timed Out",
+                    "<p>The request was not completed before the connection timed out.</p>",
+                ),
+                audit_events: vec![LogEvent::new(
+                    LogLevel::Warn,
+                    EventCategory::Http,
+                    "http_request_timed_out",
+                    "http request timed out before completion",
+                )
+                .with_field("remote_addr", remote_addr.clone())
+                .with_field("reason", error.reason)],
+            },
+            HttpRequestErrorKind::Parse => HandledHttpResponse {
+                response: html_response(
+                    400,
+                    "Bad Request",
+                    "Invalid Request",
+                    "<p>The request could not be parsed safely.</p>",
+                ),
+                audit_events: vec![LogEvent::new(
+                    LogLevel::Warn,
+                    EventCategory::Http,
+                    "http_request_rejected",
+                    "http request rejected before routing",
+                )
+                .with_field("remote_addr", remote_addr.clone())
+                .with_field("reason", error.reason)],
+            },
         },
     };
 

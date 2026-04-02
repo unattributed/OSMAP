@@ -218,6 +218,10 @@ Each phase produces formal outputs to support traceability and auditability.
   hardening, broader live mutation-path coverage on
   `mail.blackbagsecurity.com`, and remaining workflow refinements such as
   broader folder-organization ergonomics and richer search behavior.
+- The HTTP runtime now also distinguishes connection-lifecycle failures more
+  honestly: read timeouts return `408 Request Timeout`, while empty or
+  truncated connections are logged and closed without treating them as generic
+  `400 Bad Request` traffic.
 - GitHub-side security validation now has two explicit lanes:
   GitHub default CodeQL setup remains the authoritative CodeQL scanner for this
   repository, while the repo-owned `security-check` workflow is the

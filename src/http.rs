@@ -288,8 +288,18 @@ pub struct HandledHttpResponse {
 }
 
 /// Errors raised while parsing or reading an inbound HTTP request.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum HttpRequestErrorKind {
+    Parse,
+    Timeout,
+    Truncated,
+    Empty,
+}
+
+/// Errors raised while parsing or reading an inbound HTTP request.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HttpRequestError {
+    pub kind: HttpRequestErrorKind,
     pub reason: String,
 }
 
@@ -336,8 +346,10 @@ mod tests {
     use crate::session::SessionRecord;
     use crate::throttle::LoginThrottleStore;
     use std::fs;
-    use std::net::SocketAddr;
+    use std::io::{Read as _, Write as _};
+    use std::net::{Shutdown, SocketAddr, TcpListener};
     use std::path::PathBuf;
+    use std::thread;
 
     #[derive(Debug, Clone)]
     struct StubGateway;
@@ -2020,5 +2032,146 @@ mod tests {
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).expect("temp dir should be created");
         dir
+    }
+
+    fn with_connected_streams<F>(handler: F) -> Vec<u8>
+    where
+        F: FnOnce(std::net::TcpStream) + Send + 'static,
+    {
+        let listener = TcpListener::bind("127.0.0.1:0").expect("listener should bind");
+        let addr = listener.local_addr().expect("listener addr should exist");
+        let server = thread::spawn(move || {
+            let (stream, _) = listener.accept().expect("server should accept client");
+            handler(stream);
+        });
+
+        let mut client = std::net::TcpStream::connect(addr).expect("client should connect");
+        let mut response = Vec::new();
+        client
+            .read_to_end(&mut response)
+            .expect("client should read response");
+        server.join().expect("server thread should finish");
+        response
+    }
+
+    #[test]
+    fn read_http_request_reports_truncated_headers_when_peer_closes_early() {
+        let listener = TcpListener::bind("127.0.0.1:0").expect("listener should bind");
+        let addr = listener.local_addr().expect("listener addr should exist");
+        let server = thread::spawn(move || {
+            let (mut stream, _) = listener.accept().expect("server should accept client");
+            let error = crate::http_parse::read_http_request(&mut stream, &HttpPolicy::default())
+                .expect_err("truncated headers must be rejected");
+            assert_eq!(error.kind, HttpRequestErrorKind::Truncated);
+            assert_eq!(
+                error.reason,
+                "connection closed before complete http headers were received"
+            );
+        });
+
+        let mut client = std::net::TcpStream::connect(addr).expect("client should connect");
+        client
+            .write_all(b"GET /mailboxes HTTP/1.1\r\nHost: localhost\r\n")
+            .expect("client should write partial header");
+        client
+            .shutdown(Shutdown::Write)
+            .expect("client should close write side");
+
+        server.join().expect("server thread should finish");
+    }
+
+    #[test]
+    fn read_http_request_reports_truncated_bodies_when_peer_closes_early() {
+        let listener = TcpListener::bind("127.0.0.1:0").expect("listener should bind");
+        let addr = listener.local_addr().expect("listener addr should exist");
+        let server = thread::spawn(move || {
+            let (mut stream, _) = listener.accept().expect("server should accept client");
+            let error = crate::http_parse::read_http_request(&mut stream, &HttpPolicy::default())
+                .expect_err("truncated body must be rejected");
+            assert_eq!(error.kind, HttpRequestErrorKind::Truncated);
+            assert_eq!(
+                error.reason,
+                "connection closed before complete http body was received"
+            );
+        });
+
+        let mut client = std::net::TcpStream::connect(addr).expect("client should connect");
+        client
+            .write_all(b"POST /logout HTTP/1.1\r\nHost: localhost\r\nContent-Length: 4\r\n\r\nx")
+            .expect("client should write partial body");
+        client
+            .shutdown(Shutdown::Write)
+            .expect("client should close write side");
+
+        server.join().expect("server thread should finish");
+    }
+
+    #[test]
+    fn connection_timeout_returns_request_timeout_response() {
+        let response = with_connected_streams(|mut stream| {
+            let policy = HttpPolicy {
+                read_timeout_secs: 1,
+                ..HttpPolicy::default()
+            };
+            let app = BrowserApp::new(policy, StubGateway);
+            let logger = Logger::new(crate::config::LogFormat::Text, LogLevel::Debug);
+            super::http_runtime::handle_client_stream(&app, &logger, &mut stream);
+        });
+
+        let text = String::from_utf8(response).expect("response should be utf-8");
+        assert!(text.starts_with("HTTP/1.1 408 Request Timeout\r\n"));
+        assert!(text.contains("\r\nConnection: close\r\n"));
+        assert!(text.contains("The request was not completed before the connection timed out."));
+    }
+
+    #[test]
+    fn empty_connection_closes_without_emitting_http_response() {
+        let listener = TcpListener::bind("127.0.0.1:0").expect("listener should bind");
+        let addr = listener.local_addr().expect("listener addr should exist");
+        let server = thread::spawn(move || {
+            let (mut stream, _) = listener.accept().expect("server should accept client");
+            let app = BrowserApp::new(HttpPolicy::default(), StubGateway);
+            let logger = Logger::new(crate::config::LogFormat::Text, LogLevel::Debug);
+            super::http_runtime::handle_client_stream(&app, &logger, &mut stream);
+        });
+
+        let mut client = std::net::TcpStream::connect(addr).expect("client should connect");
+        client
+            .shutdown(Shutdown::Write)
+            .expect("client should close write side");
+        let mut response = Vec::new();
+        client
+            .read_to_end(&mut response)
+            .expect("client should read response");
+
+        server.join().expect("server thread should finish");
+        assert!(response.is_empty());
+    }
+
+    #[test]
+    fn truncated_connection_closes_without_emitting_http_response() {
+        let listener = TcpListener::bind("127.0.0.1:0").expect("listener should bind");
+        let addr = listener.local_addr().expect("listener addr should exist");
+        let server = thread::spawn(move || {
+            let (mut stream, _) = listener.accept().expect("server should accept client");
+            let app = BrowserApp::new(HttpPolicy::default(), StubGateway);
+            let logger = Logger::new(crate::config::LogFormat::Text, LogLevel::Debug);
+            super::http_runtime::handle_client_stream(&app, &logger, &mut stream);
+        });
+
+        let mut client = std::net::TcpStream::connect(addr).expect("client should connect");
+        client
+            .write_all(b"GET /mailboxes HTTP/1.1\r\nHost: localhost\r\n")
+            .expect("client should write partial request");
+        client
+            .shutdown(Shutdown::Write)
+            .expect("client should close write side");
+        let mut response = Vec::new();
+        client
+            .read_to_end(&mut response)
+            .expect("client should read response");
+
+        server.join().expect("server thread should finish");
+        assert!(response.is_empty());
     }
 }

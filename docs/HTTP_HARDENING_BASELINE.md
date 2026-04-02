@@ -64,6 +64,12 @@ The current browser runtime enforces:
 - rejection of fragment-bearing or otherwise ambiguous request targets
 - normalization of peer socket addresses to bare IP strings before they reach
   auth-helper metadata or structured request audit context
+- explicit distinction between parse failures, read timeouts, truncated
+  requests, and empty connections in the sequential listener lifecycle
+- `408 Request Timeout` on read timeouts instead of collapsing that case into a
+  generic `400 Bad Request`
+- silent connection close for empty or truncated requests instead of replying to
+  incomplete traffic as though it were a well-formed HTTP exchange
 
 The current HTML rendering path stays deliberately small and uses either
 escaped plain text or a narrow allowlist sanitizer. It still blocks external
@@ -74,6 +80,13 @@ Because the current server remains sequential, those read/write timeouts are an
 important correctness control as well as a convenience feature. They do not
 make the listener concurrent, but they do reduce the risk that one slow or
 stalled client will hold the process open indefinitely.
+
+The runtime now also treats incomplete connection lifecycles more explicitly.
+An empty connection is logged and closed without an HTTP response, a truncated
+request is logged as incomplete and closed without an HTTP response, and a read
+timeout now returns `408 Request Timeout`. That keeps the server from
+normalizing transport-level failure cases into the same path used for a real
+malformed request.
 
 ## Current CSRF Strategy
 

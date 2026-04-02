@@ -206,6 +206,17 @@ The current highest-confidence active hardening and Version 1 gaps are:
   views
 - richer search behavior beyond the current mailbox-scoped baseline
 
+The current HTTP hardening work has now also moved past generic parse
+rejection for some connection-lifecycle cases. The runtime distinguishes:
+
+- read timeouts, which now return `408 Request Timeout`
+- empty connections, which now close without an HTTP response
+- truncated requests, which now close as incomplete instead of being
+  normalized into a generic `400 Bad Request`
+
+That is a narrow resilience improvement for the sequential listener, not a
+claim that the listener is now concurrent or production-complete.
+
 The recent route review also found that the remaining authenticated POST routes
 in the current browser surface are:
 
