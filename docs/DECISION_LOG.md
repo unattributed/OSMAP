@@ -984,3 +984,18 @@ auth backend is reached. The first slice is intentionally narrow:
 This does not claim that auth abuse resistance is fully solved. It does mean
 OSMAP no longer depends entirely on external rate limiting for the first layer
 of browser-login brute-force friction.
+
+### Start a behavior-preserving `http.rs` decomposition pass
+
+`src/http.rs` had grown large enough that reviewability risk was becoming a
+practical concern in the browser boundary. The first decomposition pass is
+intentionally conservative:
+
+- move shared response, escaping, and event-building helpers into
+  `src/http_support.rs`
+- move server-rendered browser HTML helpers into `src/http_ui.rs`
+- leave routing, parsing, and test behavior in `src/http.rs` unchanged
+
+This is a maintainability and auditability refactor, not a feature change. The
+goal is to reduce concentration of unrelated concerns in the browser-facing
+runtime before later slices touch routing or parser structure more deeply.

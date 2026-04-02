@@ -11,6 +11,8 @@ pub mod config;
 pub mod error;
 pub mod http;
 pub mod http_form;
+pub mod http_support;
+pub mod http_ui;
 pub mod logging;
 pub mod mailbox;
 pub mod mailbox_helper;
