@@ -1070,3 +1070,19 @@ Those handlers now live in `src/http/routes_compose.rs` as an internal child
 module. This keeps the route table and server loop in `src/http.rs` stable
 while reducing how much browser-side mutation logic remains mixed into parsing,
 transport, and unrelated route concerns.
+
+### Split mailbox-helper protocol out of `mailbox_helper.rs`
+
+After the `http.rs` route extractions, the next clean maintainability target was
+`src/mailbox_helper.rs`, which still combined:
+
+- helper request and response types
+- line-oriented protocol encoding and parsing
+- protocol-specific field validation and base64 helpers
+- Unix socket client and server transport wiring
+
+The protocol types and parsing helpers now live in
+`src/mailbox_helper_protocol.rs` as an internal child module of
+`src/mailbox_helper.rs`. This keeps the helper transport boundary stable while
+making the protocol itself easier to audit separately from the socket and
+backend wiring.
