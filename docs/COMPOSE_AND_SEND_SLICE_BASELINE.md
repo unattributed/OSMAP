@@ -164,6 +164,11 @@ The current host proof confirms:
 - the browser receives the expected `303` redirect to `/compose?sent=1`
 - the server-rendered compose success page is reachable after the redirect
 - the controlled outbound message reaches the validation mailbox `INBOX`
+- the bounded submission throttle is also live-proven on
+  `mail.blackbagsecurity.com` under `enforce`: a reusable validation harness at
+  `maint/live/osmap-live-validate-send-throttle.ksh` confirms one accepted
+  `POST /send` followed by `429 Too Many Requests` plus `Retry-After` on the
+  second matching submission
 
 The first send slice is therefore both implemented and exercised, but it is
 still intentionally narrow.

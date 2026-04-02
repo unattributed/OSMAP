@@ -192,6 +192,10 @@ Phase 6:
 - the first live browser mutation proof now also exists on
   `mail.blackbagsecurity.com` under `enforce`: a controlled one-message move
   and a bounded send flow both succeeded end to end through the browser routes
+- the bounded browser send-throttle path is now also live-proven on
+  `mail.blackbagsecurity.com` under `enforce`: one accepted `POST /send`
+  followed by `429 Too Many Requests` and `Retry-After` on the second matching
+  submission
 - broader ergonomics for folder organization remain later refinements rather
   than blockers for the first move slice
 - the current repo-grounded reassessment also confirms active hardening gaps

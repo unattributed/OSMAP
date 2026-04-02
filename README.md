@@ -179,6 +179,11 @@ Each phase produces formal outputs to support traceability and auditability.
 - The backend now also applies two bounded file-backed submission-throttle
   buckets on the browser send path: a tighter canonical-user-plus-remote
   bucket and a higher threshold remote-only bucket.
+- That bounded send-throttle behavior is now also live-proven on
+  `mail.blackbagsecurity.com` under `enforce`: an isolated host validation run
+  using a synthetic validated session confirmed one accepted `POST /send`
+  followed by `429 Too Many Requests` with `Retry-After` on the second matching
+  submission.
 - Broader auth-abuse resistance and request-abuse controls still remain active
   hardening work, and the service still depends on adjacent controls such as
   nginx, PF, and operator monitoring.

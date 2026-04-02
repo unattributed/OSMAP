@@ -1524,3 +1524,23 @@ The send route now returns `429 Too Many Requests` with `Retry-After` when that
 throttle is active. This keeps the control narrow, auditable, and aligned with
 the existing state boundary instead of introducing a general-purpose rate-limit
 framework too early.
+
+### Prove send throttling through the live browser route with a reusable host harness
+
+The bounded send-throttle slice is now not only unit-tested. The repository now
+also carries a reusable live-host validation script at:
+
+- `maint/live/osmap-live-validate-send-throttle.ksh`
+
+On `mail.blackbagsecurity.com` under
+`OSMAP_OPENBSD_CONFINEMENT_MODE=enforce`, that harness proves:
+
+- one accepted `POST /send` through the real browser route
+- `303 See Other` to `/compose?sent=1` on the first submission
+- `429 Too Many Requests` with `Retry-After` on the second matching
+  submission
+- emitted `submission_throttle_engaged` and `submission_throttled` runtime log
+  events
+
+This keeps the submission-abuse control grounded in repeatable OpenBSD host
+evidence rather than only in unit tests or ad hoc operator memory.

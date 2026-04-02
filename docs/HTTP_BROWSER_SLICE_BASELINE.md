@@ -186,5 +186,7 @@ The nginx-facing deployment model now has a matching implemented confinement
 control. Live enforced-host proof now exists for the authenticated read path
 plus the synthetic session-management routes, and the first bounded mutation
 flows are now proven too: a one-message move and a send flow both succeeded on
-`mail.blackbagsecurity.com` under `enforce`. Broader live-browser mutation
-coverage still remains.
+`mail.blackbagsecurity.com` under `enforce`. The bounded send-throttle path is
+now also live-proven there: one accepted `POST /send` followed by `429 Too
+Many Requests` with `Retry-After` on the second matching submission. Broader
+live-browser mutation coverage still remains.
