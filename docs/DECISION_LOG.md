@@ -1303,3 +1303,20 @@ The auth and session browser-flow cluster now lives in
 rendering, attachment, and submission orchestration while making the browser
 auth/session boundary easier to review separately from the rest of the runtime
 gateway assembly.
+
+### Split mailbox, rendering, attachment, and submission flows out of `http_gateway.rs`
+
+After moving auth/session flow logic into `src/http_gateway_auth.rs`,
+`src/http_gateway.rs` still combined:
+
+- mailbox list and mailbox message-list browser flows
+- mailbox search and message-view browser flows
+- attachment-download orchestration
+- submission and one-message move browser flows
+- the remaining submission and attachment service builders
+
+That browser workflow cluster now lives in `src/http_gateway_mail.rs` as an
+internal child module of `src/http_gateway.rs`. This keeps the gateway root
+much closer to a thin runtime-configuration and delegation shell, while making
+the mailbox and submission browser-flow boundary easier to review separately
+from auth/session and helper-aware backend selection.
