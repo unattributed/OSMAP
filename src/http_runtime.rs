@@ -137,6 +137,7 @@ pub fn run_http_server(config: &AppConfig, logger: &Logger) -> Result<(), String
         RuntimeBrowserGateway::from_config(config),
     ));
     let active_connections = Arc::new(AtomicUsize::new(0));
+    let peak_connections = Arc::new(AtomicUsize::new(0));
     logger.emit(
         &LogEvent::new(
             LogLevel::Info,
@@ -157,10 +158,28 @@ pub fn run_http_server(config: &AppConfig, logger: &Logger) -> Result<(), String
         match stream {
             Ok(mut stream) => {
                 consecutive_accept_failures = 0;
-                if !try_acquire_connection_slot(&active_connections, app.policy()) {
-                    handle_over_capacity_stream(logger, &mut stream, app.policy());
-                    continue;
-                }
+                let active_after_accept =
+                    match try_acquire_connection_slot(&active_connections, app.policy()) {
+                        Some(active_after_accept) => active_after_accept,
+                        None => {
+                            let observed_active_connections =
+                                active_connections.load(Ordering::Acquire);
+                            handle_over_capacity_stream(
+                                logger,
+                                &mut stream,
+                                app.policy(),
+                                observed_active_connections,
+                            );
+                            continue;
+                        }
+                    };
+
+                maybe_log_connection_high_watermark(
+                    logger,
+                    app.policy(),
+                    &peak_connections,
+                    active_after_accept,
+                );
 
                 let app = Arc::clone(&app);
                 let logger = logger.clone();
@@ -201,13 +220,13 @@ pub fn run_http_server(config: &AppConfig, logger: &Logger) -> Result<(), String
 pub(super) fn try_acquire_connection_slot(
     active_connections: &AtomicUsize,
     policy: &HttpPolicy,
-) -> bool {
+) -> Option<usize> {
     let limit = policy.max_concurrent_connections;
     let mut current = active_connections.load(Ordering::Acquire);
 
     loop {
         if current >= limit {
-            return false;
+            return None;
         }
 
         match active_connections.compare_exchange_weak(
@@ -216,7 +235,7 @@ pub(super) fn try_acquire_connection_slot(
             Ordering::AcqRel,
             Ordering::Acquire,
         ) {
-            Ok(_) => return true,
+            Ok(_) => return Some(current + 1),
             Err(observed) => current = observed,
         }
     }
@@ -238,6 +257,7 @@ pub(super) fn handle_over_capacity_stream(
     logger: &Logger,
     stream: &mut TcpStream,
     policy: &HttpPolicy,
+    active_connections: usize,
 ) {
     let remote_addr = stream
         .peer_addr()
@@ -256,7 +276,8 @@ pub(super) fn handle_over_capacity_stream(
         .with_field(
             "max_concurrent_connections",
             policy.max_concurrent_connections.to_string(),
-        ),
+        )
+        .with_field("active_connections", active_connections.to_string()),
     );
 
     let response = html_response(
@@ -280,6 +301,8 @@ pub(super) fn handle_over_capacity_stream(
                 "http over-capacity response write failed",
             )
             .with_field("remote_addr", remote_addr)
+            .with_field("active_connections", active_connections.to_string())
+            .with_field("response_bytes", response_bytes.len().to_string())
             .with_field("reason", error.to_string()),
         );
     }
@@ -325,86 +348,97 @@ where
         );
     }
 
-    let (handled, request_completion) = match read_http_request(stream, app.policy()) {
-        Ok(request) => {
-            let handled = app.handle_request(&request, &remote_addr);
-            let response_bytes = handled.response.to_http_bytes();
-            let completion_event = build_request_completion_event(
-                &remote_addr,
-                request.method,
-                &request.path,
-                handled.response.status_code,
-                response_bytes.len(),
-                connection_started.elapsed(),
-            );
-            (handled, Some((response_bytes, completion_event)))
-        }
-        Err(error) => match error.kind {
-            HttpRequestErrorKind::Empty => {
-                logger.emit(
-                    &LogEvent::new(
-                        LogLevel::Info,
-                        EventCategory::Http,
-                        "http_connection_closed_without_request",
-                        "http connection closed before request bytes were received",
-                    )
-                    .with_field("remote_addr", remote_addr),
+    let (handled, request_completion, request_write_context) =
+        match read_http_request(stream, app.policy()) {
+            Ok(request) => {
+                let handled = app.handle_request(&request, &remote_addr);
+                let response_bytes = handled.response.to_http_bytes();
+                let completion_event = build_request_completion_event(
+                    &remote_addr,
+                    request.method,
+                    &request.path,
+                    handled.response.status_code,
+                    response_bytes.len(),
+                    connection_started.elapsed(),
                 );
-                return;
+                (
+                    handled,
+                    Some((response_bytes.clone(), completion_event)),
+                    Some((
+                        request.method.as_str().to_string(),
+                        request.path.clone(),
+                        response_bytes.len(),
+                    )),
+                )
             }
-            HttpRequestErrorKind::Truncated => {
-                logger.emit(
-                    &LogEvent::new(
-                        LogLevel::Warn,
-                        EventCategory::Http,
-                        "http_request_incomplete",
-                        "http request ended before a complete request was received",
-                    )
-                    .with_field("remote_addr", remote_addr)
-                    .with_field("reason", error.reason),
-                );
-                return;
-            }
-            HttpRequestErrorKind::Timeout => (
-                HandledHttpResponse {
-                    response: html_response(
-                        408,
-                        "Request Timeout",
-                        "Request Timed Out",
-                        "<p>The request was not completed before the connection timed out.</p>",
-                    ),
-                    audit_events: vec![LogEvent::new(
-                        LogLevel::Warn,
-                        EventCategory::Http,
-                        "http_request_timed_out",
-                        "http request timed out before completion",
-                    )
-                    .with_field("remote_addr", remote_addr.clone())
-                    .with_field("reason", error.reason)],
-                },
-                None,
-            ),
-            HttpRequestErrorKind::Parse => (
-                HandledHttpResponse {
-                    response: html_response(
-                        400,
-                        "Bad Request",
-                        "Invalid Request",
-                        "<p>The request could not be parsed safely.</p>",
-                    ),
-                    audit_events: vec![LogEvent::new(
-                        LogLevel::Warn,
-                        EventCategory::Http,
-                        "http_request_rejected",
-                        "http request rejected before routing",
-                    )
-                    .with_field("remote_addr", remote_addr.clone())
-                    .with_field("reason", error.reason)],
-                },
-                None,
-            ),
-        },
-    };
+            Err(error) => match error.kind {
+                HttpRequestErrorKind::Empty => {
+                    logger.emit(
+                        &LogEvent::new(
+                            LogLevel::Info,
+                            EventCategory::Http,
+                            "http_connection_closed_without_request",
+                            "http connection closed before request bytes were received",
+                        )
+                        .with_field("remote_addr", remote_addr),
+                    );
+                    return;
+                }
+                HttpRequestErrorKind::Truncated => {
+                    logger.emit(
+                        &LogEvent::new(
+                            LogLevel::Warn,
+                            EventCategory::Http,
+                            "http_request_incomplete",
+                            "http request ended before a complete request was received",
+                        )
+                        .with_field("remote_addr", remote_addr)
+                        .with_field("reason", error.reason),
+                    );
+                    return;
+                }
+                HttpRequestErrorKind::Timeout => (
+                    HandledHttpResponse {
+                        response: html_response(
+                            408,
+                            "Request Timeout",
+                            "Request Timed Out",
+                            "<p>The request was not completed before the connection timed out.</p>",
+                        ),
+                        audit_events: vec![LogEvent::new(
+                            LogLevel::Warn,
+                            EventCategory::Http,
+                            "http_request_timed_out",
+                            "http request timed out before completion",
+                        )
+                        .with_field("remote_addr", remote_addr.clone())
+                        .with_field("reason", error.reason)],
+                    },
+                    None,
+                    None,
+                ),
+                HttpRequestErrorKind::Parse => (
+                    HandledHttpResponse {
+                        response: html_response(
+                            400,
+                            "Bad Request",
+                            "Invalid Request",
+                            "<p>The request could not be parsed safely.</p>",
+                        ),
+                        audit_events: vec![LogEvent::new(
+                            LogLevel::Warn,
+                            EventCategory::Http,
+                            "http_request_rejected",
+                            "http request rejected before routing",
+                        )
+                        .with_field("remote_addr", remote_addr.clone())
+                        .with_field("reason", error.reason)],
+                    },
+                    None,
+                    None,
+                ),
+            },
+        };
 
     for event in &handled.audit_events {
         logger.emit(event);
@@ -418,22 +452,94 @@ where
         logger.emit(completion_event);
     }
     if let Err(error) = stream.write_all(&response_bytes) {
-        logger.emit(
-            &LogEvent::new(
-                LogLevel::Warn,
-                EventCategory::Http,
-                "http_response_write_failed",
-                "http response write failed",
-            )
-            .with_field("remote_addr", remote_addr)
-            .with_field("status_code", handled.response.status_code.to_string())
-            .with_field(
-                "duration_ms",
-                connection_started.elapsed().as_millis().to_string(),
-            )
-            .with_field("reason", error.to_string()),
-        );
+        let mut event = LogEvent::new(
+            LogLevel::Warn,
+            EventCategory::Http,
+            "http_response_write_failed",
+            "http response write failed",
+        )
+        .with_field("remote_addr", remote_addr)
+        .with_field("status_code", handled.response.status_code.to_string())
+        .with_field("response_bytes", response_bytes.len().to_string())
+        .with_field(
+            "duration_ms",
+            connection_started.elapsed().as_millis().to_string(),
+        )
+        .with_field("reason", error.to_string());
+
+        if let Some((method, path, attempted_bytes)) = request_write_context {
+            event = event
+                .with_field("method", method)
+                .with_field("path", path)
+                .with_field("attempted_response_bytes", attempted_bytes.to_string());
+        }
+
+        logger.emit(&event);
     }
+}
+
+/// Emits a bounded observability event when the runtime reaches a new
+/// in-flight connection high-water mark.
+pub(super) fn maybe_log_connection_high_watermark(
+    logger: &Logger,
+    policy: &HttpPolicy,
+    peak_connections: &AtomicUsize,
+    active_connections: usize,
+) {
+    let mut observed_peak = peak_connections.load(Ordering::Acquire);
+
+    loop {
+        if active_connections <= observed_peak {
+            return;
+        }
+
+        match peak_connections.compare_exchange_weak(
+            observed_peak,
+            active_connections,
+            Ordering::AcqRel,
+            Ordering::Acquire,
+        ) {
+            Ok(_) => {
+                logger.emit(&build_connection_high_watermark_event(
+                    policy,
+                    active_connections,
+                ));
+                return;
+            }
+            Err(observed) => observed_peak = observed,
+        }
+    }
+}
+
+/// Builds an observability event for a new in-flight connection high-water
+/// mark.
+pub(super) fn build_connection_high_watermark_event(
+    policy: &HttpPolicy,
+    active_connections: usize,
+) -> LogEvent {
+    let utilization_percent =
+        (active_connections.saturating_mul(100)) / policy.max_concurrent_connections.max(1);
+    let (level, action, message) = if active_connections >= policy.max_concurrent_connections {
+        (
+            LogLevel::Warn,
+            "http_connection_capacity_reached",
+            "http runtime reached its configured connection capacity",
+        )
+    } else {
+        (
+            LogLevel::Info,
+            "http_connection_high_watermark_reached",
+            "http runtime reached a new in-flight connection high-water mark",
+        )
+    };
+
+    LogEvent::new(level, EventCategory::Http, action, message)
+        .with_field("active_connections", active_connections.to_string())
+        .with_field(
+            "max_concurrent_connections",
+            policy.max_concurrent_connections.to_string(),
+        )
+        .with_field("utilization_percent", utilization_percent.to_string())
 }
 
 /// Builds a central completion event for one parsed HTTP request.

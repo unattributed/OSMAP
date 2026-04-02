@@ -2249,18 +2249,44 @@ mod tests {
             ..HttpPolicy::default()
         };
 
-        assert!(super::http_runtime::try_acquire_connection_slot(
-            &active_connections,
-            &policy
-        ));
-        assert!(super::http_runtime::try_acquire_connection_slot(
-            &active_connections,
-            &policy
-        ));
-        assert!(!super::http_runtime::try_acquire_connection_slot(
-            &active_connections,
-            &policy
-        ));
+        assert_eq!(
+            super::http_runtime::try_acquire_connection_slot(&active_connections, &policy),
+            Some(1)
+        );
+        assert_eq!(
+            super::http_runtime::try_acquire_connection_slot(&active_connections, &policy),
+            Some(2)
+        );
+        assert_eq!(
+            super::http_runtime::try_acquire_connection_slot(&active_connections, &policy),
+            None
+        );
+    }
+
+    #[test]
+    fn connection_high_watermark_event_warns_at_capacity() {
+        let policy = HttpPolicy {
+            max_concurrent_connections: 4,
+            ..HttpPolicy::default()
+        };
+
+        let event = super::http_runtime::build_connection_high_watermark_event(&policy, 4);
+
+        assert_eq!(event.level, LogLevel::Warn);
+        assert_eq!(event.category, EventCategory::Http);
+        assert_eq!(event.action, "http_connection_capacity_reached");
+        assert!(event
+            .fields
+            .iter()
+            .any(|field| { field.key == "active_connections" && field.value == "4" }));
+        assert!(event
+            .fields
+            .iter()
+            .any(|field| { field.key == "max_concurrent_connections" && field.value == "4" }));
+        assert!(event
+            .fields
+            .iter()
+            .any(|field| { field.key == "utilization_percent" && field.value == "100" }));
     }
 
     #[test]
@@ -2271,7 +2297,7 @@ mod tests {
                 ..HttpPolicy::default()
             };
             let logger = Logger::new(crate::config::LogFormat::Text, LogLevel::Debug);
-            super::http_runtime::handle_over_capacity_stream(&logger, &mut stream, &policy);
+            super::http_runtime::handle_over_capacity_stream(&logger, &mut stream, &policy, 1);
         });
 
         let text = String::from_utf8(response).expect("response should be utf-8");

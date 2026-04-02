@@ -74,9 +74,13 @@ The current browser runtime enforces:
   hot on a broken accept loop
 - explicit in-flight connection caps with `503 Service Unavailable` plus
   `Retry-After` when the runtime is already at capacity
+- connection high-watermark and capacity-reached observability events so
+  in-flight pressure is visible without an external profiler
 - central request-completion logging with status, response size, and duration
   so slow requests can be observed without inferring lifecycle from route-local
   audit events alone
+- richer response-write failure logging with request method/path and attempted
+  response size when the request had already been parsed
 
 The current HTML rendering path stays deliberately small and uses either
 escaped plain text or a narrow allowlist sanitizer. It still blocks external
@@ -98,9 +102,11 @@ malformed request.
 
 The listener now also backs off after repeated accept failures, rejects
 accepted connections when it is already at its configured in-flight cap, and
-emits one central completion event for parsed requests. That gives OSMAP a
-bounded concurrency model without pretending it now has a full production
-queueing or worker-management layer.
+emits one central completion event for parsed requests. It also now reports new
+connection high-water marks and explicit capacity-reached transitions, and it
+carries more context on response-write failures. That gives OSMAP a bounded
+concurrency model with better operator visibility without pretending it now has
+a full production queueing or worker-management layer.
 
 ## Current CSRF Strategy
 

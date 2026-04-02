@@ -220,7 +220,9 @@ The runtime now also applies bounded backoff after repeated accept failures,
 handles accepted connections concurrently up to an explicit configured cap, and
 emits central request-completion events for parsed requests with status,
 response size, and duration. Over-capacity connections now receive `503
-Service Unavailable` with `Retry-After`.
+Service Unavailable` with `Retry-After`. Connection pressure is now surfaced
+through high-watermark and capacity-reached events, and write-failure logs now
+carry richer request/response context.
 
 That is a bounded concurrency upgrade, but not a full production-grade
 request-resource control story.

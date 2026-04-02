@@ -1700,3 +1700,20 @@ This is still not a complete denial-of-service solution or a claim of
 high-throughput production readiness. It is a bounded concurrency upgrade that
 materially improves the browser runtime posture without derailing the current
 architecture.
+
+### Add connection-cap observability and richer write-failure accounting
+
+After the bounded concurrency upgrade, the next narrow runtime-hardening step
+should improve operator visibility rather than widen protocol behavior again.
+
+OSMAP now:
+
+- emits an info event when it reaches a new in-flight connection high-water mark
+- emits a warn event when it reaches its configured in-flight capacity
+- includes active-connection context on over-capacity rejection logs
+- includes richer request/response context on response-write failure logs when
+  the request had already been parsed
+
+This was chosen over broader queueing or worker-pool work because it gives
+operators more actionable signals about runtime pressure and partial failure
+without changing the current trust boundary or transport model.
