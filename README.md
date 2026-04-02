@@ -168,11 +168,16 @@ Each phase produces formal outputs to support traceability and auditability.
   a bounded settings surface are now closed in first-release form. Broader
   folder-organization ergonomics still remain later refinements, but the first
   backend-authoritative move workflow is now present.
-- The backend now includes a first bounded application-layer login-throttling
-  slice for the browser auth path, but broader auth-abuse resistance and
-  request-abuse controls still remain active hardening work, and the service
-  still depends on adjacent controls such as nginx, PF, and operator
-  monitoring.
+- The safe-HTML rendering and settings slice is now also live-proven on
+  `mail.blackbagsecurity.com` under `enforce` with a controlled HTML-bearing
+  mailbox message and a synthetic validated session: sanitized HTML renders by
+  default, the settings page persists `prefer_plain_text`, and the same
+  message then falls back to plain-text rendering.
+- The backend now applies two bounded file-backed login-throttle buckets on the
+  browser auth path: a tighter credential-plus-remote bucket and a higher
+  threshold remote-only bucket. Broader auth-abuse resistance and request-abuse
+  controls still remain active hardening work, and the service still depends
+  on adjacent controls such as nginx, PF, and operator monitoring.
 - The current HTTP runtime remains sequential. That is acceptable for the
   current prototype stage, but it remains an active correctness and
   availability constraint rather than a solved production posture.
@@ -185,10 +190,10 @@ Each phase produces formal outputs to support traceability and auditability.
   `http_runtime`, `http_gateway`, and `http_browser` modules, and the mailbox
   layer now has dedicated parser, backend, service, and model modules to make
   security review and future maintenance easier.
-- Current priority work is broader auth/request abuse resistance,
-  sequential-runtime hardening, and live mutation-path validation on
-  `mail.blackbagsecurity.com`, plus remaining workflow refinements such as
-  broader folder-organization ergonomics.
+- Current priority work is still broader auth/request abuse resistance beyond
+  the now-expanded browser-login throttle, sequential-runtime hardening, and
+  live mutation-path validation on `mail.blackbagsecurity.com`, plus remaining
+  workflow refinements such as broader folder-organization ergonomics.
 - GitHub-side security validation now has two explicit lanes:
   GitHub default CodeQL setup remains the authoritative CodeQL scanner for this
   repository, while the repo-owned `security-check` workflow is the

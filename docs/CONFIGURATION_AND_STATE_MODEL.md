@@ -86,11 +86,15 @@ The runtime now also recognizes explicit login-throttle settings for the
 browser authentication path:
 
 - `OSMAP_LOGIN_THROTTLE_MAX_FAILURES`
+- `OSMAP_LOGIN_THROTTLE_REMOTE_MAX_FAILURES`
 - `OSMAP_LOGIN_THROTTLE_WINDOW_SECS`
 - `OSMAP_LOGIN_THROTTLE_LOCKOUT_SECS`
 
-Those settings control the first file-backed application-layer throttling slice
-under the existing cache boundary.
+Those settings control the current file-backed application-layer throttling
+model under the existing cache boundary:
+
+- a tighter credential-plus-remote bucket
+- a higher-threshold remote-only bucket
 
 ## Environment Model
 

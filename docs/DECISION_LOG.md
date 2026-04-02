@@ -1434,3 +1434,35 @@ The guard now looks for Rust syntax forms instead:
 
 This keeps the gate aligned with the project's real safety goal: catch
 unreviewed Rust `unsafe`, not user-facing prose.
+
+### Prove the safe-HTML rendering and settings slice on the live OpenBSD host
+
+The safe-HTML rendering and settings slice is no longer only validated through
+unit tests and the repo-owned gate. It is now also live-proven on
+`mail.blackbagsecurity.com` under `OSMAP_OPENBSD_CONFINEMENT_MODE=enforce`
+using:
+
+- a controlled HTML-only mailbox message in the disposable validation mailbox
+- a synthetic validated browser session under the `_osmap` plus `vmail` split
+- a browser-side settings update from `prefer_sanitized_html` to
+  `prefer_plain_text`
+
+That proof matters because it verifies the hostile-content boundary and the
+new settings persistence path on the actual OpenBSD host shape rather than
+only in test fixtures.
+
+### Expand browser-login throttling to include a remote-only bucket
+
+The original browser-login throttle keyed only on presented username plus
+remote address. That was a useful first slice, but it still left easy room for
+username rotation from one source address.
+
+OSMAP now applies two bounded file-backed buckets on the browser login path:
+
+- a tighter credential-plus-remote bucket
+- a higher-threshold remote-only bucket
+
+This keeps the implementation small and reviewable while making repeated
+credential rotation from one source materially more expensive. It does not
+replace adjacent controls such as nginx, PF, or monitoring, but it is a better
+default abuse-resistance posture than a single credential-keyed bucket alone.

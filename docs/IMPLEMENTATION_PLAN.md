@@ -177,11 +177,13 @@ The current implementation now also includes:
 - a mailbox-scoped backend-authoritative search slice
 - a browser-visible session-management slice
 - a first one-message move path between existing mailboxes
-- a first bounded application-layer login-throttling slice for the browser auth
-  path
+- a bounded dual-bucket application-layer login-throttling slice for the
+  browser auth path
 - a first bounded safe-HTML rendering slice with allowlist sanitization and
   plain-text fallback
 - a first bounded end-user settings slice for HTML display preference
+- live-host proof for the safe-HTML rendering and settings slice on
+  `mail.blackbagsecurity.com`
 
 Broader ergonomics around folder organization, such as bulk actions or archive
 shortcuts from list views, remain later refinements rather than the first move
@@ -189,13 +191,11 @@ slice itself.
 
 The current highest-confidence active hardening gaps are:
 
-- broader auth-abuse and request-abuse resistance beyond the first browser-login
-  throttle slice
+- broader auth-abuse and request-abuse resistance beyond the current
+  browser-login throttle model
 - the correctness and availability constraints of the current sequential HTTP
   runtime
 - broader live-host proof for mutation workflows such as send and move
-- richer HTML-content validation and live-host proof for the new rendering path
-  on real mail content
 
 The recent maintainability refactors in the browser and mailbox layers have
 reduced the largest implementation hotspots enough that internal decomposition

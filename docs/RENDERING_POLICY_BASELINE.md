@@ -28,6 +28,11 @@ is documented separately in `MIME_AND_ATTACHMENT_POLICY_BASELINE.md`. The
 first bounded end-user rendering preference is documented separately in
 `SETTINGS_SURFACE_BASELINE.md`.
 
+This slice is now also live-proven on `mail.blackbagsecurity.com` under
+`OSMAP_OPENBSD_CONFINEMENT_MODE=enforce` using a controlled HTML-only message
+delivered to the disposable validation mailbox and a synthetic validated
+browser session.
+
 This is intentionally smaller than a full message renderer.
 
 ## Current Rendering Modes
@@ -95,6 +100,8 @@ This slice now proves that:
 - rendering can be modeled as a separate layer after message retrieval
 - the system can offer a first-release safe-HTML path without becoming a rich
   HTML mail client
+- the current sanitized-HTML path and plain-text fallback both work against a
+  real OpenBSD host mailbox under the `_osmap` plus `vmail` runtime split
 
 ## What Is Still Missing
 

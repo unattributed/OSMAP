@@ -20,6 +20,10 @@ use crate::totp::TimeProvider;
 /// one throttle window.
 pub const DEFAULT_LOGIN_THROTTLE_MAX_FAILURES: u64 = 5;
 
+/// Conservative default threshold for remote-address-only failures within one
+/// throttle window.
+pub const DEFAULT_LOGIN_THROTTLE_REMOTE_MAX_FAILURES: u64 = 12;
+
 /// Conservative default window over which failed login attempts are counted.
 pub const DEFAULT_LOGIN_THROTTLE_WINDOW_SECONDS: u64 = 300;
 
@@ -32,7 +36,8 @@ pub const TOO_MANY_ATTEMPTS_PUBLIC_REASON: &str = "too_many_attempts";
 /// Policy controlling how the current login-throttle slice behaves.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct LoginThrottlePolicy {
-    pub max_failures: u64,
+    pub credential_max_failures: u64,
+    pub remote_addr_max_failures: u64,
     pub failure_window_seconds: u64,
     pub lockout_seconds: u64,
 }
@@ -40,9 +45,33 @@ pub struct LoginThrottlePolicy {
 impl Default for LoginThrottlePolicy {
     fn default() -> Self {
         Self {
-            max_failures: DEFAULT_LOGIN_THROTTLE_MAX_FAILURES,
+            credential_max_failures: DEFAULT_LOGIN_THROTTLE_MAX_FAILURES,
+            remote_addr_max_failures: DEFAULT_LOGIN_THROTTLE_REMOTE_MAX_FAILURES,
             failure_window_seconds: DEFAULT_LOGIN_THROTTLE_WINDOW_SECONDS,
             lockout_seconds: DEFAULT_LOGIN_THROTTLE_LOCKOUT_SECONDS,
+        }
+    }
+}
+
+/// Distinguishes the current throttle buckets used on the browser login path.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LoginThrottleBucketKind {
+    CredentialAndRemoteAddr,
+    RemoteAddrOnly,
+}
+
+impl LoginThrottleBucketKind {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::CredentialAndRemoteAddr => "credential_and_remote_addr",
+            Self::RemoteAddrOnly => "remote_addr_only",
+        }
+    }
+
+    fn max_failures(self, policy: LoginThrottlePolicy) -> u64 {
+        match self {
+            Self::CredentialAndRemoteAddr => policy.credential_max_failures,
+            Self::RemoteAddrOnly => policy.remote_addr_max_failures,
         }
     }
 }
@@ -77,6 +106,7 @@ impl LoginThrottleRecord {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LoginThrottleKey {
     pub key_id: String,
+    pub bucket_kind: LoginThrottleBucketKind,
     pub submitted_username: String,
     pub remote_addr: String,
 }
@@ -85,11 +115,22 @@ impl LoginThrottleKey {
     /// Builds a stable bucket key from the presented username and remote
     /// address.
     pub fn new(submitted_username: &str, remote_addr: &str) -> Self {
+        Self::for_credential_and_remote_addr(submitted_username, remote_addr)
+    }
+
+    /// Builds the stable credential-plus-remote bucket key.
+    pub fn for_credential_and_remote_addr(submitted_username: &str, remote_addr: &str) -> Self {
         let submitted_username =
             normalize_component(submitted_username, DEFAULT_USERNAME_MAX_LEN, true);
         let remote_addr = normalize_component(remote_addr, DEFAULT_REMOTE_ADDR_MAX_LEN, false);
         let mut digest = Sha256::new();
-        digest.update(b"osmap-login-throttle-v1");
+        digest.update(b"osmap-login-throttle-v2");
+        digest.update([0]);
+        digest.update(
+            LoginThrottleBucketKind::CredentialAndRemoteAddr
+                .as_str()
+                .as_bytes(),
+        );
         digest.update([0]);
         digest.update(submitted_username.as_bytes());
         digest.update([0]);
@@ -97,6 +138,27 @@ impl LoginThrottleKey {
 
         Self {
             key_id: hex_lower(&digest.finalize()),
+            bucket_kind: LoginThrottleBucketKind::CredentialAndRemoteAddr,
+            submitted_username,
+            remote_addr,
+        }
+    }
+
+    /// Builds the stable remote-only bucket key.
+    pub fn for_remote_addr(submitted_username: &str, remote_addr: &str) -> Self {
+        let submitted_username =
+            normalize_component(submitted_username, DEFAULT_USERNAME_MAX_LEN, true);
+        let remote_addr = normalize_component(remote_addr, DEFAULT_REMOTE_ADDR_MAX_LEN, false);
+        let mut digest = Sha256::new();
+        digest.update(b"osmap-login-throttle-v2");
+        digest.update([0]);
+        digest.update(LoginThrottleBucketKind::RemoteAddrOnly.as_str().as_bytes());
+        digest.update([0]);
+        digest.update(remote_addr.as_bytes());
+
+        Self {
+            key_id: hex_lower(&digest.finalize()),
+            bucket_kind: LoginThrottleBucketKind::RemoteAddrOnly,
             submitted_username,
             remote_addr,
         }
@@ -221,14 +283,14 @@ pub enum LoginThrottleDecision {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LoginThrottleCheck {
     pub decision: LoginThrottleDecision,
-    pub audit_event: Option<LogEvent>,
+    pub audit_events: Vec<LogEvent>,
 }
 
 /// The result of recording a failed login attempt.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LoginThrottleFailureRecord {
     pub lockout_engaged: bool,
-    pub audit_event: Option<LogEvent>,
+    pub audit_events: Vec<LogEvent>,
 }
 
 /// A small throttle service over a store and time source.
@@ -262,34 +324,51 @@ where
         context: &AuthenticationContext,
         submitted_username: &str,
     ) -> Result<LoginThrottleCheck, LoginThrottleError> {
-        let key = LoginThrottleKey::new(submitted_username, &context.remote_addr);
+        let keys = [
+            LoginThrottleKey::for_credential_and_remote_addr(
+                submitted_username,
+                &context.remote_addr,
+            ),
+            LoginThrottleKey::for_remote_addr(submitted_username, &context.remote_addr),
+        ];
         let now = self.time_provider.unix_timestamp();
-        let Some(record) = self.store.load(&key.key_id)? else {
-            return Ok(LoginThrottleCheck {
-                decision: LoginThrottleDecision::Allowed,
-                audit_event: None,
-            });
-        };
+        let mut retry_after_seconds = None;
+        let mut audit_events = Vec::new();
 
-        if let Some(locked_until) = record.locked_until.filter(|until| *until > now) {
-            let retry_after_seconds = locked_until.saturating_sub(now);
-            return Ok(LoginThrottleCheck {
-                decision: LoginThrottleDecision::Throttled {
-                    retry_after_seconds,
-                },
-                audit_event: Some(build_throttled_event(
+        for key in keys {
+            let Some(record) = self.store.load(&key.key_id)? else {
+                continue;
+            };
+
+            if let Some(locked_until) = record.locked_until.filter(|until| *until > now) {
+                let current_retry_after = locked_until.saturating_sub(now);
+                retry_after_seconds = Some(
+                    retry_after_seconds
+                        .map(|current: u64| current.max(current_retry_after))
+                        .unwrap_or(current_retry_after),
+                );
+                audit_events.push(build_throttled_event(
                     context,
                     &key,
                     record.failure_count,
-                    retry_after_seconds,
-                )),
-            });
+                    current_retry_after,
+                ));
+            }
         }
 
-        Ok(LoginThrottleCheck {
-            decision: LoginThrottleDecision::Allowed,
-            audit_event: None,
-        })
+        if let Some(retry_after_seconds) = retry_after_seconds {
+            Ok(LoginThrottleCheck {
+                decision: LoginThrottleDecision::Throttled {
+                    retry_after_seconds,
+                },
+                audit_events,
+            })
+        } else {
+            Ok(LoginThrottleCheck {
+                decision: LoginThrottleDecision::Allowed,
+                audit_events,
+            })
+        }
     }
 
     /// Records one failed login attempt for the presented identity bucket.
@@ -298,45 +377,55 @@ where
         context: &AuthenticationContext,
         submitted_username: &str,
     ) -> Result<LoginThrottleFailureRecord, LoginThrottleError> {
-        let key = LoginThrottleKey::new(submitted_username, &context.remote_addr);
+        let keys = [
+            LoginThrottleKey::for_credential_and_remote_addr(
+                submitted_username,
+                &context.remote_addr,
+            ),
+            LoginThrottleKey::for_remote_addr(submitted_username, &context.remote_addr),
+        ];
         let now = self.time_provider.unix_timestamp();
-        let mut record = self
-            .store
-            .load(&key.key_id)?
-            .unwrap_or_else(LoginThrottleRecord::empty);
-
-        let lockout_expired = record.locked_until.is_some_and(|until| until <= now);
-        let outside_window = record.failure_count == 0
-            || now.saturating_sub(record.window_started_at) >= self.policy.failure_window_seconds;
-
-        if lockout_expired || outside_window {
-            record.failure_count = 1;
-            record.window_started_at = now;
-            record.last_failure_at = now;
-            record.locked_until = None;
-        } else {
-            record.failure_count = record.failure_count.saturating_add(1);
-            record.last_failure_at = now;
-        }
-
-        let mut audit_event = None;
         let mut lockout_engaged = false;
-        if record.failure_count >= self.policy.max_failures {
-            lockout_engaged = true;
-            record.locked_until = Some(now.saturating_add(self.policy.lockout_seconds));
-            audit_event = Some(build_lockout_engaged_event(
-                context,
-                &key,
-                record.failure_count,
-                self.policy.lockout_seconds,
-            ));
-        }
+        let mut audit_events = Vec::new();
 
-        self.store.save(&key.key_id, &record)?;
+        for key in keys {
+            let mut record = self
+                .store
+                .load(&key.key_id)?
+                .unwrap_or_else(LoginThrottleRecord::empty);
+
+            let lockout_expired = record.locked_until.is_some_and(|until| until <= now);
+            let outside_window = record.failure_count == 0
+                || now.saturating_sub(record.window_started_at)
+                    >= self.policy.failure_window_seconds;
+
+            if lockout_expired || outside_window {
+                record.failure_count = 1;
+                record.window_started_at = now;
+                record.last_failure_at = now;
+                record.locked_until = None;
+            } else {
+                record.failure_count = record.failure_count.saturating_add(1);
+                record.last_failure_at = now;
+            }
+
+            if record.failure_count >= key.bucket_kind.max_failures(self.policy) {
+                lockout_engaged = true;
+                record.locked_until = Some(now.saturating_add(self.policy.lockout_seconds));
+                audit_events.push(build_lockout_engaged_event(
+                    context,
+                    &key,
+                    record.failure_count,
+                    self.policy.lockout_seconds,
+                ));
+            }
+
+            self.store.save(&key.key_id, &record)?;
+        }
 
         Ok(LoginThrottleFailureRecord {
             lockout_engaged,
-            audit_event,
+            audit_events,
         })
     }
 
@@ -346,10 +435,22 @@ where
         &self,
         context: &AuthenticationContext,
         submitted_username: &str,
-    ) -> Result<Option<LogEvent>, LoginThrottleError> {
-        let key = LoginThrottleKey::new(submitted_username, &context.remote_addr);
-        self.store.remove(&key.key_id)?;
-        Ok(Some(build_cleared_event(context, &key)))
+    ) -> Result<Vec<LogEvent>, LoginThrottleError> {
+        let keys = [
+            LoginThrottleKey::for_credential_and_remote_addr(
+                submitted_username,
+                &context.remote_addr,
+            ),
+            LoginThrottleKey::for_remote_addr(submitted_username, &context.remote_addr),
+        ];
+        let mut audit_events = Vec::new();
+
+        for key in keys {
+            self.store.remove(&key.key_id)?;
+            audit_events.push(build_cleared_event(context, &key));
+        }
+
+        Ok(audit_events)
     }
 }
 
@@ -367,6 +468,7 @@ fn build_throttled_event(
     )
     .with_field("public_reason", TOO_MANY_ATTEMPTS_PUBLIC_REASON)
     .with_field("submitted_username", key.submitted_username.clone())
+    .with_field("bucket_kind", key.bucket_kind.as_str())
     .with_field("remote_addr", key.remote_addr.clone())
     .with_field("failure_count", failure_count.to_string())
     .with_field("retry_after_seconds", retry_after_seconds.to_string())
@@ -388,6 +490,7 @@ fn build_lockout_engaged_event(
     )
     .with_field("public_reason", TOO_MANY_ATTEMPTS_PUBLIC_REASON)
     .with_field("submitted_username", key.submitted_username.clone())
+    .with_field("bucket_kind", key.bucket_kind.as_str())
     .with_field("remote_addr", key.remote_addr.clone())
     .with_field("failure_count", failure_count.to_string())
     .with_field("lockout_seconds", lockout_seconds.to_string())
@@ -403,6 +506,7 @@ fn build_cleared_event(context: &AuthenticationContext, key: &LoginThrottleKey) 
         "login throttle bucket cleared after successful authentication",
     )
     .with_field("submitted_username", key.submitted_username.clone())
+    .with_field("bucket_kind", key.bucket_kind.as_str())
     .with_field("remote_addr", key.remote_addr.clone())
     .with_field("request_id", context.request_id.clone())
     .with_field("user_agent", context.user_agent.clone())
@@ -569,8 +673,20 @@ mod tests {
         );
 
         assert_eq!(key.submitted_username, "alice@example.com");
+        assert_eq!(
+            key.bucket_kind,
+            LoginThrottleBucketKind::CredentialAndRemoteAddr
+        );
         assert!(key.key_id.len() == 64);
         assert!(key.key_id.chars().all(|ch| ch.is_ascii_hexdigit()));
+
+        let remote_key = LoginThrottleKey::for_remote_addr("Alice@Example.com", "127.0.0.1");
+        assert_eq!(remote_key.submitted_username, "alice@example.com");
+        assert_eq!(
+            remote_key.bucket_kind,
+            LoginThrottleBucketKind::RemoteAddrOnly
+        );
+        assert_ne!(key.key_id, remote_key.key_id);
     }
 
     #[test]
@@ -604,7 +720,8 @@ mod tests {
             store,
             FixedTimeProvider::new(200),
             LoginThrottlePolicy {
-                max_failures: 2,
+                credential_max_failures: 2,
+                remote_addr_max_failures: 4,
                 failure_window_seconds: 300,
                 lockout_seconds: 60,
             },
@@ -614,7 +731,7 @@ mod tests {
             .record_failure(&test_context(), "alice@example.com")
             .expect("first failure should record");
         assert!(!first.lockout_engaged);
-        assert!(first.audit_event.is_none());
+        assert!(first.audit_events.is_empty());
 
         let second = service
             .record_failure(&test_context(), "alice@example.com")
@@ -622,7 +739,8 @@ mod tests {
         assert!(second.lockout_engaged);
         assert_eq!(
             second
-                .audit_event
+                .audit_events
+                .first()
                 .expect("lockout should emit an event")
                 .action,
             "login_throttle_engaged"
@@ -640,7 +758,8 @@ mod tests {
         );
         assert_eq!(
             check
-                .audit_event
+                .audit_events
+                .first()
                 .expect("throttle hit should be logged")
                 .action,
             "login_throttled"
@@ -668,7 +787,8 @@ mod tests {
             store,
             FixedTimeProvider::new(500),
             LoginThrottlePolicy {
-                max_failures: 5,
+                credential_max_failures: 5,
+                remote_addr_max_failures: 12,
                 failure_window_seconds: 60,
                 lockout_seconds: 300,
             },
@@ -710,15 +830,67 @@ mod tests {
             LoginThrottlePolicy::default(),
         );
 
-        let event = service
+        let events = service
             .clear_success(&test_context(), "alice@example.com")
-            .expect("clear should succeed")
-            .expect("clear should emit an event");
+            .expect("clear should succeed");
 
-        assert_eq!(event.action, "login_throttle_cleared");
+        assert_eq!(events.len(), 2);
+        assert!(events
+            .iter()
+            .all(|event| event.action == "login_throttle_cleared"));
         assert!(FileLoginThrottleStore::new(&dir)
             .load(&key.key_id)
             .expect("load should succeed")
             .is_none());
+    }
+
+    #[test]
+    fn remote_addr_bucket_engages_across_rotating_usernames() {
+        let dir = temp_dir("osmap-throttle-remote");
+        let store = FileLoginThrottleStore::new(&dir);
+        let service = LoginThrottleService::new(
+            store,
+            FixedTimeProvider::new(200),
+            LoginThrottlePolicy {
+                credential_max_failures: 5,
+                remote_addr_max_failures: 2,
+                failure_window_seconds: 300,
+                lockout_seconds: 60,
+            },
+        );
+
+        let first = service
+            .record_failure(&test_context(), "alice@example.com")
+            .expect("first rotating-username failure should record");
+        assert!(!first.lockout_engaged);
+
+        let second = service
+            .record_failure(&test_context(), "bob@example.com")
+            .expect("second rotating-username failure should record");
+        assert!(second.lockout_engaged);
+        assert!(second.audit_events.iter().any(|event| {
+            event.action == "login_throttle_engaged"
+                && event
+                    .fields
+                    .iter()
+                    .any(|field| field.key == "bucket_kind" && field.value == "remote_addr_only")
+        }));
+
+        let check = service
+            .check(&test_context(), "charlie@example.com")
+            .expect("remote-only throttle check should succeed");
+        assert_eq!(
+            check.decision,
+            LoginThrottleDecision::Throttled {
+                retry_after_seconds: 60
+            }
+        );
+        assert!(check.audit_events.iter().any(|event| {
+            event.action == "login_throttled"
+                && event
+                    .fields
+                    .iter()
+                    .any(|field| field.key == "bucket_kind" && field.value == "remote_addr_only")
+        }));
     }
 }

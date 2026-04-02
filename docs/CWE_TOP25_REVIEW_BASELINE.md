@@ -52,7 +52,8 @@ resource-exhaustion weaknesses.
 ### Residual risks still requiring active work
 
 - `CWE-770` remains relevant because the HTTP runtime is still sequential and
-  application-layer throttling is not yet implemented.
+  the current browser-login throttle is only one layer of broader abuse
+  resistance rather than a full request-resource control story.
 - `CWE-862`, `CWE-863`, `CWE-284`, and `CWE-639` remain relevant because the
   browser and helper surfaces are authorization-sensitive and need continuous
   regression review as features expand.
@@ -64,7 +65,7 @@ resource-exhaustion weaknesses.
 
 ## Current Rust-Specific Findings
 
-As of March 28, 2026, the current repository review found:
+As of April 2, 2026, the current repository review found:
 
 - no shell-based command execution in the Rust backend
 - no direct `Command::new` use outside the reviewed auth command-execution
@@ -74,8 +75,9 @@ As of March 28, 2026, the current repository review found:
 - no generic serde-style deserialization layer in the Rust backend
 
 The most important remaining security gap confirmed by the repository is still
-bounded auth abuse resistance and broader resource-throttling strategy, not a
-newly discovered injection or memory-safety defect.
+broader auth abuse resistance and resource-throttling strategy beyond the
+current dual-bucket browser-login throttle, not a newly discovered injection
+or memory-safety defect.
 
 ## Security Check Workflow
 

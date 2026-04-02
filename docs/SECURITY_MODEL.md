@@ -130,10 +130,15 @@ Required defensive implications:
 - useful auth logging
 - careful failure behavior that does not leak unnecessary detail
 
-The current implementation now includes a first bounded application-layer
-login-throttling slice on top of the browser auth path. That reduces brute
-force exposure materially, but it does not eliminate the need for adjacent
-controls or broader anomaly detection.
+The current implementation now includes a bounded application-layer
+login-throttling model on top of the browser auth path. It applies both:
+
+- a tighter credential-plus-remote bucket
+- a higher-threshold remote-only bucket
+
+That makes repeated username rotation from one source materially more
+expensive, but it does not eliminate the need for adjacent controls or broader
+anomaly detection.
 
 ### Account Takeover After Credential Theft
 
@@ -230,6 +235,7 @@ expectations:
 - MFA required for browser access, initially TOTP
 - strong credential handling and transport security
 - application-layer login throttling or equivalent anti-automation friction
+  that does not rely on a single credential-keyed bucket alone
 - no assumption that VPN location alone is sufficient trust
 - compatibility-conscious design for existing native-client realities
 

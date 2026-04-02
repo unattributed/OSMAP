@@ -24,6 +24,12 @@ The current slice provides:
 
 This is intentionally small and reviewable.
 
+The current settings slice is now also live-proven on
+`mail.blackbagsecurity.com` under `OSMAP_OPENBSD_CONFINEMENT_MODE=enforce`
+through the browser route itself: the default HTML preference is rendered,
+`POST /settings` persists `prefer_plain_text`, and the subsequent message view
+reflects that stored preference.
+
 ## Current Setting
 
 The first settings surface controls one behavior:
@@ -78,6 +84,8 @@ This slice now proves that:
   state boundary
 - a meaningful user-facing control can be added without widening the mail or
   submission trust boundaries
+- the stored preference can drive a real browser-visible rendering change on
+  the OpenBSD host rather than only a unit-test fixture
 
 ## What Is Still Missing
 

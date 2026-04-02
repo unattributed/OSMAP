@@ -92,9 +92,7 @@ impl RuntimeBrowserGateway {
 
         match throttle_service.check(context, username) {
             Ok(check) => {
-                if let Some(audit_event) = check.audit_event {
-                    audit_events.push(audit_event);
-                }
+                audit_events.extend(check.audit_events);
 
                 if let LoginThrottleDecision::Throttled { .. } = check.decision {
                     return BrowserLoginOutcome {
@@ -124,9 +122,7 @@ impl RuntimeBrowserGateway {
                 if public_reason == PublicFailureReason::InvalidCredentials {
                     match throttle_service.record_failure(context, username) {
                         Ok(record) => {
-                            if let Some(audit_event) = record.audit_event {
-                                audit_events.push(audit_event);
-                            }
+                            audit_events.extend(record.audit_events);
                             if record.lockout_engaged {
                                 effective_public_reason =
                                     TOO_MANY_ATTEMPTS_PUBLIC_REASON.to_string();
@@ -168,9 +164,7 @@ impl RuntimeBrowserGateway {
                         if public_reason == PublicFailureReason::InvalidSecondFactor {
                             match throttle_service.record_failure(context, username) {
                                 Ok(record) => {
-                                    if let Some(audit_event) = record.audit_event {
-                                        audit_events.push(audit_event);
-                                    }
+                                    audit_events.extend(record.audit_events);
                                     if record.lockout_engaged {
                                         effective_public_reason =
                                             TOO_MANY_ATTEMPTS_PUBLIC_REASON.to_string();
@@ -203,8 +197,9 @@ impl RuntimeBrowserGateway {
                             Ok(issued_session) => {
                                 audit_events.push(issued_session.audit_event.clone());
                                 match throttle_service.clear_success(context, username) {
-                                    Ok(Some(audit_event)) => audit_events.push(audit_event),
-                                    Ok(None) => {}
+                                    Ok(throttle_audit_events) => {
+                                        audit_events.extend(throttle_audit_events)
+                                    }
                                     Err(error) => audit_events.push(
                                         self.build_login_throttle_store_error_event(
                                             "login_throttle_clear_failed",

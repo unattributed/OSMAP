@@ -366,6 +366,7 @@ mod tests {
             session_lifetime_seconds: 43200,
             totp_allowed_skew_steps: 1,
             login_throttle_max_failures: 5,
+            login_throttle_remote_max_failures: 12,
             login_throttle_window_seconds: 300,
             login_throttle_lockout_seconds: 900,
             openbsd_confinement_mode: mode,

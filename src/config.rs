@@ -13,7 +13,7 @@ use crate::error::BootstrapError;
 use crate::state::StateLayout;
 use crate::throttle::{
     DEFAULT_LOGIN_THROTTLE_LOCKOUT_SECONDS, DEFAULT_LOGIN_THROTTLE_MAX_FAILURES,
-    DEFAULT_LOGIN_THROTTLE_WINDOW_SECONDS,
+    DEFAULT_LOGIN_THROTTLE_REMOTE_MAX_FAILURES, DEFAULT_LOGIN_THROTTLE_WINDOW_SECONDS,
 };
 
 /// Runtime configuration that is safe to print in operator-facing startup
@@ -33,6 +33,7 @@ pub struct AppConfig {
     pub session_lifetime_seconds: u64,
     pub totp_allowed_skew_steps: i64,
     pub login_throttle_max_failures: u64,
+    pub login_throttle_remote_max_failures: u64,
     pub login_throttle_window_seconds: u64,
     pub login_throttle_lockout_seconds: u64,
     pub openbsd_confinement_mode: OpenbsdConfinementMode,
@@ -231,6 +232,11 @@ impl AppConfig {
             "OSMAP_LOGIN_THROTTLE_WINDOW_SECS",
             &DEFAULT_LOGIN_THROTTLE_WINDOW_SECONDS.to_string(),
         );
+        let login_throttle_remote_max_failures_value = read_value(
+            env_map,
+            "OSMAP_LOGIN_THROTTLE_REMOTE_MAX_FAILURES",
+            &DEFAULT_LOGIN_THROTTLE_REMOTE_MAX_FAILURES.to_string(),
+        );
         let login_throttle_lockout_value = read_value(
             env_map,
             "OSMAP_LOGIN_THROTTLE_LOCKOUT_SECS",
@@ -287,6 +293,10 @@ impl AppConfig {
             &login_throttle_max_failures_value,
         )?;
         validate_non_empty(
+            "OSMAP_LOGIN_THROTTLE_REMOTE_MAX_FAILURES",
+            &login_throttle_remote_max_failures_value,
+        )?;
+        validate_non_empty(
             "OSMAP_LOGIN_THROTTLE_WINDOW_SECS",
             &login_throttle_window_value,
         )?;
@@ -314,6 +324,10 @@ impl AppConfig {
             "OSMAP_LOGIN_THROTTLE_MAX_FAILURES",
             &login_throttle_max_failures_value,
         )?;
+        let login_throttle_remote_max_failures = parse_u64(
+            "OSMAP_LOGIN_THROTTLE_REMOTE_MAX_FAILURES",
+            &login_throttle_remote_max_failures_value,
+        )?;
         let login_throttle_window_seconds = parse_u64(
             "OSMAP_LOGIN_THROTTLE_WINDOW_SECS",
             &login_throttle_window_value,
@@ -326,6 +340,10 @@ impl AppConfig {
         validate_positive_u64(
             "OSMAP_LOGIN_THROTTLE_MAX_FAILURES",
             login_throttle_max_failures,
+        )?;
+        validate_positive_u64(
+            "OSMAP_LOGIN_THROTTLE_REMOTE_MAX_FAILURES",
+            login_throttle_remote_max_failures,
         )?;
         validate_positive_u64(
             "OSMAP_LOGIN_THROTTLE_WINDOW_SECS",
@@ -363,6 +381,7 @@ impl AppConfig {
             session_lifetime_seconds,
             totp_allowed_skew_steps,
             login_throttle_max_failures,
+            login_throttle_remote_max_failures,
             login_throttle_window_seconds,
             login_throttle_lockout_seconds,
             openbsd_confinement_mode,
@@ -546,6 +565,7 @@ mod tests {
         assert_eq!(config.session_lifetime_seconds, 43200);
         assert_eq!(config.totp_allowed_skew_steps, 1);
         assert_eq!(config.login_throttle_max_failures, 5);
+        assert_eq!(config.login_throttle_remote_max_failures, 12);
         assert_eq!(config.login_throttle_window_seconds, 300);
         assert_eq!(config.login_throttle_lockout_seconds, 900);
         assert_eq!(
@@ -597,6 +617,10 @@ mod tests {
             (
                 "OSMAP_LOGIN_THROTTLE_WINDOW_SECS".to_string(),
                 "120".to_string(),
+            ),
+            (
+                "OSMAP_LOGIN_THROTTLE_REMOTE_MAX_FAILURES".to_string(),
+                "9".to_string(),
             ),
             (
                 "OSMAP_LOGIN_THROTTLE_LOCKOUT_SECS".to_string(),
@@ -657,6 +681,7 @@ mod tests {
         assert_eq!(config.session_lifetime_seconds, 3600);
         assert_eq!(config.totp_allowed_skew_steps, 2);
         assert_eq!(config.login_throttle_max_failures, 4);
+        assert_eq!(config.login_throttle_remote_max_failures, 9);
         assert_eq!(config.login_throttle_window_seconds, 120);
         assert_eq!(config.login_throttle_lockout_seconds, 600);
         assert_eq!(
@@ -742,6 +767,25 @@ mod tests {
             error,
             BootstrapError::InvalidConfig {
                 field: "OSMAP_LOGIN_THROTTLE_MAX_FAILURES",
+                reason: "value must be greater than zero".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn rejects_zero_remote_login_throttle_threshold() {
+        let env_map = BTreeMap::from([(
+            "OSMAP_LOGIN_THROTTLE_REMOTE_MAX_FAILURES".to_string(),
+            "0".to_string(),
+        )]);
+
+        let error = AppConfig::from_env_map(&env_map)
+            .expect_err("zero-valued remote login throttle threshold must fail");
+
+        assert_eq!(
+            error,
+            BootstrapError::InvalidConfig {
+                field: "OSMAP_LOGIN_THROTTLE_REMOTE_MAX_FAILURES",
                 reason: "value must be greater than zero".to_string(),
             }
         );

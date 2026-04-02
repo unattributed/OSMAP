@@ -29,6 +29,7 @@ pub struct BootstrapReport {
     pub session_lifetime_seconds: String,
     pub totp_allowed_skew_steps: String,
     pub login_throttle_max_failures: String,
+    pub login_throttle_remote_max_failures: String,
     pub login_throttle_window_seconds: String,
     pub login_throttle_lockout_seconds: String,
 }
@@ -81,6 +82,10 @@ impl BootstrapReport {
         .with_field(
             "login_throttle_max_failures",
             self.login_throttle_max_failures.clone(),
+        )
+        .with_field(
+            "login_throttle_remote_max_failures",
+            self.login_throttle_remote_max_failures.clone(),
         )
         .with_field(
             "login_throttle_window_seconds",
@@ -148,6 +153,7 @@ fn report_from_config(config: &AppConfig) -> BootstrapReport {
         session_lifetime_seconds: config.session_lifetime_seconds.to_string(),
         totp_allowed_skew_steps: config.totp_allowed_skew_steps.to_string(),
         login_throttle_max_failures: config.login_throttle_max_failures.to_string(),
+        login_throttle_remote_max_failures: config.login_throttle_remote_max_failures.to_string(),
         login_throttle_window_seconds: config.login_throttle_window_seconds.to_string(),
         login_throttle_lockout_seconds: config.login_throttle_lockout_seconds.to_string(),
     }
@@ -188,6 +194,7 @@ mod tests {
             session_lifetime_seconds: 43200,
             totp_allowed_skew_steps: 1,
             login_throttle_max_failures: 5,
+            login_throttle_remote_max_failures: 12,
             login_throttle_window_seconds: 300,
             login_throttle_lockout_seconds: 900,
         };
@@ -272,6 +279,10 @@ mod tests {
                 crate::logging::LogField {
                     key: "login_throttle_max_failures",
                     value: "5".to_string(),
+                },
+                crate::logging::LogField {
+                    key: "login_throttle_remote_max_failures",
+                    value: "12".to_string(),
                 },
                 crate::logging::LogField {
                     key: "login_throttle_window_seconds",

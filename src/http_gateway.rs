@@ -38,7 +38,8 @@ impl RuntimeBrowserGateway {
                 ..TotpPolicy::default()
             },
             login_throttle_policy: LoginThrottlePolicy {
-                max_failures: config.login_throttle_max_failures,
+                credential_max_failures: config.login_throttle_max_failures,
+                remote_addr_max_failures: config.login_throttle_remote_max_failures,
                 failure_window_seconds: config.login_throttle_window_seconds,
                 lockout_seconds: config.login_throttle_lockout_seconds,
             },
@@ -62,7 +63,8 @@ impl RuntimeBrowserGateway {
             authentication_policy: AuthenticationPolicy::default(),
             totp_policy: TotpPolicy::default(),
             login_throttle_policy: LoginThrottlePolicy {
-                max_failures: 5,
+                credential_max_failures: 5,
+                remote_addr_max_failures: 12,
                 failure_window_seconds: 300,
                 lockout_seconds: 600,
             },

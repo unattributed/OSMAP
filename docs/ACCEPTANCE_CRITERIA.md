@@ -179,13 +179,16 @@ Phase 6:
   `_osmap` and the helper kept at the `vmail` boundary
 - the browser layer now includes a first mailbox-scoped backend-authoritative
   search path plus a first one-message move path between existing mailboxes
-- the browser auth path now includes a first bounded application-layer login
-  throttling slice backed by explicit runtime configuration and file-backed
-  cache state
+- the browser auth path now includes a bounded dual-bucket application-layer
+  login throttle backed by explicit runtime configuration and file-backed cache
+  state
 - the browser layer now includes a conservative safe-HTML rendering path plus a
   first bounded settings page for HTML display preference, which closes the
   previous top-level Version 1 product gaps around HTML handling and end-user
   settings in first-release form
+- the safe-HTML rendering and settings slice is now also live-proven on
+  `mail.blackbagsecurity.com` under `enforce` against a controlled HTML-bearing
+  mailbox message and a settings update through the browser route
 - broader ergonomics for folder organization remain later refinements rather
   than blockers for the first move slice
 - the current repo-grounded reassessment also confirms active hardening gaps

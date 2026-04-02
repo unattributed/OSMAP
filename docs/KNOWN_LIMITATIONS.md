@@ -40,10 +40,10 @@
 - The implementation now provides a first bounded end-user settings surface,
   but it currently exposes only one user-facing preference rather than a broad
   settings platform
-- The Rust backend now implements a first file-backed application-layer login
-  throttling slice for browser authentication, but broader request-abuse
-  controls and richer anomaly handling still depend on adjacent defenses such
-  as nginx, PF, and operator monitoring
+- The Rust backend now implements a bounded dual-bucket file-backed login
+  throttle for browser authentication, but broader request-abuse controls and
+  richer anomaly handling still depend on adjacent defenses such as nginx, PF,
+  and operator monitoring
 - No formal migration plan has been completed
 - The existing host is multi-purpose, which constrains how aggressively the
   replacement can diverge from current operational patterns
@@ -75,6 +75,9 @@
 - attachment download is now proven against a real attachment-bearing mailbox
   under enforced confinement, but a distinct helper-side attachment-byte
   operation still does not exist
+- sanitized HTML rendering and the first settings-driven plain-text fallback
+  are now proven on `mail.blackbagsecurity.com`, but broader live mutation-path
+  proof for send and move still does not exist
 - The SDLC and release rules are now defined, but they have not yet been proven
   against a full live implementation pipeline
 - The project now has an implementation plan and work breakdown, but there is

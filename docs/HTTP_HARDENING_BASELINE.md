@@ -18,8 +18,8 @@ round of HTTP-specific hardening controls:
 - `HttpOnly` and `SameSite=Strict` session cookies
 - `Secure` cookies outside development
 - session-bound CSRF tokens on current state-changing form routes
-- a file-backed application-layer login-throttling check before the current
-  auth backend is reached
+- a file-backed dual-bucket application-layer login-throttling check before
+  the current auth backend is reached
 - server-rendered HTML with conservative message rendering and no client-side
   scripting dependency
 - an operator-controlled OpenBSD confinement mode for serve runtime
@@ -179,6 +179,11 @@ paths.
 Live host validation now also proves that the current browser login route can
 deny invalid credentials cleanly through a dedicated least-privilege Dovecot
 auth socket under both `log-only` and `enforce`.
+
+Live host validation now also proves that the current safe-HTML rendering and
+settings routes work under `enforce` against a controlled HTML-only mailbox
+message when the web runtime is kept as `_osmap` and the helper is kept at the
+`vmail` boundary.
 
 ## What This Baseline Does Not Yet Claim
 
