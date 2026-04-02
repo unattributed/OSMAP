@@ -145,6 +145,9 @@ pub(crate) fn public_reason_message(reason: &str) -> &'static str {
         "too_many_submissions" => {
             "Too many outbound submissions were observed. Please try again later."
         }
+        "too_many_message_moves" => {
+            "Too many mailbox move requests were observed. Please try again later."
+        }
         "not_found" => "The requested item was not found.",
         _ => "The service could not complete the request at this time.",
     }

@@ -14,6 +14,8 @@ use crate::state::StateLayout;
 use crate::throttle::{
     DEFAULT_LOGIN_THROTTLE_LOCKOUT_SECONDS, DEFAULT_LOGIN_THROTTLE_MAX_FAILURES,
     DEFAULT_LOGIN_THROTTLE_REMOTE_MAX_FAILURES, DEFAULT_LOGIN_THROTTLE_WINDOW_SECONDS,
+    DEFAULT_MESSAGE_MOVE_THROTTLE_LOCKOUT_SECONDS, DEFAULT_MESSAGE_MOVE_THROTTLE_MAX_MOVES,
+    DEFAULT_MESSAGE_MOVE_THROTTLE_REMOTE_MAX_MOVES, DEFAULT_MESSAGE_MOVE_THROTTLE_WINDOW_SECONDS,
     DEFAULT_SUBMISSION_THROTTLE_LOCKOUT_SECONDS, DEFAULT_SUBMISSION_THROTTLE_MAX_SUBMISSIONS,
     DEFAULT_SUBMISSION_THROTTLE_REMOTE_MAX_SUBMISSIONS, DEFAULT_SUBMISSION_THROTTLE_WINDOW_SECONDS,
 };
@@ -42,6 +44,10 @@ pub struct AppConfig {
     pub submission_throttle_remote_max_submissions: u64,
     pub submission_throttle_window_seconds: u64,
     pub submission_throttle_lockout_seconds: u64,
+    pub message_move_throttle_max_moves: u64,
+    pub message_move_throttle_remote_max_moves: u64,
+    pub message_move_throttle_window_seconds: u64,
+    pub message_move_throttle_lockout_seconds: u64,
     pub openbsd_confinement_mode: OpenbsdConfinementMode,
 }
 
@@ -268,6 +274,26 @@ impl AppConfig {
             "OSMAP_SUBMISSION_THROTTLE_LOCKOUT_SECS",
             &DEFAULT_SUBMISSION_THROTTLE_LOCKOUT_SECONDS.to_string(),
         );
+        let message_move_throttle_max_moves_value = read_value(
+            env_map,
+            "OSMAP_MESSAGE_MOVE_THROTTLE_MAX_MOVES",
+            &DEFAULT_MESSAGE_MOVE_THROTTLE_MAX_MOVES.to_string(),
+        );
+        let message_move_throttle_remote_max_moves_value = read_value(
+            env_map,
+            "OSMAP_MESSAGE_MOVE_THROTTLE_REMOTE_MAX_MOVES",
+            &DEFAULT_MESSAGE_MOVE_THROTTLE_REMOTE_MAX_MOVES.to_string(),
+        );
+        let message_move_throttle_window_value = read_value(
+            env_map,
+            "OSMAP_MESSAGE_MOVE_THROTTLE_WINDOW_SECS",
+            &DEFAULT_MESSAGE_MOVE_THROTTLE_WINDOW_SECONDS.to_string(),
+        );
+        let message_move_throttle_lockout_value = read_value(
+            env_map,
+            "OSMAP_MESSAGE_MOVE_THROTTLE_LOCKOUT_SECS",
+            &DEFAULT_MESSAGE_MOVE_THROTTLE_LOCKOUT_SECONDS.to_string(),
+        );
         let openbsd_confinement_mode_value =
             read_value(env_map, "OSMAP_OPENBSD_CONFINEMENT_MODE", "disabled");
         let doveadm_auth_socket_path =
@@ -347,6 +373,22 @@ impl AppConfig {
             &submission_throttle_lockout_value,
         )?;
         validate_non_empty(
+            "OSMAP_MESSAGE_MOVE_THROTTLE_MAX_MOVES",
+            &message_move_throttle_max_moves_value,
+        )?;
+        validate_non_empty(
+            "OSMAP_MESSAGE_MOVE_THROTTLE_REMOTE_MAX_MOVES",
+            &message_move_throttle_remote_max_moves_value,
+        )?;
+        validate_non_empty(
+            "OSMAP_MESSAGE_MOVE_THROTTLE_WINDOW_SECS",
+            &message_move_throttle_window_value,
+        )?;
+        validate_non_empty(
+            "OSMAP_MESSAGE_MOVE_THROTTLE_LOCKOUT_SECS",
+            &message_move_throttle_lockout_value,
+        )?;
+        validate_non_empty(
             "OSMAP_OPENBSD_CONFINEMENT_MODE",
             &openbsd_confinement_mode_value,
         )?;
@@ -394,6 +436,22 @@ impl AppConfig {
             "OSMAP_SUBMISSION_THROTTLE_LOCKOUT_SECS",
             &submission_throttle_lockout_value,
         )?;
+        let message_move_throttle_max_moves = parse_u64(
+            "OSMAP_MESSAGE_MOVE_THROTTLE_MAX_MOVES",
+            &message_move_throttle_max_moves_value,
+        )?;
+        let message_move_throttle_remote_max_moves = parse_u64(
+            "OSMAP_MESSAGE_MOVE_THROTTLE_REMOTE_MAX_MOVES",
+            &message_move_throttle_remote_max_moves_value,
+        )?;
+        let message_move_throttle_window_seconds = parse_u64(
+            "OSMAP_MESSAGE_MOVE_THROTTLE_WINDOW_SECS",
+            &message_move_throttle_window_value,
+        )?;
+        let message_move_throttle_lockout_seconds = parse_u64(
+            "OSMAP_MESSAGE_MOVE_THROTTLE_LOCKOUT_SECS",
+            &message_move_throttle_lockout_value,
+        )?;
         validate_positive_u64("OSMAP_SESSION_LIFETIME_SECS", session_lifetime_seconds)?;
         validate_positive_u64(
             "OSMAP_LOGIN_THROTTLE_MAX_FAILURES",
@@ -426,6 +484,22 @@ impl AppConfig {
         validate_positive_u64(
             "OSMAP_SUBMISSION_THROTTLE_LOCKOUT_SECS",
             submission_throttle_lockout_seconds,
+        )?;
+        validate_positive_u64(
+            "OSMAP_MESSAGE_MOVE_THROTTLE_MAX_MOVES",
+            message_move_throttle_max_moves,
+        )?;
+        validate_positive_u64(
+            "OSMAP_MESSAGE_MOVE_THROTTLE_REMOTE_MAX_MOVES",
+            message_move_throttle_remote_max_moves,
+        )?;
+        validate_positive_u64(
+            "OSMAP_MESSAGE_MOVE_THROTTLE_WINDOW_SECS",
+            message_move_throttle_window_seconds,
+        )?;
+        validate_positive_u64(
+            "OSMAP_MESSAGE_MOVE_THROTTLE_LOCKOUT_SECS",
+            message_move_throttle_lockout_seconds,
         )?;
 
         let state_layout = StateLayout::new(
@@ -462,6 +536,10 @@ impl AppConfig {
             submission_throttle_remote_max_submissions,
             submission_throttle_window_seconds,
             submission_throttle_lockout_seconds,
+            message_move_throttle_max_moves,
+            message_move_throttle_remote_max_moves,
+            message_move_throttle_window_seconds,
+            message_move_throttle_lockout_seconds,
             openbsd_confinement_mode,
         })
     }
@@ -650,6 +728,10 @@ mod tests {
         assert_eq!(config.submission_throttle_remote_max_submissions, 25);
         assert_eq!(config.submission_throttle_window_seconds, 300);
         assert_eq!(config.submission_throttle_lockout_seconds, 900);
+        assert_eq!(config.message_move_throttle_max_moves, 20);
+        assert_eq!(config.message_move_throttle_remote_max_moves, 60);
+        assert_eq!(config.message_move_throttle_window_seconds, 300);
+        assert_eq!(config.message_move_throttle_lockout_seconds, 900);
         assert_eq!(
             config.openbsd_confinement_mode,
             OpenbsdConfinementMode::Disabled
@@ -725,6 +807,22 @@ mod tests {
                 "1200".to_string(),
             ),
             (
+                "OSMAP_MESSAGE_MOVE_THROTTLE_MAX_MOVES".to_string(),
+                "8".to_string(),
+            ),
+            (
+                "OSMAP_MESSAGE_MOVE_THROTTLE_REMOTE_MAX_MOVES".to_string(),
+                "24".to_string(),
+            ),
+            (
+                "OSMAP_MESSAGE_MOVE_THROTTLE_WINDOW_SECS".to_string(),
+                "240".to_string(),
+            ),
+            (
+                "OSMAP_MESSAGE_MOVE_THROTTLE_LOCKOUT_SECS".to_string(),
+                "1500".to_string(),
+            ),
+            (
                 "OSMAP_DOVEADM_AUTH_SOCKET_PATH".to_string(),
                 "/var/run/osmap/dovecot-auth".to_string(),
             ),
@@ -786,6 +884,10 @@ mod tests {
         assert_eq!(config.submission_throttle_remote_max_submissions, 18);
         assert_eq!(config.submission_throttle_window_seconds, 180);
         assert_eq!(config.submission_throttle_lockout_seconds, 1200);
+        assert_eq!(config.message_move_throttle_max_moves, 8);
+        assert_eq!(config.message_move_throttle_remote_max_moves, 24);
+        assert_eq!(config.message_move_throttle_window_seconds, 240);
+        assert_eq!(config.message_move_throttle_lockout_seconds, 1500);
         assert_eq!(
             config.openbsd_confinement_mode,
             OpenbsdConfinementMode::LogOnly
@@ -926,6 +1028,44 @@ mod tests {
             error,
             BootstrapError::InvalidConfig {
                 field: "OSMAP_SUBMISSION_THROTTLE_REMOTE_MAX_SUBMISSIONS",
+                reason: "value must be greater than zero".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn rejects_zero_message_move_throttle_threshold() {
+        let env_map = BTreeMap::from([(
+            "OSMAP_MESSAGE_MOVE_THROTTLE_MAX_MOVES".to_string(),
+            "0".to_string(),
+        )]);
+
+        let error = AppConfig::from_env_map(&env_map)
+            .expect_err("zero-valued message move throttle threshold must fail");
+
+        assert_eq!(
+            error,
+            BootstrapError::InvalidConfig {
+                field: "OSMAP_MESSAGE_MOVE_THROTTLE_MAX_MOVES",
+                reason: "value must be greater than zero".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn rejects_zero_remote_message_move_throttle_threshold() {
+        let env_map = BTreeMap::from([(
+            "OSMAP_MESSAGE_MOVE_THROTTLE_REMOTE_MAX_MOVES".to_string(),
+            "0".to_string(),
+        )]);
+
+        let error = AppConfig::from_env_map(&env_map)
+            .expect_err("zero-valued remote message move throttle threshold must fail");
+
+        assert_eq!(
+            error,
+            BootstrapError::InvalidConfig {
+                field: "OSMAP_MESSAGE_MOVE_THROTTLE_REMOTE_MAX_MOVES",
                 reason: "value must be greater than zero".to_string(),
             }
         );

@@ -373,6 +373,10 @@ mod tests {
             submission_throttle_remote_max_submissions: 25,
             submission_throttle_window_seconds: 300,
             submission_throttle_lockout_seconds: 900,
+            message_move_throttle_max_moves: 20,
+            message_move_throttle_remote_max_moves: 60,
+            message_move_throttle_window_seconds: 300,
+            message_move_throttle_lockout_seconds: 900,
             openbsd_confinement_mode: mode,
         }
     }

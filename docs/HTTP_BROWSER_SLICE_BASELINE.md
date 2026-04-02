@@ -118,6 +118,8 @@ The current browser slice follows these rules:
   before the auth backend is reached
 - apply server-side canonical-user-plus-remote and remote-only throttle checks
   before the host submission surface is reached
+- apply server-side canonical-user-plus-remote and remote-only throttle checks
+  before the current one-message move workflow reaches the mailbox backend
 - avoid JavaScript as a dependency for the first flow
 
 This is not the final browser-security story, but it is an honest and useful
@@ -177,7 +179,7 @@ This slice does not yet include:
 - administrative routes
 - concurrent request handling
 - broader auth-abuse and request-abuse controls beyond the current login and
-  send throttling slices
+  send throttling slices plus the first one-message move throttle slice
 - broader live mutation-workflow coverage on the target host under confinement
 - rich HTML mail behavior such as external resources, inline image rendering,
   or permissive styling support

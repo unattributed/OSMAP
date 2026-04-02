@@ -353,6 +353,7 @@ pub enum BrowserMessageMoveDecision {
     },
     Denied {
         public_reason: String,
+        retry_after_seconds: Option<u64>,
     },
 }
 

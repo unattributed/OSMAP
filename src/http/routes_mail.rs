@@ -242,23 +242,33 @@ where
                 ),
                 audit_events,
             },
-            BrowserMessageMoveDecision::Denied { public_reason } => {
+            BrowserMessageMoveDecision::Denied {
+                public_reason,
+                retry_after_seconds,
+            } => {
                 let (status_code, reason_phrase, title) = match public_reason.as_str() {
                     "invalid_request" => (400, "Bad Request", "Invalid Message Move Request"),
                     "not_found" => (404, "Not Found", "Message Move Not Available"),
+                    TOO_MANY_MESSAGE_MOVES_PUBLIC_REASON => {
+                        (429, "Too Many Requests", "Message Move Temporarily Limited")
+                    }
                     _ => (503, "Service Unavailable", "Message Move Unavailable"),
                 };
 
-                HandledHttpResponse {
-                    response: html_response(
-                        status_code,
-                        reason_phrase,
-                        title,
-                        &format!(
-                            "<p>{}</p>",
-                            escape_html(public_reason_message(&public_reason))
-                        ),
+                let mut response = html_response(
+                    status_code,
+                    reason_phrase,
+                    title,
+                    &format!(
+                        "<p>{}</p>",
+                        escape_html(public_reason_message(&public_reason))
                     ),
+                );
+                if let Some(retry_after_seconds) = retry_after_seconds {
+                    response = response.with_header("Retry-After", retry_after_seconds.to_string());
+                }
+                HandledHttpResponse {
+                    response,
                     audit_events,
                 }
             }

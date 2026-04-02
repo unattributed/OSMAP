@@ -60,6 +60,8 @@ The current slice keeps risk bounded by:
 
 - requiring a validated browser session
 - requiring a CSRF token on the state-changing route
+- applying a bounded dual-bucket application-layer move throttle before the
+  mailbox backend is reached
 - validating both mailbox names before backend execution
 - rejecting zero or malformed UIDs
 - rejecting requests that try to move a message into the same mailbox
@@ -74,8 +76,8 @@ small action that is mapped to an authoritative existing service.
 The current validation state is:
 
 1. local unit coverage exists for request validation, `doveadm move` command
-   shape, service audit behavior, helper protocol parsing, and helper-backed
-   client execution
+   shape, throttled rejection behavior, service audit behavior, helper
+   protocol parsing, and helper-backed client execution
 2. browser-route tests cover the message-view move form, successful redirect,
    and source-mailbox success banner
 3. live-host mutation proof now exists on `mail.blackbagsecurity.com` under

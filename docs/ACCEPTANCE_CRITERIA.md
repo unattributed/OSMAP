@@ -182,6 +182,9 @@ Phase 6:
 - the browser auth path now includes a bounded dual-bucket application-layer
   login throttle backed by explicit runtime configuration and file-backed cache
   state
+- the first one-message move path now also includes a bounded dual-bucket
+  application-layer move throttle backed by explicit runtime configuration and
+  file-backed cache state
 - the browser layer now includes a conservative safe-HTML rendering path plus a
   first bounded settings page for HTML display preference, which closes the
   previous top-level Version 1 product gaps around HTML handling and end-user

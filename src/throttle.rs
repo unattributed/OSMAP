@@ -46,12 +46,31 @@ pub const DEFAULT_SUBMISSION_THROTTLE_WINDOW_SECONDS: u64 = 300;
 /// exceeded.
 pub const DEFAULT_SUBMISSION_THROTTLE_LOCKOUT_SECONDS: u64 = 900;
 
+/// Conservative default threshold for message-move requests within one throttle
+/// window for one canonical user plus remote address.
+pub const DEFAULT_MESSAGE_MOVE_THROTTLE_MAX_MOVES: u64 = 20;
+
+/// Conservative default threshold for message-move requests within one throttle
+/// window for one remote address across rotating usernames.
+pub const DEFAULT_MESSAGE_MOVE_THROTTLE_REMOTE_MAX_MOVES: u64 = 60;
+
+/// Conservative default window over which accepted message moves are counted.
+pub const DEFAULT_MESSAGE_MOVE_THROTTLE_WINDOW_SECONDS: u64 = 300;
+
+/// Conservative default lockout period once the message-move threshold is
+/// exceeded.
+pub const DEFAULT_MESSAGE_MOVE_THROTTLE_LOCKOUT_SECONDS: u64 = 900;
+
 /// Public reason exposed by the browser layer when login throttling is active.
 pub const TOO_MANY_ATTEMPTS_PUBLIC_REASON: &str = "too_many_attempts";
 
 /// Public reason exposed by the browser layer when submission throttling is
 /// active.
 pub const TOO_MANY_SUBMISSIONS_PUBLIC_REASON: &str = "too_many_submissions";
+
+/// Public reason exposed by the browser layer when message-move throttling is
+/// active.
+pub const TOO_MANY_MESSAGE_MOVES_PUBLIC_REASON: &str = "too_many_message_moves";
 
 /// Policy controlling how the current login-throttle slice behaves.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -89,6 +108,26 @@ impl Default for SubmissionThrottlePolicy {
             remote_addr_max_submissions: DEFAULT_SUBMISSION_THROTTLE_REMOTE_MAX_SUBMISSIONS,
             submission_window_seconds: DEFAULT_SUBMISSION_THROTTLE_WINDOW_SECONDS,
             lockout_seconds: DEFAULT_SUBMISSION_THROTTLE_LOCKOUT_SECONDS,
+        }
+    }
+}
+
+/// Policy controlling how the current message-move throttle slice behaves.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct MessageMoveThrottlePolicy {
+    pub canonical_user_max_moves: u64,
+    pub remote_addr_max_moves: u64,
+    pub move_window_seconds: u64,
+    pub lockout_seconds: u64,
+}
+
+impl Default for MessageMoveThrottlePolicy {
+    fn default() -> Self {
+        Self {
+            canonical_user_max_moves: DEFAULT_MESSAGE_MOVE_THROTTLE_MAX_MOVES,
+            remote_addr_max_moves: DEFAULT_MESSAGE_MOVE_THROTTLE_REMOTE_MAX_MOVES,
+            move_window_seconds: DEFAULT_MESSAGE_MOVE_THROTTLE_WINDOW_SECONDS,
+            lockout_seconds: DEFAULT_MESSAGE_MOVE_THROTTLE_LOCKOUT_SECONDS,
         }
     }
 }
@@ -135,6 +174,30 @@ impl SubmissionThrottleBucketKind {
         match self {
             Self::CanonicalUserAndRemoteAddr => policy.canonical_user_max_submissions,
             Self::RemoteAddrOnly => policy.remote_addr_max_submissions,
+        }
+    }
+}
+
+/// Distinguishes the current throttle buckets used on the browser
+/// message-move path.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MessageMoveThrottleBucketKind {
+    CanonicalUserAndRemoteAddr,
+    RemoteAddrOnly,
+}
+
+impl MessageMoveThrottleBucketKind {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::CanonicalUserAndRemoteAddr => "canonical_user_and_remote_addr",
+            Self::RemoteAddrOnly => "remote_addr_only",
+        }
+    }
+
+    fn max_moves(self, policy: MessageMoveThrottlePolicy) -> u64 {
+        match self {
+            Self::CanonicalUserAndRemoteAddr => policy.canonical_user_max_moves,
+            Self::RemoteAddrOnly => policy.remote_addr_max_moves,
         }
     }
 }
@@ -283,6 +346,67 @@ impl SubmissionThrottleKey {
         Self {
             key_id: hex_lower(&digest.finalize()),
             bucket_kind: SubmissionThrottleBucketKind::RemoteAddrOnly,
+            canonical_username,
+            remote_addr,
+        }
+    }
+}
+
+/// The key used for one message-move throttle bucket.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MessageMoveThrottleKey {
+    pub key_id: String,
+    pub bucket_kind: MessageMoveThrottleBucketKind,
+    pub canonical_username: String,
+    pub remote_addr: String,
+}
+
+impl MessageMoveThrottleKey {
+    /// Builds the stable canonical-user-plus-remote bucket key.
+    pub fn for_canonical_user_and_remote_addr(canonical_username: &str, remote_addr: &str) -> Self {
+        let canonical_username =
+            normalize_component(canonical_username, DEFAULT_USERNAME_MAX_LEN, true);
+        let remote_addr = normalize_component(remote_addr, DEFAULT_REMOTE_ADDR_MAX_LEN, false);
+        let mut digest = Sha256::new();
+        digest.update(b"osmap-message-move-throttle-v1");
+        digest.update([0]);
+        digest.update(
+            MessageMoveThrottleBucketKind::CanonicalUserAndRemoteAddr
+                .as_str()
+                .as_bytes(),
+        );
+        digest.update([0]);
+        digest.update(canonical_username.as_bytes());
+        digest.update([0]);
+        digest.update(remote_addr.as_bytes());
+
+        Self {
+            key_id: hex_lower(&digest.finalize()),
+            bucket_kind: MessageMoveThrottleBucketKind::CanonicalUserAndRemoteAddr,
+            canonical_username,
+            remote_addr,
+        }
+    }
+
+    /// Builds the stable remote-only bucket key.
+    pub fn for_remote_addr(canonical_username: &str, remote_addr: &str) -> Self {
+        let canonical_username =
+            normalize_component(canonical_username, DEFAULT_USERNAME_MAX_LEN, true);
+        let remote_addr = normalize_component(remote_addr, DEFAULT_REMOTE_ADDR_MAX_LEN, false);
+        let mut digest = Sha256::new();
+        digest.update(b"osmap-message-move-throttle-v1");
+        digest.update([0]);
+        digest.update(
+            MessageMoveThrottleBucketKind::RemoteAddrOnly
+                .as_str()
+                .as_bytes(),
+        );
+        digest.update([0]);
+        digest.update(remote_addr.as_bytes());
+
+        Self {
+            key_id: hex_lower(&digest.finalize()),
+            bucket_kind: MessageMoveThrottleBucketKind::RemoteAddrOnly,
             canonical_username,
             remote_addr,
         }
@@ -438,6 +562,27 @@ pub struct SubmissionThrottleRecord {
     pub audit_events: Vec<LogEvent>,
 }
 
+/// The result of checking whether a message move may proceed.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum MessageMoveThrottleDecision {
+    Allowed,
+    Throttled { retry_after_seconds: u64 },
+}
+
+/// The result of one message-move throttle check.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MessageMoveThrottleCheck {
+    pub decision: MessageMoveThrottleDecision,
+    pub audit_events: Vec<LogEvent>,
+}
+
+/// The result of recording one accepted message move.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MessageMoveThrottleRecord {
+    pub lockout_engaged: bool,
+    pub audit_events: Vec<LogEvent>,
+}
+
 /// A small throttle service over a store and time source.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LoginThrottleService<S, T> {
@@ -454,10 +599,28 @@ pub struct SubmissionThrottleService<S, T> {
     policy: SubmissionThrottlePolicy,
 }
 
+/// Checks and records bounded message-move behavior on the browser route.
+pub struct MessageMoveThrottleService<S, T> {
+    store: S,
+    time_provider: T,
+    policy: MessageMoveThrottlePolicy,
+}
+
 impl<S, T> SubmissionThrottleService<S, T> {
     /// Builds a submission throttle service from the supplied store, time
     /// source, and policy.
     pub fn new(store: S, time_provider: T, policy: SubmissionThrottlePolicy) -> Self {
+        Self {
+            store,
+            time_provider,
+            policy,
+        }
+    }
+}
+
+impl<S, T> MessageMoveThrottleService<S, T> {
+    /// Creates a new message-move throttle service around the supplied store.
+    pub fn new(store: S, time_provider: T, policy: MessageMoveThrottlePolicy) -> Self {
         Self {
             store,
             time_provider,
@@ -736,6 +899,122 @@ where
     }
 }
 
+impl<S, T> MessageMoveThrottleService<S, T>
+where
+    S: LoginThrottleStore,
+    T: TimeProvider,
+{
+    /// Checks whether one authenticated message-move request may proceed.
+    pub fn check(
+        &self,
+        context: &AuthenticationContext,
+        canonical_username: &str,
+    ) -> Result<MessageMoveThrottleCheck, LoginThrottleError> {
+        let keys = [
+            MessageMoveThrottleKey::for_canonical_user_and_remote_addr(
+                canonical_username,
+                &context.remote_addr,
+            ),
+            MessageMoveThrottleKey::for_remote_addr(canonical_username, &context.remote_addr),
+        ];
+        let now = self.time_provider.unix_timestamp();
+        let mut retry_after_seconds = None;
+        let mut audit_events = Vec::new();
+
+        for key in keys {
+            let Some(record) = self.store.load(&key.key_id)? else {
+                continue;
+            };
+
+            if let Some(locked_until) = record.locked_until.filter(|until| *until > now) {
+                let current_retry_after = locked_until.saturating_sub(now);
+                retry_after_seconds = Some(
+                    retry_after_seconds
+                        .map(|current: u64| current.max(current_retry_after))
+                        .unwrap_or(current_retry_after),
+                );
+                audit_events.push(build_message_move_throttled_event(
+                    context,
+                    &key,
+                    record.failure_count,
+                    current_retry_after,
+                ));
+            }
+        }
+
+        if let Some(retry_after_seconds) = retry_after_seconds {
+            Ok(MessageMoveThrottleCheck {
+                decision: MessageMoveThrottleDecision::Throttled {
+                    retry_after_seconds,
+                },
+                audit_events,
+            })
+        } else {
+            Ok(MessageMoveThrottleCheck {
+                decision: MessageMoveThrottleDecision::Allowed,
+                audit_events,
+            })
+        }
+    }
+
+    /// Records one accepted authenticated message move.
+    pub fn record_move(
+        &self,
+        context: &AuthenticationContext,
+        canonical_username: &str,
+    ) -> Result<MessageMoveThrottleRecord, LoginThrottleError> {
+        let keys = [
+            MessageMoveThrottleKey::for_canonical_user_and_remote_addr(
+                canonical_username,
+                &context.remote_addr,
+            ),
+            MessageMoveThrottleKey::for_remote_addr(canonical_username, &context.remote_addr),
+        ];
+        let now = self.time_provider.unix_timestamp();
+        let mut lockout_engaged = false;
+        let mut audit_events = Vec::new();
+
+        for key in keys {
+            let mut record = self
+                .store
+                .load(&key.key_id)?
+                .unwrap_or_else(LoginThrottleRecord::empty);
+
+            let lockout_expired = record.locked_until.is_some_and(|until| until <= now);
+            let outside_window = record.failure_count == 0
+                || now.saturating_sub(record.window_started_at) >= self.policy.move_window_seconds;
+
+            if lockout_expired || outside_window {
+                record.failure_count = 1;
+                record.window_started_at = now;
+                record.last_failure_at = now;
+                record.locked_until = None;
+            } else {
+                record.failure_count = record.failure_count.saturating_add(1);
+                record.last_failure_at = now;
+            }
+
+            if record.failure_count >= key.bucket_kind.max_moves(self.policy) {
+                lockout_engaged = true;
+                record.locked_until = Some(now.saturating_add(self.policy.lockout_seconds));
+                audit_events.push(build_message_move_lockout_engaged_event(
+                    context,
+                    &key,
+                    record.failure_count,
+                    self.policy.lockout_seconds,
+                ));
+            }
+
+            self.store.save(&key.key_id, &record)?;
+        }
+
+        Ok(MessageMoveThrottleRecord {
+            lockout_engaged,
+            audit_events,
+        })
+    }
+}
+
 fn build_throttled_event(
     context: &AuthenticationContext,
     key: &LoginThrottleKey,
@@ -833,6 +1112,50 @@ fn build_submission_lockout_engaged_event(
     .with_field("bucket_kind", key.bucket_kind.as_str())
     .with_field("remote_addr", key.remote_addr.clone())
     .with_field("submission_count", submission_count.to_string())
+    .with_field("lockout_seconds", lockout_seconds.to_string())
+    .with_field("request_id", context.request_id.clone())
+    .with_field("user_agent", context.user_agent.clone())
+}
+
+fn build_message_move_throttled_event(
+    context: &AuthenticationContext,
+    key: &MessageMoveThrottleKey,
+    move_count: u64,
+    retry_after_seconds: u64,
+) -> LogEvent {
+    LogEvent::new(
+        LogLevel::Warn,
+        EventCategory::Mailbox,
+        "message_move_throttled",
+        "message move rejected by throttle policy",
+    )
+    .with_field("public_reason", TOO_MANY_MESSAGE_MOVES_PUBLIC_REASON)
+    .with_field("canonical_username", key.canonical_username.clone())
+    .with_field("bucket_kind", key.bucket_kind.as_str())
+    .with_field("remote_addr", key.remote_addr.clone())
+    .with_field("move_count", move_count.to_string())
+    .with_field("retry_after_seconds", retry_after_seconds.to_string())
+    .with_field("request_id", context.request_id.clone())
+    .with_field("user_agent", context.user_agent.clone())
+}
+
+fn build_message_move_lockout_engaged_event(
+    context: &AuthenticationContext,
+    key: &MessageMoveThrottleKey,
+    move_count: u64,
+    lockout_seconds: u64,
+) -> LogEvent {
+    LogEvent::new(
+        LogLevel::Warn,
+        EventCategory::Mailbox,
+        "message_move_throttle_engaged",
+        "message move throttle lockout engaged",
+    )
+    .with_field("public_reason", TOO_MANY_MESSAGE_MOVES_PUBLIC_REASON)
+    .with_field("canonical_username", key.canonical_username.clone())
+    .with_field("bucket_kind", key.bucket_kind.as_str())
+    .with_field("remote_addr", key.remote_addr.clone())
+    .with_field("move_count", move_count.to_string())
     .with_field("lockout_seconds", lockout_seconds.to_string())
     .with_field("request_id", context.request_id.clone())
     .with_field("user_agent", context.user_agent.clone())
@@ -1317,6 +1640,110 @@ mod tests {
         );
         assert!(check.audit_events.iter().any(|event| {
             event.action == "submission_throttled"
+                && event
+                    .fields
+                    .iter()
+                    .any(|field| field.key == "bucket_kind" && field.value == "remote_addr_only")
+        }));
+    }
+
+    #[test]
+    fn message_move_throttle_engages_after_reaching_move_threshold() {
+        let dir = temp_dir("osmap-message-move-throttle-engage");
+        let store = FileLoginThrottleStore::new(&dir);
+        let service = MessageMoveThrottleService::new(
+            store,
+            FixedTimeProvider::new(200),
+            MessageMoveThrottlePolicy {
+                canonical_user_max_moves: 2,
+                remote_addr_max_moves: 4,
+                move_window_seconds: 300,
+                lockout_seconds: 60,
+            },
+        );
+
+        let first = service
+            .record_move(&test_context(), "alice@example.com")
+            .expect("first move should record");
+        assert!(!first.lockout_engaged);
+        assert!(first.audit_events.is_empty());
+
+        let second = service
+            .record_move(&test_context(), "alice@example.com")
+            .expect("second move should record");
+        assert!(second.lockout_engaged);
+        assert_eq!(
+            second
+                .audit_events
+                .first()
+                .expect("lockout should emit an event")
+                .action,
+            "message_move_throttle_engaged"
+        );
+
+        let check = service
+            .check(&test_context(), "alice@example.com")
+            .expect("check should succeed");
+
+        assert_eq!(
+            check.decision,
+            MessageMoveThrottleDecision::Throttled {
+                retry_after_seconds: 60
+            }
+        );
+        assert_eq!(
+            check
+                .audit_events
+                .first()
+                .expect("throttle hit should be logged")
+                .action,
+            "message_move_throttled"
+        );
+    }
+
+    #[test]
+    fn message_move_remote_bucket_engages_across_rotating_usernames() {
+        let dir = temp_dir("osmap-message-move-throttle-remote");
+        let store = FileLoginThrottleStore::new(&dir);
+        let service = MessageMoveThrottleService::new(
+            store,
+            FixedTimeProvider::new(200),
+            MessageMoveThrottlePolicy {
+                canonical_user_max_moves: 5,
+                remote_addr_max_moves: 2,
+                move_window_seconds: 300,
+                lockout_seconds: 60,
+            },
+        );
+
+        let first = service
+            .record_move(&test_context(), "alice@example.com")
+            .expect("first rotating-username move should record");
+        assert!(!first.lockout_engaged);
+
+        let second = service
+            .record_move(&test_context(), "bob@example.com")
+            .expect("second rotating-username move should record");
+        assert!(second.lockout_engaged);
+        assert!(second.audit_events.iter().any(|event| {
+            event.action == "message_move_throttle_engaged"
+                && event
+                    .fields
+                    .iter()
+                    .any(|field| field.key == "bucket_kind" && field.value == "remote_addr_only")
+        }));
+
+        let check = service
+            .check(&test_context(), "charlie@example.com")
+            .expect("remote-only message move throttle check should succeed");
+        assert_eq!(
+            check.decision,
+            MessageMoveThrottleDecision::Throttled {
+                retry_after_seconds: 60
+            }
+        );
+        assert!(check.audit_events.iter().any(|event| {
+            event.action == "message_move_throttled"
                 && event
                     .fields
                     .iter()

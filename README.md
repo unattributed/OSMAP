@@ -179,6 +179,9 @@ Each phase produces formal outputs to support traceability and auditability.
 - The backend now also applies two bounded file-backed submission-throttle
   buckets on the browser send path: a tighter canonical-user-plus-remote
   bucket and a higher threshold remote-only bucket.
+- The backend now also applies two bounded file-backed message-move throttle
+  buckets on the browser folder-organization path: a tighter
+  canonical-user-plus-remote bucket and a higher threshold remote-only bucket.
 - That bounded send-throttle behavior is now also live-proven on
   `mail.blackbagsecurity.com` under `enforce`: an isolated host validation run
   using a synthetic validated session confirmed one accepted `POST /send`
@@ -203,10 +206,10 @@ Each phase produces formal outputs to support traceability and auditability.
   layer now has dedicated parser, backend, service, and model modules to make
   security review and future maintenance easier.
 - Current priority work is still broader auth/request abuse resistance beyond
-  the current login and send throttle slices, sequential-runtime hardening,
-  broader live mutation-path coverage on `mail.blackbagsecurity.com`, and
-  remaining workflow refinements such as broader folder-organization
-  ergonomics.
+  the current login, send, and one-message move throttle slices,
+  sequential-runtime hardening, broader live mutation-path coverage on
+  `mail.blackbagsecurity.com`, and remaining workflow refinements such as
+  broader folder-organization ergonomics.
 - GitHub-side security validation now has two explicit lanes:
   GitHub default CodeQL setup remains the authoritative CodeQL scanner for this
   repository, while the repo-owned `security-check` workflow is the

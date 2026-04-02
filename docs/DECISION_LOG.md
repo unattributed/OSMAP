@@ -1544,3 +1544,24 @@ On `mail.blackbagsecurity.com` under
 
 This keeps the submission-abuse control grounded in repeatable OpenBSD host
 evidence rather than only in unit tests or ad hoc operator memory.
+
+### Add a bounded message-move throttle before widening generic mutation controls
+
+The next request-abuse slice after login and send should still stay narrow.
+OSMAP already has one real authenticated mailbox mutation route:
+
+- `POST /message/move`
+
+That route now applies a bounded file-backed application-layer message-move
+throttle with:
+
+- a tighter canonical-user-plus-remote bucket
+- a higher-threshold remote-only bucket
+
+When the throttle is active, the browser route returns `429 Too Many Requests`
+with `Retry-After`, and the runtime emits bounded mailbox audit events for both
+throttle engagement and rejected move attempts.
+
+This keeps abuse resistance focused on the highest-risk authenticated mutation
+path that currently exists, rather than introducing a generic global limiter
+before the rest of the mutation surface is even present.

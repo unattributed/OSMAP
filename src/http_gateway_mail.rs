@@ -15,6 +15,17 @@ impl RuntimeBrowserGateway {
         )
     }
 
+    /// Builds the current file-backed message-move throttle service.
+    pub(super) fn build_message_move_throttle_service(
+        &self,
+    ) -> MessageMoveThrottleService<FileLoginThrottleStore, SystemTimeProvider> {
+        MessageMoveThrottleService::new(
+            FileLoginThrottleStore::new(self.message_move_throttle_dir.clone()),
+            SystemTimeProvider,
+            self.message_move_throttle_policy,
+        )
+    }
+
     /// Builds the current send-path service around the local sendmail surface.
     pub(super) fn build_submission_service(
         &self,
@@ -40,6 +51,22 @@ impl RuntimeBrowserGateway {
         error: &LoginThrottleError,
     ) -> LogEvent {
         LogEvent::new(LogLevel::Warn, EventCategory::Submission, action, message)
+            .with_field("reason", throttle_store_error_label(error))
+            .with_field("request_id", context.request_id.clone())
+            .with_field("remote_addr", context.remote_addr.clone())
+            .with_field("user_agent", context.user_agent.clone())
+    }
+
+    /// Records a non-fatal throttle-store failure so operators can diagnose
+    /// missing mailbox-mutation abuse resistance without crashing the move path.
+    pub(super) fn build_message_move_throttle_store_error_event(
+        &self,
+        action: &'static str,
+        message: &'static str,
+        context: &AuthenticationContext,
+        error: &LoginThrottleError,
+    ) -> LogEvent {
+        LogEvent::new(LogLevel::Warn, EventCategory::Mailbox, action, message)
             .with_field("reason", throttle_store_error_label(error))
             .with_field("request_id", context.request_id.clone())
             .with_field("remote_addr", context.remote_addr.clone())
@@ -460,6 +487,7 @@ impl RuntimeBrowserGateway {
         uid: u64,
         destination_mailbox_name: &str,
     ) -> BrowserMessageMoveOutcome {
+        let throttle_service = self.build_message_move_throttle_service();
         let request = match MessageMoveRequest::new(
             MessageMovePolicy::default(),
             source_mailbox_name,
@@ -471,6 +499,7 @@ impl RuntimeBrowserGateway {
                 return BrowserMessageMoveOutcome {
                     decision: BrowserMessageMoveDecision::Denied {
                         public_reason: "invalid_request".to_string(),
+                        retry_after_seconds: None,
                     },
                     audit_events: vec![build_http_warning_event(
                         "message_move_request_rejected",
@@ -481,11 +510,42 @@ impl RuntimeBrowserGateway {
                 };
             }
         };
+        let mut audit_events = Vec::new();
+
+        match throttle_service.check(context, &validated_session.record.canonical_username) {
+            Ok(check) => {
+                audit_events.extend(check.audit_events);
+
+                if let MessageMoveThrottleDecision::Throttled {
+                    retry_after_seconds,
+                } = check.decision
+                {
+                    return BrowserMessageMoveOutcome {
+                        decision: BrowserMessageMoveDecision::Denied {
+                            public_reason: TOO_MANY_MESSAGE_MOVES_PUBLIC_REASON.to_string(),
+                            retry_after_seconds: Some(retry_after_seconds),
+                        },
+                        audit_events,
+                    };
+                }
+            }
+            Err(error) => audit_events.push(self.build_message_move_throttle_store_error_event(
+                "message_move_throttle_check_failed",
+                "message move throttle check failed",
+                context,
+                &error,
+            )),
+        }
 
         let outcome = MessageMoveService::new(self.build_message_move_backend())
             .move_for_validated_session(context, validated_session, &request);
+        let MessageMoveOutcome {
+            decision,
+            audit_event,
+        } = outcome;
+        audit_events.push(audit_event);
 
-        match outcome.decision {
+        match decision {
             MessageMoveDecision::Moved {
                 source_mailbox_name,
                 destination_mailbox_name,
@@ -497,13 +557,29 @@ impl RuntimeBrowserGateway {
                     destination_mailbox_name,
                     uid,
                 },
-                audit_events: vec![outcome.audit_event],
+                audit_events: {
+                    match throttle_service
+                        .record_move(context, &validated_session.record.canonical_username)
+                    {
+                        Ok(record) => audit_events.extend(record.audit_events),
+                        Err(error) => {
+                            audit_events.push(self.build_message_move_throttle_store_error_event(
+                                "message_move_throttle_record_failed",
+                                "message move throttle recording failed",
+                                context,
+                                &error,
+                            ))
+                        }
+                    }
+                    audit_events
+                },
             },
             MessageMoveDecision::Denied { public_reason } => BrowserMessageMoveOutcome {
                 decision: BrowserMessageMoveDecision::Denied {
                     public_reason: public_reason.as_str().to_string(),
+                    retry_after_seconds: None,
                 },
-                audit_events: vec![outcome.audit_event],
+                audit_events,
             },
         }
     }

@@ -55,10 +55,10 @@ use crate::mailbox::{
     DoveadmMailboxListBackend, DoveadmMessageListBackend, DoveadmMessageMoveBackend,
     DoveadmMessageSearchBackend, DoveadmMessageViewBackend, MailboxEntry, MailboxListingDecision,
     MailboxListingPolicy, MailboxListingService, MessageListDecision, MessageListPolicy,
-    MessageListRequest, MessageListService, MessageMoveDecision, MessageMovePolicy,
-    MessageMoveRequest, MessageMoveService, MessageSearchDecision, MessageSearchPolicy,
-    MessageSearchRequest, MessageSearchResult, MessageSearchService, MessageSummary,
-    MessageViewDecision, MessageViewPolicy, MessageViewRequest, MessageViewService,
+    MessageListRequest, MessageListService, MessageMoveDecision, MessageMoveOutcome,
+    MessageMovePolicy, MessageMoveRequest, MessageMoveService, MessageSearchDecision,
+    MessageSearchPolicy, MessageSearchRequest, MessageSearchResult, MessageSearchService,
+    MessageSummary, MessageViewDecision, MessageViewPolicy, MessageViewRequest, MessageViewService,
 };
 use crate::mailbox_helper::{
     MailboxHelperMailboxListBackend, MailboxHelperMessageListBackend,
@@ -79,8 +79,10 @@ use crate::session::{
 };
 use crate::throttle::{
     FileLoginThrottleStore, LoginThrottleDecision, LoginThrottleError, LoginThrottlePolicy,
-    LoginThrottleService, SubmissionThrottleDecision, SubmissionThrottlePolicy,
-    SubmissionThrottleService, TOO_MANY_ATTEMPTS_PUBLIC_REASON, TOO_MANY_SUBMISSIONS_PUBLIC_REASON,
+    LoginThrottleService, MessageMoveThrottleDecision, MessageMoveThrottlePolicy,
+    MessageMoveThrottleService, SubmissionThrottleDecision, SubmissionThrottlePolicy,
+    SubmissionThrottleService, TOO_MANY_ATTEMPTS_PUBLIC_REASON,
+    TOO_MANY_MESSAGE_MOVES_PUBLIC_REASON, TOO_MANY_SUBMISSIONS_PUBLIC_REASON,
 };
 use crate::totp::{FileTotpSecretStore, SystemTimeProvider, TotpPolicy, TotpVerifier};
 
@@ -821,6 +823,20 @@ mod tests {
             uid: u64,
             destination_mailbox_name: &str,
         ) -> BrowserMessageMoveOutcome {
+            if destination_mailbox_name == "Locked" {
+                return BrowserMessageMoveOutcome {
+                    decision: BrowserMessageMoveDecision::Denied {
+                        public_reason: TOO_MANY_MESSAGE_MOVES_PUBLIC_REASON.to_string(),
+                        retry_after_seconds: Some(180),
+                    },
+                    audit_events: vec![LogEvent::new(
+                        LogLevel::Warn,
+                        EventCategory::Mailbox,
+                        "stub_message_move_throttled",
+                        "stub message move throttled",
+                    )],
+                };
+            }
             if source_mailbox_name == "INBOX" && uid == 9 && !destination_mailbox_name.is_empty() {
                 BrowserMessageMoveOutcome {
                     decision: BrowserMessageMoveDecision::Moved {
@@ -839,6 +855,7 @@ mod tests {
                 BrowserMessageMoveOutcome {
                     decision: BrowserMessageMoveDecision::Denied {
                         public_reason: "invalid_request".to_string(),
+                        retry_after_seconds: None,
                     },
                     audit_events: vec![LogEvent::new(
                         LogLevel::Warn,
@@ -1060,6 +1077,75 @@ mod tests {
             .audit_events
             .iter()
             .any(|event| event.action == "submission_throttled"));
+    }
+
+    #[test]
+    fn runtime_gateway_denies_prelocked_message_move_attempts() {
+        let temp_root = temp_dir("osmap-http-message-move-throttle");
+        let context = AuthenticationContext::new(
+            AuthenticationPolicy::default(),
+            "req-move-throttle",
+            "127.0.0.1",
+            "Firefox/Test",
+        )
+        .expect("context should be valid");
+        let throttle_store =
+            FileLoginThrottleStore::new(temp_root.join("cache").join("message-move-throttle"));
+        let throttle_key =
+            crate::throttle::MessageMoveThrottleKey::for_canonical_user_and_remote_addr(
+                "alice@example.com",
+                &context.remote_addr,
+            );
+        throttle_store
+            .save(
+                &throttle_key.key_id,
+                &crate::throttle::LoginThrottleRecord {
+                    failure_count: 20,
+                    window_started_at: 100,
+                    last_failure_at: 120,
+                    locked_until: Some(10_000_000_000),
+                },
+            )
+            .expect("prelocked move throttle record should save");
+        let gateway = RuntimeBrowserGateway::for_test(&temp_root);
+        let validated_session = ValidatedSession {
+            record: crate::session::SessionRecord {
+                session_id: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+                    .to_string(),
+                csrf_token: "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
+                    .to_string(),
+                canonical_username: "alice@example.com".to_string(),
+                issued_at: 100,
+                expires_at: 200,
+                last_seen_at: 100,
+                revoked_at: None,
+                remote_addr: "127.0.0.1".to_string(),
+                user_agent: "Firefox/Test".to_string(),
+                factor: RequiredSecondFactor::Totp,
+            },
+            audit_event: LogEvent::new(
+                LogLevel::Info,
+                EventCategory::Session,
+                "stub_session_validated",
+                "stub session validated",
+            ),
+        };
+
+        let outcome = gateway.move_message(&context, &validated_session, "INBOX", 9, "Archive");
+        match outcome.decision {
+            BrowserMessageMoveDecision::Denied {
+                public_reason,
+                retry_after_seconds: Some(retry_after_seconds),
+            } => {
+                assert_eq!(public_reason, TOO_MANY_MESSAGE_MOVES_PUBLIC_REASON);
+                assert!(retry_after_seconds > 0);
+            }
+            other => panic!("unexpected move decision: {other:?}"),
+        }
+        assert!(outcome
+            .audit_events
+            .iter()
+            .any(|event| event.action == "message_move_throttled"));
     }
 
     #[test]
@@ -1506,6 +1592,33 @@ mod tests {
             .headers
             .iter()
             .any(|(name, value)| name == "Retry-After" && value == "120"));
+    }
+
+    #[test]
+    fn message_move_route_returns_retry_after_when_throttled() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/message/move",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                ],
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=9&destination_mailbox=Locked",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 429);
+        assert!(body_text(&response).contains("Too many mailbox move requests were observed."));
+        assert!(response
+            .response
+            .headers
+            .iter()
+            .any(|(name, value)| name == "Retry-After" && value == "180"));
     }
 
     #[test]

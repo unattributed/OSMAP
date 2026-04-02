@@ -174,6 +174,29 @@ That makes rapid outbound abuse through one source materially harder, but it
 still does not replace adjacent mail-side anti-abuse controls, PF, nginx, or
 operator monitoring.
 
+### Authenticated Mutation Abuse
+
+An attacker with a valid browser session repeatedly exercises authenticated
+mutation routes such as folder organization in order to disrupt user state,
+hide messages, or generate operational noise.
+
+Required defensive implications:
+
+- route-specific abuse friction on high-value mutation paths
+- bounded audit trails for throttled and accepted mutations
+- no assumption that an already-authenticated browser session is therefore
+  low-risk
+
+The current implementation now includes a bounded application-layer
+message-move throttling model on `POST /message/move`. It applies both:
+
+- a tighter canonical-user-plus-remote bucket
+- a higher-threshold remote-only bucket
+
+That makes rapid mailbox reorganization abuse through one source materially
+harder without introducing a generic global limiter too early. It still does
+not replace adjacent controls or broader route-abuse analytics.
+
 ### Content-Driven Browser Attack
 
 An attacker delivers hostile message content or attachments designed to exploit
@@ -246,6 +269,7 @@ expectations:
 - strong credential handling and transport security
 - application-layer login throttling or equivalent anti-automation friction
   that does not rely on a single credential-keyed bucket alone
+- bounded friction on the most abuse-prone authenticated mutation routes
 - no assumption that VPN location alone is sufficient trust
 - compatibility-conscious design for existing native-client realities
 

@@ -36,6 +36,10 @@ pub struct BootstrapReport {
     pub submission_throttle_remote_max_submissions: String,
     pub submission_throttle_window_seconds: String,
     pub submission_throttle_lockout_seconds: String,
+    pub message_move_throttle_max_moves: String,
+    pub message_move_throttle_remote_max_moves: String,
+    pub message_move_throttle_window_seconds: String,
+    pub message_move_throttle_lockout_seconds: String,
 }
 
 impl BootstrapReport {
@@ -115,6 +119,22 @@ impl BootstrapReport {
             "submission_throttle_lockout_seconds",
             self.submission_throttle_lockout_seconds.clone(),
         )
+        .with_field(
+            "message_move_throttle_max_moves",
+            self.message_move_throttle_max_moves.clone(),
+        )
+        .with_field(
+            "message_move_throttle_remote_max_moves",
+            self.message_move_throttle_remote_max_moves.clone(),
+        )
+        .with_field(
+            "message_move_throttle_window_seconds",
+            self.message_move_throttle_window_seconds.clone(),
+        )
+        .with_field(
+            "message_move_throttle_lockout_seconds",
+            self.message_move_throttle_lockout_seconds.clone(),
+        )
     }
 }
 
@@ -182,6 +202,16 @@ fn report_from_config(config: &AppConfig) -> BootstrapReport {
             .to_string(),
         submission_throttle_window_seconds: config.submission_throttle_window_seconds.to_string(),
         submission_throttle_lockout_seconds: config.submission_throttle_lockout_seconds.to_string(),
+        message_move_throttle_max_moves: config.message_move_throttle_max_moves.to_string(),
+        message_move_throttle_remote_max_moves: config
+            .message_move_throttle_remote_max_moves
+            .to_string(),
+        message_move_throttle_window_seconds: config
+            .message_move_throttle_window_seconds
+            .to_string(),
+        message_move_throttle_lockout_seconds: config
+            .message_move_throttle_lockout_seconds
+            .to_string(),
     }
 }
 
@@ -227,6 +257,10 @@ mod tests {
             submission_throttle_remote_max_submissions: 25,
             submission_throttle_window_seconds: 300,
             submission_throttle_lockout_seconds: 900,
+            message_move_throttle_max_moves: 20,
+            message_move_throttle_remote_max_moves: 60,
+            message_move_throttle_window_seconds: 300,
+            message_move_throttle_lockout_seconds: 900,
         };
 
         let report = report_from_config(&config);
@@ -336,6 +370,22 @@ mod tests {
                 },
                 crate::logging::LogField {
                     key: "submission_throttle_lockout_seconds",
+                    value: "900".to_string(),
+                },
+                crate::logging::LogField {
+                    key: "message_move_throttle_max_moves",
+                    value: "20".to_string(),
+                },
+                crate::logging::LogField {
+                    key: "message_move_throttle_remote_max_moves",
+                    value: "60".to_string(),
+                },
+                crate::logging::LogField {
+                    key: "message_move_throttle_window_seconds",
+                    value: "300".to_string(),
+                },
+                crate::logging::LogField {
+                    key: "message_move_throttle_lockout_seconds",
                     value: "900".to_string(),
                 },
             ]

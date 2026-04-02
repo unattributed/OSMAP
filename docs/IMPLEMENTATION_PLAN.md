@@ -181,6 +181,8 @@ The current implementation now also includes:
   browser auth path
 - a bounded dual-bucket application-layer submission-throttling slice for the
   browser send path
+- a bounded dual-bucket application-layer message-move throttling slice for the
+  first folder-organization path
 - a first bounded safe-HTML rendering slice with allowlist sanitization and
   plain-text fallback
 - a first bounded end-user settings slice for HTML display preference
@@ -196,7 +198,7 @@ slice itself.
 The current highest-confidence active hardening gaps are:
 
 - broader auth-abuse and request-abuse resistance beyond the current browser
-  login and send throttle models
+  login, send, and one-message move throttle models
 - the correctness and availability constraints of the current sequential HTTP
   runtime
 - broader live-host proof beyond the first bounded mutation workflows

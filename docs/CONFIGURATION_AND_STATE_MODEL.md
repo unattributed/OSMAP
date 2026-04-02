@@ -115,6 +115,20 @@ model for accepted outbound submissions under the existing cache boundary:
 - a tighter canonical-user-plus-remote bucket
 - a higher-threshold remote-only bucket
 
+The runtime now also recognizes explicit message-move throttle settings for
+the first folder-organization path:
+
+- `OSMAP_MESSAGE_MOVE_THROTTLE_MAX_MOVES`
+- `OSMAP_MESSAGE_MOVE_THROTTLE_REMOTE_MAX_MOVES`
+- `OSMAP_MESSAGE_MOVE_THROTTLE_WINDOW_SECS`
+- `OSMAP_MESSAGE_MOVE_THROTTLE_LOCKOUT_SECS`
+
+Those settings control the current file-backed application-layer throttling
+model for `POST /message/move` under the existing cache boundary:
+
+- a tighter canonical-user-plus-remote bucket
+- a higher-threshold remote-only bucket
+
 ## Environment Model
 
 The current runtime supports three explicit environments:
@@ -143,6 +157,7 @@ Subdirectories are then resolved beneath that root for:
 - TOTP secret files
 - login-throttle state under the cache tree
 - submission-throttle state under the cache tree
+- message-move-throttle state under the cache tree
 
 This model keeps the future OpenBSD deployment story easier to reason about,
 because state can later be owned, permissioned, unveiled, and backed up as one
@@ -182,6 +197,8 @@ The bootstrap currently enforces:
 - login-throttle threshold, window, and lockout settings must parse as positive
   unsigned integers
 - submission-throttle threshold, window, and lockout settings must parse as
+  positive unsigned integers
+- message-move-throttle threshold, window, and lockout settings must parse as
   positive unsigned integers
 - OpenBSD confinement mode must be one of the explicitly recognized values
 
