@@ -193,6 +193,16 @@ pub enum HttpMethod {
     Post,
 }
 
+impl HttpMethod {
+    /// Returns the canonical method token used in logs and diagnostics.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Get => "GET",
+            Self::Post => "POST",
+        }
+    }
+}
+
 /// A small parsed HTTP request.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HttpRequest {
@@ -350,6 +360,7 @@ mod tests {
     use std::net::{Shutdown, SocketAddr, TcpListener};
     use std::path::PathBuf;
     use std::thread;
+    use std::time::Duration;
 
     #[derive(Debug, Clone)]
     struct StubGateway;
@@ -2173,5 +2184,53 @@ mod tests {
 
         server.join().expect("server thread should finish");
         assert!(response.is_empty());
+    }
+
+    #[test]
+    fn accept_failure_backoff_caps_at_one_second() {
+        assert_eq!(super::http_runtime::accept_failure_backoff_millis(0), 0);
+        assert_eq!(super::http_runtime::accept_failure_backoff_millis(1), 50);
+        assert_eq!(super::http_runtime::accept_failure_backoff_millis(2), 100);
+        assert_eq!(super::http_runtime::accept_failure_backoff_millis(3), 200);
+        assert_eq!(super::http_runtime::accept_failure_backoff_millis(4), 400);
+        assert_eq!(super::http_runtime::accept_failure_backoff_millis(5), 800);
+        assert_eq!(super::http_runtime::accept_failure_backoff_millis(6), 1000);
+        assert_eq!(super::http_runtime::accept_failure_backoff_millis(12), 1000);
+    }
+
+    #[test]
+    fn request_completion_event_is_warn_for_slow_requests() {
+        let event = super::http_runtime::build_request_completion_event(
+            "127.0.0.1",
+            HttpMethod::Get,
+            "/mailboxes",
+            200,
+            512,
+            Duration::from_millis(1500),
+        );
+
+        assert_eq!(event.level, LogLevel::Warn);
+        assert_eq!(event.category, EventCategory::Http);
+        assert_eq!(event.action, "http_request_slow");
+        assert!(event
+            .fields
+            .iter()
+            .any(|field| field.key == "method" && field.value == "GET"));
+        assert!(event
+            .fields
+            .iter()
+            .any(|field| field.key == "path" && field.value == "/mailboxes"));
+        assert!(event
+            .fields
+            .iter()
+            .any(|field| field.key == "status_code" && field.value == "200"));
+        assert!(event
+            .fields
+            .iter()
+            .any(|field| field.key == "response_bytes" && field.value == "512"));
+        assert!(event
+            .fields
+            .iter()
+            .any(|field| field.key == "duration_ms" && field.value == "1500"));
     }
 }

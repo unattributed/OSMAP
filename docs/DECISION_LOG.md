@@ -1645,3 +1645,28 @@ This is a narrow correctness and resilience improvement for the current
 sequential listener. It does not change the listener model, but it does make
 transport failure handling more explicit and easier to reason about during
 review and later hardening.
+
+### Add accept-failure backoff and central request-completion logging to the sequential HTTP runtime
+
+The next sequential-runtime resilience slice should stay narrow and focus on
+operational behavior, not architecture changes.
+
+The runtime now adds two small controls:
+
+- bounded backoff after consecutive `accept(2)` failures so the listener does
+  not spin hot on a broken accept loop
+- one central completion event for parsed requests carrying method, path,
+  status, response size, and duration, with slow requests promoted to a warn
+  event
+
+This keeps the current listener model intact while improving two real weak
+spots in a custom sequential server:
+
+- repeated accept failures are less likely to produce a tight log-and-spin
+  loop
+- operators no longer need to reconstruct request timing only from scattered
+  route-local audit events
+
+This is still not a concurrency change or a complete denial-of-service
+solution. It is a bounded resilience and observability improvement that fits
+the current prototype stage.

@@ -70,6 +70,11 @@ The current browser runtime enforces:
   generic `400 Bad Request`
 - silent connection close for empty or truncated requests instead of replying to
   incomplete traffic as though it were a well-formed HTTP exchange
+- bounded backoff after repeated listener accept failures instead of spinning
+  hot on a broken accept loop
+- central request-completion logging with status, response size, and duration
+  so slow requests can be observed without inferring lifecycle from route-local
+  audit events alone
 
 The current HTML rendering path stays deliberately small and uses either
 escaped plain text or a narrow allowlist sanitizer. It still blocks external
@@ -87,6 +92,11 @@ request is logged as incomplete and closed without an HTTP response, and a read
 timeout now returns `408 Request Timeout`. That keeps the server from
 normalizing transport-level failure cases into the same path used for a real
 malformed request.
+
+The sequential listener now also backs off after repeated accept failures and
+emits one central completion event for parsed requests. That does not make the
+listener concurrent, but it does reduce hot-loop behavior on repeated accept
+errors and makes slow-request observation more explicit.
 
 ## Current CSRF Strategy
 

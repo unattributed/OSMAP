@@ -217,6 +217,11 @@ rejection for some connection-lifecycle cases. The runtime distinguishes:
 That is a narrow resilience improvement for the sequential listener, not a
 claim that the listener is now concurrent or production-complete.
 
+The runtime now also applies bounded backoff after repeated accept failures and
+emits central request-completion events for parsed requests with status,
+response size, and duration. That is still operational observation and loop
+resilience work for a sequential server, not a concurrency upgrade.
+
 The recent route review also found that the remaining authenticated POST routes
 in the current browser surface are:
 

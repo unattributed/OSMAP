@@ -222,6 +222,9 @@ Each phase produces formal outputs to support traceability and auditability.
   honestly: read timeouts return `408 Request Timeout`, while empty or
   truncated connections are logged and closed without treating them as generic
   `400 Bad Request` traffic.
+- The sequential listener now also applies bounded backoff after repeated
+  accept failures and emits central request-completion events with status and
+  duration so slow requests are easier to spot during hardening.
 - GitHub-side security validation now has two explicit lanes:
   GitHub default CodeQL setup remains the authoritative CodeQL scanner for this
   repository, while the repo-owned `security-check` workflow is the
