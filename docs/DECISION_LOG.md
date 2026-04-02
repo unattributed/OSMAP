@@ -1086,3 +1086,18 @@ The protocol types and parsing helpers now live in
 `src/mailbox_helper.rs`. This keeps the helper transport boundary stable while
 making the protocol itself easier to audit separately from the socket and
 backend wiring.
+
+### Split mailbox parser helpers out of `mailbox.rs`
+
+After reducing `http.rs` and then `mailbox_helper.rs`, the next largest
+maintainability hotspot was `src/mailbox.rs`, which still mixed:
+
+- mailbox service and backend trait definitions
+- `doveadm` backend wiring
+- the bounded flow-output parser cluster for mailbox, message-list,
+  message-view, and message-search results
+
+The Dovecot flow parser family now lives in `src/mailbox_parse.rs` as an
+internal child module of `src/mailbox.rs`. This keeps the service and backend
+interfaces stable while making the flow parser boundary easier to review
+separately from mailbox business logic.
