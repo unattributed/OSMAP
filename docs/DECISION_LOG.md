@@ -1101,3 +1101,18 @@ The Dovecot flow parser family now lives in `src/mailbox_parse.rs` as an
 internal child module of `src/mailbox.rs`. This keeps the service and backend
 interfaces stable while making the flow parser boundary easier to review
 separately from mailbox business logic.
+
+### Split mailbox service layer out of `mailbox.rs`
+
+After moving the Dovecot parser cluster into `src/mailbox_parse.rs`,
+`src/mailbox.rs` still combined:
+
+- mailbox outcome and trait definitions
+- validated-session service logic and audit-event construction
+- `doveadm` backend implementations
+
+The validated-session service layer and its bounded audit-event helpers now
+live in `src/mailbox_service.rs` as an internal child module of
+`src/mailbox.rs`, with the service types re-exported so the public mailbox API
+stays stable. This keeps service logic easier to review separately from command
+construction and backend execution details.
