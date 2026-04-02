@@ -1269,3 +1269,20 @@ The repeated client-side Unix-socket request/response adapters now live in
 public helper-backed mailbox API stays stable. This keeps the least-privilege
 helper transport boundary easier to review by separating client proxy behavior
 from listener lifecycle and server plumbing.
+
+### Split helper-aware mailbox backend selection out of `http_gateway.rs`
+
+After moving browser contracts, route families, and transport logic out of the
+HTTP boundary, `src/http_gateway.rs` still combined:
+
+- high-level browser flow orchestration
+- runtime gateway construction from validated configuration
+- helper-versus-direct mailbox backend selection for list, search, view, and
+  move operations
+- the concrete runtime backend enums that bridge those mailbox flows
+
+That mailbox backend selection layer now lives in
+`src/http_mailbox_backends.rs` as an internal child module of
+`src/http_gateway.rs`. This keeps `http_gateway.rs` more focused on browser
+workflow assembly while making the helper-aware mailbox backend boundary easier
+to audit separately from login, session, rendering, and submission flow logic.
