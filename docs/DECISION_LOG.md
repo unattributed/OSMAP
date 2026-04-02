@@ -999,3 +999,14 @@ intentionally conservative:
 This is a maintainability and auditability refactor, not a feature change. The
 goal is to reduce concentration of unrelated concerns in the browser-facing
 runtime before later slices touch routing or parser structure more deeply.
+
+### Continue `http.rs` decomposition by separating parser and request-shape code
+
+After extracting response and UI helpers, the next highest-risk concentration in
+`src/http.rs` was the parser and request-shape logic: header parsing, body
+bounds, target normalization, cookie extraction, and compose-source decoding.
+
+That code now lives in `src/http_parse.rs`, while `src/http.rs` re-exports the
+public parse entrypoints and keeps routing behavior unchanged. This keeps the
+observable request surface stable while making the custom HTTP boundary easier
+to review in smaller, purpose-specific units.

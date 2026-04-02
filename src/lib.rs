@@ -11,6 +11,7 @@ pub mod config;
 pub mod error;
 pub mod http;
 pub mod http_form;
+pub mod http_parse;
 pub mod http_support;
 pub mod http_ui;
 pub mod logging;
