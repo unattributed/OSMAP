@@ -1055,3 +1055,18 @@ For this project, runner-side `cargo fmt --check` should be treated as an
 authoritative CI signal. When the local environment lacks `rustfmt`, OSMAP
 should prefer formatting from a toolchain-complete validation host before
 assuming the workflow itself is broken.
+
+### Split compose and send routes out of `http.rs`
+
+The last large browser route family still sitting directly in `src/http.rs`
+was the compose and submission flow:
+
+- compose form rendering
+- reply/forward draft preparation
+- compose form parsing and submission
+- submission error handling
+
+Those handlers now live in `src/http/routes_compose.rs` as an internal child
+module. This keeps the route table and server loop in `src/http.rs` stable
+while reducing how much browser-side mutation logic remains mixed into parsing,
+transport, and unrelated route concerns.
