@@ -1149,3 +1149,21 @@ For this project, when OpenBSD-side formatting looks clean but GitHub's Linux
 runner still fails `cargo fmt --check`, the authoritative reproduction should
 be a Linux toolchain that matches the runner's Rust formatting path. That
 keeps CI fixes narrow and prevents unnecessary workflow churn.
+
+### Split `doveadm` backends out of `mailbox.rs`
+
+After moving parser helpers into `src/mailbox_parse.rs` and validated-session
+services into `src/mailbox_service.rs`, `src/mailbox.rs` still carried all of
+the concrete `doveadm` backend implementations for:
+
+- mailbox listing
+- message listing
+- message view
+- message search
+- one-message move
+
+Those backend implementations now live in `src/mailbox_backend.rs`, with the
+existing `Doveadm*Backend` types re-exported from `src/mailbox.rs` so the
+public mailbox API stays stable. This keeps command construction and backend
+execution details easier to review separately from mailbox domain types and
+service outcomes.
