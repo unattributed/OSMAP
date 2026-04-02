@@ -1233,3 +1233,22 @@ existing public types re-exported from `src/http.rs` so route modules and tests
 continue to use the same interface. This keeps `http.rs` more focused on core
 HTTP types and the browser application shell while making the browser contract
 surface easier to audit independently.
+
+### Split mailbox domain models out of `mailbox.rs`
+
+After moving parser helpers, backend implementations, and service wiring out of
+`src/mailbox.rs`, the module still carried a large cluster of mailbox-specific
+domain contracts:
+
+- mailbox and message policy bounds
+- validated mailbox request types for list, search, view, and move operations
+- mailbox and message summary/view structs
+- mailbox public-failure and audit-failure enums
+- mailbox outcomes and backend traits
+
+Those pieces now live in `src/mailbox_model.rs`, with the existing public
+types re-exported from `src/mailbox.rs` so the mailbox API remains stable for
+backends, services, helper code, routes, and tests. This keeps `mailbox.rs`
+closer to the narrower role it has after the earlier parser and service splits,
+and makes the mailbox domain surface easier to audit independently from parser
+and backend execution code.

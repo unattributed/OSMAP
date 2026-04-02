@@ -164,9 +164,15 @@ Each phase produces formal outputs to support traceability and auditability.
   request-abuse controls still remain active hardening work, and the service
   still depends on adjacent controls such as nginx, PF, and operator
   monitoring.
+- The largest Rust hotspots are also being reduced with behavior-preserving
+  internal refactors. The browser layer has been split across dedicated
+  `http_runtime`, `http_gateway`, and `http_browser` modules, and the mailbox
+  layer now has dedicated parser, backend, service, and model modules to make
+  security review and future maintenance easier.
 - Current priority work is continued HTTP hardening, tighter OpenBSD helper and
-  filesystem narrowing, and broader end-to-end live validation beyond the now
-  proven authenticated read path.
+  filesystem narrowing, broader end-to-end live validation beyond the now
+  proven authenticated read path, and continued behavior-preserving reduction
+  of oversized implementation hotspots where that improves auditability.
 - GitHub-side security validation now has two explicit lanes:
   GitHub default CodeQL setup remains the authoritative CodeQL scanner for this
   repository, while the repo-owned `security-check` workflow is the
