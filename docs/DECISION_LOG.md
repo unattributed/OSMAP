@@ -1286,3 +1286,20 @@ That mailbox backend selection layer now lives in
 `src/http_gateway.rs`. This keeps `http_gateway.rs` more focused on browser
 workflow assembly while making the helper-aware mailbox backend boundary easier
 to audit separately from login, session, rendering, and submission flow logic.
+
+### Split auth and session gateway flows out of `http_gateway.rs`
+
+After moving helper-aware mailbox backend selection into
+`src/http_mailbox_backends.rs`, `src/http_gateway.rs` still combined:
+
+- browser login flow orchestration
+- session validation, logout, session listing, and session revocation
+- auth/session service construction and browser-safe session projection helpers
+- mailbox, rendering, attachment, and submission flow wiring
+
+The auth and session browser-flow cluster now lives in
+`src/http_gateway_auth.rs` as an internal child module of
+`src/http_gateway.rs`. This keeps `http_gateway.rs` more focused on mailbox,
+rendering, attachment, and submission orchestration while making the browser
+auth/session boundary easier to review separately from the rest of the runtime
+gateway assembly.
