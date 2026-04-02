@@ -1167,3 +1167,19 @@ existing `Doveadm*Backend` types re-exported from `src/mailbox.rs` so the
 public mailbox API stays stable. This keeps command construction and backend
 execution details easier to review separately from mailbox domain types and
 service outcomes.
+
+### Split helper server dispatch from `mailbox_helper.rs` transport plumbing
+
+After moving the helper protocol into `src/mailbox_helper_protocol.rs`,
+`src/mailbox_helper.rs` still combined:
+
+- Unix socket listener and bounded read/write transport helpers
+- client backend implementations for helper consumers
+- server-side request dispatch into mailbox backends
+- helper-specific operation logging
+
+The server-side request dispatch and helper-response logging now live in
+`src/mailbox_helper_dispatch.rs`, while `src/mailbox_helper.rs` keeps the
+socket transport and helper client plumbing. This reduces reviewer load at the
+least-privilege mailbox helper boundary without changing helper protocol or
+runtime behavior.
