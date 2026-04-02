@@ -124,6 +124,9 @@ pub const DEFAULT_HTTP_READ_TIMEOUT_SECS: u64 = 5;
 /// Conservative per-connection write timeout for the sequential HTTP listener.
 pub const DEFAULT_HTTP_WRITE_TIMEOUT_SECS: u64 = 5;
 
+/// Conservative bound for concurrently handled HTTP connections.
+pub const DEFAULT_HTTP_MAX_CONCURRENT_CONNECTIONS: usize = 16;
+
 /// The fixed cookie name used by the current browser session slice.
 pub const DEFAULT_SESSION_COOKIE_NAME: &str = "osmap_session";
 
@@ -141,6 +144,7 @@ pub struct HttpPolicy {
     pub secure_session_cookie: bool,
     pub read_timeout_secs: u64,
     pub write_timeout_secs: u64,
+    pub max_concurrent_connections: usize,
     pub authentication_policy: AuthenticationPolicy,
 }
 
@@ -159,6 +163,7 @@ impl HttpPolicy {
             secure_session_cookie: config.environment != RuntimeEnvironment::Development,
             read_timeout_secs: DEFAULT_HTTP_READ_TIMEOUT_SECS,
             write_timeout_secs: DEFAULT_HTTP_WRITE_TIMEOUT_SECS,
+            max_concurrent_connections: config.http_max_concurrent_connections as usize,
             authentication_policy: AuthenticationPolicy {
                 required_second_factor: RequiredSecondFactor::Totp,
                 ..AuthenticationPolicy::default()
@@ -181,6 +186,7 @@ impl Default for HttpPolicy {
             secure_session_cookie: false,
             read_timeout_secs: DEFAULT_HTTP_READ_TIMEOUT_SECS,
             write_timeout_secs: DEFAULT_HTTP_WRITE_TIMEOUT_SECS,
+            max_concurrent_connections: DEFAULT_HTTP_MAX_CONCURRENT_CONNECTIONS,
             authentication_policy: AuthenticationPolicy::default(),
         }
     }
@@ -359,6 +365,7 @@ mod tests {
     use std::io::{Read as _, Write as _};
     use std::net::{Shutdown, SocketAddr, TcpListener};
     use std::path::PathBuf;
+    use std::sync::atomic::AtomicUsize;
     use std::thread;
     use std::time::Duration;
 
@@ -2232,5 +2239,45 @@ mod tests {
             .fields
             .iter()
             .any(|field| field.key == "duration_ms" && field.value == "1500"));
+    }
+
+    #[test]
+    fn connection_slots_are_capped_by_policy_limit() {
+        let active_connections = AtomicUsize::new(0);
+        let policy = HttpPolicy {
+            max_concurrent_connections: 2,
+            ..HttpPolicy::default()
+        };
+
+        assert!(super::http_runtime::try_acquire_connection_slot(
+            &active_connections,
+            &policy
+        ));
+        assert!(super::http_runtime::try_acquire_connection_slot(
+            &active_connections,
+            &policy
+        ));
+        assert!(!super::http_runtime::try_acquire_connection_slot(
+            &active_connections,
+            &policy
+        ));
+    }
+
+    #[test]
+    fn over_capacity_connections_receive_service_unavailable() {
+        let response = with_connected_streams(|mut stream| {
+            let policy = HttpPolicy {
+                max_concurrent_connections: 1,
+                ..HttpPolicy::default()
+            };
+            let logger = Logger::new(crate::config::LogFormat::Text, LogLevel::Debug);
+            super::http_runtime::handle_over_capacity_stream(&logger, &mut stream, &policy);
+        });
+
+        let text = String::from_utf8(response).expect("response should be utf-8");
+        assert!(text.starts_with("HTTP/1.1 503 Service Unavailable\r\n"));
+        assert!(text.contains("\r\nRetry-After: 1\r\n"));
+        assert!(text.contains("\r\nConnection: close\r\n"));
+        assert!(text.contains("The service is temporarily busy. Please retry shortly."));
     }
 }

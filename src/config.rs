@@ -34,6 +34,7 @@ pub struct AppConfig {
     pub log_level: LogLevel,
     pub log_format: LogFormat,
     pub state_layout: StateLayout,
+    pub http_max_concurrent_connections: u64,
     pub session_lifetime_seconds: u64,
     pub totp_allowed_skew_steps: i64,
     pub login_throttle_max_failures: u64,
@@ -232,6 +233,8 @@ impl AppConfig {
         let state_root_value = read_value(env_map, "OSMAP_STATE_DIR", "/var/lib/osmap");
         let log_level_value = read_value(env_map, "OSMAP_LOG_LEVEL", "info");
         let log_format_value = read_value(env_map, "OSMAP_LOG_FORMAT", "text");
+        let http_max_concurrent_connections_value =
+            read_value(env_map, "OSMAP_HTTP_MAX_CONCURRENT_CONNECTIONS", "16");
         let session_lifetime_value = read_value(env_map, "OSMAP_SESSION_LIFETIME_SECS", "43200");
         let totp_skew_steps_value = read_value(env_map, "OSMAP_TOTP_ALLOWED_SKEW_STEPS", "1");
         let login_throttle_max_failures_value = read_value(
@@ -338,6 +341,10 @@ impl AppConfig {
         validate_non_empty("OSMAP_LOG_LEVEL", &log_level_value)?;
         validate_non_empty("OSMAP_LOG_FORMAT", &log_format_value)?;
         validate_non_empty("OSMAP_LISTEN_ADDR", &listen_addr)?;
+        validate_non_empty(
+            "OSMAP_HTTP_MAX_CONCURRENT_CONNECTIONS",
+            &http_max_concurrent_connections_value,
+        )?;
         validate_non_empty("OSMAP_SESSION_LIFETIME_SECS", &session_lifetime_value)?;
         validate_non_empty("OSMAP_TOTP_ALLOWED_SKEW_STEPS", &totp_skew_steps_value)?;
         validate_non_empty(
@@ -398,6 +405,10 @@ impl AppConfig {
         let state_root = parse_absolute_path("OSMAP_STATE_DIR", &state_root_value)?;
         let log_level = LogLevel::parse(&log_level_value)?;
         let log_format = LogFormat::parse(&log_format_value)?;
+        let http_max_concurrent_connections = parse_u64(
+            "OSMAP_HTTP_MAX_CONCURRENT_CONNECTIONS",
+            &http_max_concurrent_connections_value,
+        )?;
         let openbsd_confinement_mode =
             OpenbsdConfinementMode::parse(&openbsd_confinement_mode_value)?;
         let session_lifetime_seconds =
@@ -451,6 +462,10 @@ impl AppConfig {
         let message_move_throttle_lockout_seconds = parse_u64(
             "OSMAP_MESSAGE_MOVE_THROTTLE_LOCKOUT_SECS",
             &message_move_throttle_lockout_value,
+        )?;
+        validate_positive_u64(
+            "OSMAP_HTTP_MAX_CONCURRENT_CONNECTIONS",
+            http_max_concurrent_connections,
         )?;
         validate_positive_u64("OSMAP_SESSION_LIFETIME_SECS", session_lifetime_seconds)?;
         validate_positive_u64(
@@ -526,6 +541,7 @@ impl AppConfig {
             log_format,
             state_root,
             state_layout,
+            http_max_concurrent_connections,
             session_lifetime_seconds,
             totp_allowed_skew_steps,
             login_throttle_max_failures,
@@ -718,6 +734,7 @@ mod tests {
         );
         assert_eq!(config.log_level, LogLevel::Info);
         assert_eq!(config.log_format, LogFormat::Text);
+        assert_eq!(config.http_max_concurrent_connections, 16);
         assert_eq!(config.session_lifetime_seconds, 43200);
         assert_eq!(config.totp_allowed_skew_steps, 1);
         assert_eq!(config.login_throttle_max_failures, 5);
@@ -765,6 +782,10 @@ mod tests {
             ),
             ("OSMAP_LOG_LEVEL".to_string(), "debug".to_string()),
             ("OSMAP_LOG_FORMAT".to_string(), "text".to_string()),
+            (
+                "OSMAP_HTTP_MAX_CONCURRENT_CONNECTIONS".to_string(),
+                "24".to_string(),
+            ),
             (
                 "OSMAP_SESSION_LIFETIME_SECS".to_string(),
                 "3600".to_string(),
@@ -874,6 +895,7 @@ mod tests {
         );
         assert_eq!(config.log_level, LogLevel::Debug);
         assert_eq!(config.log_format, LogFormat::Text);
+        assert_eq!(config.http_max_concurrent_connections, 24);
         assert_eq!(config.session_lifetime_seconds, 3600);
         assert_eq!(config.totp_allowed_skew_steps, 2);
         assert_eq!(config.login_throttle_max_failures, 4);
@@ -952,6 +974,25 @@ mod tests {
             error,
             BootstrapError::InvalidConfig {
                 field: "OSMAP_SESSION_LIFETIME_SECS",
+                reason: "value must be greater than zero".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn rejects_zero_http_max_concurrent_connections() {
+        let env_map = BTreeMap::from([(
+            "OSMAP_HTTP_MAX_CONCURRENT_CONNECTIONS".to_string(),
+            "0".to_string(),
+        )]);
+
+        let error = AppConfig::from_env_map(&env_map)
+            .expect_err("zero-valued concurrent connection limit must fail");
+
+        assert_eq!(
+            error,
+            BootstrapError::InvalidConfig {
+                field: "OSMAP_HTTP_MAX_CONCURRENT_CONNECTIONS",
                 reason: "value must be greater than zero".to_string(),
             }
         );

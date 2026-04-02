@@ -1,6 +1,7 @@
 use std::io::Write as _;
 use std::net::{TcpListener, TcpStream};
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
+use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -19,6 +20,23 @@ use super::{
 static REQUEST_COUNTER: AtomicU64 = AtomicU64::new(1);
 const HTTP_ACCEPT_FAILURE_BACKOFF_CAP_MILLIS: u64 = 1000;
 const HTTP_REQUEST_SLOW_THRESHOLD_MILLIS: u128 = 1000;
+const HTTP_OVER_CAPACITY_RETRY_AFTER_SECS: u64 = 1;
+
+struct ConnectionSlotGuard {
+    active_connections: Arc<AtomicUsize>,
+}
+
+impl ConnectionSlotGuard {
+    fn new(active_connections: Arc<AtomicUsize>) -> Self {
+        Self { active_connections }
+    }
+}
+
+impl Drop for ConnectionSlotGuard {
+    fn drop(&mut self) {
+        self.active_connections.fetch_sub(1, Ordering::AcqRel);
+    }
+}
 
 impl<G> BrowserApp<G>
 where
@@ -104,7 +122,7 @@ where
     }
 }
 
-/// Runs the first sequential HTTP server for the current browser slice.
+/// Runs the current bounded-concurrency HTTP server for the browser slice.
 pub fn run_http_server(config: &AppConfig, logger: &Logger) -> Result<(), String> {
     if config.run_mode != AppRunMode::Serve {
         return Ok(());
@@ -114,10 +132,11 @@ pub fn run_http_server(config: &AppConfig, logger: &Logger) -> Result<(), String
 
     let listener = TcpListener::bind(&config.listen_addr)
         .map_err(|error| format!("failed to bind {}: {error}", config.listen_addr))?;
-    let app = BrowserApp::new(
+    let app = Arc::new(BrowserApp::new(
         HttpPolicy::from_config(config),
         RuntimeBrowserGateway::from_config(config),
-    );
+    ));
+    let active_connections = Arc::new(AtomicUsize::new(0));
     logger.emit(
         &LogEvent::new(
             LogLevel::Info,
@@ -126,7 +145,11 @@ pub fn run_http_server(config: &AppConfig, logger: &Logger) -> Result<(), String
             "http server started",
         )
         .with_field("listen_addr", config.listen_addr.clone())
-        .with_field("run_mode", config.run_mode.as_str()),
+        .with_field("run_mode", config.run_mode.as_str())
+        .with_field(
+            "max_concurrent_connections",
+            app.policy().max_concurrent_connections.to_string(),
+        ),
     );
 
     let mut consecutive_accept_failures = 0_u32;
@@ -134,7 +157,18 @@ pub fn run_http_server(config: &AppConfig, logger: &Logger) -> Result<(), String
         match stream {
             Ok(mut stream) => {
                 consecutive_accept_failures = 0;
-                handle_client_stream(&app, logger, &mut stream)
+                if !try_acquire_connection_slot(&active_connections, app.policy()) {
+                    handle_over_capacity_stream(logger, &mut stream, app.policy());
+                    continue;
+                }
+
+                let app = Arc::clone(&app);
+                let logger = logger.clone();
+                let active_connections = Arc::clone(&active_connections);
+                thread::spawn(move || {
+                    let _slot_guard = ConnectionSlotGuard::new(active_connections);
+                    handle_client_stream(app.as_ref(), &logger, &mut stream);
+                });
             }
             Err(error) => {
                 consecutive_accept_failures = consecutive_accept_failures.saturating_add(1);
@@ -163,6 +197,31 @@ pub fn run_http_server(config: &AppConfig, logger: &Logger) -> Result<(), String
     Ok(())
 }
 
+/// Attempts to reserve one in-flight connection slot under the configured cap.
+pub(super) fn try_acquire_connection_slot(
+    active_connections: &AtomicUsize,
+    policy: &HttpPolicy,
+) -> bool {
+    let limit = policy.max_concurrent_connections;
+    let mut current = active_connections.load(Ordering::Acquire);
+
+    loop {
+        if current >= limit {
+            return false;
+        }
+
+        match active_connections.compare_exchange_weak(
+            current,
+            current + 1,
+            Ordering::AcqRel,
+            Ordering::Acquire,
+        ) {
+            Ok(_) => return true,
+            Err(observed) => current = observed,
+        }
+    }
+}
+
 /// Returns the bounded backoff used after consecutive accept failures.
 pub(super) fn accept_failure_backoff_millis(consecutive_failures: u32) -> u64 {
     if consecutive_failures == 0 {
@@ -172,6 +231,58 @@ pub(super) fn accept_failure_backoff_millis(consecutive_failures: u32) -> u64 {
     let exponent = consecutive_failures.saturating_sub(1).min(5);
     let backoff = 50_u64.saturating_mul(1_u64 << exponent);
     backoff.min(HTTP_ACCEPT_FAILURE_BACKOFF_CAP_MILLIS)
+}
+
+/// Rejects an accepted connection when the runtime is already at capacity.
+pub(super) fn handle_over_capacity_stream(
+    logger: &Logger,
+    stream: &mut TcpStream,
+    policy: &HttpPolicy,
+) {
+    let remote_addr = stream
+        .peer_addr()
+        .map(normalize_peer_addr)
+        .unwrap_or_else(|_| "<unknown>".to_string());
+    let _ = stream.set_write_timeout(Some(Duration::from_secs(policy.write_timeout_secs)));
+
+    logger.emit(
+        &LogEvent::new(
+            LogLevel::Warn,
+            EventCategory::Http,
+            "http_connection_rejected_over_capacity",
+            "http connection rejected because the runtime was already at capacity",
+        )
+        .with_field("remote_addr", remote_addr.clone())
+        .with_field(
+            "max_concurrent_connections",
+            policy.max_concurrent_connections.to_string(),
+        ),
+    );
+
+    let response = html_response(
+        503,
+        "Service Unavailable",
+        "Service Busy",
+        "<p>The service is temporarily busy. Please retry shortly.</p>",
+    )
+    .with_header(
+        "Retry-After",
+        HTTP_OVER_CAPACITY_RETRY_AFTER_SECS.to_string(),
+    );
+
+    let response_bytes = response.to_http_bytes();
+    if let Err(error) = stream.write_all(&response_bytes) {
+        logger.emit(
+            &LogEvent::new(
+                LogLevel::Warn,
+                EventCategory::Http,
+                "http_over_capacity_response_write_failed",
+                "http over-capacity response write failed",
+            )
+            .with_field("remote_addr", remote_addr)
+            .with_field("reason", error.to_string()),
+        );
+    }
 }
 
 /// Handles one accepted client connection and closes it after one response.

@@ -363,6 +363,7 @@ mod tests {
                 PathBuf::from("/var/lib/osmap/secrets/totp"),
             )
             .expect("layout should be valid"),
+            http_max_concurrent_connections: 16,
             session_lifetime_seconds: 43200,
             totp_allowed_skew_steps: 1,
             login_throttle_max_failures: 5,

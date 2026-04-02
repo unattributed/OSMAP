@@ -39,6 +39,7 @@ The early runtime recognizes:
 - `OSMAP_TOTP_SECRET_DIR`
 - `OSMAP_LOG_LEVEL`
 - `OSMAP_LOG_FORMAT`
+- `OSMAP_HTTP_MAX_CONCURRENT_CONNECTIONS`
 - `OSMAP_SESSION_LIFETIME_SECS`
 - `OSMAP_TOTP_ALLOWED_SKEW_STEPS`
 - `OSMAP_LOGIN_THROTTLE_MAX_FAILURES`
@@ -86,6 +87,14 @@ is proxied through the helper instead of being executed directly from the
 browser-facing process. When `OSMAP_RUN_MODE=mailbox-helper` is selected and the
 variable is absent, the helper defaults to
 `<runtime_dir>/mailbox-helper.sock`.
+
+The runtime now also recognizes one explicit HTTP concurrency setting:
+
+- `OSMAP_HTTP_MAX_CONCURRENT_CONNECTIONS`
+
+That setting bounds the number of in-flight HTTP connections the browser
+runtime will handle concurrently before it returns `503 Service Unavailable`
+with `Retry-After`.
 
 The runtime now also recognizes explicit login-throttle settings for the
 browser authentication path:

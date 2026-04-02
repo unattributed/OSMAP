@@ -51,9 +51,10 @@ resource-exhaustion weaknesses.
 
 ### Residual risks still requiring active work
 
-- `CWE-770` remains relevant because the HTTP runtime is still sequential and
-  the current browser-login throttle is only one layer of broader abuse
-  resistance rather than a full request-resource control story.
+- `CWE-770` remains relevant because the HTTP runtime now uses bounded
+  thread-per-connection handling with an explicit in-flight cap, but that is
+  still only one layer of broader request-resource control rather than a full
+  denial-of-service solution.
 - `CWE-862`, `CWE-863`, `CWE-284`, and `CWE-639` remain relevant because the
   browser and helper surfaces are authorization-sensitive and need continuous
   regression review as features expand.

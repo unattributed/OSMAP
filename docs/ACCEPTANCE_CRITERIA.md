@@ -207,8 +207,9 @@ Phase 6:
   than blockers for the first move slice
 - the current repo-grounded reassessment also confirms active gaps beyond the
   now-implemented login, send, and message-move throttle slices: the
-  correctness and availability limits of the sequential HTTP runtime, the lack
-  of broader live-host proof beyond the first mutation workflows, and the need
-  for broader folder ergonomics and richer search behavior
+  correctness and availability limits of the current bounded-concurrency HTTP
+  runtime, the lack of broader live-host proof beyond the first mutation
+  workflows, and the need for broader folder ergonomics and richer search
+  behavior
 - the actual prototype now exists and Phase 6 execution is materially underway,
   but the implementation is still prototype-grade rather than production-ready

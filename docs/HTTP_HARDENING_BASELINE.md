@@ -65,13 +65,15 @@ The current browser runtime enforces:
 - normalization of peer socket addresses to bare IP strings before they reach
   auth-helper metadata or structured request audit context
 - explicit distinction between parse failures, read timeouts, truncated
-  requests, and empty connections in the sequential listener lifecycle
+  requests, and empty connections in the listener lifecycle
 - `408 Request Timeout` on read timeouts instead of collapsing that case into a
   generic `400 Bad Request`
 - silent connection close for empty or truncated requests instead of replying to
   incomplete traffic as though it were a well-formed HTTP exchange
 - bounded backoff after repeated listener accept failures instead of spinning
   hot on a broken accept loop
+- explicit in-flight connection caps with `503 Service Unavailable` plus
+  `Retry-After` when the runtime is already at capacity
 - central request-completion logging with status, response size, and duration
   so slow requests can be observed without inferring lifecycle from route-local
   audit events alone
@@ -81,10 +83,11 @@ escaped plain text or a narrow allowlist sanitizer. It still blocks external
 fetches, scriptable markup, relative URLs, and richer client-side HTML
 behavior.
 
-Because the current server remains sequential, those read/write timeouts are an
-important correctness control as well as a convenience feature. They do not
-make the listener concurrent, but they do reduce the risk that one slow or
-stalled client will hold the process open indefinitely.
+Because the current server now uses bounded concurrent connection handling,
+those read/write timeouts remain an important correctness control as well as a
+convenience feature. They do not solve request-resource exhaustion on their
+own, but they do reduce the risk that one slow or stalled client will hold a
+worker slot open indefinitely.
 
 The runtime now also treats incomplete connection lifecycles more explicitly.
 An empty connection is logged and closed without an HTTP response, a truncated
@@ -93,10 +96,11 @@ timeout now returns `408 Request Timeout`. That keeps the server from
 normalizing transport-level failure cases into the same path used for a real
 malformed request.
 
-The sequential listener now also backs off after repeated accept failures and
-emits one central completion event for parsed requests. That does not make the
-listener concurrent, but it does reduce hot-loop behavior on repeated accept
-errors and makes slow-request observation more explicit.
+The listener now also backs off after repeated accept failures, rejects
+accepted connections when it is already at its configured in-flight cap, and
+emits one central completion event for parsed requests. That gives OSMAP a
+bounded concurrency model without pretending it now has a full production
+queueing or worker-management layer.
 
 ## Current CSRF Strategy
 
@@ -214,9 +218,9 @@ This baseline does not mean:
 
 - public-internet exposure is now the default
 - nginx configuration is finalized for production
-- the current listener is concurrent or high-throughput
-- the current timeout values eliminate denial-of-service risk from a
-  single-process listener
+- the current listener is high-throughput
+- the current timeout values and connection cap eliminate denial-of-service
+  risk from a small thread-per-connection runtime
 - attachment downloads are fully live-host-proven or fully helper-hardened
 - CSRF coverage exists beyond the currently implemented form routes
 - the current unveil view is narrow enough for final adoption

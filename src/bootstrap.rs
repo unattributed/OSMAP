@@ -26,6 +26,7 @@ pub struct BootstrapReport {
     pub totp_secret_dir: String,
     pub log_level: String,
     pub log_format: String,
+    pub http_max_concurrent_connections: String,
     pub session_lifetime_seconds: String,
     pub totp_allowed_skew_steps: String,
     pub login_throttle_max_failures: String,
@@ -79,6 +80,10 @@ impl BootstrapReport {
         .with_field("totp_secret_dir", self.totp_secret_dir.clone())
         .with_field("log_level", self.log_level.clone())
         .with_field("log_format", self.log_format.clone())
+        .with_field(
+            "http_max_concurrent_connections",
+            self.http_max_concurrent_connections.clone(),
+        )
         .with_field(
             "session_lifetime_seconds",
             self.session_lifetime_seconds.clone(),
@@ -190,6 +195,7 @@ fn report_from_config(config: &AppConfig) -> BootstrapReport {
         totp_secret_dir: config.state_layout.totp_secret_dir.display().to_string(),
         log_level: config.log_level.as_str().to_string(),
         log_format: config.log_format.as_str().to_string(),
+        http_max_concurrent_connections: config.http_max_concurrent_connections.to_string(),
         session_lifetime_seconds: config.session_lifetime_seconds.to_string(),
         totp_allowed_skew_steps: config.totp_allowed_skew_steps.to_string(),
         login_throttle_max_failures: config.login_throttle_max_failures.to_string(),
@@ -247,6 +253,7 @@ mod tests {
                 PathBuf::from("/var/lib/osmap/secrets/totp"),
             )
             .expect("layout should be valid"),
+            http_max_concurrent_connections: 16,
             session_lifetime_seconds: 43200,
             totp_allowed_skew_steps: 1,
             login_throttle_max_failures: 5,
@@ -331,6 +338,10 @@ mod tests {
                 crate::logging::LogField {
                     key: "log_format",
                     value: "text".to_string(),
+                },
+                crate::logging::LogField {
+                    key: "http_max_concurrent_connections",
+                    value: "16".to_string(),
                 },
                 crate::logging::LogField {
                     key: "session_lifetime_seconds",

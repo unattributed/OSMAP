@@ -1670,3 +1670,33 @@ spots in a custom sequential server:
 This is still not a concurrency change or a complete denial-of-service
 solution. It is a bounded resilience and observability improvement that fits
 the current prototype stage.
+
+### Replace the strictly sequential HTTP listener with a bounded-concurrency model
+
+The next narrow runtime step after connection-lifecycle cleanup and
+observability should address the biggest remaining structural limitation
+directly: one-connection-at-a-time serving.
+
+OSMAP now handles accepted HTTP connections concurrently up to an explicit
+operator-configured cap:
+
+- `OSMAP_HTTP_MAX_CONCURRENT_CONNECTIONS`
+
+The runtime uses a small thread-per-connection model with:
+
+- one in-flight counter
+- bounded admission
+- `503 Service Unavailable` plus `Retry-After` when the runtime is already at
+  capacity
+
+This was selected over a broader async or worker-pool rewrite because it:
+
+- removes the strictly sequential bottleneck
+- stays dependency-light and reviewable
+- fits the current standard-library-first runtime shape
+- keeps the operator boundary explicit through one visible capacity setting
+
+This is still not a complete denial-of-service solution or a claim of
+high-throughput production readiness. It is a bounded concurrency upgrade that
+materially improves the browser runtime posture without derailing the current
+architecture.

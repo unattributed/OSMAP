@@ -194,9 +194,9 @@ Each phase produces formal outputs to support traceability and auditability.
 - Broader auth-abuse resistance and request-abuse controls still remain active
   hardening work, and the service still depends on adjacent controls such as
   nginx, PF, and operator monitoring.
-- The current HTTP runtime remains sequential. That is acceptable for the
-  current prototype stage, but it remains an active correctness and
-  availability constraint rather than a solved production posture.
+- The current HTTP runtime now uses bounded concurrent connection handling
+  instead of a strictly sequential listener, with an explicit in-flight cap
+  and `503 Service Unavailable` when that cap is reached.
 - The first live mutation-path proof now also exists on
   `mail.blackbagsecurity.com` under `enforce`: a controlled one-message move
   from `INBOX` to `Junk` and a bounded send flow both succeeded through the
@@ -214,7 +214,7 @@ Each phase produces formal outputs to support traceability and auditability.
   routes are settings update, session revoke, and logout, and they are
   lower-volume, CSRF-bound, and lower abuse value than login, send, or message
   move.
-- Current priority work is therefore shifting toward sequential-runtime
+- Current priority work is therefore shifting toward bounded-runtime
   hardening, broader live mutation-path coverage on
   `mail.blackbagsecurity.com`, and remaining workflow refinements such as
   broader folder-organization ergonomics and richer search behavior.
@@ -222,8 +222,8 @@ Each phase produces formal outputs to support traceability and auditability.
   honestly: read timeouts return `408 Request Timeout`, while empty or
   truncated connections are logged and closed without treating them as generic
   `400 Bad Request` traffic.
-- The sequential listener now also applies bounded backoff after repeated
-  accept failures and emits central request-completion events with status and
+- The bounded listener now also applies backoff after repeated accept
+  failures and emits central request-completion events with status and
   duration so slow requests are easier to spot during hardening.
 - GitHub-side security validation now has two explicit lanes:
   GitHub default CodeQL setup remains the authoritative CodeQL scanner for this

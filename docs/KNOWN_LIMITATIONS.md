@@ -15,8 +15,10 @@
   it is still a prototype-grade browser mail product rather than a production
   service
 - The implementation now has a bounded browser slice with login, mailbox read,
-  message view, compose, send, CSRF handling, and attachment download, but it
-  still uses a sequential listener rather than concurrent request handling
+  message view, compose, send, CSRF handling, and attachment download, and it
+  now uses bounded concurrent request handling with an explicit connection cap,
+  but it still does not provide a mature worker pool, async runtime, or a
+  complete denial-of-service mitigation story
 - The implementation now has a bounded message-view fetch path, plus
   MIME-aware classification and attachment metadata surfacing, but it does not
   yet provide preview-oriented attachment behavior

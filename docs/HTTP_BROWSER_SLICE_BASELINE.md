@@ -17,7 +17,8 @@ browser router that can be started in `serve` mode.
 The current slice provides:
 
 - a bounded HTTP/1.x request parser
-- a small sequential TCP listener with one-request-per-connection behavior
+- a small bounded-concurrency TCP listener with one-request-per-connection
+  behavior and an explicit in-flight connection cap
 - explicit `bootstrap` and `serve` run modes
 - browser routes for login, mailbox home, message lists, message view, compose,
   send, logout, and health checks
@@ -177,7 +178,6 @@ This slice does not yet include:
 
 - TLS termination inside OSMAP
 - administrative routes
-- concurrent request handling
 - broader auth-abuse and request-abuse controls beyond the current login and
   send throttling slices plus the first one-message move throttle slice
 - broader live mutation-workflow coverage on the target host under confinement

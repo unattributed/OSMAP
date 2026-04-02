@@ -199,8 +199,8 @@ slice itself.
 
 The current highest-confidence active hardening and Version 1 gaps are:
 
-- the correctness and availability constraints of the current sequential HTTP
-  runtime
+- the correctness and availability constraints of the current bounded-
+  concurrency HTTP runtime
 - broader live-host proof beyond the first bounded mutation workflows
 - broader folder ergonomics such as bulk move or archive shortcuts from list
   views
@@ -214,13 +214,16 @@ rejection for some connection-lifecycle cases. The runtime distinguishes:
 - truncated requests, which now close as incomplete instead of being
   normalized into a generic `400 Bad Request`
 
-That is a narrow resilience improvement for the sequential listener, not a
-claim that the listener is now concurrent or production-complete.
+That was a narrow resilience improvement for the earlier sequential listener.
 
-The runtime now also applies bounded backoff after repeated accept failures and
+The runtime now also applies bounded backoff after repeated accept failures,
+handles accepted connections concurrently up to an explicit configured cap, and
 emits central request-completion events for parsed requests with status,
-response size, and duration. That is still operational observation and loop
-resilience work for a sequential server, not a concurrency upgrade.
+response size, and duration. Over-capacity connections now receive `503
+Service Unavailable` with `Retry-After`.
+
+That is a bounded concurrency upgrade, but not a full production-grade
+request-resource control story.
 
 The recent route review also found that the remaining authenticated POST routes
 in the current browser surface are:

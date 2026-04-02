@@ -40,11 +40,11 @@ The current implementation should therefore be treated as:
 - functionally beyond the original mailbox-read prototype baseline
 - still incomplete against the full Version 1 product contract
 - still carrying active security and hardening gaps around broader auth-abuse
-  resistance, sequential-runtime posture, and live mutation-path proof
+  resistance, bounded-runtime posture, and live mutation-path proof
 
 This document remains the target product contract, but implementation planning
 and status reporting should now treat broader folder ergonomics, richer search
-behavior, sequential-runtime hardening, and broader live mutation-path proof as
+behavior, bounded-runtime hardening, and broader live mutation-path proof as
 the clearest remaining gaps rather than continuing to describe HTML rendering,
 first-release settings, or the first request-abuse slices as absent.
 
