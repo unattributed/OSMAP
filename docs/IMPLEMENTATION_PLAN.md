@@ -222,7 +222,8 @@ emits central request-completion events for parsed requests with status,
 response size, and duration. Over-capacity connections now receive `503
 Service Unavailable` with `Retry-After`. Connection pressure is now surfaced
 through high-watermark and capacity-reached events, and write-failure logs now
-carry richer request/response context.
+carry richer request/response context. Sustained listener accept-failure
+streaks now escalate explicitly and emit a recovery event once accepts resume.
 
 That is a bounded concurrency upgrade, but not a full production-grade
 request-resource control story.

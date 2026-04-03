@@ -2206,6 +2206,44 @@ mod tests {
     }
 
     #[test]
+    fn accept_failure_event_escalates_after_threshold() {
+        let warn_event =
+            super::http_runtime::build_accept_failure_event("temporary".to_string(), 2, 100);
+        assert_eq!(warn_event.level, LogLevel::Warn);
+        assert_eq!(warn_event.action, "http_accept_failed");
+        assert!(warn_event
+            .fields
+            .iter()
+            .any(|field| field.key == "consecutive_failures" && field.value == "2"));
+
+        let error_event =
+            super::http_runtime::build_accept_failure_event("persistent".to_string(), 5, 800);
+        assert_eq!(error_event.level, LogLevel::Error);
+        assert_eq!(error_event.action, "http_accept_failed_sustained");
+        assert!(error_event
+            .fields
+            .iter()
+            .any(|field| field.key == "consecutive_failures" && field.value == "5"));
+        assert!(error_event
+            .fields
+            .iter()
+            .any(|field| field.key == "backoff_millis" && field.value == "800"));
+    }
+
+    #[test]
+    fn accept_recovery_event_reports_previous_failure_streak() {
+        let event = super::http_runtime::build_accept_recovery_event(7);
+
+        assert_eq!(event.level, LogLevel::Info);
+        assert_eq!(event.category, EventCategory::Http);
+        assert_eq!(event.action, "http_accept_recovered");
+        assert!(event
+            .fields
+            .iter()
+            .any(|field| { field.key == "previous_consecutive_failures" && field.value == "7" }));
+    }
+
+    #[test]
     fn request_completion_event_is_warn_for_slow_requests() {
         let event = super::http_runtime::build_request_completion_event(
             "127.0.0.1",

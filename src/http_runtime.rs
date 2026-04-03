@@ -19,6 +19,7 @@ use super::{
 
 static REQUEST_COUNTER: AtomicU64 = AtomicU64::new(1);
 const HTTP_ACCEPT_FAILURE_BACKOFF_CAP_MILLIS: u64 = 1000;
+const HTTP_ACCEPT_FAILURE_ESCALATION_THRESHOLD: u32 = 5;
 const HTTP_REQUEST_SLOW_THRESHOLD_MILLIS: u128 = 1000;
 const HTTP_OVER_CAPACITY_RETRY_AFTER_SECS: u64 = 1;
 
@@ -157,6 +158,9 @@ pub fn run_http_server(config: &AppConfig, logger: &Logger) -> Result<(), String
     for stream in listener.incoming() {
         match stream {
             Ok(mut stream) => {
+                if consecutive_accept_failures >= HTTP_ACCEPT_FAILURE_ESCALATION_THRESHOLD {
+                    logger.emit(&build_accept_recovery_event(consecutive_accept_failures));
+                }
                 consecutive_accept_failures = 0;
                 let active_after_accept =
                     match try_acquire_connection_slot(&active_connections, app.policy()) {
@@ -192,20 +196,11 @@ pub fn run_http_server(config: &AppConfig, logger: &Logger) -> Result<(), String
             Err(error) => {
                 consecutive_accept_failures = consecutive_accept_failures.saturating_add(1);
                 let backoff_millis = accept_failure_backoff_millis(consecutive_accept_failures);
-                logger.emit(
-                    &LogEvent::new(
-                        LogLevel::Warn,
-                        EventCategory::Http,
-                        "http_accept_failed",
-                        "http connection accept failed",
-                    )
-                    .with_field("reason", error.to_string())
-                    .with_field(
-                        "consecutive_failures",
-                        consecutive_accept_failures.to_string(),
-                    )
-                    .with_field("backoff_millis", backoff_millis.to_string()),
-                );
+                logger.emit(&build_accept_failure_event(
+                    error.to_string(),
+                    consecutive_accept_failures,
+                    backoff_millis,
+                ));
                 if backoff_millis != 0 {
                     thread::sleep(Duration::from_millis(backoff_millis));
                 }
@@ -250,6 +245,49 @@ pub(super) fn accept_failure_backoff_millis(consecutive_failures: u32) -> u64 {
     let exponent = consecutive_failures.saturating_sub(1).min(5);
     let backoff = 50_u64.saturating_mul(1_u64 << exponent);
     backoff.min(HTTP_ACCEPT_FAILURE_BACKOFF_CAP_MILLIS)
+}
+
+/// Builds the current accept-failure event with thresholded escalation for
+/// sustained listener faults.
+pub(super) fn build_accept_failure_event(
+    reason: String,
+    consecutive_failures: u32,
+    backoff_millis: u64,
+) -> LogEvent {
+    let escalated = consecutive_failures >= HTTP_ACCEPT_FAILURE_ESCALATION_THRESHOLD;
+    let (level, action, message) = if escalated {
+        (
+            LogLevel::Error,
+            "http_accept_failed_sustained",
+            "http connection accept has failed repeatedly",
+        )
+    } else {
+        (
+            LogLevel::Warn,
+            "http_accept_failed",
+            "http connection accept failed",
+        )
+    };
+
+    LogEvent::new(level, EventCategory::Http, action, message)
+        .with_field("reason", reason)
+        .with_field("consecutive_failures", consecutive_failures.to_string())
+        .with_field("backoff_millis", backoff_millis.to_string())
+}
+
+/// Builds the recovery event emitted when the listener accepts again after a
+/// sustained accept-failure streak.
+pub(super) fn build_accept_recovery_event(previous_failure_streak: u32) -> LogEvent {
+    LogEvent::new(
+        LogLevel::Info,
+        EventCategory::Http,
+        "http_accept_recovered",
+        "http listener recovered after repeated accept failures",
+    )
+    .with_field(
+        "previous_consecutive_failures",
+        previous_failure_streak.to_string(),
+    )
 }
 
 /// Rejects an accepted connection when the runtime is already at capacity.

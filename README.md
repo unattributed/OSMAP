@@ -228,6 +228,8 @@ Each phase produces formal outputs to support traceability and auditability.
 - The bounded runtime now also emits connection high-watermark and
   capacity-reached events, and its response-write failure events carry richer
   request and response context for operator triage.
+- The listener now also escalates sustained `accept(2)` failure streaks to an
+  error-level event and emits a recovery event when successful accepts resume.
 - GitHub-side security validation now has two explicit lanes:
   GitHub default CodeQL setup remains the authoritative CodeQL scanner for this
   repository, while the repo-owned `security-check` workflow is the

@@ -1718,6 +1718,22 @@ This was chosen over broader queueing or worker-pool work because it gives
 operators more actionable signals about runtime pressure and partial failure
 without changing the current trust boundary or transport model.
 
+### Escalate sustained accept-loop failures and emit recovery when the listener resumes
+
+After adding bounded concurrency and pressure observability, the next narrow
+HTTP-runtime step should make sustained listener failure less ambiguous.
+
+OSMAP now:
+
+- keeps ordinary single accept failures at `warn`
+- promotes sustained accept-failure streaks to an explicit error-level event
+- emits an info-level recovery event when successful accepts resume after such
+  a streak
+
+This was chosen over broader transport redesign because it improves operator
+visibility into listener health without widening the protocol surface or
+changing the current bounded-concurrency runtime model.
+
 ### Turn the repo-grounded reassessment into an explicit V1 closeout and V2 defer map
 
 The project is now far enough along that the main risk is no longer missing

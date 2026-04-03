@@ -19,6 +19,9 @@
   now uses bounded concurrent request handling with an explicit connection cap,
   but it still does not provide a mature worker pool, async runtime, or a
   complete denial-of-service mitigation story
+- The current HTTP runtime now has clearer connection-pressure, write-failure,
+  and accept-failure observability, but it still depends on adjacent controls
+  and does not yet provide a complete request-resource exhaustion strategy
 - The implementation now has a bounded message-view fetch path, plus
   MIME-aware classification and attachment metadata surfacing, but it does not
   yet provide preview-oriented attachment behavior

@@ -72,6 +72,8 @@ The current browser runtime enforces:
   incomplete traffic as though it were a well-formed HTTP exchange
 - bounded backoff after repeated listener accept failures instead of spinning
   hot on a broken accept loop
+- thresholded escalation for sustained listener accept failures plus a recovery
+  event when accepts resume
 - explicit in-flight connection caps with `503 Service Unavailable` plus
   `Retry-After` when the runtime is already at capacity
 - connection high-watermark and capacity-reached observability events so
@@ -100,13 +102,14 @@ timeout now returns `408 Request Timeout`. That keeps the server from
 normalizing transport-level failure cases into the same path used for a real
 malformed request.
 
-The listener now also backs off after repeated accept failures, rejects
-accepted connections when it is already at its configured in-flight cap, and
-emits one central completion event for parsed requests. It also now reports new
-connection high-water marks and explicit capacity-reached transitions, and it
-carries more context on response-write failures. That gives OSMAP a bounded
-concurrency model with better operator visibility without pretending it now has
-a full production queueing or worker-management layer.
+The listener now also backs off after repeated accept failures, escalates
+sustained accept-failure streaks, rejects accepted connections when it is
+already at its configured in-flight cap, and emits one central completion
+event for parsed requests. It also now reports new connection high-water marks
+and explicit capacity-reached transitions, and it carries more context on
+response-write failures. That gives OSMAP a bounded concurrency model with
+better operator visibility without pretending it now has a full production
+queueing or worker-management layer.
 
 ## Current CSRF Strategy
 
