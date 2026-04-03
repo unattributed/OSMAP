@@ -83,6 +83,8 @@ The current browser runtime enforces:
   audit events alone
 - richer response-write failure logging with request method/path and attempted
   response size when the request had already been parsed
+- thresholded escalation for sustained response-write failures plus a recovery
+  event when response writes resume
 
 The current HTML rendering path stays deliberately small and uses either
 escaped plain text or a narrow allowlist sanitizer. It still blocks external
@@ -107,9 +109,10 @@ sustained accept-failure streaks, rejects accepted connections when it is
 already at its configured in-flight cap, and emits one central completion
 event for parsed requests. It also now reports new connection high-water marks
 and explicit capacity-reached transitions, and it carries more context on
-response-write failures. That gives OSMAP a bounded concurrency model with
-better operator visibility without pretending it now has a full production
-queueing or worker-management layer.
+response-write failures, including sustained-failure escalation and recovery.
+That gives OSMAP a bounded concurrency model with better operator visibility
+without pretending it now has a full production queueing or worker-management
+layer.
 
 ## Current CSRF Strategy
 

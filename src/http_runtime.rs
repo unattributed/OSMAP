@@ -20,8 +20,20 @@ use super::{
 static REQUEST_COUNTER: AtomicU64 = AtomicU64::new(1);
 const HTTP_ACCEPT_FAILURE_BACKOFF_CAP_MILLIS: u64 = 1000;
 const HTTP_ACCEPT_FAILURE_ESCALATION_THRESHOLD: u32 = 5;
+const HTTP_RESPONSE_WRITE_FAILURE_ESCALATION_THRESHOLD: u32 = 5;
 const HTTP_REQUEST_SLOW_THRESHOLD_MILLIS: u128 = 1000;
 const HTTP_OVER_CAPACITY_RETRY_AFTER_SECS: u64 = 1;
+
+pub(super) struct ResponseWriteFailureContext<'a> {
+    pub(super) remote_addr: String,
+    pub(super) reason: String,
+    pub(super) consecutive_failures: usize,
+    pub(super) status_code: Option<u16>,
+    pub(super) request_context: Option<(&'a str, &'a str, usize)>,
+    pub(super) response_bytes: usize,
+    pub(super) active_connections: Option<usize>,
+    pub(super) over_capacity_response: bool,
+}
 
 struct ConnectionSlotGuard {
     active_connections: Arc<AtomicUsize>,
@@ -139,6 +151,7 @@ pub fn run_http_server(config: &AppConfig, logger: &Logger) -> Result<(), String
     ));
     let active_connections = Arc::new(AtomicUsize::new(0));
     let peak_connections = Arc::new(AtomicUsize::new(0));
+    let consecutive_response_write_failures = Arc::new(AtomicUsize::new(0));
     logger.emit(
         &LogEvent::new(
             LogLevel::Info,
@@ -173,6 +186,7 @@ pub fn run_http_server(config: &AppConfig, logger: &Logger) -> Result<(), String
                                 &mut stream,
                                 app.policy(),
                                 observed_active_connections,
+                                &consecutive_response_write_failures,
                             );
                             continue;
                         }
@@ -188,9 +202,16 @@ pub fn run_http_server(config: &AppConfig, logger: &Logger) -> Result<(), String
                 let app = Arc::clone(&app);
                 let logger = logger.clone();
                 let active_connections = Arc::clone(&active_connections);
+                let consecutive_response_write_failures =
+                    Arc::clone(&consecutive_response_write_failures);
                 thread::spawn(move || {
                     let _slot_guard = ConnectionSlotGuard::new(active_connections);
-                    handle_client_stream(app.as_ref(), &logger, &mut stream);
+                    handle_client_stream_with_write_tracking(
+                        app.as_ref(),
+                        &logger,
+                        &mut stream,
+                        &consecutive_response_write_failures,
+                    );
                 });
             }
             Err(error) => {
@@ -296,6 +317,7 @@ pub(super) fn handle_over_capacity_stream(
     stream: &mut TcpStream,
     policy: &HttpPolicy,
     active_connections: usize,
+    consecutive_response_write_failures: &AtomicUsize,
 ) {
     let remote_addr = stream
         .peer_addr()
@@ -330,25 +352,51 @@ pub(super) fn handle_over_capacity_stream(
     );
 
     let response_bytes = response.to_http_bytes();
-    if let Err(error) = stream.write_all(&response_bytes) {
-        logger.emit(
-            &LogEvent::new(
-                LogLevel::Warn,
-                EventCategory::Http,
-                "http_over_capacity_response_write_failed",
-                "http over-capacity response write failed",
-            )
-            .with_field("remote_addr", remote_addr)
-            .with_field("active_connections", active_connections.to_string())
-            .with_field("response_bytes", response_bytes.len().to_string())
-            .with_field("reason", error.to_string()),
-        );
+    match stream.write_all(&response_bytes) {
+        Ok(()) => maybe_log_response_write_recovery(
+            logger,
+            consecutive_response_write_failures,
+            remote_addr,
+        ),
+        Err(error) => {
+            let consecutive_failures = consecutive_response_write_failures
+                .fetch_add(1, Ordering::AcqRel)
+                .saturating_add(1);
+            logger.emit(&build_response_write_failure_event(
+                ResponseWriteFailureContext {
+                    remote_addr,
+                    reason: error.to_string(),
+                    consecutive_failures,
+                    status_code: None,
+                    request_context: None,
+                    response_bytes: response_bytes.len(),
+                    active_connections: Some(active_connections),
+                    over_capacity_response: true,
+                },
+            ));
+        }
     }
 }
 
 /// Handles one accepted client connection and closes it after one response.
+#[cfg(test)]
+#[allow(dead_code)]
 pub(super) fn handle_client_stream<G>(app: &BrowserApp<G>, logger: &Logger, stream: &mut TcpStream)
 where
+    G: BrowserGateway,
+{
+    let standalone_tracking = AtomicUsize::new(0);
+    handle_client_stream_with_write_tracking(app, logger, stream, &standalone_tracking);
+}
+
+/// Handles one accepted client connection and tracks response-write failure
+/// streaks across the wider runtime.
+fn handle_client_stream_with_write_tracking<G>(
+    app: &BrowserApp<G>,
+    logger: &Logger,
+    stream: &mut TcpStream,
+    consecutive_response_write_failures: &AtomicUsize,
+) where
     G: BrowserGateway,
 {
     let connection_started = Instant::now();
@@ -489,30 +537,39 @@ where
     if let Some((_, completion_event)) = &request_completion {
         logger.emit(completion_event);
     }
-    if let Err(error) = stream.write_all(&response_bytes) {
-        let mut event = LogEvent::new(
-            LogLevel::Warn,
-            EventCategory::Http,
-            "http_response_write_failed",
-            "http response write failed",
-        )
-        .with_field("remote_addr", remote_addr)
-        .with_field("status_code", handled.response.status_code.to_string())
-        .with_field("response_bytes", response_bytes.len().to_string())
-        .with_field(
-            "duration_ms",
-            connection_started.elapsed().as_millis().to_string(),
-        )
-        .with_field("reason", error.to_string());
-
-        if let Some((method, path, attempted_bytes)) = request_write_context {
-            event = event
-                .with_field("method", method)
-                .with_field("path", path)
-                .with_field("attempted_response_bytes", attempted_bytes.to_string());
+    match stream.write_all(&response_bytes) {
+        Ok(()) => maybe_log_response_write_recovery(
+            logger,
+            consecutive_response_write_failures,
+            remote_addr,
+        ),
+        Err(error) => {
+            let consecutive_failures = consecutive_response_write_failures
+                .fetch_add(1, Ordering::AcqRel)
+                .saturating_add(1);
+            let request_context =
+                request_write_context
+                    .as_ref()
+                    .map(|(method, path, attempted_bytes)| {
+                        (method.as_str(), path.as_str(), *attempted_bytes)
+                    });
+            logger.emit(
+                &build_response_write_failure_event(ResponseWriteFailureContext {
+                    remote_addr,
+                    reason: error.to_string(),
+                    consecutive_failures,
+                    status_code: Some(handled.response.status_code),
+                    request_context,
+                    response_bytes: response_bytes.len(),
+                    active_connections: None,
+                    over_capacity_response: false,
+                })
+                .with_field(
+                    "duration_ms",
+                    connection_started.elapsed().as_millis().to_string(),
+                ),
+            );
         }
-
-        logger.emit(&event);
     }
 }
 
@@ -578,6 +635,103 @@ pub(super) fn build_connection_high_watermark_event(
             policy.max_concurrent_connections.to_string(),
         )
         .with_field("utilization_percent", utilization_percent.to_string())
+}
+
+/// Builds a response-write failure event with thresholded escalation for
+/// sustained output failures.
+pub(super) fn build_response_write_failure_event(
+    context: ResponseWriteFailureContext<'_>,
+) -> LogEvent {
+    let ResponseWriteFailureContext {
+        remote_addr,
+        reason,
+        consecutive_failures,
+        status_code,
+        request_context,
+        response_bytes,
+        active_connections,
+        over_capacity_response,
+    } = context;
+
+    let escalated =
+        consecutive_failures >= HTTP_RESPONSE_WRITE_FAILURE_ESCALATION_THRESHOLD as usize;
+    let (level, action, message) = if over_capacity_response {
+        if escalated {
+            (
+                LogLevel::Error,
+                "http_over_capacity_response_write_failed_sustained",
+                "http over-capacity response writes have failed repeatedly",
+            )
+        } else {
+            (
+                LogLevel::Warn,
+                "http_over_capacity_response_write_failed",
+                "http over-capacity response write failed",
+            )
+        }
+    } else if escalated {
+        (
+            LogLevel::Error,
+            "http_response_write_failed_sustained",
+            "http response writes have failed repeatedly",
+        )
+    } else {
+        (
+            LogLevel::Warn,
+            "http_response_write_failed",
+            "http response write failed",
+        )
+    };
+
+    let mut event = LogEvent::new(level, EventCategory::Http, action, message)
+        .with_field("remote_addr", remote_addr)
+        .with_field("consecutive_failures", consecutive_failures.to_string())
+        .with_field("response_bytes", response_bytes.to_string())
+        .with_field("reason", reason);
+
+    if let Some(status_code) = status_code {
+        event = event.with_field("status_code", status_code.to_string());
+    }
+
+    if let Some((method, path, attempted_response_bytes)) = request_context {
+        event = event
+            .with_field("method", method.to_string())
+            .with_field("path", path.to_string())
+            .with_field(
+                "attempted_response_bytes",
+                attempted_response_bytes.to_string(),
+            );
+    }
+
+    if let Some(active_connections) = active_connections {
+        event = event.with_field("active_connections", active_connections.to_string());
+    }
+
+    event
+}
+
+/// Emits a recovery event after a sustained response-write failure streak.
+fn maybe_log_response_write_recovery(
+    logger: &Logger,
+    consecutive_response_write_failures: &AtomicUsize,
+    remote_addr: String,
+) {
+    let previous_failures = consecutive_response_write_failures.swap(0, Ordering::AcqRel);
+    if previous_failures >= HTTP_RESPONSE_WRITE_FAILURE_ESCALATION_THRESHOLD as usize {
+        logger.emit(
+            &LogEvent::new(
+                LogLevel::Info,
+                EventCategory::Http,
+                "http_response_write_recovered",
+                "http response writes recovered after repeated failures",
+            )
+            .with_field("remote_addr", remote_addr)
+            .with_field(
+                "previous_consecutive_failures",
+                previous_failures.to_string(),
+            ),
+        );
+    }
 }
 
 /// Builds a central completion event for one parsed HTTP request.

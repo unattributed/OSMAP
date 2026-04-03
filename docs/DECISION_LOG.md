@@ -1734,6 +1734,25 @@ This was chosen over broader transport redesign because it improves operator
 visibility into listener health without widening the protocol surface or
 changing the current bounded-concurrency runtime model.
 
+### Escalate sustained response-write failures and emit recovery when writes resume
+
+After clarifying accept-loop health, the next narrow runtime-hardening step
+should do the same for response-output failures.
+
+OSMAP now:
+
+- keeps ordinary response-write failures at `warn`
+- promotes sustained response-write failure streaks to explicit error-level
+  events
+- emits an info-level recovery event when response writes resume after a
+  sustained streak
+- applies the same streak accounting to normal route responses and
+  over-capacity `503` responses
+
+This was chosen over broader transport or buffering changes because it makes
+partial-output failure easier to observe and triage without changing the
+current bounded-concurrency request model.
+
 ### Turn the repo-grounded reassessment into an explicit V1 closeout and V2 defer map
 
 The project is now far enough along that the main risk is no longer missing

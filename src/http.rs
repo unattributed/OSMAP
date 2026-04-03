@@ -2244,6 +2244,46 @@ mod tests {
     }
 
     #[test]
+    fn response_write_failure_event_escalates_after_threshold() {
+        let warn_event = super::http_runtime::build_response_write_failure_event(
+            super::http_runtime::ResponseWriteFailureContext {
+                remote_addr: "127.0.0.1".to_string(),
+                reason: "temporary".to_string(),
+                consecutive_failures: 2,
+                status_code: Some(200),
+                request_context: Some(("GET", "/mailboxes", 512)),
+                response_bytes: 512,
+                active_connections: None,
+                over_capacity_response: false,
+            },
+        );
+        assert_eq!(warn_event.level, LogLevel::Warn);
+        assert_eq!(warn_event.action, "http_response_write_failed");
+
+        let error_event = super::http_runtime::build_response_write_failure_event(
+            super::http_runtime::ResponseWriteFailureContext {
+                remote_addr: "127.0.0.1".to_string(),
+                reason: "persistent".to_string(),
+                consecutive_failures: 5,
+                status_code: Some(503),
+                request_context: None,
+                response_bytes: 128,
+                active_connections: Some(16),
+                over_capacity_response: true,
+            },
+        );
+        assert_eq!(error_event.level, LogLevel::Error);
+        assert_eq!(
+            error_event.action,
+            "http_over_capacity_response_write_failed_sustained"
+        );
+        assert!(error_event
+            .fields
+            .iter()
+            .any(|field| field.key == "consecutive_failures" && field.value == "5"));
+    }
+
+    #[test]
     fn request_completion_event_is_warn_for_slow_requests() {
         let event = super::http_runtime::build_request_completion_event(
             "127.0.0.1",
@@ -2335,7 +2375,14 @@ mod tests {
                 ..HttpPolicy::default()
             };
             let logger = Logger::new(crate::config::LogFormat::Text, LogLevel::Debug);
-            super::http_runtime::handle_over_capacity_stream(&logger, &mut stream, &policy, 1);
+            let write_failures = AtomicUsize::new(0);
+            super::http_runtime::handle_over_capacity_stream(
+                &logger,
+                &mut stream,
+                &policy,
+                1,
+                &write_failures,
+            );
         });
 
         let text = String::from_utf8(response).expect("response should be utf-8");

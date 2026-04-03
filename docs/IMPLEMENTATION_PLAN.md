@@ -224,6 +224,8 @@ Service Unavailable` with `Retry-After`. Connection pressure is now surfaced
 through high-watermark and capacity-reached events, and write-failure logs now
 carry richer request/response context. Sustained listener accept-failure
 streaks now escalate explicitly and emit a recovery event once accepts resume.
+Sustained response-write failure streaks now also escalate explicitly and emit
+their own recovery event once writes resume.
 
 That is a bounded concurrency upgrade, but not a full production-grade
 request-resource control story.

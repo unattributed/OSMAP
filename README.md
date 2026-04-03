@@ -230,6 +230,8 @@ Each phase produces formal outputs to support traceability and auditability.
   request and response context for operator triage.
 - The listener now also escalates sustained `accept(2)` failure streaks to an
   error-level event and emits a recovery event when successful accepts resume.
+- The runtime now also escalates sustained response-write failure streaks and
+  emits a recovery event when response writes resume after repeated failures.
 - GitHub-side security validation now has two explicit lanes:
   GitHub default CodeQL setup remains the authoritative CodeQL scanner for this
   repository, while the repo-owned `security-check` workflow is the
