@@ -232,6 +232,10 @@ Each phase produces formal outputs to support traceability and auditability.
   error-level event and emits a recovery event when successful accepts resume.
 - The runtime now also escalates sustained response-write failure streaks and
   emits a recovery event when response writes resume after repeated failures.
+- A live host observability proof now also exists for the bounded runtime on
+  `mail.blackbagsecurity.com`: with the connection cap forced to `1`, one held
+  connection triggered capacity-reached and over-capacity rejection events,
+  then timed out cleanly and allowed normal health requests to resume.
 - GitHub-side security validation now has two explicit lanes:
   GitHub default CodeQL setup remains the authoritative CodeQL scanner for this
   repository, while the repo-owned `security-check` workflow is the

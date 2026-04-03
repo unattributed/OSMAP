@@ -114,6 +114,12 @@ That gives OSMAP a bounded concurrency model with better operator visibility
 without pretending it now has a full production queueing or worker-management
 layer.
 
+That observability posture is now also live-proven on
+`mail.blackbagsecurity.com` under `enforce` with the runtime cap forced to one
+in-flight connection: the host proof exercised capacity-reached,
+over-capacity rejection, request-timeout, and request-completion events in one
+isolated run.
+
 ## Current CSRF Strategy
 
 The current CSRF model uses one token derived for each persisted session record.

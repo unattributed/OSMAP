@@ -227,6 +227,11 @@ streaks now escalate explicitly and emit a recovery event once accepts resume.
 Sustained response-write failure streaks now also escalate explicitly and emit
 their own recovery event once writes resume.
 
+The bounded runtime observability path is now also host-proven on
+`mail.blackbagsecurity.com` under `enforce` through an isolated one-slot
+validation run that exercised capacity-reached, over-capacity rejection,
+request-timeout, and request-completion events.
+
 That is a bounded concurrency upgrade, but not a full production-grade
 request-resource control story.
 

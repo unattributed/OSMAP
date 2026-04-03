@@ -1753,6 +1753,25 @@ This was chosen over broader transport or buffering changes because it makes
 partial-output failure easier to observe and triage without changing the
 current bounded-concurrency request model.
 
+### Add a live host observability harness for bounded runtime signals
+
+After tightening the runtime's connection-pressure and failure accounting, the
+next useful step is a real host proof that those signals appear under the
+actual `_osmap` deployment shape rather than only in unit tests.
+
+The repo now includes a live validation harness that proves, on
+`mail.blackbagsecurity.com` under `enforce`, that an isolated one-slot runtime
+can emit:
+
+- `http_connection_capacity_reached`
+- `http_connection_rejected_over_capacity`
+- `http_request_timed_out`
+- `http_request_completed`
+
+This was chosen as the next live-proof step because it exercises the new
+runtime observability path without requiring a broader transport-failure lab or
+an unstable synthetic denial-of-service test.
+
 ### Turn the repo-grounded reassessment into an explicit V1 closeout and V2 defer map
 
 The project is now far enough along that the main risk is no longer missing
