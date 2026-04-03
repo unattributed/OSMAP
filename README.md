@@ -236,6 +236,10 @@ Each phase produces formal outputs to support traceability and auditability.
   `mail.blackbagsecurity.com`: with the connection cap forced to `1`, one held
   connection triggered capacity-reached and over-capacity rejection events,
   then timed out cleanly and allowed normal health requests to resume.
+- The standard host-side validation checkout on `mail.blackbagsecurity.com` is
+  now `~/OSMAP`, with [osmap-host-validate.ksh](/home/foo/Workspace/OSMAP/maint/live/osmap-host-validate.ksh)
+  used there to run repo-owned validation under home-local `TMPDIR`,
+  `CARGO_HOME`, and `CARGO_TARGET_DIR` instead of depending on `/tmp`.
 - GitHub-side security validation now has two explicit lanes:
   GitHub default CodeQL setup remains the authoritative CodeQL scanner for this
   repository, while the repo-owned `security-check` workflow is the

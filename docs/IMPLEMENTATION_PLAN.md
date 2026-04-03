@@ -232,6 +232,12 @@ The bounded runtime observability path is now also host-proven on
 validation run that exercised capacity-reached, over-capacity rejection,
 request-timeout, and request-completion events.
 
+For repeat host-side validation on `mail.blackbagsecurity.com`, the standard
+checkout is now `~/OSMAP`, and the repo-owned wrapper
+`maint/live/osmap-host-validate.ksh` should be used to run `make
+security-check` and related commands with home-local Rust temp and cache paths
+instead of `/tmp`.
+
 That is a bounded concurrency upgrade, but not a full production-grade
 request-resource control story.
 

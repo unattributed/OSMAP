@@ -99,3 +99,9 @@ In practice, the repository should follow this policy:
 - keep workflow definitions and issue or pull-request templates under `.github/`
 - add new narrative or design documents under `docs/` by default unless there
   is a clear platform-specific reason not to
+
+For repeat live-host validation on `mail.blackbagsecurity.com`, the standard
+host-side checkout is now `~/OSMAP`. The repo-owned wrapper
+`maint/live/osmap-host-validate.ksh` should be used there for `make
+security-check` and similar runs so Rust temp, cargo-home, and target paths
+stay under the operator home directory instead of consuming `/tmp`.

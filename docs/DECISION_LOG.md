@@ -1772,6 +1772,24 @@ This was chosen as the next live-proof step because it exercises the new
 runtime observability path without requiring a broader transport-failure lab or
 an unstable synthetic denial-of-service test.
 
+### Standardize host-side validation on `~/OSMAP` on `mail.blackbagsecurity.com`
+
+The persistent `~/OSMAP` clone on `mail.blackbagsecurity.com` is now the
+standard host-side validation checkout for OSMAP. The repo should prefer that
+path over copying throwaway trees into home directories or `/tmp` for routine
+validation.
+
+Because `/tmp` on the host may be too small or busy for repeat Rust builds, the
+repo now carries a small wrapper at:
+
+- `maint/live/osmap-host-validate.ksh`
+
+That wrapper runs `make security-check` or another passed command with
+`TMPDIR`, `CARGO_HOME`, and `CARGO_TARGET_DIR` rooted under the operator's home
+directory. This keeps repeat validation predictable, reduces ad hoc temp-tree
+sprawl on the host, and leaves the local workstation checkout as the
+authoritative development tree.
+
 ### Turn the repo-grounded reassessment into an explicit V1 closeout and V2 defer map
 
 The project is now far enough along that the main risk is no longer missing
