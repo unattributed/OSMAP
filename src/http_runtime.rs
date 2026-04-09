@@ -23,6 +23,7 @@ const HTTP_ACCEPT_FAILURE_ESCALATION_THRESHOLD: u32 = 5;
 const HTTP_RESPONSE_WRITE_FAILURE_ESCALATION_THRESHOLD: u32 = 5;
 const HTTP_REQUEST_SLOW_THRESHOLD_MILLIS: u128 = 1000;
 const HTTP_OVER_CAPACITY_RETRY_AFTER_SECS: u64 = 1;
+const HTTP_WORKER_THREAD_NAME: &str = "osmap-http-conn";
 
 pub(super) struct ResponseWriteFailureContext<'a> {
     pub(super) remote_addr: String,
@@ -200,19 +201,20 @@ pub fn run_http_server(config: &AppConfig, logger: &Logger) -> Result<(), String
                 );
 
                 let app = Arc::clone(&app);
-                let logger = logger.clone();
-                let active_connections = Arc::clone(&active_connections);
+                let worker_logger = logger.clone();
+                let worker_active_connections = Arc::clone(&active_connections);
                 let consecutive_response_write_failures =
                     Arc::clone(&consecutive_response_write_failures);
-                thread::spawn(move || {
-                    let _slot_guard = ConnectionSlotGuard::new(active_connections);
-                    handle_client_stream_with_write_tracking(
-                        app.as_ref(),
-                        &logger,
-                        &mut stream,
-                        &consecutive_response_write_failures,
-                    );
-                });
+                if let Err(event) = spawn_connection_worker(
+                    app,
+                    worker_logger,
+                    stream,
+                    worker_active_connections,
+                    consecutive_response_write_failures,
+                    spawn_http_connection_worker,
+                ) {
+                    logger.emit(&event);
+                }
             }
             Err(error) => {
                 consecutive_accept_failures = consecutive_accept_failures.saturating_add(1);
@@ -230,6 +232,44 @@ pub fn run_http_server(config: &AppConfig, logger: &Logger) -> Result<(), String
     }
 
     Ok(())
+}
+
+pub(super) fn spawn_connection_worker<G, S>(
+    app: Arc<BrowserApp<G>>,
+    logger: Logger,
+    stream: TcpStream,
+    active_connections: Arc<AtomicUsize>,
+    consecutive_response_write_failures: Arc<AtomicUsize>,
+    spawn_fn: S,
+) -> Result<(), LogEvent>
+where
+    G: BrowserGateway + Send + Sync + 'static,
+    S: FnOnce(
+        Arc<BrowserApp<G>>,
+        Logger,
+        TcpStream,
+        Arc<AtomicUsize>,
+        Arc<AtomicUsize>,
+    ) -> std::io::Result<()>,
+{
+    let active_before_release = active_connections.load(Ordering::Acquire);
+    match spawn_fn(
+        app,
+        logger,
+        stream,
+        Arc::clone(&active_connections),
+        consecutive_response_write_failures,
+    ) {
+        Ok(()) => Ok(()),
+        Err(error) => {
+            let active_after_release = release_connection_slot(active_connections.as_ref());
+            Err(build_connection_worker_spawn_failed_event(
+                error.to_string(),
+                active_before_release,
+                active_after_release,
+            ))
+        }
+    }
 }
 
 /// Attempts to reserve one in-flight connection slot under the configured cap.
@@ -255,6 +295,36 @@ pub(super) fn try_acquire_connection_slot(
             Err(observed) => current = observed,
         }
     }
+}
+
+fn spawn_http_connection_worker<G>(
+    app: Arc<BrowserApp<G>>,
+    logger: Logger,
+    mut stream: TcpStream,
+    active_connections: Arc<AtomicUsize>,
+    consecutive_response_write_failures: Arc<AtomicUsize>,
+) -> std::io::Result<()>
+where
+    G: BrowserGateway + Send + Sync + 'static,
+{
+    thread::Builder::new()
+        .name(HTTP_WORKER_THREAD_NAME.to_string())
+        .spawn(move || {
+            let _slot_guard = ConnectionSlotGuard::new(active_connections);
+            handle_client_stream_with_write_tracking(
+                app.as_ref(),
+                &logger,
+                &mut stream,
+                &consecutive_response_write_failures,
+            );
+        })
+        .map(|_| ())
+}
+
+fn release_connection_slot(active_connections: &AtomicUsize) -> usize {
+    active_connections
+        .fetch_sub(1, Ordering::AcqRel)
+        .saturating_sub(1)
 }
 
 /// Returns the bounded backoff used after consecutive accept failures.
@@ -308,6 +378,28 @@ pub(super) fn build_accept_recovery_event(previous_failure_streak: u32) -> LogEv
     .with_field(
         "previous_consecutive_failures",
         previous_failure_streak.to_string(),
+    )
+}
+
+pub(super) fn build_connection_worker_spawn_failed_event(
+    reason: String,
+    active_connections_before_release: usize,
+    active_connections_after_release: usize,
+) -> LogEvent {
+    LogEvent::new(
+        LogLevel::Error,
+        EventCategory::Http,
+        "http_connection_worker_spawn_failed",
+        "http connection worker could not be started",
+    )
+    .with_field("reason", reason)
+    .with_field(
+        "active_connections_before_release",
+        active_connections_before_release.to_string(),
+    )
+    .with_field(
+        "active_connections_after_release",
+        active_connections_after_release.to_string(),
     )
 }
 

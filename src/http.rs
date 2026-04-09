@@ -366,6 +366,7 @@ mod tests {
     use std::net::{Shutdown, SocketAddr, TcpListener};
     use std::path::PathBuf;
     use std::sync::atomic::AtomicUsize;
+    use std::sync::Arc;
     use std::thread;
     use std::time::Duration;
 
@@ -2365,6 +2366,48 @@ mod tests {
             .fields
             .iter()
             .any(|field| { field.key == "utilization_percent" && field.value == "100" }));
+    }
+
+    #[test]
+    fn connection_worker_spawn_failure_releases_slot_and_reports_error() {
+        let listener = TcpListener::bind("127.0.0.1:0").expect("listener should bind");
+        let addr = listener.local_addr().expect("listener addr should exist");
+        let _client = std::net::TcpStream::connect(addr).expect("client should connect");
+        let (stream, _) = listener.accept().expect("server should accept client");
+        let active_connections = Arc::new(AtomicUsize::new(1));
+        let app = Arc::new(BrowserApp::new(HttpPolicy::default(), StubGateway));
+        let logger = Logger::new(crate::config::LogFormat::Text, LogLevel::Debug);
+        let write_failures = Arc::new(AtomicUsize::new(0));
+
+        let event = super::http_runtime::spawn_connection_worker(
+            app,
+            logger,
+            stream,
+            Arc::clone(&active_connections),
+            write_failures,
+            |_app, _logger, _stream, _active_connections, _write_failures| {
+                Err(std::io::Error::other("simulated spawn failure"))
+            },
+        )
+        .expect_err("spawn failure should be surfaced as a log event");
+
+        assert_eq!(
+            active_connections.load(std::sync::atomic::Ordering::Acquire),
+            0
+        );
+        assert_eq!(event.level, LogLevel::Error);
+        assert_eq!(event.category, EventCategory::Http);
+        assert_eq!(event.action, "http_connection_worker_spawn_failed");
+        assert!(event
+            .fields
+            .iter()
+            .any(|field| field.key == "reason" && field.value == "simulated spawn failure"));
+        assert!(event.fields.iter().any(|field| {
+            field.key == "active_connections_before_release" && field.value == "1"
+        }));
+        assert!(event.fields.iter().any(|field| {
+            field.key == "active_connections_after_release" && field.value == "0"
+        }));
     }
 
     #[test]

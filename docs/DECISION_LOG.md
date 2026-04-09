@@ -1817,3 +1817,22 @@ first-release requirement is proven:
 This decision keeps the project focused on a defensible first release instead
 of continuing feature or architectural drift once the core browser and mail
 flows already exist.
+
+## 2026-04-09
+
+### Treat HTTP worker-thread spawn failure as a bounded-concurrency availability fault
+
+The bounded-concurrency listener now treats per-connection worker-thread spawn
+failure as an explicit runtime fault instead of assuming thread creation always
+succeeds.
+
+When a connection slot has already been reserved but the worker thread cannot
+be started, OSMAP now:
+
+- releases the reserved in-flight connection slot immediately
+- emits an explicit `http_connection_worker_spawn_failed` error event
+- records the before-and-after active-connection counts on that event
+
+This was chosen as the next narrow runtime-hardening step because a spawn
+failure after slot acquisition could otherwise leave the listener artificially
+at capacity and turn a transient host fault into a sticky availability problem.
