@@ -89,12 +89,16 @@ The current validation state is:
    redirect, and source-mailbox success banner
 3. live-host mutation proof now exists on `mail.blackbagsecurity.com` under
    `OSMAP_OPENBSD_CONFINEMENT_MODE=enforce` using a disposable validation
-   mailbox, a synthetic validated browser session, and a controlled message
-   injected into `INBOX`
+   mailbox, a synthetic validated browser session, controlled settings updates,
+   and a controlled message injected into `INBOX`
 
 That host proof confirms:
 
 - the browser message-view page exposes the move form on the target host
+- `POST /settings` persists the configured archive mailbox through the real
+  browser route
+- the mailbox page and message-view page both expose archive shortcut forms
+  that carry the configured archive mailbox value
 - `POST /message/move` succeeds through the real browser route
 - the helper-backed mailbox authority split remains intact under the `_osmap`
   plus `vmail` runtime boundary
@@ -106,6 +110,7 @@ That host proof confirms:
 The repository now includes a reusable live-host harness for that proof at:
 
 - `maint/live/osmap-live-validate-move-throttle.ksh`
+- `maint/live/osmap-live-validate-archive-shortcut.ksh`
 
 ## What Is Still Missing
 

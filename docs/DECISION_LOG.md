@@ -1950,3 +1950,35 @@ OSMAP now:
 This was chosen as the next folder-organization step because it makes daily
 organization materially easier while preserving the existing helper boundary,
 move throttle, and single-message authority model.
+
+### Prove the settings-backed archive shortcut on the live OpenBSD host
+
+After adding the settings-backed archive shortcut locally, the next step stayed
+narrow: prove that the real browser settings route, the real server-rendered
+archive shortcut forms, and the existing helper-backed move path all work
+together on `mail.blackbagsecurity.com` under `enforce`.
+
+The repo now carries and has exercised the reusable live-host validation script
+at:
+
+- `maint/live/osmap-live-validate-archive-shortcut.ksh`
+
+On `mail.blackbagsecurity.com` under
+`OSMAP_OPENBSD_CONFINEMENT_MODE=enforce`, that proof showed:
+
+- `POST /settings` persisted `archive_mailbox_name=Junk` through the real
+  browser route
+- the retained settings file under the isolated host proof root also recorded
+  `html_display_preference=prefer_sanitized_html` and
+  `archive_mailbox_name=Junk`
+- the mailbox page and message-view page both rendered archive shortcut forms
+  carrying `destination_mailbox=Junk`
+- a controlled message was archived from `INBOX` to `Junk` through the
+  existing `POST /message/move` route
+- the live runtime emitted `user_settings_updated`, repeated
+  `user_settings_loaded` with `archive_mailbox_name="Junk"`, and
+  `message_moved` for that archive action
+
+This was chosen as the next proof step because it validates the first
+post-runtime-hardening folder-ergonomics improvement against the actual
+`_osmap` plus `vmail` host boundary before broader mailbox UX work continues.

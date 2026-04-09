@@ -132,8 +132,9 @@ Each phase produces formal outputs to support traceability and auditability.
   the runtime.
 - The browser layer now also includes a first bounded settings page and a safe
   HTML rendering path: HTML-capable messages can be rendered through a narrow
-  allowlist sanitizer, and users can choose between sanitized HTML and
-  plain-text fallback.
+  allowlist sanitizer, users can choose between sanitized HTML and plain-text
+  fallback, and the same settings surface now also carries a bounded archive
+  mailbox shortcut preference.
 - The largest Rust implementation hotspots are being reduced through
   behavior-preserving internal splits across the HTTP, mailbox, and mailbox
   helper layers so the browser boundary and helper boundary stay easier to
@@ -173,6 +174,12 @@ Each phase produces formal outputs to support traceability and auditability.
   mailbox message and a synthetic validated session: sanitized HTML renders by
   default, the settings page persists `prefer_plain_text`, and the same
   message then falls back to plain-text rendering.
+- The settings-backed archive shortcut is now also live-proven on
+  `mail.blackbagsecurity.com` under `enforce`: `POST /settings` persists
+  `archive_mailbox_name=Junk`, the mailbox and message pages both render
+  archive shortcut forms with that configured destination, and a controlled
+  message is then archived from `INBOX` to `Junk` through the existing
+  `POST /message/move` route.
 - The backend now applies two bounded file-backed login-throttle buckets on the
   browser auth path: a tighter credential-plus-remote bucket and a higher
   threshold remote-only bucket.

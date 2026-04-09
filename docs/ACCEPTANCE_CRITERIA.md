@@ -186,9 +186,9 @@ Phase 6:
   application-layer move throttle backed by explicit runtime configuration and
   file-backed cache state
 - the browser layer now includes a conservative safe-HTML rendering path plus a
-  first bounded settings page for HTML display preference, which closes the
-  previous top-level Version 1 product gaps around HTML handling and end-user
-  settings in first-release form
+  first bounded settings page for HTML display preference and a settings-backed
+  archive shortcut destination, which closes the previous top-level Version 1
+  product gaps around HTML handling and end-user settings in first-release form
 - the safe-HTML rendering and settings slice is now also live-proven on
   `mail.blackbagsecurity.com` under `enforce` against a controlled HTML-bearing
   mailbox message and a settings update through the browser route

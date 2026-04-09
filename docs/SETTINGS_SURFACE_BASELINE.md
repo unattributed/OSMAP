@@ -5,20 +5,20 @@
 This document records the first bounded end-user settings surface for OSMAP.
 
 The goal of this slice is not to create a broad preferences platform. The goal
-is to expose one meaningful user-facing control that fits the current security
-model and the newly implemented HTML-rendering behavior.
+is to expose a small set of meaningful user-facing controls that fit the
+current security model and browser workflow boundary.
 
 ## Status
 
-As of April 2, 2026, the runtime now includes a file-backed settings surface
+As of April 9, 2026, the runtime now includes a file-backed settings surface
 behind the validated-session boundary.
 
 The current slice provides:
 
 - a server-rendered `GET /settings` page
 - a CSRF-bound `POST /settings` update path
-- one persisted per-user setting:
-  `html_display_preference`
+- two persisted per-user settings:
+  `html_display_preference` and `archive_mailbox_name`
 - explicit defaults when no settings file exists
 - structured audit events for settings load and update operations
 
@@ -27,20 +27,25 @@ This is intentionally small and reviewable.
 The current settings slice is now also live-proven on
 `mail.blackbagsecurity.com` under `OSMAP_OPENBSD_CONFINEMENT_MODE=enforce`
 through the browser route itself: the default HTML preference is rendered,
-`POST /settings` persists `prefer_plain_text`, and the subsequent message view
-reflects that stored preference.
+`POST /settings` persists both `prefer_sanitized_html` and
+`archive_mailbox_name=Junk`, the subsequent settings page reload reflects that
+stored state, and the configured archive shortcut appears on both mailbox and
+message pages before a real archive action succeeds.
 
-## Current Setting
+## Current Settings
 
-The first settings surface controls one behavior:
+The first settings surface currently controls two behaviors:
 
 - whether HTML-capable messages prefer sanitized HTML rendering
 - or prefer plain-text fallback when a plain-text body is available
+- which existing mailbox should be used for the one-click archive shortcut
+  when that shortcut is enabled
 
-The stored values are:
+The stored values now include:
 
 - `prefer_sanitized_html`
 - `prefer_plain_text`
+- one optional `archive_mailbox_name`
 
 The default is `prefer_sanitized_html`.
 
@@ -71,8 +76,8 @@ This slice follows these rules:
 - settings remain strictly user-facing rather than administrative
 
 The current implementation uses the settings surface to control rendering
-behavior, which makes the feature user-visible without creating a broad new
-browser trust boundary.
+behavior plus one bounded folder shortcut, which makes the feature user-visible
+without creating a broad new browser trust boundary.
 
 ## What This Slice Proves
 
@@ -80,12 +85,13 @@ This slice now proves that:
 
 - OSMAP can provide a bounded end-user settings page without becoming a large
   preferences UI
-- per-user rendering preference can be persisted safely under the existing
-  state boundary
+- per-user rendering preference and archive shortcut destination can be
+  persisted safely under the existing state boundary
 - a meaningful user-facing control can be added without widening the mail or
   submission trust boundaries
-- the stored preference can drive a real browser-visible rendering change on
-  the OpenBSD host rather than only a unit-test fixture
+- the stored settings can drive real browser-visible rendering and
+  folder-organization behavior on the OpenBSD host rather than only
+  unit-test fixtures
 
 ## What Is Still Missing
 
@@ -93,7 +99,7 @@ This slice does not yet include:
 
 - multiple unrelated user preferences
 - device labeling or richer session preference controls
-- mailbox layout customization
+- mailbox layout customization beyond the current archive shortcut
 - identity or recovery preferences
 - a broad per-user profile model
 

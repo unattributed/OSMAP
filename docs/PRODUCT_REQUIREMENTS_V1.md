@@ -153,9 +153,11 @@ The user can:
 
 Version 1 should avoid turning settings into a broad preference platform.
 
-The current first-release settings slice now includes one such setting:
+The current first-release settings slice now includes two such settings:
 
 - HTML display preference between sanitized HTML and plain-text fallback
+- one optional archive mailbox shortcut destination for the bounded
+  folder-organization path
 
 ## Required Features
 

@@ -185,7 +185,8 @@ The current implementation now also includes:
   first folder-organization path
 - a first bounded safe-HTML rendering slice with allowlist sanitization and
   plain-text fallback
-- a first bounded end-user settings slice for HTML display preference
+- a first bounded end-user settings slice for HTML display preference plus a
+  settings-backed archive shortcut
 - live-host proof for the safe-HTML rendering and settings slice on
   `mail.blackbagsecurity.com`
 - live-host proof for the first bounded browser mutation flows on
