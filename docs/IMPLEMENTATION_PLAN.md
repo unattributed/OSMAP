@@ -200,12 +200,10 @@ slice itself.
 
 The current highest-confidence active hardening and Version 1 gaps are:
 
-- broader folder ergonomics such as bulk move or archive shortcuts from list
-  views
+- richer search behavior beyond the current mailbox-scoped baseline
+- broader live-host proof beyond the first bounded mutation workflows
 - the correctness and availability constraints of the current bounded-
   concurrency HTTP runtime
-- broader live-host proof beyond the first bounded mutation workflows
-- richer search behavior beyond the current mailbox-scoped baseline
 
 The current HTTP hardening work has now also moved past generic parse
 rejection for some connection-lifecycle cases. The runtime distinguishes:
@@ -244,9 +242,20 @@ request-resource control story.
 
 Even so, the current repo-grounded reassessment no longer treats the bounded-
 concurrency listener as the single most obvious remaining production risk in
-the system. The listener is now substantially more explicit, observable, and
-host-proven than the still-narrow folder-organization workflow, which remains
-only technically present rather than practical for ordinary daily mailbox use.
+the system.
+
+The folder-organization workflow has also now moved past the earlier
+"technically present" threshold. OSMAP now has:
+
+- a general one-message move path
+- a settings-backed archive mailbox shortcut
+- archive actions on both mailbox-list and message-view pages
+- live-host proof that the settings route, rendered shortcut forms, and
+  helper-backed move path all work together under `enforce`
+
+That means the remaining missing items in folder organization, such as bulk
+move and archive mailbox discovery beyond the explicit user setting, now read
+more like later workflow refinements than the first active Version 1 blocker.
 
 The recent route review also found that the remaining authenticated POST routes
 in the current browser surface are:
@@ -269,15 +278,13 @@ finds a concentrated hotspot that materially harms auditability again.
 
 The current official closeout sequence for Version 1 is:
 
-1. finish the minimum folder-organization ergonomics still required for normal
-   daily use
-2. improve search only enough to replace ordinary Roundcube-era retrieval
+1. improve search only enough to replace ordinary Roundcube-era retrieval
    workflows rather than broadening it into a feature project
-3. broaden live-host proof on `mail.blackbagsecurity.com` for the already-
+2. broaden live-host proof on `mail.blackbagsecurity.com` for the already-
    implemented browser surface
-4. tighten the helper and OpenBSD confinement boundary to a clear Version 1
+3. tighten the helper and OpenBSD confinement boundary to a clear Version 1
    stopping point
-5. freeze the Version 1 contract and shift further ergonomics or convenience
+4. freeze the Version 1 contract and shift further ergonomics or convenience
    work behind a Version 2 boundary
 
 The current implementation should not widen browser scope casually while these

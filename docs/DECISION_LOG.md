@@ -1982,3 +1982,32 @@ On `mail.blackbagsecurity.com` under
 This was chosen as the next proof step because it validates the first
 post-runtime-hardening folder-ergonomics improvement against the actual
 `_osmap` plus `vmail` host boundary before broader mailbox UX work continues.
+
+### Reassess whether folder organization still blocks the next Version 1 item
+
+After the one-message move path gained list-page archive actions, a
+settings-backed archive mailbox destination, and live-host proof on
+`mail.blackbagsecurity.com`, the next repo-grounded reassessment no longer
+treated folder organization as the first remaining Version 1 blocker.
+
+The current folder workflow now appears practical enough for ordinary daily
+use because it offers:
+
+- one-message move into an arbitrary existing mailbox
+- one-click archive from mailbox-list and message-view pages once the archive
+  mailbox is configured
+- live-host proof that the settings route, archive shortcut rendering, and
+  helper-backed archive action succeed together under `enforce`
+
+The remaining missing items in this area:
+
+- bulk move from mailbox-list pages
+- archive mailbox discovery beyond the explicit user setting
+- richer drag-and-drop or mailbox-management actions
+
+now fit better as later workflow refinements than as the first closeout risk.
+
+The official next implementation focus therefore shifts to:
+
+- improve search only enough to replace ordinary Roundcube-era retrieval
+  workflows
