@@ -181,6 +181,11 @@ Each phase produces formal outputs to support traceability and auditability.
   archive shortcut forms with that configured destination, and a controlled
   message is then archived from `INBOX` to `Junk` through the existing
   `POST /message/move` route.
+- The bounded all-mailboxes search flow is now also live-proven on
+  `mail.blackbagsecurity.com` under `enforce`: the mailboxes page renders the
+  global search form, the mailbox page renders the all-mailboxes toggle, and a
+  controlled `/search?q=...` request returned matching messages from both
+  `INBOX` and `Junk` in one browser result set.
 - The backend now applies two bounded file-backed login-throttle buckets on the
   browser auth path: a tighter credential-plus-remote bucket and a higher
   threshold remote-only bucket.

@@ -193,5 +193,8 @@ now also live-proven there: one accepted `POST /send` followed by `429 Too
 Many Requests` with `Retry-After` on the second matching submission. The
 bounded message-move throttle path is now also live-proven there: one accepted
 `POST /message/move` followed by `429 Too Many Requests` with `Retry-After` on
-the second matching move. Broader live-browser mutation coverage still
-remains.
+the second matching move. The bounded all-mailboxes search flow is now also
+live-proven there: the mailboxes landing page rendered the global search form,
+the mailbox page rendered the all-mailboxes search toggle, and a controlled
+`/search?q=...` request returned hits from both `INBOX` and `Junk` in one
+result set. Broader live-browser coverage still remains.

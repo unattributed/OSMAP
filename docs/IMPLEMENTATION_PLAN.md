@@ -194,6 +194,8 @@ The current implementation now also includes:
   `mail.blackbagsecurity.com`, including one-message move and send
 - live-host proof for the current bounded message-move throttle on
   `mail.blackbagsecurity.com`
+- live-host proof for the bounded all-mailboxes browser search flow on
+  `mail.blackbagsecurity.com`
 
 Broader ergonomics around folder organization, such as bulk actions or archive
 shortcuts from list views, remain later refinements rather than the first move
@@ -201,9 +203,10 @@ slice itself.
 
 The current highest-confidence active hardening and Version 1 gaps are:
 
-- search proof and any final ergonomics needed beyond the new all-mailboxes
-  retrieval baseline
-- broader live-host proof beyond the first bounded mutation workflows
+- final reassessment of whether the new all-mailboxes retrieval baseline is
+  sufficient to close the search item for Version 1
+- broader live-host proof beyond the currently proven read/search/mutation
+  workflows
 - the correctness and availability constraints of the current bounded-
   concurrency HTTP runtime
 

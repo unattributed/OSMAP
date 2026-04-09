@@ -2034,3 +2034,46 @@ the browser scope in a deliberately narrow way:
 This was chosen instead of a broader search feature project because it closes
 the most obvious Roundcube-era retrieval gap while preserving the helper
 boundary, bounded output limits, and backend authority model already in place.
+
+### Prove the bounded all-mailboxes search flow on the live OpenBSD host
+
+After widening the search slice to cover all visible mailboxes, the next
+evidence step stayed narrow: prove that the real browser search surface works
+under `enforce` on `mail.blackbagsecurity.com` before treating search as
+operationally credible.
+
+The repo now carries and has exercised the reusable live-host validation script
+at:
+
+- `maint/live/osmap-live-validate-all-mailbox-search.ksh`
+
+That proof was run through the repo-owned host wrapper from a disposable clone,
+with retained host artifacts under:
+
+- `/home/osmap-live-all-mailbox-search-proof`
+
+The retained proof root now includes:
+
+- `mailboxes-response.txt`
+- `mailbox-response.txt`
+- `search-response.txt`
+- `state/runtime/serve.log`
+
+On `mail.blackbagsecurity.com` under
+`OSMAP_OPENBSD_CONFINEMENT_MODE=enforce`, that proof showed:
+
+- `/mailboxes` rendered the global `Search all mailboxes` form for the
+  synthetic validated session
+- `/mailbox?name=INBOX` rendered the new `scope=all` toggle on the mailbox
+  search form
+- one bounded `/search?q=...` request returned `HTTP/1.1 200 OK` with
+  `Scope: All mailboxes`
+- the retained search response rendered two controlled hits in one result set:
+  one in `Junk` and one in `INBOX`
+- the retained runtime log emitted `mailbox_listed` plus two
+  `message_searched` events for the same query token, one with
+  `mailbox_name="Junk"` and one with `mailbox_name="INBOX"`
+
+This was chosen as the next proof step because it validates the new
+all-mailboxes retrieval behavior at the real `_osmap` plus `vmail` boundary
+without widening the search scope into a richer feature project first.

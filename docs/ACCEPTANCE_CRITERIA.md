@@ -204,14 +204,19 @@ Phase 6:
   `mail.blackbagsecurity.com` under `enforce`: one accepted
   `POST /message/move` followed by `429 Too Many Requests` and `Retry-After`
   on the second matching move
+- the bounded all-mailboxes browser search flow is now also live-proven on
+  `mail.blackbagsecurity.com` under `enforce`: the global search form rendered
+  on `/mailboxes`, the all-mailboxes toggle rendered on `/mailbox?name=INBOX`,
+  and one bounded `/search?q=...` request returned controlled hits from both
+  `INBOX` and `Junk`
 - broader ergonomics for folder organization remain later refinements rather
   than blockers for the first move slice
 - the current repo-grounded reassessment also confirms active gaps beyond the
-  now-implemented login, send, and message-move throttle slices: the
+  now-implemented login, send, move, and bounded search slices: the
   correctness and availability limits of the current bounded-concurrency HTTP
-  runtime, the lack of broader live-host proof beyond the first mutation
-  workflows, and the need for broader folder ergonomics and richer search
-  behavior
+  runtime, the lack of broader live-host proof beyond the currently proven
+  read/search/mutation workflows, and the need for broader folder ergonomics
+  plus a final search-sufficiency reassessment
 - the actual prototype now exists and Phase 6 execution is materially underway,
   but the implementation is still prototype-grade rather than production-ready
 
