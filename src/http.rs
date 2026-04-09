@@ -365,7 +365,7 @@ mod tests {
     use std::io::{Read as _, Write as _};
     use std::net::{Shutdown, SocketAddr, TcpListener};
     use std::path::PathBuf;
-    use std::sync::atomic::AtomicUsize;
+    use std::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::Arc;
     use std::thread;
     use std::time::Duration;
@@ -2408,6 +2408,52 @@ mod tests {
         assert!(event.fields.iter().any(|field| {
             field.key == "active_connections_after_release" && field.value == "0"
         }));
+    }
+
+    #[test]
+    fn connection_slot_release_saturates_at_zero() {
+        let active_connections = AtomicUsize::new(0);
+
+        assert_eq!(
+            super::http_runtime::release_connection_slot(&active_connections),
+            0
+        );
+        assert_eq!(active_connections.load(Ordering::Acquire), 0);
+    }
+
+    #[test]
+    fn successful_response_events_only_emit_completion_for_written_requests() {
+        let completion = super::http_runtime::RequestCompletionContext {
+            remote_addr: "127.0.0.1".to_string(),
+            method: HttpMethod::Get,
+            path: "/mailboxes".to_string(),
+            status_code: 200,
+            response_bytes: 512,
+        };
+        let no_failures = AtomicUsize::new(0);
+
+        let completion_events = super::http_runtime::build_successful_response_events(
+            Some(&completion),
+            &no_failures,
+            Duration::from_millis(25),
+            "127.0.0.1",
+        );
+        assert!(completion_events
+            .iter()
+            .any(|event| event.action == "http_request_completed"));
+
+        let recovery_only_events = super::http_runtime::build_successful_response_events(
+            None,
+            &AtomicUsize::new(5),
+            Duration::from_millis(25),
+            "127.0.0.1",
+        );
+        assert!(!recovery_only_events
+            .iter()
+            .any(|event| event.action == "http_request_completed"));
+        assert!(recovery_only_events
+            .iter()
+            .any(|event| event.action == "http_response_write_recovered"));
     }
 
     #[test]

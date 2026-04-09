@@ -1836,3 +1836,23 @@ be started, OSMAP now:
 This was chosen as the next narrow runtime-hardening step because a spawn
 failure after slot acquisition could otherwise leave the listener artificially
 at capacity and turn a transient host fault into a sticky availability problem.
+
+### Make HTTP completion logging reflect successful response delivery
+
+The bounded-concurrency runtime previously emitted `http_request_completed`
+as soon as a parsed response had been prepared, before the response bytes were
+actually written to the client socket.
+
+OSMAP now:
+
+- emits request-completion and slow-request events only after `write_all`
+  succeeds
+- keeps response-write failures as the authoritative signal when delivery does
+  not complete
+- makes connection-slot release saturating so an accidental extra release
+  cannot wrap the active-connection counter to a huge value
+
+This was chosen as the next narrow runtime-hardening step because completion
+logs should reflect successful delivery rather than merely prepared routing
+outcome, and the connection-cap counter should fail safely even if later
+runtime changes ever introduce an extra release path.
