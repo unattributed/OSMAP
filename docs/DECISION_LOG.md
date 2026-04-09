@@ -2077,3 +2077,37 @@ On `mail.blackbagsecurity.com` under
 This was chosen as the next proof step because it validates the new
 all-mailboxes retrieval behavior at the real `_osmap` plus `vmail` boundary
 without widening the search scope into a richer feature project first.
+
+### Reassess whether search still blocks the next Version 1 item
+
+After widening search to cover all visible mailboxes and proving that behavior
+on `mail.blackbagsecurity.com` under `enforce`, the next repo-grounded
+reassessment no longer treats search as the first remaining Version 1 blocker.
+
+The current search workflow now appears sufficient for ordinary daily use
+because it offers:
+
+- backend-authoritative free-text search without inventing a second search
+  engine inside OSMAP
+- one-mailbox search when the user already knows the folder context
+- all-mailboxes search when the user only remembers message content and needs
+  ordinary Roundcube-style retrieval across visible folders
+- result rows that surface the mailbox for each hit so cross-folder results
+  remain navigable
+- live-host proof that the real browser surface renders the all-mailboxes form,
+  the mailbox-page scope toggle, and a bounded multi-mailbox result set under
+  the real `_osmap` plus `vmail` boundary
+
+The remaining missing items in this area:
+
+- richer query operators or field-specific search
+- explicit sorting controls on result pages
+- broader refinement behavior such as saved searches or faceting
+
+now fit better as later search-product refinements than as the first closeout
+risk for Version 1.
+
+The official next implementation focus therefore shifts to:
+
+- broaden live-host proof on `mail.blackbagsecurity.com` for the already-
+  implemented browser surface

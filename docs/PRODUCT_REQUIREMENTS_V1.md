@@ -43,10 +43,11 @@ The current implementation should therefore be treated as:
   resistance, bounded-runtime posture, and live mutation-path proof
 
 This document remains the target product contract, but implementation planning
-and status reporting should now treat broader folder ergonomics, richer search
-behavior, bounded-runtime hardening, and broader live mutation-path proof as
-the clearest remaining gaps rather than continuing to describe HTML rendering,
-first-release settings, or the first request-abuse slices as absent.
+and status reporting should now treat broader folder ergonomics,
+bounded-runtime hardening, broader live mutation-path proof, and the helper
+boundary freeze as the clearest remaining gaps rather than continuing to
+describe HTML rendering, first-release settings, or the first request-abuse
+slices as absent.
 
 ## Overview
 

@@ -203,10 +203,10 @@ slice itself.
 
 The current highest-confidence active hardening and Version 1 gaps are:
 
-- final reassessment of whether the new all-mailboxes retrieval baseline is
-  sufficient to close the search item for Version 1
 - broader live-host proof beyond the currently proven read/search/mutation
   workflows
+- the helper-compatible OpenBSD confinement boundary as a deliberate Version 1
+  stopping point
 - the correctness and availability constraints of the current bounded-
   concurrency HTTP runtime
 
@@ -283,13 +283,11 @@ finds a concentrated hotspot that materially harms auditability again.
 
 The current official closeout sequence for Version 1 is:
 
-1. improve search only enough to replace ordinary Roundcube-era retrieval
-   workflows rather than broadening it into a feature project
-2. broaden live-host proof on `mail.blackbagsecurity.com` for the already-
+1. broaden live-host proof on `mail.blackbagsecurity.com` for the already-
    implemented browser surface
-3. tighten the helper and OpenBSD confinement boundary to a clear Version 1
+2. tighten the helper and OpenBSD confinement boundary to a clear Version 1
    stopping point
-4. freeze the Version 1 contract and shift further ergonomics or convenience
+3. freeze the Version 1 contract and shift further ergonomics or convenience
    work behind a Version 2 boundary
 
 The current implementation should not widen browser scope casually while these

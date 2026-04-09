@@ -215,8 +215,8 @@ Phase 6:
   now-implemented login, send, move, and bounded search slices: the
   correctness and availability limits of the current bounded-concurrency HTTP
   runtime, the lack of broader live-host proof beyond the currently proven
-  read/search/mutation workflows, and the need for broader folder ergonomics
-  plus a final search-sufficiency reassessment
+  read/search/mutation workflows, and the need to freeze the helper/OpenBSD
+  confinement boundary honestly for Version 1
 - the actual prototype now exists and Phase 6 execution is materially underway,
   but the implementation is still prototype-grade rather than production-ready
 

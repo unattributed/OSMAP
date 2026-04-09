@@ -229,8 +229,9 @@ Each phase produces formal outputs to support traceability and auditability.
   move.
 - Current priority work is therefore shifting toward bounded-runtime
   hardening, broader live mutation-path coverage on
-  `mail.blackbagsecurity.com`, and remaining workflow refinements such as
-  broader folder-organization ergonomics and richer search behavior.
+  `mail.blackbagsecurity.com`, freezing the helper/OpenBSD boundary more
+  explicitly for Version 1, and remaining workflow refinements such as
+  broader folder-organization ergonomics.
 - The HTTP runtime now also distinguishes connection-lifecycle failures more
   honestly: read timeouts return `408 Request Timeout`, while empty or
   truncated connections are logged and closed without treating them as generic
