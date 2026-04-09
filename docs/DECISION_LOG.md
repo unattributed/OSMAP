@@ -1875,3 +1875,27 @@ OSMAP now:
 This was chosen as the next narrow runtime-hardening step because it improves
 operator visibility into one concrete bounded-concurrency failure mode without
 changing the transport model, adding a worker pool, or widening browser scope.
+
+### Add a reusable live-host harness for sustained HTTP response-write observability
+
+After proving connection-pressure and timeout signals on the live host, the
+next bounded runtime proof should stay narrow and exercise one more real
+failure mode that operators may need to diagnose in production-like conditions:
+repeated client disconnects during response delivery.
+
+The repo now carries a reusable live-host validation script at:
+
+- `maint/live/osmap-live-validate-http-write-observability.ksh`
+
+On `mail.blackbagsecurity.com` under
+`OSMAP_OPENBSD_CONFINEMENT_MODE=enforce`, that harness can prove:
+
+- repeated reset-backed `GET /login` requests can drive
+  `http_response_write_failed_sustained`
+- a subsequent normal request still returns `200 OK`
+- the runtime emits `http_response_write_recovered` once delivery succeeds
+  again
+
+This was chosen as the next bounded live-proof step because it exercises a
+real output-failure and recovery path under the actual `_osmap` runtime shape
+without widening browser scope or requiring a broader transport-fault lab.

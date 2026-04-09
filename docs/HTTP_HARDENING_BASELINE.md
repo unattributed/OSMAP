@@ -120,6 +120,13 @@ in-flight connection: the host proof exercised capacity-reached,
 over-capacity rejection, request-timeout, and request-completion events in one
 isolated run.
 
+The repo now also carries a second reusable host harness at
+`maint/live/osmap-live-validate-http-write-observability.ksh` for sustained
+response-write failure and recovery validation under the same `_osmap`
+deployment shape. That script is the next bounded live-proof tool, not yet a
+claim that the broader browser surface has been fully proven under those
+conditions.
+
 ## Current CSRF Strategy
 
 The current CSRF model uses one token derived for each persisted session record.
