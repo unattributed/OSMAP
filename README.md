@@ -136,6 +136,9 @@ Each phase produces formal outputs to support traceability and auditability.
   allowlist sanitizer, users can choose between sanitized HTML and plain-text
   fallback, and the same settings surface now also carries a bounded archive
   mailbox shortcut preference.
+- Production `serve` mode now also refuses to run without the local mailbox
+  helper boundary, so the Version 1 browser runtime no longer treats direct
+  mailbox backends as an acceptable deployment shape there.
 - The largest Rust implementation hotspots are being reduced through
   behavior-preserving internal splits across the HTTP, mailbox, and mailbox
   helper layers so the browser boundary and helper boundary stay easier to
@@ -270,16 +273,11 @@ Each phase produces formal outputs to support traceability and auditability.
 
 The current repo-grounded path to Version 1 is now:
 
-1. Continue narrow HTTP/runtime hardening until the current bounded-concurrency
-   server posture is explicit, observable, and boring to operate.
-2. Finish minimum user-facing mail ergonomics that still limit ordinary daily
-   use, especially folder organization and search usability.
-3. Broaden live host proof on `mail.blackbagsecurity.com` so more of the
-   already-implemented browser surface is proven under the real `_osmap` plus
-   `vmail` split and `enforce`.
-4. Tighten the helper and OpenBSD confinement boundary to a clear V1 stopping
+1. Tighten the helper and OpenBSD confinement boundary to a clear V1 stopping
    point rather than leaving it as an open-ended hardening thread.
-5. Freeze the Version 1 contract and keep the docs honest about what ships and
+2. Continue narrow HTTP/runtime hardening until the current bounded-concurrency
+   server posture is explicit, observable, and boring to operate.
+3. Freeze the Version 1 contract and keep the docs honest about what ships and
    what is deferred.
 
 ## V2 Direction

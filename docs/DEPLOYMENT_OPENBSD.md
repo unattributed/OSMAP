@@ -188,6 +188,8 @@ The first implementation slices of that answer now exist:
 - `OSMAP_RUN_MODE=mailbox-helper` starts the local helper
 - `OSMAP_MAILBOX_HELPER_SOCKET_PATH` selects the Unix socket path used by the
   helper and by the web runtime
+- production `OSMAP_RUN_MODE=serve` now rejects configs that do not set
+  `OSMAP_MAILBOX_HELPER_SOCKET_PATH`
 - mailbox listing, message-list retrieval, and message-view retrieval can now
   route through that helper
 - attachment download now reuses the helper-backed message-view path when the

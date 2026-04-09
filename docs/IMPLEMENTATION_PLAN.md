@@ -199,6 +199,9 @@ The current implementation now also includes:
 - live-host proof for the bounded browser session-management surface on
   `mail.blackbagsecurity.com`, including `/sessions`,
   `POST /sessions/revoke`, and `POST /logout`
+- a first explicit Version 1 mailbox-boundary freeze step: production
+  `serve` mode now requires `OSMAP_MAILBOX_HELPER_SOCKET_PATH` instead of
+  treating direct mailbox backends as an acceptable deployment shape
 
 Broader ergonomics around folder organization, such as bulk actions or archive
 shortcuts from list views, remain later refinements rather than the first move

@@ -167,8 +167,8 @@ The web runtime and the helper should each have their own `pledge(2)` and
 
 ## Current Implementation Implication
 
-The current direct `doveadm` integration remains acceptable as a prototype
-bridge because it already provides:
+The current direct `doveadm` integration remains acceptable as a development
+and staging bridge because it already provides:
 
 - bounded request validation
 - bounded output parsing
@@ -176,6 +176,11 @@ bridge because it already provides:
 - a clear seam in code through mailbox backend traits
 
 That seam is now the migration point for the helper-backed implementation.
+
+As of the current Version 1 closeout baseline, production `serve` mode now
+rejects configs that do not set `OSMAP_MAILBOX_HELPER_SOCKET_PATH`. That keeps
+the helper boundary explicit in the first-release deployment posture instead of
+leaving direct mailbox backends as an equally acceptable production path.
 
 ## Suggested First Helper Slice
 

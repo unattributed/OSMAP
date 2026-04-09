@@ -2185,3 +2185,31 @@ The official next implementation focus therefore shifts to:
 
 - tighten the helper and OpenBSD confinement boundary to a clear Version 1
   stopping point
+
+### Freeze the mailbox helper boundary into production `serve` configuration
+
+Once broader live-browser proof was in place, the next helper/OpenBSD boundary
+question was no longer "should the helper exist?" but "is that boundary an
+actual Version 1 rule or just a documented preference?"
+
+The narrowest useful answer is now implemented:
+
+- production `OSMAP_RUN_MODE=serve` rejects configs that do not set
+  `OSMAP_MAILBOX_HELPER_SOCKET_PATH`
+- the startup report now emits `mailbox_boundary_mode` with either
+  `local_helper_socket` or `direct_doveadm`
+
+This was chosen instead of a broader helper rewrite because it turns the
+already-selected mailbox helper boundary into an operator-visible deployment
+rule without removing the direct backend seam needed for development, tests,
+and narrow staging work.
+
+The effect is deliberate:
+
+- development and staging can still use the direct mailbox backend seam when
+  needed for bounded local work
+- production `serve` can no longer drift into direct mailbox authority from
+  the browser-facing runtime silently
+- the Version 1 stopping point becomes clearer in configuration, startup
+  logging, and deployment guidance before further helper or confinement
+  narrowing happens

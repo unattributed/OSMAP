@@ -529,6 +529,7 @@ impl AppConfig {
         validate_development_bindings(environment, &listen_addr)?;
         let mailbox_helper_socket_path =
             parse_mailbox_helper_socket_path(env_map, run_mode, &state_layout.runtime_dir)?;
+        validate_mailbox_boundary(environment, run_mode, mailbox_helper_socket_path.as_deref())?;
 
         Ok(Self {
             run_mode,
@@ -559,6 +560,25 @@ impl AppConfig {
             openbsd_confinement_mode,
         })
     }
+}
+
+/// Freezes the current first-release mailbox authority boundary in production.
+fn validate_mailbox_boundary(
+    environment: RuntimeEnvironment,
+    run_mode: AppRunMode,
+    mailbox_helper_socket_path: Option<&Path>,
+) -> Result<(), BootstrapError> {
+    if environment == RuntimeEnvironment::Production
+        && run_mode == AppRunMode::Serve
+        && mailbox_helper_socket_path.is_none()
+    {
+        return Err(BootstrapError::InvalidConfig {
+            field: "OSMAP_MAILBOX_HELPER_SOCKET_PATH",
+            reason: "production serve mode requires the local mailbox helper boundary".to_string(),
+        });
+    }
+
+    Ok(())
 }
 
 /// Reads a value from the environment map and falls back to a conservative
@@ -1227,6 +1247,48 @@ mod tests {
 
         assert_eq!(config.environment, RuntimeEnvironment::Staging);
         assert_eq!(config.listen_addr, "0.0.0.0:8080");
+    }
+
+    #[test]
+    fn rejects_production_serve_without_mailbox_helper_socket() {
+        let env_map = BTreeMap::from([
+            ("OSMAP_RUN_MODE".to_string(), "serve".to_string()),
+            ("OSMAP_ENV".to_string(), "production".to_string()),
+        ]);
+
+        let error = AppConfig::from_env_map(&env_map)
+            .expect_err("production serve mode must require the mailbox helper boundary");
+
+        assert_eq!(
+            error,
+            BootstrapError::InvalidConfig {
+                field: "OSMAP_MAILBOX_HELPER_SOCKET_PATH",
+                reason: "production serve mode requires the local mailbox helper boundary"
+                    .to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn accepts_production_serve_with_mailbox_helper_socket() {
+        let env_map = BTreeMap::from([
+            ("OSMAP_RUN_MODE".to_string(), "serve".to_string()),
+            ("OSMAP_ENV".to_string(), "production".to_string()),
+            (
+                "OSMAP_MAILBOX_HELPER_SOCKET_PATH".to_string(),
+                "/var/lib/osmap/run/mailbox-helper.sock".to_string(),
+            ),
+        ]);
+
+        let config = AppConfig::from_env_map(&env_map)
+            .expect("production serve mode should accept the helper boundary");
+
+        assert_eq!(config.environment, RuntimeEnvironment::Production);
+        assert_eq!(config.run_mode, AppRunMode::Serve);
+        assert_eq!(
+            config.mailbox_helper_socket_path,
+            Some(std::path::Path::new("/var/lib/osmap/run/mailbox-helper.sock").to_path_buf())
+        );
     }
 
     #[test]

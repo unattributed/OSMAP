@@ -88,6 +88,11 @@ browser-facing process. When `OSMAP_RUN_MODE=mailbox-helper` is selected and the
 variable is absent, the helper defaults to
 `<runtime_dir>/mailbox-helper.sock`.
 
+As of the current Version 1 closeout baseline, production `serve` mode now
+requires `OSMAP_MAILBOX_HELPER_SOCKET_PATH` so the browser-facing runtime does
+not silently fall back to direct mailbox backends in the shipping deployment
+shape.
+
 The runtime now also recognizes one explicit HTTP concurrency setting:
 
 - `OSMAP_HTTP_MAX_CONCURRENT_CONNECTIONS`

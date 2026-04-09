@@ -3,7 +3,7 @@
 //! The goal here is not to implement the mail service yet. The goal is to make
 //! the repository executable, testable, and ready for later vertical slices.
 
-use crate::config::AppConfig;
+use crate::config::{AppConfig, AppRunMode};
 use crate::error::BootstrapError;
 use crate::logging::{EventCategory, LogEvent, Logger};
 
@@ -16,6 +16,7 @@ pub struct BootstrapReport {
     pub doveadm_auth_socket_path: String,
     pub doveadm_userdb_socket_path: String,
     pub mailbox_helper_socket_path: String,
+    pub mailbox_boundary_mode: String,
     pub openbsd_confinement_mode: String,
     pub state_root: String,
     pub runtime_dir: String,
@@ -67,6 +68,7 @@ impl BootstrapReport {
             "mailbox_helper_socket_path",
             self.mailbox_helper_socket_path.clone(),
         )
+        .with_field("mailbox_boundary_mode", self.mailbox_boundary_mode.clone())
         .with_field(
             "openbsd_confinement_mode",
             self.openbsd_confinement_mode.clone(),
@@ -185,6 +187,7 @@ fn report_from_config(config: &AppConfig) -> BootstrapReport {
             .as_ref()
             .map(|path| path.display().to_string())
             .unwrap_or_default(),
+        mailbox_boundary_mode: mailbox_boundary_mode(config).to_string(),
         openbsd_confinement_mode: config.openbsd_confinement_mode.as_str().to_string(),
         state_root: config.state_root.display().to_string(),
         runtime_dir: config.state_layout.runtime_dir.display().to_string(),
@@ -218,6 +221,14 @@ fn report_from_config(config: &AppConfig) -> BootstrapReport {
         message_move_throttle_lockout_seconds: config
             .message_move_throttle_lockout_seconds
             .to_string(),
+    }
+}
+
+fn mailbox_boundary_mode(config: &AppConfig) -> &'static str {
+    if config.run_mode == AppRunMode::MailboxHelper || config.mailbox_helper_socket_path.is_some() {
+        "local_helper_socket"
+    } else {
+        "direct_doveadm"
     }
 }
 
@@ -298,6 +309,10 @@ mod tests {
                 crate::logging::LogField {
                     key: "mailbox_helper_socket_path",
                     value: "/var/lib/osmap/run/mailbox-helper.sock".to_string(),
+                },
+                crate::logging::LogField {
+                    key: "mailbox_boundary_mode",
+                    value: "local_helper_socket".to_string(),
                 },
                 crate::logging::LogField {
                     key: "openbsd_confinement_mode",
