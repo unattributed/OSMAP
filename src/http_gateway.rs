@@ -172,8 +172,14 @@ impl BrowserGateway for RuntimeBrowserGateway {
         context: &AuthenticationContext,
         validated_session: &ValidatedSession,
         html_display_preference: HtmlDisplayPreference,
+        archive_mailbox_name: Option<&str>,
     ) -> BrowserSettingsUpdateOutcome {
-        self.update_settings_impl(context, validated_session, html_display_preference)
+        self.update_settings_impl(
+            context,
+            validated_session,
+            html_display_preference,
+            archive_mailbox_name,
+        )
     }
 
     fn list_mailboxes(

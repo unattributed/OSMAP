@@ -1928,3 +1928,25 @@ The official next implementation focus therefore shifts to:
 HTTP/runtime work remains incomplete and still depends on adjacent controls,
 but it is no longer the first active delivery risk relative to the user-facing
 workflow gap above.
+
+### Add a settings-backed archive shortcut without broadening mailbox authority
+
+The first practical folder-organization improvement should reduce repetitive
+manual mailbox typing for the common archive workflow without turning OSMAP
+into a broad mailbox-management project.
+
+OSMAP now:
+
+- stores one optional archive mailbox name in the existing bounded settings
+  surface
+- validates that archive mailbox name with the same bounded mailbox-name rules
+  already used by the move path
+- renders one-click archive forms on the message-view page and mailbox-list
+  rows when that setting is configured
+- keeps archive behavior on the same CSRF-bound `POST /message/move` route and
+  backend-authoritative `doveadm move` path rather than introducing a second
+  mutation mechanism
+
+This was chosen as the next folder-organization step because it makes daily
+organization materially easier while preserving the existing helper boundary,
+move throttle, and single-message authority model.

@@ -590,6 +590,7 @@ mod tests {
                     canonical_username: validated_session.record.canonical_username.clone(),
                     settings: BrowserVisibleSettings {
                         html_display_preference: HtmlDisplayPreference::PreferSanitizedHtml,
+                        archive_mailbox_name: Some("Archive/2026".to_string()),
                     },
                 },
                 audit_events: vec![LogEvent::new(
@@ -606,16 +607,31 @@ mod tests {
             _context: &AuthenticationContext,
             _validated_session: &ValidatedSession,
             html_display_preference: HtmlDisplayPreference,
+            archive_mailbox_name: Option<&str>,
         ) -> BrowserSettingsUpdateOutcome {
-            match html_display_preference {
-                HtmlDisplayPreference::PreferSanitizedHtml
-                | HtmlDisplayPreference::PreferPlainText => BrowserSettingsUpdateOutcome {
+            match (html_display_preference, archive_mailbox_name) {
+                (
+                    HtmlDisplayPreference::PreferSanitizedHtml
+                    | HtmlDisplayPreference::PreferPlainText,
+                    None | Some("Archive/2026"),
+                ) => BrowserSettingsUpdateOutcome {
                     decision: BrowserSettingsUpdateDecision::Updated,
                     audit_events: vec![LogEvent::new(
                         LogLevel::Info,
                         EventCategory::Session,
                         "stub_settings_update",
                         "stub settings updated",
+                    )],
+                },
+                _ => BrowserSettingsUpdateOutcome {
+                    decision: BrowserSettingsUpdateDecision::Denied {
+                        public_reason: "invalid_request".to_string(),
+                    },
+                    audit_events: vec![LogEvent::new(
+                        LogLevel::Warn,
+                        EventCategory::Session,
+                        "stub_settings_update_denied",
+                        "stub settings update denied",
                     )],
                 },
             }
@@ -1260,6 +1276,9 @@ mod tests {
         assert!(body.contains("Search this mailbox"));
         assert!(body.contains("action=\"/search\""));
         assert!(body.contains("name=\"mailbox\" value=\"INBOX\""));
+        assert!(body.contains("Archive shortcut sends messages"));
+        assert!(body.contains("name=\"destination_mailbox\" value=\"Archive/2026\""));
+        assert!(body.contains(">Archive</button>"));
     }
 
     #[test]
@@ -1335,9 +1354,35 @@ mod tests {
         assert!(body.contains("<pre>Hello world</pre>"));
         assert!(body.contains("mode=reply"));
         assert!(body.contains("mode=forward"));
+        assert!(body.contains("Archive Message"));
+        assert!(body.contains("name=\"destination_mailbox\" value=\"Archive/2026\""));
         assert!(body.contains("action=\"/message/move\""));
         assert!(body.contains("name=\"destination_mailbox\""));
         assert!(body.contains("/attachment?mailbox=INBOX&amp;uid=9&amp;part=1.2"));
+    }
+
+    #[test]
+    fn archive_shortcut_is_hidden_when_viewing_the_archive_mailbox() {
+        let response = app().handle_request(
+            &request(
+                "GET",
+                "/mailbox?name=Archive%2F2026",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                ],
+                "",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 200);
+        let body = body_text(&response);
+        assert!(body.contains("matches your configured archive destination"));
+        assert!(!body.contains(">Archive</button>"));
     }
 
     #[test]
@@ -1457,6 +1502,8 @@ mod tests {
         let body = body_text(&response);
         assert!(body.contains("<h1>Settings</h1>"));
         assert!(body.contains("prefer_sanitized_html"));
+        assert!(body.contains("name=\"archive_mailbox_name\""));
+        assert!(body.contains("value=\"Archive/2026\""));
         assert!(body.contains("Save Settings"));
     }
 
@@ -1722,7 +1769,7 @@ mod tests {
                         "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                     ),
                 ],
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&html_display_preference=prefer_plain_text",
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&html_display_preference=prefer_plain_text&archive_mailbox_name=Archive%2F2026",
             ),
             "127.0.0.1",
         );
@@ -1733,6 +1780,28 @@ mod tests {
             .headers
             .iter()
             .any(|(name, value)| name == "Location" && value == "/settings?updated=1"));
+    }
+
+    #[test]
+    fn settings_update_rejects_invalid_archive_mailbox_name() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/settings",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                ],
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&html_display_preference=prefer_plain_text&archive_mailbox_name=Archive%0A2026",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 400);
+        assert!(body_text(&response).contains("archive mailbox name was not valid"));
     }
 
     #[test]

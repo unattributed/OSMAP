@@ -37,8 +37,9 @@
   browser search path, but it does not yet provide cross-mailbox or advanced
   search behavior
 - The implementation now provides a first one-message move path between
-  existing mailboxes, but it does not yet provide bulk move, mailbox-list
-  selection actions, or dedicated archive shortcuts
+  existing mailboxes plus a settings-backed archive shortcut, but it does not
+  yet provide bulk move, mailbox-list selection actions, or archive mailbox
+  discovery
 - The implementation now provides a first browser-visible session list and
   self-service revocation path, but it does not yet provide richer device
   labeling or anomaly-oriented session analysis

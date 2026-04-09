@@ -13,6 +13,7 @@ impl RuntimeBrowserGateway {
     ) -> BrowserVisibleSettings {
         BrowserVisibleSettings {
             html_display_preference: settings.html_display_preference,
+            archive_mailbox_name: settings.archive_mailbox_name,
         }
     }
 
@@ -74,11 +75,16 @@ impl RuntimeBrowserGateway {
         context: &AuthenticationContext,
         validated_session: &ValidatedSession,
         html_display_preference: HtmlDisplayPreference,
+        archive_mailbox_name: Option<&str>,
     ) -> BrowserSettingsUpdateOutcome {
         match self
             .build_user_settings_service()
-            .update_html_display_preference(context, validated_session, html_display_preference)
-        {
+            .update_browser_preferences(
+                context,
+                validated_session,
+                html_display_preference,
+                archive_mailbox_name,
+            ) {
             Ok(updated) => BrowserSettingsUpdateOutcome {
                 decision: BrowserSettingsUpdateDecision::Updated,
                 audit_events: vec![updated.audit_event],

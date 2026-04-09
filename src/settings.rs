@@ -1,8 +1,8 @@
 //! Bounded end-user settings for the first OSMAP browser release.
 //!
 //! This module intentionally stays small. The first settings surface exists to
-//! expose one meaningful preference without turning OSMAP into a broad
-//! preference platform.
+//! expose a small set of meaningful preferences without turning OSMAP into a
+//! broad preference platform.
 
 use std::fs;
 use std::io::Write as _;
@@ -13,6 +13,9 @@ use sha2::{Digest, Sha256};
 use crate::auth::AuthenticationContext;
 use crate::config::LogLevel;
 use crate::logging::{EventCategory, LogEvent};
+use crate::mailbox::{
+    MailboxEntry, MailboxListingPolicy, DEFAULT_MAILBOX_NAME_MAX_LEN, DEFAULT_MAX_MAILBOXES,
+};
 use crate::rendering::HtmlDisplayPreference;
 use crate::session::ValidatedSession;
 
@@ -20,12 +23,14 @@ use crate::session::ValidatedSession;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UserSettings {
     pub html_display_preference: HtmlDisplayPreference,
+    pub archive_mailbox_name: Option<String>,
 }
 
 impl Default for UserSettings {
     fn default() -> Self {
         Self {
             html_display_preference: HtmlDisplayPreference::PreferSanitizedHtml,
+            archive_mailbox_name: None,
         }
     }
 }
@@ -195,6 +200,13 @@ where
                 "html_display_preference",
                 settings.html_display_preference.as_str(),
             )
+            .with_field(
+                "archive_mailbox_name",
+                settings
+                    .archive_mailbox_name
+                    .clone()
+                    .unwrap_or_else(|| "<unset>".to_string()),
+            )
             .with_field("request_id", context.request_id.clone())
             .with_field("remote_addr", context.remote_addr.clone())
             .with_field("user_agent", context.user_agent.clone()),
@@ -202,15 +214,18 @@ where
         })
     }
 
-    /// Persists a new HTML-display preference for the current validated user.
-    pub fn update_html_display_preference(
+    /// Persists new browser-visible settings for the current validated user.
+    pub fn update_browser_preferences(
         &self,
         context: &AuthenticationContext,
         validated_session: &ValidatedSession,
         html_display_preference: HtmlDisplayPreference,
+        archive_mailbox_name: Option<&str>,
     ) -> Result<UpdatedUserSettings, UserSettingsError> {
+        let archive_mailbox_name = parse_archive_mailbox_name(archive_mailbox_name)?;
         let settings = UserSettings {
             html_display_preference,
+            archive_mailbox_name,
         };
         self.store
             .save(&validated_session.record.canonical_username, &settings)?;
@@ -230,6 +245,13 @@ where
                 "html_display_preference",
                 settings.html_display_preference.as_str(),
             )
+            .with_field(
+                "archive_mailbox_name",
+                settings
+                    .archive_mailbox_name
+                    .clone()
+                    .unwrap_or_else(|| "<unset>".to_string()),
+            )
             .with_field("request_id", context.request_id.clone())
             .with_field("remote_addr", context.remote_addr.clone())
             .with_field("user_agent", context.user_agent.clone()),
@@ -239,14 +261,19 @@ where
 }
 
 fn serialize_user_settings(settings: &UserSettings) -> String {
-    format!(
+    let mut content = format!(
         "html_display_preference={}\n",
         settings.html_display_preference.as_str()
-    )
+    );
+    if let Some(archive_mailbox_name) = &settings.archive_mailbox_name {
+        content.push_str(&format!("archive_mailbox_name={archive_mailbox_name}\n"));
+    }
+    content
 }
 
 fn parse_user_settings(content: &str) -> Result<UserSettings, UserSettingsError> {
     let mut html_display_preference = None;
+    let mut archive_mailbox_name = None;
 
     for line in content.lines() {
         if line.trim().is_empty() {
@@ -268,6 +295,9 @@ fn parse_user_settings(content: &str) -> Result<UserSettings, UserSettingsError>
                         }
                     })?)
             }
+            "archive_mailbox_name" => {
+                archive_mailbox_name = Some(parse_archive_mailbox_name(Some(value))?)
+            }
             _ => {
                 return Err(UserSettingsError {
                     reason: format!("unsupported user settings key {key}"),
@@ -278,6 +308,31 @@ fn parse_user_settings(content: &str) -> Result<UserSettings, UserSettingsError>
 
     Ok(UserSettings {
         html_display_preference: html_display_preference.unwrap_or_default(),
+        archive_mailbox_name: archive_mailbox_name.unwrap_or(None),
+    })
+}
+
+pub fn parse_archive_mailbox_name(
+    archive_mailbox_name: Option<&str>,
+) -> Result<Option<String>, UserSettingsError> {
+    let Some(archive_mailbox_name) = archive_mailbox_name else {
+        return Ok(None);
+    };
+    let archive_mailbox_name = archive_mailbox_name.trim();
+    if archive_mailbox_name.is_empty() {
+        return Ok(None);
+    }
+
+    MailboxEntry::new(
+        MailboxListingPolicy {
+            mailbox_name_max_len: DEFAULT_MAILBOX_NAME_MAX_LEN,
+            max_mailboxes: DEFAULT_MAX_MAILBOXES,
+        },
+        archive_mailbox_name.to_string(),
+    )
+    .map(|entry| Some(entry.name))
+    .map_err(|error| UserSettingsError {
+        reason: error.reason,
     })
 }
 
@@ -341,6 +396,7 @@ mod tests {
         let store = FileUserSettingsStore::new(&dir);
         let settings = UserSettings {
             html_display_preference: HtmlDisplayPreference::PreferPlainText,
+            archive_mailbox_name: Some("Archive/2026".to_string()),
         };
 
         store
@@ -366,17 +422,19 @@ mod tests {
             loaded.settings.html_display_preference,
             HtmlDisplayPreference::PreferSanitizedHtml
         );
+        assert_eq!(loaded.settings.archive_mailbox_name, None);
     }
 
     #[test]
-    fn service_updates_html_preference() {
+    fn service_updates_browser_preferences() {
         let dir = temp_dir("osmap-user-settings-update");
         let service = UserSettingsService::new(FileUserSettingsStore::new(&dir));
         let updated = service
-            .update_html_display_preference(
+            .update_browser_preferences(
                 &context_fixture(),
                 &validated_session_fixture(),
                 HtmlDisplayPreference::PreferPlainText,
+                Some("Archive/2026"),
             )
             .expect("update should succeed");
 
@@ -384,5 +442,24 @@ mod tests {
             updated.settings.html_display_preference,
             HtmlDisplayPreference::PreferPlainText
         );
+        assert_eq!(
+            updated.settings.archive_mailbox_name,
+            Some("Archive/2026".to_string())
+        );
+    }
+
+    #[test]
+    fn archive_mailbox_name_treats_blank_values_as_unset() {
+        assert_eq!(
+            parse_archive_mailbox_name(Some("   ")).expect("blank archive name should be accepted"),
+            None
+        );
+    }
+
+    #[test]
+    fn archive_mailbox_name_reuses_mailbox_name_validation() {
+        let error = parse_archive_mailbox_name(Some("Archive\n2026"))
+            .expect_err("control characters should be rejected");
+        assert!(error.reason.contains("control characters"));
     }
 }

@@ -1,9 +1,10 @@
 //! End-user settings route handlers for the bounded browser runtime.
 //!
-//! This first settings slice stays intentionally small and CSRF-bound so OSMAP
-//! can expose one useful preference without becoming a broad preference UI.
+//! This settings slice stays intentionally small and CSRF-bound so OSMAP can
+//! expose a few useful preferences without becoming a broad preference UI.
 
 use super::*;
+use crate::settings::parse_archive_mailbox_name;
 
 impl<G> BrowserApp<G>
 where
@@ -45,6 +46,7 @@ where
                         success_message,
                         error_message: None,
                         html_display_preference: settings.html_display_preference,
+                        archive_mailbox_name: settings.archive_mailbox_name.as_deref(),
                     }),
                 ),
                 audit_events,
@@ -159,10 +161,34 @@ where
                 };
             }
         };
+        let archive_mailbox_name = match parse_archive_mailbox_name(
+            form.get("archive_mailbox_name").map(String::as_str),
+        ) {
+            Ok(archive_mailbox_name) => archive_mailbox_name,
+            Err(error) => {
+                return HandledHttpResponse {
+                    response: html_response(
+                        400,
+                        "Bad Request",
+                        "Invalid Settings Request",
+                        "<p>The submitted archive mailbox name was not valid.</p>",
+                    ),
+                    audit_events: vec![build_http_warning_event(
+                        "http_settings_archive_mailbox_rejected",
+                        "settings update archive mailbox validation failed",
+                        context,
+                    )
+                    .with_field("reason", error.reason)],
+                };
+            }
+        };
 
-        let outcome =
-            self.gateway
-                .update_settings(context, &validated_session, html_display_preference);
+        let outcome = self.gateway.update_settings(
+            context,
+            &validated_session,
+            html_display_preference,
+            archive_mailbox_name.as_deref(),
+        );
         audit_events.extend(outcome.audit_events);
 
         match outcome.decision {
@@ -170,18 +196,25 @@ where
                 response: redirect_response(303, "See Other", "/settings?updated=1"),
                 audit_events,
             },
-            BrowserSettingsUpdateDecision::Denied { public_reason } => HandledHttpResponse {
-                response: html_response(
-                    503,
-                    "Service Unavailable",
-                    "Settings Update Failed",
-                    &format!(
-                        "<p>{}</p>",
-                        escape_html(public_reason_message(&public_reason))
+            BrowserSettingsUpdateDecision::Denied { public_reason } => {
+                let (status_code, reason_phrase, title) = if public_reason == "invalid_request" {
+                    (400, "Bad Request", "Invalid Settings Request")
+                } else {
+                    (503, "Service Unavailable", "Settings Update Failed")
+                };
+                HandledHttpResponse {
+                    response: html_response(
+                        status_code,
+                        reason_phrase,
+                        title,
+                        &format!(
+                            "<p>{}</p>",
+                            escape_html(public_reason_message(&public_reason))
+                        ),
                     ),
-                ),
-                audit_events,
-            },
+                    audit_events,
+                }
+            }
         }
     }
 }

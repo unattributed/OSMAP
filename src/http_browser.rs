@@ -46,6 +46,7 @@ pub trait BrowserGateway {
         context: &AuthenticationContext,
         validated_session: &ValidatedSession,
         html_display_preference: HtmlDisplayPreference,
+        archive_mailbox_name: Option<&str>,
     ) -> BrowserSettingsUpdateOutcome;
 
     fn list_mailboxes(
@@ -165,6 +166,7 @@ pub struct BrowserVisibleSession {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BrowserVisibleSettings {
     pub html_display_preference: HtmlDisplayPreference,
+    pub archive_mailbox_name: Option<String>,
 }
 
 /// The result of a browser-visible session listing operation.

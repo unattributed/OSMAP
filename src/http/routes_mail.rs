@@ -105,21 +105,42 @@ where
                 canonical_username,
                 mailbox_name,
                 messages,
-            } => HandledHttpResponse {
-                response: html_response(
-                    200,
-                    "OK",
-                    "Mailbox Messages",
-                    &render_message_list_page(
-                        &canonical_username,
-                        &validated_session.record.csrf_token,
-                        &mailbox_name,
-                        &messages,
-                        success_message.as_deref(),
+            } => {
+                let archive_mailbox_name =
+                    match self.gateway.load_settings(context, &validated_session) {
+                        BrowserSettingsOutcome {
+                            decision: BrowserSettingsDecision::Loaded { settings, .. },
+                            audit_events: settings_audit_events,
+                        } => {
+                            audit_events.extend(settings_audit_events);
+                            settings.archive_mailbox_name
+                        }
+                        BrowserSettingsOutcome {
+                            decision: BrowserSettingsDecision::Denied { .. },
+                            audit_events: settings_audit_events,
+                        } => {
+                            audit_events.extend(settings_audit_events);
+                            None
+                        }
+                    };
+
+                HandledHttpResponse {
+                    response: html_response(
+                        200,
+                        "OK",
+                        "Mailbox Messages",
+                        &render_message_list_page(
+                            &canonical_username,
+                            &validated_session.record.csrf_token,
+                            &mailbox_name,
+                            &messages,
+                            success_message.as_deref(),
+                            archive_mailbox_name.as_deref(),
+                        ),
                     ),
-                ),
-                audit_events,
-            },
+                    audit_events,
+                }
+            }
             BrowserMessageListDecision::Denied { public_reason } => HandledHttpResponse {
                 response: html_response(
                     503,
@@ -427,19 +448,40 @@ where
             BrowserMessageViewDecision::Rendered {
                 canonical_username,
                 rendered,
-            } => HandledHttpResponse {
-                response: html_response(
-                    200,
-                    "OK",
-                    "Message View",
-                    &render_message_view_page(
-                        &canonical_username,
-                        &validated_session.record.csrf_token,
-                        &rendered,
+            } => {
+                let archive_mailbox_name =
+                    match self.gateway.load_settings(context, &validated_session) {
+                        BrowserSettingsOutcome {
+                            decision: BrowserSettingsDecision::Loaded { settings, .. },
+                            audit_events: settings_audit_events,
+                        } => {
+                            audit_events.extend(settings_audit_events);
+                            settings.archive_mailbox_name
+                        }
+                        BrowserSettingsOutcome {
+                            decision: BrowserSettingsDecision::Denied { .. },
+                            audit_events: settings_audit_events,
+                        } => {
+                            audit_events.extend(settings_audit_events);
+                            None
+                        }
+                    };
+
+                HandledHttpResponse {
+                    response: html_response(
+                        200,
+                        "OK",
+                        "Message View",
+                        &render_message_view_page(
+                            &canonical_username,
+                            &validated_session.record.csrf_token,
+                            &rendered,
+                            archive_mailbox_name.as_deref(),
+                        ),
                     ),
-                ),
-                audit_events,
-            },
+                    audit_events,
+                }
+            }
             BrowserMessageViewDecision::Denied { public_reason } => HandledHttpResponse {
                 response: html_response(
                     503,

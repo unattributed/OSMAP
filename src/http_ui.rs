@@ -28,6 +28,7 @@ pub(crate) struct SettingsPageModel<'a> {
     pub success_message: Option<&'a str>,
     pub error_message: Option<&'a str>,
     pub html_display_preference: HtmlDisplayPreference,
+    pub archive_mailbox_name: Option<&'a str>,
 }
 
 /// Renders the current login page with an optional operator-safe error banner.
@@ -77,6 +78,7 @@ pub(crate) fn render_message_list_page(
     mailbox_name: &str,
     messages: &[MessageSummary],
     success_message: Option<&str>,
+    archive_mailbox_name: Option<&str>,
 ) -> String {
     let success_banner = match success_message {
         Some(success_message) => format!(
@@ -86,29 +88,65 @@ pub(crate) fn render_message_list_page(
         None => String::new(),
     };
     let mut rows = String::new();
+    let archive_actions_available = archive_mailbox_name
+        .is_some_and(|archive_mailbox_name| archive_mailbox_name != mailbox_name);
     for message in messages {
         let message_href = format!(
             "/message?mailbox={}&uid={}",
             url_encode(mailbox_name),
             message.uid
         );
+        let archive_action = if let Some(archive_mailbox_name) = archive_mailbox_name {
+            if archive_mailbox_name != mailbox_name {
+                format!(
+                    "<form method=\"post\" action=\"/message/move\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"uid\" value=\"{}\"><input type=\"hidden\" name=\"destination_mailbox\" value=\"{}\"><button type=\"submit\">Archive</button></form>",
+                    escape_html(csrf_token),
+                    escape_html(mailbox_name),
+                    message.uid,
+                    escape_html(archive_mailbox_name),
+                )
+            } else {
+                String::new()
+            }
+        } else {
+            String::new()
+        };
         rows.push_str(&format!(
-            "<tr><td><a href=\"{}\">{}</a></td><td>{}</td><td>{}</td><td>{}</td></tr>",
+            "<tr><td><a href=\"{}\">{}</a></td><td>{}</td><td>{}</td><td>{}</td>{}</tr>",
             escape_html(&message_href),
             message.uid,
             escape_html(&message.date_received),
             escape_html(&message.flags.join(" ")),
             message.size_virtual,
+            if archive_actions_available {
+                format!("<td>{archive_action}</td>")
+            } else {
+                String::new()
+            },
         ));
     }
+    let archive_notice = match archive_mailbox_name {
+        Some(archive_mailbox_name) if archive_mailbox_name != mailbox_name => format!(
+            "<p class=\"muted\">Archive shortcut sends messages from this mailbox to <strong>{}</strong>.</p>",
+            escape_html(archive_mailbox_name)
+        ),
+        Some(_) => "<p class=\"muted\">This mailbox matches your configured archive destination, so archive shortcuts are hidden here.</p>".to_string(),
+        None => "<p class=\"muted\">Set an archive mailbox in Settings to add one-click archive actions on list and message pages.</p>".to_string(),
+    };
 
     format!(
-        "<nav><a href=\"/mailboxes\">Back to mailboxes</a> | <a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <a href=\"/settings\">Settings</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Mailbox: {}</h1><p>Signed in as <strong>{}</strong>.</p>{}<form method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><label>Search this mailbox<input type=\"text\" name=\"q\" autocomplete=\"off\"></label><button type=\"submit\">Search</button></form><table><thead><tr><th>UID</th><th>Received</th><th>Flags</th><th>Size</th></tr></thead><tbody>{}</tbody></table>",
+        "<nav><a href=\"/mailboxes\">Back to mailboxes</a> | <a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <a href=\"/settings\">Settings</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Mailbox: {}</h1><p>Signed in as <strong>{}</strong>.</p>{}{}<form method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><label>Search this mailbox<input type=\"text\" name=\"q\" autocomplete=\"off\"></label><button type=\"submit\">Search</button></form><table><thead><tr><th>UID</th><th>Received</th><th>Flags</th><th>Size</th>{}</tr></thead><tbody>{}</tbody></table>",
         escape_html(csrf_token),
         escape_html(mailbox_name),
         escape_html(canonical_username),
         success_banner,
+        archive_notice,
         escape_html(mailbox_name),
+        if archive_actions_available {
+            "<th>Action</th>"
+        } else {
+            ""
+        },
         rows,
     )
 }
@@ -165,6 +203,7 @@ pub(crate) fn render_message_view_page(
     canonical_username: &str,
     csrf_token: &str,
     rendered: &RenderedMessageView,
+    archive_mailbox_name: Option<&str>,
 ) -> String {
     let mut attachments = String::new();
     if rendered.attachments.is_empty() {
@@ -189,8 +228,19 @@ pub(crate) fn render_message_view_page(
         }
     }
 
+    let archive_form = match archive_mailbox_name {
+        Some(archive_mailbox_name) if archive_mailbox_name != rendered.mailbox_name => format!(
+            "<h2>Archive Message</h2><p class=\"muted\">This shortcut reuses the bounded move path with your configured archive mailbox.</p><form method=\"post\" action=\"/message/move\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"uid\" value=\"{}\"><input type=\"hidden\" name=\"destination_mailbox\" value=\"{}\"><button type=\"submit\">Archive Message</button></form>",
+            escape_html(csrf_token),
+            escape_html(&rendered.mailbox_name),
+            rendered.uid,
+            escape_html(archive_mailbox_name),
+        ),
+        Some(_) => "<p class=\"muted\">This message is already in your configured archive mailbox.</p>".to_string(),
+        None => "<p class=\"muted\">Set an archive mailbox in Settings to add a one-click archive shortcut here.</p>".to_string(),
+    };
     let move_form = format!(
-        "<h2>Move Message</h2><p class=\"muted\">This first folder-organization slice moves one message into an existing mailbox. Archive behavior uses the same path by selecting your archive mailbox name.</p><form method=\"post\" action=\"/message/move\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"uid\" value=\"{}\"><label>Destination Mailbox<input type=\"text\" name=\"destination_mailbox\" autocomplete=\"off\"></label><button type=\"submit\">Move Message</button></form>",
+        "<h2>Move Message</h2><p class=\"muted\">This first folder-organization slice still keeps the general move path narrow: one message into one existing mailbox per request.</p><form method=\"post\" action=\"/message/move\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"uid\" value=\"{}\"><label>Destination Mailbox<input type=\"text\" name=\"destination_mailbox\" autocomplete=\"off\"></label><button type=\"submit\">Move Message</button></form>",
         escape_html(csrf_token),
         escape_html(&rendered.mailbox_name),
         rendered.uid,
@@ -201,7 +251,7 @@ pub(crate) fn render_message_view_page(
     };
 
     format!(
-        "<nav><a href=\"/mailbox?name={}\">Back to mailbox</a> | <a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <a href=\"/settings\">Settings</a> | <a href=\"/compose?mode=reply&mailbox={}&uid={}\">Reply</a> | <a href=\"/compose?mode=forward&mailbox={}&uid={}\">Forward</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Message View</h1><p>Signed in as <strong>{}</strong>.</p><dl><dt>Mailbox</dt><dd>{}</dd><dt>UID</dt><dd>{}</dd><dt>Subject</dt><dd>{}</dd><dt>From</dt><dd>{}</dd><dt>Received</dt><dd>{}</dd><dt>MIME Type</dt><dd>{}</dd><dt>Body Source</dt><dd>{}</dd><dt>Rendering Mode</dt><dd>{}</dd><dt>HTML Present</dt><dd>{}</dd></dl>{}{}<h2>Attachments</h2><ul>{}</ul><h2>Body</h2>{}",
+        "<nav><a href=\"/mailbox?name={}\">Back to mailbox</a> | <a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <a href=\"/settings\">Settings</a> | <a href=\"/compose?mode=reply&mailbox={}&uid={}\">Reply</a> | <a href=\"/compose?mode=forward&mailbox={}&uid={}\">Forward</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Message View</h1><p>Signed in as <strong>{}</strong>.</p><dl><dt>Mailbox</dt><dd>{}</dd><dt>UID</dt><dd>{}</dd><dt>Subject</dt><dd>{}</dd><dt>From</dt><dd>{}</dd><dt>Received</dt><dd>{}</dd><dt>MIME Type</dt><dd>{}</dd><dt>Body Source</dt><dd>{}</dd><dt>Rendering Mode</dt><dd>{}</dd><dt>HTML Present</dt><dd>{}</dd></dl>{}{}{}<h2>Attachments</h2><ul>{}</ul><h2>Body</h2>{}",
         escape_html(&url_encode(&rendered.mailbox_name)),
         escape_html(&url_encode(&rendered.mailbox_name)),
         rendered.uid,
@@ -219,6 +269,7 @@ pub(crate) fn render_message_view_page(
         escape_html(rendered.rendering_mode.as_str()),
         if rendered.contains_html_body { "yes" } else { "no" },
         rendering_notice,
+        archive_form,
         move_form,
         attachments,
         rendered.body_html,
@@ -359,9 +410,10 @@ pub(crate) fn render_settings_page(model: &SettingsPageModel<'_>) -> String {
         } else {
             ""
         };
+    let archive_mailbox_name = model.archive_mailbox_name.unwrap_or("");
 
     format!(
-        "<nav><a href=\"/mailboxes\">Mailboxes</a> | <a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Settings</h1><p>Signed in as <strong>{}</strong>.</p>{}{}<p class=\"muted\">This first settings slice is intentionally small. It controls whether HTML-capable messages prefer sanitized HTML or plain-text fallback during browser rendering.</p><form method=\"post\" action=\"/settings\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><fieldset><legend>HTML Message Display</legend><label><input type=\"radio\" name=\"html_display_preference\" value=\"prefer_sanitized_html\"{}> Prefer sanitized HTML when available</label><label><input type=\"radio\" name=\"html_display_preference\" value=\"prefer_plain_text\"{}> Prefer plain text when available</label></fieldset><button type=\"submit\">Save Settings</button></form>",
+        "<nav><a href=\"/mailboxes\">Mailboxes</a> | <a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Settings</h1><p>Signed in as <strong>{}</strong>.</p>{}{}<p class=\"muted\">This settings slice stays intentionally small. It controls HTML display preference and one optional archive mailbox shortcut without turning OSMAP into a broad preference UI.</p><form method=\"post\" action=\"/settings\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><fieldset><legend>HTML Message Display</legend><label><input type=\"radio\" name=\"html_display_preference\" value=\"prefer_sanitized_html\"{}> Prefer sanitized HTML when available</label><label><input type=\"radio\" name=\"html_display_preference\" value=\"prefer_plain_text\"{}> Prefer plain text when available</label></fieldset><fieldset><legend>Archive Shortcut</legend><label>Archive Mailbox<input type=\"text\" name=\"archive_mailbox_name\" value=\"{}\" autocomplete=\"off\"></label><p class=\"muted\">Leave this blank to keep only the manual move flow.</p></fieldset><button type=\"submit\">Save Settings</button></form>",
         escape_html(model.csrf_token),
         escape_html(model.canonical_username),
         success_banner,
@@ -369,5 +421,6 @@ pub(crate) fn render_settings_page(model: &SettingsPageModel<'_>) -> String {
         escape_html(model.csrf_token),
         prefer_sanitized_html_checked,
         prefer_plain_text_checked,
+        escape_html(archive_mailbox_name),
     )
 }
