@@ -2422,6 +2422,45 @@ mod tests {
     }
 
     #[test]
+    fn connection_worker_panic_releases_slot_and_reports_error() {
+        let listener = TcpListener::bind("127.0.0.1:0").expect("listener should bind");
+        let addr = listener.local_addr().expect("listener addr should exist");
+        let _client = std::net::TcpStream::connect(addr).expect("client should connect");
+        let (mut stream, _) = listener.accept().expect("server should accept client");
+        let active_connections = Arc::new(AtomicUsize::new(1));
+        let app = BrowserApp::new(HttpPolicy::default(), StubGateway);
+        let logger = Logger::new(crate::config::LogFormat::Text, LogLevel::Debug);
+        let write_failures = AtomicUsize::new(0);
+
+        let event = super::http_runtime::run_connection_worker(
+            &app,
+            &logger,
+            &mut stream,
+            &active_connections,
+            &write_failures,
+            |_app, _logger, _stream, _write_failures| panic!("simulated worker panic"),
+        )
+        .expect("worker panic should be surfaced as a log event");
+
+        assert_eq!(active_connections.load(Ordering::Acquire), 0);
+        assert_eq!(event.level, LogLevel::Error);
+        assert_eq!(event.category, EventCategory::Http);
+        assert_eq!(event.action, "http_connection_worker_panicked");
+        assert!(event
+            .fields
+            .iter()
+            .any(|field| field.key == "reason" && field.value == "simulated worker panic"));
+        assert!(event
+            .fields
+            .iter()
+            .any(|field| field.key == "thread_name" && field.value == "osmap-http-conn"));
+        assert!(event
+            .fields
+            .iter()
+            .any(|field| field.key == "active_connections_after_release" && field.value == "0"));
+    }
+
+    #[test]
     fn successful_response_events_only_emit_completion_for_written_requests() {
         let completion = super::http_runtime::RequestCompletionContext {
             remote_addr: "127.0.0.1".to_string(),

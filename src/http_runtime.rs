@@ -1,5 +1,6 @@
 use std::io::Write as _;
 use std::net::{TcpListener, TcpStream};
+use std::panic::{catch_unwind, AssertUnwindSafe};
 use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::thread;
@@ -318,15 +319,49 @@ where
     thread::Builder::new()
         .name(HTTP_WORKER_THREAD_NAME.to_string())
         .spawn(move || {
-            let _slot_guard = ConnectionSlotGuard::new(active_connections);
-            handle_client_stream_with_write_tracking(
+            if let Some(event) = run_connection_worker(
                 app.as_ref(),
                 &logger,
                 &mut stream,
-                &consecutive_response_write_failures,
-            );
+                &active_connections,
+                consecutive_response_write_failures.as_ref(),
+                handle_client_stream_with_write_tracking,
+            ) {
+                logger.emit(&event);
+            }
         })
         .map(|_| ())
+}
+
+pub(super) fn run_connection_worker<G, H>(
+    app: &BrowserApp<G>,
+    logger: &Logger,
+    stream: &mut TcpStream,
+    active_connections: &Arc<AtomicUsize>,
+    consecutive_response_write_failures: &AtomicUsize,
+    handler: H,
+) -> Option<LogEvent>
+where
+    G: BrowserGateway,
+    H: FnOnce(&BrowserApp<G>, &Logger, &mut TcpStream, &AtomicUsize),
+{
+    let remote_addr = stream
+        .peer_addr()
+        .map(normalize_peer_addr)
+        .unwrap_or_else(|_| "<unknown>".to_string());
+    let slot_guard = ConnectionSlotGuard::new(Arc::clone(active_connections));
+    let panic_result = catch_unwind(AssertUnwindSafe(|| {
+        handler(app, logger, stream, consecutive_response_write_failures);
+    }));
+    drop(slot_guard);
+
+    panic_result.err().map(|payload| {
+        build_connection_worker_panicked_event(
+            describe_panic_payload(payload.as_ref()),
+            remote_addr,
+            active_connections.load(Ordering::Acquire),
+        )
+    })
 }
 
 pub(super) fn release_connection_slot(active_connections: &AtomicUsize) -> usize {
@@ -423,6 +458,37 @@ pub(super) fn build_connection_worker_spawn_failed_event(
         "active_connections_after_release",
         active_connections_after_release.to_string(),
     )
+}
+
+pub(super) fn build_connection_worker_panicked_event(
+    reason: String,
+    remote_addr: String,
+    active_connections_after_release: usize,
+) -> LogEvent {
+    LogEvent::new(
+        LogLevel::Error,
+        EventCategory::Http,
+        "http_connection_worker_panicked",
+        "http connection worker panicked",
+    )
+    .with_field("reason", reason)
+    .with_field("remote_addr", remote_addr)
+    .with_field("thread_name", HTTP_WORKER_THREAD_NAME)
+    .with_field(
+        "active_connections_after_release",
+        active_connections_after_release.to_string(),
+    )
+}
+
+fn describe_panic_payload(payload: &(dyn std::any::Any + Send)) -> String {
+    if let Some(message) = payload.downcast_ref::<&str>() {
+        return (*message).to_string();
+    }
+    if let Some(message) = payload.downcast_ref::<String>() {
+        return message.clone();
+    }
+
+    "non-string panic payload".to_string()
 }
 
 /// Rejects an accepted connection when the runtime is already at capacity.

@@ -1856,3 +1856,22 @@ This was chosen as the next narrow runtime-hardening step because completion
 logs should reflect successful delivery rather than merely prepared routing
 outcome, and the connection-cap counter should fail safely even if later
 runtime changes ever introduce an extra release path.
+
+### Emit explicit bounded-runtime visibility when an HTTP worker thread panics
+
+The bounded-concurrency listener previously handled worker-thread spawn failure
+explicitly, but once a worker had started it still relied on the default panic
+path, which could release the connection slot without leaving a clear runtime
+signal about why that connection died.
+
+OSMAP now:
+
+- wraps each connection worker body in a bounded panic catch
+- emits `http_connection_worker_panicked` with the remote address, worker
+  thread name, and post-release active-connection count
+- keeps the connection-slot release path explicit even when a worker aborts
+  unexpectedly
+
+This was chosen as the next narrow runtime-hardening step because it improves
+operator visibility into one concrete bounded-concurrency failure mode without
+changing the transport model, adding a worker pool, or widening browser scope.
