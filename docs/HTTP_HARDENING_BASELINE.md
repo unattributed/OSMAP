@@ -120,12 +120,13 @@ in-flight connection: the host proof exercised capacity-reached,
 over-capacity rejection, request-timeout, and request-completion events in one
 isolated run.
 
-The repo now also carries a second reusable host harness at
-`maint/live/osmap-live-validate-http-write-observability.ksh` for sustained
-response-write failure and recovery validation under the same `_osmap`
-deployment shape. That script is the next bounded live-proof tool, not yet a
-claim that the broader browser surface has been fully proven under those
-conditions.
+That bounded observability posture is now also further live-proven through
+`maint/live/osmap-live-validate-http-write-observability.ksh` on
+`mail.blackbagsecurity.com` under `enforce`: repeated reset-backed
+`GET /login` requests drove sustained response-write failure events, the host
+reported those failures as `Broken pipe (os error 32)`, and a subsequent
+normal `GET /healthz` emitted `http_response_write_recovered` after returning
+`200 OK`.
 
 ## Current CSRF Strategy
 

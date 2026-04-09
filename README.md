@@ -236,6 +236,11 @@ Each phase produces formal outputs to support traceability and auditability.
   `mail.blackbagsecurity.com`: with the connection cap forced to `1`, one held
   connection triggered capacity-reached and over-capacity rejection events,
   then timed out cleanly and allowed normal health requests to resume.
+- A second live host observability proof now also exists on
+  `mail.blackbagsecurity.com` under `enforce`: repeated reset-backed
+  `GET /login` requests drove sustained response-write failures reported as
+  `Broken pipe (os error 32)`, and a subsequent normal `GET /healthz`
+  triggered `http_response_write_recovered` after returning `200 OK`.
 - The standard host-side validation checkout on `mail.blackbagsecurity.com` is
   now `~/OSMAP`, with [osmap-host-validate.ksh](/home/foo/Workspace/OSMAP/maint/live/osmap-host-validate.ksh)
   used there to run repo-owned validation under home-local `TMPDIR`,

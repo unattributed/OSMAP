@@ -1876,26 +1876,28 @@ This was chosen as the next narrow runtime-hardening step because it improves
 operator visibility into one concrete bounded-concurrency failure mode without
 changing the transport model, adding a worker pool, or widening browser scope.
 
-### Add a reusable live-host harness for sustained HTTP response-write observability
+### Prove sustained HTTP response-write failure and recovery on the live OpenBSD host
 
 After proving connection-pressure and timeout signals on the live host, the
-next bounded runtime proof should stay narrow and exercise one more real
-failure mode that operators may need to diagnose in production-like conditions:
+next bounded runtime proof stayed narrow and exercised one more real failure
+mode that operators may need to diagnose in production-like conditions:
 repeated client disconnects during response delivery.
 
-The repo now carries a reusable live-host validation script at:
+The repo now carries and has exercised the reusable live-host validation script
+at:
 
 - `maint/live/osmap-live-validate-http-write-observability.ksh`
 
 On `mail.blackbagsecurity.com` under
-`OSMAP_OPENBSD_CONFINEMENT_MODE=enforce`, that harness can prove:
+`OSMAP_OPENBSD_CONFINEMENT_MODE=enforce`, that proof showed:
 
-- repeated reset-backed `GET /login` requests can drive
+- repeated reset-backed `GET /login` requests drove
   `http_response_write_failed_sustained`
-- a subsequent normal request still returns `200 OK`
-- the runtime emits `http_response_write_recovered` once delivery succeeds
+- the live host reported those write failures as `Broken pipe (os error 32)`
+- a subsequent normal `GET /healthz` still returned `200 OK`
+- the runtime emitted `http_response_write_recovered` once delivery succeeded
   again
 
-This was chosen as the next bounded live-proof step because it exercises a
+This was chosen as the next bounded live-proof step because it exercised a
 real output-failure and recovery path under the actual `_osmap` runtime shape
 without widening browser scope or requiring a broader transport-fault lab.
