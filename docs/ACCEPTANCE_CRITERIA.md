@@ -176,7 +176,9 @@ Phase 6:
   backed by the existing persisted session metadata and revocation primitives
 - the browser-visible session-management slice is now also proven on
   `mail.blackbagsecurity.com` under `enforce` with the web runtime kept as
-  `_osmap` and the helper kept at the `vmail` boundary
+  `_osmap` and the helper kept at the `vmail` boundary, including
+  `/sessions`, `POST /sessions/revoke`, `POST /logout`, and stale-session
+  rejection after logout
 - the browser layer now includes a bounded backend-authoritative search path
   across one mailbox or all visible mailboxes plus a first one-message move
   path between existing mailboxes
@@ -212,10 +214,9 @@ Phase 6:
 - broader ergonomics for folder organization remain later refinements rather
   than blockers for the first move slice
 - the current repo-grounded reassessment also confirms active gaps beyond the
-  now-implemented login, send, move, and bounded search slices: the
-  correctness and availability limits of the current bounded-concurrency HTTP
-  runtime, the lack of broader live-host proof beyond the currently proven
-  read/search/mutation workflows, and the need to freeze the helper/OpenBSD
+  now-implemented login, send, move, bounded search, and broader live-host
+  browser proof: the correctness and availability limits of the current
+  bounded-concurrency HTTP runtime and the need to freeze the helper/OpenBSD
   confinement boundary honestly for Version 1
 - the actual prototype now exists and Phase 6 execution is materially underway,
   but the implementation is still prototype-grade rather than production-ready

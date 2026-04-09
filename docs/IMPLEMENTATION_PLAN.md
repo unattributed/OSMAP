@@ -196,6 +196,9 @@ The current implementation now also includes:
   `mail.blackbagsecurity.com`
 - live-host proof for the bounded all-mailboxes browser search flow on
   `mail.blackbagsecurity.com`
+- live-host proof for the bounded browser session-management surface on
+  `mail.blackbagsecurity.com`, including `/sessions`,
+  `POST /sessions/revoke`, and `POST /logout`
 
 Broader ergonomics around folder organization, such as bulk actions or archive
 shortcuts from list views, remain later refinements rather than the first move
@@ -203,12 +206,12 @@ slice itself.
 
 The current highest-confidence active hardening and Version 1 gaps are:
 
-- broader live-host proof beyond the currently proven read/search/mutation
-  workflows
 - the helper-compatible OpenBSD confinement boundary as a deliberate Version 1
   stopping point
 - the correctness and availability constraints of the current bounded-
   concurrency HTTP runtime
+- freezing the Version 1 contract once those remaining boundaries are
+  documented honestly
 
 The current HTTP hardening work has now also moved past generic parse
 rejection for some connection-lifecycle cases. The runtime distinguishes:
@@ -283,10 +286,10 @@ finds a concentrated hotspot that materially harms auditability again.
 
 The current official closeout sequence for Version 1 is:
 
-1. broaden live-host proof on `mail.blackbagsecurity.com` for the already-
-   implemented browser surface
-2. tighten the helper and OpenBSD confinement boundary to a clear Version 1
+1. tighten the helper and OpenBSD confinement boundary to a clear Version 1
    stopping point
+2. close any last bounded-runtime correctness or availability gaps that still
+   surface during closeout
 3. freeze the Version 1 contract and shift further ergonomics or convenience
    work behind a Version 2 boundary
 

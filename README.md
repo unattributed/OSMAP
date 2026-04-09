@@ -143,7 +143,8 @@ Each phase produces formal outputs to support traceability and auditability.
 - That session-management slice is now also proven on
   `mail.blackbagsecurity.com` under `enforce` with the web runtime kept as
   `_osmap` and the helper kept at the `vmail` boundary, using a synthetic
-  session store to validate `/sessions` and `POST /sessions/revoke`.
+  session store to validate `/sessions`, `POST /sessions/revoke`, and
+  `POST /logout`, including stale-session rejection after logout.
 - The browser layer is server-rendered and dependency-light, with bounded HTTP
   parsing and explicit separation from the underlying mail stack.
 - OpenBSD-specific work is already in the prototype: dedicated `_osmap`
@@ -228,10 +229,10 @@ Each phase produces formal outputs to support traceability and auditability.
   lower-volume, CSRF-bound, and lower abuse value than login, send, or message
   move.
 - Current priority work is therefore shifting toward bounded-runtime
-  hardening, broader live mutation-path coverage on
-  `mail.blackbagsecurity.com`, freezing the helper/OpenBSD boundary more
-  explicitly for Version 1, and remaining workflow refinements such as
-  broader folder-organization ergonomics.
+  hardening, freezing the helper/OpenBSD boundary more explicitly for
+  Version 1, and freezing the Version 1 contract now that the current
+  browser surface has broader live-host proof on
+  `mail.blackbagsecurity.com`.
 - The HTTP runtime now also distinguishes connection-lifecycle failures more
   honestly: read timeouts return `408 Request Timeout`, while empty or
   truncated connections are logged and closed without treating them as generic

@@ -2111,3 +2111,77 @@ The official next implementation focus therefore shifts to:
 
 - broaden live-host proof on `mail.blackbagsecurity.com` for the already-
   implemented browser surface
+
+### Prove the broader session-management browser surface on the live OpenBSD host
+
+After closing the first search reassessment, the strongest remaining live-host
+gap was the current session/logout browser surface. Earlier host proof had
+already covered the first `/sessions` and revoke path, but the current
+closeout target needed a reusable harness that exercised the broader
+already-implemented session-management surface under `enforce`.
+
+The repo now carries and has exercised the reusable live-host validation script
+at:
+
+- `maint/live/osmap-live-validate-session-surface.ksh`
+
+That proof was run through the repo-owned host wrapper from a disposable clone,
+with retained host artifacts under:
+
+- `/home/osmap-live-session-surface-proof`
+
+The retained proof root now includes:
+
+- `sessions-response.txt`
+- `sessions-revoked-response.txt`
+- `revoke-response.txt`
+- `logout-response.txt`
+- `stale-sessions-response.txt`
+- `state/runtime/serve.log`
+- `state/sessions/*.session`
+
+On `mail.blackbagsecurity.com` under
+`OSMAP_OPENBSD_CONFINEMENT_MODE=enforce`, that proof showed:
+
+- `GET /sessions` returned `HTTP/1.1 200 OK`
+- the retained sessions page rendered both the current session and a second
+  synthetic active session with remote address `203.0.113.9`
+- `POST /sessions/revoke` returned `HTTP/1.1 303 See Other` with
+  `Location: /sessions?revoked=1`
+- the retained `/sessions?revoked=1` response carried the success banner after
+  the non-current revoke
+- the retained non-current session record now has a non-empty `revoked_at`
+- `POST /logout` returned `HTTP/1.1 303 See Other` with `Location: /login`
+  and a `Set-Cookie` clearing the browser session
+- the retained current session record now also has a non-empty `revoked_at`
+- a subsequent stale-cookie `GET /sessions` redirected back to `/login`
+- the retained runtime log emitted `session_listed` and two
+  `session_revoked` events, one for the other session and one for the current
+  session
+
+This was chosen instead of another new browser feature because it closes the
+last obvious gap in broader live-browser proof for the already-implemented
+surface without widening OSMAP's Version 1 contract.
+
+### Reassess the broader live-host proof item after the session/logout proof
+
+After proving the current session-management browser surface under `enforce`,
+the broader live-host proof item no longer appears to be the first remaining
+Version 1 blocker.
+
+The currently implemented browser surface now has live-host proof on
+`mail.blackbagsecurity.com` for:
+
+- positive browser login plus TOTP-backed session issuance
+- mailbox listing, message listing, message view, and forced-download
+  attachment retrieval at the real `_osmap` plus `vmail` boundary
+- safe HTML rendering and the bounded settings surface
+- bounded send and one-message move flows
+- bounded all-mailboxes search
+- the first self-service session-management surface, including revoke and
+  logout behavior
+
+The official next implementation focus therefore shifts to:
+
+- tighten the helper and OpenBSD confinement boundary to a clear Version 1
+  stopping point
