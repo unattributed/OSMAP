@@ -1901,3 +1901,30 @@ On `mail.blackbagsecurity.com` under
 This was chosen as the next bounded live-proof step because it exercised a
 real output-failure and recovery path under the actual `_osmap` runtime shape
 without widening browser scope or requiring a broader transport-fault lab.
+
+### Reassess the top remaining Version 1 closeout risk after the live HTTP proof
+
+After the bounded listener gained explicit worker-spawn and worker-panic
+visibility, delivery-aligned completion logging, sustained write-failure
+escalation and recovery, and two live-host observability proofs under
+`enforce`, the next repo-grounded reassessment no longer treated HTTP/runtime
+as the single most obvious remaining closeout risk.
+
+The current browser folder-organization workflow is still much narrower than
+the runtime posture:
+
+- one-message move exists only from the message-view page
+- archive still depends on manually typing the archive mailbox name
+- mailbox-list pages still do not offer practical organization actions
+
+That means the folder workflow is still only technically present rather than
+practical enough for ordinary daily use, which now outweighs another
+incremental listener tweak as the next best Version 1 closeout focus.
+
+The official next implementation focus therefore shifts to:
+
+- minimum folder-organization ergonomics for ordinary daily use
+
+HTTP/runtime work remains incomplete and still depends on adjacent controls,
+but it is no longer the first active delivery risk relative to the user-facing
+workflow gap above.

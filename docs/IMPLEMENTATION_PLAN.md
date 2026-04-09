@@ -199,11 +199,11 @@ slice itself.
 
 The current highest-confidence active hardening and Version 1 gaps are:
 
+- broader folder ergonomics such as bulk move or archive shortcuts from list
+  views
 - the correctness and availability constraints of the current bounded-
   concurrency HTTP runtime
 - broader live-host proof beyond the first bounded mutation workflows
-- broader folder ergonomics such as bulk move or archive shortcuts from list
-  views
 - richer search behavior beyond the current mailbox-scoped baseline
 
 The current HTTP hardening work has now also moved past generic parse
@@ -241,6 +241,12 @@ instead of `/tmp`.
 That is a bounded concurrency upgrade, but not a full production-grade
 request-resource control story.
 
+Even so, the current repo-grounded reassessment no longer treats the bounded-
+concurrency listener as the single most obvious remaining production risk in
+the system. The listener is now substantially more explicit, observable, and
+host-proven than the still-narrow folder-organization workflow, which remains
+only technically present rather than practical for ordinary daily mailbox use.
+
 The recent route review also found that the remaining authenticated POST routes
 in the current browser surface are:
 
@@ -262,18 +268,15 @@ finds a concentrated hotspot that materially harms auditability again.
 
 The current official closeout sequence for Version 1 is:
 
-1. continue narrow HTTP/runtime hardening until the bounded-concurrency
-   listener is explicit, observable, and no longer the most obvious production
-   risk in the system
-2. finish the minimum folder-organization ergonomics still required for normal
+1. finish the minimum folder-organization ergonomics still required for normal
    daily use
-3. improve search only enough to replace ordinary Roundcube-era retrieval
+2. improve search only enough to replace ordinary Roundcube-era retrieval
    workflows rather than broadening it into a feature project
-4. broaden live-host proof on `mail.blackbagsecurity.com` for the already-
+3. broaden live-host proof on `mail.blackbagsecurity.com` for the already-
    implemented browser surface
-5. tighten the helper and OpenBSD confinement boundary to a clear Version 1
+4. tighten the helper and OpenBSD confinement boundary to a clear Version 1
    stopping point
-6. freeze the Version 1 contract and shift further ergonomics or convenience
+5. freeze the Version 1 contract and shift further ergonomics or convenience
    work behind a Version 2 boundary
 
 The current implementation should not widen browser scope casually while these
