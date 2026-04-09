@@ -2,6 +2,7 @@ use super::*;
 
 use crate::config::LogLevel;
 use crate::logging::EventCategory;
+use crate::mailbox::validate_message_search_query;
 
 impl RuntimeBrowserGateway {
     /// Builds the current file-backed submission-throttle service.
@@ -155,26 +156,129 @@ impl RuntimeBrowserGateway {
         &self,
         context: &AuthenticationContext,
         validated_session: &ValidatedSession,
-        mailbox_name: &str,
+        mailbox_name: Option<&str>,
         query: &str,
     ) -> BrowserMessageSearchOutcome {
-        let request =
-            match MessageSearchRequest::new(MessageSearchPolicy::default(), mailbox_name, query) {
-                Ok(request) => request,
-                Err(error) => {
+        let search_policy = MessageSearchPolicy::default();
+        let query = match validate_message_search_query(search_policy, query) {
+            Ok(query) => query,
+            Err(error) => {
+                return BrowserMessageSearchOutcome {
+                    decision: BrowserMessageSearchDecision::Denied {
+                        public_reason: "invalid_request".to_string(),
+                    },
+                    audit_events: vec![build_http_warning_event(
+                        "message_search_request_rejected",
+                        "message search request validation failed",
+                        context,
+                    )
+                    .with_field("reason", error.reason)],
+                };
+            }
+        };
+
+        let Some(mailbox_name) = mailbox_name else {
+            let mailbox_outcome = MailboxListingService::new(self.build_mailbox_list_backend())
+                .list_for_validated_session(context, validated_session);
+            let mut audit_events = vec![mailbox_outcome.audit_event];
+
+            let (canonical_username, mailboxes) = match mailbox_outcome.decision {
+                MailboxListingDecision::Listed {
+                    canonical_username,
+                    mailboxes,
+                    ..
+                } => (canonical_username, mailboxes),
+                MailboxListingDecision::Denied { public_reason } => {
                     return BrowserMessageSearchOutcome {
                         decision: BrowserMessageSearchDecision::Denied {
-                            public_reason: "invalid_request".to_string(),
+                            public_reason: public_reason.as_str().to_string(),
                         },
-                        audit_events: vec![build_http_warning_event(
-                            "message_search_request_rejected",
-                            "message search request validation failed",
-                            context,
-                        )
-                        .with_field("reason", error.reason)],
+                        audit_events,
                     };
                 }
             };
+
+            let search_service = MessageSearchService::new(self.build_message_search_backend());
+            let mut aggregated_results = Vec::new();
+            for mailbox in mailboxes {
+                let request =
+                    match MessageSearchRequest::new(search_policy, mailbox.name.clone(), &query) {
+                        Ok(request) => request,
+                        Err(error) => {
+                            audit_events.push(
+                                build_http_warning_event(
+                                    "message_search_request_rejected",
+                                    "message search request validation failed",
+                                    context,
+                                )
+                                .with_field("reason", error.reason),
+                            );
+                            return BrowserMessageSearchOutcome {
+                                decision: BrowserMessageSearchDecision::Denied {
+                                    public_reason: "invalid_request".to_string(),
+                                },
+                                audit_events,
+                            };
+                        }
+                    };
+                let outcome = search_service.search_for_validated_session(
+                    context,
+                    validated_session,
+                    &request,
+                );
+                audit_events.push(outcome.audit_event);
+
+                match outcome.decision {
+                    MessageSearchDecision::Listed { results, .. } => {
+                        let remaining = search_policy
+                            .max_results
+                            .saturating_sub(aggregated_results.len());
+                        if remaining == 0 {
+                            break;
+                        }
+                        aggregated_results.extend(results.into_iter().take(remaining));
+                        if aggregated_results.len() >= search_policy.max_results {
+                            break;
+                        }
+                    }
+                    MessageSearchDecision::Denied { public_reason } => {
+                        return BrowserMessageSearchOutcome {
+                            decision: BrowserMessageSearchDecision::Denied {
+                                public_reason: public_reason.as_str().to_string(),
+                            },
+                            audit_events,
+                        };
+                    }
+                }
+            }
+
+            return BrowserMessageSearchOutcome {
+                decision: BrowserMessageSearchDecision::Listed {
+                    canonical_username,
+                    mailbox_name: None,
+                    query,
+                    results: aggregated_results,
+                },
+                audit_events,
+            };
+        };
+
+        let request = match MessageSearchRequest::new(search_policy, mailbox_name, &query) {
+            Ok(request) => request,
+            Err(error) => {
+                return BrowserMessageSearchOutcome {
+                    decision: BrowserMessageSearchDecision::Denied {
+                        public_reason: "invalid_request".to_string(),
+                    },
+                    audit_events: vec![build_http_warning_event(
+                        "message_search_request_rejected",
+                        "message search request validation failed",
+                        context,
+                    )
+                    .with_field("reason", error.reason)],
+                };
+            }
+        };
 
         let outcome = MessageSearchService::new(self.build_message_search_backend())
             .search_for_validated_session(context, validated_session, &request);
@@ -189,7 +293,7 @@ impl RuntimeBrowserGateway {
             } => BrowserMessageSearchOutcome {
                 decision: BrowserMessageSearchDecision::Listed {
                     canonical_username,
-                    mailbox_name,
+                    mailbox_name: Some(mailbox_name),
                     query,
                     results,
                 },

@@ -154,8 +154,9 @@ Status on March 28, 2026:
   common mail layouts without widening browser trust
 - a first bounded HTTP/browser slice is now implemented on top of the existing
   auth, session, mailbox, and rendering runtime
-- the browser slice now includes mailbox-scoped search plus a first
-  browser-visible session-management page with self-service revocation
+- the browser slice now includes bounded one-mailbox and all-mailbox search
+  plus a first browser-visible session-management page with self-service
+  revocation
 - message-view success, not-found, and failure events are emitted as structured
   audit-quality log lines
 - recorded in `MESSAGE_VIEW_SLICE_BASELINE.md`

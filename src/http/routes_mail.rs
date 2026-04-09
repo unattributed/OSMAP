@@ -296,30 +296,12 @@ where
         }
     }
 
-    /// Handles mailbox-scoped message-search requests.
+    /// Handles bounded message-search requests for one mailbox or all mailboxes.
     pub(super) fn handle_message_search(
         &self,
         request: &HttpRequest,
         context: &AuthenticationContext,
     ) -> HandledHttpResponse {
-        let mailbox_name = match request.query_params.get("mailbox") {
-            Some(mailbox_name) if !mailbox_name.is_empty() => mailbox_name.clone(),
-            _ => {
-                return HandledHttpResponse {
-                    response: html_response(
-                        400,
-                        "Bad Request",
-                        "Invalid Search Request",
-                        "<p>A mailbox name is required.</p>",
-                    ),
-                    audit_events: vec![build_http_warning_event(
-                        "http_search_mailbox_rejected",
-                        "search mailbox parameter missing",
-                        context,
-                    )],
-                };
-            }
-        };
         let query = match request.query_params.get("q") {
             Some(query) if !query.trim().is_empty() => query.clone(),
             _ => {
@@ -338,6 +320,14 @@ where
                 };
             }
         };
+        let mut mailbox_name = request
+            .query_params
+            .get("mailbox")
+            .filter(|mailbox_name| !mailbox_name.is_empty())
+            .cloned();
+        if request.query_params.get("scope").map(String::as_str) == Some("all") {
+            mailbox_name = None;
+        }
 
         let (validated_session, mut audit_events) =
             match self.require_validated_session(request, context) {
@@ -345,9 +335,12 @@ where
                 Err(response) => return response,
             };
 
-        let outcome =
-            self.gateway
-                .search_messages(context, &validated_session, &mailbox_name, &query);
+        let outcome = self.gateway.search_messages(
+            context,
+            &validated_session,
+            mailbox_name.as_deref(),
+            &query,
+        );
         audit_events.extend(outcome.audit_events);
 
         match outcome.decision {
@@ -364,7 +357,7 @@ where
                     &render_message_search_page(
                         &canonical_username,
                         &validated_session.record.csrf_token,
-                        &mailbox_name,
+                        mailbox_name.as_deref(),
                         &query,
                         &results,
                     ),

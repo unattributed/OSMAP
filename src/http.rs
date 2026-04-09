@@ -694,23 +694,48 @@ mod tests {
             &self,
             _context: &AuthenticationContext,
             validated_session: &ValidatedSession,
-            mailbox_name: &str,
+            mailbox_name: Option<&str>,
             query: &str,
         ) -> BrowserMessageSearchOutcome {
-            BrowserMessageSearchOutcome {
-                decision: BrowserMessageSearchDecision::Listed {
-                    canonical_username: validated_session.record.canonical_username.clone(),
+            let mailbox_name = mailbox_name.map(str::to_string);
+            let results = match mailbox_name.as_deref() {
+                Some(mailbox_name) => vec![MessageSearchResult {
                     mailbox_name: mailbox_name.to_string(),
-                    query: query.trim().to_string(),
-                    results: vec![MessageSearchResult {
-                        mailbox_name: mailbox_name.to_string(),
+                    uid: 17,
+                    flags: vec!["\\Seen".to_string()],
+                    date_received: "2026-03-27 17:00:00 +0000".to_string(),
+                    size_virtual: 2048,
+                    subject: Some("Quarterly report".to_string()),
+                    from: Some("Alice <alice@example.com>".to_string()),
+                }],
+                None => vec![
+                    MessageSearchResult {
+                        mailbox_name: "INBOX".to_string(),
                         uid: 17,
                         flags: vec!["\\Seen".to_string()],
                         date_received: "2026-03-27 17:00:00 +0000".to_string(),
                         size_virtual: 2048,
                         subject: Some("Quarterly report".to_string()),
                         from: Some("Alice <alice@example.com>".to_string()),
-                    }],
+                    },
+                    MessageSearchResult {
+                        mailbox_name: "Archive/2026".to_string(),
+                        uid: 23,
+                        flags: Vec::new(),
+                        date_received: "2026-03-28 08:30:00 +0000".to_string(),
+                        size_virtual: 1536,
+                        subject: Some("Archived follow-up".to_string()),
+                        from: Some("Bob <bob@example.com>".to_string()),
+                    },
+                ],
+            };
+
+            BrowserMessageSearchOutcome {
+                decision: BrowserMessageSearchDecision::Listed {
+                    canonical_username: validated_session.record.canonical_username.clone(),
+                    mailbox_name,
+                    query: query.trim().to_string(),
+                    results,
                 },
                 audit_events: vec![LogEvent::new(
                     LogLevel::Info,
@@ -1273,9 +1298,10 @@ mod tests {
 
         assert_eq!(response.response.status_code, 200);
         let body = body_text(&response);
-        assert!(body.contains("Search this mailbox"));
+        assert!(body.contains("Search all mailboxes"));
         assert!(body.contains("action=\"/search\""));
         assert!(body.contains("name=\"mailbox\" value=\"INBOX\""));
+        assert!(body.contains("name=\"scope\" value=\"all\""));
         assert!(body.contains("Archive shortcut sends messages"));
         assert!(body.contains("name=\"destination_mailbox\" value=\"Archive/2026\""));
         assert!(body.contains(">Archive</button>"));
@@ -1305,6 +1331,7 @@ mod tests {
         assert!(body.contains("Quarterly report"));
         assert!(body.contains("Alice &lt;alice@example.com&gt;"));
         assert!(body.contains("/message?mailbox=INBOX&amp;uid=17"));
+        assert!(body.contains("<strong>Scope:</strong> INBOX"));
     }
 
     #[test]
@@ -1327,6 +1354,58 @@ mod tests {
 
         assert_eq!(response.response.status_code, 400);
         assert!(body_text(&response).contains("A search query is required."));
+    }
+
+    #[test]
+    fn mailboxes_page_renders_global_search_form() {
+        let response = app().handle_request(
+            &request(
+                "GET",
+                "/mailboxes",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                ],
+                "",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 200);
+        let body = body_text(&response);
+        assert!(body.contains("Search all mailboxes"));
+        assert!(body.contains("action=\"/search\""));
+        assert!(!body.contains("name=\"mailbox\""));
+    }
+
+    #[test]
+    fn search_page_renders_cross_mailbox_results_when_mailbox_not_supplied() {
+        let response = app().handle_request(
+            &request(
+                "GET",
+                "/search?q=quarterly+report",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                ],
+                "",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 200);
+        let body = body_text(&response);
+        assert!(body.contains("<strong>Scope:</strong> All mailboxes"));
+        assert!(body.contains("name=\"scope\" value=\"all\" checked"));
+        assert!(body.contains("/message?mailbox=INBOX&amp;uid=17"));
+        assert!(body.contains("/message?mailbox=Archive%2F2026&amp;uid=23"));
+        assert!(body.contains("Archive/2026"));
     }
 
     #[test]

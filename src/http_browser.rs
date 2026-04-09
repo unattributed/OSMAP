@@ -66,7 +66,7 @@ pub trait BrowserGateway {
         &self,
         context: &AuthenticationContext,
         validated_session: &ValidatedSession,
-        mailbox_name: &str,
+        mailbox_name: Option<&str>,
         query: &str,
     ) -> BrowserMessageSearchOutcome;
 
@@ -291,7 +291,7 @@ pub struct BrowserMessageSearchOutcome {
 pub enum BrowserMessageSearchDecision {
     Listed {
         canonical_username: String,
-        mailbox_name: String,
+        mailbox_name: Option<String>,
         query: String,
         results: Vec<MessageSearchResult>,
     },

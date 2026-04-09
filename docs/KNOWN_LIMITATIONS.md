@@ -33,9 +33,10 @@
   plain-text and sanitized-HTML modes, but it still does not provide
   encoded-header handling, inline image rendering, or any external-resource
   loading
-- The implementation now provides a first mailbox-scoped, backend-authoritative
-  browser search path, but it does not yet provide cross-mailbox or advanced
-  search behavior
+- The implementation now provides a bounded, backend-authoritative browser
+  search path across one mailbox or all visible mailboxes, but it does not yet
+  provide advanced query ergonomics, sorting controls, or richer search
+  refinement behavior
 - The implementation now provides a first one-message move path between
   existing mailboxes plus a settings-backed archive shortcut, but it does not
   yet provide bulk move, mailbox-list selection actions, or archive mailbox

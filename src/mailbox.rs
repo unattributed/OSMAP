@@ -20,6 +20,7 @@ pub use self::mailbox_backend::{
     DoveadmMailboxListBackend, DoveadmMessageListBackend, DoveadmMessageMoveBackend,
     DoveadmMessageSearchBackend, DoveadmMessageViewBackend,
 };
+pub(crate) use self::mailbox_model::validate_message_search_query;
 pub use self::mailbox_model::{
     MailboxAuditFailureReason, MailboxBackend, MailboxBackendError, MailboxEntry,
     MailboxListingDecision, MailboxListingOutcome, MailboxListingPolicy,

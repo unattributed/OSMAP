@@ -28,7 +28,7 @@ the Version 1 boundary:
 
 The current implementation also includes first bounded slices for:
 
-- mailbox-scoped backend-authoritative search
+- backend-authoritative search across one mailbox or all visible mailboxes
 - browser-visible session self-management
 - one-message move between existing mailboxes
 - safe HTML email rendering through a narrow allowlist sanitizer with

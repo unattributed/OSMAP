@@ -123,7 +123,8 @@ Each phase produces formal outputs to support traceability and auditability.
   are populated through the current Phase 6 baseline.
 - The runtime includes typed configuration, explicit state layout, structured
   logging, bounded auth, TOTP, session issuance and revocation, CSRF handling,
-  mailbox browsing, message listing and viewing, mailbox-scoped search,
+  mailbox browsing, message listing and viewing, bounded one-mailbox and
+  all-mailbox search,
   MIME-aware inspection, attachment upload and forced-download paths,
   compose/send, reply/forward draft generation, and a first one-message move
   path between existing mailboxes.

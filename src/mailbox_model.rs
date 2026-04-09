@@ -190,6 +190,36 @@ pub struct MessageSummary {
     pub size_virtual: u64,
 }
 
+pub(crate) fn validate_message_search_query(
+    policy: MessageSearchPolicy,
+    query: impl Into<String>,
+) -> Result<String, MailboxBackendError> {
+    let query = query.into().trim().to_string();
+    if query.is_empty() {
+        return Err(MailboxBackendError {
+            backend: "message-search-parser",
+            reason: "search query must not be empty".to_string(),
+        });
+    }
+    if query.len() > policy.query_max_len {
+        return Err(MailboxBackendError {
+            backend: "message-search-parser",
+            reason: format!(
+                "search query exceeded maximum length of {} bytes",
+                policy.query_max_len
+            ),
+        });
+    }
+    if query.chars().any(char::is_control) {
+        return Err(MailboxBackendError {
+            backend: "message-search-parser",
+            reason: "search query contains control characters".to_string(),
+        });
+    }
+
+    Ok(query)
+}
+
 /// A validated mailbox-scoped search request.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MessageSearchRequest {
@@ -213,28 +243,7 @@ impl MessageSearchRequest {
             mailbox_name.clone(),
         )?;
 
-        let query = query.into().trim().to_string();
-        if query.is_empty() {
-            return Err(MailboxBackendError {
-                backend: "message-search-parser",
-                reason: "search query must not be empty".to_string(),
-            });
-        }
-        if query.len() > policy.query_max_len {
-            return Err(MailboxBackendError {
-                backend: "message-search-parser",
-                reason: format!(
-                    "search query exceeded maximum length of {} bytes",
-                    policy.query_max_len
-                ),
-            });
-        }
-        if query.chars().any(char::is_control) {
-            return Err(MailboxBackendError {
-                backend: "message-search-parser",
-                reason: "search query contains control characters".to_string(),
-            });
-        }
+        let query = validate_message_search_query(policy, query)?;
 
         Ok(Self {
             mailbox_name,

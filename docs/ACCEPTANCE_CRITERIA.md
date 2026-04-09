@@ -177,8 +177,9 @@ Phase 6:
 - the browser-visible session-management slice is now also proven on
   `mail.blackbagsecurity.com` under `enforce` with the web runtime kept as
   `_osmap` and the helper kept at the `vmail` boundary
-- the browser layer now includes a first mailbox-scoped backend-authoritative
-  search path plus a first one-message move path between existing mailboxes
+- the browser layer now includes a bounded backend-authoritative search path
+  across one mailbox or all visible mailboxes plus a first one-message move
+  path between existing mailboxes
 - the browser auth path now includes a bounded dual-bucket application-layer
   login throttle backed by explicit runtime configuration and file-backed cache
   state

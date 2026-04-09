@@ -174,7 +174,8 @@ The next active implementation work should focus on:
 
 The current implementation now also includes:
 
-- a mailbox-scoped backend-authoritative search slice
+- a bounded backend-authoritative search slice for one mailbox or all visible
+  mailboxes
 - a browser-visible session-management slice
 - a first one-message move path between existing mailboxes
 - a bounded dual-bucket application-layer login-throttling slice for the
@@ -200,7 +201,8 @@ slice itself.
 
 The current highest-confidence active hardening and Version 1 gaps are:
 
-- richer search behavior beyond the current mailbox-scoped baseline
+- search proof and any final ergonomics needed beyond the new all-mailboxes
+  retrieval baseline
 - broader live-host proof beyond the first bounded mutation workflows
 - the correctness and availability constraints of the current bounded-
   concurrency HTTP runtime

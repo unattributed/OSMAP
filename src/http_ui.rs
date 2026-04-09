@@ -64,7 +64,7 @@ pub(crate) fn render_mailboxes_page(
     }
 
     format!(
-        "<nav><a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <a href=\"/settings\">Settings</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Mailboxes</h1><p>Signed in as <strong>{}</strong>.</p><ul>{}</ul>",
+        "<nav><a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <a href=\"/settings\">Settings</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Mailboxes</h1><p>Signed in as <strong>{}</strong>.</p><form method=\"get\" action=\"/search\"><label>Search all mailboxes<input type=\"text\" name=\"q\" autocomplete=\"off\"></label><button type=\"submit\">Search</button></form><ul>{}</ul>",
         escape_html(csrf_token),
         escape_html(canonical_username),
         items,
@@ -135,7 +135,7 @@ pub(crate) fn render_message_list_page(
     };
 
     format!(
-        "<nav><a href=\"/mailboxes\">Back to mailboxes</a> | <a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <a href=\"/settings\">Settings</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Mailbox: {}</h1><p>Signed in as <strong>{}</strong>.</p>{}{}<form method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><label>Search this mailbox<input type=\"text\" name=\"q\" autocomplete=\"off\"></label><button type=\"submit\">Search</button></form><table><thead><tr><th>UID</th><th>Received</th><th>Flags</th><th>Size</th>{}</tr></thead><tbody>{}</tbody></table>",
+        "<nav><a href=\"/mailboxes\">Back to mailboxes</a> | <a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <a href=\"/settings\">Settings</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Mailbox: {}</h1><p>Signed in as <strong>{}</strong>.</p>{}{}<form method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><label>Search query<input type=\"text\" name=\"q\" autocomplete=\"off\"></label><label><input type=\"checkbox\" name=\"scope\" value=\"all\"> Search all mailboxes</label><button type=\"submit\">Search</button></form><table><thead><tr><th>UID</th><th>Received</th><th>Flags</th><th>Size</th>{}</tr></thead><tbody>{}</tbody></table>",
         escape_html(csrf_token),
         escape_html(mailbox_name),
         escape_html(canonical_username),
@@ -151,30 +151,48 @@ pub(crate) fn render_message_list_page(
     )
 }
 
-/// Renders a mailbox-scoped search-results page.
+/// Renders a bounded search-results page for one mailbox or all mailboxes.
 pub(crate) fn render_message_search_page(
     canonical_username: &str,
     csrf_token: &str,
-    mailbox_name: &str,
+    mailbox_name: Option<&str>,
     query: &str,
     results: &[MessageSearchResult],
 ) -> String {
+    let back_link = match mailbox_name {
+        Some(mailbox_name) => format!(
+            "<a href=\"/mailbox?name={}\">Back to mailbox</a> | ",
+            escape_html(&url_encode(mailbox_name))
+        ),
+        None => String::new(),
+    };
+    let search_scope = mailbox_name.unwrap_or("All mailboxes");
+    let mailbox_hidden_input = mailbox_name.map_or_else(String::new, |mailbox_name| {
+        format!(
+            "<input type=\"hidden\" name=\"mailbox\" value=\"{}\">",
+            escape_html(mailbox_name)
+        )
+    });
+    let search_all_checked = if mailbox_name.is_none() {
+        " checked"
+    } else {
+        ""
+    };
     let mut rows = String::new();
     if results.is_empty() {
-        rows.push_str(
-            "<tr><td colspan=\"6\">No messages matched this mailbox-scoped search.</td></tr>",
-        );
+        rows.push_str("<tr><td colspan=\"7\">No messages matched this search.</td></tr>");
     } else {
         for result in results {
             let message_href = format!(
                 "/message?mailbox={}&uid={}",
-                url_encode(mailbox_name),
+                url_encode(&result.mailbox_name),
                 result.uid
             );
             rows.push_str(&format!(
-                "<tr><td><a href=\"{}\">{}</a></td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>",
+                "<tr><td><a href=\"{}\">{}</a></td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>",
                 escape_html(&message_href),
                 result.uid,
+                escape_html(&result.mailbox_name),
                 escape_html(result.subject.as_deref().unwrap_or("<none>")),
                 escape_html(result.from.as_deref().unwrap_or("<none>")),
                 escape_html(&result.date_received),
@@ -185,13 +203,14 @@ pub(crate) fn render_message_search_page(
     }
 
     format!(
-        "<nav><a href=\"/mailbox?name={}\">Back to mailbox</a> | <a href=\"/mailboxes\">All mailboxes</a> | <a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <a href=\"/settings\">Settings</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Search Results</h1><p>Signed in as <strong>{}</strong>.</p><p class=\"muted\">This first search slice stays mailbox-scoped and backend-authoritative: Dovecot evaluates the query and the browser only renders bounded results.</p><form method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><label>Search this mailbox<input type=\"text\" name=\"q\" value=\"{}\" autocomplete=\"off\"></label><button type=\"submit\">Search</button></form><p><strong>Mailbox:</strong> {}<br><strong>Query:</strong> {}<br><strong>Results:</strong> {}</p><table><thead><tr><th>UID</th><th>Subject</th><th>From</th><th>Received</th><th>Flags</th><th>Size</th></tr></thead><tbody>{}</tbody></table>",
-        escape_html(&url_encode(mailbox_name)),
+        "<nav>{}<a href=\"/mailboxes\">All mailboxes</a> | <a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <a href=\"/settings\">Settings</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Search Results</h1><p>Signed in as <strong>{}</strong>.</p><p class=\"muted\">This bounded retrieval slice keeps Dovecot authoritative for the query while letting the browser search one mailbox or all visible mailboxes without turning OSMAP into a broad search product.</p><form method=\"get\" action=\"/search\">{}<label>Search query<input type=\"text\" name=\"q\" value=\"{}\" autocomplete=\"off\"></label><label><input type=\"checkbox\" name=\"scope\" value=\"all\"{}> Search all mailboxes</label><button type=\"submit\">Search</button></form><p><strong>Scope:</strong> {}<br><strong>Query:</strong> {}<br><strong>Results:</strong> {}</p><table><thead><tr><th>UID</th><th>Mailbox</th><th>Subject</th><th>From</th><th>Received</th><th>Flags</th><th>Size</th></tr></thead><tbody>{}</tbody></table>",
+        back_link,
         escape_html(csrf_token),
         escape_html(canonical_username),
-        escape_html(mailbox_name),
+        mailbox_hidden_input,
         escape_html(query),
-        escape_html(mailbox_name),
+        search_all_checked,
+        escape_html(search_scope),
         escape_html(query),
         results.len(),
         rows,

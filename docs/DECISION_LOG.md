@@ -2011,3 +2011,26 @@ The official next implementation focus therefore shifts to:
 
 - improve search only enough to replace ordinary Roundcube-era retrieval
   workflows
+
+### Widen the bounded search slice to cover all visible mailboxes
+
+The smallest search improvement that materially changes ordinary retrieval
+behavior is not advanced syntax or richer sorting. It is letting the browser
+search across all visible mailboxes without forcing the user to guess which
+folder currently holds the message.
+
+OSMAP now keeps the existing backend-authoritative search path, but broadens
+the browser scope in a deliberately narrow way:
+
+- `/search` still requires a bounded free-text query and still relies on the
+  existing Dovecot-backed search path for every mailbox search
+- mailbox-list pages now offer a search form that can stay in the current
+  mailbox or switch to all visible mailboxes
+- the mailboxes landing page now also exposes a simple search-all-mailboxes
+  form for the common retrieval case
+- search results now show the mailbox for each match so cross-mailbox results
+  remain navigable without adding richer search-product features
+
+This was chosen instead of a broader search feature project because it closes
+the most obvious Roundcube-era retrieval gap while preserving the helper
+boundary, bounded output limits, and backend authority model already in place.

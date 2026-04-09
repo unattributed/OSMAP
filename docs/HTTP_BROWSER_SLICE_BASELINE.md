@@ -167,8 +167,8 @@ This slice now proves that:
   session subsystem
 - a bounded end-user settings page can be layered onto the current runtime
   without becoming a broad preference platform
-- mailbox-scoped search and one-message move can be added as bounded,
-  server-rendered browser routes without widening the client model
+- bounded one-mailbox and all-mailbox search plus one-message move can be
+  added as server-rendered browser routes without widening the client model
 - a practical `serve` mode can exist without giving up the fast bootstrap-only
   validation path
 

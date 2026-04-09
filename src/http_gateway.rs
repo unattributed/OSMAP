@@ -203,7 +203,7 @@ impl BrowserGateway for RuntimeBrowserGateway {
         &self,
         context: &AuthenticationContext,
         validated_session: &ValidatedSession,
-        mailbox_name: &str,
+        mailbox_name: Option<&str>,
         query: &str,
     ) -> BrowserMessageSearchOutcome {
         self.search_messages_impl(context, validated_session, mailbox_name, query)
