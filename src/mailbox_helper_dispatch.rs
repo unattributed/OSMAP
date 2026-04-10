@@ -1,4 +1,6 @@
 #[cfg(unix)]
+use crate::attachment::{AttachmentDownloadPolicy, AttachmentDownloadService};
+#[cfg(unix)]
 use crate::config::LogLevel;
 #[cfg(unix)]
 use crate::logging::{EventCategory, LogEvent, Logger};
@@ -121,6 +123,41 @@ where
                 Ok(message) => MailboxHelperResponse::MessageViewOk {
                     message: Box::new(message),
                 },
+                Err(error_response) => error_response,
+            }
+        }
+        MailboxHelperRequest::AttachmentDownload {
+            canonical_username,
+            mailbox_name,
+            uid,
+            part_path,
+        } => {
+            match MessageViewRequest::new(MessageViewPolicy::default(), mailbox_name.clone(), *uid)
+                .map_err(|error| MailboxHelperResponse::Error {
+                    backend: error.backend.to_string(),
+                    reason: error.reason,
+                })
+                .and_then(|request| {
+                    backends
+                        .message_view_backend
+                        .fetch_message(canonical_username, &request)
+                        .map_err(|error| MailboxHelperResponse::Error {
+                            backend: error.backend.to_string(),
+                            reason: error.reason,
+                        })
+                })
+                .and_then(|message| {
+                    AttachmentDownloadService::new(AttachmentDownloadPolicy::default())
+                        .download_from_message(&message, part_path)
+                        .map(|attachment| MailboxHelperResponse::AttachmentDownloadOk {
+                            attachment: Box::new(attachment),
+                        })
+                        .map_err(|error| MailboxHelperResponse::Error {
+                            backend: error.helper_backend_label().to_string(),
+                            reason: error.reason,
+                        })
+                }) {
+                Ok(response) => response,
                 Err(error_response) => error_response,
             }
         }
@@ -257,6 +294,24 @@ pub(super) fn log_helper_response(
             .with_field("destination_mailbox_name", destination_mailbox_name.clone())
             .with_field("uid", uid.to_string()),
         ),
+        (
+            MailboxHelperResponse::AttachmentDownloadOk { attachment },
+            Some(MailboxHelperRequest::AttachmentDownload {
+                canonical_username, ..
+            }),
+        ) => logger.emit(
+            &LogEvent::new(
+                LogLevel::Info,
+                EventCategory::Mailbox,
+                "mailbox_helper_attachment_downloaded",
+                "mailbox helper downloaded one attachment",
+            )
+            .with_field("canonical_username", canonical_username.clone())
+            .with_field("mailbox_name", attachment.mailbox_name.clone())
+            .with_field("uid", attachment.uid.to_string())
+            .with_field("part_path", attachment.part_path.clone())
+            .with_field("download_bytes", attachment.body.len().to_string()),
+        ),
         (MailboxHelperResponse::Error { backend, reason }, Some(request)) => logger.emit(
             &LogEvent::new(
                 LogLevel::Warn,
@@ -289,6 +344,7 @@ fn helper_operation_label(request: &MailboxHelperRequest) -> &'static str {
         MailboxHelperRequest::MessageList { .. } => "message_list",
         MailboxHelperRequest::MessageSearch { .. } => "message_search",
         MailboxHelperRequest::MessageView { .. } => "message_view",
+        MailboxHelperRequest::AttachmentDownload { .. } => "attachment_download",
         MailboxHelperRequest::MessageMove { .. } => "message_move",
     }
 }

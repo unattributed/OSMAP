@@ -432,6 +432,63 @@ impl RuntimeBrowserGateway {
             }
         };
 
+        if let Some(socket_path) = &self.mailbox_helper_socket_path {
+            let helper_backend = MailboxHelperAttachmentDownloadBackend::new(
+                socket_path,
+                MailboxHelperPolicy::default(),
+            );
+            let canonical_username = validated_session.record.canonical_username.clone();
+
+            return match helper_backend.download_attachment(
+                &canonical_username,
+                &request.mailbox_name,
+                request.uid,
+                part_path,
+            ) {
+                Ok(attachment) => BrowserAttachmentDownloadOutcome {
+                    decision: BrowserAttachmentDownloadDecision::Downloaded {
+                        canonical_username,
+                        attachment: attachment.clone(),
+                    },
+                    audit_events: vec![build_http_info_event(
+                        "attachment_downloaded",
+                        "attachment download completed through mailbox helper",
+                        context,
+                    )
+                    .with_field(
+                        "canonical_username",
+                        validated_session.record.canonical_username.clone(),
+                    )
+                    .with_field("session_id", validated_session.record.session_id.clone())
+                    .with_field("mailbox_name", attachment.mailbox_name.clone())
+                    .with_field("uid", attachment.uid.to_string())
+                    .with_field("part_path", attachment.part_path.clone())
+                    .with_field("download_bytes", attachment.body.len().to_string())
+                    .with_field("content_type", attachment.content_type.clone())],
+                },
+                Err(error) => BrowserAttachmentDownloadOutcome {
+                    decision: BrowserAttachmentDownloadDecision::Denied {
+                        public_reason: error.public_reason().as_str().to_string(),
+                    },
+                    audit_events: vec![build_http_warning_event(
+                        "attachment_download_failed",
+                        "attachment download failed through mailbox helper",
+                        context,
+                    )
+                    .with_field(
+                        "canonical_username",
+                        validated_session.record.canonical_username.clone(),
+                    )
+                    .with_field("session_id", validated_session.record.session_id.clone())
+                    .with_field("mailbox_name", request.mailbox_name.clone())
+                    .with_field("uid", request.uid.to_string())
+                    .with_field("part_path", part_path.to_string())
+                    .with_field("public_reason", error.public_reason().as_str())
+                    .with_field("reason", error.reason)],
+                },
+            };
+        }
+
         let message_outcome = MessageViewService::new(self.build_message_view_backend())
             .fetch_for_validated_session(context, validated_session, &request);
         let mut audit_events = vec![message_outcome.audit_event.clone()];

@@ -24,9 +24,9 @@ mod mailbox_helper_dispatch;
 mod mailbox_helper_protocol;
 
 pub use self::mailbox_helper_client::{
-    MailboxHelperMailboxListBackend, MailboxHelperMessageListBackend,
-    MailboxHelperMessageMoveBackend, MailboxHelperMessageSearchBackend,
-    MailboxHelperMessageViewBackend,
+    MailboxHelperAttachmentDownloadBackend, MailboxHelperMailboxListBackend,
+    MailboxHelperMessageListBackend, MailboxHelperMessageMoveBackend,
+    MailboxHelperMessageSearchBackend, MailboxHelperMessageViewBackend,
 };
 use self::mailbox_helper_dispatch::{dispatch_helper_request, log_helper_response, HelperBackends};
 use self::mailbox_helper_protocol::{
@@ -437,6 +437,24 @@ mod tests {
     }
 
     #[test]
+    fn parses_attachment_download_request() {
+        let request = parse_request(
+            "operation=attachment_download\ncanonical_username=alice@example.com\nmailbox_name=INBOX\nuid=9\npart_path=1.2\n",
+        )
+        .expect("attachment-download request should parse");
+
+        assert_eq!(
+            request,
+            MailboxHelperRequest::AttachmentDownload {
+                canonical_username: "alice@example.com".to_string(),
+                mailbox_name: "INBOX".to_string(),
+                uid: 9,
+                part_path: "1.2".to_string(),
+            }
+        );
+    }
+
+    #[test]
     fn parses_message_search_request() {
         let request = parse_request(
             "operation=message_search\ncanonical_username=alice@example.com\nmailbox_name=INBOX\nquery=quarterly report\n",
@@ -603,6 +621,32 @@ mod tests {
                     size_virtual: 44,
                     header_block: "Subject: Test message\n".to_string(),
                     body_text: "Hello world\n".to_string(),
+                }),
+            }
+        );
+    }
+
+    #[test]
+    fn parses_attachment_download_response() {
+        let response = parse_response(
+            MailboxListingPolicy::default(),
+            MessageListPolicy::default(),
+            MessageSearchPolicy::default(),
+            MessageViewPolicy::default(),
+            "status=ok\noperation=attachment_download\nattachment_mailbox_name=INBOX\nattachment_uid=9\nattachment_part_path=1.2\nattachment_filename=report.pdf\nattachment_content_type=application/pdf\nattachment_body_b64=SGVsbG8=\n",
+        )
+        .expect("attachment-download response should parse");
+
+        assert_eq!(
+            response,
+            MailboxHelperResponse::AttachmentDownloadOk {
+                attachment: Box::new(crate::attachment::DownloadedAttachment {
+                    mailbox_name: "INBOX".to_string(),
+                    uid: 9,
+                    part_path: "1.2".to_string(),
+                    filename: "report.pdf".to_string(),
+                    content_type: "application/pdf".to_string(),
+                    body: b"Hello".to_vec(),
                 }),
             }
         );
@@ -843,6 +887,95 @@ mod tests {
         assert_eq!(message.uid, 12);
         assert_eq!(message.header_block, "Subject: Test message\n");
         assert_eq!(message.body_text, "Hello world\n");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn client_downloads_attachment_over_helper_socket() {
+        let socket_path = temp_socket_path("attachment-helper-ok");
+        let backend = StaticHelperBackend {
+            mailbox_result: Arc::new(Ok(Vec::new())),
+            message_list_result: Arc::new(Ok(Vec::new())),
+            message_search_result: Arc::new(Ok(Vec::new())),
+            message_view_result: Arc::new(Ok(MessageView {
+                mailbox_name: "INBOX".to_string(),
+                uid: 12,
+                flags: vec!["\\Seen".to_string()],
+                date_received: "2026-03-27 14:00:00 +0000".to_string(),
+                size_virtual: 101,
+                header_block: "Subject: Test\nContent-Type: multipart/mixed; boundary=\"mix-1\"\n"
+                    .to_string(),
+                body_text: concat!(
+                    "--mix-1\n",
+                    "Content-Type: text/plain; charset=utf-8\n",
+                    "\n",
+                    "Body text\n",
+                    "--mix-1\n",
+                    "Content-Type: application/pdf\n",
+                    "Content-Transfer-Encoding: base64\n",
+                    "Content-Disposition: attachment; filename=\"report.pdf\"\n",
+                    "\n",
+                    "SGVsbG8=\n",
+                    "--mix-1--\n",
+                )
+                .to_string(),
+            })),
+            message_move_result: Arc::new(Ok(())),
+        };
+        let server = spawn_test_helper(socket_path.clone(), backend);
+        wait_for_socket(&socket_path);
+        let client = MailboxHelperAttachmentDownloadBackend::new(
+            &socket_path,
+            MailboxHelperPolicy::default(),
+        );
+
+        let attachment = client
+            .download_attachment("alice@example.com", "INBOX", 12, "1.2")
+            .expect("helper-backed attachment download should succeed");
+
+        server.join().expect("helper thread should finish");
+        let _ = fs::remove_file(&socket_path);
+
+        assert_eq!(attachment.mailbox_name, "INBOX");
+        assert_eq!(attachment.uid, 12);
+        assert_eq!(attachment.part_path, "1.2");
+        assert_eq!(attachment.filename, "report.pdf");
+        assert_eq!(attachment.content_type, "application/pdf");
+        assert_eq!(attachment.body, b"Hello");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn client_maps_missing_attachment_to_not_found() {
+        let socket_path = temp_socket_path("attachment-helper-missing");
+        let backend = StaticHelperBackend {
+            mailbox_result: Arc::new(Ok(Vec::new())),
+            message_list_result: Arc::new(Ok(Vec::new())),
+            message_search_result: Arc::new(Ok(Vec::new())),
+            message_view_result: Arc::new(Err(MailboxBackendError {
+                backend: "message-view-not-found",
+                reason: "message was not found".to_string(),
+            })),
+            message_move_result: Arc::new(Ok(())),
+        };
+        let server = spawn_test_helper(socket_path.clone(), backend);
+        wait_for_socket(&socket_path);
+        let client = MailboxHelperAttachmentDownloadBackend::new(
+            &socket_path,
+            MailboxHelperPolicy::default(),
+        );
+
+        let error = client
+            .download_attachment("alice@example.com", "INBOX", 12, "1.2")
+            .expect_err("missing helper attachment should surface as an error");
+
+        server.join().expect("helper thread should finish");
+        let _ = fs::remove_file(&socket_path);
+
+        assert_eq!(
+            error.kind,
+            crate::attachment::AttachmentDownloadFailureKind::NotFound
+        );
     }
 
     #[cfg(unix)]

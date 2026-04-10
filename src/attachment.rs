@@ -137,9 +137,71 @@ pub struct AttachmentDownloadOutcome {
 }
 
 /// Errors raised while validating or extracting one attachment.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AttachmentDownloadFailureKind {
+    InvalidRequest,
+    NotFound,
+    OutputRejected,
+    UnsupportedEncoding,
+}
+
+/// Errors raised while validating or extracting one attachment.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AttachmentDownloadError {
+    pub kind: AttachmentDownloadFailureKind,
     pub reason: String,
+}
+
+impl AttachmentDownloadError {
+    pub(crate) fn new(kind: AttachmentDownloadFailureKind, reason: impl Into<String>) -> Self {
+        Self {
+            kind,
+            reason: reason.into(),
+        }
+    }
+
+    pub fn public_reason(&self) -> AttachmentDownloadPublicFailureReason {
+        match self.kind {
+            AttachmentDownloadFailureKind::InvalidRequest => {
+                AttachmentDownloadPublicFailureReason::InvalidRequest
+            }
+            AttachmentDownloadFailureKind::NotFound => {
+                AttachmentDownloadPublicFailureReason::NotFound
+            }
+            AttachmentDownloadFailureKind::OutputRejected
+            | AttachmentDownloadFailureKind::UnsupportedEncoding => {
+                AttachmentDownloadPublicFailureReason::TemporarilyUnavailable
+            }
+        }
+    }
+
+    pub fn audit_reason(&self) -> AttachmentDownloadAuditFailureReason {
+        match self.kind {
+            AttachmentDownloadFailureKind::InvalidRequest => {
+                AttachmentDownloadAuditFailureReason::InvalidRequest
+            }
+            AttachmentDownloadFailureKind::NotFound => {
+                AttachmentDownloadAuditFailureReason::NotFound
+            }
+            AttachmentDownloadFailureKind::OutputRejected => {
+                AttachmentDownloadAuditFailureReason::OutputRejected
+            }
+            AttachmentDownloadFailureKind::UnsupportedEncoding => {
+                AttachmentDownloadAuditFailureReason::UnsupportedEncoding
+            }
+        }
+    }
+
+    pub fn helper_backend_label(&self) -> &'static str {
+        match self.kind {
+            AttachmentDownloadFailureKind::InvalidRequest => "attachment-download-invalid-request",
+            AttachmentDownloadFailureKind::NotFound => "attachment-download-not-found",
+            AttachmentDownloadFailureKind::OutputRejected => "attachment-download-output-rejected",
+            AttachmentDownloadFailureKind::UnsupportedEncoding => {
+                "attachment-download-unsupported-encoding"
+            }
+        }
+    }
 }
 
 /// Resolves surfaced attachment parts into bounded download payloads.
@@ -153,104 +215,31 @@ impl AttachmentDownloadService {
         Self { policy }
     }
 
-    /// Resolves one attachment part for the already validated session owner.
-    pub fn download_for_validated_session(
+    pub fn download_from_message(
         &self,
-        context: &AuthenticationContext,
-        validated_session: &ValidatedSession,
         message: &MessageView,
         part_path: &str,
-    ) -> AttachmentDownloadOutcome {
-        let request = match AttachmentDownloadRequest::new(self.policy, part_path) {
-            Ok(request) => request,
-            Err(error) => {
-                return AttachmentDownloadOutcome {
-                    decision: AttachmentDownloadDecision::Denied {
-                        public_reason: AttachmentDownloadPublicFailureReason::InvalidRequest,
-                    },
-                    audit_event: build_failure_event(
-                        context,
-                        validated_session,
-                        message,
-                        part_path,
-                        AttachmentDownloadPublicFailureReason::InvalidRequest,
-                        AttachmentDownloadAuditFailureReason::InvalidRequest,
-                        &error.reason,
-                    ),
-                };
-            }
-        };
+    ) -> Result<DownloadedAttachment, AttachmentDownloadError> {
+        let request = AttachmentDownloadRequest::new(self.policy, part_path)?;
 
-        let part = match MimeAnalyzer::new(self.policy.mime_analysis_policy)
+        let part = MimeAnalyzer::new(self.policy.mime_analysis_policy)
             .find_attachment_part(message, &request.part_path)
-        {
-            Ok(Some(part)) => part,
-            Ok(None) => {
-                return AttachmentDownloadOutcome {
-                    decision: AttachmentDownloadDecision::Denied {
-                        public_reason: AttachmentDownloadPublicFailureReason::NotFound,
-                    },
-                    audit_event: build_failure_event(
-                        context,
-                        validated_session,
-                        message,
-                        &request.part_path,
-                        AttachmentDownloadPublicFailureReason::NotFound,
-                        AttachmentDownloadAuditFailureReason::NotFound,
-                        "requested attachment part was not surfaced by the MIME layer",
-                    ),
-                };
-            }
-            Err(error) => {
-                return AttachmentDownloadOutcome {
-                    decision: AttachmentDownloadDecision::Denied {
-                        public_reason:
-                            AttachmentDownloadPublicFailureReason::TemporarilyUnavailable,
-                    },
-                    audit_event: build_failure_event(
-                        context,
-                        validated_session,
-                        message,
-                        &request.part_path,
-                        AttachmentDownloadPublicFailureReason::TemporarilyUnavailable,
-                        AttachmentDownloadAuditFailureReason::OutputRejected,
-                        &error.reason,
-                    ),
-                };
-            }
-        };
+            .map_err(|error| {
+                AttachmentDownloadError::new(
+                    AttachmentDownloadFailureKind::OutputRejected,
+                    error.reason,
+                )
+            })?
+            .ok_or_else(|| {
+                AttachmentDownloadError::new(
+                    AttachmentDownloadFailureKind::NotFound,
+                    "requested attachment part was not surfaced by the MIME layer",
+                )
+            })?;
 
-        let body = match decode_attachment_body(self.policy, &part) {
-            Ok(body) => body,
-            Err(error) => {
-                let audit_reason = if error
-                    .reason
-                    .starts_with("unsupported content-transfer-encoding")
-                {
-                    AttachmentDownloadAuditFailureReason::UnsupportedEncoding
-                } else {
-                    AttachmentDownloadAuditFailureReason::OutputRejected
-                };
+        let body = decode_attachment_body(self.policy, &part)?;
 
-                return AttachmentDownloadOutcome {
-                    decision: AttachmentDownloadDecision::Denied {
-                        public_reason:
-                            AttachmentDownloadPublicFailureReason::TemporarilyUnavailable,
-                    },
-                    audit_event: build_failure_event(
-                        context,
-                        validated_session,
-                        message,
-                        &request.part_path,
-                        AttachmentDownloadPublicFailureReason::TemporarilyUnavailable,
-                        audit_reason,
-                        &error.reason,
-                    ),
-                };
-            }
-        };
-
-        let attachment = DownloadedAttachment {
+        Ok(DownloadedAttachment {
             mailbox_name: message.mailbox_name.clone(),
             uid: message.uid,
             part_path: request.part_path.clone(),
@@ -262,6 +251,35 @@ impl AttachmentDownloadService {
             ),
             content_type: normalize_download_content_type(self.policy, &part.metadata.content_type),
             body,
+        })
+    }
+
+    /// Resolves one attachment part for the already validated session owner.
+    pub fn download_for_validated_session(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        message: &MessageView,
+        part_path: &str,
+    ) -> AttachmentDownloadOutcome {
+        let attachment = match self.download_from_message(message, part_path) {
+            Ok(attachment) => attachment,
+            Err(error) => {
+                return AttachmentDownloadOutcome {
+                    decision: AttachmentDownloadDecision::Denied {
+                        public_reason: error.public_reason(),
+                    },
+                    audit_event: build_failure_event(
+                        context,
+                        validated_session,
+                        message,
+                        part_path,
+                        error.public_reason(),
+                        error.audit_reason(),
+                        &error.reason,
+                    ),
+                };
+            }
         };
 
         AttachmentDownloadOutcome {
@@ -332,46 +350,52 @@ fn validate_part_path(
     part_path: &str,
 ) -> Result<(), AttachmentDownloadError> {
     if part_path.is_empty() {
-        return Err(AttachmentDownloadError {
-            reason: "attachment part path must not be empty".to_string(),
-        });
+        return Err(AttachmentDownloadError::new(
+            AttachmentDownloadFailureKind::InvalidRequest,
+            "attachment part path must not be empty",
+        ));
     }
 
     if part_path.len() > policy.part_path_max_len {
-        return Err(AttachmentDownloadError {
-            reason: format!(
+        return Err(AttachmentDownloadError::new(
+            AttachmentDownloadFailureKind::InvalidRequest,
+            format!(
                 "attachment part path exceeded maximum length of {} bytes",
                 policy.part_path_max_len
             ),
-        });
+        ));
     }
 
     if part_path.starts_with('.') || part_path.ends_with('.') || part_path.contains("..") {
-        return Err(AttachmentDownloadError {
-            reason: "attachment part path was not a valid dotted numeric path".to_string(),
-        });
+        return Err(AttachmentDownloadError::new(
+            AttachmentDownloadFailureKind::InvalidRequest,
+            "attachment part path was not a valid dotted numeric path",
+        ));
     }
 
     let mut segments = 0usize;
     for segment in part_path.split('.') {
         segments += 1;
         if segment.is_empty() || !segment.chars().all(|ch| ch.is_ascii_digit()) {
-            return Err(AttachmentDownloadError {
-                reason: "attachment part path was not a valid dotted numeric path".to_string(),
-            });
+            return Err(AttachmentDownloadError::new(
+                AttachmentDownloadFailureKind::InvalidRequest,
+                "attachment part path was not a valid dotted numeric path",
+            ));
         }
 
         if segment.starts_with('0') {
-            return Err(AttachmentDownloadError {
-                reason: "attachment part path segments must not have leading zeroes".to_string(),
-            });
+            return Err(AttachmentDownloadError::new(
+                AttachmentDownloadFailureKind::InvalidRequest,
+                "attachment part path segments must not have leading zeroes",
+            ));
         }
     }
 
     if segments < 2 || !part_path.starts_with("1.") {
-        return Err(AttachmentDownloadError {
-            reason: "attachment part path must reference a surfaced child part".to_string(),
-        });
+        return Err(AttachmentDownloadError::new(
+            AttachmentDownloadFailureKind::InvalidRequest,
+            "attachment part path must reference a surfaced child part",
+        ));
     }
 
     Ok(())
@@ -392,9 +416,10 @@ fn decode_attachment_body(
         "quoted-printable" => {
             decode_quoted_printable_bytes(&part.body_text, policy.download_max_bytes)
         }
-        other => Err(AttachmentDownloadError {
-            reason: format!("unsupported content-transfer-encoding {other:?}"),
-        }),
+        other => Err(AttachmentDownloadError::new(
+            AttachmentDownloadFailureKind::UnsupportedEncoding,
+            format!("unsupported content-transfer-encoding {other:?}"),
+        )),
     }
 }
 
@@ -405,9 +430,10 @@ fn bounded_bytes(
     reason: &str,
 ) -> Result<Vec<u8>, AttachmentDownloadError> {
     if bytes.len() > max_bytes {
-        return Err(AttachmentDownloadError {
-            reason: format!("{reason} of {max_bytes} bytes"),
-        });
+        return Err(AttachmentDownloadError::new(
+            AttachmentDownloadFailureKind::OutputRejected,
+            format!("{reason} of {max_bytes} bytes"),
+        ));
     }
 
     Ok(bytes)
@@ -425,9 +451,10 @@ fn decode_base64_bytes(input: &str, max_bytes: usize) -> Result<Vec<u8>, Attachm
     }
 
     if cleaned.len() % 4 != 0 {
-        return Err(AttachmentDownloadError {
-            reason: "base64 attachment body length was not a multiple of four".to_string(),
-        });
+        return Err(AttachmentDownloadError::new(
+            AttachmentDownloadFailureKind::OutputRejected,
+            "base64 attachment body length was not a multiple of four",
+        ));
     }
 
     let mut output = Vec::with_capacity((cleaned.len() / 4) * 3);
@@ -446,28 +473,32 @@ fn decode_base64_bytes(input: &str, max_bytes: usize) -> Result<Vec<u8>, Attachm
                     values[index] = 0;
                     padding += 1;
                     if index < 2 {
-                        return Err(AttachmentDownloadError {
-                            reason: "base64 attachment body used invalid padding".to_string(),
-                        });
+                        return Err(AttachmentDownloadError::new(
+                            AttachmentDownloadFailureKind::OutputRejected,
+                            "base64 attachment body used invalid padding",
+                        ));
                     }
                 }
                 _ => {
-                    return Err(AttachmentDownloadError {
-                        reason: "base64 attachment body contained invalid characters".to_string(),
-                    })
+                    return Err(AttachmentDownloadError::new(
+                        AttachmentDownloadFailureKind::OutputRejected,
+                        "base64 attachment body contained invalid characters",
+                    ))
                 }
             }
         }
 
         if padding == 1 && chunk[3] != b'=' {
-            return Err(AttachmentDownloadError {
-                reason: "base64 attachment body used invalid padding".to_string(),
-            });
+            return Err(AttachmentDownloadError::new(
+                AttachmentDownloadFailureKind::OutputRejected,
+                "base64 attachment body used invalid padding",
+            ));
         }
         if padding == 2 && !(chunk[2] == b'=' && chunk[3] == b'=') {
-            return Err(AttachmentDownloadError {
-                reason: "base64 attachment body used invalid padding".to_string(),
-            });
+            return Err(AttachmentDownloadError::new(
+                AttachmentDownloadFailureKind::OutputRejected,
+                "base64 attachment body used invalid padding",
+            ));
         }
 
         let combined = ((values[0] as u32) << 18)
@@ -483,11 +514,10 @@ fn decode_base64_bytes(input: &str, max_bytes: usize) -> Result<Vec<u8>, Attachm
         }
 
         if output.len() > max_bytes {
-            return Err(AttachmentDownloadError {
-                reason: format!(
-                    "attachment body exceeded maximum decoded length of {max_bytes} bytes"
-                ),
-            });
+            return Err(AttachmentDownloadError::new(
+                AttachmentDownloadFailureKind::OutputRejected,
+                format!("attachment body exceeded maximum decoded length of {max_bytes} bytes"),
+            ));
         }
     }
 
@@ -507,6 +537,7 @@ fn decode_quoted_printable_bytes(
         if bytes[index] == b'=' {
             if index + 1 >= bytes.len() {
                 return Err(AttachmentDownloadError {
+                    kind: AttachmentDownloadFailureKind::OutputRejected,
                     reason: "quoted-printable attachment body ended in a bare escape".to_string(),
                 });
             }
@@ -523,6 +554,7 @@ fn decode_quoted_printable_bytes(
 
             if index + 2 >= bytes.len() {
                 return Err(AttachmentDownloadError {
+                    kind: AttachmentDownloadFailureKind::OutputRejected,
                     reason: "quoted-printable attachment body ended in a truncated escape"
                         .to_string(),
                 });
@@ -537,6 +569,7 @@ fn decode_quoted_printable_bytes(
 
         if output.len() > max_bytes {
             return Err(AttachmentDownloadError {
+                kind: AttachmentDownloadFailureKind::OutputRejected,
                 reason: format!(
                     "attachment body exceeded maximum decoded length of {max_bytes} bytes"
                 ),
@@ -553,9 +586,10 @@ fn hex_value(byte: u8) -> Result<u8, AttachmentDownloadError> {
         b'0'..=b'9' => Ok(byte - b'0'),
         b'a'..=b'f' => Ok(byte - b'a' + 10),
         b'A'..=b'F' => Ok(byte - b'A' + 10),
-        _ => Err(AttachmentDownloadError {
-            reason: "quoted-printable attachment body contained invalid hex".to_string(),
-        }),
+        _ => Err(AttachmentDownloadError::new(
+            AttachmentDownloadFailureKind::OutputRejected,
+            "quoted-printable attachment body contained invalid hex",
+        )),
     }
 }
 

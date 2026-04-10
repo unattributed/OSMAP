@@ -61,9 +61,9 @@ use crate::mailbox::{
     MessageSummary, MessageViewDecision, MessageViewPolicy, MessageViewRequest, MessageViewService,
 };
 use crate::mailbox_helper::{
-    MailboxHelperMailboxListBackend, MailboxHelperMessageListBackend,
-    MailboxHelperMessageMoveBackend, MailboxHelperMessageSearchBackend,
-    MailboxHelperMessageViewBackend, MailboxHelperPolicy,
+    MailboxHelperAttachmentDownloadBackend, MailboxHelperMailboxListBackend,
+    MailboxHelperMessageListBackend, MailboxHelperMessageMoveBackend,
+    MailboxHelperMessageSearchBackend, MailboxHelperMessageViewBackend, MailboxHelperPolicy,
 };
 use crate::rendering::{
     HtmlDisplayPreference, PlainTextMessageRenderer, RenderedMessageView, RenderingPolicy,

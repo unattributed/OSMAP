@@ -6,6 +6,9 @@
 
 use std::collections::BTreeMap;
 
+use crate::attachment::{
+    AttachmentDownloadPolicy, AttachmentDownloadRequest, DownloadedAttachment,
+};
 use crate::mailbox::{
     MailboxEntry, MailboxListingPolicy, MessageListPolicy, MessageListRequest, MessageMovePolicy,
     MessageMoveRequest, MessageSearchPolicy, MessageSearchRequest, MessageSearchResult,
@@ -32,6 +35,12 @@ pub(super) enum MailboxHelperRequest {
         mailbox_name: String,
         uid: u64,
     },
+    AttachmentDownload {
+        canonical_username: String,
+        mailbox_name: String,
+        uid: u64,
+        part_path: String,
+    },
     MessageMove {
         canonical_username: String,
         source_mailbox_name: String,
@@ -57,6 +66,9 @@ pub(super) enum MailboxHelperResponse {
     },
     MessageViewOk {
         message: Box<MessageView>,
+    },
+    AttachmentDownloadOk {
+        attachment: Box<DownloadedAttachment>,
     },
     MessageMoveOk {
         source_mailbox_name: String,
@@ -93,6 +105,14 @@ pub(super) fn encode_request(request: &MailboxHelperRequest) -> String {
             uid,
         } => format!(
             "operation=message_view\ncanonical_username={canonical_username}\nmailbox_name={mailbox_name}\nuid={uid}\n"
+        ),
+        MailboxHelperRequest::AttachmentDownload {
+            canonical_username,
+            mailbox_name,
+            uid,
+            part_path,
+        } => format!(
+            "operation=attachment_download\ncanonical_username={canonical_username}\nmailbox_name={mailbox_name}\nuid={uid}\npart_path={part_path}\n"
         ),
         MailboxHelperRequest::MessageMove {
             canonical_username,
@@ -149,6 +169,26 @@ pub(super) fn parse_request(input: &str) -> Result<MailboxHelperRequest, String>
                 canonical_username,
                 mailbox_name: request.mailbox_name,
                 uid: request.uid,
+            })
+        }
+        "attachment_download" => {
+            let mailbox_name = require_field(&fields, "mailbox_name")?.to_string();
+            let uid = require_field(&fields, "uid")?
+                .parse::<u64>()
+                .map_err(|error| format!("invalid helper uid: {error}"))?;
+            let message_request =
+                MessageViewRequest::new(MessageViewPolicy::default(), mailbox_name.clone(), uid)
+                    .map_err(|error| error.reason)?;
+            let attachment_request = AttachmentDownloadRequest::new(
+                AttachmentDownloadPolicy::default(),
+                require_field(&fields, "part_path")?.to_string(),
+            )
+            .map_err(|error| error.reason)?;
+            Ok(MailboxHelperRequest::AttachmentDownload {
+                canonical_username,
+                mailbox_name: message_request.mailbox_name,
+                uid: message_request.uid,
+                part_path: attachment_request.part_path,
             })
         }
         "message_move" => {
@@ -263,6 +303,15 @@ pub(super) fn encode_response(response: &MailboxHelperResponse) -> String {
             encode_base64(message.header_block.as_bytes()),
             encode_base64(message.body_text.as_bytes()),
         ),
+        MailboxHelperResponse::AttachmentDownloadOk { attachment } => format!(
+            "status=ok\noperation=attachment_download\nattachment_mailbox_name={}\nattachment_uid={}\nattachment_part_path={}\nattachment_filename={}\nattachment_content_type={}\nattachment_body_b64={}\n",
+            attachment.mailbox_name,
+            attachment.uid,
+            attachment.part_path,
+            attachment.filename,
+            attachment.content_type,
+            encode_base64(&attachment.body),
+        ),
         MailboxHelperResponse::MessageMoveOk {
             source_mailbox_name,
             destination_mailbox_name,
@@ -293,6 +342,7 @@ pub(super) fn parse_response(
     let mut messages = Vec::<MessageSummary>::new();
     let mut search_results = Vec::<MessageSearchResult>::new();
     let mut current_message_fields = BTreeMap::<String, String>::new();
+    let mut attachment_fields = BTreeMap::<String, String>::new();
     let mut source_mailbox_name = None::<String>;
     let mut destination_mailbox_name = None::<String>;
     let mut moved_uid = None::<u64>;
@@ -313,6 +363,21 @@ pub(super) fn parse_response(
             "query" => query = Some(value.to_string()),
             "source_mailbox_name" => source_mailbox_name = Some(value.to_string()),
             "destination_mailbox_name" => destination_mailbox_name = Some(value.to_string()),
+            "attachment_mailbox_name"
+            | "attachment_uid"
+            | "attachment_part_path"
+            | "attachment_filename"
+            | "attachment_content_type"
+            | "attachment_body_b64" => {
+                if attachment_fields
+                    .insert(key.to_string(), value.to_string())
+                    .is_some()
+                {
+                    return Err(format!(
+                        "duplicate attachment field in helper response: {key}"
+                    ));
+                }
+            }
             "uid" => {
                 moved_uid = Some(
                     value
@@ -396,6 +461,9 @@ pub(super) fn parse_response(
                     message_view_policy,
                     &current_message_fields,
                 )?),
+            }),
+            Some("attachment_download") => Ok(MailboxHelperResponse::AttachmentDownloadOk {
+                attachment: Box::new(parse_attachment_download_fields(&attachment_fields)?),
             }),
             Some("message_move") => Ok(MailboxHelperResponse::MessageMoveOk {
                 source_mailbox_name: source_mailbox_name.ok_or_else(|| {
@@ -703,6 +771,68 @@ fn parse_message_view_fields(
         size_virtual,
         header_block,
         body_text,
+    })
+}
+
+fn parse_attachment_download_fields(
+    fields: &BTreeMap<String, String>,
+) -> Result<DownloadedAttachment, String> {
+    let policy = AttachmentDownloadPolicy::default();
+    let mailbox_name = require_field(fields, "attachment_mailbox_name")?.to_string();
+    let _ = MailboxEntry::new(
+        MailboxListingPolicy {
+            mailbox_name_max_len: crate::mailbox::DEFAULT_MAILBOX_NAME_MAX_LEN,
+            max_mailboxes: 1,
+        },
+        mailbox_name.clone(),
+    )
+    .map_err(|error| error.reason)?;
+
+    let uid = require_field(fields, "attachment_uid")?
+        .parse::<u64>()
+        .map_err(|error| format!("invalid helper attachment uid: {error}"))?;
+    if uid == 0 {
+        return Err("helper attachment uid must be greater than zero".to_string());
+    }
+
+    let part_path = AttachmentDownloadRequest::new(
+        policy,
+        require_field(fields, "attachment_part_path")?.to_string(),
+    )
+    .map_err(|error| error.reason)?
+    .part_path;
+
+    let filename = require_field(fields, "attachment_filename")?.to_string();
+    validate_helper_string(
+        "attachment filename",
+        &filename,
+        policy.filename_max_len,
+        false,
+        false,
+    )?;
+
+    let content_type = require_field(fields, "attachment_content_type")?.to_string();
+    validate_helper_string(
+        "attachment content_type",
+        &content_type,
+        policy.content_type_max_len,
+        false,
+        false,
+    )?;
+
+    let body = decode_base64_bytes(
+        require_field(fields, "attachment_body_b64")?,
+        policy.download_max_bytes,
+        "attachment body",
+    )?;
+
+    Ok(DownloadedAttachment {
+        mailbox_name,
+        uid,
+        part_path,
+        filename,
+        content_type,
+        body,
     })
 }
 
