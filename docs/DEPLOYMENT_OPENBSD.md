@@ -209,6 +209,10 @@ The first implementation slices of that answer now exist:
 - the repository now carries `maint/live/osmap-live-validate-login-send.ksh`
   to prove real password-plus-TOTP login plus one real browser send through
   that split-runtime enforced deployment posture
+- the repository now also carries
+  `maint/live/osmap-live-validate-v1-closeout.ksh` so operators can run the
+  current repo-owned Version 1 proof set through one wrapper while still
+  supplying mailbox secrets only through environment variables at runtime
 
 The repository now also carries first operator scaffolding for that split under
 `maint/openbsd/`:

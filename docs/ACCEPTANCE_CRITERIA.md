@@ -246,6 +246,11 @@ Version 1 should not be declared complete until all of the following are true:
 - `ksh ./maint/live/osmap-live-validate-send-throttle.ksh`
 - `ksh ./maint/live/osmap-live-validate-move-throttle.ksh`
 
+The repo-owned wrapper
+`ksh ./maint/live/osmap-live-validate-v1-closeout.ksh` now runs this exact
+closeout proof set, and it still requires an operator-supplied
+`OSMAP_VALIDATION_PASSWORD` when the real login-plus-send step is included.
+
 The current repo snapshot already satisfies these closeout-gate preconditions:
 
 - serve-side OpenBSD auth and sendmail dependency narrowing is implemented

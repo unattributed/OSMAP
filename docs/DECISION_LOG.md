@@ -2430,3 +2430,29 @@ dependency view, a real password-plus-TOTP login-plus-send proof, and a frozen
 production helper boundary. The larger remaining risk is closeout drift:
 stale status text, ambiguous release criteria, and future work getting pulled
 back into solved design debates.
+
+### Add one repo-owned wrapper for the authoritative V1 closeout proof set
+
+Once `docs/ACCEPTANCE_CRITERIA.md` became the authoritative Version 1 gate, the
+proof set itself still existed only as a list of separate commands. That was
+accurate, but it left repeat operator validation more manual than it needed to
+be.
+
+OSMAP now carries `maint/live/osmap-live-validate-v1-closeout.ksh` as a thin
+wrapper around the current closeout proof set:
+
+- `./maint/live/osmap-host-validate.ksh make security-check`
+- `ksh ./maint/live/osmap-live-validate-login-send.ksh`
+- `ksh ./maint/live/osmap-live-validate-all-mailbox-search.ksh`
+- `ksh ./maint/live/osmap-live-validate-archive-shortcut.ksh`
+- `ksh ./maint/live/osmap-live-validate-session-surface.ksh`
+- `ksh ./maint/live/osmap-live-validate-send-throttle.ksh`
+- `ksh ./maint/live/osmap-live-validate-move-throttle.ksh`
+
+That wrapper also keeps the secret boundary honest: the real login-plus-send
+step still requires an operator-supplied `OSMAP_VALIDATION_PASSWORD`, and the
+repository still does not carry mailbox credentials.
+
+This was chosen instead of inventing a broader validation framework because the
+current closeout need is only to make the authoritative Version 1 proof set
+easier to run, rerun, and review without changing what the gate actually is.
