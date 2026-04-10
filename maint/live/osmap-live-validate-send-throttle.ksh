@@ -13,6 +13,8 @@ set -eu
 PROJECT_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 WORK_ROOT="${OSMAP_LIVE_WORK_ROOT:-/home/osmap-live-send-throttle-$$}"
 STATE_ROOT="${WORK_ROOT}/state"
+HELPER_RUNTIME_DIR="${WORK_ROOT}/helper-runtime"
+HELPER_STATE_RUNTIME_DIR="${STATE_ROOT}/helper-runtime-state"
 SESSION_DIR="${STATE_ROOT}/sessions"
 RUNTIME_DIR="${STATE_ROOT}/runtime"
 SETTINGS_DIR="${STATE_ROOT}/settings"
@@ -25,6 +27,9 @@ CARGO_TARGET_DIR_PATH="${WORK_ROOT}/target"
 BIN_PATH="${WORK_ROOT}/osmap"
 LOG_PATH="${RUNTIME_DIR}/serve.log"
 PID_PATH="${RUNTIME_DIR}/serve.pid"
+HELPER_LOG_PATH="${HELPER_RUNTIME_DIR}/mailbox-helper.log"
+HELPER_PID_PATH="${HELPER_RUNTIME_DIR}/mailbox-helper.pid"
+HELPER_SOCKET_PATH="${HELPER_RUNTIME_DIR}/mailbox-helper.sock"
 LISTEN_PORT="${OSMAP_LIVE_SEND_THROTTLE_PORT:-}"
 VALIDATION_USER="${OSMAP_VALIDATION_USER:-osmap-helper-validation@blackbagsecurity.com}"
 SESSION_TOKEN="${OSMAP_LIVE_SESSION_TOKEN:-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}"
@@ -33,6 +38,7 @@ THROTTLE_MAX_SUBMISSIONS="${OSMAP_SUBMISSION_THROTTLE_MAX_SUBMISSIONS:-1}"
 THROTTLE_REMOTE_MAX_SUBMISSIONS="${OSMAP_SUBMISSION_THROTTLE_REMOTE_MAX_SUBMISSIONS:-2}"
 THROTTLE_WINDOW_SECS="${OSMAP_SUBMISSION_THROTTLE_WINDOW_SECS:-300}"
 THROTTLE_LOCKOUT_SECS="${OSMAP_SUBMISSION_THROTTLE_LOCKOUT_SECS:-900}"
+USERDB_SOCKET_PATH="${OSMAP_DOVEADM_USERDB_SOCKET_PATH:-/var/run/osmap-userdb}"
 KEEP_WORK_ROOT="${OSMAP_KEEP_WORK_ROOT:-0}"
 
 log() {
@@ -49,6 +55,9 @@ require_tool() {
 cleanup() {
   if [ -f "${PID_PATH}" ]; then
     doas kill "$(cat "${PID_PATH}")" 2>/dev/null || true
+  fi
+  if [ -f "${HELPER_PID_PATH}" ]; then
+    doas kill "$(doas cat "${HELPER_PID_PATH}")" 2>/dev/null || true
   fi
   if [ "${KEEP_WORK_ROOT}" = "1" ]; then
     log "keeping live validation root at ${WORK_ROOT}"
@@ -91,14 +100,16 @@ log "preparing isolated live validation root under ${WORK_ROOT}"
 doas rm -rf "${WORK_ROOT}"
 doas install -d -o foo -g foo -m 755 "${WORK_ROOT}"
 install -d "${TMPDIR_PATH}" "${CARGO_HOME_PATH}" "${CARGO_TARGET_DIR_PATH}"
+doas install -d -o _osmap -g _osmap -m 755 "${STATE_ROOT}"
 doas install -d -o _osmap -g _osmap -m 700 \
-  "${STATE_ROOT}" \
   "${SESSION_DIR}" \
   "${RUNTIME_DIR}" \
   "${SETTINGS_DIR}" \
   "${AUDIT_DIR}" \
   "${CACHE_DIR}" \
   "${TOTP_DIR}"
+doas install -d -o vmail -g vmail -m 755 "${HELPER_RUNTIME_DIR}"
+doas install -d -o vmail -g vmail -m 700 "${HELPER_STATE_RUNTIME_DIR}"
 
 log "building current OSMAP tree"
 cd "${PROJECT_ROOT}"
@@ -124,6 +135,43 @@ EOF
 chmod 600 '${SESSION_DIR}/${SESSION_ID}.session'
 chown _osmap:_osmap '${SESSION_DIR}/${SESSION_ID}.session'"
 
+log "starting enforced mailbox helper as vmail"
+doas -u vmail sh -c "
+  umask 077
+  echo \$$ > '${HELPER_PID_PATH}'
+  exec env \
+    OSMAP_RUN_MODE=mailbox-helper \
+    OSMAP_ENV=production \
+    OSMAP_STATE_DIR='${STATE_ROOT}' \
+    OSMAP_RUNTIME_DIR='${HELPER_STATE_RUNTIME_DIR}' \
+    OSMAP_SESSION_DIR='${SESSION_DIR}' \
+    OSMAP_SETTINGS_DIR='${SETTINGS_DIR}' \
+    OSMAP_AUDIT_DIR='${AUDIT_DIR}' \
+    OSMAP_CACHE_DIR='${CACHE_DIR}' \
+    OSMAP_TOTP_SECRET_DIR='${TOTP_DIR}' \
+    OSMAP_LOG_LEVEL=info \
+    OSMAP_MAILBOX_HELPER_SOCKET_PATH='${HELPER_SOCKET_PATH}' \
+    OSMAP_DOVEADM_USERDB_SOCKET_PATH='${USERDB_SOCKET_PATH}' \
+    OSMAP_OPENBSD_CONFINEMENT_MODE=enforce \
+    '${BIN_PATH}' >'${HELPER_LOG_PATH}' 2>&1
+" &
+
+wait_for_helper_socket() {
+  tries=0
+  while [ "${tries}" -lt 40 ]; do
+    if doas test -S "${HELPER_SOCKET_PATH}"; then
+      doas chown vmail:_osmap "${HELPER_SOCKET_PATH}"
+      doas chmod 660 "${HELPER_SOCKET_PATH}"
+      return 0
+    fi
+    sleep 1
+    tries="$((tries + 1))"
+  done
+  log "mailbox helper socket did not become ready"
+  [ -f "${HELPER_LOG_PATH}" ] && doas cat "${HELPER_LOG_PATH}"
+  return 1
+}
+
 log "starting enforced browser runtime as _osmap"
 doas -u _osmap sh -c "
   umask 077
@@ -139,6 +187,7 @@ doas -u _osmap sh -c "
     OSMAP_AUDIT_DIR='${AUDIT_DIR}' \
     OSMAP_CACHE_DIR='${CACHE_DIR}' \
     OSMAP_TOTP_SECRET_DIR='${TOTP_DIR}' \
+    OSMAP_MAILBOX_HELPER_SOCKET_PATH='${HELPER_SOCKET_PATH}' \
     OSMAP_LOG_LEVEL=info \
     OSMAP_SESSION_LIFETIME_SECS=3600 \
     OSMAP_SUBMISSION_THROTTLE_MAX_SUBMISSIONS='${THROTTLE_MAX_SUBMISSIONS}' \
@@ -200,6 +249,8 @@ header_value() {
     }
   '
 }
+
+wait_for_helper_socket
 
 wait_for_healthz
 
