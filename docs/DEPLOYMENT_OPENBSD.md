@@ -202,6 +202,13 @@ The first implementation slices of that answer now exist:
   `doveadm` support paths to explicit `doveconf`, loader, Dovecot config, and
   Dovecot config-socket paths plus exact resolved shared-library files where
   the host exposes them
+- the browser-facing `_osmap` runtime now narrows its auth-backed `doveadm`
+  and local sendmail/Postfix dependency view too, down to explicit mailwrapper,
+  sendmail, `postdrop`, Postfix config, and exact resolved shared-library
+  paths where the validated host exposes them
+- the repository now carries `maint/live/osmap-live-validate-login-send.ksh`
+  to prove real password-plus-TOTP login plus one real browser send through
+  that split-runtime enforced deployment posture
 
 The repository now also carries first operator scaffolding for that split under
 `maint/openbsd/`:

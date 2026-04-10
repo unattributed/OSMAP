@@ -88,11 +88,15 @@
   and the current split-runtime operator model is still repo-owned scaffolding
   rather than finished packaging or ports integration
 - the OpenBSD confinement plan now keeps the top-level state root read-only and
-  only the explicit child directories writable, and the helper now prefers
-  exact `doveadm` loader, library, config, and Dovecot socket paths, but the
-  browser runtime still keeps a broader auth/sendmail view and the helper still
-  has a conservative library-directory fallback when a host does not expose the
-  expected exact versioned shared-library filenames
+  only the explicit child directories writable, and both the helper and the
+  browser runtime now prefer exact `doveadm`, mailwrapper/sendmail, loader,
+  library, config, and socket paths on the validated host, but the current
+  plan still keeps conservative directory fallbacks when a host does not expose
+  the expected exact versioned shared-library filenames
+- the new repo-owned real login-plus-send proof depends on an operator-supplied
+  validation password for the dedicated validation mailbox; that keeps the
+  proof reproducible without teaching the repository to store mailbox secrets,
+  but it also means the host harness is not completely self-contained
 - sanitized HTML rendering and the first settings-driven plain-text fallback
   are now proven on `mail.blackbagsecurity.com`, and the first live mutation
   proof for one-message move plus bounded send now exists there too, and the

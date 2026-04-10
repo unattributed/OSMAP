@@ -145,6 +145,10 @@ The host-side validation currently proves two bounded claims:
 - the browser-driven positive-login path now completes primary auth, TOTP, and
   session issuance under `enforce` when OSMAP runs as `_osmap` against that
   dedicated listener
+- the repository now also carries `maint/live/osmap-live-validate-login-send.ksh`
+  so the same live host can prove real password-plus-TOTP login and one real
+  browser send through a repo-owned harness instead of only through earlier
+  ad hoc operator steps
 
 That is intentionally narrower than claiming the full auth workflow is already
 validated in production-like conditions.
@@ -158,6 +162,8 @@ The remaining live-host caveat is also clearer now than it was earlier in WP3:
   live-host auth helper behavior
 - successful positive-login validation and TOTP success under the dedicated
   host runtime user are now proven on the live host
+- one real browser send is now also proven on the live host after that login
+  through the same enforced `_osmap` runtime
 - post-auth mailbox flows are still not claimed as proven on the live host
   because Dovecot mailbox helpers currently resolve to the virtual-mail
   `vmail` uid/gid boundary on `mail.blackbagsecurity.com`

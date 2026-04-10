@@ -130,6 +130,8 @@ surface:
 That map is now being used by a real OpenBSD confinement mode in the running
 code. The helper side of that map now narrows its `doveadm` support view to
 explicit loader, Dovecot config, and config-socket paths plus exact resolved
-shared-library files on the validated host. The next hardening step is to do
-the same for the remaining broader browser auth/sendmail side without breaking
-the current auth, mailbox, and submission slices.
+shared-library files on the validated host. The browser-facing `_osmap` side
+now does the same for its auth-backed `doveadm` and local sendmail/Postfix
+paths. The next hardening step is to remove or further narrow the remaining
+directory fallbacks and host-shape assumptions without breaking the current
+auth, mailbox, and submission slices.

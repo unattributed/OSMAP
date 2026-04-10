@@ -64,19 +64,21 @@ Shared runtime paths still include:
   the current mode needs them
 - `/dev/null`
 
-The current `serve` runtime still includes the broader auth and sendmail view:
+The current `serve` runtime is now narrower and more explicit on the validated
+host too:
 
-- `/usr/local/bin/doveadm`
-- `/usr/sbin/sendmail`
-- `/usr/local/sbin/sendmail`
-- `/usr/lib`
-- `/usr/libexec`
-- `/usr/local/lib`
-- `/etc/dovecot`
-- `/etc/mail`
-- `/etc/mailer.conf`
-- `/var/spool/postfix`
-- `/var/spool/smtpd`
+- the current `doveadm` auth-side dependency view:
+  `/usr/local/bin/doveadm`, `/usr/local/bin/doveconf`,
+  `/usr/libexec/ld.so`, exact resolved shared-library files where available,
+  `/usr/local/lib/dovecot`, `dovecot.conf`, `conf.d`, `local.conf`, and
+  `/var/dovecot/config`
+- the current local sendmail path:
+  `/usr/sbin/sendmail`, `/usr/local/sbin/sendmail`, and
+  `/usr/local/sbin/postdrop`
+- sendmail wrapper and Postfix config paths:
+  `/etc/mailer.conf`, `/etc/postfix/main.cf`, `/etc/pwd.db`, `/etc/group`,
+  `/etc/localtime`, `/usr/share/zoneinfo/posixrules`, `/dev/urandom`, and
+  `/var/spool/postfix`
 
 The current `mailbox-helper` runtime is now narrower and more explicit on the
 validated host:
@@ -120,10 +122,12 @@ Those helpers inherit the parent process's unveiled filesystem view. That means
 the current enforced unveil policy must still remain broader than the final
 target in at least these places:
 
-- the `serve` runtime still keeps a broader auth and sendmail-compatible view
+- the `serve` runtime still depends on the current Dovecot and Postfix helper
+  shape rather than an in-process mail stack
 - the helper still depends on the current Dovecot config socket and dynamic
   library layout
-- the browser runtime still needs local submission spool paths
+- the browser runtime still needs local submission spool paths and a
+  mailwrapper-to-Postfix handoff
 
 This is not the end goal. It is the smallest honest enforcement layer that can
 be applied today without pretending the helper dependency problem is already
@@ -157,6 +161,8 @@ The current confinement layer has been validated through:
   `mail.blackbagsecurity.com`
 - helper-backed bounded message move under enforced confinement on
   `mail.blackbagsecurity.com`
+- real password-plus-TOTP browser login plus one real browser send under
+  enforced confinement on `mail.blackbagsecurity.com`
 - one continuous real browser flow under enforced confinement on
   `mail.blackbagsecurity.com`, from password-plus-TOTP login through
   helper-backed mailbox, message-view, and attachment reads
@@ -178,6 +184,7 @@ The enforced OpenBSD run logged:
 - successful helper-backed all-mailboxes browser search under `enforce`
 - successful helper-backed bounded message move and move-throttle handling
   under `enforce`
+- successful real browser login plus one real browser send under `enforce`
 - successful real browser session issuance followed by helper-backed mailbox,
   message-view, and attachment reads under `enforce`
 

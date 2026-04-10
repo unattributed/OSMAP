@@ -55,6 +55,27 @@ const OPENBSD_LOCAL_LIBRARY_PREFIXES: [&str; 6] = [
     "libzstd.so.",
 ];
 
+/// The system-library prefixes the local sendmail path resolves on the
+/// validated OpenBSD host.
+const OPENBSD_SENDMAIL_SYSTEM_LIBRARY_PREFIXES: [&str; 7] = [
+    "libc.so.",
+    "libcrypto.so.",
+    "libm.so.",
+    "libpthread.so.",
+    "libssl.so.",
+    "libutil.so.",
+    "libz.so.",
+];
+
+/// The local-library prefixes the local sendmail path resolves on the
+/// validated OpenBSD host.
+const OPENBSD_SENDMAIL_LOCAL_LIBRARY_PREFIXES: [&str; 4] = [
+    "libmariadb.so.",
+    "libpcre2-8.so.",
+    "libsasl2.so.",
+    "libsqlite3.so.",
+];
+
 /// One unveiled path plus the permissions granted to it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OpenbsdUnveilRule {
@@ -87,17 +108,8 @@ impl OpenbsdConfinementPlan {
                 add_rule(&mut rules, &config.state_layout.cache_dir, "rwc");
                 add_rule(&mut rules, &config.state_layout.totp_secret_dir, "rwc");
 
-                add_rule(&mut rules, Path::new("/usr/local/bin/doveadm"), "x");
-                add_rule(&mut rules, Path::new("/usr/sbin/sendmail"), "x");
-                add_rule(&mut rules, Path::new("/usr/local/sbin/sendmail"), "x");
-                add_rule(&mut rules, Path::new("/usr/lib"), "rx");
-                add_rule(&mut rules, Path::new("/usr/libexec"), "rx");
-                add_rule(&mut rules, Path::new("/usr/local/lib"), "rx");
-                add_rule(&mut rules, Path::new("/etc/dovecot"), "r");
-                add_rule(&mut rules, Path::new("/etc/mail"), "r");
-                add_rule(&mut rules, Path::new("/etc/mailer.conf"), "r");
-                add_rule(&mut rules, Path::new("/var/spool/postfix"), "rwc");
-                add_rule(&mut rules, Path::new("/var/spool/smtpd"), "rwc");
+                add_doveadm_dependency_rules(&mut rules);
+                add_sendmail_dependency_rules(&mut rules);
                 add_rule(&mut rules, Path::new("/dev/null"), "rw");
 
                 if let Some(auth_socket_path) = &config.doveadm_auth_socket_path {
@@ -281,6 +293,40 @@ fn add_doveadm_dependency_rules(rules: &mut BTreeMap<PathBuf, String>) {
     }
 
     add_if_exists(rules, Path::new("/var/dovecot/config"), "rw");
+}
+
+/// Adds the current browser-runtime sendmail dependency view. This follows the
+/// validated OpenBSD path where `/usr/sbin/sendmail` is a mailwrapper that
+/// dispatches into the local Postfix sendmail compatibility binary.
+fn add_sendmail_dependency_rules(rules: &mut BTreeMap<PathBuf, String>) {
+    add_if_exists(rules, Path::new("/usr/sbin/sendmail"), "x");
+    add_if_exists(rules, Path::new("/usr/local/sbin/sendmail"), "x");
+    add_if_exists(rules, Path::new("/usr/local/sbin/postdrop"), "x");
+
+    if !add_if_exists(rules, Path::new("/usr/libexec/ld.so"), "r") {
+        add_rule(rules, Path::new("/usr/libexec"), "rx");
+    }
+    add_if_exists(rules, Path::new("/var/run/ld.so.hints"), "r");
+
+    add_resolved_library_rules(
+        rules,
+        Path::new("/usr/lib"),
+        &OPENBSD_SENDMAIL_SYSTEM_LIBRARY_PREFIXES,
+    );
+    add_resolved_library_rules(
+        rules,
+        Path::new("/usr/local/lib"),
+        &OPENBSD_SENDMAIL_LOCAL_LIBRARY_PREFIXES,
+    );
+
+    add_if_exists(rules, Path::new("/etc/mailer.conf"), "r");
+    add_if_exists(rules, Path::new("/etc/postfix/main.cf"), "r");
+    add_if_exists(rules, Path::new("/etc/localtime"), "r");
+    add_if_exists(rules, Path::new("/usr/share/zoneinfo/posixrules"), "r");
+    add_if_exists(rules, Path::new("/etc/pwd.db"), "r");
+    add_if_exists(rules, Path::new("/etc/group"), "r");
+    add_if_exists(rules, Path::new("/dev/urandom"), "r");
+    add_if_exists(rules, Path::new("/var/spool/postfix"), "rwc");
 }
 
 /// Adds exact versioned library paths when they can be resolved under the
@@ -504,6 +550,13 @@ mod tests {
             .iter()
             .any(|rule| rule.path == Path::new("/usr/local/bin/doveadm")
                 && rule.permissions.contains('x')));
+        if Path::new("/usr/sbin/sendmail").exists() {
+            assert!(plan
+                .unveil_rules
+                .iter()
+                .any(|rule| rule.path == Path::new("/usr/sbin/sendmail")
+                    && rule.permissions.contains('x')));
+        }
         assert!(plan
             .unveil_rules
             .iter()
@@ -518,11 +571,13 @@ mod tests {
             .iter()
             .any(|rule| rule.path == Path::new("/var/lib/osmap/settings")
                 && rule.permissions.contains('w')));
-        assert!(plan
-            .unveil_rules
-            .iter()
-            .any(|rule| rule.path == Path::new("/usr/local/sbin/sendmail")
-                && rule.permissions.contains('x')));
+        if Path::new("/usr/sbin/sendmail").exists() {
+            assert!(plan
+                .unveil_rules
+                .iter()
+                .any(|rule| rule.path == Path::new("/usr/sbin/sendmail")
+                    && rule.permissions.contains('x')));
+        }
         assert!(!plan
             .unveil_rules
             .iter()
@@ -530,7 +585,15 @@ mod tests {
         assert!(!plan
             .unveil_rules
             .iter()
+            .any(|rule| rule.path == Path::new("/etc/mail")));
+        assert!(!plan
+            .unveil_rules
+            .iter()
             .any(|rule| rule.path == Path::new("/var/log/dovecot.log")));
+        assert!(!plan
+            .unveil_rules
+            .iter()
+            .any(|rule| rule.path == Path::new("/var/spool/smtpd")));
         assert!(!plan
             .unveil_rules
             .iter()

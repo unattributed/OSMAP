@@ -2350,3 +2350,56 @@ Validation after this narrowing passed locally and on the target OpenBSD host:
   as the read proof
 - disposable-host `ksh ./maint/live/osmap-live-validate-move-throttle.ksh`
   as the mutation proof
+
+### Narrow the serve-side OpenBSD dependency view to explicit auth and sendmail paths
+
+After narrowing the helper-side dependency view, the browser-facing `serve`
+runtime still carried broader allowances than the validated host actually used:
+
+- blanket `/usr/libexec`
+- blanket `/usr/local/lib`
+- blanket `/etc/dovecot`
+- `/etc/mail`
+- `/var/spool/smtpd`
+
+Host tracing on `mail.blackbagsecurity.com` showed a more precise current
+dependency picture:
+
+- auth-backed `doveadm` on `_osmap` uses the same explicit loader, Dovecot
+  config, config-socket, and resolved shared-library shape already proven for
+  the helper
+- `/usr/sbin/sendmail` is a mailwrapper that reads `/etc/mailer.conf`, then
+  execs `/usr/local/sbin/sendmail`
+- the local sendmail/Postfix path currently relies on exact loader and library
+  files, `/etc/postfix/main.cf`, `/etc/pwd.db`, `/etc/group`, `/etc/localtime`,
+  `/usr/share/zoneinfo/posixrules`, `/dev/urandom`, `/var/spool/postfix`, and
+  `/usr/local/sbin/postdrop`
+
+OSMAP now narrows the `serve`-mode filesystem view accordingly instead of
+keeping the broader directory-wide auth/sendmail allowances.
+
+This was chosen instead of leaving the broader serve view in place because the
+current host evidence is now good enough to make the browser-facing runtime
+reviewable on the same terms as the helper, without pretending the runtime is
+already independent of Dovecot or Postfix.
+
+The repository now also carries `maint/live/osmap-live-validate-login-send.ksh`
+as a repo-owned positive-login proof harness. That script:
+
+- provisions an isolated TOTP secret for the validation mailbox inside the
+  temporary OSMAP state tree
+- performs a real password-plus-TOTP login under enforced confinement
+- carries the issued session cookie into the compose flow
+- submits one real browser message and confirms delivery into the validation
+  mailbox
+
+Validation after this narrowing passed locally and on the target OpenBSD host:
+
+- local `cargo test openbsd`
+- local `cargo test login_sets_session_cookie_and_redirects`
+- local `cargo test compose_page_renders_csrf_bound_form`
+- local `cargo test sendmail_backend_uses_local_submission_surface`
+- local `make security-check`
+- disposable-host `./maint/live/osmap-host-validate.ksh make security-check`
+- disposable-host `ksh ./maint/live/osmap-live-validate-login-send.ksh`
+  as the real positive-login-plus-send proof
