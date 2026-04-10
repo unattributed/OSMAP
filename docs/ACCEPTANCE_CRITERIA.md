@@ -250,6 +250,8 @@ The repo-owned wrapper
 `ksh ./maint/live/osmap-live-validate-v1-closeout.ksh` now runs this exact
 closeout proof set, and it still requires an operator-supplied
 `OSMAP_VALIDATION_PASSWORD` when the real login-plus-send step is included.
+It now also supports `--list` plus `--report <path>` so operators can capture
+one small summary artifact for the exact closeout steps they ran.
 
 The current repo snapshot already satisfies these closeout-gate preconditions:
 

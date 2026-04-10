@@ -212,7 +212,8 @@ The first implementation slices of that answer now exist:
 - the repository now also carries
   `maint/live/osmap-live-validate-v1-closeout.ksh` so operators can run the
   current repo-owned Version 1 proof set through one wrapper while still
-  supplying mailbox secrets only through environment variables at runtime
+  supplying mailbox secrets only through environment variables at runtime, and
+  can optionally emit a small step-summary report for review records
 
 The repository now also carries first operator scaffolding for that split under
 `maint/openbsd/`:

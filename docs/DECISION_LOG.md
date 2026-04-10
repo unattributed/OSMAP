@@ -2456,3 +2456,18 @@ repository still does not carry mailbox credentials.
 This was chosen instead of inventing a broader validation framework because the
 current closeout need is only to make the authoritative Version 1 proof set
 easier to run, rerun, and review without changing what the gate actually is.
+
+### Let the V1 closeout wrapper emit a small reviewable run summary
+
+Once the closeout proof wrapper existed, the next friction point was not what
+to run but how to leave a small, operator-readable record of what actually ran.
+
+`maint/live/osmap-live-validate-v1-closeout.ksh` now also supports:
+
+- `--list` to print the current authoritative step set
+- `--report <path>` to write a small pass-summary file for the steps executed
+
+This was chosen instead of adding a larger reporting system because the V1
+closeout need is only a minimal review artifact that records the exact proof
+subset that passed, without changing the proof scripts themselves or inventing
+a new persistence layer.
