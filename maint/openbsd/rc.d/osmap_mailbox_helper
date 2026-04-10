@@ -1,0 +1,19 @@
+#!/bin/ksh
+#
+# Example OpenBSD rc.d script for the local OSMAP mailbox-helper runtime.
+# Intended install target: /etc/rc.d/osmap_mailbox_helper
+
+daemon="/usr/local/libexec/osmap/osmap-mailbox-helper-run.ksh"
+daemon_user="vmail"
+pexp="/usr/local/bin/osmap mailbox-helper"
+rc_reload=NO
+
+. /etc/rc.d/rc.subr
+
+rc_configtest() {
+	OSMAP_ENV_FILE="/etc/osmap/osmap-mailbox-helper.env" \
+	OSMAP_BIN="/usr/local/bin/osmap" \
+	"${daemon}" bootstrap
+}
+
+rc_cmd $1

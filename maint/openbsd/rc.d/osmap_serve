@@ -1,0 +1,19 @@
+#!/bin/ksh
+#
+# Example OpenBSD rc.d script for the browser-facing OSMAP runtime.
+# Intended install target: /etc/rc.d/osmap_serve
+
+daemon="/usr/local/libexec/osmap/osmap-serve-run.ksh"
+daemon_user="_osmap"
+pexp="/usr/local/bin/osmap serve"
+rc_reload=NO
+
+. /etc/rc.d/rc.subr
+
+rc_configtest() {
+	OSMAP_ENV_FILE="/etc/osmap/osmap-serve.env" \
+	OSMAP_BIN="/usr/local/bin/osmap" \
+	"${daemon}" bootstrap
+}
+
+rc_cmd $1

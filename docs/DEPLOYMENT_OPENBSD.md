@@ -201,6 +201,9 @@ The repository now also carries first operator scaffolding for that split under
 
 - `osmap-serve.env.example` for the `_osmap` browser-facing runtime
 - `osmap-mailbox-helper.env.example` for the `vmail` mailbox-helper runtime
+- `libexec/` launcher examples that source those env files and execute one
+  explicit OSMAP CLI run mode
+- `rc.d/` example scripts for `osmap_serve` and `osmap_mailbox_helper`
 - `README.md` with socket-permission and startup-order guidance for the current
   helper boundary
 

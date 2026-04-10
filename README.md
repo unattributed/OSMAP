@@ -153,6 +153,10 @@ Each phase produces formal outputs to support traceability and auditability.
 - OpenBSD-specific work is already in the prototype: dedicated `_osmap`
   runtime assumptions, explicit Dovecot socket configuration, and
   operator-controlled `pledge(2)` / `unveil(2)` enforcement modes.
+- The binary now also accepts an optional explicit run-mode argument
+  (`bootstrap`, `serve`, or `mailbox-helper`), which keeps OpenBSD
+  service-management examples small and gives the split runtime distinct
+  process-table shapes.
 - Positive browser authentication plus TOTP-backed session issuance are proven
   on `mail.blackbagsecurity.com` under `_osmap`.
 - The mailbox-helper runtime now exists in-repo: a local Unix-socket helper
