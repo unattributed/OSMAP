@@ -253,6 +253,12 @@ closeout proof set, and it still requires an operator-supplied
 It now also supports `--list` plus `--report <path>` so operators can capture
 one small summary artifact for the exact closeout steps they ran.
 
+On April 11, 2026, this full seven-step wrapper was rerun successfully on
+`mail.blackbagsecurity.com`, including the real password-plus-TOTP
+`login-send` step. That host rerun used a controlled one-session validation
+password override and restored the original mailbox password hash afterward, so
+the repo still does not carry mailbox credentials.
+
 The current repo snapshot already satisfies these closeout-gate preconditions:
 
 - serve-side OpenBSD auth and sendmail dependency narrowing is implemented
@@ -263,13 +269,14 @@ The current repo snapshot already satisfies these closeout-gate preconditions:
 - live-host proof already covers login, mailbox read, attachment download,
   search, archive, session surface, send, send throttle, and move throttle
 
-The current remaining closeout work is therefore:
+The current remaining closeout work is therefore administrative rather than
+architectural:
 
-- keep the authoritative gate and status docs aligned with the implemented
-  boundary
-- rerun the affected repo-owned proof scripts when closeout-facing behavior
-  changes
-- only do additional implementation work if a failing proof or repo
+- keep the authoritative gate and status docs aligned with the successful
+  April 11, 2026 host rerun
+- rerun the affected repo-owned proof scripts only when closeout-facing
+  behavior changes
+- take additional implementation work only if a later failing proof or repo
   inconsistency reveals a narrower blocker
 
 The following should not block Version 1 unless a narrower first-release need

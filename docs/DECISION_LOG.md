@@ -2493,3 +2493,28 @@ the actual blocker was operator reachability to the private host, not the proof
 logic. The smallest useful answer is a thin orchestration wrapper that keeps
 the authoritative gate unchanged while making the real host run easier from a
 reachable workstation.
+
+### Freeze the V1 release decision after a full host rerun
+
+On April 11, 2026, the full authoritative wrapper
+`ksh ./maint/live/osmap-live-validate-v1-closeout.ksh` was rerun on
+`mail.blackbagsecurity.com` and passed end to end:
+
+- `security-check=passed`
+- `login-send=passed`
+- `all-mailbox-search=passed`
+- `archive-shortcut=passed`
+- `session-surface=passed`
+- `send-throttle=passed`
+- `move-throttle=passed`
+
+Because the repository still does not carry mailbox credentials, the real
+`login-send` proof was executed in one controlled shell session by installing a
+random temporary validation password, running the wrapper, and restoring the
+original mailbox password hash before exit.
+
+This freezes the Version 1 release decision against
+`docs/ACCEPTANCE_CRITERIA.md`: the next repo-level work is closeout discipline
+and release handling, not more browser features, OpenBSD redesign, or broader
+helper expansion. Future implementation work should be reopened only by a new
+failing proof or a concrete repo inconsistency.
