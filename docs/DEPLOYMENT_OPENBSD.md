@@ -214,6 +214,10 @@ The first implementation slices of that answer now exist:
   current repo-owned Version 1 proof set through one wrapper while still
   supplying mailbox secrets only through environment variables at runtime, and
   can optionally emit a small step-summary report for review records
+- the repository now also carries
+  `maint/live/osmap-run-v1-closeout-over-ssh.sh` so a workstation that can
+  actually reach `mail.blackbagsecurity.com` can trigger that same host-side
+  closeout wrapper and pull the resulting report back locally
 
 The repository now also carries first operator scaffolding for that split under
 `maint/openbsd/`:

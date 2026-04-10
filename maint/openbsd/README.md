@@ -108,3 +108,9 @@ The quickest local checks after wiring the env files are:
 
 For repo-owned live-host validation commands, use
 `maint/live/osmap-host-validate.ksh` from the standard host checkout.
+
+If the validating workstation can reach `mail.blackbagsecurity.com` over SSH
+and the host-side checkout is already `~/OSMAP`, the repo also provides
+`maint/live/osmap-run-v1-closeout-over-ssh.sh` to invoke the current
+authoritative V1 closeout wrapper remotely and fetch the resulting summary
+report back to the local machine.

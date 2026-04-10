@@ -2471,3 +2471,25 @@ This was chosen instead of adding a larger reporting system because the V1
 closeout need is only a minimal review artifact that records the exact proof
 subset that passed, without changing the proof scripts themselves or inventing
 a new persistence layer.
+
+### Add a repo-owned SSH wrapper for the host-side V1 closeout gate
+
+The authoritative Version 1 proof set now has a host-side wrapper and a small
+report format, but one more practical friction point remained: the validating
+workstation may not be the same machine as `mail.blackbagsecurity.com`.
+
+OSMAP now carries `maint/live/osmap-run-v1-closeout-over-ssh.sh` so a machine
+that can reach the private host can:
+
+- SSH into the standard `~/OSMAP` checkout
+- run `maint/live/osmap-live-validate-v1-closeout.ksh` there with the selected
+  steps
+- forward `OSMAP_VALIDATION_PASSWORD` only for the remote invocation when the
+  real login-plus-send step is included
+- fetch the resulting closeout summary report back to the local machine
+
+This was chosen instead of broadening the live-proof scripts themselves because
+the actual blocker was operator reachability to the private host, not the proof
+logic. The smallest useful answer is a thin orchestration wrapper that keeps
+the authoritative gate unchanged while making the real host run easier from a
+reachable workstation.
