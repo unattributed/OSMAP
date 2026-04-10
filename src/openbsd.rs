@@ -7,6 +7,7 @@
 //! - stay honest about platform boundaries in non-OpenBSD environments
 
 use std::collections::BTreeMap;
+use std::fs;
 use std::path::{Path, PathBuf};
 
 use crate::config::{AppConfig, LogLevel, OpenbsdConfinementMode};
@@ -37,6 +38,22 @@ const OPENBSD_HELPER_PROMISES_BEFORE_LOCK: &str =
 /// The narrower promise set kept after the filesystem view is locked in the
 /// local mailbox-helper runtime.
 const OPENBSD_HELPER_PROMISES_AFTER_LOCK: &str = "stdio rpath wpath cpath fattr unix proc exec";
+
+/// The system-library prefixes the helper-side `doveadm` execution currently
+/// resolves on the validated OpenBSD host.
+const OPENBSD_SYSTEM_LIBRARY_PREFIXES: [&str; 4] =
+    ["libc.so.", "libm.so.", "libpthread.so.", "libz.so."];
+
+/// The local-library prefixes the helper-side `doveadm` execution currently
+/// resolves on the validated OpenBSD host.
+const OPENBSD_LOCAL_LIBRARY_PREFIXES: [&str; 6] = [
+    "libbz2.so.",
+    "libiconv.so.",
+    "liblz4.so.",
+    "liblzma.so.",
+    "libsodium.so.",
+    "libzstd.so.",
+];
 
 /// One unveiled path plus the permissions granted to it.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -127,11 +144,7 @@ impl OpenbsdConfinementPlan {
                 // mailbox reads.
                 add_rule(&mut rules, &config.state_root, "r");
                 add_rule(&mut rules, &config.state_layout.runtime_dir, "rwc");
-                add_rule(&mut rules, Path::new("/usr/local/bin/doveadm"), "x");
-                add_rule(&mut rules, Path::new("/usr/lib"), "rx");
-                add_rule(&mut rules, Path::new("/usr/libexec"), "rx");
-                add_rule(&mut rules, Path::new("/usr/local/lib"), "rx");
-                add_rule(&mut rules, Path::new("/etc/dovecot"), "r");
+                add_doveadm_dependency_rules(&mut rules);
                 add_rule(&mut rules, Path::new("/dev/null"), "rw");
 
                 if let Some(userdb_socket_path) = &config.doveadm_userdb_socket_path {
@@ -228,6 +241,99 @@ fn add_parent_dir_rules(rules: &mut BTreeMap<PathBuf, String>, path: &Path) {
         }
         add_rule(rules, parent, "r");
         current = parent.parent();
+    }
+}
+
+/// Adds the current helper-side `doveadm` dependency view. The helper prefers
+/// exact executable, loader, library, config, and Dovecot socket paths when it
+/// can resolve them on the current host, but falls back to the broader library
+/// roots if a host does not expose the expected versioned files.
+fn add_doveadm_dependency_rules(rules: &mut BTreeMap<PathBuf, String>) {
+    add_rule(rules, Path::new("/usr/local/bin/doveadm"), "x");
+    add_if_exists(rules, Path::new("/usr/local/bin/doveconf"), "x");
+
+    if !add_if_exists(rules, Path::new("/usr/libexec/ld.so"), "r") {
+        add_rule(rules, Path::new("/usr/libexec"), "rx");
+    }
+    add_if_exists(rules, Path::new("/var/run/ld.so.hints"), "r");
+
+    add_resolved_library_rules(
+        rules,
+        Path::new("/usr/lib"),
+        &OPENBSD_SYSTEM_LIBRARY_PREFIXES,
+    );
+    add_resolved_library_rules(
+        rules,
+        Path::new("/usr/local/lib"),
+        &OPENBSD_LOCAL_LIBRARY_PREFIXES,
+    );
+
+    if !add_if_exists(rules, Path::new("/usr/local/lib/dovecot"), "rx") {
+        add_rule(rules, Path::new("/usr/local/lib"), "rx");
+    }
+
+    let mut added_explicit_config_path = false;
+    added_explicit_config_path |= add_if_exists(rules, Path::new("/etc/dovecot/dovecot.conf"), "r");
+    added_explicit_config_path |= add_if_exists(rules, Path::new("/etc/dovecot/conf.d"), "r");
+    added_explicit_config_path |= add_if_exists(rules, Path::new("/etc/dovecot/local.conf"), "r");
+    if !added_explicit_config_path {
+        add_if_exists(rules, Path::new("/etc/dovecot"), "r");
+    }
+
+    add_if_exists(rules, Path::new("/var/dovecot/config"), "rw");
+}
+
+/// Adds exact versioned library paths when they can be resolved under the
+/// supplied directory, otherwise falls back to the broader directory path.
+fn add_resolved_library_rules(
+    rules: &mut BTreeMap<PathBuf, String>,
+    dir: &Path,
+    prefixes: &[&str],
+) {
+    match resolve_prefixed_paths(dir, prefixes) {
+        Some(paths) => {
+            for path in paths {
+                add_rule(rules, &path, "r");
+            }
+        }
+        None => {
+            if dir.exists() {
+                add_rule(rules, dir, "rx");
+            }
+        }
+    }
+}
+
+/// Returns one stable exact path for every requested filename prefix inside the
+/// supplied directory, or `None` when any prefix cannot be resolved.
+fn resolve_prefixed_paths(dir: &Path, prefixes: &[&str]) -> Option<Vec<PathBuf>> {
+    let entries = fs::read_dir(dir).ok()?;
+    let mut file_names = entries
+        .filter_map(|entry| entry.ok())
+        .map(|entry| entry.path())
+        .collect::<Vec<_>>();
+    file_names.sort();
+
+    let mut resolved = Vec::with_capacity(prefixes.len());
+    for prefix in prefixes {
+        let path = file_names.iter().find(|path| {
+            path.file_name()
+                .and_then(|name| name.to_str())
+                .is_some_and(|name| name.starts_with(prefix))
+        })?;
+        resolved.push(path.clone());
+    }
+
+    Some(resolved)
+}
+
+/// Adds one rule only when the path currently exists on the host.
+fn add_if_exists(rules: &mut BTreeMap<PathBuf, String>, path: &Path, permissions: &str) -> bool {
+    if path.exists() {
+        add_rule(rules, path, permissions);
+        true
+    } else {
+        false
     }
 }
 
@@ -341,6 +447,7 @@ mod tests {
     use super::*;
     use crate::config::{AppRunMode, LogFormat, RuntimeEnvironment};
     use crate::state::StateLayout;
+    use std::time::{SystemTime, UNIX_EPOCH};
 
     fn config_fixture(mode: OpenbsdConfinementMode) -> AppConfig {
         AppConfig {
@@ -531,10 +638,18 @@ mod tests {
                 && rule.permissions.contains('r')
                 && rule.permissions.contains('w')
         }));
-        assert!(!plan
+        assert!(plan
             .unveil_rules
             .iter()
-            .any(|rule| rule.path == Path::new("/var/dovecot")));
+            .any(|rule| rule.path == Path::new("/usr/local/bin/doveadm")
+                && rule.permissions.contains('x')));
+        if Path::new("/var/dovecot/config").exists() {
+            assert!(plan
+                .unveil_rules
+                .iter()
+                .any(|rule| rule.path == Path::new("/var/dovecot/config")
+                    && rule.permissions.contains('w')));
+        }
         assert!(!plan
             .unveil_rules
             .iter()
@@ -579,5 +694,31 @@ mod tests {
             .unveil_rules
             .iter()
             .any(|rule| rule.path == Path::new("/var/log/dovecot.log")));
+    }
+
+    #[test]
+    fn resolves_prefixed_paths_to_stable_exact_matches() {
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("clock should be after epoch")
+            .as_nanos();
+        let temp_dir = std::env::temp_dir().join(format!("osmap-openbsd-paths-{now}"));
+        fs::create_dir_all(&temp_dir).expect("temp dir should be created");
+        fs::write(temp_dir.join("libalpha.so.2.0"), "").expect("alpha file should exist");
+        fs::write(temp_dir.join("libbeta.so.1.0"), "").expect("beta file should exist");
+        fs::write(temp_dir.join("libgamma.txt"), "").expect("noise file should exist");
+
+        let resolved = resolve_prefixed_paths(&temp_dir, &["libalpha.so.", "libbeta.so."])
+            .expect("prefixes should resolve");
+
+        assert_eq!(
+            resolved,
+            vec![
+                temp_dir.join("libalpha.so.2.0"),
+                temp_dir.join("libbeta.so.1.0")
+            ]
+        );
+
+        fs::remove_dir_all(&temp_dir).expect("temp dir should be removed");
     }
 }

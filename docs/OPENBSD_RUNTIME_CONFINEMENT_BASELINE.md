@@ -54,10 +54,18 @@ This reflects the current application truth:
 
 ## Current Filesystem View
 
-The current unveil plan includes:
+The current unveil plan now differs meaningfully between the browser runtime
+and the mailbox helper.
+
+Shared runtime paths still include:
 
 - the configured OSMAP state root, now as a read-only anchor path
-- configured runtime, session, audit, cache, and TOTP-secret directories
+- configured runtime, session, audit, cache, and TOTP-secret directories where
+  the current mode needs them
+- `/dev/null`
+
+The current `serve` runtime still includes the broader auth and sendmail view:
+
 - `/usr/local/bin/doveadm`
 - `/usr/sbin/sendmail`
 - `/usr/local/sbin/sendmail`
@@ -69,13 +77,24 @@ The current unveil plan includes:
 - `/etc/mailer.conf`
 - `/var/spool/postfix`
 - `/var/spool/smtpd`
-- `/dev/null`
 
-This is still broader than the final target, but it is materially narrower than
-both the earlier blanket `/etc` plus `/var` view and the earlier writable
-top-level state-root view because the current prototype now has enough
-live-host evidence to describe helper dependencies and state mutability more
-precisely.
+The current `mailbox-helper` runtime is now narrower and more explicit on the
+validated host:
+
+- `/usr/local/bin/doveadm`
+- `/usr/local/bin/doveconf`
+- `/usr/libexec/ld.so`
+- exact resolved `doveadm` shared-library paths from `/usr/lib` and
+  `/usr/local/lib` when the current host exposes the expected versioned files
+- `/usr/local/lib/dovecot`
+- `/etc/dovecot/dovecot.conf`
+- `/etc/dovecot/conf.d`
+- `/etc/dovecot/local.conf`
+- `/var/dovecot/config`
+
+If a host does not expose the expected exact versioned library filenames, the
+helper falls back to the broader `/usr/lib` or `/usr/local/lib` visibility
+instead of failing only because the host library naming differs.
 
 When configured, the runtime also adds explicit read/write unveil rules for:
 
@@ -98,11 +117,13 @@ process. It still shells out to:
 - `sendmail`
 
 Those helpers inherit the parent process's unveiled filesystem view. That means
-the current enforced unveil policy must remain broad enough for:
+the current enforced unveil policy must still remain broader than the final
+target in at least these places:
 
-- system libraries
-- helper-specific configuration files
-- local submission spool paths
+- the `serve` runtime still keeps a broader auth and sendmail-compatible view
+- the helper still depends on the current Dovecot config socket and dynamic
+  library layout
+- the browser runtime still needs local submission spool paths
 
 This is not the end goal. It is the smallest honest enforcement layer that can
 be applied today without pretending the helper dependency problem is already
@@ -134,6 +155,8 @@ The current confinement layer has been validated through:
   `mail.blackbagsecurity.com`
 - helper-backed all-mailboxes browser search under enforced confinement on
   `mail.blackbagsecurity.com`
+- helper-backed bounded message move under enforced confinement on
+  `mail.blackbagsecurity.com`
 - one continuous real browser flow under enforced confinement on
   `mail.blackbagsecurity.com`, from password-plus-TOTP login through
   helper-backed mailbox, message-view, and attachment reads
@@ -153,6 +176,8 @@ The enforced OpenBSD run logged:
 - successful helper-backed mailbox listing, message-list retrieval, message
   view, and attachment download under `enforce`
 - successful helper-backed all-mailboxes browser search under `enforce`
+- successful helper-backed bounded message move and move-throttle handling
+  under `enforce`
 - successful real browser session issuance followed by helper-backed mailbox,
   message-view, and attachment reads under `enforce`
 

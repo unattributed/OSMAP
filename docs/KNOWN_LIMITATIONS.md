@@ -70,7 +70,8 @@
   implementation
 - The OpenBSD runtime now has an enforced confinement mode, but its helper
   compatibility view is still broader than the final target even after the
-  first narrowing passes away from blanket `/etc` and `/var` visibility
+  current helper-side narrowing away from blanket `/usr/libexec`,
+  `/usr/local/lib`, and `/etc/dovecot` visibility on the validated host
 - `mail.blackbagsecurity.com` now has a dedicated least-privilege Dovecot auth
   listener for `_osmap`, and positive browser login plus TOTP-backed session
   issuance are now validated there under `enforce`
@@ -87,9 +88,11 @@
   and the current split-runtime operator model is still repo-owned scaffolding
   rather than finished packaging or ports integration
 - the OpenBSD confinement plan now keeps the top-level state root read-only and
-  only the explicit child directories writable, but helper and mail-stack
-  dependency paths are still broader than the likely final smallest viable
-  filesystem view
+  only the explicit child directories writable, and the helper now prefers
+  exact `doveadm` loader, library, config, and Dovecot socket paths, but the
+  browser runtime still keeps a broader auth/sendmail view and the helper still
+  has a conservative library-directory fallback when a host does not expose the
+  expected exact versioned shared-library filenames
 - sanitized HTML rendering and the first settings-driven plain-text fallback
   are now proven on `mail.blackbagsecurity.com`, and the first live mutation
   proof for one-message move plus bounded send now exists there too, and the

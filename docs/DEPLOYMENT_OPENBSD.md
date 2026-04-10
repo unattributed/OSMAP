@@ -198,6 +198,10 @@ The first implementation slices of that answer now exist:
   when the helper socket is configured
 - helper-specific confinement now exists in code and has live-host proof under
   the actual `vmail` boundary
+- the helper-side confinement view on the validated host now narrows
+  `doveadm` support paths to explicit `doveconf`, loader, Dovecot config, and
+  Dovecot config-socket paths plus exact resolved shared-library files where
+  the host exposes them
 
 The repository now also carries first operator scaffolding for that split under
 `maint/openbsd/`:

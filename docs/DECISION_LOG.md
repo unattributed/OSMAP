@@ -2314,3 +2314,39 @@ operator-facing deployment model.
 Local validation and disposable-host validation on `mail.blackbagsecurity.com`
 both passed after this change, including the repo-owned `make security-check`
 gate and a real helper-backed enforced all-mailboxes browser search workflow.
+
+### Narrow the helper-side OpenBSD dependency view to explicit `doveadm` and Dovecot paths
+
+The helper-side confinement plan still carried blanket `/usr/libexec`,
+`/usr/local/lib`, and `/etc/dovecot` visibility even though host tracing on
+`mail.blackbagsecurity.com` showed a smaller stable dependency set for the
+current helper-backed search and move workflows.
+
+OSMAP now narrows the `mailbox-helper` view by:
+
+- keeping `/usr/local/bin/doveadm` explicit
+- adding `/usr/local/bin/doveconf` explicitly because the traced `doveadm`
+  execution invokes it on the validated host
+- narrowing the loader path to `/usr/libexec/ld.so`
+- preferring exact resolved shared-library files from `/usr/lib` and
+  `/usr/local/lib` when the current host exposes the expected versioned names
+- narrowing Dovecot config visibility to `dovecot.conf`, `conf.d`, and
+  `local.conf`
+- adding the explicit Dovecot config-socket path at `/var/dovecot/config`
+- keeping a conservative broader-library fallback only when a host does not
+  expose the expected exact versioned library filenames
+
+This was chosen instead of hard-coding one OpenBSD package ABI snapshot or
+keeping the broader helper library/config roots because the new plan is both
+more reviewable on the validated host and less brittle across later host
+library upgrades.
+
+Validation after this narrowing passed locally and on the target OpenBSD host:
+
+- local `cargo test openbsd`
+- local `make security-check`
+- disposable-host `./maint/live/osmap-host-validate.ksh make security-check`
+- disposable-host `ksh ./maint/live/osmap-live-validate-all-mailbox-search.ksh`
+  as the read proof
+- disposable-host `ksh ./maint/live/osmap-live-validate-move-throttle.ksh`
+  as the mutation proof
