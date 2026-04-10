@@ -2213,3 +2213,56 @@ The effect is deliberate:
 - the Version 1 stopping point becomes clearer in configuration, startup
   logging, and deployment guidance before further helper or confinement
   narrowing happens
+
+## 2026-04-10
+
+### Carry the helper boundary into an operator-visible OpenBSD split-runtime layout
+
+Freezing the mailbox helper into production `serve` configuration was not
+enough on its own. The project also needed an operator-facing deployment shape
+that matches that boundary instead of leaving it as a purely internal runtime
+rule.
+
+OSMAP now treats the current OpenBSD deployment model as a split runtime:
+
+- one browser-facing `serve` process
+- one local `mailbox-helper` process
+- separate example environment files and launch wrappers for each runtime
+
+This was chosen instead of keeping one monolithic service wrapper because the
+selected least-privilege design is now real project policy, not just an
+implementation detail hidden inside one binary.
+
+### Carry repo-owned OpenBSD `rc.d` scaffolding for the split runtime
+
+Once the split runtime became the intended operator model, the repository
+needed first-class OpenBSD supervision examples that reflect it. OSMAP now
+carries repo-owned example `rc.d` scripts and launcher scaffolding for:
+
+- `osmap_serve`
+- `osmap_mailbox_helper`
+
+This does not claim that packaging or final base-system integration is
+complete. It does mean the project now treats OpenBSD service supervision for
+the split runtime as something operators should be able to review, test, and
+adapt directly from the repository rather than reconstruct from prose alone.
+
+### Use a dedicated helper-side attachment-download operation instead of reusing helper-backed message view
+
+The earlier helper-backed attachment path reused helper-side message view and
+then resolved attachment bytes in the web-facing runtime. That was a useful
+bridge, but it was no longer the right stopping point once the helper boundary
+itself became a production rule.
+
+OSMAP now treats attachment-byte retrieval as its own helper operation:
+
+- the web-facing runtime asks the local helper for one bounded attachment
+- the helper resolves the attachment part from the fetched message
+- the helper protocol returns the bounded attachment payload directly
+- helper failures preserve stable browser-facing meanings such as
+  `invalid_request`, `not_found`, and temporary failure
+
+This was chosen instead of continuing to tunnel attachment download through the
+helper-backed message-view bridge because the dedicated operation keeps mailbox
+authority narrower and makes the helper boundary more honest about what the
+browser process is and is not allowed to do.
