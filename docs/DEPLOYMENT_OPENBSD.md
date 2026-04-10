@@ -150,8 +150,7 @@ Preferred Phase 4 baseline:
 Current prototype-specific deployment guidance:
 
 - keep OSMAP on `127.0.0.1:<port>` behind nginx
-- keep OSMAP under a dedicated service user once the service-management layer is
-  written
+- keep OSMAP under dedicated service users that match the current runtime split
 - keep the state tree owned narrowly enough that later `unveil(2)` policy can
   be practical
 - keep `doveadm` and `sendmail` execution paths explicit and reviewable
@@ -196,6 +195,18 @@ The first implementation slices of that answer now exist:
   helper socket is configured
 - helper-specific confinement now exists in code and has live-host proof under
   the actual `vmail` boundary
+
+The repository now also carries first operator scaffolding for that split under
+`maint/openbsd/`:
+
+- `osmap-serve.env.example` for the `_osmap` browser-facing runtime
+- `osmap-mailbox-helper.env.example` for the `vmail` mailbox-helper runtime
+- `README.md` with socket-permission and startup-order guidance for the current
+  helper boundary
+
+That does not claim that packaging or `rc.d` integration is final. It does make
+the current `_osmap` plus `vmail` deployment shape concrete enough to review,
+stage, and hand to operators without inventing the service split from scratch.
 
 This is more likely to produce a system that OpenBSD operators, and eventually
 potential downstream packagers, would consider credible.

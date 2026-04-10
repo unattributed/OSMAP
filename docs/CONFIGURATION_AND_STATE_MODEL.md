@@ -50,6 +50,10 @@ The early runtime recognizes:
 - `OSMAP_SUBMISSION_THROTTLE_REMOTE_MAX_SUBMISSIONS`
 - `OSMAP_SUBMISSION_THROTTLE_WINDOW_SECS`
 - `OSMAP_SUBMISSION_THROTTLE_LOCKOUT_SECS`
+- `OSMAP_MESSAGE_MOVE_THROTTLE_MAX_MOVES`
+- `OSMAP_MESSAGE_MOVE_THROTTLE_REMOTE_MAX_MOVES`
+- `OSMAP_MESSAGE_MOVE_THROTTLE_WINDOW_SECS`
+- `OSMAP_MESSAGE_MOVE_THROTTLE_LOCKOUT_SECS`
 - `OSMAP_OPENBSD_CONFINEMENT_MODE`
 
 The committed example file under `config/osmap.env.example` is intentionally
@@ -92,6 +96,11 @@ As of the current Version 1 closeout baseline, production `serve` mode now
 requires `OSMAP_MAILBOX_HELPER_SOCKET_PATH` so the browser-facing runtime does
 not silently fall back to direct mailbox backends in the shipping deployment
 shape.
+
+The repo now also ships split OpenBSD env examples under `maint/openbsd/` so
+operators can keep the browser-facing runtime and the mailbox-helper runtime on
+separate service definitions while still sharing one explicit helper socket
+boundary.
 
 The runtime now also recognizes one explicit HTTP concurrency setting:
 

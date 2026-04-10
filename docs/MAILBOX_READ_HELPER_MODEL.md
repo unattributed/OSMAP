@@ -203,6 +203,8 @@ That migration is now underway:
 - message-view retrieval uses the helper when configured
 - attachment download now reuses the helper-backed message-view fetch path when
   configured, while attachment bytes are still decoded in the web runtime
+- first repo-owned OpenBSD service env examples for the split `_osmap` plus
+  `vmail` runtime now live under `maint/openbsd/`
 
 ## What This Document Does Not Claim
 
