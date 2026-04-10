@@ -191,8 +191,8 @@ The first implementation slices of that answer now exist:
   `OSMAP_MAILBOX_HELPER_SOCKET_PATH`
 - mailbox listing, message-list retrieval, and message-view retrieval can now
   route through that helper
-- attachment download now reuses the helper-backed message-view path when the
-  helper socket is configured
+- attachment download now uses a dedicated helper-side attachment operation
+  when the helper socket is configured
 - helper-specific confinement now exists in code and has live-host proof under
   the actual `vmail` boundary
 

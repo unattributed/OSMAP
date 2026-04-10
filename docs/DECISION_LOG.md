@@ -2266,3 +2266,23 @@ This was chosen instead of continuing to tunnel attachment download through the
 helper-backed message-view bridge because the dedicated operation keeps mailbox
 authority narrower and makes the helper boundary more honest about what the
 browser process is and is not allowed to do.
+
+### Keep status and deployment docs synchronized with the helper boundary that actually ships
+
+Once the helper-side attachment-download operation and OpenBSD split-runtime
+scaffolding landed, several status-facing docs still described the older
+bridge behavior. That was no longer acceptable because the current helper
+boundary is now part of the real deployment posture, not just an internal
+refactor detail.
+
+The active docs now need to say the current state plainly:
+
+- attachment download uses a dedicated helper-side operation
+- the helper boundary now also carries search and the first one-message move
+  workflow
+- production `serve` treats the mailbox helper as a required deployment rule
+  rather than an optional preference
+
+This was chosen instead of leaving older wording in place because stale helper
+docs would mislead operator review, deployment staging, and the next round of
+implementation planning.

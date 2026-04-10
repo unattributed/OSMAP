@@ -79,15 +79,13 @@
   message-list retrieval, message view, and attachment download are now proven
   there under `enforce`
 - the current direct `doveadm` mailbox-read path remains a prototype bridge;
-  the selected least-privilege next step is a dedicated local mailbox-read
-  helper boundary, and mailbox listing, message-list retrieval, plus
-  message-view retrieval now use that helper when configured, while attachment
-  download now reuses the helper-backed message-view path instead of making the
-  web runtime fetch directly, but the broader read-path migration is not
-  complete
-- attachment download is now proven against a real attachment-bearing mailbox
-  under enforced confinement, but a distinct helper-side attachment-byte
-  operation still does not exist
+  production `serve` mode now freezes the least-privilege deployment posture
+  around `OSMAP_MAILBOX_HELPER_SOCKET_PATH`, while direct mailbox backends
+  remain only as development and test seams rather than an acceptable
+  production shape
+- the helper/OpenBSD confinement view is still not the final narrowest target,
+  and the current split-runtime operator model is still repo-owned scaffolding
+  rather than finished packaging or ports integration
 - sanitized HTML rendering and the first settings-driven plain-text fallback
   are now proven on `mail.blackbagsecurity.com`, and the first live mutation
   proof for one-message move plus bounded send now exists there too, and the

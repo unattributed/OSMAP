@@ -65,7 +65,7 @@ This preserves a clear split between:
 
 ## Current Status
 
-As of March 28, 2026, the first in-repo helper slice exists and has live-host
+As of April 10, 2026, the first in-repo helper slice exists and has live-host
 proof on `mail.blackbagsecurity.com`.
 
 What is implemented:
@@ -74,39 +74,41 @@ What is implemented:
 - a local Unix-domain socket helper server
 - a small line-oriented request/response protocol
 - a helper-backed mailbox-list client backend in the web runtime
+- a helper-backed message-search client backend in the web runtime
 - a helper-backed message-list client backend in the web runtime
 - a helper-backed message-view client backend in the web runtime
-- helper-backed source-message fetches for the attachment-download route
-- mailbox-list, message-list, and message-view routing through the helper when
+- a helper-backed attachment-download client backend in the web runtime
+- a helper-backed one-message move backend in the web runtime
+- mailbox-list, message-search, message-list, message-view, attachment
+  download, and one-message move routing through the helper when
   `OSMAP_MAILBOX_HELPER_SOCKET_PATH` is configured
 - live helper-backed mailbox listing, message-list retrieval, message view, and
-  attachment download under `OSMAP_OPENBSD_CONFINEMENT_MODE=enforce` with the
+  attachment download under `OSMAP_OPENBSD_CONFINEMENT_MODE=enforce`, plus
+  helper-backed search and one-message move in the browser runtime, with the
   web runtime kept as `_osmap` and the helper kept at the `vmail` boundary
 - a dedicated Dovecot auth listener for `_osmap` plus a dedicated Dovecot
   userdb listener for the `vmail` helper path on the validated host
 
-What is not yet implemented:
-
-- a dedicated helper-side attachment-byte operation distinct from the current
-  helper-backed message-view fetch path
-
 ## Scope Of The Helper
 
-The helper should be read-only in its first implementation slice.
+The helper started as a read-oriented least-privilege boundary, but the current
+Version 1 slice is now slightly broader than read-only.
 
-Its allowed operations should be limited to:
+Its currently implemented operations are:
 
 - mailbox listing
+- mailbox-scoped and all-visible-mailboxes search execution
 - message-list retrieval
 - single-message retrieval
 - attachment-part retrieval needed for the current forced-download path
+- one-message move between existing mailboxes
 
 It should not take over:
 
 - browser authentication
 - session management
 - outbound sendmail submission
-- mailbox mutation workflows not yet implemented in OSMAP
+- broad mailbox mutation workflows not yet implemented in OSMAP
 - arbitrary command execution
 
 ## Request And Response Shape
@@ -117,21 +119,21 @@ Current request properties in the first slice:
 
 - one explicit operation name
 - canonical username
-- mailbox name for message-list and message-view requests
-- UID for message-view requests
-
-Expected later request properties:
-
+- mailbox name where required
+- query text for message-search requests
 - UID where required
 - MIME part path where required
-- bounded request identifier for audit correlation
+- destination mailbox name for one-message move requests
 
 Current response properties:
 
 - success or denied/error status
 - bounded mailbox names for mailbox-list responses
+- bounded message-search results for search responses
 - bounded message summaries for message-list responses
 - one bounded message payload for message-view responses
+- one bounded attachment payload for attachment-download responses
+- bounded move confirmation for one-message move responses
 - operator-usable but bounded failure labels
 
 The current wire format is a small line-oriented key/value protocol over a
@@ -182,9 +184,9 @@ rejects configs that do not set `OSMAP_MAILBOX_HELPER_SOCKET_PATH`. That keeps
 the helper boundary explicit in the first-release deployment posture instead of
 leaving direct mailbox backends as an equally acceptable production path.
 
-## Suggested First Helper Slice
+## First Helper Slice Outcome
 
-The first helper implementation should:
+The original first helper implementation target was to:
 
 - live in this repository
 - implement only read-only mailbox operations
@@ -193,16 +195,19 @@ The first helper implementation should:
 - run only on loopback or a Unix-domain socket
 - ship with explicit OpenBSD service-management guidance
 
-The web-facing runtime should switch from direct `doveadm` execution to the
-helper one operation family at a time rather than in one broad rewrite.
+That did happen first, and the web-facing runtime switched from direct
+`doveadm` execution to the helper one operation family at a time rather than
+in one broad rewrite.
 
 That migration is now underway:
 
 - mailbox listing uses the helper when configured
+- message search uses the helper when configured
 - message-list retrieval uses the helper when configured
 - message-view retrieval uses the helper when configured
-- attachment download now reuses the helper-backed message-view fetch path when
-  configured, while attachment bytes are still decoded in the web runtime
+- attachment download now uses a dedicated helper-side attachment operation
+  when configured
+- one-message move now uses the helper when configured
 - first repo-owned OpenBSD service env examples for the split `_osmap` plus
   `vmail` runtime now live under `maint/openbsd/`
 

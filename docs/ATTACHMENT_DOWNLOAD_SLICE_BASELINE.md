@@ -19,7 +19,7 @@ The current slice provides:
 - session-gated attachment download
 - mailbox-plus-UID-plus-part-path authorization reuse
 - MIME-part resolution through the existing bounded message-view payload
-- helper-backed source-message retrieval when
+- a dedicated helper-backed attachment-download operation when
   `OSMAP_MAILBOX_HELPER_SOCKET_PATH` is configured
 - forced-download HTTP responses rather than inline preview behavior
 - conservative `Content-Disposition` filename sanitization
@@ -96,10 +96,10 @@ The first enforced-host synthetic-session validation confirmed:
 - the attachment route returned the expected bounded failure response for a
   synthetic missing-user session
 
-The local runtime now also keeps the attachment route on the helper-backed
-read path when a mailbox helper socket is configured. This avoids teaching the
-web-facing runtime to fall back to direct mailbox reads for attachment
-downloads after mailbox listing, message listing, and message view have already
+The local runtime now also keeps the attachment route on a dedicated
+helper-backed attachment operation when a mailbox helper socket is configured.
+This avoids teaching the web-facing runtime to fall back to direct mailbox
+reads for attachment downloads after the rest of the mailbox authority has
 moved behind the helper boundary.
 
 ## Live-Host Proof Update
@@ -111,7 +111,7 @@ The current validated host shape now uses:
 
 - `_osmap` plus `/var/run/osmap-auth` for browser auth
 - `vmail` plus `/var/run/osmap-userdb` for mailbox-helper userdb lookups
-- a helper-backed message-view fetch path under
+- a dedicated helper-backed attachment-download operation under
   `OSMAP_OPENBSD_CONFINEMENT_MODE=enforce`
 
 Using that shape, OSMAP now successfully:
@@ -132,8 +132,9 @@ This slice now proves that:
 - the existing mailbox, message-view, and MIME layers are coherent enough to
   support one explicit download route
 - attachment download can remain bounded and auditable
-- the helper-backed read path is coherent enough to carry attachment downloads
-  under the target `vmail` boundary on the current host
+- the helper boundary is coherent enough to carry attachment downloads under
+  the target `vmail` boundary on the current host without making the browser
+  runtime reconstruct attachment bytes from a proxied message view
 - the project can add real value without abandoning its low-dependency and
   reviewability posture
 
@@ -145,7 +146,5 @@ This slice does not yet include:
 - attachment preview behavior
 - original-message attachment reattachment in reply or forward flows
 - attachment download rate controls beyond adjacent nginx and network controls
-- a dedicated helper-side attachment-byte operation separate from the current
-  helper-backed message-view fetch
 
 Those remain later hardening and live-integration work.
