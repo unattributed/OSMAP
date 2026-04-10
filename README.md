@@ -161,8 +161,8 @@ Each phase produces formal outputs to support traceability and auditability.
   on `mail.blackbagsecurity.com` under `_osmap`.
 - The mailbox-helper runtime now exists in-repo: a local Unix-socket helper
   plus helper-backed mailbox listing, message-list retrieval, and message-view
-  retrieval, and the attachment route now reuses that helper-backed message
-  fetch when configured.
+  retrieval, and attachment download now also runs through a dedicated
+  helper-backed operation when configured.
 - The helper-backed read path is now also proven on `mail.blackbagsecurity.com`
   under `OSMAP_OPENBSD_CONFINEMENT_MODE=enforce`: mailbox listing,
   message-list retrieval, message view, and attachment download all succeeded
@@ -235,11 +235,11 @@ Each phase produces formal outputs to support traceability and auditability.
   routes are settings update, session revoke, and logout, and they are
   lower-volume, CSRF-bound, and lower abuse value than login, send, or message
   move.
-- Current priority work is therefore shifting toward bounded-runtime
-  hardening, freezing the helper/OpenBSD boundary more explicitly for
-  Version 1, and freezing the Version 1 contract now that the current
-  browser surface has broader live-host proof on
-  `mail.blackbagsecurity.com`.
+- Current priority work is therefore centered on freezing the Version 1
+  contract around the already-implemented helper/OpenBSD boundary, keeping the
+  status docs aligned with the current live-host proof, and only taking
+  narrower runtime or confinement changes when repo evidence exposes a real
+  blocker.
 - The HTTP runtime now also distinguishes connection-lifecycle failures more
   honestly: read timeouts return `408 Request Timeout`, while empty or
   truncated connections are logged and closed without treating them as generic
@@ -264,7 +264,7 @@ Each phase produces formal outputs to support traceability and auditability.
   `Broken pipe (os error 32)`, and a subsequent normal `GET /healthz`
   triggered `http_response_write_recovered` after returning `200 OK`.
 - The standard host-side validation checkout on `mail.blackbagsecurity.com` is
-  now `~/OSMAP`, with [osmap-host-validate.ksh](/home/foo/Workspace/OSMAP/maint/live/osmap-host-validate.ksh)
+  now `~/OSMAP`, with [osmap-host-validate.ksh](maint/live/osmap-host-validate.ksh)
   used there to run repo-owned validation under home-local `TMPDIR`,
   `CARGO_HOME`, and `CARGO_TARGET_DIR` instead of depending on `/tmp`.
 - GitHub-side security validation now has two explicit lanes:
@@ -275,14 +275,15 @@ Each phase produces formal outputs to support traceability and auditability.
 
 ## V1 Closeout Priorities
 
-The current repo-grounded path to Version 1 is now:
+The current repo-grounded path to Version 1 completion is now:
 
-1. Tighten the helper and OpenBSD confinement boundary to a clear V1 stopping
-   point rather than leaving it as an open-ended hardening thread.
-2. Continue narrow HTTP/runtime hardening until the current bounded-concurrency
-   server posture is explicit, observable, and boring to operate.
-3. Freeze the Version 1 contract and keep the docs honest about what ships and
-   what is deferred.
+1. Freeze the Version 1 closeout truth in `docs/ACCEPTANCE_CRITERIA.md`,
+   including the required proof scripts, the remaining open items, and the
+   explicit Version 2 deferrals.
+2. Keep `README.md`, the closeout-facing docs, and the repo-owned validation
+   references aligned with that gate.
+3. Only take additional implementation or hardening work when a failing proof
+   or a repo inconsistency reveals a narrower blocker.
 
 ## V2 Direction
 

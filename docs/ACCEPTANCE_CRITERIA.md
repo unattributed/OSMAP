@@ -213,35 +213,65 @@ Phase 6:
   `INBOX` and `Junk`
 - broader ergonomics for folder organization remain later refinements rather
   than blockers for the first move slice
-- the current repo-grounded reassessment also confirms active gaps beyond the
-  now-implemented login, send, move, bounded search, and broader live-host
-  browser proof: the correctness and availability limits of the current
-  bounded-concurrency HTTP runtime and the need to freeze the helper/OpenBSD
-  confinement boundary honestly for Version 1
+- the current repo-grounded reassessment also confirms that the remaining
+  closeout work is now mostly release-gate honesty and documentation
+  discipline, with bounded-runtime correctness or availability fixes only if
+  repo evidence still exposes a blocker
 - the actual prototype now exists and Phase 6 execution is materially underway,
   but the implementation is still prototype-grade rather than production-ready
 
 ## Current Version 1 Release Gate
 
+`docs/ACCEPTANCE_CRITERIA.md` is the authoritative Version 1 closeout gate.
 Version 1 should not be declared complete until all of the following are true:
 
-- the bounded-concurrency HTTP runtime has no remaining obvious correctness or
-  availability gap that still outweighs user-workflow work
-- the folder-organization workflow is practical enough for ordinary daily use
-  rather than only technically present
-- the search workflow is sufficient to replace normal Roundcube-era retrieval
-  behavior for the target users
-- live-host proof on `mail.blackbagsecurity.com` covers the already-
-  implemented browser surface broadly enough that the release posture is based
-  on evidence rather than unit tests alone
-- the helper and OpenBSD confinement boundary are documented as a deliberate
-  Version 1 stopping point instead of an unfinished direction
-- `README.md`, `PRODUCT_REQUIREMENTS_V1.md`, `KNOWN_LIMITATIONS.md`, and the
-  relevant slice baselines all describe the real shipping boundary honestly
+- the shipping boundary is frozen consistently across `README.md`,
+  `PRODUCT_REQUIREMENTS_V1.md`, `KNOWN_LIMITATIONS.md`,
+  `IMPLEMENTATION_PLAN.md`, `OPENBSD_RUNTIME_CONFINEMENT_BASELINE.md`, and the
+  latest closeout entries in `DECISION_LOG.md`
+- production `serve` requires `OSMAP_MAILBOX_HELPER_SOCKET_PATH`, and the
+  helper/OpenBSD confinement plan is documented as the deliberate Version 1
+  stopping point rather than as an unfinished direction
+- the folder-organization and search workflows remain accepted as sufficient
+  first-release baselines rather than being reopened as active blockers
+- the bounded-concurrency HTTP runtime has no remaining repo-evidenced
+  correctness or availability issue that outweighs closeout
+- the following repo-owned proof set has passed for the current closeout
+  snapshot on `mail.blackbagsecurity.com`:
+- `./maint/live/osmap-host-validate.ksh make security-check`
+- `ksh ./maint/live/osmap-live-validate-login-send.ksh`
+- `ksh ./maint/live/osmap-live-validate-all-mailbox-search.ksh`
+- `ksh ./maint/live/osmap-live-validate-archive-shortcut.ksh`
+- `ksh ./maint/live/osmap-live-validate-session-surface.ksh`
+- `ksh ./maint/live/osmap-live-validate-send-throttle.ksh`
+- `ksh ./maint/live/osmap-live-validate-move-throttle.ksh`
+
+The current repo snapshot already satisfies these closeout-gate preconditions:
+
+- serve-side OpenBSD auth and sendmail dependency narrowing is implemented
+- the repo-owned real password-plus-TOTP login-plus-send harness exists under
+  `maint/live/osmap-live-validate-login-send.ksh`
+- production `serve` already rejects configs without the local mailbox helper
+  boundary
+- live-host proof already covers login, mailbox read, attachment download,
+  search, archive, session surface, send, send throttle, and move throttle
+
+The current remaining closeout work is therefore:
+
+- keep the authoritative gate and status docs aligned with the implemented
+  boundary
+- rerun the affected repo-owned proof scripts when closeout-facing behavior
+  changes
+- only do additional implementation work if a failing proof or repo
+  inconsistency reveals a narrower blocker
 
 The following should not block Version 1 unless a narrower first-release need
 is proven:
 
+- broader OpenBSD ABI independence beyond the current conservative library
+  fallbacks
+- finished packaging or ports integration beyond the current repo-owned
+  split-runtime scaffolding
 - richer search behavior beyond ordinary daily-use needs
 - broader folder ergonomics beyond the first practical baseline
 - richer session or device intelligence

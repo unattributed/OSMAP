@@ -65,13 +65,15 @@
 - The identity model intentionally stops short of phishing-resistant MFA,
   native-client coexistence refinement, recovery design, and broader browser
   session-management UX
-- The architecture now defines a clear system shape, but mailbox, rendering,
-  send-path, and confinement enforcement details still need proof through
-  implementation
-- The OpenBSD runtime now has an enforced confinement mode, but its helper
-  compatibility view is still broader than the final target even after the
-  current helper-side narrowing away from blanket `/usr/libexec`,
-  `/usr/local/lib`, and `/etc/dovecot` visibility on the validated host
+- The architecture now defines a clear system shape, and the current repo now
+  materially proves login, read, search, move, send, session, and confinement
+  behavior on the validated host, but Version 1 closeout still depends on
+  keeping the release gate and status docs aligned with that proven boundary
+- The OpenBSD runtime now has an enforced confinement mode, and the current
+  helper-side plus serve-side dependency view is narrowed to explicit auth,
+  sendmail, loader, library, config, and socket paths on the validated host,
+  but the policy still keeps conservative library fallbacks when exact
+  versioned shared-library files are unavailable
 - `mail.blackbagsecurity.com` now has a dedicated least-privilege Dovecot auth
   listener for `_osmap`, and positive browser login plus TOTP-backed session
   issuance are now validated there under `enforce`
@@ -84,9 +86,10 @@
   around `OSMAP_MAILBOX_HELPER_SOCKET_PATH`, while direct mailbox backends
   remain only as development and test seams rather than an acceptable
   production shape
-- the helper/OpenBSD confinement view is still not the final narrowest target,
-  and the current split-runtime operator model is still repo-owned scaffolding
-  rather than finished packaging or ports integration
+- the helper/OpenBSD confinement plan should now be treated as the deliberate
+  Version 1 stopping point, but the current split-runtime operator model is
+  still repo-owned scaffolding rather than finished packaging or ports
+  integration
 - the OpenBSD confinement plan now keeps the top-level state root read-only and
   only the explicit child directories writable, and both the helper and the
   browser runtime now prefer exact `doveadm`, mailwrapper/sendmail, loader,
@@ -104,7 +107,6 @@
   but broader mutation coverage is still incomplete
 - The SDLC and release rules are now defined, but they have not yet been proven
   against a full live implementation pipeline
-- The project now has an implementation plan and work breakdown, but there is
-  not yet a fully proven browser proof of concept covering hardened deployment
-  and successful live mutation workflows beyond the first bounded move/send
-  coverage
+- The project now has an implementation plan and work breakdown, but Version 1
+  closeout still depends on one authoritative release gate and consistent
+  status docs rather than on widening the implementation surface

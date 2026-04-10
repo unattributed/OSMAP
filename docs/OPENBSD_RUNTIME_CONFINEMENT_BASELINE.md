@@ -264,22 +264,20 @@ of a vague future idea, and the current host has live proof for it:
 
 This baseline does not mean:
 
-- the current unveil policy is narrow enough for final adoption
+- the current policy is package-ABI-independent or free of conservative
+  library fallbacks
 - helper-process dependencies have been eliminated
-- richer send helper execution is fully proven under enforced confinement
-- QEMU and host confinement validation are complete for every user workflow
+- repo-owned split-runtime scaffolding is finished packaging or ports
+  integration
+- every possible host and user workflow has live proof under enforced
+  confinement
 
-The next confinement work should focus on narrowing the helper-compatible
-filesystem view and proving more real user flows under enforced mode.
-
-The now-selected next narrowing move is to stop treating direct mailbox helper
-execution from the web process as the likely final shape. A dedicated local
-mailbox-read helper boundary gives the confinement work a clearer target:
-
-- the web-facing runtime can keep a smaller execution and filesystem view
-- the mailbox helper can carry the narrower mail-storage authority it actually
-  needs
-- the two processes can be audited and confined separately
+The repository now treats the helper boundary plus the current serve-side auth
+and sendmail dependency narrowing as the deliberate Version 1 stopping point.
+The next closeout work is therefore to keep the release gate and status docs
+aligned with that implemented boundary and rerun the affected repo-owned host
+proofs when it changes, not to reopen direct mailbox authority from the web
+runtime as the likely production shape.
 
 The helper-backed read-path migration now reaches mailbox listing,
 message-list retrieval, message-view retrieval, attachment download, search,
@@ -293,5 +291,8 @@ top-level state-root anchor plus explicit writable child directories.
 That is still not the same thing as full live-browser coverage. The helper
 runtime has now been exercised successfully on `mail.blackbagsecurity.com`
 under the actual `vmail` boundary in this document's validation set, and the
-core authenticated read path is now proven in one continuous browser flow, but
-broader workflow coverage and further narrowing remain.
+core authenticated read path is now proven in one continuous browser flow. The
+repo now also carries a real password-plus-TOTP login-plus-send proof under
+`enforce`, while broader workflow coverage beyond the current proof set and
+further packaging work remain later refinements rather than the first active
+Version 1 blocker.

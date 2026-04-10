@@ -1796,7 +1796,7 @@ The project is now far enough along that the main risk is no longer missing
 basic product shape. The bigger risk is drifting into convenient extra work
 before the first release boundary is finished and frozen.
 
-The current official Version 1 closeout order is now:
+At that point, the official Version 1 closeout order was:
 
 1. narrow HTTP/runtime hardening
 2. minimum folder-organization ergonomics for ordinary use
@@ -2403,3 +2403,30 @@ Validation after this narrowing passed locally and on the target OpenBSD host:
 - disposable-host `./maint/live/osmap-host-validate.ksh make security-check`
 - disposable-host `ksh ./maint/live/osmap-live-validate-login-send.ksh`
   as the real positive-login-plus-send proof
+
+### Treat V1 closeout drift as the next repo-level risk, not more helper/OpenBSD redesign
+
+After the serve-side auth/sendmail narrowing landed, the repo-owned
+`maint/live/osmap-live-validate-login-send.ksh` harness existed, and
+production `serve` already rejected configs without
+`OSMAP_MAILBOX_HELPER_SOCKET_PATH`, continuing to frame helper/OpenBSD
+tightening as the next default item would have been stale.
+
+The current closeout rule is now:
+
+- use `docs/ACCEPTANCE_CRITERIA.md` as the authoritative Version 1 gate
+- keep `README.md`, `KNOWN_LIMITATIONS.md`, `IMPLEMENTATION_PLAN.md`,
+  `OPENBSD_RUNTIME_CONFINEMENT_BASELINE.md`, and the current status entries in
+  `DECISION_LOG.md` aligned with that gate
+- treat the current conservative library fallbacks and repo-owned split-
+  runtime scaffolding as the deliberate Version 1 stopping point unless a
+  failing proof exposes a narrower blocker
+- take further implementation work only when repo truth, not stale planning
+  text, shows an unclosed blocker
+
+This was chosen instead of continuing with more speculative confinement
+tightening because the repository already has the narrower serve-side
+dependency view, a real password-plus-TOTP login-plus-send proof, and a frozen
+production helper boundary. The larger remaining risk is closeout drift:
+stale status text, ambiguous release criteria, and future work getting pulled
+back into solved design debates.

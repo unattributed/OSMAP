@@ -158,19 +158,17 @@ guidance plus an implemented OpenBSD confinement mode.
 The next active implementation work should focus on:
 
 - using the project-local QEMU lab wrappers and `mail.blackbagsecurity.com` for
-  continued OpenBSD validation as the runtime broadens
-- keeping the custom HTTP runtime on a narrow hardening track before widening
-  browser feature surface further
+  targeted reruns of the existing proof set when closeout-facing behavior
+  changes
+- keeping the custom HTTP runtime on a narrow hardening track only when repo
+  evidence shows a concrete correctness or availability blocker
 - reconciling the remaining Version 1 gaps against the actual repo state so the
   next work is driven by real product deficits rather than stale assumptions
-- extending the current mailbox-helper slice beyond mailbox listing,
-  message-list retrieval, and message-view retrieval toward attachment-part
-  retrieval without widening the web-facing runtime
-- narrowing and validating the helper-compatible OpenBSD confinement view
-  around that helper boundary rather than around long-term direct `doveadm`
-  execution from the web process
-- carrying the current session model into broader browser-state handling
-  without collapsing the security boundaries that now exist
+- freezing one authoritative closeout gate for Version 1 in
+  `ACCEPTANCE_CRITERIA.md`
+- preserving the current production `serve` posture around the mailbox helper
+  boundary and the explicit OpenBSD dependency view instead of reopening direct
+  mailbox authority from the web process
 
 The current implementation now also includes:
 
@@ -209,12 +207,12 @@ slice itself.
 
 The current highest-confidence active hardening and Version 1 gaps are:
 
-- the helper-compatible OpenBSD confinement boundary as a deliberate Version 1
-  stopping point
-- the correctness and availability constraints of the current bounded-
-  concurrency HTTP runtime
-- freezing the Version 1 contract once those remaining boundaries are
-  documented honestly
+- closeout drift between the implemented proof surface and the status-facing
+  docs
+- any concrete correctness or availability blocker still exposed by the
+  bounded-concurrency HTTP runtime
+- disciplined reruns of the repo-owned host proofs when closeout-facing
+  behavior changes
 
 The current HTTP hardening work has now also moved past generic parse
 rejection for some connection-lifecycle cases. The runtime distinguishes:
@@ -289,12 +287,13 @@ finds a concentrated hotspot that materially harms auditability again.
 
 The current official closeout sequence for Version 1 is:
 
-1. tighten the helper and OpenBSD confinement boundary to a clear Version 1
-   stopping point
-2. close any last bounded-runtime correctness or availability gaps that still
-   surface during closeout
-3. freeze the Version 1 contract and shift further ergonomics or convenience
-   work behind a Version 2 boundary
+1. freeze the Version 1 contract in `ACCEPTANCE_CRITERIA.md`, including the
+   required proofs, the remaining open items, and the explicit Version 2
+   deferrals
+2. keep `README.md`, `KNOWN_LIMITATIONS.md`, the relevant baselines, and the
+   current decision-log status aligned with that gate
+3. only take narrower implementation or hardening work when a failing proof or
+   repo inconsistency reveals a real blocker
 
 The current implementation should not widen browser scope casually while these
 items remain open.
