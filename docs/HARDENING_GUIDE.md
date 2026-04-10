@@ -120,12 +120,14 @@ hardening strategy should look like it belongs there:
 The current code shape is now small enough to map the likely confinement
 surface:
 
-- read and write the bounded OSMAP state tree
+- keep the top-level OSMAP state root read-only
+- read and write only the bounded OSMAP state subdirectories that actually
+  need mutation
 - bind one local TCP listener
 - execute `/usr/local/bin/doveadm`
 - execute `/usr/sbin/sendmail`
 
 That map is now being used by a real OpenBSD confinement mode in the running
 code. The next hardening step is to narrow the helper-compatible filesystem
-view and prove more live browser workflows under enforcement without breaking
-the current auth, mailbox, and submission slices.
+view further around the helper and mail-stack dependencies without breaking the
+current auth, mailbox, and submission slices.

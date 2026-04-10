@@ -54,6 +54,9 @@ Current OSMAP state boundaries already map to:
 - `secrets/totp`
 
 This is a useful starting point for OpenBSD file ownership and confinement work.
+The current confinement plan now also treats the top-level state root as a
+read-only anchor and keeps only the explicit mutable child directories
+writable.
 
 ## Service Accounts
 

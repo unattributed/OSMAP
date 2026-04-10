@@ -2286,3 +2286,31 @@ The active docs now need to say the current state plainly:
 This was chosen instead of leaving older wording in place because stale helper
 docs would mislead operator review, deployment staging, and the next round of
 implementation planning.
+
+### Narrow the OpenBSD filesystem view by making the top-level state root read-only
+
+The confinement plan still unveiled the whole configured OSMAP state root as
+write-capable even though the runtime already had explicit writable subtrees
+for:
+
+- runtime files
+- sessions
+- settings
+- audit
+- cache
+- TOTP secrets
+
+That was broader than necessary for the current Version 1 runtime shape.
+
+OSMAP now keeps the top-level state root itself read-only in both `serve` and
+`mailbox-helper` modes while leaving only the explicit mutable subdirectories
+writable.
+
+This was chosen instead of leaving the broader root-level write view in place
+because it gives the helper/OpenBSD boundary a cleaner and more reviewable
+Version 1 stopping point without changing the existing state layout or
+operator-facing deployment model.
+
+Local validation and disposable-host validation on `mail.blackbagsecurity.com`
+both passed after this change, including the repo-owned `make security-check`
+gate and a real helper-backed enforced all-mailboxes browser search workflow.

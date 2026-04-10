@@ -86,6 +86,10 @@
 - the helper/OpenBSD confinement view is still not the final narrowest target,
   and the current split-runtime operator model is still repo-owned scaffolding
   rather than finished packaging or ports integration
+- the OpenBSD confinement plan now keeps the top-level state root read-only and
+  only the explicit child directories writable, but helper and mail-stack
+  dependency paths are still broader than the likely final smallest viable
+  filesystem view
 - sanitized HTML rendering and the first settings-driven plain-text fallback
   are now proven on `mail.blackbagsecurity.com`, and the first live mutation
   proof for one-message move plus bounded send now exists there too, and the

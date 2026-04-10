@@ -56,7 +56,7 @@ This reflects the current application truth:
 
 The current unveil plan includes:
 
-- the configured OSMAP state root
+- the configured OSMAP state root, now as a read-only anchor path
 - configured runtime, session, audit, cache, and TOTP-secret directories
 - `/usr/local/bin/doveadm`
 - `/usr/sbin/sendmail`
@@ -72,8 +72,10 @@ The current unveil plan includes:
 - `/dev/null`
 
 This is still broader than the final target, but it is materially narrower than
-the previous blanket `/etc` plus `/var` view because the current prototype now
-has enough live-host evidence to describe helper dependencies more precisely.
+both the earlier blanket `/etc` plus `/var` view and the earlier writable
+top-level state-root view because the current prototype now has enough
+live-host evidence to describe helper dependencies and state mutability more
+precisely.
 
 When configured, the runtime also adds explicit read/write unveil rules for:
 
@@ -130,6 +132,8 @@ The current confinement layer has been validated through:
 - helper-backed mailbox listing, message-list retrieval, message view, and
   attachment download under enforced confinement on
   `mail.blackbagsecurity.com`
+- helper-backed all-mailboxes browser search under enforced confinement on
+  `mail.blackbagsecurity.com`
 - one continuous real browser flow under enforced confinement on
   `mail.blackbagsecurity.com`, from password-plus-TOTP login through
   helper-backed mailbox, message-view, and attachment reads
@@ -148,6 +152,7 @@ The enforced OpenBSD run logged:
 - successful synthetic session validation and refresh under `enforce`
 - successful helper-backed mailbox listing, message-list retrieval, message
   view, and attachment download under `enforce`
+- successful helper-backed all-mailboxes browser search under `enforce`
 - successful real browser session issuance followed by helper-backed mailbox,
   message-view, and attachment reads under `enforce`
 
@@ -245,11 +250,13 @@ mailbox-read helper boundary gives the confinement work a clearer target:
 - the two processes can be audited and confined separately
 
 The helper-backed read-path migration now reaches mailbox listing,
-message-list retrieval, message-view retrieval, and attachment-route source
-message fetches when `OSMAP_MAILBOX_HELPER_SOCKET_PATH` is configured.
-Helper-specific OpenBSD confinement now also exists as a distinct runtime plan
-for `OSMAP_RUN_MODE=mailbox-helper`, with `unix` socket promises and a smaller
-filesystem view than the browser-facing `serve` runtime.
+message-list retrieval, message-view retrieval, attachment download, search,
+and the first one-message move path when
+`OSMAP_MAILBOX_HELPER_SOCKET_PATH` is configured. Helper-specific OpenBSD
+confinement now also exists as a distinct runtime plan for
+`OSMAP_RUN_MODE=mailbox-helper`, with `unix` socket promises, a smaller
+filesystem view than the browser-facing `serve` runtime, and a read-only
+top-level state-root anchor plus explicit writable child directories.
 
 That is still not the same thing as full live-browser coverage. The helper
 runtime has now been exercised successfully on `mail.blackbagsecurity.com`

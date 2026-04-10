@@ -62,7 +62,7 @@ impl OpenbsdConfinementPlan {
                 // The browser runtime owns sessions, runtime sockets, cache,
                 // and TOTP secrets. Those explicit mutable paths remain
                 // writable instead of widening the tree above them.
-                add_rule(&mut rules, &config.state_root, "rwc");
+                add_rule(&mut rules, &config.state_root, "r");
                 add_rule(&mut rules, &config.state_layout.runtime_dir, "rwc");
                 add_rule(&mut rules, &config.state_layout.session_dir, "rwc");
                 add_rule(&mut rules, &config.state_layout.settings_dir, "rwc");
@@ -125,7 +125,7 @@ impl OpenbsdConfinementPlan {
                 // The local helper only needs its own runtime socket plus the
                 // current doveadm and Dovecot surfaces required for bounded
                 // mailbox reads.
-                add_rule(&mut rules, &config.state_root, "rwc");
+                add_rule(&mut rules, &config.state_root, "r");
                 add_rule(&mut rules, &config.state_layout.runtime_dir, "rwc");
                 add_rule(&mut rules, Path::new("/usr/local/bin/doveadm"), "x");
                 add_rule(&mut rules, Path::new("/usr/lib"), "rx");
@@ -400,6 +400,10 @@ mod tests {
         assert!(plan
             .unveil_rules
             .iter()
+            .any(|rule| rule.path == Path::new("/var/lib/osmap") && rule.permissions == "r"));
+        assert!(plan
+            .unveil_rules
+            .iter()
             .any(|rule| rule.path == Path::new("/var/lib/osmap/sessions")
                 && rule.permissions.contains('w')));
         assert!(plan
@@ -518,6 +522,10 @@ mod tests {
                 && rule.permissions.contains('r')
                 && rule.permissions.contains('w')
         }));
+        assert!(plan
+            .unveil_rules
+            .iter()
+            .any(|rule| rule.path == Path::new("/var/lib/osmap") && rule.permissions == "r"));
         assert!(plan.unveil_rules.iter().any(|rule| {
             rule.path == Path::new("/var/lib/osmap/run/mailbox-helper.sock")
                 && rule.permissions.contains('r')
@@ -555,6 +563,10 @@ mod tests {
                 && rule.permissions.contains('r')
                 && rule.permissions.contains('w')
         }));
+        assert!(plan
+            .unveil_rules
+            .iter()
+            .any(|rule| rule.path == Path::new("/var/lib/osmap") && rule.permissions == "r"));
         assert!(!plan
             .unveil_rules
             .iter()
