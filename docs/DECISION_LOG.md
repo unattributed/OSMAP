@@ -2956,3 +2956,47 @@ Validation for this change was:
   `project_root=/home/foo/OSMAP`,
   `step_count=1`,
   `login-send=passed`
+
+### Fix the validation-password regression for full helper-driven closeout runs
+
+When the full authoritative closeout wrapper was rerun from the standard
+`~/OSMAP` checkout on April 12, 2026, the first step (`security-check`) failed
+before the rest of the live proof set could run.
+
+The failure was not in the application itself. It came from the repo-owned
+regression `maint/security/test-osmap-validation-password-override.sh`.
+
+That test still assumed that a no-`login-send` passthrough case must see an
+empty `OSMAP_VALIDATION_PASSWORD`. In a full helper-driven closeout run,
+however, the host-side helper correctly exports a temporary validation password
+for the wrapped closeout command as a whole, so earlier non-`login-send` steps
+such as `security-check` inherit that environment variable even though they do
+not use it.
+
+OSMAP now narrows the regression to the real contract that matters:
+
+- when `login-send` is absent, the helper must not change the mailbox password
+  hash
+- when `login-send` is absent, the helper may preserve an inherited
+  `OSMAP_VALIDATION_PASSWORD`, but it must not invent or replace it as part of
+  the passthrough branch
+
+The regression now explicitly exercises that case by running the passthrough
+path with a preexisting sentinel password and asserting that the helper leaves
+that value untouched.
+
+This was chosen instead of trying to scrub the temporary password from the
+environment between individual closeout steps because the only current blocker
+was the test's overly strict assumption, not a repo-evidenced misuse of the
+password by the non-`login-send` proof scripts. The smallest correct answer is
+to align the regression with the actual helper contract and unblock the full
+authoritative closeout run.
+
+This does not change Version 1 scope or release posture. It removes a false
+negative in the shared security gate that was preventing the frozen closeout
+wrapper from completing on the current snapshot.
+
+Validation for this change was:
+
+- `OSMAP_VALIDATION_PASSWORD=preexisting sh maint/security/test-osmap-validation-password-override.sh`
+- `make security-check`

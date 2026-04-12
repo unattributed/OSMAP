@@ -181,8 +181,8 @@ original_hash=$(cat "${OSMAP_TEST_ORIGINAL_HASH_PATH}")
   printf 'helper should not change mailbox hash when login-send is absent\n' >&2
   exit 1
 }
-[ -z "${OSMAP_VALIDATION_PASSWORD:-}" ] || {
-  printf 'helper should not export a temporary password when login-send is absent\n' >&2
+[ "${OSMAP_VALIDATION_PASSWORD:-}" = "${OSMAP_TEST_EXPECTED_PASSTHROUGH_PASSWORD:-}" ] || {
+  printf 'helper should preserve the inherited validation password when login-send is absent\n' >&2
   exit 1
 }
 [ "$#" -eq 1 ] && [ "$1" = "security-check" ] || {
@@ -205,6 +205,8 @@ assert_equals() {
 
 run_helper() {
   fake_closeout_path=$1
+  expected_passthrough_password=$2
+  shift
   shift
 
   env \
@@ -215,6 +217,8 @@ run_helper() {
     OSMAP_TEST_FAILURE_MARKER_PATH="${failure_marker_path}" \
     OSMAP_TEST_PASSTHROUGH_MARKER_PATH="${passthrough_marker_path}" \
     OSMAP_TEST_ORIGINAL_HASH_PATH="${mailbox_hash_path}.orig" \
+    OSMAP_TEST_EXPECTED_PASSTHROUGH_PASSWORD="${expected_passthrough_password}" \
+    OSMAP_VALIDATION_PASSWORD="${expected_passthrough_password}" \
     OSMAP_TEST_REAL_CLOSEOUT_WRAPPER="${closeout_wrapper_path}" \
     OSMAP_TEST_FAKE_CLOSEOUT_PATH="${fake_closeout_path}" \
     sh "${helper_path}" "$@"
@@ -224,14 +228,14 @@ original_hash=$(cat "${mailbox_hash_path}")
 printf '%s' "${original_hash}" > "${mailbox_hash_path}.orig"
 printf '%s' "{BLF-CRYPT}temporary-hash-for-generated-proof-secret" > "${expected_temp_hash_path}"
 
-run_helper "${tmp_root}/closeout-success.sh"
+run_helper "${tmp_root}/closeout-success.sh" ""
 assert_equals "$(cat "${mailbox_hash_path}")" "${original_hash}"
 [ -f "${success_marker_path}" ] || {
   printf 'success path did not run the closeout command\n' >&2
   exit 1
 }
 
-if run_helper "${tmp_root}/closeout-failure.sh" login-send; then
+if run_helper "${tmp_root}/closeout-failure.sh" "" login-send; then
   printf 'expected failure path to return non-zero\n' >&2
   exit 1
 fi
@@ -242,7 +246,7 @@ assert_equals "$(cat "${mailbox_hash_path}")" "${original_hash}"
   exit 1
 }
 
-run_helper "${tmp_root}/closeout-passthrough.sh" security-check
+run_helper "${tmp_root}/closeout-passthrough.sh" "preexisting-wrapper-secret" security-check
 assert_equals "$(cat "${mailbox_hash_path}")" "${original_hash}"
 [ -f "${passthrough_marker_path}" ] || {
   printf 'passthrough path did not run the closeout command\n' >&2
