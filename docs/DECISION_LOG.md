@@ -3000,3 +3000,60 @@ Validation for this change was:
 
 - `OSMAP_VALIDATION_PASSWORD=preexisting sh maint/security/test-osmap-validation-password-override.sh`
 - `make security-check`
+
+### Re-run the full authoritative V1 closeout gate on the current pushed snapshot
+
+After the helper-driven gate regression was fixed and pushed as `763e644`, the
+remaining closeout task was the clean final proof run the repo still needed:
+rerun the full authoritative seven-step closeout wrapper from the standard
+`~/OSMAP` checkout on the current pushed snapshot and capture the resulting
+report.
+
+That full host rerun now passed on April 12, 2026.
+
+The standard host checkout was first fast-forwarded to the new pushed tip, then
+the standard host-side helper was used to run the frozen gate in place:
+
+- `security-check=passed`
+- `login-send=passed`
+- `all-mailbox-search=passed`
+- `archive-shortcut=passed`
+- `session-surface=passed`
+- `send-throttle=passed`
+- `move-throttle=passed`
+
+The resulting host report recorded:
+
+- `osmap_v1_closeout_result=passed`
+- `project_root=/home/foo/OSMAP`
+- `step_count=7`
+
+`docs/ACCEPTANCE_CRITERIA.md` now reflects this current-tip rerun directly, so
+the repo can honestly say that the frozen Version 1 closeout gate passed on the
+current pushed snapshot rather than only on the earlier April 11, 2026 host
+snapshot.
+
+This was chosen instead of leaving the earlier April 11 run as the last top
+level proof record because the intervening wrapper, regression, and operator
+flow changes were all closeout-facing. The smallest correct closeout answer was
+to rerun the whole frozen gate once on the current pushed tip and record that
+result plainly. This does not widen Version 1 scope or reopen architecture. It
+just closes the proof-and-honesty loop around the current release posture.
+
+Validation for this change was:
+
+- host checkout sync:
+  `ssh mail 'cd ~/OSMAP && git fetch origin && git merge --ff-only origin/main'`
+- full authoritative host rerun:
+  `ssh mail 'cd ~/OSMAP && sh ./maint/live/osmap-run-v1-closeout-with-temporary-validation-password.sh --report "$HOME/osmap-v1-closeout-report.txt"'`
+- fetched host report:
+  `osmap_v1_closeout_result=passed`,
+  `project_root=/home/foo/OSMAP`,
+  `step_count=7`,
+  `security-check=passed`,
+  `login-send=passed`,
+  `all-mailbox-search=passed`,
+  `archive-shortcut=passed`,
+  `session-surface=passed`,
+  `send-throttle=passed`,
+  `move-throttle=passed`

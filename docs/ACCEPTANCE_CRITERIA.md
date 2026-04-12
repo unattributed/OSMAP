@@ -263,9 +263,12 @@ generated summary report.
 
 On April 11, 2026, this full seven-step wrapper was rerun successfully on
 `mail.blackbagsecurity.com`, including the real password-plus-TOTP
-`login-send` step. That host rerun used a controlled one-session validation
-password override and restored the original mailbox password hash afterward, so
-the repo still does not carry mailbox credentials.
+`login-send` step. On April 12, 2026, after the helper-driven gate regression
+was fixed and pushed as commit `763e644`, the same full seven-step wrapper was
+rerun successfully again from the standard `~/OSMAP` checkout on that current
+pushed snapshot. That current-tip host rerun again used a controlled
+one-session validation password override and restored the original mailbox
+password hash afterward, so the repo still does not carry mailbox credentials.
 
 The current repo snapshot already satisfies these closeout-gate preconditions:
 
@@ -281,7 +284,7 @@ The current remaining closeout work is therefore administrative rather than
 architectural:
 
 - keep the authoritative gate and status docs aligned with the successful
-  April 11, 2026 host rerun
+  April 12, 2026 current-pushed-snapshot host rerun
 - rerun the affected repo-owned proof scripts through the closeout wrapper only
   when closeout-facing behavior changes
 - take additional implementation work only if a later failing proof or repo
