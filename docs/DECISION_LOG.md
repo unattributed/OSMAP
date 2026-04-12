@@ -3116,3 +3116,50 @@ Validation for this change was:
 - successful real message view on `/message?...`
 - successful browser compose/send with outbound delivery confirmed in Proton
   Mail
+
+### Add a bounded OWASP ASVS baseline during V1 closeout
+
+The repository already named OWASP guidance and OWASP ASVS as part of the
+project's security posture, but only the CWE Top 25 lens had a concrete,
+repo-owned review artifact.
+
+That left a small but real closeout gap: the repo could say it aligned to
+OWASP-style guidance, yet reviewers still had to infer what that meant from
+scattered security, SDLC, and implementation documents.
+
+OSMAP now adds one narrow `OWASP_ASVS_BASELINE.md` document to make that posture
+concrete for the implemented Version 1 surface only.
+
+This was chosen instead of deferring the work to Version 2 because the repo is
+already making OWASP-facing claims during Version 1 closeout. The smallest
+truth-preserving answer is to add one bounded crosswalk now, not to launch a
+broader compliance program later or create multiple overlapping OWASP
+checklists.
+
+This was also chosen instead of creating a separate OWASP Top 10 baseline
+because ASVS is the more useful verification-oriented frame for the actual
+browser/auth/session/mail controls OSMAP ships. The new baseline therefore
+uses ASVS-style control areas as the main structure and includes a short OWASP
+Top 10 crosswalk only where it helps reviewers reason about the current risk
+surface.
+
+The document is intentionally narrow:
+
+- it is limited to the implemented Version 1 browser and helper surfaces
+- it does not claim full ASVS compliance or certification
+- it does not widen Version 1 scope
+- it complements, rather than replaces, `CWE_TOP25_REVIEW_BASELINE.md`
+
+This does not change release posture or the authoritative Version 1 gate. It
+improves documentation honesty by making the repo's stated OWASP posture
+reviewable in the same bounded way the repo already handles CWE Top 25.
+
+Validation for this change was:
+
+- review of the existing OWASP- and ASVS-facing references in
+  `PROJECT_CHARTER.md`, `SECURE_SDLC.md`, `README.md`, and
+  `CWE_TOP25_REVIEW_BASELINE.md`
+- creation of a Version 1-scoped `OWASP_ASVS_BASELINE.md` mapping the current
+  implemented surfaces to the relevant ASVS-style control families
+- alignment update in `SECURE_SDLC.md` so the repo's OWASP posture now points
+  to one concrete baseline document instead of only aspiration text

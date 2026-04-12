@@ -25,6 +25,11 @@ from:
 Those sources should inform project decisions without replacing repository-local
 verification, tests, or design review.
 
+The current repo-grounded OWASP verification artifact for Version 1 is
+`OWASP_ASVS_BASELINE.md`. It should be kept narrow, tied to the implemented
+surface, and updated when the shipped browser/auth/session/mail boundary
+changes materially.
+
 ## Development Principles
 
 OSMAP development should prioritize:
@@ -115,6 +120,9 @@ Guidance:
 - keep a repo-owned security gate for the current Rust backend, including the
   shared `make security-check` workflow and the current CWE Top 25 review
   baseline
+- keep the current OWASP-oriented verification posture concrete through the
+  Version 1-scoped `OWASP_ASVS_BASELINE.md` crosswalk rather than leaving OWASP
+  and ASVS as ungrounded aspiration text
 - keep GitHub default CodeQL setup or a consciously chosen advanced CodeQL
   replacement aligned with the repository's actual GitHub scanning posture
 
