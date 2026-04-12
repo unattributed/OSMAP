@@ -3057,3 +3057,62 @@ Validation for this change was:
   `session-surface=passed`,
   `send-throttle=passed`,
   `move-throttle=passed`
+
+### Record one successful real-user browser walkthrough as supplemental V1 proof
+
+After the authoritative current-tip closeout gate passed on April 12, 2026,
+the next release-discipline question was whether the repo should also carry one
+plain statement of successful real-user browser use against the same validated
+host snapshot, rather than leaving all proof framed only as scripted closeout
+runs and isolated route checks.
+
+The answer is yes, but only as supplemental evidence. The repo should not
+replace the frozen closeout wrapper or widen Version 1 scope into a new manual
+test matrix. It should simply record one successful real-user walkthrough so
+reviewers can see that the current pushed snapshot was also exercised through
+the actual browser UI with a real mailbox account.
+
+That supplemental walkthrough succeeded on April 12, 2026 against a temporary
+review instance launched from the current `~/OSMAP` checkout on
+`mail.blackbagsecurity.com` and exposed locally through an SSH tunnel to
+`127.0.0.1:18080`.
+
+The walkthrough used the real mailbox user `duncan@blackbagsecurity.com` plus
+an operator-provisioned OSMAP TOTP secret. Proton Pass held the mailbox
+credentials during the review, and Proton Authenticator enrolled that OSMAP
+TOTP secret and generated the six-digit codes used at login. Those external
+tools are proof context only, not project dependencies or new required parts of
+the OSMAP design.
+
+The successful browser-visible flow covered:
+
+- mailbox-password-plus-TOTP login
+- mailbox listing on `/mailboxes`
+- self-service session visibility on `/sessions`
+- real message viewing through `/message`
+- browser compose/send with successful outbound delivery confirmed in Proton
+  Mail
+- safe HTML rendering on a real mailbox message
+
+This was chosen instead of trying to define a broader new manual acceptance
+suite because the current need was narrow: capture one honest reviewer-facing
+statement that the real UI was used successfully on the current validated host
+snapshot. That keeps the repository aligned to the frozen Version 1 gate while
+making the release-closeout story easier to trust.
+
+This does not change Version 1 scope or release posture. The authoritative
+release gate remains the repo-owned closeout wrapper set in
+`docs/ACCEPTANCE_CRITERIA.md`. The manual walkthrough only strengthens the
+evidence that the current pushed snapshot behaves as intended for a real user.
+
+Validation for this change was:
+
+- temporary host review instance launch from the current standard checkout on
+  `mail.blackbagsecurity.com`
+- successful browser login for `duncan@blackbagsecurity.com` with mailbox
+  password plus operator-provisioned OSMAP TOTP
+- successful mailbox list review on `/mailboxes`
+- successful session review on `/sessions`
+- successful real message view on `/message?...`
+- successful browser compose/send with outbound delivery confirmed in Proton
+  Mail

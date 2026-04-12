@@ -258,8 +258,36 @@ plus `--report <path>` so operators can capture one small summary artifact for
 the exact closeout steps they ran.
 Operators who are not already on `mail.blackbagsecurity.com` should use
 `./maint/live/osmap-run-v1-closeout-over-ssh.sh` to trigger that same
-host-side wrapper in the standard `~/OSMAP` checkout and pull back the
-generated summary report.
+host-side closeout path and fetch the resulting report.
+
+## Supplemental Browser Proof On April 12, 2026
+
+The authoritative Version 1 release gate above passed on the current pushed
+snapshot on April 12, 2026. A supplemental manual browser walkthrough on that
+same date also succeeded against a temporary review instance launched from the
+standard `~/OSMAP` checkout on `mail.blackbagsecurity.com`, exposed locally
+through an SSH tunnel to `127.0.0.1:18080`.
+
+That supplemental proof used the real mailbox user
+`duncan@blackbagsecurity.com` with an operator-provisioned OSMAP TOTP secret.
+The operator held the mailbox credentials in Proton Pass, enrolled the OSMAP
+TOTP secret in Proton Authenticator, and generated the expected six-digit TOTP
+codes there for browser login.
+
+The successful manual walkthrough covered:
+
+- real mailbox-password-plus-TOTP browser login
+- mailbox listing on `/mailboxes`
+- session visibility on `/sessions`
+- real message viewing on `/message?...`
+- browser compose/send with successful outbound delivery confirmed in Proton
+  Mail
+- safe HTML rendering on a real mailbox message
+
+This supplemental walkthrough does not replace the frozen repo-owned closeout
+gate. It exists to record that the current pushed snapshot has both the
+authoritative scripted closeout proof and one successful real-user browser
+review on the validated OpenBSD host.
 
 On April 11, 2026, this full seven-step wrapper was rerun successfully on
 `mail.blackbagsecurity.com`, including the real password-plus-TOTP

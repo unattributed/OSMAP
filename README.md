@@ -274,6 +274,15 @@ Each phase produces formal outputs to support traceability and auditability.
   host-side wrapper through
   [osmap-run-v1-closeout-over-ssh.sh](maint/live/osmap-run-v1-closeout-over-ssh.sh)
   and pull back the small review report.
+- A supplemental real-user browser walkthrough now also exists on April 12,
+  2026 against a temporary review instance launched from the current
+  `~/OSMAP` checkout on `mail.blackbagsecurity.com`: the real mailbox user
+  `duncan@blackbagsecurity.com` signed in with mailbox password plus OSMAP
+  TOTP, viewed mailboxes, reviewed `/sessions`, opened a real message,
+  rendered sanitized HTML, and sent a browser-composed message that was
+  confirmed delivered in Proton Mail. Proton Pass and Proton Authenticator
+  were used as operator tools during that walkthrough; OSMAP itself does not
+  depend on either product.
 - GitHub-side security validation now has two explicit lanes:
   GitHub default CodeQL setup remains the authoritative CodeQL scanner for this
   repository, while the repo-owned `security-check` workflow is the
@@ -287,8 +296,9 @@ The Version 1 closeout contract is now frozen in
 is:
 
 1. Keep `README.md`, the closeout-facing docs, and the repo-owned validation
-   references aligned with that gate and with the successful April 11, 2026
-   host rerun.
+   references aligned with that gate, with the successful April 12, 2026
+   current-tip host rerun, and with the supplemental April 12, 2026 real-user
+   browser walkthrough.
 2. Use `ksh ./maint/live/osmap-live-validate-v1-closeout.ksh` on
    `mail.blackbagsecurity.com`, or
    `./maint/live/osmap-run-v1-closeout-over-ssh.sh` from a reachable
