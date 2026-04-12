@@ -2719,3 +2719,44 @@ Validation for this change was:
 
 - `sh maint/security/test-osmap-validation-password-override.sh`
 - `make security-check`
+
+### Capture the proven V1 closeout operator flow in one SOP document
+
+After the host checkout was restored, the full seven-step rerun passed again,
+and the local regression checks now covered both wrappers plus the temporary
+validation-password override choreography, the remaining documentation gap was
+operator clarity.
+
+The current closeout truth was accurate, but it was still spread across:
+
+- `ACCEPTANCE_CRITERIA.md` for the authoritative gate
+- `DEPLOYMENT_OPENBSD.md` for the deployment-side wrapper references
+- `DECISION_LOG.md` for the proven host rerun and password-override history
+- wrapper help text for day-to-day command-line details
+
+OSMAP now adds `docs/V1_CLOSEOUT_SOP.md` as the short repo-owned operator
+procedure for rerunning the frozen Version 1 closeout gate.
+
+That SOP now captures in one place:
+
+- the standard `~/OSMAP` host-side checkout and authoritative wrapper path
+- the off-host SSH wrapper entry point for the same host-side gate
+- the validated temporary password-override choreography for the real
+  `login-send` step
+- the expected closeout report shape and how subset reruns should differ
+
+`docs/README.md` now lists that SOP in the documentation map, and
+`docs/DEPLOYMENT_OPENBSD.md` now points operators there when they need the
+practical rerun procedure rather than the broader deployment rationale.
+
+This was chosen instead of widening `ACCEPTANCE_CRITERIA.md` or embedding the
+full password-override procedure inside `DEPLOYMENT_OPENBSD.md` because the
+gate itself should stay concise and authoritative, while the deployment
+document should stay focused on runtime shape. The smallest useful answer is a
+short dedicated SOP that centralizes the proven operator flow without
+duplicating the whole closeout rationale everywhere.
+
+Validation for this change was:
+
+- `sh maint/security/test-osmap-validation-password-override.sh`
+- `make security-check`

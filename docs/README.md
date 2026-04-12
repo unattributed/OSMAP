@@ -67,6 +67,7 @@ Current primary documents:
 - `LEAST_PRIVILEGE_AUTH_SOCKET_MODEL.md`
 - `TOTP_SECRET_MANAGEMENT_MODEL.md`
 - `CWE_TOP25_REVIEW_BASELINE.md`
+- `V1_CLOSEOUT_SOP.md`
 - `WORK_DECOMPOSITION.md`
 - `DECISION_LOG.md`
 
@@ -105,3 +106,8 @@ host-side checkout is now `~/OSMAP`. The repo-owned wrapper
 `maint/live/osmap-host-validate.ksh` should be used there for `make
 security-check` and similar runs so Rust temp, cargo-home, and target paths
 stay under the operator home directory instead of consuming `/tmp`.
+
+For the short operator procedure around the authoritative Version 1 host
+closeout rerun, including the temporary validation-password override used by
+the real `login-send` step and the expected report artifact, see
+`V1_CLOSEOUT_SOP.md`.
