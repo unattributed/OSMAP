@@ -2855,3 +2855,45 @@ Validation for this change was:
 - `sh -n maint/live/osmap-run-v1-closeout-over-ssh.sh`
 - `sh maint/security/test-osmap-run-v1-closeout-over-ssh.sh`
 - `make security-check`
+
+### Re-prove the aligned SSH closeout subset path against the real host
+
+After the SSH wrapper was updated to delegate `login-send` reruns to the same
+host-side helper used by direct host-local runs, the remaining question was
+whether the now-aligned off-host path still worked cleanly against the actual
+validated OpenBSD host and not just the local regression stub.
+
+OSMAP therefore reran one harmless real off-host closeout subset from the
+workstation against `ssh mail`, using the standard SSH wrapper and the
+no-`login-send` step pair `security-check session-surface`.
+
+That rerun passed end to end:
+
+- the wrapper entered the standard `~/OSMAP` checkout on the host
+- `security-check` passed through the host validation wrapper
+- `session-surface` passed through the live OpenBSD proof harness
+- the fetched local summary report recorded:
+  `project_root=/home/foo/OSMAP`, `step_count=2`,
+  `security-check=passed`, and `session-surface=passed`
+
+This was chosen instead of immediately rerunning a broader proof set because
+the change under test was the aligned SSH operator path itself, not the whole
+frozen seven-step release gate. The smallest correct answer was one real
+off-host subset that exercises the actual host checkout, the SSH transport,
+the report fetch path, and one live proof beyond `security-check` without
+touching the validation mailbox secret flow unnecessarily.
+
+This does not change Version 1 scope or release posture. It tightens the proof
+story around the already-frozen closeout boundary by showing that the
+workstation-driven subset path still works on the real host after the wrapper
+alignment work.
+
+Validation for this change was:
+
+- `./maint/live/osmap-run-v1-closeout-over-ssh.sh --host mail --local-report ./maint/live/latest-host-security-session-report.txt security-check session-surface`
+- fetched report:
+  `osmap_v1_closeout_result=passed`,
+  `project_root=/home/foo/OSMAP`,
+  `step_count=2`,
+  `security-check=passed`,
+  `session-surface=passed`
