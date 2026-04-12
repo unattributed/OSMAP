@@ -2518,3 +2518,46 @@ This freezes the Version 1 release decision against
 and release handling, not more browser features, OpenBSD redesign, or broader
 helper expansion. Future implementation work should be reopened only by a new
 failing proof or a concrete repo inconsistency.
+
+### Align the frozen V1 release story with the actual closeout path
+
+After the April 11, 2026 full host rerun, the acceptance gate already treated
+Version 1 closeout as frozen, but some release-facing docs still described that
+freeze as future work. The off-host SSH wrapper also still had a concrete
+operator-path bug: its handling of remote `~/...` paths broke the documented
+host project-root and report-path flow before the closeout wrapper could
+complete.
+
+OSMAP now makes the smallest correction that matches repo truth:
+
+- `README.md`, `KNOWN_LIMITATIONS.md`, `IMPLEMENTATION_PLAN.md`,
+  `OPENBSD_RUNTIME_CONFINEMENT_BASELINE.md`, and
+  `ACCEPTANCE_CRITERIA.md` now all treat the Version 1 gate as already frozen
+  and the remaining work as documentation parity plus targeted proof reruns
+- `maint/live/osmap-run-v1-closeout-over-ssh.sh` now normalizes remote
+  `~/...` paths correctly and runs its remote commands through explicit
+  `sh -lc` execution so the project-root and report-path handling stay stable
+  across SSH
+- the authoritative host-side closeout path remains
+  `ksh ./maint/live/osmap-live-validate-v1-closeout.ksh`, with the SSH wrapper
+  kept as the thin off-host trigger rather than as a second gate
+
+This was chosen instead of introducing a new closeout-status document or a
+broader orchestration layer because the repository already had the correct gate,
+proof set, and wrapper shape. The real defects were stale wording and a narrow
+SSH-wrapper bug, so the smallest correct change was to align the existing docs
+and make the existing operator path actually honor the documented remote path.
+
+Validation for this change was:
+
+- `sh -n ./maint/live/osmap-run-v1-closeout-over-ssh.sh`
+- `ssh mail.blackbagsecurity.com 'cd ~/osmap-v1-closeout-clean-20260411-002325 && ksh ./maint/live/osmap-live-validate-v1-closeout.ksh --list'`
+- `./maint/live/osmap-run-v1-closeout-over-ssh.sh --remote-project-root ~/osmap-v1-closeout-clean-20260411-002325 --local-report ./maint/live/latest-host-security-check-report.txt security-check`
+
+That validation proved three things:
+
+- the authoritative closeout step list still matches the acceptance gate
+- the off-host SSH wrapper can now reach a host-side closeout checkout, run the
+  `security-check` step, write a report, and fetch that report back locally
+- Version 1 scope and release posture remain unchanged: the current remaining
+  repo work is closeout discipline, not scope widening

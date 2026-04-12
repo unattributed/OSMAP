@@ -235,11 +235,12 @@ Each phase produces formal outputs to support traceability and auditability.
   routes are settings update, session revoke, and logout, and they are
   lower-volume, CSRF-bound, and lower abuse value than login, send, or message
   move.
-- Current priority work is therefore centered on freezing the Version 1
-  contract around the already-implemented helper/OpenBSD boundary, keeping the
-  status docs aligned with the current live-host proof, and only taking
-  narrower runtime or confinement changes when repo evidence exposes a real
-  blocker.
+- Current priority work is therefore centered on keeping the frozen Version 1
+  contract around the already-implemented helper/OpenBSD boundary aligned with
+  the successful April 11, 2026 live-host closeout rerun, using the
+  repo-owned closeout wrappers for targeted reruns when closeout-facing
+  behavior changes, and only taking narrower runtime or confinement changes
+  when repo evidence exposes a real blocker.
 - The HTTP runtime now also distinguishes connection-lifecycle failures more
   honestly: read timeouts return `408 Request Timeout`, while empty or
   truncated connections are logged and closed without treating them as generic
@@ -267,6 +268,12 @@ Each phase produces formal outputs to support traceability and auditability.
   now `~/OSMAP`, with [osmap-host-validate.ksh](maint/live/osmap-host-validate.ksh)
   used there to run repo-owned validation under home-local `TMPDIR`,
   `CARGO_HOME`, and `CARGO_TARGET_DIR` instead of depending on `/tmp`.
+- The authoritative Version 1 host closeout gate is now
+  `ksh ./maint/live/osmap-live-validate-v1-closeout.ksh` in that same
+  `~/OSMAP` checkout, and a reachable workstation can trigger that exact
+  host-side wrapper through
+  [osmap-run-v1-closeout-over-ssh.sh](maint/live/osmap-run-v1-closeout-over-ssh.sh)
+  and pull back the small review report.
 - GitHub-side security validation now has two explicit lanes:
   GitHub default CodeQL setup remains the authoritative CodeQL scanner for this
   repository, while the repo-owned `security-check` workflow is the
@@ -275,13 +282,17 @@ Each phase produces formal outputs to support traceability and auditability.
 
 ## V1 Closeout Priorities
 
-The current repo-grounded path to Version 1 completion is now:
+The Version 1 closeout contract is now frozen in
+`docs/ACCEPTANCE_CRITERIA.md`, and the remaining repo-grounded closeout work
+is:
 
-1. Freeze the Version 1 closeout truth in `docs/ACCEPTANCE_CRITERIA.md`,
-   including the required proof scripts, the remaining open items, and the
-   explicit Version 2 deferrals.
-2. Keep `README.md`, the closeout-facing docs, and the repo-owned validation
-   references aligned with that gate.
+1. Keep `README.md`, the closeout-facing docs, and the repo-owned validation
+   references aligned with that gate and with the successful April 11, 2026
+   host rerun.
+2. Use `ksh ./maint/live/osmap-live-validate-v1-closeout.ksh` on
+   `mail.blackbagsecurity.com`, or
+   `./maint/live/osmap-run-v1-closeout-over-ssh.sh` from a reachable
+   workstation, whenever closeout-facing behavior changes.
 3. Only take additional implementation or hardening work when a failing proof
    or a repo inconsistency reveals a narrower blocker.
 

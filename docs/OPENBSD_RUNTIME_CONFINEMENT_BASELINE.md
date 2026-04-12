@@ -274,10 +274,10 @@ This baseline does not mean:
 
 The repository now treats the helper boundary plus the current serve-side auth
 and sendmail dependency narrowing as the deliberate Version 1 stopping point.
-The next closeout work is therefore to keep the release gate and status docs
-aligned with that implemented boundary and rerun the affected repo-owned host
-proofs when it changes, not to reopen direct mailbox authority from the web
-runtime as the likely production shape.
+The closeout discipline for that boundary is therefore to keep the release gate
+and status docs aligned with the successful April 11, 2026 full host rerun,
+rerun the affected repo-owned host proofs when it changes, and not reopen
+direct mailbox authority from the web runtime as the likely production shape.
 
 The helper-backed read-path migration now reaches mailbox listing,
 message-list retrieval, message-view retrieval, attachment download, search,
@@ -296,3 +296,9 @@ repo now also carries a real password-plus-TOTP login-plus-send proof under
 `enforce`, while broader workflow coverage beyond the current proof set and
 further packaging work remain later refinements rather than the first active
 Version 1 blocker.
+
+For operator reruns, the authoritative host-side closeout path is
+`ksh ./maint/live/osmap-live-validate-v1-closeout.ksh` in the standard
+`~/OSMAP` checkout, with `./maint/live/osmap-run-v1-closeout-over-ssh.sh`
+available when the validating workstation is off-host but can reach
+`mail.blackbagsecurity.com`.

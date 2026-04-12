@@ -68,7 +68,8 @@
 - The architecture now defines a clear system shape, and the current repo now
   materially proves login, read, search, move, send, session, and confinement
   behavior on the validated host, but Version 1 closeout still depends on
-  keeping the release gate and status docs aligned with that proven boundary
+  keeping the frozen release gate and status docs aligned with that proven
+  boundary and the successful April 11, 2026 host rerun
 - The OpenBSD runtime now has an enforced confinement mode, and the current
   helper-side plus serve-side dependency view is narrowed to explicit auth,
   sendmail, loader, library, config, and socket paths on the validated host,
@@ -108,5 +109,6 @@
 - The SDLC and release rules are now defined, but they have not yet been proven
   against a full live implementation pipeline
 - The project now has an implementation plan and work breakdown, but Version 1
-  closeout still depends on one authoritative release gate and consistent
-  status docs rather than on widening the implementation surface
+  closeout still depends on one authoritative release gate, one authoritative
+  host-side closeout wrapper path, and consistent status docs rather than on
+  widening the implementation surface

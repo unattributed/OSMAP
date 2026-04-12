@@ -31,6 +31,22 @@ quote_sh() {
   printf "'%s'" "$(printf '%s' "$1" | sed "s/'/'\\\\''/g")"
 }
 
+remote_path_expr() {
+  remote_path="$1"
+
+  case "${remote_path}" in
+    "~")
+      printf '%s' '"$HOME"'
+      ;;
+    "~/"*)
+      printf '"$HOME"/%s' "$(quote_sh "${remote_path#\~/}")"
+      ;;
+    *)
+      quote_sh "${remote_path}"
+      ;;
+  esac
+}
+
 usage() {
   cat <<EOF
 usage: $(basename "$0") [--host <ssh-target>] [--remote-project-root <path>] [--remote-report <path>] [--local-report <path>] [step ...]
@@ -144,9 +160,9 @@ build_remote_command() {
   fi
 
   printf '%s' \
-    "cd $(quote_sh "${REMOTE_PROJECT_ROOT}") && " \
+    "cd $(remote_path_expr "${REMOTE_PROJECT_ROOT}") && " \
     "${command_prefix}" \
-    "ksh ./maint/live/osmap-live-validate-v1-closeout.ksh --report $(quote_sh "${REMOTE_REPORT_PATH}")"
+    "ksh ./maint/live/osmap-live-validate-v1-closeout.ksh --report $(remote_path_expr "${REMOTE_REPORT_PATH}")"
 
   printf ' %s' $(printf '%s\n' "${steps_csv}" | while IFS= read -r step_name; do quote_sh "${step_name}"; done)
 }
@@ -157,10 +173,13 @@ require_tool ssh
 require_tool sed
 
 REMOTE_COMMAND="$(build_remote_command "${STEP_NAMES}")"
+REMOTE_SHELL_COMMAND="sh -lc $(quote_sh "${REMOTE_COMMAND}")"
+REPORT_FETCH_COMMAND="cat $(remote_path_expr "${REMOTE_REPORT_PATH}")"
+REPORT_FETCH_SHELL_COMMAND="sh -lc $(quote_sh "${REPORT_FETCH_COMMAND}")"
 
 log "running remote V1 closeout proof set on ${SSH_TARGET}"
-ssh "${SSH_TARGET}" "${REMOTE_COMMAND}"
+ssh "${SSH_TARGET}" "${REMOTE_SHELL_COMMAND}"
 
 log "fetching remote report from ${SSH_TARGET}:${REMOTE_REPORT_PATH}"
-ssh "${SSH_TARGET}" "cat $(quote_sh "${REMOTE_REPORT_PATH}")" > "${LOCAL_REPORT_PATH}"
+ssh "${SSH_TARGET}" "${REPORT_FETCH_SHELL_COMMAND}" > "${LOCAL_REPORT_PATH}"
 log "wrote local closeout report to ${LOCAL_REPORT_PATH}"

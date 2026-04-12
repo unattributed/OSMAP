@@ -252,6 +252,10 @@ closeout proof set, and it still requires an operator-supplied
 `OSMAP_VALIDATION_PASSWORD` when the real login-plus-send step is included.
 It now also supports `--list` plus `--report <path>` so operators can capture
 one small summary artifact for the exact closeout steps they ran.
+Operators who are not already on `mail.blackbagsecurity.com` should use
+`./maint/live/osmap-run-v1-closeout-over-ssh.sh` to trigger that same
+host-side wrapper in the standard `~/OSMAP` checkout and pull back the
+generated summary report.
 
 On April 11, 2026, this full seven-step wrapper was rerun successfully on
 `mail.blackbagsecurity.com`, including the real password-plus-TOTP
@@ -274,8 +278,8 @@ architectural:
 
 - keep the authoritative gate and status docs aligned with the successful
   April 11, 2026 host rerun
-- rerun the affected repo-owned proof scripts only when closeout-facing
-  behavior changes
+- rerun the affected repo-owned proof scripts through the closeout wrapper only
+  when closeout-facing behavior changes
 - take additional implementation work only if a later failing proof or repo
   inconsistency reveals a narrower blocker
 

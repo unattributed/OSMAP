@@ -164,8 +164,10 @@ The next active implementation work should focus on:
   evidence shows a concrete correctness or availability blocker
 - reconciling the remaining Version 1 gaps against the actual repo state so the
   next work is driven by real product deficits rather than stale assumptions
-- freezing one authoritative closeout gate for Version 1 in
-  `ACCEPTANCE_CRITERIA.md`
+- preserving the now-frozen authoritative closeout gate in
+  `ACCEPTANCE_CRITERIA.md` across `README.md`, `KNOWN_LIMITATIONS.md`,
+  `OPENBSD_RUNTIME_CONFINEMENT_BASELINE.md`, and the current `DECISION_LOG.md`
+  status entries
 - preserving the current production `serve` posture around the mailbox helper
   boundary and the explicit OpenBSD dependency view instead of reopening direct
   mailbox authority from the web process
@@ -285,13 +287,17 @@ finds a concentrated hotspot that materially harms auditability again.
 
 ## Current V1 Closeout Sequence
 
-The current official closeout sequence for Version 1 is:
+The authoritative Version 1 closeout contract is now frozen in
+`ACCEPTANCE_CRITERIA.md`, and the current official closeout sequence is:
 
-1. freeze the Version 1 contract in `ACCEPTANCE_CRITERIA.md`, including the
-   required proofs, the remaining open items, and the explicit Version 2
-   deferrals
-2. keep `README.md`, `KNOWN_LIMITATIONS.md`, the relevant baselines, and the
-   current decision-log status aligned with that gate
+1. keep `README.md`, `KNOWN_LIMITATIONS.md`, the relevant baselines, and the
+   current decision-log status aligned with that gate and with the successful
+   April 11, 2026 host rerun
+2. rerun affected repo-owned proofs through
+   `ksh ./maint/live/osmap-live-validate-v1-closeout.ksh` on
+   `mail.blackbagsecurity.com`, or through
+   `./maint/live/osmap-run-v1-closeout-over-ssh.sh` from a reachable
+   workstation, only when closeout-facing behavior changes
 3. only take narrower implementation or hardening work when a failing proof or
    repo inconsistency reveals a real blocker
 
