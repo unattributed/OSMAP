@@ -19,6 +19,10 @@ This baseline is intentionally narrow:
 - it does not claim full ASVS compliance, certification, or coverage of future
   Version 2 scope
 
+This document is the control-and-verification half of the current Version 1
+security-review pair. `CWE_TOP25_REVIEW_BASELINE.md` is the weakness-class
+half.
+
 ## Review Basis
 
 This baseline is grounded in:
@@ -50,6 +54,23 @@ This baseline should not be read as covering:
 - public internet exposure without the surrounding operator controls already
   described elsewhere in the repo
 - broader Version 2 UX, admin, or device-management work
+
+## How This Fits With The CWE Baseline
+
+This baseline answers "which current Version 1 controls and verification areas
+map cleanly to the browser, auth, session, mail, and helper surfaces OSMAP now
+ships?"
+
+`CWE_TOP25_REVIEW_BASELINE.md` answers the adjacent question "which high-value
+weakness classes still matter most to the current repo, and what residual risks
+remain active?"
+
+Taken together, the two documents are meant to be read as one small
+security-review pair:
+
+- `OWASP_ASVS_BASELINE.md` frames the current control and verification posture
+- `CWE_TOP25_REVIEW_BASELINE.md` frames the current weakness-class and residual
+  risk posture
 
 ## ASVS-Aligned Control Areas
 
@@ -205,4 +226,5 @@ This baseline does not claim:
 
 It does claim that the repo now has a concrete, reviewable OWASP-oriented
 verification artifact to complement `CWE_TOP25_REVIEW_BASELINE.md` and the
-existing SDLC/security-model documents.
+existing SDLC/security-model documents. For the adjacent weakness-class view,
+read this together with `CWE_TOP25_REVIEW_BASELINE.md`.

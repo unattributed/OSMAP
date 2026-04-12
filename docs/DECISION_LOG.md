@@ -3163,3 +3163,34 @@ Validation for this change was:
   implemented surfaces to the relevant ASVS-style control families
 - alignment update in `SECURE_SDLC.md` so the repo's OWASP posture now points
   to one concrete baseline document instead of only aspiration text
+
+### Cross-reference the CWE and ASVS baselines as one V1 review pair
+
+After the bounded ASVS baseline was added, the repo still had one small
+readability gap: `CWE_TOP25_REVIEW_BASELINE.md` and `OWASP_ASVS_BASELINE.md`
+sat next to each other as related security-review documents, but they did not
+yet explain their relationship explicitly.
+
+OSMAP now adds a small polish pass so each document tells reviewers how to read
+the pair:
+
+- the CWE baseline is the weakness-class and residual-risk lens
+- the ASVS baseline is the control-and-verification lens for the shipped
+  Version 1 browser and helper surfaces
+
+This was chosen instead of adding more index or overview documents because the
+repo did not need another layer of security-document scaffolding. The smallest
+correct answer was to make the two existing baselines cross-reference each
+other directly and read cleanly as one deliberate V1 review set.
+
+This does not change Version 1 scope, release posture, or the authoritative
+closeout gate. It improves operator and reviewer clarity by reducing the
+chance that one of the two security-review baselines gets read in isolation and
+misunderstood as the whole posture.
+
+Validation for this change was:
+
+- review of `CWE_TOP25_REVIEW_BASELINE.md` and `OWASP_ASVS_BASELINE.md`
+  together after the initial ASVS-baseline addition
+- targeted doc update so each baseline now explains its role in the paired V1
+  security-review posture

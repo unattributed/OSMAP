@@ -14,6 +14,10 @@ repeatable review baseline that:
 - records the residual risks that still need active hardening
 - defines the shared `security-check` workflow that future commits should pass
 
+This document is the weakness-class half of the current Version 1 security
+review pair. `OWASP_ASVS_BASELINE.md` is the control-and-verification half for
+the shipped browser and helper surfaces.
+
 ## Review Basis
 
 This baseline is grounded in:
@@ -27,6 +31,23 @@ The 2025 list includes weakness classes such as XSS, SQL injection, CSRF,
 authorization failures, path traversal, command injection, unsafe file upload,
 deserialization of untrusted data, exposure of sensitive information, and
 resource-exhaustion weaknesses.
+
+## How This Fits With The ASVS Baseline
+
+This baseline answers "which high-value weakness classes remain relevant to the
+current repo, and what concrete controls are already visible against them?"
+
+`OWASP_ASVS_BASELINE.md` answers the adjacent question "which implemented
+Version 1 controls and verification areas map cleanly to the current browser,
+auth, session, mail, and helper surfaces?"
+
+Taken together, the two documents are meant to be read as one small
+security-review pair:
+
+- `CWE_TOP25_REVIEW_BASELINE.md` keeps the repo honest about weakness classes
+  and residual risk
+- `OWASP_ASVS_BASELINE.md` keeps the repo honest about the implemented control
+  posture and verification story
 
 ## Current Repository Assessment
 
@@ -135,4 +156,5 @@ This baseline does not claim:
 
 It does claim that OSMAP now has a concrete, repeatable Rust-backend security
 review gate that is aligned with the project’s actual risk profile instead of a
-generic checklist.
+generic checklist. For the adjacent control-oriented browser and helper review
+posture, read this together with `OWASP_ASVS_BASELINE.md`.
