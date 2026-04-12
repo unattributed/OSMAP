@@ -2608,3 +2608,41 @@ This keeps Version 1 scope and release posture unchanged, but it materially
 reduces release-discipline drift: the standard host checkout is once again the
 real closeout path, and the off-host SSH wrapper no longer misassembles
 multi-step proof runs.
+
+### Add a local regression check for closeout SSH wrapper command assembly
+
+After the host rerun and the step-separator fix, the remaining risk was not
+missing functionality but silent regression: `maint/live/osmap-run-v1-closeout-over-ssh.sh`
+now had two classes of operator-critical shell assembly behavior that could
+drift again without any local signal:
+
+- the default no-argument path must assemble all seven authoritative closeout
+  steps separately
+- explicit multi-step subsets must preserve step boundaries and remote `~/...`
+  path handling
+
+OSMAP now adds a tiny local regression check at
+`maint/security/test-osmap-run-v1-closeout-over-ssh.sh` and runs it from the
+shared `make security-check` gate.
+
+That script uses a stub `ssh` binary and asserts:
+
+- the default path emits the expected host, remote project root, report path,
+  and all seven closeout step arguments separately
+- the default path still forwards `OSMAP_VALIDATION_PASSWORD` when
+  `login-send` is part of the selected step set
+- an explicit multi-step subset keeps its step boundaries intact instead of
+  collapsing into one invalid token
+- the fetched local report path is still driven by the expected remote report
+  command
+
+This was chosen instead of adding a heavier shell test framework because the
+problem space is narrow and already shell-native. The smallest useful answer is
+a repo-owned stub-`ssh` regression script that exercises the wrapper exactly
+where it previously broke, inside the same shared gate that operators and CI
+already treat as authoritative.
+
+Validation for this change was:
+
+- `sh maint/security/test-osmap-run-v1-closeout-over-ssh.sh`
+- `make security-check`

@@ -120,4 +120,7 @@ if [ -n "$command_hits" ]; then
 	printf '%s\n' "$command_hits"
 fi
 
+echo "==> validating closeout ssh wrapper command assembly"
+sh maint/security/test-osmap-run-v1-closeout-over-ssh.sh
+
 echo "==> security-check complete"
