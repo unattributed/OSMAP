@@ -90,9 +90,9 @@ That wrapper SSHes into the standard `~/OSMAP` checkout, runs the same
 host-side closeout wrapper there, and fetches the resulting report back to the
 local machine.
 
-For the standard full rerun that includes the real `login-send` step, prefer
-SSHing to the host and using the helper there so the temporary password
-override and restoration stay entirely on the validated OpenBSD host.
+When the selected step set includes `login-send`, the SSH wrapper now invokes
+the same host-side helper there automatically, so the temporary password
+override and restoration still happen entirely on the validated OpenBSD host.
 
 ## Real `login-send` Secret Handling
 

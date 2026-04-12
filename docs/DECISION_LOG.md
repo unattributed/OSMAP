@@ -2807,3 +2807,51 @@ Validation for this change was:
 - `sh -n maint/live/osmap-run-v1-closeout-with-temporary-validation-password.sh`
 - `sh maint/security/test-osmap-validation-password-override.sh`
 - `make security-check`
+
+### Route SSH-driven login-send closeout reruns through the same host helper
+
+Once the host-side helper existed, the remaining operator-flow inconsistency
+was the off-host SSH wrapper:
+`maint/live/osmap-run-v1-closeout-over-ssh.sh`.
+
+It could already trigger the authoritative host-side closeout wrapper and fetch
+the report, but when `login-send` was included it still expected the caller to
+export `OSMAP_VALIDATION_PASSWORD` locally and forwarded that value into the
+remote command. That meant the host-local rerun path and the workstation-driven
+rerun path still handled the most sensitive closeout step differently.
+
+OSMAP now routes those SSH-driven `login-send` reruns through the same
+host-side helper:
+`maint/live/osmap-run-v1-closeout-with-temporary-validation-password.sh`.
+
+That keeps the behavior aligned:
+
+- step sets that include `login-send` now SSH into the standard checkout and
+  invoke the helper there, so the temporary password generation, mailbox-hash
+  swap, wrapped closeout run, and restoration all happen on the validated host
+- step sets that do not include `login-send` still invoke the direct host-side
+  closeout wrapper without widening the secret-handling path
+
+The SSH-wrapper regression now proves both branches locally:
+
+- the default full closeout path uses the host-side helper
+- a no-`login-send` subset still uses the direct host-side wrapper
+- a `login-send`-only subset also uses the helper and no longer forwards
+  `OSMAP_VALIDATION_PASSWORD` from the workstation
+
+`docs/V1_CLOSEOUT_SOP.md` now reflects that the workstation wrapper and the
+host-local procedure share the same guarded secret-handling path when
+`login-send` is selected.
+
+This was chosen instead of teaching the SSH wrapper to recreate the temporary
+password override remotely inline because that would duplicate a sensitive
+procedure the repository already standardized. The smallest correct answer is
+to delegate the SSH path to the same bounded host-side helper and keep one
+authoritative secret-handling implementation. This does not change Version 1
+scope or release posture; it only removes an operator-flow inconsistency.
+
+Validation for this change was:
+
+- `sh -n maint/live/osmap-run-v1-closeout-over-ssh.sh`
+- `sh maint/security/test-osmap-run-v1-closeout-over-ssh.sh`
+- `make security-check`

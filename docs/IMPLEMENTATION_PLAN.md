@@ -294,8 +294,11 @@ The authoritative Version 1 closeout contract is now frozen in
    current decision-log status aligned with that gate and with the successful
    April 11, 2026 host rerun
 2. rerun affected repo-owned proofs through
-   `ksh ./maint/live/osmap-live-validate-v1-closeout.ksh` on
-   `mail.blackbagsecurity.com`, or through
+   `sh ./maint/live/osmap-run-v1-closeout-with-temporary-validation-password.sh`
+   on `mail.blackbagsecurity.com` when the selected step set includes
+   `login-send`, through
+   `ksh ./maint/live/osmap-live-validate-v1-closeout.ksh` there for narrower
+   no-`login-send` subsets, or through
    `./maint/live/osmap-run-v1-closeout-over-ssh.sh` from a reachable
    workstation, only when closeout-facing behavior changes
 3. only take narrower implementation or hardening work when a failing proof or

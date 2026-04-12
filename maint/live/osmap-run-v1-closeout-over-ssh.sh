@@ -4,9 +4,8 @@
 # through SSH from a machine that can reach that host.
 #
 # This wrapper does not store mailbox secrets. If the selected proof steps
-# include `login-send`, operators should export OSMAP_VALIDATION_PASSWORD
-# locally before invoking this script; the value is forwarded only for that
-# remote command invocation.
+# include `login-send`, it delegates to the host-side helper that performs the
+# temporary validation-password override and restoration on the validated host.
 
 set -eu
 
@@ -14,6 +13,8 @@ SSH_TARGET="${OSMAP_V1_CLOSEOUT_SSH_TARGET:-mail.blackbagsecurity.com}"
 REMOTE_PROJECT_ROOT="${OSMAP_V1_CLOSEOUT_REMOTE_PROJECT_ROOT:-~/OSMAP}"
 REMOTE_REPORT_PATH="${OSMAP_V1_CLOSEOUT_REMOTE_REPORT_PATH:-~/osmap-v1-closeout-report.txt}"
 LOCAL_REPORT_PATH="${OSMAP_V1_CLOSEOUT_LOCAL_REPORT_PATH:-}"
+REMOTE_CLOSEOUT_WRAPPER="./maint/live/osmap-live-validate-v1-closeout.ksh"
+REMOTE_LOGIN_HELPER="./maint/live/osmap-run-v1-closeout-with-temporary-validation-password.sh"
 STEP_NAMES=""
 
 log() {
@@ -149,20 +150,15 @@ parse_args() {
 
 build_remote_command() {
   steps_csv="$1"
-  command_prefix=""
+  remote_runner="ksh ${REMOTE_CLOSEOUT_WRAPPER}"
 
   if printf '%s\n' "${steps_csv}" | grep -Fxq "login-send"; then
-    [ -n "${OSMAP_VALIDATION_PASSWORD:-}" ] || {
-      log "OSMAP_VALIDATION_PASSWORD must be set when running login-send over SSH"
-      exit 1
-    }
-    command_prefix="OSMAP_VALIDATION_PASSWORD=$(quote_sh "${OSMAP_VALIDATION_PASSWORD}") "
+    remote_runner="sh ${REMOTE_LOGIN_HELPER}"
   fi
 
   printf '%s' \
     "cd $(remote_path_expr "${REMOTE_PROJECT_ROOT}") && " \
-    "${command_prefix}" \
-    "ksh ./maint/live/osmap-live-validate-v1-closeout.ksh --report $(remote_path_expr "${REMOTE_REPORT_PATH}")"
+    "${remote_runner} --report $(remote_path_expr "${REMOTE_REPORT_PATH}")"
 
   printf ' %s' $(printf '%s\n' "${steps_csv}" | while IFS= read -r step_name; do
     printf '%s\n' "$(quote_sh "${step_name}")"

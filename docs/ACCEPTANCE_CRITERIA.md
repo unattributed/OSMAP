@@ -248,10 +248,14 @@ Version 1 should not be declared complete until all of the following are true:
 
 The repo-owned wrapper
 `ksh ./maint/live/osmap-live-validate-v1-closeout.ksh` now runs this exact
-closeout proof set, and it still requires an operator-supplied
-`OSMAP_VALIDATION_PASSWORD` when the real login-plus-send step is included.
-It now also supports `--list` plus `--report <path>` so operators can capture
-one small summary artifact for the exact closeout steps they ran.
+closeout proof set, and it still expects `OSMAP_VALIDATION_PASSWORD` when the
+real login-plus-send step is included directly. The repo-owned host helper
+`sh ./maint/live/osmap-run-v1-closeout-with-temporary-validation-password.sh`
+now provides the standard guarded path for those host-side reruns, while the
+SSH wrapper delegates to that same helper automatically when `login-send` is
+part of the selected step set. The closeout wrapper also supports `--list`
+plus `--report <path>` so operators can capture one small summary artifact for
+the exact closeout steps they ran.
 Operators who are not already on `mail.blackbagsecurity.com` should use
 `./maint/live/osmap-run-v1-closeout-over-ssh.sh` to trigger that same
 host-side wrapper in the standard `~/OSMAP` checkout and pull back the

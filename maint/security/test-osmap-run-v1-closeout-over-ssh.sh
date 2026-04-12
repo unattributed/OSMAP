@@ -78,7 +78,6 @@ run_case() {
       PATH="${bin_dir}:${PATH}" \
       OSMAP_TEST_SSH_LOG_DIR="${log_dir}" \
       OSMAP_TEST_SSH_REPORT_CONTENT="${report_content}" \
-      OSMAP_VALIDATION_PASSWORD="wrapper-test-secret" \
       "${wrapper_path}" --host "${expected_host}" --local-report "${report_path}" "$@" >/dev/null 2>&1
   )
 
@@ -116,9 +115,7 @@ default_fetch_command=$(printf '%s\n' "${default_output}" | sed -n '3p')
 
 assert_contains "${default_command}" "cd \"\$HOME\"/"
 assert_contains "${default_command}" "OSMAP"
-assert_contains "${default_command}" "OSMAP_VALIDATION_PASSWORD="
-assert_contains "${default_command}" "wrapper-test-secret"
-assert_contains "${default_command}" "ksh ./maint/live/osmap-live-validate-v1-closeout.ksh --report \"\$HOME\"/"
+assert_contains "${default_command}" "sh ./maint/live/osmap-run-v1-closeout-with-temporary-validation-password.sh --report \"\$HOME\"/"
 assert_contains "${default_command}" "osmap-v1-closeout-report.txt"
 for step_name in \
   security-check \
@@ -157,5 +154,26 @@ assert_not_contains "${subset_command}" "login-send"
 assert_not_contains "${subset_command}" "security-checksession-surface"
 assert_contains "${subset_fetch_command}" "cat \"\$HOME\"/"
 assert_contains "${subset_fetch_command}" "custom-report.txt"
+
+login_send_output=$(
+  run_case \
+    login-send-only \
+    'login-send-report=passed' \
+    login-send-host \
+    --remote-project-root '~/helper-closeout' \
+    --remote-report '~/helper-report.txt' \
+    login-send
+)
+login_send_command=$(printf '%s\n' "${login_send_output}" | sed -n '1p')
+login_send_fetch_command=$(printf '%s\n' "${login_send_output}" | sed -n '3p')
+
+assert_contains "${login_send_command}" "cd \"\$HOME\"/"
+assert_contains "${login_send_command}" "helper-closeout"
+assert_contains "${login_send_command}" "sh ./maint/live/osmap-run-v1-closeout-with-temporary-validation-password.sh --report \"\$HOME\"/"
+assert_contains "${login_send_command}" "helper-report.txt"
+assert_contains "${login_send_command}" "'login-send'"
+assert_not_contains "${login_send_command}" "OSMAP_VALIDATION_PASSWORD="
+assert_contains "${login_send_fetch_command}" "cat \"\$HOME\"/"
+assert_contains "${login_send_fetch_command}" "helper-report.txt"
 
 printf '%s\n' "closeout ssh wrapper regression checks passed"

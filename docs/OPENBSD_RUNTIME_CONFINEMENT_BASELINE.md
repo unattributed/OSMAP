@@ -297,8 +297,12 @@ repo now also carries a real password-plus-TOTP login-plus-send proof under
 further packaging work remain later refinements rather than the first active
 Version 1 blocker.
 
-For operator reruns, the authoritative host-side closeout path is
+For operator reruns, the authoritative host-side closeout path remains
 `ksh ./maint/live/osmap-live-validate-v1-closeout.ksh` in the standard
-`~/OSMAP` checkout, with `./maint/live/osmap-run-v1-closeout-over-ssh.sh`
+`~/OSMAP` checkout, with
+`sh ./maint/live/osmap-run-v1-closeout-with-temporary-validation-password.sh`
+as the standard guarded answer when the selected step set includes
+`login-send`. `./maint/live/osmap-run-v1-closeout-over-ssh.sh` remains
 available when the validating workstation is off-host but can reach
-`mail.blackbagsecurity.com`.
+`mail.blackbagsecurity.com`, and now delegates those `login-send` reruns to
+the same host-side helper.
