@@ -2646,3 +2646,39 @@ Validation for this change was:
 
 - `sh maint/security/test-osmap-run-v1-closeout-over-ssh.sh`
 - `make security-check`
+
+### Add a matching local regression check for the host-side closeout wrapper
+
+Once the off-host SSH wrapper had a regression check, the remaining unguarded
+half of the closeout pair was the host-side wrapper itself:
+`maint/live/osmap-live-validate-v1-closeout.ksh`.
+
+That script now carries the authoritative local step list, default step
+expansion, default multi-step report emission, explicit `--report` handling,
+and `--list` output. Those are all small shell behaviors, but they are also the
+release-discipline boundary operators actually use on the validated host.
+
+OSMAP now adds a matching local regression check at
+`maint/security/test-osmap-live-validate-v1-closeout.sh` and runs it from the
+shared `make security-check` gate alongside the SSH-wrapper check.
+
+That test stands up a temporary fake repo root with stub closeout scripts and a
+stub `ksh`, then asserts:
+
+- `--list` prints the authoritative seven-step set in order
+- the default no-argument path expands to the full seven-step proof sequence
+  and writes the default report path
+- the default report records the expected `project_root`, `step_count=7`, and
+  passed step lines
+- an explicit `--report <path>` single-step run writes the requested report
+  path and records the expected one-step summary
+
+This was chosen instead of teaching the security gate to run the real live
+closeout scripts because the behavior under test is shell assembly, not host
+runtime truth. The smallest correct answer is a local stubbed wrapper check
+that exercises the real control flow without widening the proof surface.
+
+Validation for this change was:
+
+- `sh maint/security/test-osmap-live-validate-v1-closeout.sh`
+- `make security-check`

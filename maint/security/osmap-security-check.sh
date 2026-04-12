@@ -123,4 +123,7 @@ fi
 echo "==> validating closeout ssh wrapper command assembly"
 sh maint/security/test-osmap-run-v1-closeout-over-ssh.sh
 
+echo "==> validating local closeout wrapper step and report handling"
+sh maint/security/test-osmap-live-validate-v1-closeout.sh
+
 echo "==> security-check complete"
