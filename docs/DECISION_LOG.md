@@ -2561,3 +2561,50 @@ That validation proved three things:
   `security-check` step, write a report, and fetch that report back locally
 - Version 1 scope and release posture remain unchanged: the current remaining
   repo work is closeout discipline, not scope widening
+
+### Restore `~/OSMAP` as the real host closeout path and fix multi-step SSH wrapper assembly
+
+The next closeout follow-through was to make the documented standard host
+checkout true again in practice. `~/OSMAP` on `mail` had drifted behind
+`origin/main` with older local edits, so the authoritative host-side closeout
+path and the real host state had diverged.
+
+The host checkout has now been brought back to `origin/main` after preserving
+its prior local drift under `/home/foo/osmap-presync-backup-20260412-092020`,
+and the full seven-step authoritative wrapper has been rerun there successfully
+through the actual standard path:
+
+- `project_root=/home/foo/OSMAP`
+- `security-check=passed`
+- `login-send=passed`
+- `all-mailbox-search=passed`
+- `archive-shortcut=passed`
+- `session-surface=passed`
+- `send-throttle=passed`
+- `move-throttle=passed`
+
+That host rerun again used a controlled temporary password override for the
+validation mailbox and restored the original mailbox hash afterward, so the
+repository still does not carry mailbox credentials and the live validation
+mailbox returned to its previous state after the proof.
+
+While executing that follow-through, one more concrete operator-path bug became
+visible: `maint/live/osmap-run-v1-closeout-over-ssh.sh` still concatenated
+quoted step names without separators when building the remote command, so any
+multi-step invocation collapsed into one invalid step token.
+
+OSMAP now fixes that bug by emitting one newline-separated quoted step per
+iteration before the final shell word-splitting step. This was chosen instead
+of redesigning the SSH wrapper because the real defect was only the missing
+separator between already-correct per-step shell-quoted arguments.
+
+Validation for this follow-through was:
+
+- `ssh -o BatchMode=yes mail 'cd ~/OSMAP && ksh ./maint/live/osmap-live-validate-v1-closeout.ksh --list'`
+- direct host-side rerun of `ksh ./maint/live/osmap-live-validate-v1-closeout.ksh --report "$HOME/osmap-v1-closeout-report.txt"` from `~/OSMAP`, with a controlled temporary validation password override and automatic hash restoration
+- fetch of the resulting report showing `project_root=/home/foo/OSMAP` and `step_count=7`
+
+This keeps Version 1 scope and release posture unchanged, but it materially
+reduces release-discipline drift: the standard host checkout is once again the
+real closeout path, and the off-host SSH wrapper no longer misassembles
+multi-step proof runs.

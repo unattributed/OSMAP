@@ -164,7 +164,9 @@ build_remote_command() {
     "${command_prefix}" \
     "ksh ./maint/live/osmap-live-validate-v1-closeout.ksh --report $(remote_path_expr "${REMOTE_REPORT_PATH}")"
 
-  printf ' %s' $(printf '%s\n' "${steps_csv}" | while IFS= read -r step_name; do quote_sh "${step_name}"; done)
+  printf ' %s' $(printf '%s\n' "${steps_csv}" | while IFS= read -r step_name; do
+    printf '%s\n' "$(quote_sh "${step_name}")"
+  done)
 }
 
 parse_args "$@"
