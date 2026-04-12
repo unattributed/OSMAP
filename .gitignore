@@ -2,3 +2,4 @@ PKCB/
 .agents/
 AGENTS.md
 target/
+*.bz2
