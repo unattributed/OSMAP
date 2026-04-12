@@ -2897,3 +2897,62 @@ Validation for this change was:
   `step_count=2`,
   `security-check=passed`,
   `session-surface=passed`
+
+### Re-prove the SSH plus helper login-send path on the real host
+
+After the workstation wrapper was aligned to delegate `login-send` reruns to
+the same host-side temporary-password helper used by direct host-local runs,
+the remaining high-value proof was the real secret-touching path itself.
+
+The first off-host `login-send` rerun attempt immediately surfaced a concrete
+operator-truth issue rather than an application failure:
+
+- the standard host checkout at `~/OSMAP` was still parked at `f1bb84f`
+- it therefore did not yet contain
+  `maint/live/osmap-run-v1-closeout-with-temporary-validation-password.sh`
+- the SSH wrapper failed with
+  `sh: ./maint/live/osmap-run-v1-closeout-with-temporary-validation-password.sh: No such file or directory`
+
+That host checkout was clean, so the smallest correct answer was to
+fast-forward `~/OSMAP` to current `origin/main` rather than invent a fallback
+path or bypass the standard checkout. After `git fetch origin` plus
+`git merge --ff-only origin/main`, the host reached `f4f1564` and the same
+off-host rerun was repeated unchanged.
+
+That real rerun then passed end to end:
+
+- the SSH wrapper entered the standard `~/OSMAP` checkout on `mail`
+- it invoked the host-side temporary validation-password helper
+- the helper invoked the authoritative host-side closeout wrapper
+- the real live `login-send` proof completed successfully on OpenBSD
+- the fetched report recorded:
+  `project_root=/home/foo/OSMAP`, `step_count=1`, and `login-send=passed`
+
+This was chosen instead of widening the rerun to the full seven-step closeout
+set because the behavior under test was the aligned SSH plus helper path for
+the one step that still touches validation mailbox secret handling. The
+smallest correct answer was a `login-send`-only off-host rerun after bringing
+the standard host checkout back to the already-pushed repo tip.
+
+This does not change Version 1 scope or release posture. It does tighten the
+operator proof story in two useful ways:
+
+- the repository now has fresh real-host evidence for the SSH-driven
+  `login-send` path, not just local regression coverage
+- operators now have one more concrete reminder that the standard `~/OSMAP`
+  checkout must be synced to current `origin/main` before relying on newly
+  added closeout wrappers there
+
+Validation for this change was:
+
+- initial failing proof on stale host checkout:
+  `./maint/live/osmap-run-v1-closeout-over-ssh.sh --host mail --local-report ./maint/live/latest-host-login-send-report.txt login-send`
+- host checkout sync:
+  `ssh mail 'cd ~/OSMAP && git fetch origin && git merge --ff-only origin/main'`
+- successful rerun:
+  `./maint/live/osmap-run-v1-closeout-over-ssh.sh --host mail --local-report ./maint/live/latest-host-login-send-report.txt login-send`
+- fetched report:
+  `osmap_v1_closeout_result=passed`,
+  `project_root=/home/foo/OSMAP`,
+  `step_count=1`,
+  `login-send=passed`

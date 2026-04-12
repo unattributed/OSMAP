@@ -42,6 +42,10 @@ For routine off-host invocation from a reachable workstation, the standard
 local report path is whatever the operator passes with `--local-report`, or the
 wrapper default in the current working directory if none is supplied.
 
+Before either a host-local rerun or an off-host SSH-triggered rerun, make sure
+the standard `~/OSMAP` checkout is synced to the current pushed `origin/main`
+tip so the host-side wrapper set matches the repo state being validated.
+
 ## Standard Host Rerun
 
 When the validating operator is already on the host and the rerun includes the
