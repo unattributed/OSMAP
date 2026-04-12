@@ -3194,3 +3194,39 @@ Validation for this change was:
   together after the initial ASVS-baseline addition
 - targeted doc update so each baseline now explains its role in the paired V1
   security-review posture
+
+### Add exact ASVS 5.0.0 requirement IDs to the V1 ASVS baseline
+
+After the bounded ASVS baseline existed and the CWE/ASVS pair was made easier
+to read together, one small traceability gap still remained: the ASVS baseline
+described the right Version 1 control areas, but it still grouped them in prose
+without citing the exact upstream ASVS 5.0.0 requirement IDs that informed the
+mapping.
+
+OSMAP now tightens `OWASP_ASVS_BASELINE.md` by adding the most directly
+relevant ASVS 5.0.0 control IDs for the shipped Version 1 browser and helper
+surface, using the OWASP-published CycloneDX JSON artifact as the upstream
+source.
+
+This was chosen instead of importing the full OWASP JSON artifact or building a
+large compliance matrix in-repo. The smallest correct answer was to keep the
+baseline narrow and human-readable while making its mapping auditable against
+the exact ASVS identifiers.
+
+This was also chosen instead of trying to enumerate every nearby ASVS control.
+The baseline remains intentionally selective: it now cites the controls that
+most directly fit OSMAP's shipped Version 1 behavior and keeps explicit
+non-claims about broader ASVS compliance.
+
+This does not change Version 1 scope, release posture, or the authoritative
+closeout gate. It improves reviewer traceability and reduces ambiguity about
+which exact ASVS 5.0.0 requirements were considered relevant during closeout.
+
+Validation for this change was:
+
+- review of the OWASP ASVS 5.0.0 CycloneDX JSON artifact published at:
+  `https://raw.githubusercontent.com/OWASP/ASVS/v5.0.0/5.0/docs_en/OWASP_Application_Security_Verification_Standard_5.0.0_en.cdx.json`
+- targeted update of `OWASP_ASVS_BASELINE.md` to add exact requirement IDs for
+  the OSMAP-relevant control areas around authentication, session management,
+  access control, request validation, browser safety, file handling, and
+  operational verification

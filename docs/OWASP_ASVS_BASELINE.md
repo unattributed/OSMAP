@@ -34,6 +34,12 @@ This baseline is grounded in:
   `ACCEPTANCE_CRITERIA.md` and `V1_CLOSEOUT_SOP.md`
 - the successful April 12, 2026 current-tip closeout rerun and supplemental
   real-user browser walkthrough on `mail.blackbagsecurity.com`
+- the OWASP ASVS 5.0.0 CycloneDX JSON artifact published by OWASP at:
+  `https://raw.githubusercontent.com/OWASP/ASVS/v5.0.0/5.0/docs_en/OWASP_Application_Security_Verification_Standard_5.0.0_en.cdx.json`
+
+The ASVS 5.0.0 requirement IDs referenced below are the most directly relevant
+controls for OSMAP's current Version 1 surface. They are not a claim that
+every adjacent ASVS requirement is fully implemented or fully verified.
 
 ## Current Version 1 Scope Boundary
 
@@ -76,6 +82,21 @@ security-review pair:
 
 ### Authentication and Second Factor
 
+Most directly relevant ASVS 5.0.0 requirement IDs:
+
+- `V6.1.1` authentication rate-limiting and anti-automation documentation
+- `V6.1.3` documentation of multiple authentication pathways and their
+  security strength
+- `V6.2.6` password input masking
+- `V6.2.7` permitting browser password helpers and password managers
+- `V6.2.8` verifying passwords exactly as received
+- `V6.3.1` implementation of brute-force and credential-stuffing defenses
+- `V6.3.3` requirement for multi-factor access to the application
+- `V6.3.8` resistance to failed-authentication user enumeration
+- `V6.5.3` CSPRNG generation of TOTP seeds
+- `V6.5.5` defined TOTP lifetime
+- `V6.5.8` checking TOTP against a trusted time source
+
 The current V1 implementation is aligned with the ASVS-style requirement that
 browser authentication be explicit, bounded, and multi-step rather than
 password-only:
@@ -94,6 +115,19 @@ already includes every possible MFA recovery or enrollment control.
 
 ### Session Management
 
+Most directly relevant ASVS 5.0.0 requirement IDs:
+
+- `V7.1.1` documented inactivity timeout and absolute maximum session lifetime
+- `V7.1.2` documented concurrent-session behavior
+- `V7.2.1` backend session-token verification
+- `V7.2.2` dynamic session-token generation
+- `V7.2.3` unique high-entropy reference tokens
+- `V7.2.4` new session token on authentication
+- `V7.3.1` inactivity timeout
+- `V7.3.2` absolute maximum session lifetime
+- `V7.4.1` backend invalidation on logout or expiration
+- `V7.4.4` visible logout on authenticated pages
+
 The current session layer aligns with the ASVS-style requirement that sessions
 be explicit, bounded, revocable, and visible:
 
@@ -108,6 +142,12 @@ This materially supports OWASP Top 10 concerns around broken authentication and
 session misuse.
 
 ### Access Control and Trust Boundaries
+
+Most directly relevant ASVS 5.0.0 requirement IDs:
+
+- `V8.1.1` documented function-level and data-specific access rules
+- `V8.2.1` explicit function-level access restriction
+- `V8.2.2` data-specific access restriction to mitigate IDOR/BOLA
 
 The current Version 1 architecture aligns with ASVS-style least-privilege and
 access-control expectations:
@@ -124,6 +164,20 @@ control.
 
 ### Input Validation and Request Handling
 
+Most directly relevant ASVS 5.0.0 requirement IDs:
+
+- `V2.1.1` documented input-validation rules
+- `V2.1.3` documented business-logic limits and validations
+- `V2.2.1` allowlist or expected-structure input validation
+- `V2.2.2` validation enforced at a trusted service layer
+- `V2.3.2` documented and implemented business-logic limits
+- `V3.5.1` anti-forgery protection for sensitive browser requests
+- `V3.5.3` use of appropriate non-safe HTTP methods for sensitive actions
+- `V4.1.4` only explicitly supported HTTP methods allowed
+- `V4.2.1` HTTP message-boundary validation against request smuggling
+- `V4.2.4` rejection of CR/LF header injection
+- `V4.2.5` protections against oversized URIs and header fields
+
 The current browser boundary aligns with ASVS-style conservative request
 validation:
 
@@ -139,6 +193,17 @@ abuse and request forgery.
 
 ### Output Encoding and Browser Safety
 
+Most directly relevant ASVS 5.0.0 requirement IDs:
+
+- `V1.1.2` output encoding and escaping
+- `V1.2.1` context-appropriate output encoding for HTTP and HTML responses
+- `V1.2.2` safe URL construction and protocol restriction
+- `V1.3.1` sanitization of untrusted HTML content
+- `V3.4.5` referrer policy to limit sensitive-data leakage
+- `V3.4.6` `frame-ancestors` CSP protection against embedding
+- `V3.5.1` browser-side anti-forgery controls
+- `V3.5.8` restrictive loading or embedding of authenticated resources
+
 The current rendering model aligns with ASVS-style output-safety expectations:
 
 - HTML output is escaped by default for browser-visible values
@@ -153,6 +218,16 @@ browser abuse.
 
 ### File and Attachment Handling
 
+Most directly relevant ASVS 5.0.0 requirement IDs:
+
+- `V5.1.1` documented permitted file types and maximum sizes
+- `V5.2.1` acceptance only of file sizes the application can safely process
+- `V5.3.2` strict validation or sanitization when user-submitted filenames or
+  metadata affect file operations
+- `V5.4.1` validation or ignoring of user-submitted filenames plus explicit
+  `Content-Disposition`
+- `V5.4.2` sanitization or encoding of served filenames
+
 The current attachment and upload behavior aligns with ASVS-style file-handling
 controls in a bounded first-release form:
 
@@ -166,6 +241,13 @@ controls in a bounded first-release form:
 This materially supports OWASP Top 10 concerns around unsafe file handling.
 
 ### Error Handling, Logging, and Operational Verification
+
+Most directly relevant ASVS 5.0.0 requirement IDs:
+
+- `V6.3.8` bounded failed-authentication responses that avoid user deduction
+- `V7.1.1` and `V7.1.2` session-lifecycle documentation
+- `V8.1.1` authorization-rule documentation
+- `V2.1.3` documented business-logic limits
 
 The current runtime aligns with ASVS-style observability and safe-failure
 expectations:
