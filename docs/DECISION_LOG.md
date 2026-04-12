@@ -2682,3 +2682,40 @@ Validation for this change was:
 
 - `sh maint/security/test-osmap-live-validate-v1-closeout.sh`
 - `make security-check`
+
+### Add a regression check for the temporary validation-password override flow
+
+After the SSH wrapper and local closeout wrapper both had local regression
+checks, the last operator-sensitive closeout path still living only in manual
+procedure was the temporary validation-password override used for the real
+`login-send` proof.
+
+That path has a narrow but important contract:
+
+- read the original mailbox hash from the validation mailbox record
+- install one temporary `doveadm pw -s BLF-CRYPT` hash before the closeout
+  command runs
+- restore the original mailbox hash afterward, even when the closeout command
+  fails
+
+OSMAP now adds `maint/security/test-osmap-validation-password-override.sh` and
+runs it from the shared `make security-check` gate.
+
+That test uses stub `doas`, `doveadm`, and `mariadb` commands around a
+temporary mailbox-hash state file, then proves:
+
+- the closeout command sees the temporary hash during the success path
+- the original hash is restored after the success path completes
+- the closeout command also sees the temporary hash during the failure path
+- the original hash is still restored after the failure path exits non-zero
+
+This was chosen instead of widening the existing live closeout wrappers because
+the behavior under test is the reversible override choreography itself, not the
+rest of the live host proof surface. The smallest correct answer is a local
+stubbed regression that exercises the exact high-risk state transition without
+requiring another real host run.
+
+Validation for this change was:
+
+- `sh maint/security/test-osmap-validation-password-override.sh`
+- `make security-check`
