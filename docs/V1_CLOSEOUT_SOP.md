@@ -26,6 +26,10 @@ The authoritative host-side closeout wrapper is:
 
 - `ksh ./maint/live/osmap-live-validate-v1-closeout.ksh`
 
+The standard host-side helper for reruns that include `login-send` is:
+
+- `sh ./maint/live/osmap-run-v1-closeout-with-temporary-validation-password.sh`
+
 The off-host trigger for the same host-side wrapper is:
 
 - `./maint/live/osmap-run-v1-closeout-over-ssh.sh`
@@ -40,23 +44,34 @@ wrapper default in the current working directory if none is supplied.
 
 ## Standard Host Rerun
 
-When the validating operator is already on the host, use the standard checkout
-and run:
+When the validating operator is already on the host and the rerun includes the
+real `login-send` step, use the standard checkout and the repo-owned helper:
 
 ```sh
 cd ~/OSMAP
-ksh ./maint/live/osmap-live-validate-v1-closeout.ksh --report "$HOME/osmap-v1-closeout-report.txt"
+sh ./maint/live/osmap-run-v1-closeout-with-temporary-validation-password.sh --report "$HOME/osmap-v1-closeout-report.txt"
 ```
 
 To rerun only a narrower affected subset after a targeted closeout-facing
-change, pass the exact step names after the wrapper options. For example:
+change that still includes `login-send`, pass the exact step names after the
+helper options. For example:
+
+```sh
+cd ~/OSMAP
+sh ./maint/live/osmap-run-v1-closeout-with-temporary-validation-password.sh --report "$HOME/osmap-v1-closeout-report.txt" login-send
+```
+
+For narrower reruns that do not include `login-send`, use the closeout wrapper
+directly and avoid touching the validation mailbox password hash at all. For
+example:
 
 ```sh
 cd ~/OSMAP
 ksh ./maint/live/osmap-live-validate-v1-closeout.ksh --report "$HOME/osmap-v1-closeout-report.txt" security-check session-surface
 ```
 
-To print the authoritative current step set without running it:
+To print the authoritative current step set without running it, use the
+closeout wrapper directly:
 
 ```sh
 cd ~/OSMAP
@@ -75,61 +90,31 @@ That wrapper SSHes into the standard `~/OSMAP` checkout, runs the same
 host-side closeout wrapper there, and fetches the resulting report back to the
 local machine.
 
+For the standard full rerun that includes the real `login-send` step, prefer
+SSHing to the host and using the helper there so the temporary password
+override and restoration stay entirely on the validated OpenBSD host.
+
 ## Real `login-send` Secret Handling
 
-The `login-send` step uses the real validation mailbox, so the repository still
-requires an operator-supplied `OSMAP_VALIDATION_PASSWORD` at runtime when that
-step is included.
+The `login-send` step uses the real validation mailbox, so the standard
+repo-owned answer is the helper
+`maint/live/osmap-run-v1-closeout-with-temporary-validation-password.sh` to
+handle the real `login-send` secret flow on the host.
 
-The current validated answer is a controlled temporary password override:
+That helper now performs the validated guarded sequence automatically:
 
 1. Read and preserve the current mailbox password hash for
    `osmap-helper-validation@blackbagsecurity.com`.
-2. Generate one temporary `BLF-CRYPT` hash with `doveadm pw -s BLF-CRYPT`.
+2. Generate one temporary password and one temporary `BLF-CRYPT` hash.
 3. Update the validation mailbox record to that temporary hash.
-4. Run the authoritative closeout wrapper in the same guarded shell session.
+4. Export `OSMAP_VALIDATION_PASSWORD` only for the wrapped closeout command.
 5. Restore the original mailbox password hash on exit, even if the closeout run
    fails.
 
 This keeps the real `login-send` step reproducible without storing mailbox
-credentials in the repository or leaving the validation mailbox on a temporary
-secret after the run.
-
-## Example Guarded Host Session
-
-The following pattern captures the validated choreography. It should be run in
-one shell session on the host so the original mailbox hash is restored on exit:
-
-```sh
-set -eu
-
-validation_user='osmap-helper-validation@blackbagsecurity.com'
-temp_password="$(openssl rand -hex 16)"
-orig_hash="$(doas mariadb -N -B postfixadmin -e "SELECT password FROM mailbox WHERE username='${validation_user}' AND active='1';")"
-
-restore_password() {
-  doas mariadb postfixadmin <<SQL
-UPDATE mailbox
-SET password='${orig_hash}'
-WHERE username='${validation_user}' AND active='1';
-SQL
-}
-
-trap restore_password EXIT INT TERM
-
-temp_hash="$(doas doveadm pw -s BLF-CRYPT -p "${temp_password}")"
-
-doas mariadb postfixadmin <<SQL
-UPDATE mailbox
-SET password='${temp_hash}'
-WHERE username='${validation_user}' AND active='1';
-SQL
-
-cd ~/OSMAP
-OSMAP_VALIDATION_PASSWORD="${temp_password}" \
-  ksh ./maint/live/osmap-live-validate-v1-closeout.ksh \
-  --report "$HOME/osmap-v1-closeout-report.txt"
-```
+credentials in the repository, without asking operators to assemble the hash
+swap by hand, and without leaving the validation mailbox on a temporary secret
+after the run.
 
 ## Expected Report Artifact
 

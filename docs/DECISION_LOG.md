@@ -2760,3 +2760,50 @@ Validation for this change was:
 
 - `sh maint/security/test-osmap-validation-password-override.sh`
 - `make security-check`
+
+### Replace the manual validation-password override choreography with one helper
+
+Once the closeout wrappers, the report flow, and the reversible
+validation-password override all had repo-owned regression checks, the last
+remaining operator-sensitive gap was that the host-side closeout SOP still
+asked operators to assemble the mailbox-hash swap by hand.
+
+That was no longer a proof gap, but it was still release-discipline drift:
+
+- the repository already knew the exact reversible hash-swap procedure
+- the security gate already tested that behavior locally
+- the SOP still described a shell block operators had to retype or adapt
+
+OSMAP now adds
+`maint/live/osmap-run-v1-closeout-with-temporary-validation-password.sh` as the
+single repo-owned helper for that closeout path.
+
+That helper keeps the existing V1 gate frozen in
+`maint/live/osmap-live-validate-v1-closeout.ksh` and only adds the missing
+operator discipline around it:
+
+- if the selected step set includes `login-send`, it reads the current
+  validation mailbox hash, generates one temporary password plus `BLF-CRYPT`
+  hash, applies that temporary hash, exports `OSMAP_VALIDATION_PASSWORD` only
+  for the wrapped closeout invocation, and restores the original hash on exit
+- if the selected step set does not include `login-send`, it passes straight
+  through to the closeout wrapper without touching the validation mailbox
+
+`docs/V1_CLOSEOUT_SOP.md` now makes that helper the standard host-side answer
+for full reruns that include `login-send`, and the docs map text now reflects
+that the override is repo-owned rather than hand-assembled.
+
+This was chosen instead of widening the SSH wrapper or embedding more shell in
+the SOP because the real gap was not another proof runner. It was the lack of
+one bounded host-side helper for the already-proven reversible secret flow.
+The smallest correct answer is a wrapper that automates that one sensitive
+state transition while preserving the frozen V1 closeout boundary and the
+existing release posture. This does not change Version 1 scope or release
+status; it only tightens the documented operator path around the already-proven
+gate.
+
+Validation for this change was:
+
+- `sh -n maint/live/osmap-run-v1-closeout-with-temporary-validation-password.sh`
+- `sh maint/security/test-osmap-validation-password-override.sh`
+- `make security-check`

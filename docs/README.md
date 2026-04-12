@@ -108,6 +108,6 @@ security-check` and similar runs so Rust temp, cargo-home, and target paths
 stay under the operator home directory instead of consuming `/tmp`.
 
 For the short operator procedure around the authoritative Version 1 host
-closeout rerun, including the temporary validation-password override used by
-the real `login-send` step and the expected report artifact, see
-`V1_CLOSEOUT_SOP.md`.
+closeout rerun, including the repo-owned helper that now performs the
+temporary validation-password override used by the real `login-send` step and
+the expected report artifact, see `V1_CLOSEOUT_SOP.md`.

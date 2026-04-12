@@ -220,8 +220,9 @@ The first implementation slices of that answer now exist:
   closeout wrapper and pull the resulting report back locally
 
 For the short operator SOP that ties the standard `~/OSMAP` rerun path, the
-temporary validation-password override choreography, and the expected closeout
-report shape together in one place, see `docs/V1_CLOSEOUT_SOP.md`.
+repo-owned helper for the temporary validation-password override, and the
+expected closeout report shape together in one place, see
+`docs/V1_CLOSEOUT_SOP.md`.
 
 The repository now also carries first operator scaffolding for that split under
 `maint/openbsd/`:

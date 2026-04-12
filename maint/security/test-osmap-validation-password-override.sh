@@ -3,6 +3,8 @@
 set -eu
 
 repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
+helper_path="${repo_root}/maint/live/osmap-run-v1-closeout-with-temporary-validation-password.sh"
+closeout_wrapper_path="${repo_root}/maint/live/osmap-live-validate-v1-closeout.ksh"
 tmp_root=$(mktemp -d "${TMPDIR:-/tmp}/osmap-validation-password-test.XXXXXX")
 bin_dir="${tmp_root}/bin"
 state_dir="${tmp_root}/state"
@@ -19,6 +21,7 @@ mailbox_hash_path="${state_dir}/mailbox-password.txt"
 expected_temp_hash_path="${state_dir}/expected-temp-hash.txt"
 success_marker_path="${state_dir}/success-marker"
 failure_marker_path="${state_dir}/failure-marker"
+passthrough_marker_path="${state_dir}/passthrough-marker"
 
 cat > "${mailbox_hash_path}" <<'EOF'
 {BLF-CRYPT}$2y$05$originalValidationHashForOsmapCloseoutFlow
@@ -29,6 +32,24 @@ cat > "${bin_dir}/doas" <<'EOF'
 exec "$@"
 EOF
 chmod +x "${bin_dir}/doas"
+
+cat > "${bin_dir}/openssl" <<'EOF'
+#!/bin/sh
+
+set -eu
+
+[ "$#" -eq 3 ] || {
+  printf 'unexpected openssl invocation\n' >&2
+  exit 1
+}
+[ "$1" = "rand" ] && [ "$2" = "-hex" ] && [ "$3" = "16" ] || {
+  printf 'unexpected openssl invocation\n' >&2
+  exit 1
+}
+
+printf 'generated-proof-secret\n'
+EOF
+chmod +x "${bin_dir}/openssl"
 
 cat > "${bin_dir}/doveadm" <<'EOF'
 #!/bin/sh
@@ -87,6 +108,29 @@ printf '%s' "${password}" > "${state_file}"
 EOF
 chmod +x "${bin_dir}/mariadb"
 
+cat > "${bin_dir}/ksh" <<'EOF'
+#!/bin/sh
+
+set -eu
+
+real_closeout_wrapper=${OSMAP_TEST_REAL_CLOSEOUT_WRAPPER:?}
+fake_closeout_path=${OSMAP_TEST_FAKE_CLOSEOUT_PATH:?}
+
+[ "$#" -ge 1 ] || {
+  printf 'unexpected empty ksh invocation\n' >&2
+  exit 1
+}
+
+if [ "$1" = "${real_closeout_wrapper}" ]; then
+  shift
+  exec "${fake_closeout_path}" "$@"
+fi
+
+printf 'unexpected ksh invocation: %s\n' "$*" >&2
+exit 1
+EOF
+chmod +x "${bin_dir}/ksh"
+
 cat > "${tmp_root}/closeout-success.sh" <<'EOF'
 #!/bin/sh
 
@@ -96,6 +140,10 @@ current_hash=$(cat "${OSMAP_TEST_MAILBOX_HASH_PATH}")
 expected_hash=$(cat "${OSMAP_TEST_EXPECTED_TEMP_HASH_PATH}")
 [ "${current_hash}" = "${expected_hash}" ] || {
   printf 'temporary hash was not active during success path\n' >&2
+  exit 1
+}
+[ "${OSMAP_VALIDATION_PASSWORD:-}" = "generated-proof-secret" ] || {
+  printf 'expected helper to export the generated temporary password\n' >&2
   exit 1
 }
 printf 'ok\n' > "${OSMAP_TEST_SUCCESS_MARKER_PATH}"
@@ -113,10 +161,37 @@ expected_hash=$(cat "${OSMAP_TEST_EXPECTED_TEMP_HASH_PATH}")
   printf 'temporary hash was not active during failure path\n' >&2
   exit 1
 }
+[ "${OSMAP_VALIDATION_PASSWORD:-}" = "generated-proof-secret" ] || {
+  printf 'expected helper to export the generated temporary password\n' >&2
+  exit 1
+}
 printf 'ok\n' > "${OSMAP_TEST_FAILURE_MARKER_PATH}"
 exit 1
 EOF
 chmod +x "${tmp_root}/closeout-failure.sh"
+
+cat > "${tmp_root}/closeout-passthrough.sh" <<'EOF'
+#!/bin/sh
+
+set -eu
+
+current_hash=$(cat "${OSMAP_TEST_MAILBOX_HASH_PATH}")
+original_hash=$(cat "${OSMAP_TEST_ORIGINAL_HASH_PATH}")
+[ "${current_hash}" = "${original_hash}" ] || {
+  printf 'helper should not change mailbox hash when login-send is absent\n' >&2
+  exit 1
+}
+[ -z "${OSMAP_VALIDATION_PASSWORD:-}" ] || {
+  printf 'helper should not export a temporary password when login-send is absent\n' >&2
+  exit 1
+}
+[ "$#" -eq 1 ] && [ "$1" = "security-check" ] || {
+  printf 'unexpected passthrough arguments\n' >&2
+  exit 1
+}
+printf 'ok\n' > "${OSMAP_TEST_PASSTHROUGH_MARKER_PATH}"
+EOF
+chmod +x "${tmp_root}/closeout-passthrough.sh"
 
 assert_equals() {
   left=$1
@@ -128,126 +203,35 @@ assert_equals() {
   }
 }
 
-run_validation_password_override() {
-  temp_password=$1
-  closeout_command=$2
+run_helper() {
+  fake_closeout_path=$1
+  shift
 
-  (
-    original_hash="$(doas mariadb -N -B postfixadmin -e "SELECT password FROM mailbox WHERE username='osmap-helper-validation@blackbagsecurity.com' AND active='1';")"
-
-    restore_password() {
-      doas mariadb postfixadmin <<SQL
-UPDATE mailbox
-SET password='${original_hash}'
-WHERE username='osmap-helper-validation@blackbagsecurity.com' AND active='1';
-SQL
-    }
-
-    trap restore_password EXIT INT TERM
-
-    temp_hash="$(doas doveadm pw -s BLF-CRYPT -p "${temp_password}")"
-    printf '%s' "${temp_hash}" > "${expected_temp_hash_path}"
-
-    doas mariadb postfixadmin <<SQL
-UPDATE mailbox
-SET password='${temp_hash}'
-WHERE username='osmap-helper-validation@blackbagsecurity.com' AND active='1';
-SQL
-
-    "${closeout_command}"
-  )
+  env \
+    PATH="${bin_dir}:${PATH}" \
+    OSMAP_TEST_MAILBOX_HASH_PATH="${mailbox_hash_path}" \
+    OSMAP_TEST_EXPECTED_TEMP_HASH_PATH="${expected_temp_hash_path}" \
+    OSMAP_TEST_SUCCESS_MARKER_PATH="${success_marker_path}" \
+    OSMAP_TEST_FAILURE_MARKER_PATH="${failure_marker_path}" \
+    OSMAP_TEST_PASSTHROUGH_MARKER_PATH="${passthrough_marker_path}" \
+    OSMAP_TEST_ORIGINAL_HASH_PATH="${mailbox_hash_path}.orig" \
+    OSMAP_TEST_REAL_CLOSEOUT_WRAPPER="${closeout_wrapper_path}" \
+    OSMAP_TEST_FAKE_CLOSEOUT_PATH="${fake_closeout_path}" \
+    sh "${helper_path}" "$@"
 }
 
 original_hash=$(cat "${mailbox_hash_path}")
+printf '%s' "${original_hash}" > "${mailbox_hash_path}.orig"
+printf '%s' "{BLF-CRYPT}temporary-hash-for-generated-proof-secret" > "${expected_temp_hash_path}"
 
-env \
-  PATH="${bin_dir}:${PATH}" \
-  OSMAP_TEST_MAILBOX_HASH_PATH="${mailbox_hash_path}" \
-  OSMAP_TEST_EXPECTED_TEMP_HASH_PATH="${expected_temp_hash_path}" \
-  OSMAP_TEST_SUCCESS_MARKER_PATH="${success_marker_path}" \
-  OSMAP_TEST_FAILURE_MARKER_PATH="${failure_marker_path}" \
-  sh -c '
-    run_validation_password_override() {
-      temp_password=$1
-      closeout_command=$2
-
-      (
-        original_hash="$(doas mariadb -N -B postfixadmin -e "SELECT password FROM mailbox WHERE username='\''osmap-helper-validation@blackbagsecurity.com'\'' AND active='\''1'\'';")"
-
-        restore_password() {
-          doas mariadb postfixadmin <<SQL
-UPDATE mailbox
-SET password='"'"'${original_hash}'"'"'
-WHERE username='"'"'osmap-helper-validation@blackbagsecurity.com'"'"' AND active='"'"'1'"'"';
-SQL
-        }
-
-        trap restore_password EXIT INT TERM
-
-        temp_hash="$(doas doveadm pw -s BLF-CRYPT -p "${temp_password}")"
-        printf "%s" "${temp_hash}" > "'"${expected_temp_hash_path}"'"
-
-        doas mariadb postfixadmin <<SQL
-UPDATE mailbox
-SET password='"'"'${temp_hash}'"'"'
-WHERE username='"'"'osmap-helper-validation@blackbagsecurity.com'"'"' AND active='"'"'1'"'"';
-SQL
-
-        "${closeout_command}"
-      )
-    }
-
-    run_validation_password_override success-proof "'"${tmp_root}/closeout-success.sh"'"
-  '
-
+run_helper "${tmp_root}/closeout-success.sh"
 assert_equals "$(cat "${mailbox_hash_path}")" "${original_hash}"
 [ -f "${success_marker_path}" ] || {
   printf 'success path did not run the closeout command\n' >&2
   exit 1
 }
-assert_equals "$(cat "${expected_temp_hash_path}")" "{BLF-CRYPT}temporary-hash-for-success-proof"
 
-rm -f "${expected_temp_hash_path}"
-
-if env \
-  PATH="${bin_dir}:${PATH}" \
-  OSMAP_TEST_MAILBOX_HASH_PATH="${mailbox_hash_path}" \
-  OSMAP_TEST_EXPECTED_TEMP_HASH_PATH="${expected_temp_hash_path}" \
-  OSMAP_TEST_SUCCESS_MARKER_PATH="${success_marker_path}" \
-  OSMAP_TEST_FAILURE_MARKER_PATH="${failure_marker_path}" \
-  sh -c '
-    run_validation_password_override() {
-      temp_password=$1
-      closeout_command=$2
-
-      (
-        original_hash="$(doas mariadb -N -B postfixadmin -e "SELECT password FROM mailbox WHERE username='\''osmap-helper-validation@blackbagsecurity.com'\'' AND active='\''1'\'';")"
-
-        restore_password() {
-          doas mariadb postfixadmin <<SQL
-UPDATE mailbox
-SET password='"'"'${original_hash}'"'"'
-WHERE username='"'"'osmap-helper-validation@blackbagsecurity.com'"'"' AND active='"'"'1'"'"';
-SQL
-        }
-
-        trap restore_password EXIT INT TERM
-
-        temp_hash="$(doas doveadm pw -s BLF-CRYPT -p "${temp_password}")"
-        printf "%s" "${temp_hash}" > "'"${expected_temp_hash_path}"'"
-
-        doas mariadb postfixadmin <<SQL
-UPDATE mailbox
-SET password='"'"'${temp_hash}'"'"'
-WHERE username='"'"'osmap-helper-validation@blackbagsecurity.com'"'"' AND active='"'"'1'"'"';
-SQL
-
-        "${closeout_command}"
-      )
-    }
-
-    run_validation_password_override failure-proof "'"${tmp_root}/closeout-failure.sh"'"
-  '; then
+if run_helper "${tmp_root}/closeout-failure.sh" login-send; then
   printf 'expected failure path to return non-zero\n' >&2
   exit 1
 fi
@@ -257,6 +241,12 @@ assert_equals "$(cat "${mailbox_hash_path}")" "${original_hash}"
   printf 'failure path did not run the closeout command\n' >&2
   exit 1
 }
-assert_equals "$(cat "${expected_temp_hash_path}")" "{BLF-CRYPT}temporary-hash-for-failure-proof"
+
+run_helper "${tmp_root}/closeout-passthrough.sh" security-check
+assert_equals "$(cat "${mailbox_hash_path}")" "${original_hash}"
+[ -f "${passthrough_marker_path}" ] || {
+  printf 'passthrough path did not run the closeout command\n' >&2
+  exit 1
+}
 
 printf '%s\n' "validation password override regression checks passed"
