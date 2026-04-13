@@ -732,12 +732,10 @@ mod tests {
 
     #[test]
     fn decodes_q_encoded_header_summary_values() {
-        let unfolded = unfold_headers(
-            concat!(
-                "Subject: =?UTF-8?Q?Ol=C3=A1_do_mundo?=\n",
-                "From: =?UTF-8?Q?Andr=C3=A9_Example?= <alice@example.com>\n"
-            ),
-        );
+        let unfolded = unfold_headers(concat!(
+            "Subject: =?UTF-8?Q?Ol=C3=A1_do_mundo?=\n",
+            "From: =?UTF-8?Q?Andr=C3=A9_Example?= <alice@example.com>\n"
+        ));
         let subject =
             extract_header_value(&unfolded, "Subject", DEFAULT_RENDERED_HEADER_VALUE_MAX_LEN)
                 .expect("subject extraction should succeed");
@@ -750,12 +748,10 @@ mod tests {
 
     #[test]
     fn decodes_base64_encoded_header_summary_values() {
-        let unfolded = unfold_headers(
-            concat!(
-                "Subject: =?UTF-8?B?VGVzdCDinJM=?=\n",
-                "From: =?ISO-8859-1?Q?Andr=E9?= <alice@example.com>\n"
-            ),
-        );
+        let unfolded = unfold_headers(concat!(
+            "Subject: =?UTF-8?B?VGVzdCDinJM=?=\n",
+            "From: =?ISO-8859-1?Q?Andr=E9?= <alice@example.com>\n"
+        ));
         let subject =
             extract_header_value(&unfolded, "Subject", DEFAULT_RENDERED_HEADER_VALUE_MAX_LEN)
                 .expect("subject extraction should succeed");
@@ -768,9 +764,7 @@ mod tests {
 
     #[test]
     fn decodes_adjacent_encoded_words_without_preserving_separator_whitespace() {
-        let unfolded = unfold_headers(
-            "Subject: =?UTF-8?Q?Hello?= =?UTF-8?Q?_world?=\n",
-        );
+        let unfolded = unfold_headers("Subject: =?UTF-8?Q?Hello?= =?UTF-8?Q?_world?=\n");
         let subject =
             extract_header_value(&unfolded, "Subject", DEFAULT_RENDERED_HEADER_VALUE_MAX_LEN)
                 .expect("subject extraction should succeed");
@@ -856,7 +850,10 @@ mod tests {
             .render_for_validated_session(&test_context(), &validated_session_fixture(), &message)
             .expect("rendering should succeed");
 
-        assert_eq!(outcome.rendered.subject.as_deref(), Some("Quarterly résumé"));
+        assert_eq!(
+            outcome.rendered.subject.as_deref(),
+            Some("Quarterly résumé")
+        );
         assert_eq!(
             outcome.rendered.from.as_deref(),
             Some("André Example <alice@example.com>")
