@@ -2,6 +2,30 @@
 
 ## 2026-04-13
 
+### Add a standalone live-host proof for encoded header summary rendering
+
+The bounded RFC 2047 decoding slice for `Subject` and `From` already had local
+Rust coverage, but it still lacked explicit host evidence on the real helper-
+backed browser path. The next closeout-supporting step was one narrow host
+proof that exercised `/message` against a controlled message carrying encoded
+header summaries.
+
+OSMAP now carries `maint/live/osmap-live-validate-encoded-header-summary.ksh`.
+That script:
+
+- builds the current tree on the validated host
+- starts an isolated enforced mailbox helper plus browser runtime with a
+  synthetic validated session
+- injects one controlled plain-text message carrying encoded `Subject` and
+  `From` headers
+- renders `/message?...` through the real browser route
+- verifies the page surfaces the decoded summary values on the server-rendered
+  message view
+
+This was chosen instead of widening the frozen V1 closeout gate because the
+need was supplemental host evidence for an already shipped bounded rendering
+behavior, not a new release requirement.
+
 ### Add a standalone live-host proof for inline-image metadata in message view
 
 The message-view path could now surface bounded `Content-ID` metadata and a

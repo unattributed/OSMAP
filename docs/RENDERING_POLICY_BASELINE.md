@@ -46,6 +46,12 @@ injects one controlled multipart/related HTML message with a `cid:`-referenced
 inline image part and confirms the browser message view surfaces the bounded
 inline-image notice plus the attachment `Content-ID` metadata.
 
+The bounded RFC 2047 header-summary decoding path is now also live-proven there
+through `maint/live/osmap-live-validate-encoded-header-summary.ksh`, which
+injects one controlled plain-text message carrying encoded `Subject` and `From`
+headers and confirms `/message` surfaces the decoded summary values on the
+server-rendered page.
+
 This is intentionally smaller than a full message renderer.
 
 ## Current Rendering Modes

@@ -212,5 +212,9 @@ result set. The bounded inline-image metadata path is now also live-proven
 there through `maint/live/osmap-live-validate-inline-image-metadata.ksh`: a
 controlled multipart/related HTML message rendered through `/message` and
 surfaced both the `cid:`-aware inline-image notice and the attachment
-`Content-ID` metadata on the server-rendered page. Broader live-browser
-coverage still remains.
+`Content-ID` metadata on the server-rendered page. The bounded encoded-header
+summary path is now also live-proven there through
+`maint/live/osmap-live-validate-encoded-header-summary.ksh`: a controlled
+message with RFC 2047 encoded `Subject` and `From` headers rendered through
+`/message` and surfaced the decoded summary values on the server-rendered page.
+Broader live-browser coverage still remains.

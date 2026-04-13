@@ -216,6 +216,10 @@ Phase 6:
   HTML message rendered through `/message` and surfaced both the `cid:`-aware
   inline-image notice and the attachment `Content-ID` metadata on the
   server-rendered page
+- the bounded encoded-header summary browser path is now also live-proven on
+  `mail.blackbagsecurity.com` under `enforce`: a controlled message with RFC
+  2047 encoded `Subject` and `From` headers rendered through `/message` and
+  surfaced the decoded summary values on the server-rendered page
 - broader ergonomics for folder organization remain later refinements rather
   than blockers for the first move slice
 - the current repo-grounded reassessment also confirms that the remaining
