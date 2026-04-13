@@ -113,6 +113,8 @@ This slice now proves that:
 - the browser-facing layer can preserve a conservative rendering posture even
   when the message is HTML or multipart
 - surfaced attachment parts can be resolved without bypassing the MIME layer
+- surfaced attachment metadata can carry bounded `Content-ID` values for
+  `cid:`-style inline assets on the validated OpenBSD host
 - the project can support common multipart mail without quietly becoming a rich
   HTML mail renderer
 

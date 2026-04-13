@@ -106,6 +106,7 @@
   are now proven on `mail.blackbagsecurity.com`, and the first live mutation
   proof for one-message move plus bounded send now exists there too, and the
   bounded move-throttle plus send-throttle behaviors are both now proven there,
+  and the bounded `cid:` inline-image metadata path is now proven there too,
   but broader mutation coverage is still incomplete
 - The SDLC and release rules are now defined, but they have not yet been proven
   against a full live implementation pipeline

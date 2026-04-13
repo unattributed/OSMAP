@@ -2,6 +2,30 @@
 
 ## 2026-04-13
 
+### Add a standalone live-host proof for inline-image metadata in message view
+
+The message-view path could now surface bounded `Content-ID` metadata and a
+more precise inline-image notice, but that behavior still only had local Rust
+test coverage and the shared security gate. The next useful closeout-supporting
+step was one narrow host proof that exercised the real helper-backed browser
+path on `mail.blackbagsecurity.com`.
+
+OSMAP now carries `maint/live/osmap-live-validate-inline-image-metadata.ksh`.
+That script:
+
+- builds the current tree on the validated host
+- starts an isolated enforced mailbox helper plus browser runtime with a
+  synthetic validated session
+- injects one controlled multipart/related HTML message carrying a
+  `cid:`-referenced inline image part
+- renders `/message?...` through the real browser route
+- verifies the page surfaces both the `cid:`-aware inline-image notice and the
+  attachment `Content-ID` metadata
+
+This was chosen instead of widening the frozen V1 closeout gate because the
+need was supplemental host evidence for an already shipped bounded behavior,
+not a new release requirement.
+
 ### Add a short V1 closeout work-rules allowlist
 
 Once the Version 1 release gate was frozen, the remaining process risk was no

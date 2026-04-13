@@ -208,4 +208,9 @@ the second matching move. The bounded all-mailboxes search flow is now also
 live-proven there: the mailboxes landing page rendered the global search form,
 the mailbox page rendered the all-mailboxes search toggle, and a controlled
 `/search?q=...` request returned hits from both `INBOX` and `Junk` in one
-result set. Broader live-browser coverage still remains.
+result set. The bounded inline-image metadata path is now also live-proven
+there through `maint/live/osmap-live-validate-inline-image-metadata.ksh`: a
+controlled multipart/related HTML message rendered through `/message` and
+surfaced both the `cid:`-aware inline-image notice and the attachment
+`Content-ID` metadata on the server-rendered page. Broader live-browser
+coverage still remains.

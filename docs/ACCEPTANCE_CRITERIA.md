@@ -211,6 +211,11 @@ Phase 6:
   on `/mailboxes`, the all-mailboxes toggle rendered on `/mailbox?name=INBOX`,
   and one bounded `/search?q=...` request returned controlled hits from both
   `INBOX` and `Junk`
+- the bounded inline-image metadata browser path is now also live-proven on
+  `mail.blackbagsecurity.com` under `enforce`: a controlled multipart/related
+  HTML message rendered through `/message` and surfaced both the `cid:`-aware
+  inline-image notice and the attachment `Content-ID` metadata on the
+  server-rendered page
 - broader ergonomics for folder organization remain later refinements rather
   than blockers for the first move slice
 - the current repo-grounded reassessment also confirms that the remaining
