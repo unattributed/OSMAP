@@ -124,6 +124,9 @@ Guidance:
   baseline
 - keep repo-owned local hook backstops available so the same security gate can
   run before commit and before push when maintainers enable the shared hook path
+- keep a repo-owned regression check around `make install-hooks` so the local
+  hook backstops remain provably wired to the shared security gate as that
+  workflow evolves
 - keep the current OWASP-oriented verification posture concrete through the
   Version 1-scoped `OWASP_ASVS_BASELINE.md` crosswalk rather than leaving OWASP
   and ASVS as ungrounded aspiration text

@@ -106,6 +106,10 @@ To enable the repo-owned pre-commit hook path for this checkout, run:
 That sets `core.hooksPath` to `.githooks` so the shared security gate runs both
 before commit and again before push.
 
+The repo-owned `make security-check` workflow also carries a temp-repo
+regression check for `make install-hooks` so the maintained hook path keeps
+proving both hooks route back through the shared security gate.
+
 For OpenBSD-facing work, maintainers may also validate changes on:
 
 - a project-local QEMU lab under `maint/qemu/`

@@ -120,6 +120,9 @@ That workflow currently does all of the following:
 - fail if new `unsafe` appears outside `src/openbsd.rs`
 - fail if shell-based command execution appears in `src/`
 - fail if new direct `Command::new` call sites appear outside `src/auth.rs`
+- validate that `make install-hooks` keeps the repo-owned `pre-commit` and
+  `pre-push` hooks executable, configured, and routed back through
+  `make security-check`
 
 Install the shared hook path with:
 

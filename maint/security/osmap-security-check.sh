@@ -129,4 +129,7 @@ sh maint/security/test-osmap-live-validate-v1-closeout.sh
 echo "==> validating reversible validation-password override flow"
 sh maint/security/test-osmap-validation-password-override.sh
 
+echo "==> validating hook installation and security gate invocation"
+sh maint/security/test-osmap-install-hooks.sh
+
 echo "==> security-check complete"

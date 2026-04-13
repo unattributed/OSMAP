@@ -2,6 +2,27 @@
 
 ## 2026-04-13
 
+### Add a hook-installation regression check to the shared security gate
+
+Once `pre-commit` and `pre-push` both existed as repo-owned backstops, the next
+failure mode was silent drift in the installation path itself: a future edit to
+`Makefile`, `.githooks/`, or the shared hook scripts could leave maintainers
+believing the hooks still enforced `make security-check` when they no longer
+did.
+
+The shared `make security-check` gate now includes a temp-repo shell
+regression that:
+
+- runs `make install-hooks`
+- verifies `core.hooksPath=.githooks`
+- verifies both hook scripts are executable
+- invokes both hooks from a nested working directory against a stubbed
+  `make security-check` target so the repo-root handoff stays proven
+
+That keeps the local enforcement story honest by testing not just the security
+gate itself, but also the maintained path that is supposed to run it before
+commit and before push.
+
 ### Add a pre-push security-check backstop to the repo-owned hook path
 
 The repository already had a repo-owned `pre-commit` hook that routed through
