@@ -28,6 +28,7 @@ The early runtime recognizes:
 - `OSMAP_ENV`
 - `OSMAP_LISTEN_ADDR`
 - `OSMAP_DOVEADM_AUTH_SOCKET_PATH`
+- `OSMAP_TRUSTED_WEB_RUNTIME_UID`
 - `OSMAP_DOVEADM_USERDB_SOCKET_PATH`
 - `OSMAP_MAILBOX_HELPER_SOCKET_PATH`
 - `OSMAP_STATE_DIR`
@@ -78,6 +79,12 @@ The runtime now also recognizes an optional
 `OSMAP_DOVEADM_AUTH_SOCKET_PATH` setting for deployments that want OSMAP to use
 an explicitly chosen Dovecot auth socket rather than the default helper
 behavior.
+
+The runtime now also recognizes an optional
+`OSMAP_TRUSTED_WEB_RUNTIME_UID` setting. In `mailbox-helper` mode this becomes
+required and must name the dedicated browser-runtime UID expected for the
+deployment, so helper startup can fail closed if the configured auth socket is
+owned by some other local principal.
 
 The runtime now also recognizes an optional
 `OSMAP_DOVEADM_USERDB_SOCKET_PATH` setting for deployments that want OSMAP to
@@ -208,6 +215,8 @@ The bootstrap currently enforces:
 - environment values must be recognized explicitly
 - the optional `OSMAP_DOVEADM_AUTH_SOCKET_PATH`, when present, must be an
   absolute path
+- the optional `OSMAP_TRUSTED_WEB_RUNTIME_UID`, when present, must be a
+  positive unsigned integer
 - the optional `OSMAP_DOVEADM_USERDB_SOCKET_PATH`, when present, must be an
   absolute path
 - the optional `OSMAP_MAILBOX_HELPER_SOCKET_PATH`, when present, must be an
@@ -266,6 +275,7 @@ include in startup reporting and confinement planning.
 The current validated example on `mail.blackbagsecurity.com` is:
 
 - `OSMAP_DOVEADM_AUTH_SOCKET_PATH=/var/run/osmap-auth`
+- `OSMAP_TRUSTED_WEB_RUNTIME_UID=1001`
 - `OSMAP_DOVEADM_USERDB_SOCKET_PATH=/var/run/osmap-userdb`
 
 with `_osmap` using the auth listener and the `vmail` mailbox helper using the

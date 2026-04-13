@@ -249,6 +249,10 @@ The runtime now supports that operator path explicitly:
 - `OSMAP_RUN_MODE=mailbox-helper` now also requires
   `OSMAP_DOVEADM_AUTH_SOCKET_PATH` so the helper can derive the one trusted
   local caller UID before mailbox requests are accepted
+- `OSMAP_RUN_MODE=mailbox-helper` also now requires
+  `OSMAP_TRUSTED_WEB_RUNTIME_UID` so startup can fail closed unless the
+  auth-socket owner still matches the dedicated `_osmap` UID expected for the
+  deployment
 - when configured, the OpenBSD confinement plan now adds the explicit socket
   paths plus read-only parent-directory visibility for those paths
 

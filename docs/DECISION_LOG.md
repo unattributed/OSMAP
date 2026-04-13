@@ -3551,3 +3551,34 @@ Validation for this change was:
   plus the updated repo-owned `POST /send`, `POST /message/move`,
   `POST /sessions/revoke`, `POST /settings`, and `POST /logout` validators on
   `mail.blackbagsecurity.com`
+
+### Fail mailbox-helper startup closed unless the trusted auth-socket owner matches the expected web-runtime UID
+
+OSMAP's mailbox-helper boundary already rejects Unix-socket peers whose UID
+does not match the caller identity derived from
+`OSMAP_DOVEADM_AUTH_SOCKET_PATH`. The remaining V1-safe assumption is that this
+derived UID really is the dedicated browser-runtime UID for the deployment,
+rather than the owner of some unrelated socket path.
+
+The helper startup path now makes that assumption explicit:
+
+- `mailbox-helper` mode requires `OSMAP_TRUSTED_WEB_RUNTIME_UID`
+- helper startup derives the trusted caller UID from
+  `OSMAP_DOVEADM_AUTH_SOCKET_PATH`
+- startup now fails closed if the auth-socket owner UID does not match the
+  configured expected browser-runtime UID
+- the helper protocol and current `_osmap` plus `vmail` architecture remain
+  unchanged for V1
+
+This was chosen as the smallest correct closeout because it preserves the
+current trusted-service boundary while making the required deployment posture
+operator-visible and enforced at startup instead of only implied in docs.
+
+Validation for this change was:
+
+- config coverage for required and invalid `OSMAP_TRUSTED_WEB_RUNTIME_UID`
+  values
+- helper coverage for accepted and rejected auth-socket owner UID derivation
+- local `make security-check`
+- host validation on `mail.blackbagsecurity.com` using the existing helper
+  boundary proofs under the real `_osmap` plus `vmail` split

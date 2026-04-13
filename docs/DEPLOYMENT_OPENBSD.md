@@ -167,6 +167,8 @@ Current prototype-specific deployment guidance:
   `OSMAP_DOVEADM_AUTH_SOCKET_PATH` so the helper can derive the one trusted
   local caller UID from the auth-socket owner before accepting mailbox
   requests
+- mailbox-helper startup also depends on `OSMAP_TRUSTED_WEB_RUNTIME_UID`, and
+  that value must match the dedicated `_osmap` UID expected for the host
 - the current validated host shape on `mail.blackbagsecurity.com` uses
   `_osmap` plus `/var/run/osmap-auth` for browser auth and `vmail` plus
   `/var/run/osmap-userdb` for mailbox-helper lookups

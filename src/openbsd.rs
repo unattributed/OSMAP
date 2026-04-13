@@ -588,6 +588,7 @@ mod tests {
             environment: RuntimeEnvironment::Production,
             listen_addr: "127.0.0.1:8080".to_string(),
             doveadm_auth_socket_path: None,
+            trusted_web_runtime_uid: None,
             doveadm_userdb_socket_path: None,
             mailbox_helper_socket_path: None,
             state_root: PathBuf::from("/var/lib/osmap"),

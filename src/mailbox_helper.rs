@@ -274,6 +274,9 @@ fn trusted_caller_policy_from_config(
     let auth_socket_path = config.doveadm_auth_socket_path.as_ref().ok_or_else(|| {
         "mailbox helper run mode requires OSMAP_DOVEADM_AUTH_SOCKET_PATH".to_string()
     })?;
+    let expected_web_runtime_uid = config.trusted_web_runtime_uid.ok_or_else(|| {
+        "mailbox helper run mode requires OSMAP_TRUSTED_WEB_RUNTIME_UID".to_string()
+    })?;
     let metadata = fs::symlink_metadata(auth_socket_path).map_err(|error| {
         format!(
             "failed to inspect trusted auth socket {}: {error}",
@@ -288,8 +291,15 @@ fn trusted_caller_policy_from_config(
         ));
     }
 
+    let derived_trusted_peer_uid = metadata.uid();
+    if derived_trusted_peer_uid != expected_web_runtime_uid {
+        return Err(format!(
+            "trusted auth socket owner uid {derived_trusted_peer_uid} did not match configured OSMAP_TRUSTED_WEB_RUNTIME_UID {expected_web_runtime_uid}"
+        ));
+    }
+
     Ok(MailboxHelperTrustedCallerPolicy {
-        trusted_peer_uid: metadata.uid(),
+        trusted_peer_uid: derived_trusted_peer_uid,
     })
 }
 
@@ -678,6 +688,7 @@ mod tests {
             environment: crate::config::RuntimeEnvironment::Development,
             listen_addr: "127.0.0.1:8080".to_string(),
             doveadm_auth_socket_path: Some(socket_path.clone()),
+            trusted_web_runtime_uid: Some(test_runtime_uid()),
             doveadm_userdb_socket_path: None,
             mailbox_helper_socket_path: Some(temp_root.join("mailbox-helper.sock")),
             state_root: temp_root.clone(),
@@ -718,6 +729,75 @@ mod tests {
             .expect("auth socket metadata should be readable")
             .uid();
         assert_eq!(policy.trusted_peer_uid, expected_uid);
+
+        fs::remove_file(&socket_path).expect("socket should be removed");
+        fs::remove_dir_all(&temp_root).expect("temp root should be removed");
+    }
+
+    #[test]
+    fn trusted_caller_policy_rejects_mismatched_expected_web_runtime_uid() {
+        let temp_root = env::temp_dir().join(format!(
+            "osmap-mailbox-helper-authz-mismatch-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .expect("system time should be after unix epoch")
+                .as_nanos()
+        ));
+        fs::create_dir_all(&temp_root).expect("temp root should be created");
+        let socket_path = temp_root.join("trusted-auth.sock");
+        let _listener = UnixListener::bind(&socket_path).expect("test auth socket should bind");
+        let actual_uid = fs::metadata(&socket_path)
+            .expect("auth socket metadata should be readable")
+            .uid();
+        let mismatched_uid = actual_uid.saturating_add(1);
+        let config = AppConfig {
+            run_mode: AppRunMode::MailboxHelper,
+            environment: crate::config::RuntimeEnvironment::Development,
+            listen_addr: "127.0.0.1:8080".to_string(),
+            doveadm_auth_socket_path: Some(socket_path.clone()),
+            trusted_web_runtime_uid: Some(mismatched_uid),
+            doveadm_userdb_socket_path: None,
+            mailbox_helper_socket_path: Some(temp_root.join("mailbox-helper.sock")),
+            state_root: temp_root.clone(),
+            log_level: LogLevel::Info,
+            log_format: crate::config::LogFormat::Text,
+            state_layout: crate::state::StateLayout::new(
+                temp_root.clone(),
+                temp_root.join("run"),
+                temp_root.join("sessions"),
+                temp_root.join("settings"),
+                temp_root.join("audit"),
+                temp_root.join("cache"),
+                temp_root.join("totp"),
+            )
+            .expect("layout should be valid"),
+            http_max_concurrent_connections: 16,
+            session_lifetime_seconds: 43200,
+            totp_allowed_skew_steps: 1,
+            login_throttle_max_failures: 5,
+            login_throttle_remote_max_failures: 12,
+            login_throttle_window_seconds: 300,
+            login_throttle_lockout_seconds: 900,
+            submission_throttle_max_submissions: 10,
+            submission_throttle_remote_max_submissions: 25,
+            submission_throttle_window_seconds: 300,
+            submission_throttle_lockout_seconds: 900,
+            message_move_throttle_max_moves: 20,
+            message_move_throttle_remote_max_moves: 60,
+            message_move_throttle_window_seconds: 300,
+            message_move_throttle_lockout_seconds: 900,
+            openbsd_confinement_mode: crate::config::OpenbsdConfinementMode::Disabled,
+        };
+
+        let error = trusted_caller_policy_from_config(&config)
+            .expect_err("mismatched configured runtime uid must fail closed");
+        assert_eq!(
+            error,
+            format!(
+                "trusted auth socket owner uid {actual_uid} did not match configured OSMAP_TRUSTED_WEB_RUNTIME_UID {mismatched_uid}"
+            )
+        );
 
         fs::remove_file(&socket_path).expect("socket should be removed");
         fs::remove_dir_all(&temp_root).expect("temp root should be removed");

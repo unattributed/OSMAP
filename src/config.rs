@@ -28,6 +28,7 @@ pub struct AppConfig {
     pub environment: RuntimeEnvironment,
     pub listen_addr: String,
     pub doveadm_auth_socket_path: Option<PathBuf>,
+    pub trusted_web_runtime_uid: Option<u32>,
     pub doveadm_userdb_socket_path: Option<PathBuf>,
     pub mailbox_helper_socket_path: Option<PathBuf>,
     pub state_root: PathBuf,
@@ -301,6 +302,7 @@ impl AppConfig {
             read_value(env_map, "OSMAP_OPENBSD_CONFINEMENT_MODE", "disabled");
         let doveadm_auth_socket_path =
             parse_optional_absolute_optional_path(env_map, "OSMAP_DOVEADM_AUTH_SOCKET_PATH")?;
+        let trusted_web_runtime_uid = parse_optional_u32(env_map, "OSMAP_TRUSTED_WEB_RUNTIME_UID")?;
         let doveadm_userdb_socket_path =
             parse_optional_absolute_optional_path(env_map, "OSMAP_DOVEADM_USERDB_SOCKET_PATH")?;
 
@@ -534,6 +536,7 @@ impl AppConfig {
             run_mode,
             mailbox_helper_socket_path.as_deref(),
             doveadm_auth_socket_path.as_deref(),
+            trusted_web_runtime_uid,
         )?;
 
         Ok(Self {
@@ -541,6 +544,7 @@ impl AppConfig {
             environment,
             listen_addr,
             doveadm_auth_socket_path,
+            trusted_web_runtime_uid,
             doveadm_userdb_socket_path,
             mailbox_helper_socket_path,
             log_level,
@@ -573,6 +577,7 @@ fn validate_mailbox_boundary(
     run_mode: AppRunMode,
     mailbox_helper_socket_path: Option<&Path>,
     doveadm_auth_socket_path: Option<&Path>,
+    trusted_web_runtime_uid: Option<u32>,
 ) -> Result<(), BootstrapError> {
     if environment == RuntimeEnvironment::Production
         && run_mode == AppRunMode::Serve
@@ -588,6 +593,13 @@ fn validate_mailbox_boundary(
         return Err(BootstrapError::InvalidConfig {
             field: "OSMAP_DOVEADM_AUTH_SOCKET_PATH",
             reason: "mailbox helper run mode requires the auth socket path to derive the trusted local caller".to_string(),
+        });
+    }
+
+    if run_mode == AppRunMode::MailboxHelper && trusted_web_runtime_uid.is_none() {
+        return Err(BootstrapError::InvalidConfig {
+            field: "OSMAP_TRUSTED_WEB_RUNTIME_UID",
+            reason: "mailbox helper run mode requires the dedicated web runtime uid so startup can verify the trusted auth-socket owner".to_string(),
         });
     }
 
@@ -638,6 +650,31 @@ fn parse_optional_absolute_optional_path(
 ) -> Result<Option<PathBuf>, BootstrapError> {
     match env_map.get(field) {
         Some(value) => Ok(Some(parse_absolute_path(field, value)?)),
+        None => Ok(None),
+    }
+}
+
+/// Parses an optional non-zero Unix UID.
+fn parse_optional_u32(
+    env_map: &BTreeMap<String, String>,
+    field: &'static str,
+) -> Result<Option<u32>, BootstrapError> {
+    match env_map.get(field) {
+        Some(value) => {
+            let parsed = value
+                .parse::<u32>()
+                .map_err(|error| BootstrapError::InvalidConfig {
+                    field,
+                    reason: format!("value must be a non-zero unsigned integer: {error}"),
+                })?;
+            if parsed == 0 {
+                return Err(BootstrapError::InvalidConfig {
+                    field,
+                    reason: "value must be greater than zero".to_string(),
+                });
+            }
+            Ok(Some(parsed))
+        }
         None => Ok(None),
     }
 }
@@ -742,6 +779,7 @@ mod tests {
         assert_eq!(config.environment, RuntimeEnvironment::Development);
         assert_eq!(config.listen_addr, "127.0.0.1:8080");
         assert_eq!(config.doveadm_auth_socket_path, None);
+        assert_eq!(config.trusted_web_runtime_uid, None);
         assert_eq!(config.doveadm_userdb_socket_path, None);
         assert_eq!(config.mailbox_helper_socket_path, None);
         assert_eq!(config.state_root, std::path::Path::new("/var/lib/osmap"));
@@ -881,6 +919,10 @@ mod tests {
                 "/var/run/osmap/dovecot-auth".to_string(),
             ),
             (
+                "OSMAP_TRUSTED_WEB_RUNTIME_UID".to_string(),
+                "1001".to_string(),
+            ),
+            (
                 "OSMAP_DOVEADM_USERDB_SOCKET_PATH".to_string(),
                 "/var/run/osmap/dovecot-userdb".to_string(),
             ),
@@ -899,6 +941,7 @@ mod tests {
             config.doveadm_auth_socket_path,
             Some(std::path::Path::new("/var/run/osmap/dovecot-auth").to_path_buf())
         );
+        assert_eq!(config.trusted_web_runtime_uid, Some(1001));
         assert_eq!(
             config.doveadm_userdb_socket_path,
             Some(std::path::Path::new("/var/run/osmap/dovecot-userdb").to_path_buf())
@@ -1207,6 +1250,10 @@ mod tests {
                 "OSMAP_DOVEADM_AUTH_SOCKET_PATH".to_string(),
                 "/var/run/osmap-auth".to_string(),
             ),
+            (
+                "OSMAP_TRUSTED_WEB_RUNTIME_UID".to_string(),
+                "1001".to_string(),
+            ),
         ]);
 
         let config = AppConfig::from_env_map(&env_map).expect("helper mode should parse");
@@ -1250,6 +1297,45 @@ mod tests {
             BootstrapError::InvalidConfig {
                 field: "OSMAP_DOVEADM_AUTH_SOCKET_PATH",
                 reason: "mailbox helper run mode requires the auth socket path to derive the trusted local caller".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn mailbox_helper_mode_requires_trusted_web_runtime_uid() {
+        let env_map = BTreeMap::from([
+            ("OSMAP_RUN_MODE".to_string(), "mailbox-helper".to_string()),
+            (
+                "OSMAP_DOVEADM_AUTH_SOCKET_PATH".to_string(),
+                "/var/run/osmap-auth".to_string(),
+            ),
+        ]);
+
+        let error = AppConfig::from_env_map(&env_map)
+            .expect_err("mailbox helper mode must require the trusted web runtime uid");
+
+        assert_eq!(
+            error,
+            BootstrapError::InvalidConfig {
+                field: "OSMAP_TRUSTED_WEB_RUNTIME_UID",
+                reason: "mailbox helper run mode requires the dedicated web runtime uid so startup can verify the trusted auth-socket owner".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn rejects_zero_trusted_web_runtime_uid() {
+        let env_map =
+            BTreeMap::from([("OSMAP_TRUSTED_WEB_RUNTIME_UID".to_string(), "0".to_string())]);
+
+        let error =
+            AppConfig::from_env_map(&env_map).expect_err("zero trusted runtime uid must fail");
+
+        assert_eq!(
+            error,
+            BootstrapError::InvalidConfig {
+                field: "OSMAP_TRUSTED_WEB_RUNTIME_UID",
+                reason: "value must be greater than zero".to_string(),
             }
         );
     }

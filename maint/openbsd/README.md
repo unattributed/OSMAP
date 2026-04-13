@@ -39,6 +39,8 @@ The current least-privilege OpenBSD posture is:
 - mailbox helper startup also needs `OSMAP_DOVEADM_AUTH_SOCKET_PATH` so the
   helper can derive the one trusted local caller identity from the auth-socket
   owner before it accepts mailbox requests
+- mailbox helper startup also needs `OSMAP_TRUSTED_WEB_RUNTIME_UID`, and that
+  value must match the dedicated `_osmap` UID expected on the host
 - the browser runtime reaches the helper over one local Unix socket
 
 The example env files in this directory use:
@@ -87,6 +89,8 @@ The `rc.d` examples assume:
 - `/etc/osmap/osmap-mailbox-helper.env` holds the helper env file
 - the helper env file includes both `OSMAP_DOVEADM_AUTH_SOCKET_PATH` and
   `OSMAP_DOVEADM_USERDB_SOCKET_PATH`
+- the helper env file also includes `OSMAP_TRUSTED_WEB_RUNTIME_UID`, typically
+  set from `id -u _osmap`
 - `/usr/local/libexec/osmap/` holds the launcher scripts
 
 Those launchers source the env file and then execute one explicit OSMAP CLI

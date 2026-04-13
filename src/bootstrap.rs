@@ -14,6 +14,7 @@ pub struct BootstrapReport {
     pub environment: String,
     pub listen_addr: String,
     pub doveadm_auth_socket_path: String,
+    pub trusted_web_runtime_uid: String,
     pub doveadm_userdb_socket_path: String,
     pub mailbox_helper_socket_path: String,
     pub mailbox_boundary_mode: String,
@@ -59,6 +60,10 @@ impl BootstrapReport {
         .with_field(
             "doveadm_auth_socket_path",
             self.doveadm_auth_socket_path.clone(),
+        )
+        .with_field(
+            "trusted_web_runtime_uid",
+            self.trusted_web_runtime_uid.clone(),
         )
         .with_field(
             "doveadm_userdb_socket_path",
@@ -177,6 +182,10 @@ fn report_from_config(config: &AppConfig) -> BootstrapReport {
             .as_ref()
             .map(|path| path.display().to_string())
             .unwrap_or_default(),
+        trusted_web_runtime_uid: config
+            .trusted_web_runtime_uid
+            .map(|uid| uid.to_string())
+            .unwrap_or_default(),
         doveadm_userdb_socket_path: config
             .doveadm_userdb_socket_path
             .as_ref()
@@ -246,6 +255,7 @@ mod tests {
             environment: RuntimeEnvironment::Development,
             listen_addr: "127.0.0.1:8080".to_string(),
             doveadm_auth_socket_path: Some(PathBuf::from("/var/run/osmap/dovecot-auth")),
+            trusted_web_runtime_uid: Some(1001),
             doveadm_userdb_socket_path: Some(PathBuf::from("/var/run/osmap/dovecot-userdb")),
             mailbox_helper_socket_path: Some(PathBuf::from(
                 "/var/lib/osmap/run/mailbox-helper.sock",
@@ -301,6 +311,10 @@ mod tests {
                 crate::logging::LogField {
                     key: "doveadm_auth_socket_path",
                     value: "/var/run/osmap/dovecot-auth".to_string(),
+                },
+                crate::logging::LogField {
+                    key: "trusted_web_runtime_uid",
+                    value: "1001".to_string(),
                 },
                 crate::logging::LogField {
                     key: "doveadm_userdb_socket_path",

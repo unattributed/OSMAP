@@ -75,6 +75,8 @@ What is implemented:
 - a small line-oriented request/response protocol
 - helper-side peer-credential enforcement that only trusts the local caller
   identity derived from `OSMAP_DOVEADM_AUTH_SOCKET_PATH`
+- helper startup validation that fails closed unless that derived caller UID
+  matches the configured dedicated web-runtime UID for the deployment
 - a helper-backed mailbox-list client backend in the web runtime
 - a helper-backed message-search client backend in the web runtime
 - a helper-backed message-list client backend in the web runtime
@@ -167,6 +169,8 @@ The intended OpenBSD model is:
   unrelated users
 - helper-side peer-credential checks that still reject unrelated local callers
   even if filesystem socket permissions are widened incorrectly
+- explicit startup validation that the auth-socket owner UID still matches the
+  dedicated `_osmap` UID expected for the deployment
 
 The web runtime and the helper should each have their own `pledge(2)` and
 `unveil(2)` plans instead of sharing one broad filesystem and execution view.
