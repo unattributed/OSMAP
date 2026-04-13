@@ -358,6 +358,7 @@ dependencies = [
  "ammonia",
  "getrandom",
  "hmac",
+ "libc",
  "sha1",
  "sha2",
 ]

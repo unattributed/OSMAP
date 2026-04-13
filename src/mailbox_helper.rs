@@ -10,6 +10,8 @@ use std::fs;
 use std::io::{Read, Write};
 use std::net::Shutdown;
 #[cfg(unix)]
+use std::os::unix::fs::MetadataExt as _;
+#[cfg(unix)]
 use std::os::unix::fs::{FileTypeExt as _, PermissionsExt as _};
 #[cfg(unix)]
 use std::os::unix::net::{UnixListener, UnixStream};
@@ -46,7 +48,7 @@ use crate::mailbox::{
     MessageSearchRequest, MessageSearchResult, MessageSummary, MessageView, MessageViewBackend,
     MessageViewPolicy, MessageViewRequest,
 };
-use crate::openbsd::apply_runtime_confinement;
+use crate::openbsd::{apply_runtime_confinement, unix_stream_peer_uid};
 
 /// Conservative upper bound for one helper request payload.
 pub const DEFAULT_MAILBOX_HELPER_MAX_REQUEST_BYTES: usize = 4096;
@@ -67,6 +69,12 @@ pub struct MailboxHelperPolicy {
     pub max_response_bytes: usize,
     pub read_timeout_secs: u64,
     pub write_timeout_secs: u64,
+}
+
+#[cfg(unix)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct MailboxHelperTrustedCallerPolicy {
+    trusted_peer_uid: u32,
 }
 
 impl Default for MailboxHelperPolicy {
@@ -99,6 +107,7 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
 
     #[cfg(unix)]
     {
+        let trusted_caller_policy = trusted_caller_policy_from_config(config)?;
         apply_runtime_confinement(config, logger)?;
         remove_stale_socket_if_needed(socket_path)?;
 
@@ -168,6 +177,7 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
                     logger,
                     &mut stream,
                     policy,
+                    trusted_caller_policy,
                 ),
                 Err(error) => logger.emit(
                     &LogEvent::new(
@@ -191,6 +201,7 @@ fn handle_helper_client<MB, MLB, MSB, MVB, MMB>(
     logger: &Logger,
     stream: &mut UnixStream,
     policy: MailboxHelperPolicy,
+    trusted_caller_policy: MailboxHelperTrustedCallerPolicy,
 ) where
     MB: MailboxBackend,
     MLB: MessageListBackend,
@@ -199,6 +210,30 @@ fn handle_helper_client<MB, MLB, MSB, MVB, MMB>(
     MMB: MessageMoveBackend,
 {
     configure_stream_timeouts(stream, policy);
+
+    match helper_stream_peer_uid(stream)
+        .and_then(|peer_uid| authorize_helper_peer_uid(peer_uid, trusted_caller_policy))
+    {
+        Ok(()) => {}
+        Err(reason) => {
+            logger.emit(
+                &LogEvent::new(
+                    LogLevel::Warn,
+                    EventCategory::Mailbox,
+                    "mailbox_helper_peer_not_authorized",
+                    "mailbox helper peer was not authorized",
+                )
+                .with_field("reason", reason),
+            );
+            let response = MailboxHelperResponse::Error {
+                backend: "mailbox-helper-authz".to_string(),
+                reason: "helper peer credentials were not authorized".to_string(),
+            };
+            let _ = write_response(stream, &response);
+            log_helper_response(logger, &response, None);
+            return;
+        }
+    }
 
     let request = match read_bounded_from_stream(stream, policy.max_request_bytes)
         .map_err(|reason| MailboxHelperResponse::Error {
@@ -233,6 +268,52 @@ fn handle_helper_client<MB, MLB, MSB, MVB, MMB>(
 }
 
 #[cfg(unix)]
+fn trusted_caller_policy_from_config(
+    config: &AppConfig,
+) -> Result<MailboxHelperTrustedCallerPolicy, String> {
+    let auth_socket_path = config.doveadm_auth_socket_path.as_ref().ok_or_else(|| {
+        "mailbox helper run mode requires OSMAP_DOVEADM_AUTH_SOCKET_PATH".to_string()
+    })?;
+    let metadata = fs::symlink_metadata(auth_socket_path).map_err(|error| {
+        format!(
+            "failed to inspect trusted auth socket {}: {error}",
+            auth_socket_path.display()
+        )
+    })?;
+
+    if !metadata.file_type().is_socket() {
+        return Err(format!(
+            "trusted auth socket path {} must point to a Unix-domain socket",
+            auth_socket_path.display()
+        ));
+    }
+
+    Ok(MailboxHelperTrustedCallerPolicy {
+        trusted_peer_uid: metadata.uid(),
+    })
+}
+
+#[cfg(unix)]
+fn authorize_helper_peer_uid(
+    peer_uid: u32,
+    trusted_caller_policy: MailboxHelperTrustedCallerPolicy,
+) -> Result<(), String> {
+    if peer_uid == trusted_caller_policy.trusted_peer_uid {
+        return Ok(());
+    }
+
+    Err(format!(
+        "helper peer uid {peer_uid} did not match trusted uid {}",
+        trusted_caller_policy.trusted_peer_uid
+    ))
+}
+
+#[cfg(unix)]
+fn helper_stream_peer_uid(stream: &UnixStream) -> Result<u32, String> {
+    unix_stream_peer_uid(stream)
+}
+
+#[cfg(unix)]
 fn configure_stream_timeouts<T>(stream: &T, policy: MailboxHelperPolicy)
 where
     T: UnixStreamTimeouts,
@@ -262,7 +343,9 @@ impl UnixStreamTimeouts for UnixStream {
 fn write_response(stream: &mut UnixStream, response: &MailboxHelperResponse) -> Result<(), String> {
     stream
         .write_all(encode_response(response).as_bytes())
-        .map_err(|error| format!("failed to write helper response: {error}"))
+        .map_err(|error| format!("failed to write helper response: {error}"))?;
+    let _ = stream.shutdown(Shutdown::Write);
+    Ok(())
 }
 
 #[cfg(unix)]
@@ -317,6 +400,8 @@ fn remove_stale_socket_if_needed(socket_path: &Path) -> Result<(), String> {
 mod tests {
     use super::*;
     use crate::mailbox::MailboxBackendError;
+    use std::env;
+    use std::fs;
     use std::sync::Arc;
     use std::thread;
     use std::time::{Duration, Instant};
@@ -487,6 +572,159 @@ mod tests {
                 uid: 9,
             }
         );
+    }
+
+    fn helper_test_backends() -> StaticHelperBackend {
+        StaticHelperBackend {
+            mailbox_result: Arc::new(Ok(vec![MailboxEntry {
+                name: "INBOX".to_string(),
+            }])),
+            message_list_result: Arc::new(Ok(Vec::new())),
+            message_search_result: Arc::new(Ok(Vec::new())),
+            message_view_result: Arc::new(Ok(MessageView {
+                mailbox_name: "INBOX".to_string(),
+                uid: 1,
+                flags: Vec::new(),
+                date_received: "2026-04-13 00:00:00 +0000".to_string(),
+                size_virtual: 1,
+                header_block: "Subject: test\n".to_string(),
+                body_text: "hello\n".to_string(),
+            })),
+            message_move_result: Arc::new(Ok(())),
+        }
+    }
+
+    fn run_helper_round_trip(trusted_peer_uid: u32, request: &str) -> MailboxHelperResponse {
+        let socket_path = temp_socket_path("mailbox-helper-authz");
+        let backends = helper_test_backends();
+        let server =
+            spawn_test_helper_with_trusted_uid(socket_path.clone(), backends, trusted_peer_uid);
+
+        wait_for_socket(&socket_path);
+        let mut client_stream =
+            UnixStream::connect(&socket_path).expect("test client should connect to helper");
+
+        client_stream
+            .write_all(request.as_bytes())
+            .expect("request write should succeed");
+        client_stream
+            .shutdown(Shutdown::Write)
+            .expect("client shutdown should succeed");
+        let response_bytes = read_bounded_from_stream(
+            &mut client_stream,
+            DEFAULT_MAILBOX_HELPER_MAX_RESPONSE_BYTES,
+        )
+        .expect("response read should succeed");
+        server.join().expect("helper thread should complete");
+        let _ = fs::remove_file(&socket_path);
+
+        let response_text = String::from_utf8(response_bytes).expect("response should be utf-8");
+        parse_response(
+            MailboxListingPolicy::default(),
+            MessageListPolicy::default(),
+            MessageSearchPolicy::default(),
+            MessageViewPolicy::default(),
+            &response_text,
+        )
+        .expect("response should parse")
+    }
+
+    #[test]
+    fn helper_rejects_untrusted_peer_uid() {
+        let current_uid = test_runtime_uid();
+        let response = run_helper_round_trip(
+            current_uid.saturating_add(1),
+            "operation=mailbox_list\ncanonical_username=alice@example.com\n",
+        );
+
+        assert_eq!(
+            response,
+            MailboxHelperResponse::Error {
+                backend: "mailbox-helper-authz".to_string(),
+                reason: "helper peer credentials were not authorized".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn helper_accepts_trusted_peer_uid() {
+        let current_uid = test_runtime_uid();
+        let response = run_helper_round_trip(
+            current_uid,
+            "operation=mailbox_list\ncanonical_username=alice@example.com\n",
+        );
+
+        assert_eq!(
+            response,
+            MailboxHelperResponse::MailboxListOk {
+                mailboxes: vec![MailboxEntry {
+                    name: "INBOX".to_string(),
+                }],
+            }
+        );
+    }
+
+    #[test]
+    fn trusted_caller_policy_uses_auth_socket_owner_uid() {
+        let temp_root = env::temp_dir().join(format!(
+            "osmap-mailbox-helper-authz-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .expect("system time should be after unix epoch")
+                .as_nanos()
+        ));
+        fs::create_dir_all(&temp_root).expect("temp root should be created");
+        let socket_path = temp_root.join("trusted-auth.sock");
+        let _listener = UnixListener::bind(&socket_path).expect("test auth socket should bind");
+        let config = AppConfig {
+            run_mode: AppRunMode::MailboxHelper,
+            environment: crate::config::RuntimeEnvironment::Development,
+            listen_addr: "127.0.0.1:8080".to_string(),
+            doveadm_auth_socket_path: Some(socket_path.clone()),
+            doveadm_userdb_socket_path: None,
+            mailbox_helper_socket_path: Some(temp_root.join("mailbox-helper.sock")),
+            state_root: temp_root.clone(),
+            log_level: LogLevel::Info,
+            log_format: crate::config::LogFormat::Text,
+            state_layout: crate::state::StateLayout::new(
+                temp_root.clone(),
+                temp_root.join("run"),
+                temp_root.join("sessions"),
+                temp_root.join("settings"),
+                temp_root.join("audit"),
+                temp_root.join("cache"),
+                temp_root.join("totp"),
+            )
+            .expect("layout should be valid"),
+            http_max_concurrent_connections: 16,
+            session_lifetime_seconds: 43200,
+            totp_allowed_skew_steps: 1,
+            login_throttle_max_failures: 5,
+            login_throttle_remote_max_failures: 12,
+            login_throttle_window_seconds: 300,
+            login_throttle_lockout_seconds: 900,
+            submission_throttle_max_submissions: 10,
+            submission_throttle_remote_max_submissions: 25,
+            submission_throttle_window_seconds: 300,
+            submission_throttle_lockout_seconds: 900,
+            message_move_throttle_max_moves: 20,
+            message_move_throttle_remote_max_moves: 60,
+            message_move_throttle_window_seconds: 300,
+            message_move_throttle_lockout_seconds: 900,
+            openbsd_confinement_mode: crate::config::OpenbsdConfinementMode::Disabled,
+        };
+
+        let policy =
+            trusted_caller_policy_from_config(&config).expect("auth socket owner should resolve");
+
+        let expected_uid = fs::metadata(&socket_path)
+            .expect("auth socket metadata should be readable")
+            .uid();
+        assert_eq!(policy.trusted_peer_uid, expected_uid);
+
+        fs::remove_file(&socket_path).expect("socket should be removed");
+        fs::remove_dir_all(&temp_root).expect("temp root should be removed");
     }
 
     #[test]
@@ -1019,6 +1257,24 @@ mod tests {
             + Send
             + 'static,
     {
+        spawn_test_helper_with_trusted_uid(socket_path, backend, test_runtime_uid())
+    }
+
+    #[cfg(unix)]
+    fn spawn_test_helper_with_trusted_uid<B>(
+        socket_path: PathBuf,
+        backend: B,
+        trusted_peer_uid: u32,
+    ) -> thread::JoinHandle<()>
+    where
+        B: MailboxBackend
+            + MessageListBackend
+            + MessageSearchBackend
+            + MessageViewBackend
+            + MessageMoveBackend
+            + Send
+            + 'static,
+    {
         thread::spawn(move || {
             let _ = remove_stale_socket_if_needed(&socket_path);
             let listener = UnixListener::bind(&socket_path).expect("test helper should bind");
@@ -1035,6 +1291,7 @@ mod tests {
                 &logger,
                 &mut stream,
                 MailboxHelperPolicy::default(),
+                MailboxHelperTrustedCallerPolicy { trusted_peer_uid },
             );
         })
     }
@@ -1050,6 +1307,24 @@ mod tests {
                 .as_nanos()
         );
         std::env::temp_dir().join(unique)
+    }
+
+    #[cfg(unix)]
+    fn test_runtime_uid() -> u32 {
+        let temp_root = env::temp_dir().join(format!(
+            "osmap-mailbox-helper-test-uid-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .expect("system time should be after unix epoch")
+                .as_nanos()
+        ));
+        fs::create_dir_all(&temp_root).expect("temp root should be created");
+        let uid = fs::metadata(&temp_root)
+            .expect("temp root metadata should be readable")
+            .uid();
+        fs::remove_dir(&temp_root).expect("temp root should be removed");
+        uid
     }
 
     #[cfg(unix)]

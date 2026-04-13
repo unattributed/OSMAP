@@ -3390,3 +3390,42 @@ Validation for this change was:
   the OSMAP-relevant control areas around authentication, session management,
   access control, request validation, browser safety, file handling, and
   operational verification
+
+### Enforce the trusted local caller boundary on mailbox-helper requests
+
+The local mailbox helper previously accepted `canonical_username` from any
+local process that could connect to the helper socket. That left the real
+authorization boundary too dependent on filesystem socket permissions alone.
+
+OSMAP now tightens the helper boundary without redesigning the helper protocol:
+
+- `mailbox-helper` startup requires `OSMAP_DOVEADM_AUTH_SOCKET_PATH`
+- the helper derives the one trusted local caller UID from that auth-socket
+  owner before runtime confinement is applied
+- each helper request now checks Unix peer credentials and rejects callers
+  whose UID does not match that trusted local runtime identity
+- repo-owned OpenBSD helper env examples and live validation scripts now pass
+  the auth socket path to helper mode too
+- the repository now carries `maint/live/osmap-live-validate-helper-peer-auth.ksh`
+  to prove on `mail.blackbagsecurity.com` that trusted `_osmap` requests reach
+  the mailbox backend while an unrelated local caller is rejected even if the
+  isolated helper socket permissions are widened during validation
+
+This was chosen instead of redesigning the helper protocol to carry session
+identity because the smallest correct V1-closeout fix is to authenticate the
+existing local caller boundary, not to move browser-session authorization into
+the helper.
+
+This was also chosen instead of adding a brand-new trusted-UID configuration
+knob because the validated host already has one authoritative least-privilege
+runtime principal anchored by `/var/run/osmap-auth`. Reusing that existing
+deployment truth keeps the change smaller and easier to review.
+
+Validation for this change was:
+
+- targeted helper and config test coverage for trusted-caller derivation and
+  peer-credential acceptance or rejection
+- local `cargo test`
+- local `make security-check`
+- host `maint/live/osmap-live-validate-helper-peer-auth.ksh` on
+  `mail.blackbagsecurity.com`

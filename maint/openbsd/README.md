@@ -36,6 +36,9 @@ The current least-privilege OpenBSD posture is:
   `/var/run/osmap-auth`
 - mailbox helper lookups use a dedicated Dovecot userdb listener such as
   `/var/run/osmap-userdb`
+- mailbox helper startup also needs `OSMAP_DOVEADM_AUTH_SOCKET_PATH` so the
+  helper can derive the one trusted local caller identity from the auth-socket
+  owner before it accepts mailbox requests
 - the browser runtime reaches the helper over one local Unix socket
 
 The example env files in this directory use:
@@ -82,6 +85,8 @@ The `rc.d` examples assume:
 - `/usr/local/bin/osmap` is the installed OSMAP binary
 - `/etc/osmap/osmap-serve.env` holds the browser-facing env file
 - `/etc/osmap/osmap-mailbox-helper.env` holds the helper env file
+- the helper env file includes both `OSMAP_DOVEADM_AUTH_SOCKET_PATH` and
+  `OSMAP_DOVEADM_USERDB_SOCKET_PATH`
 - `/usr/local/libexec/osmap/` holds the launcher scripts
 
 Those launchers source the env file and then execute one explicit OSMAP CLI

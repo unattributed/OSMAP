@@ -41,6 +41,7 @@ VALIDATION_USER="${OSMAP_VALIDATION_USER:-osmap-helper-validation@blackbagsecuri
 SESSION_TOKEN="${OSMAP_LIVE_SESSION_TOKEN:-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}"
 OTHER_SESSION_ID="${OSMAP_LIVE_OTHER_SESSION_ID:-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb}"
 USER_AGENT="osmap-live-session-surface"
+AUTH_SOCKET_PATH="${OSMAP_DOVEADM_AUTH_SOCKET_PATH:-/var/run/osmap-auth}"
 USERDB_SOCKET_PATH="${OSMAP_DOVEADM_USERDB_SOCKET_PATH:-/var/run/osmap-userdb}"
 KEEP_WORK_ROOT="${OSMAP_KEEP_WORK_ROOT:-0}"
 
@@ -188,6 +189,7 @@ doas -u vmail sh -c "
     OSMAP_TOTP_SECRET_DIR='${TOTP_DIR}' \
     OSMAP_LOG_LEVEL=info \
     OSMAP_MAILBOX_HELPER_SOCKET_PATH='${HELPER_SOCKET_PATH}' \
+    OSMAP_DOVEADM_AUTH_SOCKET_PATH='${AUTH_SOCKET_PATH}' \
     OSMAP_DOVEADM_USERDB_SOCKET_PATH='${USERDB_SOCKET_PATH}' \
     OSMAP_OPENBSD_CONFINEMENT_MODE=enforce \
     '${BIN_PATH}' >'${HELPER_LOG_PATH}' 2>&1

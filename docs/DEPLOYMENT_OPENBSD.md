@@ -163,6 +163,10 @@ Current prototype-specific deployment guidance:
   auth listener
 - use `OSMAP_DOVEADM_USERDB_SOCKET_PATH` when the host provides a dedicated
   userdb listener for mailbox and message helpers
+- mailbox-helper startup now also depends on
+  `OSMAP_DOVEADM_AUTH_SOCKET_PATH` so the helper can derive the one trusted
+  local caller UID from the auth-socket owner before accepting mailbox
+  requests
 - the current validated host shape on `mail.blackbagsecurity.com` uses
   `_osmap` plus `/var/run/osmap-auth` for browser auth and `vmail` plus
   `/var/run/osmap-userdb` for mailbox-helper lookups
@@ -198,6 +202,10 @@ The first implementation slices of that answer now exist:
   when the helper socket is configured
 - helper-specific confinement now exists in code and has live-host proof under
   the actual `vmail` boundary
+- the repository now carries
+  `maint/live/osmap-live-validate-helper-peer-auth.ksh` to prove the helper
+  accepts trusted `_osmap` callers and rejects unrelated local callers even
+  when the isolated helper socket permissions are widened during validation
 - the helper-side confinement view on the validated host now narrows
   `doveadm` support paths to explicit `doveconf`, loader, Dovecot config, and
   Dovecot config-socket paths plus exact resolved shared-library files where

@@ -8,6 +8,10 @@
 
 use std::collections::BTreeMap;
 use std::fs;
+#[cfg(unix)]
+use std::os::unix::io::AsRawFd as _;
+#[cfg(unix)]
+use std::os::unix::net::UnixStream;
 use std::path::{Path, PathBuf};
 
 use crate::config::{AppConfig, LogLevel, OpenbsdConfinementMode};
@@ -232,6 +236,78 @@ pub fn apply_runtime_confinement(config: &AppConfig, logger: &Logger) -> Result<
             }
         }
     }
+}
+
+/// Returns the peer UID for one connected Unix-domain socket through the
+/// reviewed FFI boundary.
+#[cfg(unix)]
+pub(crate) fn unix_stream_peer_uid(stream: &UnixStream) -> Result<u32, String> {
+    unix_stream_peer_uid_from_raw_fd(stream.as_raw_fd())
+}
+
+#[cfg(all(
+    unix,
+    any(
+        target_os = "openbsd",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "dragonfly",
+        target_os = "macos",
+        target_os = "ios"
+    )
+))]
+fn unix_stream_peer_uid_from_raw_fd(raw_fd: i32) -> Result<u32, String> {
+    let mut peer_uid = 0 as libc::uid_t;
+    let mut peer_gid = 0 as libc::gid_t;
+    let result = unsafe { libc::getpeereid(raw_fd, &mut peer_uid, &mut peer_gid) };
+    if result != 0 {
+        return Err(format!(
+            "failed to inspect helper peer credentials: {}",
+            std::io::Error::last_os_error()
+        ));
+    }
+
+    Ok(peer_uid as u32)
+}
+
+#[cfg(all(unix, any(target_os = "linux", target_os = "android")))]
+fn unix_stream_peer_uid_from_raw_fd(raw_fd: i32) -> Result<u32, String> {
+    let mut peer_credentials = unsafe { std::mem::zeroed::<libc::ucred>() };
+    let mut peer_credentials_len = std::mem::size_of::<libc::ucred>() as libc::socklen_t;
+    let result = unsafe {
+        libc::getsockopt(
+            raw_fd,
+            libc::SOL_SOCKET,
+            libc::SO_PEERCRED,
+            (&mut peer_credentials as *mut libc::ucred).cast(),
+            &mut peer_credentials_len,
+        )
+    };
+    if result != 0 {
+        return Err(format!(
+            "failed to inspect helper peer credentials: {}",
+            std::io::Error::last_os_error()
+        ));
+    }
+
+    Ok(peer_credentials.uid)
+}
+
+#[cfg(all(
+    unix,
+    not(any(
+        target_os = "openbsd",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "dragonfly",
+        target_os = "macos",
+        target_os = "ios",
+        target_os = "linux",
+        target_os = "android"
+    ))
+))]
+fn unix_stream_peer_uid_from_raw_fd(_raw_fd: i32) -> Result<u32, String> {
+    Err("helper peer credential inspection is not supported on this Unix platform".to_string())
 }
 
 /// Adds one unveil rule while preserving the strongest permissions per path.

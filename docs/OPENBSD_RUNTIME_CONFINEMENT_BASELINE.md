@@ -246,6 +246,9 @@ The runtime now supports that operator path explicitly:
   socket
 - `OSMAP_DOVEADM_USERDB_SOCKET_PATH` can point OSMAP at a dedicated Dovecot
   userdb socket for mailbox and message helper lookups
+- `OSMAP_RUN_MODE=mailbox-helper` now also requires
+  `OSMAP_DOVEADM_AUTH_SOCKET_PATH` so the helper can derive the one trusted
+  local caller UID before mailbox requests are accepted
 - when configured, the OpenBSD confinement plan now adds the explicit socket
   paths plus read-only parent-directory visibility for those paths
 
@@ -255,6 +258,8 @@ of a vague future idea, and the current host has live proof for it:
 - `_osmap` handles browser auth through `/var/run/osmap-auth`
 - the local mailbox helper handles mailbox reads through
   `/var/run/osmap-userdb` while running at the `vmail` boundary
+- the local mailbox helper rejects unrelated local peer UIDs even if the
+  isolated helper socket permissions are temporarily widened during validation
 - helper-backed mailbox and attachment reads succeed under
   `OSMAP_OPENBSD_CONFINEMENT_MODE=enforce`
 - a real browser login can carry an issued session into those same helper-

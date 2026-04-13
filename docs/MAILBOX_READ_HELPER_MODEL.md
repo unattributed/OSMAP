@@ -73,6 +73,8 @@ What is implemented:
 - a dedicated `mailbox-helper` run mode
 - a local Unix-domain socket helper server
 - a small line-oriented request/response protocol
+- helper-side peer-credential enforcement that only trusts the local caller
+  identity derived from `OSMAP_DOVEADM_AUTH_SOCKET_PATH`
 - a helper-backed mailbox-list client backend in the web runtime
 - a helper-backed message-search client backend in the web runtime
 - a helper-backed message-list client backend in the web runtime
@@ -163,6 +165,8 @@ The intended OpenBSD model is:
   the host
 - explicit socket permissions that allow `_osmap` to reach the helper and deny
   unrelated users
+- helper-side peer-credential checks that still reject unrelated local callers
+  even if filesystem socket permissions are widened incorrectly
 
 The web runtime and the helper should each have their own `pledge(2)` and
 `unveil(2)` plans instead of sharing one broad filesystem and execution view.
@@ -210,6 +214,9 @@ That migration is now underway:
 - one-message move now uses the helper when configured
 - first repo-owned OpenBSD service env examples for the split `_osmap` plus
   `vmail` runtime now live under `maint/openbsd/`
+- `maint/live/osmap-live-validate-helper-peer-auth.ksh` now proves on
+  `mail.blackbagsecurity.com` that trusted `_osmap` helper calls are accepted
+  while an unrelated local caller is rejected by helper peer authorization
 
 ## What This Document Does Not Claim
 

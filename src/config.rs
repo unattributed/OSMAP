@@ -529,7 +529,12 @@ impl AppConfig {
         validate_development_bindings(environment, &listen_addr)?;
         let mailbox_helper_socket_path =
             parse_mailbox_helper_socket_path(env_map, run_mode, &state_layout.runtime_dir)?;
-        validate_mailbox_boundary(environment, run_mode, mailbox_helper_socket_path.as_deref())?;
+        validate_mailbox_boundary(
+            environment,
+            run_mode,
+            mailbox_helper_socket_path.as_deref(),
+            doveadm_auth_socket_path.as_deref(),
+        )?;
 
         Ok(Self {
             run_mode,
@@ -567,6 +572,7 @@ fn validate_mailbox_boundary(
     environment: RuntimeEnvironment,
     run_mode: AppRunMode,
     mailbox_helper_socket_path: Option<&Path>,
+    doveadm_auth_socket_path: Option<&Path>,
 ) -> Result<(), BootstrapError> {
     if environment == RuntimeEnvironment::Production
         && run_mode == AppRunMode::Serve
@@ -575,6 +581,13 @@ fn validate_mailbox_boundary(
         return Err(BootstrapError::InvalidConfig {
             field: "OSMAP_MAILBOX_HELPER_SOCKET_PATH",
             reason: "production serve mode requires the local mailbox helper boundary".to_string(),
+        });
+    }
+
+    if run_mode == AppRunMode::MailboxHelper && doveadm_auth_socket_path.is_none() {
+        return Err(BootstrapError::InvalidConfig {
+            field: "OSMAP_DOVEADM_AUTH_SOCKET_PATH",
+            reason: "mailbox helper run mode requires the auth socket path to derive the trusted local caller".to_string(),
         });
     }
 
@@ -1188,8 +1201,13 @@ mod tests {
 
     #[test]
     fn helper_mode_defaults_mailbox_helper_socket_under_runtime_dir() {
-        let env_map =
-            BTreeMap::from([("OSMAP_RUN_MODE".to_string(), "mailbox-helper".to_string())]);
+        let env_map = BTreeMap::from([
+            ("OSMAP_RUN_MODE".to_string(), "mailbox-helper".to_string()),
+            (
+                "OSMAP_DOVEADM_AUTH_SOCKET_PATH".to_string(),
+                "/var/run/osmap-auth".to_string(),
+            ),
+        ]);
 
         let config = AppConfig::from_env_map(&env_map).expect("helper mode should parse");
 
@@ -1215,6 +1233,23 @@ mod tests {
             BootstrapError::PathMustBeAbsolute {
                 field: "OSMAP_MAILBOX_HELPER_SOCKET_PATH",
                 value: "var/run/mailbox-helper.sock".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn mailbox_helper_mode_requires_auth_socket_path() {
+        let env_map =
+            BTreeMap::from([("OSMAP_RUN_MODE".to_string(), "mailbox-helper".to_string())]);
+
+        let error = AppConfig::from_env_map(&env_map)
+            .expect_err("mailbox helper mode must require the auth socket path");
+
+        assert_eq!(
+            error,
+            BootstrapError::InvalidConfig {
+                field: "OSMAP_DOVEADM_AUTH_SOCKET_PATH",
+                reason: "mailbox helper run mode requires the auth socket path to derive the trusted local caller".to_string(),
             }
         );
     }
