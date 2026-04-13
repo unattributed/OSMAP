@@ -237,7 +237,8 @@ Each phase produces formal outputs to support traceability and auditability.
   move.
 - Current priority work is therefore centered on keeping the frozen Version 1
   contract around the already-implemented helper/OpenBSD boundary aligned with
-  the successful April 11, 2026 live-host closeout rerun, using the
+  the successful April 14, 2026 current-pushed-snapshot live-host closeout
+  rerun, using the
   repo-owned closeout wrappers for targeted reruns when closeout-facing
   behavior changes, and only taking narrower runtime or confinement changes
   when repo evidence exposes a real blocker.
@@ -296,9 +297,10 @@ The Version 1 closeout contract is now frozen in
 is:
 
 1. Keep `README.md`, the closeout-facing docs, and the repo-owned validation
-   references aligned with that gate, with the successful April 12, 2026
-   current-tip host rerun, and with the supplemental April 12, 2026 real-user
-   browser walkthrough.
+   references aligned with that gate, with the successful April 14, 2026
+   current-pushed-snapshot host rerun archived in
+   `maint/live/latest-host-v1-closeout-report.txt`, and with the supplemental
+   April 12, 2026 real-user browser walkthrough.
 2. Use `ksh ./maint/live/osmap-live-validate-v1-closeout.ksh` on
    `mail.blackbagsecurity.com`, or
    `./maint/live/osmap-run-v1-closeout-over-ssh.sh` from a reachable
@@ -319,6 +321,8 @@ is proven:
 - richer session or device intelligence beyond first self-service visibility
 - more attachment convenience behavior that would widen browser trust
 - broader settings surface beyond the first bounded user preference
+- mailbox-helper identity derivation beyond the current trusted-service V1
+  boundary, including opaque helper-side identity handles
 - deeper runtime redesign such as worker-pool or async server architecture
 
 ---

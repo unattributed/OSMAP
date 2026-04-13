@@ -3582,3 +3582,56 @@ Validation for this change was:
 - local `make security-check`
 - host validation on `mail.blackbagsecurity.com` using the existing helper
   boundary proofs under the real `_osmap` plus `vmail` split
+
+### Re-run and archive the full V1 closeout gate on the hardened mailbox-helper snapshot
+
+The mailbox-helper trust-boundary item is now closed for Version 1. The helper
+still accepts `canonical_username` over the local protocol, but the V1
+boundary is now explicit and enforced:
+
+- helper startup derives the trusted local caller UID from
+  `OSMAP_DOVEADM_AUTH_SOCKET_PATH`
+- helper startup now fails closed unless that derived UID matches
+  `OSMAP_TRUSTED_WEB_RUNTIME_UID`
+- per-request peer-credential checks still require the connecting runtime UID
+  to match that trusted caller identity
+- the stronger post-V1 security target remains removing caller-supplied
+  mailbox authority input from the helper protocol entirely
+
+With that V1 boundary hardened, the smallest correct next step was not a
+protocol redesign. It was a fresh authoritative closeout rerun on the current
+pushed snapshot and one archived report artifact that the release-facing docs
+could point to directly.
+
+That rerun initially exposed one host-only regression in the shared security
+gate: the new helper trusted-UID tests created a Unix socket path long enough
+to exceed the host `sockaddr_un` length limit under the validation temp root.
+The tests were tightened to use the repo's existing short socket-path helper,
+and the authoritative rerun then passed on April 14, 2026.
+
+Archived report:
+
+- `maint/live/latest-host-v1-closeout-report.txt`
+
+Captured result:
+
+- `osmap_v1_closeout_result=passed`
+- `step_count=7`
+- `security-check=passed`
+- `login-send=passed`
+- `all-mailbox-search=passed`
+- `archive-shortcut=passed`
+- `session-surface=passed`
+- `send-throttle=passed`
+- `move-throttle=passed`
+
+This was chosen instead of widening the mailbox-helper change further because
+the current V1 release gate requires a defensible, validated trusted-service
+boundary, not a new helper authorization architecture. The opaque identity-
+handle redesign remains a post-V1 security architecture target.
+
+Validation for this closeout step was:
+
+- local `cargo test trusted_caller_policy -- --nocapture`
+- local `make security-check`
+- host `./maint/live/osmap-run-v1-closeout-over-ssh.sh --host mail --local-report ./maint/live/latest-host-v1-closeout-report.txt`

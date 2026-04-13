@@ -1,0 +1,11 @@
+osmap_v1_closeout_result=passed
+project_root=/home/foo/OSMAP
+step_count=7
+steps=
+security-check=passed
+login-send=passed
+all-mailbox-search=passed
+archive-shortcut=passed
+session-surface=passed
+send-throttle=passed
+move-throttle=passed

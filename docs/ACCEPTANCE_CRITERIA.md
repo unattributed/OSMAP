@@ -272,10 +272,10 @@ host-side closeout path and fetch the resulting report.
 ## Supplemental Browser Proof On April 12, 2026
 
 The authoritative Version 1 release gate above passed on the current pushed
-snapshot on April 12, 2026. A supplemental manual browser walkthrough on that
-same date also succeeded against a temporary review instance launched from the
-standard `~/OSMAP` checkout on `mail.blackbagsecurity.com`, exposed locally
-through an SSH tunnel to `127.0.0.1:18080`.
+snapshot on April 14, 2026. A supplemental manual browser walkthrough on
+April 12, 2026 also succeeded against a temporary review instance launched
+from the standard `~/OSMAP` checkout on `mail.blackbagsecurity.com`, exposed
+locally through an SSH tunnel to `127.0.0.1:18080`.
 
 That supplemental proof used the real mailbox user
 `duncan@blackbagsecurity.com` with an operator-provisioned OSMAP TOTP secret.
@@ -306,6 +306,10 @@ rerun successfully again from the standard `~/OSMAP` checkout on that current
 pushed snapshot. That current-tip host rerun again used a controlled
 one-session validation password override and restored the original mailbox
 password hash afterward, so the repo still does not carry mailbox credentials.
+On April 14, 2026, after the mailbox-helper trusted-UID closeout hardening and
+the host-portable helper test fix landed, the same full seven-step wrapper was
+rerun successfully again on the then-current pushed snapshot and the fetched
+report was archived at `maint/live/latest-host-v1-closeout-report.txt`.
 
 The current repo snapshot already satisfies these closeout-gate preconditions:
 
@@ -321,7 +325,7 @@ The current remaining closeout work is therefore administrative rather than
 architectural:
 
 - keep the authoritative gate and status docs aligned with the successful
-  April 12, 2026 current-pushed-snapshot host rerun
+  April 14, 2026 current-pushed-snapshot host rerun
 - rerun the affected repo-owned proof scripts through the closeout wrapper only
   when closeout-facing behavior changes
 - take additional implementation work only if a later failing proof or repo
@@ -338,4 +342,6 @@ is proven:
 - broader folder ergonomics beyond the first practical baseline
 - richer session or device intelligence
 - broader settings surface
+- mailbox-helper opaque identity-handle redesign beyond the current trusted
+  local service boundary
 - deeper runtime redesign beyond the current bounded-concurrency model

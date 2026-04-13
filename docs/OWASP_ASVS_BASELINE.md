@@ -32,8 +32,9 @@ This baseline is grounded in:
 - the current repo-owned validation and regression scripts
 - the current release-facing docs, including
   `ACCEPTANCE_CRITERIA.md` and `V1_CLOSEOUT_SOP.md`
-- the successful April 12, 2026 current-tip closeout rerun and supplemental
-  real-user browser walkthrough on `mail.blackbagsecurity.com`
+- the successful April 14, 2026 current-pushed-snapshot closeout rerun and
+  the earlier April 12, 2026 supplemental real-user browser walkthrough on
+  `mail.blackbagsecurity.com`
 - the OWASP ASVS 5.0.0 CycloneDX JSON artifact published by OWASP at:
   `https://raw.githubusercontent.com/OWASP/ASVS/v5.0.0/5.0/docs_en/OWASP_Application_Security_Verification_Standard_5.0.0_en.cdx.json`
 

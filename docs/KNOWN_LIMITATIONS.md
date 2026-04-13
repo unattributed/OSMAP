@@ -71,7 +71,8 @@
   materially proves login, read, search, move, send, session, and confinement
   behavior on the validated host, but Version 1 closeout still depends on
   keeping the frozen release gate and status docs aligned with that proven
-  boundary and the successful April 11, 2026 host rerun
+  boundary and the successful April 14, 2026 current-pushed-snapshot host
+  rerun
 - The OpenBSD runtime now has an enforced confinement mode, and the current
   helper-side plus serve-side dependency view is narrowed to explicit auth,
   sendmail, loader, library, config, and socket paths on the validated host,
