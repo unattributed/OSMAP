@@ -681,7 +681,7 @@ mod tests {
                 .as_nanos()
         ));
         fs::create_dir_all(&temp_root).expect("temp root should be created");
-        let socket_path = temp_root.join("trusted-auth.sock");
+        let socket_path = temp_socket_path("trusted-auth");
         let _listener = UnixListener::bind(&socket_path).expect("test auth socket should bind");
         let config = AppConfig {
             run_mode: AppRunMode::MailboxHelper,
@@ -745,7 +745,7 @@ mod tests {
                 .as_nanos()
         ));
         fs::create_dir_all(&temp_root).expect("temp root should be created");
-        let socket_path = temp_root.join("trusted-auth.sock");
+        let socket_path = temp_socket_path("trusted-auth");
         let _listener = UnixListener::bind(&socket_path).expect("test auth socket should bind");
         let actual_uid = fs::metadata(&socket_path)
             .expect("auth socket metadata should be readable")
