@@ -783,6 +783,12 @@ mod tests {
                             content_type: "application/pdf".to_string(),
                             disposition: AttachmentDisposition::Attachment,
                             size_hint_bytes: 128,
+                        }, crate::mime::AttachmentMetadata {
+                            part_path: "1.3".to_string(),
+                            filename: Some("chart.png".to_string()),
+                            content_type: "image/png".to_string(),
+                            disposition: AttachmentDisposition::Inline,
+                            size_hint_bytes: 64,
                         }],
                         rendering_mode: RenderingMode::PlainTextPreformatted,
                     }),
@@ -1438,6 +1444,8 @@ mod tests {
         assert!(body.contains("action=\"/message/move\""));
         assert!(body.contains("name=\"destination_mailbox\""));
         assert!(body.contains("/attachment?mailbox=INBOX&amp;uid=9&amp;part=1.2"));
+        assert!(body.contains("chart.png"));
+        assert!(body.contains("Current browser policy does not render inline images inside the message body"));
     }
 
     #[test]

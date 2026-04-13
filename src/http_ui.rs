@@ -224,6 +224,14 @@ pub(crate) fn render_message_view_page(
     rendered: &RenderedMessageView,
     archive_mailbox_name: Option<&str>,
 ) -> String {
+    let inline_image_count = rendered
+        .attachments
+        .iter()
+        .filter(|attachment| {
+            attachment.disposition == crate::mime::AttachmentDisposition::Inline
+                && attachment.content_type.starts_with("image/")
+        })
+        .count();
     let mut attachments = String::new();
     if rendered.attachments.is_empty() {
         attachments.push_str("<li>No attachment metadata surfaced for this message.</li>");
@@ -268,9 +276,18 @@ pub(crate) fn render_message_view_page(
         "sanitized_html" => "<p class=\"muted\">HTML content is shown through the current allowlist sanitization policy. Active content, external fetches, and unsafe URLs are removed.</p>",
         _ => "",
     };
+    let inline_image_notice = if rendered.contains_html_body && inline_image_count > 0 {
+        format!(
+            "<p class=\"muted\">This message surfaced <strong>{}</strong> inline image part{}. Current browser policy does not render inline images inside the message body. Review the sanitized body text and download any needed image parts explicitly from the attachment list.</p>",
+            inline_image_count,
+            if inline_image_count == 1 { "" } else { "s" },
+        )
+    } else {
+        String::new()
+    };
 
     format!(
-        "<nav><a href=\"/mailbox?name={}\">Back to mailbox</a> | <a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <a href=\"/settings\">Settings</a> | <a href=\"/compose?mode=reply&mailbox={}&uid={}\">Reply</a> | <a href=\"/compose?mode=forward&mailbox={}&uid={}\">Forward</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Message View</h1><p>Signed in as <strong>{}</strong>.</p><dl><dt>Mailbox</dt><dd>{}</dd><dt>UID</dt><dd>{}</dd><dt>Subject</dt><dd>{}</dd><dt>From</dt><dd>{}</dd><dt>Received</dt><dd>{}</dd><dt>MIME Type</dt><dd>{}</dd><dt>Body Source</dt><dd>{}</dd><dt>Rendering Mode</dt><dd>{}</dd><dt>HTML Present</dt><dd>{}</dd></dl>{}{}{}<h2>Attachments</h2><ul>{}</ul><h2>Body</h2>{}",
+        "<nav><a href=\"/mailbox?name={}\">Back to mailbox</a> | <a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <a href=\"/settings\">Settings</a> | <a href=\"/compose?mode=reply&mailbox={}&uid={}\">Reply</a> | <a href=\"/compose?mode=forward&mailbox={}&uid={}\">Forward</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Message View</h1><p>Signed in as <strong>{}</strong>.</p><dl><dt>Mailbox</dt><dd>{}</dd><dt>UID</dt><dd>{}</dd><dt>Subject</dt><dd>{}</dd><dt>From</dt><dd>{}</dd><dt>Received</dt><dd>{}</dd><dt>MIME Type</dt><dd>{}</dd><dt>Body Source</dt><dd>{}</dd><dt>Rendering Mode</dt><dd>{}</dd><dt>HTML Present</dt><dd>{}</dd></dl>{}{}{}{}<h2>Attachments</h2><ul>{}</ul><h2>Body</h2>{}",
         escape_html(&url_encode(&rendered.mailbox_name)),
         escape_html(&url_encode(&rendered.mailbox_name)),
         rendered.uid,
@@ -290,6 +307,7 @@ pub(crate) fn render_message_view_page(
         rendering_notice,
         archive_form,
         move_form,
+        inline_image_notice,
         attachments,
         rendered.body_html,
     )

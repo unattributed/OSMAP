@@ -156,7 +156,7 @@ This slice now proves that:
 This slice still does not include:
 
 - richer attachment download policy and live-host attachment validation
-- inline image and external-resource policy
+- inline image rendering and broader external-resource policy
 - richer browser presentation policy beyond the now-implemented bounded route set
 
 The first bounded attachment-download route and later safe-HTML rendering layer

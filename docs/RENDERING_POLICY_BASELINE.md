@@ -20,6 +20,8 @@ The current slice provides:
 - header extraction for a small summary surface
 - bounded RFC 2047 encoded-word decoding for the narrow `Subject` and `From`
   summary values
+- a bounded inline-image policy notice when HTML-capable messages surface
+  inline image attachment metadata
 - browser-safe HTML escaping for plain-text rendering
 - a narrow allowlist sanitizer for HTML-capable messages
 - two explicit rendering modes: preformatted plain text and sanitized HTML
@@ -50,6 +52,8 @@ That means:
 - sanitized HTML bodies are wrapped in a small container and rendered through a
   restrictive allowlist policy
 - the message view now shows the active rendering mode to the user
+- HTML-capable messages with surfaced inline image metadata now render an
+  explicit browser notice instead of attempting inline image display
 - compose/reply/forward body generation still uses plain-text content, even
   when sanitized HTML is rendered for browser reading
 
@@ -113,7 +117,7 @@ This slice now proves that:
 This slice still does not yet include:
 
 - attachment preview behavior
-- inline image policy
+- inline image rendering
 - richer browser presentation beyond the current server-rendered route set
 - permissive HTML layout support, broad inline styling, or any external
   resource loading

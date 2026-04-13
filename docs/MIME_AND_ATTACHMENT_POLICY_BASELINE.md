@@ -67,6 +67,8 @@ This is enough to support:
 - honest operator and developer reasoning about message structure
 - bounded forced-download behavior for surfaced parts
 - later UI work that shows attachments without guessing
+- a bounded inline-image policy notice when surfaced attachment metadata marks
+  image parts as `inline`
 
 It is still not a preview contract or a full MIME-client contract.
 

@@ -2,6 +2,22 @@
 
 ## 2026-04-13
 
+### Surface inline-image policy as explicit browser notice instead of rendering
+
+The message-view path now treats inline images the same way the broader browser
+slice treats other rich mail behavior: as something to acknowledge explicitly
+without widening the trust boundary.
+
+When an HTML-capable message surfaces attachment metadata for image parts marked
+`inline`, the browser page should now show a small notice explaining that the
+current policy does not render inline images inside the sanitized message body
+and that any needed image parts must be downloaded explicitly from the
+attachment list.
+
+That keeps the browser contract honest and more usable without introducing
+inline-image rendering, external-resource loading, or a broader HTML client
+surface.
+
 ### Keep development closeout disciplined around docs, signed commits, sync, and next steps
 
 The repository's active workflow guidance now makes four expectations explicit
