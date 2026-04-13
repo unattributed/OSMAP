@@ -59,6 +59,8 @@ The current file-backed store:
 - keeps one settings file per canonical username
 - derives the filename from a SHA-256 hash of the canonical username with a
   stable domain-separation prefix
+- writes through a unique same-directory temp file before atomic rename so
+  concurrent saves do not share one intermediate pathname
 - uses `0600` permissions on Unix-like systems
 - keeps the serialized format small and line-oriented
 

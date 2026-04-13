@@ -7,6 +7,7 @@
 use std::fs;
 use std::io::Write as _;
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use sha2::{Digest, Sha256};
 
@@ -75,6 +76,19 @@ impl FileUserSettingsStore {
         self.settings_dir
             .join(format!("{}.settings", hex_lower(&digest.finalize())))
     }
+
+    fn temporary_settings_path(&self, path: &std::path::Path) -> PathBuf {
+        let final_name = path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .unwrap_or("settings");
+        let unique_suffix = NEXT_SETTINGS_TEMP_FILE_ID.fetch_add(1, Ordering::Relaxed);
+        self.settings_dir.join(format!(
+            ".{final_name}.{}.{}.tmp",
+            std::process::id(),
+            unique_suffix
+        ))
+    }
 }
 
 impl UserSettingsStore for FileUserSettingsStore {
@@ -105,15 +119,19 @@ impl UserSettingsStore for FileUserSettingsStore {
         })?;
 
         let path = self.settings_path_for_username(canonical_username);
-        let tmp_path = self.settings_dir.join("settings.tmp");
+        let tmp_path = self.temporary_settings_path(&path);
         let content = serialize_user_settings(settings);
 
-        let mut file = fs::File::create(&tmp_path).map_err(|error| UserSettingsError {
-            reason: format!(
-                "failed to create user settings temp file {:?}: {error}",
-                tmp_path
-            ),
-        })?;
+        let mut file = fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&tmp_path)
+            .map_err(|error| UserSettingsError {
+                reason: format!(
+                    "failed to create user settings temp file {:?}: {error}",
+                    tmp_path
+                ),
+            })?;
         file.write_all(content.as_bytes())
             .map_err(|error| UserSettingsError {
                 reason: format!(
@@ -142,6 +160,8 @@ impl UserSettingsStore for FileUserSettingsStore {
         Ok(())
     }
 }
+
+static NEXT_SETTINGS_TEMP_FILE_ID: AtomicU64 = AtomicU64::new(0);
 
 /// Loaded settings plus the emitted audit event.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -408,6 +428,65 @@ mod tests {
             .expect("settings should exist");
 
         assert_eq!(loaded, settings);
+    }
+
+    #[test]
+    fn file_settings_store_saves_do_not_collide_across_users() {
+        use std::sync::{Arc, Barrier};
+        use std::thread;
+
+        let dir = temp_dir("osmap-user-settings-concurrent");
+        let store = Arc::new(FileUserSettingsStore::new(&dir));
+        let alice_settings = UserSettings {
+            html_display_preference: HtmlDisplayPreference::PreferPlainText,
+            archive_mailbox_name: Some("Archive/Alice".to_string()),
+        };
+        let bob_settings = UserSettings {
+            html_display_preference: HtmlDisplayPreference::PreferSanitizedHtml,
+            archive_mailbox_name: Some("Archive/Bob".to_string()),
+        };
+
+        for _ in 0..200 {
+            let barrier = Arc::new(Barrier::new(2));
+
+            let alice_store = Arc::clone(&store);
+            let alice_barrier = Arc::clone(&barrier);
+            let alice_expected = alice_settings.clone();
+            let alice_handle = thread::spawn(move || {
+                alice_barrier.wait();
+                alice_store
+                    .save("alice@example.com", &alice_expected)
+                    .expect("alice save should succeed");
+            });
+
+            let bob_store = Arc::clone(&store);
+            let bob_barrier = Arc::clone(&barrier);
+            let bob_expected = bob_settings.clone();
+            let bob_handle = thread::spawn(move || {
+                bob_barrier.wait();
+                bob_store
+                    .save("bob@example.com", &bob_expected)
+                    .expect("bob save should succeed");
+            });
+
+            alice_handle.join().expect("alice writer should join");
+            bob_handle.join().expect("bob writer should join");
+
+            assert_eq!(
+                store
+                    .load("alice@example.com")
+                    .expect("alice load should succeed")
+                    .expect("alice settings should exist"),
+                alice_settings
+            );
+            assert_eq!(
+                store
+                    .load("bob@example.com")
+                    .expect("bob load should succeed")
+                    .expect("bob settings should exist"),
+                bob_settings
+            );
+        }
     }
 
     #[test]

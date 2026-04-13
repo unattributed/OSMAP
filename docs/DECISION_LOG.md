@@ -3463,3 +3463,30 @@ Validation for this change was:
 - local `make security-check`
 - host `maint/live/osmap-live-validate-login-failure-normalization.ksh` on
   `mail.blackbagsecurity.com`
+
+### Use unique same-directory temp files for settings persistence
+
+OSMAP previously wrote all end-user settings saves through one shared
+`settings.tmp` pathname under `OSMAP_SETTINGS_DIR`. That created avoidable
+cross-user interference under concurrent writes because different users could
+collide on the same intermediate file before the final atomic rename.
+
+The settings store now keeps the existing per-user final file layout but
+changes the intermediate write path:
+
+- each save uses a unique temp filename in the same settings directory
+- the temp file is still finalized with atomic rename onto the per-user
+  settings file
+- concurrent saves for different users no longer share one temp pathname
+- the stored record format and final on-disk filename scheme stay unchanged
+
+This was chosen as the smallest correct fix because it closes the integrity
+issue without widening the settings surface or changing the state layout that
+the current V1 closeout docs already describe.
+
+Validation for this change was:
+
+- targeted concurrent settings-store coverage proving cross-user saves no
+  longer collide
+- local `make security-check`
+- host `make security-check` on `mail.blackbagsecurity.com`
