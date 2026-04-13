@@ -1,6 +1,156 @@
 # Migration Plan Roundcube
 
-Status: Placeholder.
+## Purpose
 
-This document is reserved for migration planning when replacement of legacy
-webmail becomes an active delivery objective.
+This document records the current public-safe migration baseline for replacing
+Roundcube's core browser-mail role with OSMAP.
+
+The project is not yet in general cutover. OSMAP remains prototype-grade and
+does not yet have a public deployment. Even so, the repository now has enough
+implemented workflow surface, host proof, and deployment guidance that a formal
+migration plan is more useful than a stub.
+
+## Migration Objective
+
+The migration goal is narrow:
+
+- replace Roundcube for the essential browser-mail workflows defined in the
+  Version 1 product boundary
+- preserve the existing OpenBSD mail stack as authoritative
+- preserve native-client access during and after migration
+- keep rollback to the legacy browser path straightforward until OSMAP is
+  proven in real use
+
+This is not a "big bang" replacement of the whole mail platform.
+
+## Current Readiness
+
+The repo now provides real implementation and proof for:
+
+- password-plus-TOTP browser login
+- session issuance, listing, revocation, and logout
+- mailbox listing, message-list retrieval, message view, and attachment
+  download
+- bounded search across one mailbox or all visible mailboxes
+- compose, reply, forward, bounded attachment upload, and send
+- one-message move plus a settings-backed archive shortcut
+- safe HTML rendering with plain-text fallback
+- helper-backed mailbox reads on the validated OpenBSD host
+
+The repo does not yet prove a full production migration by itself. Important
+limits still include:
+
+- no draft persistence
+- no original-message attachment reattachment in reply/forward flows
+- no bulk message organization workflow
+- prototype-grade rather than production-grade hardening posture
+
+The migration plan should therefore start with low-disruption coexistence, not
+immediate Roundcube retirement.
+
+## Migration Principles
+
+- keep IMAP, SMTP submission, and native clients unchanged
+- prefer rollout behind the current VPN-first or similarly narrow exposure
+  posture first
+- do not import risky Roundcube behavior only for parity theater
+- avoid coupling migration success to Roundcube database or preference import
+  unless a real blocker proves that necessary
+- keep the Roundcube rollback path available until pilot exit criteria are met
+
+## Preconditions
+
+Before any real user migration begins, the operator should confirm:
+
+- the authoritative Version 1 closeout gate passes on the intended host or an
+  equivalent host posture
+- the deployed snapshot matches the currently reviewed repo state
+- the `_osmap` plus `vmail` helper-backed deployment shape is in place
+- the operator has tested rollback of the browser path to Roundcube
+- the affected user workflows have been inventoried, especially any current
+  Roundcube-specific habits around drafts, attachment reuse, or folder actions
+
+## Recommended Migration Sequence
+
+### 1. Workflow Inventory
+
+Inventory the actual Roundcube behaviors relied on by the intended pilot users.
+The current OSMAP product boundary is intentionally narrower than legacy
+webmail, so migration should be driven by real required workflows rather than
+by assumptions.
+
+### 2. Operator Shadow Use
+
+Run OSMAP in a trusted operator-only posture first:
+
+- keep Roundcube available
+- keep native clients unchanged
+- validate login, read, search, send, move, session, and settings flows on the
+  intended host
+- record any workflow blockers against the current Version 1 limitations
+
+### 3. Small Pilot
+
+Move a small trusted user set to OSMAP for the supported bounded workflows
+while Roundcube remains available as rollback and comparison support. The pilot
+should follow `PILOT_DEPLOYMENT_PLAN.md`.
+
+### 4. Controlled Default Switch
+
+Only after the pilot is stable should OSMAP become the default browser-mail
+entry path for the chosen user group. Keep Roundcube reachable for rollback
+during the initial cutover window.
+
+### 5. Legacy Retirement
+
+Retire Roundcube only after:
+
+- the required user workflows are confirmed on OSMAP
+- the rollback window closes without unresolved blockers
+- operators are satisfied with logs, closeout reruns, and helper-boundary
+  stability
+
+## Data And Preference Strategy
+
+The current preferred migration posture is deliberately conservative:
+
+- do not migrate Roundcube application state blindly
+- keep OSMAP settings independent and intentionally small
+- require any legacy preference or database import to justify its own risk
+
+At the current repo stage, that means users should expect fresh OSMAP browser
+settings rather than a promise that historical Roundcube preferences will be
+ported.
+
+## Rollback Strategy
+
+Rollback must stay simple enough to use under pressure:
+
+- keep the Roundcube installation and related state intact during migration
+- keep nginx or the chosen edge path reversible
+- keep OSMAP service accounts, env files, and helper socket boundaries separate
+  so disabling OSMAP does not disturb native-client or core mail behavior
+- prefer rollback to the last known-good browser path over ad hoc permission
+  widening inside OSMAP
+
+## Migration Exit Criteria
+
+The migration can be considered successful for a given user group when:
+
+- required browser-mail workflows are completed on OSMAP without falling back
+  to Roundcube for normal use
+- no blocker remains around auth, read, search, send, or required folder
+  movement
+- incident handling and closeout reruns remain operationally credible
+- operators judge the remaining limitations acceptable for that user group
+
+## Deferred Questions
+
+These questions remain later-phase work rather than prerequisites for this
+baseline migration plan:
+
+- whether any Roundcube preference data is worth migrating at all
+- whether broader folder ergonomics or draft persistence are mandatory for all
+  target users
+- when broad internet exposure is justified instead of a conservative
+  VPN-first posture

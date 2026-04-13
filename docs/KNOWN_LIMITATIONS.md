@@ -57,7 +57,8 @@
   (`/settings`, `/sessions/revoke`, and `/logout`) are CSRF-bound and much
   lower abuse value than login, send, or message move, so the next hardening
   win is unlikely to be another narrow per-route throttle
-- No formal migration plan has been completed
+- A formal migration baseline now exists, but no Roundcube migration rehearsal
+  or end-user pilot has been completed yet
 - The existing host is multi-purpose, which constrains how aggressively the
   replacement can diverge from current operational patterns
 - Required user workflows are defined at product level, but detailed field-level
