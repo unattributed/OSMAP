@@ -122,6 +122,8 @@ Guidance:
 - keep a repo-owned security gate for the current Rust backend, including the
   shared `make security-check` workflow and the current CWE Top 25 review
   baseline
+- keep repo-owned local hook backstops available so the same security gate can
+  run before commit and before push when maintainers enable the shared hook path
 - keep the current OWASP-oriented verification posture concrete through the
   Version 1-scoped `OWASP_ASVS_BASELINE.md` crosswalk rather than leaving OWASP
   and ASVS as ungrounded aspiration text

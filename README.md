@@ -345,7 +345,7 @@ The short version:
 - update tests and docs with meaningful implementation changes
 - run `make security-check` before commit when working on the Rust backend
 - install the repo-owned hook path with `make install-hooks` if you want that
-  gate to run automatically on each commit
+  gate to run automatically on each commit and again before each push
 - expect GitHub Actions to enforce the same repo-owned `make security-check`
   gate on pushes and pull requests to `main`
 - expect extra scrutiny for auth, session, HTTP, MIME, attachment, helper, and

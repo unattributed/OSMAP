@@ -2,6 +2,27 @@
 
 ## 2026-04-13
 
+### Add a pre-push security-check backstop to the repo-owned hook path
+
+The repository already had a repo-owned `pre-commit` hook that routed through
+`make security-check`, but the recent rustfmt-only CI failure on `main` showed
+that the practical maintainer workflow still benefited from one more local
+backstop before network publication.
+
+The shared hook path now includes `pre-push` too, and `make install-hooks` now
+marks both hook scripts executable before setting `core.hooksPath=.githooks`.
+
+That keeps the security gate aligned across:
+
+- explicit local `make security-check`
+- repo-owned `pre-commit`
+- repo-owned `pre-push`
+- GitHub Actions `security-check`
+
+The intent is not to add process for its own sake. It is to make the central
+Rust/backend security gate harder to skip accidentally when code-security
+changes are moving quickly.
+
 ### Surface inline-image policy as explicit browser notice instead of rendering
 
 The message-view path now treats inline images the same way the broader browser

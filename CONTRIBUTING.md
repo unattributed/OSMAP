@@ -103,6 +103,9 @@ To enable the repo-owned pre-commit hook path for this checkout, run:
 
 - `make install-hooks`
 
+That sets `core.hooksPath` to `.githooks` so the shared security gate runs both
+before commit and again before push.
+
 For OpenBSD-facing work, maintainers may also validate changes on:
 
 - a project-local QEMU lab under `maint/qemu/`

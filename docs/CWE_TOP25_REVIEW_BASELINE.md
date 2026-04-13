@@ -103,8 +103,8 @@ or memory-safety defect.
 
 ## Security Check Workflow
 
-The repository now includes a shared `make security-check` entrypoint and a
-repo-owned pre-commit hook path.
+The repository now includes a shared `make security-check` entrypoint plus
+repo-owned `pre-commit` and `pre-push` hook paths.
 
 The repository also carries a GitHub Actions `security-check` workflow that
 mirrors the same gate on pushes and pull requests. GitHub default CodeQL setup
@@ -127,16 +127,16 @@ Install the shared hook path with:
 make install-hooks
 ```
 
-That sets `core.hooksPath` to `.githooks` for the local checkout so commits run
-the repo-owned security gate automatically.
+That sets `core.hooksPath` to `.githooks` for the local checkout so the
+repo-owned security gate runs automatically before commit and before push.
 
 ## GitHub Code Scanning Posture
 
 OSMAP now separates two concerns clearly:
 
 - repo-owned Rust quality and security gating runs through `make security-check`
-  locally, through the repo-owned pre-commit hook, and through the GitHub
-  Actions `security-check` workflow
+  locally, through the repo-owned pre-commit and pre-push hooks, and through
+  the GitHub Actions `security-check` workflow
 - CodeQL alert generation remains the responsibility of GitHub default CodeQL
   setup while that repository setting is enabled
 

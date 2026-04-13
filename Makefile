@@ -31,7 +31,7 @@ security-check:
 	sh maint/security/osmap-security-check.sh
 
 install-hooks:
-	chmod +x .githooks/pre-commit maint/security/osmap-security-check.sh
+	chmod +x .githooks/pre-commit .githooks/pre-push maint/security/osmap-security-check.sh
 	git config core.hooksPath .githooks
 
 run:
