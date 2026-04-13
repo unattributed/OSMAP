@@ -610,11 +610,7 @@ mod tests {
         client_stream
             .shutdown(Shutdown::Write)
             .expect("client shutdown should succeed");
-        let response_bytes = read_bounded_from_stream(
-            &mut client_stream,
-            DEFAULT_MAILBOX_HELPER_MAX_RESPONSE_BYTES,
-        )
-        .expect("response read should succeed");
+        let response_bytes = read_helper_test_response(&mut client_stream);
         server.join().expect("helper thread should complete");
         let _ = fs::remove_file(&socket_path);
 
@@ -1325,6 +1321,28 @@ mod tests {
             .uid();
         fs::remove_dir(&temp_root).expect("temp root should be removed");
         uid
+    }
+
+    #[cfg(unix)]
+    fn read_helper_test_response(stream: &mut UnixStream) -> Vec<u8> {
+        let mut output = Vec::new();
+        let mut chunk = [0_u8; 4096];
+
+        loop {
+            match stream.read(&mut chunk) {
+                Ok(0) => break,
+                Ok(read) => {
+                    output.extend_from_slice(&chunk[..read]);
+                    if output.len() > DEFAULT_MAILBOX_HELPER_MAX_RESPONSE_BYTES {
+                        panic!("test helper response exceeded maximum size");
+                    }
+                }
+                Err(error) if error.kind() == std::io::ErrorKind::ConnectionReset => break,
+                Err(error) => panic!("response read should succeed: {error}"),
+            }
+        }
+
+        output
     }
 
     #[cfg(unix)]
