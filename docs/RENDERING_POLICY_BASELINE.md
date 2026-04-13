@@ -18,6 +18,8 @@ The current slice provides:
 
 - a plain-text-first rendering policy with bounded safe-HTML support
 - header extraction for a small summary surface
+- bounded RFC 2047 encoded-word decoding for the narrow `Subject` and `From`
+  summary values
 - browser-safe HTML escaping for plain-text rendering
 - a narrow allowlist sanitizer for HTML-capable messages
 - two explicit rendering modes: preformatted plain text and sanitized HTML
@@ -62,14 +64,17 @@ The current renderer extracts only a narrow summary:
 - `From`
 
 The renderer unfolds continuation lines conservatively and applies explicit
-length bounds before those values can move toward a browser-facing layer.
+length bounds before those values can move toward a browser-facing layer. It
+now also performs bounded RFC 2047 encoded-word decoding for those summary
+fields when the message uses common `utf-8`, `us-ascii`, or `iso-8859-1`
+encoded words.
 
 It does not yet attempt:
 
 - full header presentation
 - address parsing
-- encoded-word decoding
 - MIME header interpretation beyond the narrow follow-on classification layer
+- full RFC 2047 coverage across all possible header charsets and edge cases
 
 Those are later refinements, not assumptions.
 
@@ -109,7 +114,6 @@ This slice still does not yet include:
 
 - attachment preview behavior
 - inline image policy
-- encoded header decoding
 - richer browser presentation beyond the current server-rendered route set
 - permissive HTML layout support, broad inline styling, or any external
   resource loading

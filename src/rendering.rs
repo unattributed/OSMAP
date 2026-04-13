@@ -246,20 +246,213 @@ fn extract_header_value(
     for line in unfolded_headers.lines() {
         if let Some((name, value)) = line.split_once(':') {
             if name.trim().eq_ignore_ascii_case(wanted_name) {
-                let value = value.trim().to_string();
-                if value.len() > max_len {
+                let raw_value = value.trim();
+                if raw_value.len() > max_len {
                     return Err(RenderError {
                         reason: format!(
                             "header {wanted_name} exceeded maximum length of {max_len} bytes"
                         ),
                     });
                 }
-                return Ok(Some(value));
+                let decoded = decode_encoded_words(raw_value);
+                if decoded.len() > max_len {
+                    return Err(RenderError {
+                        reason: format!(
+                            "header {wanted_name} exceeded maximum length of {max_len} bytes"
+                        ),
+                    });
+                }
+                return Ok(Some(decoded));
             }
         }
     }
 
     Ok(None)
+}
+
+/// Decodes RFC 2047 encoded words conservatively for the narrow header summary.
+fn decode_encoded_words(value: &str) -> String {
+    let mut decoded = String::with_capacity(value.len());
+    let mut index = 0;
+
+    while index < value.len() {
+        if let Some((consumed, segment)) = parse_encoded_word(&value[index..]) {
+            decoded.push_str(&segment);
+            index += consumed;
+
+            let whitespace_start = index;
+            while let Some(byte) = value.as_bytes().get(index) {
+                if *byte == b' ' || *byte == b'\t' {
+                    index += 1;
+                } else {
+                    break;
+                }
+            }
+
+            if index < value.len() && parse_encoded_word(&value[index..]).is_some() {
+                continue;
+            }
+
+            if whitespace_start < index {
+                decoded.push_str(&value[whitespace_start..index]);
+            }
+            continue;
+        }
+
+        let next_char = value[index..]
+            .chars()
+            .next()
+            .expect("index should remain at a valid char boundary");
+        decoded.push(next_char);
+        index += next_char.len_utf8();
+    }
+
+    decoded
+}
+
+/// Parses and decodes one RFC 2047 encoded word from the start of `input`.
+fn parse_encoded_word(input: &str) -> Option<(usize, String)> {
+    if !input.starts_with("=?") {
+        return None;
+    }
+
+    let bytes = input.as_bytes();
+    let charset_end = input[2..].find('?')? + 2;
+    let charset = input[2..charset_end].trim();
+    if charset.is_empty() {
+        return None;
+    }
+
+    let encoding = *bytes.get(charset_end + 1)?;
+    if !matches!(encoding, b'B' | b'b' | b'Q' | b'q') {
+        return None;
+    }
+    if *bytes.get(charset_end + 2)? != b'?' {
+        return None;
+    }
+
+    let encoded_start = charset_end + 3;
+    let encoded_end = input[encoded_start..].find("?=")? + encoded_start;
+    let encoded_text = &input[encoded_start..encoded_end];
+
+    let decoded_bytes = match encoding {
+        b'B' | b'b' => decode_header_base64(encoded_text).ok()?,
+        b'Q' | b'q' => decode_header_q_encoding(encoded_text).ok()?,
+        _ => return None,
+    };
+    let decoded_text = decode_header_bytes_with_charset(charset, &decoded_bytes)?;
+
+    Some((encoded_end + 2, decoded_text))
+}
+
+/// Decodes one RFC 2047 Q-encoded word without widening the trust surface.
+fn decode_header_q_encoding(input: &str) -> Result<Vec<u8>, ()> {
+    let bytes = input.as_bytes();
+    let mut output = Vec::with_capacity(bytes.len());
+    let mut index = 0;
+
+    while index < bytes.len() {
+        match bytes[index] {
+            b'_' => {
+                output.push(b' ');
+                index += 1;
+            }
+            b'=' => {
+                let high = *bytes.get(index + 1).ok_or(())?;
+                let low = *bytes.get(index + 2).ok_or(())?;
+                output.push((hex_value(high)? << 4) | hex_value(low)?);
+                index += 3;
+            }
+            byte if byte.is_ascii() => {
+                output.push(byte);
+                index += 1;
+            }
+            _ => return Err(()),
+        }
+    }
+
+    Ok(output)
+}
+
+/// Decodes one RFC 2047 base64-encoded word conservatively.
+fn decode_header_base64(input: &str) -> Result<Vec<u8>, ()> {
+    let bytes = input.as_bytes();
+    if bytes.len() % 4 != 0 {
+        return Err(());
+    }
+
+    let mut output = Vec::with_capacity(bytes.len() / 4 * 3);
+    let mut index = 0;
+
+    while index < bytes.len() {
+        let mut values = [0u8; 4];
+        let mut padding = 0;
+        let mut saw_padding = false;
+
+        for offset in 0..4 {
+            let byte = bytes[index + offset];
+            if saw_padding && byte != b'=' {
+                return Err(());
+            }
+            values[offset] = match byte {
+                b'A'..=b'Z' => byte - b'A',
+                b'a'..=b'z' => byte - b'a' + 26,
+                b'0'..=b'9' => byte - b'0' + 52,
+                b'+' => 62,
+                b'/' => 63,
+                b'=' => {
+                    padding += 1;
+                    saw_padding = true;
+                    0
+                }
+                _ => return Err(()),
+            };
+        }
+
+        output.push((values[0] << 2) | (values[1] >> 4));
+        if padding < 2 {
+            output.push((values[1] << 4) | (values[2] >> 2));
+        }
+        if padding == 0 {
+            output.push((values[2] << 6) | values[3]);
+        }
+        if padding > 2 {
+            return Err(());
+        }
+
+        index += 4;
+    }
+
+    Ok(output)
+}
+
+/// Decodes header bytes for a narrow set of common charsets.
+fn decode_header_bytes_with_charset(charset: &str, bytes: &[u8]) -> Option<String> {
+    let charset = charset.trim().to_ascii_lowercase();
+    match charset.as_str() {
+        "utf-8" | "utf8" => String::from_utf8(bytes.to_vec()).ok(),
+        "us-ascii" | "ascii" => {
+            if bytes.is_ascii() {
+                Some(String::from_utf8_lossy(bytes).into_owned())
+            } else {
+                None
+            }
+        }
+        "iso-8859-1" | "latin1" | "latin-1" => {
+            Some(bytes.iter().map(|byte| char::from(*byte)).collect())
+        }
+        _ => None,
+    }
+}
+
+/// Decodes one hexadecimal ASCII nibble used by RFC 2047 Q encoding.
+fn hex_value(byte: u8) -> Result<u8, ()> {
+    match byte {
+        b'0'..=b'9' => Ok(byte - b'0'),
+        b'A'..=b'F' => Ok(byte - b'A' + 10),
+        b'a'..=b'f' => Ok(byte - b'a' + 10),
+        _ => Err(()),
+    }
 }
 
 /// Renders the selected body or a safe placeholder from MIME analysis.
@@ -538,6 +731,54 @@ mod tests {
     }
 
     #[test]
+    fn decodes_q_encoded_header_summary_values() {
+        let unfolded = unfold_headers(
+            concat!(
+                "Subject: =?UTF-8?Q?Ol=C3=A1_do_mundo?=\n",
+                "From: =?UTF-8?Q?Andr=C3=A9_Example?= <alice@example.com>\n"
+            ),
+        );
+        let subject =
+            extract_header_value(&unfolded, "Subject", DEFAULT_RENDERED_HEADER_VALUE_MAX_LEN)
+                .expect("subject extraction should succeed");
+        let from = extract_header_value(&unfolded, "From", DEFAULT_RENDERED_HEADER_VALUE_MAX_LEN)
+            .expect("from extraction should succeed");
+
+        assert_eq!(subject.as_deref(), Some("Olá do mundo"));
+        assert_eq!(from.as_deref(), Some("André Example <alice@example.com>"));
+    }
+
+    #[test]
+    fn decodes_base64_encoded_header_summary_values() {
+        let unfolded = unfold_headers(
+            concat!(
+                "Subject: =?UTF-8?B?VGVzdCDinJM=?=\n",
+                "From: =?ISO-8859-1?Q?Andr=E9?= <alice@example.com>\n"
+            ),
+        );
+        let subject =
+            extract_header_value(&unfolded, "Subject", DEFAULT_RENDERED_HEADER_VALUE_MAX_LEN)
+                .expect("subject extraction should succeed");
+        let from = extract_header_value(&unfolded, "From", DEFAULT_RENDERED_HEADER_VALUE_MAX_LEN)
+            .expect("from extraction should succeed");
+
+        assert_eq!(subject.as_deref(), Some("Test ✓"));
+        assert_eq!(from.as_deref(), Some("André <alice@example.com>"));
+    }
+
+    #[test]
+    fn decodes_adjacent_encoded_words_without_preserving_separator_whitespace() {
+        let unfolded = unfold_headers(
+            "Subject: =?UTF-8?Q?Hello?= =?UTF-8?Q?_world?=\n",
+        );
+        let subject =
+            extract_header_value(&unfolded, "Subject", DEFAULT_RENDERED_HEADER_VALUE_MAX_LEN)
+                .expect("subject extraction should succeed");
+
+        assert_eq!(subject.as_deref(), Some("Hello world"));
+    }
+
+    #[test]
     fn escapes_plain_text_body_for_browser_display() {
         let rendered = render_plain_text_body(
             "Hello <world> & \"friends\"\n",
@@ -597,6 +838,28 @@ mod tests {
         assert_eq!(
             rendered,
             "ts=7373 level=info category=mailbox action=message_rendered_plain_text msg=\"message rendered with plain-text policy\" canonical_username=\"alice@example.com\" session_id=\"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\" mailbox_name=\"INBOX\" uid=\"9\" mime_top_level_content_type=\"text/plain\" body_source=\"singlepart_plain_text\" attachment_count=\"0\" contains_html_body=\"false\" rendering_mode=\"plain_text_preformatted\" request_id=\"req-render\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\""
+        );
+    }
+
+    #[test]
+    fn renders_message_view_with_decoded_subject_and_from_summary() {
+        let renderer = PlainTextMessageRenderer::new(RenderingPolicy::default());
+        let mut message = plain_text_message_view_fixture();
+        message.header_block = concat!(
+            "Subject: =?UTF-8?Q?Quarterly_r=C3=A9sum=C3=A9?=\n",
+            "From: =?UTF-8?Q?Andr=C3=A9_Example?= <alice@example.com>\n",
+            "Content-Type: text/plain; charset=utf-8\n"
+        )
+        .to_string();
+
+        let outcome = renderer
+            .render_for_validated_session(&test_context(), &validated_session_fixture(), &message)
+            .expect("rendering should succeed");
+
+        assert_eq!(outcome.rendered.subject.as_deref(), Some("Quarterly résumé"));
+        assert_eq!(
+            outcome.rendered.from.as_deref(),
+            Some("André Example <alice@example.com>")
         );
     }
 

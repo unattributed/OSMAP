@@ -31,7 +31,7 @@
   reattachment
 - The implementation now has a conservative rendering layer with both
   plain-text and sanitized-HTML modes, but it still does not provide
-  encoded-header handling, inline image rendering, or any external-resource
+  inline image rendering, full rich-header coverage, or any external-resource
   loading
 - The implementation now provides a bounded, backend-authoritative browser
   search path across one mailbox or all visible mailboxes, but it does not yet
