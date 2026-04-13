@@ -92,6 +92,8 @@ Review expectations:
 - auth, session, crypto, and parser changes require explicit security-minded
   review
 - documentation changes must accompany material design shifts
+- all associated status, operator, and boundary documents must be kept aligned
+  in the same change stream when shipped behavior changes materially
 
 ## Testing Requirements
 
@@ -158,6 +160,8 @@ Meaningful changes should be:
 - reviewed before release
 - documented when they affect trust, exposure, dependencies, or operator
   expectations
+- committed with signed commits so repository history remains attributable
+  and reviewable
 - reversible where practical
 
 ## Configuration Management
@@ -201,6 +205,9 @@ At minimum, the project should maintain:
 - current architecture and security documents
 - OpenBSD deployment guidance
 - operator-facing notes for rollback, exposure, and incident handling
+
+Change closeout should also leave one explicit next-best development step so
+follow-on work is easier to prioritize and resume.
 
 Phase progression docs should remain useful, not ceremonial. If a section becomes
 stale or misleading, it should be corrected during the work that invalidated it.

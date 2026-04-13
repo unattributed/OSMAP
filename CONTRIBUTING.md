@@ -61,10 +61,17 @@ issue first before investing heavily in implementation.
 1. Start from the current repository state, not from stale summaries.
 2. Keep each change narrowly scoped.
 3. Add or update tests when behavior changes.
-4. Update documentation in the same change stream when implementation or
-   project status changes.
+4. Update all associated and applicable documentation in the same change stream
+   when implementation, project status, operational guidance, or known
+   limitations change.
 5. Keep commit messages contextual and useful to sysadmins and collaborating
    developers.
+6. Sign commits so the mainline history remains attributable and reviewable.
+7. When working directly on `main`, validate locally, commit, and sync the
+   resulting snapshot to `origin/main` instead of leaving completed work only in
+   a local checkout.
+8. Close out each completed change with the next best development step so the
+   repository preserves momentum instead of ending at a bare status report.
 
 ## Validation
 
@@ -110,6 +117,8 @@ particular:
 
 - keep status statements honest
 - revise stale "not yet implemented" language when code now exists
+- update all other associated docs that describe the same shipped boundary or
+  operator workflow, not only the first document you touched
 - update [`docs/DECISION_LOG.md`](docs/DECISION_LOG.md) for meaningful
   security, architecture, or governance decisions
 

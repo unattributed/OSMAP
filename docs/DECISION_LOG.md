@@ -1,5 +1,21 @@
 # Decision Log
 
+## 2026-04-13
+
+### Keep development closeout disciplined around docs, signed commits, sync, and next steps
+
+The repository's active workflow guidance now makes four expectations explicit
+for normal development closeout:
+
+- update all associated and applicable documentation in the same change stream
+  when shipped behavior, status, or operator guidance changes
+- sign commits so the mainline history remains attributable and reviewable
+- when working directly on `main`, validate, commit, and sync the completed
+  snapshot to `origin/main` instead of leaving finished work only in a local
+  checkout
+- close out each completed change with one explicit next-best development step
+  so the project keeps momentum and handoff clarity
+
 ## 2026-03-27
 
 ### Keep planning artifacts public and non-sensitive
