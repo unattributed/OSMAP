@@ -5,7 +5,9 @@
 //! is to add a real second-factor backend without introducing a large auth
 //! framework.
 
+#[cfg(not(unix))]
 use std::fs;
+use std::io::Read as _;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -176,17 +178,99 @@ impl TotpSecretStore for FileTotpSecretStore {
         canonical_username: &str,
     ) -> Result<Option<TotpSecret>, TotpSecretStoreError> {
         let path = self.secret_path_for_username(canonical_username);
-
-        if !path.exists() {
+        let Some(content) = read_secret_file(&path)? else {
             return Ok(None);
-        }
-
-        let content = fs::read_to_string(&path).map_err(|error| TotpSecretStoreError {
-            reason: format!("failed reading TOTP secret file {:?}: {error}", path),
-        })?;
+        };
 
         parse_secret_file(&content)
     }
+}
+
+#[cfg(unix)]
+fn read_secret_file(path: &std::path::Path) -> Result<Option<String>, TotpSecretStoreError> {
+    use std::fs::OpenOptions;
+    use std::os::unix::fs::{MetadataExt as _, OpenOptionsExt as _};
+
+    let mut file = match OpenOptions::new()
+        .read(true)
+        .custom_flags(libc::O_NOFOLLOW)
+        .open(path)
+    {
+        Ok(file) => file,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(error) => {
+            return Err(TotpSecretStoreError {
+                reason: format!("failed opening TOTP secret file {:?}: {error}", path),
+            });
+        }
+    };
+
+    let metadata = file.metadata().map_err(|error| TotpSecretStoreError {
+        reason: format!("failed reading TOTP secret metadata {:?}: {error}", path),
+    })?;
+    validate_secret_file_metadata(
+        path,
+        metadata.file_type().is_file(),
+        metadata.uid(),
+        metadata.mode() & 0o777,
+        crate::openbsd::effective_uid(),
+    )?;
+
+    let mut content = String::new();
+    file.read_to_string(&mut content)
+        .map_err(|error| TotpSecretStoreError {
+            reason: format!("failed reading TOTP secret file {:?}: {error}", path),
+        })?;
+
+    Ok(Some(content))
+}
+
+#[cfg(not(unix))]
+fn read_secret_file(path: &std::path::Path) -> Result<Option<String>, TotpSecretStoreError> {
+    if !path.exists() {
+        return Ok(None);
+    }
+
+    fs::read_to_string(path)
+        .map(Some)
+        .map_err(|error| TotpSecretStoreError {
+            reason: format!("failed reading TOTP secret file {:?}: {error}", path),
+        })
+}
+
+#[cfg(unix)]
+fn validate_secret_file_metadata(
+    path: &std::path::Path,
+    is_regular_file: bool,
+    owner_uid: u32,
+    mode: u32,
+    expected_owner_uid: u32,
+) -> Result<(), TotpSecretStoreError> {
+    if !is_regular_file {
+        return Err(TotpSecretStoreError {
+            reason: format!("TOTP secret path {:?} is not a regular file", path),
+        });
+    }
+
+    if owner_uid != expected_owner_uid {
+        return Err(TotpSecretStoreError {
+            reason: format!(
+                "TOTP secret file {:?} must be owned by uid {}",
+                path, expected_owner_uid
+            ),
+        });
+    }
+
+    if mode & 0o077 != 0 {
+        return Err(TotpSecretStoreError {
+            reason: format!(
+                "TOTP secret file {:?} must not grant group or other access",
+                path
+            ),
+        });
+    }
+
+    Ok(())
 }
 
 /// Parses the counters that should be accepted for the current time and policy.
@@ -322,6 +406,7 @@ mod tests {
     use super::*;
     use crate::auth::RequiredSecondFactor;
     use std::collections::BTreeMap;
+    use std::fs;
 
     #[derive(Debug, Clone, Copy)]
     struct FixedTimeProvider {
@@ -398,6 +483,101 @@ mod tests {
             .expect("secret should exist");
 
         assert_eq!(secret.secret_bytes, b"12345678901234567890");
+    }
+
+    #[cfg(unix)]
+    fn temp_dir(prefix: &str) -> PathBuf {
+        let unique = format!(
+            "{prefix}-{}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .expect("system clock should be after unix epoch")
+                .as_nanos()
+        );
+        let dir = std::env::temp_dir().join(unique);
+        fs::create_dir_all(&dir).expect("temp dir should be created");
+        dir
+    }
+
+    #[cfg(unix)]
+    fn write_secret_file(store: &FileTotpSecretStore, canonical_username: &str) -> PathBuf {
+        let secret_path = store.secret_path_for_username(canonical_username);
+        fs::write(&secret_path, "secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ\n")
+            .expect("secret file should be written");
+        secret_path
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn file_secret_store_rejects_symlinked_secret_files() {
+        use std::os::unix::fs as unix_fs;
+
+        let dir = temp_dir("osmap-totp-symlink");
+        let store = FileTotpSecretStore::new(&dir);
+        let target_path = dir.join("real-secret.totp");
+        fs::write(&target_path, "secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ\n")
+            .expect("target secret should be written");
+        unix_fs::symlink(
+            &target_path,
+            store.secret_path_for_username("alice@example.com"),
+        )
+        .expect("symlink should be created");
+
+        let error = store
+            .load_secret("alice@example.com")
+            .expect_err("symlinked secret should be rejected");
+
+        assert!(error.reason.contains("failed opening TOTP secret file"));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn file_secret_store_rejects_group_readable_secret_files() {
+        use std::os::unix::fs::PermissionsExt as _;
+
+        let dir = temp_dir("osmap-totp-mode");
+        let store = FileTotpSecretStore::new(&dir);
+        let secret_path = write_secret_file(&store, "alice@example.com");
+        fs::set_permissions(&secret_path, fs::Permissions::from_mode(0o640))
+            .expect("secret permissions should be updated");
+
+        let error = store
+            .load_secret("alice@example.com")
+            .expect_err("permissive secret should be rejected");
+
+        assert!(error
+            .reason
+            .contains("must not grant group or other access"));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn file_secret_store_accepts_owner_only_secret_files() {
+        use std::os::unix::fs::PermissionsExt as _;
+
+        let dir = temp_dir("osmap-totp-secure");
+        let store = FileTotpSecretStore::new(&dir);
+        let secret_path = write_secret_file(&store, "alice@example.com");
+        fs::set_permissions(&secret_path, fs::Permissions::from_mode(0o600))
+            .expect("secret permissions should be updated");
+
+        let secret = store
+            .load_secret("alice@example.com")
+            .expect("secret load should succeed")
+            .expect("secret should exist");
+
+        assert_eq!(secret.secret_bytes, b"12345678901234567890");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn secret_metadata_validation_rejects_owner_mismatch() {
+        let path = std::path::Path::new("/tmp/alice.totp");
+        let error = validate_secret_file_metadata(path, true, 1001, 0o600, 1002)
+            .expect_err("owner mismatch should be rejected");
+
+        assert!(error.reason.contains("must be owned by uid 1002"));
     }
 
     #[test]

@@ -77,7 +77,9 @@ The current model assumes:
 
 - TOTP secrets are provisioned by an operator-controlled process
 - the committed example configuration remains non-secret
-- secret files are not world-readable
+- secret files are regular files, not symlinks
+- secret files are owned by the runtime user that reads them
+- secret files do not grant group or other access
 - secret files are not placed under repo-managed paths
 - the runtime only needs read access to the secret directory
 
@@ -86,6 +88,8 @@ The current model assumes:
 The TOTP implementation is currently validated through:
 
 - local unit tests using RFC-compatible reference vectors
+- Unix-focused secret-store tests that reject symlinked or permissive secret
+  files before parsing them
 - a real verifier implementation backed by a secret-store abstraction
 
 Broader OpenBSD QEMU validation should remain the next preferred step before

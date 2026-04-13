@@ -3490,3 +3490,32 @@ Validation for this change was:
   longer collide
 - local `make security-check`
 - host `make security-check` on `mail.blackbagsecurity.com`
+
+### Reject unsafe TOTP secret files before parsing them
+
+OSMAP previously loaded TOTP secret files with a direct path read. That kept
+the secret-store code small, but it also meant the runtime would follow
+symlinks and accept files with looser ownership or mode than the project
+intended.
+
+The Unix secret-store path now tightens that boundary before parsing:
+
+- the secret file is opened with no-follow semantics
+- the opened path must resolve to a regular file
+- the file owner must match the effective runtime UID
+- the file must not grant group or other access
+- the existing filename scheme and `secret=<base32-value>` format remain
+  unchanged
+
+This was chosen as the smallest correct fix because it hardens the real
+filesystem trust boundary without changing enrollment, file layout, or the
+existing OpenBSD deployment shape used by the repository's maintained host
+proofs.
+
+Validation for this change was:
+
+- targeted Unix-side tests for symlink rejection, owner-only mode acceptance,
+  permissive-mode rejection, and owner-mismatch rejection
+- local `make security-check`
+- host `maint/live/osmap-live-validate-login-send.ksh` on
+  `mail.blackbagsecurity.com`

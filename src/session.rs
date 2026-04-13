@@ -959,6 +959,12 @@ mod tests {
         let secret_path = secret_store.secret_path_for_username("alice@example.com");
         fs::write(&secret_path, "secret=GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ\n")
             .expect("secret file should be written");
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt as _;
+            fs::set_permissions(&secret_path, fs::Permissions::from_mode(0o600))
+                .expect("secret file permissions should be updated");
+        }
 
         let auth_service =
             AuthenticationService::new(AuthenticationPolicy::default(), AcceptingPrimaryBackend);

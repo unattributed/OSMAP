@@ -245,6 +245,17 @@ pub(crate) fn unix_stream_peer_uid(stream: &UnixStream) -> Result<u32, String> {
     unix_stream_peer_uid_from_raw_fd(stream.as_raw_fd())
 }
 
+/// Returns the effective Unix UID through the reviewed FFI boundary.
+#[cfg(unix)]
+pub(crate) fn effective_uid() -> u32 {
+    effective_uid_raw()
+}
+
+#[cfg(unix)]
+fn effective_uid_raw() -> u32 {
+    unsafe { libc::geteuid() as u32 }
+}
+
 #[cfg(all(
     unix,
     any(
