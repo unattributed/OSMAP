@@ -232,6 +232,15 @@ pub(crate) fn render_message_view_page(
                 && attachment.content_type.starts_with("image/")
         })
         .count();
+    let inline_cid_image_count = rendered
+        .attachments
+        .iter()
+        .filter(|attachment| {
+            attachment.disposition == crate::mime::AttachmentDisposition::Inline
+                && attachment.content_type.starts_with("image/")
+                && attachment.content_id.is_some()
+        })
+        .count();
     let mut attachments = String::new();
     if rendered.attachments.is_empty() {
         attachments.push_str("<li>No attachment metadata surfaced for this message.</li>");
@@ -243,13 +252,24 @@ pub(crate) fn render_message_view_page(
                 rendered.uid,
                 url_encode(&attachment.part_path),
             );
+            let content_id_metadata = attachment
+                .content_id
+                .as_deref()
+                .map(|content_id| {
+                    format!(
+                        ", Content-ID <strong>cid:{}</strong>",
+                        escape_html(content_id)
+                    )
+                })
+                .unwrap_or_default();
             attachments.push_str(&format!(
-                "<li>Part <strong>{}</strong>: {} ({}, {}, {} bytes) [<a href=\"{}\">Download</a>]</li>",
+                "<li>Part <strong>{}</strong>: {} ({}, {}, {} bytes{}) [<a href=\"{}\">Download</a>]</li>",
                 escape_html(&attachment.part_path),
                 escape_html(attachment.filename.as_deref().unwrap_or("<unnamed>")),
                 escape_html(&attachment.content_type),
                 escape_html(attachment.disposition.as_str()),
                 attachment.size_hint_bytes,
+                content_id_metadata,
                 escape_html(&download_href),
             ));
         }
@@ -277,11 +297,20 @@ pub(crate) fn render_message_view_page(
         _ => "",
     };
     let inline_image_notice = if rendered.contains_html_body && inline_image_count > 0 {
-        format!(
-            "<p class=\"muted\">This message surfaced <strong>{}</strong> inline image part{}. Current browser policy does not render inline images inside the message body. Review the sanitized body text and download any needed image parts explicitly from the attachment list.</p>",
-            inline_image_count,
-            if inline_image_count == 1 { "" } else { "s" },
-        )
+        if inline_cid_image_count > 0 {
+            format!(
+                "<p class=\"muted\">This message surfaced <strong>{}</strong> inline image part{}, including <strong>{}</strong> with Content-ID metadata used by `cid:` HTML references. Current browser policy does not render inline images inside the message body. Review the sanitized body text and download any needed image parts explicitly from the attachment list.</p>",
+                inline_image_count,
+                if inline_image_count == 1 { "" } else { "s" },
+                inline_cid_image_count,
+            )
+        } else {
+            format!(
+                "<p class=\"muted\">This message surfaced <strong>{}</strong> inline image part{}. Current browser policy does not render inline images inside the message body. Review the sanitized body text and download any needed image parts explicitly from the attachment list.</p>",
+                inline_image_count,
+                if inline_image_count == 1 { "" } else { "s" },
+            )
+        }
     } else {
         String::new()
     };

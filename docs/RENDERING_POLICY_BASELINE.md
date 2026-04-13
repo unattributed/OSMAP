@@ -22,6 +22,9 @@ The current slice provides:
   summary values
 - a bounded inline-image policy notice when HTML-capable messages surface
   inline image attachment metadata
+- bounded `Content-ID` metadata surfacing for surfaced attachment parts so the
+  browser can distinguish likely `cid:`-backed inline assets from generic
+  inline-disposition images
 - browser-safe HTML escaping for plain-text rendering
 - a narrow allowlist sanitizer for HTML-capable messages
 - two explicit rendering modes: preformatted plain text and sanitized HTML
@@ -54,6 +57,10 @@ That means:
 - the message view now shows the active rendering mode to the user
 - HTML-capable messages with surfaced inline image metadata now render an
   explicit browser notice instead of attempting inline image display
+- surfaced attachment metadata now includes bounded `Content-ID` values when
+  they are present and valid
+- the inline-image notice is now more precise when HTML-capable messages
+  surface true `cid:`-style inline-image metadata
 - compose/reply/forward body generation still uses plain-text content, even
   when sanitized HTML is rendered for browser reading
 

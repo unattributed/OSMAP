@@ -783,6 +783,7 @@ mod tests {
                                 filename: Some("report.pdf".to_string()),
                                 content_type: "application/pdf".to_string(),
                                 disposition: AttachmentDisposition::Attachment,
+                                content_id: None,
                                 size_hint_bytes: 128,
                             },
                             crate::mime::AttachmentMetadata {
@@ -790,6 +791,7 @@ mod tests {
                                 filename: Some("chart.png".to_string()),
                                 content_type: "image/png".to_string(),
                                 disposition: AttachmentDisposition::Inline,
+                                content_id: Some("chart@example.com".to_string()),
                                 size_hint_bytes: 64,
                             },
                         ],
@@ -1448,8 +1450,9 @@ mod tests {
         assert!(body.contains("name=\"destination_mailbox\""));
         assert!(body.contains("/attachment?mailbox=INBOX&amp;uid=9&amp;part=1.2"));
         assert!(body.contains("chart.png"));
+        assert!(body.contains("Content-ID <strong>cid:chart@example.com</strong>"));
         assert!(body.contains(
-            "Current browser policy does not render inline images inside the message body"
+            "including <strong>1</strong> with Content-ID metadata used by `cid:` HTML references"
         ));
     }
 

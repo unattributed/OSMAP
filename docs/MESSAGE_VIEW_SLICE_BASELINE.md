@@ -161,4 +161,7 @@ This slice still does not include:
 
 The first bounded attachment-download route and later safe-HTML rendering layer
 now exist on top of this baseline, but broader content policy work still
-remains.
+remains. The current follow-on metadata surface is also now precise enough to
+expose bounded `Content-ID` values for surfaced attachment parts, which helps
+the browser distinguish likely `cid:`-backed inline assets from generic inline
+image parts without widening rendering scope.

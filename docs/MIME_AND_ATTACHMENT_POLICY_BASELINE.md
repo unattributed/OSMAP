@@ -60,6 +60,7 @@ The current attachment metadata model includes:
 - filename when present
 - content type
 - disposition
+- bounded `Content-ID` when present
 - size hint in bytes
 
 This is enough to support:
@@ -69,6 +70,8 @@ This is enough to support:
 - later UI work that shows attachments without guessing
 - a bounded inline-image policy notice when surfaced attachment metadata marks
   image parts as `inline`
+- more precise distinction between generic inline image parts and inline assets
+  that carry `cid:`-style `Content-ID` metadata
 
 It is still not a preview contract or a full MIME-client contract.
 

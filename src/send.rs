@@ -1180,6 +1180,7 @@ mod tests {
                 filename: Some("report.pdf".to_string()),
                 content_type: "application/pdf".to_string(),
                 disposition: AttachmentDisposition::Attachment,
+                content_id: None,
                 size_hint_bytes: 4096,
             }],
             rendering_mode: crate::rendering::RenderingMode::PlainTextPreformatted,

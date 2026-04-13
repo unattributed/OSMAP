@@ -2,6 +2,44 @@
 
 ## 2026-04-13
 
+### Add a short V1 closeout work-rules allowlist
+
+Once the Version 1 release gate was frozen, the remaining process risk was no
+longer only technical drift. It was scope drift: taking on useful-sounding work
+that did not actually support closeout.
+
+OSMAP now carries `docs/V1_CLOSEOUT_WORK_RULES.md` as a short allowlist for
+active work while the project remains in Version 1 closeout. It keeps the
+day-to-day rule simple:
+
+- if the task keeps the frozen gate, proofs, docs, or shipped V1 surface
+  healthy, it can be in scope
+- if it does not clearly fit that allowlist, treat it as Version 2 by default
+
+This was chosen instead of relying on scattered README prose because the
+project now needs one compact scoping reference that can be checked before
+implementation work starts.
+
+### Surface bounded Content-ID metadata for attachment parts in the message view
+
+The inline-image policy notice already told the truth about what OSMAP would
+not do: it would not render inline images inside the browser message body. But
+it still treated all inline-disposition image parts the same even though some
+are real `cid:`-addressable HTML assets and some are not.
+
+The surfaced attachment metadata and message-view UI now carry bounded
+`Content-ID` values when they are present and valid. That allows the browser
+message view to:
+
+- show `cid:` metadata in the surfaced attachment list
+- distinguish likely `cid:`-backed inline assets from generic inline image
+  parts
+- make the inline-image notice more precise without introducing inline-image
+  rendering, external-resource loading, or broader rich-mail behavior
+
+This was chosen instead of inline-image rendering because the Version 1 need is
+clarity about the current trust boundary, not a richer browser mail client.
+
 ### Add a hook-installation regression check to the shared security gate
 
 Once `pre-commit` and `pre-push` both existed as repo-owned backstops, the next

@@ -306,6 +306,9 @@ is:
 3. Only take additional implementation or hardening work when a failing proof
    or a repo inconsistency reveals a narrower blocker.
 
+For the short allowlist that turns that rule into day-to-day scoping guidance,
+see `docs/V1_CLOSEOUT_WORK_RULES.md`.
+
 ## V2 Direction
 
 The repo now treats the following as Version 2 work unless a narrower V1 need

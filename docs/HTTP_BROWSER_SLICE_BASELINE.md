@@ -86,6 +86,9 @@ The routes intentionally mirror the current runtime baseline:
 - message view can now also surface a bounded inline-image policy notice for
   HTML-capable messages whose surfaced attachment metadata includes inline image
   parts
+- message view can now also surface bounded `Content-ID` metadata for
+  attachment parts so the inline-image notice can distinguish likely
+  `cid:`-backed assets from generic inline-disposition images
 - attachment download reuses the existing session, message-view, and MIME
   attachment-part model
 - search executes through the backend-authoritative mailbox search path instead
@@ -161,6 +164,9 @@ This slice now proves that:
   way to a browser-facing page
 - the browser layer can surface inline-image handling rules without widening
   sanitized HTML into a richer mail client
+- the browser layer can surface bounded `Content-ID` metadata and use it to
+  make inline-image policy messaging more precise without adding inline-image
+  rendering
 - the current outbound send path can be exposed through a bounded server-side
   compose form without inventing an SMTP client or rich browser runtime
 - reply and forward behavior can be added as server-side draft generation

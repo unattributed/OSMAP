@@ -69,6 +69,7 @@ Current primary documents:
 - `CWE_TOP25_REVIEW_BASELINE.md`
 - `OWASP_ASVS_BASELINE.md`
 - `V1_CLOSEOUT_SOP.md`
+- `V1_CLOSEOUT_WORK_RULES.md`
 - `WORK_DECOMPOSITION.md`
 - `DECISION_LOG.md`
 

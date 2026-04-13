@@ -111,6 +111,7 @@ pub struct AttachmentMetadata {
     pub filename: Option<String>,
     pub content_type: String,
     pub disposition: AttachmentDisposition,
+    pub content_id: Option<String>,
     pub size_hint_bytes: usize,
 }
 
@@ -175,6 +176,12 @@ impl MimeAnalyzer {
                 self.policy.header_value_max_len,
             )?
             .as_deref(),
+            extract_header_value(
+                &unfolded_headers,
+                "Content-ID",
+                self.policy.header_value_max_len,
+            )?
+            .as_deref(),
             &message.body_text,
             "1",
             0,
@@ -215,6 +222,11 @@ impl MimeAnalyzer {
                 disposition_header: extract_header_value(
                     &unfolded_headers,
                     "Content-Disposition",
+                    self.policy.header_value_max_len,
+                )?,
+                content_id_header: extract_header_value(
+                    &unfolded_headers,
+                    "Content-ID",
                     self.policy.header_value_max_len,
                 )?,
                 transfer_encoding_header: extract_header_value(
@@ -260,6 +272,7 @@ struct ParsedPart {
 struct EntitySearchInput<'a> {
     content_type: &'a ParsedHeaderValue,
     disposition_header: Option<String>,
+    content_id_header: Option<String>,
     transfer_encoding_header: Option<String>,
     body_text: &'a str,
     part_path: &'a str,
@@ -270,6 +283,7 @@ fn analyze_entity(
     policy: MimeAnalysisPolicy,
     content_type: &ParsedHeaderValue,
     disposition_header: Option<&str>,
+    content_id_header: Option<&str>,
     body_text: &str,
     part_path: &str,
     depth: usize,
@@ -277,6 +291,7 @@ fn analyze_entity(
     let disposition = parse_header_value(disposition_header.unwrap_or(""), policy)?;
     let filename = extract_filename(policy, content_type, &disposition)?;
     let disposition_kind = classify_disposition(&disposition);
+    let content_id = normalize_content_id(content_id_header, policy)?;
 
     // Multipart entities are inspected recursively, but only to a bounded
     // depth and part count so hostile messages cannot create unreviewable work.
@@ -328,6 +343,8 @@ fn analyze_entity(
                     policy.header_value_max_len,
                 )?
                 .as_deref(),
+                extract_header_value(&unfolded_headers, "Content-ID", policy.header_value_max_len)?
+                    .as_deref(),
                 &part.body_text,
                 &part.part_path,
                 depth + 1,
@@ -374,6 +391,7 @@ fn analyze_entity(
                 filename,
                 content_type: content_type.value.clone(),
                 disposition: disposition_kind,
+                content_id,
                 size_hint_bytes: body_text.len(),
             }],
         });
@@ -429,6 +447,7 @@ fn find_attachment_part_in_entity(
         parse_header_value(entity.disposition_header.as_deref().unwrap_or(""), policy)?;
     let filename = extract_filename(policy, entity.content_type, &disposition)?;
     let disposition_kind = classify_disposition(&disposition);
+    let content_id = normalize_content_id(entity.content_id_header.as_deref(), policy)?;
 
     if entity.content_type.value.starts_with("multipart/") {
         if depth >= policy.max_depth {
@@ -459,6 +478,11 @@ fn find_attachment_part_in_entity(
                     disposition_header: extract_header_value(
                         &unfolded_headers,
                         "Content-Disposition",
+                        policy.header_value_max_len,
+                    )?,
+                    content_id_header: extract_header_value(
+                        &unfolded_headers,
+                        "Content-ID",
                         policy.header_value_max_len,
                     )?,
                     transfer_encoding_header: extract_header_value(
@@ -492,6 +516,7 @@ fn find_attachment_part_in_entity(
                 filename,
                 content_type: entity.content_type.value.clone(),
                 disposition: disposition_kind,
+                content_id,
                 size_hint_bytes: entity.body_text.len(),
             },
             transfer_encoding: normalize_transfer_encoding(
@@ -698,6 +723,51 @@ fn extract_filename(
     }
 
     Ok(None)
+}
+
+/// Extracts one bounded Content-ID value without surrounding angle brackets.
+fn normalize_content_id(
+    raw_value: Option<&str>,
+    policy: MimeAnalysisPolicy,
+) -> Result<Option<String>, MimeAnalysisError> {
+    let Some(raw_value) = raw_value else {
+        return Ok(None);
+    };
+
+    let trimmed = raw_value.trim();
+    if trimmed.is_empty() {
+        return Ok(None);
+    }
+
+    if trimmed.len() > policy.header_value_max_len {
+        return Err(MimeAnalysisError {
+            reason: format!(
+                "content-id exceeded maximum length of {} bytes",
+                policy.header_value_max_len
+            ),
+        });
+    }
+
+    let normalized = trimmed
+        .strip_prefix('<')
+        .and_then(|value| value.strip_suffix('>'))
+        .unwrap_or(trimmed)
+        .trim();
+
+    if normalized.is_empty() {
+        return Ok(None);
+    }
+
+    if normalized
+        .chars()
+        .any(|ch| ch.is_control() || ch.is_whitespace())
+    {
+        return Err(MimeAnalysisError {
+            reason: "content-id contained unsupported characters".to_string(),
+        });
+    }
+
+    Ok(Some(normalized.to_string()))
 }
 
 /// Maps the disposition header into a bounded canonical enum.
@@ -959,6 +1029,7 @@ mod tests {
             analysis.attachments[0].disposition,
             AttachmentDisposition::Attachment
         );
+        assert_eq!(analysis.attachments[0].content_id.as_deref(), None);
     }
 
     #[test]
@@ -1005,6 +1076,36 @@ mod tests {
             analysis.attachments[0].disposition,
             AttachmentDisposition::Inline
         );
+        assert_eq!(analysis.attachments[0].content_id.as_deref(), None);
+    }
+
+    #[test]
+    fn surfaces_content_id_metadata_for_inline_image_parts() {
+        let analyzer = MimeAnalyzer::new(MimeAnalysisPolicy::default());
+        let analysis = analyzer
+            .analyze_message(&message_view(
+                "Subject: Test\nContent-Type: multipart/related; boundary=\"rel-1\"\n",
+                concat!(
+                    "--rel-1\n",
+                    "Content-Type: text/html; charset=utf-8\n",
+                    "\n",
+                    "<html><body><img src=\"cid:chart@example.com\"></body></html>\n",
+                    "--rel-1\n",
+                    "Content-Type: image/png; name=\"chart.png\"\n",
+                    "Content-Disposition: inline; filename=\"chart.png\"\n",
+                    "Content-ID: <chart@example.com>\n",
+                    "\n",
+                    "PNGDATA\n",
+                    "--rel-1--\n",
+                ),
+            ))
+            .expect("analysis should succeed");
+
+        assert_eq!(analysis.attachments.len(), 1);
+        assert_eq!(
+            analysis.attachments[0].content_id.as_deref(),
+            Some("chart@example.com")
+        );
     }
 
     #[test]
@@ -1034,6 +1135,7 @@ mod tests {
             .expect("attachment should exist");
 
         assert_eq!(part.metadata.filename.as_deref(), Some("report.pdf"));
+        assert_eq!(part.metadata.content_id.as_deref(), None);
         assert_eq!(part.transfer_encoding, "base64");
         assert_eq!(part.body_text, "SGVsbG8=");
     }
