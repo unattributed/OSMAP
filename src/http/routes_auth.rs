@@ -237,6 +237,7 @@ where
                 Err(response) => return response,
             };
         if let Some(response) = self.require_valid_csrf(
+            request,
             form.get("csrf_token").map(String::as_str),
             &validated_session,
             context,
@@ -379,6 +380,7 @@ where
             audit_events.extend(validation.audit_events.clone());
             if let BrowserSessionDecision::Valid { validated_session } = validation.decision {
                 if let Some(response) = self.require_valid_csrf(
+                    request,
                     form.get("csrf_token").map(String::as_str),
                     validated_session.as_ref(),
                     context,
@@ -442,6 +444,7 @@ where
     /// Validates the CSRF token for authenticated state-changing routes.
     pub(super) fn require_valid_csrf(
         &self,
+        request: &HttpRequest,
         submitted_token: Option<&str>,
         validated_session: &ValidatedSession,
         context: &AuthenticationContext,
@@ -483,6 +486,132 @@ where
             });
         }
 
+        if let Some(response) =
+            self.require_same_origin_request(request, validated_session, context)
+        {
+            return Some(response);
+        }
+
         None
+    }
+
+    fn require_same_origin_request(
+        &self,
+        request: &HttpRequest,
+        validated_session: &ValidatedSession,
+        context: &AuthenticationContext,
+    ) -> Option<HandledHttpResponse> {
+        let expected_host = request.headers.get("host")?.to_ascii_lowercase();
+
+        if let Some(origin) = request.headers.get("origin") {
+            return validate_same_origin_header(
+                SameOriginHeaderKind::Origin,
+                origin,
+                &expected_host,
+                validated_session,
+                context,
+            );
+        }
+
+        if let Some(referer) = request.headers.get("referer") {
+            return validate_same_origin_header(
+                SameOriginHeaderKind::Referer,
+                referer,
+                &expected_host,
+                validated_session,
+                context,
+            );
+        }
+
+        Some(rejected_same_origin_response(
+            "http_same_origin_missing",
+            "same-origin request metadata missing from state-changing request",
+            context,
+            validated_session,
+        ))
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum SameOriginHeaderKind {
+    Origin,
+    Referer,
+}
+
+fn validate_same_origin_header(
+    header_kind: SameOriginHeaderKind,
+    value: &str,
+    expected_host: &str,
+    validated_session: &ValidatedSession,
+    context: &AuthenticationContext,
+) -> Option<HandledHttpResponse> {
+    let Some(header_host) = extract_absolute_uri_authority(value) else {
+        let (action, message) = match header_kind {
+            SameOriginHeaderKind::Origin => (
+                "http_origin_invalid",
+                "origin header was not a valid absolute http(s) uri",
+            ),
+            SameOriginHeaderKind::Referer => (
+                "http_referer_invalid",
+                "referer header was not a valid absolute http(s) uri",
+            ),
+        };
+        return Some(rejected_same_origin_response(
+            action,
+            message,
+            context,
+            validated_session,
+        ));
+    };
+
+    if header_host != expected_host {
+        let (action, message) = match header_kind {
+            SameOriginHeaderKind::Origin => (
+                "http_origin_mismatch",
+                "origin header did not match request host",
+            ),
+            SameOriginHeaderKind::Referer => (
+                "http_referer_mismatch",
+                "referer header did not match request host",
+            ),
+        };
+        return Some(rejected_same_origin_response(
+            action,
+            message,
+            context,
+            validated_session,
+        ));
+    }
+
+    None
+}
+
+fn extract_absolute_uri_authority(value: &str) -> Option<String> {
+    let remainder = value
+        .strip_prefix("https://")
+        .or_else(|| value.strip_prefix("http://"))?;
+    let authority = remainder.split(['/', '?', '#']).next()?.trim();
+    if authority.is_empty() || authority.contains('@') || authority.contains('\\') {
+        return None;
+    }
+
+    Some(authority.to_ascii_lowercase())
+}
+
+fn rejected_same_origin_response(
+    action: &'static str,
+    message: &'static str,
+    context: &AuthenticationContext,
+    validated_session: &ValidatedSession,
+) -> HandledHttpResponse {
+    HandledHttpResponse {
+        response: html_response(
+            403,
+            "Forbidden",
+            "Request Origin Rejected",
+            "<p>The request did not include accepted same-origin request metadata.</p>",
+        ),
+        audit_events: vec![build_http_warning_event(action, message, context)
+            .with_field("session_id", validated_session.record.session_id.clone())],
     }
 }

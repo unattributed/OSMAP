@@ -3519,3 +3519,35 @@ Validation for this change was:
 - local `make security-check`
 - host `maint/live/osmap-live-validate-login-send.ksh` on
   `mail.blackbagsecurity.com`
+
+### Require same-origin request metadata on authenticated POST routes
+
+OSMAP previously relied on per-session CSRF tokens plus `SameSite=Strict`
+cookies for authenticated POST routes. That was already a meaningful primary
+control, but it left the browser mutation surface without an explicit same-
+origin header check.
+
+The authenticated POST boundary now tightens that posture:
+
+- `POST /send`, `POST /message/move`, `POST /sessions/revoke`,
+  `POST /settings`, and `POST /logout` still require the current per-session
+  CSRF token
+- those same routes now also require same-origin request metadata
+- `Origin` is preferred when present
+- `Referer` is accepted only as a fallback when `Origin` is absent
+- malformed or cross-origin metadata is rejected before route mutation occurs
+
+This was chosen as the smallest correct fix because it adds one narrow browser
+integrity check without changing cookie handling, form shapes, or the existing
+state-changing route layout.
+
+Validation for this change was:
+
+- route coverage for same-origin success, missing-header rejection,
+  same-origin-`Referer` fallback, and cross-origin rejection across the
+  authenticated POST surface
+- local `make security-check`
+- host `maint/live/osmap-run-v1-closeout-with-temporary-validation-password.sh login-send`
+  plus the updated repo-owned `POST /send`, `POST /message/move`,
+  `POST /sessions/revoke`, `POST /settings`, and `POST /logout` validators on
+  `mail.blackbagsecurity.com`

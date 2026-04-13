@@ -54,9 +54,10 @@
   controls and richer anomaly handling still depend on adjacent defenses such
   as nginx, PF, and operator monitoring
 - The remaining authenticated POST routes in the current browser surface
-  (`/settings`, `/sessions/revoke`, and `/logout`) are CSRF-bound and much
-  lower abuse value than login, send, or message move, so the next hardening
-  win is unlikely to be another narrow per-route throttle
+  (`/settings`, `/sessions/revoke`, and `/logout`) are now both CSRF-bound and
+  same-origin-bound and remain much lower abuse value than login, send, or
+  message move, so the next hardening win is unlikely to be another narrow
+  per-route throttle
 - A formal migration baseline now exists, but no Roundcube migration rehearsal
   or end-user pilot has been completed yet
 - The existing host is multi-purpose, which constrains how aggressively the

@@ -114,6 +114,8 @@ The current browser slice follows these rules:
 - keep the session cookie `SameSite=Strict`
 - set `Secure` on the session cookie outside development
 - require per-session CSRF tokens on current state-changing browser routes
+- require same-origin request metadata on authenticated POST routes, preferring
+  `Origin` and falling back to same-origin `Referer` only when needed
 - use `Cache-Control: no-store` on sensitive responses
 - send a restrictive content-security policy
 - send `Referrer-Policy: no-referrer`

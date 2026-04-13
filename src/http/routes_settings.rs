@@ -119,6 +119,7 @@ where
                 Err(response) => return response,
             };
         if let Some(response) = self.require_valid_csrf(
+            request,
             form.get("csrf_token").map(String::as_str),
             &validated_session,
             context,

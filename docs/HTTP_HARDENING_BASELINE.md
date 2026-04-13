@@ -141,6 +141,8 @@ That token is:
 - rendered into state-changing forms
 - required for `POST /send`
 - required for `POST /logout`
+- paired with same-origin `Origin` validation, with same-origin `Referer`
+  accepted only as a fallback when `Origin` is absent
 - compared with a constant-time byte comparison helper
 - derived with a separate SHA-256-based label from the bearer token so it does
   not reuse the persisted session identifier value

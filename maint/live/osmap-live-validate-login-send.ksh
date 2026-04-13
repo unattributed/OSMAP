@@ -304,6 +304,7 @@ request_post() {
     if [ -n "${cookie_value}" ]; then
       printf 'Cookie: osmap_session=%s\r\n' "${cookie_value}"
     fi
+    printf 'Origin: https://127.0.0.1\r\n'
     printf 'Content-Type: application/x-www-form-urlencoded\r\n'
     printf 'Content-Length: %s\r\n' "${content_length}"
     printf 'Connection: close\r\n'

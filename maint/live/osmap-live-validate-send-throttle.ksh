@@ -230,6 +230,7 @@ post_send() {
     printf 'Host: 127.0.0.1\r\n'
     printf 'User-Agent: %s\r\n' "${USER_AGENT}"
     printf 'Cookie: osmap_session=%s\r\n' "${SESSION_TOKEN}"
+    printf 'Origin: https://127.0.0.1\r\n'
     printf 'Content-Type: application/x-www-form-urlencoded\r\n'
     printf 'Content-Length: %s\r\n' "${content_length}"
     printf 'Connection: close\r\n'

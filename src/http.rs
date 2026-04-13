@@ -992,6 +992,38 @@ mod tests {
         String::from_utf8_lossy(&response.response.body).into_owned()
     }
 
+    fn authenticated_headers() -> [(&'static str, &'static str); 2] {
+        [
+            ("User-Agent", "Firefox/Test"),
+            (
+                "Cookie",
+                "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            ),
+        ]
+    }
+
+    fn authenticated_same_origin_headers() -> [(&'static str, &'static str); 3] {
+        [
+            ("User-Agent", "Firefox/Test"),
+            (
+                "Cookie",
+                "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            ),
+            ("Origin", "https://localhost"),
+        ]
+    }
+
+    fn authenticated_same_origin_referer_headers() -> [(&'static str, &'static str); 3] {
+        [
+            ("User-Agent", "Firefox/Test"),
+            (
+                "Cookie",
+                "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            ),
+            ("Referer", "https://localhost/settings"),
+        ]
+    }
+
     #[test]
     fn parses_basic_http_requests() {
         let request = parse_http_request(
@@ -1527,13 +1559,7 @@ mod tests {
             &request(
                 "POST",
                 "/message/move",
-                &[
-                    ("User-Agent", "Firefox/Test"),
-                    (
-                        "Cookie",
-                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-                    ),
-                ],
+                &authenticated_same_origin_headers(),
                 "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=9&destination_mailbox=Archive%2F2026",
             ),
             "127.0.0.1",
@@ -1739,13 +1765,7 @@ mod tests {
             &request(
                 "POST",
                 "/send",
-                &[
-                    ("User-Agent", "Firefox/Test"),
-                    (
-                        "Cookie",
-                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-                    ),
-                ],
+                &authenticated_headers(),
                 "to=bob%40example.com&subject=Test&body=Hello",
             ),
             "127.0.0.1",
@@ -1761,13 +1781,7 @@ mod tests {
             &request(
                 "POST",
                 "/send",
-                &[
-                    ("User-Agent", "Firefox/Test"),
-                    (
-                        "Cookie",
-                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-                    ),
-                ],
+                &authenticated_same_origin_headers(),
                 "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&to=bob%40example.com&subject=Test&body=Hello",
             ),
             "127.0.0.1",
@@ -1787,13 +1801,7 @@ mod tests {
             &request(
                 "POST",
                 "/send",
-                &[
-                    ("User-Agent", "Firefox/Test"),
-                    (
-                        "Cookie",
-                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-                    ),
-                ],
+                &authenticated_same_origin_headers(),
                 "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&to=locked%40example.com&subject=Test&body=Hello",
             ),
             "127.0.0.1",
@@ -1814,13 +1822,7 @@ mod tests {
             &request(
                 "POST",
                 "/message/move",
-                &[
-                    ("User-Agent", "Firefox/Test"),
-                    (
-                        "Cookie",
-                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-                    ),
-                ],
+                &authenticated_same_origin_headers(),
                 "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=9&destination_mailbox=Locked",
             ),
             "127.0.0.1",
@@ -1841,13 +1843,7 @@ mod tests {
             &request(
                 "POST",
                 "/sessions/revoke",
-                &[
-                    ("User-Agent", "Firefox/Test"),
-                    (
-                        "Cookie",
-                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-                    ),
-                ],
+                &authenticated_same_origin_headers(),
                 "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&session_id=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             ),
             "127.0.0.1",
@@ -1867,13 +1863,7 @@ mod tests {
             &request(
                 "POST",
                 "/sessions/revoke",
-                &[
-                    ("User-Agent", "Firefox/Test"),
-                    (
-                        "Cookie",
-                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-                    ),
-                ],
+                &authenticated_same_origin_headers(),
                 "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&session_id=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
             ),
             "127.0.0.1",
@@ -1898,13 +1888,7 @@ mod tests {
             &request(
                 "POST",
                 "/settings",
-                &[
-                    ("User-Agent", "Firefox/Test"),
-                    (
-                        "Cookie",
-                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-                    ),
-                ],
+                &authenticated_same_origin_headers(),
                 "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&html_display_preference=prefer_plain_text&archive_mailbox_name=Archive%2F2026",
             ),
             "127.0.0.1",
@@ -1924,13 +1908,7 @@ mod tests {
             &request(
                 "POST",
                 "/settings",
-                &[
-                    ("User-Agent", "Firefox/Test"),
-                    (
-                        "Cookie",
-                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-                    ),
-                ],
+                &authenticated_same_origin_headers(),
                 "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&html_display_preference=prefer_plain_text&archive_mailbox_name=Archive%0A2026",
             ),
             "127.0.0.1",
@@ -1973,6 +1951,7 @@ mod tests {
                         "Cookie",
                         "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                     ),
+                    ("Origin", "https://localhost"),
                     ("Content-Type", "multipart/form-data; boundary=test-boundary"),
                 ],
                 &multipart_body,
@@ -1994,13 +1973,7 @@ mod tests {
             &request(
                 "POST",
                 "/logout",
-                &[
-                    ("User-Agent", "Firefox/Test"),
-                    (
-                        "Cookie",
-                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-                    ),
-                ],
+                &authenticated_same_origin_headers(),
                 "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210",
             ),
             "127.0.0.1",
@@ -2026,6 +1999,7 @@ mod tests {
                         "Cookie",
                         "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                     ),
+                    ("Origin", "https://localhost"),
                     ("Content-Type", "multipart/form-data; boundary=test-boundary"),
                 ],
                 "--test-boundary--\r\n",
@@ -2035,6 +2009,88 @@ mod tests {
 
         assert_eq!(response.response.status_code, 400);
         assert!(body_text(&response).contains("content type was not supported"));
+    }
+
+    #[test]
+    fn settings_update_requires_same_origin_request_metadata() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/settings",
+                &authenticated_headers(),
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&html_display_preference=prefer_plain_text",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 403);
+        assert!(body_text(&response).contains("Request Origin Rejected"));
+    }
+
+    #[test]
+    fn settings_update_accepts_same_origin_referer_when_origin_is_absent() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/settings",
+                &authenticated_same_origin_referer_headers(),
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&html_display_preference=prefer_plain_text&archive_mailbox_name=Archive%2F2026",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 303);
+        assert!(response
+            .response
+            .headers
+            .iter()
+            .any(|(name, value)| name == "Location" && value == "/settings?updated=1"));
+    }
+
+    #[test]
+    fn authenticated_post_routes_reject_cross_origin_headers() {
+        for (path, body) in [
+            (
+                "/send",
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&to=bob%40example.com&subject=Test&body=Hello",
+            ),
+            (
+                "/message/move",
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=9&destination_mailbox=Archive%2F2026",
+            ),
+            (
+                "/sessions/revoke",
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&session_id=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            ),
+            (
+                "/settings",
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&html_display_preference=prefer_plain_text",
+            ),
+            (
+                "/logout",
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210",
+            ),
+        ] {
+            let response = app().handle_request(
+                &request(
+                    "POST",
+                    path,
+                    &[
+                        ("User-Agent", "Firefox/Test"),
+                        (
+                            "Cookie",
+                            "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                        ),
+                        ("Origin", "https://evil.example"),
+                    ],
+                    body,
+                ),
+                "127.0.0.1",
+            );
+
+            assert_eq!(response.response.status_code, 403, "route {path} should reject");
+            assert!(body_text(&response).contains("Request Origin Rejected"));
+        }
     }
 
     #[test]
