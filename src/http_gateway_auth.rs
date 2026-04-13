@@ -118,7 +118,8 @@ impl RuntimeBrowserGateway {
 
         match auth_outcome.decision {
             AuthenticationDecision::Denied { public_reason } => {
-                let mut effective_public_reason = public_reason.as_str().to_string();
+                let mut effective_public_reason =
+                    normalized_login_public_reason(public_reason).to_string();
                 if public_reason == PublicFailureReason::InvalidCredentials {
                     match throttle_service.record_failure(context, username) {
                         Ok(record) => {
@@ -160,7 +161,8 @@ impl RuntimeBrowserGateway {
 
                 match factor_outcome.decision {
                     AuthenticationDecision::Denied { public_reason } => {
-                        let mut effective_public_reason = public_reason.as_str().to_string();
+                        let mut effective_public_reason =
+                            normalized_login_public_reason(public_reason).to_string();
                         if public_reason == PublicFailureReason::InvalidSecondFactor {
                             match throttle_service.record_failure(context, username) {
                                 Ok(record) => {
@@ -448,5 +450,43 @@ impl RuntimeBrowserGateway {
                 .with_field("reason", session_error_label(&error))],
             },
         }
+    }
+}
+
+fn normalized_login_public_reason(public_reason: PublicFailureReason) -> &'static str {
+    match public_reason {
+        PublicFailureReason::InvalidSecondFactor => {
+            PublicFailureReason::InvalidCredentials.as_str()
+        }
+        _ => public_reason.as_str(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn normalizes_second_factor_rejection_to_generic_login_failure_reason() {
+        assert_eq!(
+            normalized_login_public_reason(PublicFailureReason::InvalidSecondFactor),
+            PublicFailureReason::InvalidCredentials.as_str()
+        );
+    }
+
+    #[test]
+    fn preserves_non_second_factor_login_failure_reasons() {
+        assert_eq!(
+            normalized_login_public_reason(PublicFailureReason::InvalidCredentials),
+            PublicFailureReason::InvalidCredentials.as_str()
+        );
+        assert_eq!(
+            normalized_login_public_reason(PublicFailureReason::InvalidRequest),
+            PublicFailureReason::InvalidRequest.as_str()
+        );
+        assert_eq!(
+            normalized_login_public_reason(PublicFailureReason::TemporarilyUnavailable),
+            PublicFailureReason::TemporarilyUnavailable.as_str()
+        );
     }
 }

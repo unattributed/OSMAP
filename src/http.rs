@@ -408,27 +408,8 @@ mod tests {
             password: &str,
             totp_code: &str,
         ) -> BrowserLoginOutcome {
-            if username == "alice@example.com"
-                && password == "correct horse battery staple"
-                && totp_code == "123456"
-            {
-                BrowserLoginOutcome {
-                    decision: BrowserLoginDecision::Authenticated {
-                        canonical_username: username.to_string(),
-                        session_token: SessionToken::new(
-                            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-                        )
-                        .expect("token should be valid"),
-                    },
-                    audit_events: vec![LogEvent::new(
-                        LogLevel::Info,
-                        EventCategory::Auth,
-                        "stub_login_ok",
-                        "stub login accepted",
-                    )],
-                }
-            } else {
-                BrowserLoginOutcome {
+            if username != "alice@example.com" || password != "correct horse battery staple" {
+                return BrowserLoginOutcome {
                     decision: BrowserLoginDecision::Denied {
                         public_reason: "invalid_credentials".to_string(),
                     },
@@ -438,7 +419,37 @@ mod tests {
                         "stub_login_denied",
                         "stub login denied",
                     )],
-                }
+                };
+            }
+
+            if totp_code != "123456" {
+                return BrowserLoginOutcome {
+                    decision: BrowserLoginDecision::Denied {
+                        public_reason: "invalid_credentials".to_string(),
+                    },
+                    audit_events: vec![LogEvent::new(
+                        LogLevel::Warn,
+                        EventCategory::Auth,
+                        "stub_second_factor_denied",
+                        "stub second factor denied",
+                    )],
+                };
+            }
+
+            BrowserLoginOutcome {
+                decision: BrowserLoginDecision::Authenticated {
+                    canonical_username: username.to_string(),
+                    session_token: SessionToken::new(
+                        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    )
+                    .expect("token should be valid"),
+                },
+                audit_events: vec![LogEvent::new(
+                    LogLevel::Info,
+                    EventCategory::Auth,
+                    "stub_login_ok",
+                    "stub login accepted",
+                )],
             }
         }
 
@@ -1044,6 +1055,36 @@ mod tests {
             .iter()
             .any(|(name, value)| name == "Set-Cookie"
                 && value.contains("osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")));
+    }
+
+    #[test]
+    fn login_failure_banner_is_identical_for_wrong_password_and_wrong_totp() {
+        let app = app();
+        let wrong_password_request = request(
+            "POST",
+            "/login",
+            &[("content-type", "application/x-www-form-urlencoded")],
+            "username=alice%40example.com&password=wrong&totp_code=123456",
+        );
+        let wrong_totp_request = request(
+            "POST",
+            "/login",
+            &[("content-type", "application/x-www-form-urlencoded")],
+            "username=alice%40example.com&password=correct+horse+battery+staple&totp_code=000000",
+        );
+
+        let wrong_password = app.handle_request(&wrong_password_request, "127.0.0.1");
+        let wrong_totp = app.handle_request(&wrong_totp_request, "127.0.0.1");
+        let wrong_password_body =
+            String::from_utf8(wrong_password.response.body).expect("body should be utf-8");
+        let wrong_totp_body =
+            String::from_utf8(wrong_totp.response.body).expect("body should be utf-8");
+
+        assert_eq!(wrong_password.response.status_code, 401);
+        assert_eq!(wrong_totp.response.status_code, 401);
+        assert!(wrong_password_body.contains("The supplied credentials were not accepted."));
+        assert!(wrong_totp_body.contains("The supplied credentials were not accepted."));
+        assert!(!wrong_totp_body.contains("second-factor code was not accepted"));
     }
 
     #[test]

@@ -140,7 +140,7 @@ pub(crate) fn public_reason_message(reason: &str) -> &'static str {
     match reason {
         "invalid_credentials" => "The supplied credentials were not accepted.",
         "invalid_request" => "The submitted request was not valid.",
-        "invalid_second_factor" => "The submitted second-factor code was not accepted.",
+        "invalid_second_factor" => "The supplied credentials were not accepted.",
         "too_many_attempts" => "Too many login attempts were observed. Please try again later.",
         "too_many_submissions" => {
             "Too many outbound submissions were observed. Please try again later."

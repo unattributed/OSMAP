@@ -59,6 +59,9 @@ The current browser runtime enforces:
 - rejection of POST requests that omit `Content-Length`
 - rejection of unsupported login/logout form content types instead of guessing
   at non-URL-encoded bodies
+- one generic browser-visible login failure banner for wrong passwords and
+  wrong second-factor codes, so the browser surface does not reveal which stage
+  rejected the submitted credential set
 - rejection of non-canonical request-path forms such as repeated slashes,
   trailing-slash aliases, and dot segments
 - rejection of fragment-bearing or otherwise ambiguous request targets

@@ -3429,3 +3429,37 @@ Validation for this change was:
 - local `make security-check`
 - host `maint/live/osmap-live-validate-helper-peer-auth.ksh` on
   `mail.blackbagsecurity.com`
+
+### Normalize browser-visible login failures across password and TOTP rejection
+
+OSMAP previously returned different browser-visible login failure banners for
+wrong passwords versus wrong second-factor codes. That gave the browser surface
+more authentication-stage detail than it needed.
+
+OSMAP now keeps the underlying auth and audit model intact while tightening the
+browser-facing result:
+
+- wrong passwords and wrong second-factor codes both render the same generic
+  credential-failure banner
+- audit events still distinguish primary-auth denial from second-factor denial
+- malformed requests and lockout responses remain distinct so the browser still
+  surfaces genuinely different request and abuse states
+- the repository now carries
+  `maint/live/osmap-live-validate-login-failure-normalization.ksh` so
+  `mail.blackbagsecurity.com` can prove the normalized failure banner and still
+  confirm that a correct password-plus-TOTP login succeeds in the same
+  isolated runtime
+
+This was chosen instead of flattening the internal auth model because the
+project still benefits from stage-specific audit records and tests. The smaller
+correct fix is to collapse the browser-visible semantics while keeping the
+operator-visible evidence.
+
+Validation for this change was:
+
+- targeted unit coverage for login-failure public-reason normalization
+- route coverage proving wrong-password and wrong-TOTP browser responses render
+  the same failure banner
+- local `make security-check`
+- host `maint/live/osmap-live-validate-login-failure-normalization.ksh` on
+  `mail.blackbagsecurity.com`

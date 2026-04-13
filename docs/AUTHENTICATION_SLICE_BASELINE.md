@@ -97,6 +97,10 @@ The auth slice follows these rules:
   authenticated session
 - second-factor success leads to an authenticated-pending-session decision, not
   a silent implicit session
+- browser-visible login failure messaging is intentionally normalized so wrong
+  passwords and wrong second-factor codes both surface the same generic
+  credential-failure banner even though the audit trail keeps the stages
+  distinct underneath
 
 ## Current Backend Integration
 
@@ -149,6 +153,11 @@ The host-side validation currently proves two bounded claims:
   so the same live host can prove real password-plus-TOTP login and one real
   browser send through a repo-owned harness instead of only through earlier
   ad hoc operator steps
+- the repository now also carries
+  `maint/live/osmap-live-validate-login-failure-normalization.ksh` so the live
+  host can prove wrong-password and wrong-TOTP submissions now render the same
+  browser-visible failure banner while a correct password-plus-TOTP login still
+  succeeds through the same isolated runtime
 
 That is intentionally narrower than claiming the full auth workflow is already
 validated in production-like conditions.
