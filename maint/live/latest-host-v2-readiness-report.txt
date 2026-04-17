@@ -1,0 +1,15 @@
+osmap_v2_readiness_result=passed
+project_root=/home/foo/OSMAP
+step_count=11
+steps=
+security-check=passed
+login-send=passed
+login-failure-normalization=passed
+all-mailbox-search=passed
+archive-shortcut=passed
+session-surface=passed
+send-throttle=passed
+move-throttle=passed
+helper-peer-auth=passed
+request-guardrails=passed
+mailbox-backend-unavailable=passed
