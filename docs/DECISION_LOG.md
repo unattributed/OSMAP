@@ -3759,3 +3759,22 @@ The live proof harness now derives `session_id` the same way the runtime does:
 This was chosen instead of weakening the request-guardrail expectations because
 the correct fix was to make the synthetic proof session match runtime reality,
 not to lower the hostile-path gate.
+
+### Fix the live V2 mailbox-backend-unavailable proof to use the persisted session id format
+
+The next real tail-step rehearsal surfaced the same class of harness mistake in
+`maint/live/osmap-live-validate-mailbox-backend-unavailable.ksh`. That proof
+was still writing the raw browser cookie token as `session_id`, so the browser
+request to `/mailboxes` never reached the intended helper-unavailable path and
+was redirected to `/login` instead.
+
+The proof harness now derives the persisted session id the same way the runtime
+does:
+
+- `sha256("session-id:" + session_token)` for `session_id`
+- `sha256("csrf:" + session_token)` for `csrf_token`
+
+This was chosen instead of relaxing the bounded-backend-unavailable check
+because the runtime behavior was correct; the proof harness needed to model a
+real authenticated session before it could honestly test the `503 Service
+Unavailable` path.

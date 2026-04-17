@@ -30,7 +30,7 @@ VALIDATION_USER="${OSMAP_VALIDATION_USER:-osmap-helper-validation@blackbagsecuri
 AUTH_SOCKET_PATH="${OSMAP_DOVEADM_AUTH_SOCKET_PATH:-/var/run/osmap-auth}"
 UNAVAILABLE_HELPER_SOCKET_PATH="${WORK_ROOT}/missing-helper.sock"
 SESSION_TOKEN="0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-SESSION_ID="${SESSION_TOKEN}"
+SESSION_ID="$(printf 'session-id:%s' "${SESSION_TOKEN}" | sha256 -q)"
 CSRF_TOKEN="$(printf 'csrf:%s' "${SESSION_TOKEN}" | sha256 -q)"
 USER_AGENT="osmap-live-mailbox-backend-unavailable"
 KEEP_WORK_ROOT="${OSMAP_KEEP_WORK_ROOT:-0}"
@@ -62,6 +62,7 @@ trap cleanup EXIT INT TERM
 require_tool cargo
 require_tool doas
 require_tool nc
+require_tool sha256
 require_tool grep
 require_tool sed
 require_tool awk
