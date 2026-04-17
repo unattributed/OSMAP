@@ -3738,3 +3738,24 @@ includes a dedicated regression test for the V2 helper path.
 This was chosen instead of merely documenting the off-host wrapper because the
 project needs the full V2 rehearsal path to be genuinely executable on
 `mail.blackbagsecurity.com`, not just described convincingly in docs.
+
+### Fix the live V2 request-guardrails proof to use a real derived session id
+
+The first real host-side Version 2 readiness run on `mail.blackbagsecurity.com`
+did exactly what it was supposed to do: it surfaced a harness bug instead of
+quietly producing misleading proof. The `request-guardrails` step was writing a
+synthetic session file whose `session_id` field matched the raw browser cookie
+token, but OSMAP persists session ids as a derived hash.
+
+That made the hostile-path POST probes look unauthenticated and redirected them
+to `/login` instead of exercising the authenticated CSRF and same-origin
+rejection paths.
+
+The live proof harness now derives `session_id` the same way the runtime does:
+
+- `sha256("session-id:" + session_token)` for the persisted session id
+- `sha256("csrf:" + session_token)` for the CSRF token
+
+This was chosen instead of weakening the request-guardrail expectations because
+the correct fix was to make the synthetic proof session match runtime reality,
+not to lower the hostile-path gate.

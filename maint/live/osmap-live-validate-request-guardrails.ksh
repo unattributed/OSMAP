@@ -37,7 +37,7 @@ AUTH_SOCKET_PATH="${OSMAP_DOVEADM_AUTH_SOCKET_PATH:-/var/run/osmap-auth}"
 TRUSTED_WEB_RUNTIME_UID="${OSMAP_TRUSTED_WEB_RUNTIME_UID:-$(id -u _osmap)}"
 USERDB_SOCKET_PATH="${OSMAP_DOVEADM_USERDB_SOCKET_PATH:-/var/run/osmap-userdb}"
 SESSION_TOKEN="0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-SESSION_ID="${SESSION_TOKEN}"
+SESSION_ID="$(printf 'session-id:%s' "${SESSION_TOKEN}" | sha256 -q)"
 CSRF_TOKEN="$(printf 'csrf:%s' "${SESSION_TOKEN}" | sha256 -q)"
 INVALID_CSRF_TOKEN="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 USER_AGENT="osmap-live-request-guardrails"
@@ -73,6 +73,7 @@ trap cleanup EXIT INT TERM
 require_tool cargo
 require_tool doas
 require_tool nc
+require_tool sha256
 require_tool grep
 require_tool sed
 require_tool awk
