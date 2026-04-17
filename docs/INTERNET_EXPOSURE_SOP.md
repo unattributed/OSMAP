@@ -19,6 +19,7 @@ reviewing it against the real host.
 The authoritative host-side assessment entrypoint is now:
 
 - `ksh ./maint/live/osmap-live-assess-internet-exposure.ksh`
+- `ksh ./maint/live/osmap-live-validate-edge-cutover.ksh` after the edge move
 
 ## Standard Inputs
 
@@ -59,17 +60,19 @@ The standard host checkout is:
    - PF ingress policy for public WAN, WireGuard, and loopback
    - TLS termination behavior and redirect posture
    - rollback posture if the browser surface must be narrowed again quickly
-5. Compare those observed host facts against every section in
+5. If the host claims to have applied the OSMAP edge move, run the repo-owned
+   edge-cutover verifier too and keep its report with the exposure review.
+6. Compare those observed host facts against every section in
    `INTERNET_EXPOSURE_CHECKLIST.md`.
-6. Update `INTERNET_EXPOSURE_STATUS.md` so it records:
+7. Update `INTERNET_EXPOSURE_STATUS.md` so it records:
    - the exact assessment date
    - the assessed host
    - the assessed repo snapshot
    - whether direct public browser exposure is approved or not approved
    - the factual blockers or conditions attached to that result
-7. If the result remains `not approved`, keep the current staged posture and
+8. If the result remains `not approved`, keep the current staged posture and
    record the narrowest concrete next requirements.
-8. If the result becomes `approved`, record the exact public edge shape, the
+9. If the result becomes `approved`, record the exact public edge shape, the
    rollback path, and the operator conditions under which that approval holds.
 
 ## Standard Commands

@@ -179,6 +179,7 @@ submission expansion.
    - `doas rcctl reload nginx`
    - `doas pfctl -f /etc/pf.conf`
 10. Re-run:
+   - `ksh ./maint/live/osmap-live-validate-edge-cutover.ksh`
    - `ksh ./maint/live/osmap-live-assess-internet-exposure.ksh`
    - the current Version 2 readiness wrapper
 11. Update `INTERNET_EXPOSURE_STATUS.md` with the post-cutover result.
@@ -215,6 +216,7 @@ A candidate cutover is not complete until all of the following are true:
 
 - nginx serves OSMAP at `https://mail.blackbagsecurity.com/`
 - the OSMAP backend remains reachable only through nginx and loopback
+- `maint/live/osmap-live-validate-edge-cutover.ksh` passes on the changed host
 - the current Version 2 readiness report still passes
 - the repo-owned exposure assessment reflects the new listener and PF posture
 - operator rollback remains available without privilege widening

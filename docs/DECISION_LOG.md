@@ -2,6 +2,27 @@
 
 ## 2026-04-17
 
+### Add a repo-owned verifier for the actual OSMAP edge cutover state
+
+Once `docs/EDGE_CUTOVER_PLAN.md` existed, the next exposure-readiness gap was
+no longer the absence of a plan. It was the absence of one repo-owned command
+that could tell operators whether the real host had actually applied that
+plan.
+
+OSMAP now carries `maint/live/osmap-live-validate-edge-cutover.ksh` plus a
+shared regression test in
+`maint/security/test-osmap-live-validate-edge-cutover.sh`. The wrapper checks:
+
+- the canonical nginx include swap from `roundcube.tmpl` to `osmap-root.tmpl`
+- the expected OSMAP root-template proxy shape
+- the planned HTTPS listener bindings
+- the PF change that allows WAN `443` while keeping the older broad mail-port
+  expansion out of scope
+
+This was chosen instead of performing the host cutover immediately because
+Version 2 still needed one repeatable, reviewable proof path for the edge
+state itself before the real public-browser move would be safe to claim.
+
 ### Define the exact OSMAP edge cutover and rollback plan for the validated host
 
 Once the repo had a Version 2 readiness gate and a repo-owned exposure

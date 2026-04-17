@@ -144,4 +144,7 @@ sh maint/security/test-osmap-run-v2-readiness-over-ssh.sh
 echo "==> validating internet exposure assessment wrapper behavior"
 sh maint/security/test-osmap-live-assess-internet-exposure.sh
 
+echo "==> validating edge cutover wrapper behavior"
+sh maint/security/test-osmap-live-validate-edge-cutover.sh
+
 echo "==> security-check complete"
