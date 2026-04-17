@@ -32,6 +32,9 @@ Version 2 is acceptable only when all of the following are true:
 - the candidate snapshot preserves the deliberate `_osmap` plus `vmail`
   least-privilege split, dedicated Dovecot socket model, and OpenBSD
   confinement posture
+- the validated host has a repo-owned rehearsal or apply path for installing
+  the split `_osmap` plus `vmail` service files instead of depending on ad hoc
+  service wiring
 - the repo-defined internet-exposure gate is satisfied before the candidate is
   described as suitable for direct public browser access
 - the migration, rollback, and pilot runbooks are concrete enough that a small
@@ -75,6 +78,8 @@ of the following must be true:
 
 - the criteria in `INTERNET_EXPOSURE_CHECKLIST.md` are satisfied
 - repo-owned current host exposure evidence exists for the candidate posture
+- the persistent `_osmap` plus `vmail` service install exists on the candidate
+  host before the public browser edge is switched away from Roundcube
 - the canonical nginx route replacement, PF/listener changes, and rollback
   path are defined concretely in `EDGE_CUTOVER_PLAN.md`
 - the repo-owned edge-cutover verifier passes for any host that claims the

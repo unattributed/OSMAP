@@ -3949,3 +3949,34 @@ This was chosen instead of waiting for a future edge-cutover attempt because
 the project needed a current factual baseline before making further direct
 public exposure changes. The repo can now compare future cutover work against a
 concrete before-state rather than against memory.
+
+### Add a repo-owned mail-host service enablement path before public edge cutover
+
+The first controlled edge-cutover rehearsal review exposed a more basic host
+readiness gap on `mail.blackbagsecurity.com`: the reviewed nginx and PF
+cutover artifacts now exist, but the host still did not have a persistent
+OSMAP service install at all.
+
+The observed host facts were:
+
+- `_osmap` and `vmail` exist
+- the dedicated Dovecot auth and userdb sockets exist
+- `/usr/local/bin/osmap` is not installed
+- `/etc/osmap` is absent
+- `/usr/local/libexec/osmap` is absent
+- `/etc/rc.d/osmap_serve` and `/etc/rc.d/osmap_mailbox_helper` are absent
+- no dedicated shared runtime group yet exists for the helper socket path
+
+The repository now adds:
+
+- `maint/openbsd/mail.blackbagsecurity.com/etc/osmap/osmap-serve.env`
+- `maint/openbsd/mail.blackbagsecurity.com/etc/osmap/osmap-mailbox-helper.env`
+- `maint/live/osmap-live-rehearse-service-enablement.ksh`
+- `docs/MAIL_HOST_SERVICE_ENABLEMENT_SOP.md`
+
+This was chosen instead of attempting the first real edge cutover because the
+host must first be able to run a persistent loopback OSMAP runtime under the
+reviewed `_osmap` plus `vmail` split. The new wrapper and SOP intentionally
+fail closed if the host still lacks the installed binary or the dedicated
+shared helper-socket group. They also record the security rule that `_osmap`
+must not be added to `vmail` as a shortcut.

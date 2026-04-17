@@ -10,10 +10,21 @@ validated host.
 
 The current artifact set is:
 
+- `etc/osmap/osmap-serve.env`
+- `etc/osmap/osmap-mailbox-helper.env`
 - `nginx/sites-enabled/main-ssl.conf`
 - `nginx/templates/osmap-root.tmpl`
 - `pf.anchors/macros.pf`
 - `pf.anchors/selfhost.pf`
 
-Use them when the host is ready for the reviewed OSMAP edge cutover. They are
-meant to replace hand-edited ad hoc changes during that move.
+The service env files are the reviewed `mail.blackbagsecurity.com` inputs for
+the split `_osmap` plus `vmail` runtime install. They are paired with the
+generic launchers and `rc.d` scripts under `maint/openbsd/` and the host-side
+wrapper `maint/live/osmap-live-rehearse-service-enablement.ksh`.
+
+Use these artifacts when the host is ready for:
+
+- reviewed OSMAP service installation under the split runtime users
+- reviewed OSMAP browser-edge cutover
+
+They are meant to replace hand-edited ad hoc changes during those moves.

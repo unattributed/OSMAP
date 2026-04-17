@@ -49,12 +49,19 @@ The current state is not a blank slate:
 - OSMAP host-side least-privilege assumptions are already present on the
   validated host, including `_osmap`, `vmail`, and the dedicated Dovecot auth
   and userdb listeners
+- the repo now also has a reviewed host-side service-enablement path for the
+  split `_osmap` plus `vmail` runtime install before edge cutover
 
 ## What Must Happen Before Reassessment
 
 Before this status can move to an approval result, the repo and the validated
 host still need all of the following:
 
+- the reviewed OSMAP service-install path must be applied and validated so the
+  host actually has `/usr/local/bin/osmap`, `/etc/osmap`, and the `rc.d`
+  service files required for a persistent loopback OSMAP runtime
+- the dedicated shared runtime group for the helper socket path must exist and
+  include `_osmap` without widening `_osmap` into `vmail`
 - the cutover steps in `EDGE_CUTOVER_PLAN.md` must be applied and validated so
   the canonical HTTPS route serves OSMAP, not Roundcube
 - the PF and listener changes in `EDGE_CUTOVER_PLAN.md` must be applied so the
