@@ -1,0 +1,86 @@
+# /etc/pf.anchors/selfhost.pf
+# anchor with rules for traffic that is specific to this self hosting mail host
+
+include "/etc/pf.anchors/macros.pf"
+
+########################################################################
+# 0. Suricata-assisted IPS guardrails (tables defined in pf.conf)
+########################################################################
+
+# Tables are fed by suricata_eve2pf.ksh (watch first, block later).
+# suricata_watch / suricata_block / suricata_allow are defined globally in pf.conf.
+
+# Allowlist before block to avoid accidental IPS impact on trusted sources.
+pass in quick on $ext_if inet from <suricata_allow> to any
+block in log quick on $ext_if inet from <suricata_block> to any
+
+########################################################################
+# 1. NAT for WireGuard clients (IPv4 only)
+########################################################################
+
+# clients on 10.44.0.0/24 go out to the internet via the external IPv4
+match out on $ext_if inet from $vpn_net to any nat-to ($ext_if) round-robin
+
+########################################################################
+# 2. WAN facing rules on the external interface (IPv4 and IPv6)
+########################################################################
+
+# 2.1 SSH from anywhere on the internet (rate limited, fed into <sshguard>)
+pass in quick on $ext_if inet proto tcp from any to ($ext_if) port $ssh_port \
+    flags S/SA \
+    keep state (max-src-conn-rate 10/60, overload <sshguard> flush global, \
+                source-track rule, if-bound, src.track 60)
+
+# 2.2 WireGuard listener on the public internet
+pass in quick on $ext_if inet proto udp from any to ($ext_if) port $wg_port \
+    keep state (if-bound)
+
+# SMTP ingress is handled in the spamd anchor (port 25 policy lives there)
+
+# 2.3 Public HTTPS for OSMAP at the canonical mail host root
+pass in quick on $ext_if inet proto tcp from any to ($ext_if) port = 443 \
+    flags S/SA synproxy state (if-bound)
+
+# 2.4 Explicitly drop the remaining end-user mail ports on the WAN
+# keep them reachable only via the reviewed browser edge or WireGuard
+block drop in log quick on $ext_if inet proto tcp from any \
+    to ($ext_if) port $wan_blocked_tcp_svcs
+
+########################################################################
+# 3. Services for WireGuard clients (10.44.0.0/24, IPv4 only)
+########################################################################
+
+# 3.1 Mail stack on the host itself, via WireGuard
+# - to the wg0 address
+pass in quick on $vpn_if inet proto tcp from $vpn_net to ($vpn_if) \
+    port $vpn_host_tcp_svcs \
+    flags S/SA synproxy state (if-bound)
+
+# - to the external interface address, helps when using MX or hostnames
+pass in quick on $vpn_if inet proto tcp from $vpn_net to ($ext_if) \
+    port $vpn_host_tcp_svcs \
+    flags S/SA keep state (if-bound)
+
+# 3.2 DNS and ICMP for VPN clients, host acts as DNS resolver
+pass in quick on $vpn_if inet proto tcp from $vpn_net to ($vpn_if) port $vpn_dns_svcs \
+    flags S/SA keep state (if-bound)
+
+pass in quick on $vpn_if inet proto udp from $vpn_net to ($vpn_if) port $vpn_dns_svcs \
+    keep state (if-bound)
+
+pass in quick on $vpn_if inet proto icmp from $vpn_net to ($vpn_if) \
+    keep state (if-bound)
+
+# 3.3 Prevent VPN clients from reaching other RFC1918 networks
+block drop in log quick on $vpn_if inet from $vpn_net \
+    to $vpn_banned_client_targets
+
+# 3.4 Allow VPN clients to reach anywhere else on the internet
+pass in quick on $vpn_if inet proto tcp from $vpn_net to any \
+    flags S/SA keep state (if-bound)
+
+pass in quick on $vpn_if inet proto udp from $vpn_net to any \
+    keep state (if-bound)
+
+pass in quick on $vpn_if inet proto icmp from $vpn_net to any \
+    keep state (if-bound)

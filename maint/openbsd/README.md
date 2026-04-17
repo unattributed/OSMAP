@@ -43,6 +43,10 @@ The current least-privilege OpenBSD posture is:
   value must match the dedicated `_osmap` UID expected on the host
 - the browser runtime reaches the helper over one local Unix socket
 
+For the validated `mail.blackbagsecurity.com` edge move from Roundcube to
+OSMAP, the reviewed host-specific browser-edge and PF artifacts now live under
+`maint/openbsd/mail.blackbagsecurity.com/`.
+
 The example env files in this directory use:
 
 - `/var/lib/osmap` as the web runtime state root

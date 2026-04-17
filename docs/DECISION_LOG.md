@@ -2,6 +2,29 @@
 
 ## 2026-04-17
 
+### Add reviewed nginx and PF cutover artifacts for the validated host
+
+Once the repo carried both an exact edge-cutover plan and a repo-owned wrapper
+to verify the resulting live edge state, the remaining operator-risk gap was
+manual editing. The actual host move still depended on hand-editing
+`main-ssl.conf`, `osmap-root.tmpl`, `macros.pf`, and `selfhost.pf` under
+pressure.
+
+OSMAP now carries reviewed host-specific cutover artifacts under
+`maint/openbsd/mail.blackbagsecurity.com/` for:
+
+- the canonical HTTPS vhost replacement
+- the OSMAP root nginx template
+- the PF macros file with WAN `443` removed from the blocked set
+- the PF selfhost anchor with the explicit public `443` pass rule
+
+The shared security gate now also includes a regression that checks those
+artifacts for the specific lines the current cutover plan depends on.
+
+This was chosen instead of moving straight to host cutover because Version 2
+still benefited more from removing operator improvisation than from making one
+unreviewed edge change faster.
+
 ### Add a repo-owned verifier for the actual OSMAP edge cutover state
 
 Once `docs/EDGE_CUTOVER_PLAN.md` existed, the next exposure-readiness gap was

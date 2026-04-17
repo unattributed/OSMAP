@@ -15,6 +15,13 @@ It defines:
 
 It is intentionally specific to the current validated host shape.
 
+The reviewed host-side artifact files for that cutover now live under:
+
+- `maint/openbsd/mail.blackbagsecurity.com/nginx/sites-enabled/main-ssl.conf`
+- `maint/openbsd/mail.blackbagsecurity.com/nginx/templates/osmap-root.tmpl`
+- `maint/openbsd/mail.blackbagsecurity.com/pf.anchors/macros.pf`
+- `maint/openbsd/mail.blackbagsecurity.com/pf.anchors/selfhost.pf`
+
 ## Current Host Baseline
 
 As of April 17, 2026, the validated host still uses this edge shape:
@@ -168,10 +175,12 @@ submission expansion.
    - `/etc/nginx/templates/roundcube.tmpl`
    - `/etc/pf.anchors/macros.pf`
    - `/etc/pf.anchors/selfhost.pf`
-4. Add `/etc/nginx/templates/osmap-root.tmpl`.
-5. Replace the Roundcube include in `main-ssl.conf` with the OSMAP include.
-6. Add `listen 192.168.1.44:443 ssl;` to the canonical HTTPS vhost.
-7. Update PF exactly as described above.
+4. Install the reviewed repo-owned cutover artifacts from
+   `maint/openbsd/mail.blackbagsecurity.com/`:
+   - `nginx/sites-enabled/main-ssl.conf`
+   - `nginx/templates/osmap-root.tmpl`
+   - `pf.anchors/macros.pf`
+   - `pf.anchors/selfhost.pf`
 8. Validate nginx and PF before reload:
    - `doas nginx -t`
    - `doas pfctl -nf /etc/pf.conf`
@@ -188,13 +197,12 @@ submission expansion.
 
 If the public OSMAP edge must be removed quickly:
 
-1. Restore `/etc/nginx/sites-enabled/main-ssl.conf` so it includes
-   `/etc/nginx/templates/roundcube.tmpl` again.
-2. Remove the public `listen 192.168.1.44:443 ssl;` line or restore the
-   previous backed-up vhost file.
-3. Restore `443` to `wan_blocked_tcp_svcs` in `/etc/pf.anchors/macros.pf`.
-4. Remove the explicit public `443` pass rule from
-   `/etc/pf.anchors/selfhost.pf`.
+1. Restore the backed-up pre-cutover edge files:
+   - `/etc/nginx/sites-enabled/main-ssl.conf`
+   - `/etc/pf.anchors/macros.pf`
+   - `/etc/pf.anchors/selfhost.pf`
+2. Remove `/etc/nginx/templates/osmap-root.tmpl` if it was only added for the
+   cutover and is no longer needed.
 5. Validate and reload nginx and PF:
    - `doas nginx -t`
    - `doas rcctl reload nginx`

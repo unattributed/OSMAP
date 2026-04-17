@@ -1,0 +1,24 @@
+# Shared macros describing WAN listeners, blocked ports, and VPN-only services for the WireGuard mail host
+
+ext_if                 = "egress"
+vpn_if                 = "wg0"
+vpn_net                = "10.44.0.0/24"
+wg_port                = "51820"
+ssh_port               = "22"
+
+# TCP services that are reachable on the host exclusively for WireGuard clients
+# include both submission (587 STARTTLS) and smtps (465) for client compatibility.
+vpn_host_tcp_svcs      = "{ 465, 587, 993 }"
+
+# TCP services that must stay closed on WAN (SMTP handled by spamd anchor)
+# HTTP/80 is controlled by the acme anchor (closed by default, opened only during renewals).
+wan_blocked_tcp_svcs   = "{ 110, 143, 465, 587, 993, 995, 2000, 4190, 8080, 9999 }"
+
+# DNS service on the WireGuard interface (tcp + udp)
+vpn_dns_svcs           = "{ 53 }"
+
+# Networks VPN clients are not allowed to reach (RFC1918 + link-local + localhost)
+vpn_banned_client_targets = "{ 127.0.0.0/8, 169.254.0.0/16, 172.16.0.0/12, 192.168.0.0/16 }"
+
+# SSH rate limiting, fed by sshguard table
+wan_ssh_limits         = "max-src-conn-rate 10/60, overload <sshguard> flush global"

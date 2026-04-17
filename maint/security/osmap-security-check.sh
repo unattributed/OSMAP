@@ -147,4 +147,7 @@ sh maint/security/test-osmap-live-assess-internet-exposure.sh
 echo "==> validating edge cutover wrapper behavior"
 sh maint/security/test-osmap-live-validate-edge-cutover.sh
 
+echo "==> validating reviewed mail host edge artifacts"
+sh maint/security/test-osmap-mail-host-edge-artifacts.sh
+
 echo "==> security-check complete"
