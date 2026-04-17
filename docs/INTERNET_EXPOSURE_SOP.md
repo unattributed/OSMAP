@@ -16,6 +16,10 @@ It exists to keep one short, repo-owned answer for:
 does not replace that checklist. It defines the routine operator workflow for
 reviewing it against the real host.
 
+The authoritative host-side assessment entrypoint is now:
+
+- `ksh ./maint/live/osmap-live-assess-internet-exposure.ksh`
+
 ## Standard Inputs
 
 Use these inputs together:
@@ -46,23 +50,25 @@ The standard host checkout is:
 2. Confirm the current host-side OSMAP gate with the repo-owned Version 2
    rehearsal path and keep the current report archived under
    `maint/live/latest-host-v2-readiness-report.txt`.
-3. Inspect the live host exposure shape, at minimum:
+3. Run the repo-owned host-side exposure assessment wrapper and capture its
+   report.
+4. Inspect the live host exposure shape further if needed, at minimum:
    - active HTTPS and HTTP listeners
    - active nginx vhost and route ownership at the canonical mail host
    - PF ingress policy for public WAN, WireGuard, and loopback
    - TLS termination behavior and redirect posture
    - rollback posture if the browser surface must be narrowed again quickly
-4. Compare those observed host facts against every section in
+5. Compare those observed host facts against every section in
    `INTERNET_EXPOSURE_CHECKLIST.md`.
-5. Update `INTERNET_EXPOSURE_STATUS.md` so it records:
+6. Update `INTERNET_EXPOSURE_STATUS.md` so it records:
    - the exact assessment date
    - the assessed host
    - the assessed repo snapshot
    - whether direct public browser exposure is approved or not approved
    - the factual blockers or conditions attached to that result
-6. If the result remains `not approved`, keep the current staged posture and
+7. If the result remains `not approved`, keep the current staged posture and
    record the narrowest concrete next requirements.
-7. If the result becomes `approved`, record the exact public edge shape, the
+8. If the result becomes `approved`, record the exact public edge shape, the
    rollback path, and the operator conditions under which that approval holds.
 
 ## Standard Commands
@@ -73,18 +79,14 @@ These commands are the standard evidence-gathering baseline on `mail`:
 ssh mail
 cd ~/OSMAP
 git rev-parse --short HEAD
-doas netstat -na -f inet
-doas pfctl -a selfhost -sr
-doas sed -n '1,160p' /etc/nginx/sites-enabled/main.conf
-doas sed -n '1,200p' /etc/nginx/sites-enabled/main-ssl.conf
-doas sed -n '1,120p' /etc/nginx/templates/ssl.tmpl
-doas cat /etc/nginx/control-plane.allow
+ksh ./maint/live/osmap-live-assess-internet-exposure.ksh \
+  --report "$HOME/osmap-internet-exposure-report.txt"
 ```
 
-Do not treat one command dump as sufficient by itself. The operator review
-must connect the listener facts, nginx route ownership, PF ingress policy,
-rollback posture, and the current V2 readiness report into one exposure
-decision.
+The wrapper report is the standard starting point, not the whole decision by
+itself. The operator review must still connect the listener facts, nginx route
+ownership, PF ingress policy, rollback posture, and the current V2 readiness
+report into one exposure decision.
 
 ## Standard Outcomes
 

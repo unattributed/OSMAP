@@ -3810,3 +3810,31 @@ This was chosen instead of jumping straight into nginx edge rewiring because
 the repo first needed one authoritative, reviewable statement of current
 truth. Without that, the project risked drifting into either premature public
 exposure claims or stale VPN-only assumptions.
+
+### Add a repo-owned host-side internet-exposure assessment wrapper
+
+Once the repo had an exposure SOP and a current status document, the next gap
+was still practical: the exposure gate depended on manual host inspection and
+operator recollection rather than one repeatable repo-owned command.
+
+The repository now adds:
+
+- `maint/live/osmap-live-assess-internet-exposure.ksh`
+- `maint/security/test-osmap-live-assess-internet-exposure.sh`
+
+and wires that regression into the shared `make security-check` gate.
+
+This wrapper does not automatically bless a host for direct public OSMAP
+exposure. It does the narrower and more important job first: it captures the
+current host snapshot, the relevant listener bindings, the canonical nginx
+HTTPS route ownership, the control-plane allowlist, and the PF selfhost anchor
+posture into one report that the operator can review against the exposure
+checklist.
+
+This was chosen instead of rewriting nginx or PF immediately because the
+project still needs one trustworthy evidence path before making edge-cutover
+claims. The safe sequence is:
+
+1. make the current exposure gate executable and reviewable
+2. archive the current staged-host report
+3. only then design and validate the actual edge cutover and rollback change

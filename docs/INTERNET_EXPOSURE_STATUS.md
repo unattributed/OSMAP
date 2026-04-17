@@ -7,6 +7,8 @@
 - assessed host checkout: `~/OSMAP`
 - assessed host snapshot for the passing V2 readiness run: `a51557c`
 - repo commit that archives that readiness report: `bbf795c`
+- current repo-owned exposure report artifact:
+  `maint/live/latest-host-internet-exposure-report.txt`
 - current result: `not approved for direct public browser exposure`
 
 ## Why The Result Is Not Approved Yet
@@ -38,6 +40,8 @@ The current state is not a blank slate:
 - the repo-owned Version 2 readiness gate passed on `mail.blackbagsecurity.com`
   and the current report is archived at
   `maint/live/latest-host-v2-readiness-report.txt`
+- the repo-owned internet-exposure assessment wrapper now exists and can
+  produce a current host report without depending on operator memory alone
 - incident handling, pilot, rollback, and hostile-path guidance now exist in
   repo-owned docs
 - OSMAP host-side least-privilege assumptions are already present on the
@@ -56,8 +60,9 @@ host still need all of the following:
   shape
 - an explicit rollback or temporary re-restriction path for that public OSMAP
   edge
-- an exposure reassessment run against the updated host shape using
-  `INTERNET_EXPOSURE_SOP.md`
+- an updated exposure reassessment run against the changed host shape using
+  `INTERNET_EXPOSURE_SOP.md` and
+  `maint/live/osmap-live-assess-internet-exposure.ksh`
 
 ## Security Meaning
 

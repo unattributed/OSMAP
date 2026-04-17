@@ -74,6 +74,7 @@ Before Version 2 is described as suitable for direct public browser access, all
 of the following must be true:
 
 - the criteria in `INTERNET_EXPOSURE_CHECKLIST.md` are satisfied
+- repo-owned current host exposure evidence exists for the candidate posture
 - TLS-only browser access through the hardened edge is configured and validated
 - operators have usable auth, session, send, and error visibility for suspected
   hostile activity

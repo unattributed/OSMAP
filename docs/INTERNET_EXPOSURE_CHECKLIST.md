@@ -10,6 +10,8 @@ decide whether public exposure is justified for the current OSMAP snapshot.
 For the standard operator review flow and the current assessed result on the
 validated host, see `INTERNET_EXPOSURE_SOP.md` and
 `INTERNET_EXPOSURE_STATUS.md`.
+The current repo-owned host-side evidence collection entrypoint is
+`maint/live/osmap-live-assess-internet-exposure.ksh`.
 
 ## Defense Readiness
 
