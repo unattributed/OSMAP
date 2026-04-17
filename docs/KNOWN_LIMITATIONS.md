@@ -4,8 +4,8 @@
 
 - Phase 1 is evidence-based but still intentionally public-safe, so some local
   implementation details and private notes are summarized rather than published
-- Active user workflow inventory has not yet been confirmed with direct usage
-  analysis
+- A repo-owned pilot workflow inventory baseline now exists, but real pilot-user
+  confirmation against that inventory has not yet been completed
 - The exact Postfix configuration has not yet been exhaustively summarized in
   public docs, though service bindings and usage are already clear
 
@@ -57,9 +57,9 @@
   throttle for the first folder-organization path, but broader request-abuse
   controls and richer anomaly handling still depend on adjacent defenses such
   as nginx, PF, and operator monitoring
-- Operator-facing migration, rollback, and pilot guidance now exists, but the
-  repo still lacks one fully frozen Version 2 gate that ties public-exposure
-  readiness, migration readiness, and hostile-path proof together
+- Operator-facing migration, rollback, pilot, workflow-inventory, and
+  acceptance-gate guidance now exists, but the repo still lacks a completed
+  real-user pilot rehearsal against that Version 2 gate
 - The remaining authenticated POST routes in the current browser surface
   (`/settings`, `/sessions/revoke`, and `/logout`) are now both CSRF-bound and
   same-origin-bound and remain much lower abuse value than login, send, or

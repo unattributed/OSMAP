@@ -36,6 +36,8 @@ Do not start the pilot until all of the following are true:
 - the helper-backed `_osmap` plus `vmail` runtime split is in place
 - nginx, auth-socket, userdb-socket, and helper-socket integration are stable
 - rollback to Roundcube has been rehearsed
+- the selected pilot users have been checked against
+  `PILOT_WORKFLOW_INVENTORY.md`
 - the selected pilot users understand the current product limitations
 
 ## Supported Pilot Workflows
@@ -61,7 +63,8 @@ The pilot should be communicated with the current limitations up front:
   monitoring
 
 Any user whose daily workflow depends on those missing behaviors should not be
-treated as an early pilot candidate.
+treated as an early pilot candidate. `PILOT_WORKFLOW_INVENTORY.md` is the
+operator baseline for making that decision.
 
 ## Recommended Pilot Posture
 

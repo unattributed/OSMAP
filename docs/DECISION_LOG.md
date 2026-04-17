@@ -3697,3 +3697,23 @@ The Version 2 readiness wrapper now brings the current gate into one place:
 This was chosen instead of treating the new Version 2 criteria as a purely
 documentary gate because OSMAP already uses repo-owned live wrappers as the
 authoritative way to keep release claims honest on `mail.blackbagsecurity.com`.
+
+### Add a repo-owned pilot workflow inventory baseline for Version 2 cohort selection
+
+Once the Version 2 definition and readiness gate existed, the next practical
+gap was not another broad feature list. It was operator clarity about who is a
+good pilot candidate right now and which workflows still require Roundcube
+fallback.
+
+The repository now carries `docs/PILOT_WORKFLOW_INVENTORY.md` as the baseline
+Version 2 cohort-selection artifact. It records:
+
+- which browser-mail workflows are currently supported
+- which are supported only with the current bounded OSMAP limits
+- which still require Roundcube fallback
+- which are intentionally out of scope for Version 2
+
+This was chosen instead of waiting for ad hoc operator memory or private notes
+because the Version 2 migration and pilot gate already depends on a truthful
+workflow inventory, and that inventory needs one repo-owned public-safe source
+of truth even before real-user confirmation is complete.

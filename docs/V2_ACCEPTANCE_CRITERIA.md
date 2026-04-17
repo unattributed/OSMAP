@@ -82,7 +82,8 @@ of the following must be true:
 
 Before Version 2 is considered complete, the repo must also show:
 
-- a workflow inventory for the intended pilot users
+- a repo-owned workflow inventory for the intended pilot users, currently
+  recorded in `PILOT_WORKFLOW_INVENTORY.md`
 - explicit disposition of current Roundcube-dependent habits and features
 - a rollback path that restores the previous browser access path without
   widening OSMAP authority

@@ -67,8 +67,9 @@ Before any real user migration begins, the operator should confirm:
 - the deployed snapshot matches the currently reviewed repo state
 - the `_osmap` plus `vmail` helper-backed deployment shape is in place
 - the operator has tested rollback of the browser path to Roundcube
-- the affected user workflows have been inventoried, especially any current
-  Roundcube-specific habits around drafts, attachment reuse, or folder actions
+- the affected user workflows have been checked against
+  `PILOT_WORKFLOW_INVENTORY.md`, especially any current Roundcube-specific
+  habits around drafts, attachment reuse, bulk actions, or filtering
 
 ## Recommended Migration Sequence
 
@@ -77,7 +78,8 @@ Before any real user migration begins, the operator should confirm:
 Inventory the actual Roundcube behaviors relied on by the intended pilot users.
 The current OSMAP product boundary is intentionally narrower than legacy
 webmail, so migration should be driven by real required workflows rather than
-by assumptions.
+by assumptions. Use `PILOT_WORKFLOW_INVENTORY.md` as the baseline operator
+artifact for that confirmation.
 
 ### 2. Operator Shadow Use
 
@@ -121,6 +123,21 @@ The current preferred migration posture is deliberately conservative:
 At the current repo stage, that means users should expect fresh OSMAP browser
 settings rather than a promise that historical Roundcube preferences will be
 ported.
+
+## Workflow-Driven Cohort Selection
+
+The first real Version 2 pilot should prefer users whose daily browser-mail
+work already fits the current inventory in `PILOT_WORKFLOW_INVENTORY.md`.
+
+That means the current best-fit cohort is users who mainly need:
+
+- login, read, search, attachment download, send, and light folder movement
+- conservative HTML handling
+- no dependency on drafts, bulk mailbox actions, or Roundcube-only filtering UI
+
+Users whose daily workflow still depends on a `roundcube_fallback` item should
+stay on the coexistence path until the operator is satisfied that fallback is
+rare or no longer necessary.
 
 ## Rollback Strategy
 
