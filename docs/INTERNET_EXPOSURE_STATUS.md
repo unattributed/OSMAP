@@ -54,8 +54,11 @@ The current state is not a blank slate:
 - the repo now also has a reviewed host-side binary-deployment path that can
   build, stage, install, and restore `/usr/local/bin/osmap` before the service
   install is attempted
+- that reviewed binary-deployment path has now been applied on the validated
+  host, and the current service report confirms `service_binary_state=installed`
+  for snapshot `70fa951`
 - the repo now also has a host-side validator for that persistent service
-  install, with the first host report archived at
+  install, with the current host report archived at
   `maint/live/latest-host-service-enablement-report.txt`
 
 ## What Must Happen Before Reassessment
@@ -66,11 +69,13 @@ host still need all of the following:
 - the reviewed OSMAP service-install path must be applied and validated so the
   host actually has `/etc/osmap` and the `rc.d` service files required for a
   persistent loopback OSMAP runtime
-- the reviewed OSMAP binary-deployment path must be applied and validated so
-  the host actually has `/usr/local/bin/osmap`
 - the repo-owned service-enablement validator must pass on the candidate host
 - the dedicated shared runtime group for the helper socket path must exist and
   include `_osmap` without widening `_osmap` into `vmail`
+- the reviewed service env, launcher, and `rc.d` files must be installed so
+  `rcctl check osmap_mailbox_helper` and `rcctl check osmap_serve` can pass
+- the helper socket and loopback `127.0.0.1:8080` listener must exist before
+  the browser edge is switched away from Roundcube
 - the cutover steps in `EDGE_CUTOVER_PLAN.md` must be applied and validated so
   the canonical HTTPS route serves OSMAP, not Roundcube
 - the PF and listener changes in `EDGE_CUTOVER_PLAN.md` must be applied so the

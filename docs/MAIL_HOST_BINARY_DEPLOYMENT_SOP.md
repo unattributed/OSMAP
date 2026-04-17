@@ -120,3 +120,8 @@ The minimum expected result for this gate is:
 
 The full service-enablement gate still has to be cleared separately through
 `MAIL_HOST_SERVICE_ENABLEMENT_SOP.md`.
+
+The current repo-owned host artifacts for this gate should be archived at:
+
+- `maint/live/latest-host-binary-deployment-session.txt`
+- `maint/live/latest-host-service-enablement-report.txt`

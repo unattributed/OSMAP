@@ -27,6 +27,33 @@ cutover because Version 2 still benefited more from removing the first explicit
 host blocker in a reviewable way than from widening the scope of one host-side
 change stream.
 
+### Clear the first hard mail-host service blocker with the reviewed binary path
+
+After the binary deployment wrapper existed, the next useful step was not more
+planning. It was to apply that narrow path on `mail.blackbagsecurity.com` and
+archive the immediate validator evidence.
+
+The reviewed wrapper was run from `~/OSMAP` on the validated host in both
+rehearsal and apply mode. The apply run installed `/usr/local/bin/osmap` and
+immediately reran the repo-owned service validator. The current archived
+artifacts are:
+
+- `maint/live/latest-host-binary-deployment-session.txt`
+- `maint/live/latest-host-service-enablement-report.txt`
+
+That validator report now shows `service_binary_state=installed` and no longer
+reports `missing_osmap_binary`. It still fails, correctly, on the remaining
+service prerequisites:
+
+- missing shared runtime group and `_osmap` membership
+- missing reviewed env, launcher, and `rc.d` files
+- missing helper socket
+- missing loopback `127.0.0.1:8080` listener
+
+This was chosen instead of jumping straight to the full service apply path
+because Version 2 still benefits from clearing and proving one host-side
+precondition at a time.
+
 ## 2026-04-17
 
 ### Add a host-side rehearsal and apply path for the reviewed edge cutover

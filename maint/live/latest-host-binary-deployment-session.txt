@@ -1,0 +1,11 @@
+osmap_binary_deployment_session_mode=apply
+session_dir=/home/foo/osmap-binary-deployment/proof-20260418
+project_root=/home/foo/OSMAP
+assessed_snapshot=70fa951
+build_profile=debug
+built_binary_path=/home/foo/osmap-binary-deployment/proof-20260418/build/cargo-target/debug/osmap
+staged_binary_path=/home/foo/osmap-binary-deployment/proof-20260418/staged/usr/local/bin/osmap
+live_osmap_bin_path=/usr/local/bin/osmap
+apply_script=/home/foo/osmap-binary-deployment/proof-20260418/scripts/apply-binary-deployment.sh
+restore_script=/home/foo/osmap-binary-deployment/proof-20260418/scripts/restore-binary-deployment.sh
+validator_report=/home/foo/osmap-binary-deployment/proof-20260418/reports/service-enablement-after-binary-install.txt
