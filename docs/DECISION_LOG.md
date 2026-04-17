@@ -1,5 +1,32 @@
 # Decision Log
 
+## 2026-04-18
+
+### Add a repo-owned binary deployment path before the reviewed service install
+
+Once the repo carried both a reviewed service-enablement wrapper and a
+persistent-service validator, the next blocker was no longer procedural
+ambiguity. The first hard host-side blocker was explicit: the validator failed
+immediately because `/usr/local/bin/osmap` did not exist on
+`mail.blackbagsecurity.com`.
+
+OSMAP now carries `maint/live/osmap-live-rehearse-binary-deployment.ksh` plus
+`docs/MAIL_HOST_BINARY_DEPLOYMENT_SOP.md`. The wrapper builds one staged
+binary from the reviewed host checkout, prepares exact apply and restore
+scripts, installs the staged binary into `/usr/local/bin/osmap` when asked,
+and immediately reruns the repo-owned service validator.
+
+The apply path does not require the full service validator to pass yet. It
+requires only that the validator confirm `service_binary_state=installed` and
+stop reporting `missing_osmap_binary`. That keeps this gate narrow: clear the
+first hard precondition without pretending the rest of the service install is
+already complete.
+
+This was chosen instead of expanding directly into service install or edge
+cutover because Version 2 still benefited more from removing the first explicit
+host blocker in a reviewable way than from widening the scope of one host-side
+change stream.
+
 ## 2026-04-17
 
 ### Add a host-side rehearsal and apply path for the reviewed edge cutover

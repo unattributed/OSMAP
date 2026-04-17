@@ -33,6 +33,9 @@ Version 2 is acceptable only when all of the following are true:
   least-privilege split, dedicated Dovecot socket model, and OpenBSD
   confinement posture
 - the validated host has a repo-owned rehearsal or apply path for installing
+  the `/usr/local/bin/osmap` binary before the split `_osmap` plus `vmail`
+  service install is attempted
+- the validated host has a repo-owned rehearsal or apply path for installing
   the split `_osmap` plus `vmail` service files instead of depending on ad hoc
   service wiring
 - the repo-owned persistent-service validator passes for any host that claims
@@ -82,6 +85,8 @@ of the following must be true:
 - repo-owned current host exposure evidence exists for the candidate posture
 - the persistent `_osmap` plus `vmail` service install exists on the candidate
   host before the public browser edge is switched away from Roundcube
+- the repo-owned binary-deployment path has cleared the
+  `/usr/local/bin/osmap` precondition before the service install is applied
 - the repo-owned service-enablement validator passes for the candidate host
 - the canonical nginx route replacement, PF/listener changes, and rollback
   path are defined concretely in `EDGE_CUTOVER_PLAN.md`

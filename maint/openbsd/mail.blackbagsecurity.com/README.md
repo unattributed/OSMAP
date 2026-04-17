@@ -24,6 +24,7 @@ wrapper `maint/live/osmap-live-rehearse-service-enablement.ksh`.
 
 Use these artifacts when the host is ready for:
 
+- reviewed OSMAP binary deployment into `/usr/local/bin/osmap`
 - reviewed OSMAP service installation under the split runtime users
 - reviewed OSMAP browser-edge cutover
 

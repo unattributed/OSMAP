@@ -159,4 +159,7 @@ sh maint/security/test-osmap-live-rehearse-service-enablement.sh
 echo "==> validating service enablement wrapper behavior"
 sh maint/security/test-osmap-live-validate-service-enablement.sh
 
+echo "==> validating binary deployment rehearsal wrapper behavior"
+sh maint/security/test-osmap-live-rehearse-binary-deployment.sh
+
 echo "==> security-check complete"

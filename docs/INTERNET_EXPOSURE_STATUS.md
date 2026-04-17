@@ -51,6 +51,9 @@ The current state is not a blank slate:
   and userdb listeners
 - the repo now also has a reviewed host-side service-enablement path for the
   split `_osmap` plus `vmail` runtime install before edge cutover
+- the repo now also has a reviewed host-side binary-deployment path that can
+  build, stage, install, and restore `/usr/local/bin/osmap` before the service
+  install is attempted
 - the repo now also has a host-side validator for that persistent service
   install, with the first host report archived at
   `maint/live/latest-host-service-enablement-report.txt`
@@ -61,8 +64,10 @@ Before this status can move to an approval result, the repo and the validated
 host still need all of the following:
 
 - the reviewed OSMAP service-install path must be applied and validated so the
-  host actually has `/usr/local/bin/osmap`, `/etc/osmap`, and the `rc.d`
-  service files required for a persistent loopback OSMAP runtime
+  host actually has `/etc/osmap` and the `rc.d` service files required for a
+  persistent loopback OSMAP runtime
+- the reviewed OSMAP binary-deployment path must be applied and validated so
+  the host actually has `/usr/local/bin/osmap`
 - the repo-owned service-enablement validator must pass on the candidate host
 - the dedicated shared runtime group for the helper socket path must exist and
   include `_osmap` without widening `_osmap` into `vmail`
