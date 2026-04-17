@@ -4,6 +4,7 @@
 //! opaque, high-entropy values; the store keeps only a hash-derived session
 //! identifier and bounded metadata under the configured session directory.
 
+use std::cmp::Reverse;
 use std::fs;
 use std::io::Write as _;
 use std::path::PathBuf;
@@ -263,7 +264,7 @@ impl SessionStore for FileSessionStore {
             }
         }
 
-        records.sort_by(|left, right| right.issued_at.cmp(&left.issued_at));
+        records.sort_by_key(|record| Reverse(record.issued_at));
         Ok(records)
     }
 }
