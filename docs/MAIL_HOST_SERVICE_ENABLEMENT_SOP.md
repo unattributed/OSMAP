@@ -9,6 +9,7 @@ standard host checkout at `~/OSMAP`.
 It is paired with:
 
 - `maint/live/osmap-live-rehearse-service-enablement.ksh`
+- `maint/live/osmap-live-validate-service-enablement.ksh`
 - `maint/openbsd/README.md`
 - `maint/openbsd/mail.blackbagsecurity.com/`
 
@@ -96,21 +97,35 @@ operators can inspect them before manual cleanup.
 
 ## Required Post-Apply Checks
 
-After a real apply run, also run:
+After a real apply run, do not stop at `rcctl start`. Also run:
 
 ```sh
 cd ~/OSMAP
-doas rcctl check osmap_mailbox_helper
-doas rcctl check osmap_serve
-netstat -na -f inet | egrep '\.(8080)[[:space:]].*LISTEN'
+ksh ./maint/live/osmap-live-validate-service-enablement.ksh
 ```
 
+The repo-owned validator confirms:
+
+- `/usr/local/bin/osmap` exists
+- the shared helper-socket runtime group exists
+- `_osmap` is in that group without being widened into `vmail`
+- the reviewed env, launcher, and `rc.d` files are installed
+- `rcctl check osmap_mailbox_helper` passes
+- `rcctl check osmap_serve` passes
+- the helper socket exists
+- `127.0.0.1:8080` is actually listening
+
 Before the public browser edge is cut over, also run the edge and readiness
-checks that depend on this service install:
+checks that depend on this persistent service install:
 
 ```sh
 cd ~/OSMAP
+ksh ./maint/live/osmap-live-validate-service-enablement.ksh
 ksh ./maint/live/osmap-live-validate-edge-cutover.ksh
 ksh ./maint/live/osmap-live-assess-internet-exposure.ksh
 ksh ./maint/live/osmap-live-validate-v2-readiness.ksh
 ```
+
+The current repo-owned host report artifact for this gate should be archived at:
+
+- `maint/live/latest-host-service-enablement-report.txt`

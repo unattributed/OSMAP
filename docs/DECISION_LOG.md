@@ -3980,3 +3980,31 @@ reviewed `_osmap` plus `vmail` split. The new wrapper and SOP intentionally
 fail closed if the host still lacks the installed binary or the dedicated
 shared helper-socket group. They also record the security rule that `_osmap`
 must not be added to `vmail` as a shortcut.
+
+### Add a repo-owned persistent-service validator before edge cutover
+
+After the host-side service-enablement rehearsal path existed, the next gap was
+still operationally important: there was no single repo-owned command that
+could prove whether the persistent `_osmap` plus `vmail` service install was
+actually present and healthy on `mail.blackbagsecurity.com`.
+
+The repository now adds:
+
+- `maint/live/osmap-live-validate-service-enablement.ksh`
+- `maint/security/test-osmap-live-validate-service-enablement.sh`
+
+and wires that regression into the shared `make security-check` gate.
+
+This validator was chosen before any real edge cutover because the project
+needed one explicit proof point for:
+
+- `/usr/local/bin/osmap`
+- the dedicated shared helper-socket group and `_osmap` membership
+- installed env, launcher, and `rc.d` files
+- healthy `osmap_mailbox_helper` and `osmap_serve` services
+- helper-socket presence
+- loopback `127.0.0.1:8080` readiness
+
+The first live host run now also truthfully records the current blocker in a
+repo-owned artifact: the validated host still fails the gate at the earliest
+precondition because `/usr/local/bin/osmap` is not installed yet.

@@ -156,4 +156,7 @@ sh maint/security/test-osmap-live-rehearse-edge-cutover.sh
 echo "==> validating service enablement rehearsal wrapper behavior"
 sh maint/security/test-osmap-live-rehearse-service-enablement.sh
 
+echo "==> validating service enablement wrapper behavior"
+sh maint/security/test-osmap-live-validate-service-enablement.sh
+
 echo "==> security-check complete"
