@@ -15,6 +15,9 @@ The repo-owned wrappers:
 
 are the authoritative operator entrypoints for that gate.
 
+For the short operator procedure around routine host-side and off-host
+Version 2 rehearsal runs, see `V2_PILOT_REHEARSAL_SOP.md`.
+
 ## Version 2 Release Gate
 
 Version 2 is acceptable only when all of the following are true:

@@ -14,7 +14,7 @@ REMOTE_PROJECT_ROOT="${OSMAP_V2_READINESS_REMOTE_PROJECT_ROOT:-~/OSMAP}"
 REMOTE_REPORT_PATH="${OSMAP_V2_READINESS_REMOTE_REPORT_PATH:-~/osmap-v2-readiness-report.txt}"
 LOCAL_REPORT_PATH="${OSMAP_V2_READINESS_LOCAL_REPORT_PATH:-}"
 REMOTE_READINESS_WRAPPER="./maint/live/osmap-live-validate-v2-readiness.ksh"
-REMOTE_LOGIN_HELPER="./maint/live/osmap-run-v1-closeout-with-temporary-validation-password.sh"
+REMOTE_LOGIN_HELPER="./maint/live/osmap-run-v2-readiness-with-temporary-validation-password.sh"
 STEP_NAMES=""
 
 log() {

@@ -115,7 +115,7 @@ default_fetch_command=$(printf '%s\n' "${default_output}" | sed -n '3p')
 
 assert_contains "${default_command}" "cd \"\$HOME\"/"
 assert_contains "${default_command}" "OSMAP"
-assert_contains "${default_command}" "sh ./maint/live/osmap-run-v1-closeout-with-temporary-validation-password.sh --report \"\$HOME\"/"
+assert_contains "${default_command}" "sh ./maint/live/osmap-run-v2-readiness-with-temporary-validation-password.sh --report \"\$HOME\"/"
 assert_contains "${default_command}" "osmap-v2-readiness-report.txt"
 for step_name in \
   security-check \
@@ -174,7 +174,7 @@ login_send_fetch_command=$(printf '%s\n' "${login_send_output}" | sed -n '3p')
 
 assert_contains "${login_send_command}" "cd \"\$HOME\"/"
 assert_contains "${login_send_command}" "helper-v2"
-assert_contains "${login_send_command}" "sh ./maint/live/osmap-run-v1-closeout-with-temporary-validation-password.sh --report \"\$HOME\"/"
+assert_contains "${login_send_command}" "sh ./maint/live/osmap-run-v2-readiness-with-temporary-validation-password.sh --report \"\$HOME\"/"
 assert_contains "${login_send_command}" "helper-v2-report.txt"
 assert_contains "${login_send_command}" "'login-send'"
 assert_contains "${login_send_command}" "'mailbox-backend-unavailable'"

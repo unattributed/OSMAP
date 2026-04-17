@@ -3717,3 +3717,24 @@ This was chosen instead of waiting for ad hoc operator memory or private notes
 because the Version 2 migration and pilot gate already depends on a truthful
 workflow inventory, and that inventory needs one repo-owned public-safe source
 of truth even before real-user confirmation is complete.
+
+### Add a Version 2 host-side validation-password helper and pilot rehearsal SOP
+
+While drafting the short Version 2 rehearsal procedure, the repository exposed a
+real bug instead of just a documentation gap: the V2 SSH wrapper still
+delegated `login-send`-including runs to the V1 host-side helper. That helper
+would install the temporary validation password correctly, but then it would
+invoke the V1 wrapper, which does not recognize the V2-only proof steps.
+
+The repository now fixes that by adding:
+
+- `maint/live/osmap-run-v2-readiness-with-temporary-validation-password.sh`
+- `docs/V2_PILOT_REHEARSAL_SOP.md`
+
+and by updating `maint/live/osmap-run-v2-readiness-over-ssh.sh` to delegate to
+the new V2 helper instead of the V1 helper. The shared security gate now also
+includes a dedicated regression test for the V2 helper path.
+
+This was chosen instead of merely documenting the off-host wrapper because the
+project needs the full V2 rehearsal path to be genuinely executable on
+`mail.blackbagsecurity.com`, not just described convincingly in docs.
