@@ -22,6 +22,10 @@ The reviewed host-side artifact files for that cutover now live under:
 - `maint/openbsd/mail.blackbagsecurity.com/pf.anchors/macros.pf`
 - `maint/openbsd/mail.blackbagsecurity.com/pf.anchors/selfhost.pf`
 
+For the host-side rehearsal and generated apply or restore scripts that use
+those files from the standard `~/OSMAP` checkout, see
+`EDGE_CUTOVER_REHEARSAL_SOP.md`.
+
 ## Current Host Baseline
 
 As of April 17, 2026, the validated host still uses this edge shape:

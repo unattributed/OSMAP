@@ -2,6 +2,29 @@
 
 ## 2026-04-17
 
+### Add a host-side rehearsal and apply path for the reviewed edge cutover
+
+Once the repo carried reviewed host-specific edge artifacts, the remaining
+operator-risk gap was procedural. Operators still had to assemble the exact
+backup, install, validate, reload, and restore commands themselves.
+
+OSMAP now carries `maint/live/osmap-live-rehearse-edge-cutover.ksh` plus
+`docs/EDGE_CUTOVER_REHEARSAL_SOP.md`. The wrapper prepares a timestamped
+session on the host that contains:
+
+- backups of the current live edge files
+- staged reviewed replacements from the repo
+- an executable apply script
+- an executable restore script
+
+The shared security gate now also includes a regression that proves the wrapper
+can generate those scripts, apply the reviewed files, validate nginx and PF,
+and restore the prior state in a controlled fake host layout.
+
+This was chosen instead of jumping straight to a live edge mutation because
+Version 2 still benefited more from removing operator improvisation than from
+touching the validated host faster.
+
 ### Add reviewed nginx and PF cutover artifacts for the validated host
 
 Once the repo carried both an exact edge-cutover plan and a repo-owned wrapper
