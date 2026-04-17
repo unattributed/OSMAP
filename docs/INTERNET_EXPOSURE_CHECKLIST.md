@@ -7,6 +7,9 @@ OSMAP is treated as ready for direct public browser access over the internet.
 
 It is not a launch authorization by itself. It is the control document used to
 decide whether public exposure is justified for the current OSMAP snapshot.
+For the standard operator review flow and the current assessed result on the
+validated host, see `INTERNET_EXPOSURE_SOP.md` and
+`INTERNET_EXPOSURE_STATUS.md`.
 
 ## Defense Readiness
 

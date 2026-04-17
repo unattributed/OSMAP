@@ -24,9 +24,12 @@ first release.
 
 ## Is this meant to be publicly exposed immediately
 
-Not necessarily. The current environment uses a VPN-first exposure model for
-webmail and user mail access. Version 1 can be developed and validated within
-that model before any broader exposure decision is made.
+No. The current validated host still uses a narrow staged exposure model for
+webmail and user mail access, and OSMAP should not be treated as direct-public
+ready until the repo-defined internet-exposure gate is passed.
+
+That said, the intended Version 2 target is direct public browser access
+through a hardened HTTPS edge, not a permanent VPN-only product posture.
 
 ## Why keep the first release so small
 

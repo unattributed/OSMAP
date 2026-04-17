@@ -3778,3 +3778,35 @@ This was chosen instead of relaxing the bounded-backend-unavailable check
 because the runtime behavior was correct; the proof harness needed to model a
 real authenticated session before it could honestly test the `503 Service
 Unavailable` path.
+
+### Add a repo-owned internet-exposure SOP and current assessed status
+
+With the first passing Version 2 readiness report archived, the next highest
+leverage gap was no longer another browser feature or another hostile-path
+probe. It was operator truthfulness about the current edge posture.
+
+The repository already had an internet-exposure checklist, but it still left
+too much of the real answer in operator memory:
+
+- what the current `mail.blackbagsecurity.com` posture actually is
+- whether OSMAP is currently the HTTPS edge application or not
+- whether the current host is approved for direct public OSMAP browser access
+
+The repository now adds:
+
+- `docs/INTERNET_EXPOSURE_SOP.md`
+- `docs/INTERNET_EXPOSURE_STATUS.md`
+
+and aligns the surrounding pilot and exposure docs so they now say the same
+thing:
+
+- the current host remains in a narrow staged posture
+- that staged posture is valid, but it is not the intended permanent Version 2
+  browser-access model
+- direct public browser exposure remains an intended Version 2 target only
+  after a separate explicit gate is passed against the real host
+
+This was chosen instead of jumping straight into nginx edge rewiring because
+the repo first needed one authoritative, reviewable statement of current
+truth. Without that, the project risked drifting into either premature public
+exposure claims or stale VPN-only assumptions.

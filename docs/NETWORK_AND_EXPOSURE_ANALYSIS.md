@@ -61,16 +61,19 @@ project is starting from a relatively conservative exposure model.
 
 ## Implications For The Replacement
 
-- OSMAP should not assume immediate public exposure is required on day one
-- Any move from VPN-only to public exposure should be treated as a separate,
-  explicit security decision
+- OSMAP should not assume the current staged host posture is already the final
+  Version 2 browser-access posture
+- Any move from the current narrow staged posture to direct public browser
+  access should be treated as a separate, explicit security decision
 - Identity, session, logging, and abuse controls will need to carry more weight
   if the network boundary becomes less trusted
-- The safest migration path may involve first replacing Roundcube while keeping
-  the existing VPN-only posture intact
+- The safest migration path may still involve first replacing Roundcube while
+  keeping the current narrow staged posture intact, but that should be treated
+  as a rollout phase rather than the intended permanent Version 2 destination
 
 ## Open Questions
 
 - Which parts of the current control plane should remain VPN-only indefinitely
-- Whether public exposure is required for the first production release
+- Which exact nginx, PF, and rollback changes are required before OSMAP can
+  replace Roundcube at the direct public HTTPS edge
 - What protections must exist before relaxing the current network boundary

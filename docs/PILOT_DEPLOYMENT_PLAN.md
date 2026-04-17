@@ -39,6 +39,8 @@ Do not start the pilot until all of the following are true:
 - the selected pilot users have been checked against
   `PILOT_WORKFLOW_INVENTORY.md`
 - the selected pilot users understand the current product limitations
+- the current `INTERNET_EXPOSURE_STATUS.md` result matches the intended pilot
+  browser-access posture
 
 ## Supported Pilot Workflows
 
@@ -90,9 +92,11 @@ Before pilot users start:
 1. run `osmap bootstrap` or equivalent config validation with the pilot env
    files
 2. confirm helper socket creation and connectivity
-3. rerun the current closeout wrapper and archive the report
-4. confirm rollback instructions are available to the operator
-5. confirm incident notes and operator contacts are current
+3. rerun the current Version 2 readiness wrapper and archive the report
+4. confirm the current `INTERNET_EXPOSURE_STATUS.md` assessment matches the
+   intended pilot browser-access posture
+5. confirm rollback instructions are available to the operator
+6. confirm incident notes and operator contacts are current
 
 ## Pilot Success Signals
 

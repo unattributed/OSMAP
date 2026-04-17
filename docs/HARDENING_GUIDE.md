@@ -10,8 +10,9 @@ implementation continue.
 The project should preserve the current instinct toward narrow exposure:
 
 - keep only required listeners reachable
-- prefer staged rollout behind the current VPN-first posture
-- treat public exposure as a later, explicit decision
+- allow staged rollout behind the current narrow host posture when appropriate
+- treat direct public exposure as an explicit gate, not as either an automatic
+  default or an indefinitely deferred non-goal
 - avoid opening convenience ports or auxiliary surfaces without strong reason
 
 ## Exposure Rules
