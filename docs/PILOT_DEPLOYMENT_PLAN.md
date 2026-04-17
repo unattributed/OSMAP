@@ -36,6 +36,8 @@ Do not start the pilot until all of the following are true:
 - the helper-backed `_osmap` plus `vmail` runtime split is in place
 - nginx, auth-socket, userdb-socket, and helper-socket integration are stable
 - rollback to Roundcube has been rehearsed
+- the edge cutover and rollback procedure in `EDGE_CUTOVER_PLAN.md` has been
+  reviewed for the intended pilot browser-access posture
 - the selected pilot users have been checked against
   `PILOT_WORKFLOW_INVENTORY.md`
 - the selected pilot users understand the current product limitations
@@ -79,7 +81,8 @@ The intended Version 2 pilot posture is:
 - keep OSMAP state and helper state on separate explicit roots
 - keep OpenBSD confinement in `enforce` once the pilot snapshot is validated
 - allow direct browser access only after the criteria in
-  `INTERNET_EXPOSURE_CHECKLIST.md` are satisfied
+  `INTERNET_EXPOSURE_CHECKLIST.md` are satisfied and the host edge changes in
+  `EDGE_CUTOVER_PLAN.md` are completed
 
 Until that exposure gate is passed, VPN-only or similarly narrow rollout
 remains a valid staging and rollback posture, not the intended permanent

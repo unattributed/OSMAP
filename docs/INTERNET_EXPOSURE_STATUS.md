@@ -55,13 +55,12 @@ The current state is not a blank slate:
 Before this status can move to an approval result, the repo and the validated
 host still need all of the following:
 
-- a reviewed nginx edge route that serves OSMAP, not Roundcube, at the
-  intended browser entry path
-- a reviewed PF and listener posture that intentionally permits the chosen
-  public HTTPS edge shape instead of only the current WireGuard and loopback
-  shape
-- an explicit rollback or temporary re-restriction path for that public OSMAP
-  edge
+- the cutover steps in `EDGE_CUTOVER_PLAN.md` must be applied and validated so
+  the canonical HTTPS route serves OSMAP, not Roundcube
+- the PF and listener changes in `EDGE_CUTOVER_PLAN.md` must be applied so the
+  chosen public HTTPS edge shape is intentional rather than accidental
+- the rollback or temporary re-restriction path in `EDGE_CUTOVER_PLAN.md` must
+  remain available
 - an updated exposure reassessment run against the changed host shape using
   `INTERNET_EXPOSURE_SOP.md` and
   `maint/live/osmap-live-assess-internet-exposure.ksh`

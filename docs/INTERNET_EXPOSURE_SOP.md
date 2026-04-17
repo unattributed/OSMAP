@@ -25,6 +25,7 @@ The authoritative host-side assessment entrypoint is now:
 Use these inputs together:
 
 - `docs/INTERNET_EXPOSURE_CHECKLIST.md`
+- `docs/EDGE_CUTOVER_PLAN.md`
 - `docs/INTERNET_EXPOSURE_STATUS.md`
 - `docs/V2_ACCEPTANCE_CRITERIA.md`
 - `docs/INCIDENT_RESPONSE_PLAN.md`

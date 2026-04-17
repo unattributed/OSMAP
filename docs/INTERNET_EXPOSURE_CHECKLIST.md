@@ -57,6 +57,8 @@ Before direct public exposure:
 - insecure fallback behavior must be absent
 - hostnames and certificate validation behavior must align with deployment
   reality
+- the canonical HTTPS route change and rollback path must be defined concretely
+  in `EDGE_CUTOVER_PLAN.md`
 
 ## Rate Limiting
 
@@ -75,6 +77,8 @@ Before direct public exposure:
 - evidence preservation expectations must be clear
 - rollback or temporary re-restriction to the VPN-only model must remain
   available
+- the public HTTPS rollback path must restore Roundcube or the narrower staged
+  posture without widening OSMAP authority
 
 ## Approval Sign-Off
 

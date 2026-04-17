@@ -1,5 +1,29 @@
 # Decision Log
 
+## 2026-04-17
+
+### Define the exact OSMAP edge cutover and rollback plan for the validated host
+
+Once the repo had a Version 2 readiness gate and a repo-owned exposure
+assessment wrapper, the remaining exposure-side gap was not another abstract
+security statement. It was the absence of one exact operator artifact for
+moving `mail.blackbagsecurity.com` from Roundcube-at-root to OSMAP-at-root
+without widening OSMAP authority.
+
+OSMAP now carries `docs/EDGE_CUTOVER_PLAN.md`. It freezes the current host
+baseline and defines:
+
+- the exact nginx include replacement from `roundcube.tmpl` to an OSMAP root
+  template
+- the exact public-HTTPS listener and PF changes needed for direct browser
+  access on the validated host
+- the rollback path to re-restrict or restore Roundcube without changing the
+  `_osmap` plus `vmail` runtime split
+
+This was chosen instead of jumping straight to host cutover because Version 2
+still needed one reviewable, repo-owned change plan before the real edge move
+could be executed safely and audited later.
+
 ## 2026-04-13
 
 ### Add a standalone live-host proof for encoded header summary rendering

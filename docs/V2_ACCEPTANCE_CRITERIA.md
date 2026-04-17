@@ -75,6 +75,8 @@ of the following must be true:
 
 - the criteria in `INTERNET_EXPOSURE_CHECKLIST.md` are satisfied
 - repo-owned current host exposure evidence exists for the candidate posture
+- the canonical nginx route replacement, PF/listener changes, and rollback
+  path are defined concretely in `EDGE_CUTOVER_PLAN.md`
 - TLS-only browser access through the hardened edge is configured and validated
 - operators have usable auth, session, send, and error visibility for suspected
   hostile activity
