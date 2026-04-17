@@ -65,15 +65,20 @@ treated as an early pilot candidate.
 
 ## Recommended Pilot Posture
 
-The conservative first pilot posture is:
+The intended Version 2 pilot posture is:
 
-- keep the current VPN-first or similarly narrow exposure model
 - keep nginx at the TLS edge
 - run OSMAP `serve` as `_osmap`
 - run OSMAP `mailbox-helper` as `vmail`
 - keep mailbox reads behind the helper socket boundary
 - keep OSMAP state and helper state on separate explicit roots
 - keep OpenBSD confinement in `enforce` once the pilot snapshot is validated
+- allow direct browser access only after the criteria in
+  `INTERNET_EXPOSURE_CHECKLIST.md` are satisfied
+
+Until that exposure gate is passed, VPN-only or similarly narrow rollout
+remains a valid staging and rollback posture, not the intended permanent
+Version 2 browser-access model.
 
 ## Day-One Pilot Checklist
 

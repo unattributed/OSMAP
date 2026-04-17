@@ -3635,3 +3635,65 @@ Validation for this closeout step was:
 - local `cargo test trusted_caller_policy -- --nocapture`
 - local `make security-check`
 - host `./maint/live/osmap-run-v1-closeout-over-ssh.sh --host mail --local-report ./maint/live/latest-host-v1-closeout-report.txt`
+
+## 2026-04-17
+
+### Define Version 2 around migration-capable public browser access, not permanent VPN-only posture
+
+The repository already described OSMAP as an internet-exposure-ready
+replacement and as a browser-mail product that should operate safely on the
+public internet. The earlier VPN-first phrasing in several planning and pilot
+documents was still useful as a current-host baseline and rollback posture, but
+it was too easy to read as the intended permanent deployment model.
+
+That is now clarified this way:
+
+- direct public browser access is an intended supported Version 2 target
+- public exposure is still gated and must not be treated as automatically safe
+- the current VPN-first host shape remains a valid staging, fallback, and
+  rollback posture rather than the definitive product destination
+
+The repository now records that distinction explicitly through:
+
+- `docs/V2_DEFINITION.md`
+- `docs/V2_ACCEPTANCE_CRITERIA.md`
+- updates to `README.md`, `INTERNET_EXPOSURE_CHECKLIST.md`,
+  `MIGRATION_PLAN_ROUNDCUBE.md`, `PILOT_DEPLOYMENT_PLAN.md`, and
+  `KNOWN_LIMITATIONS.md`
+
+This was chosen instead of leaving the earlier wording in place because the
+project needs one authoritative answer to a central Version 2 question:
+
+- OSMAP should be safe enough for direct public browser access, but it should
+  not claim that posture until the repo-defined exposure gate is actually
+  satisfied.
+
+### Add a repo-owned live Version 2 readiness wrapper and matching hostile-path proofs
+
+Once the Version 2 boundary and acceptance criteria were written down, the next
+process risk was drift between the new gate and the commands operators would
+actually run on the validated host.
+
+The repository now carries:
+
+- `maint/live/osmap-live-validate-v2-readiness.ksh`
+- `maint/live/osmap-run-v2-readiness-over-ssh.sh`
+
+along with two new focused live proofs that fill the main Version 2 gate gaps
+not already covered by the Version 1 closeout-era wrappers:
+
+- `maint/live/osmap-live-validate-request-guardrails.ksh`
+- `maint/live/osmap-live-validate-mailbox-backend-unavailable.ksh`
+
+The Version 2 readiness wrapper now brings the current gate into one place:
+
+- existing positive-path proofs such as login, search, archive, session, send,
+  and move
+- existing hostile-path proofs such as login-failure normalization and helper
+  peer rejection
+- new hostile-path proofs for CSRF and same-origin rejection plus bounded
+  mailbox-helper unavailability
+
+This was chosen instead of treating the new Version 2 criteria as a purely
+documentary gate because OSMAP already uses repo-owned live wrappers as the
+authoritative way to keep release claims honest on `mail.blackbagsecurity.com`.

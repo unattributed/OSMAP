@@ -126,10 +126,16 @@ sh maint/security/test-osmap-run-v1-closeout-over-ssh.sh
 echo "==> validating local closeout wrapper step and report handling"
 sh maint/security/test-osmap-live-validate-v1-closeout.sh
 
+echo "==> validating local v2 readiness wrapper step and report handling"
+sh maint/security/test-osmap-live-validate-v2-readiness.sh
+
 echo "==> validating reversible validation-password override flow"
 sh maint/security/test-osmap-validation-password-override.sh
 
 echo "==> validating hook installation and security gate invocation"
 sh maint/security/test-osmap-install-hooks.sh
+
+echo "==> validating v2 readiness ssh wrapper command assembly"
+sh maint/security/test-osmap-run-v2-readiness-over-ssh.sh
 
 echo "==> security-check complete"

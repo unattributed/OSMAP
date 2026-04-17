@@ -3,14 +3,14 @@
 ## Purpose
 
 This checklist defines the minimum questions that should be answered before
-OSMAP moves from a VPN-first posture toward broader internet exposure.
+OSMAP is treated as ready for direct public browser access over the internet.
 
-It is not a launch authorization by itself. It is a control document used to
-decide whether exposure is justified.
+It is not a launch authorization by itself. It is the control document used to
+decide whether public exposure is justified for the current OSMAP snapshot.
 
 ## Defense Readiness
 
-Before broader exposure:
+Before direct public exposure:
 
 - the Version 1 scope must already be stable
 - the Phase 3 security model must be accepted
@@ -22,7 +22,7 @@ Before broader exposure:
 
 ## Monitoring Validation
 
-Before broader exposure:
+Before direct public exposure:
 
 - authentication events must be logged meaningfully
 - sensitive user actions must produce usable audit events
@@ -35,7 +35,7 @@ Before broader exposure:
 
 ## Abuse Controls
 
-Before broader exposure:
+Before direct public exposure:
 
 - login rate limiting or equivalent anti-automation protections must exist
 - session abuse scenarios must have detection and response paths
@@ -45,7 +45,7 @@ Before broader exposure:
 
 ## TLS Configuration
 
-Before broader exposure:
+Before direct public exposure:
 
 - TLS-only access must be enforced
 - certificate management must be reliable and reviewable
@@ -55,7 +55,7 @@ Before broader exposure:
 
 ## Rate Limiting
 
-Before broader exposure:
+Before direct public exposure:
 
 - login paths must have defensible rate limiting or equivalent controls
 - abuse of expensive endpoints must be considered
@@ -63,7 +63,7 @@ Before broader exposure:
 
 ## Incident Readiness
 
-Before broader exposure:
+Before direct public exposure:
 
 - operators must know how to contain a suspected account takeover
 - session revocation and user-impacting response actions must be understood
@@ -80,5 +80,5 @@ Public exposure should require explicit operator approval after review of:
 - known residual risks
 - rollback readiness
 
-If those conditions are not met, the safer default is to keep the service
-within the existing VPN-first model.
+If those conditions are not met, the safer default is to keep the service on a
+narrower staged posture until the public-exposure gate is actually satisfied.

@@ -51,8 +51,8 @@ immediate Roundcube retirement.
 ## Migration Principles
 
 - keep IMAP, SMTP submission, and native clients unchanged
-- prefer rollout behind the current VPN-first or similarly narrow exposure
-  posture first
+- treat direct public browser access as an intended supported deployment target,
+  but only after the repo-defined internet-exposure gate is satisfied
 - do not import risky Roundcube behavior only for parity theater
 - avoid coupling migration success to Roundcube database or preference import
   unless a real blocker proves that necessary
@@ -152,5 +152,5 @@ baseline migration plan:
 - whether any Roundcube preference data is worth migrating at all
 - whether broader folder ergonomics or draft persistence are mandatory for all
   target users
-- when broad internet exposure is justified instead of a conservative
-  VPN-first posture
+- whether any pilot cohort proves a narrow missing workflow is truly mandatory
+  for migration-capable adoption

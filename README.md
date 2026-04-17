@@ -313,15 +313,35 @@ see `docs/V1_CLOSEOUT_WORK_RULES.md`.
 
 ## V2 Direction
 
-The repo now treats the following as Version 2 work unless a narrower V1 need
-is proven:
+Version 2 is now defined as the first pilot-ready, migration-capable production
+candidate for the known OpenBSD mail environment. It is intended to preserve
+OSMAP's narrow security-first shape while making the project credible for
+controlled real-world use and direct browser access through a hardened public
+HTTPS edge once the explicit internet-exposure gate is satisfied.
 
-- broader folder ergonomics beyond the first useful move/archive baseline
-- richer search behavior beyond what normal daily use strictly requires
-- richer session or device intelligence beyond first self-service visibility
+The authoritative Version 2 definition and release gate now live in:
+
+- `docs/V2_DEFINITION.md`
+- `docs/V2_ACCEPTANCE_CRITERIA.md`
+
+The short form is:
+
+- keep the `_osmap` plus `vmail` least-privilege split
+- preserve Dovecot and Postfix as the authoritative backends
+- support direct public browser access only after the repo-defined exposure gate
+  is passed
+- focus Version 2 on migration readiness, operator readiness, pilot readiness,
+  and hostile-path proof rather than on broad feature expansion
+
+Unless a narrower migration-capable need is proven, the following remain beyond
+Version 2:
+
+- broader folder ergonomics beyond the first practical move/archive baseline
+- richer search behavior beyond ordinary daily-use needs
+- richer session or device intelligence beyond first useful security visibility
 - more attachment convenience behavior that would widen browser trust
 - broader settings surface beyond the first bounded user preference
-- mailbox-helper identity derivation beyond the current trusted-service V1
+- mailbox-helper identity derivation beyond the current trusted-service
   boundary, including opaque helper-side identity handles
 - deeper runtime redesign such as worker-pool or async server architecture
 

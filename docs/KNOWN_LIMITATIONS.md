@@ -14,6 +14,10 @@
 - The implementation now has runtime, auth, TOTP, and session foundations, but
   it is still a prototype-grade browser mail product rather than a production
   service
+- Direct public browser exposure is an intended Version 2 target, but the repo
+  does not yet treat the current snapshot as ready for that posture until the
+  explicit gate in `INTERNET_EXPOSURE_CHECKLIST.md` is satisfied and proven
+  against the candidate release state
 - The implementation now has a bounded browser slice with login, mailbox read,
   message view, compose, send, CSRF handling, and attachment download, and it
   now uses bounded concurrent request handling with an explicit connection cap,
@@ -53,6 +57,9 @@
   throttle for the first folder-organization path, but broader request-abuse
   controls and richer anomaly handling still depend on adjacent defenses such
   as nginx, PF, and operator monitoring
+- Operator-facing migration, rollback, and pilot guidance now exists, but the
+  repo still lacks one fully frozen Version 2 gate that ties public-exposure
+  readiness, migration readiness, and hostile-path proof together
 - The remaining authenticated POST routes in the current browser surface
   (`/settings`, `/sessions/revoke`, and `/logout`) are now both CSRF-bound and
   same-origin-bound and remain much lower abuse value than login, send, or
