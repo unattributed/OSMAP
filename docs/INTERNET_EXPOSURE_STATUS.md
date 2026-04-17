@@ -5,7 +5,7 @@
 - assessment date: April 17, 2026
 - assessed host: `mail.blackbagsecurity.com`
 - assessed host checkout: `~/OSMAP`
-- assessed host snapshot for the passing V2 readiness run: `a51557c`
+- assessed host snapshot for the current repo-owned exposure report: `74d9222`
 - repo commit that archives that readiness report: `bbf795c`
 - current repo-owned exposure report artifact:
   `maint/live/latest-host-internet-exposure-report.txt`
@@ -42,6 +42,8 @@ The current state is not a blank slate:
   `maint/live/latest-host-v2-readiness-report.txt`
 - the repo-owned internet-exposure assessment wrapper now exists and can
   produce a current host report without depending on operator memory alone
+- the current repo-owned exposure report now records the actual `mail` host
+  posture for snapshot `74d9222`
 - incident handling, pilot, rollback, and hostile-path guidance now exist in
   repo-owned docs
 - OSMAP host-side least-privilege assumptions are already present on the

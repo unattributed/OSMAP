@@ -3838,3 +3838,23 @@ claims. The safe sequence is:
 1. make the current exposure gate executable and reviewable
 2. archive the current staged-host report
 3. only then design and validate the actual edge cutover and rollback change
+
+### Archive the first repo-owned host internet-exposure report
+
+After the host-side exposure assessment wrapper was added, the next step was to
+use it immediately on `mail.blackbagsecurity.com` and archive the result in the
+repository.
+
+The repository now carries `maint/live/latest-host-internet-exposure-report.txt`
+as the first repo-owned exposure report for the validated host. That report
+records the current staged posture truthfully:
+
+- Roundcube still owns the canonical HTTPS route
+- HTTPS listeners are still limited to loopback and WireGuard addresses
+- the nginx control-plane allowlist is still WireGuard-plus-loopback only
+- the PF selfhost anchor still blocks public ingress to TCP `443`
+
+This was chosen instead of waiting for a future edge-cutover attempt because
+the project needed a current factual baseline before making further direct
+public exposure changes. The repo can now compare future cutover work against a
+concrete before-state rather than against memory.
