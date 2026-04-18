@@ -1,0 +1,8 @@
+osmap_auth_observability_result=passed
+login_url=http://127.0.0.1:8080/login
+serve_log_path=/var/lib/osmap/audit/serve.log
+probe_username=osmap-log-probe@example.invalid
+http_code=401
+log_lines_before=16
+log_lines_after=18
+matched_auth_event=ts=1776499407 level=warn category=auth action=login_denied msg="primary authentication denied" stage="primary" result="denied" public_reason="invalid_credentials" audit_reason="invalid_credentials" submitted_username="osmap-log-probe@example.invalid" request_id="http-2" remote_addr="127.0.0.1" user_agent="curl/8.13.0"

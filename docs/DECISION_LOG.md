@@ -4392,3 +4392,42 @@ decision:
 Current approval state:
 
 - approved for limited direct public browser exposure
+
+### Restore live auth observability and re-provision the Duncan TOTP secret
+
+After direct public browser access was approved on `mail.blackbagsecurity.com`,
+the first real user login check exposed an operational blind spot rather than a
+new browser-surface defect: failed login attempts still returned the correct
+normalized browser error, but the live `_osmap` and `vmail` services were
+discarding stdout and stderr to `/dev/null`, so there was no host-side record
+of which structured auth event had actually fired.
+
+That was corrected in the reviewed OpenBSD launcher artifacts by routing
+service stderr into bounded audit files beneath the existing state roots:
+
+- `/var/lib/osmap/audit/serve.log`
+- `/var/lib/osmap-helper/audit/mailbox-helper.log`
+
+The host-side auth observability proof now passes on the real
+`mail.blackbagsecurity.com` deployment:
+
+- `maint/live/latest-host-auth-observability-report.txt`
+
+That proof confirms a synthetic bad login against the live loopback HTTP
+surface returns `401` and is captured as a structured
+`category=auth action=login_denied` event in the serve audit log.
+
+The same real-user login check also showed that the live TOTP secret stores
+were empty, so the previously enrolled authenticator secret for
+`duncan@blackbagsecurity.com` could not still be valid for the current public
+instance. A new operator-managed `.totp` secret file was therefore installed
+outside the repository under the configured live secret store boundary with the
+required runtime ownership and permissions:
+
+- path: `/var/lib/osmap/secrets/totp/<hex-username>.totp`
+- owner: `_osmap:_osmap`
+- mode: `0600`
+
+This keeps the live TOTP credential inside the reviewed secret-store model,
+restores real auth-path observability, and avoids committing or documenting
+secret material in the repository.
