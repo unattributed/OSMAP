@@ -88,6 +88,15 @@ Public exposure should require explicit operator approval after review of:
 - current monitoring capability
 - known residual risks
 - rollback readiness
+- whether the public OSMAP root is independently safe and correct even when
+  control-plane or operator-only routes remain separately restricted
+
+Control-plane allowlists for `/postfixadmin/`, `/pf/`, `/dr/`, and similar
+operator routes are expected to remain narrower than the public OSMAP root.
+That narrower control-plane posture should be recorded, but it should not by
+itself block approval of the public OSMAP browser surface when the public root,
+listener shape, PF `443` posture, rollback plan, and Version 2 readiness gate
+are all already satisfied.
 
 If those conditions are not met, the safer default is to keep the service on a
 narrower staged posture until the public-exposure gate is actually satisfied.

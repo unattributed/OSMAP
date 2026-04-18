@@ -4300,3 +4300,41 @@ result is now down to the remaining policy-oriented hold:
 That is no longer evidence of a broken public OSMAP root. It is now the
 remaining approval and exposure-gate interpretation question after a passing
 edge validator and a passing full Version 2 readiness gate.
+
+### Narrow the internet-exposure assessment to the public OSMAP root
+
+After the reviewed edge cutover and the passing post-cutover Version 2
+readiness run, the remaining internet-exposure blocker was no longer about the
+public browser surface itself. The repo-owned assessment was still treating the
+intentionally narrow control-plane allowlist as if it blocked approval of the
+public OSMAP root.
+
+That was the wrong boundary. The public OSMAP root and the separately
+restricted control-plane routes have different exposure intent, and the
+assessment needed to reflect that directly.
+
+The repository now narrows `maint/live/osmap-live-assess-internet-exposure.ksh`
+so that:
+
+- true public-root blockers remain blockers
+- narrower control-plane restrictions are preserved as advisory findings
+- a host can be recorded as `approved_for_limited_direct_public_browser_exposure`
+  when the public OSMAP root, WAN `443` posture, rollback path, and full
+  Version 2 readiness gate are already satisfied
+
+The regression now covers both sides of that boundary:
+
+- a still-staged Roundcube-at-root host remains unapproved
+- a reviewed OSMAP-at-root host with a still-narrow control-plane allowlist is
+  approved for limited direct public browser exposure
+
+The validated `mail.blackbagsecurity.com` host was then reassessed on the
+current snapshot, and the repo now records the final explicit approval
+decision:
+
+- `maint/live/latest-host-internet-exposure-report.txt`
+- `docs/INTERNET_EXPOSURE_STATUS.md`
+
+Current approval state:
+
+- approved for limited direct public browser exposure

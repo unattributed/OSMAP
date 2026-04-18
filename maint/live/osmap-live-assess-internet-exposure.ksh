@@ -18,6 +18,8 @@ NGINX_MAIN_HTTP_PATH="${OSMAP_EXPOSURE_NGINX_MAIN_HTTP_PATH:-/etc/nginx/sites-en
 NGINX_SSL_TEMPLATE_PATH="${OSMAP_EXPOSURE_NGINX_SSL_TEMPLATE_PATH:-/etc/nginx/templates/ssl.tmpl}"
 NGINX_CONTROL_PLANE_ALLOW_PATH="${OSMAP_EXPOSURE_NGINX_CONTROL_PLANE_ALLOW_PATH:-/etc/nginx/control-plane.allow}"
 PF_SELFHOST_ANCHOR="${OSMAP_EXPOSURE_PF_SELFHOST_ANCHOR:-selfhost}"
+BLOCKING_REASONS=""
+ADVISORY_FINDINGS=""
 
 log() {
   printf '%s\n' "$*"
@@ -126,13 +128,23 @@ extract_allow_entries() {
   ' | paste -sd ',' -
 }
 
-append_reason() {
+append_blocker() {
   reason="$1"
   if [ -z "${BLOCKING_REASONS}" ]; then
     BLOCKING_REASONS="${reason}"
   else
     BLOCKING_REASONS="${BLOCKING_REASONS}
 ${reason}"
+  fi
+}
+
+append_advisory() {
+  finding="$1"
+  if [ -z "${ADVISORY_FINDINGS}" ]; then
+    ADVISORY_FINDINGS="${finding}"
+  else
+    ADVISORY_FINDINGS="${ADVISORY_FINDINGS}
+${finding}"
   fi
 }
 
@@ -152,6 +164,10 @@ write_report() {
     printf 'blocking_reasons=\n'
     if [ -n "${BLOCKING_REASONS}" ]; then
       printf '%s\n' "${BLOCKING_REASONS}"
+    fi
+    printf 'advisory_findings=\n'
+    if [ -n "${ADVISORY_FINDINGS}" ]; then
+      printf '%s\n' "${ADVISORY_FINDINGS}"
     fi
     printf 'listener_lines=\n'
     printf '%s\n' "${LISTENER_LINES}"
@@ -195,23 +211,26 @@ SUBMISSION_TLS_BINDINGS="$(listener_bindings_for_port 465)"
 SUBMISSION_BINDINGS="$(listener_bindings_for_port 587)"
 MAIN_SSL_INCLUDE_TARGETS="$(extract_include_targets "${MAIN_SSL_CONTENT}" | paste -sd ',' -)"
 CONTROL_PLANE_ALLOW_ENTRIES="$(extract_allow_entries "${CONTROL_PLANE_ALLOW_CONTENT}")"
-BLOCKING_REASONS=""
 ASSESSMENT_RESULT="not_approved_for_direct_public_browser_exposure"
 
 if printf '%s\n' "${MAIN_SSL_CONTENT}" | grep -Fq '/etc/nginx/templates/roundcube.tmpl'; then
-  append_reason "canonical_https_vhost_still_includes_roundcube_template"
+  append_blocker "canonical_https_vhost_still_includes_roundcube_template"
 fi
 
 if [ "${HTTPS_BINDINGS:-}" = "127.0.0.1.443,10.44.0.1.443" ] || [ "${HTTPS_BINDINGS:-}" = "10.44.0.1.443,127.0.0.1.443" ]; then
-  append_reason "https_listeners_are_limited_to_loopback_and_wireguard_addresses"
+  append_blocker "https_listeners_are_limited_to_loopback_and_wireguard_addresses"
 fi
 
 if [ "${CONTROL_PLANE_ALLOW_ENTRIES:-}" = "10.44.0.0/24,127.0.0.1" ] || [ "${CONTROL_PLANE_ALLOW_ENTRIES:-}" = "127.0.0.1,10.44.0.0/24" ]; then
-  append_reason "nginx_control_plane_allowlist_is_limited_to_wireguard_and_loopback"
+  append_advisory "nginx_control_plane_allowlist_is_limited_to_wireguard_and_loopback"
 fi
 
 if printf '%s\n' "${PF_SELFHOST_RULES}" | grep -Fq 'block drop in log quick on egress inet proto tcp from any to (egress) port = 443'; then
-  append_reason "pf_selfhost_anchor_blocks_public_ingress_to_tcp_443"
+  append_blocker "pf_selfhost_anchor_blocks_public_ingress_to_tcp_443"
+fi
+
+if [ -z "${BLOCKING_REASONS}" ]; then
+  ASSESSMENT_RESULT="approved_for_limited_direct_public_browser_exposure"
 fi
 
 write_report

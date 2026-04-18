@@ -112,30 +112,95 @@ assert_contains() {
   }
 }
 
-report_path="${tmp_root}/internet-exposure-report.txt"
-output=$(
+write_approved_fixture() {
+  cat > "${fake_sites_dir}/main-ssl.conf" <<'EOF'
+server {
+    listen 127.0.0.1:443 ssl;
+    listen 10.44.0.1:443 ssl;
+    listen 192.168.1.44:443 ssl;
+    include /etc/nginx/templates/ssl.tmpl;
+    include /etc/nginx/templates/osmap-root.tmpl;
+}
+EOF
+
+  cat > "${bin_dir}/netstat" <<'EOF'
+#!/bin/sh
+cat <<'OUT'
+tcp          0      0  *.80                   *.*                    LISTEN
+tcp          0      0  127.0.0.1.443          *.*                    LISTEN
+tcp          0      0  10.44.0.1.443          *.*                    LISTEN
+tcp          0      0  192.168.1.44.443       *.*                    LISTEN
+tcp          0      0  127.0.0.1.993          *.*                    LISTEN
+tcp          0      0  10.44.0.1.993          *.*                    LISTEN
+tcp          0      0  127.0.0.1.465          *.*                    LISTEN
+tcp          0      0  10.44.0.1.465          *.*                    LISTEN
+tcp          0      0  127.0.0.1.587          *.*                    LISTEN
+tcp          0      0  10.44.0.1.587          *.*                    LISTEN
+tcp          0      0  *.25                   *.*                    LISTEN
+OUT
+EOF
+
+  cat > "${bin_dir}/pfctl" <<'EOF'
+#!/bin/sh
+cat <<'OUT'
+pass in quick on egress inet proto tcp from any to (egress) port = 22 flags S/SA keep state
+pass in quick on egress inet proto udp from any to (egress) port = 51820 keep state
+pass in quick on egress inet proto tcp from any to (egress) port = 443 flags S/SA synproxy state (if-bound)
+pass in quick on wg0 inet proto tcp from 10.44.0.0/24 to any flags S/SA keep state
+OUT
+EOF
+
+  chmod +x "${bin_dir}/netstat" "${bin_dir}/pfctl"
+}
+
+staged_report_path="${tmp_root}/internet-exposure-staged-report.txt"
+staged_output=$(
   env \
     PATH="${bin_dir}:${PATH}" \
     OSMAP_EXPOSURE_NGINX_MAIN_HTTP_PATH="${fake_sites_dir}/main.conf" \
     OSMAP_EXPOSURE_NGINX_MAIN_SSL_PATH="${fake_sites_dir}/main-ssl.conf" \
     OSMAP_EXPOSURE_NGINX_SSL_TEMPLATE_PATH="${fake_templates_dir}/ssl.tmpl" \
     OSMAP_EXPOSURE_NGINX_CONTROL_PLANE_ALLOW_PATH="${fake_nginx_dir}/control-plane.allow" \
-    sh "${fake_live_dir}/osmap-live-assess-internet-exposure.ksh" --report "${report_path}"
+    sh "${fake_live_dir}/osmap-live-assess-internet-exposure.ksh" --report "${staged_report_path}"
 )
 
-assert_contains "${output}" "wrote internet exposure report to ${report_path}"
-assert_contains "${output}" "internet exposure result: not_approved_for_direct_public_browser_exposure"
+assert_contains "${staged_output}" "wrote internet exposure report to ${staged_report_path}"
+assert_contains "${staged_output}" "internet exposure result: not_approved_for_direct_public_browser_exposure"
 
-report_contents=$(cat "${report_path}")
-assert_contains "${report_contents}" "osmap_internet_exposure_result=not_approved_for_direct_public_browser_exposure"
-assert_contains "${report_contents}" "assessed_host=mail.blackbagsecurity.com"
-assert_contains "${report_contents}" "assessed_snapshot=deadbeef"
-assert_contains "${report_contents}" "https_listener_bindings=10.44.0.1.443,127.0.0.1.443"
-assert_contains "${report_contents}" "control_plane_allow_entries=10.44.0.0/24,127.0.0.1"
-assert_contains "${report_contents}" "canonical_https_vhost_still_includes_roundcube_template"
-assert_contains "${report_contents}" "https_listeners_are_limited_to_loopback_and_wireguard_addresses"
-assert_contains "${report_contents}" "nginx_control_plane_allowlist_is_limited_to_wireguard_and_loopback"
-assert_contains "${report_contents}" "pf_selfhost_anchor_blocks_public_ingress_to_tcp_443"
+staged_report_contents=$(cat "${staged_report_path}")
+assert_contains "${staged_report_contents}" "osmap_internet_exposure_result=not_approved_for_direct_public_browser_exposure"
+assert_contains "${staged_report_contents}" "assessed_host=mail.blackbagsecurity.com"
+assert_contains "${staged_report_contents}" "assessed_snapshot=deadbeef"
+assert_contains "${staged_report_contents}" "https_listener_bindings=10.44.0.1.443,127.0.0.1.443"
+assert_contains "${staged_report_contents}" "control_plane_allow_entries=10.44.0.0/24,127.0.0.1"
+assert_contains "${staged_report_contents}" "canonical_https_vhost_still_includes_roundcube_template"
+assert_contains "${staged_report_contents}" "https_listeners_are_limited_to_loopback_and_wireguard_addresses"
+assert_contains "${staged_report_contents}" "pf_selfhost_anchor_blocks_public_ingress_to_tcp_443"
+assert_contains "${staged_report_contents}" "advisory_findings="
+assert_contains "${staged_report_contents}" "nginx_control_plane_allowlist_is_limited_to_wireguard_and_loopback"
+
+write_approved_fixture
+
+approved_report_path="${tmp_root}/internet-exposure-approved-report.txt"
+approved_output=$(
+  env \
+    PATH="${bin_dir}:${PATH}" \
+    OSMAP_EXPOSURE_NGINX_MAIN_HTTP_PATH="${fake_sites_dir}/main.conf" \
+    OSMAP_EXPOSURE_NGINX_MAIN_SSL_PATH="${fake_sites_dir}/main-ssl.conf" \
+    OSMAP_EXPOSURE_NGINX_SSL_TEMPLATE_PATH="${fake_templates_dir}/ssl.tmpl" \
+    OSMAP_EXPOSURE_NGINX_CONTROL_PLANE_ALLOW_PATH="${fake_nginx_dir}/control-plane.allow" \
+    sh "${fake_live_dir}/osmap-live-assess-internet-exposure.ksh" --report "${approved_report_path}"
+)
+
+assert_contains "${approved_output}" "wrote internet exposure report to ${approved_report_path}"
+assert_contains "${approved_output}" "internet exposure result: approved_for_limited_direct_public_browser_exposure"
+
+approved_report_contents=$(cat "${approved_report_path}")
+assert_contains "${approved_report_contents}" "osmap_internet_exposure_result=approved_for_limited_direct_public_browser_exposure"
+assert_contains "${approved_report_contents}" "https_listener_bindings=10.44.0.1.443,127.0.0.1.443,192.168.1.44.443"
+assert_contains "${approved_report_contents}" "canonical_https_includes=/etc/nginx/templates/ssl.tmpl,/etc/nginx/templates/osmap-root.tmpl"
+assert_contains "${approved_report_contents}" "blocking_reasons="
+assert_contains "${approved_report_contents}" "advisory_findings="
+assert_contains "${approved_report_contents}" "nginx_control_plane_allowlist_is_limited_to_wireguard_and_loopback"
 
 printf '%s\n' "internet exposure assessment regression checks passed"
-

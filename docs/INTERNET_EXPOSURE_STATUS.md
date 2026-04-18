@@ -11,25 +11,26 @@
   - `maint/live/latest-host-edge-cutover-report.txt`
   - `maint/live/latest-host-internet-exposure-report.txt`
   - `maint/live/latest-host-v2-readiness-report.txt`
-- current result: `not approved for direct public browser exposure`
+- current result: `approved for limited direct public browser exposure`
 
-## Why The Result Is Not Approved Yet
+## Why The Result Is Approved
 
 The current host no longer matches the earlier staged Roundcube-at-root posture.
-The reviewed OSMAP edge cutover is now applied and validator-proven. The
-remaining reason the repo-owned exposure assessment still returns
-`not approved` is narrower:
+The reviewed OSMAP edge cutover is now applied and validator-proven, and the
+repo-owned internet-exposure assessment now evaluates the public OSMAP root
+separately from intentionally narrower control-plane routes.
 
-- the repo-owned exposure assessment still records
+- the current repo-owned exposure report records
   `nginx_control_plane_allowlist_is_limited_to_wireguard_and_loopback`
 - that allowlist is intentionally still narrow for control-plane and operator
   routes
-- the public OSMAP root does not depend on that control-plane allowlist, so
-  the remaining work is an explicit approval decision and any follow-on
-  refinement of the exposure assessor, not a broken browser-edge deployment
+- the public OSMAP root does not depend on that control-plane allowlist
+- the repo now records that narrower control-plane posture as an advisory
+  finding rather than a blocker for the public OSMAP browser surface
 
-That means the host has reached the reviewed cutover posture, but the repo does
-not yet auto-promote it to an approved direct-public result.
+That means the validated host has reached the reviewed cutover posture and is
+approved for limited direct public browser exposure under the current recorded
+conditions.
 
 ## What Is Already True
 
@@ -53,7 +54,7 @@ The current state is not a blank slate:
 - the repo-owned internet-exposure assessment wrapper now exists and can
   produce a current host report without depending on operator memory alone
 - the current repo-owned exposure report now records the actual post-cutover
-  `mail` host posture for snapshot `03d9e75`
+  `mail` host posture for snapshot `5d8bcfb`
 - incident handling, pilot, rollback, and hostile-path guidance now exist in
   repo-owned docs
 - OSMAP host-side least-privilege assumptions are already present on the
@@ -95,17 +96,20 @@ The current state is not a blank slate:
 - the current archived service-activation apply session is
   `maint/live/latest-host-service-activation-session.txt`
 
-## What Must Happen Before Approval
+## Approval Conditions
 
-Before this status can move to an approved direct-public result, the repo and
-the validated host still need both of the following:
+This limited direct-public approval holds only while all of the following stay
+true:
 
-- an explicit operator approval decision that the current reviewed edge,
-  rollback path, and post-cutover readiness evidence are sufficient for the
-  intended direct-public use
-- a decision on whether the remaining exposure-assessment blocker should stay
-  as an approval hold or be narrowed so it only evaluates control-plane routes
-  rather than the public OSMAP root
+- the canonical HTTPS root continues to serve OSMAP through the reviewed edge
+  shape in `maint/live/latest-host-edge-cutover-report.txt`
+- the full Version 2 readiness gate continues to pass, as recorded in
+  `maint/live/latest-host-v2-readiness-report.txt`
+- WAN `443` remains intentionally enabled while the other end-user mail-client
+  ports remain blocked on WAN
+- control-plane and operator-only routes remain separately restricted
+- the rollback path in `EDGE_CUTOVER_PLAN.md` remains ready to restore the
+  narrower posture quickly
 
 ## Security Meaning
 
@@ -115,9 +119,7 @@ The current result should be read as:
 - the persistent `_osmap` plus `vmail` loopback runtime is now present and
   validator-proven on the real host
 - the reviewed browser edge is now deployed on the validated host
-- the current remaining exposure hold is about explicit approval and precise
-  exposure-gate interpretation, not about a failed edge cutover or broken V2
-  runtime
+- the current narrower control-plane allowlist is intentional and remains an
+  advisory condition, not a blocker for the public OSMAP browser root
 
-That is a tighter and more advanced state than the earlier staged posture, but
-it is still not the same thing as a completed approval decision.
+That is the recorded limited-approval state for the current validated host.

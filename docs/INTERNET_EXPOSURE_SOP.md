@@ -70,6 +70,8 @@ The standard host checkout is:
    - the assessed repo snapshot
    - whether direct public browser exposure is approved or not approved
    - the factual blockers or conditions attached to that result
+   - any advisory findings that apply only to separately restricted
+     control-plane or operator routes
 8. If the result remains `not approved`, keep the current staged posture and
    record the narrowest concrete next requirements.
 9. If the result becomes `approved`, record the exact public edge shape, the
@@ -103,11 +105,19 @@ Avoid softer phrases such as "probably ready" or "should be fine." The point of
 this SOP is to force a concrete operator decision tied to the real host and the
 current repo state.
 
+Use `approved for limited direct public browser exposure` when:
+
+- the canonical HTTPS root serves OSMAP through the reviewed edge shape
+- WAN `443` is intentionally enabled
+- the full Version 2 readiness gate still passes
+- rollback remains available
+- any remaining narrower restrictions apply only to control-plane or
+  operator-only routes rather than the public OSMAP browser root
+
 ## Current Reality
 
-As of April 17, 2026, the current `mail.blackbagsecurity.com` posture is still
-a staged narrow-exposure deployment, not a direct-public OSMAP deployment.
-
-That is a valid current state. It should be recorded truthfully, not treated as
-a failure. Version 2 intends to support direct public browser access, but only
-after the explicit exposure gate is actually passed.
+As of April 18, 2026, the validated `mail.blackbagsecurity.com` host has the
+reviewed OSMAP browser edge applied and still passes the full guarded Version 2
+readiness gate. The remaining exposure review work is now about explicit
+approval and precise recording of any control-plane-only restrictions, not
+about a missing or broken public OSMAP root deployment.
