@@ -126,12 +126,16 @@ capture_group_line() {
 
 capture_user_membership() {
   user_name="$1"
-  doas sh -lc "id -Gn ${user_name} 2>/dev/null" || true
+  doas id -Gn "${user_name}" 2>/dev/null || true
 }
 
 capture_service_check_status() {
   service_name="$1"
-  doas sh -lc "rcctl check ${service_name} >/dev/null 2>&1; printf '%s' \$?"
+  if doas rcctl check "${service_name}" >/dev/null 2>&1; then
+    printf '%s' "0"
+  else
+    printf '%s' "$?"
+  fi
 }
 
 write_report() {
