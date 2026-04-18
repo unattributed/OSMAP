@@ -1,0 +1,231 @@
+osmap_edge_cutover_result=passed
+project_root=/home/foo/OSMAP
+assessed_host=mail.blackbagsecurity.com
+assessed_snapshot=03d9e75
+expected_https_listener_bindings=10.44.0.1.443,127.0.0.1.443,192.168.1.44.443
+https_listener_bindings=10.44.0.1.443,127.0.0.1.443,192.168.1.44.443
+osmap_listener_bindings=127.0.0.1.8080
+canonical_https_includes=/etc/nginx/templates/ssl.tmpl,/etc/nginx/templates/misc.tmpl,/etc/nginx/templates/osmap-root.tmpl,/etc/nginx/templates/sogo.tmpl,/etc/nginx/templates/postfixadmin.tmpl,/etc/nginx/templates/php-catchall.tmpl,/etc/nginx/templates/stub_status.tmpl,/etc/nginx/templates/pf_dashboard.locations.tmpl,/etc/nginx/templates/ops_monitor.locations.tmpl,/etc/nginx/templates/obsd1_dr_portal.locations.tmpl,/etc/nginx/templates/rspamd.tmpl,/etc/nginx/templates/brevo_webhook.locations.tmpl
+failed_checks=
+listener_lines=
+tcp          0      0  192.168.1.44.443       *.*                    LISTEN
+tcp          0      0  127.0.0.1.8080         *.*                    LISTEN
+tcp          0      0  10.44.0.1.443          *.*                    LISTEN
+tcp          0      0  127.0.0.1.443          *.*                    LISTEN
+nginx_main_ssl=
+# Main HTTPS vhost for mail.blackbagsecurity.com
+# nginx chroot: /var/www
+#
+# Exposed URLs:
+# - https://mail.blackbagsecurity.com/postfixadmin/
+# - https://mail.blackbagsecurity.com/ (OSMAP webmail)
+# - https://mail.blackbagsecurity.com/sogo (SOGo groupware)
+# - https://mail.blackbagsecurity.com/pf/ (pfstat for pf, suricata, and spamd)
+# - https://mail.blackbagsecurity.com/dr/ (obsd1-dr portal)
+
+
+server {
+    listen 127.0.0.1:443 ssl;
+    listen 10.44.0.1:443 ssl;
+    listen 192.168.1.44:443 ssl;
+    http2 on;
+
+    server_name mail.blackbagsecurity.com 10.44.0.1 127.0.0.1;
+
+    # Default root for this vhost (inside chroot /var/www)
+    # /htdocs is /var/www/htdocs on the real filesystem
+    root /htdocs;
+    index index.php index.html;
+
+    # Serve outbound-brand assets such as BIMI SVGs or mark certificates from
+    # a stable HTTPS path on the same host that publishes outbound mail auth.
+    location ^~ /.well-known/bimi/ {
+        try_files $uri =404;
+        add_header Cache-Control "public, max-age=300";
+    }
+
+    # TLS, misc hardening, and application templates
+    include /etc/nginx/templates/ssl.tmpl;
+    include /etc/nginx/templates/misc.tmpl;
+    include /etc/nginx/templates/osmap-root.tmpl;
+    include /etc/nginx/templates/sogo.tmpl;
+    include /etc/nginx/templates/postfixadmin.tmpl;
+    include /etc/nginx/templates/php-catchall.tmpl;
+    include /etc/nginx/templates/stub_status.tmpl;
+    include /etc/nginx/templates/pf_dashboard.locations.tmpl;
+    include /etc/nginx/templates/ops_monitor.locations.tmpl;
+    include /etc/nginx/templates/obsd1_dr_portal.locations.tmpl;
+    include /etc/nginx/templates/rspamd.tmpl;
+    include /etc/nginx/templates/brevo_webhook.locations.tmpl;
+
+    # General logs for this vhost
+    access_log /var/log/nginx/mail.access.log;
+    error_log  /var/log/nginx/mail.error.log;
+}
+nginx_osmap_root_template=
+# OSMAP on mail.blackbagsecurity.com
+# Canonical browser path:
+#   https://mail.blackbagsecurity.com/
+
+# Preserve legacy entry aliases but converge on the canonical root.
+location = /mail { return 301 /; }
+location = /webmail { return 301 /; }
+location ^~ /mail/ { return 301 /; }
+location ^~ /webmail/ { return 301 /; }
+
+location / {
+    limit_except GET POST { deny all; }
+
+    proxy_pass http://127.0.0.1:8080;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_buffering off;
+}
+pf_macros=
+# Shared macros describing WAN listeners, blocked ports, and VPN-only services for the WireGuard mail host
+
+ext_if                 = "egress"
+vpn_if                 = "wg0"
+vpn_net                = "10.44.0.0/24"
+wg_port                = "51820"
+ssh_port               = "22"
+
+# TCP services that are reachable on the host exclusively for WireGuard clients
+# include both submission (587 STARTTLS) and smtps (465) for client compatibility.
+vpn_host_tcp_svcs      = "{ 465, 587, 993 }"
+
+# TCP services that must stay closed on WAN (SMTP handled by spamd anchor)
+# HTTP/80 is controlled by the acme anchor (closed by default, opened only during renewals).
+wan_blocked_tcp_svcs   = "{ 110, 143, 465, 587, 993, 995, 2000, 4190, 8080, 9999 }"
+
+# DNS service on the WireGuard interface (tcp + udp)
+vpn_dns_svcs           = "{ 53 }"
+
+# Networks VPN clients are not allowed to reach (RFC1918 + link-local + localhost)
+vpn_banned_client_targets = "{ 127.0.0.0/8, 169.254.0.0/16, 172.16.0.0/12, 192.168.0.0/16 }"
+
+# SSH rate limiting, fed by sshguard table
+wan_ssh_limits         = "max-src-conn-rate 10/60, overload <sshguard> flush global"
+pf_selfhost_config=
+# /etc/pf.anchors/selfhost.pf
+# anchor with rules for traffic that is specific to this self hosting mail host
+
+include "/etc/pf.anchors/macros.pf"
+
+########################################################################
+# 0. Suricata-assisted IPS guardrails (tables defined in pf.conf)
+########################################################################
+
+# Tables are fed by suricata_eve2pf.ksh (watch first, block later).
+# suricata_watch / suricata_block / suricata_allow are defined globally in pf.conf.
+
+# Allowlist before block to avoid accidental IPS impact on trusted sources.
+pass in quick on $ext_if inet from <suricata_allow> to any
+block in log quick on $ext_if inet from <suricata_block> to any
+
+########################################################################
+# 1. NAT for WireGuard clients (IPv4 only)
+########################################################################
+
+# clients on 10.44.0.0/24 go out to the internet via the external IPv4
+match out on $ext_if inet from $vpn_net to any nat-to ($ext_if) round-robin
+
+########################################################################
+# 2. WAN facing rules on the external interface (IPv4 and IPv6)
+########################################################################
+
+# 2.1 SSH from anywhere on the internet (rate limited, fed into <sshguard>)
+pass in quick on $ext_if inet proto tcp from any to ($ext_if) port $ssh_port \
+    flags S/SA \
+    keep state (max-src-conn-rate 10/60, overload <sshguard> flush global, \
+                source-track rule, if-bound, src.track 60)
+
+# 2.2 WireGuard listener on the public internet
+pass in quick on $ext_if inet proto udp from any to ($ext_if) port $wg_port \
+    keep state (if-bound)
+
+# SMTP ingress is handled in the spamd anchor (port 25 policy lives there)
+
+# 2.3 Public HTTPS for OSMAP at the canonical mail host root
+pass in quick on $ext_if inet proto tcp from any to ($ext_if) port = 443 \
+    flags S/SA synproxy state (if-bound)
+
+# 2.4 Explicitly drop the remaining end-user mail ports on the WAN
+# keep them reachable only via the reviewed browser edge or WireGuard
+block drop in log quick on $ext_if inet proto tcp from any \
+    to ($ext_if) port $wan_blocked_tcp_svcs
+
+########################################################################
+# 3. Services for WireGuard clients (10.44.0.0/24, IPv4 only)
+########################################################################
+
+# 3.1 Mail stack on the host itself, via WireGuard
+# - to the wg0 address
+pass in quick on $vpn_if inet proto tcp from $vpn_net to ($vpn_if) \
+    port $vpn_host_tcp_svcs \
+    flags S/SA synproxy state (if-bound)
+
+# - to the external interface address, helps when using MX or hostnames
+pass in quick on $vpn_if inet proto tcp from $vpn_net to ($ext_if) \
+    port $vpn_host_tcp_svcs \
+    flags S/SA keep state (if-bound)
+
+# 3.2 DNS and ICMP for VPN clients, host acts as DNS resolver
+pass in quick on $vpn_if inet proto tcp from $vpn_net to ($vpn_if) port $vpn_dns_svcs \
+    flags S/SA keep state (if-bound)
+
+pass in quick on $vpn_if inet proto udp from $vpn_net to ($vpn_if) port $vpn_dns_svcs \
+    keep state (if-bound)
+
+pass in quick on $vpn_if inet proto icmp from $vpn_net to ($vpn_if) \
+    keep state (if-bound)
+
+# 3.3 Prevent VPN clients from reaching other RFC1918 networks
+block drop in log quick on $vpn_if inet from $vpn_net \
+    to $vpn_banned_client_targets
+
+# 3.4 Allow VPN clients to reach anywhere else on the internet
+pass in quick on $vpn_if inet proto tcp from $vpn_net to any \
+    flags S/SA keep state (if-bound)
+
+pass in quick on $vpn_if inet proto udp from $vpn_net to any \
+    keep state (if-bound)
+
+pass in quick on $vpn_if inet proto icmp from $vpn_net to any \
+    keep state (if-bound)
+pf_selfhost_runtime_rules=
+pass in quick on egress inet from <suricata_allow> to any flags S/SA keep state (if-bound)
+block drop in log quick on egress inet from <suricata_block> to any
+match out on egress inet from 10.44.0.0/24 to any nat-to (egress) round-robin
+pass in quick on egress inet proto tcp from any to (egress) port = 22 flags S/SA keep state (source-track rule, max-src-conn-rate 10/60, overload <sshguard> flush global, if-bound, src.track 60)
+pass in quick on egress inet proto udp from any to (egress) port = 51820 keep state (if-bound)
+pass in quick on egress inet proto tcp from any to (egress) port = 443 flags S/SA synproxy state (if-bound)
+block drop in log quick on egress inet proto tcp from any to (egress) port = 110
+block drop in log quick on egress inet proto tcp from any to (egress) port = 143
+block drop in log quick on egress inet proto tcp from any to (egress) port = 465
+block drop in log quick on egress inet proto tcp from any to (egress) port = 587
+block drop in log quick on egress inet proto tcp from any to (egress) port = 993
+block drop in log quick on egress inet proto tcp from any to (egress) port = 995
+block drop in log quick on egress inet proto tcp from any to (egress) port = 2000
+block drop in log quick on egress inet proto tcp from any to (egress) port = 4190
+block drop in log quick on egress inet proto tcp from any to (egress) port = 8080
+block drop in log quick on egress inet proto tcp from any to (egress) port = 9999
+pass in quick on wg0 inet proto tcp from 10.44.0.0/24 to (wg0) port = 465 flags S/SA synproxy state (if-bound)
+pass in quick on wg0 inet proto tcp from 10.44.0.0/24 to (wg0) port = 587 flags S/SA synproxy state (if-bound)
+pass in quick on wg0 inet proto tcp from 10.44.0.0/24 to (wg0) port = 993 flags S/SA synproxy state (if-bound)
+pass in quick on wg0 inet proto tcp from 10.44.0.0/24 to (egress) port = 465 flags S/SA keep state (if-bound)
+pass in quick on wg0 inet proto tcp from 10.44.0.0/24 to (egress) port = 587 flags S/SA keep state (if-bound)
+pass in quick on wg0 inet proto tcp from 10.44.0.0/24 to (egress) port = 993 flags S/SA keep state (if-bound)
+pass in quick on wg0 inet proto tcp from 10.44.0.0/24 to (wg0) port = 53 flags S/SA keep state (if-bound)
+pass in quick on wg0 inet proto udp from 10.44.0.0/24 to (wg0) port = 53 keep state (if-bound)
+pass in quick on wg0 inet proto icmp from 10.44.0.0/24 to (wg0) keep state (if-bound)
+block drop in log quick on wg0 inet from 10.44.0.0/24 to 127.0.0.0/8
+block drop in log quick on wg0 inet from 10.44.0.0/24 to 169.254.0.0/16
+block drop in log quick on wg0 inet from 10.44.0.0/24 to 172.16.0.0/12
+block drop in log quick on wg0 inet from 10.44.0.0/24 to 192.168.0.0/16
+pass in quick on wg0 inet proto tcp from 10.44.0.0/24 to any flags S/SA keep state (if-bound)
+pass in quick on wg0 inet proto udp from 10.44.0.0/24 to any keep state (if-bound)
+pass in quick on wg0 inet proto icmp from 10.44.0.0/24 to any keep state (if-bound)

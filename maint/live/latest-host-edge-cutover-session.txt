@@ -1,0 +1,15 @@
+osmap_edge_cutover_session_mode=apply
+project_root=/home/foo/OSMAP
+artifact_root=/home/foo/OSMAP/maint/openbsd/mail.blackbagsecurity.com
+session_dir=/home/foo/osmap-edge-cutover/proof-20260418-cutover
+backup_root=/home/foo/osmap-edge-cutover/proof-20260418-cutover/backup
+staged_root=/home/foo/osmap-edge-cutover/proof-20260418-cutover/staged
+scripts_root=/home/foo/osmap-edge-cutover/proof-20260418-cutover/scripts
+apply_script=/home/foo/osmap-edge-cutover/proof-20260418-cutover/scripts/apply-edge-cutover.sh
+restore_script=/home/foo/osmap-edge-cutover/proof-20260418-cutover/scripts/restore-edge-cutover.sh
+live_nginx_main_ssl_path=/etc/nginx/sites-enabled/main-ssl.conf
+live_nginx_osmap_root_template_path=/etc/nginx/templates/osmap-root.tmpl
+live_pf_macros_path=/etc/pf.anchors/macros.pf
+live_pf_selfhost_path=/etc/pf.anchors/selfhost.pf
+live_pf_conf_path=/etc/pf.conf
+nf

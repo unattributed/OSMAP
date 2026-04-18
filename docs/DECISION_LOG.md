@@ -4254,3 +4254,49 @@ needed one explicit proof point for:
 The first live host run now also truthfully records the current blocker in a
 repo-owned artifact: the validated host still fails the gate at the earliest
 precondition because `/usr/local/bin/osmap` is not installed yet.
+
+### Apply the reviewed mail host edge cutover and rerun the full V2 gate
+
+With the persistent `_osmap` plus `vmail` runtime already validator-proven on
+`mail.blackbagsecurity.com`, the next highest-leverage step was the reviewed
+browser-edge transition itself:
+
+- apply the repo-owned nginx and PF cutover artifacts on the validated host
+- rerun the repo-owned edge validator
+- rerun the repo-owned internet-exposure assessment
+- rerun the full guarded Version 2 readiness wrapper against the changed host
+
+This was chosen instead of continuing to add more staging-only docs because the
+remaining Version 2 question had become operational rather than architectural:
+could the real host serve OSMAP at the canonical HTTPS root, keep the loopback
+runtime boundary intact, and still pass the full hostile-path and workflow gate.
+
+The cutover itself succeeded on `mail.blackbagsecurity.com`:
+
+- `maint/live/latest-host-edge-cutover-session.txt` records the generated apply
+  and restore session from the standard `~/OSMAP` checkout
+- `maint/live/latest-host-edge-cutover-report.txt` now records a passing edge
+  validator result for snapshot `03d9e75`
+- `maint/live/latest-host-v2-readiness-report.txt` now records a passing full
+  Version 2 readiness gate after the cutover
+
+During the first post-cutover readiness rerun, one repo-owned correctness bug
+showed up in the host-side `security-check` path: the service-enablement
+validator still used brittle `doas sh -lc` wrappers for `id` and `rcctl`, which
+made the regression harness behave inconsistently on the validated OpenBSD host.
+
+That defect was fixed immediately by tightening
+`maint/live/osmap-live-validate-service-enablement.ksh` to call `doas id` and
+`doas rcctl check` directly while still preserving explicit return-code capture.
+This was the smallest correct fix because it both restored the post-cutover V2
+gate and reduced unnecessary shell execution on the validation path.
+
+The current repo-owned exposure assessment still returns
+`not_approved_for_direct_public_browser_exposure`, but after the cutover that
+result is now down to the remaining policy-oriented hold:
+
+- `nginx_control_plane_allowlist_is_limited_to_wireguard_and_loopback`
+
+That is no longer evidence of a broken public OSMAP root. It is now the
+remaining approval and exposure-gate interpretation question after a passing
+edge validator and a passing full Version 2 readiness gate.
