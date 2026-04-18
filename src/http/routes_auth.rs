@@ -504,6 +504,25 @@ where
         let expected_host = request.headers.get("host")?.to_ascii_lowercase();
 
         if let Some(origin) = request.headers.get("origin") {
+            if is_opaque_origin(origin) {
+                if let Some(referer) = request.headers.get("referer") {
+                    return validate_same_origin_header(
+                        SameOriginHeaderKind::Referer,
+                        referer,
+                        &expected_host,
+                        validated_session,
+                        context,
+                    );
+                }
+
+                return Some(rejected_same_origin_response(
+                    "http_origin_opaque",
+                    "origin header was opaque and no fallback referer was present",
+                    context,
+                    validated_session,
+                ));
+            }
+
             return validate_same_origin_header(
                 SameOriginHeaderKind::Origin,
                 origin,
@@ -584,6 +603,10 @@ fn validate_same_origin_header(
     }
 
     None
+}
+
+fn is_opaque_origin(value: &str) -> bool {
+    value.trim().eq_ignore_ascii_case("null")
 }
 
 fn extract_absolute_uri_authority(value: &str) -> Option<String> {

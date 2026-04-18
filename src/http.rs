@@ -2048,6 +2048,57 @@ mod tests {
     }
 
     #[test]
+    fn send_route_accepts_opaque_origin_when_same_origin_referer_is_present() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/send",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                    ("Origin", "null"),
+                    ("Referer", "https://localhost/compose"),
+                ],
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&to=bob%40example.com&subject=Test&body=Hello",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 303);
+        assert!(response
+            .response
+            .headers
+            .iter()
+            .any(|(name, value)| name == "Location" && value == "/compose?sent=1"));
+    }
+
+    #[test]
+    fn authenticated_post_routes_reject_opaque_origin_without_same_origin_referer() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/logout",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                    ("Origin", "null"),
+                ],
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 403);
+        assert!(body_text(&response).contains("Request Origin Rejected"));
+    }
+
+    #[test]
     fn authenticated_post_routes_reject_cross_origin_headers() {
         for (path, body) in [
             (

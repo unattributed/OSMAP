@@ -3943,6 +3943,27 @@ Validation for this change was:
   `POST /sessions/revoke`, `POST /settings`, and `POST /logout` validators on
   `mail.blackbagsecurity.com`
 
+After the public-edge cutover, one real-browser regression appeared on the
+compose send path: Firefox submitted a multipart authenticated `POST /send`
+with `Origin: null`, and OSMAP treated that opaque origin value as a hard
+origin-parse failure before it considered the same-origin `Referer` that the
+browser also sent.
+
+That was stricter than intended and broke a workflow that had previously worked
+without improving cross-origin protection. The request-guardrail logic now
+handles this case narrowly:
+
+- `Origin: null` is treated as an opaque browser origin, not as accepted
+  same-origin metadata
+- when that opaque origin appears, OSMAP may fall back to a same-origin
+  `Referer`
+- opaque-origin requests without a same-origin `Referer` still fail closed
+- cross-origin absolute `Origin` values and malformed absolute origins still
+  fail closed as before
+
+This restores the real browser compose/send flow while preserving the intended
+same-origin guardrail boundary.
+
 ### Fail mailbox-helper startup closed unless the trusted auth-socket owner matches the expected web-runtime UID
 
 OSMAP's mailbox-helper boundary already rejects Unix-socket peers whose UID

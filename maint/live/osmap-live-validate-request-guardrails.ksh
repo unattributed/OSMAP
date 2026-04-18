@@ -8,6 +8,7 @@
 # - invalid CSRF on an authenticated POST is rejected
 # - cross-origin authenticated POST requests are rejected
 # - authenticated POST requests without same-origin metadata are rejected
+# - opaque Origin headers may fall back to a same-origin Referer
 
 set -eu
 
@@ -297,6 +298,14 @@ MISSING_ORIGIN_RESPONSE="$(post_request "/logout" "csrf_token=${CSRF_TOKEN}")"
 printf '%s\n' "$(response_body "${MISSING_ORIGIN_RESPONSE}")" | grep -Fq "Request Origin Rejected" || {
   log "missing same-origin metadata response did not render the expected body"
   printf '%s\n' "${MISSING_ORIGIN_RESPONSE}"
+  exit 1
+}
+
+log "verifying opaque Origin fallback with same-origin Referer on /logout"
+OPAQUE_ORIGIN_RESPONSE="$(post_request "/logout" "csrf_token=${CSRF_TOKEN}" "null" "https://127.0.0.1/compose")"
+[ "$(status_line "${OPAQUE_ORIGIN_RESPONSE}")" = "HTTP/1.1 303 See Other" ] || {
+  log "opaque Origin fallback request did not return 303"
+  printf '%s\n' "${OPAQUE_ORIGIN_RESPONSE}"
   exit 1
 }
 
