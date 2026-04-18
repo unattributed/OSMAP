@@ -54,7 +54,7 @@ The current state is not a blank slate:
 - the repo-owned internet-exposure assessment wrapper now exists and can
   produce a current host report without depending on operator memory alone
 - the current repo-owned exposure report now records the actual post-cutover
-  `mail` host posture for snapshot `5d8bcfb`
+  `mail` host posture for snapshot `d1c1a2f`
 - incident handling, pilot, rollback, and hostile-path guidance now exist in
   repo-owned docs
 - OSMAP host-side least-privilege assumptions are already present on the

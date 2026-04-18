@@ -1,7 +1,7 @@
-osmap_internet_exposure_result=not_approved_for_direct_public_browser_exposure
+osmap_internet_exposure_result=approved_for_limited_direct_public_browser_exposure
 project_root=/home/foo/OSMAP
 assessed_host=mail.blackbagsecurity.com
-assessed_snapshot=03d9e75
+assessed_snapshot=d1c1a2f
 https_listener_bindings=10.44.0.1.443,127.0.0.1.443,192.168.1.44.443
 http_listener_bindings=*.80
 imap_tls_listener_bindings=10.44.0.1.993,127.0.0.1.993
@@ -10,9 +10,9 @@ submission_listener_bindings=10.44.0.1.587,127.0.0.1.587
 control_plane_allow_entries=10.44.0.0/24,127.0.0.1
 canonical_https_includes=/etc/nginx/templates/ssl.tmpl,/etc/nginx/templates/misc.tmpl,/etc/nginx/templates/osmap-root.tmpl,/etc/nginx/templates/sogo.tmpl,/etc/nginx/templates/postfixadmin.tmpl,/etc/nginx/templates/php-catchall.tmpl,/etc/nginx/templates/stub_status.tmpl,/etc/nginx/templates/pf_dashboard.locations.tmpl,/etc/nginx/templates/ops_monitor.locations.tmpl,/etc/nginx/templates/obsd1_dr_portal.locations.tmpl,/etc/nginx/templates/rspamd.tmpl,/etc/nginx/templates/brevo_webhook.locations.tmpl
 blocking_reasons=
+advisory_findings=
 nginx_control_plane_allowlist_is_limited_to_wireguard_and_loopback
 listener_lines=
-tcp          0      0  192.168.1.44.443       *.*                    LISTEN
 tcp          0      0  *.80                   *.*                    LISTEN
 tcp          0      0  10.44.0.1.443          *.*                    LISTEN
 tcp          0      0  127.0.0.1.443          *.*                    LISTEN
@@ -26,6 +26,7 @@ tcp          0      0  10.44.0.1.587          *.*                    LISTEN
 tcp          0      0  127.0.0.1.587          *.*                    LISTEN
 tcp          0      0  *.25                   *.*                    LISTEN
 tcp          0      0  192.168.1.44.22        *.*                    LISTEN
+tcp          0      0  192.168.1.44.443       *.*                    LISTEN
 pf_selfhost_rules=
 pass in quick on egress inet from <suricata_allow> to any flags S/SA keep state (if-bound)
 block drop in log quick on egress inet from <suricata_block> to any
