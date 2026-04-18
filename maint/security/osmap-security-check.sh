@@ -171,4 +171,7 @@ sh maint/security/test-osmap-live-rehearse-service-artifacts.sh
 echo "==> validating service-activation rehearsal wrapper behavior"
 sh maint/security/test-osmap-live-rehearse-service-activation.sh
 
+echo "==> validating openbsd rc.d process-expression placement"
+sh maint/security/test-osmap-openbsd-rcd-health.sh
+
 echo "==> security-check complete"

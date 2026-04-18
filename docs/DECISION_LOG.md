@@ -29,6 +29,25 @@ This was chosen instead of jumping straight to edge cutover because Version 2
 still benefits more from proving the persistent loopback runtime is healthy
 before the public browser path moves away from Roundcube.
 
+### Fix the reviewed rc.d health check definitions before treating activation as complete
+
+The first real host-side service-activation apply revealed that the runtime
+itself could come up while `rcctl check` still failed. The helper socket
+existed, `127.0.0.1:8080` was listening, and both OSMAP processes were present,
+but the reviewed `rc.d` scripts were still unhealthy in the eyes of OpenBSD
+service management.
+
+The cause was the placement of `pexp` in the reviewed `rc.d` scripts. OSMAP
+had set `pexp` before sourcing `/etc/rc.d/rc.subr`, but OpenBSD recomputes
+that variable during initialization. The resulting runtime state used the
+launcher path instead of the final `/usr/local/bin/osmap ...` process shape,
+so `rcctl check` looked for the wrong command line.
+
+OSMAP now sets `pexp` after sourcing `rc.subr` in both reviewed `rc.d`
+artifacts and carries a dedicated regression in
+`maint/security/test-osmap-openbsd-rcd-health.sh` so this exact mismatch does
+not regress.
+
 ### Clear the next mail-host service blockers with the reviewed service-artifact path
 
 After the reviewed service-artifact wrapper existed, the next useful step was
