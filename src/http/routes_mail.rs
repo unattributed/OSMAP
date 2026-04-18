@@ -6,6 +6,19 @@
 
 use super::*;
 
+fn mailbox_is_user_visible(mailbox_name: &str) -> bool {
+    matches!(mailbox_name, "INBOX" | "Drafts" | "Junk" | "Sent" | "Trash")
+        || mailbox_name.starts_with("INBOX.")
+}
+
+fn filter_user_visible_mailboxes(mailboxes: &[MailboxEntry]) -> Vec<MailboxEntry> {
+    mailboxes
+        .iter()
+        .filter(|mailbox| mailbox_is_user_visible(&mailbox.name))
+        .cloned()
+        .collect()
+}
+
 impl<G> BrowserApp<G>
 where
     G: BrowserGateway,
@@ -29,19 +42,22 @@ where
             BrowserMailboxDecision::Listed {
                 canonical_username,
                 mailboxes,
-            } => HandledHttpResponse {
-                response: html_response(
-                    200,
-                    "OK",
-                    "Mailboxes",
-                    &render_mailboxes_page(
-                        &canonical_username,
-                        &validated_session.record.csrf_token,
-                        &mailboxes,
+            } => {
+                let visible_mailboxes = filter_user_visible_mailboxes(&mailboxes);
+                HandledHttpResponse {
+                    response: html_response(
+                        200,
+                        "OK",
+                        "Mailboxes",
+                        &render_mailboxes_page(
+                            &canonical_username,
+                            &validated_session.record.csrf_token,
+                            &visible_mailboxes,
+                        ),
                     ),
-                ),
-                audit_events,
-            },
+                    audit_events,
+                }
+            }
             BrowserMailboxDecision::Denied { public_reason } => HandledHttpResponse {
                 response: html_response(
                     503,

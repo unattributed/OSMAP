@@ -658,10 +658,19 @@ mod tests {
                     canonical_username: validated_session.record.canonical_username.clone(),
                     mailboxes: vec![
                         MailboxEntry {
+                            name: "dovecot".to_string(),
+                        },
+                        MailboxEntry {
+                            name: "dovecot.sieve".to_string(),
+                        },
+                        MailboxEntry {
                             name: "INBOX".to_string(),
                         },
                         MailboxEntry {
-                            name: "Archive/2026".to_string(),
+                            name: "INBOX.Projects".to_string(),
+                        },
+                        MailboxEntry {
+                            name: "Drafts".to_string(),
                         },
                     ],
                 },
@@ -1359,7 +1368,11 @@ mod tests {
         assert_eq!(response.response.status_code, 200);
         let body = body_text(&response);
         assert!(body.contains("alice@example.com"));
-        assert!(body.contains("Archive/2026"));
+        assert!(body.contains(">INBOX</a>"));
+        assert!(body.contains(">INBOX.Projects</a>"));
+        assert!(body.contains(">Drafts</a>"));
+        assert!(!body.contains(">dovecot</a>"));
+        assert!(!body.contains(">dovecot.sieve</a>"));
     }
 
     #[test]

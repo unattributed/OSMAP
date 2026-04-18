@@ -3988,6 +3988,28 @@ The result is that real same-origin browser form submits can succeed even when
 privacy behavior strips `Referer` and uses `Origin: null`, without reopening
 cross-site state-changing routes.
 
+### Hide non-user Dovecot control mailboxes from the mailbox-home page
+
+The real `mail.blackbagsecurity.com` mailbox-home page was still surfacing
+internal Dovecot control mailboxes like `dovecot` and `dovecot.sieve` alongside
+real user folders. Those entries are operationally real, but they are not part
+of the intended browser mailbox surface for Version 2 and create noise on the
+page users actually navigate.
+
+The mailbox-home route now filters the rendered folder list down to the
+user-facing subset:
+
+- `INBOX`
+- any `INBOX.*` child mailbox
+- `Drafts`
+- `Junk`
+- `Sent`
+- `Trash`
+
+This was kept as a narrow presentation-layer filter so OSMAP does not change
+the backend mailbox authority or the underlying helper-backed listing behavior.
+It only removes non-user control mailboxes from the mailbox-home page.
+
 ### Fail mailbox-helper startup closed unless the trusted auth-socket owner matches the expected web-runtime UID
 
 OSMAP's mailbox-helper boundary already rejects Unix-socket peers whose UID
