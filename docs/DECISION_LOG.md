@@ -2,6 +2,29 @@
 
 ## 2026-04-18
 
+### Preserve real client IPs behind the loopback nginx edge
+
+Once OSMAP was live on the public browser edge, the next operational truth was
+uncomfortable: auth, session, send, and mailbox audit events still recorded
+`remote_addr="127.0.0.1"` because the `_osmap` runtime only trusted the local
+TCP peer and ignored the client IP headers that nginx already set.
+
+That weakened two important Version 2 properties:
+
+- operator-visible audit logs no longer showed the actual browser client
+- remote-address-based throttle buckets collapsed behind the local reverse
+  proxy instead of reflecting the real remote browser
+
+OSMAP now derives the effective browser client IP from loopback-trusted proxy
+headers:
+
+- trust `X-Real-IP` only when the immediate peer is loopback
+- otherwise ignore proxy headers and keep using the socket peer address
+
+This keeps the trust boundary narrow. OSMAP does not accept arbitrary
+forwarding headers from non-loopback clients, but it now preserves the real
+browser client IP when nginx proxies locally on the validated host shape.
+
 ### Stop short of nginx OCSP stapling on the current mail host certificate
 
 The next TLS task on `mail.blackbagsecurity.com` was to enable OCSP stapling

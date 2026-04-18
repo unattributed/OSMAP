@@ -7,7 +7,7 @@
 use std::collections::BTreeMap;
 use std::io::ErrorKind;
 use std::io::Read as _;
-use std::net::{SocketAddr, TcpStream};
+use std::net::{IpAddr, SocketAddr, TcpStream};
 
 use crate::http::{
     HttpMethod, HttpPolicy, HttpRequest, HttpRequestError, HttpRequestErrorKind,
@@ -24,6 +24,55 @@ use crate::session::SessionToken;
 /// context and auth-helper metadata.
 pub(crate) fn normalize_peer_addr(addr: SocketAddr) -> String {
     addr.ip().to_string()
+}
+
+/// Derives the effective client address for browser audit and throttle context.
+///
+/// OSMAP trusts proxy-supplied client IP metadata only when the immediate peer
+/// is loopback. This matches the current mail host shape, where nginx proxies
+/// locally to the `_osmap` runtime and sets `X-Real-IP` explicitly from the
+/// browser-facing client address.
+pub(crate) fn effective_remote_addr(request: &HttpRequest, peer_remote_addr: &str) -> String {
+    if !is_loopback_addr(peer_remote_addr) {
+        return peer_remote_addr.to_string();
+    }
+
+    if let Some(forwarded) = request
+        .headers
+        .get("x-real-ip")
+        .and_then(|value| normalize_forwarded_ip(value))
+    {
+        return forwarded;
+    }
+
+    if let Some(forwarded_for) = request
+        .headers
+        .get("x-forwarded-for")
+        .and_then(|value| normalize_forwarded_for(value))
+    {
+        return forwarded_for;
+    }
+
+    peer_remote_addr.to_string()
+}
+
+fn is_loopback_addr(value: &str) -> bool {
+    value
+        .parse::<IpAddr>()
+        .map(|addr| addr.is_loopback())
+        .unwrap_or(false)
+}
+
+fn normalize_forwarded_ip(value: &str) -> Option<String> {
+    value
+        .trim()
+        .parse::<IpAddr>()
+        .ok()
+        .map(|addr| addr.to_string())
+}
+
+fn normalize_forwarded_for(value: &str) -> Option<String> {
+    value.split(',').rev().find_map(normalize_forwarded_ip)
 }
 
 /// Reads one bounded HTTP request from the supplied stream.
@@ -483,5 +532,60 @@ fn empty_request_error(reason: impl Into<String>) -> HttpRequestError {
     HttpRequestError {
         kind: HttpRequestErrorKind::Empty,
         reason: reason.into(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{effective_remote_addr, normalize_peer_addr};
+    use crate::http::{HttpPolicy, HttpRequest};
+    use std::net::SocketAddr;
+
+    fn request_with_headers(headers: &[(&str, &str)]) -> HttpRequest {
+        let mut raw = String::from("GET /login HTTP/1.1\r\nHost: localhost\r\n");
+        for (name, value) in headers {
+            raw.push_str(&format!("{name}: {value}\r\n"));
+        }
+        raw.push_str("\r\n");
+
+        crate::http::parse_http_request_bytes(raw.as_bytes(), &HttpPolicy::default())
+            .expect("request should parse")
+    }
+
+    #[test]
+    fn normalizes_peer_addresses_to_bare_ip_strings() {
+        let ipv4 = "127.0.0.1:18091"
+            .parse::<SocketAddr>()
+            .expect("ipv4 socket addr should parse");
+        let ipv6 = "[::1]:18091"
+            .parse::<SocketAddr>()
+            .expect("ipv6 socket addr should parse");
+
+        assert_eq!(normalize_peer_addr(ipv4), "127.0.0.1");
+        assert_eq!(normalize_peer_addr(ipv6), "::1");
+    }
+
+    #[test]
+    fn trusts_x_real_ip_only_from_loopback_peers() {
+        let request = request_with_headers(&[("X-Real-IP", "198.51.100.24")]);
+
+        assert_eq!(
+            effective_remote_addr(&request, "127.0.0.1"),
+            "198.51.100.24"
+        );
+        assert_eq!(
+            effective_remote_addr(&request, "203.0.113.9"),
+            "203.0.113.9"
+        );
+    }
+
+    #[test]
+    fn falls_back_to_last_forwarded_for_hop_for_loopback_proxy_requests() {
+        let request = request_with_headers(&[("X-Forwarded-For", "198.51.100.13, 198.51.100.24")]);
+
+        assert_eq!(
+            effective_remote_addr(&request, "127.0.0.1"),
+            "198.51.100.24"
+        );
     }
 }

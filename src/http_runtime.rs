@@ -8,7 +8,7 @@ use std::time::{Duration, Instant};
 
 use crate::auth::AuthenticationContext;
 use crate::config::{AppConfig, AppRunMode, LogLevel};
-use crate::http_parse::{normalize_peer_addr, read_http_request};
+use crate::http_parse::{effective_remote_addr, normalize_peer_addr, read_http_request};
 use crate::http_support::{build_http_info_event, build_http_warning_event, html_response};
 use crate::logging::{EventCategory, LogEvent, Logger};
 use crate::openbsd::apply_runtime_confinement;
@@ -67,10 +67,11 @@ where
 {
     /// Handles one parsed HTTP request from the supplied remote address.
     pub fn handle_request(&self, request: &HttpRequest, remote_addr: &str) -> HandledHttpResponse {
+        let effective_remote_addr = effective_remote_addr(request, remote_addr);
         let context = match AuthenticationContext::new(
             self.policy.authentication_policy,
             next_request_id(),
-            remote_addr,
+            &effective_remote_addr,
             request
                 .headers
                 .get("user-agent")
@@ -91,7 +92,7 @@ where
                         "http request context validation failed",
                         &AuthenticationContext {
                             request_id: "<invalid>".to_string(),
-                            remote_addr: remote_addr.to_string(),
+                            remote_addr: effective_remote_addr,
                             user_agent: "<invalid>".to_string(),
                         },
                     )

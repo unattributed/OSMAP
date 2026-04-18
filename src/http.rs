@@ -32,8 +32,6 @@ use crate::auth::{
 use crate::config::LogLevel;
 use crate::config::{AppConfig, RuntimeEnvironment};
 use crate::http_form::{parse_compose_form, parse_urlencoded_form};
-#[cfg(test)]
-use crate::http_parse::normalize_peer_addr;
 use crate::http_parse::{
     allows_urlencoded_request_body, build_session_cookie, clear_session_cookie,
     compose_source_from_request, session_cookie_value,
@@ -363,7 +361,7 @@ mod tests {
     use crate::throttle::LoginThrottleStore;
     use std::fs;
     use std::io::{Read as _, Write as _};
-    use std::net::{Shutdown, SocketAddr, TcpListener};
+    use std::net::{Shutdown, TcpListener};
     use std::path::PathBuf;
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::sync::Arc;
@@ -2436,19 +2434,6 @@ mod tests {
         );
     }
 
-    #[test]
-    fn normalizes_peer_addresses_to_bare_ip_strings() {
-        let ipv4 = "127.0.0.1:18091"
-            .parse::<SocketAddr>()
-            .expect("ipv4 socket addr should parse");
-        let ipv6 = "[::1]:18091"
-            .parse::<SocketAddr>()
-            .expect("ipv6 socket addr should parse");
-
-        assert_eq!(normalize_peer_addr(ipv4), "127.0.0.1");
-        assert_eq!(normalize_peer_addr(ipv6), "::1");
-    }
-
     fn temp_dir(prefix: &str) -> PathBuf {
         let dir = std::env::temp_dir().join(format!("{prefix}-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
@@ -2500,6 +2485,58 @@ mod tests {
             .expect("client should close write side");
 
         server.join().expect("server thread should finish");
+    }
+
+    #[test]
+    fn login_form_uses_trusted_loopback_proxy_client_ip_for_audit_context() {
+        let response = app().handle_request(
+            &request(
+                "GET",
+                "/login",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    ("X-Real-IP", "198.51.100.24"),
+                ],
+                "",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 200);
+        let event = response
+            .audit_events
+            .first()
+            .expect("login form should emit one audit event");
+        assert!(event
+            .fields
+            .iter()
+            .any(|field| field.key == "remote_addr" && field.value == "198.51.100.24"));
+    }
+
+    #[test]
+    fn login_form_ignores_proxy_client_ip_headers_from_non_loopback_peers() {
+        let response = app().handle_request(
+            &request(
+                "GET",
+                "/login",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    ("X-Real-IP", "198.51.100.24"),
+                ],
+                "",
+            ),
+            "203.0.113.9",
+        );
+
+        assert_eq!(response.response.status_code, 200);
+        let event = response
+            .audit_events
+            .first()
+            .expect("login form should emit one audit event");
+        assert!(event
+            .fields
+            .iter()
+            .any(|field| field.key == "remote_addr" && field.value == "203.0.113.9"));
     }
 
     #[test]
