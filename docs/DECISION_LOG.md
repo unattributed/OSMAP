@@ -4583,3 +4583,35 @@ message-list summary flow:
 
 This keeps the change inside the existing narrow read surface while making the
 mailbox page meaningfully more useful for controlled real-world use.
+
+### Align low-level HTTP telemetry with the effective client IP
+
+After the public browser edge was validated behind nginx, request-scoped auth
+and mailbox events already reflected the real browser client IP because the
+runtime trusted `X-Real-IP` only from loopback peers. The lower-level HTTP
+runtime telemetry was still inconsistent, though:
+
+- route events like `http_login_form_served` showed the effective client IP
+- generic completion and response-write recovery events could still show the
+  loopback proxy peer
+
+That mismatch weakened audit readability on the public edge. The repository now
+reuses the same effective-client-IP decision for parsed requests when emitting:
+
+- `http_request_completed`
+- `http_request_slow`
+- parsed-request response write failure events
+- parsed-request response write recovery events
+
+Socket-level events that fire before any request is parsed, like over-capacity
+connection rejection and empty/truncated connection handling, still report the
+actual peer address because there is no trusted request metadata to evaluate at
+that point.
+
+The repo now also carries a dedicated live validator for this boundary:
+
+- `maint/live/osmap-live-validate-effective-client-ip-telemetry.ksh`
+
+That wrapper confirms a loopback-proxied request with `X-Real-IP` produces
+matching route-level and low-level HTTP audit lines with the same effective
+client address.

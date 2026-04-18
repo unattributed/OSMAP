@@ -621,19 +621,21 @@ fn handle_client_stream_with_write_tracking<G>(
     let (handled, request_completion, request_write_context) =
         match read_http_request(stream, app.policy()) {
             Ok(request) => {
+                let effective_request_remote_addr = effective_remote_addr(&request, &remote_addr);
                 let handled = app.handle_request(&request, &remote_addr);
                 let status_code = handled.response.status_code;
                 let response_bytes = handled.response.to_http_bytes();
                 (
                     handled,
                     Some(RequestCompletionContext {
-                        remote_addr: remote_addr.clone(),
+                        remote_addr: effective_request_remote_addr.clone(),
                         method: request.method,
                         path: request.path.clone(),
                         status_code,
                         response_bytes: response_bytes.len(),
                     }),
                     Some((
+                        effective_request_remote_addr,
                         request.method.as_str().to_string(),
                         request.path.clone(),
                         response_bytes.len(),
@@ -732,12 +734,16 @@ fn handle_client_stream_with_write_tracking<G>(
             let request_context =
                 request_write_context
                     .as_ref()
-                    .map(|(method, path, attempted_bytes)| {
+                    .map(|(_, method, path, attempted_bytes)| {
                         (method.as_str(), path.as_str(), *attempted_bytes)
                     });
+            let effective_remote_addr = request_write_context
+                .as_ref()
+                .map(|(remote_addr, _, _, _)| remote_addr.clone())
+                .unwrap_or_else(|| remote_addr.clone());
             logger.emit(
                 &build_response_write_failure_event(ResponseWriteFailureContext {
-                    remote_addr,
+                    remote_addr: effective_remote_addr,
                     reason: error.to_string(),
                     consecutive_failures,
                     status_code: Some(handled.response.status_code),
@@ -896,7 +902,7 @@ pub(super) fn build_successful_response_events(
     request_completion: Option<&RequestCompletionContext>,
     consecutive_response_write_failures: &AtomicUsize,
     duration: Duration,
-    remote_addr: &str,
+    fallback_remote_addr: &str,
 ) -> Vec<LogEvent> {
     let mut events = Vec::new();
 
@@ -911,9 +917,13 @@ pub(super) fn build_successful_response_events(
         ));
     }
 
-    if let Some(recovery_event) =
-        take_response_write_recovery_event(consecutive_response_write_failures, remote_addr)
-    {
+    let recovery_remote_addr = request_completion
+        .map(|completion_context| completion_context.remote_addr.as_str())
+        .unwrap_or(fallback_remote_addr);
+    if let Some(recovery_event) = take_response_write_recovery_event(
+        consecutive_response_write_failures,
+        recovery_remote_addr,
+    ) {
         events.push(recovery_event);
     }
 

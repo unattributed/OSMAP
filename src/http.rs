@@ -2942,6 +2942,43 @@ mod tests {
     }
 
     #[test]
+    fn successful_response_events_use_effective_remote_addr_for_recovery_after_parsed_requests() {
+        let completion = super::http_runtime::RequestCompletionContext {
+            remote_addr: "198.51.100.24".to_string(),
+            method: HttpMethod::Get,
+            path: "/login".to_string(),
+            status_code: 200,
+            response_bytes: 512,
+        };
+        let prior_failures = AtomicUsize::new(5);
+
+        let events = super::http_runtime::build_successful_response_events(
+            Some(&completion),
+            &prior_failures,
+            Duration::from_millis(25),
+            "127.0.0.1",
+        );
+
+        let completion_event = events
+            .iter()
+            .find(|event| event.action == "http_request_completed")
+            .expect("completion event should be present");
+        assert!(completion_event
+            .fields
+            .iter()
+            .any(|field| { field.key == "remote_addr" && field.value == "198.51.100.24" }));
+
+        let recovery_event = events
+            .iter()
+            .find(|event| event.action == "http_response_write_recovered")
+            .expect("recovery event should be present");
+        assert!(recovery_event
+            .fields
+            .iter()
+            .any(|field| { field.key == "remote_addr" && field.value == "198.51.100.24" }));
+    }
+
+    #[test]
     fn over_capacity_connections_receive_service_unavailable() {
         let response = with_connected_streams(|mut stream| {
             let policy = HttpPolicy {
