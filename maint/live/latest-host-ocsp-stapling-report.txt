@@ -1,0 +1,8 @@
+nginx_ocsp_stapling_result=unsupported_by_certificate
+cert_path=/etc/ssl/mail.blackbagsecurity.com.fullchain.pem
+connect_host=mail.blackbagsecurity.com
+connect_port=443
+server_name=mail.blackbagsecurity.com
+ocsp_responder_url=
+failure_reason=leaf_certificate_has_no_ocsp_responder_url
+s_client_status_line=no_ocsp_status_check_attempted

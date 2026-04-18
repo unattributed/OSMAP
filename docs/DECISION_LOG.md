@@ -2,6 +2,40 @@
 
 ## 2026-04-18
 
+### Stop short of nginx OCSP stapling on the current mail host certificate
+
+The next TLS task on `mail.blackbagsecurity.com` was to enable OCSP stapling
+for the nginx HTTPS endpoint with the smallest safe change. The repo and host
+inspection showed:
+
+- the authoritative TLS include is `/etc/nginx/templates/ssl.tmpl`
+- the live certificate is `/etc/ssl/mail.blackbagsecurity.com.fullchain.pem`
+- the host has OpenBSD `ocspcheck(8)` available
+- the current leaf certificate is a Let's Encrypt E7 leaf with no OCSP
+  responder URL in its Authority Information Access extension
+
+The decisive host checks were:
+
+- `openssl x509 -in /etc/ssl/mail.blackbagsecurity.com.fullchain.pem -ocsp_uri -noout`
+  returned nothing
+- `ocspcheck /etc/ssl/mail.blackbagsecurity.com.fullchain.pem` failed with
+  `contains no OCSP url`
+
+Because the deployed certificate does not expose an OCSP responder URL, OSMAP
+did not add nginx stapling directives, an `ocspcheck` staple-file workflow, or
+any certificate-renewal hook changes. That would have created config churn
+without producing a real stapled response.
+
+Instead, the repo now carries
+`maint/live/osmap-live-validate-nginx-ocsp-stapling.ksh` plus one shell
+regression so this prerequisite is explicit and reproducible. For the current
+certificate chain, the expected result is
+`nginx_ocsp_stapling_result=unsupported_by_certificate`.
+
+The current archived host evidence is:
+
+- `maint/live/latest-host-ocsp-stapling-report.txt`
+
 ### Restore live auth observability before further browser-auth debugging
 
 The public browser surface was already working, but the first real failed login

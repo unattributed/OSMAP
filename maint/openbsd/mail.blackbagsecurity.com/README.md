@@ -23,6 +23,20 @@ generic launchers and `rc.d` scripts under `maint/openbsd/` and the host-side
 wrappers `maint/live/osmap-live-rehearse-service-artifacts.ksh` and
 `maint/live/osmap-live-rehearse-service-activation.ksh`.
 
+## TLS note
+
+The current live certificate at
+`/etc/ssl/mail.blackbagsecurity.com.fullchain.pem` is a Let's Encrypt E7 leaf
+that does not advertise an OCSP responder URL in its Authority Information
+Access extension.
+
+That means OCSP stapling is not currently implementable for this exact host
+certificate chain with either direct nginx stapling or an OpenBSD
+`ocspcheck`-generated staple file. The repo-owned validator
+`maint/live/osmap-live-validate-nginx-ocsp-stapling.ksh` is the authoritative
+check for this prerequisite and should be run before attempting any stapling
+configuration change on this host.
+
 Use these artifacts when the host is ready for:
 
 - reviewed OSMAP binary deployment into `/usr/local/bin/osmap`

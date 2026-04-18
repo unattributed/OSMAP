@@ -177,6 +177,9 @@ sh maint/security/test-osmap-openbsd-launcher-log-capture.sh
 echo "==> validating live auth observability wrapper behavior"
 sh maint/security/test-osmap-live-validate-auth-observability.sh
 
+echo "==> validating nginx OCSP stapling wrapper behavior"
+sh maint/security/test-osmap-live-validate-nginx-ocsp-stapling.sh
+
 echo "==> validating openbsd rc.d process-expression placement"
 sh maint/security/test-osmap-openbsd-rcd-health.sh
 
