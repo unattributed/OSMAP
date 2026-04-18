@@ -856,7 +856,7 @@ mod tests {
             MessageListPolicy::default(),
             MessageSearchPolicy::default(),
             MessageViewPolicy::default(),
-            "status=ok\noperation=message_list\nmailbox_name=INBOX\nmessage_count=2\nmessage_uid=7\nmessage_flags=\\Seen\nmessage_date_received=2026-03-27 12:00:00 +0000\nmessage_size_virtual=42\nmessage_mailbox=INBOX\nmessage_end=1\nmessage_uid=8\nmessage_flags=\nmessage_date_received=2026-03-27 13:00:00 +0000\nmessage_size_virtual=43\nmessage_mailbox=INBOX\nmessage_end=1\n",
+            "status=ok\noperation=message_list\nmailbox_name=INBOX\nmessage_count=2\nmessage_uid=7\nmessage_flags=\\Seen\nmessage_date_received=2026-03-27 12:00:00 +0000\nmessage_size_virtual=42\nmessage_mailbox=INBOX\nmessage_subject=Quarterly report\nmessage_from=Alice <alice@example.com>\nmessage_end=1\nmessage_uid=8\nmessage_flags=\nmessage_date_received=2026-03-27 13:00:00 +0000\nmessage_size_virtual=43\nmessage_mailbox=INBOX\nmessage_subject=Follow-up\nmessage_from=Bob <bob@example.com>\nmessage_end=1\n",
         )
         .expect("message-list response should parse");
 
@@ -871,6 +871,8 @@ mod tests {
                         flags: vec!["\\Seen".to_string()],
                         date_received: "2026-03-27 12:00:00 +0000".to_string(),
                         size_virtual: 42,
+                        subject: Some("Quarterly report".to_string()),
+                        from: Some("Alice <alice@example.com>".to_string()),
                     },
                     MessageSummary {
                         mailbox_name: "INBOX".to_string(),
@@ -878,6 +880,8 @@ mod tests {
                         flags: Vec::new(),
                         date_received: "2026-03-27 13:00:00 +0000".to_string(),
                         size_virtual: 43,
+                        subject: Some("Follow-up".to_string()),
+                        from: Some("Bob <bob@example.com>".to_string()),
                     },
                 ],
             }
@@ -1079,6 +1083,8 @@ mod tests {
                     flags: vec!["\\Seen".to_string()],
                     date_received: "2026-03-27 12:00:00 +0000".to_string(),
                     size_virtual: 99,
+                    subject: Some("Quarterly report".to_string()),
+                    from: Some("Alice <alice@example.com>".to_string()),
                 },
                 MessageSummary {
                     mailbox_name: "INBOX".to_string(),
@@ -1086,6 +1092,8 @@ mod tests {
                     flags: Vec::new(),
                     date_received: "2026-03-27 13:00:00 +0000".to_string(),
                     size_virtual: 100,
+                    subject: Some("Follow-up".to_string()),
+                    from: Some("Bob <bob@example.com>".to_string()),
                 },
             ])),
             message_search_result: Arc::new(Ok(Vec::new())),
@@ -1114,7 +1122,14 @@ mod tests {
 
         assert_eq!(messages.len(), 2);
         assert_eq!(messages[0].uid, 10);
+        assert_eq!(messages[0].subject.as_deref(), Some("Quarterly report"));
+        assert_eq!(
+            messages[0].from.as_deref(),
+            Some("Alice <alice@example.com>")
+        );
         assert_eq!(messages[1].uid, 11);
+        assert_eq!(messages[1].subject.as_deref(), Some("Follow-up"));
+        assert_eq!(messages[1].from.as_deref(), Some("Bob <bob@example.com>"));
     }
 
     #[cfg(unix)]

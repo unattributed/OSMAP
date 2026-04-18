@@ -53,6 +53,7 @@ pub struct MessageListPolicy {
     pub max_messages: usize,
     pub message_date_max_len: usize,
     pub message_flag_string_max_len: usize,
+    pub header_value_max_len: usize,
 }
 
 impl Default for MessageListPolicy {
@@ -62,6 +63,7 @@ impl Default for MessageListPolicy {
             max_messages: DEFAULT_MAX_MESSAGES,
             message_date_max_len: DEFAULT_MESSAGE_DATE_MAX_LEN,
             message_flag_string_max_len: DEFAULT_MESSAGE_FLAG_STRING_MAX_LEN,
+            header_value_max_len: DEFAULT_SEARCH_HEADER_VALUE_MAX_LEN,
         }
     }
 }
@@ -188,6 +190,8 @@ pub struct MessageSummary {
     pub flags: Vec<String>,
     pub date_received: String,
     pub size_virtual: u64,
+    pub subject: Option<String>,
+    pub from: Option<String>,
 }
 
 pub(crate) fn validate_message_search_query(

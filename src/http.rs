@@ -697,6 +697,8 @@ mod tests {
                         flags: vec!["\\Seen".to_string()],
                         date_received: "2026-03-27 11:00:00 +0000".to_string(),
                         size_virtual: 512,
+                        subject: Some("Quarterly report".to_string()),
+                        from: Some("Alice <alice@example.com>".to_string()),
                     }],
                 },
                 audit_events: vec![LogEvent::new(
@@ -1400,6 +1402,10 @@ mod tests {
         assert!(body.contains("Archive shortcut sends messages"));
         assert!(body.contains("name=\"destination_mailbox\" value=\"Archive/2026\""));
         assert!(body.contains(">Archive</button>"));
+        assert!(body.contains("<th>Subject</th>"));
+        assert!(body.contains("<th>From</th>"));
+        assert!(body.contains("Quarterly report"));
+        assert!(body.contains("Alice &lt;alice@example.com&gt;"));
     }
 
     #[test]

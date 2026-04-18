@@ -348,8 +348,8 @@ mod tests {
             CommandExecution {
                 status_code: 0,
                 stdout: concat!(
-                    "uid=4 flags=\"\\\\Seen\" date.received=2026-03-27 09:00:00 +0000 size.virtual=2048 mailbox=INBOX\n",
-                    "uid=5 flags=\"\\\\Seen \\\\Answered\" date.received=2026-03-27 10:15:00 +0000 size.virtual=4096 mailbox=INBOX\n"
+                    "uid=4 flags=\"\\\\Seen\" date.received=2026-03-27 09:00:00 +0000 size.virtual=2048 mailbox=INBOX hdr.subject=\"Quarterly report\" hdr.from=\"Alice <alice@example.com>\"\n",
+                    "uid=5 flags=\"\\\\Seen \\\\Answered\" date.received=2026-03-27 10:15:00 +0000 size.virtual=4096 mailbox=INBOX hdr.subject=\"Follow-up\" hdr.from=\"Bob <bob@example.com>\"\n"
                 )
                 .to_string(),
                 stderr: String::new(),
@@ -371,10 +371,17 @@ mod tests {
         assert_eq!(messages[0].uid, 4);
         assert_eq!(messages[0].mailbox_name, "INBOX");
         assert_eq!(messages[0].flags, vec!["\\Seen".to_string()]);
+        assert_eq!(messages[0].subject.as_deref(), Some("Quarterly report"));
+        assert_eq!(
+            messages[0].from.as_deref(),
+            Some("Alice <alice@example.com>")
+        );
         assert_eq!(
             messages[1].flags,
             vec!["\\Seen".to_string(), "\\Answered".to_string()]
         );
+        assert_eq!(messages[1].subject.as_deref(), Some("Follow-up"));
+        assert_eq!(messages[1].from.as_deref(), Some("Bob <bob@example.com>"));
 
         let recorded = executor.borrow();
         assert_eq!(
@@ -387,7 +394,7 @@ mod tests {
                 "fetch".to_string(),
                 "-u".to_string(),
                 "alice@example.com".to_string(),
-                "uid flags date.received size.virtual mailbox".to_string(),
+                "uid flags date.received size.virtual mailbox hdr.subject hdr.from".to_string(),
                 "mailbox".to_string(),
                 "INBOX".to_string(),
                 "all".to_string(),
@@ -794,6 +801,8 @@ mod tests {
                     flags: vec!["\\Seen".to_string()],
                     date_received: "2026-03-27 09:00:00 +0000".to_string(),
                     size_virtual: 2048,
+                    subject: Some("Quarterly report".to_string()),
+                    from: Some("Alice <alice@example.com>".to_string()),
                 },
                 MessageSummary {
                     mailbox_name: "INBOX".to_string(),
@@ -801,6 +810,8 @@ mod tests {
                     flags: vec![],
                     date_received: "2026-03-27 09:30:00 +0000".to_string(),
                     size_virtual: 1024,
+                    subject: Some("Follow-up".to_string()),
+                    from: Some("Bob <bob@example.com>".to_string()),
                 },
             ],
         });
@@ -1163,6 +1174,8 @@ mod tests {
                 flags: vec!["\\Seen".to_string()],
                 date_received: "2026-03-27 11:00:00 +0000".to_string(),
                 size_virtual: 512,
+                subject: Some("Example".to_string()),
+                from: Some("Alice <alice@example.com>".to_string()),
             }],
         });
         let outcome =

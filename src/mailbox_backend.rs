@@ -140,7 +140,7 @@ where
             "fetch".to_string(),
             "-u".to_string(),
             canonical_username.to_string(),
-            "uid flags date.received size.virtual mailbox".to_string(),
+            "uid flags date.received size.virtual mailbox hdr.subject hdr.from".to_string(),
             "mailbox".to_string(),
             request.mailbox_name.clone(),
             "all".to_string(),

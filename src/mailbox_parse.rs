@@ -202,6 +202,34 @@ fn parse_message_summary_line(
         )?,
         "message-list-parser",
     )?;
+    let subject = optional_flow_field(&fields, "hdr.subject")
+        .filter(|value| !value.is_empty())
+        .map(|value| {
+            validate_bounded_string(
+                "hdr.subject",
+                value,
+                policy.header_value_max_len,
+                "message-list-parser",
+                true,
+                false,
+            )?;
+            Ok(value.to_string())
+        })
+        .transpose()?;
+    let from = optional_flow_field(&fields, "hdr.from")
+        .filter(|value| !value.is_empty())
+        .map(|value| {
+            validate_bounded_string(
+                "hdr.from",
+                value,
+                policy.header_value_max_len,
+                "message-list-parser",
+                true,
+                false,
+            )?;
+            Ok(value.to_string())
+        })
+        .transpose()?;
 
     Ok(MessageSummary {
         mailbox_name,
@@ -209,6 +237,8 @@ fn parse_message_summary_line(
         flags,
         date_received,
         size_virtual,
+        subject,
+        from,
     })
 }
 

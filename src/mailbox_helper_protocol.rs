@@ -254,6 +254,12 @@ pub(super) fn encode_response(response: &MailboxHelperResponse) -> String {
                 output.push_str("message_mailbox=");
                 output.push_str(&message.mailbox_name);
                 output.push('\n');
+                output.push_str("message_subject=");
+                output.push_str(message.subject.as_deref().unwrap_or(""));
+                output.push('\n');
+                output.push_str("message_from=");
+                output.push_str(message.from.as_deref().unwrap_or(""));
+                output.push('\n');
                 output.push_str("message_end=1\n");
             }
             output
@@ -585,6 +591,34 @@ fn parse_message_summary_fields(
             .map(|value| value.to_string())
             .collect()
     };
+    let subject = fields
+        .get("message_subject")
+        .filter(|value| !value.is_empty())
+        .map(|value| {
+            validate_helper_string(
+                "message subject",
+                value,
+                policy.header_value_max_len,
+                true,
+                false,
+            )?;
+            Ok::<String, String>(value.clone())
+        })
+        .transpose()?;
+    let from = fields
+        .get("message_from")
+        .filter(|value| !value.is_empty())
+        .map(|value| {
+            validate_helper_string(
+                "message from",
+                value,
+                policy.header_value_max_len,
+                true,
+                false,
+            )?;
+            Ok::<String, String>(value.clone())
+        })
+        .transpose()?;
 
     Ok(MessageSummary {
         mailbox_name,
@@ -592,6 +626,8 @@ fn parse_message_summary_fields(
         flags,
         date_received,
         size_virtual,
+        subject,
+        from,
     })
 }
 

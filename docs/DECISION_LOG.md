@@ -4555,3 +4555,31 @@ required runtime ownership and permissions:
 This keeps the live TOTP credential inside the reviewed secret-store model,
 restores real auth-path observability, and avoids committing or documenting
 secret material in the repository.
+
+### Show subject and sender in mailbox message listings
+
+The mailbox page at `/mailbox?name=...` was still exposing only bounded
+operational metadata for each row:
+
+- `UID`
+- `Received`
+- `Flags`
+- `Size`
+
+That was safe but not operator-usable enough for real mailbox triage on the
+live Version 2 surface. Search results and single-message view already carried
+`Subject` and `From`, so the next smallest change was to extend the existing
+mailbox-list summary path rather than inventing a richer browser data model.
+
+The repository now carries `subject` and `from` through the existing bounded
+message-list summary flow:
+
+- `doveadm fetch` mailbox-list requests now ask for `hdr.subject` and
+  `hdr.from`
+- the bounded mailbox-list parser validates and stores those fields
+- the mailbox-helper protocol preserves them for the live deployment path
+- the mailbox list page renders `Subject` and `From` next to `UID`,
+  `Received`, `Flags`, and `Size`
+
+This keeps the change inside the existing narrow read surface while making the
+mailbox page meaningfully more useful for controlled real-world use.
