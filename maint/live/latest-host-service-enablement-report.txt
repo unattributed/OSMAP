@@ -1,22 +1,16 @@
 osmap_service_enablement_result=failed
 project_root=/home/foo/OSMAP
 assessed_host=mail.blackbagsecurity.com
-assessed_snapshot=0b73b8a
+assessed_snapshot=5a6bfde
 shared_runtime_group=osmaprt
 service_binary_state=installed
 shared_group_line=osmaprt:*:1002:_osmap
 osmap_group_membership=_osmap osmaprt
-serve_service_check_rc=2
-helper_service_check_rc=2
+serve_service_check_rc=1
+helper_service_check_rc=1
 http_listener_bindings=none
 https_listener_bindings=10.44.0.1.443,127.0.0.1.443
 failed_checks=
-missing_serve_env_file
-missing_helper_env_file
-missing_serve_launcher
-missing_helper_launcher
-missing_serve_rc_script
-missing_helper_rc_script
 mailbox_helper_service_not_healthy
 serve_service_not_healthy
 missing_helper_socket
@@ -24,17 +18,83 @@ loopback_http_listener_not_ready
 service_binary_listing=
 -rwxr-xr-x  1 root  wheel  19989000 Apr 18 02:16 /usr/local/bin/osmap
 serve_env=
-missing:/etc/osmap/osmap-serve.env
+# Reviewed browser-facing OSMAP env for mail.blackbagsecurity.com.
+# Intended installation target: /etc/osmap/osmap-serve.env
+
+OSMAP_RUN_MODE=serve
+OSMAP_ENV=production
+OSMAP_LISTEN_ADDR=127.0.0.1:8080
+OSMAP_DOVEADM_AUTH_SOCKET_PATH=/var/run/osmap-auth
+OSMAP_MAILBOX_HELPER_SOCKET_PATH=/var/lib/osmap-helper/run/mailbox-helper.sock
+OSMAP_STATE_DIR=/var/lib/osmap
+OSMAP_RUNTIME_DIR=/var/lib/osmap/run
+OSMAP_SESSION_DIR=/var/lib/osmap/sessions
+OSMAP_SETTINGS_DIR=/var/lib/osmap/settings
+OSMAP_AUDIT_DIR=/var/lib/osmap/audit
+OSMAP_CACHE_DIR=/var/lib/osmap/cache
+OSMAP_TOTP_SECRET_DIR=/var/lib/osmap/secrets/totp
+OSMAP_LOG_LEVEL=info
+OSMAP_LOG_FORMAT=text
+OSMAP_HTTP_MAX_CONCURRENT_CONNECTIONS=16
+OSMAP_SESSION_LIFETIME_SECS=43200
+OSMAP_TOTP_ALLOWED_SKEW_STEPS=1
+OSMAP_LOGIN_THROTTLE_MAX_FAILURES=5
+OSMAP_LOGIN_THROTTLE_REMOTE_MAX_FAILURES=12
+OSMAP_LOGIN_THROTTLE_WINDOW_SECS=300
+OSMAP_LOGIN_THROTTLE_LOCKOUT_SECS=900
+OSMAP_SUBMISSION_THROTTLE_MAX_SUBMISSIONS=10
+OSMAP_SUBMISSION_THROTTLE_REMOTE_MAX_SUBMISSIONS=25
+OSMAP_SUBMISSION_THROTTLE_WINDOW_SECS=300
+OSMAP_SUBMISSION_THROTTLE_LOCKOUT_SECS=900
+OSMAP_MESSAGE_MOVE_THROTTLE_MAX_MOVES=20
+OSMAP_MESSAGE_MOVE_THROTTLE_REMOTE_MAX_MOVES=60
+OSMAP_MESSAGE_MOVE_THROTTLE_WINDOW_SECS=300
+OSMAP_MESSAGE_MOVE_THROTTLE_LOCKOUT_SECS=900
+OSMAP_OPENBSD_CONFINEMENT_MODE=enforce
 helper_env=
-missing:/etc/osmap/osmap-mailbox-helper.env
+# Reviewed mailbox-helper OSMAP env for mail.blackbagsecurity.com.
+# Intended installation target: /etc/osmap/osmap-mailbox-helper.env
+
+OSMAP_RUN_MODE=mailbox-helper
+OSMAP_ENV=production
+OSMAP_LISTEN_ADDR=127.0.0.1:8080
+OSMAP_DOVEADM_AUTH_SOCKET_PATH=/var/run/osmap-auth
+OSMAP_TRUSTED_WEB_RUNTIME_UID=1001
+OSMAP_DOVEADM_USERDB_SOCKET_PATH=/var/run/osmap-userdb
+OSMAP_MAILBOX_HELPER_SOCKET_PATH=/var/lib/osmap-helper/run/mailbox-helper.sock
+OSMAP_STATE_DIR=/var/lib/osmap-helper
+OSMAP_RUNTIME_DIR=/var/lib/osmap-helper/run
+OSMAP_SESSION_DIR=/var/lib/osmap-helper/sessions
+OSMAP_SETTINGS_DIR=/var/lib/osmap-helper/settings
+OSMAP_AUDIT_DIR=/var/lib/osmap-helper/audit
+OSMAP_CACHE_DIR=/var/lib/osmap-helper/cache
+OSMAP_TOTP_SECRET_DIR=/var/lib/osmap-helper/secrets/totp
+OSMAP_LOG_LEVEL=info
+OSMAP_LOG_FORMAT=text
+OSMAP_HTTP_MAX_CONCURRENT_CONNECTIONS=16
+OSMAP_SESSION_LIFETIME_SECS=43200
+OSMAP_TOTP_ALLOWED_SKEW_STEPS=1
+OSMAP_LOGIN_THROTTLE_MAX_FAILURES=5
+OSMAP_LOGIN_THROTTLE_REMOTE_MAX_FAILURES=12
+OSMAP_LOGIN_THROTTLE_WINDOW_SECS=300
+OSMAP_LOGIN_THROTTLE_LOCKOUT_SECS=900
+OSMAP_SUBMISSION_THROTTLE_MAX_SUBMISSIONS=10
+OSMAP_SUBMISSION_THROTTLE_REMOTE_MAX_SUBMISSIONS=25
+OSMAP_SUBMISSION_THROTTLE_WINDOW_SECS=300
+OSMAP_SUBMISSION_THROTTLE_LOCKOUT_SECS=900
+OSMAP_MESSAGE_MOVE_THROTTLE_MAX_MOVES=20
+OSMAP_MESSAGE_MOVE_THROTTLE_REMOTE_MAX_MOVES=60
+OSMAP_MESSAGE_MOVE_THROTTLE_WINDOW_SECS=300
+OSMAP_MESSAGE_MOVE_THROTTLE_LOCKOUT_SECS=900
+OSMAP_OPENBSD_CONFINEMENT_MODE=enforce
 serve_run=
-missing:/usr/local/libexec/osmap/osmap-serve-run.ksh
+-r-xr-xr-x  1 root  wheel  676 Apr 18 09:47 /usr/local/libexec/osmap/osmap-serve-run.ksh
 helper_run=
-missing:/usr/local/libexec/osmap/osmap-mailbox-helper-run.ksh
+-r-xr-xr-x  1 root  wheel  721 Apr 18 09:47 /usr/local/libexec/osmap/osmap-mailbox-helper-run.ksh
 serve_rc=
-missing:/etc/rc.d/osmap_serve
+-r-xr-xr-x  1 root  wheel  412 Apr 18 09:47 /etc/rc.d/osmap_serve
 helper_rc=
-missing:/etc/rc.d/osmap_mailbox_helper
+-r-xr-xr-x  1 root  wheel  453 Apr 18 09:47 /etc/rc.d/osmap_mailbox_helper
 helper_socket=
 missing:/var/lib/osmap-helper/run/mailbox-helper.sock
 listener_lines=

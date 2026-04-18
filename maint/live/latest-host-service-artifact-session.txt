@@ -1,0 +1,7 @@
+osmap_service_artifacts_session_mode=apply
+session_dir=/home/foo/osmap-service-artifacts/proof-20260418
+backup_root=/home/foo/osmap-service-artifacts/proof-20260418/backup
+staged_root=/home/foo/osmap-service-artifacts/proof-20260418/staged
+apply_script=/home/foo/osmap-service-artifacts/proof-20260418/scripts/apply-service-artifacts.sh
+restore_script=/home/foo/osmap-service-artifacts/proof-20260418/scripts/restore-service-artifacts.sh
+validator_report=/home/foo/osmap-service-artifacts/proof-20260418/reports/service-enablement-after-service-artifacts.txt

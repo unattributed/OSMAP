@@ -2,6 +2,44 @@
 
 ## 2026-04-18
 
+### Clear the next mail-host service blockers with the reviewed service-artifact path
+
+After the reviewed service-artifact wrapper existed, the next useful step was
+to apply that narrow path on `mail.blackbagsecurity.com` and archive the
+immediate validator evidence.
+
+The reviewed wrapper was run from `~/OSMAP` on the validated host in both
+rehearsal and apply mode. The apply run installed the reviewed env files into
+`/etc/osmap/`, the reviewed launchers into `/usr/local/libexec/osmap/`, and
+the reviewed `rc.d` files into `/etc/rc.d/`, then immediately reran the
+repo-owned service validator. The current archived artifacts are:
+
+- `maint/live/latest-host-service-artifact-session.txt`
+- `maint/live/latest-host-service-enablement-report.txt`
+
+That validator report now shows the reviewed service artifacts are installed
+and no longer reports:
+
+- `missing_serve_env_file`
+- `missing_helper_env_file`
+- `missing_serve_launcher`
+- `missing_helper_launcher`
+- `missing_serve_rc_script`
+- `missing_helper_rc_script`
+
+It still fails, correctly, on the remaining activation and runtime-health
+prerequisites:
+
+- `mailbox_helper_service_not_healthy`
+- `serve_service_not_healthy`
+- `missing_helper_socket`
+- `loopback_http_listener_not_ready`
+
+This was chosen instead of jumping straight to service startup because Version
+2 still benefits from clearing and proving the reviewed file-install blockers
+before folding in state-directory creation, service start, and runtime-health
+debugging.
+
 ### Add a repo-owned service-artifact path before the final service activation step
 
 Once the reviewed binary and runtime-group paths had cleared the first two host
