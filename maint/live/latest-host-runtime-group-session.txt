@@ -1,0 +1,14 @@
+osmap_runtime_group_session_mode=apply
+session_dir=/home/foo/osmap-runtime-group/proof-20260418
+project_root=/home/foo/OSMAP
+assessed_snapshot=0b73b8a
+target_user=_osmap
+shared_runtime_group=osmaprt
+group_file=/etc/group
+original_primary_group=_osmap
+original_secondary_groups=
+group_exists_before=0
+group_line_before=missing
+apply_script=/home/foo/osmap-runtime-group/proof-20260418/scripts/apply-runtime-group-provisioning.sh
+restore_script=/home/foo/osmap-runtime-group/proof-20260418/scripts/restore-runtime-group-provisioning.sh
+validator_report=/home/foo/osmap-runtime-group/proof-20260418/reports/service-enablement-after-runtime-group.txt

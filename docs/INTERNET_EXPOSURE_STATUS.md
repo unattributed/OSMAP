@@ -60,6 +60,10 @@ The current state is not a blank slate:
 - the repo now also has a reviewed host-side runtime-group provisioning path
   that can create `osmaprt`, add `_osmap` to it, and restore the prior
   supplementary-group state without widening `_osmap` into `vmail`
+- that reviewed runtime-group provisioning path has now been applied on the
+  validated host, and the current service report confirms both
+  `shared_group_line=osmaprt:...` and `_osmap` membership in `osmaprt` for
+  snapshot `0b73b8a`
 - the repo now also has a host-side validator for that persistent service
   install, with the current host report archived at
   `maint/live/latest-host-service-enablement-report.txt`
@@ -73,9 +77,6 @@ host still need all of the following:
   host actually has `/etc/osmap` and the `rc.d` service files required for a
   persistent loopback OSMAP runtime
 - the repo-owned service-enablement validator must pass on the candidate host
-- the reviewed runtime-group provisioning path must be applied and validated so
-  the dedicated shared runtime group exists and includes `_osmap` without
-  widening `_osmap` into `vmail`
 - the reviewed service env, launcher, and `rc.d` files must be installed so
   `rcctl check osmap_mailbox_helper` and `rcctl check osmap_serve` can pass
 - the helper socket and loopback `127.0.0.1:8080` listener must exist before

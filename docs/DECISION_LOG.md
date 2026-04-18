@@ -25,6 +25,42 @@ socket setup because Version 2 still benefits more from removing the next
 explicit host blocker in a reviewable way than from splicing multiple service
 changes together.
 
+### Clear the next mail-host service blocker with the reviewed runtime-group path
+
+After the runtime-group provisioning wrapper existed, the next useful step was
+to apply that narrow path on `mail.blackbagsecurity.com` and archive the
+immediate validator evidence.
+
+The reviewed wrapper was run from `~/OSMAP` on the validated host in both
+rehearsal and apply mode. The apply run created `osmaprt`, appended `_osmap`
+to that group, and immediately reran the repo-owned service validator. The
+current archived artifacts are:
+
+- `maint/live/latest-host-runtime-group-session.txt`
+- `maint/live/latest-host-service-enablement-report.txt`
+
+That validator report now shows:
+
+- `service_binary_state=installed`
+- `shared_group_line=osmaprt:*:1002:_osmap`
+- `osmap_group_membership=_osmap osmaprt`
+
+It no longer reports:
+
+- `missing_shared_runtime_group`
+- `osmap_user_missing_shared_runtime_group_membership`
+
+It still fails, correctly, on the remaining service prerequisites:
+
+- missing reviewed env, launcher, and `rc.d` files
+- missing helper socket
+- missing loopback `127.0.0.1:8080` listener
+- unhealthy `osmap_mailbox_helper` and `osmap_serve`
+
+This was chosen instead of jumping straight to the full service apply path
+because Version 2 still benefits from clearing and proving one host-side
+precondition at a time.
+
 ### Add a repo-owned binary deployment path before the reviewed service install
 
 Once the repo carried both a reviewed service-enablement wrapper and a
