@@ -21,13 +21,15 @@ The service env files are the reviewed `mail.blackbagsecurity.com` inputs for
 the split `_osmap` plus `vmail` runtime install. They are paired with the
 generic launchers and `rc.d` scripts under `maint/openbsd/` and the host-side
 wrappers `maint/live/osmap-live-rehearse-service-artifacts.ksh` and
-`maint/live/osmap-live-rehearse-service-enablement.ksh`.
+`maint/live/osmap-live-rehearse-service-activation.ksh`.
 
 Use these artifacts when the host is ready for:
 
 - reviewed OSMAP binary deployment into `/usr/local/bin/osmap`
 - reviewed OSMAP service-artifact installation into `/etc/osmap/`,
   `/usr/local/libexec/osmap/`, and `/etc/rc.d/`
+- reviewed OSMAP service-activation into the persistent `_osmap` plus `vmail`
+  runtime
 - reviewed OSMAP service installation under the split runtime users
 - reviewed OSMAP browser-edge cutover
 

@@ -71,6 +71,9 @@ The current state is not a blank slate:
   host, and the current service report confirms the reviewed `/etc/osmap`,
   `/usr/local/libexec/osmap`, and `/etc/rc.d` files are installed for
   snapshot `5a6bfde`
+- the repo now also has a reviewed host-side service-activation path that can
+  create the reviewed state/runtime directories, start both OSMAP services,
+  and immediately rerun the service validator
 - the repo now also has a host-side validator for that persistent service
   install, with the current host report archived at
   `maint/live/latest-host-service-enablement-report.txt`

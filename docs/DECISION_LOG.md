@@ -2,6 +2,33 @@
 
 ## 2026-04-18
 
+### Add a repo-owned service-activation path for the final host runtime step
+
+Once the reviewed binary, runtime-group, and service-artifact paths had
+cleared the install-side blockers, the next explicit validator failures were
+all runtime-health checks:
+
+- `mailbox_helper_service_not_healthy`
+- `serve_service_not_healthy`
+- `missing_helper_socket`
+- `loopback_http_listener_not_ready`
+
+OSMAP now carries `maint/live/osmap-live-rehearse-service-activation.ksh` plus
+`docs/MAIL_HOST_SERVICE_ACTIVATION_SOP.md`. The wrapper prepares exact apply
+and restore scripts for the final host-side runtime step: create the reviewed
+`_osmap` and `vmail` state/runtime directories, normalize the env-file group
+ownership needed by the dedicated runtime users, start both services via
+`rcctl`, and immediately rerun the repo-owned service validator.
+
+The apply path does not accept partial success. It requires the validator to
+stop reporting the four remaining runtime-health failures listed above. That
+keeps this gate narrow: clear the final host runtime blockers without mixing in
+browser-edge cutover or broader deployment changes.
+
+This was chosen instead of jumping straight to edge cutover because Version 2
+still benefits more from proving the persistent loopback runtime is healthy
+before the public browser path moves away from Roundcube.
+
 ### Clear the next mail-host service blockers with the reviewed service-artifact path
 
 After the reviewed service-artifact wrapper existed, the next useful step was

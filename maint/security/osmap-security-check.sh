@@ -168,4 +168,7 @@ sh maint/security/test-osmap-live-rehearse-runtime-group-provisioning.sh
 echo "==> validating service-artifact rehearsal wrapper behavior"
 sh maint/security/test-osmap-live-rehearse-service-artifacts.sh
 
+echo "==> validating service-activation rehearsal wrapper behavior"
+sh maint/security/test-osmap-live-rehearse-service-activation.sh
+
 echo "==> security-check complete"

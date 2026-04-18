@@ -11,11 +11,13 @@ It is paired with:
 - `maint/live/osmap-live-rehearse-binary-deployment.ksh`
 - `maint/live/osmap-live-rehearse-runtime-group-provisioning.ksh`
 - `maint/live/osmap-live-rehearse-service-artifacts.ksh`
+- `maint/live/osmap-live-rehearse-service-activation.ksh`
 - `maint/live/osmap-live-rehearse-service-enablement.ksh`
 - `maint/live/osmap-live-validate-service-enablement.ksh`
 - `MAIL_HOST_BINARY_DEPLOYMENT_SOP.md`
 - `MAIL_HOST_RUNTIME_GROUP_PROVISIONING_SOP.md`
 - `MAIL_HOST_SERVICE_ARTIFACTS_SOP.md`
+- `MAIL_HOST_SERVICE_ACTIVATION_SOP.md`
 - `maint/openbsd/README.md`
 - `maint/openbsd/mail.blackbagsecurity.com/`
 
@@ -40,6 +42,8 @@ Before a real apply run, all of the following must already be true:
   dedicated helper-socket group and added `_osmap` to it
 - the reviewed service-artifact path has already installed the env files,
   launchers, and `rc.d` scripts
+- the reviewed service-activation path has already created the runtime/state
+  directories and attempted the `rcctl` startup sequence
 
 The binary prerequisite is handled separately by `MAIL_HOST_BINARY_DEPLOYMENT_SOP.md`
 and `maint/live/osmap-live-rehearse-binary-deployment.ksh`.
@@ -49,6 +53,9 @@ The runtime-group prerequisite is handled separately by
 The service-artifact prerequisite is handled separately by
 `MAIL_HOST_SERVICE_ARTIFACTS_SOP.md` and
 `maint/live/osmap-live-rehearse-service-artifacts.ksh`.
+The service-activation prerequisite is handled separately by
+`MAIL_HOST_SERVICE_ACTIVATION_SOP.md` and
+`maint/live/osmap-live-rehearse-service-activation.ksh`.
 
 For the reviewed `mail.blackbagsecurity.com` service path, the wrapper defaults
 that dedicated shared runtime group to `osmaprt`.
