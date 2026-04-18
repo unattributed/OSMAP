@@ -9,6 +9,7 @@
 # - cross-origin authenticated POST requests are rejected
 # - authenticated POST requests without same-origin metadata are rejected
 # - opaque Origin headers may fall back to a same-origin Referer
+# - opaque Origin headers may also fall back to same-origin fetch metadata
 
 set -eu
 
@@ -306,6 +307,28 @@ OPAQUE_ORIGIN_RESPONSE="$(post_request "/logout" "csrf_token=${CSRF_TOKEN}" "nul
 [ "$(status_line "${OPAQUE_ORIGIN_RESPONSE}")" = "HTTP/1.1 303 See Other" ] || {
   log "opaque Origin fallback request did not return 303"
   printf '%s\n' "${OPAQUE_ORIGIN_RESPONSE}"
+  exit 1
+}
+
+log "verifying same-origin fetch metadata fallback with opaque Origin on /logout"
+OPAQUE_ORIGIN_FETCH_METADATA_RESPONSE="$(
+  {
+    printf 'POST /logout HTTP/1.1\r\n'
+    printf 'Host: 127.0.0.1\r\n'
+    printf 'User-Agent: %s\r\n' "${USER_AGENT}"
+    printf 'Cookie: osmap_session=%s\r\n' "${SESSION_TOKEN}"
+    printf 'Origin: null\r\n'
+    printf 'Sec-Fetch-Site: same-origin\r\n'
+    printf 'Content-Type: application/x-www-form-urlencoded\r\n'
+    printf 'Content-Length: %s\r\n' "$(printf '%s' "csrf_token=${CSRF_TOKEN}" | wc -c | tr -d ' ')"
+    printf 'Connection: close\r\n'
+    printf '\r\n'
+    printf '%s' "csrf_token=${CSRF_TOKEN}"
+  } | nc -N 127.0.0.1 "${LISTEN_PORT}"
+)"
+[ "$(status_line "${OPAQUE_ORIGIN_FETCH_METADATA_RESPONSE}")" = "HTTP/1.1 303 See Other" ] || {
+  log "same-origin fetch metadata fallback request did not return 303"
+  printf '%s\n' "${OPAQUE_ORIGIN_FETCH_METADATA_RESPONSE}"
   exit 1
 }
 

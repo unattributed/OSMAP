@@ -2076,6 +2076,61 @@ mod tests {
     }
 
     #[test]
+    fn send_route_accepts_same_origin_fetch_metadata_when_origin_is_opaque() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/send",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                    ("Origin", "null"),
+                    ("Sec-Fetch-Site", "same-origin"),
+                ],
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&to=bob%40example.com&subject=Test&body=Hello",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 303);
+        assert!(response
+            .response
+            .headers
+            .iter()
+            .any(|(name, value)| name == "Location" && value == "/compose?sent=1"));
+    }
+
+    #[test]
+    fn settings_update_accepts_same_origin_fetch_metadata_when_origin_and_referer_are_absent() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/settings",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                    ("Sec-Fetch-Site", "same-origin"),
+                ],
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&html_display_preference=prefer_plain_text",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 303);
+        assert!(response
+            .response
+            .headers
+            .iter()
+            .any(|(name, value)| name == "Location" && value == "/settings?updated=1"));
+    }
+
+    #[test]
     fn authenticated_post_routes_reject_opaque_origin_without_same_origin_referer() {
         let response = app().handle_request(
             &request(
@@ -2088,6 +2143,29 @@ mod tests {
                         "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                     ),
                     ("Origin", "null"),
+                ],
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 403);
+        assert!(body_text(&response).contains("Request Origin Rejected"));
+    }
+
+    #[test]
+    fn authenticated_post_routes_reject_cross_site_fetch_metadata_without_origin_or_referer() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/logout",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                    ("Sec-Fetch-Site", "cross-site"),
                 ],
                 "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210",
             ),

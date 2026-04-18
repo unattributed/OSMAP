@@ -3964,6 +3964,30 @@ handles this case narrowly:
 This restores the real browser compose/send flow while preserving the intended
 same-origin guardrail boundary.
 
+One more real-browser case then appeared on the public host after this fix was
+deployed: Brave/Chromium submitted the authenticated compose `POST /send` with
+an opaque `Origin: null` and no `Referer`, but still as a same-origin browser
+navigation.
+
+That meant the remaining safe browser signal was fetch metadata rather than the
+legacy `Referer` fallback. The same-origin request guardrail now also accepts:
+
+- `Sec-Fetch-Site: same-origin`
+
+but only as a narrow fallback when the request does not provide a usable
+same-origin `Origin` or `Referer`.
+
+This keeps the browser mutation boundary tight:
+
+- explicit cross-origin absolute `Origin` values still fail closed
+- opaque origins without same-origin `Referer` or same-origin fetch metadata
+  still fail closed
+- `Sec-Fetch-Site: cross-site` still fails closed
+
+The result is that real same-origin browser form submits can succeed even when
+privacy behavior strips `Referer` and uses `Origin: null`, without reopening
+cross-site state-changing routes.
+
 ### Fail mailbox-helper startup closed unless the trusted auth-socket owner matches the expected web-runtime UID
 
 OSMAP's mailbox-helper boundary already rejects Unix-socket peers whose UID

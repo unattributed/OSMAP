@@ -515,6 +515,10 @@ where
                     );
                 }
 
+                if is_same_origin_fetch_site(request.headers.get("sec-fetch-site")) {
+                    return None;
+                }
+
                 return Some(rejected_same_origin_response(
                     "http_origin_opaque",
                     "origin header was opaque and no fallback referer was present",
@@ -530,6 +534,10 @@ where
                 validated_session,
                 context,
             );
+        }
+
+        if is_same_origin_fetch_site(request.headers.get("sec-fetch-site")) {
+            return None;
         }
 
         if let Some(referer) = request.headers.get("referer") {
@@ -607,6 +615,10 @@ fn validate_same_origin_header(
 
 fn is_opaque_origin(value: &str) -> bool {
     value.trim().eq_ignore_ascii_case("null")
+}
+
+fn is_same_origin_fetch_site(value: Option<&String>) -> bool {
+    matches!(value.map(|value| value.trim()), Some("same-origin"))
 }
 
 fn extract_absolute_uri_authority(value: &str) -> Option<String> {
