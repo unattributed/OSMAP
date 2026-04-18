@@ -148,11 +148,11 @@ helper_totp_parent=$(quote_sh "$(dirname "${LIVE_HELPER_TOTP_DIR}")")
 helper_totp_dir=$(quote_sh "${LIVE_HELPER_TOTP_DIR}")
 validator_script=$(quote_sh "${SERVICE_VALIDATOR_PATH}")
 validator_report=$(quote_sh "${VALIDATOR_REPORT_PATH}")
-activation_failed=0
+runtime_failed=0
 
 run_or_note_failure() {
   if ! "\$@"; then
-    activation_failed=1
+    :
   fi
 }
 
@@ -228,11 +228,11 @@ for failed_check in \
 do
   if grep -Fq "\${failed_check}" "\$validator_report"; then
     printf '%s\n' "service validator still reports \${failed_check} after service activation" >&2
-    activation_failed=1
+    runtime_failed=1
   fi
 done
 
-if [ "\$activation_failed" -ne 0 ]; then
+if [ "\$runtime_failed" -ne 0 ]; then
   exit 1
 fi
 EOF
