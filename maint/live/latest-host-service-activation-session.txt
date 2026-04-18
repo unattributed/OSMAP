@@ -1,0 +1,10 @@
+osmap_service_activation_session_mode=apply
+session_dir=/home/foo/osmap-service-activation/proof-20260418-final
+apply_script=/home/foo/osmap-service-activation/proof-20260418-final/scripts/apply-service-activation.sh
+restore_script=/home/foo/osmap-service-activation/proof-20260418-final/scripts/restore-service-activation.sh
+validator_report=/home/foo/osmap-service-activation/proof-20260418-final/reports/service-enablement-after-service-activation.txt
+shared_runtime_group=osmaprt
+serve_runfile=/var/run/rc.d/osmap_serve
+helper_runfile=/var/run/rc.d/osmap_mailbox_helper
+serve_state_dir=/var/lib/osmap
+helper_state_dir=/var/lib/osmap-helper

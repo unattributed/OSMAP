@@ -48,6 +48,31 @@ artifacts and carries a dedicated regression in
 `maint/security/test-osmap-openbsd-rcd-health.sh` so this exact mismatch does
 not regress.
 
+### Clear the final persistent-service blockers on the validated host
+
+After the reviewed activation wrapper, the `rc.d` health fix, and the stale
+runfile cleanup had all landed, the next useful step was to rerun the reviewed
+service-artifact and service-activation paths on `mail.blackbagsecurity.com`
+and archive the resulting validator evidence.
+
+The final reviewed activation apply on the validated host now shows:
+
+- `serve_service_check_rc=0`
+- `helper_service_check_rc=0`
+- `http_listener_bindings=127.0.0.1.8080`
+- `helper_socket=srw-rw---- ... /var/lib/osmap-helper/run/mailbox-helper.sock`
+- no remaining `failed_checks`
+
+The current archived artifacts are:
+
+- `maint/live/latest-host-service-activation-session.txt`
+- `maint/live/latest-host-service-enablement-report.txt`
+
+That means the persistent `_osmap` plus `vmail` loopback runtime is now in
+place and validator-proven on `mail.blackbagsecurity.com`. The remaining
+Version 2 exposure work is no longer service installation. It is public-edge
+cutover, exposure reassessment, and rollback-safe public-browser validation.
+
 ### Clear the next mail-host service blockers with the reviewed service-artifact path
 
 After the reviewed service-artifact wrapper existed, the next useful step was

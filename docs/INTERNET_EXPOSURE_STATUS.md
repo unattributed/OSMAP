@@ -74,24 +74,22 @@ The current state is not a blank slate:
 - the repo now also has a reviewed host-side service-activation path that can
   create the reviewed state/runtime directories, start both OSMAP services,
   and immediately rerun the service validator
+- that reviewed service-activation path has now been applied on the validated
+  host, and the current service report confirms a healthy persistent loopback
+  OSMAP runtime for snapshot `6c92c4d`
 - the repo now also has a host-side validator for that persistent service
   install, with the current host report archived at
   `maint/live/latest-host-service-enablement-report.txt`
 - the current archived service-artifact apply session is
   `maint/live/latest-host-service-artifact-session.txt`
+- the current archived service-activation apply session is
+  `maint/live/latest-host-service-activation-session.txt`
 
 ## What Must Happen Before Reassessment
 
 Before this status can move to an approval result, the repo and the validated
 host still need all of the following:
 
-- the remaining service-activation path must be applied and validated so the
-  reviewed runtime users, env files, launchers, and `rc.d` scripts become a
-  healthy persistent loopback OSMAP runtime
-- the repo-owned service-enablement validator must pass on the candidate host,
-  not just confirm that reviewed service artifacts are installed
-- the helper socket and loopback `127.0.0.1:8080` listener must exist before
-  the browser edge is switched away from Roundcube
 - the cutover steps in `EDGE_CUTOVER_PLAN.md` must be applied and validated so
   the canonical HTTPS route serves OSMAP, not Roundcube
 - the PF and listener changes in `EDGE_CUTOVER_PLAN.md` must be applied so the
@@ -107,6 +105,8 @@ host still need all of the following:
 The current result should be read as:
 
 - OSMAP Version 2 browser behavior is now materially proven on the real host
+- the persistent `_osmap` plus `vmail` loopback runtime is now present and
+  validator-proven on the real host
 - the current host is still correctly staged behind a narrow network posture
 - the project must not describe the current snapshot as publicly exposed OSMAP
   until the real edge deployment and rollback story are separately reviewed
