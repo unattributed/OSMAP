@@ -10,6 +10,7 @@ fake_live_dir="${tmp_root}/live"
 fake_live_etc_dir="${fake_live_dir}/etc"
 fake_live_usr_local_dir="${fake_live_dir}/usr/local"
 fake_live_var_lib_dir="${fake_live_dir}/var/lib"
+fake_live_runfile_dir="${fake_live_dir}/var/run/rc.d"
 fake_bin_dir="${tmp_root}/bin"
 session_dir="${tmp_root}/session"
 
@@ -26,6 +27,7 @@ mkdir -p \
   "${fake_live_usr_local_dir}/bin" \
   "${fake_live_usr_local_dir}/libexec/osmap" \
   "${fake_live_var_lib_dir}" \
+  "${fake_live_runfile_dir}" \
   "${fake_bin_dir}"
 
 cp "${source_wrapper}" "${fake_repo}/maint/live/osmap-live-rehearse-service-activation.ksh"
@@ -208,7 +210,9 @@ cat > "${fake_bin_dir}/rcctl" <<'EOF'
 #!/bin/sh
 printf '%s\n' "rcctl $*" >> "${OSMAP_TEST_SERVICE_ACTIVATION_LOG_FILE:?}"
 run_root="${OSMAP_TEST_SERVICE_ACTIVATION_ROOT:?}/run"
+runfile_root="${OSMAP_TEST_SERVICE_ACTIVATION_ROOT:?}/var/run/rc.d"
 mkdir -p "${run_root}"
+mkdir -p "${runfile_root}"
 case "$1 $2" in
   "configtest osmap_mailbox_helper"|"configtest osmap_serve")
     exit 0
@@ -218,6 +222,7 @@ case "$1 $2" in
     if [ "${OSMAP_TEST_SERVICE_ACTIVATION_SKIP_HELPER_SOCKET:-0}" != "1" ]; then
       : > "${run_root}/mailbox-helper.sock"
     fi
+    : > "${runfile_root}/osmap_mailbox_helper"
     exit 0
     ;;
   "start osmap_serve")
@@ -225,6 +230,7 @@ case "$1 $2" in
     if [ "${OSMAP_TEST_SERVICE_ACTIVATION_SKIP_HTTP_LISTENER:-0}" != "1" ]; then
       : > "${run_root}/http-listener.ready"
     fi
+    : > "${runfile_root}/osmap_serve"
     exit 0
     ;;
   "check osmap_mailbox_helper")
@@ -236,15 +242,20 @@ case "$1 $2" in
     exit $?
     ;;
   "stop osmap_mailbox_helper")
-    rm -f "${run_root}/helper-service.running" "${run_root}/mailbox-helper.sock"
+    rm -f "${run_root}/helper-service.running" "${run_root}/mailbox-helper.sock" "${runfile_root}/osmap_mailbox_helper"
     exit 0
     ;;
   "stop osmap_serve")
-    rm -f "${run_root}/serve-service.running" "${run_root}/http-listener.ready"
+    rm -f "${run_root}/serve-service.running" "${run_root}/http-listener.ready" "${runfile_root}/osmap_serve"
     exit 0
     ;;
 esac
 exit 1
+EOF
+
+cat > "${fake_bin_dir}/pkill" <<'EOF'
+#!/bin/sh
+exit 0
 EOF
 
 cat > "${fake_bin_dir}/date" <<'EOF'
@@ -267,6 +278,7 @@ chmod +x \
   "${fake_bin_dir}/id" \
   "${fake_bin_dir}/chgrp" \
   "${fake_bin_dir}/rcctl" \
+  "${fake_bin_dir}/pkill" \
   "${fake_bin_dir}/date" \
   "${fake_bin_dir}/ksh"
 
@@ -301,6 +313,8 @@ rehearsal_output=$(
     OSMAP_SERVICE_ENABLEMENT_LIVE_HELPER_RUN_PATH="${fake_live_usr_local_dir}/libexec/osmap/osmap-mailbox-helper-run.ksh" \
     OSMAP_SERVICE_ENABLEMENT_LIVE_SERVE_RC_PATH="${fake_live_etc_dir}/rc.d/osmap_serve" \
     OSMAP_SERVICE_ENABLEMENT_LIVE_HELPER_RC_PATH="${fake_live_etc_dir}/rc.d/osmap_mailbox_helper" \
+    OSMAP_SERVICE_ENABLEMENT_LIVE_SERVE_RUNFILE_PATH="${fake_live_runfile_dir}/osmap_serve" \
+    OSMAP_SERVICE_ENABLEMENT_LIVE_HELPER_RUNFILE_PATH="${fake_live_runfile_dir}/osmap_mailbox_helper" \
     OSMAP_SERVICE_ENABLEMENT_LIVE_OSMAP_STATE_DIR="${fake_live_var_lib_dir}/osmap" \
     OSMAP_SERVICE_ENABLEMENT_LIVE_OSMAP_RUNTIME_DIR="${fake_live_var_lib_dir}/osmap/run" \
     OSMAP_SERVICE_ENABLEMENT_LIVE_OSMAP_SESSION_DIR="${fake_live_var_lib_dir}/osmap/sessions" \
@@ -328,6 +342,8 @@ assert_contains "${rehearsal_output}" "restore script: ${session_dir}/scripts/re
 report_contents=$(cat "${session_dir}/service-activation-session.txt")
 assert_contains "${report_contents}" "osmap_service_activation_session_mode=rehearse"
 assert_contains "${report_contents}" "validator_report=${session_dir}/reports/service-enablement-after-service-activation.txt"
+assert_contains "${report_contents}" "serve_runfile=${fake_live_runfile_dir}/osmap_serve"
+assert_contains "${report_contents}" "helper_runfile=${fake_live_runfile_dir}/osmap_mailbox_helper"
 
 env \
   PATH="${fake_bin_dir}:${PATH}" \
@@ -341,6 +357,14 @@ env \
 }
 [ -d "${fake_live_var_lib_dir}/osmap-helper/run" ] || {
   printf 'expected helper runtime directory to be created\n' >&2
+  exit 1
+}
+[ -f "${fake_live_runfile_dir}/osmap_serve" ] || {
+  printf 'expected serve runfile marker to be created\n' >&2
+  exit 1
+}
+[ -f "${fake_live_runfile_dir}/osmap_mailbox_helper" ] || {
+  printf 'expected helper runfile marker to be created\n' >&2
   exit 1
 }
 
@@ -363,6 +387,14 @@ env \
 restore_log=$(cat "${log_file}")
 assert_contains "${restore_log}" "rcctl stop osmap_serve"
 assert_contains "${restore_log}" "rcctl stop osmap_mailbox_helper"
+[ ! -f "${fake_live_runfile_dir}/osmap_serve" ] || {
+  printf 'expected serve runfile marker to be removed during restore\n' >&2
+  exit 1
+}
+[ ! -f "${fake_live_runfile_dir}/osmap_mailbox_helper" ] || {
+  printf 'expected helper runfile marker to be removed during restore\n' >&2
+  exit 1
+}
 
 bad_session_dir="${tmp_root}/bad-session"
 env \
@@ -375,6 +407,8 @@ env \
   OSMAP_SERVICE_ENABLEMENT_LIVE_HELPER_RUN_PATH="${fake_live_usr_local_dir}/libexec/osmap/osmap-mailbox-helper-run.ksh" \
   OSMAP_SERVICE_ENABLEMENT_LIVE_SERVE_RC_PATH="${fake_live_etc_dir}/rc.d/osmap_serve" \
   OSMAP_SERVICE_ENABLEMENT_LIVE_HELPER_RC_PATH="${fake_live_etc_dir}/rc.d/osmap_mailbox_helper" \
+  OSMAP_SERVICE_ENABLEMENT_LIVE_SERVE_RUNFILE_PATH="${fake_live_runfile_dir}/osmap_serve-bad" \
+  OSMAP_SERVICE_ENABLEMENT_LIVE_HELPER_RUNFILE_PATH="${fake_live_runfile_dir}/osmap_mailbox_helper-bad" \
   OSMAP_SERVICE_ENABLEMENT_LIVE_OSMAP_STATE_DIR="${fake_live_var_lib_dir}/osmap-bad" \
   OSMAP_SERVICE_ENABLEMENT_LIVE_OSMAP_RUNTIME_DIR="${fake_live_var_lib_dir}/osmap-bad/run" \
   OSMAP_SERVICE_ENABLEMENT_LIVE_OSMAP_SESSION_DIR="${fake_live_var_lib_dir}/osmap-bad/sessions" \

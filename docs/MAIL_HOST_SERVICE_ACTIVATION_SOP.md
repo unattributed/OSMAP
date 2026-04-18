@@ -76,6 +76,8 @@ That mode runs the generated `apply-service-activation.sh`, which:
   present
 - normalizes the service env file group ownership so `_osmap` and `vmail` can
   read their respective env files without widening privilege
+- removes stale exact-match OSMAP processes and stale `/var/run/rc.d/` runfiles
+  from earlier failed attempts before the clean startup sequence begins
 - creates the reviewed `_osmap` and `vmail` state/runtime directories with the
   expected ownership and modes
 - starts and checks `osmap_mailbox_helper`
@@ -98,7 +100,8 @@ sh "$HOME/osmap-service-activation/<session>/scripts/restore-service-activation.
 ```
 
 That script stops `osmap_serve` and `osmap_mailbox_helper` and removes the
-helper socket if it still exists. It intentionally leaves the created
+helper socket and stale `/var/run/rc.d/` service runfiles if they still exist.
+It intentionally leaves the created
 state/runtime directories in place so operators can inspect them before manual
 cleanup.
 

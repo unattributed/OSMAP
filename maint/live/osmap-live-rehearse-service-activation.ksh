@@ -19,6 +19,8 @@ LIVE_SERVE_RUN_PATH="${OSMAP_SERVICE_ENABLEMENT_LIVE_SERVE_RUN_PATH:-/usr/local/
 LIVE_HELPER_RUN_PATH="${OSMAP_SERVICE_ENABLEMENT_LIVE_HELPER_RUN_PATH:-/usr/local/libexec/osmap/osmap-mailbox-helper-run.ksh}"
 LIVE_SERVE_RC_PATH="${OSMAP_SERVICE_ENABLEMENT_LIVE_SERVE_RC_PATH:-/etc/rc.d/osmap_serve}"
 LIVE_HELPER_RC_PATH="${OSMAP_SERVICE_ENABLEMENT_LIVE_HELPER_RC_PATH:-/etc/rc.d/osmap_mailbox_helper}"
+LIVE_SERVE_RUNFILE_PATH="${OSMAP_SERVICE_ENABLEMENT_LIVE_SERVE_RUNFILE_PATH:-/var/run/rc.d/osmap_serve}"
+LIVE_HELPER_RUNFILE_PATH="${OSMAP_SERVICE_ENABLEMENT_LIVE_HELPER_RUNFILE_PATH:-/var/run/rc.d/osmap_mailbox_helper}"
 
 LIVE_OSMAP_STATE_DIR="${OSMAP_SERVICE_ENABLEMENT_LIVE_OSMAP_STATE_DIR:-/var/lib/osmap}"
 LIVE_OSMAP_RUNTIME_DIR="${OSMAP_SERVICE_ENABLEMENT_LIVE_OSMAP_RUNTIME_DIR:-/var/lib/osmap/run}"
@@ -125,6 +127,8 @@ serve_run=$(quote_sh "${LIVE_SERVE_RUN_PATH}")
 helper_run=$(quote_sh "${LIVE_HELPER_RUN_PATH}")
 serve_rc=$(quote_sh "${LIVE_SERVE_RC_PATH}")
 helper_rc=$(quote_sh "${LIVE_HELPER_RC_PATH}")
+serve_runfile=$(quote_sh "${LIVE_SERVE_RUNFILE_PATH}")
+helper_runfile=$(quote_sh "${LIVE_HELPER_RUNFILE_PATH}")
 helper_socket_path=$(quote_sh "${LIVE_HELPER_RUNTIME_DIR}/mailbox-helper.sock")
 serve_state_dir=$(quote_sh "${LIVE_OSMAP_STATE_DIR}")
 serve_runtime_dir=$(quote_sh "${LIVE_OSMAP_RUNTIME_DIR}")
@@ -191,6 +195,9 @@ doas install -d -o vmail -g "\$shared_group" -m 0710 "\$helper_state_dir"
 doas install -d -o vmail -g "\$shared_group" -m 2770 "\$helper_runtime_dir"
 doas install -d -o vmail -g vmail -m 0750 "\$helper_session_dir" "\$helper_settings_dir" "\$helper_audit_dir" "\$helper_cache_dir"
 doas install -d -o vmail -g vmail -m 0700 "\$helper_totp_parent" "\$helper_totp_dir"
+doas pkill -T 0 -xf "/usr/local/bin/osmap serve" >/dev/null 2>&1 || true
+doas pkill -T 0 -xf "/usr/local/bin/osmap mailbox-helper" >/dev/null 2>&1 || true
+doas rm -f "\$serve_runfile" "\$helper_runfile"
 doas rm -f "\$helper_socket_path"
 
 run_or_note_failure doas rcctl configtest osmap_mailbox_helper
@@ -240,6 +247,9 @@ set -eu
 
 doas rcctl stop osmap_serve >/dev/null 2>&1 || true
 doas rcctl stop osmap_mailbox_helper >/dev/null 2>&1 || true
+doas pkill -T 0 -xf "/usr/local/bin/osmap serve" >/dev/null 2>&1 || true
+doas pkill -T 0 -xf "/usr/local/bin/osmap mailbox-helper" >/dev/null 2>&1 || true
+doas rm -f $(quote_sh "${LIVE_SERVE_RUNFILE_PATH}") $(quote_sh "${LIVE_HELPER_RUNFILE_PATH}")
 doas rm -f $(quote_sh "${LIVE_HELPER_RUNTIME_DIR}/mailbox-helper.sock")
 EOF
 
@@ -254,6 +264,8 @@ write_session_report() {
     printf 'restore_script=%s\n' "${RESTORE_SCRIPT_PATH}"
     printf 'validator_report=%s\n' "${VALIDATOR_REPORT_PATH}"
     printf 'shared_runtime_group=%s\n' "${SHARED_RUNTIME_GROUP}"
+    printf 'serve_runfile=%s\n' "${LIVE_SERVE_RUNFILE_PATH}"
+    printf 'helper_runfile=%s\n' "${LIVE_HELPER_RUNFILE_PATH}"
     printf 'serve_state_dir=%s\n' "${LIVE_OSMAP_STATE_DIR}"
     printf 'helper_state_dir=%s\n' "${LIVE_HELPER_STATE_DIR}"
   } > "${SESSION_REPORT_PATH}"
