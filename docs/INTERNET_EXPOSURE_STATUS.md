@@ -64,6 +64,9 @@ The current state is not a blank slate:
   validated host, and the current service report confirms both
   `shared_group_line=osmaprt:...` and `_osmap` membership in `osmaprt` for
   snapshot `0b73b8a`
+- the repo now also has a reviewed host-side service-artifact path that can
+  install the reviewed env files, launchers, and `rc.d` scripts without
+  mixing in service startup
 - the repo now also has a host-side validator for that persistent service
   install, with the current host report archived at
   `maint/live/latest-host-service-enablement-report.txt`
@@ -78,7 +81,8 @@ host still need all of the following:
   persistent loopback OSMAP runtime
 - the repo-owned service-enablement validator must pass on the candidate host
 - the reviewed service env, launcher, and `rc.d` files must be installed so
-  `rcctl check osmap_mailbox_helper` and `rcctl check osmap_serve` can pass
+  `rcctl check osmap_mailbox_helper` and `rcctl check osmap_serve` can
+  eventually pass
 - the helper socket and loopback `127.0.0.1:8080` listener must exist before
   the browser edge is switched away from Roundcube
 - the cutover steps in `EDGE_CUTOVER_PLAN.md` must be applied and validated so

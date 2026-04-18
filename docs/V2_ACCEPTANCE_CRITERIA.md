@@ -39,8 +39,11 @@ Version 2 is acceptable only when all of the following are true:
   dedicated shared runtime group and adding `_osmap` to it before the split
   service install is attempted
 - the validated host has a repo-owned rehearsal or apply path for installing
-  the split `_osmap` plus `vmail` service files instead of depending on ad hoc
-  service wiring
+  the reviewed env, launcher, and `rc.d` service artifacts before full service
+  activation is attempted
+- the validated host has a repo-owned rehearsal or apply path for completing
+  the remaining split `_osmap` plus `vmail` service activation instead of
+  depending on ad hoc service wiring
 - the repo-owned persistent-service validator passes for any host that claims
   the split `_osmap` plus `vmail` install is ready for edge cutover
 - the repo-defined internet-exposure gate is satisfied before the candidate is
@@ -93,6 +96,8 @@ of the following must be true:
 - the repo-owned runtime-group provisioning path has cleared the
   shared-runtime-group and `_osmap` membership preconditions before the service
   install is applied
+- the repo-owned service-artifact path has cleared the env, launcher, and
+  `rc.d` preconditions before the final service-activation step is applied
 - the repo-owned service-enablement validator passes for the candidate host
 - the canonical nginx route replacement, PF/listener changes, and rollback
   path are defined concretely in `EDGE_CUTOVER_PLAN.md`

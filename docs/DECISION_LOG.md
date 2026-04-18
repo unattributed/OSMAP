@@ -2,6 +2,30 @@
 
 ## 2026-04-18
 
+### Add a repo-owned service-artifact path before the final service activation step
+
+Once the reviewed binary and runtime-group paths had cleared the first two host
+blockers, the next explicit validator failures were no longer about identity or
+privilege setup. They were about the absence of the reviewed service artifacts:
+the env files, launchers, and `rc.d` scripts.
+
+OSMAP now carries `maint/live/osmap-live-rehearse-service-artifacts.ksh` plus
+`docs/MAIL_HOST_SERVICE_ARTIFACTS_SOP.md`. The wrapper prepares exact apply and
+restore scripts for installing the reviewed files into `/etc/osmap/`,
+`/usr/local/libexec/osmap/`, and `/etc/rc.d/`, then immediately reruns the
+repo-owned service validator.
+
+The apply path does not require the full service validator to pass yet. It
+requires only that the validator stop reporting the six artifact-missing
+checks. That keeps this gate narrow: clear the reviewed file-install
+preconditions without pretending service startup, socket creation, or loopback
+listener readiness are already complete.
+
+This was chosen instead of widening directly into service activation because
+Version 2 still benefits more from removing the next explicit host blockers in
+one coherent file-install step than from merging artifact installation and
+service startup into one riskier change.
+
 ### Add a repo-owned runtime-group provisioning path before the reviewed service install
 
 Once the reviewed binary deployment path had cleared `/usr/local/bin/osmap`,
