@@ -32,4 +32,14 @@ assert_pexp_follows_rc_subr() {
 assert_pexp_follows_rc_subr "${serve_rc}" 'pexp="/usr/local/bin/osmap serve"'
 assert_pexp_follows_rc_subr "${helper_rc}" 'pexp="/usr/local/bin/osmap mailbox-helper"'
 
+grep -Fq 'daemon_flags="serve"' "${serve_rc}" || {
+  printf 'missing serve daemon_flags in %s\n' "${serve_rc}" >&2
+  exit 1
+}
+
+grep -Fq 'daemon_flags="mailbox-helper"' "${helper_rc}" || {
+  printf 'missing mailbox-helper daemon_flags in %s\n' "${helper_rc}" >&2
+  exit 1
+}
+
 printf '%s\n' "openbsd rc.d health regression checks passed"

@@ -5,6 +5,7 @@
 
 daemon="/usr/local/libexec/osmap/osmap-mailbox-helper-run.ksh"
 daemon_user="vmail"
+daemon_flags="mailbox-helper"
 rc_reload=NO
 
 . /etc/rc.d/rc.subr

@@ -5,6 +5,7 @@
 
 daemon="/usr/local/libexec/osmap/osmap-serve-run.ksh"
 daemon_user="_osmap"
+daemon_flags="serve"
 rc_reload=NO
 
 . /etc/rc.d/rc.subr
