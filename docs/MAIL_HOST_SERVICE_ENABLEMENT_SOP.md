@@ -9,9 +9,11 @@ standard host checkout at `~/OSMAP`.
 It is paired with:
 
 - `maint/live/osmap-live-rehearse-binary-deployment.ksh`
+- `maint/live/osmap-live-rehearse-runtime-group-provisioning.ksh`
 - `maint/live/osmap-live-rehearse-service-enablement.ksh`
 - `maint/live/osmap-live-validate-service-enablement.ksh`
 - `MAIL_HOST_BINARY_DEPLOYMENT_SOP.md`
+- `MAIL_HOST_RUNTIME_GROUP_PROVISIONING_SOP.md`
 - `maint/openbsd/README.md`
 - `maint/openbsd/mail.blackbagsecurity.com/`
 
@@ -30,12 +32,16 @@ Before a real apply run, all of the following must already be true:
 
 - the reviewed target snapshot is synced into `~/OSMAP`
 - the `_osmap` and `vmail` users already exist
-- a dedicated shared runtime group exists for the helper socket path
-- `_osmap` is a member of that dedicated shared runtime group
+- the reviewed binary-deployment path has already cleared the
+  `/usr/local/bin/osmap` prerequisite
+- the reviewed runtime-group provisioning path has already created the
+  dedicated helper-socket group and added `_osmap` to it
 
-The binary prerequisite is handled separately by
-`MAIL_HOST_BINARY_DEPLOYMENT_SOP.md` and
-`maint/live/osmap-live-rehearse-binary-deployment.ksh`.
+The binary prerequisite is handled separately by `MAIL_HOST_BINARY_DEPLOYMENT_SOP.md`
+and `maint/live/osmap-live-rehearse-binary-deployment.ksh`.
+The runtime-group prerequisite is handled separately by
+`MAIL_HOST_RUNTIME_GROUP_PROVISIONING_SOP.md` and
+`maint/live/osmap-live-rehearse-runtime-group-provisioning.ksh`.
 
 For the reviewed `mail.blackbagsecurity.com` service path, the wrapper defaults
 that dedicated shared runtime group to `osmaprt`.

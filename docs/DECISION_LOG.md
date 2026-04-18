@@ -2,6 +2,29 @@
 
 ## 2026-04-18
 
+### Add a repo-owned runtime-group provisioning path before the reviewed service install
+
+Once the reviewed binary deployment path had cleared `/usr/local/bin/osmap`,
+the next explicit host-side blocker in the service validator was the missing
+shared runtime group and the missing `_osmap` membership in that group.
+
+OSMAP now carries `maint/live/osmap-live-rehearse-runtime-group-provisioning.ksh`
+plus `docs/MAIL_HOST_RUNTIME_GROUP_PROVISIONING_SOP.md`. The wrapper prepares
+exact apply and restore scripts for creating `osmaprt`, appending `_osmap` to
+that group, and immediately rerunning the repo-owned service validator.
+
+The apply path does not require the full service validator to pass yet. It
+requires only that the validator stop reporting
+`missing_shared_runtime_group` and
+`osmap_user_missing_shared_runtime_group_membership`. That keeps this gate
+narrow: clear the next hard precondition without pretending the later service
+install steps are already complete.
+
+This was chosen instead of widening directly into env, launcher, `rc.d`, or
+socket setup because Version 2 still benefits more from removing the next
+explicit host blocker in a reviewable way than from splicing multiple service
+changes together.
+
 ### Add a repo-owned binary deployment path before the reviewed service install
 
 Once the repo carried both a reviewed service-enablement wrapper and a

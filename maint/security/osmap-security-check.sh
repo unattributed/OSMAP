@@ -162,4 +162,7 @@ sh maint/security/test-osmap-live-validate-service-enablement.sh
 echo "==> validating binary deployment rehearsal wrapper behavior"
 sh maint/security/test-osmap-live-rehearse-binary-deployment.sh
 
+echo "==> validating runtime-group provisioning rehearsal wrapper behavior"
+sh maint/security/test-osmap-live-rehearse-runtime-group-provisioning.sh
+
 echo "==> security-check complete"
