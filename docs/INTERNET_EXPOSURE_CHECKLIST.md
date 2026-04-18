@@ -59,6 +59,9 @@ Before direct public exposure:
   reality
 - the canonical HTTPS route change and rollback path must be defined concretely
   in `EDGE_CUTOVER_PLAN.md`
+- one repo-owned outside-in browser-path verification from outside the
+  WireGuard-only management plane must confirm the public HTTPS root reaches
+  the expected OSMAP login surface
 
 ## Rate Limiting
 

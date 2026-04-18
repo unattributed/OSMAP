@@ -11,6 +11,7 @@
   - `maint/live/latest-host-edge-cutover-report.txt`
   - `maint/live/latest-host-internet-exposure-report.txt`
   - `maint/live/latest-host-v2-readiness-report.txt`
+  - `maint/live/latest-external-browser-path-verification.txt`
 - current result: `approved for limited direct public browser exposure`
 
 ## Why The Result Is Approved
@@ -55,6 +56,12 @@ The current state is not a blank slate:
   produce a current host report without depending on operator memory alone
 - the current repo-owned exposure report now records the actual post-cutover
   `mail` host posture for snapshot `d1c1a2f`
+- the repo now also has an outside-in browser-path verification artifact from a
+  system outside the WireGuard-only management plane, archived at
+  `maint/live/latest-external-browser-path-verification.txt`
+- that outside-in proof confirms the public HTTPS root redirects to the OSMAP
+  login page with a valid certificate and the expected username, password, and
+  `totp_code` form fields
 - incident handling, pilot, rollback, and hostile-path guidance now exist in
   repo-owned docs
 - OSMAP host-side least-privilege assumptions are already present on the

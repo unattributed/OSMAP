@@ -2,6 +2,29 @@
 
 ## 2026-04-18
 
+### Archive one real outside-in browser-path verification after limited public approval
+
+Once the repo had a passing edge-cutover report, a passing host-side exposure
+assessment, and a passing guarded Version 2 readiness report, the next useful
+step was to collect one real outside-in verification from a system that was not
+using the WireGuard-only management path.
+
+The repository now carries
+`maint/live/latest-external-browser-path-verification.txt`, which records:
+
+- public DNS resolution for `mail.blackbagsecurity.com`
+- the local non-WireGuard route used to reach that public address
+- a browser-style HTTPS fetch to `https://mail.blackbagsecurity.com/`
+- the one-hop redirect from `/` to `/login`
+- the final `200` response at the OSMAP login page
+- the presence of the expected username, password, and `totp_code` form fields
+- the observed certificate identity and browser-facing security headers
+
+This was chosen instead of adding more host-side validation because the repo
+already had host-internal proof. What remained was one honest outside-in
+confirmation that the approved public browser surface was reachable and still
+looked like OSMAP from a non-management path.
+
 ### Add a repo-owned service-activation path for the final host runtime step
 
 Once the reviewed binary, runtime-group, and service-artifact paths had

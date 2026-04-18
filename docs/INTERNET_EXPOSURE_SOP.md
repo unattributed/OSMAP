@@ -45,6 +45,10 @@ The standard host checkout is:
 
 - `~/OSMAP`
 
+The standard off-host outside-in evidence artifact is:
+
+- `maint/live/latest-external-browser-path-verification.txt`
+
 ## Standard Review Flow
 
 1. Sync the local repo and the host checkout to the reviewed `origin/main`
@@ -62,9 +66,13 @@ The standard host checkout is:
    - rollback posture if the browser surface must be narrowed again quickly
 5. If the host claims to have applied the OSMAP edge move, run the repo-owned
    edge-cutover verifier too and keep its report with the exposure review.
-6. Compare those observed host facts against every section in
+6. From a system outside the WireGuard-only management plane, perform one real
+   HTTPS browser-path verification against `https://mail.blackbagsecurity.com/`
+   and archive the resulting redirect, login-page, TLS, and routing evidence
+   under `maint/live/latest-external-browser-path-verification.txt`.
+7. Compare those observed host facts against every section in
    `INTERNET_EXPOSURE_CHECKLIST.md`.
-7. Update `INTERNET_EXPOSURE_STATUS.md` so it records:
+8. Update `INTERNET_EXPOSURE_STATUS.md` so it records:
    - the exact assessment date
    - the assessed host
    - the assessed repo snapshot
@@ -72,9 +80,9 @@ The standard host checkout is:
    - the factual blockers or conditions attached to that result
    - any advisory findings that apply only to separately restricted
      control-plane or operator routes
-8. If the result remains `not approved`, keep the current staged posture and
+9. If the result remains `not approved`, keep the current staged posture and
    record the narrowest concrete next requirements.
-9. If the result becomes `approved`, record the exact public edge shape, the
+10. If the result becomes `approved`, record the exact public edge shape, the
    rollback path, and the operator conditions under which that approval holds.
 
 ## Standard Commands
@@ -93,6 +101,20 @@ The wrapper report is the standard starting point, not the whole decision by
 itself. The operator review must still connect the listener facts, nginx route
 ownership, PF ingress policy, rollback posture, and the current V2 readiness
 report into one exposure decision.
+
+The standard outside-in confirmation uses a non-management path:
+
+```sh
+dig +short mail.blackbagsecurity.com
+ip route get "$(dig +short mail.blackbagsecurity.com | tail -n 1)"
+curl -sS -A 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0 Safari/537.36' \
+  -L -D /tmp/osmap-public.headers -o /tmp/osmap-public.body \
+  --write-out 'remote_ip=%{remote_ip}\nhttp_code=%{http_code}\nnum_redirects=%{num_redirects}\nurl_effective=%{url_effective}\nssl_verify_result=%{ssl_verify_result}\n' \
+  https://mail.blackbagsecurity.com/
+```
+
+Archive the resulting route, redirect chain, login-page markers, and TLS
+identity under `maint/live/latest-external-browser-path-verification.txt`.
 
 ## Standard Outcomes
 

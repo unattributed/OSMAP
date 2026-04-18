@@ -110,6 +110,8 @@ of the following must be true:
   path are defined concretely in `EDGE_CUTOVER_PLAN.md`
 - the repo-owned edge-cutover verifier passes for any host that claims the
   direct-public OSMAP edge posture
+- repo-owned off-host browser-path evidence exists for the approved public
+  HTTPS root, collected from outside the WireGuard-only management plane
 - TLS-only browser access through the hardened edge is configured and validated
 - operators have usable auth, session, send, and error visibility for suspected
   hostile activity

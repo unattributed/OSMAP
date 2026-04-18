@@ -1,0 +1,56 @@
+# External Browser Path Verification
+
+- verification date: April 18, 2026
+- verification origin: local workstation outside the WireGuard-only management plane
+- target URL: `https://mail.blackbagsecurity.com/`
+
+## Route And Name Resolution
+
+- `dig +short mail.blackbagsecurity.com`:
+  - `124.121.44.172`
+- `ip route get 124.121.44.172`:
+  - `124.121.44.172 via 192.168.1.1 dev enp4s0 src 192.168.1.53 uid 1000`
+
+## HTTPS Fetch Result
+
+- browser-style GET used a standard desktop browser user agent
+- curl redirect chain:
+  - `GET /` returned `HTTP/2 303` with `location: /login`
+  - `GET /login` returned `HTTP/2 200`
+- curl final metadata:
+  - `remote_ip=124.121.44.172`
+  - `http_code=200`
+  - `num_redirects=1`
+  - `url_effective=https://mail.blackbagsecurity.com/login`
+  - `ssl_verify_result=0`
+
+## Browser Surface Markers
+
+- `<title>OSMAP Login`
+- `action="/login"`
+- `name="username"`
+- `name="password"`
+- `name="totp_code"`
+
+## Security Headers Observed
+
+- `cache-control: no-store`
+- `content-security-policy: default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'`
+- `cross-origin-resource-policy: same-origin`
+- `referrer-policy: no-referrer`
+- `x-content-type-options: nosniff`
+- `x-frame-options: DENY`
+- `strict-transport-security: max-age=31536000; includeSubDomains`
+
+## Certificate Identity
+
+- `subject=CN=mail.blackbagsecurity.com`
+- `issuer=C=US, O=Let's Encrypt, CN=E7`
+- `notBefore=Mar 23 18:06:49 2026 GMT`
+- `notAfter=Jun 21 18:06:48 2026 GMT`
+- `sha256 Fingerprint=7B:B9:0B:08:85:61:5F:C8:E8:0F:12:B7:58:7E:7A:15:BB:5D:A2:70:D9:A8:55:8C:EE:A5:9E:CA:93:A1:EA:FB`
+
+## Result
+
+- outside-in public browser-path verification: `passed`
+- observed browser entrypoint: public HTTPS root redirects to the OSMAP login page
