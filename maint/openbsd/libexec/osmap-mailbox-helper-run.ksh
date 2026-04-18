@@ -33,4 +33,14 @@ set -a
 . "$OSMAP_ENV_FILE"
 set +a
 
+: "${OSMAP_AUDIT_DIR:=/var/lib/osmap-helper/audit}"
+: "${OSMAP_STDERR_LOG_PATH:=${OSMAP_AUDIT_DIR%/}/mailbox-helper.log}"
+
+umask 027
+: >> "$OSMAP_STDERR_LOG_PATH" || {
+	printf '%s\n' "OSMAP mailbox-helper log file is not writable: $OSMAP_STDERR_LOG_PATH" >&2
+	exit 1
+}
+
+exec >>"$OSMAP_STDERR_LOG_PATH" 2>&1
 exec "$OSMAP_BIN" "$mode"

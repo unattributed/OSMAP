@@ -2,6 +2,37 @@
 
 ## 2026-04-18
 
+### Restore live auth observability before further browser-auth debugging
+
+The public browser surface was already working, but the first real failed login
+attempt after direct-public approval exposed a bad operational truth: the
+running `osmap_serve` and `osmap_mailbox_helper` processes had both stdout and
+stderr redirected to `/dev/null`.
+
+That meant OSMAP's structured auth events still existed in code, but operators
+could not actually observe them on the validated host. A bogus login reproduced
+the browser-visible `401`, yet no corresponding `category=auth` event appeared
+in `daemon`, `messages`, `secure`, or `authlog`.
+
+OSMAP now restores reviewed stderr capture through the service launchers by
+directing each runtime into its configured audit directory:
+
+- `/var/lib/osmap/audit/serve.log`
+- `/var/lib/osmap-helper/audit/mailbox-helper.log`
+
+The repository now also carries
+`maint/live/osmap-live-validate-auth-observability.ksh` plus two shell
+regressions that prove:
+
+- the reviewed OpenBSD launchers append structured stderr output into the
+  configured log files
+- a live bogus login yields a `401` and a matching `category=auth
+  action=login_denied` event in the captured serve log
+
+This was chosen before deeper browser-auth debugging because the project needed
+real operator visibility into login failures again before trying to classify a
+specific mailbox-password or TOTP problem on the live host.
+
 ### Archive one real outside-in browser-path verification after limited public approval
 
 Once the repo had a passing edge-cutover report, a passing host-side exposure

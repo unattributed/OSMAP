@@ -80,6 +80,8 @@ That mode runs the generated `apply-service-artifacts.sh`, which:
 - installs the reviewed env files into `/etc/osmap`
 - installs the reviewed launchers into `/usr/local/libexec/osmap`
 - installs the reviewed `rc.d` files into `/etc/rc.d`
+- restores reviewed stderr capture into the configured audit-log files instead
+  of leaving both services pointed at `/dev/null`
 - immediately reruns
   `ksh ./maint/live/osmap-live-validate-service-enablement.ksh`
 - requires the validator report to stop reporting:

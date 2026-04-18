@@ -112,6 +112,9 @@ of the following must be true:
   direct-public OSMAP edge posture
 - repo-owned off-host browser-path evidence exists for the approved public
   HTTPS root, collected from outside the WireGuard-only management plane
+- repo-owned auth-observability evidence confirms browser login failures emit
+  structured auth events into a host-readable log instead of disappearing into
+  `/dev/null`
 - TLS-only browser access through the hardened edge is configured and validated
 - operators have usable auth, session, send, and error visibility for suspected
   hostile activity
