@@ -115,6 +115,39 @@ extract_include_targets() {
   '
 }
 
+extract_server_block_for_listener() {
+  listener="$1"
+  printf '%s\n' "${MAIN_SSL_CONTENT}" | awk -v listener="${listener}" '
+    /server[[:space:]]*\{/ {
+      in_block = 1
+      depth = 0
+      block = ""
+      found = 0
+    }
+    in_block {
+      block = block $0 "\n"
+      if (index($0, listener) > 0) {
+        found = 1
+      }
+
+      line = $0
+      opens = gsub(/\{/, "{", line)
+      line = $0
+      closes = gsub(/\}/, "}", line)
+      depth += opens - closes
+
+      if (depth == 0) {
+        if (found) {
+          printf "%s", block
+        }
+        in_block = 0
+        block = ""
+        found = 0
+      }
+    }
+  '
+}
+
 append_failed_check() {
   failed_check="$1"
   if [ -z "${FAILED_CHECKS}" ]; then
@@ -135,6 +168,8 @@ write_report() {
     printf 'https_listener_bindings=%s\n' "${HTTPS_BINDINGS:-none}"
     printf 'osmap_listener_bindings=%s\n' "${OSMAP_BINDINGS:-none}"
     printf 'canonical_https_includes=%s\n' "${MAIN_SSL_INCLUDE_TARGETS:-none}"
+    printf 'public_https_includes=%s\n' "${PUBLIC_INCLUDE_TARGETS:-none}"
+    printf 'private_https_includes=%s\n' "${PRIVATE_INCLUDE_TARGETS:-none}"
     printf 'failed_checks=\n'
     if [ -n "${FAILED_CHECKS}" ]; then
       printf '%s\n' "${FAILED_CHECKS}"
@@ -177,11 +212,55 @@ PF_SELFHOST_RUNTIME_RULES="$(capture_pf_anchor_rules)"
 HTTPS_BINDINGS="$(listener_bindings_for_port 443)"
 OSMAP_BINDINGS="$(listener_bindings_for_port 8080)"
 MAIN_SSL_INCLUDE_TARGETS="$(extract_include_targets "${MAIN_SSL_CONTENT}" | paste -sd ',' -)"
+PUBLIC_SERVER_CONTENT="$(extract_server_block_for_listener 'listen 192.168.1.44:443 ssl;')"
+PRIVATE_SERVER_CONTENT="$(extract_server_block_for_listener 'listen 10.44.0.1:443 ssl;')"
+PUBLIC_INCLUDE_TARGETS="$(extract_include_targets "${PUBLIC_SERVER_CONTENT}" | paste -sd ',' -)"
+PRIVATE_INCLUDE_TARGETS="$(extract_include_targets "${PRIVATE_SERVER_CONTENT}" | paste -sd ',' -)"
 VALIDATION_RESULT="passed"
 
 if ! printf '%s\n' "${MAIN_SSL_CONTENT}" | grep -Fq 'include /etc/nginx/templates/osmap-root.tmpl;'; then
   append_failed_check "canonical_https_vhost_missing_osmap_root_template_include"
 fi
+
+if [ -z "${PUBLIC_SERVER_CONTENT}" ]; then
+  append_failed_check "public_https_server_block_missing"
+fi
+
+if [ -z "${PRIVATE_SERVER_CONTENT}" ]; then
+  append_failed_check "private_https_server_block_missing"
+fi
+
+if printf '%s\n' "${PUBLIC_SERVER_CONTENT}" | grep -Fq 'listen 10.44.0.1:443 ssl;'; then
+  append_failed_check "public_https_server_block_includes_wireguard_listener"
+fi
+
+if printf '%s\n' "${PUBLIC_SERVER_CONTENT}" | grep -Fq 'listen 127.0.0.1:443 ssl;'; then
+  append_failed_check "public_https_server_block_includes_loopback_listener"
+fi
+
+if [ "${PUBLIC_INCLUDE_TARGETS:-}" != "/etc/nginx/templates/ssl.tmpl,/etc/nginx/templates/osmap-root.tmpl" ]; then
+  append_failed_check "public_https_server_block_not_osmap_only"
+fi
+
+for private_template in \
+  /etc/nginx/templates/sogo.tmpl \
+  /etc/nginx/templates/postfixadmin.tmpl \
+  /etc/nginx/templates/php-catchall.tmpl \
+  /etc/nginx/templates/stub_status.tmpl \
+  /etc/nginx/templates/pf_dashboard.locations.tmpl \
+  /etc/nginx/templates/ops_monitor.locations.tmpl \
+  /etc/nginx/templates/obsd1_dr_portal.locations.tmpl \
+  /etc/nginx/templates/rspamd.tmpl \
+  /etc/nginx/templates/brevo_webhook.locations.tmpl
+do
+  if printf '%s\n' "${PUBLIC_SERVER_CONTENT}" | grep -Fq "include ${private_template};"; then
+    append_failed_check "public_https_server_block_exposes_private_template:${private_template}"
+  fi
+
+  if ! printf '%s\n' "${PRIVATE_SERVER_CONTENT}" | grep -Fq "include ${private_template};"; then
+    append_failed_check "private_https_server_block_missing_template:${private_template}"
+  fi
+done
 
 if printf '%s\n' "${MAIN_SSL_CONTENT}" | grep -Fq 'include /etc/nginx/templates/roundcube.tmpl;'; then
   append_failed_check "canonical_https_vhost_still_includes_roundcube_template"

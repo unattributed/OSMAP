@@ -96,10 +96,12 @@ Public exposure should require explicit operator approval after review of:
 
 Control-plane allowlists for `/postfixadmin/`, `/pf/`, `/dr/`, and similar
 operator routes are expected to remain narrower than the public OSMAP root.
-That narrower control-plane posture should be recorded, but it should not by
-itself block approval of the public OSMAP browser surface when the public root,
-listener shape, PF `443` posture, rollback plan, and Version 2 readiness gate
-are all already satisfied.
+Those templates must not be included in the public WAN HTTPS server block at
+all; they belong on the loopback and WireGuard HTTPS listener. That narrower
+control-plane posture should be recorded, but it should not by itself block
+approval of the public OSMAP browser surface when the public root, listener
+shape, PF `443` posture, rollback plan, and Version 2 readiness gate are all
+already satisfied.
 
 If those conditions are not met, the safer default is to keep the service on a
 narrower staged posture until the public-exposure gate is actually satisfied.

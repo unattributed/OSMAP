@@ -47,10 +47,13 @@ The current state is not a blank slate:
 - the reviewed canonical HTTPS edge cutover is now applied on the validated
   host and the current edge report is archived at
   `maint/live/latest-host-edge-cutover-report.txt`
-- the canonical HTTPS vhost now serves OSMAP at `/` through
+- the public HTTPS server block now serves OSMAP at `/` through
   `/etc/nginx/templates/osmap-root.tmpl`, not Roundcube
 - HTTPS now listens on `127.0.0.1:443`, `10.44.0.1:443`, and
   `192.168.1.44:443`
+- the public `192.168.1.44:443` server block is OSMAP-only; private/control
+  templates such as SOGo, PostfixAdmin, PF dashboards, Rspamd, and operator
+  portals remain on the loopback and WireGuard HTTPS server block
 - PF now permits public ingress to TCP `443` while keeping the other end-user
   mail-client ports blocked on WAN
 - the repo-owned internet-exposure assessment wrapper now exists and can
@@ -114,11 +117,14 @@ true:
 
 - the canonical HTTPS root continues to serve OSMAP through the reviewed edge
   shape in `maint/live/latest-host-edge-cutover-report.txt`
+- the public HTTPS server block continues to include only the TLS template and
+  `osmap-root.tmpl`
 - the full Version 2 readiness gate continues to pass, as recorded in
   `maint/live/latest-host-v2-readiness-report.txt`
 - WAN `443` remains intentionally enabled while the other end-user mail-client
   ports remain blocked on WAN
-- control-plane and operator-only routes remain separately restricted
+- control-plane and operator-only routes remain off the public WAN server block
+  and separately restricted on the private HTTPS listener
 - the rollback path in `EDGE_CUTOVER_PLAN.md` remains ready to restore the
   narrower posture quickly
 

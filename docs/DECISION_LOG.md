@@ -4615,3 +4615,21 @@ The repo now also carries a dedicated live validator for this boundary:
 That wrapper confirms a loopback-proxied request with `X-Real-IP` produces
 matching route-level and low-level HTTP audit lines with the same effective
 client address.
+
+### Split public OSMAP HTTPS from private control-plane HTTPS
+
+After the public HTTPS cutover, the `mail.blackbagsecurity.com` nginx server
+block that listened on the public WAN address also included private/control
+templates such as SOGo, PostfixAdmin, PF dashboards, Rspamd, and operator
+portals. PF can only make a port-level decision for TCP `443`, so this was the
+wrong boundary for path-level exposure control.
+
+The reviewed mail-host edge artifact now splits HTTPS into two server blocks:
+
+- `192.168.1.44:443` includes only shared TLS policy and
+  `osmap-root.tmpl`
+- `127.0.0.1:443` and `10.44.0.1:443` retain the private/control templates
+
+This preserves direct public browser access to OSMAP while putting adjacent
+private services back behind loopback and WireGuard. The edge validator now
+fails any public HTTPS server block that includes private/control templates.

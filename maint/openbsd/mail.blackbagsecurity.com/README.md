@@ -17,6 +17,19 @@ The current artifact set is:
 - `pf.anchors/macros.pf`
 - `pf.anchors/selfhost.pf`
 
+The nginx HTTPS artifact intentionally separates the public WAN listener from
+the private/control listeners:
+
+- `192.168.1.44:443` is OSMAP-only and includes only shared TLS policy plus
+  `osmap-root.tmpl`
+- `127.0.0.1:443` and `10.44.0.1:443` retain adjacent private/control
+  templates such as SOGo, PostfixAdmin, PF dashboards, Rspamd, and operator
+  portals
+
+Do not merge those listeners back into one server block. PF can only open TCP
+`443`; nginx is the path-level boundary that keeps public HTTPS limited to
+OSMAP.
+
 The service env files are the reviewed `mail.blackbagsecurity.com` inputs for
 the split `_osmap` plus `vmail` runtime install. They are paired with the
 generic launchers and `rc.d` scripts under `maint/openbsd/` and the host-side

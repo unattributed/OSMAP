@@ -49,30 +49,63 @@ The intended cutover shape is deliberately narrow:
 - OSMAP continues to run as `_osmap`
 - mailbox access continues to cross the existing helper socket boundary to
   `vmail`
-- direct public exposure is added only for HTTPS on the canonical browser path
+- direct public exposure is added only for HTTPS on the canonical OSMAP browser
+  path
 - WAN exposure for IMAP, submission, ManageSieve, helper sockets, and the
   loopback OSMAP listener does not expand as part of this change
 - control-plane routes such as `/postfixadmin/`, `/pf/`, `/dr/`, and similar
-  paths remain separately restricted
+  paths remain on the loopback and WireGuard HTTPS listeners only
 
 ## Exact nginx Route Replacement
 
-### 1. Replace Roundcube At The Canonical Root
+### 1. Split The Public OSMAP Listener From Private HTTPS Listeners
 
-In `/etc/nginx/sites-enabled/main-ssl.conf`, replace:
+In `/etc/nginx/sites-enabled/main-ssl.conf`, do not place the public WAN
+listener in the same server block as private/control templates.
 
-```nginx
-include /etc/nginx/templates/roundcube.tmpl;
-```
-
-with:
+The public server block for `192.168.1.44:443` must include only the shared TLS
+template and the OSMAP root template:
 
 ```nginx
-include /etc/nginx/templates/osmap-root.tmpl;
+server {
+    listen 192.168.1.44:443 ssl;
+    http2 on;
+
+    server_name mail.blackbagsecurity.com;
+
+    root /htdocs;
+    index index.php index.html;
+
+    include /etc/nginx/templates/ssl.tmpl;
+    include /etc/nginx/templates/osmap-root.tmpl;
+}
 ```
 
-Update the vhost comment block so `/` is described as OSMAP rather than
-Roundcube.
+The private/control server block must keep the loopback and WireGuard listeners
+separate from the WAN listener:
+
+```nginx
+server {
+    listen 127.0.0.1:443 ssl;
+    listen 10.44.0.1:443 ssl;
+    http2 on;
+
+    server_name mail.blackbagsecurity.com 10.44.0.1 127.0.0.1;
+
+    include /etc/nginx/templates/ssl.tmpl;
+    include /etc/nginx/templates/misc.tmpl;
+    include /etc/nginx/templates/osmap-root.tmpl;
+    include /etc/nginx/templates/sogo.tmpl;
+    include /etc/nginx/templates/postfixadmin.tmpl;
+    include /etc/nginx/templates/php-catchall.tmpl;
+    include /etc/nginx/templates/stub_status.tmpl;
+    include /etc/nginx/templates/pf_dashboard.locations.tmpl;
+    include /etc/nginx/templates/ops_monitor.locations.tmpl;
+    include /etc/nginx/templates/obsd1_dr_portal.locations.tmpl;
+    include /etc/nginx/templates/rspamd.tmpl;
+    include /etc/nginx/templates/brevo_webhook.locations.tmpl;
+}
+```
 
 ### 2. Add The OSMAP Root Template
 
@@ -112,6 +145,8 @@ The cutover does not make every existing HTTPS route public.
 
 - do not add `control-plane-allow.tmpl` to the OSMAP root location
 - do keep the current allowlist posture for control-plane and operator routes
+  on the private listener
+- do not include private/control templates in the public WAN server block
 - do not remove allow checks from unrelated nginx templates as part of this
   cutover
 
@@ -119,8 +154,8 @@ The goal is to expose the OSMAP browser surface, not the host control plane.
 
 ### 4. Public HTTPS Listener Shape
 
-Keep the current local and WireGuard listeners, and add the host egress
-listener used for public HTTPS reachability:
+Keep the current local and WireGuard listeners in the private/control server
+block, and keep the host egress listener in the public OSMAP-only server block:
 
 ```nginx
 listen 127.0.0.1:443 ssl;
@@ -128,7 +163,8 @@ listen 10.44.0.1:443 ssl;
 listen 192.168.1.44:443 ssl;
 ```
 
-`server_name mail.blackbagsecurity.com` remains the canonical browser hostname.
+`server_name mail.blackbagsecurity.com` remains the canonical public browser
+hostname. `10.44.0.1` and `127.0.0.1` stay on the private/control server block.
 If upstream NAT or port forwarding is required, forward only TCP `443` to
 `192.168.1.44:443`. Do not forward `8080`, helper sockets, IMAP, submission,
 or ManageSieve as part of this change.

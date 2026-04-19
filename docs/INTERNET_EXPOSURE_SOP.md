@@ -130,11 +130,14 @@ current repo state.
 Use `approved for limited direct public browser exposure` when:
 
 - the canonical HTTPS root serves OSMAP through the reviewed edge shape
+- the public WAN HTTPS server block includes only shared TLS policy and
+  `osmap-root.tmpl`
 - WAN `443` is intentionally enabled
 - the full Version 2 readiness gate still passes
 - rollback remains available
 - any remaining narrower restrictions apply only to control-plane or
-  operator-only routes rather than the public OSMAP browser root
+  operator-only routes on loopback or WireGuard rather than the public OSMAP
+  browser root
 
 ## Current Reality
 
