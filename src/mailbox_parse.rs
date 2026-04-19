@@ -61,13 +61,8 @@ pub(super) fn parse_doveadm_message_list_output(
 
     let mut messages = Vec::new();
 
-    for raw_line in execution.stdout.lines() {
-        let line = raw_line.trim();
-        if line.is_empty() {
-            continue;
-        }
-
-        messages.push(parse_message_summary_line(policy, line)?);
+    for record in parse_uid_started_flow_records(&execution.stdout, "message-list-parser")? {
+        messages.push(parse_message_summary_line(policy, &record)?);
         if messages.len() > policy.max_messages {
             return Err(MailboxBackendError {
                 backend: "message-list-parser",
@@ -125,13 +120,8 @@ pub(super) fn parse_doveadm_message_search_output(
 
     let mut results = Vec::new();
 
-    for raw_line in execution.stdout.lines() {
-        let line = raw_line.trim();
-        if line.is_empty() {
-            continue;
-        }
-
-        results.push(parse_message_search_result_line(policy, line)?);
+    for record in parse_uid_started_flow_records(&execution.stdout, "message-search-parser")? {
+        results.push(parse_message_search_result_line(policy, &record)?);
         if results.len() > policy.max_results {
             return Err(MailboxBackendError {
                 backend: "message-search-parser",
@@ -202,34 +192,18 @@ fn parse_message_summary_line(
         )?,
         "message-list-parser",
     )?;
-    let subject = optional_flow_field(&fields, "hdr.subject")
-        .filter(|value| !value.is_empty())
-        .map(|value| {
-            validate_bounded_string(
-                "hdr.subject",
-                value,
-                policy.header_value_max_len,
-                "message-list-parser",
-                true,
-                false,
-            )?;
-            Ok(value.to_string())
-        })
-        .transpose()?;
-    let from = optional_flow_field(&fields, "hdr.from")
-        .filter(|value| !value.is_empty())
-        .map(|value| {
-            validate_bounded_string(
-                "hdr.from",
-                value,
-                policy.header_value_max_len,
-                "message-list-parser",
-                true,
-                false,
-            )?;
-            Ok(value.to_string())
-        })
-        .transpose()?;
+    let subject = optional_summary_header_field(
+        &fields,
+        "hdr.subject",
+        policy.header_value_max_len,
+        "message-list-parser",
+    )?;
+    let from = optional_summary_header_field(
+        &fields,
+        "hdr.from",
+        policy.header_value_max_len,
+        "message-list-parser",
+    )?;
 
     Ok(MessageSummary {
         mailbox_name,
@@ -395,34 +369,18 @@ fn parse_message_search_result_line(
         "message-search-parser",
     )?;
 
-    let subject = optional_flow_field(&fields, "hdr.subject")
-        .filter(|value| !value.is_empty())
-        .map(|value| {
-            validate_bounded_string(
-                "hdr.subject",
-                value,
-                policy.header_value_max_len,
-                "message-search-parser",
-                true,
-                false,
-            )?;
-            Ok(value.to_string())
-        })
-        .transpose()?;
-    let from = optional_flow_field(&fields, "hdr.from")
-        .filter(|value| !value.is_empty())
-        .map(|value| {
-            validate_bounded_string(
-                "hdr.from",
-                value,
-                policy.header_value_max_len,
-                "message-search-parser",
-                true,
-                false,
-            )?;
-            Ok(value.to_string())
-        })
-        .transpose()?;
+    let subject = optional_summary_header_field(
+        &fields,
+        "hdr.subject",
+        policy.header_value_max_len,
+        "message-search-parser",
+    )?;
+    let from = optional_summary_header_field(
+        &fields,
+        "hdr.from",
+        policy.header_value_max_len,
+        "message-search-parser",
+    )?;
 
     Ok(MessageSearchResult {
         mailbox_name,
@@ -545,6 +503,80 @@ fn parse_flow_fields(
     }
 
     Ok(fields)
+}
+
+fn parse_uid_started_flow_records(
+    output: &str,
+    backend: &'static str,
+) -> Result<Vec<String>, MailboxBackendError> {
+    let mut records = Vec::new();
+    let mut current = String::new();
+
+    for raw_line in output.lines() {
+        if raw_line.is_empty() {
+            continue;
+        }
+
+        if raw_line.starts_with("uid=") {
+            if !current.is_empty() {
+                records.push(std::mem::take(&mut current));
+            }
+            current.push_str(raw_line);
+            continue;
+        }
+
+        if current.is_empty() {
+            return Err(MailboxBackendError {
+                backend,
+                reason: format!("flow continuation appeared before first uid record: {raw_line:?}"),
+            });
+        }
+
+        current.push('\n');
+        current.push_str(raw_line);
+    }
+
+    if !current.is_empty() {
+        records.push(current);
+    }
+
+    Ok(records)
+}
+
+fn optional_summary_header_field(
+    fields: &BTreeMap<String, String>,
+    field: &'static str,
+    max_len: usize,
+    backend: &'static str,
+) -> Result<Option<String>, MailboxBackendError> {
+    optional_flow_field(fields, field)
+        .map(normalize_header_summary_value)
+        .filter(|value| !value.is_empty())
+        .map(|value| {
+            validate_bounded_string(field, &value, max_len, backend, true, false)?;
+            Ok(value)
+        })
+        .transpose()
+}
+
+fn normalize_header_summary_value(value: &str) -> String {
+    let mut normalized = String::new();
+    let mut pending_space = false;
+
+    for ch in value.chars() {
+        if ch.is_whitespace() {
+            pending_space = true;
+            continue;
+        }
+
+        if pending_space && !normalized.is_empty() {
+            normalized.push(' ');
+        }
+        pending_space = false;
+        normalized.push(ch);
+    }
+
+    normalized
 }
 
 fn escape_flow_quoted_value(value: &str) -> String {

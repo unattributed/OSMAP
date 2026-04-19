@@ -4687,3 +4687,17 @@ The Version 2 readiness wrapper now includes a persistent-service guard:
 This keeps the V2 gate safe for the live public edge without changing the
 individual proof scripts, widening runtime authority, or hiding service-health
 failures from the operator.
+
+### Accept folded header summaries in live message lists
+
+A real public-browser INBOX request for `duncan@blackbagsecurity.com` exposed a
+message-list parser mismatch: Dovecot `doveadm -f flow fetch ... hdr.subject
+hdr.from` can return folded header summary values across physical lines. OSMAP
+was parsing each physical line as a complete message summary, so a folded
+subject continuation was rejected as a malformed record missing `mailbox`.
+
+The message-list and message-search parsers now group `uid=`-started flow
+records before field parsing and normalize header summary whitespace into
+single-line browser values. This restores the live read path without changing
+Dovecot authority, helper privilege, nginx/PF exposure, or adding a JSON parser
+dependency to the trusted computing base.

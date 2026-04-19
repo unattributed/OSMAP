@@ -403,6 +403,44 @@ mod tests {
     }
 
     #[test]
+    fn parses_message_summaries_with_folded_header_fields_from_live_flow_output() {
+        let executor = Rc::new(std::cell::RefCell::new(StubCommandExecutor::success(
+            CommandExecution {
+                status_code: 0,
+                stdout: concat!(
+                    "uid=158 flags=\\Seen date.received=2026-04-18 23:39:14 size.virtual=40908 mailbox=INBOX hdr.subject=Your SecOps Engineer Application is Moving Forward - Complete Your\n",
+                    " Interview hdr.from=micro1 <support@micro1.ai>\n",
+                )
+                .to_string(),
+                stderr: String::new(),
+            },
+        )));
+        let backend = DoveadmMessageListBackend::new(
+            MessageListPolicy::default(),
+            executor,
+            "/usr/local/bin/doveadm",
+        );
+        let request = MessageListRequest::new(MessageListPolicy::default(), "INBOX")
+            .expect("request should be valid");
+
+        let messages = backend
+            .list_messages("alice@example.com", &request)
+            .expect("folded header message list should succeed");
+
+        assert_eq!(messages.len(), 1);
+        assert_eq!(messages[0].uid, 158);
+        assert_eq!(messages[0].mailbox_name, "INBOX");
+        assert_eq!(
+            messages[0].subject.as_deref(),
+            Some("Your SecOps Engineer Application is Moving Forward - Complete Your Interview")
+        );
+        assert_eq!(
+            messages[0].from.as_deref(),
+            Some("micro1 <support@micro1.ai>")
+        );
+    }
+
+    #[test]
     fn parses_message_view_from_doveadm_flow_output() {
         let executor = Rc::new(std::cell::RefCell::new(StubCommandExecutor::success(
             CommandExecution {
