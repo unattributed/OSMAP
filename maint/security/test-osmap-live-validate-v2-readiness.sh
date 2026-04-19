@@ -215,6 +215,7 @@ service_guard_output=$(
     PATH="${bin_dir}:${PATH}" \
     OSMAP_TEST_V2_READINESS_LOG_FILE="${service_guard_log}" \
     OSMAP_V2_READINESS_SERVICE_GUARD=always \
+    OSMAP_V2_READINESS_SERVICE_GUARD_REPORT_PATH="${service_guard_report}.service-enablement" \
     sh "${fake_live_dir}/osmap-live-validate-v2-readiness.ksh" \
       --report "${service_guard_report}" helper-peer-auth
 )
