@@ -115,6 +115,9 @@ of the following must be true:
 - repo-owned auth-observability evidence confirms browser login failures emit
   structured auth events into a host-readable log instead of disappearing into
   `/dev/null`
+- repo-owned public-send audit-correlation evidence confirms the same effective
+  client IP appears across auth, session, mailbox, submission, and
+  `http_request_completed` events for the main public browser send workflow
 - TLS-only browser access through the hardened edge is configured and validated
 - operators have usable auth, session, send, and error visibility for suspected
   hostile activity

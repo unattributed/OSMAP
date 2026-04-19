@@ -14,6 +14,7 @@
   - `maint/live/latest-external-browser-path-verification.txt`
   - `maint/live/latest-external-public-https-isolation-report.txt`
   - `maint/live/latest-host-auth-observability-report.txt`
+  - `maint/live/latest-host-public-send-audit-correlation-report.txt`
 - current result: `approved for limited direct public browser exposure`
 
 ## Why The Result Is Approved
@@ -74,6 +75,10 @@ The current state is not a blank slate:
 - the repo now also has a host-side auth-observability validator that confirms
   login failures are captured into the reviewed serve audit log instead of
   disappearing into `/dev/null`
+- the repo now also has a live public-send audit-correlation validator that
+  proves the main public browser send workflow reports one effective client IP
+  consistently across auth, session, mailbox, submission, and generic HTTP
+  completion audit events
 - incident handling, pilot, rollback, and hostile-path guidance now exist in
   repo-owned docs
 - OSMAP host-side least-privilege assumptions are already present on the

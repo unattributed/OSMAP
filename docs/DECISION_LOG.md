@@ -4633,3 +4633,30 @@ The reviewed mail-host edge artifact now splits HTTPS into two server blocks:
 This preserves direct public browser access to OSMAP while putting adjacent
 private services back behind loopback and WireGuard. The edge validator now
 fails any public HTTPS server block that includes private/control templates.
+
+### Validate public send audit correlation across the full browser workflow
+
+After low-level HTTP completion events were aligned with the effective client
+IP, the remaining operator-facing telemetry gap was proving the complete public
+send workflow, not just the login form probe. A real incident review needs auth,
+session, mailbox, submission, and request-completion events to line up on the
+same client address.
+
+The repo now carries:
+
+- `maint/live/osmap-live-validate-public-send-audit-correlation.ksh`
+- `maint/security/test-osmap-live-validate-public-send-audit-correlation.sh`
+
+The live wrapper uses the persistent public HTTPS endpoint, temporarily
+provisions only the validation mailbox password and validation TOTP secret,
+restores both afterward, submits one real validation message, and then checks
+the persistent serve audit log for matching effective-client-IP evidence across:
+
+- auth: `second_factor_accepted`
+- session: `session_issued` and `session_validated`
+- mailbox: `mailbox_listed`
+- submission: `message_submitted`
+- HTTP completion: `http_request_completed` for `POST /send`
+
+This closes the main public-browser telemetry proof without widening OSMAP
+authority, changing TLS or nginx routing, or adding a new runtime dependency.

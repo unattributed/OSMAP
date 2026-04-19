@@ -180,6 +180,9 @@ sh maint/security/test-osmap-live-validate-auth-observability.sh
 echo "==> validating effective client ip telemetry wrapper behavior"
 sh maint/security/test-osmap-live-validate-effective-client-ip-telemetry.sh
 
+echo "==> validating public send audit correlation wrapper behavior"
+sh maint/security/test-osmap-live-validate-public-send-audit-correlation.sh
+
 echo "==> validating nginx OCSP stapling wrapper behavior"
 sh maint/security/test-osmap-live-validate-nginx-ocsp-stapling.sh
 
