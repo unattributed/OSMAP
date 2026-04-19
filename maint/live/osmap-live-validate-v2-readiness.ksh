@@ -14,6 +14,10 @@ set -eu
 PROJECT_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 DEFAULT_REPORT_PATH="${PROJECT_ROOT}/maint/live/osmap-live-validate-v2-readiness-report.txt"
 REPORT_PATH="${OSMAP_V2_READINESS_REPORT_PATH:-}"
+SERVICE_GUARD_MODE="${OSMAP_V2_READINESS_SERVICE_GUARD:-auto}"
+SERVICE_GUARD_REPORT_PATH="${OSMAP_V2_READINESS_SERVICE_GUARD_REPORT_PATH:-}"
+SERVICE_GUARD_RESULT="not_run"
+SERVICE_GUARD_ARMED=0
 STEP_RESULTS=""
 STEP_COUNT=0
 STEP_NAMES=""
@@ -30,6 +34,18 @@ require_tool() {
 }
 
 require_tool ksh
+
+on_exit() {
+  exit_status="$?"
+  if [ "${SERVICE_GUARD_ARMED}" = "1" ]; then
+    if ! ensure_persistent_service_health; then
+      [ "${exit_status}" -eq 0 ] && exit_status=1
+    fi
+  fi
+  exit "${exit_status}"
+}
+
+trap on_exit EXIT INT TERM HUP
 
 usage() {
   cat <<EOF
@@ -87,6 +103,8 @@ write_report() {
     printf 'osmap_v2_readiness_result=passed\n'
     printf 'project_root=%s\n' "${PROJECT_ROOT}"
     printf 'step_count=%s\n' "${STEP_COUNT}"
+    printf 'service_guard_result=%s\n' "${SERVICE_GUARD_RESULT}"
+    printf 'service_guard_report=%s\n' "${SERVICE_GUARD_REPORT_PATH:-<none>}"
     printf 'steps=\n'
     printf '%s\n' "${STEP_RESULTS}"
   } > "${REPORT_PATH}"
@@ -101,6 +119,103 @@ run_step() {
     cd "${PROJECT_ROOT}"
     "$@"
   )
+}
+
+service_guard_can_run() {
+  case "${SERVICE_GUARD_MODE}" in
+    never)
+      return 1
+      ;;
+    auto|always)
+      ;;
+    *)
+      log "unsupported service guard mode: ${SERVICE_GUARD_MODE}"
+      return 2
+      ;;
+  esac
+
+  if ! command -v doas >/dev/null 2>&1 || ! command -v rcctl >/dev/null 2>&1; then
+    [ "${SERVICE_GUARD_MODE}" = "always" ] && {
+      log "service guard requested but doas or rcctl is unavailable"
+      return 2
+    }
+    return 1
+  fi
+
+  if ! doas test -x /etc/rc.d/osmap_mailbox_helper >/dev/null 2>&1 ||
+    ! doas test -x /etc/rc.d/osmap_serve >/dev/null 2>&1; then
+    [ "${SERVICE_GUARD_MODE}" = "always" ] && {
+      log "service guard requested but OSMAP rc.d scripts are not installed"
+      return 2
+    }
+    return 1
+  fi
+
+  return 0
+}
+
+ensure_service_started() {
+  service_name="$1"
+
+  if doas rcctl check "${service_name}" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  log "persistent service ${service_name} is not healthy; attempting rcctl start"
+  doas rcctl start "${service_name}" >/dev/null 2>&1 || true
+
+  if doas rcctl check "${service_name}" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  log "persistent service ${service_name} is still not healthy after rcctl start"
+  return 1
+}
+
+ensure_persistent_service_health() {
+  SERVICE_GUARD_ARMED=0
+
+  set +e
+  service_guard_can_run
+  guard_rc="$?"
+  set -e
+  if [ "${guard_rc}" -ne 0 ]; then
+    if [ "${guard_rc}" -eq 2 ]; then
+      SERVICE_GUARD_RESULT="failed"
+      return 1
+    fi
+    SERVICE_GUARD_RESULT="skipped"
+    return 0
+  fi
+
+  log "checking persistent OSMAP service health after readiness proof set"
+
+  if [ -z "${SERVICE_GUARD_REPORT_PATH}" ]; then
+    if [ -n "${REPORT_PATH}" ]; then
+      SERVICE_GUARD_REPORT_PATH="${REPORT_PATH}.service-enablement"
+    else
+      SERVICE_GUARD_REPORT_PATH="${DEFAULT_REPORT_PATH}.service-enablement"
+    fi
+  fi
+
+  if ! ensure_service_started osmap_mailbox_helper; then
+    SERVICE_GUARD_RESULT="failed"
+    return 1
+  fi
+
+  if ! ensure_service_started osmap_serve; then
+    SERVICE_GUARD_RESULT="failed"
+    return 1
+  fi
+
+  if ! ksh "${PROJECT_ROOT}/maint/live/osmap-live-validate-service-enablement.ksh" \
+    --report "${SERVICE_GUARD_REPORT_PATH}"; then
+    SERVICE_GUARD_RESULT="failed"
+    return 1
+  fi
+
+  SERVICE_GUARD_RESULT="passed"
+  log "persistent OSMAP service guard passed"
 }
 
 require_login_secret_if_needed() {
@@ -206,6 +321,7 @@ parse_args "$@"
 require_login_secret_if_needed ${STEP_NAMES}
 
 log "running Version 2 readiness proof set from ${PROJECT_ROOT}"
+SERVICE_GUARD_ARMED=1
 
 for step_name in ${STEP_NAMES}; do
   case "${step_name}" in
@@ -246,5 +362,6 @@ for step_name in ${STEP_NAMES}; do
   append_result "${step_name}=passed"
 done
 
+ensure_persistent_service_health
 write_report
 log "Version 2 readiness proof set passed"

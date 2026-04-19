@@ -50,6 +50,9 @@ Version 2 is acceptable only when all of the following are true:
   depending on ad hoc service wiring
 - the repo-owned persistent-service validator passes for any host that claims
   the split `_osmap` plus `vmail` install is ready for edge cutover
+- the repo-owned Version 2 readiness wrapper restores and revalidates the
+  persistent `osmap_mailbox_helper` and `osmap_serve` services after a proof
+  run when the reviewed `rc.d` service install is present
 - the repo-defined internet-exposure gate is satisfied before the candidate is
   described as suitable for direct public browser access
 - the migration, rollback, and pilot runbooks are concrete enough that a small

@@ -4666,3 +4666,24 @@ produces outside-in public-edge evidence.
 
 This closes the main public-browser telemetry proof without widening OSMAP
 authority, changing TLS or nginx routing, or adding a new runtime dependency.
+
+### Make the Version 2 readiness wrapper service-safe
+
+The full Version 2 readiness gate runs several isolated live proofs. Those
+proofs are valuable, but the operator path should never leave the persistent
+public OSMAP services in an unhealthy state after validation completes.
+
+The Version 2 readiness wrapper now includes a persistent-service guard:
+
+- it auto-detects the reviewed `rc.d` install for `osmap_mailbox_helper` and
+  `osmap_serve`
+- it starts `osmap_mailbox_helper` first if the helper service is not healthy
+- it starts `osmap_serve` next if the browser service is not healthy
+- it immediately runs `osmap-live-validate-service-enablement.ksh` and records
+  the service-guard result in the V2 readiness report
+- it also runs from the wrapper exit trap, so failed or interrupted readiness
+  runs still attempt to restore the persistent service posture
+
+This keeps the V2 gate safe for the live public edge without changing the
+individual proof scripts, widening runtime authority, or hiding service-health
+failures from the operator.
