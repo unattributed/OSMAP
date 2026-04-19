@@ -101,6 +101,7 @@ default_output=$(
     PATH="${bin_dir}:${PATH}" \
     OSMAP_TEST_V2_READINESS_LOG_FILE="${default_log}" \
     OSMAP_VALIDATION_PASSWORD="local-wrapper-test-secret" \
+    OSMAP_V2_READINESS_SERVICE_GUARD=never \
     sh "${fake_live_dir}/osmap-live-validate-v2-readiness.ksh"
 )
 
@@ -136,6 +137,7 @@ single_output=$(
   env \
     PATH="${bin_dir}:${PATH}" \
     OSMAP_TEST_V2_READINESS_LOG_FILE="${single_log}" \
+    OSMAP_V2_READINESS_SERVICE_GUARD=never \
     sh "${fake_live_dir}/osmap-live-validate-v2-readiness.ksh" --report "${single_report}" helper-peer-auth request-guardrails
 )
 
