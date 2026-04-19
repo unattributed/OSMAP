@@ -115,11 +115,26 @@ assert_contains() {
 write_approved_fixture() {
   cat > "${fake_sites_dir}/main-ssl.conf" <<'EOF'
 server {
-    listen 127.0.0.1:443 ssl;
-    listen 10.44.0.1:443 ssl;
     listen 192.168.1.44:443 ssl;
     include /etc/nginx/templates/ssl.tmpl;
     include /etc/nginx/templates/osmap-root.tmpl;
+}
+
+server {
+    listen 127.0.0.1:443 ssl;
+    listen 10.44.0.1:443 ssl;
+    include /etc/nginx/templates/ssl.tmpl;
+    include /etc/nginx/templates/misc.tmpl;
+    include /etc/nginx/templates/osmap-root.tmpl;
+    include /etc/nginx/templates/sogo.tmpl;
+    include /etc/nginx/templates/postfixadmin.tmpl;
+    include /etc/nginx/templates/php-catchall.tmpl;
+    include /etc/nginx/templates/stub_status.tmpl;
+    include /etc/nginx/templates/pf_dashboard.locations.tmpl;
+    include /etc/nginx/templates/ops_monitor.locations.tmpl;
+    include /etc/nginx/templates/obsd1_dr_portal.locations.tmpl;
+    include /etc/nginx/templates/rspamd.tmpl;
+    include /etc/nginx/templates/brevo_webhook.locations.tmpl;
 }
 EOF
 
@@ -175,6 +190,8 @@ assert_contains "${staged_report_contents}" "https_listener_bindings=10.44.0.1.4
 assert_contains "${staged_report_contents}" "control_plane_allow_entries=10.44.0.0/24,127.0.0.1"
 assert_contains "${staged_report_contents}" "canonical_https_vhost_still_includes_roundcube_template"
 assert_contains "${staged_report_contents}" "https_listeners_are_limited_to_loopback_and_wireguard_addresses"
+assert_contains "${staged_report_contents}" "public_https_server_block_missing"
+assert_contains "${staged_report_contents}" "public_https_server_block_not_osmap_only"
 assert_contains "${staged_report_contents}" "pf_selfhost_anchor_blocks_public_ingress_to_tcp_443"
 assert_contains "${staged_report_contents}" "advisory_findings="
 assert_contains "${staged_report_contents}" "nginx_control_plane_allowlist_is_limited_to_wireguard_and_loopback"
@@ -198,7 +215,8 @@ assert_contains "${approved_output}" "internet exposure result: approved_for_lim
 approved_report_contents=$(cat "${approved_report_path}")
 assert_contains "${approved_report_contents}" "osmap_internet_exposure_result=approved_for_limited_direct_public_browser_exposure"
 assert_contains "${approved_report_contents}" "https_listener_bindings=10.44.0.1.443,127.0.0.1.443,192.168.1.44.443"
-assert_contains "${approved_report_contents}" "canonical_https_includes=/etc/nginx/templates/ssl.tmpl,/etc/nginx/templates/osmap-root.tmpl"
+assert_contains "${approved_report_contents}" "public_https_includes=/etc/nginx/templates/ssl.tmpl,/etc/nginx/templates/osmap-root.tmpl"
+assert_contains "${approved_report_contents}" "private_https_includes=/etc/nginx/templates/ssl.tmpl,/etc/nginx/templates/misc.tmpl,/etc/nginx/templates/osmap-root.tmpl,/etc/nginx/templates/sogo.tmpl,/etc/nginx/templates/postfixadmin.tmpl,/etc/nginx/templates/php-catchall.tmpl,/etc/nginx/templates/stub_status.tmpl,/etc/nginx/templates/pf_dashboard.locations.tmpl,/etc/nginx/templates/ops_monitor.locations.tmpl,/etc/nginx/templates/obsd1_dr_portal.locations.tmpl,/etc/nginx/templates/rspamd.tmpl,/etc/nginx/templates/brevo_webhook.locations.tmpl"
 assert_contains "${approved_report_contents}" "blocking_reasons="
 assert_contains "${approved_report_contents}" "advisory_findings="
 assert_contains "${approved_report_contents}" "nginx_control_plane_allowlist_is_limited_to_wireguard_and_loopback"

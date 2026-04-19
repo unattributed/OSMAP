@@ -118,6 +118,39 @@ extract_include_targets() {
   '
 }
 
+extract_server_block_for_listener() {
+  listener="$1"
+  printf '%s\n' "${MAIN_SSL_CONTENT}" | awk -v listener="${listener}" '
+    /server[[:space:]]*\{/ {
+      in_block = 1
+      depth = 0
+      block = ""
+      found = 0
+    }
+    in_block {
+      block = block $0 "\n"
+      if (index($0, listener) > 0) {
+        found = 1
+      }
+
+      line = $0
+      opens = gsub(/\{/, "{", line)
+      line = $0
+      closes = gsub(/\}/, "}", line)
+      depth += opens - closes
+
+      if (depth == 0) {
+        if (found) {
+          printf "%s", block
+        }
+        in_block = 0
+        block = ""
+        found = 0
+      }
+    }
+  '
+}
+
 extract_allow_entries() {
   printf '%s\n' "$1" | awk '
     $1 == "allow" {
@@ -161,6 +194,8 @@ write_report() {
     printf 'submission_listener_bindings=%s\n' "${SUBMISSION_BINDINGS:-none}"
     printf 'control_plane_allow_entries=%s\n' "${CONTROL_PLANE_ALLOW_ENTRIES:-none}"
     printf 'canonical_https_includes=%s\n' "${MAIN_SSL_INCLUDE_TARGETS:-none}"
+    printf 'public_https_includes=%s\n' "${PUBLIC_INCLUDE_TARGETS:-none}"
+    printf 'private_https_includes=%s\n' "${PRIVATE_INCLUDE_TARGETS:-none}"
     printf 'blocking_reasons=\n'
     if [ -n "${BLOCKING_REASONS}" ]; then
       printf '%s\n' "${BLOCKING_REASONS}"
@@ -210,6 +245,10 @@ IMAPS_BINDINGS="$(listener_bindings_for_port 993)"
 SUBMISSION_TLS_BINDINGS="$(listener_bindings_for_port 465)"
 SUBMISSION_BINDINGS="$(listener_bindings_for_port 587)"
 MAIN_SSL_INCLUDE_TARGETS="$(extract_include_targets "${MAIN_SSL_CONTENT}" | paste -sd ',' -)"
+PUBLIC_SERVER_CONTENT="$(extract_server_block_for_listener 'listen 192.168.1.44:443 ssl;')"
+PRIVATE_SERVER_CONTENT="$(extract_server_block_for_listener 'listen 10.44.0.1:443 ssl;')"
+PUBLIC_INCLUDE_TARGETS="$(extract_include_targets "${PUBLIC_SERVER_CONTENT}" | paste -sd ',' -)"
+PRIVATE_INCLUDE_TARGETS="$(extract_include_targets "${PRIVATE_SERVER_CONTENT}" | paste -sd ',' -)"
 CONTROL_PLANE_ALLOW_ENTRIES="$(extract_allow_entries "${CONTROL_PLANE_ALLOW_CONTENT}")"
 ASSESSMENT_RESULT="not_approved_for_direct_public_browser_exposure"
 
@@ -220,6 +259,38 @@ fi
 if [ "${HTTPS_BINDINGS:-}" = "127.0.0.1.443,10.44.0.1.443" ] || [ "${HTTPS_BINDINGS:-}" = "10.44.0.1.443,127.0.0.1.443" ]; then
   append_blocker "https_listeners_are_limited_to_loopback_and_wireguard_addresses"
 fi
+
+if [ -z "${PUBLIC_SERVER_CONTENT}" ]; then
+  append_blocker "public_https_server_block_missing"
+fi
+
+if [ "${PUBLIC_INCLUDE_TARGETS:-}" != "/etc/nginx/templates/ssl.tmpl,/etc/nginx/templates/osmap-root.tmpl" ]; then
+  append_blocker "public_https_server_block_not_osmap_only"
+fi
+
+if printf '%s\n' "${PUBLIC_SERVER_CONTENT}" | grep -Fq 'listen 10.44.0.1:443 ssl;'; then
+  append_blocker "public_https_server_block_includes_wireguard_listener"
+fi
+
+if printf '%s\n' "${PUBLIC_SERVER_CONTENT}" | grep -Fq 'listen 127.0.0.1:443 ssl;'; then
+  append_blocker "public_https_server_block_includes_loopback_listener"
+fi
+
+for private_template in \
+  /etc/nginx/templates/sogo.tmpl \
+  /etc/nginx/templates/postfixadmin.tmpl \
+  /etc/nginx/templates/php-catchall.tmpl \
+  /etc/nginx/templates/stub_status.tmpl \
+  /etc/nginx/templates/pf_dashboard.locations.tmpl \
+  /etc/nginx/templates/ops_monitor.locations.tmpl \
+  /etc/nginx/templates/obsd1_dr_portal.locations.tmpl \
+  /etc/nginx/templates/rspamd.tmpl \
+  /etc/nginx/templates/brevo_webhook.locations.tmpl
+do
+  if printf '%s\n' "${PUBLIC_SERVER_CONTENT}" | grep -Fq "include ${private_template};"; then
+    append_blocker "public_https_server_block_exposes_private_template:${private_template}"
+  fi
+done
 
 if [ "${CONTROL_PLANE_ALLOW_ENTRIES:-}" = "10.44.0.0/24,127.0.0.1" ] || [ "${CONTROL_PLANE_ALLOW_ENTRIES:-}" = "127.0.0.1,10.44.0.0/24" ]; then
   append_advisory "nginx_control_plane_allowlist_is_limited_to_wireguard_and_loopback"
