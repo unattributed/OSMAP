@@ -1,6 +1,8 @@
 osmap_v2_readiness_result=passed
 project_root=/home/foo/OSMAP
 step_count=11
+service_guard_result=passed
+service_guard_report=/home/foo/osmap-v2-readiness-service-guard-report.txt
 steps=
 security-check=passed
 login-send=passed
