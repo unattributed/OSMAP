@@ -16,6 +16,8 @@ VALIDATION_RECIPIENT="${OSMAP_PUBLIC_SEND_AUDIT_RECIPIENT:-${VALIDATION_USER}}"
 TOTP_SECRET_BASE32="${OSMAP_VALIDATION_TOTP_SECRET_BASE32:-JBSWY3DPEHPK3PXP}"
 USER_AGENT="${OSMAP_PUBLIC_SEND_AUDIT_USER_AGENT:-OSMAP-Public-Send-Audit-Correlation/20260419}"
 CURL_BIN="${OSMAP_PUBLIC_SEND_AUDIT_CURL_BIN:-curl}"
+SSH_HOST="${OSMAP_PUBLIC_SEND_AUDIT_SSH_HOST:-}"
+SSH_BIN="${OSMAP_PUBLIC_SEND_AUDIT_SSH_BIN:-ssh}"
 if [ "${OSMAP_PUBLIC_SEND_AUDIT_DOAS_BIN+x}" ]; then
 	DOAS_BIN="${OSMAP_PUBLIC_SEND_AUDIT_DOAS_BIN}"
 else
@@ -110,25 +112,6 @@ require_tool() {
 	}
 }
 
-run_privileged() {
-	if [ -n "${DOAS_BIN}" ]; then
-		"${DOAS_BIN}" "$@"
-	else
-		"$@"
-	fi
-}
-
-run_privileged_as() {
-	user="$1"
-	shift
-
-	if [ -n "${DOAS_BIN}" ]; then
-		"${DOAS_BIN}" -u "${user}" "$@"
-	else
-		"$@"
-	fi
-}
-
 quote_sh() {
 	printf "'%s'" "$(printf '%s' "$1" | sed "s/'/'\\\\''/g")"
 }
@@ -136,8 +119,23 @@ quote_sh() {
 run_privileged_sh() {
 	command="$1"
 
-	if [ -n "${DOAS_BIN}" ]; then
+	if [ -n "${SSH_HOST}" ]; then
+		"${SSH_BIN}" "${SSH_HOST}" "doas sh -c $(quote_sh "${command}")"
+	elif [ -n "${DOAS_BIN}" ]; then
 		"${DOAS_BIN}" sh -c "${command}"
+	else
+		sh -c "${command}"
+	fi
+}
+
+run_privileged_as_sh() {
+	user="$1"
+	command="$2"
+
+	if [ -n "${SSH_HOST}" ]; then
+		"${SSH_BIN}" "${SSH_HOST}" "doas -u ${user} sh -c $(quote_sh "${command}")"
+	elif [ -n "${DOAS_BIN}" ]; then
+		"${DOAS_BIN}" -u "${user}" sh -c "${command}"
 	else
 		sh -c "${command}"
 	fi
@@ -232,7 +230,8 @@ PY
 
 select_original_hash() {
 	quoted_user="$(sql_quote "${VALIDATION_USER}")"
-	run_privileged "${MARIADB_BIN}" -N -B postfixadmin -e "SELECT password FROM mailbox WHERE username='${quoted_user}' AND active='1';" | sed -n '1p'
+	sql="SELECT password FROM mailbox WHERE username='${quoted_user}' AND active='1';"
+	run_privileged_sh "${MARIADB_BIN} -N -B postfixadmin -e $(quote_sh "${sql}")" | sed -n '1p'
 }
 
 update_mailbox_hash() {
@@ -240,8 +239,8 @@ update_mailbox_hash() {
 	quoted_hash="$(sql_quote "${next_hash}")"
 	quoted_user="$(sql_quote "${VALIDATION_USER}")"
 
-	printf "UPDATE mailbox SET password='%s' WHERE username='%s' AND active='1';\n" \
-		"${quoted_hash}" "${quoted_user}" | run_privileged "${MARIADB_BIN}" postfixadmin >/dev/null
+	sql="UPDATE mailbox SET password='${quoted_hash}' WHERE username='${quoted_user}' AND active='1';"
+	run_privileged_sh "printf '%s\n' $(quote_sh "${sql}") | ${MARIADB_BIN} postfixadmin >/dev/null"
 }
 
 restore_original_hash() {
@@ -264,7 +263,7 @@ write_live_totp_secret() {
 
 	run_privileged_sh "install -d -m 700 ${quoted_dir} && printf '%s\n' ${quoted_secret} > ${quoted_path} && chmod 600 ${quoted_path}"
 	if [ "${SKIP_CHOWN}" != "1" ]; then
-		run_privileged chown _osmap:_osmap "${secret_path}"
+		run_privileged_sh "chown _osmap:_osmap ${quoted_path}"
 	fi
 }
 
@@ -291,10 +290,10 @@ restore_totp_secret() {
 		quoted_backup="$(quote_sh "${TOTP_BACKUP_PATH}")"
 		run_privileged_sh "cat ${quoted_backup} > ${quoted_path} && chmod 600 ${quoted_path}"
 		if [ "${SKIP_CHOWN}" != "1" ]; then
-			run_privileged chown _osmap:_osmap "${secret_path}"
+			run_privileged_sh "chown _osmap:_osmap ${quoted_path}"
 		fi
 	else
-		run_privileged rm -f "$(validation_totp_path)"
+		run_privileged_sh "rm -f $(quote_sh "$(validation_totp_path)")"
 	fi
 
 	RESTORE_TOTP_PENDING=0
@@ -302,9 +301,7 @@ restore_totp_secret() {
 
 cleanup_injected_message() {
 	if [ -n "${SEND_SUBJECT:-}" ]; then
-		run_privileged_as vmail "${DOVEADM_BIN}" -o stats_writer_socket_path= \
-			expunge -u "${VALIDATION_RECIPIENT}" mailbox INBOX header Subject "${SEND_SUBJECT}" \
-			>/dev/null 2>&1 || true
+		run_privileged_as_sh vmail "${DOVEADM_BIN} -o stats_writer_socket_path= expunge -u $(quote_sh "${VALIDATION_RECIPIENT}") mailbox INBOX header Subject $(quote_sh "${SEND_SUBJECT}")" >/dev/null 2>&1 || true
 	fi
 }
 
@@ -369,12 +366,17 @@ umask 077
 
 require_tool "${CURL_BIN}"
 require_tool "${OPENSSL_BIN}"
-require_tool "${MARIADB_BIN}"
-require_tool "${DOVEADM_BIN}"
 require_tool "${HEXDUMP_BIN}"
 require_tool python3
-if [ -n "${DOAS_BIN}" ]; then
+if [ -n "${SSH_HOST}" ]; then
+	require_tool "${SSH_BIN}"
+elif [ -n "${DOAS_BIN}" ]; then
 	require_tool "${DOAS_BIN}"
+	require_tool "${MARIADB_BIN}"
+	require_tool "${DOVEADM_BIN}"
+else
+	require_tool "${MARIADB_BIN}"
+	require_tool "${DOVEADM_BIN}"
 fi
 
 if ! run_privileged_sh "test -f $(quote_sh "${SERVE_LOG_PATH}")"; then
@@ -394,7 +396,7 @@ TEMP_PASSWORD="$("${OPENSSL_BIN}" rand -hex 16)"
 	exit 1
 }
 
-TEMP_HASH="$(run_privileged "${DOVEADM_BIN}" pw -s BLF-CRYPT -p "${TEMP_PASSWORD}")"
+TEMP_HASH="$(run_privileged_sh "${DOVEADM_BIN} pw -s BLF-CRYPT -p $(quote_sh "${TEMP_PASSWORD}")")"
 [ -n "${TEMP_HASH}" ] || {
 	log "failed to generate temporary validation password hash"
 	exit 1

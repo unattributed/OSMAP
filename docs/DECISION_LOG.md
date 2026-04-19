@@ -4658,5 +4658,11 @@ the persistent serve audit log for matching effective-client-IP evidence across:
 - submission: `message_submitted`
 - HTTP completion: `http_request_completed` for `POST /send`
 
+When `OSMAP_PUBLIC_SEND_AUDIT_SSH_HOST` is set, the wrapper performs privileged
+credential setup and log reads over SSH while issuing the HTTPS browser requests
+from the local operator workstation. That mode avoids the mail host's
+intentional loopback `/etc/hosts` mapping for `mail.blackbagsecurity.com` and
+produces outside-in public-edge evidence.
+
 This closes the main public-browser telemetry proof without widening OSMAP
 authority, changing TLS or nginx routing, or adding a new runtime dependency.

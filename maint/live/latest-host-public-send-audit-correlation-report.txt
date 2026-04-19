@@ -1,0 +1,20 @@
+osmap_public_send_audit_correlation_result=passed
+public_base_url=https://mail.blackbagsecurity.com
+serve_log_path=/var/lib/osmap/audit/serve.log
+validation_user=osmap-helper-validation@blackbagsecurity.com
+validation_recipient=osmap-helper-validation@blackbagsecurity.com
+expected_remote_addr=124.121.44.172
+user_agent=OSMAP-Public-Send-Audit-Correlation/20260419
+login_status=303
+mailboxes_status=200
+compose_status=200
+send_status=303
+send_location=/compose?sent=1
+log_lines_before=2001
+log_lines_after=2017
+matched_auth_event=ts=1776562031 level=info category=auth action=second_factor_accepted msg="second factor accepted, session issuance pending" stage="second_factor" result="accepted" canonical_username="osmap-helper-validation@blackbagsecurity.com" second_factor="totp" request_id="http-41" remote_addr="124.121.44.172" user_agent="OSMAP-Public-Send-Audit-Correlation/20260419"
+matched_session_issued_event=ts=1776562031 level=info category=session action=session_issued msg="browser session issued" session_id="589ea18dca5e2677f209b1bd75fcc84e877caa2098f2ecdbcaec36f797aaaf5d" canonical_username="osmap-helper-validation@blackbagsecurity.com" issued_at="1776562031" expires_at="1776605231" factor="totp" request_id="http-41" remote_addr="124.121.44.172" user_agent="OSMAP-Public-Send-Audit-Correlation/20260419"
+matched_session_validated_event=ts=1776562031 level=info category=session action=session_validated msg="browser session validated" session_id="589ea18dca5e2677f209b1bd75fcc84e877caa2098f2ecdbcaec36f797aaaf5d" canonical_username="osmap-helper-validation@blackbagsecurity.com" request_id="http-44" remote_addr="124.121.44.172" user_agent="OSMAP-Public-Send-Audit-Correlation/20260419" expires_at="1776605231"
+matched_mailbox_event=ts=1776562031 level=info category=mailbox action=mailbox_listed msg="mailbox listing completed" canonical_username="osmap-helper-validation@blackbagsecurity.com" session_id="589ea18dca5e2677f209b1bd75fcc84e877caa2098f2ecdbcaec36f797aaaf5d" mailbox_count="2" request_id="http-42" remote_addr="124.121.44.172" user_agent="OSMAP-Public-Send-Audit-Correlation/20260419"
+matched_submission_event=ts=1776562031 level=info category=submission action=message_submitted msg="outbound message submission completed" canonical_username="osmap-helper-validation@blackbagsecurity.com" session_id="589ea18dca5e2677f209b1bd75fcc84e877caa2098f2ecdbcaec36f797aaaf5d" recipient_count="1" attachment_count="0" attachment_bytes_total="0" has_subject="true" request_id="http-44" remote_addr="124.121.44.172" user_agent="OSMAP-Public-Send-Audit-Correlation/20260419"
+matched_completion_event=ts=1776562031 level=info category=http action=http_request_completed msg="http request completed" remote_addr="124.121.44.172" method="POST" path="/send" status_code="303" response_bytes="529" duration_ms="10"
