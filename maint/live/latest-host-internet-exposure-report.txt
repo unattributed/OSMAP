@@ -1,23 +1,20 @@
 osmap_internet_exposure_result=approved_for_limited_direct_public_browser_exposure
 project_root=/home/foo/OSMAP
 assessed_host=mail.blackbagsecurity.com
-assessed_snapshot=d1c1a2f
+assessed_snapshot=86edd05
 https_listener_bindings=10.44.0.1.443,127.0.0.1.443,192.168.1.44.443
 http_listener_bindings=*.80
 imap_tls_listener_bindings=10.44.0.1.993,127.0.0.1.993
 submission_tls_listener_bindings=10.44.0.1.465,127.0.0.1.465
 submission_listener_bindings=10.44.0.1.587,127.0.0.1.587
 control_plane_allow_entries=10.44.0.0/24,127.0.0.1
-canonical_https_includes=/etc/nginx/templates/ssl.tmpl,/etc/nginx/templates/misc.tmpl,/etc/nginx/templates/osmap-root.tmpl,/etc/nginx/templates/sogo.tmpl,/etc/nginx/templates/postfixadmin.tmpl,/etc/nginx/templates/php-catchall.tmpl,/etc/nginx/templates/stub_status.tmpl,/etc/nginx/templates/pf_dashboard.locations.tmpl,/etc/nginx/templates/ops_monitor.locations.tmpl,/etc/nginx/templates/obsd1_dr_portal.locations.tmpl,/etc/nginx/templates/rspamd.tmpl,/etc/nginx/templates/brevo_webhook.locations.tmpl
+canonical_https_includes=/etc/nginx/templates/ssl.tmpl,/etc/nginx/templates/osmap-root.tmpl,/etc/nginx/templates/ssl.tmpl,/etc/nginx/templates/misc.tmpl,/etc/nginx/templates/osmap-root.tmpl,/etc/nginx/templates/sogo.tmpl,/etc/nginx/templates/postfixadmin.tmpl,/etc/nginx/templates/php-catchall.tmpl,/etc/nginx/templates/stub_status.tmpl,/etc/nginx/templates/pf_dashboard.locations.tmpl,/etc/nginx/templates/ops_monitor.locations.tmpl,/etc/nginx/templates/obsd1_dr_portal.locations.tmpl,/etc/nginx/templates/rspamd.tmpl,/etc/nginx/templates/brevo_webhook.locations.tmpl
+public_https_includes=/etc/nginx/templates/ssl.tmpl,/etc/nginx/templates/osmap-root.tmpl
+private_https_includes=/etc/nginx/templates/ssl.tmpl,/etc/nginx/templates/misc.tmpl,/etc/nginx/templates/osmap-root.tmpl,/etc/nginx/templates/sogo.tmpl,/etc/nginx/templates/postfixadmin.tmpl,/etc/nginx/templates/php-catchall.tmpl,/etc/nginx/templates/stub_status.tmpl,/etc/nginx/templates/pf_dashboard.locations.tmpl,/etc/nginx/templates/ops_monitor.locations.tmpl,/etc/nginx/templates/obsd1_dr_portal.locations.tmpl,/etc/nginx/templates/rspamd.tmpl,/etc/nginx/templates/brevo_webhook.locations.tmpl
 blocking_reasons=
 advisory_findings=
 nginx_control_plane_allowlist_is_limited_to_wireguard_and_loopback
 listener_lines=
-tcp          0      0  *.80                   *.*                    LISTEN
-tcp          0      0  10.44.0.1.443          *.*                    LISTEN
-tcp          0      0  127.0.0.1.443          *.*                    LISTEN
-tcp          0      0  127.0.0.1.993          *.*                    LISTEN
-tcp          0      0  10.44.0.1.993          *.*                    LISTEN
 tcp          0      0  127.0.0.1.4190         *.*                    LISTEN
 tcp          0      0  10.44.0.1.4190         *.*                    LISTEN
 tcp          0      0  10.44.0.1.465          *.*                    LISTEN
@@ -26,7 +23,12 @@ tcp          0      0  10.44.0.1.587          *.*                    LISTEN
 tcp          0      0  127.0.0.1.587          *.*                    LISTEN
 tcp          0      0  *.25                   *.*                    LISTEN
 tcp          0      0  192.168.1.44.22        *.*                    LISTEN
+tcp          0      0  *.80                   *.*                    LISTEN
 tcp          0      0  192.168.1.44.443       *.*                    LISTEN
+tcp          0      0  10.44.0.1.993          *.*                    LISTEN
+tcp          0      0  10.44.0.1.443          *.*                    LISTEN
+tcp          0      0  127.0.0.1.443          *.*                    LISTEN
+tcp          0      0  127.0.0.1.993          *.*                    LISTEN
 pf_selfhost_rules=
 pass in quick on egress inet from <suricata_allow> to any flags S/SA keep state (if-bound)
 block drop in log quick on egress inet from <suricata_block> to any
@@ -83,21 +85,36 @@ server {
     }
 }
 nginx_main_ssl=
-# Main HTTPS vhost for mail.blackbagsecurity.com
+# HTTPS vhosts for mail.blackbagsecurity.com
 # nginx chroot: /var/www
 #
-# Exposed URLs:
-# - https://mail.blackbagsecurity.com/postfixadmin/
-# - https://mail.blackbagsecurity.com/ (OSMAP webmail)
-# - https://mail.blackbagsecurity.com/sogo (SOGo groupware)
-# - https://mail.blackbagsecurity.com/pf/ (pfstat for pf, suricata, and spamd)
-# - https://mail.blackbagsecurity.com/dr/ (obsd1-dr portal)
+# Public WAN exposure is intentionally limited to OSMAP at the canonical
+# browser root. Existing private/control applications remain available only
+# through the loopback and WireGuard listeners below.
 
+server {
+    listen 192.168.1.44:443 ssl;
+    http2 on;
+
+    server_name mail.blackbagsecurity.com;
+
+    # Default root for this vhost (inside chroot /var/www)
+    # /htdocs is /var/www/htdocs on the real filesystem
+    root /htdocs;
+    index index.php index.html;
+
+    # TLS, misc hardening, and OSMAP public browser route
+    include /etc/nginx/templates/ssl.tmpl;
+    include /etc/nginx/templates/osmap-root.tmpl;
+
+    # General logs for this vhost
+    access_log /var/log/nginx/mail.access.log;
+    error_log  /var/log/nginx/mail.error.log;
+}
 
 server {
     listen 127.0.0.1:443 ssl;
     listen 10.44.0.1:443 ssl;
-    listen 192.168.1.44:443 ssl;
     http2 on;
 
     server_name mail.blackbagsecurity.com 10.44.0.1 127.0.0.1;
@@ -108,13 +125,13 @@ server {
     index index.php index.html;
 
     # Serve outbound-brand assets such as BIMI SVGs or mark certificates from
-    # a stable HTTPS path on the same host that publishes outbound mail auth.
+    # a stable HTTPS path on the private/control listener.
     location ^~ /.well-known/bimi/ {
         try_files $uri =404;
         add_header Cache-Control "public, max-age=300";
     }
 
-    # TLS, misc hardening, and application templates
+    # TLS, misc hardening, OSMAP, and private/control application templates
     include /etc/nginx/templates/ssl.tmpl;
     include /etc/nginx/templates/misc.tmpl;
     include /etc/nginx/templates/osmap-root.tmpl;

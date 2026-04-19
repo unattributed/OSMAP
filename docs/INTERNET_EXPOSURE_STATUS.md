@@ -12,6 +12,7 @@
   - `maint/live/latest-host-internet-exposure-report.txt`
   - `maint/live/latest-host-v2-readiness-report.txt`
   - `maint/live/latest-external-browser-path-verification.txt`
+  - `maint/live/latest-external-public-https-isolation-report.txt`
   - `maint/live/latest-host-auth-observability-report.txt`
 - current result: `approved for limited direct public browser exposure`
 
@@ -66,6 +67,10 @@ The current state is not a blank slate:
 - that outside-in proof confirms the public HTTPS root redirects to the OSMAP
   login page with a valid certificate and the expected username, password, and
   `totp_code` form fields
+- the repo now also has an outside-in public HTTPS isolation proof, archived at
+  `maint/live/latest-external-public-https-isolation-report.txt`, confirming
+  that public OSMAP paths remain reachable while former control-plane prefixes
+  do not expose their private applications
 - the repo now also has a host-side auth-observability validator that confirms
   login failures are captured into the reviewed serve audit log instead of
   disappearing into `/dev/null`

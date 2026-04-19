@@ -1,0 +1,13 @@
+osmap_public_https_isolation_result=passed
+assessed_host=mail.blackbagsecurity.com
+assessed_snapshot=86edd05
+verification_origin=local workstation over public HTTPS
+private_marker_check=PostfixAdmin,SOGo,Rspamd,pfstat,suricata,operator monitoring,Brevo webhook
+path=/ status=HTTP/2 303 
+path=/login status=HTTP/2 200 
+path=/postfixadmin/ status=HTTP/2 400 
+path=/pf/ status=HTTP/2 400 
+path=/dr/ status=HTTP/2 400 
+path=/rspamd/ status=HTTP/2 400 
+path=/sogo/ status=HTTP/2 400 
+path=/brevo/webhook status=HTTP/2 404 
