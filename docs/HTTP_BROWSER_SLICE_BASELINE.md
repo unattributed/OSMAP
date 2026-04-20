@@ -73,6 +73,7 @@ The current browser layer provides:
 - `GET /settings`
 - `POST /send`
 - `POST /message/move`
+- `POST /messages/archive`
 - `POST /sessions/revoke`
 - `POST /settings`
 - `POST /logout`
@@ -101,6 +102,8 @@ The routes intentionally mirror the current runtime baseline:
   display mode and allows CSRF-bound updates
 - the message move route performs the current one-message folder-organization
   slice through the existing mailbox runtime
+- the selected-message archive route reuses the configured archive mailbox and
+  applies that same move runtime once per selected UID
 - send hands the composed message to the local submission surface
 - logout revokes the current session token
 
@@ -192,7 +195,8 @@ This slice does not yet include:
 - TLS termination inside OSMAP
 - administrative routes
 - broader auth-abuse and request-abuse controls beyond the current login and
-  send throttling slices plus the first one-message move throttle slice
+  send throttling slices plus the first message-move throttle slice reused by
+  selected-message archive
 - broader live mutation-workflow coverage on the target host under confinement
 - rich HTML mail behavior such as external resources, inline image rendering,
   or permissive styling support

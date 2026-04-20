@@ -261,23 +261,28 @@ The folder-organization workflow has also now moved past the earlier
 - a general one-message move path
 - a settings-backed archive mailbox shortcut
 - archive actions on both mailbox-list and message-view pages
+- bounded selected-message archive from mailbox-list pages, reusing the same
+  move path once per selected UID
 - live-host proof that the settings route, rendered shortcut forms, and
   helper-backed move path all work together under `enforce`
 
-That means the remaining missing items in folder organization, such as bulk
-move and archive mailbox discovery beyond the explicit user setting, now read
-more like later workflow refinements than the first active Version 1 blocker.
+That means the remaining missing items in folder organization, such as general
+bulk move to arbitrary destinations and archive mailbox discovery beyond the
+explicit user setting, now read more like later workflow refinements than the
+first active Version 1 blocker.
 
-The recent route review also found that the remaining authenticated POST routes
-in the current browser surface are:
+The current high-value authenticated mutation routes are login-adjacent send,
+message move, and selected-message archive. The lower-volume authenticated POST
+routes left outside those throttled mutation paths are:
 
 - `POST /settings`
 - `POST /sessions/revoke`
 - `POST /logout`
 
-Those routes are CSRF-bound, low-volume, and lower abuse value than login,
-send, or message move, so there is not yet a comparably strong case for
-another narrow per-route throttle slice.
+Those lower-volume routes are CSRF-bound and lower abuse value than login,
+send, or mailbox mutation. Selected-message archive now reuses the existing
+message-move throttle once per selected UID, so there is not yet a comparably
+strong case for another narrow per-route throttle slice.
 
 The recent maintainability refactors in the browser and mailbox layers have
 reduced the largest implementation hotspots enough that internal decomposition

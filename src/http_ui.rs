@@ -112,7 +112,15 @@ pub(crate) fn render_message_list_page(
             String::new()
         };
         rows.push_str(&format!(
-            "<tr><td><a href=\"{}\">{}</a></td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td>{}</tr>",
+            "<tr>{}<td><a href=\"{}\">{}</a></td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td>{}</tr>",
+            if archive_actions_available {
+                format!(
+                    "<td><input form=\"bulk-archive-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\"></td>",
+                    message.uid, message.uid
+                )
+            } else {
+                String::new()
+            },
             escape_html(&message_href),
             message.uid,
             escape_html(message.subject.as_deref().unwrap_or("<none>")),
@@ -127,6 +135,15 @@ pub(crate) fn render_message_list_page(
             },
         ));
     }
+    let bulk_archive_form = match archive_mailbox_name {
+        Some(archive_mailbox_name) if archive_mailbox_name != mailbox_name && !messages.is_empty() => format!(
+            "<form id=\"bulk-archive-form\" method=\"post\" action=\"/messages/archive\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"destination_mailbox\" value=\"{}\"><button type=\"submit\">Archive Selected</button></form>",
+            escape_html(csrf_token),
+            escape_html(mailbox_name),
+            escape_html(archive_mailbox_name),
+        ),
+        _ => String::new(),
+    };
     let archive_notice = match archive_mailbox_name {
         Some(archive_mailbox_name) if archive_mailbox_name != mailbox_name => format!(
             "<p class=\"muted\">Archive shortcut sends messages from this mailbox to <strong>{}</strong>.</p>",
@@ -137,13 +154,19 @@ pub(crate) fn render_message_list_page(
     };
 
     format!(
-        "<nav><a href=\"/mailboxes\">Back to mailboxes</a> | <a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <a href=\"/settings\">Settings</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Mailbox: {}</h1><p>Signed in as <strong>{}</strong>.</p>{}{}<form method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><label>Search query<input type=\"text\" name=\"q\" autocomplete=\"off\"></label><label><input type=\"checkbox\" name=\"scope\" value=\"all\"> Search all mailboxes</label><button type=\"submit\">Search</button></form><table><thead><tr><th>UID</th><th>Subject</th><th>From</th><th>Received</th><th>Flags</th><th>Size</th>{}</tr></thead><tbody>{}</tbody></table>",
+        "<nav><a href=\"/mailboxes\">Back to mailboxes</a> | <a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <a href=\"/settings\">Settings</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Mailbox: {}</h1><p>Signed in as <strong>{}</strong>.</p>{}{}<form method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><label>Search query<input type=\"text\" name=\"q\" autocomplete=\"off\"></label><label><input type=\"checkbox\" name=\"scope\" value=\"all\"> Search all mailboxes</label><button type=\"submit\">Search</button></form>{}<table><thead><tr>{}<th>UID</th><th>Subject</th><th>From</th><th>Received</th><th>Flags</th><th>Size</th>{}</tr></thead><tbody>{}</tbody></table>",
         escape_html(csrf_token),
         escape_html(mailbox_name),
         escape_html(canonical_username),
         success_banner,
         archive_notice,
         escape_html(mailbox_name),
+        bulk_archive_form,
+        if archive_actions_available {
+            "<th>Select</th>"
+        } else {
+            ""
+        },
         if archive_actions_available {
             "<th>Action</th>"
         } else {

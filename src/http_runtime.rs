@@ -124,6 +124,7 @@ where
             (HttpMethod::Get, "/sessions") => self.handle_sessions_page(request, &context),
             (HttpMethod::Get, "/settings") => self.handle_settings_page(request, &context),
             (HttpMethod::Post, "/message/move") => self.handle_message_move(request, &context),
+            (HttpMethod::Post, "/messages/archive") => self.handle_bulk_archive(request, &context),
             (HttpMethod::Post, "/send") => self.handle_send(request, &context),
             (HttpMethod::Post, "/sessions/revoke") => self.handle_session_revoke(request, &context),
             (HttpMethod::Post, "/settings") => self.handle_settings_update(request, &context),

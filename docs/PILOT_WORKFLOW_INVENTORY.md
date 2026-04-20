@@ -31,7 +31,8 @@ The current best-fit Version 2 pilot user is someone who needs:
 - password-plus-TOTP browser login
 - routine mailbox read, search, and attachment download
 - straightforward compose, reply, forward, and send
-- light folder organization through one-message move or archive
+- light folder organization through one-message move, archive, or bounded
+  selected-message archive from a mailbox list
 - simple session self-management
 
 The current repo state is not yet a good fit for users who depend daily on:
@@ -58,14 +59,15 @@ The current repo state is not yet a good fit for users who depend daily on:
 | Reply | `supported_with_limits` | admit | No automatic original-attachment reattach. |
 | Forward | `supported_with_limits` | admit | No automatic original-attachment reattach. |
 | Upload new attachment and send | `supported` | admit | Bounded upload path only. |
-| One-message move | `supported` | admit | Narrow organization workflow, not bulk triage. |
+| One-message move | `supported` | admit | Narrow organization workflow, not broad mailbox management. |
 | Archive shortcut | `supported_with_limits` | admit | Depends on configured archive mailbox rather than discovery-heavy UX. |
+| Selected-message archive from mailbox list | `supported_with_limits` | admit | Bounded archive-only selection reuses the existing move path once per selected UID. |
 | Session list, revoke, logout | `supported` | admit | Included in current browser security surface. |
 | Safe HTML view | `supported_with_limits` | admit | Sanitized HTML only; no active content or remote loads. |
 | Plain-text preference for message display | `supported` | admit | Small bounded settings surface only. |
 | Draft save and resume later | `roundcube_fallback` | do not admit if required daily | Not implemented. |
 | Reply or forward with original attachments preserved automatically | `roundcube_fallback` | do not admit if required daily | Not implemented. |
-| Bulk move or other bulk mailbox actions | `roundcube_fallback` | do not admit if required daily | Not implemented. |
+| General bulk move or other bulk mailbox actions | `roundcube_fallback` | do not admit if required daily | OSMAP supports bounded selected archive, not arbitrary bulk mailbox operations. |
 | Rich mailbox-management ergonomics | `roundcube_fallback` | admit only if unnecessary | OSMAP Version 2 intentionally stays narrower than Roundcube. |
 | ManageSieve filter editing in browser | `roundcube_fallback` | do not admit if required daily | No OSMAP UI for this. |
 | Contacts, calendar, or groupware | `out_of_scope` | exclude | Not part of OSMAP Version 2. |
@@ -90,7 +92,8 @@ Before moving a real user into the pilot, confirm explicitly:
 
 - whether they need browser draft persistence
 - whether they need reply or forward with original attachments preserved
-- whether they rely on bulk mailbox actions
+- whether they rely on general bulk mailbox actions beyond bounded selected
+  archive
 - whether they rely on Roundcube-only filtering or preference features
 - whether they expect rich HTML convenience behavior that OSMAP intentionally
   will not provide

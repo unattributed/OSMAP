@@ -4701,3 +4701,27 @@ records before field parsing and normalize header summary whitespace into
 single-line browser values. This restores the live read path without changing
 Dovecot authority, helper privilege, nginx/PF exposure, or adding a JSON parser
 dependency to the trusted computing base.
+
+### Add bounded selected-message archive on mailbox lists
+
+After the public Version 2 surface became usable enough for real mailbox
+triage, the next small pilot-workflow gap was mailbox-list ergonomics. OSMAP
+already had a one-message move path and per-row archive shortcuts, but a user
+still had to submit one archive form per row when clearing a small group of
+messages.
+
+The repository now adds a deliberately narrow selected-message archive slice:
+
+- mailbox-list pages render selection checkboxes when an archive mailbox is
+  configured and differs from the current mailbox
+- `POST /messages/archive` is CSRF-bound and same-origin-bound like the other
+  authenticated mutation routes
+- the route accepts at most a small bounded set of selected UIDs
+- each selected UID is moved by calling the existing message-move gateway path,
+  so helper-backed Dovecot authority, message-move validation, audit events,
+  and the dual-bucket move throttle are reused instead of bypassed
+- the browser redirects back to the source mailbox with a count-aware success
+  banner after all selected moves complete
+
+This closes the smallest mailbox-list selection gap without adding arbitrary
+bulk move, mailbox discovery, drag-and-drop, or a broader mailbox-write API.

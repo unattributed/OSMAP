@@ -189,6 +189,10 @@ Each phase produces formal outputs to support traceability and auditability.
   archive shortcut forms with that configured destination, and a controlled
   message is then archived from `INBOX` to `Junk` through the existing
   `POST /message/move` route.
+- Mailbox-list pages now also expose bounded selected-message archive controls
+  when an archive mailbox is configured. The selected archive route reuses the
+  same message-move backend once per selected UID instead of adding broader
+  mailbox-write authority.
 - The bounded all-mailboxes search flow is now also live-proven on
   `mail.blackbagsecurity.com` under `enforce`: the mailboxes page renders the
   global search form, the mailbox page renders the all-mailboxes toggle, and a
@@ -231,10 +235,11 @@ Each phase produces formal outputs to support traceability and auditability.
   layer now has dedicated parser, backend, service, and model modules to make
   security review and future maintenance easier.
 - A fresh repo-grounded reassessment now shows no equally strong candidate for
-  another narrow per-route throttle right now: the remaining authenticated POST
-  routes are settings update, session revoke, and logout, and they are
-  lower-volume, CSRF-bound, and lower abuse value than login, send, or message
-  move.
+  another narrow per-route throttle right now: selected-message archive reuses
+  the message-move throttle once per selected UID, while the remaining
+  authenticated POST routes are settings update, session revoke, and logout,
+  and they are lower-volume, CSRF-bound, and lower abuse value than login,
+  send, or message move.
 - Current priority work is therefore centered on keeping the frozen Version 1
   contract around the already-implemented helper/OpenBSD boundary aligned with
   the successful April 14, 2026 current-pushed-snapshot live-host closeout

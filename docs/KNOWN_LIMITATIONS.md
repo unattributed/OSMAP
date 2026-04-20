@@ -42,9 +42,9 @@
   provide advanced query ergonomics, sorting controls, or richer search
   refinement behavior
 - The implementation now provides a first one-message move path between
-  existing mailboxes plus a settings-backed archive shortcut, but it does not
-  yet provide bulk move, mailbox-list selection actions, or archive mailbox
-  discovery
+  existing mailboxes plus settings-backed archive shortcuts, including bounded
+  selected-message archive from mailbox-list pages, but it does not yet provide
+  general bulk move to arbitrary destinations or archive mailbox discovery
 - The implementation now provides a first browser-visible session list and
   self-service revocation path, but it does not yet provide richer device
   labeling or anomaly-oriented session analysis
@@ -60,11 +60,12 @@
 - Operator-facing migration, rollback, pilot, workflow-inventory, and
   acceptance-gate guidance now exists, but the repo still lacks a completed
   real-user pilot rehearsal against that Version 2 gate
-- The remaining authenticated POST routes in the current browser surface
-  (`/settings`, `/sessions/revoke`, and `/logout`) are now both CSRF-bound and
-  same-origin-bound and remain much lower abuse value than login, send, or
-  message move, so the next hardening win is unlikely to be another narrow
-  per-route throttle
+- The selected-message archive route reuses the current message-move throttle
+  once per selected UID. The remaining lower-volume authenticated POST routes
+  in the current browser surface (`/settings`, `/sessions/revoke`, and
+  `/logout`) are now both CSRF-bound and same-origin-bound and remain much
+  lower abuse value than login, send, or message move, so the next hardening win
+  is unlikely to be another narrow per-route throttle
 - A formal migration baseline now exists, but no Roundcube migration rehearsal
   or end-user pilot has been completed yet
 - The existing host is multi-purpose, which constrains how aggressively the

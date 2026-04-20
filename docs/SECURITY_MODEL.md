@@ -188,7 +188,9 @@ Required defensive implications:
   low-risk
 
 The current implementation now includes a bounded application-layer
-message-move throttling model on `POST /message/move`. It applies both:
+message-move throttling model on `POST /message/move`. The selected-message
+archive route, `POST /messages/archive`, reuses that same move path once per
+selected UID. The throttling model applies both:
 
 - a tighter canonical-user-plus-remote bucket
 - a higher-threshold remote-only bucket

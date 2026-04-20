@@ -11,8 +11,8 @@ teaching the web-facing runtime to own mailbox-write authority directly.
 
 ## Status
 
-As of April 9, 2026, the prototype now includes a first one-message move path
-between existing mailboxes plus a settings-backed archive shortcut that reuses
+As of April 20, 2026, the prototype includes a first one-message move path
+between existing mailboxes plus settings-backed archive shortcuts that reuse
 that same bounded mutation path.
 
 That slice currently covers:
@@ -22,6 +22,8 @@ That slice currently covers:
 - helper-backed move proxying when `OSMAP_MAILBOX_HELPER_SOCKET_PATH` is
   configured
 - a CSRF-protected `POST /message/move` browser route
+- a CSRF-protected `POST /messages/archive` route for selected-message archive
+  from the mailbox-list page
 - a server-rendered move form on the message-view page
 - a user-configurable archive mailbox setting
 - archive shortcut forms on the message-view page and mailbox-list rows when an
@@ -43,7 +45,10 @@ The current move workflow is intentionally narrow:
 
 Archive behavior now still uses this same path, but the mailbox name can be
 stored once in the settings surface and reused through one-click archive forms
-on message and mailbox-list pages.
+on message and mailbox-list pages. Mailbox-list pages also expose a bounded
+selected-message archive form when the configured archive mailbox differs from
+the current mailbox; that route performs the same backend move operation once
+per selected UID rather than adding a broader mailbox-write API.
 
 ## Authority Boundary
 
@@ -85,8 +90,9 @@ The current validation state is:
    shape, throttled rejection behavior, service audit behavior, helper
    protocol parsing, and helper-backed client execution
 2. browser-route tests cover the message-view move form, settings-backed
-   archive shortcut rendering on message and mailbox-list pages, successful
-   redirect, and source-mailbox success banner
+   archive shortcut rendering on message and mailbox-list pages, selected
+   mailbox-list archive controls, successful redirects, empty-selection
+   rejection, and source-mailbox success banners
 3. live-host mutation proof now exists on `mail.blackbagsecurity.com` under
    `OSMAP_OPENBSD_CONFINEMENT_MODE=enforce` using a disposable validation
    mailbox, a synthetic validated browser session, controlled settings updates,
@@ -116,7 +122,7 @@ The repository now includes a reusable live-host harness for that proof at:
 
 This slice does not yet include:
 
-- bulk move from mailbox-list pages
+- general bulk move to arbitrary destination mailboxes from mailbox-list pages
 - archive mailbox discovery beyond the explicit user setting
 - drag-and-drop or richer browser-side mailbox actions
 - mailbox creation, rename, or deletion

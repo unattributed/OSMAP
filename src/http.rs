@@ -691,15 +691,26 @@ mod tests {
                 decision: BrowserMessageListDecision::Listed {
                     canonical_username: validated_session.record.canonical_username.clone(),
                     mailbox_name: mailbox_name.to_string(),
-                    messages: vec![MessageSummary {
-                        mailbox_name: mailbox_name.to_string(),
-                        uid: 9,
-                        flags: vec!["\\Seen".to_string()],
-                        date_received: "2026-03-27 11:00:00 +0000".to_string(),
-                        size_virtual: 512,
-                        subject: Some("Quarterly report".to_string()),
-                        from: Some("Alice <alice@example.com>".to_string()),
-                    }],
+                    messages: vec![
+                        MessageSummary {
+                            mailbox_name: mailbox_name.to_string(),
+                            uid: 9,
+                            flags: vec!["\\Seen".to_string()],
+                            date_received: "2026-03-27 11:00:00 +0000".to_string(),
+                            size_virtual: 512,
+                            subject: Some("Quarterly report".to_string()),
+                            from: Some("Alice <alice@example.com>".to_string()),
+                        },
+                        MessageSummary {
+                            mailbox_name: mailbox_name.to_string(),
+                            uid: 10,
+                            flags: Vec::new(),
+                            date_received: "2026-03-28 12:00:00 +0000".to_string(),
+                            size_virtual: 768,
+                            subject: Some("Follow-up".to_string()),
+                            from: Some("Bob <bob@example.com>".to_string()),
+                        },
+                    ],
                 },
                 audit_events: vec![LogEvent::new(
                     LogLevel::Info,
@@ -940,7 +951,10 @@ mod tests {
                     )],
                 };
             }
-            if source_mailbox_name == "INBOX" && uid == 9 && !destination_mailbox_name.is_empty() {
+            if source_mailbox_name == "INBOX"
+                && matches!(uid, 9 | 10)
+                && !destination_mailbox_name.is_empty()
+            {
                 BrowserMessageMoveOutcome {
                     decision: BrowserMessageMoveDecision::Moved {
                         source_mailbox_name: source_mailbox_name.to_string(),
@@ -1571,6 +1585,34 @@ mod tests {
     }
 
     #[test]
+    fn mailbox_page_renders_bounded_bulk_archive_controls() {
+        let response = app().handle_request(
+            &request(
+                "GET",
+                "/mailbox?name=INBOX",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                ],
+                "",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 200);
+        let body = body_text(&response);
+        assert!(body.contains("id=\"bulk-archive-form\""));
+        assert!(body.contains("action=\"/messages/archive\""));
+        assert!(body.contains("name=\"destination_mailbox\" value=\"Archive/2026\""));
+        assert!(body.contains("form=\"bulk-archive-form\" type=\"checkbox\" name=\"uid_9\""));
+        assert!(body.contains("form=\"bulk-archive-form\" type=\"checkbox\" name=\"uid_10\""));
+        assert!(body.contains(">Archive Selected</button>"));
+    }
+
+    #[test]
     fn message_move_redirects_back_to_mailbox_after_success() {
         let response = app().handle_request(
             &request(
@@ -1586,6 +1628,57 @@ mod tests {
         assert!(response.response.headers.iter().any(|(name, value)| {
             name == "Location" && value == "/mailbox?name=INBOX&moved_to=Archive%2F2026"
         }));
+    }
+
+    #[test]
+    fn bulk_archive_redirects_back_to_mailbox_after_success() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/messages/archive",
+                &authenticated_same_origin_headers(),
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=Archive%2F2026&uid_9=9&uid_10=10",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 303);
+        assert!(response.response.headers.iter().any(|(name, value)| {
+            name == "Location"
+                && value == "/mailbox?name=INBOX&moved_to=Archive%2F2026&moved_count=2"
+        }));
+    }
+
+    #[test]
+    fn bulk_archive_requires_at_least_one_selected_message() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/messages/archive",
+                &authenticated_same_origin_headers(),
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=Archive%2F2026",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 400);
+        assert!(body_text(&response).contains("Select at least one message to archive."));
+    }
+
+    #[test]
+    fn bulk_archive_rejects_oversized_selection_before_moving() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/messages/archive",
+                &authenticated_same_origin_headers(),
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=Archive%2F2026&uid_1=1&uid_2=2&uid_3=3&uid_4=4&uid_5=5&uid_6=6&uid_7=7&uid_8=8&uid_9=9&uid_10=10&uid_11=11",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 400);
+        assert!(body_text(&response).contains("The archive selection was not valid."));
     }
 
     #[test]
@@ -1608,6 +1701,28 @@ mod tests {
 
         assert_eq!(response.response.status_code, 200);
         assert!(body_text(&response).contains("Message moved to Archive/2026."));
+    }
+
+    #[test]
+    fn mailbox_page_renders_bulk_move_success_notice() {
+        let response = app().handle_request(
+            &request(
+                "GET",
+                "/mailbox?name=INBOX&moved_to=Archive%2F2026&moved_count=2",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                ],
+                "",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 200);
+        assert!(body_text(&response).contains("2 messages moved to Archive/2026."));
     }
 
     #[test]
@@ -2203,6 +2318,10 @@ mod tests {
             (
                 "/message/move",
                 "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=9&destination_mailbox=Archive%2F2026",
+            ),
+            (
+                "/messages/archive",
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=Archive%2F2026&uid_9=9",
             ),
             (
                 "/sessions/revoke",
