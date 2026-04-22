@@ -62,6 +62,7 @@ EOF
 set_default_steps() {
   STEP_NAMES="security-check
 login-send
+safe-html-attachment-download
 login-failure-normalization
 all-mailbox-search
 archive-shortcut
@@ -76,7 +77,7 @@ mailbox-backend-unavailable"
 validate_steps() {
   for requested_step in "$@"; do
     case "${requested_step}" in
-      security-check|login-send|login-failure-normalization|all-mailbox-search|archive-shortcut|session-surface|send-throttle|move-throttle|helper-peer-auth|request-guardrails|mailbox-backend-unavailable)
+      security-check|login-send|safe-html-attachment-download|login-failure-normalization|all-mailbox-search|archive-shortcut|session-surface|send-throttle|move-throttle|helper-peer-auth|request-guardrails|mailbox-backend-unavailable)
         ;;
       *)
         log "unknown readiness step: ${requested_step}"

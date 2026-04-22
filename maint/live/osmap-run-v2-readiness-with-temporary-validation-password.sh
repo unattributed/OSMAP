@@ -12,6 +12,7 @@ set -eu
 PROJECT_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 READINESS_WRAPPER="${PROJECT_ROOT}/maint/live/osmap-live-validate-v2-readiness.ksh"
 VALIDATION_USER="${OSMAP_VALIDATION_USER:-osmap-helper-validation@blackbagsecurity.com}"
+TMPDIR_PATH="${OSMAP_V2_READINESS_TMPDIR:-${HOME}/tmp-osmap-v2-readiness}"
 RESTORE_PENDING=0
 ORIGINAL_HASH=""
 
@@ -109,8 +110,13 @@ esac
 
 require_tool doas
 require_tool ksh
+require_tool mkdir
 require_tool openssl
 require_tool sed
+
+mkdir -p "${TMPDIR_PATH}"
+chmod 700 "${TMPDIR_PATH}"
+export TMPDIR="${TMPDIR_PATH}"
 
 if ! steps_require_validation_password "$@"; then
   exec ksh "${READINESS_WRAPPER}" "$@"

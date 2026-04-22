@@ -4804,3 +4804,33 @@ forced-download headers, same-origin and nosniff response headers, decoded
 payload, and `attachment_downloaded` audit event. The Version 2 readiness
 wrapper now includes this validator as `safe-html-attachment-download`, closing
 that pilot workflow evidence gap without adding a new browser feature.
+
+### Keep the full V2 readiness operator path current
+
+The first full V2 readiness rerun after adding
+`safe-html-attachment-download` exposed two operator-path issues rather than a
+product failure. The SSH wrapper still had its own stale default step list, so
+its "full" run would have skipped the new authoritative step. The host-side
+temporary validation-password helper also relied on the process default
+temporary directory while using shell constructs that can create temp files;
+on the validated host `/tmp` is not writable in the current posture.
+
+The SSH wrapper now includes `safe-html-attachment-download` in its default and
+accepted step sets. The temporary-password helper now creates and exports a
+home-backed `TMPDIR` before the guarded mailbox hash swap and readiness
+wrapper execution. This keeps the repo-owned full V2 gate runnable on the
+validated host without weakening the mail service boundary or changing the
+persistent OSMAP deployment.
+
+### Preserve quoted multiline flow values during V2 readiness
+
+The full V2 readiness rerun then exposed a unit-test regression in the
+message-view parser. The previous live Sent fix correctly kept unquoted
+trailing address tokens after a quoted display name, but it trimmed the entire
+quoted value afterward. For Dovecot `hdr` fields this removed a newline that
+belonged to the quoted multiline header block.
+
+The flow parser now trims only the unquoted suffix collected after a closing
+quote. Newlines and other content that are actually inside the quoted flow
+value remain preserved for message-view rendering, while the Sent-style
+`"Display Name" <addr>` summary form still parses as one header value.

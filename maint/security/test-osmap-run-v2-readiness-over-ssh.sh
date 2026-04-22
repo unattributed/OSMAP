@@ -120,6 +120,7 @@ assert_contains "${default_command}" "osmap-v2-readiness-report.txt"
 for step_name in \
   security-check \
   login-send \
+  safe-html-attachment-download \
   login-failure-normalization \
   all-mailbox-search \
   archive-shortcut \

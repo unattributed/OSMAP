@@ -48,6 +48,7 @@ EOF
 
 write_stub "${fake_live_dir}/osmap-host-validate.ksh"
 write_stub "${fake_live_dir}/osmap-live-validate-login-send.ksh"
+write_stub "${fake_live_dir}/osmap-live-validate-inline-image-metadata.ksh"
 write_stub "${fake_live_dir}/osmap-live-validate-login-failure-normalization.ksh"
 write_stub "${fake_live_dir}/osmap-live-validate-all-mailbox-search.ksh"
 write_stub "${fake_live_dir}/osmap-live-validate-archive-shortcut.ksh"
@@ -84,6 +85,7 @@ list_output=$(
 )
 assert_equals "${list_output}" "security-check
 login-send
+safe-html-attachment-download
 login-failure-normalization
 all-mailbox-search
 archive-shortcut
@@ -112,6 +114,7 @@ assert_contains "${default_output}" "Version 2 readiness proof set passed"
 default_invocations=$(cat "${default_log}")
 assert_equals "${default_invocations}" "osmap-host-validate.ksh make security-check
 osmap-live-validate-login-send.ksh
+osmap-live-validate-inline-image-metadata.ksh
 osmap-live-validate-login-failure-normalization.ksh
 osmap-live-validate-all-mailbox-search.ksh
 osmap-live-validate-archive-shortcut.ksh
@@ -125,8 +128,9 @@ osmap-live-validate-mailbox-backend-unavailable.ksh"
 default_report_contents=$(cat "${default_report}")
 assert_contains "${default_report_contents}" "osmap_v2_readiness_result=passed"
 assert_contains "${default_report_contents}" "project_root=${fake_repo}"
-assert_contains "${default_report_contents}" "step_count=11"
+assert_contains "${default_report_contents}" "step_count=12"
 assert_contains "${default_report_contents}" "service_guard_result=skipped"
+assert_contains "${default_report_contents}" "safe-html-attachment-download=passed"
 assert_contains "${default_report_contents}" "login-failure-normalization=passed"
 assert_contains "${default_report_contents}" "request-guardrails=passed"
 assert_contains "${default_report_contents}" "mailbox-backend-unavailable=passed"

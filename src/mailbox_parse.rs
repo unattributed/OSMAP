@@ -484,14 +484,15 @@ fn parse_flow_fields(
                 value.push(current);
                 index += 1;
             }
+            let mut suffix = String::new();
             while index < chars.len() {
                 if chars[index].is_whitespace() && is_flow_field_boundary(&chars, index) {
                     break;
                 }
-                value.push(chars[index]);
+                suffix.push(chars[index]);
                 index += 1;
             }
-            value = value.trim_end().to_string();
+            value.push_str(suffix.trim_end());
         } else {
             let value_start = index;
             while index < chars.len() {

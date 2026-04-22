@@ -1,11 +1,12 @@
 osmap_v2_readiness_result=passed
 project_root=/home/foo/OSMAP
-step_count=11
+step_count=12
 service_guard_result=passed
-service_guard_report=/home/foo/osmap-v2-readiness-service-guard-report.txt
+service_guard_report=/home/foo/osmap-v2-readiness-report.txt.service-enablement
 steps=
 security-check=passed
 login-send=passed
+safe-html-attachment-download=passed
 login-failure-normalization=passed
 all-mailbox-search=passed
 archive-shortcut=passed
