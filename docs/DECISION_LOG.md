@@ -4775,3 +4775,17 @@ so a quoted display name followed by an angle-address is treated as one header
 summary value instead of an invalid extra field. A regression test uses the
 live-shaped Sent line from the audit log. This restores a normal pilot folder
 view without widening mailbox authority or changing the helper protocol.
+
+### Record browser-verified mailbox listing recovery
+
+After deploying `8317d29` on the live mail host, the pilot browser session
+confirmed the previously failing mailbox views render successfully, including
+Sent, Junk, Drafts, `INBOX.Vehicles`, `INBOX.serjon`, and `INBOX.IOA`. The host
+audit log also shows post-deployment `message_listed` completions for those
+same authenticated requests instead of the earlier `message_list_failed`
+parser errors.
+
+The message-list regression test now covers the live audit-shaped examples
+from Sent, Junk, Trash, and custom folders that previously failed on quoted
+display names followed by angle-addresses. This turns the pilot finding into a
+stable repo-owned parser guard while leaving runtime behavior unchanged.
