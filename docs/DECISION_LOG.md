@@ -4789,3 +4789,18 @@ The message-list regression test now covers the live audit-shaped examples
 from Sent, Junk, Trash, and custom folders that previously failed on quoted
 display names followed by angle-addresses. This turns the pilot finding into a
 stable repo-owned parser guard while leaving runtime behavior unchanged.
+
+### Add safe HTML and attachment download to the V2 readiness gate
+
+The Version 2 positive-path criteria require repo-owned evidence for both safe
+HTML rendering and bounded forced-download attachment retrieval. The existing
+inline-image metadata validator already proved the sanitized HTML view and
+Content-ID notice on the live host, but it was not part of the authoritative
+Version 2 readiness wrapper and did not perform the actual attachment download.
+
+`maint/live/osmap-live-validate-inline-image-metadata.ksh` now downloads the
+surfaced inline image attachment through `/attachment`, verifies the
+forced-download headers, same-origin and nosniff response headers, decoded
+payload, and `attachment_downloaded` audit event. The Version 2 readiness
+wrapper now includes this validator as `safe-html-attachment-download`, closing
+that pilot workflow evidence gap without adding a new browser feature.

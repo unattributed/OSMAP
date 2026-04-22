@@ -34,6 +34,7 @@ HELPER_LOG_PATH="${HELPER_RUNTIME_DIR}/mailbox-helper.log"
 HELPER_PID_PATH="${HELPER_RUNTIME_DIR}/mailbox-helper.pid"
 HELPER_SOCKET_PATH="${HELPER_RUNTIME_DIR}/mailbox-helper.sock"
 MESSAGE_RESPONSE_PATH="${WORK_ROOT}/message-response.txt"
+ATTACHMENT_RESPONSE_PATH="${WORK_ROOT}/attachment-response.txt"
 LISTEN_PORT="${OSMAP_LIVE_INLINE_IMAGE_METADATA_PORT:-}"
 VALIDATION_USER="${OSMAP_VALIDATION_USER:-osmap-helper-validation@blackbagsecurity.com}"
 SESSION_TOKEN="${OSMAP_LIVE_SESSION_TOKEN:-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}"
@@ -301,6 +302,14 @@ response_body() {
   '
 }
 
+response_headers() {
+  printf '%s' "$1" | awk '
+    BEGIN { body = 0 }
+    /^\r?$/ { body = 1 }
+    body == 0 { gsub("\r", ""); print }
+  '
+}
+
 wait_for_helper_socket
 wait_for_healthz
 
@@ -352,6 +361,11 @@ printf '%s\n' "${MESSAGE_BODY}" | grep -Fq "${INLINE_FILENAME}" || {
   printf '%s\n' "${MESSAGE_RESPONSE}"
   exit 1
 }
+printf '%s\n' "${MESSAGE_BODY}" | grep -Fq "/attachment?mailbox=INBOX&amp;uid=${uid}&amp;part=1.2" || {
+  log "message view did not render the forced-download attachment link"
+  printf '%s\n' "${MESSAGE_RESPONSE}"
+  exit 1
+}
 printf '%s\n' "${MESSAGE_BODY}" | grep -Fq "HTML content is shown through the current allowlist sanitization policy" || {
   log "message view did not render the sanitized-html policy notice"
   printf '%s\n' "${MESSAGE_RESPONSE}"
@@ -364,7 +378,52 @@ doas grep -q 'action=message_rendered_sanitized_html' "${HTTP_LOG_PATH}" || {
   exit 1
 }
 
-log "live inline-image metadata validation passed"
+log "downloading the surfaced inline image attachment through the browser route"
+ATTACHMENT_RESPONSE="$(request_get "/attachment?mailbox=INBOX&uid=${uid}&part=1.2")"
+printf '%s' "${ATTACHMENT_RESPONSE}" > "${ATTACHMENT_RESPONSE_PATH}"
+ATTACHMENT_STATUS="$(status_line "${ATTACHMENT_RESPONSE}")"
+ATTACHMENT_HEADERS="$(response_headers "${ATTACHMENT_RESPONSE}")"
+ATTACHMENT_BODY="$(response_body "${ATTACHMENT_RESPONSE}")"
+
+[ "${ATTACHMENT_STATUS}" = "HTTP/1.1 200 OK" ] || {
+  log "attachment download did not succeed"
+  printf '%s\n' "${ATTACHMENT_RESPONSE}"
+  exit 1
+}
+printf '%s\n' "${ATTACHMENT_HEADERS}" | grep -Fq 'Content-Disposition: attachment; filename="chart-inline-proof.png"' || {
+  log "attachment download did not force the expected filename"
+  printf '%s\n' "${ATTACHMENT_RESPONSE}"
+  exit 1
+}
+printf '%s\n' "${ATTACHMENT_HEADERS}" | grep -Fq 'Content-Type: image/png' || {
+  log "attachment download did not preserve the bounded image content type"
+  printf '%s\n' "${ATTACHMENT_RESPONSE}"
+  exit 1
+}
+printf '%s\n' "${ATTACHMENT_HEADERS}" | grep -Fq 'X-Content-Type-Options: nosniff' || {
+  log "attachment download did not emit nosniff"
+  printf '%s\n' "${ATTACHMENT_RESPONSE}"
+  exit 1
+}
+printf '%s\n' "${ATTACHMENT_HEADERS}" | grep -Fq 'Cross-Origin-Resource-Policy: same-origin' || {
+  log "attachment download did not emit same-origin resource policy"
+  printf '%s\n' "${ATTACHMENT_RESPONSE}"
+  exit 1
+}
+[ "${ATTACHMENT_BODY}" = "PNGDATA" ] || {
+  log "attachment download body did not match the injected payload"
+  printf '%s\n' "${ATTACHMENT_RESPONSE}"
+  exit 1
+}
+
+doas grep -q 'action=attachment_downloaded' "${HTTP_LOG_PATH}" || {
+  log "attachment download event missing from runtime log"
+  doas cat "${HTTP_LOG_PATH}"
+  exit 1
+}
+
+log "live inline-image metadata and attachment download validation passed"
 log "message_status=${MESSAGE_STATUS}"
+log "attachment_status=${ATTACHMENT_STATUS}"
 log "uid=${uid}"
 log "content_id=${INLINE_CONTENT_ID}"

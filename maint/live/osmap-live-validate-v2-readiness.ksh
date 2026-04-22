@@ -54,6 +54,7 @@ usage: $(basename "$0") [--list] [--report <path>] [step ...]
 steps:
   security-check
   login-send
+  safe-html-attachment-download
   login-failure-normalization
   all-mailbox-search
   archive-shortcut
@@ -86,6 +87,7 @@ list_steps() {
   printf '%s\n' \
     security-check \
     login-send \
+    safe-html-attachment-download \
     login-failure-normalization \
     all-mailbox-search \
     archive-shortcut \
@@ -233,6 +235,7 @@ require_login_secret_if_needed() {
 set_default_steps() {
   STEP_NAMES="security-check
 login-send
+safe-html-attachment-download
 login-failure-normalization
 all-mailbox-search
 archive-shortcut
@@ -288,11 +291,11 @@ parse_args() {
     STEP_NAMES=""
     for requested_step in "$@"; do
       case "${requested_step}" in
-        security-check|login-send|login-failure-normalization|all-mailbox-search|archive-shortcut|session-surface|send-throttle|move-throttle|helper-peer-auth|request-guardrails|mailbox-backend-unavailable)
+        security-check|login-send|safe-html-attachment-download|login-failure-normalization|all-mailbox-search|archive-shortcut|session-surface|send-throttle|move-throttle|helper-peer-auth|request-guardrails|mailbox-backend-unavailable)
           ;;
         *)
           log "unknown v2 readiness step: ${requested_step}"
-          log "valid steps: security-check login-send login-failure-normalization all-mailbox-search archive-shortcut session-surface send-throttle move-throttle helper-peer-auth request-guardrails mailbox-backend-unavailable"
+          log "valid steps: security-check login-send safe-html-attachment-download login-failure-normalization all-mailbox-search archive-shortcut session-surface send-throttle move-throttle helper-peer-auth request-guardrails mailbox-backend-unavailable"
           exit 1
           ;;
       esac
@@ -330,6 +333,9 @@ for step_name in ${STEP_NAMES}; do
       ;;
     login-send)
       run_step "${step_name}" ksh ./maint/live/osmap-live-validate-login-send.ksh
+      ;;
+    safe-html-attachment-download)
+      run_step "${step_name}" ksh ./maint/live/osmap-live-validate-inline-image-metadata.ksh
       ;;
     login-failure-normalization)
       run_step "${step_name}" ksh ./maint/live/osmap-live-validate-login-failure-normalization.ksh
