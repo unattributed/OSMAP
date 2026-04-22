@@ -46,10 +46,24 @@ require_tool() {
   }
 }
 
+terminate_pid_path() {
+  pid_path="$1"
+  doas test -f "${pid_path}" 2>/dev/null || return 0
+
+  target_pid="$(doas cat "${pid_path}" 2>/dev/null || true)"
+  case "${target_pid}" in
+    ""|*[!0-9]*)
+      return 0
+      ;;
+  esac
+
+  doas kill "${target_pid}" 2>/dev/null || true
+  sleep 1
+  doas kill -KILL "${target_pid}" 2>/dev/null || true
+}
+
 cleanup() {
-  if [ -f "${PID_PATH}" ]; then
-    doas kill "$(doas cat "${PID_PATH}")" 2>/dev/null || true
-  fi
+  terminate_pid_path "${PID_PATH}"
   if [ "${KEEP_WORK_ROOT}" = "1" ]; then
     log "keeping live validation root at ${WORK_ROOT}"
   else
@@ -114,7 +128,7 @@ chown _osmap:_osmap '${SESSION_DIR}/${SESSION_ID}.session'"
 log "starting enforced browser runtime as _osmap with unavailable helper socket"
 doas -u _osmap sh -c "
   umask 077
-  echo \$$ > '${PID_PATH}'
+  echo \$\$ > '${PID_PATH}'
   exec env \
     OSMAP_RUN_MODE=serve \
     OSMAP_ENV=production \

@@ -64,13 +64,25 @@ cleanup_injected_message() {
   fi
 }
 
+terminate_pid_path() {
+  pid_path="$1"
+  doas test -f "${pid_path}" 2>/dev/null || return 0
+
+  target_pid="$(doas cat "${pid_path}" 2>/dev/null || true)"
+  case "${target_pid}" in
+    ""|*[!0-9]*)
+      return 0
+      ;;
+  esac
+
+  doas kill "${target_pid}" 2>/dev/null || true
+  sleep 1
+  doas kill -KILL "${target_pid}" 2>/dev/null || true
+}
+
 cleanup() {
-  if [ -f "${HTTP_PID_PATH}" ]; then
-    doas kill "$(doas cat "${HTTP_PID_PATH}")" 2>/dev/null || true
-  fi
-  if [ -f "${HELPER_PID_PATH}" ]; then
-    doas kill "$(doas cat "${HELPER_PID_PATH}")" 2>/dev/null || true
-  fi
+  terminate_pid_path "${HTTP_PID_PATH}"
+  terminate_pid_path "${HELPER_PID_PATH}"
   cleanup_injected_message
   if [ "${KEEP_WORK_ROOT}" = "1" ]; then
     log "keeping live validation root at ${WORK_ROOT}"
@@ -155,7 +167,7 @@ chown _osmap:_osmap '${SESSION_DIR}/${SESSION_ID}.session'"
 log "starting enforced mailbox helper as vmail"
 doas -u vmail sh -c "
   umask 077
-  echo \$$ > '${HELPER_PID_PATH}'
+  echo \$\$ > '${HELPER_PID_PATH}'
   exec env \
     OSMAP_RUN_MODE=mailbox-helper \
     OSMAP_ENV=production \
@@ -194,7 +206,7 @@ wait_for_helper_socket() {
 log "starting enforced browser runtime as _osmap"
 doas -u _osmap sh -c "
   umask 077
-  echo \$$ > '${HTTP_PID_PATH}'
+  echo \$\$ > '${HTTP_PID_PATH}'
   exec env \
     OSMAP_RUN_MODE=serve \
     OSMAP_ENV=production \

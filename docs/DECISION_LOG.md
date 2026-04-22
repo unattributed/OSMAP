@@ -4725,3 +4725,22 @@ The repository now adds a deliberately narrow selected-message archive slice:
 
 This closes the smallest mailbox-list selection gap without adding arbitrary
 bulk move, mailbox discovery, drag-and-drop, or a broader mailbox-write API.
+
+### Fix live validator PID cleanup for isolated runtimes
+
+Host inspection on `mail.blackbagsecurity.com` showed old `_osmap` validation
+runtimes still listening on loopback ports after previous V2 readiness runs.
+The affected live validators wrote PID files from a double-quoted child shell
+using `echo \$$`, which allowed the parent shell to expand part of the token
+before the child shell ran. Cleanup then tried to kill the wrong PID value and
+left the isolated runtime alive.
+
+The live validators now pass literal child-shell PID expansion as
+`echo \$\$`, so each PID file records the actual helper or browser runtime
+process. Cleanup now verifies that the isolated process exited after `TERM`
+and falls back to `KILL` for that validation PID if needed. Because the PID
+files live below protected `_osmap` or `vmail` runtime directories, cleanup now
+uses `doas test` before the already-privileged PID read. The security check
+also includes a regression guard for the PID quoting and privileged PID-check
+patterns. This tightens the V2 readiness workflow without changing the
+persistent OSMAP service model, runtime authority, or public edge posture.

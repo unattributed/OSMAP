@@ -72,10 +72,24 @@ restore_original_hash() {
   RESTORE_PENDING=0
 }
 
+terminate_pid_path() {
+  pid_path="$1"
+  doas test -f "${pid_path}" 2>/dev/null || return 0
+
+  target_pid="$(doas cat "${pid_path}" 2>/dev/null || true)"
+  case "${target_pid}" in
+    ""|*[!0-9]*)
+      return 0
+      ;;
+  esac
+
+  doas kill "${target_pid}" 2>/dev/null || true
+  sleep 1
+  doas kill -KILL "${target_pid}" 2>/dev/null || true
+}
+
 cleanup() {
-  if [ -f "${HTTP_PID_PATH}" ]; then
-    doas kill "$(doas cat "${HTTP_PID_PATH}")" 2>/dev/null || true
-  fi
+  terminate_pid_path "${HTTP_PID_PATH}"
   restore_original_hash
   if [ "${KEEP_WORK_ROOT}" = "1" ]; then
     log "keeping live validation root at ${WORK_ROOT}"
@@ -190,7 +204,7 @@ PY
 log "starting enforced browser runtime as _osmap"
 doas -u _osmap sh -c "
   umask 077
-  echo \$$ > '${HTTP_PID_PATH}'
+  echo \$\$ > '${HTTP_PID_PATH}'
   exec env \
     OSMAP_RUN_MODE=serve \
     OSMAP_ENV=production \

@@ -174,6 +174,9 @@ sh maint/security/test-osmap-live-rehearse-service-activation.sh
 echo "==> validating openbsd launcher log-capture behavior"
 sh maint/security/test-osmap-openbsd-launcher-log-capture.sh
 
+echo "==> validating live validator pid quoting"
+sh maint/security/test-osmap-live-validator-pid-quoting.sh
+
 echo "==> validating live auth observability wrapper behavior"
 sh maint/security/test-osmap-live-validate-auth-observability.sh
 
