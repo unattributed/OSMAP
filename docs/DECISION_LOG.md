@@ -4744,3 +4744,34 @@ uses `doas test` before the already-privileged PID read. The security check
 also includes a regression guard for the PID quoting and privileged PID-check
 patterns. This tightens the V2 readiness workflow without changing the
 persistent OSMAP service model, runtime authority, or public edge posture.
+
+### Prove selected-message archive in the live archive gate
+
+The bounded selected-message archive slice became part of the current pilot
+workflow surface after the mailbox-list controls and `POST /messages/archive`
+route landed. The existing live archive proof still only exercised the older
+single-message archive shortcut through `POST /message/move`, leaving the new
+pilot workflow covered by unit tests but not by host-side evidence.
+
+`maint/live/osmap-live-validate-archive-shortcut.ksh` now keeps the original
+shortcut proof and then injects a second controlled message, verifies the
+mailbox-list selected archive checkbox renders for that UID, submits
+`POST /messages/archive`, and confirms the message leaves INBOX and appears in
+the configured archive mailbox. Because the Version 2 readiness wrapper already
+runs this archive step, selected-message archive now has repo-owned live proof
+without adding a new operator command or widening the supported bulk-action
+surface.
+
+### Restore Sent folder listing for live flow output
+
+The live public OSMAP session for `duncan@blackbagsecurity.com` showed
+`/mailbox?name=Sent` returning the bounded unavailable page. Host audit logs
+confirmed this was not a Dovecot access failure: the mailbox helper reached
+Sent but the message-list parser rejected a normal live `doveadm -f flow`
+summary where `hdr.from` appeared as `"Display Name" <addr>`.
+
+The flow parser now preserves non-field trailing tokens after a quoted value,
+so a quoted display name followed by an angle-address is treated as one header
+summary value instead of an invalid extra field. A regression test uses the
+live-shaped Sent line from the audit log. This restores a normal pilot folder
+view without widening mailbox authority or changing the helper protocol.

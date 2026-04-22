@@ -441,6 +441,38 @@ mod tests {
     }
 
     #[test]
+    fn parses_message_summaries_with_quoted_display_name_and_trailing_address() {
+        let executor = Rc::new(std::cell::RefCell::new(StubCommandExecutor::success(
+            CommandExecution {
+                status_code: 0,
+                stdout: "uid=4 flags=\\Seen date.received=2025-12-17 11:49:08 size.virtual=4095 mailbox=Sent hdr.subject=3 things hdr.from=\"Duncan @ Black Bag Security\" <duncan@blackbagsecurity.com>\n".to_string(),
+                stderr: String::new(),
+            },
+        )));
+        let backend = DoveadmMessageListBackend::new(
+            MessageListPolicy::default(),
+            executor,
+            "/usr/local/bin/doveadm",
+        );
+        let request = MessageListRequest::new(MessageListPolicy::default(), "Sent")
+            .expect("request should be valid");
+
+        let messages = backend
+            .list_messages("duncan@blackbagsecurity.com", &request)
+            .expect("Sent message list should parse live-style flow output");
+
+        assert_eq!(messages.len(), 1);
+        assert_eq!(messages[0].uid, 4);
+        assert_eq!(messages[0].mailbox_name, "Sent");
+        assert_eq!(messages[0].flags, vec!["\\Seen".to_string()]);
+        assert_eq!(messages[0].subject.as_deref(), Some("3 things"));
+        assert_eq!(
+            messages[0].from.as_deref(),
+            Some("Duncan @ Black Bag Security <duncan@blackbagsecurity.com>")
+        );
+    }
+
+    #[test]
     fn parses_message_view_from_doveadm_flow_output() {
         let executor = Rc::new(std::cell::RefCell::new(StubCommandExecutor::success(
             CommandExecution {

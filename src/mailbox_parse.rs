@@ -484,6 +484,14 @@ fn parse_flow_fields(
                 value.push(current);
                 index += 1;
             }
+            while index < chars.len() {
+                if chars[index].is_whitespace() && is_flow_field_boundary(&chars, index) {
+                    break;
+                }
+                value.push(chars[index]);
+                index += 1;
+            }
+            value = value.trim_end().to_string();
         } else {
             let value_start = index;
             while index < chars.len() {

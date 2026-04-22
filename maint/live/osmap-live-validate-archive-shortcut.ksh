@@ -6,9 +6,9 @@
 # `doas -u _osmap` and `doas -u vmail` are available. It builds the current
 # OSMAP tree, starts an isolated enforced mailbox helper and browser runtime
 # with a synthetic validated session, configures an archive mailbox through the
-# browser settings route, verifies that archive shortcuts render on mailbox and
-# message pages, then archives one injected message through the existing move
-# route and confirms the message lands in the configured destination mailbox.
+# browser settings route, verifies that archive shortcuts and bounded selected
+# archive controls render on mailbox and message pages, then archives controlled
+# messages through both the existing move route and the selected archive route.
 
 set -eu
 
@@ -53,15 +53,21 @@ require_tool() {
   }
 }
 
-cleanup_injected_message() {
-  if [ -n "${MESSAGE_SUBJECT:-}" ]; then
+cleanup_subject() {
+  subject="$1"
+  if [ -n "${subject}" ]; then
     doas -u vmail /usr/local/bin/doveadm -o stats_writer_socket_path= \
-      expunge -u "${VALIDATION_USER}" mailbox INBOX header Subject "${MESSAGE_SUBJECT}" \
+      expunge -u "${VALIDATION_USER}" mailbox INBOX header Subject "${subject}" \
       >/dev/null 2>&1 || true
     doas -u vmail /usr/local/bin/doveadm -o stats_writer_socket_path= \
-      expunge -u "${VALIDATION_USER}" mailbox "${ARCHIVE_MAILBOX}" header Subject "${MESSAGE_SUBJECT}" \
+      expunge -u "${VALIDATION_USER}" mailbox "${ARCHIVE_MAILBOX}" header Subject "${subject}" \
       >/dev/null 2>&1 || true
   fi
+}
+
+cleanup_injected_message() {
+  cleanup_subject "${MESSAGE_SUBJECT:-}"
+  cleanup_subject "${SELECTED_MESSAGE_SUBJECT:-}"
 }
 
 terminate_pid_path() {
@@ -124,6 +130,7 @@ CSRF_TOKEN="$(printf 'csrf:%s' "${SESSION_TOKEN}" | sha256 -q)"
 NOW="$(date +%s)"
 EXPIRES_AT="$((NOW + 3600))"
 MESSAGE_SUBJECT="OSMAP archive shortcut proof ${NOW}-$$"
+SELECTED_MESSAGE_SUBJECT="OSMAP selected archive proof ${NOW}-$$"
 
 log "preparing isolated live validation root under ${WORK_ROOT}"
 doas rm -rf "${WORK_ROOT}"
@@ -248,18 +255,20 @@ wait_for_healthz() {
 }
 
 inject_message() {
+  subject="$1"
   {
     printf 'From: OSMAP Archive Proof <%s>\n' "${VALIDATION_USER}"
     printf 'To: %s\n' "${VALIDATION_USER}"
-    printf 'Subject: %s\n' "${MESSAGE_SUBJECT}"
+    printf 'Subject: %s\n' "${subject}"
     printf '\n'
     printf 'archive shortcut validation\n'
   } | /usr/sbin/sendmail -t
 }
 
 lookup_uid() {
+  subject="$2"
   doas -u vmail /usr/local/bin/doveadm -o stats_writer_socket_path= \
-    search -u "${VALIDATION_USER}" mailbox "$1" header Subject "${MESSAGE_SUBJECT}" \
+    search -u "${VALIDATION_USER}" mailbox "$1" header Subject "${subject}" \
     | awk 'NF > 0 { print $NF; exit }'
 }
 
@@ -345,13 +354,13 @@ printf '%s\n' "${SETTINGS_PAGE_BODY}" | grep -Fq "name=\"archive_mailbox_name\" 
 }
 
 log "injecting controlled validation message into INBOX"
-inject_message
+inject_message "${MESSAGE_SUBJECT}"
 
 uid=""
 tries=0
 while [ -z "${uid}" ] && [ "${tries}" -lt 20 ]; do
   sleep 1
-  uid="$(lookup_uid INBOX || true)"
+  uid="$(lookup_uid INBOX "${MESSAGE_SUBJECT}" || true)"
   tries="$((tries + 1))"
 done
 
@@ -371,6 +380,11 @@ printf '%s\n' "${MAILBOX_BODY}" | grep -Fq ">Archive</button>" || {
 }
 printf '%s\n' "${MAILBOX_BODY}" | grep -Fq "name=\"destination_mailbox\" value=\"${ARCHIVE_MAILBOX}\"" || {
   log "mailbox page did not render the configured archive mailbox in shortcut form"
+  printf '%s\n' "${MAILBOX_RESPONSE}"
+  exit 1
+}
+printf '%s\n' "${MAILBOX_BODY}" | grep -Fq "id=\"bulk-archive-form\"" || {
+  log "mailbox page did not render selected archive form"
   printf '%s\n' "${MAILBOX_RESPONSE}"
   exit 1
 }
@@ -407,8 +421,8 @@ MOVE_LOCATION="$(header_value "${MOVE_RESPONSE}" "Location")"
 }
 
 sleep 1
-INBOX_UID="$(lookup_uid INBOX || true)"
-ARCHIVE_UID="$(lookup_uid "${ARCHIVE_MAILBOX}" || true)"
+INBOX_UID="$(lookup_uid INBOX "${MESSAGE_SUBJECT}" || true)"
+ARCHIVE_UID="$(lookup_uid "${ARCHIVE_MAILBOX}" "${MESSAGE_SUBJECT}" || true)"
 
 [ -z "${INBOX_UID}" ] || {
   log "message remained in INBOX after archive shortcut move"
@@ -416,6 +430,62 @@ ARCHIVE_UID="$(lookup_uid "${ARCHIVE_MAILBOX}" || true)"
 }
 [ -n "${ARCHIVE_UID}" ] || {
   log "message did not appear in archive mailbox after shortcut move"
+  exit 1
+}
+
+log "injecting second controlled validation message for selected archive"
+inject_message "${SELECTED_MESSAGE_SUBJECT}"
+
+selected_uid=""
+tries=0
+while [ -z "${selected_uid}" ] && [ "${tries}" -lt 20 ]; do
+  sleep 1
+  selected_uid="$(lookup_uid INBOX "${SELECTED_MESSAGE_SUBJECT}" || true)"
+  tries="$((tries + 1))"
+done
+
+[ -n "${selected_uid}" ] || {
+  log "failed to locate selected archive validation message uid"
+  [ -f "${HELPER_LOG_PATH}" ] && doas cat "${HELPER_LOG_PATH}"
+  exit 1
+}
+
+log "verifying selected archive checkbox renders for the second message"
+SELECTED_MAILBOX_RESPONSE="$(request_get "/mailbox?name=INBOX")"
+SELECTED_MAILBOX_BODY="$(response_body "${SELECTED_MAILBOX_RESPONSE}")"
+printf '%s\n' "${SELECTED_MAILBOX_BODY}" | grep -Fq "form=\"bulk-archive-form\" type=\"checkbox\" name=\"uid_${selected_uid}\" value=\"${selected_uid}\"" || {
+  log "mailbox page did not render selected archive checkbox for injected message"
+  printf '%s\n' "${SELECTED_MAILBOX_RESPONSE}"
+  exit 1
+}
+
+log "archiving the second message through the selected archive route"
+SELECTED_BODY="csrf_token=${CSRF_TOKEN}&mailbox=INBOX&destination_mailbox=${ARCHIVE_MAILBOX}&uid_${selected_uid}=${selected_uid}"
+SELECTED_RESPONSE="$(request_post "/messages/archive" "${SELECTED_BODY}")"
+SELECTED_STATUS="$(status_line "${SELECTED_RESPONSE}")"
+SELECTED_LOCATION="$(header_value "${SELECTED_RESPONSE}" "Location")"
+
+[ "${SELECTED_STATUS}" = "HTTP/1.1 303 See Other" ] || {
+  log "selected archive route did not succeed"
+  printf '%s\n' "${SELECTED_RESPONSE}"
+  exit 1
+}
+[ "${SELECTED_LOCATION}" = "/mailbox?name=INBOX&moved_to=${ARCHIVE_MAILBOX}&moved_count=1" ] || {
+  log "selected archive redirect was unexpected"
+  printf '%s\n' "${SELECTED_RESPONSE}"
+  exit 1
+}
+
+sleep 1
+SELECTED_INBOX_UID="$(lookup_uid INBOX "${SELECTED_MESSAGE_SUBJECT}" || true)"
+SELECTED_ARCHIVE_UID="$(lookup_uid "${ARCHIVE_MAILBOX}" "${SELECTED_MESSAGE_SUBJECT}" || true)"
+
+[ -z "${SELECTED_INBOX_UID}" ] || {
+  log "selected archive message remained in INBOX after move"
+  exit 1
+}
+[ -n "${SELECTED_ARCHIVE_UID}" ] || {
+  log "selected archive message did not appear in archive mailbox"
   exit 1
 }
 
@@ -433,4 +503,5 @@ doas grep -q 'action=message_moved' "${HTTP_LOG_PATH}" || {
 log "live archive shortcut validation passed"
 log "settings_status=${SETTINGS_STATUS}"
 log "move_status=${MOVE_STATUS}"
+log "selected_archive_status=${SELECTED_STATUS}"
 log "archive_mailbox=${ARCHIVE_MAILBOX}"
