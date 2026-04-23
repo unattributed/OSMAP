@@ -248,6 +248,7 @@ pub(crate) fn render_message_view_page(
     csrf_token: &str,
     rendered: &RenderedMessageView,
     archive_mailbox_name: Option<&str>,
+    user_visible_mailboxes: &[MailboxEntry],
 ) -> String {
     let inline_image_count = rendered
         .attachments
@@ -311,12 +312,42 @@ pub(crate) fn render_message_view_page(
         Some(_) => "<p class=\"muted\">This message is already in your configured archive mailbox.</p>".to_string(),
         None => "<p class=\"muted\">Set an archive mailbox in Settings to add a one-click archive shortcut here.</p>".to_string(),
     };
-    let move_form = format!(
-        "<h2>Move Message</h2><p class=\"muted\">This first folder-organization slice still keeps the general move path narrow: one message into one existing mailbox per request.</p><form method=\"post\" action=\"/message/move\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"uid\" value=\"{}\"><label>Destination Mailbox<input type=\"text\" name=\"destination_mailbox\" autocomplete=\"off\"></label><button type=\"submit\">Move Message</button></form>",
-        escape_html(csrf_token),
-        escape_html(&rendered.mailbox_name),
-        rendered.uid,
-    );
+    let trash_mailbox_available = user_visible_mailboxes
+        .iter()
+        .any(|mailbox| mailbox.name == "Trash" && mailbox.name != rendered.mailbox_name);
+    let delete_form = if trash_mailbox_available {
+        format!(
+            "<h2>Delete Message</h2><p class=\"muted\">This delete control stays inside the current bounded mailbox-move slice by moving the message into <strong>Trash</strong>.</p><form method=\"post\" action=\"/message/move\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"uid\" value=\"{}\"><input type=\"hidden\" name=\"destination_mailbox\" value=\"Trash\"><button type=\"submit\">Delete to Trash</button></form>",
+            escape_html(csrf_token),
+            escape_html(&rendered.mailbox_name),
+            rendered.uid,
+        )
+    } else {
+        String::new()
+    };
+    let move_destination_options = user_visible_mailboxes
+        .iter()
+        .filter(|mailbox| mailbox.name != rendered.mailbox_name)
+        .map(|mailbox| {
+            format!(
+                "<option value=\"{}\">{}</option>",
+                escape_html(&mailbox.name),
+                escape_html(&mailbox.name)
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("");
+    let move_form = if move_destination_options.is_empty() {
+        "<h2>Move Message</h2><p class=\"muted\">No alternate visible mailbox destinations are currently available for this bounded move action.</p>".to_string()
+    } else {
+        format!(
+            "<h2>Move Message</h2><p class=\"muted\">This first folder-organization slice still keeps the general move path narrow: one message into one existing visible mailbox per request.</p><form method=\"post\" action=\"/message/move\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"uid\" value=\"{}\"><label>Destination Mailbox<select name=\"destination_mailbox\">{}</select></label><button type=\"submit\">Move Message</button></form>",
+            escape_html(csrf_token),
+            escape_html(&rendered.mailbox_name),
+            rendered.uid,
+            move_destination_options,
+        )
+    };
     let rendering_notice = match rendered.rendering_mode.as_str() {
         "sanitized_html" => "<p class=\"muted\">HTML content is shown through the current allowlist sanitization policy. Active content, external fetches, and unsafe URLs are removed.</p>",
         _ => "",
@@ -341,7 +372,7 @@ pub(crate) fn render_message_view_page(
     };
 
     format!(
-        "<nav><a href=\"/mailbox?name={}\">Back to mailbox</a> | <a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <a href=\"/settings\">Settings</a> | <a href=\"/compose?mode=reply&mailbox={}&uid={}\">Reply</a> | <a href=\"/compose?mode=forward&mailbox={}&uid={}\">Forward</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Message View</h1><p>Signed in as <strong>{}</strong>.</p><dl><dt>Mailbox</dt><dd>{}</dd><dt>UID</dt><dd>{}</dd><dt>Subject</dt><dd>{}</dd><dt>From</dt><dd>{}</dd><dt>Received</dt><dd>{}</dd><dt>MIME Type</dt><dd>{}</dd><dt>Body Source</dt><dd>{}</dd><dt>Rendering Mode</dt><dd>{}</dd><dt>HTML Present</dt><dd>{}</dd></dl>{}{}{}{}<h2>Attachments</h2><ul>{}</ul><h2>Body</h2>{}",
+        "<nav><a href=\"/mailbox?name={}\">Back to mailbox</a> | <a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <a href=\"/settings\">Settings</a> | <a href=\"/compose?mode=reply&mailbox={}&uid={}\">Reply</a> | <a href=\"/compose?mode=forward&mailbox={}&uid={}\">Forward</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Message View</h1><p>Signed in as <strong>{}</strong>.</p><dl><dt>Mailbox</dt><dd>{}</dd><dt>UID</dt><dd>{}</dd><dt>Subject</dt><dd>{}</dd><dt>From</dt><dd>{}</dd><dt>Received</dt><dd>{}</dd><dt>MIME Type</dt><dd>{}</dd><dt>Body Source</dt><dd>{}</dd><dt>Rendering Mode</dt><dd>{}</dd><dt>HTML Present</dt><dd>{}</dd></dl>{}{}{}{}{}<h2>Attachments</h2><ul>{}</ul><h2>Body</h2>{}",
         escape_html(&url_encode(&rendered.mailbox_name)),
         escape_html(&url_encode(&rendered.mailbox_name)),
         rendered.uid,
@@ -360,6 +391,7 @@ pub(crate) fn render_message_view_page(
         if rendered.contains_html_body { "yes" } else { "no" },
         rendering_notice,
         archive_form,
+        delete_form,
         move_form,
         inline_image_notice,
         attachments,

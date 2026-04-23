@@ -701,6 +701,31 @@ where
                     &validated_session,
                     &mut audit_events,
                 );
+                let visible_mailboxes = match self.gateway.list_mailboxes(context, &validated_session)
+                {
+                    BrowserMailboxOutcome {
+                        decision: BrowserMailboxDecision::Listed { mailboxes, .. },
+                        audit_events: mailbox_audit_events,
+                    } => {
+                        audit_events.extend(mailbox_audit_events);
+                        filter_user_visible_mailboxes(&mailboxes)
+                    }
+                    BrowserMailboxOutcome {
+                        decision: BrowserMailboxDecision::Denied { public_reason },
+                        audit_events: mailbox_audit_events,
+                    } => {
+                        audit_events.extend(mailbox_audit_events);
+                        audit_events.push(
+                            build_http_warning_event(
+                                "message_view_move_destinations_unresolved",
+                                "message view visible move destinations could not be resolved",
+                                context,
+                            )
+                            .with_field("public_reason", public_reason),
+                        );
+                        Vec::new()
+                    }
+                };
 
                 HandledHttpResponse {
                     response: html_response(
@@ -712,6 +737,7 @@ where
                             &validated_session.record.csrf_token,
                             &rendered,
                             archive_mailbox_name.as_deref(),
+                            &visible_mailboxes,
                         ),
                     ),
                     audit_events,

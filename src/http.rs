@@ -719,6 +719,9 @@ mod tests {
                         MailboxEntry {
                             name: "Junk".to_string(),
                         },
+                        MailboxEntry {
+                            name: "Trash".to_string(),
+                        },
                     ],
                 },
                 audit_events: vec![LogEvent::new(
@@ -1650,8 +1653,12 @@ mod tests {
         assert!(body.contains("mode=forward"));
         assert!(body.contains("Archive Message"));
         assert!(body.contains("name=\"destination_mailbox\" value=\"Archive/2026\""));
+        assert!(body.contains("Delete to Trash"));
+        assert!(body.contains("name=\"destination_mailbox\" value=\"Trash\""));
         assert!(body.contains("action=\"/message/move\""));
-        assert!(body.contains("name=\"destination_mailbox\""));
+        assert!(body.contains("<select name=\"destination_mailbox\">"));
+        assert!(body.contains("<option value=\"Trash\">Trash</option>"));
+        assert!(body.contains("<option value=\"Junk\">Junk</option>"));
         assert!(body.contains("/attachment?mailbox=INBOX&amp;uid=9&amp;part=1.2"));
         assert!(body.contains("chart.png"));
         assert!(body.contains("Content-ID <strong>cid:chart@example.com</strong>"));
