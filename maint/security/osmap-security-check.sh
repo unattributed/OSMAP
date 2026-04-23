@@ -141,6 +141,9 @@ sh maint/security/test-osmap-install-hooks.sh
 echo "==> validating v2 readiness ssh wrapper command assembly"
 sh maint/security/test-osmap-run-v2-readiness-over-ssh.sh
 
+echo "==> validating v2 readiness step-set consistency"
+sh maint/security/test-osmap-v2-readiness-step-set.sh
+
 echo "==> validating internet exposure assessment wrapper behavior"
 sh maint/security/test-osmap-live-assess-internet-exposure.sh
 

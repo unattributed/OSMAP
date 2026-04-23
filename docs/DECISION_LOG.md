@@ -4950,3 +4950,23 @@ out the newer positive and negative proof requirements:
 `docs/V2_PILOT_REHEARSAL_SOP.md` now matches that gate by including
 `safe-html-attachment-download` in the standard host-side rehearsal command and
 by showing the current twelve-step report shape.
+
+### Add a drift guard for the V2 readiness step set
+
+The current Version 2 readiness gate is intentionally explicit, but that also
+means the same step set appears in the acceptance criteria, host-side wrapper,
+off-host SSH wrapper, and pilot rehearsal SOP. The last gate expansion showed
+that stale operator-facing copies are an easy way for a "full" rehearsal to
+silently stop being full.
+
+`maint/security/test-osmap-v2-readiness-step-set.sh` now treats the current
+twelve-step set as a local regression target and compares it against:
+
+- `maint/live/osmap-live-validate-v2-readiness.ksh --list`
+- `docs/V2_ACCEPTANCE_CRITERIA.md`
+- `maint/live/osmap-run-v2-readiness-over-ssh.sh`
+- the standard command and expected report shape in
+  `docs/V2_PILOT_REHEARSAL_SOP.md`
+
+The shared `make security-check` gate now runs that consistency check so future
+V2 readiness changes must update the operator path and docs together.
