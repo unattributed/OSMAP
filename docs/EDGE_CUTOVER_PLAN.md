@@ -119,8 +119,10 @@ Create `/etc/nginx/templates/osmap-root.tmpl` with this route shape:
 # Preserve legacy entry aliases but converge on the canonical root.
 location = /mail { return 301 /; }
 location = /webmail { return 301 /; }
+location = /osmap { return 301 /; }
 location ^~ /mail/ { return 301 /; }
 location ^~ /webmail/ { return 301 /; }
+location ^~ /osmap/ { return 301 /; }
 
 location / {
     limit_except GET POST { deny all; }
