@@ -10,6 +10,7 @@ use std::env;
 use std::path::{Path, PathBuf};
 
 use crate::error::BootstrapError;
+use crate::session::DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS;
 use crate::state::StateLayout;
 use crate::throttle::{
     DEFAULT_LOGIN_THROTTLE_LOCKOUT_SECONDS, DEFAULT_LOGIN_THROTTLE_MAX_FAILURES,
@@ -37,6 +38,7 @@ pub struct AppConfig {
     pub state_layout: StateLayout,
     pub http_max_concurrent_connections: u64,
     pub session_lifetime_seconds: u64,
+    pub session_idle_timeout_seconds: u64,
     pub totp_allowed_skew_steps: i64,
     pub login_throttle_max_failures: u64,
     pub login_throttle_remote_max_failures: u64,
@@ -237,6 +239,11 @@ impl AppConfig {
         let http_max_concurrent_connections_value =
             read_value(env_map, "OSMAP_HTTP_MAX_CONCURRENT_CONNECTIONS", "16");
         let session_lifetime_value = read_value(env_map, "OSMAP_SESSION_LIFETIME_SECS", "43200");
+        let session_idle_timeout_value = read_value(
+            env_map,
+            "OSMAP_SESSION_IDLE_TIMEOUT_SECS",
+            &DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS.to_string(),
+        );
         let totp_skew_steps_value = read_value(env_map, "OSMAP_TOTP_ALLOWED_SKEW_STEPS", "1");
         let login_throttle_max_failures_value = read_value(
             env_map,
@@ -348,6 +355,10 @@ impl AppConfig {
             &http_max_concurrent_connections_value,
         )?;
         validate_non_empty("OSMAP_SESSION_LIFETIME_SECS", &session_lifetime_value)?;
+        validate_non_empty(
+            "OSMAP_SESSION_IDLE_TIMEOUT_SECS",
+            &session_idle_timeout_value,
+        )?;
         validate_non_empty("OSMAP_TOTP_ALLOWED_SKEW_STEPS", &totp_skew_steps_value)?;
         validate_non_empty(
             "OSMAP_LOGIN_THROTTLE_MAX_FAILURES",
@@ -415,6 +426,10 @@ impl AppConfig {
             OpenbsdConfinementMode::parse(&openbsd_confinement_mode_value)?;
         let session_lifetime_seconds =
             parse_u64("OSMAP_SESSION_LIFETIME_SECS", &session_lifetime_value)?;
+        let session_idle_timeout_seconds = parse_u64(
+            "OSMAP_SESSION_IDLE_TIMEOUT_SECS",
+            &session_idle_timeout_value,
+        )?;
         let totp_allowed_skew_steps =
             parse_i64("OSMAP_TOTP_ALLOWED_SKEW_STEPS", &totp_skew_steps_value)?;
         let login_throttle_max_failures = parse_u64(
@@ -470,6 +485,10 @@ impl AppConfig {
             http_max_concurrent_connections,
         )?;
         validate_positive_u64("OSMAP_SESSION_LIFETIME_SECS", session_lifetime_seconds)?;
+        validate_positive_u64(
+            "OSMAP_SESSION_IDLE_TIMEOUT_SECS",
+            session_idle_timeout_seconds,
+        )?;
         validate_positive_u64(
             "OSMAP_LOGIN_THROTTLE_MAX_FAILURES",
             login_throttle_max_failures,
@@ -553,6 +572,7 @@ impl AppConfig {
             state_layout,
             http_max_concurrent_connections,
             session_lifetime_seconds,
+            session_idle_timeout_seconds,
             totp_allowed_skew_steps,
             login_throttle_max_failures,
             login_throttle_remote_max_failures,
@@ -807,6 +827,10 @@ mod tests {
         assert_eq!(config.log_format, LogFormat::Text);
         assert_eq!(config.http_max_concurrent_connections, 16);
         assert_eq!(config.session_lifetime_seconds, 43200);
+        assert_eq!(
+            config.session_idle_timeout_seconds,
+            DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS
+        );
         assert_eq!(config.totp_allowed_skew_steps, 1);
         assert_eq!(config.login_throttle_max_failures, 5);
         assert_eq!(config.login_throttle_remote_max_failures, 12);
@@ -860,6 +884,10 @@ mod tests {
             (
                 "OSMAP_SESSION_LIFETIME_SECS".to_string(),
                 "3600".to_string(),
+            ),
+            (
+                "OSMAP_SESSION_IDLE_TIMEOUT_SECS".to_string(),
+                "900".to_string(),
             ),
             ("OSMAP_TOTP_ALLOWED_SKEW_STEPS".to_string(), "2".to_string()),
             (
@@ -973,6 +1001,7 @@ mod tests {
         assert_eq!(config.log_format, LogFormat::Text);
         assert_eq!(config.http_max_concurrent_connections, 24);
         assert_eq!(config.session_lifetime_seconds, 3600);
+        assert_eq!(config.session_idle_timeout_seconds, 900);
         assert_eq!(config.totp_allowed_skew_steps, 2);
         assert_eq!(config.login_throttle_max_failures, 4);
         assert_eq!(config.login_throttle_remote_max_failures, 9);
@@ -1050,6 +1079,25 @@ mod tests {
             error,
             BootstrapError::InvalidConfig {
                 field: "OSMAP_SESSION_LIFETIME_SECS",
+                reason: "value must be greater than zero".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn rejects_zero_session_idle_timeout() {
+        let env_map = BTreeMap::from([(
+            "OSMAP_SESSION_IDLE_TIMEOUT_SECS".to_string(),
+            "0".to_string(),
+        )]);
+
+        let error =
+            AppConfig::from_env_map(&env_map).expect_err("zero-valued idle timeout must fail");
+
+        assert_eq!(
+            error,
+            BootstrapError::InvalidConfig {
+                field: "OSMAP_SESSION_IDLE_TIMEOUT_SECS",
                 reason: "value must be greater than zero".to_string(),
             }
         );

@@ -129,8 +129,9 @@ Each phase produces formal outputs to support traceability and auditability.
   compose/send, reply/forward draft generation, and a first one-message move
   path between existing mailboxes.
 - The browser layer now includes a first self-service session-management page
-  backed by the persisted session metadata and revocation primitives already in
-  the runtime.
+  backed by persisted session metadata, one-session revocation, revocation of
+  other sessions, revocation of all sessions, and the configured idle and
+  absolute timeout policy.
 - The browser layer now also includes a first bounded settings page and a safe
   HTML rendering path: HTML-capable messages can be rendered through a narrow
   allowlist sanitizer, users can choose between sanitized HTML and plain-text

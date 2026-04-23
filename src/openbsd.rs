@@ -606,6 +606,7 @@ mod tests {
             .expect("layout should be valid"),
             http_max_concurrent_connections: 16,
             session_lifetime_seconds: 43200,
+            session_idle_timeout_seconds: 1800,
             totp_allowed_skew_steps: 1,
             login_throttle_max_failures: 5,
             login_throttle_remote_max_failures: 12,

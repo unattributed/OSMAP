@@ -97,7 +97,9 @@ The routes intentionally mirror the current runtime baseline:
 - compose renders the current plain-text-first outbound form, including
   reply/forward prefills when a source message is supplied
 - the sessions page surfaces the current persisted-session metadata through a
-  browser-safe view and allows self-service revocation
+  browser-safe view, shows the configured idle and absolute timeout policy, and
+  allows self-service revocation of the current session, other sessions, or all
+  sessions
 - the settings page surfaces the current bounded user preference for HTML
   display mode and allows CSRF-bound updates
 - the message move route performs the current one-message folder-organization

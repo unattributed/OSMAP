@@ -4861,3 +4861,46 @@ TLS 1.2 CBC suite removal, concurrent-session policy, and an inconclusive
 session revoke race observation. Those are documented as Version 3 backlog
 items because they do not block the current bounded Version 2 workflow slice
 and need separate compatibility or policy decisions.
+
+## 2026-04-23
+
+### Keep service rehearsal membership checks hermetic
+
+The local security gate exposed a regression in the Version 2 operator
+rehearsal path: the generated service-enablement and service-activation apply
+scripts still checked `_osmap` group membership through `doas sh -lc`. On the
+reviewed host that still reached `id`, but in the hermetic shell regressions
+the login-shell wrapper escaped the stubbed identity command and leaked into
+the local workstation user database.
+
+The rehearsal wrappers now use direct `doas id -Gn ... | tr ... | grep`
+pipelines for runtime-group membership checks. The runtime-group provisioning
+wrapper also now captures the original secondary groups with `doas id -Gn`
+directly instead of nesting an identity lookup inside a shell.
+
+This keeps the real OpenBSD precondition unchanged while making the repo-owned
+regressions genuinely local and repeatable. The local `make security-check`
+gate now completes through all shell/operator tests in this workspace; cargo
+phases remain skipped here because the local `rustc` is 1.85.0 and the repo
+minimum is 1.86.
+
+### Add bulk session revocation and idle-timeout revocation
+
+The Version 2 browser session surface needed a stronger user-controlled
+security response than one-session-at-a-time revocation. The sessions page now
+shows the configured absolute lifetime and idle timeout, and it adds
+CSRF-bound controls to revoke either all other active sessions or all active
+sessions including the current browser session.
+
+The session service now also treats timeout as a persisted state transition:
+expired sessions and idle sessions are marked with `revoked_at` during
+validation or session listing instead of merely failing validation in memory.
+The default idle timeout is 1800 seconds, while the existing absolute lifetime
+remains 43200 seconds unless operators override it.
+
+This keeps Version 2 narrower than a full device-management system while
+making the exposed `/sessions` tab useful for an operator-approved public
+browser posture. The local test suite passes with
+`cargo test --ignore-rust-version`, and the repo-owned `make security-check`
+gate completes; plain `cargo check` remains blocked on this workstation
+because its default `rustc` is 1.85.0 while the repo minimum is 1.86.

@@ -96,7 +96,7 @@ capture_primary_group() {
 
 capture_secondary_groups() {
   primary_group="$1"
-  group_list="$(doas sh -lc "id -Gn ${TARGET_USER} 2>/dev/null" || true)"
+  group_list="$(doas id -Gn "${TARGET_USER}" 2>/dev/null || true)"
 
   if [ -z "${group_list}" ]; then
     return 0

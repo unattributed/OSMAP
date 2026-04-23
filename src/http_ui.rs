@@ -372,6 +372,8 @@ pub(crate) fn render_sessions_page(
     canonical_username: &str,
     current_session_id: &str,
     csrf_token: &str,
+    session_lifetime_seconds: u64,
+    session_idle_timeout_seconds: u64,
     sessions: &[BrowserVisibleSession],
     success_message: Option<&str>,
 ) -> String {
@@ -425,11 +427,20 @@ pub(crate) fn render_sessions_page(
         ));
     }
 
+    let controls = format!(
+        "<section><h2>Session Controls</h2><p><strong>Idle timeout:</strong> {} seconds. <strong>Absolute lifetime:</strong> {} seconds.</p><form method=\"post\" action=\"/sessions/revoke\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"scope\" value=\"others\"><button type=\"submit\">Revoke Other Sessions</button></form> <form method=\"post\" action=\"/sessions/revoke\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"scope\" value=\"all\"><button type=\"submit\">Revoke All Sessions</button></form></section>",
+        session_idle_timeout_seconds,
+        session_lifetime_seconds,
+        escape_html(csrf_token),
+        escape_html(csrf_token),
+    );
+
     format!(
-        "<nav><a href=\"/mailboxes\">Back to mailboxes</a> | <a href=\"/compose\">Compose</a> | <a href=\"/settings\">Settings</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Sessions</h1><p>Signed in as <strong>{}</strong>.</p><p class=\"muted\">This first self-service session view exposes the persisted session metadata already tracked by the runtime so users can see and revoke their own browser sessions without introducing a heavier device-management model.</p>{}<table><thead><tr><th>Session ID</th><th>Status</th><th>Issued</th><th>Last Seen</th><th>Expires</th><th>Revoked</th><th>Remote Address</th><th>User Agent</th><th>Action</th></tr></thead><tbody>{}</tbody></table>",
+        "<nav><a href=\"/mailboxes\">Back to mailboxes</a> | <a href=\"/compose\">Compose</a> | <a href=\"/settings\">Settings</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Sessions</h1><p>Signed in as <strong>{}</strong>.</p><p class=\"muted\">This first self-service session view exposes the persisted session metadata already tracked by the runtime so users can see and revoke their own browser sessions without introducing a heavier device-management model.</p>{}{}<table><thead><tr><th>Session ID</th><th>Status</th><th>Issued</th><th>Last Seen</th><th>Expires</th><th>Revoked</th><th>Remote Address</th><th>User Agent</th><th>Action</th></tr></thead><tbody>{}</tbody></table>",
         escape_html(csrf_token),
         escape_html(canonical_username),
         success_banner,
+        controls,
         rows,
     )
 }

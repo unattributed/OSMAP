@@ -39,6 +39,7 @@ impl RuntimeBrowserGateway {
             SystemTimeProvider,
             SystemRandomSource,
             self.session_lifetime_seconds,
+            self.session_idle_timeout_seconds,
         )
     }
 
@@ -341,6 +342,8 @@ impl RuntimeBrowserGateway {
             Ok(records) => BrowserSessionListOutcome {
                 decision: BrowserSessionListDecision::Listed {
                     canonical_username: validated_session.record.canonical_username.clone(),
+                    session_lifetime_seconds: self.session_lifetime_seconds,
+                    session_idle_timeout_seconds: self.session_idle_timeout_seconds,
                     sessions: records.into_iter().map(Self::visible_session).collect(),
                 },
                 audit_events: vec![build_http_info_event(
@@ -445,6 +448,79 @@ impl RuntimeBrowserGateway {
                 audit_events: vec![build_http_warning_event(
                     "session_revoke_failed",
                     "browser session revoke failed",
+                    context,
+                )
+                .with_field("reason", session_error_label(&error))],
+            },
+        }
+    }
+
+    pub(super) fn revoke_sessions_impl(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        scope: BrowserSessionRevokeScope,
+    ) -> BrowserSessionRevokeOutcome {
+        let service = self.build_session_service();
+        let result = match scope {
+            BrowserSessionRevokeScope::OtherSessions => service.revoke_all_for_user_except(
+                context,
+                &validated_session.record.canonical_username,
+                &validated_session.record.session_id,
+            ),
+            BrowserSessionRevokeScope::AllSessions => {
+                service.revoke_all_for_user(context, &validated_session.record.canonical_username)
+            }
+        };
+
+        match result {
+            Ok(revoked_sessions) => {
+                let revoked_current_session = revoked_sessions
+                    .iter()
+                    .any(|revoked| revoked.record.session_id == validated_session.record.session_id);
+                let mut audit_events = revoked_sessions
+                    .iter()
+                    .map(|revoked| revoked.audit_event.clone())
+                    .collect::<Vec<_>>();
+                audit_events.push(
+                    build_http_info_event(
+                        "session_bulk_revoked",
+                        "browser session bulk revocation completed",
+                        context,
+                    )
+                    .with_field(
+                        "canonical_username",
+                        validated_session.record.canonical_username.clone(),
+                    )
+                    .with_field(
+                        "scope",
+                        match scope {
+                            BrowserSessionRevokeScope::OtherSessions => "other_sessions",
+                            BrowserSessionRevokeScope::AllSessions => "all_sessions",
+                        },
+                    )
+                    .with_field("revoked_count", revoked_sessions.len().to_string())
+                    .with_field(
+                        "revoked_current_session",
+                        revoked_current_session.to_string(),
+                    ),
+                );
+
+                BrowserSessionRevokeOutcome {
+                    decision: BrowserSessionRevokeDecision::RevokedMany {
+                        revoked_count: revoked_sessions.len(),
+                        revoked_current_session,
+                    },
+                    audit_events,
+                }
+            }
+            Err(error) => BrowserSessionRevokeOutcome {
+                decision: BrowserSessionRevokeDecision::Denied {
+                    public_reason: "temporarily_unavailable".to_string(),
+                },
+                audit_events: vec![build_http_warning_event(
+                    "session_bulk_revoke_failed",
+                    "browser session bulk revoke failed",
                     context,
                 )
                 .with_field("reason", session_error_label(&error))],

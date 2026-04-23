@@ -30,6 +30,7 @@ pub struct BootstrapReport {
     pub log_format: String,
     pub http_max_concurrent_connections: String,
     pub session_lifetime_seconds: String,
+    pub session_idle_timeout_seconds: String,
     pub totp_allowed_skew_steps: String,
     pub login_throttle_max_failures: String,
     pub login_throttle_remote_max_failures: String,
@@ -94,6 +95,10 @@ impl BootstrapReport {
         .with_field(
             "session_lifetime_seconds",
             self.session_lifetime_seconds.clone(),
+        )
+        .with_field(
+            "session_idle_timeout_seconds",
+            self.session_idle_timeout_seconds.clone(),
         )
         .with_field(
             "totp_allowed_skew_steps",
@@ -209,6 +214,7 @@ fn report_from_config(config: &AppConfig) -> BootstrapReport {
         log_format: config.log_format.as_str().to_string(),
         http_max_concurrent_connections: config.http_max_concurrent_connections.to_string(),
         session_lifetime_seconds: config.session_lifetime_seconds.to_string(),
+        session_idle_timeout_seconds: config.session_idle_timeout_seconds.to_string(),
         totp_allowed_skew_steps: config.totp_allowed_skew_steps.to_string(),
         login_throttle_max_failures: config.login_throttle_max_failures.to_string(),
         login_throttle_remote_max_failures: config.login_throttle_remote_max_failures.to_string(),
@@ -276,6 +282,7 @@ mod tests {
             .expect("layout should be valid"),
             http_max_concurrent_connections: 16,
             session_lifetime_seconds: 43200,
+            session_idle_timeout_seconds: 1800,
             totp_allowed_skew_steps: 1,
             login_throttle_max_failures: 5,
             login_throttle_remote_max_failures: 12,
@@ -375,6 +382,10 @@ mod tests {
                 crate::logging::LogField {
                     key: "session_lifetime_seconds",
                     value: "43200".to_string(),
+                },
+                crate::logging::LogField {
+                    key: "session_idle_timeout_seconds",
+                    value: "1800".to_string(),
                 },
                 crate::logging::LogField {
                     key: "totp_allowed_skew_steps",

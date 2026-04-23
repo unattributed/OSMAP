@@ -19,7 +19,7 @@ not-applicable status.
 | Tampered invalid message UID receives a success-style move redirect | Version 2 now | One-message move is an exposed Version 2 workflow, so success redirects must only follow a real authorized move. |
 | Authenticated search returns `503 Message Search Unavailable` while search UI is exposed | Version 2 now | Search across one mailbox and all visible mailboxes is in the Version 2 acceptance boundary. |
 | TLS 1.2 CBC suites remain enabled | Version 3 defer | This is real edge hardening work, but it is outside the bounded browser workflow defects fixed in this Version 2 slice and needs compatibility review. |
-| Multiple concurrent active sessions are allowed | Version 3 defer | The report identifies a policy choice, not a confirmed vulnerability; Version 2 already provides session visibility and self-service revocation. |
+| Multiple concurrent active sessions are allowed | Version 3 defer | The report identifies a policy choice, not a confirmed vulnerability; Version 2 now provides session visibility, idle-timeout revocation, and self-service revocation for one session, other sessions, or all sessions. |
 | Session revoke race behavior was mixed | Version 3 defer | The evidence used a shared client cookie jar and is explicitly not a confirmed server-side flaw. |
 | Client-side injection, CORS, clickjacking, XSSI, template injection, HTML injection, CSS injection, websocket, web messaging, browser storage, reverse tabnabbing, obvious API surface checks | Not applicable for this pass | The tested slice was broadly clean, and no Version 2 remediation change intentionally widens those surfaces. |
 

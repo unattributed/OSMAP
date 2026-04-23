@@ -153,6 +153,8 @@ where
         match outcome.decision {
             BrowserSessionListDecision::Listed {
                 canonical_username,
+                session_lifetime_seconds,
+                session_idle_timeout_seconds,
                 sessions,
             } => HandledHttpResponse {
                 response: html_response(
@@ -163,6 +165,8 @@ where
                         &canonical_username,
                         &validated_session.record.session_id,
                         &validated_session.record.csrf_token,
+                        session_lifetime_seconds,
+                        session_idle_timeout_seconds,
                         &sessions,
                         success_message,
                     ),
@@ -245,29 +249,59 @@ where
             return response;
         }
 
-        let Some(session_id) = form.get("session_id").cloned() else {
-            return HandledHttpResponse {
-                response: html_response(
-                    400,
-                    "Bad Request",
-                    "Invalid Session Request",
-                    "<p>A session identifier is required.</p>",
-                ),
-                audit_events: vec![build_http_warning_event(
-                    "http_session_revoke_missing_target",
-                    "session revoke target missing",
-                    context,
-                )],
+        let outcome = if let Some(scope) = form.get("scope").map(String::as_str) {
+            let scope = match scope {
+                "others" => BrowserSessionRevokeScope::OtherSessions,
+                "all" => BrowserSessionRevokeScope::AllSessions,
+                _ => {
+                    return HandledHttpResponse {
+                        response: html_response(
+                            400,
+                            "Bad Request",
+                            "Invalid Session Request",
+                            "<p>The session revoke scope is invalid.</p>",
+                        ),
+                        audit_events: vec![build_http_warning_event(
+                            "http_session_revoke_invalid_scope",
+                            "session revoke scope was invalid",
+                            context,
+                        )
+                        .with_field("scope", scope.to_string())],
+                    };
+                }
             };
+
+            self.gateway
+                .revoke_sessions(context, &validated_session, scope)
+        } else {
+            let Some(session_id) = form.get("session_id").cloned() else {
+                return HandledHttpResponse {
+                    response: html_response(
+                        400,
+                        "Bad Request",
+                        "Invalid Session Request",
+                        "<p>A session identifier or revoke scope is required.</p>",
+                    ),
+                    audit_events: vec![build_http_warning_event(
+                        "http_session_revoke_missing_target",
+                        "session revoke target missing",
+                        context,
+                    )],
+                };
+            };
+
+            self.gateway
+                .revoke_session(context, &validated_session, &session_id)
         };
 
-        let outcome = self
-            .gateway
-            .revoke_session(context, &validated_session, &session_id);
         audit_events.extend(outcome.audit_events);
 
         match outcome.decision {
             BrowserSessionRevokeDecision::Revoked {
+                revoked_current_session,
+                ..
+            }
+            | BrowserSessionRevokeDecision::RevokedMany {
                 revoked_current_session,
                 ..
             } => {

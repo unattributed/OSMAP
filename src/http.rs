@@ -343,9 +343,9 @@ pub use self::http_browser::{
     BrowserMessageSearchOutcome, BrowserMessageViewDecision, BrowserMessageViewOutcome,
     BrowserSendDecision, BrowserSendOutcome, BrowserSessionDecision, BrowserSessionListDecision,
     BrowserSessionListOutcome, BrowserSessionRevokeDecision, BrowserSessionRevokeOutcome,
-    BrowserSessionValidationOutcome, BrowserSettingsDecision, BrowserSettingsOutcome,
-    BrowserSettingsUpdateDecision, BrowserSettingsUpdateOutcome, BrowserVisibleSession,
-    BrowserVisibleSettings,
+    BrowserSessionRevokeScope, BrowserSessionValidationOutcome, BrowserSettingsDecision,
+    BrowserSettingsOutcome, BrowserSettingsUpdateDecision, BrowserSettingsUpdateOutcome,
+    BrowserVisibleSession, BrowserVisibleSettings,
 };
 pub use self::http_gateway::RuntimeBrowserGateway;
 pub use self::http_runtime::run_http_server;
@@ -506,6 +506,8 @@ mod tests {
             BrowserSessionListOutcome {
                 decision: BrowserSessionListDecision::Listed {
                     canonical_username: validated_session.record.canonical_username.clone(),
+                    session_lifetime_seconds: 3600,
+                    session_idle_timeout_seconds: 1800,
                     sessions: vec![
                         BrowserVisibleSession {
                             session_id: validated_session.record.session_id.clone(),
@@ -586,6 +588,40 @@ mod tests {
                         "stub session revoke denied",
                     )],
                 }
+            }
+        }
+
+        fn revoke_sessions(
+            &self,
+            _context: &AuthenticationContext,
+            _validated_session: &ValidatedSession,
+            scope: BrowserSessionRevokeScope,
+        ) -> BrowserSessionRevokeOutcome {
+            match scope {
+                BrowserSessionRevokeScope::OtherSessions => BrowserSessionRevokeOutcome {
+                    decision: BrowserSessionRevokeDecision::RevokedMany {
+                        revoked_count: 1,
+                        revoked_current_session: false,
+                    },
+                    audit_events: vec![LogEvent::new(
+                        LogLevel::Info,
+                        EventCategory::Session,
+                        "stub_session_revoke_others",
+                        "stub other sessions revoked",
+                    )],
+                },
+                BrowserSessionRevokeScope::AllSessions => BrowserSessionRevokeOutcome {
+                    decision: BrowserSessionRevokeDecision::RevokedMany {
+                        revoked_count: 2,
+                        revoked_current_session: true,
+                    },
+                    audit_events: vec![LogEvent::new(
+                        LogLevel::Info,
+                        EventCategory::Session,
+                        "stub_session_revoke_all",
+                        "stub all sessions revoked",
+                    )],
+                },
             }
         }
 
@@ -1905,6 +1941,9 @@ mod tests {
         assert!(body.contains("<h1>Sessions</h1>"));
         assert!(body.contains("203.0.113.9"));
         assert!(body.contains("Revoke This Session"));
+        assert!(body.contains("Revoke Other Sessions"));
+        assert!(body.contains("Revoke All Sessions"));
+        assert!(body.contains("Idle timeout:</strong> 1800 seconds"));
     }
 
     #[test]
@@ -2130,6 +2169,51 @@ mod tests {
                 "/sessions/revoke",
                 &authenticated_same_origin_headers(),
                 "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&session_id=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 303);
+        assert!(response
+            .response
+            .headers
+            .iter()
+            .any(|(name, value)| name == "Location" && value == "/login"));
+        assert!(response
+            .response
+            .headers
+            .iter()
+            .any(|(name, value)| name == "Set-Cookie" && value.contains("Max-Age=0")));
+    }
+
+    #[test]
+    fn session_revoke_other_sessions_redirects_back_to_sessions() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/sessions/revoke",
+                &authenticated_same_origin_headers(),
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&scope=others",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 303);
+        assert!(response
+            .response
+            .headers
+            .iter()
+            .any(|(name, value)| name == "Location" && value == "/sessions?revoked=1"));
+    }
+
+    #[test]
+    fn session_revoke_all_sessions_clears_current_cookie() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/sessions/revoke",
+                &authenticated_same_origin_headers(),
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&scope=all",
             ),
             "127.0.0.1",
         );

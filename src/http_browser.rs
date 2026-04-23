@@ -35,6 +35,13 @@ pub trait BrowserGateway {
         session_id: &str,
     ) -> BrowserSessionRevokeOutcome;
 
+    fn revoke_sessions(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        scope: BrowserSessionRevokeScope,
+    ) -> BrowserSessionRevokeOutcome;
+
     fn load_settings(
         &self,
         context: &AuthenticationContext,
@@ -181,6 +188,8 @@ pub struct BrowserSessionListOutcome {
 pub enum BrowserSessionListDecision {
     Listed {
         canonical_username: String,
+        session_lifetime_seconds: u64,
+        session_idle_timeout_seconds: u64,
         sessions: Vec<BrowserVisibleSession>,
     },
     Denied {
@@ -202,9 +211,20 @@ pub enum BrowserSessionRevokeDecision {
         revoked_session_id: String,
         revoked_current_session: bool,
     },
+    RevokedMany {
+        revoked_count: usize,
+        revoked_current_session: bool,
+    },
     Denied {
         public_reason: String,
     },
+}
+
+/// Bulk session-revocation scopes supported by the browser sessions page.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BrowserSessionRevokeScope {
+    OtherSessions,
+    AllSessions,
 }
 
 /// The result of loading the browser-visible settings page.

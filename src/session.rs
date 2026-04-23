@@ -31,6 +31,9 @@ pub const SESSION_ID_HEX_LEN: usize = 64;
 /// Fixed hex length for the persisted CSRF token format.
 pub const CSRF_TOKEN_HEX_LEN: usize = 64;
 
+/// Conservative default idle timeout for browser sessions: 30 minutes.
+pub const DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS: u64 = 30 * 60;
+
 /// Describes the persisted session metadata visible to operators.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SessionRecord {
@@ -275,6 +278,7 @@ pub struct SessionService<S, T, R> {
     time_provider: T,
     random_source: R,
     lifetime_seconds: u64,
+    idle_timeout_seconds: u64,
 }
 
 impl<S, T, R> SessionService<S, T, R> {
@@ -284,12 +288,14 @@ impl<S, T, R> SessionService<S, T, R> {
         time_provider: T,
         random_source: R,
         lifetime_seconds: u64,
+        idle_timeout_seconds: u64,
     ) -> Self {
         Self {
             session_store,
             time_provider,
             random_source,
             lifetime_seconds,
+            idle_timeout_seconds,
         }
     }
 }
@@ -366,9 +372,11 @@ where
             });
         }
 
-        if now > record.expires_at {
+        if let Some(reason) = self.timeout_reason(&record, now) {
+            record.revoked_at = Some(now);
+            self.session_store.save(&record)?;
             return Err(SessionError::StoreFailure {
-                reason: "session is expired".to_string(),
+                reason: format!("session is {reason}"),
             });
         }
 
@@ -446,12 +454,66 @@ where
         self.revoke_by_session_id(context, session_id)
     }
 
+    /// Revokes all active sessions for a user except the supplied session id.
+    pub fn revoke_all_for_user_except(
+        &self,
+        context: &AuthenticationContext,
+        canonical_username: &str,
+        current_session_id: &str,
+    ) -> Result<Vec<RevokedSession>, SessionError> {
+        let records = self.list_for_user(canonical_username)?;
+        records
+            .into_iter()
+            .filter(|record| record.revoked_at.is_none())
+            .filter(|record| record.session_id != current_session_id)
+            .map(|record| self.revoke_by_session_id(context, &record.session_id))
+            .collect()
+    }
+
+    /// Revokes all active sessions for a user, including the current session.
+    pub fn revoke_all_for_user(
+        &self,
+        context: &AuthenticationContext,
+        canonical_username: &str,
+    ) -> Result<Vec<RevokedSession>, SessionError> {
+        let records = self.list_for_user(canonical_username)?;
+        records
+            .into_iter()
+            .filter(|record| record.revoked_at.is_none())
+            .map(|record| self.revoke_by_session_id(context, &record.session_id))
+            .collect()
+    }
+
     /// Returns the operator-visible session list for a canonical user.
     pub fn list_for_user(
         &self,
         canonical_username: &str,
     ) -> Result<Vec<SessionRecord>, SessionError> {
-        self.session_store.list_for_user(canonical_username)
+        let now = self.time_provider.unix_timestamp();
+        let mut records = self.session_store.list_for_user(canonical_username)?;
+        for record in &mut records {
+            if self.timeout_reason(record, now).is_some() {
+                record.revoked_at = Some(now);
+                self.session_store.save(record)?;
+            }
+        }
+        Ok(records)
+    }
+
+    fn timeout_reason(&self, record: &SessionRecord, now: u64) -> Option<&'static str> {
+        if record.revoked_at.is_some() {
+            return None;
+        }
+
+        if now > record.expires_at {
+            return Some("expired");
+        }
+
+        if now.saturating_sub(record.last_seen_at) > self.idle_timeout_seconds {
+            return Some("idle timed out");
+        }
+
+        None
     }
 }
 
@@ -739,6 +801,7 @@ mod tests {
                 bytes: vec![0x11; SESSION_TOKEN_BYTES],
             },
             3600,
+            DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS,
         );
 
         let issued = service
@@ -771,6 +834,7 @@ mod tests {
                 bytes: vec![0x22; SESSION_TOKEN_BYTES],
             },
             3600,
+            DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS,
         );
 
         let issued = service
@@ -801,6 +865,7 @@ mod tests {
                 bytes: vec![0x33; SESSION_TOKEN_BYTES],
             },
             3600,
+            DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS,
         );
 
         let issued = service
@@ -831,6 +896,7 @@ mod tests {
                 bytes: vec![0x66; SESSION_TOKEN_BYTES],
             },
             3600,
+            DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS,
         );
 
         let issued = service
@@ -861,6 +927,7 @@ mod tests {
                 bytes: vec![0x44; SESSION_TOKEN_BYTES],
             },
             3600,
+            DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS,
         );
 
         service
@@ -891,6 +958,7 @@ mod tests {
                 bytes: vec![0x55; SESSION_TOKEN_BYTES],
             },
             10,
+            DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS,
         );
 
         let issued = service
@@ -912,6 +980,144 @@ mod tests {
                 reason: "session is expired".to_string(),
             }
         );
+
+        let stored = service
+            .session_store
+            .load(&issued.record.session_id)
+            .expect("session store should load")
+            .expect("session should still exist");
+        assert_eq!(stored.revoked_at, Some(200));
+    }
+
+    #[test]
+    fn validate_session_auto_revokes_idle_records() {
+        let session_dir = temp_dir("osmap-session-idle-timeout");
+        let store = FileSessionStore::new(&session_dir);
+        let time = FixedTimeProvider::new(100);
+        let service = SessionService::new(
+            store,
+            time,
+            StaticRandomSource {
+                bytes: vec![0x88; SESSION_TOKEN_BYTES],
+            },
+            3600,
+            30,
+        );
+
+        let issued = service
+            .issue(
+                &test_context(),
+                "alice@example.com",
+                RequiredSecondFactor::Totp,
+            )
+            .expect("session issuance should succeed");
+        service.time_provider.unix_timestamp.set(131);
+
+        let error = service
+            .validate(&test_context(), &issued.token)
+            .expect_err("idle sessions must fail");
+
+        assert_eq!(
+            error,
+            SessionError::StoreFailure {
+                reason: "session is idle timed out".to_string(),
+            }
+        );
+        let stored = service
+            .session_store
+            .load(&issued.record.session_id)
+            .expect("session store should load")
+            .expect("session should still exist");
+        assert_eq!(stored.revoked_at, Some(131));
+    }
+
+    #[test]
+    fn list_sessions_auto_revokes_idle_records() {
+        let session_dir = temp_dir("osmap-session-list-idle-timeout");
+        let store = FileSessionStore::new(&session_dir);
+        let time = FixedTimeProvider::new(100);
+        let service = SessionService::new(
+            store,
+            time,
+            StaticRandomSource {
+                bytes: vec![0x99; SESSION_TOKEN_BYTES],
+            },
+            3600,
+            30,
+        );
+
+        service
+            .issue(
+                &test_context(),
+                "alice@example.com",
+                RequiredSecondFactor::Totp,
+            )
+            .expect("session issuance should succeed");
+        service.time_provider.unix_timestamp.set(131);
+
+        let records = service
+            .list_for_user("alice@example.com")
+            .expect("listing should succeed");
+
+        assert_eq!(records.len(), 1);
+        assert_eq!(records[0].revoked_at, Some(131));
+    }
+
+    #[test]
+    fn revoke_all_for_user_except_preserves_current_session() {
+        let session_dir = temp_dir("osmap-session-revoke-others");
+        let service = SessionService::new(
+            FileSessionStore::new(&session_dir),
+            FixedTimeProvider::new(100),
+            StaticRandomSource {
+                bytes: vec![0xaa; SESSION_TOKEN_BYTES],
+            },
+            3600,
+            DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS,
+        );
+
+        let current = service
+            .issue(
+                &test_context(),
+                "alice@example.com",
+                RequiredSecondFactor::Totp,
+            )
+            .expect("current session issuance should succeed");
+        let other_record = SessionRecord {
+            session_id: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+                .to_string(),
+            csrf_token: "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+                .to_string(),
+            canonical_username: "alice@example.com".to_string(),
+            issued_at: 101,
+            expires_at: 3701,
+            last_seen_at: 101,
+            revoked_at: None,
+            remote_addr: "203.0.113.9".to_string(),
+            user_agent: "Firefox/Other".to_string(),
+            factor: RequiredSecondFactor::Totp,
+        };
+        service
+            .session_store
+            .save(&other_record)
+            .expect("other session should save");
+
+        let revoked = service
+            .revoke_all_for_user_except(
+                &test_context(),
+                "alice@example.com",
+                &current.record.session_id,
+            )
+            .expect("other sessions should revoke");
+
+        assert_eq!(revoked.len(), 1);
+        assert_eq!(revoked[0].record.session_id, other_record.session_id);
+        let current_stored = service
+            .session_store
+            .load(&current.record.session_id)
+            .expect("session store should load")
+            .expect("current session should still exist");
+        assert_eq!(current_stored.revoked_at, None);
     }
 
     #[test]
@@ -1019,6 +1225,7 @@ mod tests {
                 bytes: vec![0x77; SESSION_TOKEN_BYTES],
             },
             3600,
+            DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS,
         );
         let issued = session_service
             .issue(

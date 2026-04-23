@@ -78,8 +78,10 @@ state tree.
 The current runtime enforces:
 
 - a required positive session lifetime in seconds
+- a required positive idle timeout in seconds, defaulting to 30 minutes
 - explicit expiration timestamps on issued sessions
-- validation failure for expired sessions
+- validation failure and automatic revocation for expired sessions
+- validation failure and automatic revocation for inactive sessions
 - validation failure for revoked sessions
 - CSRF-token matching on the currently implemented state-changing browser routes
 - last-seen updates on successful validation
@@ -93,8 +95,12 @@ The runtime currently supports two revocation paths:
 
 - revoke by presented token for logout-style behavior
 - revoke by persisted session identifier for operator-oriented handling
+- revoke all other active sessions for the same user
+- revoke all active sessions for the same user, including the current browser
+  session
 
-Both paths record `revoked_at` and emit a structured session audit event.
+All revocation paths record `revoked_at` and emit structured session audit
+events.
 
 This is important because "logout" is not being treated as a UI nicety. It is
 implemented as state transition and audit event generation in the runtime core.

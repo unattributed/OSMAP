@@ -172,7 +172,7 @@ doas grep -q "^\${shared_group}:" "\$group_file" || {
   printf '%s\n' "missing required shared runtime group: \${shared_group}" >&2
   exit 1
 }
-doas sh -lc "id -Gn _osmap | tr ' ' '\\n' | grep -Fx \"\${shared_group}\" >/dev/null" || {
+doas id -Gn _osmap | tr ' ' '\\n' | grep -Fx "\${shared_group}" >/dev/null || {
   printf '%s\n' "_osmap is not in required shared runtime group: \${shared_group}" >&2
   exit 1
 }

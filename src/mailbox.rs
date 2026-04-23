@@ -73,7 +73,8 @@ mod tests {
     use crate::config::LogFormat;
     use crate::logging::Logger;
     use crate::session::{
-        FileSessionStore, RandomSource, SessionError, SessionService, SESSION_TOKEN_BYTES,
+        FileSessionStore, RandomSource, SessionError, SessionService,
+        DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS, SESSION_TOKEN_BYTES,
     };
     use crate::totp::{FileTotpSecretStore, TimeProvider, TotpPolicy, TotpVerifier};
     use std::cell::Cell;
@@ -1145,6 +1146,7 @@ mod tests {
                 bytes: vec![0x88; SESSION_TOKEN_BYTES],
             },
             3600,
+            DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS,
         );
         let issued = session_service
             .issue(
@@ -1249,6 +1251,7 @@ mod tests {
                 bytes: vec![0x99; SESSION_TOKEN_BYTES],
             },
             3600,
+            DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS,
         );
         let issued = session_service
             .issue(
@@ -1373,6 +1376,7 @@ mod tests {
                 bytes: vec![0xaa; SESSION_TOKEN_BYTES],
             },
             3600,
+            DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS,
         );
         let issued = session_service
             .issue(

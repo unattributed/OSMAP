@@ -18,6 +18,7 @@ pub struct RuntimeBrowserGateway {
     submission_throttle_policy: SubmissionThrottlePolicy,
     message_move_throttle_policy: MessageMoveThrottlePolicy,
     session_lifetime_seconds: u64,
+    session_idle_timeout_seconds: u64,
     session_dir: PathBuf,
     settings_dir: PathBuf,
     login_throttle_dir: PathBuf,
@@ -60,6 +61,7 @@ impl RuntimeBrowserGateway {
                 lockout_seconds: config.message_move_throttle_lockout_seconds,
             },
             session_lifetime_seconds: config.session_lifetime_seconds,
+            session_idle_timeout_seconds: config.session_idle_timeout_seconds,
             session_dir: config.state_layout.session_dir.clone(),
             settings_dir: config.state_layout.settings_dir.clone(),
             login_throttle_dir: config.state_layout.cache_dir.join("login-throttle"),
@@ -99,6 +101,7 @@ impl RuntimeBrowserGateway {
                 lockout_seconds: 900,
             },
             session_lifetime_seconds: 3600,
+            session_idle_timeout_seconds: 1800,
             session_dir: temp_root.join("sessions"),
             settings_dir: temp_root.join("settings"),
             login_throttle_dir: temp_root.join("cache").join("login-throttle"),
@@ -157,6 +160,15 @@ impl BrowserGateway for RuntimeBrowserGateway {
         session_id: &str,
     ) -> BrowserSessionRevokeOutcome {
         self.revoke_session_impl(context, validated_session, session_id)
+    }
+
+    fn revoke_sessions(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        scope: BrowserSessionRevokeScope,
+    ) -> BrowserSessionRevokeOutcome {
+        self.revoke_sessions_impl(context, validated_session, scope)
     }
 
     fn load_settings(

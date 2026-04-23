@@ -51,9 +51,10 @@
   current Version 2 move/archive surface validates configured archive targets
   against the authenticated user's mailbox list and re-resolves the source
   mailbox plus UID before reporting move success.
-- The implementation now provides a first browser-visible session list and
-  self-service revocation path, but it does not yet provide richer device
-  labeling or anomaly-oriented session analysis
+- The implementation now provides a first browser-visible session list,
+  self-service revocation for one session, other sessions, or all sessions, and
+  automatic revocation for expired or inactive sessions, but it does not yet
+  provide richer device labeling or anomaly-oriented session analysis
 - The implementation now provides a first bounded end-user settings surface,
   but it currently exposes only one user-facing preference rather than a broad
   settings platform
