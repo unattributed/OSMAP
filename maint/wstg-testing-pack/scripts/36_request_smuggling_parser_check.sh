@@ -6,32 +6,39 @@ require_cmds python3
 setup_run_dir "36-request-smuggling-parser-check"
 
 TARGET_HOST="${HOSTNAME}"
-TARGET_PORT=443
-TARGET_HOST="$TARGET_HOST" TARGET_PORT="$TARGET_PORT" python3 - <<'PY'
+TARGET_HOST="$TARGET_HOST" TARGET_PORT="$TARGET_PORT" TARGET_TLS="$TARGET_TLS" LOGIN_PATH="$LOGIN_PATH" python3 - <<'PY'
 import os, re, ssl, socket
 from pathlib import Path
 host = os.environ["TARGET_HOST"]
 port = int(os.environ["TARGET_PORT"])
+use_tls = os.environ.get("TARGET_TLS") == "1"
+login_path = os.environ.get("LOGIN_PATH", "/login")
 cases = {
     "baseline_get": (
-        f"GET /login HTTP/1.1\r\nHost: {host}\r\nConnection: close\r\n\r\n"
+        f"GET {login_path} HTTP/1.1\r\nHost: {host}\r\nConnection: close\r\n\r\n"
     ),
     "cl_te_probe": (
-        f"POST /login HTTP/1.1\r\nHost: {host}\r\nContent-Length: 4\r\nTransfer-Encoding: chunked\r\nContent-Type: application/x-www-form-urlencoded\r\nConnection: close\r\n\r\n0\r\n\r\n"
+        f"POST {login_path} HTTP/1.1\r\nHost: {host}\r\nContent-Length: 4\r\nTransfer-Encoding: chunked\r\nContent-Type: application/x-www-form-urlencoded\r\nConnection: close\r\n\r\n0\r\n\r\n"
     ),
     "te_cl_probe": (
-        f"POST /login HTTP/1.1\r\nHost: {host}\r\nTransfer-Encoding: chunked\r\nContent-Length: 4\r\nContent-Type: application/x-www-form-urlencoded\r\nConnection: close\r\n\r\n0\r\n\r\n"
+        f"POST {login_path} HTTP/1.1\r\nHost: {host}\r\nTransfer-Encoding: chunked\r\nContent-Length: 4\r\nContent-Type: application/x-www-form-urlencoded\r\nConnection: close\r\n\r\n0\r\n\r\n"
     ),
     "dup_cl_probe": (
-        f"POST /login HTTP/1.1\r\nHost: {host}\r\nContent-Length: 4\r\nContent-Length: 8\r\nContent-Type: application/x-www-form-urlencoded\r\nConnection: close\r\n\r\nx=1\n"
+        f"POST {login_path} HTTP/1.1\r\nHost: {host}\r\nContent-Length: 4\r\nContent-Length: 8\r\nContent-Type: application/x-www-form-urlencoded\r\nConnection: close\r\n\r\nx=1\n"
     ),
 }
-for name, req in cases.items():
-    ctx = ssl.create_default_context()
+def exchange(req):
     with socket.create_connection((host, port), timeout=8) as sock:
-        with ctx.wrap_socket(sock, server_hostname=host) as ssock:
-            ssock.sendall(req.encode())
-            data = ssock.recv(4096).decode("utf-8", errors="replace")
+        if use_tls:
+            ctx = ssl.create_default_context()
+            with ctx.wrap_socket(sock, server_hostname=host) as ssock:
+                ssock.sendall(req.encode())
+                return ssock.recv(4096).decode("utf-8", errors="replace")
+        sock.sendall(req.encode())
+        return sock.recv(4096).decode("utf-8", errors="replace")
+
+for name, req in cases.items():
+    data = exchange(req)
     Path(f"{name}.txt").write_text(data)
     first = data.splitlines()[0] if data.splitlines() else "NO RESPONSE"
     title_match = re.search(r"<title>([^<]+)", data, re.I)

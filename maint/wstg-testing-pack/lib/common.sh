@@ -10,6 +10,7 @@ load_env() {
     "$PWD/.env"
   )
   local env_file=""
+  local env_sets_hostname=0
   for candidate in "${env_candidates[@]}"; do
     if [[ -f "$candidate" ]]; then
       env_file="$candidate"
@@ -17,16 +18,54 @@ load_env() {
     fi
   done
   if [[ -n "$env_file" ]]; then
+    if grep -Eq '^[[:space:]]*(export[[:space:]]+)?HOSTNAME=' "$env_file"; then
+      env_sets_hostname=1
+    fi
     set -a
     # shellcheck disable=SC1090
     source "$env_file"
     set +a
   fi
 
-  export SCHEME="${SCHEME:-https}"
-  export HOSTNAME="${TARGET_HOSTNAME:-${HOSTNAME:-}}"
+  local configured_base_url="${TARGET_BASE_URL:-}"
+  local configured_scheme="${SCHEME:-}"
+  if [[ -z "$configured_scheme" && -n "$configured_base_url" ]]; then
+    case "$configured_base_url" in
+      http://*) configured_scheme="http" ;;
+      https://*) configured_scheme="https" ;;
+    esac
+  fi
+
+  export SCHEME="${configured_scheme:-https}"
+
+  local configured_hostname="${TARGET_HOSTNAME:-}"
+  if [[ -z "$configured_hostname" && "$env_sets_hostname" -eq 1 ]]; then
+    configured_hostname="${HOSTNAME:-}"
+  fi
+  if [[ -z "$configured_hostname" && -n "$configured_base_url" ]]; then
+    configured_hostname="$(host_from_url "$configured_base_url")"
+  fi
+
+  export HOSTNAME="$configured_hostname"
+  export TARGET_HOSTNAME="$configured_hostname"
   export EMAIL="${TARGET_EMAIL:-${EMAIL:-}}"
-  export TARGET_BASE_URL="${TARGET_BASE_URL:-${SCHEME}://${HOSTNAME}}"
+  export TARGET_EMAIL="$EMAIL"
+  export TARGET_BASE_URL="${configured_base_url:-${SCHEME}://${HOSTNAME}}"
+  export TARGET_PORT="${TARGET_PORT:-$(port_from_url "$TARGET_BASE_URL")}"
+  if [[ -z "$TARGET_PORT" ]]; then
+    case "$SCHEME" in
+      http) TARGET_PORT=80 ;;
+      *) TARGET_PORT=443 ;;
+    esac
+  fi
+  export TARGET_TLS="${TARGET_TLS:-}"
+  if [[ -z "$TARGET_TLS" ]]; then
+    case "$SCHEME" in
+      https) TARGET_TLS=1 ;;
+      *) TARGET_TLS=0 ;;
+    esac
+  fi
+
   export OUT_ROOT="${OUT_ROOT:-$HOME/webmail-wstg}"
   export LOGIN_PATH="${LOGIN_PATH:-/login}"
   export LOGOUT_PATH="${LOGOUT_PATH:-/logout}"
@@ -61,13 +100,46 @@ load_env() {
   export TEST_TOTP_CODE="${TEST_TOTP_CODE:-}"
 }
 
-require_basic_env() {
+url_authority() {
+  local url="$1"
+  case "$url" in
+    *://*) url="${url#*://}" ;;
+  esac
+  url="${url%%/*}"
+  url="${url##*@}"
+  printf '%s' "$url"
+}
+
+host_from_url() {
+  local authority
+  authority="$(url_authority "$1")"
+  case "$authority" in
+    \[*\]*) printf '%s' "${authority%%]*}]" ;;
+    *:*) printf '%s' "${authority%%:*}" ;;
+    *) printf '%s' "$authority" ;;
+  esac
+}
+
+port_from_url() {
+  local authority
+  authority="$(url_authority "$1")"
+  case "$authority" in
+    \[*\]:*) printf '%s' "${authority##*:}" ;;
+    *:*) printf '%s' "${authority##*:}" ;;
+  esac
+}
+
+require_target_host() {
   if [[ -z "${HOSTNAME:-}" ]]; then
-    echo "ERROR: HOSTNAME is not set. Put it in .env or export it." >&2
+    echo "ERROR: TARGET_HOSTNAME is not set. Put TARGET_HOSTNAME in .env or set TARGET_BASE_URL." >&2
     exit 1
   fi
+}
+
+require_basic_env() {
+  require_target_host
   if [[ -z "${EMAIL:-}" ]]; then
-    echo "ERROR: EMAIL is not set. Put it in .env or export it." >&2
+    echo "ERROR: TARGET_EMAIL is not set. Put TARGET_EMAIL in .env or export EMAIL." >&2
     exit 1
   fi
 }
@@ -91,6 +163,7 @@ timestamp() {
 
 setup_run_dir() {
   local test_name="$1"
+  require_target_host
   export RUN_DIR="${OUT_ROOT}/${test_name}-$(timestamp)"
   mkdir -p "$RUN_DIR"
   cd "$RUN_DIR"

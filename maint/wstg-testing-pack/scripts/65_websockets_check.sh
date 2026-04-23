@@ -24,6 +24,9 @@ printf '\n===== direct websocket handshake probes =====\n'
 python3 - <<'PY'
 import base64, os, ssl, socket
 host = os.environ["HOSTNAME"]
+port = int(os.environ["TARGET_PORT"])
+scheme = os.environ.get("SCHEME", "https")
+use_tls = os.environ.get("TARGET_TLS") == "1"
 paths = os.environ["WEBSOCKET_PATHS"].split()
 cookie = ""
 with open("cookies.txt", "r", encoding="utf-8", errors="ignore") as f:
@@ -40,15 +43,19 @@ for path in paths:
         "Connection: Upgrade\r\n"
         f"Sec-WebSocket-Key: {key}\r\n"
         "Sec-WebSocket-Version: 13\r\n"
-        f"Origin: https://{host}\r\n"
+        f"Origin: {scheme}://{host}\r\n"
         + (f"Cookie: osmap_session={cookie}\r\n" if cookie else "")
         + "\r\n"
     )
-    ctx = ssl.create_default_context()
-    with socket.create_connection((host, 443), timeout=8) as sock:
-        with ctx.wrap_socket(sock, server_hostname=host) as ssock:
-            ssock.sendall(req.encode())
-            data = ssock.recv(4096).decode("utf-8", errors="replace")
+    with socket.create_connection((host, port), timeout=8) as sock:
+        if use_tls:
+            ctx = ssl.create_default_context()
+            with ctx.wrap_socket(sock, server_hostname=host) as ssock:
+                ssock.sendall(req.encode())
+                data = ssock.recv(4096).decode("utf-8", errors="replace")
+        else:
+            sock.sendall(req.encode())
+            data = sock.recv(4096).decode("utf-8", errors="replace")
     first = data.splitlines()[0] if data.splitlines() else "NO RESPONSE"
     print(f"\n===== {path} =====")
     print(first)

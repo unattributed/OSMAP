@@ -20,13 +20,13 @@ That means the pack is suitable for repeatable testing and sharing with other te
 
 1. Copy `.env.example` to `.env`
 2. Set at least:
-   - `HOSTNAME=`
-   - `EMAIL=`
+   - `TARGET_HOSTNAME=`
+   - `TARGET_EMAIL=`
 3. Leave `TEST_PASSWORD` and `TEST_TOTP_CODE` blank unless you explicitly want them stored in the environment
 4. Run any script you need, for example:
 
 ```bash
-cd webmail-wstg-pack
+cd maint/wstg-testing-pack
 cp .env.example .env
 joe .env
 ./scripts/29_compose_surface_map.sh
@@ -35,11 +35,18 @@ joe .env
 ## Shared environment variables
 
 Required:
+- `TARGET_HOSTNAME`
+- `TARGET_EMAIL`
+
+Compatibility aliases:
 - `HOSTNAME`
 - `EMAIL`
 
 Common optional values:
 - `SCHEME`
+- `TARGET_BASE_URL`
+- `TARGET_PORT`
+- `TARGET_TLS`
 - `OUT_ROOT`
 - `DEFAULT_MAILBOX`
 - `DEFAULT_MESSAGE_UID`
@@ -47,13 +54,17 @@ Common optional values:
 - `DEFAULT_ARCHIVE_MAILBOX`
 - `SEARCH_QUERY`
 - `INVALID_EMAIL`
+- `OTHER_EMAIL`
 - `ATTACKER_URL`
+- `CORS_TEST_ORIGINS`
 
 Optional secret values:
 - `TEST_PASSWORD`
 - `TEST_TOTP_CODE`
 
 If secret values are blank, the scripts prompt interactively.
+
+Values containing spaces, such as `HTTP_ALT_PORTS`, `WEBSOCKET_PATHS`, and `CORS_TEST_ORIGINS`, must be quoted because `.env` is sourced by Bash.
 
 ## Script coverage
 
@@ -142,6 +153,8 @@ Each script writes its own timestamped run directory under `OUT_ROOT`, for examp
 $OUT_ROOT/29-compose-surface-map-20260423-190349
 ```
 
+Script numbers intentionally preserve the original assessment sequence. Gaps are reserved for original notes or one-off checks that were not turned into reusable scripts.
+
 ## Dependencies
 
 Core:
@@ -164,8 +177,6 @@ Optional:
 - Some tests prompt for multiple TOTP codes because they establish separate fresh sessions
 - The timeout scripts can be long-running, tune values in `.env` if needed
 
-## Suggested repo layout if you commit this pack
+## Repository location
 
-- Path: `tools/webmail-wstg-pack/`
-- Change description: add reusable shell scripts for webmail WSTG testing with shared .env configuration
-- Suggested git commit comment: `add reusable webmail wstg shell test pack`
+This pack lives under `maint/wstg-testing-pack/` so it can share the repository's maintenance and security-gate conventions.
