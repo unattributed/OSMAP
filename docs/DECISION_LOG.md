@@ -4834,3 +4834,30 @@ The flow parser now trims only the unquoted suffix collected after a closing
 quote. Newlines and other content that are actually inside the quoted flow
 value remain preserved for message-view rendering, while the Sent-style
 `"Display Name" <addr>` summary form still parses as one header value.
+
+### Fold April 2026 WSTG workflow findings into V2
+
+The April 2026 WSTG pass found three confirmed defects in current Version 2
+browser workflows: invalid archive mailbox settings could be saved, a tampered
+move UID could produce a success-style redirect, and exposed search forms could
+lead to generic `503 Message Search Unavailable` responses. Those are Version
+2 defects because archive, one-message move, and bounded search are already in
+the pilot-ready browser boundary.
+
+The remediation keeps the existing narrow design rather than adding a broader
+mailbox-management surface:
+
+- settings save resolves `archive_mailbox_name` against the authenticated
+  user's mailbox listing before persistence
+- message and mailbox views suppress stale archive shortcut targets that no
+  longer resolve
+- message move re-resolves the source mailbox plus UID and validates both
+  source and destination mailboxes before reporting success
+- all-mailboxes search now searches only browser-visible mailboxes, and invalid
+  search mailbox inputs return deterministic 400-class responses
+
+The same WSTG pass also identified real but lower-priority hardening topics:
+TLS 1.2 CBC suite removal, concurrent-session policy, and an inconclusive
+session revoke race observation. Those are documented as Version 3 backlog
+items because they do not block the current bounded Version 2 workflow slice
+and need separate compatibility or policy decisions.

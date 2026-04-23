@@ -19,12 +19,72 @@ fn filter_user_visible_mailboxes(mailboxes: &[MailboxEntry]) -> Vec<MailboxEntry
         .collect()
 }
 
+fn mailbox_name_exists(mailboxes: &[MailboxEntry], mailbox_name: &str) -> bool {
+    mailboxes.iter().any(|mailbox| mailbox.name == mailbox_name)
+}
+
 const MAX_BULK_ARCHIVE_MESSAGES: usize = 10;
 
 impl<G> BrowserApp<G>
 where
     G: BrowserGateway,
 {
+    fn validated_archive_mailbox_name(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        audit_events: &mut Vec<LogEvent>,
+    ) -> Option<String> {
+        let archive_mailbox_name = match self.gateway.load_settings(context, validated_session) {
+            BrowserSettingsOutcome {
+                decision: BrowserSettingsDecision::Loaded { settings, .. },
+                audit_events: settings_audit_events,
+            } => {
+                audit_events.extend(settings_audit_events);
+                settings.archive_mailbox_name
+            }
+            BrowserSettingsOutcome {
+                decision: BrowserSettingsDecision::Denied { .. },
+                audit_events: settings_audit_events,
+            } => {
+                audit_events.extend(settings_audit_events);
+                None
+            }
+        }?;
+
+        let mailbox_outcome = self.gateway.list_mailboxes(context, validated_session);
+        audit_events.extend(mailbox_outcome.audit_events);
+
+        match mailbox_outcome.decision {
+            BrowserMailboxDecision::Listed { mailboxes, .. } => {
+                if mailbox_name_exists(&mailboxes, &archive_mailbox_name) {
+                    Some(archive_mailbox_name)
+                } else {
+                    audit_events.push(
+                        build_http_warning_event(
+                            "archive_mailbox_setting_ignored",
+                            "stored archive mailbox was not present in mailbox listing",
+                            context,
+                        )
+                        .with_field("archive_mailbox_name", archive_mailbox_name),
+                    );
+                    None
+                }
+            }
+            BrowserMailboxDecision::Denied { public_reason } => {
+                audit_events.push(
+                    build_http_warning_event(
+                        "archive_mailbox_setting_unresolved",
+                        "archive mailbox setting could not be resolved",
+                        context,
+                    )
+                    .with_field("public_reason", public_reason),
+                );
+                None
+            }
+        }
+    }
+
     /// Handles the mailbox-home page for the validated browser session.
     pub(super) fn handle_mailboxes(
         &self,
@@ -131,23 +191,11 @@ where
                 mailbox_name,
                 messages,
             } => {
-                let archive_mailbox_name =
-                    match self.gateway.load_settings(context, &validated_session) {
-                        BrowserSettingsOutcome {
-                            decision: BrowserSettingsDecision::Loaded { settings, .. },
-                            audit_events: settings_audit_events,
-                        } => {
-                            audit_events.extend(settings_audit_events);
-                            settings.archive_mailbox_name
-                        }
-                        BrowserSettingsOutcome {
-                            decision: BrowserSettingsDecision::Denied { .. },
-                            audit_events: settings_audit_events,
-                        } => {
-                            audit_events.extend(settings_audit_events);
-                            None
-                        }
-                    };
+                let archive_mailbox_name = self.validated_archive_mailbox_name(
+                    context,
+                    &validated_session,
+                    &mut audit_events,
+                );
 
                 HandledHttpResponse {
                     response: html_response(
@@ -294,7 +342,12 @@ where
                 retry_after_seconds,
             } => {
                 let (status_code, reason_phrase, title) = match public_reason.as_str() {
-                    "invalid_request" => (400, "Bad Request", "Invalid Message Move Request"),
+                    "invalid_mailbox" | "invalid_request" => {
+                        (400, "Bad Request", "Invalid Message Move Request")
+                    }
+                    "invalid_message_reference" => {
+                        (404, "Not Found", "Message Move Not Available")
+                    }
                     "not_found" => (404, "Not Found", "Message Move Not Available"),
                     TOO_MANY_MESSAGE_MOVES_PUBLIC_REASON => {
                         (429, "Too Many Requests", "Message Move Temporarily Limited")
@@ -440,7 +493,12 @@ where
                     retry_after_seconds,
                 } => {
                     let (status_code, reason_phrase, title) = match public_reason.as_str() {
-                        "invalid_request" => (400, "Bad Request", "Invalid Bulk Archive Request"),
+                        "invalid_mailbox" | "invalid_request" => {
+                            (400, "Bad Request", "Invalid Bulk Archive Request")
+                        }
+                        "invalid_message_reference" => {
+                            (404, "Not Found", "Bulk Archive Not Available")
+                        }
                         "not_found" => (404, "Not Found", "Bulk Archive Not Available"),
                         TOO_MANY_MESSAGE_MOVES_PUBLIC_REASON => {
                             (429, "Too Many Requests", "Bulk Archive Temporarily Limited")
@@ -553,18 +611,27 @@ where
                 ),
                 audit_events,
             },
-            BrowserMessageSearchDecision::Denied { public_reason } => HandledHttpResponse {
-                response: html_response(
-                    503,
-                    "Service Unavailable",
-                    "Message Search Unavailable",
-                    &format!(
-                        "<p>{}</p>",
-                        escape_html(public_reason_message(&public_reason))
+            BrowserMessageSearchDecision::Denied { public_reason } => {
+                let (status_code, reason_phrase, title) = match public_reason.as_str() {
+                    "invalid_mailbox" | "invalid_request" => {
+                        (400, "Bad Request", "Invalid Search Request")
+                    }
+                    "not_found" => (404, "Not Found", "Message Search Not Available"),
+                    _ => (503, "Service Unavailable", "Message Search Unavailable"),
+                };
+                HandledHttpResponse {
+                    response: html_response(
+                        status_code,
+                        reason_phrase,
+                        title,
+                        &format!(
+                            "<p>{}</p>",
+                            escape_html(public_reason_message(&public_reason))
+                        ),
                     ),
-                ),
-                audit_events,
-            },
+                    audit_events,
+                }
+            }
         }
     }
 
@@ -631,23 +698,11 @@ where
                 canonical_username,
                 rendered,
             } => {
-                let archive_mailbox_name =
-                    match self.gateway.load_settings(context, &validated_session) {
-                        BrowserSettingsOutcome {
-                            decision: BrowserSettingsDecision::Loaded { settings, .. },
-                            audit_events: settings_audit_events,
-                        } => {
-                            audit_events.extend(settings_audit_events);
-                            settings.archive_mailbox_name
-                        }
-                        BrowserSettingsOutcome {
-                            decision: BrowserSettingsDecision::Denied { .. },
-                            audit_events: settings_audit_events,
-                        } => {
-                            audit_events.extend(settings_audit_events);
-                            None
-                        }
-                    };
+                let archive_mailbox_name = self.validated_archive_mailbox_name(
+                    context,
+                    &validated_session,
+                    &mut audit_events,
+                );
 
                 HandledHttpResponse {
                     response: html_response(
@@ -665,15 +720,22 @@ where
                 }
             }
             BrowserMessageViewDecision::Denied { public_reason } => HandledHttpResponse {
-                response: html_response(
-                    503,
-                    "Service Unavailable",
-                    "Message View Unavailable",
-                    &format!(
-                        "<p>{}</p>",
-                        escape_html(public_reason_message(&public_reason))
-                    ),
-                ),
+                response: {
+                    let (status_code, reason_phrase, title) = match public_reason.as_str() {
+                        "invalid_request" => (400, "Bad Request", "Invalid Message Request"),
+                        "not_found" => (404, "Not Found", "Message Not Found"),
+                        _ => (503, "Service Unavailable", "Message View Unavailable"),
+                    };
+                    html_response(
+                        status_code,
+                        reason_phrase,
+                        title,
+                        &format!(
+                            "<p>{}</p>",
+                            escape_html(public_reason_message(&public_reason))
+                        ),
+                    )
+                },
                 audit_events,
             },
         }

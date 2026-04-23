@@ -20,6 +20,8 @@ The current slice provides:
 - two persisted per-user settings:
   `html_display_preference` and `archive_mailbox_name`
 - explicit defaults when no settings file exists
+- archive mailbox validation against the authenticated user's current mailbox
+  list before a configured shortcut is persisted
 - structured audit events for settings load and update operations
 
 This is intentionally small and reviewable.
@@ -73,7 +75,11 @@ This slice follows these rules:
 
 - settings are session-gated
 - updates require the current per-session CSRF token
+- archive shortcut destinations must be syntactically valid mailbox names and
+  must exist in the authenticated user's mailbox listing at save time
 - settings load failure does not widen browser trust silently
+- stale archive destinations that no longer resolve are hidden from message and
+  mailbox shortcut forms instead of being reused as hidden move targets
 - message rendering falls back safely when settings cannot be loaded
 - settings remain strictly user-facing rather than administrative
 
@@ -89,6 +95,8 @@ This slice now proves that:
   preferences UI
 - per-user rendering preference and archive shortcut destination can be
   persisted safely under the existing state boundary
+- syntactically valid but non-existent archive destinations are rejected with a
+  clear 400-class validation response and are not saved
 - a meaningful user-facing control can be added without widening the mail or
   submission trust boundaries
 - the stored settings can drive real browser-visible rendering and

@@ -82,6 +82,12 @@ The Version 2 candidate must also have current repo-owned evidence for:
 - login throttle enforcement with operator-visible audit evidence
 - send throttle enforcement with operator-visible audit evidence
 - move throttle enforcement with operator-visible audit evidence
+- rejection of non-existent archive shortcut destinations at settings save time
+- rejection of invalid or mismatched message move mailbox/UID tuples without a
+  success-style redirect
+- deterministic search behavior for the exposed browser search forms, with
+  invalid inputs returning 400-class responses and ordinary authenticated
+  search avoiding generic 503 failures
 - helper peer rejection when the caller UID does not match the trusted web
   runtime boundary
 - CSRF rejection on state-changing routes

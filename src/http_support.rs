@@ -139,6 +139,11 @@ pub(crate) fn throttle_store_error_label(error: &LoginThrottleError) -> &'static
 pub(crate) fn public_reason_message(reason: &str) -> &'static str {
     match reason {
         "invalid_credentials" => "The supplied credentials were not accepted.",
+        "invalid_archive_mailbox" => {
+            "The selected archive mailbox does not exist for this account."
+        }
+        "invalid_mailbox" => "The selected mailbox does not exist for this account.",
+        "invalid_message_reference" => "The selected message was not found in that mailbox.",
         "invalid_request" => "The submitted request was not valid.",
         "invalid_second_factor" => "The supplied credentials were not accepted.",
         "too_many_attempts" => "Too many login attempts were observed. Please try again later.",

@@ -591,7 +591,7 @@ mod tests {
 
         fn load_settings(
             &self,
-            _context: &AuthenticationContext,
+            context: &AuthenticationContext,
             validated_session: &ValidatedSession,
         ) -> BrowserSettingsOutcome {
             BrowserSettingsOutcome {
@@ -599,7 +599,14 @@ mod tests {
                     canonical_username: validated_session.record.canonical_username.clone(),
                     settings: BrowserVisibleSettings {
                         html_display_preference: HtmlDisplayPreference::PreferSanitizedHtml,
-                        archive_mailbox_name: Some("Archive/2026".to_string()),
+                        archive_mailbox_name: Some(
+                            if context.user_agent == "Firefox/InvalidArchiveTest" {
+                                "MissingArchive"
+                            } else {
+                                "Archive/2026"
+                            }
+                            .to_string(),
+                        ),
                     },
                 },
                 audit_events: vec![LogEvent::new(
@@ -670,6 +677,12 @@ mod tests {
                         MailboxEntry {
                             name: "Drafts".to_string(),
                         },
+                        MailboxEntry {
+                            name: "Archive/2026".to_string(),
+                        },
+                        MailboxEntry {
+                            name: "Junk".to_string(),
+                        },
                     ],
                 },
                 audit_events: vec![LogEvent::new(
@@ -729,6 +742,19 @@ mod tests {
             query: &str,
         ) -> BrowserMessageSearchOutcome {
             let mailbox_name = mailbox_name.map(str::to_string);
+            if mailbox_name.as_deref() == Some("MissingArchive") {
+                return BrowserMessageSearchOutcome {
+                    decision: BrowserMessageSearchDecision::Denied {
+                        public_reason: "invalid_mailbox".to_string(),
+                    },
+                    audit_events: vec![LogEvent::new(
+                        LogLevel::Warn,
+                        EventCategory::Mailbox,
+                        "stub_message_search_denied",
+                        "stub message search denied",
+                    )],
+                };
+            }
             let results = match mailbox_name.as_deref() {
                 Some(mailbox_name) => vec![MessageSearchResult {
                     mailbox_name: mailbox_name.to_string(),
@@ -937,6 +963,22 @@ mod tests {
             uid: u64,
             destination_mailbox_name: &str,
         ) -> BrowserMessageMoveOutcome {
+            if (source_mailbox_name == "INBOX" && uid == 100156)
+                || (source_mailbox_name == "Junk" && uid == 9)
+            {
+                return BrowserMessageMoveOutcome {
+                    decision: BrowserMessageMoveDecision::Denied {
+                        public_reason: "invalid_message_reference".to_string(),
+                        retry_after_seconds: None,
+                    },
+                    audit_events: vec![LogEvent::new(
+                        LogLevel::Warn,
+                        EventCategory::Mailbox,
+                        "stub_message_move_reference_denied",
+                        "stub message move reference denied",
+                    )],
+                };
+            }
             if destination_mailbox_name == "Locked" {
                 return BrowserMessageMoveOutcome {
                     decision: BrowserMessageMoveDecision::Denied {
@@ -1472,6 +1514,28 @@ mod tests {
     }
 
     #[test]
+    fn search_page_rejects_unknown_mailbox_cleanly() {
+        let response = app().handle_request(
+            &request(
+                "GET",
+                "/search?mailbox=MissingArchive&q=quarterly+report",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                ],
+                "",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 400);
+        assert!(body_text(&response).contains("selected mailbox does not exist"));
+    }
+
+    #[test]
     fn mailboxes_page_renders_global_search_form() {
         let response = app().handle_request(
             &request(
@@ -1628,6 +1692,75 @@ mod tests {
         assert!(response.response.headers.iter().any(|(name, value)| {
             name == "Location" && value == "/mailbox?name=INBOX&moved_to=Archive%2F2026"
         }));
+    }
+
+    #[test]
+    fn message_move_rejects_tampered_invalid_uid_without_success_redirect() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/message/move",
+                &authenticated_same_origin_headers(),
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=100156&destination_mailbox=Junk",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 404);
+        assert!(body_text(&response).contains("selected message was not found"));
+        assert!(!response
+            .response
+            .headers
+            .iter()
+            .any(|(name, value)| name == "Location" && value.contains("moved_to")));
+    }
+
+    #[test]
+    fn message_move_rejects_mismatched_mailbox_uid_tuple() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/message/move",
+                &authenticated_same_origin_headers(),
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=Junk&uid=9&destination_mailbox=INBOX",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 404);
+        assert!(body_text(&response).contains("selected message was not found"));
+    }
+
+    #[test]
+    fn message_move_rejects_non_numeric_uid() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/message/move",
+                &authenticated_same_origin_headers(),
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=abc&destination_mailbox=Junk",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 400);
+        assert!(body_text(&response).contains("A positive IMAP UID is required."));
+    }
+
+    #[test]
+    fn message_move_rejects_empty_destination() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/message/move",
+                &authenticated_same_origin_headers(),
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=9&destination_mailbox=",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 400);
+        assert!(body_text(&response).contains("submitted request was not valid"));
     }
 
     #[test]
@@ -2048,6 +2181,53 @@ mod tests {
 
         assert_eq!(response.response.status_code, 400);
         assert!(body_text(&response).contains("archive mailbox name was not valid"));
+    }
+
+    #[test]
+    fn settings_update_rejects_nonexistent_archive_mailbox_name() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/settings",
+                &authenticated_same_origin_headers(),
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&html_display_preference=prefer_plain_text&archive_mailbox_name=MissingArchive",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 400);
+        assert!(body_text(&response).contains(
+            "The selected archive mailbox does not exist for this account."
+        ));
+        assert!(!response
+            .response
+            .headers
+            .iter()
+            .any(|(name, value)| name == "Location" && value == "/settings?updated=1"));
+    }
+
+    #[test]
+    fn message_view_hides_archive_shortcut_when_setting_target_is_missing() {
+        let response = app().handle_request(
+            &request(
+                "GET",
+                "/message?mailbox=INBOX&uid=9",
+                &[
+                    ("User-Agent", "Firefox/InvalidArchiveTest"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                ],
+                "",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 200);
+        let body = body_text(&response);
+        assert!(!body.contains("name=\"destination_mailbox\" value=\"MissingArchive\""));
+        assert!(body.contains("Set an archive mailbox in Settings"));
     }
 
     #[test]

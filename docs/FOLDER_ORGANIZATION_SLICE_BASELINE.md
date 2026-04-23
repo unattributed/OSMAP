@@ -75,6 +75,9 @@ The current slice keeps risk bounded by:
   mailbox backend is reached
 - validating both mailbox names before backend execution
 - rejecting zero or malformed UIDs
+- resolving the source mailbox, destination mailbox, and source UID against
+  the authenticated user's current mailbox/message state before reporting a
+  move as successful
 - rejecting requests that try to move a message into the same mailbox
 - delegating message movement to Dovecot rather than reimplementing mail
   mutation logic inside OSMAP
@@ -91,8 +94,10 @@ The current validation state is:
    protocol parsing, and helper-backed client execution
 2. browser-route tests cover the message-view move form, settings-backed
    archive shortcut rendering on message and mailbox-list pages, selected
-   mailbox-list archive controls, successful redirects, empty-selection
-   rejection, and source-mailbox success banners
+   mailbox-list archive controls, successful redirects, invalid UID rejection,
+   mismatched mailbox/UID rejection, non-numeric UID rejection,
+   empty-destination rejection, empty-selection rejection, and source-mailbox
+   success banners
 3. live-host mutation proof now exists on `mail.blackbagsecurity.com` under
    `OSMAP_OPENBSD_CONFINEMENT_MODE=enforce` using a disposable validation
    mailbox, a synthetic validated browser session, controlled settings updates,
@@ -103,9 +108,17 @@ That host proof confirms:
 - the browser message-view page exposes the move form on the target host
 - `POST /settings` persists the configured archive mailbox through the real
   browser route
+- `POST /settings` now rejects a syntactically valid but non-existent archive
+  mailbox instead of persisting a shortcut that will fail later
 - the mailbox page and message-view page both expose archive shortcut forms
   that carry the configured archive mailbox value
+- stale stored archive shortcut targets are ignored when the mailbox listing no
+  longer contains that destination, so message views do not emit hidden archive
+  forms pointing at invalid mailboxes
 - `POST /message/move` succeeds through the real browser route
+- `POST /message/move` now re-resolves the source mailbox plus UID tuple at
+  action time and returns a clean 400 or 404 response instead of a success
+  redirect when the tuple is invalid
 - the helper-backed mailbox authority split remains intact under the `_osmap`
   plus `vmail` runtime boundary
 - the controlled message is removed from `INBOX` and appears in `Junk`

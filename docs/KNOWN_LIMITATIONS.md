@@ -40,11 +40,17 @@
 - The implementation now provides a bounded, backend-authoritative browser
   search path across one mailbox or all visible mailboxes, but it does not yet
   provide advanced query ergonomics, sorting controls, or richer search
-  refinement behavior
+  refinement behavior. The Version 2 browser surface must keep that existing
+  search route operational or fail deterministically for invalid inputs; it
+  must not expose a visible search form that leads to a generic runtime 503 for
+  ordinary authenticated search.
 - The implementation now provides a first one-message move path between
   existing mailboxes plus settings-backed archive shortcuts, including bounded
   selected-message archive from mailbox-list pages, but it does not yet provide
-  general bulk move to arbitrary destinations or archive mailbox discovery
+  general bulk move to arbitrary destinations or archive mailbox discovery. The
+  current Version 2 move/archive surface validates configured archive targets
+  against the authenticated user's mailbox list and re-resolves the source
+  mailbox plus UID before reporting move success.
 - The implementation now provides a first browser-visible session list and
   self-service revocation path, but it does not yet provide richer device
   labeling or anomaly-oriented session analysis
@@ -124,3 +130,20 @@
   closeout still depends on one authoritative release gate, one authoritative
   host-side closeout wrapper path, and consistent status docs rather than on
   widening the implementation surface
+
+## Version 3 Backlog From April 2026 WSTG
+
+- TLS 1.2 CBC suite removal is real hardening work, but it belongs to Version 3
+  because it is an edge and compatibility decision outside the bounded Version
+  2 browser workflow fixes.
+- Concurrent-session caps, device limits, and richer session anomaly handling
+  remain Version 3 policy work. Version 2 keeps session visibility and
+  self-service revocation, while the WSTG observation did not show a confirmed
+  vulnerability in allowing more than one active session.
+- The session revoke race observation remains Version 3 investigation because
+  the reported evidence used a shared client cookie jar and was not a confirmed
+  server-side flaw.
+- Richer search ergonomics, archive mailbox discovery, general bulk move, and
+  move-history UI remain Version 3 workflow refinement. Version 2 only needs
+  the exposed search, archive, and one-message move workflows to be correct,
+  bounded, and non-misleading.

@@ -4,6 +4,15 @@ use crate::config::LogLevel;
 use crate::logging::EventCategory;
 use crate::mailbox::validate_message_search_query;
 
+fn mailbox_is_browser_visible(mailbox_name: &str) -> bool {
+    matches!(mailbox_name, "INBOX" | "Drafts" | "Junk" | "Sent" | "Trash")
+        || mailbox_name.starts_with("INBOX.")
+}
+
+fn mailbox_list_contains(mailboxes: &[MailboxEntry], mailbox_name: &str) -> bool {
+    mailboxes.iter().any(|mailbox| mailbox.name == mailbox_name)
+}
+
 impl RuntimeBrowserGateway {
     /// Builds the current file-backed submission-throttle service.
     pub(super) fn build_submission_throttle_service(
@@ -200,7 +209,10 @@ impl RuntimeBrowserGateway {
 
             let search_service = MessageSearchService::new(self.build_message_search_backend());
             let mut aggregated_results = Vec::new();
-            for mailbox in mailboxes {
+            for mailbox in mailboxes
+                .into_iter()
+                .filter(|mailbox| mailbox_is_browser_visible(&mailbox.name))
+            {
                 let request =
                     match MessageSearchRequest::new(search_policy, mailbox.name.clone(), &query) {
                         Ok(request) => request,
@@ -263,6 +275,37 @@ impl RuntimeBrowserGateway {
             };
         };
 
+        let mailbox_outcome = MailboxListingService::new(self.build_mailbox_list_backend())
+            .list_for_validated_session(context, validated_session);
+        let mut audit_events = vec![mailbox_outcome.audit_event];
+        let mailboxes = match mailbox_outcome.decision {
+            MailboxListingDecision::Listed { mailboxes, .. } => mailboxes,
+            MailboxListingDecision::Denied { public_reason } => {
+                return BrowserMessageSearchOutcome {
+                    decision: BrowserMessageSearchDecision::Denied {
+                        public_reason: public_reason.as_str().to_string(),
+                    },
+                    audit_events,
+                };
+            }
+        };
+        if !mailbox_list_contains(&mailboxes, mailbox_name) {
+            audit_events.push(
+                build_http_warning_event(
+                    "message_search_mailbox_rejected",
+                    "message search mailbox did not match mailbox listing",
+                    context,
+                )
+                .with_field("mailbox_name", mailbox_name.to_string()),
+            );
+            return BrowserMessageSearchOutcome {
+                decision: BrowserMessageSearchDecision::Denied {
+                    public_reason: "invalid_mailbox".to_string(),
+                },
+                audit_events,
+            };
+        }
+
         let request = match MessageSearchRequest::new(search_policy, mailbox_name, &query) {
             Ok(request) => request,
             Err(error) => {
@@ -270,12 +313,17 @@ impl RuntimeBrowserGateway {
                     decision: BrowserMessageSearchDecision::Denied {
                         public_reason: "invalid_request".to_string(),
                     },
-                    audit_events: vec![build_http_warning_event(
-                        "message_search_request_rejected",
-                        "message search request validation failed",
-                        context,
-                    )
-                    .with_field("reason", error.reason)],
+                    audit_events: {
+                        audit_events.push(
+                            build_http_warning_event(
+                                "message_search_request_rejected",
+                                "message search request validation failed",
+                                context,
+                            )
+                            .with_field("reason", error.reason),
+                        );
+                        audit_events
+                    },
                 };
             }
         };
@@ -297,13 +345,19 @@ impl RuntimeBrowserGateway {
                     query,
                     results,
                 },
-                audit_events: vec![outcome.audit_event],
+                audit_events: {
+                    audit_events.push(outcome.audit_event);
+                    audit_events
+                },
             },
             MessageSearchDecision::Denied { public_reason } => BrowserMessageSearchOutcome {
                 decision: BrowserMessageSearchDecision::Denied {
                     public_reason: public_reason.as_str().to_string(),
                 },
-                audit_events: vec![outcome.audit_event],
+                audit_events: {
+                    audit_events.push(outcome.audit_event);
+                    audit_events
+                },
             },
         }
     }
@@ -696,6 +750,106 @@ impl RuntimeBrowserGateway {
                 context,
                 &error,
             )),
+        }
+
+        let mailbox_outcome = MailboxListingService::new(self.build_mailbox_list_backend())
+            .list_for_validated_session(context, validated_session);
+        audit_events.push(mailbox_outcome.audit_event);
+        let mailboxes = match mailbox_outcome.decision {
+            MailboxListingDecision::Listed { mailboxes, .. } => mailboxes,
+            MailboxListingDecision::Denied { public_reason } => {
+                return BrowserMessageMoveOutcome {
+                    decision: BrowserMessageMoveDecision::Denied {
+                        public_reason: public_reason.as_str().to_string(),
+                        retry_after_seconds: None,
+                    },
+                    audit_events,
+                };
+            }
+        };
+
+        if !mailbox_list_contains(&mailboxes, &request.source_mailbox_name)
+            || !mailbox_list_contains(&mailboxes, &request.destination_mailbox_name)
+        {
+            audit_events.push(
+                build_http_warning_event(
+                    "message_move_mailbox_rejected",
+                    "message move mailbox did not match mailbox listing",
+                    context,
+                )
+                .with_field("source_mailbox_name", request.source_mailbox_name.clone())
+                .with_field(
+                    "destination_mailbox_name",
+                    request.destination_mailbox_name.clone(),
+                ),
+            );
+            return BrowserMessageMoveOutcome {
+                decision: BrowserMessageMoveDecision::Denied {
+                    public_reason: "invalid_mailbox".to_string(),
+                    retry_after_seconds: None,
+                },
+                audit_events,
+            };
+        }
+
+        let view_request = match MessageViewRequest::new(
+            MessageViewPolicy::default(),
+            &request.source_mailbox_name,
+            request.uid,
+        ) {
+            Ok(view_request) => view_request,
+            Err(error) => {
+                audit_events.push(
+                    build_http_warning_event(
+                        "message_move_reference_rejected",
+                        "message move reference validation failed",
+                        context,
+                    )
+                    .with_field("reason", error.reason),
+                );
+                return BrowserMessageMoveOutcome {
+                    decision: BrowserMessageMoveDecision::Denied {
+                        public_reason: "invalid_request".to_string(),
+                        retry_after_seconds: None,
+                    },
+                    audit_events,
+                };
+            }
+        };
+        let view_outcome = MessageViewService::new(self.build_message_view_backend())
+            .fetch_for_validated_session(context, validated_session, &view_request);
+        audit_events.push(view_outcome.audit_event);
+        match view_outcome.decision {
+            MessageViewDecision::Retrieved { message, .. } => {
+                if message.mailbox_name != request.source_mailbox_name || message.uid != request.uid
+                {
+                    audit_events.push(
+                        build_http_warning_event(
+                            "message_move_reference_rejected",
+                            "message move reference did not match fetched message",
+                            context,
+                        )
+                        .with_field("source_mailbox_name", request.source_mailbox_name.clone())
+                        .with_field("uid", request.uid.to_string()),
+                    );
+                    return BrowserMessageMoveOutcome {
+                        decision: BrowserMessageMoveDecision::Denied {
+                            public_reason: "invalid_message_reference".to_string(),
+                            retry_after_seconds: None,
+                        },
+                        audit_events,
+                    };
+                }
+            }
+            MessageViewDecision::Denied { .. } => {
+                return BrowserMessageMoveOutcome {
+                    decision: BrowserMessageMoveDecision::Denied {
+                        public_reason: "invalid_message_reference".to_string(),
+                        retry_after_seconds: None,
+                    },
+                    audit_events,
+                };
+            }
         }
 
         let outcome = MessageMoveService::new(self.build_message_move_backend())

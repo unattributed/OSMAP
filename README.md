@@ -189,6 +189,12 @@ Each phase produces formal outputs to support traceability and auditability.
   archive shortcut forms with that configured destination, and a controlled
   message is then archived from `INBOX` to `Junk` through the existing
   `POST /message/move` route.
+- The April 2026 WSTG remediation pass now closes the Version 2 workflow
+  defects found in that exposed browser slice: archive mailbox settings are
+  checked against the authenticated mailbox list before persistence, stale
+  archive shortcuts are hidden, message moves re-resolve the source mailbox and
+  UID before reporting success, and exposed search forms no longer point at a
+  generic 503 path for ordinary authenticated use.
 - Mailbox-list pages now also expose bounded selected-message archive controls
   when an archive mailbox is configured. The selected archive route reuses the
   same message-move backend once per selected UID instead of adding broader

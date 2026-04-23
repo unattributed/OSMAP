@@ -116,8 +116,17 @@ following are true:
 - broader folder ergonomics beyond what pilot users actually require
 - richer search behavior beyond ordinary browser mail use
 - richer session or device intelligence beyond first useful security visibility
+- TLS cipher-suite hardening beyond the existing exposure gate, including
+  removing TLS 1.2 CBC suites after compatibility review
 - preview-heavy attachment workflows
 - broader settings or personalization surfaces
 - helper-side opaque identity redesign beyond the current trusted-runtime split
 - packaging or ports integration beyond what the current operator deployment
   guidance already proves
+
+The April 2026 WSTG remediation pass treats invalid archive settings,
+misleading move success redirects, and exposed broken search as Version 2
+defects because they affect current in-scope browser workflows. The same pass
+defers TLS CBC cleanup, concurrent-session caps, and unconfirmed session-race
+analysis to Version 3 because they are real hardening or policy topics outside
+the current bounded workflow slice.

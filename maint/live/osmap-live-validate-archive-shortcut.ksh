@@ -40,6 +40,7 @@ AUTH_SOCKET_PATH="${OSMAP_DOVEADM_AUTH_SOCKET_PATH:-/var/run/osmap-auth}"
 TRUSTED_WEB_RUNTIME_UID="${OSMAP_TRUSTED_WEB_RUNTIME_UID:-$(id -u _osmap)}"
 USERDB_SOCKET_PATH="${OSMAP_DOVEADM_USERDB_SOCKET_PATH:-/var/run/osmap-userdb}"
 ARCHIVE_MAILBOX="${OSMAP_ARCHIVE_SHORTCUT_MAILBOX:-Junk}"
+INVALID_ARCHIVE_MAILBOX="${OSMAP_INVALID_ARCHIVE_SHORTCUT_MAILBOX:-OSMAP-Missing-Archive-$$}"
 KEEP_WORK_ROOT="${OSMAP_KEEP_WORK_ROOT:-0}"
 
 log() {
@@ -327,6 +328,22 @@ response_body() {
 wait_for_helper_socket
 wait_for_healthz
 
+log "verifying non-existent archive mailbox is rejected at settings save time"
+INVALID_SETTINGS_BODY="csrf_token=${CSRF_TOKEN}&html_display_preference=prefer_sanitized_html&archive_mailbox_name=${INVALID_ARCHIVE_MAILBOX}"
+INVALID_SETTINGS_RESPONSE="$(request_post "/settings" "${INVALID_SETTINGS_BODY}")"
+INVALID_SETTINGS_STATUS="$(status_line "${INVALID_SETTINGS_RESPONSE}")"
+
+[ "${INVALID_SETTINGS_STATUS}" = "HTTP/1.1 400 Bad Request" ] || {
+  log "invalid archive mailbox settings update was not rejected"
+  printf '%s\n' "${INVALID_SETTINGS_RESPONSE}"
+  exit 1
+}
+response_body "${INVALID_SETTINGS_RESPONSE}" | grep -Fq "selected archive mailbox does not exist" || {
+  log "invalid archive mailbox rejection did not include expected message"
+  printf '%s\n' "${INVALID_SETTINGS_RESPONSE}"
+  exit 1
+}
+
 log "configuring archive shortcut through the browser settings route"
 SETTINGS_BODY="csrf_token=${CSRF_TOKEN}&html_display_preference=prefer_sanitized_html&archive_mailbox_name=${ARCHIVE_MAILBOX}"
 SETTINGS_RESPONSE="$(request_post "/settings" "${SETTINGS_BODY}")"
@@ -400,6 +417,29 @@ printf '%s\n' "${MESSAGE_BODY}" | grep -Fq "Archive Message" || {
 printf '%s\n' "${MESSAGE_BODY}" | grep -Fq "name=\"destination_mailbox\" value=\"${ARCHIVE_MAILBOX}\"" || {
   log "message view did not render the configured archive mailbox in shortcut form"
   printf '%s\n' "${MESSAGE_RESPONSE}"
+  exit 1
+}
+
+log "verifying tampered invalid UID move does not return a success redirect"
+INVALID_MOVE_UID="$((uid + 1000000000))"
+INVALID_MOVE_BODY="csrf_token=${CSRF_TOKEN}&mailbox=INBOX&uid=${INVALID_MOVE_UID}&destination_mailbox=${ARCHIVE_MAILBOX}"
+INVALID_MOVE_RESPONSE="$(request_post "/message/move" "${INVALID_MOVE_BODY}")"
+INVALID_MOVE_STATUS="$(status_line "${INVALID_MOVE_RESPONSE}")"
+INVALID_MOVE_LOCATION="$(header_value "${INVALID_MOVE_RESPONSE}" "Location")"
+
+[ "${INVALID_MOVE_STATUS}" = "HTTP/1.1 404 Not Found" ] || {
+  log "invalid UID move was not rejected with 404"
+  printf '%s\n' "${INVALID_MOVE_RESPONSE}"
+  exit 1
+}
+[ -z "${INVALID_MOVE_LOCATION}" ] || {
+  log "invalid UID move unexpectedly returned a Location header"
+  printf '%s\n' "${INVALID_MOVE_RESPONSE}"
+  exit 1
+}
+response_body "${INVALID_MOVE_RESPONSE}" | grep -Fq "selected message was not found" || {
+  log "invalid UID move rejection did not include expected message"
+  printf '%s\n' "${INVALID_MOVE_RESPONSE}"
   exit 1
 }
 

@@ -6,6 +6,10 @@
 use super::*;
 use crate::settings::parse_archive_mailbox_name;
 
+fn mailbox_name_exists(mailboxes: &[MailboxEntry], mailbox_name: &str) -> bool {
+    mailboxes.iter().any(|mailbox| mailbox.name == mailbox_name)
+}
+
 impl<G> BrowserApp<G>
 where
     G: BrowserGateway,
@@ -183,6 +187,54 @@ where
                 };
             }
         };
+
+        if let Some(archive_mailbox_name) = archive_mailbox_name.as_deref() {
+            let mailbox_outcome = self.gateway.list_mailboxes(context, &validated_session);
+            audit_events.extend(mailbox_outcome.audit_events);
+
+            match mailbox_outcome.decision {
+                BrowserMailboxDecision::Listed { mailboxes, .. } => {
+                    if !mailbox_name_exists(&mailboxes, archive_mailbox_name) {
+                        return HandledHttpResponse {
+                            response: html_response(
+                                400,
+                                "Bad Request",
+                                "Invalid Settings Request",
+                                "<p>The selected archive mailbox does not exist for this account.</p>",
+                            ),
+                            audit_events: {
+                                audit_events.push(
+                                    build_http_warning_event(
+                                        "http_settings_archive_mailbox_missing",
+                                        "settings update archive mailbox did not match mailbox listing",
+                                        context,
+                                    )
+                                    .with_field(
+                                        "archive_mailbox_name",
+                                        archive_mailbox_name.to_string(),
+                                    ),
+                                );
+                                audit_events
+                            },
+                        };
+                    }
+                }
+                BrowserMailboxDecision::Denied { public_reason } => {
+                    return HandledHttpResponse {
+                        response: html_response(
+                            503,
+                            "Service Unavailable",
+                            "Settings Update Failed",
+                            &format!(
+                                "<p>{}</p>",
+                                escape_html(public_reason_message(&public_reason))
+                            ),
+                        ),
+                        audit_events,
+                    };
+                }
+            }
+        }
 
         let outcome = self.gateway.update_settings(
             context,
