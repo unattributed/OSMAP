@@ -4929,3 +4929,24 @@ starts the same isolated `_osmap` plus `vmail` enforced runtime, then proves:
 
 This keeps the Version 2 readiness wrapper step name stable while making the
 proof match the current browser security surface.
+
+### Tighten the Version 2 acceptance gate around current proof
+
+After the session-surface proof was extended and the
+`safe-html-attachment-download` step became part of the full readiness wrapper,
+`docs/V2_ACCEPTANCE_CRITERIA.md` needed to be explicit about the current
+authoritative proof set rather than relying on operators to infer it from the
+wrapper.
+
+The acceptance criteria now list the twelve current readiness steps and call
+out the newer positive and negative proof requirements:
+
+- safe HTML rendering plus bounded forced-download retrieval for surfaced
+  inline-image attachment metadata
+- session listing, one-session revoke, revoke-other, revoke-all,
+  idle-timeout revocation, and logout
+- automatic persisted revocation for expired or inactive browser sessions
+
+`docs/V2_PILOT_REHEARSAL_SOP.md` now matches that gate by including
+`safe-html-attachment-download` in the standard host-side rehearsal command and
+by showing the current twelve-step report shape.

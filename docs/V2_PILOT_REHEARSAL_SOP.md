@@ -63,6 +63,7 @@ sh ./maint/live/osmap-run-v2-readiness-with-temporary-validation-password.sh \
   --report "$HOME/osmap-v2-readiness-report.txt" \
   security-check \
   login-send \
+  safe-html-attachment-download \
   login-failure-normalization \
   all-mailbox-search \
   archive-shortcut \
@@ -140,10 +141,13 @@ look like this shape:
 ```text
 osmap_v2_readiness_result=passed
 project_root=/home/foo/OSMAP
-step_count=11
+step_count=12
+service_guard_result=passed
+service_guard_report=/home/foo/osmap-v2-readiness-report.txt.service-enablement
 steps=
 security-check=passed
 login-send=passed
+safe-html-attachment-download=passed
 login-failure-normalization=passed
 all-mailbox-search=passed
 archive-shortcut=passed

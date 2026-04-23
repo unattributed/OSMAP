@@ -18,6 +18,21 @@ are the authoritative operator entrypoints for that gate.
 For the short operator procedure around routine host-side and off-host
 Version 2 rehearsal runs, see `V2_PILOT_REHEARSAL_SOP.md`.
 
+The current authoritative readiness step set is:
+
+- `security-check`
+- `login-send`
+- `safe-html-attachment-download`
+- `login-failure-normalization`
+- `all-mailbox-search`
+- `archive-shortcut`
+- `session-surface`
+- `send-throttle`
+- `move-throttle`
+- `helper-peer-auth`
+- `request-guardrails`
+- `mailbox-backend-unavailable`
+
 ## Version 2 Release Gate
 
 Version 2 is acceptable only when all of the following are true:
@@ -71,8 +86,11 @@ The Version 2 candidate must have current repo-owned evidence on
 - bounded search across one mailbox and all visible mailboxes
 - browser compose/send through the existing submission path
 - one-message move and the archive shortcut
-- session listing, revocation, and logout
+- session listing, one-session revocation, revoke-other-sessions,
+  revoke-all-sessions, idle-timeout revocation, and logout
 - safe HTML rendering through the narrow sanitizer path
+- inline image metadata surfacing without inline image rendering, plus bounded
+  forced-download retrieval for the surfaced attachment part
 
 ## Required Negative-Path And Abuse-Path Proof
 
@@ -82,6 +100,7 @@ The Version 2 candidate must also have current repo-owned evidence for:
 - login throttle enforcement with operator-visible audit evidence
 - send throttle enforcement with operator-visible audit evidence
 - move throttle enforcement with operator-visible audit evidence
+- automatic persisted revocation for expired or inactive browser sessions
 - rejection of non-existent archive shortcut destinations at settings save time
 - rejection of invalid or mismatched message move mailbox/UID tuples without a
   success-style redirect
