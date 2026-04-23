@@ -2196,9 +2196,8 @@ mod tests {
         );
 
         assert_eq!(response.response.status_code, 400);
-        assert!(body_text(&response).contains(
-            "The selected archive mailbox does not exist for this account."
-        ));
+        assert!(body_text(&response)
+            .contains("The selected archive mailbox does not exist for this account."));
         assert!(!response
             .response
             .headers

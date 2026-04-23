@@ -345,9 +345,7 @@ where
                     "invalid_mailbox" | "invalid_request" => {
                         (400, "Bad Request", "Invalid Message Move Request")
                     }
-                    "invalid_message_reference" => {
-                        (404, "Not Found", "Message Move Not Available")
-                    }
+                    "invalid_message_reference" => (404, "Not Found", "Message Move Not Available"),
                     "not_found" => (404, "Not Found", "Message Move Not Available"),
                     TOO_MANY_MESSAGE_MOVES_PUBLIC_REASON => {
                         (429, "Too Many Requests", "Message Move Temporarily Limited")
