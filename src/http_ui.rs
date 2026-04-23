@@ -515,7 +515,26 @@ pub(crate) fn render_settings_page(model: &SettingsPageModel<'_>) -> String {
     let archive_mailbox_name = model.archive_mailbox_name.unwrap_or("");
 
     format!(
-        "<nav><a href=\"/mailboxes\">Mailboxes</a> | <a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav><h1>Settings</h1><p>Signed in as <strong>{}</strong>.</p>{}{}<p class=\"muted\">This settings slice stays intentionally small. It controls HTML display preference and one optional archive mailbox shortcut without turning OSMAP into a broad preference UI.</p><form method=\"post\" action=\"/settings\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><fieldset><legend>HTML Message Display</legend><label><input type=\"radio\" name=\"html_display_preference\" value=\"prefer_sanitized_html\"{}> Prefer sanitized HTML when available</label><label><input type=\"radio\" name=\"html_display_preference\" value=\"prefer_plain_text\"{}> Prefer plain text when available</label></fieldset><fieldset><legend>Archive Shortcut</legend><label>Archive Mailbox<input type=\"text\" name=\"archive_mailbox_name\" value=\"{}\" autocomplete=\"off\"></label><p class=\"muted\">Leave this blank to keep only the manual move flow.</p></fieldset><button type=\"submit\">Save Settings</button></form>",
+        concat!(
+            "<nav><a href=\"/mailboxes\">Mailboxes</a> | <a href=\"/compose\">Compose</a> | <a href=\"/sessions\">Sessions</a> | <form method=\"post\" action=\"/logout\" style=\"display:inline\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form></nav>",
+            "<h1>Settings</h1><p>Signed in as <strong>{}</strong>.</p>{}{}",
+            "<p class=\"muted\">This settings slice stays intentionally small. It controls HTML display preference and one optional archive mailbox shortcut without turning OSMAP into a broad preference UI.</p>",
+            "<form method=\"post\" action=\"/settings\" style=\"max-width:52rem;display:grid;gap:0.75rem\">",
+            "<input type=\"hidden\" name=\"csrf_token\" value=\"{}\">",
+            "<fieldset style=\"margin:0;padding:0.85rem 1rem;display:grid;gap:0.65rem;border:1px solid #999\">",
+            "<legend>HTML Message Display</legend>",
+            "<div style=\"display:flex;align-items:center;gap:0.5rem\"><input id=\"html-display-prefer-sanitized\" type=\"radio\" name=\"html_display_preference\" value=\"prefer_sanitized_html\"{}><label for=\"html-display-prefer-sanitized\">Prefer sanitized HTML when available</label></div>",
+            "<div style=\"display:flex;align-items:center;gap:0.5rem\"><input id=\"html-display-prefer-plain\" type=\"radio\" name=\"html_display_preference\" value=\"prefer_plain_text\"{}><label for=\"html-display-prefer-plain\">Prefer plain text when available</label></div>",
+            "</fieldset>",
+            "<fieldset style=\"margin:0;padding:0.85rem 1rem;display:grid;gap:0.65rem;border:1px solid #999\">",
+            "<legend>Archive Shortcut</legend>",
+            "<label for=\"archive-mailbox-name\">Archive Mailbox</label>",
+            "<input id=\"archive-mailbox-name\" type=\"text\" name=\"archive_mailbox_name\" value=\"{}\" autocomplete=\"off\" style=\"box-sizing:border-box;width:100%;max-width:44rem\">",
+            "<p class=\"muted\" style=\"margin:0\">Leave this blank to keep only the manual move flow.</p>",
+            "</fieldset>",
+            "<div><button type=\"submit\">Save Settings</button></div>",
+            "</form>"
+        ),
         escape_html(model.csrf_token),
         escape_html(model.canonical_username),
         success_banner,

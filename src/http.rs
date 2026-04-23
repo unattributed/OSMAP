@@ -1968,7 +1968,11 @@ mod tests {
         let body = body_text(&response);
         assert!(body.contains("<h1>Settings</h1>"));
         assert!(body.contains("prefer_sanitized_html"));
+        assert!(body.contains("id=\"html-display-prefer-sanitized\""));
+        assert!(body.contains("for=\"html-display-prefer-sanitized\""));
         assert!(body.contains("name=\"archive_mailbox_name\""));
+        assert!(body.contains("id=\"archive-mailbox-name\""));
+        assert!(body.contains("max-width:52rem"));
         assert!(body.contains("value=\"Archive/2026\""));
         assert!(body.contains("Save Settings"));
     }
