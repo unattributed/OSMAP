@@ -5,9 +5,10 @@
 # This script is intended to run on a host like mail.blackbagsecurity.com where
 # `doas -u _osmap` is available. It builds the current OSMAP tree, starts an
 # isolated enforced browser runtime with a synthetic persisted session store,
-# verifies `/sessions`, revokes a non-current session through the browser route,
-# then logs out the current session and confirms the cookie and persisted state
-# are both invalidated.
+# verifies `/sessions`, proves idle timeout revocation, revokes one
+# non-current session, revokes all other sessions, logs out the current
+# session, then proves the revoke-all-sessions control clears the current
+# browser session too.
 
 set -eu
 
@@ -34,12 +35,17 @@ HELPER_SOCKET_PATH="${HELPER_RUNTIME_DIR}/mailbox-helper.sock"
 SESSIONS_RESPONSE_PATH="${WORK_ROOT}/sessions-response.txt"
 SESSIONS_REVOKED_RESPONSE_PATH="${WORK_ROOT}/sessions-revoked-response.txt"
 REVOKE_RESPONSE_PATH="${WORK_ROOT}/revoke-response.txt"
+BULK_REVOKE_RESPONSE_PATH="${WORK_ROOT}/bulk-revoke-response.txt"
 LOGOUT_RESPONSE_PATH="${WORK_ROOT}/logout-response.txt"
+REVOKE_ALL_RESPONSE_PATH="${WORK_ROOT}/revoke-all-response.txt"
 STALE_RESPONSE_PATH="${WORK_ROOT}/stale-sessions-response.txt"
 LISTEN_PORT="${OSMAP_LIVE_SESSION_SURFACE_PORT:-}"
 VALIDATION_USER="${OSMAP_VALIDATION_USER:-osmap-helper-validation@blackbagsecurity.com}"
 SESSION_TOKEN="${OSMAP_LIVE_SESSION_TOKEN:-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa}"
 OTHER_SESSION_ID="${OSMAP_LIVE_OTHER_SESSION_ID:-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb}"
+BULK_OTHER_SESSION_ID="${OSMAP_LIVE_BULK_OTHER_SESSION_ID:-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd}"
+IDLE_SESSION_ID="${OSMAP_LIVE_IDLE_SESSION_ID:-eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee}"
+REVOKE_ALL_SESSION_TOKEN="${OSMAP_LIVE_REVOKE_ALL_SESSION_TOKEN:-ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff}"
 USER_AGENT="osmap-live-session-surface"
 AUTH_SOCKET_PATH="${OSMAP_DOVEADM_AUTH_SOCKET_PATH:-/var/run/osmap-auth}"
 TRUSTED_WEB_RUNTIME_UID="${OSMAP_TRUSTED_WEB_RUNTIME_UID:-$(id -u _osmap)}"
@@ -111,26 +117,74 @@ if [ "${#SESSION_TOKEN}" -ne 64 ]; then
   exit 1
 fi
 
-case "${OTHER_SESSION_ID}" in
+for session_id_value in "${OTHER_SESSION_ID}" "${BULK_OTHER_SESSION_ID}" "${IDLE_SESSION_ID}"
+do
+  case "${session_id_value}" in
+    [0-9a-fA-F][0-9a-fA-F]*)
+      ;;
+    *)
+      log "synthetic session id must be hex"
+      exit 1
+      ;;
+  esac
+
+  if [ "${#session_id_value}" -ne 64 ]; then
+    log "synthetic session id must be exactly 64 hex characters"
+    exit 1
+  fi
+done
+
+case "${REVOKE_ALL_SESSION_TOKEN}" in
   [0-9a-fA-F][0-9a-fA-F]*)
     ;;
   *)
-    log "other session id must be hex"
+    log "revoke-all session token must be hex"
     exit 1
     ;;
 esac
 
-if [ "${#OTHER_SESSION_ID}" -ne 64 ]; then
-  log "other session id must be exactly 64 hex characters"
+if [ "${#REVOKE_ALL_SESSION_TOKEN}" -ne 64 ]; then
+  log "revoke-all session token must be exactly 64 hex characters"
   exit 1
 fi
 
 CURRENT_SESSION_ID="$(printf 'session-id:%s' "${SESSION_TOKEN}" | sha256 -q)"
 CSRF_TOKEN="$(printf 'csrf:%s' "${SESSION_TOKEN}" | sha256 -q)"
+REVOKE_ALL_SESSION_ID="$(printf 'session-id:%s' "${REVOKE_ALL_SESSION_TOKEN}" | sha256 -q)"
+REVOKE_ALL_CSRF_TOKEN="$(printf 'csrf:%s' "${REVOKE_ALL_SESSION_TOKEN}" | sha256 -q)"
 NOW="$(date +%s)"
 EXPIRES_AT="$((NOW + 3600))"
 OTHER_ISSUED_AT="$((NOW - 120))"
 OTHER_LAST_SEEN_AT="$((NOW - 30))"
+BULK_OTHER_ISSUED_AT="$((NOW - 180))"
+BULK_OTHER_LAST_SEEN_AT="$((NOW - 40))"
+IDLE_ISSUED_AT="$((NOW - 240))"
+IDLE_LAST_SEEN_AT="$((NOW - 120))"
+
+write_session_record() {
+  session_id="$1"
+  csrf_token="$2"
+  issued_at="$3"
+  expires_at="$4"
+  last_seen_at="$5"
+  remote_addr="$6"
+  user_agent="$7"
+
+  doas sh -c "cat > '${SESSION_DIR}/${session_id}.session' <<'EOF'
+session_id=${session_id}
+csrf_token=${csrf_token}
+canonical_username=${VALIDATION_USER}
+issued_at=${issued_at}
+expires_at=${expires_at}
+last_seen_at=${last_seen_at}
+revoked_at=
+remote_addr=${remote_addr}
+user_agent=${user_agent}
+factor=totp
+EOF
+chmod 600 '${SESSION_DIR}/${session_id}.session'
+chown _osmap:_osmap '${SESSION_DIR}/${session_id}.session'"
+}
 
 log "preparing isolated live validation root under ${WORK_ROOT}"
 doas rm -rf "${WORK_ROOT}"
@@ -156,35 +210,10 @@ TMPDIR="${TMPDIR_PATH}" \
 doas install -o _osmap -g _osmap -m 755 "${CARGO_TARGET_DIR_PATH}/debug/osmap" "${BIN_PATH}"
 
 log "writing synthetic session records"
-doas sh -c "cat > '${SESSION_DIR}/${CURRENT_SESSION_ID}.session' <<'EOF'
-session_id=${CURRENT_SESSION_ID}
-csrf_token=${CSRF_TOKEN}
-canonical_username=${VALIDATION_USER}
-issued_at=${NOW}
-expires_at=${EXPIRES_AT}
-last_seen_at=${NOW}
-revoked_at=
-remote_addr=127.0.0.1
-user_agent=${USER_AGENT}
-factor=totp
-EOF
-chmod 600 '${SESSION_DIR}/${CURRENT_SESSION_ID}.session'
-chown _osmap:_osmap '${SESSION_DIR}/${CURRENT_SESSION_ID}.session'"
-
-doas sh -c "cat > '${SESSION_DIR}/${OTHER_SESSION_ID}.session' <<'EOF'
-session_id=${OTHER_SESSION_ID}
-csrf_token=cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-canonical_username=${VALIDATION_USER}
-issued_at=${OTHER_ISSUED_AT}
-expires_at=${EXPIRES_AT}
-last_seen_at=${OTHER_LAST_SEEN_AT}
-revoked_at=
-remote_addr=203.0.113.9
-user_agent=Firefox/Other
-factor=totp
-EOF
-chmod 600 '${SESSION_DIR}/${OTHER_SESSION_ID}.session'
-chown _osmap:_osmap '${SESSION_DIR}/${OTHER_SESSION_ID}.session'"
+write_session_record "${CURRENT_SESSION_ID}" "${CSRF_TOKEN}" "${NOW}" "${EXPIRES_AT}" "${NOW}" "127.0.0.1" "${USER_AGENT}"
+write_session_record "${OTHER_SESSION_ID}" "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc" "${OTHER_ISSUED_AT}" "${EXPIRES_AT}" "${OTHER_LAST_SEEN_AT}" "203.0.113.9" "Firefox/Other"
+write_session_record "${BULK_OTHER_SESSION_ID}" "1111111111111111111111111111111111111111111111111111111111111111" "${BULK_OTHER_ISSUED_AT}" "${EXPIRES_AT}" "${BULK_OTHER_LAST_SEEN_AT}" "203.0.113.10" "Firefox/BulkOther"
+write_session_record "${IDLE_SESSION_ID}" "2222222222222222222222222222222222222222222222222222222222222222" "${IDLE_ISSUED_AT}" "${EXPIRES_AT}" "${IDLE_LAST_SEEN_AT}" "203.0.113.11" "Firefox/Idle"
 
 log "starting enforced mailbox helper as vmail"
 doas -u vmail sh -c "
@@ -243,6 +272,7 @@ doas -u _osmap sh -c "
     OSMAP_MAILBOX_HELPER_SOCKET_PATH='${HELPER_SOCKET_PATH}' \
     OSMAP_LOG_LEVEL=info \
     OSMAP_SESSION_LIFETIME_SECS=3600 \
+    OSMAP_SESSION_IDLE_TIMEOUT_SECS=60 \
     OSMAP_OPENBSD_CONFINEMENT_MODE=enforce \
     '${BIN_PATH}' >'${LOG_PATH}' 2>&1
 " &
@@ -357,9 +387,36 @@ printf '%s\n' "${SESSIONS_BODY}" | grep -Fq "Revoke This Session" || {
   printf '%s\n' "${SESSIONS_RESPONSE}"
   exit 1
 }
+printf '%s\n' "${SESSIONS_BODY}" | grep -Fq "Revoke Other Sessions" || {
+  log "/sessions did not render revoke-other-sessions action"
+  printf '%s\n' "${SESSIONS_RESPONSE}"
+  exit 1
+}
+printf '%s\n' "${SESSIONS_BODY}" | grep -Fq "Revoke All Sessions" || {
+  log "/sessions did not render revoke-all-sessions action"
+  printf '%s\n' "${SESSIONS_RESPONSE}"
+  exit 1
+}
+printf '%s\n' "${SESSIONS_BODY}" | grep -Fq "Idle timeout:</strong> 60 seconds" || {
+  log "/sessions did not render configured idle timeout"
+  printf '%s\n' "${SESSIONS_RESPONSE}"
+  exit 1
+}
+printf '%s\n' "${SESSIONS_BODY}" | grep -Fq "Absolute lifetime:</strong> 3600 seconds" || {
+  log "/sessions did not render configured absolute lifetime"
+  printf '%s\n' "${SESSIONS_RESPONSE}"
+  exit 1
+}
 printf '%s\n' "${SESSIONS_BODY}" | grep -Fq "name=\"session_id\" value=\"${OTHER_SESSION_ID}\"" || {
   log "/sessions did not render revoke form for non-current session"
   printf '%s\n' "${SESSIONS_RESPONSE}"
+  exit 1
+}
+
+IDLE_REVOKED_AT="$(session_revoked_at "${SESSION_DIR}/${IDLE_SESSION_ID}.session")"
+[ -n "${IDLE_REVOKED_AT}" ] || {
+  log "idle session record was not automatically marked revoked"
+  doas cat "${SESSION_DIR}/${IDLE_SESSION_ID}.session"
   exit 1
 }
 
@@ -395,6 +452,37 @@ SESSIONS_REVOKED_BODY="$(response_body "${SESSIONS_REVOKED_RESPONSE}")"
 printf '%s\n' "${SESSIONS_REVOKED_BODY}" | grep -Fq "The selected session was revoked." || {
   log "/sessions?revoked=1 did not render success banner"
   printf '%s\n' "${SESSIONS_REVOKED_RESPONSE}"
+  exit 1
+}
+
+log "revoking all other active sessions through browser route"
+BULK_REVOKE_BODY="csrf_token=${CSRF_TOKEN}&scope=others"
+BULK_REVOKE_RESPONSE="$(request_post "/sessions/revoke" "${BULK_REVOKE_BODY}" "${SESSION_TOKEN}")"
+printf '%s' "${BULK_REVOKE_RESPONSE}" > "${BULK_REVOKE_RESPONSE_PATH}"
+BULK_REVOKE_STATUS="$(status_line "${BULK_REVOKE_RESPONSE}")"
+BULK_REVOKE_LOCATION="$(header_value "${BULK_REVOKE_RESPONSE}" "Location")"
+
+[ "${BULK_REVOKE_STATUS}" = "HTTP/1.1 303 See Other" ] || {
+  log "bulk revoke-other-sessions request did not succeed"
+  printf '%s\n' "${BULK_REVOKE_RESPONSE}"
+  exit 1
+}
+[ "${BULK_REVOKE_LOCATION}" = "/sessions?revoked=1" ] || {
+  log "bulk revoke-other-sessions redirect was unexpected"
+  printf '%s\n' "${BULK_REVOKE_RESPONSE}"
+  exit 1
+}
+
+BULK_OTHER_REVOKED_AT="$(session_revoked_at "${SESSION_DIR}/${BULK_OTHER_SESSION_ID}.session")"
+[ -n "${BULK_OTHER_REVOKED_AT}" ] || {
+  log "bulk non-current session record was not marked revoked"
+  doas cat "${SESSION_DIR}/${BULK_OTHER_SESSION_ID}.session"
+  exit 1
+}
+CURRENT_REVOKED_AT_AFTER_BULK="$(session_revoked_at "${SESSION_DIR}/${CURRENT_SESSION_ID}.session")"
+[ -z "${CURRENT_REVOKED_AT_AFTER_BULK}" ] || {
+  log "revoke-other-sessions unexpectedly revoked the current session"
+  doas cat "${SESSION_DIR}/${CURRENT_SESSION_ID}.session"
   exit 1
 }
 
@@ -446,14 +534,51 @@ STALE_LOCATION="$(header_value "${STALE_RESPONSE}" "Location")"
   exit 1
 }
 
+log "verifying revoke-all-sessions clears the current browser session"
+write_session_record "${REVOKE_ALL_SESSION_ID}" "${REVOKE_ALL_CSRF_TOKEN}" "${NOW}" "${EXPIRES_AT}" "${NOW}" "127.0.0.1" "${USER_AGENT}-all"
+REVOKE_ALL_BODY="csrf_token=${REVOKE_ALL_CSRF_TOKEN}&scope=all"
+REVOKE_ALL_RESPONSE="$(request_post "/sessions/revoke" "${REVOKE_ALL_BODY}" "${REVOKE_ALL_SESSION_TOKEN}")"
+printf '%s' "${REVOKE_ALL_RESPONSE}" > "${REVOKE_ALL_RESPONSE_PATH}"
+REVOKE_ALL_STATUS="$(status_line "${REVOKE_ALL_RESPONSE}")"
+REVOKE_ALL_LOCATION="$(header_value "${REVOKE_ALL_RESPONSE}" "Location")"
+REVOKE_ALL_SET_COOKIE="$(header_value "${REVOKE_ALL_RESPONSE}" "Set-Cookie")"
+
+[ "${REVOKE_ALL_STATUS}" = "HTTP/1.1 303 See Other" ] || {
+  log "revoke-all-sessions request did not succeed"
+  printf '%s\n' "${REVOKE_ALL_RESPONSE}"
+  exit 1
+}
+[ "${REVOKE_ALL_LOCATION}" = "/login" ] || {
+  log "revoke-all-sessions redirect was unexpected"
+  printf '%s\n' "${REVOKE_ALL_RESPONSE}"
+  exit 1
+}
+printf '%s\n' "${REVOKE_ALL_SET_COOKIE}" | grep -Fq "Max-Age=0" || {
+  log "revoke-all-sessions did not clear the session cookie"
+  printf '%s\n' "${REVOKE_ALL_RESPONSE}"
+  exit 1
+}
+REVOKE_ALL_REVOKED_AT="$(session_revoked_at "${SESSION_DIR}/${REVOKE_ALL_SESSION_ID}.session")"
+[ -n "${REVOKE_ALL_REVOKED_AT}" ] || {
+  log "revoke-all current session record was not marked revoked"
+  doas cat "${SESSION_DIR}/${REVOKE_ALL_SESSION_ID}.session"
+  exit 1
+}
+
 doas grep -q 'action=session_listed' "${LOG_PATH}" || {
   log "session_listed event missing from runtime log"
   doas cat "${LOG_PATH}"
   exit 1
 }
 SESSION_REVOKED_COUNT="$(doas grep -c 'action=session_revoked' "${LOG_PATH}" || true)"
-[ "${SESSION_REVOKED_COUNT}" -ge 2 ] || {
-  log "expected at least two session_revoked events in runtime log"
+[ "${SESSION_REVOKED_COUNT}" -ge 4 ] || {
+  log "expected at least four session_revoked events in runtime log"
+  doas cat "${LOG_PATH}"
+  exit 1
+}
+
+doas grep -q 'action=session_bulk_revoked' "${LOG_PATH}" || {
+  log "session_bulk_revoked event missing from runtime log"
   doas cat "${LOG_PATH}"
   exit 1
 }
@@ -461,4 +586,6 @@ SESSION_REVOKED_COUNT="$(doas grep -c 'action=session_revoked' "${LOG_PATH}" || 
 log "live session surface validation passed"
 log "sessions_status=${SESSIONS_STATUS}"
 log "revoke_status=${REVOKE_STATUS}"
+log "bulk_revoke_status=${BULK_REVOKE_STATUS}"
 log "logout_status=${LOGOUT_STATUS}"
+log "revoke_all_status=${REVOKE_ALL_STATUS}"

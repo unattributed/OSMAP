@@ -4904,3 +4904,28 @@ browser posture. The local test suite passes with
 `cargo test --ignore-rust-version`, and the repo-owned `make security-check`
 gate completes; plain `cargo check` remains blocked on this workstation
 because its default `rustc` is 1.85.0 while the repo minimum is 1.86.
+
+### Extend the live session-surface proof for the stronger controls
+
+After the new `/sessions` controls landed, the authoritative Version 2
+`session-surface` proof still exercised the older page shape: list sessions,
+revoke one non-current session, log out, and confirm stale-cookie rejection.
+That would leave the new revoke-other, revoke-all, and idle-timeout behavior
+covered by local Rust tests but not by the live enforced OpenBSD harness.
+
+`maint/live/osmap-live-validate-session-surface.ksh` now seeds synthetic
+current, non-current, bulk-revoke, idle, and revoke-all session records. It
+starts the same isolated `_osmap` plus `vmail` enforced runtime, then proves:
+
+- `/sessions` renders the configured idle timeout and absolute lifetime
+- `/sessions` renders both `Revoke Other Sessions` and `Revoke All Sessions`
+- an idle synthetic session is automatically persisted with `revoked_at`
+- single-session revoke still marks the target record revoked
+- revoke-other marks only the other active session revoked and preserves the
+  current session
+- logout still revokes the current session and clears the cookie
+- revoke-all revokes the active current session and clears the cookie
+- runtime logs include `session_revoked` and `session_bulk_revoked` events
+
+This keeps the Version 2 readiness wrapper step name stable while making the
+proof match the current browser security surface.

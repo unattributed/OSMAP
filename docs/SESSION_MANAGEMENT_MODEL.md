@@ -161,16 +161,17 @@ The current validation state is:
 2. an end-to-end test now exercises primary auth, real TOTP verification, and
    session issuance together
 3. OpenBSD host validation on `mail.blackbagsecurity.com` now includes the
-   browser-visible `/sessions` page plus the `POST /sessions/revoke` and
-   `POST /logout` flows under the real `_osmap` plus `vmail` helper split with
+   browser-visible `/sessions` page, single-session revoke, revoke-other
+   sessions, revoke-all sessions, automatic idle-timeout revocation, and
+   `POST /logout` under the real `_osmap` plus `vmail` helper split with
    `OSMAP_OPENBSD_CONFINEMENT_MODE=enforce`
 4. that broader live proof used a synthetic persisted session store so the
    session UI, logout invalidation, and stale-session rejection could be
    validated without widening the harness to depend on live mailbox
    credentials for this slice
-5. the retained proof root at `/home/osmap-live-session-surface-proof`
-   captured `HTTP/1.1 200 OK` for `/sessions`, `303 See Other` for both revoke
-   and logout, persisted `revoked_at` values on both session records, and a
+5. the session-surface proof captures `HTTP/1.1 200 OK` for `/sessions`, `303
+   See Other` for single revoke, revoke-other, revoke-all, and logout,
+   persisted `revoked_at` values for revoked and idle-timed-out records, and a
    stale-session redirect back to `/login`
 
 The QEMU wrapper layer remains available for broader isolated OpenBSD testing as
