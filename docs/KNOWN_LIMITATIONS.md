@@ -4,8 +4,8 @@
 
 - Phase 1 is evidence-based but still intentionally public-safe, so some local
   implementation details and private notes are summarized rather than published
-- A repo-owned pilot workflow inventory baseline now exists, but real pilot-user
-  confirmation against that inventory has not yet been completed
+- A repo-owned pilot workflow inventory baseline now exists, and the final
+  Version 2 trial cohort has been confirmed against that bounded workflow set
 - The exact Postfix configuration has not yet been exhaustively summarized in
   public docs, though service bindings and usage are already clear
 
@@ -14,10 +14,9 @@
 - The implementation now has runtime, auth, TOTP, and session foundations, but
   it is still a prototype-grade browser mail product rather than a production
   service
-- Direct public browser exposure is an intended Version 2 target, but the repo
-  does not yet treat the current snapshot as ready for that posture until the
-  explicit gate in `INTERNET_EXPOSURE_CHECKLIST.md` is satisfied and proven
-  against the candidate release state
+- Direct public browser exposure remains limited and evidence-gated. The
+  current Version 2 evidence supports the approved limited direct-public
+  browser posture, not a broad production launch.
 - The implementation now has a bounded browser slice with login, mailbox read,
   message view, compose, send, CSRF handling, and attachment download, and it
   now uses bounded concurrent request handling with an explicit connection cap,
@@ -65,16 +64,17 @@
   controls and richer anomaly handling still depend on adjacent defenses such
   as nginx, PF, and operator monitoring
 - Operator-facing migration, rollback, pilot, workflow-inventory, and
-  acceptance-gate guidance now exists, but the repo still lacks a completed
-  real-user pilot rehearsal against that Version 2 gate
+  acceptance-gate guidance now exists, and the final Version 2 trial cohort
+  has completed the bounded pilot workflows
 - The selected-message archive route reuses the current message-move throttle
   once per selected UID. The remaining lower-volume authenticated POST routes
   in the current browser surface (`/settings`, `/sessions/revoke`, and
   `/logout`) are now both CSRF-bound and same-origin-bound and remain much
   lower abuse value than login, send, or message move, so the next hardening win
   is unlikely to be another narrow per-route throttle
-- A formal migration baseline now exists, but no Roundcube migration rehearsal
-  or end-user pilot has been completed yet
+- A formal migration baseline now exists, and the bounded Version 2 end-user
+  pilot is complete, but broader Roundcube migration rehearsal remains future
+  rollout work
 - The existing host is multi-purpose, which constrains how aggressively the
   replacement can diverge from current operational patterns
 - Required user workflows are defined at product level, but detailed field-level
@@ -148,3 +148,5 @@
   move-history UI remain Version 3 workflow refinement. Version 2 only needs
   the exposed search, archive, and one-message move workflows to be correct,
   bounded, and non-misleading.
+- Additional pilot-requested functionality and Thunderbird-like UX polish
+  remain Version 3 or later work.

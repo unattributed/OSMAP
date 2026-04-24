@@ -173,8 +173,9 @@ Each phase produces formal outputs to support traceability and auditability.
   `mail.blackbagsecurity.com` under `enforce`: real password-plus-TOTP login,
   issued browser session cookie, helper-backed mailbox listing, helper-backed
   message view, and attachment download all succeeded in one continuous flow.
-- OSMAP is still prototype-grade, not production-ready, and does not yet have a
-  public deployment.
+- OSMAP is still prototype-grade and not production-ready, but the current
+  Version 2 evidence includes limited direct-public browser exposure and final
+  pilot closeout for the bounded workflow set.
 - The previous top-level Version 1 product gaps around safe HTML rendering and
   a bounded settings surface are now closed in first-release form. Broader
   folder-organization ergonomics still remain later refinements, but the first

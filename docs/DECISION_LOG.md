@@ -4970,3 +4970,22 @@ twelve-step set as a local regression target and compares it against:
 
 The shared `make security-check` gate now runs that consistency check so future
 V2 readiness changes must update the operator path and docs together.
+
+## 2026-04-24
+
+### Close the Version 2 pilot without widening scope
+
+The remaining Version 2 blocker was pilot-execution evidence, not more feature
+work. Three trial users completed the bounded workflows presented in the
+current code base:
+
+- `duncan@blackbagsecurity.com`
+- `ops@blackbagsecurity.io`
+- `duncan@redactedsecurity.ca`
+
+All three completed retrieve mail, send mail, and send mail with attachments,
+and all three reported that the presented functions worked as expected.
+
+OSMAP now treats the Version 2 pilot as complete for that bounded browser-mail
+scope. Additional requested functionality and a more polished Thunderbird-like
+user experience remain deferred to Version 3 or later.

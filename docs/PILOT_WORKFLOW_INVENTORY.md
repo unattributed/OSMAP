@@ -3,14 +3,14 @@
 ## Purpose
 
 This document records the current repo-owned workflow inventory for Version 2
-pilot planning.
+pilot planning and closeout.
 
-It is not a claim that every intended pilot user has already been interviewed.
 It is the baseline operator artifact used to decide:
 
 - which users are good Version 2 pilot candidates now
 - which daily workflows OSMAP already supports credibly
 - which workflows still require Roundcube fallback or should defer pilot entry
+- whether the completed Version 2 pilot cohort fit the bounded V2 workflow set
 
 ## Inventory Status Meanings
 
@@ -86,9 +86,25 @@ Users can still be reasonable pilot candidates if they:
 - can tolerate conservative HTML handling
 - do not rely on browser draft persistence or bulk mailbox actions
 
+## Version 2 Pilot Closeout Confirmation
+
+The final Version 2 pilot cohort fit the workflow inventory for the bounded
+scope tested:
+
+| Trial user | Workflow fit | Completed actions | Result |
+| --- | --- | --- | --- |
+| `duncan@blackbagsecurity.com` | V2 fit | retrieve mail; send mail; send mail with attachments | Functions presented in the current code base worked as expected. |
+| `ops@blackbagsecurity.io` | V2 fit | retrieve mail; send mail; send mail with attachments | Functions presented in the current code base worked as expected. |
+| `duncan@redactedsecurity.ca` | V2 fit | retrieve mail; send mail; send mail with attachments | Functions presented in the current code base worked as expected. |
+
+All three trial users want additional functionality in Version 3. All three
+also want a more polished user experience, ideally closer to Thunderbird. That
+feedback is explicitly deferred to Version 3 or later and does not widen the
+Version 2 closeout scope.
+
 ## Per-User Confirmation Checklist
 
-Before moving a real user into the pilot, confirm explicitly:
+Before moving an additional real user into a future pilot, confirm explicitly:
 
 - whether they need browser draft persistence
 - whether they need reply or forward with original attachments preserved

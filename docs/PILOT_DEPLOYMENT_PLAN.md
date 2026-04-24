@@ -2,11 +2,11 @@
 
 ## Purpose
 
-This document records the current pre-pilot deployment plan for OSMAP.
+This document records the standing pilot deployment plan for OSMAP.
 
-The project is not yet in active pilot rollout, but it now has enough
-implementation depth, host validation, and operator scaffolding to define the
-entry criteria and operating shape for a future small-user pilot.
+The initial Version 2 pilot is complete for the bounded workflow set recorded
+in `V2_PILOT_CLOSEOUT.md`. This plan remains the operator reference for any
+future pilot rerun, expansion, pause, rollback, or exit decision.
 
 For the current live pilot-closeout status, use `V2_PILOT_STATUS.md`. This
 document defines the standing plan, not the day-to-day status snapshot.
@@ -31,7 +31,8 @@ The pilot should not be treated as general public launch.
 
 ## Entry Criteria
 
-Do not start the pilot until all of the following are true:
+Do not start a future pilot run or expansion until all of the following are
+true:
 
 - the authoritative Version 1 closeout gate passes on the intended pilot host
   or an equivalent deployment shape
@@ -93,7 +94,7 @@ Version 2 browser-access model.
 
 ## Day-One Pilot Checklist
 
-Before pilot users start:
+Before future pilot users start:
 
 1. run `osmap bootstrap` or equivalent config validation with the pilot env
    files
