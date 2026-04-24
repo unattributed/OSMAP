@@ -117,3 +117,46 @@ Before moving an additional real user into a future pilot, confirm explicitly:
 If any of those are required for ordinary use, keep that user on Roundcube
 until either the need is reclassified as unnecessary or a later version closes
 the gap without widening OSMAP beyond its mission.
+
+## Version 3 Daily-Driver Target
+
+Version 3 changes the future admission target, not the completed Version 2
+closeout result. A Version 3 daily-driver candidate is someone who still fits
+the OSMAP security model but needs the following workflows for ordinary
+browser-mail use:
+
+- draft save and resume
+- explicit reply and forward attachment handling
+- richer search refinement and result clarity
+- bounded selected-message folder cleanup beyond archive-only behavior
+- clearer session and device policy
+- more reliable MIME and HTML correctness for common mail received from
+  outside senders
+
+The Version 3 target remains a focused browser-mail access layer. The following
+users are still not good Version 3 candidates if these workflows are daily
+requirements:
+
+- contacts, calendar, or groupware users
+- plugin-dependent webmail users
+- mobile-app-dependent users
+- users requiring remote external content loading in messages
+- users requiring browser OpenPGP implementation rather than design-only
+  investigation
+- users requiring broad admin-console workflows
+
+## Version 3 Gap Map
+
+| Workflow gap | Version 3 disposition | Acceptance gate |
+| --- | --- | --- |
+| MIME and HTML correctness | in scope | `docs/V3_ACCEPTANCE_CRITERIA.md` |
+| Draft save and resume later | in scope | `docs/V3_ACCEPTANCE_CRITERIA.md` |
+| Reply or forward with original attachments preserved explicitly | in scope | `docs/V3_ACCEPTANCE_CRITERIA.md` |
+| Richer search ergonomics | in scope | `docs/V3_ACCEPTANCE_CRITERIA.md` |
+| Bounded bulk folder actions | in scope | `docs/V3_ACCEPTANCE_CRITERIA.md` |
+| Concurrent-session and device policy | in scope | `docs/V3_SECURITY_GATES.md` |
+| TLS 1.2 CBC disposition | in scope | `docs/V3_SECURITY_GATES.md` |
+| WSTG regression evidence | in scope | `docs/V3_SECURITY_GATES.md` |
+| Contacts, calendar, groupware, plugins, mobile app, broad admin console | out of scope | `docs/V3_DEFINITION.md` |
+| Remote external content loading | out of scope | `docs/V3_DEFINITION.md` |
+| OpenPGP implementation | out of scope except design-only investigation | `docs/V3_ROADMAP.md` |

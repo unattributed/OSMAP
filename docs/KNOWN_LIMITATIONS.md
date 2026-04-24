@@ -130,22 +130,49 @@
   closeout gate, Version 2 readiness gate, and Version 2 pilot closeout record.
   Future progress should continue through scoped gates rather than by widening
   the completed Version 2 surface.
+- Version 3 is now defined as a focused daily-driver adoption release. It is a
+  scoped plan and gate set, not an implementation claim; the current code base
+  still has the product limitations listed in this document until the
+  corresponding Version 3 acceptance gates pass.
 
-## Version 3 Backlog From April 2026 WSTG
+## Version 3 Daily-Driver Adoption Boundary
 
-- TLS 1.2 CBC suite removal is real hardening work, but it belongs to Version 3
-  because it is an edge and compatibility decision outside the bounded Version
-  2 browser workflow fixes.
-- Concurrent-session caps, device limits, and richer session anomaly handling
-  remain Version 3 policy work. Version 2 keeps session visibility and
-  self-service revocation, while the WSTG observation did not show a confirmed
-  vulnerability in allowing more than one active session.
-- The session revoke race observation remains Version 3 investigation because
-  the reported evidence used a shared client cookie jar and was not a confirmed
-  server-side flaw.
-- Richer search ergonomics, archive mailbox discovery, general bulk move, and
-  move-history UI remain Version 3 workflow refinement. Version 2 only needs
-  the exposed search, archive, and one-message move workflows to be correct,
-  bounded, and non-misleading.
-- Additional pilot-requested functionality and Thunderbird-like UX polish
-  remain Version 3 or later work.
+Version 3 is limited to the pilot-proven gaps that block ordinary daily use:
+
+- MIME and HTML correctness
+- draft save and resume
+- reply and forward attachment handling
+- richer search
+- bounded bulk folder actions
+- session and device policy
+- TLS CBC cleanup or a documented exception
+- WSTG regression evidence
+
+The authoritative Version 3 scope is now recorded in:
+
+- `docs/V3_DEFINITION.md`
+- `docs/V3_ACCEPTANCE_CRITERIA.md`
+- `docs/V3_ROADMAP.md`
+- `docs/V3_SECURITY_GATES.md`
+
+The following remain out of scope for Version 3:
+
+- contacts, calendar, groupware, plugins, mobile app, and broad admin console
+- remote external content loading
+- OpenPGP implementation, except design-only investigation
+- broad runtime rewrite
+- general Roundcube parity
+
+The April 2026 WSTG backlog maps into Version 3 as follows:
+
+- TLS 1.2 CBC suite removal is required unless a dated, owned compatibility
+  exception with compensating controls is documented.
+- Concurrent-session caps, device limits, richer session labels, and anomaly
+  handling are Version 3 policy work. Version 3 must choose and test an
+  explicit policy rather than leaving concurrent sessions as an implicit
+  behavior.
+- The session revoke race observation remains an investigation item until it
+  is retested with isolated cookie jars.
+- Richer search, bounded bulk folder actions, and folder ergonomics are
+  Version 3 workflow refinements only to the extent required by the
+  daily-driver adoption boundary.

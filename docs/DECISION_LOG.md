@@ -1,5 +1,36 @@
 # Decision Log
 
+## 2026-04-24
+
+### Define Version 3 as the daily-driver adoption boundary
+
+After Version 2 pilot closeout, the project needed a Version 3 boundary that
+absorbs real pilot feedback without reopening the completed Version 2 scope.
+The final V2 cohort proved retrieve, send, and send-with-attachments for the
+bounded browser slice, but the remaining daily-driver gaps were specific:
+draft continuity, reply and forward attachment handling, richer search,
+bounded bulk organization, MIME and HTML correctness, session/device policy,
+TLS CBC disposition, and WSTG regression evidence.
+
+OSMAP now treats Version 3 as a focused adoption release, not a Roundcube
+parity project. The new Version 3 docs define:
+
+- `docs/V3_DEFINITION.md` as the authoritative scope boundary
+- `docs/V3_ACCEPTANCE_CRITERIA.md` as the feature-by-feature gate
+- `docs/V3_ROADMAP.md` as the implementation sequence
+- `docs/V3_SECURITY_GATES.md` as the carry-forward and new security evidence
+  requirements
+
+The decision preserves the Version 2 `_osmap` plus `vmail` split, production
+mailbox-helper requirement, public-edge hardening, and all existing Version 2
+gates. Contacts, calendar, groupware, plugins, mobile app, broad admin
+console, remote external content loading, OpenPGP implementation, and broad
+runtime rewrite remain outside Version 3.
+
+The first Version 3 implementation slice should be MIME and HTML correctness
+because reliable summaries, body selection, attachment metadata, and safe
+rendering are prerequisite to draft, reply, forward, and search work.
+
 ## 2026-04-18
 
 ### Preserve real client IPs behind the loopback nginx edge

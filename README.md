@@ -177,6 +177,13 @@ Each phase produces formal outputs to support traceability and auditability.
 - OSMAP is still prototype-grade and not production-ready, but the current
   Version 2 evidence includes limited direct-public browser exposure and final
   pilot closeout for the bounded workflow set.
+- Version 3 is now defined as the focused daily-driver adoption release in
+  `docs/V3_DEFINITION.md`, `docs/V3_ACCEPTANCE_CRITERIA.md`,
+  `docs/V3_ROADMAP.md`, and `docs/V3_SECURITY_GATES.md`. That scope preserves
+  all Version 2 gates while targeting the pilot-proven gaps around MIME and
+  HTML correctness, draft continuity, reply and forward attachment handling,
+  richer search, bounded bulk folder actions, session and device policy, TLS
+  CBC disposition, and WSTG regression evidence.
 - The previous top-level Version 1 product gaps around safe HTML rendering and
   a bounded settings surface are now closed in first-release form. Broader
   folder-organization ergonomics still remain later refinements, but the first
