@@ -169,21 +169,26 @@ impl MimeAnalyzer {
         )?;
         let observation = analyze_entity(
             self.policy,
-            &content_type,
-            extract_header_value(
-                &unfolded_headers,
-                "Content-Disposition",
-                self.policy.header_value_max_len,
-            )?
-            .as_deref(),
-            extract_header_value(
-                &unfolded_headers,
-                "Content-ID",
-                self.policy.header_value_max_len,
-            )?
-            .as_deref(),
-            &message.body_text,
-            "1",
+            EntityAnalyzeInput {
+                content_type: &content_type,
+                disposition_header: extract_header_value(
+                    &unfolded_headers,
+                    "Content-Disposition",
+                    self.policy.header_value_max_len,
+                )?,
+                content_id_header: extract_header_value(
+                    &unfolded_headers,
+                    "Content-ID",
+                    self.policy.header_value_max_len,
+                )?,
+                transfer_encoding_header: extract_header_value(
+                    &unfolded_headers,
+                    "Content-Transfer-Encoding",
+                    self.policy.header_value_max_len,
+                )?,
+                body_text: &message.body_text,
+                part_path: "1",
+            },
             0,
         )?;
 
@@ -268,6 +273,16 @@ struct ParsedPart {
     body_text: String,
 }
 
+/// Private recursive view of one MIME entity while analyzing renderable bodies.
+struct EntityAnalyzeInput<'a> {
+    content_type: &'a ParsedHeaderValue,
+    disposition_header: Option<String>,
+    content_id_header: Option<String>,
+    transfer_encoding_header: Option<String>,
+    body_text: &'a str,
+    part_path: &'a str,
+}
+
 /// Private recursive view of one MIME entity while searching for attachments.
 struct EntitySearchInput<'a> {
     content_type: &'a ParsedHeaderValue,
@@ -281,21 +296,18 @@ struct EntitySearchInput<'a> {
 /// Recursively analyzes one MIME entity while preserving conservative bounds.
 fn analyze_entity(
     policy: MimeAnalysisPolicy,
-    content_type: &ParsedHeaderValue,
-    disposition_header: Option<&str>,
-    content_id_header: Option<&str>,
-    body_text: &str,
-    part_path: &str,
+    entity: EntityAnalyzeInput<'_>,
     depth: usize,
 ) -> Result<EntityObservation, MimeAnalysisError> {
-    let disposition = parse_header_value(disposition_header.unwrap_or(""), policy)?;
-    let filename = extract_filename(policy, content_type, &disposition)?;
+    let disposition =
+        parse_header_value(entity.disposition_header.as_deref().unwrap_or(""), policy)?;
+    let filename = extract_filename(policy, entity.content_type, &disposition)?;
     let disposition_kind = classify_disposition(&disposition);
-    let content_id = normalize_content_id(content_id_header, policy)?;
+    let content_id = normalize_content_id(entity.content_id_header.as_deref(), policy)?;
 
     // Multipart entities are inspected recursively, but only to a bounded
     // depth and part count so hostile messages cannot create unreviewable work.
-    if content_type.value.starts_with("multipart/") {
+    if entity.content_type.value.starts_with("multipart/") {
         if depth >= policy.max_depth {
             return Ok(EntityObservation {
                 body_source: MimeBodySource::MultipartStructureWithheld,
@@ -306,7 +318,7 @@ fn analyze_entity(
             });
         }
 
-        let Some(boundary) = content_type.params.get("boundary") else {
+        let Some(boundary) = entity.content_type.params.get("boundary") else {
             return Ok(EntityObservation {
                 body_source: MimeBodySource::MultipartStructureWithheld,
                 selected_plain_text_body: None,
@@ -316,7 +328,7 @@ fn analyze_entity(
             });
         };
 
-        let parts = parse_multipart_parts(policy, boundary, body_text, part_path)?;
+        let parts = parse_multipart_parts(policy, boundary, entity.body_text, entity.part_path)?;
         let mut selected_plain_text_body = None;
         let mut selected_html_body = None;
         let mut contains_html_body = false;
@@ -336,17 +348,26 @@ fn analyze_entity(
             )?;
             let part_observation = analyze_entity(
                 policy,
-                &part_content_type,
-                extract_header_value(
-                    &unfolded_headers,
-                    "Content-Disposition",
-                    policy.header_value_max_len,
-                )?
-                .as_deref(),
-                extract_header_value(&unfolded_headers, "Content-ID", policy.header_value_max_len)?
-                    .as_deref(),
-                &part.body_text,
-                &part.part_path,
+                EntityAnalyzeInput {
+                    content_type: &part_content_type,
+                    disposition_header: extract_header_value(
+                        &unfolded_headers,
+                        "Content-Disposition",
+                        policy.header_value_max_len,
+                    )?,
+                    content_id_header: extract_header_value(
+                        &unfolded_headers,
+                        "Content-ID",
+                        policy.header_value_max_len,
+                    )?,
+                    transfer_encoding_header: extract_header_value(
+                        &unfolded_headers,
+                        "Content-Transfer-Encoding",
+                        policy.header_value_max_len,
+                    )?,
+                    body_text: &part.body_text,
+                    part_path: &part.part_path,
+                },
                 depth + 1,
             )?;
 
@@ -380,44 +401,80 @@ fn analyze_entity(
         });
     }
 
-    if should_surface_as_attachment(&content_type.value, disposition_kind, filename.as_deref()) {
+    if should_surface_as_attachment(
+        &entity.content_type.value,
+        disposition_kind,
+        filename.as_deref(),
+    ) {
         return Ok(EntityObservation {
             body_source: MimeBodySource::AttachmentOnlyWithheld,
             selected_plain_text_body: None,
             selected_html_body: None,
             contains_html_body: false,
             attachments: vec![AttachmentMetadata {
-                part_path: part_path.to_string(),
+                part_path: entity.part_path.to_string(),
                 filename,
-                content_type: content_type.value.clone(),
+                content_type: entity.content_type.value.clone(),
                 disposition: disposition_kind,
                 content_id,
-                size_hint_bytes: body_text.len(),
+                size_hint_bytes: entity.body_text.len(),
             }],
         });
     }
 
-    if content_type.value == "text/plain" || content_type.value.is_empty() {
+    if entity.content_type.value == "text/plain" || entity.content_type.value.is_empty() {
+        let Some(decoded_body) = decode_text_body(
+            policy,
+            entity.content_type,
+            entity.transfer_encoding_header.as_deref(),
+            entity.body_text,
+        )?
+        else {
+            return Ok(EntityObservation {
+                body_source: MimeBodySource::BinaryWithheld,
+                selected_plain_text_body: None,
+                selected_html_body: None,
+                contains_html_body: false,
+                attachments: Vec::new(),
+            });
+        };
+
         return Ok(EntityObservation {
             body_source: MimeBodySource::SinglePartPlainText,
-            selected_plain_text_body: Some(body_text.to_string()),
+            selected_plain_text_body: Some(decoded_body),
             selected_html_body: None,
             contains_html_body: false,
             attachments: Vec::new(),
         });
     }
 
-    if content_type.value == "text/html" {
+    if entity.content_type.value == "text/html" {
+        let Some(decoded_body) = decode_text_body(
+            policy,
+            entity.content_type,
+            entity.transfer_encoding_header.as_deref(),
+            entity.body_text,
+        )?
+        else {
+            return Ok(EntityObservation {
+                body_source: MimeBodySource::HtmlWithheld,
+                selected_plain_text_body: None,
+                selected_html_body: None,
+                contains_html_body: true,
+                attachments: Vec::new(),
+            });
+        };
+
         return Ok(EntityObservation {
             body_source: MimeBodySource::HtmlWithheld,
             selected_plain_text_body: None,
-            selected_html_body: Some(body_text.to_string()),
+            selected_html_body: Some(decoded_body),
             contains_html_body: true,
             attachments: Vec::new(),
         });
     }
 
-    if body_text.trim().is_empty() {
+    if entity.body_text.trim().is_empty() {
         return Ok(EntityObservation {
             body_source: MimeBodySource::Empty,
             selected_plain_text_body: None,
@@ -620,6 +677,159 @@ fn normalize_transfer_encoding(
     }
 
     Ok(value)
+}
+
+/// Decodes a text body according to the small transfer-encoding set OSMAP
+/// renders in-browser.
+fn decode_text_body(
+    policy: MimeAnalysisPolicy,
+    content_type: &ParsedHeaderValue,
+    transfer_encoding_header: Option<&str>,
+    body_text: &str,
+) -> Result<Option<String>, MimeAnalysisError> {
+    let transfer_encoding = normalize_transfer_encoding(transfer_encoding_header, policy)?;
+    let decoded_bytes = match transfer_encoding.as_str() {
+        "" | "7bit" | "8bit" | "binary" => return Ok(Some(body_text.to_string())),
+        "base64" => {
+            let Some(decoded) = decode_base64_text_bytes(body_text) else {
+                return Ok(None);
+            };
+            decoded
+        }
+        "quoted-printable" => {
+            let Some(decoded) = decode_quoted_printable_text_bytes(body_text) else {
+                return Ok(None);
+            };
+            decoded
+        }
+        _ => return Ok(None),
+    };
+
+    Ok(decode_text_bytes_with_charset(
+        content_type
+            .params
+            .get("charset")
+            .map(String::as_str)
+            .unwrap_or("utf-8"),
+        &decoded_bytes,
+    ))
+}
+
+/// Decodes base64 text bodies without accepting invalid padding or characters.
+fn decode_base64_text_bytes(input: &str) -> Option<Vec<u8>> {
+    let cleaned = input
+        .bytes()
+        .filter(|byte| !byte.is_ascii_whitespace())
+        .collect::<Vec<_>>();
+
+    if cleaned.is_empty() {
+        return Some(Vec::new());
+    }
+
+    if cleaned.len() % 4 != 0 {
+        return None;
+    }
+
+    let mut output = Vec::with_capacity((cleaned.len() / 4) * 3);
+    for chunk in cleaned.chunks(4) {
+        let mut values = [0u8; 4];
+        let mut padding = 0usize;
+
+        for (index, byte) in chunk.iter().copied().enumerate() {
+            match byte {
+                b'A'..=b'Z' => values[index] = byte - b'A',
+                b'a'..=b'z' => values[index] = byte - b'a' + 26,
+                b'0'..=b'9' => values[index] = byte - b'0' + 52,
+                b'+' => values[index] = 62,
+                b'/' => values[index] = 63,
+                b'=' => {
+                    values[index] = 0;
+                    padding += 1;
+                    if index < 2 {
+                        return None;
+                    }
+                }
+                _ => return None,
+            }
+        }
+
+        if padding == 1 && chunk[3] != b'=' {
+            return None;
+        }
+        if padding == 2 && !(chunk[2] == b'=' && chunk[3] == b'=') {
+            return None;
+        }
+
+        let combined = ((values[0] as u32) << 18)
+            | ((values[1] as u32) << 12)
+            | ((values[2] as u32) << 6)
+            | (values[3] as u32);
+        output.push(((combined >> 16) & 0xff) as u8);
+        if padding < 2 {
+            output.push(((combined >> 8) & 0xff) as u8);
+        }
+        if padding < 1 {
+            output.push((combined & 0xff) as u8);
+        }
+    }
+
+    Some(output)
+}
+
+/// Decodes quoted-printable text bodies for selected renderable parts.
+fn decode_quoted_printable_text_bytes(input: &str) -> Option<Vec<u8>> {
+    let bytes = input.as_bytes();
+    let mut output = Vec::with_capacity(bytes.len());
+    let mut index = 0usize;
+
+    while index < bytes.len() {
+        if bytes[index] == b'=' {
+            if index + 1 >= bytes.len() {
+                return None;
+            }
+
+            if bytes[index + 1] == b'\n' {
+                index += 2;
+                continue;
+            }
+
+            if bytes[index + 1] == b'\r' && index + 2 < bytes.len() && bytes[index + 2] == b'\n' {
+                index += 3;
+                continue;
+            }
+
+            if index + 2 >= bytes.len() {
+                return None;
+            }
+
+            output.push((hex_value(bytes[index + 1])? << 4) | hex_value(bytes[index + 2])?);
+            index += 3;
+        } else {
+            output.push(bytes[index]);
+            index += 1;
+        }
+    }
+
+    Some(output)
+}
+
+/// Decodes text body bytes for a narrow set of common charsets.
+fn decode_text_bytes_with_charset(charset: &str, bytes: &[u8]) -> Option<String> {
+    let charset = charset.trim().to_ascii_lowercase();
+    match charset.as_str() {
+        "utf-8" | "utf8" => String::from_utf8(bytes.to_vec()).ok(),
+        "us-ascii" | "ascii" => {
+            if bytes.is_ascii() {
+                Some(String::from_utf8_lossy(bytes).into_owned())
+            } else {
+                None
+            }
+        }
+        "iso-8859-1" | "latin1" | "latin-1" => {
+            Some(bytes.iter().map(|byte| char::from(*byte)).collect())
+        }
+        _ => None,
+    }
 }
 
 /// Extracts one unfolded header value from a header block by case-insensitive name.
@@ -1123,6 +1333,69 @@ mod tests {
         );
         assert!(analysis.selected_html_body.is_none());
         assert!(analysis.attachments.is_empty());
+    }
+
+    #[test]
+    fn decodes_quoted_printable_plain_text_bodies() {
+        let analyzer = MimeAnalyzer::new(MimeAnalysisPolicy::default());
+        let analysis = analyzer
+            .analyze_message(&message_view(
+                concat!(
+                    "Subject: Test\n",
+                    "Content-Type: text/plain; charset=utf-8\n",
+                    "Content-Transfer-Encoding: quoted-printable\n"
+                ),
+                "Ol=C3=A1=\n team\n",
+            ))
+            .expect("analysis should succeed");
+
+        assert_eq!(analysis.body_source, MimeBodySource::SinglePartPlainText);
+        assert_eq!(
+            analysis.selected_plain_text_body.as_deref(),
+            Some("Olá team\n")
+        );
+        assert!(analysis.selected_html_body.is_none());
+    }
+
+    #[test]
+    fn decodes_base64_html_bodies() {
+        let analyzer = MimeAnalyzer::new(MimeAnalysisPolicy::default());
+        let analysis = analyzer
+            .analyze_message(&message_view(
+                concat!(
+                    "Subject: Test\n",
+                    "Content-Type: text/html; charset=utf-8\n",
+                    "Content-Transfer-Encoding: base64\n"
+                ),
+                "PHA+SGVsbG8gPHN0cm9uZz50ZWFtPC9zdHJvbmc+PC9wPg==\n",
+            ))
+            .expect("analysis should succeed");
+
+        assert_eq!(analysis.body_source, MimeBodySource::HtmlWithheld);
+        assert_eq!(
+            analysis.selected_html_body.as_deref(),
+            Some("<p>Hello <strong>team</strong></p>")
+        );
+        assert!(analysis.contains_html_body);
+    }
+
+    #[test]
+    fn withholds_malformed_encoded_text_bodies_without_error() {
+        let analyzer = MimeAnalyzer::new(MimeAnalysisPolicy::default());
+        let analysis = analyzer
+            .analyze_message(&message_view(
+                concat!(
+                    "Subject: Test\n",
+                    "Content-Type: text/plain; charset=utf-8\n",
+                    "Content-Transfer-Encoding: quoted-printable\n"
+                ),
+                "Hello=\n=",
+            ))
+            .expect("analysis should succeed");
+
+        assert_eq!(analysis.body_source, MimeBodySource::BinaryWithheld);
+        assert!(analysis.selected_plain_text_body.is_none());
+        assert!(analysis.selected_html_body.is_none());
     }
 
     #[test]

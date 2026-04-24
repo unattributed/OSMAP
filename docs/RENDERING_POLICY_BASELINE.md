@@ -27,6 +27,8 @@ The current slice provides:
   inline-disposition images
 - browser-safe HTML escaping for plain-text rendering
 - a narrow allowlist sanitizer for HTML-capable messages
+- rendering of selected `base64` and `quoted-printable` text bodies after the
+  MIME layer decodes them into the current supported charset set
 - two explicit rendering modes: preformatted plain text and sanitized HTML
 - structured audit events for rendering operations
 
@@ -66,6 +68,8 @@ That means:
 - plain-text bodies are HTML-escaped and wrapped in a `<pre>` block
 - sanitized HTML bodies are wrapped in a small container and rendered through a
   restrictive allowlist policy
+- selected transfer-encoded text bodies are decoded before plain-text escaping
+  or HTML sanitization
 - the message view now shows the active rendering mode to the user
 - HTML-capable messages with surfaced inline image metadata now render an
   explicit browser notice instead of attempting inline image display
@@ -126,6 +130,8 @@ This slice now proves that:
   trusting live message HTML
 - header summary extraction can stay bounded and reviewable
 - rendering can be modeled as a separate layer after message retrieval
+- transfer-encoded text bodies can be rendered only after bounded MIME-layer
+  decoding, with malformed encoded text withheld instead of shown raw
 - the system can offer a first-release safe-HTML path without becoming a rich
   HTML mail client
 - the current sanitized-HTML path and plain-text fallback both work against a

@@ -2,6 +2,26 @@
 
 ## 2026-04-24
 
+### Decode selected transfer-encoded text bodies before rendering
+
+The next small Version 3 MIME correctness gap was body transfer encoding.
+OSMAP already decoded attachment bodies for forced download, but selected
+`text/plain` and `text/html` body parts could still reach the renderer as raw
+`base64` or `quoted-printable` text.
+
+OSMAP now decodes selected textual bodies for the narrow rendering path when
+the message uses common `base64` or `quoted-printable` transfer encoding and
+the current supported charset set. Malformed or unsupported encoded text is
+withheld as non-renderable content instead of being displayed raw.
+
+This keeps the change in the MIME/rendering slice only:
+
+- no route changes
+- no rich-text compose
+- no remote external content loading
+- no attachment preview behavior
+- no change to the `_osmap` plus `vmail` runtime split
+
 ### Start Version 3 MIME correctness with RFC 2231 attachment filenames
 
 The first Version 3 implementation slice needed to improve MIME correctness

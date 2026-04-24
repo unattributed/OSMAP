@@ -22,6 +22,8 @@ The current slice provides:
 - bounded first-layer and nested multipart inspection
 - plain-text part selection for common multipart layouts
 - selected HTML-body extraction for the rendering layer
+- bounded text-body transfer decoding for selected `base64` and
+  `quoted-printable` plain-text or HTML parts
 - explicit structure-withheld placeholder behavior when no bounded renderable
   body exists
 - attachment metadata surfacing and bounded attachment-part resolution
@@ -50,8 +52,12 @@ That means:
 - selected plain-text bodies can be escaped and wrapped in `<pre>`
 - selected HTML bodies can be handed to the narrow allowlist sanitizer used by
   the rendering layer
+- selected `base64` and `quoted-printable` text bodies are decoded before
+  rendering when they use the current supported charset set
 - multipart messages without a safe bounded text or sanitizable HTML preview
   still fall back to an explicit placeholder
+- malformed or unsupported encoded text bodies are withheld instead of being
+  rendered as raw transfer-encoded content
 - attachment-bearing messages now expose attachment metadata without exposing
   attachment content
 
@@ -118,6 +124,8 @@ This slice now proves that:
 - surfaced attachment parts can be resolved without bypassing the MIME layer
 - common RFC 2231 attachment filename parameters can be decoded into bounded
   metadata without changing attachment preview or download trust
+- common transfer-encoded text bodies can be decoded for browser-safe
+  rendering without changing attachment behavior or the trust model
 - surfaced attachment metadata can carry bounded `Content-ID` values for
   `cid:`-style inline assets on the validated OpenBSD host
 - the project can support common multipart mail without quietly becoming a rich

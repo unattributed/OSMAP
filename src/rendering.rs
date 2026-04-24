@@ -885,6 +885,38 @@ mod tests {
     }
 
     #[test]
+    fn renders_base64_html_only_messages_after_decoding_and_sanitizing() {
+        let renderer = PlainTextMessageRenderer::new(RenderingPolicy::default());
+        let mut message = html_only_message_view_fixture();
+        message.header_block = concat!(
+            "Subject: Encoded HTML only\n",
+            "From: Alice <alice@example.com>\n",
+            "Content-Type: text/html; charset=utf-8\n",
+            "Content-Transfer-Encoding: base64\n"
+        )
+        .to_string();
+        message.body_text = concat!(
+            "PHA+SGVsbG8gPHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0PjxzdHJvbmc+dGVh",
+            "bTwvc3Ryb25nPjwvcD4=\n"
+        )
+        .to_string();
+
+        let outcome = renderer
+            .render_for_validated_session(&test_context(), &validated_session_fixture(), &message)
+            .expect("rendering should succeed");
+
+        assert_eq!(outcome.rendered.body_source, MimeBodySource::HtmlSanitized);
+        assert!(outcome.rendered.body_html.contains("message-html"));
+        assert!(outcome.rendered.body_html.contains("Hello"));
+        assert!(outcome.rendered.body_html.contains("<strong>team</strong>"));
+        assert!(!outcome.rendered.body_html.contains("<script"));
+        assert_eq!(
+            outcome.rendered.rendering_mode,
+            RenderingMode::SanitizedHtml
+        );
+    }
+
+    #[test]
     fn renders_multipart_messages_with_attachment_metadata() {
         let renderer = PlainTextMessageRenderer::new(RenderingPolicy::default());
         let outcome = renderer
