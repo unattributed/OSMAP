@@ -25,6 +25,9 @@ The current slice provides:
 - explicit structure-withheld placeholder behavior when no bounded renderable
   body exists
 - attachment metadata surfacing and bounded attachment-part resolution
+- bounded RFC 2231 decoding for attachment filename metadata in common
+  `filename*`, continued `filename*0*`/`filename*1*`, and content-type `name*`
+  forms
 - rendering audit fields that now describe MIME type, body source, and
   attachment count
 
@@ -113,6 +116,8 @@ This slice now proves that:
 - the browser-facing layer can preserve a conservative rendering posture even
   when the message is HTML or multipart
 - surfaced attachment parts can be resolved without bypassing the MIME layer
+- common RFC 2231 attachment filename parameters can be decoded into bounded
+  metadata without changing attachment preview or download trust
 - surfaced attachment metadata can carry bounded `Content-ID` values for
   `cid:`-style inline assets on the validated OpenBSD host
 - the project can support common multipart mail without quietly becoming a rich
@@ -122,7 +127,8 @@ This slice now proves that:
 
 This slice does not yet include:
 
-- encoded-word and RFC 2231 parameter decoding
+- full encoded-word and RFC 2231 parameter coverage beyond the current bounded
+  header-summary and attachment-filename cases
 - rich attachment preview behavior
 - inline image rendering
 - nested message/rfc822 presentation

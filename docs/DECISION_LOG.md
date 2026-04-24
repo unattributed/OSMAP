@@ -2,6 +2,26 @@
 
 ## 2026-04-24
 
+### Start Version 3 MIME correctness with RFC 2231 attachment filenames
+
+The first Version 3 implementation slice needed to improve MIME correctness
+without changing the runtime boundary, adding remote content loading, or
+turning the MIME layer into a broad mail-client engine.
+
+The smallest useful gap was attachment filename metadata. The MIME baseline
+already identified RFC 2231 parameter decoding as missing, and real attachment
+correctness depends on common `filename*`, continued `filename*0*` /
+`filename*1*`, and content-type `name*` forms. OSMAP now decodes those bounded
+filename parameters for the narrow attachment metadata surface.
+
+The change deliberately stays inside `src/mime.rs`:
+
+- no route changes
+- no attachment preview behavior
+- no inline image rendering
+- no remote external content loading
+- no change to the `_osmap` plus `vmail` runtime split
+
 ### Define Version 3 as the daily-driver adoption boundary
 
 After Version 2 pilot closeout, the project needed a Version 3 boundary that

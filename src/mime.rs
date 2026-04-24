@@ -697,11 +697,10 @@ fn extract_filename(
     content_type: &ParsedHeaderValue,
     disposition: &ParsedHeaderValue,
 ) -> Result<Option<String>, MimeAnalysisError> {
-    let filename = disposition
-        .params
-        .get("filename")
-        .cloned()
-        .or_else(|| content_type.params.get("name").cloned());
+    let filename = match extract_filename_parameter(policy, &disposition.params, "filename")? {
+        Some(filename) => Some(filename),
+        None => extract_filename_parameter(policy, &content_type.params, "name")?,
+    };
 
     if let Some(filename) = filename {
         if filename.len() > policy.filename_max_len {
@@ -723,6 +722,188 @@ fn extract_filename(
     }
 
     Ok(None)
+}
+
+/// Extracts a simple or RFC 2231 extended filename-like parameter.
+fn extract_filename_parameter(
+    policy: MimeAnalysisPolicy,
+    params: &BTreeMap<String, String>,
+    base_name: &str,
+) -> Result<Option<String>, MimeAnalysisError> {
+    if let Some(value) = params.get(&format!("{base_name}*")) {
+        return decode_rfc2231_extended_parameter(policy, value);
+    }
+
+    if let Some(value) = decode_rfc2231_continuation_parameter(policy, params, base_name)? {
+        return Ok(Some(value));
+    }
+
+    Ok(params.get(base_name).cloned())
+}
+
+/// Decodes a bounded RFC 2231 single extended parameter value.
+fn decode_rfc2231_extended_parameter(
+    policy: MimeAnalysisPolicy,
+    value: &str,
+) -> Result<Option<String>, MimeAnalysisError> {
+    let Some((charset, encoded_value)) = split_rfc2231_extended_parameter(value) else {
+        return Ok(None);
+    };
+
+    decode_rfc2231_encoded_bytes(policy, &charset, encoded_value)
+}
+
+/// Decodes a bounded RFC 2231 continuation parameter set when present.
+fn decode_rfc2231_continuation_parameter(
+    policy: MimeAnalysisPolicy,
+    params: &BTreeMap<String, String>,
+    base_name: &str,
+) -> Result<Option<String>, MimeAnalysisError> {
+    let mut index = 0;
+    let mut output = Vec::new();
+    let mut charset = None;
+    let mut found_any = false;
+
+    loop {
+        let encoded_key = format!("{base_name}*{index}*");
+        let plain_key = format!("{base_name}*{index}");
+        let (value, encoded) = if let Some(value) = params.get(&encoded_key) {
+            (value, true)
+        } else if let Some(value) = params.get(&plain_key) {
+            (value, false)
+        } else {
+            break;
+        };
+
+        found_any = true;
+        let segment = if encoded && index == 0 {
+            let Some((decoded_charset, encoded_value)) = split_rfc2231_extended_parameter(value)
+            else {
+                return Ok(None);
+            };
+            charset = Some(decoded_charset);
+            let Some(decoded_bytes) = percent_decode_bytes(encoded_value) else {
+                return Ok(None);
+            };
+            decoded_bytes
+        } else if encoded {
+            let Some(decoded_bytes) = percent_decode_bytes(value) else {
+                return Ok(None);
+            };
+            decoded_bytes
+        } else {
+            value.as_bytes().to_vec()
+        };
+
+        output.extend(segment);
+        if output.len() > policy.filename_max_len {
+            return Err(MimeAnalysisError {
+                reason: format!(
+                    "attachment filename exceeded maximum length of {} bytes",
+                    policy.filename_max_len
+                ),
+            });
+        }
+
+        index += 1;
+    }
+
+    if !found_any {
+        return Ok(None);
+    }
+
+    let decoded = match charset {
+        Some(charset) => decode_rfc2231_bytes_with_charset(&charset, &output),
+        None => String::from_utf8(output).ok(),
+    };
+
+    Ok(decoded)
+}
+
+/// Splits the `charset'language'value` shape used by RFC 2231 extended values.
+fn split_rfc2231_extended_parameter(value: &str) -> Option<(String, &str)> {
+    let mut segments = value.splitn(3, '\'');
+    let charset = segments.next()?;
+    let _language = segments.next()?;
+    let encoded_value = segments.next()?;
+
+    Some((charset.to_string(), encoded_value))
+}
+
+/// Percent-decodes an RFC 2231 value and converts the supported charset.
+fn decode_rfc2231_encoded_bytes(
+    policy: MimeAnalysisPolicy,
+    charset: &str,
+    encoded_value: &str,
+) -> Result<Option<String>, MimeAnalysisError> {
+    let Some(decoded_bytes) = percent_decode_bytes(encoded_value) else {
+        return Ok(None);
+    };
+    let Some(decoded) = decode_rfc2231_bytes_with_charset(charset, &decoded_bytes) else {
+        return Ok(None);
+    };
+
+    if decoded.len() > policy.filename_max_len {
+        return Err(MimeAnalysisError {
+            reason: format!(
+                "attachment filename exceeded maximum length of {} bytes",
+                policy.filename_max_len
+            ),
+        });
+    }
+
+    Ok(Some(decoded))
+}
+
+/// Percent-decodes an ASCII parameter body without accepting malformed escapes.
+fn percent_decode_bytes(value: &str) -> Option<Vec<u8>> {
+    let bytes = value.as_bytes();
+    let mut output = Vec::with_capacity(bytes.len());
+    let mut index = 0;
+
+    while index < bytes.len() {
+        if bytes[index] == b'%' {
+            let high = *bytes.get(index + 1)?;
+            let low = *bytes.get(index + 2)?;
+            output.push((hex_value(high)? << 4) | hex_value(low)?);
+            index += 3;
+        } else {
+            output.push(bytes[index]);
+            index += 1;
+        }
+    }
+
+    Some(output)
+}
+
+/// Decodes RFC 2231 parameter bytes for the same narrow charset set used by
+/// the header-summary renderer.
+fn decode_rfc2231_bytes_with_charset(charset: &str, bytes: &[u8]) -> Option<String> {
+    let charset = charset.trim().to_ascii_lowercase();
+    match charset.as_str() {
+        "utf-8" | "utf8" => String::from_utf8(bytes.to_vec()).ok(),
+        "us-ascii" | "ascii" => {
+            if bytes.is_ascii() {
+                Some(String::from_utf8_lossy(bytes).into_owned())
+            } else {
+                None
+            }
+        }
+        "iso-8859-1" | "latin1" | "latin-1" => {
+            Some(bytes.iter().map(|byte| char::from(*byte)).collect())
+        }
+        _ => None,
+    }
+}
+
+/// Decodes one hexadecimal ASCII nibble used by RFC 2231 percent encoding.
+fn hex_value(byte: u8) -> Option<u8> {
+    match byte {
+        b'0'..=b'9' => Some(byte - b'0'),
+        b'A'..=b'F' => Some(byte - b'A' + 10),
+        b'a'..=b'f' => Some(byte - b'a' + 10),
+        _ => None,
+    }
 }
 
 /// Extracts one bounded Content-ID value without surrounding angle brackets.
@@ -1033,6 +1214,92 @@ mod tests {
     }
 
     #[test]
+    fn decodes_rfc2231_attachment_filename_parameters() {
+        let analyzer = MimeAnalyzer::new(MimeAnalysisPolicy::default());
+        let analysis = analyzer
+            .analyze_message(&message_view(
+                "Subject: Test\nContent-Type: multipart/mixed; boundary=\"mix-1\"\n",
+                concat!(
+                    "--mix-1\n",
+                    "Content-Type: text/plain; charset=utf-8\n",
+                    "\n",
+                    "Hello from text part\n",
+                    "--mix-1\n",
+                    "Content-Type: application/pdf\n",
+                    "Content-Disposition: attachment; filename*=utf-8''r%C3%A9sum%C3%A9.pdf\n",
+                    "\n",
+                    "%PDF-sample%\n",
+                    "--mix-1--\n",
+                ),
+            ))
+            .expect("analysis should succeed");
+
+        assert_eq!(analysis.attachments.len(), 1);
+        assert_eq!(
+            analysis.attachments[0].filename.as_deref(),
+            Some("résumé.pdf")
+        );
+    }
+
+    #[test]
+    fn decodes_rfc2231_continued_attachment_filename_parameters() {
+        let analyzer = MimeAnalyzer::new(MimeAnalysisPolicy::default());
+        let analysis = analyzer
+            .analyze_message(&message_view(
+                "Subject: Test\nContent-Type: multipart/mixed; boundary=\"mix-1\"\n",
+                concat!(
+                    "--mix-1\n",
+                    "Content-Type: text/plain; charset=utf-8\n",
+                    "\n",
+                    "Hello from text part\n",
+                    "--mix-1\n",
+                    "Content-Type: application/pdf\n",
+                    "Content-Disposition: attachment; ",
+                    "filename*0*=utf-8''quarterly-%E2%9C; ",
+                    "filename*1*=%93-report.pdf\n",
+                    "\n",
+                    "%PDF-sample%\n",
+                    "--mix-1--\n",
+                ),
+            ))
+            .expect("analysis should succeed");
+
+        assert_eq!(analysis.attachments.len(), 1);
+        assert_eq!(
+            analysis.attachments[0].filename.as_deref(),
+            Some("quarterly-✓-report.pdf")
+        );
+    }
+
+    #[test]
+    fn decodes_rfc2231_content_type_name_parameters() {
+        let analyzer = MimeAnalyzer::new(MimeAnalysisPolicy::default());
+        let analysis = analyzer
+            .analyze_message(&message_view(
+                "Subject: Test\nContent-Type: multipart/mixed; boundary=\"mix-1\"\n",
+                concat!(
+                    "--mix-1\n",
+                    "Content-Type: text/plain; charset=utf-8\n",
+                    "\n",
+                    "Hello from text part\n",
+                    "--mix-1\n",
+                    "Content-Type: application/pdf; name*=iso-8859-1''caf%E9.pdf\n",
+                    "Content-Disposition: attachment\n",
+                    "\n",
+                    "%PDF-sample%\n",
+                    "--mix-1--\n",
+                ),
+            ))
+            .expect("analysis should succeed");
+
+        assert_eq!(analysis.attachments.len(), 1);
+        assert_eq!(
+            analysis.attachments[0].filename.as_deref(),
+            Some("café.pdf")
+        );
+    }
+
+    #[test]
     fn surfaces_nested_attachment_metadata_from_common_multipart_layouts() {
         let analyzer = MimeAnalyzer::new(MimeAnalysisPolicy::default());
         let analysis = analyzer
@@ -1138,5 +1405,35 @@ mod tests {
         assert_eq!(part.metadata.content_id.as_deref(), None);
         assert_eq!(part.transfer_encoding, "base64");
         assert_eq!(part.body_text, "SGVsbG8=");
+    }
+
+    #[test]
+    fn resolves_rfc2231_filename_when_finding_attachment_parts() {
+        let analyzer = MimeAnalyzer::new(MimeAnalysisPolicy::default());
+        let part = analyzer
+            .find_attachment_part(
+                &message_view(
+                    "Subject: Test\nContent-Type: multipart/mixed; boundary=\"mix-1\"\n",
+                    concat!(
+                        "--mix-1\n",
+                        "Content-Type: text/plain\n",
+                        "\n",
+                        "Hello\n",
+                        "--mix-1\n",
+                        "Content-Type: application/pdf\n",
+                        "Content-Transfer-Encoding: base64\n",
+                        "Content-Disposition: attachment; filename*=utf-8''r%C3%A9sum%C3%A9.pdf\n",
+                        "\n",
+                        "SGVsbG8=\n",
+                        "--mix-1--\n",
+                    ),
+                ),
+                "1.2",
+            )
+            .expect("lookup should succeed")
+            .expect("attachment should exist");
+
+        assert_eq!(part.metadata.filename.as_deref(), Some("résumé.pdf"));
+        assert_eq!(part.transfer_encoding, "base64");
     }
 }
