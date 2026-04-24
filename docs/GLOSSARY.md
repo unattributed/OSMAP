@@ -1,7 +1,8 @@
 # Glossary
 
 This glossary records recurring OSMAP terms that now appear across the Phase 0
-through Phase 6 documentation set and the current Rust implementation.
+through Version 2 closeout documentation set and the current Rust
+implementation.
 
 ## Terms
 
@@ -45,7 +46,9 @@ some audit fields operate on this canonicalized view.
 
 The authoritative Version 1 release-facing proof boundary defined in
 `ACCEPTANCE_CRITERIA.md` and exercised by the repo-owned closeout validation
-wrappers described in `V1_CLOSEOUT_SOP.md`.
+wrappers described in `V1_CLOSEOUT_SOP.md`. Version 2 uses the separate
+readiness and pilot-closeout records in `V2_ACCEPTANCE_CRITERIA.md`,
+`V2_PILOT_STATUS.md`, and `V2_PILOT_CLOSEOUT.md`.
 
 ### Development Mode
 
@@ -80,8 +83,9 @@ host-local details.
 ### Roundcube Retirement
 
 The later-phase act of removing Roundcube from the active browser-mail role
-after OSMAP migration, pilot, rollback planning, and workflow validation are
-all complete. It is not yet an active project phase.
+after OSMAP migration, rollback planning, and workflow validation are complete
+for the intended rollout population. The Version 2 pilot closeout does not by
+itself retire Roundcube.
 
 ### Safe HTML Rendering
 
@@ -121,4 +125,6 @@ storing mailbox secrets in version control.
 
 The conservative deployment assumption that browser access may initially remain
 behind the current VPN and edge allowlisting model instead of treating broad
-public internet exposure as the default first-release posture.
+public internet exposure as the default fallback posture. Version 2 now has
+approved limited direct-public browser exposure evidence, but VPN-first remains
+a valid rollback or staging posture.

@@ -8,13 +8,13 @@ The goal is to preserve least privilege on OpenBSD without teaching the
 web-facing OSMAP runtime to depend on `doas` and without running the web-facing
 service itself as `vmail`.
 
-## Verified Problem
+## Verified Problem That Drove The Helper
 
-The current prototype reads mailbox data by invoking `doveadm` from the OSMAP
+The earlier prototype read mailbox data by invoking `doveadm` from the OSMAP
 web process.
 
-That is good enough for a bounded prototype, but current live-host validation on
-`mail.blackbagsecurity.com` proves it is not a sufficient final shape for
+That was good enough for a bounded prototype, but live-host validation on
+`mail.blackbagsecurity.com` proved it was not a sufficient final shape for
 least-privilege deployment there.
 
 The relevant facts now verified are:
@@ -24,11 +24,12 @@ The relevant facts now verified are:
 - OSMAP running as `_osmap` can also reach a dedicated Dovecot userdb listener
 - the host Dovecot `user_query` still resolves mailbox access to
   `uid=2000(vmail)` and `gid=2000(vmail)`
-- mailbox helpers run from the `_osmap` web process therefore fail on the
-  current host when Dovecot tries to transition to the virtual-mail identity
+- mailbox helpers run from the `_osmap` web process therefore failed on the
+  current host when Dovecot tried to transition to the virtual-mail identity
 
-This means the remaining blocker is not auth-socket reachability. It is the
-mailbox-read identity boundary.
+That established the problem as the mailbox-read identity boundary rather than
+auth-socket reachability. The implemented `mailbox-helper` path below is the
+selected resolution for the current bounded OSMAP surface.
 
 ## Rejected Immediate Answers
 

@@ -4,24 +4,25 @@
 
 This document defines the authoritative Version 2 boundary for OSMAP.
 
-Version 2 is not "Version 1 plus more features." It is the first release
-candidate intended to make OSMAP credible for controlled real-world adoption on
-the known OpenBSD mail host shape.
+Version 2 is not "Version 1 plus more features." It is the release boundary
+that makes OSMAP credible for controlled real-world adoption on the known
+OpenBSD mail host shape.
 
 ## Authoritative Definition
 
-OSMAP Version 2 is the first pilot-ready, migration-capable production
+OSMAP Version 2 is the first pilot-complete, migration-capable production
 candidate for the known OpenBSD mail environment: a security-first browser mail
 service that preserves the existing mail stack, keeps the `_osmap` to `vmail`
-least-privilege boundary intact, supports direct public browser access through
-a hardened HTTPS edge once the explicit internet-exposure gate is satisfied,
-and ships with the operator, migration, rollback, and validation material
-needed for controlled real-world use.
+least-privilege boundary intact, supports limited direct public browser access
+through a hardened HTTPS edge after the explicit internet-exposure gate is
+satisfied, and ships with the operator, migration, rollback, validation, and
+pilot-closeout material needed for controlled real-world use.
 
 ## Working Definition
 
-Version 2 is the first security-validated, operator-usable, migration-capable
-OSMAP release for direct browser access on the real OpenBSD mail host shape.
+Version 2 is the first security-validated, operator-usable, pilot-complete,
+migration-capable OSMAP release for direct browser access on the real OpenBSD
+mail host shape.
 
 ## Why Version 2 Exists
 
@@ -34,13 +35,13 @@ Version 1 now proves the narrow browser-mail product shape:
 - bounded send and one-message move
 - OpenBSD confinement and least-privilege backend coupling
 
-That is enough to freeze the first secure browser slice, but it is not yet
-enough to declare OSMAP ready for limited real-world replacement of Roundcube.
+That was enough to freeze the first secure browser slice, but not enough by
+itself to declare OSMAP ready for limited real-world replacement of Roundcube.
 
 Version 2 exists to close the gap between:
 
 - a working, validated prototype
-- a migration-capable, pilot-ready release candidate
+- a migration-capable, pilot-complete release candidate
 
 ## Version 2 In Scope
 
@@ -57,8 +58,8 @@ Version 2 exists to close the gap between:
   invalid login, throttled login, throttled send, throttled move, helper peer
   rejection, CSRF and same-origin rejection, bounded backend failure behavior
 - migration and rollback planning sufficient to support a controlled pilot
-- pilot deployment guidance that treats public browser reachability as intended,
-  but still gated by explicit readiness criteria
+- pilot deployment and closeout guidance that treats public browser
+  reachability as intended, but still gated by explicit readiness criteria
 - narrowly scoped product work only when the pilot workflow inventory proves it
   is required for migration-capable adoption
 
@@ -108,6 +109,7 @@ following are true:
 - the public-exposure gate is defined and passed before that deployment posture
   is claimed
 - the migration and rollback story is credible for a small controlled pilot
+- the bounded real-user pilot result is archived in repo-owned docs
 - the remaining deferred work is clearly Version 3 or later, not hidden inside
   Version 2
 

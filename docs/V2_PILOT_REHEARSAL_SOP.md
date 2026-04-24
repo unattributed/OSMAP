@@ -3,8 +3,8 @@
 ## Purpose
 
 This document records the standard operator procedure for rehearsing the
-authoritative Version 2 readiness gate on the validated host before or during
-pilot preparation.
+authoritative Version 2 readiness gate on the validated host before, during,
+or after pilot work.
 
 It exists to keep one short operational answer in-repo for:
 
@@ -167,9 +167,10 @@ match exactly the subset the operator selected.
 Rerun the Version 2 readiness wrapper when:
 
 - Version 2 gate-facing behavior changes
-- migration or pilot guidance needs fresh proof against the current snapshot
+- migration, pilot, or closeout guidance needs fresh proof against the current
+  snapshot
 - the public-exposure, rollback, or hostile-path story may have drifted
-- the operator wants a fresh pre-pilot readiness snapshot from
+- the operator wants a fresh readiness snapshot from
   `mail.blackbagsecurity.com`
 
 Do not widen the proof set casually. Use the exact authoritative wrapper steps

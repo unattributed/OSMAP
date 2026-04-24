@@ -91,8 +91,29 @@ Primary outputs:
 - `PROOF_OF_CONCEPT_PLAN.md`
 - `WORK_DECOMPOSITION.md`
 
+## Version 1 And Version 2 Closeout
+
+Objective:
+Validate the bounded browser-mail implementation on the real OpenBSD host
+shape, prove rollback and limited public browser exposure, and close the
+initial real-user pilot without widening the product scope.
+
+Primary outputs:
+
+- `V1_CLOSEOUT_SOP.md`
+- `V2_DEFINITION.md`
+- `V2_ACCEPTANCE_CRITERIA.md`
+- `V2_PILOT_CLOSEOUT.md`
+- `V2_PILOT_STATUS.md`
+- `PILOT_WORKFLOW_INVENTORY.md`
+- `PILOT_DEPLOYMENT_PLAN.md`
+- `MIGRATION_PLAN_ROUNDCUBE.md`
+- `EDGE_CUTOVER_PLAN.md`
+- `INTERNET_EXPOSURE_STATUS.md`
+
 ## Later Phases
 
-Later phases cover implementation, validation, pilot deployment, migration, and
-Roundcube retirement. Those phases should not be treated as active until the
-current phase outputs are genuinely reviewable.
+Later phases cover Version 3 workflow refinement, broader migration rollout,
+packaging or ports integration, deeper hardening, and eventual Roundcube
+retirement. They should build on the closed Version 2 evidence instead of
+reopening Version 2 as a feature-expansion phase.

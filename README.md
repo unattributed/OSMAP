@@ -119,8 +119,9 @@ Each phase produces formal outputs to support traceability and auditability.
 
 - OSMAP is now a working prototype with real Rust implementation, not only a
   design repo.
-- Planning, architecture, security, SDLC, and implementation-control documents
-  are populated through the current Phase 6 baseline.
+- Planning, architecture, security, SDLC, implementation-control, readiness,
+  exposure, rollback, and pilot-closeout documents are populated through the
+  current Version 2 closeout baseline.
 - The runtime includes typed configuration, explicit state layout, structured
   logging, bounded auth, TOTP, session issuance and revocation, CSRF handling,
   mailbox browsing, message listing and viewing, bounded one-mailbox and
@@ -326,16 +327,17 @@ see `docs/V1_CLOSEOUT_WORK_RULES.md`.
 
 ## V2 Direction
 
-Version 2 is now defined as the first pilot-ready, migration-capable production
-candidate for the known OpenBSD mail environment. It is intended to preserve
-OSMAP's narrow security-first shape while making the project credible for
-controlled real-world use and direct browser access through a hardened public
-HTTPS edge once the explicit internet-exposure gate is satisfied.
+Version 2 is now the first pilot-complete, migration-capable production
+candidate for the known OpenBSD mail environment. It preserves OSMAP's narrow
+security-first shape while making the project credible for controlled
+real-world use and limited direct browser access through a hardened public
+HTTPS edge after the explicit internet-exposure gate is satisfied.
 
 The authoritative Version 2 definition and release gate now live in:
 
 - `docs/V2_DEFINITION.md`
 - `docs/V2_ACCEPTANCE_CRITERIA.md`
+- `docs/V2_PILOT_CLOSEOUT.md`
 - `docs/V2_PILOT_STATUS.md`
 - `docs/PILOT_WORKFLOW_INVENTORY.md`
 
@@ -345,7 +347,7 @@ The short form is:
 - preserve Dovecot and Postfix as the authoritative backends
 - support direct public browser access only after the repo-defined exposure gate
   is passed
-- focus Version 2 on migration readiness, operator readiness, pilot readiness,
+- focus Version 2 on migration readiness, operator readiness, pilot closeout,
   and hostile-path proof rather than on broad feature expansion
 
 Unless a narrower migration-capable need is proven, the following remain beyond

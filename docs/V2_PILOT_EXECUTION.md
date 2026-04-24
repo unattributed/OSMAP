@@ -12,6 +12,7 @@ and operator guidance.
 ## Use These Documents Instead
 
 - `docs/V2_PILOT_STATUS.md` for the single live pilot-closeout status
+- `docs/V2_PILOT_CLOSEOUT.md` for the final completed pilot record
 - `docs/V2_DEFINITION.md` for the Version 2 product boundary
 - `docs/V2_ACCEPTANCE_CRITERIA.md` for the authoritative V2 gate
 - `docs/PILOT_DEPLOYMENT_PLAN.md` for pilot entry, pause, rollback, and exit

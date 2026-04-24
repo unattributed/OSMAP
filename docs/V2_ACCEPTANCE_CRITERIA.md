@@ -6,7 +6,8 @@ This document defines the authoritative Version 2 release gate for OSMAP.
 
 Version 2 should not be declared ready because it has "enough features." It is
 ready only when the real deployment shape, the real trust boundary, the real
-public-exposure posture, and the real migration path are all proven together.
+public-exposure posture, the real migration path, and the bounded pilot result
+are all proven together.
 
 The repo-owned wrappers:
 
@@ -18,7 +19,8 @@ are the authoritative operator entrypoints for that gate.
 For the short operator procedure around routine host-side and off-host
 Version 2 rehearsal runs, see `V2_PILOT_REHEARSAL_SOP.md`.
 
-For the single live pilot-closeout status snapshot, see `V2_PILOT_STATUS.md`.
+For the final pilot-closeout record and live status snapshot, see
+`V2_PILOT_CLOSEOUT.md` and `V2_PILOT_STATUS.md`.
 
 The current authoritative readiness step set is:
 
@@ -157,7 +159,7 @@ of the following must be true:
 
 ## Migration And Pilot Gate
 
-Before Version 2 is considered complete, the repo must also show:
+The Version 2 completion record must also show:
 
 - a repo-owned workflow inventory for the intended pilot users, currently
   recorded in `PILOT_WORKFLOW_INVENTORY.md`
@@ -166,6 +168,8 @@ Before Version 2 is considered complete, the repo must also show:
   widening OSMAP authority
 - a pilot plan with entry, abort, rollback, and exit criteria
 - documentation that makes the remaining unsupported workflows obvious up front
+- a final bounded pilot closeout record, currently recorded in
+  `V2_PILOT_CLOSEOUT.md`
 
 ## Required Operator Truthfulness
 

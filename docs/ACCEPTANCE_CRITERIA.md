@@ -88,7 +88,7 @@ Phase 6 is acceptable when all of the following are true:
 - the project can begin implementation without ambiguity about what should be
   built first
 
-## Current Status On April 2, 2026
+## Baseline Status On April 2, 2026
 
 Phase 0:
 
@@ -226,8 +226,8 @@ Phase 6:
   closeout work is now mostly release-gate honesty and documentation
   discipline, with bounded-runtime correctness or availability fixes only if
   repo evidence still exposes a blocker
-- the actual prototype now exists and Phase 6 execution is materially underway,
-  but the implementation is still prototype-grade rather than production-ready
+- the actual prototype existed and Phase 6 execution was materially underway,
+  but the implementation was still prototype-grade rather than production-ready
 
 ## Current Version 1 Release Gate
 

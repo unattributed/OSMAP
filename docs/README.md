@@ -12,19 +12,21 @@ The repository deliberately separates:
 - Private operator notes and working material under ignored paths such as
   `PKCB/` and `AGENTS.md`
 
-As of April 2, 2026, the project has substantive public-safe documentation
-through active Phase 6 implementation. The current baseline was built from:
+As of April 24, 2026, the project has substantive public-safe documentation
+through Version 2 pilot closeout. The current baseline was built from:
 
 - private PKCB planning notes
 - repository phase control blocks
 - read-only inspection of `mail.blackbagsecurity.com`
 - current in-repo Rust implementation and validation evidence
+- repo-owned Version 2 readiness, public-exposure, rollback, and pilot
+  closeout records
 
 The documents in this folder are written for two audiences:
 
 - sysadmins who need to understand the current mail stack and migration impact
 - collaborating developers who need phase boundaries, constraints, and
-  integration facts before implementation begins
+  integration facts for maintenance, validation, and future scoped work
 
 Current primary documents:
 
@@ -72,6 +74,7 @@ Current primary documents:
 - `V1_CLOSEOUT_WORK_RULES.md`
 - `V2_DEFINITION.md`
 - `V2_ACCEPTANCE_CRITERIA.md`
+- `V2_PILOT_CLOSEOUT.md`
 - `V2_PILOT_STATUS.md`
 - `V2_WSTG_REMEDIATION_2026_04_23.md`
 - `V2_PILOT_REHEARSAL_SOP.md`
@@ -85,22 +88,19 @@ Current primary documents:
 - `INTERNET_EXPOSURE_CHECKLIST.md`
 - `INTERNET_EXPOSURE_SOP.md`
 - `INTERNET_EXPOSURE_STATUS.md`
+- `MIGRATION_PLAN_ROUNDCUBE.md`
+- `PILOT_DEPLOYMENT_PLAN.md`
 - `PILOT_WORKFLOW_INVENTORY.md`
 - `WORK_DECOMPOSITION.md`
 - `DECISION_LOG.md`
 
 The intent of these documents is operational usefulness, not ceremony. Phase 0
-through Phase 6 documents should stay populated, current, and reviewable as the
-project moves through implementation, mailbox-helper refinement, attachment
-handling, safe HTML rendering, bounded user settings, OpenBSD hardening,
-GitHub-side security gating, and the remaining hardening and workflow work
-around broader abuse resistance, live mutation-path proof, and
-folder-organization refinement beyond the now-implemented first
-login, send, and message-move throttle slices. They should also stay current with behavior-preserving
-internal refactors that reduce review hotspots in the Rust implementation,
-especially around the HTTP and mailbox boundaries, including the ongoing
-decomposition of `http.rs`, `mailbox.rs`, and `mailbox_helper.rs` into smaller
-reviewable modules.
+through Version 2 documents should stay populated, current, and reviewable as
+the project moves through maintenance, migration planning, broader hardening,
+and future Version 3 workflow work. The current Version 2 documentation set
+records a bounded pilot-complete state, not broad production readiness or
+feature expansion. Requested additional functionality and Thunderbird-like UX
+polish remain Version 3 or later work.
 
 Some later-phase or deferred documents remain placeholders so the intended
 documentation map is visible without publishing private notes prematurely.

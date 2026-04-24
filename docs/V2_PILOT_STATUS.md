@@ -9,8 +9,8 @@ Use it for the current answer to:
 
 - whether the repo-owned V2 gate is currently passing
 - whether rollback evidence is current
-- whether the project is ready to claim final V2 closeout
-- which remaining blockers are still operational rather than implementation
+- whether final V2 closeout has been claimed
+- which follow-up work is explicitly deferred beyond Version 2
 
 Use the linked documents below for scope, operator procedure, and detailed gate
 definitions. Do not treat those documents as separate live status trackers.

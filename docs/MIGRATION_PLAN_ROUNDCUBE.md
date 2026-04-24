@@ -5,10 +5,11 @@
 This document records the current public-safe migration baseline for replacing
 Roundcube's core browser-mail role with OSMAP.
 
-The project is not yet in general cutover. OSMAP remains prototype-grade and
-does not yet have a public deployment. Even so, the repository now has enough
-implemented workflow surface, host proof, and deployment guidance that a formal
-migration plan is more useful than a stub.
+The project is not yet in general cutover. OSMAP remains prototype-grade, but
+the repository now has limited direct-public browser exposure evidence, a
+completed bounded Version 2 pilot, implemented workflow surface, host proof,
+and deployment guidance. A formal migration plan is therefore more useful than
+a stub.
 
 ## Migration Objective
 
@@ -19,7 +20,7 @@ The migration goal is narrow:
 - preserve the existing OpenBSD mail stack as authoritative
 - preserve native-client access during and after migration
 - keep rollback to the legacy browser path straightforward until OSMAP is
-  proven in real use
+  proven for the intended rollout group
 
 This is not a "big bang" replacement of the whole mail platform.
 
@@ -36,6 +37,8 @@ The repo now provides real implementation and proof for:
 - one-message move plus a settings-backed archive shortcut
 - safe HTML rendering with plain-text fallback
 - helper-backed mailbox reads on the validated OpenBSD host
+- a completed bounded Version 2 pilot for retrieve mail, send mail, and send
+  mail with attachments
 
 The repo does not yet prove a full production migration by itself. Important
 limits still include:
@@ -51,16 +54,18 @@ immediate Roundcube retirement.
 ## Migration Principles
 
 - keep IMAP, SMTP submission, and native clients unchanged
-- treat direct public browser access as an intended supported deployment target,
-  but only after the repo-defined internet-exposure gate is satisfied
+- treat limited direct public browser access as an evidence-gated posture that
+  is currently approved for the validated Version 2 host shape, and repeat the
+  exposure gate before any materially different rollout
 - do not import risky Roundcube behavior only for parity theater
 - avoid coupling migration success to Roundcube database or preference import
   unless a real blocker proves that necessary
-- keep the Roundcube rollback path available until pilot exit criteria are met
+- keep the Roundcube rollback path available until migration exit criteria are
+  met for the chosen rollout group
 
 ## Preconditions
 
-Before any real user migration begins, the operator should confirm:
+Before any broader real user migration begins, the operator should confirm:
 
 - the authoritative Version 1 closeout gate passes on the intended host or an
   equivalent host posture
@@ -83,25 +88,27 @@ artifact for that confirmation.
 
 ### 2. Operator Shadow Use
 
-Run OSMAP in a trusted operator-only posture first:
+Run or rerun OSMAP in a trusted operator posture first for any new rollout
+group:
 
 - keep Roundcube available
 - keep native clients unchanged
 - validate login, read, search, send, move, session, and settings flows on the
   intended host
-- record any workflow blockers against the current Version 1 limitations
+- record any workflow blockers against the current Version 2 limitations
 
 ### 3. Small Pilot
 
-Move a small trusted user set to OSMAP for the supported bounded workflows
-while Roundcube remains available as rollback and comparison support. The pilot
-should follow `PILOT_DEPLOYMENT_PLAN.md`.
+The initial bounded Version 2 pilot is complete. For any future pilot rerun or
+expansion, move only a small trusted user set to OSMAP for the supported
+bounded workflows while Roundcube remains available as rollback and comparison
+support. The pilot should follow `PILOT_DEPLOYMENT_PLAN.md`.
 
 ### 4. Controlled Default Switch
 
-Only after the pilot is stable should OSMAP become the default browser-mail
-entry path for the chosen user group. Keep Roundcube reachable for rollback
-during the initial cutover window.
+Only after the relevant pilot or expansion cohort is stable should OSMAP become
+the default browser-mail entry path for the chosen user group. Keep Roundcube
+reachable for rollback during the initial cutover window.
 
 ### 5. Legacy Retirement
 
@@ -120,14 +127,14 @@ The current preferred migration posture is deliberately conservative:
 - keep OSMAP settings independent and intentionally small
 - require any legacy preference or database import to justify its own risk
 
-At the current repo stage, that means users should expect fresh OSMAP browser
-settings rather than a promise that historical Roundcube preferences will be
-ported.
+For the current Version 2 state, that means users should expect fresh OSMAP
+browser settings rather than a promise that historical Roundcube preferences
+will be ported.
 
 ## Workflow-Driven Cohort Selection
 
-The first real Version 2 pilot should prefer users whose daily browser-mail
-work already fits the current inventory in `PILOT_WORKFLOW_INVENTORY.md`.
+Future migration cohorts should prefer users whose daily browser-mail work
+already fits the current inventory in `PILOT_WORKFLOW_INVENTORY.md`.
 
 That means the current best-fit cohort is users who mainly need:
 

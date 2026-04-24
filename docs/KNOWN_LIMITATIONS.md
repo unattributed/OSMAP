@@ -84,10 +84,9 @@
   session-management UX
 - The architecture now defines a clear system shape, and the current repo now
   materially proves login, read, search, move, send, session, and confinement
-  behavior on the validated host, but Version 1 closeout still depends on
-  keeping the frozen release gate and status docs aligned with that proven
-  boundary and the successful April 14, 2026 current-pushed-snapshot host
-  rerun
+  behavior on the validated host. Version 1 closeout remains anchored to the
+  frozen release gate and the successful April 14, 2026 current-pushed-snapshot
+  host rerun.
 - The OpenBSD runtime now has an enforced confinement mode, and the current
   helper-side plus serve-side dependency view is narrowed to explicit auth,
   sendmail, loader, library, config, and socket paths on the validated host,
@@ -127,10 +126,10 @@
   but broader mutation coverage is still incomplete
 - The SDLC and release rules are now defined, but they have not yet been proven
   against a full live implementation pipeline
-- The project now has an implementation plan and work breakdown, but Version 1
-  closeout still depends on one authoritative release gate, one authoritative
-  host-side closeout wrapper path, and consistent status docs rather than on
-  widening the implementation surface
+- The project now has an implementation plan, work breakdown, Version 1
+  closeout gate, Version 2 readiness gate, and Version 2 pilot closeout record.
+  Future progress should continue through scoped gates rather than by widening
+  the completed Version 2 surface.
 
 ## Version 3 Backlog From April 2026 WSTG
 
