@@ -475,9 +475,9 @@ impl RuntimeBrowserGateway {
 
         match result {
             Ok(revoked_sessions) => {
-                let revoked_current_session = revoked_sessions
-                    .iter()
-                    .any(|revoked| revoked.record.session_id == validated_session.record.session_id);
+                let revoked_current_session = revoked_sessions.iter().any(|revoked| {
+                    revoked.record.session_id == validated_session.record.session_id
+                });
                 let mut audit_events = revoked_sessions
                     .iter()
                     .map(|revoked| revoked.audit_event.clone())

@@ -8,6 +8,9 @@ The project is not yet in active pilot rollout, but it now has enough
 implementation depth, host validation, and operator scaffolding to define the
 entry criteria and operating shape for a future small-user pilot.
 
+For the current live pilot-closeout status, use `V2_PILOT_STATUS.md`. This
+document defines the standing plan, not the day-to-day status snapshot.
+
 ## Pilot Objective
 
 The pilot should prove that the current bounded OSMAP feature set can replace

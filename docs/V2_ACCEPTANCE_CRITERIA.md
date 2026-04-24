@@ -18,6 +18,8 @@ are the authoritative operator entrypoints for that gate.
 For the short operator procedure around routine host-side and off-host
 Version 2 rehearsal runs, see `V2_PILOT_REHEARSAL_SOP.md`.
 
+For the single live pilot-closeout status snapshot, see `V2_PILOT_STATUS.md`.
+
 The current authoritative readiness step set is:
 
 - `security-check`

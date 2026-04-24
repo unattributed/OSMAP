@@ -1,7 +1,7 @@
 osmap_edge_cutover_result=passed
 project_root=/home/foo/OSMAP
 assessed_host=mail.blackbagsecurity.com
-assessed_snapshot=86edd05
+assessed_snapshot=b7ac387
 expected_https_listener_bindings=10.44.0.1.443,127.0.0.1.443,192.168.1.44.443
 https_listener_bindings=10.44.0.1.443,127.0.0.1.443,192.168.1.44.443
 osmap_listener_bindings=127.0.0.1.8080
@@ -10,10 +10,10 @@ public_https_includes=/etc/nginx/templates/ssl.tmpl,/etc/nginx/templates/osmap-r
 private_https_includes=/etc/nginx/templates/ssl.tmpl,/etc/nginx/templates/misc.tmpl,/etc/nginx/templates/osmap-root.tmpl,/etc/nginx/templates/sogo.tmpl,/etc/nginx/templates/postfixadmin.tmpl,/etc/nginx/templates/php-catchall.tmpl,/etc/nginx/templates/stub_status.tmpl,/etc/nginx/templates/pf_dashboard.locations.tmpl,/etc/nginx/templates/ops_monitor.locations.tmpl,/etc/nginx/templates/obsd1_dr_portal.locations.tmpl,/etc/nginx/templates/rspamd.tmpl,/etc/nginx/templates/brevo_webhook.locations.tmpl
 failed_checks=
 listener_lines=
-tcp          0      0  127.0.0.1.8080         *.*                    LISTEN
-tcp          0      0  192.168.1.44.443       *.*                    LISTEN
-tcp          0      0  10.44.0.1.443          *.*                    LISTEN
 tcp          0      0  127.0.0.1.443          *.*                    LISTEN
+tcp          0      0  127.0.0.1.8080         *.*                    LISTEN
+tcp          0      0  10.44.0.1.443          *.*                    LISTEN
+tcp          0      0  192.168.1.44.443       *.*                    LISTEN
 nginx_main_ssl=
 # HTTPS vhosts for mail.blackbagsecurity.com
 # nginx chroot: /var/www
@@ -87,8 +87,10 @@ nginx_osmap_root_template=
 # Preserve legacy entry aliases but converge on the canonical root.
 location = /mail { return 301 /; }
 location = /webmail { return 301 /; }
+location = /osmap { return 301 /; }
 location ^~ /mail/ { return 301 /; }
 location ^~ /webmail/ { return 301 /; }
+location ^~ /osmap/ { return 301 /; }
 
 location / {
     limit_except GET POST { deny all; }

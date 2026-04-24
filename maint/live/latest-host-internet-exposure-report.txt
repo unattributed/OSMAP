@@ -1,7 +1,7 @@
 osmap_internet_exposure_result=approved_for_limited_direct_public_browser_exposure
 project_root=/home/foo/OSMAP
 assessed_host=mail.blackbagsecurity.com
-assessed_snapshot=86edd05
+assessed_snapshot=b7ac387
 https_listener_bindings=10.44.0.1.443,127.0.0.1.443,192.168.1.44.443
 http_listener_bindings=*.80
 imap_tls_listener_bindings=10.44.0.1.993,127.0.0.1.993
@@ -15,20 +15,20 @@ blocking_reasons=
 advisory_findings=
 nginx_control_plane_allowlist_is_limited_to_wireguard_and_loopback
 listener_lines=
-tcp          0      0  127.0.0.1.4190         *.*                    LISTEN
-tcp          0      0  10.44.0.1.4190         *.*                    LISTEN
-tcp          0      0  10.44.0.1.465          *.*                    LISTEN
-tcp          0      0  127.0.0.1.465          *.*                    LISTEN
-tcp          0      0  10.44.0.1.587          *.*                    LISTEN
-tcp          0      0  127.0.0.1.587          *.*                    LISTEN
-tcp          0      0  *.25                   *.*                    LISTEN
-tcp          0      0  192.168.1.44.22        *.*                    LISTEN
 tcp          0      0  *.80                   *.*                    LISTEN
-tcp          0      0  192.168.1.44.443       *.*                    LISTEN
+tcp          0      0  192.168.1.44.22        *.*                    LISTEN
+tcp          0      0  *.25                   *.*                    LISTEN
+tcp          0      0  127.0.0.1.587          *.*                    LISTEN
+tcp          0      0  10.44.0.1.587          *.*                    LISTEN
+tcp          0      0  127.0.0.1.465          *.*                    LISTEN
+tcp          0      0  10.44.0.1.465          *.*                    LISTEN
+tcp          0      0  10.44.0.1.4190         *.*                    LISTEN
+tcp          0      0  127.0.0.1.443          *.*                    LISTEN
+tcp          0      0  127.0.0.1.4190         *.*                    LISTEN
 tcp          0      0  10.44.0.1.993          *.*                    LISTEN
 tcp          0      0  10.44.0.1.443          *.*                    LISTEN
-tcp          0      0  127.0.0.1.443          *.*                    LISTEN
 tcp          0      0  127.0.0.1.993          *.*                    LISTEN
+tcp          0      0  192.168.1.44.443       *.*                    LISTEN
 pf_selfhost_rules=
 pass in quick on egress inet from <suricata_allow> to any flags S/SA keep state (if-bound)
 block drop in log quick on egress inet from <suricata_block> to any

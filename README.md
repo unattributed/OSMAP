@@ -335,6 +335,7 @@ The authoritative Version 2 definition and release gate now live in:
 
 - `docs/V2_DEFINITION.md`
 - `docs/V2_ACCEPTANCE_CRITERIA.md`
+- `docs/V2_PILOT_STATUS.md`
 - `docs/PILOT_WORKFLOW_INVENTORY.md`
 
 The short form is:
