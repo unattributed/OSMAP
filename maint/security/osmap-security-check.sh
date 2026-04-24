@@ -180,6 +180,9 @@ sh maint/security/test-osmap-openbsd-launcher-log-capture.sh
 echo "==> validating live validator pid quoting"
 sh maint/security/test-osmap-live-validator-pid-quoting.sh
 
+echo "==> validating session-surface timestamp freshness"
+sh maint/security/test-osmap-session-surface-timestamps.sh
+
 echo "==> validating live auth observability wrapper behavior"
 sh maint/security/test-osmap-live-validate-auth-observability.sh
 

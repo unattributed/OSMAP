@@ -4989,3 +4989,23 @@ and all three reported that the presented functions worked as expected.
 OSMAP now treats the Version 2 pilot as complete for that bounded browser-mail
 scope. Additional requested functionality and a more polished Thunderbird-like
 user experience remain deferred to Version 3 or later.
+
+### Keep the live session-surface proof independent of build duration
+
+The live `session-surface` validator seeded synthetic session timestamps before
+building the current tree. On a slower host build, the synthetic session meant
+to remain active for the revoke-other check could age past the configured idle
+timeout before the browser request reached the runtime. That made the V1 and V2
+gates intermittently fail even though the underlying session behavior was
+working.
+
+The validator now timestamps the synthetic active sessions after `cargo build`
+and keeps the intentionally idle session stale. The shared `security-check`
+gate also includes a small regression that verifies this timestamp ordering and
+keeps the active synthetic sessions fresh.
+
+After that harness fix, both authoritative host gates passed on
+`mail.blackbagsecurity.com`:
+
+- `maint/live/latest-host-v1-closeout-report.txt`
+- `maint/live/latest-host-v2-readiness-report.txt`

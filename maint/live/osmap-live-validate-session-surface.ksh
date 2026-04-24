@@ -152,15 +152,6 @@ CURRENT_SESSION_ID="$(printf 'session-id:%s' "${SESSION_TOKEN}" | sha256 -q)"
 CSRF_TOKEN="$(printf 'csrf:%s' "${SESSION_TOKEN}" | sha256 -q)"
 REVOKE_ALL_SESSION_ID="$(printf 'session-id:%s' "${REVOKE_ALL_SESSION_TOKEN}" | sha256 -q)"
 REVOKE_ALL_CSRF_TOKEN="$(printf 'csrf:%s' "${REVOKE_ALL_SESSION_TOKEN}" | sha256 -q)"
-NOW="$(date +%s)"
-EXPIRES_AT="$((NOW + 3600))"
-OTHER_ISSUED_AT="$((NOW - 120))"
-OTHER_LAST_SEEN_AT="$((NOW - 30))"
-BULK_OTHER_ISSUED_AT="$((NOW - 180))"
-BULK_OTHER_LAST_SEEN_AT="$((NOW - 40))"
-IDLE_ISSUED_AT="$((NOW - 240))"
-IDLE_LAST_SEEN_AT="$((NOW - 120))"
-
 write_session_record() {
   session_id="$1"
   csrf_token="$2"
@@ -208,6 +199,15 @@ TMPDIR="${TMPDIR_PATH}" \
   CARGO_TARGET_DIR="${CARGO_TARGET_DIR_PATH}" \
   cargo build --quiet
 doas install -o _osmap -g _osmap -m 755 "${CARGO_TARGET_DIR_PATH}/debug/osmap" "${BIN_PATH}"
+
+NOW="$(date +%s)"
+EXPIRES_AT="$((NOW + 3600))"
+OTHER_ISSUED_AT="$((NOW - 120))"
+OTHER_LAST_SEEN_AT="${NOW}"
+BULK_OTHER_ISSUED_AT="$((NOW - 180))"
+BULK_OTHER_LAST_SEEN_AT="${NOW}"
+IDLE_ISSUED_AT="$((NOW - 240))"
+IDLE_LAST_SEEN_AT="$((NOW - 120))"
 
 log "writing synthetic session records"
 write_session_record "${CURRENT_SESSION_ID}" "${CSRF_TOKEN}" "${NOW}" "${EXPIRES_AT}" "${NOW}" "127.0.0.1" "${USER_AGENT}"
