@@ -807,6 +807,13 @@ class Runner:
             "doas nginx -T 2>/dev/null | egrep 'server_name mail.blackbagsecurity.com|proxy_pass http://127.0.0.1:8080|limit_except GET POST|listen .*443|include /etc/nginx/templates/osmap-root.tmpl' | head -80",
         )
         combined = f"{services}\n{bindings}\n{nginx}"
+        if "ERROR:" in combined:
+            return self.result(
+                "OSMAP-WSTG-CONF-005",
+                STATUS_WARNING,
+                "host-assisted SSH evidence was unavailable from the current network path",
+                ["evidence/host_services.txt", "evidence/host_bindings.txt", "evidence/host_nginx.txt"],
+            )
         required = ["nginx(ok)", "osmap_serve(ok)", "osmap_mailbox_helper(ok)", "127.0.0.1.8080", "proxy_pass http://127.0.0.1:8080"]
         missing = [item for item in required if item not in combined]
         if missing:
@@ -820,6 +827,13 @@ class Runner:
             "host_pf.txt",
             "doas pfctl -s info 2>/dev/null | head -40; printf '\\n--- rules ---\\n'; doas pfctl -sr 2>/dev/null | head -120",
         )
+        if "ERROR:" in pf:
+            return self.result(
+                "OSMAP-WSTG-CONF-006",
+                STATUS_WARNING,
+                "host-assisted SSH pf evidence was unavailable from the current network path",
+                ["evidence/host_pf.txt"],
+            )
         if "Status: Enabled" not in pf or "block drop" not in pf:
             return self.result("OSMAP-WSTG-CONF-006", STATUS_FAIL, "pf evidence does not show enabled default-drop posture", ["evidence/host_pf.txt"])
         return self.result("OSMAP-WSTG-CONF-006", STATUS_PASS, "pf is enabled and rules include drop posture", ["evidence/host_pf.txt"])
