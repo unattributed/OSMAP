@@ -447,9 +447,9 @@ mod tests {
             CommandExecution {
                 status_code: 0,
                 stdout: [
-                    "uid=4 flags=\\Seen date.received=2025-12-17 11:49:08 size.virtual=4095 mailbox=Sent hdr.subject=3 things hdr.from=\"Duncan @ Black Bag Security\" <duncan@blackbagsecurity.com>",
-                    "uid=9 flags=\\Recent date.received=2026-04-07 09:22:30 size.virtual=42552 mailbox=Junk hdr.subject=Re: Work opportunity hdr.from=\"Duncan @ Redacted\" <duncan@redactedsecurity.ca>",
-                    "uid=13 flags=\\Flagged \\Seen date.received=2026-02-06 05:23:43 size.virtual=6056 mailbox=INBOX.serjon hdr.subject=Re: Catching Up hdr.from=\"Duncan @ Redacted Security\" <duncan@redactedsecurity.ca>",
+                    "uid=4 flags=\\Seen date.received=2025-12-17 11:49:08 size.virtual=4095 mailbox=Sent hdr.subject=3 things hdr.from=\"Pilot Primary\" <pilot-primary@example.invalid>",
+                    "uid=9 flags=\\Recent date.received=2026-04-07 09:22:30 size.virtual=42552 mailbox=Junk hdr.subject=Re: Work opportunity hdr.from=\"Pilot Secondary\" <pilot-secondary@example.invalid>",
+                    "uid=13 flags=\\Flagged \\Seen date.received=2026-02-06 05:23:43 size.virtual=6056 mailbox=INBOX.serjon hdr.subject=Re: Catching Up hdr.from=\"Pilot Secondary\" <pilot-secondary@example.invalid>",
                     "uid=4 flags=\\Answered \\Seen date.received=2026-02-13 05:53:35 size.virtual=13826 mailbox=INBOX.IOA hdr.subject=IOActive MNDA (US).docx hdr.from=\"IOActive Legal Dept. via Docusign\" <dse@docusign.net>",
                     "uid=1 flags=\\Seen NonJunk date.received=2025-11-24 16:19:38 size.virtual=64173 mailbox=Trash hdr.subject=***UNCHECKED*** Your new Fee Information Document hdr.from=\"Wise (formerly TransferWise)\" <noreply@info.wise.com>",
                 ]
@@ -467,7 +467,7 @@ mod tests {
             .expect("request should be valid");
 
         let messages = backend
-            .list_messages("duncan@blackbagsecurity.com", &request)
+            .list_messages("pilot-primary@example.invalid", &request)
             .expect("live-style message lists should parse quoted display names");
 
         assert_eq!(messages.len(), 5);
@@ -477,14 +477,14 @@ mod tests {
         assert_eq!(messages[0].subject.as_deref(), Some("3 things"));
         assert_eq!(
             messages[0].from.as_deref(),
-            Some("Duncan @ Black Bag Security <duncan@blackbagsecurity.com>")
+            Some("Pilot Primary <pilot-primary@example.invalid>")
         );
         assert_eq!(messages[1].uid, 9);
         assert_eq!(messages[1].mailbox_name, "Junk");
         assert_eq!(messages[1].flags, vec!["\\Recent".to_string()]);
         assert_eq!(
             messages[1].from.as_deref(),
-            Some("Duncan @ Redacted <duncan@redactedsecurity.ca>")
+            Some("Pilot Secondary <pilot-secondary@example.invalid>")
         );
         assert_eq!(messages[2].uid, 13);
         assert_eq!(messages[2].mailbox_name, "INBOX.serjon");
@@ -494,7 +494,7 @@ mod tests {
         );
         assert_eq!(
             messages[2].from.as_deref(),
-            Some("Duncan @ Redacted Security <duncan@redactedsecurity.ca>")
+            Some("Pilot Secondary <pilot-secondary@example.invalid>")
         );
         assert_eq!(messages[3].uid, 4);
         assert_eq!(messages[3].mailbox_name, "INBOX.IOA");

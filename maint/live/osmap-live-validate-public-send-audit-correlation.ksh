@@ -13,7 +13,7 @@ SERVE_LOG_PATH="${OSMAP_PUBLIC_SEND_AUDIT_SERVE_LOG_PATH:-/var/lib/osmap/audit/s
 LIVE_TOTP_DIR="${OSMAP_PUBLIC_SEND_AUDIT_TOTP_DIR:-/var/lib/osmap/secrets/totp}"
 VALIDATION_USER="${OSMAP_VALIDATION_USER:-osmap-helper-validation@blackbagsecurity.com}"
 VALIDATION_RECIPIENT="${OSMAP_PUBLIC_SEND_AUDIT_RECIPIENT:-${VALIDATION_USER}}"
-TOTP_SECRET_BASE32="${OSMAP_VALIDATION_TOTP_SECRET_BASE32:-JBSWY3DPEHPK3PXP}"
+TOTP_SECRET_BASE32="${OSMAP_VALIDATION_TOTP_SECRET_BASE32:-}"
 USER_AGENT="${OSMAP_PUBLIC_SEND_AUDIT_USER_AGENT:-OSMAP-Public-Send-Audit-Correlation/20260419}"
 CURL_BIN="${OSMAP_PUBLIC_SEND_AUDIT_CURL_BIN:-curl}"
 SSH_HOST="${OSMAP_PUBLIC_SEND_AUDIT_SSH_HOST:-}"
@@ -377,6 +377,17 @@ elif [ -n "${DOAS_BIN}" ]; then
 else
 	require_tool "${MARIADB_BIN}"
 	require_tool "${DOVEADM_BIN}"
+fi
+
+if [ -z "${TOTP_SECRET_BASE32}" ]; then
+	TOTP_SECRET_BASE32="$(
+		python3 - <<'PY'
+import base64
+import os
+
+print(base64.b32encode(os.urandom(20)).decode("ascii").rstrip("="))
+PY
+	)"
 fi
 
 if ! run_privileged_sh "test -f $(quote_sh "${SERVE_LOG_PATH}")"; then

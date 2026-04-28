@@ -93,9 +93,9 @@ scope tested:
 
 | Trial user | Workflow fit | Completed actions | Result |
 | --- | --- | --- | --- |
-| `duncan@blackbagsecurity.com` | V2 fit | retrieve mail; send mail; send mail with attachments | Functions presented in the current code base worked as expected. |
-| `ops@blackbagsecurity.io` | V2 fit | retrieve mail; send mail; send mail with attachments | Functions presented in the current code base worked as expected. |
-| `duncan@redactedsecurity.ca` | V2 fit | retrieve mail; send mail; send mail with attachments | Functions presented in the current code base worked as expected. |
+| `pilot-primary@example.invalid` | V2 fit | retrieve mail; send mail; send mail with attachments | Functions presented in the current code base worked as expected. |
+| `pilot-ops@example.invalid` | V2 fit | retrieve mail; send mail; send mail with attachments | Functions presented in the current code base worked as expected. |
+| `pilot-secondary@example.invalid` | V2 fit | retrieve mail; send mail; send mail with attachments | Functions presented in the current code base worked as expected. |
 
 All three trial users want additional functionality in Version 3. All three
 also want a more polished user experience, ideally closer to Thunderbird. That

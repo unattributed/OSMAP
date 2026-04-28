@@ -89,6 +89,9 @@ if [ "$run_cargo_phases" -eq 1 ]; then
 	fi
 fi
 
+echo "==> validating publication hygiene"
+sh maint/security/osmap-publication-guard.sh
+
 echo "==> scanning for disallowed unsafe outside src/openbsd.rs"
 unsafe_hits=$(grep -RInE 'unsafe[[:space:]]*(fn|impl|trait|\{)' src 2>/dev/null || true)
 disallowed_unsafe=$(printf '%s\n' "$unsafe_hits" | grep -v 'src/openbsd.rs:' | sed '/^$/d' || true)

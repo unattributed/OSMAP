@@ -51,7 +51,7 @@ Example file contents:
 
 ```text
 # alice@example.com
-secret=JBSWY3DPEHPK3PXP
+secret=<base32-secret>
 ```
 
 The file format is intentionally small so operators can inspect it easily and

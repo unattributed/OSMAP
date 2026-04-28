@@ -3756,7 +3756,7 @@ review instance launched from the current `~/OSMAP` checkout on
 `mail.blackbagsecurity.com` and exposed locally through an SSH tunnel to
 `127.0.0.1:18080`.
 
-The walkthrough used the real mailbox user `duncan@blackbagsecurity.com` plus
+The walkthrough used the real mailbox user `pilot-primary@example.invalid` plus
 an operator-provisioned OSMAP TOTP secret. Proton Pass held the mailbox
 credentials during the review, and Proton Authenticator enrolled that OSMAP
 TOTP secret and generated the six-digit codes used at login. Those external
@@ -3788,7 +3788,7 @@ Validation for this change was:
 
 - temporary host review instance launch from the current standard checkout on
   `mail.blackbagsecurity.com`
-- successful browser login for `duncan@blackbagsecurity.com` with mailbox
+- successful browser login for `pilot-primary@example.invalid` with mailbox
   password plus operator-provisioned OSMAP TOTP
 - successful mailbox list review on `/mailboxes`
 - successful session review on `/sessions`
@@ -4614,7 +4614,7 @@ surface returns `401` and is captured as a structured
 
 The same real-user login check also showed that the live TOTP secret stores
 were empty, so the previously enrolled authenticator secret for
-`duncan@blackbagsecurity.com` could not still be valid for the current public
+`pilot-primary@example.invalid` could not still be valid for the current public
 instance. A new operator-managed `.totp` secret file was therefore installed
 outside the repository under the configured live secret store boundary with the
 required runtime ownership and permissions:
@@ -4761,7 +4761,7 @@ failures from the operator.
 
 ### Accept folded header summaries in live message lists
 
-A real public-browser INBOX request for `duncan@blackbagsecurity.com` exposed a
+A real public-browser INBOX request for `pilot-primary@example.invalid` exposed a
 message-list parser mismatch: Dovecot `doveadm -f flow fetch ... hdr.subject
 hdr.from` can return folded header summary values across physical lines. OSMAP
 was parsing each physical line as a complete message summary, so a folded
@@ -4835,7 +4835,7 @@ surface.
 
 ### Restore Sent folder listing for live flow output
 
-The live public OSMAP session for `duncan@blackbagsecurity.com` showed
+The live public OSMAP session for `pilot-primary@example.invalid` showed
 `/mailbox?name=Sent` returning the bounded unavailable page. Host audit logs
 confirmed this was not a Dovecot access failure: the mailbox helper reached
 Sent but the message-list parser rejected a normal live `doveadm -f flow`
@@ -5050,9 +5050,9 @@ The remaining Version 2 blocker was pilot-execution evidence, not more feature
 work. Three trial users completed the bounded workflows presented in the
 current code base:
 
-- `duncan@blackbagsecurity.com`
-- `ops@blackbagsecurity.io`
-- `duncan@redactedsecurity.ca`
+- `pilot-primary@example.invalid`
+- `pilot-ops@example.invalid`
+- `pilot-secondary@example.invalid`
 
 All three completed retrieve mail, send mail, and send mail with attachments,
 and all three reported that the presented functions worked as expected.

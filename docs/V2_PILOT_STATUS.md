@@ -82,9 +82,9 @@ This repo pass completed the following work immediately:
 The Version 2 pilot is complete for the bounded V2 scope. The final trial
 cohort was:
 
-- `duncan@blackbagsecurity.com`
-- `ops@blackbagsecurity.io`
-- `duncan@redactedsecurity.ca`
+- `pilot-primary@example.invalid`
+- `pilot-ops@example.invalid`
+- `pilot-secondary@example.invalid`
 
 Each trial user completed retrieve mail, send mail, and send mail with
 attachments. Each reported that the functions presented in the current code

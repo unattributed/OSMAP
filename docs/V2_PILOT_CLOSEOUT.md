@@ -14,9 +14,9 @@
 
 The final Version 2 pilot cohort was:
 
-- `duncan@blackbagsecurity.com`
-- `ops@blackbagsecurity.io`
-- `duncan@redactedsecurity.ca`
+- `pilot-primary@example.invalid`
+- `pilot-ops@example.invalid`
+- `pilot-secondary@example.invalid`
 
 All three trial users fit the Version 2 workflow inventory for the tested
 pilot scope. All three reported that the functions presented in the current

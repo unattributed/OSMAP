@@ -34,7 +34,7 @@ GOOD_LOGIN_RESPONSE_PATH="${WORK_ROOT}/good-login-response.txt"
 LISTEN_PORT="${OSMAP_LIVE_LOGIN_FAILURE_NORMALIZATION_PORT:-}"
 VALIDATION_USER="${OSMAP_VALIDATION_USER:-osmap-helper-validation@blackbagsecurity.com}"
 AUTH_SOCKET_PATH="${OSMAP_DOVEADM_AUTH_SOCKET_PATH:-/var/run/osmap-auth}"
-TOTP_SECRET_BASE32="${OSMAP_VALIDATION_TOTP_SECRET_BASE32:-JBSWY3DPEHPK3PXP}"
+TOTP_SECRET_BASE32="${OSMAP_VALIDATION_TOTP_SECRET_BASE32:-}"
 KEEP_WORK_ROOT="${OSMAP_KEEP_WORK_ROOT:-0}"
 RESTORE_PENDING=0
 ORIGINAL_HASH=""
@@ -108,6 +108,17 @@ require_tool python3
 require_tool sed
 require_tool grep
 require_tool hexdump
+
+if [ -z "${TOTP_SECRET_BASE32}" ]; then
+  TOTP_SECRET_BASE32="$(
+    python3 - <<'PY'
+import base64
+import os
+
+print(base64.b32encode(os.urandom(20)).decode("ascii").rstrip("="))
+PY
+  )"
+fi
 
 if [ -z "${LISTEN_PORT}" ]; then
   LISTEN_PORT="$((18800 + ($$ % 1000)))"

@@ -72,7 +72,7 @@ Authenticated checks for a real account without storing the password or TOTP
 secret:
 
 ```bash
-./run.sh --prompt-auth --auth-email duncan@blackbagsecurity.com
+./run.sh --prompt-auth --auth-email pilot-primary@example.invalid
 ```
 
 This prompts locally for the account password and for a fresh TOTP code whenever

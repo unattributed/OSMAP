@@ -278,7 +278,7 @@ from the standard `~/OSMAP` checkout on `mail.blackbagsecurity.com`, exposed
 locally through an SSH tunnel to `127.0.0.1:18080`.
 
 That supplemental proof used the real mailbox user
-`duncan@blackbagsecurity.com` with an operator-provisioned OSMAP TOTP secret.
+`pilot-primary@example.invalid` with an operator-provisioned OSMAP TOTP secret.
 The operator held the mailbox credentials in Proton Pass, enrolled the OSMAP
 TOTP secret in Proton Authenticator, and generated the expected six-digit TOTP
 codes there for browser login.

@@ -38,7 +38,7 @@ SEND_RESPONSE_PATH="${WORK_ROOT}/send-response.txt"
 LISTEN_PORT="${OSMAP_LIVE_LOGIN_SEND_PORT:-}"
 VALIDATION_USER="${OSMAP_VALIDATION_USER:-osmap-helper-validation@blackbagsecurity.com}"
 VALIDATION_PASSWORD="${OSMAP_VALIDATION_PASSWORD:-}"
-TOTP_SECRET_BASE32="${OSMAP_VALIDATION_TOTP_SECRET_BASE32:-JBSWY3DPEHPK3PXP}"
+TOTP_SECRET_BASE32="${OSMAP_VALIDATION_TOTP_SECRET_BASE32:-}"
 AUTH_SOCKET_PATH="${OSMAP_DOVEADM_AUTH_SOCKET_PATH:-/var/run/osmap-auth}"
 TRUSTED_WEB_RUNTIME_UID="${OSMAP_TRUSTED_WEB_RUNTIME_UID:-$(id -u _osmap)}"
 USERDB_SOCKET_PATH="${OSMAP_DOVEADM_USERDB_SOCKET_PATH:-/var/run/osmap-userdb}"
@@ -106,6 +106,17 @@ require_tool hexdump
   log "OSMAP_VALIDATION_PASSWORD must be set for real login validation"
   exit 1
 }
+
+if [ -z "${TOTP_SECRET_BASE32}" ]; then
+  TOTP_SECRET_BASE32="$(
+    python3 - <<'PY'
+import base64
+import os
+
+print(base64.b32encode(os.urandom(20)).decode("ascii").rstrip("="))
+PY
+  )"
+fi
 
 if [ -z "${LISTEN_PORT}" ]; then
   LISTEN_PORT="$((18700 + ($$ % 1000)))"

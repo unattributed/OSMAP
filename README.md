@@ -299,7 +299,7 @@ Each phase produces formal outputs to support traceability and auditability.
 - A supplemental real-user browser walkthrough now also exists on April 12,
   2026 against a temporary review instance launched from the current
   `~/OSMAP` checkout on `mail.blackbagsecurity.com`: the real mailbox user
-  `duncan@blackbagsecurity.com` signed in with mailbox password plus OSMAP
+  `pilot-primary@example.invalid` signed in with mailbox password plus OSMAP
   TOTP, viewed mailboxes, reviewed `/sessions`, opened a real message,
   rendered sanitized HTML, and sent a browser-composed message that was
   confirmed delivered in Proton Mail. Proton Pass and Proton Authenticator
