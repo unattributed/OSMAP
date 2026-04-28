@@ -1,0 +1,209 @@
+{
+  "standards": {
+    "mitre_attack": "MITRE ATT&CK Enterprise, including T1071.001 Web Protocols",
+    "owasp_top_10": "OWASP Top 10 2021",
+    "wstg": "OWASP Web Security Testing Guide v4.2",
+    "asvs": "OWASP Application Security Verification Standard 5.0.0"
+  },
+  "tests": [
+    {
+      "test_id": "OSMAP-BORDER-WEB-001",
+      "test_name": "ATT&CK T1071.001 Web Protocols - HTTPS edge and method boundary",
+      "script": "run-border-pack.py",
+      "mitre_attack": ["T1071.001"],
+      "owasp_top_10": ["A02:2021 Cryptographic Failures", "A05:2021 Security Misconfiguration", "A07:2021 Identification and Authentication Failures"],
+      "wstg": ["WSTG-v42-CONF-01", "WSTG-v42-CONF-06"],
+      "asvs": ["v5.0.0-14.4.1", "v5.0.0-14.4.3"],
+      "test_type": ["unauthenticated", "dynamic test"],
+      "expected_result": "HTTPS responds for OSMAP while unsafe or tunnel-style HTTP methods are rejected.",
+      "evidence_produced": ["method boundary response headers and bodies"],
+      "severity_if_failed": "high"
+    },
+    {
+      "test_id": "OSMAP-BORDER-WEB-002",
+      "test_name": "ATT&CK T1071.001 Web Protocols - suspicious endpoint exposure",
+      "script": "run-border-pack.py",
+      "mitre_attack": ["T1071.001", "T1190"],
+      "owasp_top_10": ["A01:2021 Broken Access Control", "A05:2021 Security Misconfiguration"],
+      "wstg": ["WSTG-v42-CONF-01", "WSTG-v42-INFO-02"],
+      "asvs": ["v5.0.0-14.4.1", "v5.0.0-1.2.2"],
+      "test_type": ["unauthenticated", "dynamic test"],
+      "expected_result": "Common webshell, beacon, framework, and diagnostics paths do not expose live handlers or secrets.",
+      "evidence_produced": ["per-path response headers and bodies"],
+      "severity_if_failed": "high"
+    },
+    {
+      "test_id": "OSMAP-BORDER-WEB-003",
+      "test_name": "ATT&CK T1190 Public-Facing Application - control-plane route exposure",
+      "script": "run-border-pack.py",
+      "mitre_attack": ["T1190", "T1133"],
+      "owasp_top_10": ["A01:2021 Broken Access Control", "A05:2021 Security Misconfiguration"],
+      "wstg": ["WSTG-v42-ATHZ-01", "WSTG-v42-CONF-05"],
+      "asvs": ["v5.0.0-4.1.1", "v5.0.0-14.3.1"],
+      "test_type": ["unauthenticated", "dynamic test"],
+      "expected_result": "Adjacent admin and operator paths are not publicly reachable from the internet edge.",
+      "evidence_produced": ["control-plane path response evidence"],
+      "severity_if_failed": "critical"
+    },
+    {
+      "test_id": "OSMAP-BORDER-WEB-004",
+      "test_name": "ATT&CK T1190 Public-Facing Application - spoofed proxy header trust boundary",
+      "script": "run-border-pack.py",
+      "mitre_attack": ["T1190", "T1557"],
+      "owasp_top_10": ["A01:2021 Broken Access Control", "A04:2021 Insecure Design", "A05:2021 Security Misconfiguration"],
+      "wstg": ["WSTG-v42-ATHZ-01", "WSTG-v42-CONF-05"],
+      "asvs": ["v5.0.0-4.1.1", "v5.0.0-14.4.1"],
+      "test_type": ["unauthenticated", "dynamic test"],
+      "expected_result": "Client-supplied forwarding headers do not unlock private control-plane paths.",
+      "evidence_produced": ["spoofed-header response evidence"],
+      "severity_if_failed": "critical"
+    },
+    {
+      "test_id": "OSMAP-BORDER-WEB-005",
+      "test_name": "OWASP A05 Host Header Boundary - virtual host confusion",
+      "script": "run-border-pack.py",
+      "mitre_attack": ["T1190"],
+      "owasp_top_10": ["A05:2021 Security Misconfiguration", "A01:2021 Broken Access Control"],
+      "wstg": ["WSTG-v42-CONF-01", "WSTG-v42-INPV-17"],
+      "asvs": ["v5.0.0-14.4.1", "v5.0.0-14.4.3"],
+      "test_type": ["unauthenticated", "dynamic test"],
+      "expected_result": "Unexpected Host headers do not serve the OSMAP authenticated interface.",
+      "evidence_produced": ["host-header response evidence"],
+      "severity_if_failed": "medium"
+    },
+    {
+      "test_id": "OSMAP-BORDER-WEB-006",
+      "test_name": "OWASP A03 Injection - diagnostic disclosure probes",
+      "script": "run-border-pack.py",
+      "mitre_attack": ["T1190"],
+      "owasp_top_10": ["A03:2021 Injection", "A09:2021 Security Logging and Monitoring Failures"],
+      "wstg": ["WSTG-v42-INPV-05", "WSTG-v42-ERRH-01"],
+      "asvs": ["v5.0.0-5.1.4", "v5.0.0-7.4.1"],
+      "test_type": ["unauthenticated", "dynamic test"],
+      "expected_result": "Benign injection-shaped requests do not expose SQL, stack, Rust panic, or backend diagnostics.",
+      "evidence_produced": ["probe response evidence"],
+      "severity_if_failed": "high"
+    },
+    {
+      "test_id": "OSMAP-BORDER-WEB-007",
+      "test_name": "OWASP A10 SSRF - internal URL parameter probes",
+      "script": "run-border-pack.py",
+      "mitre_attack": ["T1190", "T1105"],
+      "owasp_top_10": ["A10:2021 Server-Side Request Forgery", "A05:2021 Security Misconfiguration"],
+      "wstg": ["WSTG-v42-INPV-19"],
+      "asvs": ["v5.0.0-5.2.6", "v5.0.0-14.4.1"],
+      "test_type": ["unauthenticated", "dynamic test"],
+      "expected_result": "URL-like parameters do not cause internal service content or diagnostics to be returned.",
+      "evidence_produced": ["SSRF-shaped response evidence"],
+      "severity_if_failed": "high"
+    },
+    {
+      "test_id": "OSMAP-BORDER-NET-001",
+      "test_name": "ATT&CK T1046 Network Service Discovery - public TCP exposure",
+      "script": "run-border-pack.py",
+      "mitre_attack": ["T1046", "T1133"],
+      "owasp_top_10": ["A05:2021 Security Misconfiguration", "A06:2021 Vulnerable and Outdated Components"],
+      "wstg": ["WSTG-v42-CONF-01"],
+      "asvs": ["v5.0.0-14.3.1", "v5.0.0-14.4.1"],
+      "test_type": ["unauthenticated", "dynamic test"],
+      "expected_result": "Public high-risk backend ports are closed; expected public services are documented.",
+      "evidence_produced": ["bounded TCP connect results"],
+      "severity_if_failed": "critical"
+    },
+    {
+      "test_id": "OSMAP-BORDER-HOST-001",
+      "test_name": "ATT&CK T1071.001 Web Protocols - host service state",
+      "script": "run-border-pack.py",
+      "mitre_attack": ["T1071.001", "T1046"],
+      "owasp_top_10": ["A05:2021 Security Misconfiguration", "A09:2021 Security Logging and Monitoring Failures"],
+      "wstg": ["WSTG-v42-CONF-01"],
+      "asvs": ["v5.0.0-14.3.1", "v5.0.0-14.4.1"],
+      "test_type": ["host assisted", "static review"],
+      "expected_result": "Core web, OSMAP, mail, filtering, and monitoring services report healthy state.",
+      "evidence_produced": ["rcctl service state evidence"],
+      "severity_if_failed": "high"
+    },
+    {
+      "test_id": "OSMAP-BORDER-HOST-002",
+      "test_name": "OWASP A05 Security Misconfiguration - backend binding exposure",
+      "script": "run-border-pack.py",
+      "mitre_attack": ["T1046", "T1133"],
+      "owasp_top_10": ["A01:2021 Broken Access Control", "A05:2021 Security Misconfiguration"],
+      "wstg": ["WSTG-v42-CONF-01", "WSTG-v42-CONF-05"],
+      "asvs": ["v5.0.0-4.1.1", "v5.0.0-14.3.1"],
+      "test_type": ["host assisted", "static review"],
+      "expected_result": "OSMAP, databases, Redis, and Rspamd controller bindings are loopback or VPN scoped, not public.",
+      "evidence_produced": ["host netstat evidence"],
+      "severity_if_failed": "critical"
+    },
+    {
+      "test_id": "OSMAP-BORDER-HOST-003",
+      "test_name": "ATT&CK Detection Support - pf and Suricata posture",
+      "script": "run-border-pack.py",
+      "mitre_attack": ["T1071.001", "T1041", "T1105"],
+      "owasp_top_10": ["A05:2021 Security Misconfiguration", "A09:2021 Security Logging and Monitoring Failures"],
+      "wstg": ["WSTG-v42-CONF-01"],
+      "asvs": ["v5.0.0-14.3.1", "v5.0.0-14.4.1"],
+      "test_type": ["host assisted", "static review"],
+      "expected_result": "pf is enabled with default drop posture and Suricata/PF integration artifacts are present.",
+      "evidence_produced": ["pf and Suricata table evidence"],
+      "severity_if_failed": "high"
+    },
+    {
+      "test_id": "OSMAP-BORDER-HOST-004",
+      "test_name": "OWASP A01 Access Control - nginx public and private route split",
+      "script": "run-border-pack.py",
+      "mitre_attack": ["T1190", "T1133"],
+      "owasp_top_10": ["A01:2021 Broken Access Control", "A05:2021 Security Misconfiguration"],
+      "wstg": ["WSTG-v42-ATHZ-01", "WSTG-v42-CONF-05"],
+      "asvs": ["v5.0.0-4.1.1", "v5.0.0-14.4.1"],
+      "test_type": ["host assisted", "static review"],
+      "expected_result": "Public OSMAP route and private control-plane routes remain separated in nginx configuration.",
+      "evidence_produced": ["nginx route evidence"],
+      "severity_if_failed": "critical"
+    },
+    {
+      "test_id": "OSMAP-BORDER-LOG-001",
+      "test_name": "ATT&CK T1071.001 Purple-Team Logging - benign web marker correlation",
+      "script": "run-border-pack.py",
+      "mitre_attack": ["T1071.001", "T1041", "T1105"],
+      "owasp_top_10": ["A09:2021 Security Logging and Monitoring Failures", "A05:2021 Security Misconfiguration"],
+      "wstg": ["WSTG-v42-CONF-01", "WSTG-v42-ERRH-01"],
+      "asvs": ["v5.0.0-7.1.1", "v5.0.0-7.2.1", "v5.0.0-14.4.1"],
+      "test_type": ["unauthenticated", "host assisted", "dynamic test"],
+      "expected_result": "A unique benign web request marker from the operator network is visible in backend access logs, with IDS/PF context collected when available.",
+      "evidence_produced": ["marker request evidence", "backend log grep evidence"],
+      "severity_if_failed": "high"
+    },
+    {
+      "test_id": "OSMAP-BORDER-REPO-001",
+      "test_name": "OWASP A06 and A08 - mailstack security tooling alignment",
+      "script": "run-border-pack.py",
+      "mitre_attack": ["T1190", "T1071.001"],
+      "owasp_top_10": ["A06:2021 Vulnerable and Outdated Components", "A08:2021 Software and Data Integrity Failures", "A09:2021 Security Logging and Monitoring Failures"],
+      "wstg": ["WSTG-v42-CONF-01"],
+      "asvs": ["v5.0.0-14.2.1", "v5.0.0-14.3.1", "v5.0.0-14.5.1"],
+      "test_type": ["static review"],
+      "expected_result": "The backend mailstack repo retains hardening, SBOM, Suricata, PF, Rspamd, and verification assets.",
+      "evidence_produced": ["local repo file presence evidence"],
+      "severity_if_failed": "medium"
+    }
+  ],
+  "gaps": [
+    {
+      "gap_id": "OSMAP-BORDER-GAP-001",
+      "area": "Active malware or C2 emulation",
+      "reason": "The suite uses benign boundary probes and host telemetry review. It does not execute malware, deploy agents, transmit payloads, or attempt command-and-control callbacks."
+    },
+    {
+      "gap_id": "OSMAP-BORDER-GAP-002",
+      "area": "Credentialed adjacent control-plane applications",
+      "reason": "The suite validates that adjacent applications are not publicly exposed. It does not log into SOGo, PostfixAdmin, Rspamd, or monitoring portals."
+    },
+    {
+      "gap_id": "OSMAP-BORDER-GAP-003",
+      "area": "Full OWASP Top 10 certification",
+      "reason": "The suite adds automated assurance for OSMAP and border controls. It is not a complete application penetration test or formal OWASP certification."
+    }
+  ]
+}

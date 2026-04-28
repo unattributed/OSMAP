@@ -73,6 +73,10 @@ server {
 
     server_name mail.blackbagsecurity.com;
 
+    if ($host != "mail.blackbagsecurity.com") {
+        return 421;
+    }
+
     root /htdocs;
     index index.php index.html;
 
@@ -91,6 +95,10 @@ server {
     http2 on;
 
     server_name mail.blackbagsecurity.com 10.44.0.1 127.0.0.1;
+
+    if ($host !~ ^(mail\.blackbagsecurity\.com|10\.44\.0\.1|127\.0\.0\.1)$) {
+        return 421;
+    }
 
     include /etc/nginx/templates/ssl.tmpl;
     include /etc/nginx/templates/misc.tmpl;

@@ -46,6 +46,8 @@ assert_contains_file "${main_ssl}" "listen 127.0.0.1:443 ssl;"
 assert_contains_file "${main_ssl}" "listen 10.44.0.1:443 ssl;"
 assert_contains_file "${main_ssl}" "listen 192.168.1.44:443 ssl;"
 assert_contains_file "${main_ssl}" "include /etc/nginx/templates/osmap-root.tmpl;"
+assert_contains_file "${main_ssl}" 'if ($host != "mail.blackbagsecurity.com") {'
+assert_contains_file "${main_ssl}" 'if ($host !~ ^(mail\.blackbagsecurity\.com|10\.44\.0\.1|127\.0\.0\.1)$) {'
 assert_not_contains_file "${main_ssl}" "include /etc/nginx/templates/roundcube.tmpl;"
 assert_contains_file "${main_ssl}" "Public WAN exposure is intentionally limited to OSMAP"
 assert_contains_file "${main_ssl}" "Existing private/control applications remain available only"
