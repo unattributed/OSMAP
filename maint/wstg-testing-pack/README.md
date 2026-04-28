@@ -1,182 +1,126 @@
-# Reusable Webmail WSTG Shell Test Pack
+# OSMAP WSTG Testing Pack
 
-This pack turns the ad hoc one-liners from the original OSMAP exposed-slice assessment into reusable Bash scripts that load target-specific values from a `.env` file.
+This pack performs safe, repeatable OWASP WSTG validation for the OSMAP browser
+interface at `https://mail.blackbagsecurity.com`.
 
-## What is included
+It validates OSMAP only. It does not claim to validate the whole mail stack,
+all private control-plane applications, or complete ASVS compliance.
 
-- `.env.example`, template configuration file
-- `lib/common.sh`, shared helpers for login, cookie handling, CSRF extraction, and output directories
-- `scripts/`, numbered Bash scripts grouped around the original test flow
+## Standards
 
-The scripts are intended for **authorized testing only** against webmail applications you have permission to assess.
+- OWASP Web Security Testing Guide v4.2
+- OWASP Application Security Verification Standard 5.0.0
+- WSTG identifiers use `WSTG-v42-CAT-NN`
+- ASVS identifiers use `v5.0.0-C.S.R`
 
-## Important note on fidelity
+The canonical mapping is `wstg-asvs-mapping.json`. The rendered coverage table
+is `COVERAGE.md`.
 
-Most scripts are direct conversions of the commands used in the original test run. A smaller number, mainly the earliest auth and lockout probes, are **hardened functional equivalents** reconstructed from the test history and directory naming rather than byte-for-byte copies of the original shell one-liners.
-
-That means the pack is suitable for repeatable testing and sharing with other testers, but a few early scripts are best treated as generalized versions of the original checks.
-
-## Quick start
-
-1. Copy `.env.example` to `.env`
-2. Set at least:
-   - `TARGET_HOSTNAME=`
-   - `TARGET_EMAIL=`
-3. Leave `TEST_PASSWORD` and `TEST_TOTP_CODE` blank unless you explicitly want them stored in the environment
-4. Run any script you need, for example:
+## Setup
 
 ```bash
-cd maint/wstg-testing-pack
+cd /home/foo/Workspace/OSMAP/maint/wstg-testing-pack
 cp .env.example .env
-joe .env
-./scripts/29_compose_surface_map.sh
 ```
 
-## Shared environment variables
+The default `.env.example` is safe and contains no secrets. Authenticated tests
+skip unless all of these are true:
 
-Required:
-- `TARGET_HOSTNAME`
-- `TARGET_EMAIL`
+- `OSMAP_ALLOW_AUTHENTICATED_TESTS=true`
+- `OSMAP_TEST_EMAIL` is set
+- `OSMAP_TEST_PASSWORD` is set
+- `OSMAP_TOTP_SECRET` is set
 
-Compatibility aliases:
-- `HOSTNAME`
-- `EMAIL`
+Secrets are redacted from reports and evidence. Do not commit `.env`.
 
-Common optional values:
-- `SCHEME`
-- `TARGET_BASE_URL`
-- `TARGET_PORT`
-- `TARGET_TLS`
-- `OUT_ROOT`
-- `DEFAULT_MAILBOX`
-- `DEFAULT_MESSAGE_UID`
-- `DEFAULT_ATTACHMENT_PART`
-- `DEFAULT_ARCHIVE_MAILBOX`
-- `SEARCH_QUERY`
-- `INVALID_EMAIL`
-- `OTHER_EMAIL`
-- `ATTACKER_URL`
-- `CORS_TEST_ORIGINS`
+## Safe Limits
 
-Optional secret values:
-- `TEST_PASSWORD`
-- `TEST_TOTP_CODE`
+The runner is scoped to `OSMAP_BASE_URL` and uses bounded requests. It does not
+perform destructive testing, denial of service testing, credential stuffing,
+uncontrolled fuzzing, or broad internet scanning.
 
-If secret values are blank, the scripts prompt interactively.
+The brute-force throttle probe defaults to three invalid attempts with a delay
+between requests. Increase `OSMAP_THROTTLE_PROBE_ATTEMPTS` only for a controlled
+validation window.
 
-Values containing spaces, such as `HTTP_ALT_PORTS`, `WEBSOCKET_PATHS`, and `CORS_TEST_ORIGINS`, must be quoted because `.env` is sourced by Bash.
+Host-assisted tests use `ssh $OSMAP_SSH_HOST` and read-only commands. They are
+disabled unless `--include-host` or `OSMAP_ALLOW_HOST_ASSISTED_TESTS=true` is
+used.
 
-## Script coverage
+## Running
 
-### Authentication and session
-- `01_baseline_routes.sh`
-- `02_auth_negative_login.sh`
-- `03_auth_throttle_same_ip.sh`
-- `04_auth_throttle_cooldown.sh`
-- `05_lockout_scope_same_ip.sh`
-- `06_real_user_lockout_threshold.sh`
-- `07_valid_login_during_lockout.sh`
-- `08_real_user_cooldown_window.sh`
-- `09_success_login_and_session.sh`
-- `10_session_fixation.sh`
-- `11_auth_form_map.sh`
-- `12_logout_missing_csrf.sh`
-- `13_logout_valid_csrf.sh`
-- `14_logout_browserlike_csrf.sh`
-- `19_session_timeout_activity.sh`
-- `20_idle_timeout_spotcheck.sh`
-- `23_concurrent_sessions_baseline.sh`
+Unauthenticated dynamic and static checks:
 
-### Input validation, injection, and request handling
-- `15_search_reflected_xss_and_availability.sh`
-- `16_settings_archive_html_injection.sh`
-- `17_archive_hidden_field_tamper.sh`
-- `18_reset_archive_mailbox.sh`
-- `24_sqli_login.sh`
-- `25_ldap_injection_login.sh`
-- `26_xml_injection_settings.sh`
-- `27_ssi_injection_settings.sh`
-- `28_xpath_injection_login.sh`
-- `29_compose_surface_map.sh`
-- `30_send_header_injection.sh`
-- `33_command_injection_attachment_filename.sh`
-- `34_format_string_settings.sh`
-- `35_http_response_splitting.sh`
-- `36_request_smuggling_parser_check.sh`
-- `37_host_header_injection.sh`
-- `38_ssti_settings.sh`
-- `39_ssrf_sink_discovery.sh`
-- `40_mass_assignment_settings.sh`
-- `41_csv_export_sink_discovery.sh`
-
-### Transport and crypto
-- `44_tls_transport_check.sh`
-- `45_padding_oracle_check.sh`
-- `46_unencrypted_channel_check.sh`
-- `47_weak_crypto_primitives_check.sh`
-
-### Business logic
-- `48_business_invalid_archive_mailbox.sh`
-- `49_business_forge_request_revoke.sh`
-- `50_business_integrity_message_move.sh`
-- `51_business_revoke_race.sh`
-- `52_business_session_count_limit.sh`
-- `53_business_workflow_circumvention_send.sh`
-- `54_business_application_misuse_send_repeat.sh`
-- `55_upload_unexpected_types.sh`
-- `56_upload_malicious_files.sh`
-
-### Client-side
-- `57_dom_xss_sink_discovery.sh`
-- `58_javascript_execution_check.sh`
-- `59_html_injection_check.sh`
-- `60_url_redirect_check.sh`
-- `61_css_injection_check.sh`
-- `62_resource_manipulation_check.sh`
-- `63_cors_check.sh`
-- `64_clickjacking_check.sh`
-- `65_websockets_check.sh`
-- `66_web_messaging_check.sh`
-- `67_browser_storage_and_flash_applicability.sh`
-- `68_xssi_check.sh`
-- `69_reverse_tabnabbing_check.sh`
-- `70_client_side_template_injection.sh`
-
-### API reconnaissance
-- `71_api_reconnaissance.sh`
-
-## Output behavior
-
-Each script writes its own timestamped run directory under `OUT_ROOT`, for example:
-
-```text
-$OUT_ROOT/29-compose-surface-map-20260423-190349
+```bash
+./run.sh --unauthenticated
 ```
 
-Script numbers intentionally preserve the original assessment sequence. Gaps are reserved for original notes or one-off checks that were not turned into reusable scripts.
+Unauthenticated plus read-only host-assisted checks:
 
-## Dependencies
+```bash
+./run.sh --unauthenticated --include-host
+```
 
-Core:
-- `bash`
-- `curl`
-- `awk`
-- `grep`
-- `sed`
-- `python3`
+Authenticated checks, only when `.env` contains a dedicated validation account:
 
-Optional:
-- `git`, for `testssl.sh` bootstrap
-- `testssl.sh`, if already installed
-- `file`, for attachment inspection
+```bash
+./run.sh --authenticated
+```
 
-## Safety notes
+Run one mapped test:
 
-- These scripts are for **permitted** testing only
-- Several scripts intentionally submit malformed values to authenticated workflows
-- Some tests prompt for multiple TOTP codes because they establish separate fresh sessions
-- The timeout scripts can be long-running, tune values in `.env` if needed
+```bash
+./run.sh --test-id OSMAP-WSTG-CONF-002
+```
 
-## Repository location
+## Outputs
 
-This pack lives under `maint/wstg-testing-pack/` so it can share the repository's maintenance and security-gate conventions.
+Each run writes a timestamped directory under `OSMAP_OUTPUT_DIR` or
+`maint/wstg-testing-pack/output/`:
+
+- `summary.json`: machine-readable results
+- `report.md`: human-readable report
+- `evidence/`: redacted request, response, static, and host evidence
+- `logs/`: reserved for runner logs
+
+The runner exits nonzero only when a test has confirmed `fail`. Skipped
+credential-gated tests do not fail the run.
+
+## Statuses
+
+- `pass`: expected secure behavior was observed
+- `fail`: confirmed behavior violates the mapped expectation
+- `warning`: evidence was useful but inconclusive under safe limits
+- `skip`: test was intentionally not run, usually due to missing credentials
+- `not_applicable`: the mapped area does not apply to current OSMAP scope
+
+## Adding a Test
+
+1. Add a new object to `wstg-asvs-mapping.json`.
+2. Use WSTG v4.2 and ASVS 5.0.0 versioned identifiers.
+3. Implement a deterministic runner method in `run-wstg-pack.py`.
+4. Produce redacted evidence under the run directory.
+5. Prefer skip or warning over unsafe probing.
+6. Run `python3 -m py_compile run-wstg-pack.py` and the relevant runner test.
+
+If a check cannot map cleanly to WSTG v4.2 or ASVS 5.0.0, document it as a gap
+instead of presenting it as compliance coverage.
+
+## Limitations And False Positives
+
+- Authenticated tests require a dedicated validation account and current TOTP
+  secret. Without those, they skip by design.
+- The throttle check is intentionally bounded and may return `warning` if the
+  configured safe attempt count does not reach the production threshold.
+- Static rendering and attachment checks verify source and documentation
+  alignment. They do not inject live mailbox content unless authenticated,
+  fixture-driven tests are explicitly added later.
+- TLS policy findings may reflect edge compatibility choices documented in the
+  OSMAP Version 3 backlog.
+
+## Operator Note
+
+This pack verifies the OSMAP web interface and its immediate nginx/host
+deployment posture. Mail transport controls such as Postfix, Dovecot, Rspamd,
+Suricata, SBOM cron, and broad PF operations remain covered by the existing
+mail-stack and live-host validation tooling outside this pack.

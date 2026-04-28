@@ -5,47 +5,78 @@ set -eu
 repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
 pack_dir="$repo_root/maint/wstg-testing-pack"
 
-if ! command -v bash >/dev/null 2>&1; then
-	echo "note: bash is unavailable; skipping WSTG testing pack validation"
-	exit 0
+if ! command -v python3 >/dev/null 2>&1; then
+	echo "ERROR: python3 is required for the WSTG testing pack" >&2
+	exit 1
 fi
 
-tmp_dir=$(mktemp -d "${TMPDIR:-/tmp}/osmap-wstg-pack-test.XXXXXX")
-trap 'rm -rf "$tmp_dir"' EXIT HUP INT TERM
+echo "validating WSTG runner syntax"
+python3 -m py_compile "$pack_dir/run-wstg-pack.py"
 
-echo "validating WSTG testing pack bash syntax"
-for script in "$pack_dir"/lib/*.sh "$pack_dir"/scripts/*.sh; do
-	bash -n "$script"
-done
+echo "validating WSTG mapping and manifest"
+python3 - "$pack_dir" <<'PY'
+import csv
+import json
+import sys
+from pathlib import Path
 
-echo "validating WSTG testing pack manifest"
-find "$pack_dir/scripts" -maxdepth 1 -type f -name '*.sh' -exec basename {} \; | sort > "$tmp_dir/scripts.txt"
-awk -F, 'NR > 1 { print $1 }' "$pack_dir/MANIFEST.csv" | sort > "$tmp_dir/manifest.txt"
-diff -u "$tmp_dir/scripts.txt" "$tmp_dir/manifest.txt"
+pack = Path(sys.argv[1])
+mapping = json.loads((pack / "wstg-asvs-mapping.json").read_text())
 
-echo "validating WSTG testing pack sample environment"
-mkdir -p "$tmp_dir/home" "$tmp_dir/run"
-cp "$pack_dir/.env.example" "$tmp_dir/run/.env"
-HOME="$tmp_dir/home" bash -s -- "$pack_dir" "$tmp_dir/run" <<'BASH'
-set -euo pipefail
+required_test_fields = {
+    "test_id",
+    "test_name",
+    "script_path",
+    "wstg",
+    "wstg_section",
+    "asvs",
+    "asvs_section",
+    "test_type",
+    "expected_result",
+    "evidence_produced",
+    "severity_if_failed",
+}
+seen = set()
+for item in mapping["tests"]:
+    missing = required_test_fields - set(item)
+    if missing:
+        raise SystemExit(f"{item.get('test_id', '<unknown>')} missing fields: {sorted(missing)}")
+    if item["test_id"] in seen:
+        raise SystemExit(f"duplicate test_id: {item['test_id']}")
+    seen.add(item["test_id"])
+    if not all(value.startswith("WSTG-v42-") for value in item["wstg"]):
+        raise SystemExit(f"{item['test_id']} contains non-v4.2 WSTG identifier")
+    if not all(value.startswith("v5.0.0-") for value in item["asvs"]):
+        raise SystemExit(f"{item['test_id']} contains non-ASVS-5.0.0 identifier")
+    script_path = pack / item["script_path"]
+    if not script_path.exists():
+        raise SystemExit(f"{item['test_id']} script_path does not exist: {script_path}")
 
-pack_dir="$1"
-run_dir="$2"
+manifest_paths = []
+with (pack / "MANIFEST.csv").open(newline="") as handle:
+    for row in csv.DictReader(handle):
+        manifest_paths.append(row["path"])
+for rel_path in manifest_paths:
+    if not (pack / rel_path).exists():
+        raise SystemExit(f"manifest path does not exist: {rel_path}")
 
-cd "$run_dir"
-source "$pack_dir/lib/common.sh"
-load_env
+env_text = (pack / ".env.example").read_text()
+for key in [
+    "OSMAP_BASE_URL=https://mail.blackbagsecurity.com",
+    "OSMAP_HOST=mail.blackbagsecurity.com",
+    "OSMAP_SSH_HOST=mail",
+    "OSMAP_TEST_EMAIL=",
+    "OSMAP_TEST_PASSWORD=",
+    "OSMAP_TOTP_SECRET=",
+    "OSMAP_SECONDARY_EMAIL=",
+    "OSMAP_OUTPUT_DIR=",
+    "OSMAP_RATE_LIMIT_DELAY_SECONDS=",
+    "OSMAP_ALLOW_AUTHENTICATED_TESTS=false",
+]:
+    if key not in env_text:
+        raise SystemExit(f".env.example missing {key}")
 
-[[ "$HOSTNAME" == "mail.example.com" ]]
-[[ "$TARGET_HOSTNAME" == "mail.example.com" ]]
-[[ "$EMAIL" == "user@example.com" ]]
-[[ "$TARGET_EMAIL" == "user@example.com" ]]
-[[ "$TARGET_BASE_URL" == "https://mail.example.com" ]]
-[[ "$TARGET_PORT" == "443" ]]
-[[ "$TARGET_TLS" == "1" ]]
-[[ "$HTTP_ALT_PORTS" == "80 8080" ]]
-[[ "$WEBSOCKET_PATHS" == *"/socket.io/"* ]]
-[[ "$CORS_TEST_ORIGINS" == "https://attacker.invalid null" ]]
-BASH
+print(f"validated {len(mapping['tests'])} mapped WSTG tests")
+PY
 
 echo "WSTG testing pack validation passed"
