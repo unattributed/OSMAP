@@ -1010,7 +1010,7 @@ def build_config(args: argparse.Namespace) -> Config:
     return Config(
         base_url=base_url.rstrip("/"),
         host=host,
-        ssh_host=merged.get("OSMAP_SSH_HOST", "mail"),
+        ssh_host=merged.get("OSMAP_SSH_HOST", "mail.blackbagsecurity.com"),
         test_email=args.auth_email or merged.get("OSMAP_TEST_EMAIL", ""),
         test_password=merged.get("OSMAP_TEST_PASSWORD", ""),
         totp_secret=merged.get("OSMAP_TOTP_SECRET", ""),

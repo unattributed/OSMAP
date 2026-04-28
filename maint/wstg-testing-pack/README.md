@@ -43,9 +43,10 @@ The brute-force throttle probe defaults to three invalid attempts with a delay
 between requests. Increase `OSMAP_THROTTLE_PROBE_ATTEMPTS` only for a controlled
 validation window.
 
-Host-assisted tests use `ssh $OSMAP_SSH_HOST` and read-only commands. They are
-disabled unless `--include-host` or `OSMAP_ALLOW_HOST_ASSISTED_TESTS=true` is
-used.
+Host-assisted tests use `ssh $OSMAP_SSH_HOST` and read-only commands. The
+default host is `mail.blackbagsecurity.com`; the shorter `mail` alias may not be
+available from every operator network. Host-assisted checks are disabled unless
+`--include-host` or `OSMAP_ALLOW_HOST_ASSISTED_TESTS=true` is used.
 
 ## Running
 
