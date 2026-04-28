@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import base64
 import datetime as dt
+import getpass
 import hashlib
 import hmac
 import http.client
@@ -49,6 +50,7 @@ class Config:
     output_dir: Path
     rate_delay: float
     allow_authenticated: bool
+    prompt_auth: bool
     allow_host_assisted: bool
     throttle_attempts: int
     timeout: float
@@ -112,6 +114,8 @@ class Runner:
         self.cookie_jar: dict[str, str] = {}
         self.authenticated = False
         self.csrf_token = ""
+        self.prompted_password = ""
+        self.last_login_set_cookie_headers: list[str] = []
         self.secrets = [
             value
             for value in (
@@ -316,8 +320,48 @@ class Runner:
         return (
             self.config.allow_authenticated
             and bool(self.config.test_email)
-            and bool(self.config.test_password)
-            and bool(self.config.totp_secret)
+            and (bool(self.config.test_password) or self.config.prompt_auth)
+            and (bool(self.config.totp_secret) or self.config.prompt_auth)
+        )
+
+    def auth_password(self) -> str:
+        if self.config.test_password:
+            return self.config.test_password
+        if not self.prompted_password:
+            self.prompted_password = getpass.getpass(
+                f"Password for {self.config.test_email}: "
+            )
+            if self.prompted_password:
+                self.secrets.append(self.prompted_password)
+        return self.prompted_password
+
+    def auth_totp_code(self, reason: str) -> str:
+        if self.config.totp_secret:
+            return generate_totp(self.config.totp_secret)
+        prompt = f"Current TOTP for {self.config.test_email} ({reason}): "
+        code = getpass.getpass(prompt).strip().replace(" ", "")
+        if code:
+            self.secrets.append(code)
+        return code
+
+    def authenticated_login(
+        self,
+        label: str,
+        *,
+        cookies: dict[str, str] | None = None,
+        reason: str = "login",
+        store_cookies: bool = False,
+    ) -> HttpEvidence:
+        return self.form_post(
+            label,
+            "/login",
+            {
+                "username": self.config.test_email,
+                "password": self.auth_password(),
+                "totp_code": self.auth_totp_code(reason),
+            },
+            cookies=cookies,
+            store_cookies=store_cookies,
         )
 
     def ensure_login(self) -> tuple[bool, str]:
@@ -325,17 +369,12 @@ class Runner:
             return True, "already authenticated"
         if not self.authenticated_ready():
             return False, "authenticated tests disabled or credentials/TOTP secret missing"
-        code = generate_totp(self.config.totp_secret)
-        evidence = self.form_post(
+        evidence = self.authenticated_login(
             "auth_login",
-            "/login",
-            {
-                "username": self.config.test_email,
-                "password": self.config.test_password,
-                "totp_code": code,
-            },
             store_cookies=True,
+            reason="primary authenticated WSTG session",
         )
+        self.last_login_set_cookie_headers = evidence.header_values("Set-Cookie")
         if evidence.status != 303 or "osmap_session" not in self.cookie_jar:
             return False, f"login failed with HTTP {evidence.status}"
         mailboxes = self.request(
@@ -558,13 +597,7 @@ class Runner:
         ok, message = self.ensure_login()
         if not ok:
             return self.result("OSMAP-WSTG-SESS-001", STATUS_SKIP, message)
-        headers = (self.evidence_dir / "auth_login.headers").read_text(encoding="utf-8")
-        login_raw = self.form_post(
-            "session_cookie_flags_recheck",
-            "/login",
-            {"username": self.config.test_email, "password": self.config.test_password, "totp_code": generate_totp(self.config.totp_secret)},
-        )
-        cookie_headers = login_raw.header_values("Set-Cookie")
+        cookie_headers = self.last_login_set_cookie_headers
         cookie = "\n".join(cookie_headers).lower()
         flags = ["httponly", "secure", "samesite=strict", "path=/"]
         missing = [flag for flag in flags if flag not in cookie]
@@ -573,25 +606,41 @@ class Runner:
                 "OSMAP-WSTG-SESS-001",
                 STATUS_FAIL,
                 "session cookie is missing required flags",
-                ["evidence/session_cookie_flags_recheck.headers"],
-                {"missing": missing, "redacted_login_header_available": bool(headers)},
+                ["evidence/auth_login.headers"],
+                {"missing": missing},
             )
-        return self.result("OSMAP-WSTG-SESS-001", STATUS_PASS, "session cookie has Secure, HttpOnly, SameSite=Strict, and Path=/", ["evidence/session_cookie_flags_recheck.headers"])
+        return self.result("OSMAP-WSTG-SESS-001", STATUS_PASS, "session cookie has Secure, HttpOnly, SameSite=Strict, and Path=/", ["evidence/auth_login.headers"])
 
     def test_session_fixation(self) -> TestResult:
         if not self.authenticated_ready():
             return self.result("OSMAP-WSTG-SESS-002", STATUS_SKIP, "authenticated tests disabled or credentials/TOTP secret missing")
         fixed = "f" * 64
-        evidence = self.form_post(
+        evidence = self.authenticated_login(
             "session_fixation",
-            "/login",
-            {"username": self.config.test_email, "password": self.config.test_password, "totp_code": generate_totp(self.config.totp_secret)},
             cookies={"osmap_session": fixed},
+            reason="session fixation check",
         )
         cookie_values = evidence.header_values("Set-Cookie")
         retained = any(f"osmap_session={fixed}" in value for value in cookie_values)
         if evidence.status != 303 or retained:
             return self.result("OSMAP-WSTG-SESS-002", STATUS_FAIL, "pre-login session value was retained or login failed", ["evidence/session_fixation.headers"], {"http_status": evidence.status})
+        cleanup_jar = cookie_jar_from_set_cookie_headers(cookie_values)
+        if "osmap_session" in cleanup_jar:
+            cleanup_page = self.request(
+                "session_fixation_cleanup_mailboxes",
+                "GET",
+                "/mailboxes",
+                cookies=cleanup_jar,
+            )
+            cleanup_csrf = extract_csrf(cleanup_page.body_text())
+            if cleanup_csrf:
+                self.form_post(
+                    "session_fixation_cleanup_logout",
+                    "/logout",
+                    {"csrf_token": cleanup_csrf},
+                    cookies=cleanup_jar,
+                    headers=same_origin_headers(self.config),
+                )
         return self.result("OSMAP-WSTG-SESS-002", STATUS_PASS, "authentication issued a fresh session cookie", ["evidence/session_fixation.headers"])
 
     def test_logout_csrf(self) -> TestResult:
@@ -880,6 +929,16 @@ def extract_csrf(text: str) -> str:
     return match.group(1) if match else ""
 
 
+def cookie_jar_from_set_cookie_headers(headers: list[str]) -> dict[str, str]:
+    jar: dict[str, str] = {}
+    for header in headers:
+        first = header.split(";", 1)[0]
+        if "=" in first:
+            name, value = first.split("=", 1)
+            jar[name] = value
+    return jar
+
+
 def safe_label(label: str) -> str:
     safe = re.sub(r"[^A-Za-z0-9_.-]+", "_", label)
     return safe.strip("_") or "evidence"
@@ -943,19 +1002,23 @@ def build_config(args: argparse.Namespace) -> Config:
     allow_auth = parse_bool(merged.get("OSMAP_ALLOW_AUTHENTICATED_TESTS"), False)
     if args.authenticated:
         allow_auth = True
+    if args.prompt_auth:
+        allow_auth = True
     if args.unauthenticated:
         allow_auth = False
+    prompt_auth = args.prompt_auth or parse_bool(merged.get("OSMAP_PROMPT_AUTH"), False)
     return Config(
         base_url=base_url.rstrip("/"),
         host=host,
         ssh_host=merged.get("OSMAP_SSH_HOST", "mail"),
-        test_email=merged.get("OSMAP_TEST_EMAIL", ""),
+        test_email=args.auth_email or merged.get("OSMAP_TEST_EMAIL", ""),
         test_password=merged.get("OSMAP_TEST_PASSWORD", ""),
         totp_secret=merged.get("OSMAP_TOTP_SECRET", ""),
         secondary_email=merged.get("OSMAP_SECONDARY_EMAIL", ""),
         output_dir=output_root,
         rate_delay=float(merged.get("OSMAP_RATE_LIMIT_DELAY_SECONDS", "1") or "1"),
         allow_authenticated=allow_auth,
+        prompt_auth=prompt_auth,
         allow_host_assisted=allow_host,
         throttle_attempts=max(1, int(merged.get("OSMAP_THROTTLE_PROBE_ATTEMPTS", "3") or "3")),
         timeout=float(merged.get("OSMAP_REQUEST_TIMEOUT_SECONDS", "12") or "12"),
@@ -1084,6 +1147,8 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--include-host", action="store_true", help="Run read-only ssh host-assisted tests")
     parser.add_argument("--no-host", action="store_true", help="Disable host-assisted tests")
     parser.add_argument("--authenticated", action="store_true", help="Enable authenticated tests when .env has credentials")
+    parser.add_argument("--prompt-auth", action="store_true", help="Prompt locally for password and fresh TOTP codes instead of requiring stored auth secrets")
+    parser.add_argument("--auth-email", help="Authenticated test email address, used with --authenticated or --prompt-auth")
     parser.add_argument("--unauthenticated", action="store_true", help="Force credential-gated tests to skip")
     parser.add_argument("--test-id", action="append", help="Run one test id; may be repeated")
     return parser.parse_args(argv)

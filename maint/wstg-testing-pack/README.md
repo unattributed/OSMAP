@@ -67,6 +67,19 @@ Authenticated checks, only when `.env` contains a dedicated validation account:
 ./run.sh --authenticated
 ```
 
+Authenticated checks for a real account without storing the password or TOTP
+secret:
+
+```bash
+./run.sh --prompt-auth --auth-email duncan@blackbagsecurity.com
+```
+
+This prompts locally for the account password and for a fresh TOTP code whenever
+the runner must create a new login session. The code has a short lifetime, so
+wait for each prompt before generating or reading the current code. The password
+and TOTP codes are redacted from evidence and are not written to `.env`,
+reports, or shell history.
+
 Run one mapped test:
 
 ```bash
@@ -109,7 +122,8 @@ instead of presenting it as compliance coverage.
 ## Limitations And False Positives
 
 - Authenticated tests require a dedicated validation account and current TOTP
-  secret. Without those, they skip by design.
+  secret, or `--prompt-auth` with a real account. Without one of those, they
+  skip by design.
 - The throttle check is intentionally bounded and may return `warning` if the
   configured safe attempt count does not reach the production threshold.
 - Static rendering and attachment checks verify source and documentation
