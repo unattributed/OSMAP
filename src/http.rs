@@ -1170,8 +1170,8 @@ mod tests {
         let body = body_text(&response);
         assert!(body.contains("OSMAP Login"));
         assert!(body.contains("Secure Webmail"));
-        assert!(body.contains("2FA required"));
-        assert!(body.contains("Session secured"));
+        assert!(body.contains("2FA Required"));
+        assert!(body.contains("Session Secured"));
         assert!(body.contains("totp_code"));
         assert!(!body.contains("Remember this device"));
         assert!(!body.contains("Forgot password"));
