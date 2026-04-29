@@ -426,7 +426,7 @@ printf '%s' "${MAILBOXES_RESPONSE}" | grep -q '^HTTP/1.1 200 OK' || {
   printf '%s\n' "${MAILBOXES_RESPONSE}"
   exit 1
 }
-response_body "${MAILBOXES_RESPONSE}" | grep -q 'Signed in as' || {
+response_body "${MAILBOXES_RESPONSE}" | grep -qi 'signed in as' || {
   log "mailboxes page did not render signed-in state"
   printf '%s\n' "${MAILBOXES_RESPONSE}"
   exit 1
