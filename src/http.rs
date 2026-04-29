@@ -1169,7 +1169,12 @@ mod tests {
         assert_eq!(response.response.status_code, 200);
         let body = body_text(&response);
         assert!(body.contains("OSMAP Login"));
+        assert!(body.contains("Secure Webmail"));
+        assert!(body.contains("2FA required"));
+        assert!(body.contains("Session secured"));
         assert!(body.contains("totp_code"));
+        assert!(!body.contains("Remember this device"));
+        assert!(!body.contains("Forgot password"));
     }
 
     #[test]
@@ -1647,6 +1652,9 @@ mod tests {
         assert_eq!(response.response.status_code, 200);
         let body = body_text(&response);
         assert!(body.contains("multipart/mixed"));
+        assert!(body.contains("mail-shell mail-shell-three"));
+        assert!(body.contains("Reading Pane"));
+        assert!(body.contains("Remote content blocked by policy"));
         assert!(body.contains("report.pdf"));
         assert!(body.contains("<pre>Hello world</pre>"));
         assert!(body.contains("mode=reply"));
@@ -1979,7 +1987,7 @@ mod tests {
         assert!(body.contains("for=\"html-display-prefer-sanitized\""));
         assert!(body.contains("name=\"archive_mailbox_name\""));
         assert!(body.contains("id=\"archive-mailbox-name\""));
-        assert!(body.contains("max-width:52rem"));
+        assert!(body.contains("class=\"action-stack\""));
         assert!(body.contains("value=\"Archive/2026\""));
         assert!(body.contains("Save Settings"));
     }

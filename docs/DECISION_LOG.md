@@ -1,5 +1,37 @@
 # Decision Log
 
+## 2026-04-29
+
+### Polish the V3 browser UI without widening the browser trust boundary
+
+OSMAP now has a more deliberate server-rendered V3 browser surface for the
+existing login, mailbox, message, compose, session, search, and settings pages.
+The login page presents OSMAP Secure Webmail as a centered authentication card
+with explicit username, password, and TOTP labels, generic failure messaging,
+and calm security indicators for the reviewed HTTPS edge, required TOTP, and
+HttpOnly/SameSite session cookies.
+
+The authenticated mailbox surface now uses a shared application header, visible
+2FA/session state, folder navigation where the current route already has
+mailbox-list data, a cleaner message-list toolbar, and a three-pane message
+view with folder navigation, supported reply, forward, move, archive, and
+delete-to-Trash actions, attachment metadata, rendering-state details, and
+explicit remote-content blocked notices.
+
+This was intentionally kept as a UI-only polish slice:
+
+- no frontend framework
+- no external assets, remote fonts, remote images, or CDN dependencies
+- no new JavaScript
+- no CSP, HSTS, cookie, CSRF, same-origin, auth, session, mailbox-helper, MIME,
+  attachment, or rendering-policy weakening
+- no remember-device, password-reset, Snooze, OAuth, contacts, calendar, or
+  unsupported action controls
+
+The change updates route-level HTML assertions so the polished UI remains
+covered while preserving the existing authentication, session, mailbox, send,
+attachment, logout, and rendering behavior.
+
 ## 2026-04-24
 
 ### Decode selected transfer-encoded text bodies before rendering
