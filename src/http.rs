@@ -691,9 +691,33 @@ mod tests {
 
         fn list_mailboxes(
             &self,
-            _context: &AuthenticationContext,
+            context: &AuthenticationContext,
             validated_session: &ValidatedSession,
         ) -> BrowserMailboxOutcome {
+            if context.user_agent == "Firefox/ManyMailboxes" {
+                let mut mailboxes = vec![MailboxEntry {
+                    name: "INBOX".to_string(),
+                }];
+                mailboxes.extend((0..=crate::mailbox::DEFAULT_MAX_MAILBOXES).map(|index| {
+                    MailboxEntry {
+                        name: format!("INBOX.overflow-{index}"),
+                    }
+                }));
+
+                return BrowserMailboxOutcome {
+                    decision: BrowserMailboxDecision::Listed {
+                        canonical_username: validated_session.record.canonical_username.clone(),
+                        mailboxes,
+                    },
+                    audit_events: vec![LogEvent::new(
+                        LogLevel::Info,
+                        EventCategory::Mailbox,
+                        "stub_many_mailboxes",
+                        "stub many mailboxes returned",
+                    )],
+                };
+            }
+
             BrowserMailboxOutcome {
                 decision: BrowserMailboxDecision::Listed {
                     canonical_username: validated_session.record.canonical_username.clone(),
@@ -794,6 +818,34 @@ mod tests {
                     )],
                 };
             }
+            if query.trim() == "manyresults" {
+                let results = (0..crate::mailbox::DEFAULT_MAX_SEARCH_RESULTS + 25)
+                    .map(|index| MessageSearchResult {
+                        mailbox_name: "INBOX".to_string(),
+                        uid: 10_000 + index as u64,
+                        flags: Vec::new(),
+                        date_received: "2026-03-29 09:00:00 +0000".to_string(),
+                        size_virtual: 512,
+                        subject: Some(format!("Result {index}")),
+                        from: Some("Load Test <load@example.com>".to_string()),
+                    })
+                    .collect();
+
+                return BrowserMessageSearchOutcome {
+                    decision: BrowserMessageSearchDecision::Listed {
+                        canonical_username: validated_session.record.canonical_username.clone(),
+                        mailbox_name,
+                        query: query.trim().to_string(),
+                        results,
+                    },
+                    audit_events: vec![LogEvent::new(
+                        LogLevel::Info,
+                        EventCategory::Mailbox,
+                        "stub_many_search_results",
+                        "stub many message search results returned",
+                    )],
+                };
+            }
             let results = match mailbox_name.as_deref() {
                 Some(mailbox_name) => vec![MessageSearchResult {
                     mailbox_name: mailbox_name.to_string(),
@@ -849,6 +901,20 @@ mod tests {
             mailbox_name: &str,
             uid: u64,
         ) -> BrowserMessageViewOutcome {
+            if uid == 900 {
+                return BrowserMessageViewOutcome {
+                    decision: BrowserMessageViewDecision::Denied {
+                        public_reason: "temporarily_unavailable".to_string(),
+                    },
+                    audit_events: vec![LogEvent::new(
+                        LogLevel::Warn,
+                        EventCategory::Mailbox,
+                        "stub_oversized_mime_rejected",
+                        "stub oversized mime body rejected",
+                    )],
+                };
+            }
+
             let _unused_fixture = MessageView {
                 mailbox_name: mailbox_name.to_string(),
                 uid,
@@ -857,6 +923,37 @@ mod tests {
                 size_virtual: 512,
                 header_block: "Subject: Example\n".to_string(),
                 body_text: "Hello world\n".to_string(),
+            };
+            let attachments = if uid == 901 {
+                (0..crate::mime::DEFAULT_MIME_PARTS_MAX + 12)
+                    .map(|index| crate::mime::AttachmentMetadata {
+                        part_path: format!("1.{}", index + 2),
+                        filename: Some(format!("overflow-{index}.bin")),
+                        content_type: "application/octet-stream".to_string(),
+                        disposition: AttachmentDisposition::Attachment,
+                        content_id: None,
+                        size_hint_bytes: 128,
+                    })
+                    .collect()
+            } else {
+                vec![
+                    crate::mime::AttachmentMetadata {
+                        part_path: "1.2".to_string(),
+                        filename: Some("report.pdf".to_string()),
+                        content_type: "application/pdf".to_string(),
+                        disposition: AttachmentDisposition::Attachment,
+                        content_id: None,
+                        size_hint_bytes: 128,
+                    },
+                    crate::mime::AttachmentMetadata {
+                        part_path: "1.3".to_string(),
+                        filename: Some("chart.png".to_string()),
+                        content_type: "image/png".to_string(),
+                        disposition: AttachmentDisposition::Inline,
+                        content_id: Some("chart@example.com".to_string()),
+                        size_hint_bytes: 64,
+                    },
+                ]
             };
 
             BrowserMessageViewOutcome {
@@ -873,24 +970,7 @@ mod tests {
                         contains_html_body: true,
                         body_html: "<pre>Hello world</pre>".to_string(),
                         body_text_for_compose: "Hello world".to_string(),
-                        attachments: vec![
-                            crate::mime::AttachmentMetadata {
-                                part_path: "1.2".to_string(),
-                                filename: Some("report.pdf".to_string()),
-                                content_type: "application/pdf".to_string(),
-                                disposition: AttachmentDisposition::Attachment,
-                                content_id: None,
-                                size_hint_bytes: 128,
-                            },
-                            crate::mime::AttachmentMetadata {
-                                part_path: "1.3".to_string(),
-                                filename: Some("chart.png".to_string()),
-                                content_type: "image/png".to_string(),
-                                disposition: AttachmentDisposition::Inline,
-                                content_id: Some("chart@example.com".to_string()),
-                                size_hint_bytes: 64,
-                            },
-                        ],
+                        attachments,
                         rendering_mode: RenderingMode::PlainTextPreformatted,
                     }),
                 },
@@ -1632,6 +1712,69 @@ mod tests {
     }
 
     #[test]
+    fn search_page_caps_excessive_all_mailbox_results() {
+        let response = app().handle_request(
+            &request(
+                "GET",
+                "/search?q=manyresults",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                ],
+                "",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 200);
+        let body = body_text(&response);
+        assert!(body.contains("Result limit reached."));
+        assert!(body.contains(&format!(
+            "Displaying the first {} of {} backend results.",
+            crate::mailbox::DEFAULT_MAX_SEARCH_RESULTS,
+            crate::mailbox::DEFAULT_MAX_SEARCH_RESULTS + 25
+        )));
+        assert!(body.contains(&format!(
+            "<strong>Results:</strong> {}",
+            crate::mailbox::DEFAULT_MAX_SEARCH_RESULTS
+        )));
+        assert!(body.contains("Result 249"));
+        assert!(!body.contains("Result 250"));
+    }
+
+    #[test]
+    fn mailboxes_page_caps_pathological_mailbox_lists() {
+        let response = app().handle_request(
+            &request(
+                "GET",
+                "/mailboxes",
+                &[
+                    ("User-Agent", "Firefox/ManyMailboxes"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                ],
+                "",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 200);
+        let body = body_text(&response);
+        assert!(body.contains(&format!(
+            "Mailbox list display limit reached: showing first {} of {} visible mailboxes.",
+            crate::mailbox::DEFAULT_MAX_MAILBOXES,
+            crate::mailbox::DEFAULT_MAX_MAILBOXES + 2
+        )));
+        assert!(body.contains("INBOX.overflow-1022"));
+        assert!(!body.contains("INBOX.overflow-1023"));
+    }
+
+    #[test]
     fn message_view_renders_safe_body_and_attachments() {
         let response = app().handle_request(
             &request(
@@ -1673,6 +1816,62 @@ mod tests {
         assert!(body.contains(
             "including <strong>1</strong> with Content-ID metadata used by `cid:` HTML references"
         ));
+    }
+
+    #[test]
+    fn message_view_route_maps_oversized_mime_body_to_safe_failure() {
+        let response = app().handle_request(
+            &request(
+                "GET",
+                "/message?mailbox=INBOX&uid=900",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                ],
+                "",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 503);
+        let body = body_text(&response);
+        assert!(body.contains("The service could not complete the request at this time."));
+        assert!(!body.contains("oversized"));
+        assert!(!body.contains("mime body"));
+    }
+
+    #[test]
+    fn message_view_caps_excessive_attachment_metadata() {
+        let response = app().handle_request(
+            &request(
+                "GET",
+                "/message?mailbox=INBOX&uid=901",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                ],
+                "",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 200);
+        let body = body_text(&response);
+        assert!(body.contains(&format!(
+            "Displaying the first {} of {} surfaced parts.",
+            crate::mime::DEFAULT_MIME_PARTS_MAX,
+            crate::mime::DEFAULT_MIME_PARTS_MAX + 12
+        )));
+        assert!(body.contains("overflow-63.bin"));
+        assert!(!body.contains("overflow-64.bin"));
+        assert!(body.contains("/attachment?mailbox=INBOX&amp;uid=901&amp;part=1.65"));
+        assert!(!body.contains("/attachment?mailbox=INBOX&amp;uid=901&amp;part=1.66"));
     }
 
     #[test]

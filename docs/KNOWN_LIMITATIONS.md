@@ -49,7 +49,9 @@
   refinement behavior. The Version 2 browser surface must keep that existing
   search route operational or fail deterministically for invalid inputs; it
   must not expose a visible search form that leads to a generic runtime 503 for
-  ordinary authenticated search.
+  ordinary authenticated search. The browser route now caps rendered search
+  rows, but richer search still needs product-level sorting and refinement
+  decisions.
 - The implementation now provides a first one-message move path between
   existing mailboxes plus settings-backed archive shortcuts, including bounded
   selected-message archive from mailbox-list pages, but it does not yet provide

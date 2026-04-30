@@ -154,7 +154,9 @@ The MIME/HTML regression corpus now lives under `tests/fixtures/mime/` and
 covers encoded headers, multipart alternative, nested mixed/related messages,
 malformed boundaries, hostile active HTML, `cid:` image references, remote
 resources, data URIs, suspicious attachment names, and nested attachments. The
-next Version 3 hardening pass should keep adding route tests for oversized MIME
-bodies, excessive attachment metadata, pathological mailbox output, and large
-all-mailbox search result sets. Adjacent controls such as nginx request limits,
+browser routes now also cap rendered mailbox links, search-result rows, and
+attachment metadata rows even if an upstream gateway hands them over-limit
+collections. The next Version 3 hardening pass should keep adding deeper tests
+for expensive mailbox backends, broad real-world MIME fixtures, and slow
+synchronous request occupancy. Adjacent controls such as nginx request limits,
 PF, and host monitoring remain part of the credible DoS posture.

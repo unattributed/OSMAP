@@ -5,8 +5,18 @@
 
 use crate::http::BrowserVisibleSession;
 use crate::http_support::{escape_html, url_encode};
-use crate::mailbox::{MailboxEntry, MessageSearchResult, MessageSummary};
+use crate::mailbox::{
+    MailboxEntry, MessageSearchResult, MessageSummary, DEFAULT_MAX_MAILBOXES,
+    DEFAULT_MAX_SEARCH_RESULTS,
+};
+use crate::mime::DEFAULT_MIME_PARTS_MAX;
 use crate::rendering::{HtmlDisplayPreference, RenderedMessageView};
+
+/// Defense-in-depth cap for attachment metadata rows rendered by one route.
+const DEFAULT_RENDERED_ATTACHMENT_METADATA_MAX: usize = DEFAULT_MIME_PARTS_MAX;
+
+/// Defense-in-depth cap for mailbox links rendered by one route.
+const DEFAULT_RENDERED_MAILBOXES_MAX: usize = DEFAULT_MAX_MAILBOXES;
 
 /// Small view model for the current server-rendered compose page.
 pub(crate) struct ComposePageModel<'a> {
@@ -83,7 +93,7 @@ fn app_header(canonical_username: &str, csrf_token: &str, current: &str) -> Stri
 
 fn folder_pane(mailboxes: &[MailboxEntry], current_mailbox_name: Option<&str>) -> String {
     let mut items = String::new();
-    for mailbox in mailboxes {
+    for mailbox in mailboxes.iter().take(DEFAULT_RENDERED_MAILBOXES_MAX) {
         let mailbox_href = format!("/mailbox?name={}", url_encode(&mailbox.name));
         let current = if current_mailbox_name == Some(mailbox.name.as_str()) {
             " aria-current=\"page\""
@@ -95,6 +105,13 @@ fn folder_pane(mailboxes: &[MailboxEntry], current_mailbox_name: Option<&str>) -
             escape_html(&mailbox_href),
             current,
             escape_html(&mailbox.name),
+        ));
+    }
+    if mailboxes.len() > DEFAULT_RENDERED_MAILBOXES_MAX {
+        items.push_str(&format!(
+            "<li class=\"muted\">Mailbox list display limit reached: showing first {} of {} visible mailboxes.</li>",
+            DEFAULT_RENDERED_MAILBOXES_MAX,
+            mailboxes.len(),
         ));
     }
 
@@ -302,6 +319,19 @@ pub(crate) fn render_message_search_page(
     query: &str,
     results: &[MessageSearchResult],
 ) -> String {
+    let displayed_results = results
+        .iter()
+        .take(DEFAULT_MAX_SEARCH_RESULTS)
+        .collect::<Vec<_>>();
+    let truncation_notice = if results.len() > displayed_results.len() {
+        format!(
+            "<div class=\"notice notice-error\" role=\"status\"><strong>Result limit reached.</strong> Displaying the first {} of {} backend results.</div>",
+            displayed_results.len(),
+            results.len(),
+        )
+    } else {
+        String::new()
+    };
     let back_link = match mailbox_name {
         Some(mailbox_name) => format!(
             "<a href=\"/mailbox?name={}\">Back to mailbox</a> | ",
@@ -325,7 +355,7 @@ pub(crate) fn render_message_search_page(
     if results.is_empty() {
         rows.push_str("<tr><td colspan=\"7\">No messages matched this search.</td></tr>");
     } else {
-        for result in results {
+        for result in &displayed_results {
             let message_href = format!(
                 "/message?mailbox={}&uid={}",
                 url_encode(&result.mailbox_name),
@@ -353,6 +383,7 @@ pub(crate) fn render_message_search_page(
             "<p>{}<a href=\"/mailboxes\">All mailboxes</a></p>",
             "<h1>Search Results</h1>",
             "<p class=\"muted\">This bounded retrieval slice keeps Dovecot authoritative for the query while letting the browser search one mailbox or all visible mailboxes without turning OSMAP into a broad search product.</p>",
+            "{}",
             "<form class=\"search-row\" method=\"get\" action=\"/search\">{}<label for=\"search-query\">Search query<input id=\"search-query\" type=\"text\" name=\"q\" value=\"{}\" autocomplete=\"off\"></label><button type=\"submit\">Search</button><label><input type=\"checkbox\" name=\"scope\" value=\"all\"{}> Search all mailboxes</label></form>",
             "<p><strong>Scope:</strong> {}<br><strong>Query:</strong> {}<br><strong>Results:</strong> {}</p>",
             "<div class=\"table-wrap\"><table><thead><tr><th>UID</th><th>Mailbox</th><th>Subject</th><th>From</th><th>Received</th><th>Flags</th><th>Size</th></tr></thead><tbody>{}</tbody></table></div>",
@@ -361,12 +392,13 @@ pub(crate) fn render_message_search_page(
         ),
         app_header(canonical_username, csrf_token, "mailboxes"),
         back_link,
+        truncation_notice,
         mailbox_hidden_input,
         escape_html(query),
         search_all_checked,
         escape_html(search_scope),
         escape_html(query),
-        results.len(),
+        displayed_results.len(),
         rows,
     )
 }
@@ -379,9 +411,15 @@ pub(crate) fn render_message_view_page(
     archive_mailbox_name: Option<&str>,
     user_visible_mailboxes: &[MailboxEntry],
 ) -> String {
+    let displayed_attachments = rendered
+        .attachments
+        .iter()
+        .take(DEFAULT_RENDERED_ATTACHMENT_METADATA_MAX)
+        .collect::<Vec<_>>();
     let inline_image_count = rendered
         .attachments
         .iter()
+        .take(DEFAULT_RENDERED_ATTACHMENT_METADATA_MAX)
         .filter(|attachment| {
             attachment.disposition == crate::mime::AttachmentDisposition::Inline
                 && attachment.content_type.starts_with("image/")
@@ -390,6 +428,7 @@ pub(crate) fn render_message_view_page(
     let inline_cid_image_count = rendered
         .attachments
         .iter()
+        .take(DEFAULT_RENDERED_ATTACHMENT_METADATA_MAX)
         .filter(|attachment| {
             attachment.disposition == crate::mime::AttachmentDisposition::Inline
                 && attachment.content_type.starts_with("image/")
@@ -402,7 +441,7 @@ pub(crate) fn render_message_view_page(
             "<li class=\"attachment-item\">No attachment metadata surfaced for this message.</li>",
         );
     } else {
-        for attachment in &rendered.attachments {
+        for attachment in &displayed_attachments {
             let download_href = format!(
                 "/attachment?mailbox={}&uid={}&part={}",
                 url_encode(&rendered.mailbox_name),
@@ -428,6 +467,13 @@ pub(crate) fn render_message_view_page(
                 attachment.size_hint_bytes,
                 content_id_metadata,
                 escape_html(&download_href),
+            ));
+        }
+        if rendered.attachments.len() > displayed_attachments.len() {
+            attachments.push_str(&format!(
+                "<li class=\"attachment-item\"><strong>Attachment metadata limit reached.</strong><br>Displaying the first {} of {} surfaced parts.</li>",
+                displayed_attachments.len(),
+                rendered.attachments.len(),
             ));
         }
     }

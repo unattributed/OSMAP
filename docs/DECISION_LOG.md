@@ -5169,3 +5169,23 @@ tags, suspicious attachment filenames, and nested attachment lookup. Rendering
 tests assert that active and remote content is stripped or neutralized by
 default, while attachment tests keep suspicious files on the forced-download
 path with sanitized metadata.
+
+### Add route-level resource guardrail regressions
+
+OSMAP now adds defense-in-depth caps at the server-rendered route boundary for
+three browser-visible resource surfaces: mailbox links, search-result rows, and
+attachment metadata rows. The parser and service layers already enforce their
+own limits, but these UI caps keep an unexpected or future gateway regression
+from rendering unbounded HTML in one response.
+
+Route-level tests now cover:
+
+- all-mailbox search returning more rows than the documented result cap
+- mailbox listing returning more visible folders than the documented mailbox cap
+- message rendering returning excessive attachment metadata
+- an oversized MIME/rendering failure mapping to a generic 503 browser response
+  without leaking backend detail
+
+This does not replace deeper throughput controls. The runtime is still
+synchronous, and Version 3 still needs broader worker-budget and host-level DoS
+planning.
