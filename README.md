@@ -1,59 +1,68 @@
-# OSMAP — OpenBSD Secure Mail Access Platform
+# OSMAP: OpenBSD Secure Mail Access Platform
 
-OSMAP is a security-focused web mail access platform designed for OpenBSD systems.  
-It replaces traditional webmail interfaces such as Roundcube with a restricted, maintainable, and internet-exposure-ready alternative.
+OSMAP is a security-focused webmail access platform for hardened OpenBSD mail systems.
 
-The project prioritizes security, operational simplicity, and long-term maintainability over feature breadth.
+It is intended to replace broad, plugin-heavy webmail interfaces such as Roundcube with a smaller, more restricted, and more maintainable browser access layer. The project prioritizes security, operational simplicity, auditability, and long-term maintainability over feature breadth.
+
+OSMAP does not replace the mail stack. Postfix, Dovecot, Rspamd, nginx, TLS, PF, and the surrounding OpenBSD host controls remain authoritative.
 
 ---
 
 ## Project Goals
 
-OSMAP aims to provide a safe browser-based interface to an existing mail system without altering the core mail transport infrastructure.
+OSMAP aims to provide safe browser-based access to an existing mail system without weakening the underlying mail transport or delivery architecture.
 
-Key objectives:
+Primary goals:
 
-- Replace Roundcube in hardened environments
-- Operate safely when exposed to the public internet
-- Minimize attack surface
+- Replace Roundcube in hardened self-hosted environments
+- Operate safely behind a hardened public HTTPS edge
+- Minimize exposed browser functionality
+- Preserve compatibility with existing IMAP and SMTP infrastructure
 - Enforce strong authentication
-- Preserve compatibility with IMAP/SMTP backends
+- Maintain clear trust boundaries between the browser runtime and mailbox access
+- Run with least privilege on OpenBSD
+- Keep deployments reversible and auditable
+- Maintain a clearly defined software supply chain
+- Support reproducible builds, validation, and deployment checks
 - Remain maintainable by a small operator team
-- Use a clearly defined software supply chain
-- Support reproducible builds and deployments
 
 ---
 
-## Non-Goals (Version 1)
+## Non-Goals
 
-OSMAP intentionally avoids feature creep.
+OSMAP intentionally avoids broad webmail feature creep.
 
-Out of scope for the initial release:
+Out of scope unless a later version explicitly redefines the project boundary:
 
 - Calendar and groupware features
 - Mobile applications
 - Plugin ecosystems
-- Multi-tenant hosting
 - SaaS deployment model
-- Replacement of Postfix, Dovecot, or other core mail services
+- Multi-tenant hosting
+- Replacement of Postfix, Dovecot, Rspamd, nginx, PF, or other core host services
 - ProtonMail-style zero-access encryption
 - Enterprise identity federation
+- Broad JavaScript-heavy application behavior
+- Attachment preview behavior that widens browser trust
+- Unbounded mailbox-wide operations
 
 ---
 
 ## Intended Environment
 
-OSMAP is designed specifically for a self-hosted OpenBSD mail stack.
+OSMAP is designed for a self-hosted OpenBSD mail stack.
 
-Typical deployment includes:
+A typical deployment includes:
 
-- OpenBSD operating system
-- Postfix (SMTP and submission services)
-- Dovecot (IMAP)
-- Rspamd spam filtering
-- MariaDB or compatible database
-- nginx reverse proxy
-- TLS-only access
+- OpenBSD
+- Postfix for SMTP and submission
+- Dovecot for mailbox access
+- Rspamd for spam filtering
+- nginx as the public HTTPS edge
+- TLS-only browser access
+- PF and host-level network controls
+- A dedicated `_osmap` web runtime user
+- A mailbox helper boundary running with only the mailbox authority it needs
 
 Native mail clients such as Thunderbird remain supported and unchanged.
 
@@ -63,43 +72,53 @@ Native mail clients such as Thunderbird remain supported and unchanged.
 
 Security is the primary design driver.
 
-Principles include:
+Core principles:
 
 - Minimal exposed functionality
 - Least privilege operation
 - Explicit trust boundaries
 - Defense in depth
-- Observability and auditability
+- Strong authentication
+- Session revocation and expiry
+- Bounded parsing and request handling
+- Safe rendering by default
+- Supply-chain awareness
+- Observable and auditable runtime behavior
 - Reversible deployments
-- Supply chain awareness
 - Maintainability over novelty
 
-The project aligns with recognized guidance such as:
+The project aligns its planning and validation with recognized security guidance, including:
 
 - OWASP Top 10
+- OWASP ASVS
+- OWASP WSTG
 - CWE Top 25
-- MITRE ATT&CK (defensive perspective)
+- MITRE ATT&CK from a defensive perspective
 - Applicable NIST cybersecurity guidance
 
 ---
 
 ## Why Replace Roundcube?
 
-Traditional webmail platforms often prioritize features and extensibility over security minimalism.
+Traditional webmail platforms often prioritize features, extensibility, and compatibility over security minimalism.
+
+OSMAP exists for environments where public webmail access is necessary, but the exposed browser surface must remain narrow and reviewable.
 
 OSMAP focuses on:
 
 - Reduced complexity
-- Tighter integration with hardened systems
-- Clear operational model
-- Explicit security assumptions
-- Long-term sustainability
+- Fewer exposed features
+- Server-rendered browser flows
+- Clear operational assumptions
+- Stronger alignment with OpenBSD host controls
+- Explicit validation before direct internet exposure
+- Long-term sustainability for small operator teams
 
 ---
 
 ## Development Approach
 
-The project follows a structured, phased methodology:
+The project follows a phased methodology:
 
 1. Charter and planning baseline
 2. Current system analysis
@@ -109,265 +128,213 @@ The project follows a structured, phased methodology:
 6. Secure SDLC and release governance
 7. Implementation planning and proof-of-concept definition
 8. Controlled implementation, validation, and hardening
-9. Deployment, migration, and legacy retirement
+9. Pilot deployment, migration planning, and legacy retirement criteria
+10. Daily-driver hardening and broader adoption readiness
 
-Each phase produces formal outputs to support traceability and auditability.
+Each phase produces documentation, implementation changes, validation scripts, or acceptance evidence that can be reviewed later.
 
 ---
 
-## Status
+## Current Status
 
-- OSMAP is now a working prototype with real Rust implementation, not only a
-  design repo.
-- Planning, architecture, security, SDLC, implementation-control, readiness,
-  exposure, rollback, and pilot-closeout documents are populated through the
-  current Version 2 closeout baseline.
-- The runtime includes typed configuration, explicit state layout, structured
-  logging, bounded auth, TOTP, session issuance and revocation, CSRF handling,
-  mailbox browsing, message listing and viewing, bounded one-mailbox and
-  all-mailbox search,
-  MIME-aware inspection, attachment upload and forced-download paths,
-  compose/send, reply/forward draft generation, and a first one-message move
-  path between existing mailboxes.
-- The browser layer now includes a first self-service session-management page
-  backed by persisted session metadata, one-session revocation, revocation of
-  other sessions, revocation of all sessions, and the configured idle and
-  absolute timeout policy.
-- The browser layer now also includes a first bounded settings page and a safe
-  HTML rendering path: HTML-capable messages can be rendered through a narrow
-  allowlist sanitizer, users can choose between sanitized HTML and plain-text
-  fallback, and the same settings surface now also carries a bounded archive
-  mailbox shortcut preference.
-- Production `serve` mode now also refuses to run without the local mailbox
-  helper boundary, so the Version 1 browser runtime no longer treats direct
-  mailbox backends as an acceptable deployment shape there.
-- The largest Rust implementation hotspots are being reduced through
-  behavior-preserving internal splits across the HTTP, mailbox, and mailbox
-  helper layers so the browser boundary and helper boundary stay easier to
-  audit as the prototype matures.
-- That session-management slice is now also proven on
-  `mail.blackbagsecurity.com` under `enforce` with the web runtime kept as
-  `_osmap` and the helper kept at the `vmail` boundary, using a synthetic
-  session store to validate `/sessions`, `POST /sessions/revoke`, and
-  `POST /logout`, including stale-session rejection after logout.
-- The browser layer is server-rendered and dependency-light, with bounded HTTP
-  parsing and explicit separation from the underlying mail stack.
-- OpenBSD-specific work is already in the prototype: dedicated `_osmap`
-  runtime assumptions, explicit Dovecot socket configuration, and
-  operator-controlled `pledge(2)` / `unveil(2)` enforcement modes.
-- The binary now also accepts an optional explicit run-mode argument
-  (`bootstrap`, `serve`, or `mailbox-helper`), which keeps OpenBSD
-  service-management examples small and gives the split runtime distinct
-  process-table shapes.
-- Positive browser authentication plus TOTP-backed session issuance are proven
-  on `mail.blackbagsecurity.com` under `_osmap`.
-- The mailbox-helper runtime now exists in-repo: a local Unix-socket helper
-  plus helper-backed mailbox listing, message-list retrieval, and message-view
-  retrieval, and attachment download now also runs through a dedicated
-  helper-backed operation when configured.
-- The helper-backed read path is now also proven on `mail.blackbagsecurity.com`
-  under `OSMAP_OPENBSD_CONFINEMENT_MODE=enforce`: mailbox listing,
-  message-list retrieval, message view, and attachment download all succeeded
-  against an attachment-bearing validation mailbox with the web runtime kept as
-  `_osmap` and the mailbox helper running at the `vmail` boundary.
-- A full read-oriented browser trace is now also proven on
-  `mail.blackbagsecurity.com` under `enforce`: real password-plus-TOTP login,
-  issued browser session cookie, helper-backed mailbox listing, helper-backed
-  message view, and attachment download all succeeded in one continuous flow.
-- OSMAP is still prototype-grade and not production-ready, but the current
-  Version 2 evidence includes limited direct-public browser exposure and final
-  pilot closeout for the bounded workflow set.
-- Version 3 is now defined as the focused daily-driver adoption release in
-  `docs/V3_DEFINITION.md`, `docs/V3_ACCEPTANCE_CRITERIA.md`,
-  `docs/V3_ROADMAP.md`, and `docs/V3_SECURITY_GATES.md`. That scope preserves
-  all Version 2 gates while targeting the pilot-proven gaps around MIME and
-  HTML correctness, draft continuity, reply and forward attachment handling,
-  richer search, bounded bulk folder actions, session and device policy, TLS
-  CBC disposition, and WSTG regression evidence.
-- The previous top-level Version 1 product gaps around safe HTML rendering and
-  a bounded settings surface are now closed in first-release form. Broader
-  folder-organization ergonomics still remain later refinements, but the first
-  backend-authoritative move workflow is now present.
-- The safe-HTML rendering and settings slice is now also live-proven on
-  `mail.blackbagsecurity.com` under `enforce` with a controlled HTML-bearing
-  mailbox message and a synthetic validated session: sanitized HTML renders by
-  default, the settings page persists `prefer_plain_text`, and the same
-  message then falls back to plain-text rendering.
-- The settings-backed archive shortcut is now also live-proven on
-  `mail.blackbagsecurity.com` under `enforce`: `POST /settings` persists
-  `archive_mailbox_name=Junk`, the mailbox and message pages both render
-  archive shortcut forms with that configured destination, and a controlled
-  message is then archived from `INBOX` to `Junk` through the existing
-  `POST /message/move` route.
-- The April 2026 WSTG remediation pass now closes the Version 2 workflow
-  defects found in that exposed browser slice: archive mailbox settings are
-  checked against the authenticated mailbox list before persistence, stale
-  archive shortcuts are hidden, message moves re-resolve the source mailbox and
-  UID before reporting success, and exposed search forms no longer point at a
-  generic 503 path for ordinary authenticated use.
-- Mailbox-list pages now also expose bounded selected-message archive controls
-  when an archive mailbox is configured. The selected archive route reuses the
-  same message-move backend once per selected UID instead of adding broader
-  mailbox-write authority.
-- The bounded all-mailboxes search flow is now also live-proven on
-  `mail.blackbagsecurity.com` under `enforce`: the mailboxes page renders the
-  global search form, the mailbox page renders the all-mailboxes toggle, and a
-  controlled `/search?q=...` request returned matching messages from both
-  `INBOX` and `Junk` in one browser result set.
-- The backend now applies two bounded file-backed login-throttle buckets on the
-  browser auth path: a tighter credential-plus-remote bucket and a higher
-  threshold remote-only bucket.
-- The backend now also applies two bounded file-backed submission-throttle
-  buckets on the browser send path: a tighter canonical-user-plus-remote
-  bucket and a higher threshold remote-only bucket.
-- The backend now also applies two bounded file-backed message-move throttle
-  buckets on the browser folder-organization path: a tighter
-  canonical-user-plus-remote bucket and a higher threshold remote-only bucket.
-- That bounded send-throttle behavior is now also live-proven on
-  `mail.blackbagsecurity.com` under `enforce`: an isolated host validation run
-  using a synthetic validated session confirmed one accepted `POST /send`
-  followed by `429 Too Many Requests` with `Retry-After` on the second matching
-  submission.
-- The bounded message-move throttle is now also live-proven on
-  `mail.blackbagsecurity.com` under `enforce`: a controlled message injected
-  into `INBOX` was moved once through `POST /message/move`, then the second
-  matching move attempt returned `429 Too Many Requests` with `Retry-After`.
-- Broader auth-abuse resistance and request-abuse controls still remain active
-  hardening work, and the service still depends on adjacent controls such as
-  nginx, PF, and operator monitoring.
-- The current HTTP runtime now uses bounded concurrent connection handling
-  instead of a strictly sequential listener, with an explicit in-flight cap
-  and `503 Service Unavailable` when that cap is reached.
-- The first live mutation-path proof now also exists on
-  `mail.blackbagsecurity.com` under `enforce`: a controlled one-message move
-  from `INBOX` to `Junk` and a bounded send flow both succeeded through the
-  real browser routes with the `_osmap` plus `vmail` runtime split.
-- The authenticated read and first mutation paths are therefore both proven on
-  the target host, but broader mutation coverage and operational-hardening
-  work still remain.
-- The largest Rust hotspots are also being reduced with behavior-preserving
-  internal refactors. The browser layer has been split across dedicated
-  `http_runtime`, `http_gateway`, and `http_browser` modules, and the mailbox
-  layer now has dedicated parser, backend, service, and model modules to make
-  security review and future maintenance easier.
-- A fresh repo-grounded reassessment now shows no equally strong candidate for
-  another narrow per-route throttle right now: selected-message archive reuses
-  the message-move throttle once per selected UID, while the remaining
-  authenticated POST routes are settings update, session revoke, and logout,
-  and they are lower-volume, CSRF-bound, and lower abuse value than login,
-  send, or message move.
-- Current priority work is therefore centered on keeping the frozen Version 1
-  contract around the already-implemented helper/OpenBSD boundary aligned with
-  the successful April 14, 2026 current-pushed-snapshot live-host closeout
-  rerun, using the
-  repo-owned closeout wrappers for targeted reruns when closeout-facing
-  behavior changes, and only taking narrower runtime or confinement changes
-  when repo evidence exposes a real blocker.
-- The HTTP runtime now also distinguishes connection-lifecycle failures more
-  honestly: read timeouts return `408 Request Timeout`, while empty or
-  truncated connections are logged and closed without treating them as generic
-  `400 Bad Request` traffic.
-- The bounded listener now also applies backoff after repeated accept
-  failures and emits central request-completion events with status and
-  duration so slow requests are easier to spot during hardening.
-- The bounded runtime now also emits connection high-watermark and
-  capacity-reached events, and its response-write failure events carry richer
-  request and response context for operator triage.
-- The listener now also escalates sustained `accept(2)` failure streaks to an
-  error-level event and emits a recovery event when successful accepts resume.
-- The runtime now also escalates sustained response-write failure streaks and
-  emits a recovery event when response writes resume after repeated failures.
-- A live host observability proof now also exists for the bounded runtime on
-  `mail.blackbagsecurity.com`: with the connection cap forced to `1`, one held
-  connection triggered capacity-reached and over-capacity rejection events,
-  then timed out cleanly and allowed normal health requests to resume.
-- A second live host observability proof now also exists on
-  `mail.blackbagsecurity.com` under `enforce`: repeated reset-backed
-  `GET /login` requests drove sustained response-write failures reported as
-  `Broken pipe (os error 32)`, and a subsequent normal `GET /healthz`
-  triggered `http_response_write_recovered` after returning `200 OK`.
-- The standard host-side validation checkout on `mail.blackbagsecurity.com` is
-  now `~/OSMAP`, with [osmap-host-validate.ksh](maint/live/osmap-host-validate.ksh)
-  used there to run repo-owned validation under home-local `TMPDIR`,
-  `CARGO_HOME`, and `CARGO_TARGET_DIR` instead of depending on `/tmp`.
-- The authoritative Version 1 host closeout gate is now
-  `ksh ./maint/live/osmap-live-validate-v1-closeout.ksh` in that same
-  `~/OSMAP` checkout, and a reachable workstation can trigger that exact
-  host-side wrapper through
-  [osmap-run-v1-closeout-over-ssh.sh](maint/live/osmap-run-v1-closeout-over-ssh.sh)
-  and pull back the small review report.
-- A supplemental real-user browser walkthrough now also exists on April 12,
-  2026 against a temporary review instance launched from the current
-  `~/OSMAP` checkout on `mail.blackbagsecurity.com`: the real mailbox user
-  `pilot-primary@example.invalid` signed in with mailbox password plus OSMAP
-  TOTP, viewed mailboxes, reviewed `/sessions`, opened a real message,
-  rendered sanitized HTML, and sent a browser-composed message that was
-  confirmed delivered in Proton Mail. Proton Pass and Proton Authenticator
-  were used as operator tools during that walkthrough; OSMAP itself does not
-  depend on either product.
-- GitHub-side security validation now has two explicit lanes:
-  GitHub default CodeQL setup remains the authoritative CodeQL scanner for this
-  repository, while the repo-owned `security-check` workflow is the
-  authoritative CI gate for Rust checks, tests, clippy, formatting, and the
-  current CWE-oriented shell guards.
+OSMAP is now a working Rust prototype with live-host validation evidence. It is no longer only a planning repository.
 
-## V1 Closeout Priorities
+The current implementation includes:
 
-The Version 1 closeout contract is now frozen in
-`docs/ACCEPTANCE_CRITERIA.md`, and the remaining repo-grounded closeout work
-is:
+- Typed runtime configuration
+- Structured logging
+- Bounded HTTP parsing
+- Server-rendered browser flows
+- Password plus TOTP authentication
+- Session issuance, listing, revocation, idle expiry, and absolute lifetime expiry
+- CSRF protection for state-changing browser routes
+- Mailbox listing
+- Message listing and viewing
+- Bounded one-mailbox and all-mailbox search
+- MIME-aware message inspection
+- Safe HTML rendering through a narrow sanitizer
+- Plain-text fallback preference
+- Attachment upload limits
+- Forced-download attachment behavior
+- Compose and send
+- Reply and forward draft generation
+- One-message move support between existing mailboxes
+- Selected-message archive controls when an archive mailbox is configured
+- Login, send, and message-move throttling
+- Bounded concurrent connection handling
+- Runtime observability for capacity, timeouts, accept failures, and response-write failures
 
-1. Keep `README.md`, the closeout-facing docs, and the repo-owned validation
-   references aligned with that gate, with the successful April 14, 2026
-   current-pushed-snapshot host rerun archived in
-   `maint/live/latest-host-v1-closeout-report.txt`, and with the supplemental
-   April 12, 2026 real-user browser walkthrough.
-2. Use `ksh ./maint/live/osmap-live-validate-v1-closeout.ksh` on
-   `mail.blackbagsecurity.com`, or
-   `./maint/live/osmap-run-v1-closeout-over-ssh.sh` from a reachable
-   workstation, whenever closeout-facing behavior changes.
-3. Only take additional implementation or hardening work when a failing proof
-   or a repo inconsistency reveals a narrower blocker.
+OpenBSD-specific work is already present:
 
-For the short allowlist that turns that rule into day-to-day scoping guidance,
-see `docs/V1_CLOSEOUT_WORK_RULES.md`.
+- Dedicated `_osmap` runtime assumptions
+- Dedicated mailbox helper boundary
+- Helper-backed mailbox listing
+- Helper-backed message listing
+- Helper-backed message view
+- Helper-backed attachment download
+- Explicit Dovecot socket configuration
+- Operator-controlled `pledge(2)` and `unveil(2)` enforcement modes
+- Production `serve` mode refusal when the required local mailbox helper boundary is not configured
+
+The project has also reduced some large implementation hotspots through internal module splits across the HTTP, mailbox, and mailbox-helper layers. This improves reviewability as the browser and helper boundaries become more security-sensitive.
+
+OSMAP remains prototype-grade. The current code has passed meaningful controlled validation on the known OpenBSD target environment, but it is not yet ready for broad public adoption.
+
+---
+
+## Validation Status
+
+The known live validation target is:
+
+- `mail.blackbagsecurity.com`
+
+The standard host-side validation checkout is:
+
+- `~/OSMAP`
+
+Important validation entry points include:
+
+- [`maint/live/osmap-host-validate.ksh`](maint/live/osmap-host-validate.ksh)
+- [`maint/live/osmap-live-validate-v1-closeout.ksh`](maint/live/osmap-live-validate-v1-closeout.ksh)
+- [`maint/live/osmap-run-v1-closeout-over-ssh.sh`](maint/live/osmap-run-v1-closeout-over-ssh.sh)
+
+Validation performed so far includes:
+
+- Positive browser login with password plus TOTP
+- Session issuance and stale-session rejection after logout
+- Session listing and revocation flows
+- Helper-backed mailbox listing
+- Helper-backed message listing
+- Helper-backed message view
+- Helper-backed attachment download
+- Sanitized HTML rendering
+- Plain-text fallback preference persistence
+- Settings-backed archive shortcut behavior
+- One-message move from `INBOX` to `Junk`
+- Bounded all-mailboxes search
+- Bounded send flow
+- Send-throttle proof
+- Message-move throttle proof
+- Capacity-reached and over-capacity listener behavior
+- Response-write failure and recovery observability
+
+The repository-owned security validation currently has two lanes:
+
+- GitHub default CodeQL setup for CodeQL scanning
+- Repo-owned `security-check` workflow for Rust checks, tests, clippy, formatting, and current shell-based security guards
+
+Further supply-chain assurance work is planned for Version 3.
+
+---
+
+## Version 1 Closeout Priorities
+
+The Version 1 closeout contract is frozen in:
+
+- [`docs/ACCEPTANCE_CRITERIA.md`](docs/ACCEPTANCE_CRITERIA.md)
+
+The remaining Version 1 closeout rule is intentionally narrow:
+
+1. Keep `README.md`, closeout-facing docs, and validation references aligned with the accepted gate.
+2. Use `ksh ./maint/live/osmap-live-validate-v1-closeout.ksh` on `mail.blackbagsecurity.com`, or `./maint/live/osmap-run-v1-closeout-over-ssh.sh` from a reachable workstation, whenever closeout-facing behavior changes.
+3. Only take additional Version 1 implementation or hardening work when a failing proof or repo inconsistency reveals a specific blocker.
+
+Day-to-day scoping guidance lives in:
+
+- [`docs/V1_CLOSEOUT_WORK_RULES.md`](docs/V1_CLOSEOUT_WORK_RULES.md)
+
+---
 
 ## V2 Direction
 
-Version 2 is now the first pilot-complete, migration-capable production
-candidate for the known OpenBSD mail environment. It preserves OSMAP's narrow
-security-first shape while making the project credible for controlled
-real-world use and limited direct browser access through a hardened public
-HTTPS edge after the explicit internet-exposure gate is satisfied.
+Version 2 is the first pilot-complete, migration-capable production candidate for the known OpenBSD mail environment.
 
-The authoritative Version 2 definition and release gate now live in:
+It preserves OSMAP's narrow security shape while making the project credible for controlled real-world use and limited direct browser access through a hardened public HTTPS edge after the explicit internet-exposure gate is satisfied.
 
-- `docs/V2_DEFINITION.md`
-- `docs/V2_ACCEPTANCE_CRITERIA.md`
-- `docs/V2_PILOT_CLOSEOUT.md`
-- `docs/V2_PILOT_STATUS.md`
-- `docs/PILOT_WORKFLOW_INVENTORY.md`
+The authoritative Version 2 definition and release gate live in:
+
+- [`docs/V2_DEFINITION.md`](docs/V2_DEFINITION.md)
+- [`docs/V2_ACCEPTANCE_CRITERIA.md`](docs/V2_ACCEPTANCE_CRITERIA.md)
+- [`docs/V2_PILOT_CLOSEOUT.md`](docs/V2_PILOT_CLOSEOUT.md)
+- [`docs/V2_PILOT_STATUS.md`](docs/V2_PILOT_STATUS.md)
+- [`docs/PILOT_WORKFLOW_INVENTORY.md`](docs/PILOT_WORKFLOW_INVENTORY.md)
 
 The short form is:
 
-- keep the `_osmap` plus `vmail` least-privilege split
-- preserve Dovecot and Postfix as the authoritative backends
-- support direct public browser access only after the repo-defined exposure gate
-  is passed
-- focus Version 2 on migration readiness, operator readiness, pilot closeout,
-  and hostile-path proof rather than on broad feature expansion
+- Keep the `_osmap` plus `vmail` least-privilege split
+- Preserve Dovecot and Postfix as the authoritative backends
+- Support direct public browser access only after the repo-defined exposure gate is passed
+- Focus Version 2 on migration readiness, operator readiness, pilot closeout, and hostile-path proof
+- Avoid broad feature expansion until the daily-driver security foundation is stronger
 
-Unless a narrower migration-capable need is proven, the following remain beyond
-Version 2:
+Unless a narrower migration-capable need is proven, the following remain beyond Version 2:
 
-- broader folder ergonomics beyond the first practical move/archive baseline
-- richer search behavior beyond ordinary daily-use needs
-- richer session or device intelligence beyond first useful security visibility
-- more attachment convenience behavior that would widen browser trust
-- broader settings surface beyond the first bounded user preference
-- mailbox-helper identity derivation beyond the current trusted-service
-  boundary, including opaque helper-side identity handles
-- deeper runtime redesign such as worker-pool or async server architecture
+- Broader folder ergonomics beyond the first practical move and archive baseline
+- Richer search behavior beyond ordinary daily-use needs
+- Richer session or device intelligence beyond first useful security visibility
+- More attachment convenience behavior that would widen browser trust
+- Broader settings behavior beyond the first bounded user preference
+- Mailbox-helper identity derivation beyond the current trusted-service boundary
+- Deeper runtime redesign such as worker-pool or async server architecture
+
+---
+
+## V3 Direction
+
+Version 3 is the focused daily-driver hardening release for the known OpenBSD mail environment.
+
+It preserves all Version 2 security gates while moving OSMAP from controlled pilot usefulness toward safer routine use by real users. Version 3 is not a broad feature-expansion release. Its purpose is to close the most important correctness, security, resource-control, and operational gaps exposed by Version 2 before OSMAP grows a larger browser surface.
+
+The authoritative Version 3 definition and release gate live in:
+
+- [`docs/V3_DEFINITION.md`](docs/V3_DEFINITION.md)
+- [`docs/V3_ACCEPTANCE_CRITERIA.md`](docs/V3_ACCEPTANCE_CRITERIA.md)
+- [`docs/V3_ROADMAP.md`](docs/V3_ROADMAP.md)
+- [`docs/V3_SECURITY_GATES.md`](docs/V3_SECURITY_GATES.md)
+
+The short form is:
+
+- Preserve the `_osmap` plus `vmail` least-privilege split
+- Preserve Dovecot and Postfix as the authoritative backends
+- Keep direct public browser access gated by repo-owned security checks and live-host validation
+- Make Rust supply-chain assurance a first-class release gate
+- Add strict timeout handling around every external command boundary
+- Reduce resource-exhaustion risk across HTTP parsing, authentication, mailbox access, search, MIME parsing, attachment handling, send, and move operations
+- Strengthen MIME and HTML correctness through fixture-driven tests before adding richer mail behavior
+- Prove session revocation, expiry, and concurrent session behavior with regression tests
+- Improve daily-driver usability only where the security model remains narrow, bounded, and testable
+
+Version 3 priority work is:
+
+1. Supply-chain assurance for Rust dependencies, CI, and local `make security-check`
+2. External command timeout hardening for authentication, send, helper, and mailbox-related command paths
+3. Explicit resource limits and regression tests for expensive browser and mailbox operations
+4. Fixture-driven MIME, attachment, charset, encoded-header, and sanitized-HTML validation
+5. Session-store concurrency, revocation, and expiry correctness
+6. Daily-driver improvements such as draft continuity, reply and forward correctness, safer attachment handling, richer bounded search, and bounded bulk folder actions
+
+The highest-risk Version 3 technical concerns are:
+
+- Dependency and supply-chain assurance is not yet strong enough to be a release gate by itself
+- External command paths need hard timeout enforcement and consistent error mapping
+- Resource exhaustion controls need to cover more expensive mailbox and rendering paths
+- MIME and HTML behavior needs a larger hostile fixture corpus
+- Session-store race and revocation behavior needs stronger concurrency coverage
+- TLS CBC disposition needs either closure or a documented exception
+- WSTG regression evidence should become more repeatable and easier to review
+
+Unless a narrower daily-driver need is proven and covered by tests, the following remain beyond Version 3:
+
+- Plugin support
+- Calendar or groupware features
+- Mobile applications
+- Multi-tenant hosting
+- Enterprise identity federation
+- ProtonMail-style zero-access encryption
+- Broad JavaScript-heavy webmail behavior
+- Unbounded mailbox-wide operations
+- Attachment preview behavior that widens browser trust
+- Runtime redesign that is not directly justified by measured security or reliability needs
 
 ---
 
@@ -379,60 +346,84 @@ OSMAP is intended for:
 - Organizations operating their own mail infrastructure
 - Operators of hardened OpenBSD systems
 - Environments where public webmail exposure is necessary but risk must be tightly controlled
+- Small teams that value a narrow, auditable webmail surface over broad feature convenience
 
 ---
 
 ## Contributing
 
-Contribution guidance now lives in [`CONTRIBUTING.md`](CONTRIBUTING.md).
-The main project documentation set lives under [`docs/`](docs/README.md); the
-repository root is intentionally kept for the main project README, build files,
-license, and GitHub-detected community files.
+Contribution guidance lives in:
+
+- [`CONTRIBUTING.md`](CONTRIBUTING.md)
+
+The main documentation set lives under:
+
+- [`docs/`](docs/README.md)
+
+The repository root is intentionally kept for the main project README, build files, license, and GitHub-detected community files.
 
 The short version:
 
-- keep changes small and reviewable
-- preserve OSMAP's bounded scope and OpenBSD-first posture
-- update tests and docs with meaningful implementation changes
-- run `make security-check` before commit when working on the Rust backend
-- install the repo-owned hook path with `make install-hooks` if you want that
-  gate to run automatically on each commit and again before each push
-- expect GitHub Actions to enforce the same repo-owned `make security-check`
-  gate on pushes and pull requests to `main`
-- expect extra scrutiny for auth, session, HTTP, MIME, attachment, helper, and
-  confinement work
+- Keep changes small and reviewable
+- Preserve OSMAP's bounded scope and OpenBSD-first posture
+- Update tests and docs with meaningful implementation changes
+- Run `make security-check` before committing Rust backend changes
+- Install the repo-owned hook path with `make install-hooks` if automatic local checks are desired
+- Expect GitHub Actions to enforce the repo-owned `make security-check` gate on pushes and pull requests to `main`
+- Expect extra scrutiny for auth, session, HTTP, MIME, attachment, helper, command execution, and confinement work
+- Do not weaken security controls to make tests pass
+- Do not add secrets, host-private credentials, or sensitive runtime material to the repository
 
-Security-sensitive reports should follow [`SECURITY.md`](SECURITY.md), not
-public issues.
+Security-sensitive reports should follow:
+
+- [`SECURITY.md`](SECURITY.md)
+
+Do not report sensitive issues through public GitHub issues.
 
 ---
 
 ## Security Notice
 
-This software is intended for use in security-sensitive environments.  
-Improper deployment or modification may expose sensitive data or services.
+OSMAP is intended for security-sensitive environments.
 
-Always evaluate changes in a controlled environment before production use.
+Improper deployment, configuration, or modification may expose sensitive mail, credentials, sessions, or host services.
 
-Private vulnerability reporting guidance is in [`SECURITY.md`](SECURITY.md).
+Operators should always:
+
+- Review configuration before deployment
+- Validate changes in a controlled environment first
+- Keep host-level controls such as PF, nginx, TLS, Dovecot, Postfix, and monitoring aligned with the documented deployment model
+- Treat browser-exposed functionality as security-sensitive
+- Run the repo-owned validation checks before production use
+- Preserve rollback paths
+
+Private vulnerability reporting guidance is in:
+
+- [`SECURITY.md`](SECURITY.md)
 
 ---
 
 ## License
 
-OSMAP is licensed under the ISC license. See [`LICENSE`](LICENSE).
+OSMAP is licensed under the ISC license.
+
+See:
+
+- [`LICENSE`](LICENSE)
 
 ---
 
 ## Disclaimer
 
-OSMAP is provided without warranty.  
-Operators are responsible for secure configuration, deployment, and ongoing maintenance.
+OSMAP is provided without warranty.
+
+Operators are responsible for secure configuration, deployment, monitoring, validation, and ongoing maintenance.
+
+---
 
 ## Community Files
 
-The repository now includes the expected public collaboration files for a
-healthy GitHub project:
+The repository includes the expected public collaboration files for a healthy GitHub project:
 
 - [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md)
 - [`CONTRIBUTING.md`](CONTRIBUTING.md)
