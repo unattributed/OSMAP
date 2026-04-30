@@ -9,6 +9,8 @@ cd "$repo_root"
 : "${OSMAP_CARGO_AUDIT_VERSION:=0.22.1}"
 : "${OSMAP_BOOTSTRAP_CARGO_DENY:=0}"
 : "${OSMAP_BOOTSTRAP_CARGO_AUDIT:=0}"
+: "${OSMAP_RUSTSEC_ADVISORY_DB_URL:=https://github.com/RustSec/advisory-db.git}"
+: "${OSMAP_RUSTSEC_ADVISORY_DB_PATH:=${CARGO_HOME:-${HOME}/.cargo}/advisory-db}"
 
 if ! command -v cargo >/dev/null 2>&1; then
 	echo "error: cargo is required for the supply-chain gate" >&2
@@ -50,7 +52,21 @@ if [ "$deny_version" != "$OSMAP_CARGO_DENY_VERSION" ]; then
 fi
 
 echo "==> cargo audit vulnerable and yanked advisories"
-cargo audit --deny warnings
+if command -v git >/dev/null 2>&1; then
+	if [ -d "$OSMAP_RUSTSEC_ADVISORY_DB_PATH/.git" ]; then
+		git -C "$OSMAP_RUSTSEC_ADVISORY_DB_PATH" fetch --depth 1 origin main
+		git -C "$OSMAP_RUSTSEC_ADVISORY_DB_PATH" checkout -q FETCH_HEAD
+	elif [ -e "$OSMAP_RUSTSEC_ADVISORY_DB_PATH" ]; then
+		echo "error: advisory database path exists but is not a git checkout: ${OSMAP_RUSTSEC_ADVISORY_DB_PATH}" >&2
+		exit 1
+	else
+		mkdir -p "$(dirname -- "$OSMAP_RUSTSEC_ADVISORY_DB_PATH")"
+		git clone --depth 1 "$OSMAP_RUSTSEC_ADVISORY_DB_URL" "$OSMAP_RUSTSEC_ADVISORY_DB_PATH"
+	fi
+	cargo audit --deny warnings --db "$OSMAP_RUSTSEC_ADVISORY_DB_PATH" --no-fetch
+else
+	cargo audit --deny warnings
+fi
 
 echo "==> cargo deny bans, licenses, and sources"
 cargo deny --locked check bans licenses sources

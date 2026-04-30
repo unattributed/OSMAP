@@ -5118,11 +5118,12 @@ After that harness fix, both authoritative host gates passed on
 ### Add enforced Rust supply-chain gates
 
 OSMAP now treats Rust dependency assurance as an enforced gate rather than only
-a policy document. `make supply-chain-check` runs `cargo audit` for vulnerable
-and yanked advisory checks, `cargo deny` for source, license, wildcard, and
-duplicate-version policy, and a `cargo tree -d --locked` duplicate-version
-backstop. The shared `make security-check` path and GitHub Actions security
-workflow both run the same gate.
+a policy document. `make supply-chain-check` refreshes the RustSec advisory
+database with `git` where available, runs `cargo audit --no-fetch` for
+vulnerable and yanked advisory checks, runs `cargo deny` for source, license,
+wildcard, and duplicate-version policy, and runs a `cargo tree -d --locked`
+duplicate-version backstop. The shared `make security-check` path and GitHub
+Actions security workflow both run the same gate.
 
 The current cargo-deny line compatible with the repo's Rust floor cannot parse
 newer CVSS 4 RustSec advisories, so advisory enforcement is intentionally

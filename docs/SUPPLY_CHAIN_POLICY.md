@@ -52,7 +52,8 @@ The repository now includes a first-class Rust dependency gate:
 
 - `deny.toml` defines the approved registry, git-source, duplicate-version, and
   license policy.
-- `maint/security/osmap-supply-chain-check.sh` runs `cargo audit` for RustSec
+- `maint/security/osmap-supply-chain-check.sh` refreshes the RustSec advisory
+  database with `git` where available, then runs `cargo audit --no-fetch` for
   vulnerable and yanked advisory checks.
 - The same script runs `cargo deny` for duplicate dependency, source, and
   license policy checks, plus a `cargo tree -d --locked` duplicate-version
@@ -68,6 +69,10 @@ The current pinned tool versions are recorded in
 `maint/security/osmap-supply-chain-check.sh`. Maintainers should update those
 pins deliberately when the repo's Rust floor changes or when the advisory
 ecosystem requires a newer parser.
+
+The script refreshes the advisory database with `git` before calling
+`cargo-audit` because that path is simpler to inspect and proved more portable
+on the OpenBSD target host than relying on cargo-audit's internal fetch path.
 
 The gate fails on:
 
