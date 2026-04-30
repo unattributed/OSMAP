@@ -4,41 +4,63 @@
 
 This document defines the testable Version 3 release gate for OSMAP.
 
-Version 3 is acceptable only when every in-scope daily-driver feature has a
-specific implementation gate, all Version 2 gates still pass, and the public
-browser posture remains least-privilege and regression-tested.
+Version 3 is acceptable only when every in-scope daily-driver feature has a specific implementation gate, every required security gate has evidence, all Version 2 gates still pass, and the public browser posture remains least-privilege and regression-tested.
 
 ## Required Baseline
 
 Before any Version 3 feature is treated as complete:
 
-- `make security-check` passes in a compatible local or host toolchain
+- the project distinguishes developer partial checks from release-mode validation
+- release-mode validation fails when required validation is skipped or incomplete
+- `make security-check` or its release-mode successor passes in a compatible local, CI, or host toolchain without skipping required release phases
+- Cargo build, tests, clippy when available, formatting checks when available, and Rust supply-chain checks have successful evidence for the assessed commit
 - the Version 2 readiness wrapper still passes on the validated host posture
-- public-edge exposure remains gated by the existing internet-exposure,
-  edge-cutover, rollback, observability, and service-health evidence
-- the implementation still requires the mailbox helper in production `serve`
-  mode
-- no new browser route bypasses session validation, CSRF for state changes, or
-  same-origin enforcement
-- docs for the feature name the unsupported cases and fallback behavior
+- public-edge exposure remains gated by the existing internet-exposure, edge-cutover, rollback, observability, and service-health evidence
+- production `serve` mode still requires the mailbox helper
+- no new browser route bypasses session validation, CSRF for state changes, same-origin enforcement, resource limits, or audited error behavior
+- WSTG coverage is updated for changed browser routes, or a documented non-applicability record explains why no new check is needed
+- authenticated WSTG and other credential-dependent security tests include credential and TOTP-backed evidence where those tests require it
+- docs for the feature name unsupported cases, failure behavior, limits, and fallback behavior
+
+## Release-Mode Rule
+
+Developer validation may report skipped phases clearly.
+
+Release-mode validation must fail when a required phase is skipped. This includes skipped Cargo validation, skipped supply-chain validation, missing host-readiness evidence, missing V2 carry-forward evidence, missing V3 feature-gate evidence, and skipped authenticated WSTG or other security tests when the test requires credential and TOTP coverage.
+
+For WSTG and other security tests that require authenticated coverage, evidence must show that the real browser credential and TOTP path was exercised. The evidence may use a dedicated validation account with stored test secrets in a local uncommitted `.env`, or a human-prompted flow such as `--prompt-auth --auth-email`. The evidence must not commit plaintext passwords, reusable TOTP seeds, active session cookies, private message bodies, or private attachment content.
+
+## Feature Admission Rule
+
+A Version 3 feature may enter implementation only when the following are named in the design or ticket:
+
+- the pilot-proven workflow gap it closes
+- the user-visible workflow it enables
+- the browser routes and state-changing actions it touches
+- the helper operations it uses or adds
+- request, response, mailbox, MIME, attachment, and storage limits
+- timeout behavior for external command, helper, or backend boundaries
+- CSRF, same-origin, session, and authorization requirements
+- WSTG disposition
+- unit, route, integration, host, and manual-security evidence expected at closeout
+- unsupported cases and fallback behavior
 
 ## Feature Gates
 
 | Feature | Acceptance gate |
 | --- | --- |
-| MIME and HTML correctness | MIME parsing remains bounded by part count, nesting, header, filename, and body limits; encoded subject/from/date summaries render correctly for representative messages; multipart alternative selection is deterministic; malformed MIME falls back to safe text or clear withheld-state UI; sanitized HTML keeps the allowlist posture, strips active content, denies relative URLs, and never loads remote resources; regression tests cover plain text, HTML-only, multipart alternative, attachment-bearing, malformed boundary, encoded header, inline `cid:` metadata, and oversized inputs. |
-| Draft save and resume | Authenticated users can save, list, resume, update, send, and delete bounded drafts; drafts are scoped to the canonical user; draft state is stored under reviewed OSMAP state paths with restrictive permissions; draft POST routes are CSRF-bound and same-origin-bound; sending a draft submits once and either deletes or marks the draft according to documented behavior; expired or revoked sessions cannot access drafts; tests cover ownership isolation, invalid draft IDs, oversized drafts, attachment limits, and backend failures. |
-| Reply and forward attachment handling | Reply and forward compose flows show original attachments explicitly; users can choose which original attachments to include where the policy allows it; included attachments are fetched through the existing helper-backed, bounded attachment path and revalidated at send time; aggregate attachment count and size limits include both uploaded and original-message attachments; failures do not silently drop selected attachments after user confirmation; tests cover reply default behavior, forward default behavior, selected original attachments, stale source messages, oversized aggregate attachments, and helper failures. |
-| Richer search | Users can search one mailbox or all visible mailboxes with documented query fields, date or sender refinements if implemented, result sorting, empty-state behavior, and bounded result limits; unsupported query syntax returns deterministic 400-class responses; all-mailbox search stays limited to browser-visible mailboxes; search does not expose backend-only mailbox names; tests cover valid refinements, invalid refinements, sorting, result caps, unknown mailbox rejection, and backend-unavailable behavior. |
-| Bounded bulk folder actions | Users can select a bounded number of visible messages and perform approved actions such as archive, move to a visible mailbox, mark read/unread if implemented, or delete only if separately approved by the roadmap; every action revalidates each mailbox/UID tuple at action time; partial success is reported explicitly; existing move throttles or equivalent abuse controls apply; tests cover valid selection, empty selection, over-limit selection, invalid destination, stale UID, mixed partial results, CSRF rejection, and same-origin rejection. |
-| Session and device policy | The chosen policy for concurrent sessions, device labels, remembered device metadata, and revocation is documented and enforced; session list displays enough metadata for users to identify sessions without exposing secrets; policy violations are deterministic and logged; tests cover session cap behavior, device label normalization, revocation of one session, revocation of other sessions, revoke-all, expired sessions, idle sessions, and isolated-cookie race retesting. |
-| TLS CBC cleanup or exception | TLS 1.2 CBC suites are removed from the reviewed public-edge configuration, or `V3_SECURITY_GATES.md` records a dated compatibility exception with evidence, owner, expiry, and compensating controls; evidence includes an external TLS scan or equivalent command output archived under `maint/live/`. |
-| WSTG regression evidence | The WSTG testing pack is current for the V3 browser surface; all applicable scripts pass or have documented non-applicability; new V3 routes are covered by route, auth, CSRF, same-origin, injection, upload, business-logic, session, and transport checks as applicable. |
+| MIME and HTML correctness | MIME parsing remains bounded by part count, nesting, header, filename, charset, transfer encoding, and body limits. Encoded subject, from, date, body, and attachment metadata render correctly for representative messages. Multipart alternative selection is deterministic. Malformed MIME falls back to safe text or clear withheld-state UI. Sanitized HTML keeps the allowlist posture, strips active content, denies relative URLs unless explicitly reviewed, and never loads remote resources. Regression tests cover plain text, HTML-only, multipart alternative, attachment-bearing, malformed boundary, encoded header, transfer-encoded body, inline `cid:` metadata, suspicious filenames, unsupported charset, and oversized inputs. |
+| Draft save and resume | Authenticated users can save, list, resume, update, send, and delete bounded drafts. Drafts are scoped to the canonical user. Draft state is stored under reviewed OSMAP state paths with restrictive permissions. Draft POST routes are CSRF-bound and same-origin-bound. Sending a draft submits once and either deletes or marks the draft according to documented behavior. Expired or revoked sessions cannot access drafts. Tests cover ownership isolation, invalid draft IDs, oversized drafts, attachment limits, stale sessions, storage failures, and backend failures. |
+| Reply and forward attachment handling | Reply and forward compose flows show original attachments explicitly. Users can choose which original attachments to include where policy allows it. Included attachments are fetched through the existing helper-backed, bounded attachment path and revalidated at send time. Aggregate attachment count and size limits include both uploaded and original-message attachments. Failures do not silently drop selected attachments after user confirmation. Tests cover reply default behavior, forward default behavior, selected original attachments, stale source messages, oversized aggregate attachments, and helper failures. |
+| Richer bounded search | Users can search one mailbox or all visible mailboxes with documented query fields, refinements if implemented, result sorting, empty-state behavior, and bounded result limits. Unsupported query syntax returns deterministic 400-class responses. All-mailbox search stays limited to browser-visible mailboxes. Search does not expose backend-only mailbox names. Expensive searches have bounded execution and result behavior. Tests cover valid refinements, invalid refinements, sorting, result caps, unknown mailbox rejection, backend-unavailable behavior, and timeout behavior where applicable. |
+| Bounded bulk folder actions | Users can select a bounded number of visible messages and perform approved actions such as archive, move to a visible mailbox, mark read or unread if implemented, or delete only if separately approved by the roadmap. Every action revalidates each mailbox and UID tuple at action time. Partial success is reported explicitly. Existing move throttles or equivalent abuse controls apply. Tests cover valid selection, empty selection, over-limit selection, invalid destination, stale UID, mixed partial results, CSRF rejection, same-origin rejection, and backend failure. |
+| Session and device policy | The chosen policy for concurrent sessions, device labels, remembered device metadata, and revocation is documented and enforced. Session list displays enough metadata for users to identify sessions without exposing secrets. Policy violations are deterministic and logged. Tests cover session cap behavior if chosen, concurrent session behavior if allowed, device label normalization, revocation of one session, revocation of other sessions, revoke-all, expired sessions, idle sessions, and isolated-cookie race retesting. |
+| TLS CBC cleanup or exception | TLS 1.2 CBC suites are removed from the reviewed public-edge configuration, or `V3_SECURITY_GATES.md` records a dated compatibility exception with evidence, owner, expiry, exact suites retained, and compensating controls. Evidence includes an external TLS scan or equivalent command output archived under a reviewed evidence path. |
+| WSTG regression evidence | The WSTG testing pack is current for the V3 browser surface. All applicable scripts pass or have documented non-applicability. Authenticated WSTG tests that require credential and TOTP coverage must not be counted complete if skipped. New V3 routes are covered by route, auth, CSRF, same-origin, injection, upload, business-logic, session, and transport checks as applicable. |
 
 ## Daily-Driver Gate
 
-Version 3 is daily-driver ready only when a representative user can complete
-the following without Roundcube fallback for these workflows:
+Version 3 is daily-driver ready only when a representative user can complete the following without Roundcube fallback for these workflows:
 
 - login with password plus TOTP
 - read plain-text, sanitized-HTML, and attachment-bearing messages
@@ -49,11 +71,11 @@ the following without Roundcube fallback for these workflows:
 - review and revoke browser sessions according to the chosen device policy
 - log out and have stale sessions rejected
 
+This gate must be supported by sanitized evidence. Evidence may prove workflow completion without storing private mailbox content.
+
 ## Not A Roundcube Clone Gate
 
-Version 3 is not acceptable if it adds broad parity work that is not needed for
-the daily-driver adoption boundary. The following remain excluded unless a
-future version explicitly redefines OSMAP:
+Version 3 is not acceptable if it adds broad parity work that is not needed for the daily-driver adoption boundary. The following remain excluded unless a future version explicitly redefines OSMAP:
 
 - contacts and address-book management
 - calendar and groupware
@@ -63,17 +85,22 @@ future version explicitly redefines OSMAP:
 - mobile app
 - OpenPGP implementation
 - generic mailbox-management suite
+- broad JavaScript-heavy client behavior
+- unbounded mailbox-wide operations
 
 ## Evidence Required At Closeout
 
 The Version 3 closeout record must link:
 
 - the commit or tag being assessed
-- local `make security-check` result, or the reason the local cargo phases were
-  skipped and the host/CI result that covered them
+- release-mode validation result for that commit or tag
+- Cargo build and test evidence from a compatible toolchain
+- supply-chain evidence, including advisory, source, license, and duplicate dependency checks
 - current V2 readiness evidence
+- host-readiness and public-edge evidence for the intended deployment host
 - V3 feature-gate evidence for every in-scope feature
 - WSTG regression evidence
+- authenticated WSTG or other credential-dependent security evidence proving credential and TOTP paths were exercised where required
 - TLS CBC removal or exception evidence
-- a pilot or rehearsal workflow inventory showing that daily-driver gaps are
-  closed for the selected cohort
+- a pilot or rehearsal workflow inventory showing that daily-driver gaps are closed for the selected cohort
+- a sanitized evidence archive that excludes plaintext passwords, reusable TOTP seeds, active session cookies, private message bodies, private attachment content, and host secrets

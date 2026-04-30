@@ -281,9 +281,9 @@ Unless a narrower migration-capable need is proven, the following remain beyond 
 
 ## V3 Direction
 
-Version 3 is the focused daily-driver hardening release for the known OpenBSD mail environment.
+Version 3 is the focused daily-driver hardening cycle for the known OpenBSD mail environment.
 
-It preserves all Version 2 security gates while moving OSMAP from controlled pilot usefulness toward safer routine use by real users. Version 3 is not a broad feature-expansion release. Its purpose is to close the most important correctness, security, resource-control, and operational gaps exposed by Version 2 before OSMAP grows a larger browser surface.
+It preserves all Version 2 security gates while moving OSMAP from controlled pilot usefulness toward safer routine use by selected real users. Version 3 is not a broad feature-expansion release. Its purpose is to close the most important assurance, correctness, resource-control, and workflow gaps exposed by Version 2 before OSMAP grows a larger browser surface.
 
 The authoritative Version 3 definition and release gate live in:
 
@@ -297,31 +297,36 @@ The short form is:
 - Preserve the `_osmap` plus `vmail` least-privilege split
 - Preserve Dovecot and Postfix as the authoritative backends
 - Keep direct public browser access gated by repo-owned security checks and live-host validation
+- Split developer partial checks from release-mode validation
+- Make release-mode validation fail on skipped required checks or missing evidence
 - Make Rust supply-chain assurance a first-class release gate
-- Add strict timeout handling around every external command boundary
-- Reduce resource-exhaustion risk across HTTP parsing, authentication, mailbox access, search, MIME parsing, attachment handling, send, and move operations
+- Require credential and TOTP-backed evidence for WSTG and other security tests that need authenticated coverage
+- Add strict timeout and resource-control evidence around expensive browser, helper, mailbox, MIME, attachment, send, search, and move paths
 - Strengthen MIME and HTML correctness through fixture-driven tests before adding richer mail behavior
-- Prove session revocation, expiry, and concurrent session behavior with regression tests
+- Prove session revocation, expiry, and concurrent-session behavior with regression tests
 - Improve daily-driver usability only where the security model remains narrow, bounded, and testable
 
 Version 3 priority work is:
 
-1. Supply-chain assurance for Rust dependencies, CI, and local `make security-check`
-2. External command timeout hardening for authentication, send, helper, and mailbox-related command paths
-3. Explicit resource limits and regression tests for expensive browser and mailbox operations
-4. Fixture-driven MIME, attachment, charset, encoded-header, and sanitized-HTML validation
-5. Session-store concurrency, revocation, and expiry correctness
-6. Daily-driver improvements such as draft continuity, reply and forward correctness, safer attachment handling, richer bounded search, and bounded bulk folder actions
+1. Release-mode validation that cannot pass on skipped required security checks
+2. Supply-chain assurance for Rust dependencies, CI, local checks, and release evidence
+3. Explicit resource limits and timeout behavior for expensive browser, helper, mailbox, MIME, attachment, send, search, and move operations
+4. WSTG and security-test release evidence, including credential and TOTP-backed authenticated coverage where required
+5. Fixture-driven MIME, attachment, charset, transfer-encoding, encoded-header, and sanitized-HTML validation
+6. Session-store concurrency, revocation, expiry, and device-policy correctness
+7. Daily-driver improvements such as draft continuity, reply and forward correctness, safer attachment handling, richer bounded search, and bounded bulk folder actions
 
 The highest-risk Version 3 technical concerns are:
 
-- Dependency and supply-chain assurance is not yet strong enough to be a release gate by itself
-- External command paths need hard timeout enforcement and consistent error mapping
-- Resource exhaustion controls need to cover more expensive mailbox and rendering paths
+- Developer checks can currently appear useful even when required release evidence is missing or skipped
+- Credential-gated WSTG tests can skip in ordinary runner mode, which is acceptable for developer partial testing but not for release evidence when authenticated coverage is required
+- Dependency and supply-chain assurance must be strong enough to block release candidates, not just advise developers
+- External command and helper paths need hard timeout behavior and consistent error mapping
+- Resource-exhaustion controls need to cover more expensive mailbox and rendering paths
 - MIME and HTML behavior needs a larger hostile fixture corpus
 - Session-store race and revocation behavior needs stronger concurrency coverage
 - TLS CBC disposition needs either closure or a documented exception
-- WSTG regression evidence should become more repeatable and easier to review
+- Live-host evidence must be sanitized and reviewable without committing secrets
 
 Unless a narrower daily-driver need is proven and covered by tests, the following remain beyond Version 3:
 
@@ -332,11 +337,10 @@ Unless a narrower daily-driver need is proven and covered by tests, the followin
 - Enterprise identity federation
 - ProtonMail-style zero-access encryption
 - Broad JavaScript-heavy webmail behavior
+- Remote external content loading
 - Unbounded mailbox-wide operations
 - Attachment preview behavior that widens browser trust
 - Runtime redesign that is not directly justified by measured security or reliability needs
-
----
 
 ## Target Users
 
