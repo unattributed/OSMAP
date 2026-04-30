@@ -5112,3 +5112,41 @@ After that harness fix, both authoritative host gates passed on
 
 - `maint/live/latest-host-v1-closeout-report.txt`
 - `maint/live/latest-host-v2-readiness-report.txt`
+
+## 2026-04-29
+
+### Add enforced Rust supply-chain gates
+
+OSMAP now treats Rust dependency assurance as an enforced gate rather than only
+a policy document. `make supply-chain-check` runs `cargo audit` for vulnerable
+and yanked advisory checks, `cargo deny` for source, license, wildcard, and
+duplicate-version policy, and a `cargo tree -d --locked` duplicate-version
+backstop. The shared `make security-check` path and GitHub Actions security
+workflow both run the same gate.
+
+The current cargo-deny line compatible with the repo's Rust floor cannot parse
+newer CVSS 4 RustSec advisories, so advisory enforcement is intentionally
+handled by the pinned cargo-audit version while cargo-deny handles the rest of
+the supply-chain policy.
+
+### Bound runtime external command execution
+
+The auth, `doveadm`, mailbox-helper-backed, and sendmail paths already avoided
+shell interpolation through a shared command executor. That executor now also
+clears inherited environment variables down to a small fixed environment and
+enforces a timeout for every runtime command path. A regression test proves a
+slow external command is killed instead of holding request handling
+indefinitely.
+
+### Serialize same-process session state transitions
+
+The file-backed session store now uses unique temp-file names for concurrent
+writes, and the session service serializes same-process issue, validate, list,
+logout, single-session revoke, revoke-other, and revoke-all state transitions.
+Local concurrency tests now cover simultaneous validation, logout racing with
+validation, revoke-all racing with listing, idle and absolute expiry, and token
+reuse after revocation.
+
+This is not a cross-process database lock. Version 3 still needs an
+isolated-cookie live retest and a conscious concurrent-session/device policy
+before the session/device gate can close.

@@ -7,10 +7,14 @@
 //! - avoid inventing a new SMTP client stack inside the browser runtime
 
 use std::path::PathBuf;
+use std::time::Duration;
 
 use sha2::{Digest, Sha256};
 
-use crate::auth::{AuthenticationContext, CommandExecutor, SystemCommandExecutor};
+use crate::auth::{
+    AuthenticationContext, CommandExecutor, SystemCommandExecutor,
+    DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS,
+};
 use crate::config::LogLevel;
 use crate::logging::{EventCategory, LogEvent};
 use crate::mime::AttachmentMetadata;
@@ -324,7 +328,7 @@ where
         let submission_message = build_submission_message(canonical_username, request);
         let execution = self
             .command_executor
-            .run_with_stdin_bytes(
+            .run_with_stdin_bytes_timeout(
                 self.sendmail_path.to_string_lossy().as_ref(),
                 &[
                     "-t".to_string(),
@@ -333,6 +337,7 @@ where
                     canonical_username.to_string(),
                 ],
                 &submission_message,
+                Duration::from_secs(DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS),
             )
             .map_err(|error| SubmissionBackendError {
                 backend: "sendmail-submission",

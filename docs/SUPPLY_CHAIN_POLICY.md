@@ -46,6 +46,40 @@ The project should maintain enough process to verify:
 
 Dependencies should not be treated as "free" just because they build.
 
+## Current Enforcement Gate
+
+The repository now includes a first-class Rust dependency gate:
+
+- `deny.toml` defines the approved registry, git-source, duplicate-version, and
+  license policy.
+- `maint/security/osmap-supply-chain-check.sh` runs `cargo audit` for RustSec
+  vulnerable and yanked advisory checks.
+- The same script runs `cargo deny` for duplicate dependency, source, and
+  license policy checks, plus a `cargo tree -d --locked` duplicate-version
+  backstop.
+- `make supply-chain-check` runs only the dependency gate.
+- `make security-check` runs the dependency gate after the normal Rust build,
+  test, lint, and formatting phases.
+- The repo-owned GitHub Actions `security-check` workflow bootstraps the
+  pinned `cargo-audit` and `cargo-deny` versions before running the shared
+  security gate.
+
+The current pinned tool versions are recorded in
+`maint/security/osmap-supply-chain-check.sh`. Maintainers should update those
+pins deliberately when the repo's Rust floor changes or when the advisory
+ecosystem requires a newer parser.
+
+The gate fails on:
+
+- RustSec vulnerable or yanked dependencies
+- unexpected duplicate dependency versions
+- wildcard dependency requirements
+- dependencies from unapproved registries or git sources
+- dependency licenses outside the reviewed allowlist
+
+No project exception is currently recorded for a vulnerable advisory,
+unapproved source, duplicate dependency version, or unapproved license.
+
 ## Update Policy
 
 Dependency updates should be:

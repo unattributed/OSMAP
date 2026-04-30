@@ -1,0 +1,41 @@
+# OSMAP dependency security policy for cargo-deny.
+#
+# This file is intentionally conservative: crates must come from crates.io,
+# vulnerable or yanked crates fail the gate, duplicate versions fail the gate,
+# and licenses must be part of the reviewed allowlist below.
+
+[graph]
+all-features = true
+
+[advisories]
+db-urls = ["https://github.com/rustsec/advisory-db"]
+yanked = "deny"
+ignore = []
+
+[licenses]
+allow = [
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-3-Clause",
+    "MIT",
+    "MPL-2.0",
+    "Unicode-3.0",
+]
+confidence-threshold = 0.8
+
+[licenses.private]
+ignore = true
+
+[bans]
+multiple-versions = "deny"
+wildcards = "deny"
+highlight = "all"
+deny = []
+skip = []
+skip-tree = []
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []

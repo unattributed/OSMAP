@@ -1,6 +1,7 @@
 use std::path::PathBuf;
+use std::time::Duration;
 
-use crate::auth::{CommandExecutor, SystemCommandExecutor};
+use crate::auth::{CommandExecutor, SystemCommandExecutor, DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS};
 
 use super::{
     concise_command_diagnostics, parse_doveadm_mailbox_list_output,
@@ -72,7 +73,12 @@ where
 
         let execution = self
             .command_executor
-            .run_with_stdin(self.doveadm_path.to_string_lossy().as_ref(), &args, "")
+            .run_with_stdin_timeout(
+                self.doveadm_path.to_string_lossy().as_ref(),
+                &args,
+                "",
+                Duration::from_secs(DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS),
+            )
             .map_err(|error| MailboxBackendError {
                 backend: "doveadm-mailbox-list",
                 reason: error.reason,
@@ -148,7 +154,12 @@ where
 
         let execution = self
             .command_executor
-            .run_with_stdin(self.doveadm_path.to_string_lossy().as_ref(), &args, "")
+            .run_with_stdin_timeout(
+                self.doveadm_path.to_string_lossy().as_ref(),
+                &args,
+                "",
+                Duration::from_secs(DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS),
+            )
             .map_err(|error| MailboxBackendError {
                 backend: "doveadm-message-list",
                 reason: error.reason,
@@ -225,7 +236,12 @@ where
 
         let execution = self
             .command_executor
-            .run_with_stdin(self.doveadm_path.to_string_lossy().as_ref(), &args, "")
+            .run_with_stdin_timeout(
+                self.doveadm_path.to_string_lossy().as_ref(),
+                &args,
+                "",
+                Duration::from_secs(DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS),
+            )
             .map_err(|error| MailboxBackendError {
                 backend: "doveadm-message-view",
                 reason: error.reason,
@@ -303,7 +319,12 @@ where
 
         let execution = self
             .command_executor
-            .run_with_stdin(self.doveadm_path.to_string_lossy().as_ref(), &args, "")
+            .run_with_stdin_timeout(
+                self.doveadm_path.to_string_lossy().as_ref(),
+                &args,
+                "",
+                Duration::from_secs(DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS),
+            )
             .map_err(|error| MailboxBackendError {
                 backend: "doveadm-message-search",
                 reason: error.reason,
@@ -369,7 +390,12 @@ where
 
         let execution = self
             .command_executor
-            .run_with_stdin(self.doveadm_path.to_string_lossy().as_ref(), &args, "")
+            .run_with_stdin_timeout(
+                self.doveadm_path.to_string_lossy().as_ref(),
+                &args,
+                "",
+                Duration::from_secs(DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS),
+            )
             .map_err(|error| MailboxBackendError {
                 backend: "doveadm-message-move",
                 reason: error.reason,

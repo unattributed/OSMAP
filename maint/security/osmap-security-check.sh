@@ -87,6 +87,9 @@ if [ "$run_cargo_phases" -eq 1 ]; then
 	else
 		echo "note: rustfmt is not installed in this environment; skipping fmt-check phase"
 	fi
+
+	echo "==> supply-chain gate"
+	sh maint/security/osmap-supply-chain-check.sh
 fi
 
 echo "==> validating publication hygiene"

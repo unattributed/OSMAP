@@ -66,6 +66,7 @@ The current file-backed model is intentionally small:
 - create the session directory on demand
 - write records as a line-oriented format
 - use an atomic temp-file-plus-rename path
+- use unique temp-file names for concurrent writes to the same session
 - set restrictive permissions on Unix-like systems
 - keep records simple enough to inspect during early implementation
 
@@ -104,6 +105,13 @@ events.
 
 This is important because "logout" is not being treated as a UI nicety. It is
 implemented as state transition and audit event generation in the runtime core.
+
+Within one Rust process, session issue, validation, listing, idle or absolute
+expiry revocation, logout, one-session revoke, revoke-other, and revoke-all
+state transitions are serialized through the session module. This prevents
+same-process request races from re-saving a stale unrevoked record over a
+logout or revoke-all update. It is still a file-backed prototype store rather
+than a cross-host or cross-process database lock.
 
 ## Visibility Model
 
@@ -160,16 +168,19 @@ The current validation state is:
 1. local Rust unit and runtime verification completed
 2. an end-to-end test now exercises primary auth, real TOTP verification, and
    session issuance together
-3. OpenBSD host validation on `mail.blackbagsecurity.com` now includes the
+3. local concurrency tests now cover simultaneous session validation, logout
+   racing with validation, revoke-all racing with listing, automatic idle and
+   absolute expiry revocation, and rejected token reuse after revocation
+4. OpenBSD host validation on `mail.blackbagsecurity.com` now includes the
    browser-visible `/sessions` page, single-session revoke, revoke-other
    sessions, revoke-all sessions, automatic idle-timeout revocation, and
    `POST /logout` under the real `_osmap` plus `vmail` helper split with
    `OSMAP_OPENBSD_CONFINEMENT_MODE=enforce`
-4. that broader live proof used a synthetic persisted session store so the
+5. that broader live proof used a synthetic persisted session store so the
    session UI, logout invalidation, and stale-session rejection could be
    validated without widening the harness to depend on live mailbox
    credentials for this slice
-5. the session-surface proof captures `HTTP/1.1 200 OK` for `/sessions`, `303
+6. the session-surface proof captures `HTTP/1.1 200 OK` for `/sessions`, `303
    See Other` for single revoke, revoke-other, revoke-all, and logout,
    persisted `revoked_at` values for revoked and idle-timed-out records, and a
    stale-session redirect back to `/login`
@@ -182,6 +193,8 @@ later browser and mailbox work increases integration risk.
 This slice does not yet include:
 
 - rate limiting for session creation or validation abuse
+- cross-process or cross-host session-store locking beyond atomic file replace
+  and the current same-process critical section
 - stronger session fixation defenses around future auth-flow refinements
 - persistent audit-log storage beyond the current structured event stream
 - richer device interpretation, geolocation, or anomaly scoring around the

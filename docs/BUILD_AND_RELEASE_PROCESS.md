@@ -53,7 +53,8 @@ predictable.
 The release flow should eventually look like:
 
 1. Source and dependency review
-2. Shared security gate such as `make security-check`
+2. Shared security gate such as `make security-check`, including the
+   supply-chain subgate from `make supply-chain-check`
 3. Matching CI confirmation from the repo-owned `security-check` workflow
 4. Build
 5. Static analysis and required tests

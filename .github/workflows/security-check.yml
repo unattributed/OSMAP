@@ -32,4 +32,7 @@ jobs:
           components: clippy, rustfmt
 
       - name: run repo security gate
+        env:
+          OSMAP_BOOTSTRAP_CARGO_AUDIT: "1"
+          OSMAP_BOOTSTRAP_CARGO_DENY: "1"
         run: make security-check

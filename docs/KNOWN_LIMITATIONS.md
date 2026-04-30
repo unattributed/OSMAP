@@ -25,6 +25,10 @@
 - The current HTTP runtime now has clearer connection-pressure, write-failure,
   and accept-failure observability, but it still depends on adjacent controls
   and does not yet provide a complete request-resource exhaustion strategy
+- Runtime auth, mailbox, and sendmail command execution now has a shared
+  timeout-enforced executor with a bounded environment, but output capture is
+  still in-memory and should receive explicit byte caps in a later resource
+  exhaustion pass.
 - The implementation now has a bounded message-view fetch path, plus
   MIME-aware classification and attachment metadata surfacing, but it does not
   yet provide preview-oriented attachment behavior
@@ -53,7 +57,8 @@
 - The implementation now provides a first browser-visible session list,
   self-service revocation for one session, other sessions, or all sessions, and
   automatic revocation for expired or inactive sessions, but it does not yet
-  provide richer device labeling or anomaly-oriented session analysis
+  provide richer device labeling, cross-process session-store locking, or
+  anomaly-oriented session analysis
 - The implementation now provides a first bounded end-user settings surface,
   but it currently exposes only one user-facing preference rather than a broad
   settings platform
@@ -171,8 +176,11 @@ The April 2026 WSTG backlog maps into Version 3 as follows:
   handling are Version 3 policy work. Version 3 must choose and test an
   explicit policy rather than leaving concurrent sessions as an implicit
   behavior.
-- The session revoke race observation remains an investigation item until it
-  is retested with isolated cookie jars.
+- The same-process session revoke race is now covered by local concurrency
+  tests around validation, logout, revoke-all, listing, idle expiry, absolute
+  expiry, and token reuse. A browser-level isolated-cookie retest against the
+  live service is still required before the Version 3 session/device gate is
+  closed.
 - Richer search, bounded bulk folder actions, and folder ergonomics are
   Version 3 workflow refinements only to the extent required by the
   daily-driver adoption boundary.

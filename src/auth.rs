@@ -6,9 +6,13 @@
 //! issuance.
 
 use std::fmt;
+use std::io;
 use std::path::PathBuf;
 use std::process::{Command, ExitStatus, Stdio};
 use std::str;
+use std::sync::mpsc;
+use std::thread;
+use std::time::{Duration, Instant};
 
 use crate::config::LogLevel;
 use crate::logging::{EventCategory, LogEvent};
@@ -30,6 +34,12 @@ pub const DEFAULT_USER_AGENT_MAX_LEN: usize = 512;
 
 /// Conservative maximum length for submitted TOTP codes.
 pub const DEFAULT_FACTOR_CODE_MAX_LEN: usize = 16;
+
+/// Conservative timeout for runtime external commands.
+pub const DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS: u64 = 10;
+
+/// Minimal bounded environment supplied to external commands.
+const SAFE_COMMAND_PATH: &str = "/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin";
 
 /// Defines the bounds and mandatory second-factor policy for browser auth.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -479,6 +489,16 @@ pub trait CommandExecutor {
         stdin_data: &[u8],
     ) -> Result<CommandExecution, CommandExecutionError>;
 
+    fn run_with_stdin_bytes_timeout(
+        &self,
+        program: &str,
+        args: &[String],
+        stdin_data: &[u8],
+        _timeout: Duration,
+    ) -> Result<CommandExecution, CommandExecutionError> {
+        self.run_with_stdin_bytes(program, args, stdin_data)
+    }
+
     fn run_with_stdin(
         &self,
         program: &str,
@@ -486,6 +506,16 @@ pub trait CommandExecutor {
         stdin_data: &str,
     ) -> Result<CommandExecution, CommandExecutionError> {
         self.run_with_stdin_bytes(program, args, stdin_data.as_bytes())
+    }
+
+    fn run_with_stdin_timeout(
+        &self,
+        program: &str,
+        args: &[String],
+        stdin_data: &str,
+        timeout: Duration,
+    ) -> Result<CommandExecution, CommandExecutionError> {
+        self.run_with_stdin_bytes_timeout(program, args, stdin_data.as_bytes(), timeout)
     }
 }
 
@@ -500,8 +530,26 @@ impl CommandExecutor for SystemCommandExecutor {
         args: &[String],
         stdin_data: &[u8],
     ) -> Result<CommandExecution, CommandExecutionError> {
+        self.run_with_stdin_bytes_timeout(
+            program,
+            args,
+            stdin_data,
+            Duration::from_secs(DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS),
+        )
+    }
+
+    fn run_with_stdin_bytes_timeout(
+        &self,
+        program: &str,
+        args: &[String],
+        stdin_data: &[u8],
+        timeout: Duration,
+    ) -> Result<CommandExecution, CommandExecutionError> {
         let mut child = Command::new(program)
             .args(args)
+            .env_clear()
+            .env("PATH", SAFE_COMMAND_PATH)
+            .env("LC_ALL", "C")
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -510,27 +558,83 @@ impl CommandExecutor for SystemCommandExecutor {
                 reason: format!("failed to spawn command: {error}"),
             })?;
 
-        if let Some(stdin) = child.stdin.as_mut() {
-            use std::io::Write as _;
-            stdin
-                .write_all(stdin_data)
-                .map_err(|error| CommandExecutionError {
-                    reason: format!("failed to write command stdin: {error}"),
-                })?;
+        let stdin = child.stdin.take().ok_or_else(|| CommandExecutionError {
+            reason: "failed to open command stdin".to_string(),
+        })?;
+        let stdin_data = stdin_data.to_vec();
+        let (stdin_tx, stdin_rx) = mpsc::channel();
+        thread::spawn(move || {
+            let result = write_command_stdin(stdin, &stdin_data)
+                .map_err(|error| format!("failed to write command stdin: {error}"));
+            let _ = stdin_tx.send(result);
+        });
+
+        wait_for_command_with_timeout(child, stdin_rx, timeout)
+    }
+}
+
+fn write_command_stdin(mut stdin: std::process::ChildStdin, stdin_data: &[u8]) -> io::Result<()> {
+    use std::io::Write as _;
+    stdin.write_all(stdin_data)?;
+    stdin.flush()
+}
+
+fn wait_for_command_with_timeout(
+    mut child: std::process::Child,
+    stdin_rx: mpsc::Receiver<Result<(), String>>,
+    timeout: Duration,
+) -> Result<CommandExecution, CommandExecutionError> {
+    let deadline = Instant::now() + timeout;
+    let mut stdin_result: Option<Result<(), String>> = None;
+
+    loop {
+        if stdin_result.is_none() {
+            match stdin_rx.try_recv() {
+                Ok(result) => stdin_result = Some(result),
+                Err(mpsc::TryRecvError::Disconnected) => {
+                    stdin_result = Some(Err("stdin writer stopped unexpectedly".to_string()));
+                }
+                Err(mpsc::TryRecvError::Empty) => {}
+            }
         }
 
-        let output = child
-            .wait_with_output()
-            .map_err(|error| CommandExecutionError {
-                reason: format!("failed waiting for command output: {error}"),
-            })?;
-
-        Ok(CommandExecution {
-            status_code: status_code_or_signal(output.status),
-            stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
-            stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
-        })
+        match child.try_wait().map_err(|error| CommandExecutionError {
+            reason: format!("failed waiting for command status: {error}"),
+        })? {
+            Some(_) => break,
+            None if Instant::now() >= deadline => {
+                let _ = child.kill();
+                let _ = child.wait_with_output();
+                return Err(CommandExecutionError {
+                    reason: format!("command timed out after {} seconds", timeout.as_secs()),
+                });
+            }
+            None => thread::sleep(Duration::from_millis(10)),
+        }
     }
+
+    let output = child
+        .wait_with_output()
+        .map_err(|error| CommandExecutionError {
+            reason: format!("failed waiting for command output: {error}"),
+        })?;
+
+    match stdin_result.unwrap_or_else(|| {
+        stdin_rx
+            .recv()
+            .unwrap_or_else(|_| Err("stdin writer stopped unexpectedly".to_string()))
+    }) {
+        Ok(()) => {}
+        Err(reason) => {
+            return Err(CommandExecutionError { reason });
+        }
+    }
+
+    Ok(CommandExecution {
+        status_code: status_code_or_signal(output.status),
+        stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
+        stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
+    })
 }
 
 /// Connects primary credential verification to `doveadm auth test`.
@@ -592,10 +696,11 @@ where
 
         let execution = self
             .command_executor
-            .run_with_stdin(
+            .run_with_stdin_timeout(
                 self.doveadm_path.to_string_lossy().as_ref(),
                 &args,
                 &format!("{password}\n"),
+                Duration::from_secs(DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS),
             )
             .map_err(|error| PrimaryAuthBackendError {
                 backend: "doveadm-auth-test",
@@ -1272,6 +1377,30 @@ mod tests {
             .expect("invalid credentials should not be treated as backend errors");
 
         assert_eq!(verdict, PrimaryAuthVerdict::Reject);
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn system_command_executor_times_out_slow_command() {
+        if !PathBuf::from("/bin/sleep").exists() {
+            return;
+        }
+
+        let started_at = Instant::now();
+        let error = SystemCommandExecutor
+            .run_with_stdin_bytes_timeout(
+                "/bin/sleep",
+                &["2".to_string()],
+                b"",
+                Duration::from_millis(100),
+            )
+            .expect_err("slow command must be killed by the timeout");
+
+        assert!(error.reason.contains("command timed out"));
+        assert!(
+            started_at.elapsed() < Duration::from_secs(2),
+            "timeout should return before the command's requested sleep completes"
+        );
     }
 
     #[test]

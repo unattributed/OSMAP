@@ -93,6 +93,10 @@ This principle now applies directly to the browser and submission paths:
 - invalid compose input fails closed
 - backend execution failures become bounded user-visible failures plus audit
   events
+- runtime external command execution goes through the shared Rust command
+  executor, avoids shell interpolation, clears inherited environment variables
+  down to a small fixed set, and enforces a timeout on auth, `doveadm`, and
+  sendmail paths
 
 ## Maintenance Considerations
 
@@ -136,3 +140,18 @@ now does the same for its auth-backed `doveadm` and local sendmail/Postfix
 paths. The next hardening step is to remove or further narrow the remaining
 directory fallbacks and host-shape assumptions without breaking the current
 auth, mailbox, and submission slices.
+
+## Remaining Resource-Exhaustion Work
+
+The current implementation has concrete limits for HTTP body and header
+parsing, concurrent connections, compose body size, attachment count and byte
+size, mailbox listing, message-list parsing, message rendering, search query
+shape, helper socket reads and writes, and external command runtime. Those
+limits reduce obvious unbounded request and backend hangs, but they are not a
+complete denial-of-service design.
+
+The next Version 3 hardening pass should keep adding fixture and route tests
+for oversized MIME bodies, excessive attachment metadata, pathological mailbox
+output, large all-mailbox search result sets, and expensive malformed HTML/MIME
+inputs. Adjacent controls such as nginx request limits, PF, and host monitoring
+remain part of the credible DoS posture.

@@ -8,6 +8,8 @@ use std::cmp::Reverse;
 use std::fs;
 use std::io::Write as _;
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Mutex, MutexGuard};
 
 use getrandom::getrandom;
 use sha2::{Digest, Sha256};
@@ -33,6 +35,9 @@ pub const CSRF_TOKEN_HEX_LEN: usize = 64;
 
 /// Conservative default idle timeout for browser sessions: 30 minutes.
 pub const DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS: u64 = 30 * 60;
+
+static SESSION_OPERATION_LOCK: Mutex<()> = Mutex::new(());
+static SESSION_TMP_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 /// Describes the persisted session metadata visible to operators.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -187,7 +192,12 @@ impl SessionStore for FileSessionStore {
         })?;
 
         let path = self.session_path(&record.session_id);
-        let tmp_path = self.session_dir.join(format!("{}.tmp", record.session_id));
+        let tmp_path = self.session_dir.join(format!(
+            "{}.{}.{}.tmp",
+            record.session_id,
+            std::process::id(),
+            SESSION_TMP_COUNTER.fetch_add(1, Ordering::Relaxed)
+        ));
         let content = serialize_session_record(record);
 
         let mut file = fs::File::create(&tmp_path).map_err(|error| SessionError::StoreFailure {
@@ -313,6 +323,7 @@ where
         canonical_username: &str,
         factor: RequiredSecondFactor,
     ) -> Result<IssuedSession, SessionError> {
+        let _guard = session_operation_lock()?;
         let issued_at = self.time_provider.unix_timestamp();
         let expires_at = issued_at.saturating_add(self.lifetime_seconds);
         let token = generate_session_token(&self.random_source)?;
@@ -360,10 +371,21 @@ where
         context: &AuthenticationContext,
         token: &SessionToken,
     ) -> Result<ValidatedSession, SessionError> {
+        let _guard = session_operation_lock()?;
         let session_id = session_id_from_token(token.as_str());
+        self.validate_unlocked(context, &session_id)
+    }
+
+    fn validate_unlocked(
+        &self,
+        context: &AuthenticationContext,
+        session_id: &str,
+    ) -> Result<ValidatedSession, SessionError> {
         let now = self.time_provider.unix_timestamp();
-        let Some(mut record) = self.session_store.load(&session_id)? else {
-            return Err(SessionError::SessionNotFound { session_id });
+        let Some(mut record) = self.session_store.load(session_id)? else {
+            return Err(SessionError::SessionNotFound {
+                session_id: session_id.to_string(),
+            });
         };
 
         if record.revoked_at.is_some() {
@@ -415,6 +437,15 @@ where
         context: &AuthenticationContext,
         session_id: &str,
     ) -> Result<RevokedSession, SessionError> {
+        let _guard = session_operation_lock()?;
+        self.revoke_by_session_id_unlocked(context, session_id)
+    }
+
+    fn revoke_by_session_id_unlocked(
+        &self,
+        context: &AuthenticationContext,
+        session_id: &str,
+    ) -> Result<RevokedSession, SessionError> {
         let Some(mut record) = self.session_store.load(session_id)? else {
             return Err(SessionError::SessionNotFound {
                 session_id: session_id.to_string(),
@@ -461,12 +492,13 @@ where
         canonical_username: &str,
         current_session_id: &str,
     ) -> Result<Vec<RevokedSession>, SessionError> {
-        let records = self.list_for_user(canonical_username)?;
+        let _guard = session_operation_lock()?;
+        let records = self.list_for_user_unlocked(canonical_username)?;
         records
             .into_iter()
             .filter(|record| record.revoked_at.is_none())
             .filter(|record| record.session_id != current_session_id)
-            .map(|record| self.revoke_by_session_id(context, &record.session_id))
+            .map(|record| self.revoke_by_session_id_unlocked(context, &record.session_id))
             .collect()
     }
 
@@ -476,16 +508,25 @@ where
         context: &AuthenticationContext,
         canonical_username: &str,
     ) -> Result<Vec<RevokedSession>, SessionError> {
-        let records = self.list_for_user(canonical_username)?;
+        let _guard = session_operation_lock()?;
+        let records = self.list_for_user_unlocked(canonical_username)?;
         records
             .into_iter()
             .filter(|record| record.revoked_at.is_none())
-            .map(|record| self.revoke_by_session_id(context, &record.session_id))
+            .map(|record| self.revoke_by_session_id_unlocked(context, &record.session_id))
             .collect()
     }
 
     /// Returns the operator-visible session list for a canonical user.
     pub fn list_for_user(
+        &self,
+        canonical_username: &str,
+    ) -> Result<Vec<SessionRecord>, SessionError> {
+        let _guard = session_operation_lock()?;
+        self.list_for_user_unlocked(canonical_username)
+    }
+
+    fn list_for_user_unlocked(
         &self,
         canonical_username: &str,
     ) -> Result<Vec<SessionRecord>, SessionError> {
@@ -515,6 +556,14 @@ where
 
         None
     }
+}
+
+fn session_operation_lock() -> Result<MutexGuard<'static, ()>, SessionError> {
+    SESSION_OPERATION_LOCK
+        .lock()
+        .map_err(|_| SessionError::StoreFailure {
+            reason: "session operation lock is poisoned".to_string(),
+        })
 }
 
 /// Generates a new high-entropy session token.
@@ -707,6 +756,8 @@ mod tests {
     use crate::totp::TimeProvider;
     use crate::totp::{FileTotpSecretStore, TotpPolicy, TotpVerifier};
     use std::cell::Cell;
+    use std::sync::{Arc, Barrier};
+    use std::thread;
 
     #[derive(Debug)]
     struct FixedTimeProvider {
@@ -724,6 +775,31 @@ mod tests {
     impl TimeProvider for FixedTimeProvider {
         fn unix_timestamp(&self) -> u64 {
             self.unix_timestamp.get()
+        }
+    }
+
+    #[derive(Debug, Clone)]
+    struct SharedTimeProvider {
+        unix_timestamp: Arc<std::sync::atomic::AtomicU64>,
+    }
+
+    impl SharedTimeProvider {
+        fn new(unix_timestamp: u64) -> Self {
+            Self {
+                unix_timestamp: Arc::new(std::sync::atomic::AtomicU64::new(unix_timestamp)),
+            }
+        }
+
+        fn set(&self, unix_timestamp: u64) {
+            self.unix_timestamp
+                .store(unix_timestamp, std::sync::atomic::Ordering::SeqCst);
+        }
+    }
+
+    impl TimeProvider for SharedTimeProvider {
+        fn unix_timestamp(&self) -> u64 {
+            self.unix_timestamp
+                .load(std::sync::atomic::Ordering::SeqCst)
         }
     }
 
@@ -777,6 +853,25 @@ mod tests {
         let _ = fs::remove_dir_all(&dir);
         fs::create_dir_all(&dir).expect("temp dir should be created");
         dir
+    }
+
+    fn session_record_fixture(
+        id_char: char,
+        canonical_username: &str,
+        issued_at: u64,
+    ) -> SessionRecord {
+        SessionRecord {
+            session_id: id_char.to_string().repeat(SESSION_ID_HEX_LEN),
+            csrf_token: "c".repeat(CSRF_TOKEN_HEX_LEN),
+            canonical_username: canonical_username.to_string(),
+            issued_at,
+            expires_at: issued_at + 3600,
+            last_seen_at: issued_at,
+            revoked_at: None,
+            remote_addr: "127.0.0.1".to_string(),
+            user_agent: "Firefox/Test".to_string(),
+            factor: RequiredSecondFactor::Totp,
+        }
     }
 
     #[test]
@@ -914,6 +1009,181 @@ mod tests {
 
         assert_eq!(revoked.record.revoked_at, Some(300));
         assert_eq!(revoked.record.session_id, issued.record.session_id);
+    }
+
+    #[test]
+    fn simultaneous_session_validations_do_not_corrupt_last_seen() {
+        let session_dir = temp_dir("osmap-session-concurrent-validate");
+        let time = SharedTimeProvider::new(100);
+        let service = Arc::new(SessionService::new(
+            FileSessionStore::new(&session_dir),
+            time.clone(),
+            StaticRandomSource {
+                bytes: vec![0x12; SESSION_TOKEN_BYTES],
+            },
+            3600,
+            DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS,
+        ));
+        let issued = service
+            .issue(
+                &test_context(),
+                "alice@example.com",
+                RequiredSecondFactor::Totp,
+            )
+            .expect("session issuance should succeed");
+        time.set(200);
+
+        let barrier = Arc::new(Barrier::new(6));
+        let mut handles = Vec::new();
+        for _ in 0..5 {
+            let service = Arc::clone(&service);
+            let barrier = Arc::clone(&barrier);
+            let token = issued.token.clone();
+            handles.push(thread::spawn(move || {
+                barrier.wait();
+                service
+                    .validate(&test_context(), &token)
+                    .expect("concurrent validation should succeed");
+            }));
+        }
+        barrier.wait();
+        for handle in handles {
+            handle.join().expect("validation thread should not panic");
+        }
+
+        let stored = service
+            .session_store
+            .load(&issued.record.session_id)
+            .expect("session store should load")
+            .expect("session should exist");
+        assert_eq!(stored.last_seen_at, 200);
+        assert_eq!(stored.revoked_at, None);
+    }
+
+    #[test]
+    fn logout_racing_with_validation_leaves_session_revoked() {
+        let session_dir = temp_dir("osmap-session-concurrent-logout");
+        let time = SharedTimeProvider::new(100);
+        let service = Arc::new(SessionService::new(
+            FileSessionStore::new(&session_dir),
+            time.clone(),
+            StaticRandomSource {
+                bytes: vec![0x13; SESSION_TOKEN_BYTES],
+            },
+            3600,
+            DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS,
+        ));
+        let issued = service
+            .issue(
+                &test_context(),
+                "alice@example.com",
+                RequiredSecondFactor::Totp,
+            )
+            .expect("session issuance should succeed");
+        time.set(300);
+
+        let barrier = Arc::new(Barrier::new(3));
+        let validate_service = Arc::clone(&service);
+        let validate_barrier = Arc::clone(&barrier);
+        let validate_token = issued.token.clone();
+        let validate_handle = thread::spawn(move || {
+            validate_barrier.wait();
+            let _ = validate_service.validate(&test_context(), &validate_token);
+        });
+
+        let revoke_service = Arc::clone(&service);
+        let revoke_barrier = Arc::clone(&barrier);
+        let revoke_token = issued.token.clone();
+        let revoke_handle = thread::spawn(move || {
+            revoke_barrier.wait();
+            revoke_service
+                .revoke_by_token(&test_context(), &revoke_token)
+                .expect("logout revocation should succeed");
+        });
+
+        barrier.wait();
+        validate_handle
+            .join()
+            .expect("validation thread should not panic");
+        revoke_handle
+            .join()
+            .expect("revoke thread should not panic");
+
+        let stored = service
+            .session_store
+            .load(&issued.record.session_id)
+            .expect("session store should load")
+            .expect("session should exist");
+        assert_eq!(stored.revoked_at, Some(300));
+        let error = service
+            .validate(&test_context(), &issued.token)
+            .expect_err("revoked token reuse must fail");
+        assert_eq!(
+            error,
+            SessionError::StoreFailure {
+                reason: "session is revoked".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn revoke_all_racing_with_listing_leaves_all_sessions_revoked() {
+        let session_dir = temp_dir("osmap-session-concurrent-revoke-all");
+        let time = SharedTimeProvider::new(400);
+        let service = Arc::new(SessionService::new(
+            FileSessionStore::new(&session_dir),
+            time,
+            StaticRandomSource {
+                bytes: vec![0x14; SESSION_TOKEN_BYTES],
+            },
+            3600,
+            DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS,
+        ));
+        for (id_char, issued_at) in [('a', 100), ('b', 101), ('d', 102)] {
+            service
+                .session_store
+                .save(&session_record_fixture(
+                    id_char,
+                    "alice@example.com",
+                    issued_at,
+                ))
+                .expect("session fixture should save");
+        }
+
+        let barrier = Arc::new(Barrier::new(3));
+        let list_service = Arc::clone(&service);
+        let list_barrier = Arc::clone(&barrier);
+        let list_handle = thread::spawn(move || {
+            list_barrier.wait();
+            list_service
+                .list_for_user("alice@example.com")
+                .expect("concurrent list should succeed")
+        });
+
+        let revoke_service = Arc::clone(&service);
+        let revoke_barrier = Arc::clone(&barrier);
+        let revoke_handle = thread::spawn(move || {
+            revoke_barrier.wait();
+            revoke_service
+                .revoke_all_for_user(&test_context(), "alice@example.com")
+                .expect("revoke-all should succeed")
+        });
+
+        barrier.wait();
+        let listed = list_handle.join().expect("list thread should not panic");
+        let revoked = revoke_handle
+            .join()
+            .expect("revoke-all thread should not panic");
+
+        assert_eq!(listed.len(), 3);
+        assert_eq!(revoked.len(), 3);
+        let final_records = service
+            .list_for_user("alice@example.com")
+            .expect("final listing should succeed");
+        assert_eq!(final_records.len(), 3);
+        assert!(final_records
+            .iter()
+            .all(|record| record.revoked_at == Some(400)));
     }
 
     #[test]
