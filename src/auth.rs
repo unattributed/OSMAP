@@ -6,7 +6,7 @@
 //! issuance.
 
 use std::fmt;
-use std::io;
+use std::io::{self, Read};
 use std::path::PathBuf;
 use std::process::{Command, ExitStatus, Stdio};
 use std::str;
@@ -37,6 +37,9 @@ pub const DEFAULT_FACTOR_CODE_MAX_LEN: usize = 16;
 
 /// Conservative timeout for runtime external commands.
 pub const DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS: u64 = 10;
+
+/// Conservative per-stream output cap for runtime external commands.
+pub const DEFAULT_EXTERNAL_COMMAND_OUTPUT_MAX_BYTES: usize = 4 * 1024 * 1024;
 
 /// Minimal bounded environment supplied to external commands.
 const SAFE_COMMAND_PATH: &str = "/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin";
@@ -499,6 +502,17 @@ pub trait CommandExecutor {
         self.run_with_stdin_bytes(program, args, stdin_data)
     }
 
+    fn run_with_stdin_bytes_timeout_and_output_limit(
+        &self,
+        program: &str,
+        args: &[String],
+        stdin_data: &[u8],
+        timeout: Duration,
+        _output_max_bytes: usize,
+    ) -> Result<CommandExecution, CommandExecutionError> {
+        self.run_with_stdin_bytes_timeout(program, args, stdin_data, timeout)
+    }
+
     fn run_with_stdin(
         &self,
         program: &str,
@@ -545,6 +559,23 @@ impl CommandExecutor for SystemCommandExecutor {
         stdin_data: &[u8],
         timeout: Duration,
     ) -> Result<CommandExecution, CommandExecutionError> {
+        self.run_with_stdin_bytes_timeout_and_output_limit(
+            program,
+            args,
+            stdin_data,
+            timeout,
+            DEFAULT_EXTERNAL_COMMAND_OUTPUT_MAX_BYTES,
+        )
+    }
+
+    fn run_with_stdin_bytes_timeout_and_output_limit(
+        &self,
+        program: &str,
+        args: &[String],
+        stdin_data: &[u8],
+        timeout: Duration,
+        output_max_bytes: usize,
+    ) -> Result<CommandExecution, CommandExecutionError> {
         let mut child = Command::new(program)
             .args(args)
             .env_clear()
@@ -561,6 +592,12 @@ impl CommandExecutor for SystemCommandExecutor {
         let stdin = child.stdin.take().ok_or_else(|| CommandExecutionError {
             reason: "failed to open command stdin".to_string(),
         })?;
+        let stdout = child.stdout.take().ok_or_else(|| CommandExecutionError {
+            reason: "failed to open command stdout".to_string(),
+        })?;
+        let stderr = child.stderr.take().ok_or_else(|| CommandExecutionError {
+            reason: "failed to open command stderr".to_string(),
+        })?;
         let stdin_data = stdin_data.to_vec();
         let (stdin_tx, stdin_rx) = mpsc::channel();
         thread::spawn(move || {
@@ -569,7 +606,10 @@ impl CommandExecutor for SystemCommandExecutor {
             let _ = stdin_tx.send(result);
         });
 
-        wait_for_command_with_timeout(child, stdin_rx, timeout)
+        let stdout_handle = spawn_bounded_output_reader(stdout, output_max_bytes, "stdout");
+        let stderr_handle = spawn_bounded_output_reader(stderr, output_max_bytes, "stderr");
+
+        wait_for_command_with_timeout(child, stdin_rx, stdout_handle, stderr_handle, timeout)
     }
 }
 
@@ -582,6 +622,8 @@ fn write_command_stdin(mut stdin: std::process::ChildStdin, stdin_data: &[u8]) -
 fn wait_for_command_with_timeout(
     mut child: std::process::Child,
     stdin_rx: mpsc::Receiver<Result<(), String>>,
+    stdout_handle: thread::JoinHandle<Result<Vec<u8>, CommandExecutionError>>,
+    stderr_handle: thread::JoinHandle<Result<Vec<u8>, CommandExecutionError>>,
     timeout: Duration,
 ) -> Result<CommandExecution, CommandExecutionError> {
     let deadline = Instant::now() + timeout;
@@ -604,7 +646,9 @@ fn wait_for_command_with_timeout(
             Some(_) => break,
             None if Instant::now() >= deadline => {
                 let _ = child.kill();
-                let _ = child.wait_with_output();
+                let _ = child.wait();
+                let _ = stdout_handle.join();
+                let _ = stderr_handle.join();
                 return Err(CommandExecutionError {
                     reason: format!("command timed out after {} seconds", timeout.as_secs()),
                 });
@@ -613,11 +657,9 @@ fn wait_for_command_with_timeout(
         }
     }
 
-    let output = child
-        .wait_with_output()
-        .map_err(|error| CommandExecutionError {
-            reason: format!("failed waiting for command output: {error}"),
-        })?;
+    let status = child.wait().map_err(|error| CommandExecutionError {
+        reason: format!("failed waiting for command status: {error}"),
+    })?;
 
     match stdin_result.unwrap_or_else(|| {
         stdin_rx
@@ -630,11 +672,62 @@ fn wait_for_command_with_timeout(
         }
     }
 
+    let stdout = join_output_reader(stdout_handle, "stdout")?;
+    let stderr = join_output_reader(stderr_handle, "stderr")?;
+
     Ok(CommandExecution {
-        status_code: status_code_or_signal(output.status),
-        stdout: String::from_utf8_lossy(&output.stdout).into_owned(),
-        stderr: String::from_utf8_lossy(&output.stderr).into_owned(),
+        status_code: status_code_or_signal(status),
+        stdout: String::from_utf8_lossy(&stdout).into_owned(),
+        stderr: String::from_utf8_lossy(&stderr).into_owned(),
     })
+}
+
+fn spawn_bounded_output_reader<R>(
+    reader: R,
+    max_bytes: usize,
+    stream_name: &'static str,
+) -> thread::JoinHandle<Result<Vec<u8>, CommandExecutionError>>
+where
+    R: Read + Send + 'static,
+{
+    thread::spawn(move || read_bounded_command_output(reader, max_bytes, stream_name))
+}
+
+fn read_bounded_command_output<R: Read>(
+    mut reader: R,
+    max_bytes: usize,
+    stream_name: &'static str,
+) -> Result<Vec<u8>, CommandExecutionError> {
+    let mut output = Vec::new();
+    let mut buffer = [0u8; 8192];
+
+    loop {
+        let read = reader
+            .read(&mut buffer)
+            .map_err(|error| CommandExecutionError {
+                reason: format!("failed reading command {stream_name}: {error}"),
+            })?;
+        if read == 0 {
+            return Ok(output);
+        }
+        if output.len().saturating_add(read) > max_bytes {
+            return Err(CommandExecutionError {
+                reason: format!(
+                    "command {stream_name} exceeded maximum output length of {max_bytes} bytes"
+                ),
+            });
+        }
+        output.extend_from_slice(&buffer[..read]);
+    }
+}
+
+fn join_output_reader(
+    handle: thread::JoinHandle<Result<Vec<u8>, CommandExecutionError>>,
+    stream_name: &'static str,
+) -> Result<Vec<u8>, CommandExecutionError> {
+    handle.join().map_err(|_| CommandExecutionError {
+        reason: format!("command {stream_name} reader panicked"),
+    })?
 }
 
 /// Connects primary credential verification to `doveadm auth test`.
@@ -1401,6 +1494,28 @@ mod tests {
             started_at.elapsed() < Duration::from_secs(2),
             "timeout should return before the command's requested sleep completes"
         );
+    }
+
+    #[test]
+    #[cfg(unix)]
+    fn system_command_executor_rejects_oversized_stdout() {
+        if !PathBuf::from("/usr/bin/yes").exists() {
+            return;
+        }
+
+        let error = SystemCommandExecutor
+            .run_with_stdin_bytes_timeout_and_output_limit(
+                "/usr/bin/yes",
+                &[],
+                b"",
+                Duration::from_secs(2),
+                1024,
+            )
+            .expect_err("unbounded stdout must be rejected");
+
+        assert!(error
+            .reason
+            .contains("stdout exceeded maximum output length"));
     }
 
     #[test]

@@ -1,0 +1,16 @@
+Subject: =?ISO-8859-1?Q?Caf=E9_update?=
+From: =?UTF-8?Q?Andr=C3=A9_Example?= <andre@example.com>
+Content-Type: multipart/alternative; boundary="alt-fixture"
+
+--alt-fixture
+Content-Type: text/plain; charset=iso-8859-1
+Content-Transfer-Encoding: quoted-printable
+
+Ol=E1 team
+Plain fixture part
+--alt-fixture
+Content-Type: text/html; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+<p>Ol=C3=A1 <strong>team</strong></p>
+--alt-fixture--

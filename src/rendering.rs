@@ -716,6 +716,22 @@ mod tests {
         }
     }
 
+    fn message_view_from_fixture(raw_message: &str) -> MessageView {
+        let normalized = raw_message.replace("\r\n", "\n");
+        let (header_block, body_text) = normalized
+            .split_once("\n\n")
+            .expect("fixture should contain a header/body separator");
+        MessageView {
+            mailbox_name: "INBOX".to_string(),
+            uid: 99,
+            flags: vec!["\\Seen".to_string()],
+            date_received: "2026-03-27 12:00:00 +0000".to_string(),
+            size_virtual: normalized.len() as u64,
+            header_block: header_block.to_string(),
+            body_text: body_text.to_string(),
+        }
+    }
+
     #[test]
     fn unfolds_headers_and_extracts_values() {
         let unfolded = unfold_headers(&plain_text_message_view_fixture().header_block);
@@ -861,6 +877,33 @@ mod tests {
     }
 
     #[test]
+    fn fixture_encoded_headers_render_with_selected_sanitized_html() {
+        let renderer = PlainTextMessageRenderer::new(RenderingPolicy::default());
+        let message = message_view_from_fixture(include_str!(
+            "../tests/fixtures/mime/multipart_alternative_encoded_headers.eml"
+        ));
+
+        let outcome = renderer
+            .render_for_validated_session(&test_context(), &validated_session_fixture(), &message)
+            .expect("fixture rendering should succeed");
+
+        assert_eq!(outcome.rendered.subject.as_deref(), Some("Café update"));
+        assert_eq!(
+            outcome.rendered.from.as_deref(),
+            Some("André Example <andre@example.com>")
+        );
+        assert_eq!(
+            outcome.rendered.body_source,
+            MimeBodySource::MultipartHtmlSanitized
+        );
+        assert!(outcome.rendered.body_html.contains("<strong>team</strong>"));
+        assert_eq!(
+            outcome.rendered.body_text_for_compose,
+            "Olá team\nPlain fixture part"
+        );
+    }
+
+    #[test]
     fn renders_html_only_messages_with_sanitized_html() {
         let renderer = PlainTextMessageRenderer::new(RenderingPolicy::default());
         let outcome = renderer
@@ -949,6 +992,61 @@ mod tests {
             outcome.rendered.rendering_mode,
             RenderingMode::SanitizedHtml
         );
+    }
+
+    #[test]
+    fn fixture_hostile_html_strips_active_and_remote_content() {
+        let renderer = PlainTextMessageRenderer::new(RenderingPolicy::default());
+        let message = message_view_from_fixture(include_str!(
+            "../tests/fixtures/mime/nested_mixed_hostile_html.eml"
+        ));
+
+        let outcome = renderer
+            .render_for_validated_session(&test_context(), &validated_session_fixture(), &message)
+            .expect("fixture rendering should succeed");
+        let body = &outcome.rendered.body_html;
+
+        assert_eq!(
+            outcome.rendered.body_source,
+            MimeBodySource::MultipartHtmlSanitized
+        );
+        assert!(body.contains("<strong>reader</strong>"));
+        assert!(body.contains("href=\"https://example.com/safe\""));
+        assert!(!body.contains("<script"));
+        assert!(!body.contains("onclick"));
+        assert!(!body.contains("<form"));
+        assert!(!body.contains("<iframe"));
+        assert!(!body.contains("<img"));
+        assert!(!body.contains("<style"));
+        assert!(!body.contains("javascript:"));
+        assert!(!body.contains("cid:"));
+        assert!(!body.contains("data:image"));
+        assert!(!body.contains("evil.example"));
+        assert_eq!(
+            outcome.rendered.body_text_for_compose,
+            "Safe plain fallback"
+        );
+        assert_eq!(outcome.rendered.attachments.len(), 2);
+    }
+
+    #[test]
+    fn fixture_malformed_boundary_renders_safe_placeholder() {
+        let renderer = PlainTextMessageRenderer::new(RenderingPolicy::default());
+        let message = message_view_from_fixture(include_str!(
+            "../tests/fixtures/mime/malformed_boundary.eml"
+        ));
+
+        let outcome = renderer
+            .render_for_validated_session(&test_context(), &validated_session_fixture(), &message)
+            .expect("malformed fixture should render safely");
+
+        assert_eq!(
+            outcome.rendered.body_source,
+            MimeBodySource::MultipartStructureWithheld
+        );
+        assert!(outcome.rendered.body_html.contains(
+            "Multipart structure detected, but no safe plain-text preview is available."
+        ));
     }
 
     #[test]

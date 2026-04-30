@@ -26,9 +26,10 @@
   and accept-failure observability, but it still depends on adjacent controls
   and does not yet provide a complete request-resource exhaustion strategy
 - Runtime auth, mailbox, and sendmail command execution now has a shared
-  timeout-enforced executor with a bounded environment, but output capture is
-  still in-memory and should receive explicit byte caps in a later resource
-  exhaustion pass.
+  timeout-enforced executor with a bounded environment and explicit stdout and
+  stderr byte caps. It still depends on the synchronous request model, so very
+  slow but under-limit backend commands remain bounded by timeout rather than a
+  separate worker-pool budget.
 - The implementation now has a bounded message-view fetch path, plus
   MIME-aware classification and attachment metadata surfacing, but it does not
   yet provide preview-oriented attachment behavior
@@ -39,7 +40,9 @@
 - The implementation now has a conservative rendering layer with both
   plain-text and sanitized-HTML modes, but it still does not provide
   inline image rendering, full rich-header coverage, or any external-resource
-  loading
+  loading. The fixture corpus now covers hostile HTML, remote-resource
+  stripping, `cid:` metadata, malformed multipart boundaries, encoded headers,
+  and suspicious attachment names, but it is not yet a broad real-world corpus.
 - The implementation now provides a bounded, backend-authoritative browser
   search path across one mailbox or all visible mailboxes, but it does not yet
   provide advanced query ergonomics, sorting controls, or richer search

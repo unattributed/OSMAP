@@ -5151,3 +5151,21 @@ reuse after revocation.
 This is not a cross-process database lock. Version 3 still needs an
 isolated-cookie live retest and a conscious concurrent-session/device policy
 before the session/device gate can close.
+
+### Add MIME/HTML fixtures and command output caps
+
+The external command executor now caps stdout and stderr independently while
+retaining the timeout, shell-free argument passing, and bounded environment.
+This closes the most obvious remaining memory-exhaustion path at the auth,
+`doveadm`, and sendmail process boundary. A regression test proves a command
+that produces unbounded stdout is rejected.
+
+The MIME and HTML regression coverage now includes fixture files under
+`tests/fixtures/mime/`. The first fixture corpus covers multipart alternative,
+nested multipart, malformed boundaries, encoded subject/from headers, unusual
+but supported charsets, hostile HTML with scripts, event handlers, forms,
+iframes, remote images, style abuse, `cid:` references, data URIs, malformed
+tags, suspicious attachment filenames, and nested attachment lookup. Rendering
+tests assert that active and remote content is stripped or neutralized by
+default, while attachment tests keep suspicious files on the forced-download
+path with sanitized metadata.

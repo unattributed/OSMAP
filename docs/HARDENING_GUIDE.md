@@ -95,8 +95,8 @@ This principle now applies directly to the browser and submission paths:
   events
 - runtime external command execution goes through the shared Rust command
   executor, avoids shell interpolation, clears inherited environment variables
-  down to a small fixed set, and enforces a timeout on auth, `doveadm`, and
-  sendmail paths
+  down to a small fixed set, and enforces both a timeout and per-stream output
+  byte cap on auth, `doveadm`, and sendmail paths
 
 ## Maintenance Considerations
 
@@ -146,12 +146,15 @@ auth, mailbox, and submission slices.
 The current implementation has concrete limits for HTTP body and header
 parsing, concurrent connections, compose body size, attachment count and byte
 size, mailbox listing, message-list parsing, message rendering, search query
-shape, helper socket reads and writes, and external command runtime. Those
-limits reduce obvious unbounded request and backend hangs, but they are not a
-complete denial-of-service design.
+shape, helper socket reads and writes, external command runtime, and external
+command stdout/stderr capture. Those limits reduce obvious unbounded request
+and backend hangs, but they are not a complete denial-of-service design.
 
-The next Version 3 hardening pass should keep adding fixture and route tests
-for oversized MIME bodies, excessive attachment metadata, pathological mailbox
-output, large all-mailbox search result sets, and expensive malformed HTML/MIME
-inputs. Adjacent controls such as nginx request limits, PF, and host monitoring
-remain part of the credible DoS posture.
+The MIME/HTML regression corpus now lives under `tests/fixtures/mime/` and
+covers encoded headers, multipart alternative, nested mixed/related messages,
+malformed boundaries, hostile active HTML, `cid:` image references, remote
+resources, data URIs, suspicious attachment names, and nested attachments. The
+next Version 3 hardening pass should keep adding route tests for oversized MIME
+bodies, excessive attachment metadata, pathological mailbox output, and large
+all-mailbox search result sets. Adjacent controls such as nginx request limits,
+PF, and host monitoring remain part of the credible DoS posture.

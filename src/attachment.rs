@@ -720,6 +720,22 @@ mod tests {
         }
     }
 
+    fn message_view_from_fixture(raw_message: &str) -> MessageView {
+        let normalized = raw_message.replace("\r\n", "\n");
+        let (header_block, body_text) = normalized
+            .split_once("\n\n")
+            .expect("fixture should contain a header/body separator");
+        MessageView {
+            mailbox_name: "INBOX".to_string(),
+            uid: 99,
+            flags: vec!["\\Seen".to_string()],
+            date_received: "2026-03-27 12:00:00 +0000".to_string(),
+            size_virtual: normalized.len() as u64,
+            header_block: header_block.to_string(),
+            body_text: body_text.to_string(),
+        }
+    }
+
     #[test]
     fn downloads_base64_attachment_parts() {
         let message = multipart_message_view(concat!(
@@ -808,6 +824,30 @@ mod tests {
             AttachmentDownloadDecision::Downloaded { attachment, .. } => {
                 assert_eq!(attachment.filename, "weird_report_.txt");
                 assert_eq!(attachment.content_type, "application/x-custom+data");
+            }
+            other => panic!("expected downloaded attachment, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn fixture_suspicious_html_attachment_is_forced_to_safe_download_metadata() {
+        let message = message_view_from_fixture(include_str!(
+            "../tests/fixtures/mime/nested_mixed_hostile_html.eml"
+        ));
+
+        let outcome = AttachmentDownloadService::new(AttachmentDownloadPolicy::default())
+            .download_for_validated_session(
+                &test_context(),
+                &validated_session_fixture(),
+                &message,
+                "1.2",
+            );
+
+        match outcome.decision {
+            AttachmentDownloadDecision::Downloaded { attachment, .. } => {
+                assert_eq!(attachment.filename, "invoice_.html");
+                assert_eq!(attachment.content_type, "text/html");
+                assert!(String::from_utf8_lossy(&attachment.body).contains("download me"));
             }
             other => panic!("expected downloaded attachment, got {other:?}"),
         }

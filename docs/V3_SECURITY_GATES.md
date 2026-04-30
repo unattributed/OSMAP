@@ -32,7 +32,7 @@ Version 3 cannot pass by replacing or weakening any of these gates.
 | Gate | Required evidence |
 | --- | --- |
 | Supply-chain assurance | `make supply-chain-check` or `make security-check` evidence showing RustSec advisory checks, duplicate dependency rejection, approved-source enforcement, and license allowlist enforcement. Any exception must be dated, owned, justified, and scoped to a specific crate/version/advisory/license. |
-| MIME and HTML regression | Unit or route tests plus live or fixture evidence for encoded headers, multipart alternatives, sanitized HTML, malformed MIME, inline `cid:` metadata, attachment metadata, and oversized input rejection. |
+| MIME and HTML regression | Unit or route tests plus live or fixture evidence for encoded headers, multipart alternatives, nested multipart, sanitized hostile HTML, malformed MIME, inline `cid:` metadata, attachment metadata, suspicious filenames, remote-content neutralization, and oversized input rejection. |
 | Draft storage boundary | Tests and docs proving draft ownership isolation, restrictive state paths, bounded draft and attachment sizes, CSRF and same-origin enforcement, expired-session rejection, and deterministic cleanup behavior. |
 | Reply/forward attachment safety | Tests proving selected original attachments are helper-fetched, revalidated at send time, included in aggregate limits, and not silently dropped after confirmation. |
 | Richer search guardrails | Tests proving query validation, mailbox visibility limits, result caps, sorting determinism, invalid-query 400-class behavior, and backend-unavailable behavior. |

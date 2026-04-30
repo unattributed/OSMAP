@@ -1315,6 +1315,14 @@ mod tests {
         }
     }
 
+    fn message_view_from_fixture(raw_message: &str) -> MessageView {
+        let normalized = raw_message.replace("\r\n", "\n");
+        let (header_block, body_text) = normalized
+            .split_once("\n\n")
+            .expect("fixture should contain a header/body separator");
+        message_view(header_block, body_text)
+    }
+
     #[test]
     fn analyzes_singlepart_plain_text_messages() {
         let analyzer = MimeAnalyzer::new(MimeAnalysisPolicy::default());
@@ -1645,6 +1653,136 @@ mod tests {
         assert_eq!(
             analysis.attachments[0].content_id.as_deref(),
             Some("chart@example.com")
+        );
+    }
+
+    #[test]
+    fn fixture_multipart_alternative_decodes_headers_and_bodies() {
+        let analyzer = MimeAnalyzer::new(MimeAnalysisPolicy::default());
+        let message = message_view_from_fixture(include_str!(
+            "../tests/fixtures/mime/multipart_alternative_encoded_headers.eml"
+        ));
+        let analysis = analyzer
+            .analyze_message(&message)
+            .expect("fixture analysis should succeed");
+
+        assert_eq!(analysis.top_level_content_type, "multipart/alternative");
+        assert_eq!(analysis.body_source, MimeBodySource::MultipartPlainTextPart);
+        assert_eq!(
+            analysis.selected_plain_text_body.as_deref(),
+            Some("Olá team\nPlain fixture part")
+        );
+        assert_eq!(
+            analysis.selected_html_body.as_deref(),
+            Some("<p>Olá <strong>team</strong></p>")
+        );
+        assert!(analysis.contains_html_body);
+        assert!(analysis.attachments.is_empty());
+    }
+
+    #[test]
+    fn fixture_nested_mixed_surfaces_cid_and_suspicious_attachment_metadata() {
+        let analyzer = MimeAnalyzer::new(MimeAnalysisPolicy::default());
+        let message = message_view_from_fixture(include_str!(
+            "../tests/fixtures/mime/nested_mixed_hostile_html.eml"
+        ));
+        let analysis = analyzer
+            .analyze_message(&message)
+            .expect("fixture analysis should succeed");
+
+        assert_eq!(analysis.body_source, MimeBodySource::MultipartPlainTextPart);
+        assert_eq!(
+            analysis.selected_plain_text_body.as_deref(),
+            Some("Safe plain fallback")
+        );
+        assert!(analysis
+            .selected_html_body
+            .as_deref()
+            .expect("html part should be selected")
+            .contains("javascript:alert(1)"));
+        assert_eq!(analysis.attachments.len(), 2);
+        assert_eq!(analysis.attachments[0].part_path, "1.1.2");
+        assert_eq!(
+            analysis.attachments[0].content_id.as_deref(),
+            Some("chart@example.com")
+        );
+        assert_eq!(analysis.attachments[1].part_path, "1.2");
+        assert_eq!(
+            analysis.attachments[1].filename.as_deref(),
+            Some("../../invoice?.html")
+        );
+    }
+
+    #[test]
+    fn fixture_malformed_boundary_withholds_structure_without_panic() {
+        let analyzer = MimeAnalyzer::new(MimeAnalysisPolicy::default());
+        let message = message_view_from_fixture(include_str!(
+            "../tests/fixtures/mime/malformed_boundary.eml"
+        ));
+        let analysis = analyzer
+            .analyze_message(&message)
+            .expect("malformed fixture should be safely classified");
+
+        assert_eq!(
+            analysis.body_source,
+            MimeBodySource::MultipartStructureWithheld
+        );
+        assert!(analysis.selected_plain_text_body.is_none());
+        assert!(analysis.selected_html_body.is_none());
+        assert!(analysis.attachments.is_empty());
+    }
+
+    #[test]
+    fn fixture_nested_multipart_attachment_remains_findable_by_path() {
+        let analyzer = MimeAnalyzer::new(MimeAnalysisPolicy::default());
+        let message = message_view_from_fixture(include_str!(
+            "../tests/fixtures/mime/nested_multipart_attachment.eml"
+        ));
+        let analysis = analyzer
+            .analyze_message(&message)
+            .expect("fixture analysis should succeed");
+        let attachment = analyzer
+            .find_attachment_part(&message, "1.1.2")
+            .expect("attachment lookup should succeed")
+            .expect("nested attachment should be surfaced");
+
+        assert_eq!(
+            analysis.selected_plain_text_body.as_deref(),
+            Some("Nested plain text")
+        );
+        assert_eq!(analysis.attachments.len(), 1);
+        assert_eq!(attachment.metadata.part_path, "1.1.2");
+        assert_eq!(attachment.metadata.filename.as_deref(), Some("résumé.pdf"));
+        assert_eq!(attachment.body_text, "SGVsbG8=");
+    }
+
+    #[test]
+    fn rejects_pathological_multipart_part_counts() {
+        let analyzer = MimeAnalyzer::new(MimeAnalysisPolicy {
+            max_parts: 1,
+            ..MimeAnalysisPolicy::default()
+        });
+
+        let error = analyzer
+            .analyze_message(&message_view(
+                "Subject: Test\nContent-Type: multipart/mixed; boundary=\"many\"\n",
+                concat!(
+                    "--many\n",
+                    "Content-Type: text/plain\n",
+                    "\n",
+                    "one\n",
+                    "--many\n",
+                    "Content-Type: text/plain\n",
+                    "\n",
+                    "two\n",
+                    "--many--\n",
+                ),
+            ))
+            .expect_err("excessive part count should fail");
+
+        assert_eq!(
+            error.reason,
+            "mime part count exceeded maximum of 1".to_string()
         );
     }
 

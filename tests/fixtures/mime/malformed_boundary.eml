@@ -1,0 +1,9 @@
+Subject: Broken multipart
+From: Broken Sender <broken@example.org>
+Content-Type: multipart/mixed; boundary="broken-fixture"
+
+This preamble never reaches a valid part.
+--wrong-fixture
+Content-Type: text/plain
+
+This body should not be selected because the boundary is wrong.
