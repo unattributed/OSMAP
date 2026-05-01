@@ -108,8 +108,15 @@ The current logic is intentionally aimed at common mail shapes first:
 - single-part HTML mail
 - `multipart/alternative` with text/plain plus text/html
 - `multipart/mixed` carrying a readable body plus attachments
+- `multipart/related` newsletter-style messages with a readable body, remote
+  tracking references, and inline `cid:` image metadata
 - nested multipart layouts where a top-level mixed message contains an
   alternative body and a separate attachment
+- calendar invites surfaced as forced-download `text/calendar` attachments
+- delivery-status notifications with `message/delivery-status` and
+  `message/rfc822` attachment parts
+- unsupported HTML charsets that are classified without rendering undecoded
+  bytes
 
 That coverage is practical enough to move the prototype forward while staying
 reviewable.
@@ -128,6 +135,12 @@ This slice now proves that:
   rendering without changing attachment behavior or the trust model
 - surfaced attachment metadata can carry bounded `Content-ID` values for
   `cid:`-style inline assets on the validated OpenBSD host
+- sanitized HTML fixtures strip or neutralize remote images, protocol-relative
+  tracking URLs, and inline `cid:` loads by default
+- calendar and delivery-status attachments remain on the forced-download path
+  with safe content-disposition behavior
+- unsupported HTML charsets fall back to an explicit withheld-body placeholder
+  instead of rendering ambiguous text
 - the project can support common multipart mail without quietly becoming a rich
   HTML mail renderer
 
@@ -137,6 +150,8 @@ This slice does not yet include:
 
 - full encoded-word and RFC 2231 parameter coverage beyond the current bounded
   header-summary and attachment-filename cases
+- a broad real-world corpus from many mail generators and language/localization
+  combinations
 - rich attachment preview behavior
 - inline image rendering
 - nested message/rfc822 presentation

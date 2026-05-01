@@ -1757,6 +1757,113 @@ mod tests {
     }
 
     #[test]
+    fn fixture_newsletter_related_selects_body_and_inline_logo_metadata() {
+        let analyzer = MimeAnalyzer::new(MimeAnalysisPolicy::default());
+        let message = message_view_from_fixture(include_str!(
+            "../tests/fixtures/mime/newsletter_related_remote_content.eml"
+        ));
+        let analysis = analyzer
+            .analyze_message(&message)
+            .expect("newsletter fixture analysis should succeed");
+
+        assert_eq!(analysis.top_level_content_type, "multipart/related");
+        assert_eq!(analysis.body_source, MimeBodySource::MultipartPlainTextPart);
+        assert_eq!(
+            analysis.selected_plain_text_body.as_deref(),
+            Some("Monthly digest\nRead the safe summary.")
+        );
+        assert!(analysis
+            .selected_html_body
+            .as_deref()
+            .expect("html body should be selected")
+            .contains("tracker.example"));
+        assert_eq!(analysis.attachments.len(), 1);
+        assert_eq!(analysis.attachments[0].content_type, "image/jpeg");
+        assert_eq!(
+            analysis.attachments[0].filename.as_deref(),
+            Some("logo.jpg")
+        );
+        assert_eq!(
+            analysis.attachments[0].content_id.as_deref(),
+            Some("logo@example.com")
+        );
+    }
+
+    #[test]
+    fn fixture_calendar_invite_surfaces_ics_attachment() {
+        let analyzer = MimeAnalyzer::new(MimeAnalysisPolicy::default());
+        let message = message_view_from_fixture(include_str!(
+            "../tests/fixtures/mime/calendar_invite_mixed.eml"
+        ));
+        let analysis = analyzer
+            .analyze_message(&message)
+            .expect("calendar fixture analysis should succeed");
+        let attachment = analyzer
+            .find_attachment_part(&message, "1.2")
+            .expect("calendar lookup should succeed")
+            .expect("calendar attachment should be surfaced");
+
+        assert_eq!(
+            analysis.selected_plain_text_body.as_deref(),
+            Some("Project review on Friday at 10:00.")
+        );
+        assert_eq!(analysis.attachments.len(), 1);
+        assert_eq!(analysis.attachments[0].content_type, "text/calendar");
+        assert_eq!(
+            analysis.attachments[0].filename.as_deref(),
+            Some("invite.ics")
+        );
+        assert_eq!(attachment.transfer_encoding, "quoted-printable");
+    }
+
+    #[test]
+    fn fixture_delivery_status_surfaces_report_attachments() {
+        let analyzer = MimeAnalyzer::new(MimeAnalysisPolicy::default());
+        let message = message_view_from_fixture(include_str!(
+            "../tests/fixtures/mime/delivery_status_notification.eml"
+        ));
+        let analysis = analyzer
+            .analyze_message(&message)
+            .expect("delivery-status fixture analysis should succeed");
+
+        assert_eq!(analysis.top_level_content_type, "multipart/report");
+        assert_eq!(
+            analysis.selected_plain_text_body.as_deref(),
+            Some("Delivery to the following recipient failed permanently.")
+        );
+        assert_eq!(analysis.attachments.len(), 2);
+        assert_eq!(
+            analysis.attachments[0].content_type,
+            "message/delivery-status"
+        );
+        assert_eq!(
+            analysis.attachments[0].filename.as_deref(),
+            Some("delivery-status.txt")
+        );
+        assert_eq!(analysis.attachments[1].content_type, "message/rfc822");
+        assert_eq!(
+            analysis.attachments[1].filename.as_deref(),
+            Some("original-message.eml")
+        );
+    }
+
+    #[test]
+    fn fixture_unsupported_charset_html_is_withheld() {
+        let analyzer = MimeAnalyzer::new(MimeAnalysisPolicy::default());
+        let message = message_view_from_fixture(include_str!(
+            "../tests/fixtures/mime/unsupported_charset_html.eml"
+        ));
+        let analysis = analyzer
+            .analyze_message(&message)
+            .expect("unsupported charset should classify without panic");
+
+        assert_eq!(analysis.body_source, MimeBodySource::HtmlWithheld);
+        assert!(analysis.contains_html_body);
+        assert!(analysis.selected_html_body.is_none());
+        assert!(analysis.selected_plain_text_body.is_none());
+    }
+
+    #[test]
     fn rejects_pathological_multipart_part_counts() {
         let analyzer = MimeAnalyzer::new(MimeAnalysisPolicy {
             max_parts: 1,

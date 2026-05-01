@@ -1050,6 +1050,56 @@ mod tests {
     }
 
     #[test]
+    fn fixture_newsletter_related_sanitizes_remote_content() {
+        let renderer = PlainTextMessageRenderer::new(RenderingPolicy::default());
+        let message = message_view_from_fixture(include_str!(
+            "../tests/fixtures/mime/newsletter_related_remote_content.eml"
+        ));
+
+        let outcome = renderer
+            .render_for_validated_session(&test_context(), &validated_session_fixture(), &message)
+            .expect("newsletter fixture should render safely");
+        let body = &outcome.rendered.body_html;
+
+        assert_eq!(
+            outcome.rendered.body_source,
+            MimeBodySource::MultipartHtmlSanitized
+        );
+        assert_eq!(
+            outcome.rendered.subject.as_deref(),
+            Some("Monthly security digest")
+        );
+        assert!(body.contains("<h1>Monthly digest</h1>"));
+        assert!(body.contains("href=\"https://example.com/digest\""));
+        assert!(!body.contains("<img"));
+        assert!(!body.contains("tracker.example"));
+        assert!(!body.contains("cid:"));
+        assert!(outcome.rendered.attachments.iter().any(|attachment| {
+            attachment.filename.as_deref() == Some("logo.jpg")
+                && attachment.content_id.as_deref() == Some("logo@example.com")
+        }));
+    }
+
+    #[test]
+    fn fixture_unsupported_charset_html_renders_placeholder() {
+        let renderer = PlainTextMessageRenderer::new(RenderingPolicy::default());
+        let message = message_view_from_fixture(include_str!(
+            "../tests/fixtures/mime/unsupported_charset_html.eml"
+        ));
+
+        let outcome = renderer
+            .render_for_validated_session(&test_context(), &validated_session_fixture(), &message)
+            .expect("unsupported charset fixture should render safely");
+
+        assert_eq!(outcome.rendered.body_source, MimeBodySource::HtmlWithheld);
+        assert!(outcome.rendered.contains_html_body);
+        assert!(outcome
+            .rendered
+            .body_html
+            .contains("HTML-only message withheld by current plain-text policy."));
+    }
+
+    #[test]
     fn rejects_oversized_rendered_headers() {
         let error = extract_header_value(&format!("Subject: {}\n", "A".repeat(64)), "Subject", 16)
             .expect_err("oversized header values must fail");

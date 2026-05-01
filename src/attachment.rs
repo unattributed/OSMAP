@@ -854,6 +854,55 @@ mod tests {
     }
 
     #[test]
+    fn fixture_calendar_invite_downloads_as_safe_attachment() {
+        let message = message_view_from_fixture(include_str!(
+            "../tests/fixtures/mime/calendar_invite_mixed.eml"
+        ));
+
+        let outcome = AttachmentDownloadService::new(AttachmentDownloadPolicy::default())
+            .download_for_validated_session(
+                &test_context(),
+                &validated_session_fixture(),
+                &message,
+                "1.2",
+            );
+
+        match outcome.decision {
+            AttachmentDownloadDecision::Downloaded { attachment, .. } => {
+                assert_eq!(attachment.filename, "invite.ics");
+                assert_eq!(attachment.content_type, "text/calendar");
+                assert!(String::from_utf8_lossy(&attachment.body).contains("BEGIN:VCALENDAR"));
+                assert!(String::from_utf8_lossy(&attachment.body).contains("METHOD:REQUEST"));
+            }
+            other => panic!("expected downloaded attachment, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn fixture_delivery_status_downloads_original_message_as_attachment() {
+        let message = message_view_from_fixture(include_str!(
+            "../tests/fixtures/mime/delivery_status_notification.eml"
+        ));
+
+        let outcome = AttachmentDownloadService::new(AttachmentDownloadPolicy::default())
+            .download_for_validated_session(
+                &test_context(),
+                &validated_session_fixture(),
+                &message,
+                "1.3",
+            );
+
+        match outcome.decision {
+            AttachmentDownloadDecision::Downloaded { attachment, .. } => {
+                assert_eq!(attachment.filename, "original-message.eml");
+                assert_eq!(attachment.content_type, "message/rfc822");
+                assert!(String::from_utf8_lossy(&attachment.body).contains("Original body"));
+            }
+            other => panic!("expected downloaded attachment, got {other:?}"),
+        }
+    }
+
+    #[test]
     fn decodes_quoted_printable_attachment_bodies() {
         let decoded = decode_quoted_printable_bytes("line=0Awith=20space", 64)
             .expect("quoted-printable should decode");

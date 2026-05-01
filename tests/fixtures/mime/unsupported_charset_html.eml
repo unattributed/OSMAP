@@ -1,0 +1,6 @@
+Subject: Legacy charset HTML
+From: Legacy Sender <legacy@example.org>
+Content-Type: text/html; charset=windows-1252
+Content-Transfer-Encoding: quoted-printable
+
+<p>Smart quote =93test=94</p>

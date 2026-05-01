@@ -21,7 +21,7 @@ This roadmap sequences Version 3 work so OSMAP becomes a focused daily-driver ha
 | --- | --- | --- | --- |
 | 0 | V3 release-gate foundation | split developer partial validation from release-mode validation; define evidence archive expectations; require release-mode failure on skipped required phases | release-mode gate fails on skipped Cargo, skipped required supply-chain tooling, missing host-readiness evidence, missing V2 carry-forward evidence, or skipped authenticated WSTG/security tests that require credential and TOTP coverage |
 | 1 | Supply-chain assurance | make RustSec advisory review, cargo-deny source and license enforcement, duplicate dependency rejection, dependency exception handling, and SBOM or dependency inventory evidence part of the release gate | supply-chain gate produces timestamped evidence and cannot pass when required tools are missing |
-| 2 | Resource and timeout hardening | identify expensive HTTP, auth, helper, mailbox, search, MIME, attachment, send, move, and bulk paths; add or verify bounded inputs, outputs, timeouts, and deterministic failures | tests and docs prove expensive paths are bounded and fail closed or fail clearly |
+| 2 | Resource and timeout hardening | identify expensive HTTP, auth, helper, mailbox, search, MIME, attachment, send, move, and bulk paths; add or verify bounded inputs, outputs, timeouts, deterministic failures, and the worker-budget design in `REQUEST_WORKER_BUDGET_MODEL.md` | tests and docs prove expensive paths are bounded and fail closed or fail clearly |
 | 3 | WSTG release-mode coverage | update WSTG pack and documentation so authenticated security checks cannot be counted complete when credential and TOTP-dependent tests are skipped | WSTG evidence shows unauthenticated coverage, authenticated coverage where applicable, and sanitized prompt-auth or dedicated validation-account proof |
 | 4 | MIME and HTML correctness | tighten representative message correctness before expanding compose continuity | MIME/HTML feature gate passes with regression tests and no remote content loading |
 | 5 | Session and device policy | choose concurrent-session behavior, device labels, revocation semantics, and isolated-cookie race retest | session/device security gate passes |
@@ -68,6 +68,13 @@ The MIME and HTML implementation plan should inspect and extend:
 
 Do not add remote image loading, rich-text compose, JavaScript rendering, attachment preview, or a new mail-client engine as part of this slice.
 
+The current fixture corpus covers hostile input plus several common real-world
+mail shapes: newsletter-style related messages, calendar invites,
+delivery-status notifications, unsupported charsets, nested multipart, encoded
+headers, and suspicious attachment metadata. The next MIME slice should broaden
+that corpus with more mail-generator samples, language and charset variety, and
+larger but still bounded body and attachment metadata cases.
+
 ## Security Foundation Track
 
 The security foundation track continues throughout Version 3 and blocks release if incomplete:
@@ -79,6 +86,8 @@ The security foundation track continues throughout Version 3 and blocks release 
 - authenticated WSTG evidence where credentials and TOTP are required
 - external command and helper timeout evidence
 - resource-exhaustion regression tests
+- worker-budget design and implementation evidence for slow synchronous request
+  occupancy
 - session/device policy evidence
 - TLS CBC disposition evidence
 

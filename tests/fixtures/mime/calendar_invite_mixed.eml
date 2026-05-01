@@ -1,0 +1,23 @@
+Subject: Project review invitation
+From: Organizer <organizer@example.com>
+Content-Type: multipart/mixed; boundary="calendar-mix"
+
+--calendar-mix
+Content-Type: multipart/alternative; boundary="calendar-alt"
+
+--calendar-alt
+Content-Type: text/plain; charset=utf-8
+
+Project review on Friday at 10:00.
+--calendar-alt
+Content-Type: text/html; charset=utf-8
+
+<p>Project review on <strong>Friday</strong> at 10:00.</p>
+--calendar-alt--
+--calendar-mix
+Content-Type: text/calendar; method=REQUEST; name="invite.ics"
+Content-Disposition: attachment; filename="invite.ics"
+Content-Transfer-Encoding: quoted-printable
+
+BEGIN:VCALENDAR=0AMETHOD:REQUEST=0ASUMMARY:Project review=0AEND:VCALENDAR
+--calendar-mix--

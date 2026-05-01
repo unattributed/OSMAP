@@ -1,0 +1,24 @@
+Subject: Delivery Status Notification (Failure)
+From: Mail Delivery Subsystem <mailer-daemon@example.net>
+Content-Type: multipart/report; report-type=delivery-status; boundary="dsn-report"
+
+--dsn-report
+Content-Type: text/plain; charset=us-ascii
+
+Delivery to the following recipient failed permanently.
+--dsn-report
+Content-Type: message/delivery-status
+Content-Disposition: attachment; filename="delivery-status.txt"
+
+Final-Recipient: rfc822; missing@example.net
+Action: failed
+Status: 5.1.1
+--dsn-report
+Content-Type: message/rfc822
+Content-Disposition: attachment; filename="original-message.eml"
+
+Subject: Original message
+From: Alice <alice@example.com>
+
+Original body
+--dsn-report--

@@ -1,0 +1,33 @@
+Subject: =?UTF-8?Q?Monthly_security_digest?=
+From: Security Digest <digest@example.com>
+List-Unsubscribe: <mailto:unsubscribe@example.com>
+Content-Type: multipart/related; boundary="newsletter-rel"
+
+--newsletter-rel
+Content-Type: multipart/alternative; boundary="newsletter-alt"
+
+--newsletter-alt
+Content-Type: text/plain; charset=utf-8
+
+Monthly digest
+Read the safe summary.
+--newsletter-alt
+Content-Type: text/html; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+<html><body>
+<h1>Monthly digest</h1>
+<p>Read the <a href=3D"https://example.com/digest">safe summary</a>.</p>
+<img src=3D"https://tracker.example/open.gif">
+<img src=3D"cid:logo@example.com">
+<a href=3D"//tracker.example/relative">relative</a>
+</body></html>
+--newsletter-alt--
+--newsletter-rel
+Content-Type: image/jpeg; name="logo.jpg"
+Content-Disposition: inline; filename="logo.jpg"
+Content-ID: <logo@example.com>
+Content-Transfer-Encoding: base64
+
+/9j/2w==
+--newsletter-rel--

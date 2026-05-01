@@ -151,12 +151,20 @@ command stdout/stderr capture. Those limits reduce obvious unbounded request
 and backend hangs, but they are not a complete denial-of-service design.
 
 The MIME/HTML regression corpus now lives under `tests/fixtures/mime/` and
-covers encoded headers, multipart alternative, nested mixed/related messages,
+covers encoded headers, multipart alternative, multipart mixed, nested
+mixed/related messages, calendar invites, delivery-status notifications,
 malformed boundaries, hostile active HTML, `cid:` image references, remote
-resources, data URIs, suspicious attachment names, and nested attachments. The
-browser routes now also cap rendered mailbox links, search-result rows, and
-attachment metadata rows even if an upstream gateway hands them over-limit
-collections. The next Version 3 hardening pass should keep adding deeper tests
-for expensive mailbox backends, broad real-world MIME fixtures, and slow
-synchronous request occupancy. Adjacent controls such as nginx request limits,
-PF, and host monitoring remain part of the credible DoS posture.
+resources, data URIs, suspicious attachment names, nested attachments, and
+unsupported charset fallback behavior. The browser routes now also cap rendered
+mailbox links, search-result rows, and attachment metadata rows even if an
+upstream gateway hands them over-limit collections.
+
+Slow synchronous request occupancy is now tracked as a Version 3 design item in
+`REQUEST_WORKER_BUDGET_MODEL.md`. The current implementation still relies on
+the global concurrent connection cap plus lower-level parser, helper, and
+command timeouts; it does not yet have independent per-route worker budgets.
+The next hardening pass should implement the smallest useful budget guard for
+expensive mailbox, search, send, and auth routes, then add route-level tests
+that prove cheap routes keep working while expensive budgets are saturated.
+Adjacent controls such as nginx request limits, PF, and host monitoring remain
+part of the credible DoS posture.

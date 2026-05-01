@@ -5189,3 +5189,32 @@ Route-level tests now cover:
 This does not replace deeper throughput controls. The runtime is still
 synchronous, and Version 3 still needs broader worker-budget and host-level DoS
 planning.
+
+## 2026-04-30
+
+### Broaden the MIME fixture corpus toward real-world mail shapes
+
+The MIME and rendering tests now add fixture coverage for newsletter-style
+`multipart/related` mail with inline `cid:` image metadata and remote tracking
+references, calendar invitations carried as `text/calendar` attachments,
+delivery-status notifications with `message/delivery-status` and
+`message/rfc822` parts, and HTML declared with an unsupported legacy charset.
+
+These fixtures keep the existing browser trust model: remote and active HTML
+content is stripped or neutralized, unsupported HTML is withheld, and calendar
+or delivery-status parts remain forced downloads rather than previews.
+
+### Start the worker-budget model as a design baseline
+
+OSMAP now records the next runtime denial-of-service hardening step in
+`docs/REQUEST_WORKER_BUDGET_MODEL.md`. The design keeps the current
+OpenBSD-friendly synchronous runtime, but proposes separate admission budgets
+for expensive mailbox, search, send, and auth work so slow authenticated routes
+cannot consume the entire global connection budget.
+
+This is intentionally a design baseline, not an implementation claim. The
+current runtime remains protected by the global concurrent-connection cap,
+parser and renderer limits, helper I/O limits, command output caps, and command
+timeouts. Version 3 still needs the small budget guard, route wiring, and
+regression tests proving budget exhaustion, slot release, timeout release, and
+log redaction.
