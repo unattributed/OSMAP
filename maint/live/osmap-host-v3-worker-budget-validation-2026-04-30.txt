@@ -1,0 +1,32 @@
+OSMAP V3 worker-budget validation
+Date: 2026-04-30
+Host: mail.blackbagsecurity.com
+Repo path confirmed: /home/foo/OSMAP
+Validated commit: ee11b91 enforce search and message worker budgets
+
+Production-safe actions performed:
+- fast-forwarded /home/foo/OSMAP from origin main
+- ran cargo fmt --check
+- ran cargo test budget
+- ran cargo clippy --all-targets -- -D warnings
+- ran make supply-chain-check
+
+Result:
+- focused worker-budget tests passed:
+  - zero mailbox/search worker budgets are rejected
+  - mailbox/search budgets above the HTTP connection cap are rejected
+  - search budget exhaustion returns 503 with Retry-After
+  - login remains available while the search budget is saturated
+  - budget events do not log bearer or CSRF tokens
+  - message-view budget releases after a timeout-like failure
+  - budget guard releases during panic unwinding
+- clippy completed with warnings treated as errors
+- cargo audit found no vulnerable or yanked locked dependencies
+- cargo deny source, license, and duplicate-version policy passed
+- cargo tree duplicate-version backstop found no duplicate dependency versions
+
+Operational notes:
+- no mailboxes, secrets, firewall rules, or service state were modified
+- the production repo had pre-existing untracked local agent notes; they were
+  left untouched
+- route-deadline propagation and send/auth worker budgets remain future V3 work
