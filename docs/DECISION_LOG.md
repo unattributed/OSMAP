@@ -5218,3 +5218,24 @@ parser and renderer limits, helper I/O limits, command output caps, and command
 timeouts. Version 3 still needs the small budget guard, route wiring, and
 regression tests proving budget exhaustion, slot release, timeout release, and
 log redaction.
+
+### Enforce the first route-class worker budgets
+
+OSMAP now enforces the first small worker-budget slice for slow synchronous
+request occupancy. `OSMAP_SEARCH_WORKER_BUDGET` protects message search,
+including all-visible-mailbox search, and `OSMAP_MAILBOX_WORKER_BUDGET`
+protects browser message view. Both budgets are fail-fast counters inside the
+global `OSMAP_HTTP_MAX_CONCURRENT_CONNECTIONS` cap.
+
+When a budget is exhausted, the browser receives a generic `503 Service
+Unavailable` with `Retry-After`; operators receive bounded
+`request_budget_exhausted` audit events with budget name, route class, active
+count, configured limit, request id, remote address, user agent, and canonical
+username after session validation. Tests cover search saturation, login
+remaining available while search is saturated, message-view release after a
+timeout-like backend failure, guard release on panic, zero and over-cap
+configuration rejection, and budget log redaction.
+
+The remaining worker-budget work is to extend the model to send and auth paths
+and add true route-deadline propagation instead of relying only on lower-level
+command/helper timeouts.

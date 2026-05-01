@@ -159,12 +159,12 @@ unsupported charset fallback behavior. The browser routes now also cap rendered
 mailbox links, search-result rows, and attachment metadata rows even if an
 upstream gateway hands them over-limit collections.
 
-Slow synchronous request occupancy is now tracked as a Version 3 design item in
-`REQUEST_WORKER_BUDGET_MODEL.md`. The current implementation still relies on
-the global concurrent connection cap plus lower-level parser, helper, and
-command timeouts; it does not yet have independent per-route worker budgets.
-The next hardening pass should implement the smallest useful budget guard for
-expensive mailbox, search, send, and auth routes, then add route-level tests
-that prove cheap routes keep working while expensive budgets are saturated.
-Adjacent controls such as nginx request limits, PF, and host monitoring remain
-part of the credible DoS posture.
+Slow synchronous request occupancy is tracked in
+`REQUEST_WORKER_BUDGET_MODEL.md`. The current implementation now has the first
+independent route-class worker budgets for authenticated message search and
+message view, in addition to the global concurrent connection cap and
+lower-level parser, helper, and command timeouts. Budget exhaustion fails fast
+with `503 Service Unavailable`, `Retry-After`, and bounded audit events. The
+next hardening pass should extend the same model to send and auth paths and add
+true route-deadline propagation. Adjacent controls such as nginx request
+limits, PF, and host monitoring remain part of the credible DoS posture.

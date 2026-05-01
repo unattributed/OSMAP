@@ -19,17 +19,19 @@
   browser posture, not a broad production launch.
 - The implementation now has a bounded browser slice with login, mailbox read,
   message view, compose, send, CSRF handling, and attachment download, and it
-  now uses bounded concurrent request handling with an explicit connection cap,
-  but it still does not provide a mature worker pool, async runtime, or a
-  complete denial-of-service mitigation story
+  now uses bounded concurrent request handling with an explicit connection cap
+  plus first route-class worker budgets for message search and message view,
+  but it still does not provide a mature worker pool, async runtime, send/auth
+  route budgets, route-deadline propagation, or a complete denial-of-service
+  mitigation story
 - The current HTTP runtime now has clearer connection-pressure, write-failure,
   and accept-failure observability, but it still depends on adjacent controls
   and does not yet provide a complete request-resource exhaustion strategy
 - Runtime auth, mailbox, and sendmail command execution now has a shared
   timeout-enforced executor with a bounded environment and explicit stdout and
   stderr byte caps. It still depends on the synchronous request model, so very
-  slow but under-limit backend commands remain bounded by timeout rather than a
-  separate worker-pool budget.
+  slow but under-limit backend commands remain bounded by timeout and the first
+  search/message-view route budgets rather than a full worker-pool budget.
 - The implementation now has a bounded message-view fetch path, plus
   MIME-aware classification and attachment metadata surfacing, but it does not
   yet provide preview-oriented attachment behavior

@@ -18,6 +18,7 @@ mod routes_settings;
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use crate::attachment::{
     AttachmentDownloadDecision, AttachmentDownloadPolicy, AttachmentDownloadPublicFailureReason,
@@ -28,9 +29,7 @@ use crate::auth::{
     DoveadmAuthTestBackend, PublicFailureReason, RequiredSecondFactor, SecondFactorService,
     SystemCommandExecutor,
 };
-#[cfg(test)]
-use crate::config::LogLevel;
-use crate::config::{AppConfig, RuntimeEnvironment};
+use crate::config::{AppConfig, LogLevel, RuntimeEnvironment};
 use crate::http_form::{parse_compose_form, parse_urlencoded_form};
 use crate::http_parse::{
     allows_urlencoded_request_body, build_session_cookie, clear_session_cookie,
@@ -125,6 +124,15 @@ pub const DEFAULT_HTTP_WRITE_TIMEOUT_SECS: u64 = 5;
 /// Conservative bound for concurrently handled HTTP connections.
 pub const DEFAULT_HTTP_MAX_CONCURRENT_CONNECTIONS: usize = 16;
 
+/// Conservative bound for expensive authenticated mailbox worker occupancy.
+pub const DEFAULT_MAILBOX_WORKER_BUDGET: usize = 8;
+
+/// Conservative bound for expensive authenticated search worker occupancy.
+pub const DEFAULT_SEARCH_WORKER_BUDGET: usize = 4;
+
+/// Short retry hint for fail-fast route-class budget exhaustion.
+pub const DEFAULT_REQUEST_BUDGET_RETRY_AFTER_SECS: u64 = 1;
+
 /// The fixed cookie name used by the current browser session slice.
 pub const DEFAULT_SESSION_COOKIE_NAME: &str = "osmap_session";
 
@@ -143,6 +151,9 @@ pub struct HttpPolicy {
     pub read_timeout_secs: u64,
     pub write_timeout_secs: u64,
     pub max_concurrent_connections: usize,
+    pub mailbox_worker_budget: usize,
+    pub search_worker_budget: usize,
+    pub request_budget_retry_after_secs: u64,
     pub authentication_policy: AuthenticationPolicy,
 }
 
@@ -162,6 +173,9 @@ impl HttpPolicy {
             read_timeout_secs: DEFAULT_HTTP_READ_TIMEOUT_SECS,
             write_timeout_secs: DEFAULT_HTTP_WRITE_TIMEOUT_SECS,
             max_concurrent_connections: config.http_max_concurrent_connections as usize,
+            mailbox_worker_budget: config.mailbox_worker_budget as usize,
+            search_worker_budget: config.search_worker_budget as usize,
+            request_budget_retry_after_secs: DEFAULT_REQUEST_BUDGET_RETRY_AFTER_SECS,
             authentication_policy: AuthenticationPolicy {
                 required_second_factor: RequiredSecondFactor::Totp,
                 ..AuthenticationPolicy::default()
@@ -185,6 +199,9 @@ impl Default for HttpPolicy {
             read_timeout_secs: DEFAULT_HTTP_READ_TIMEOUT_SECS,
             write_timeout_secs: DEFAULT_HTTP_WRITE_TIMEOUT_SECS,
             max_concurrent_connections: DEFAULT_HTTP_MAX_CONCURRENT_CONNECTIONS,
+            mailbox_worker_budget: DEFAULT_MAILBOX_WORKER_BUDGET,
+            search_worker_budget: DEFAULT_SEARCH_WORKER_BUDGET,
+            request_budget_retry_after_secs: DEFAULT_REQUEST_BUDGET_RETRY_AFTER_SECS,
             authentication_policy: AuthenticationPolicy::default(),
         }
     }
@@ -301,6 +318,100 @@ pub struct HandledHttpResponse {
     pub audit_events: Vec<LogEvent>,
 }
 
+/// Shared fail-fast budgets for expensive authenticated route classes.
+#[derive(Debug)]
+struct RequestBudgets {
+    mailbox_workers: RequestBudget,
+    search_workers: RequestBudget,
+}
+
+impl RequestBudgets {
+    fn from_policy(policy: &HttpPolicy) -> Self {
+        Self {
+            mailbox_workers: RequestBudget::new("mailbox_workers", policy.mailbox_worker_budget),
+            search_workers: RequestBudget::new("search_workers", policy.search_worker_budget),
+        }
+    }
+}
+
+/// One atomic route-class budget.
+#[derive(Debug)]
+struct RequestBudget {
+    name: &'static str,
+    limit: usize,
+    active: AtomicUsize,
+}
+
+impl RequestBudget {
+    fn new(name: &'static str, limit: usize) -> Self {
+        Self {
+            name,
+            limit,
+            active: AtomicUsize::new(0),
+        }
+    }
+
+    fn try_acquire(&self) -> Option<RequestBudgetGuard<'_>> {
+        let mut active = self.active.load(Ordering::SeqCst);
+        loop {
+            if active >= self.limit {
+                return None;
+            }
+            match self.active.compare_exchange(
+                active,
+                active + 1,
+                Ordering::SeqCst,
+                Ordering::SeqCst,
+            ) {
+                Ok(_) => {
+                    return Some(RequestBudgetGuard {
+                        budget: self,
+                        released: false,
+                    });
+                }
+                Err(observed) => active = observed,
+            }
+        }
+    }
+
+    fn active_count(&self) -> usize {
+        self.active.load(Ordering::SeqCst)
+    }
+}
+
+/// RAII guard that releases a budget slot on normal return or unwind.
+#[derive(Debug)]
+struct RequestBudgetGuard<'a> {
+    budget: &'a RequestBudget,
+    released: bool,
+}
+
+impl RequestBudgetGuard<'_> {
+    fn active_count(&self) -> usize {
+        self.budget.active_count()
+    }
+
+    fn limit(&self) -> usize {
+        self.budget.limit
+    }
+
+    fn release(mut self) -> usize {
+        self.released = true;
+        self.budget
+            .active
+            .fetch_sub(1, Ordering::SeqCst)
+            .saturating_sub(1)
+    }
+}
+
+impl Drop for RequestBudgetGuard<'_> {
+    fn drop(&mut self) {
+        if !self.released {
+            self.budget.active.fetch_sub(1, Ordering::SeqCst);
+        }
+    }
+}
+
 /// Errors raised while parsing or reading an inbound HTTP request.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum HttpRequestErrorKind {
@@ -321,18 +432,169 @@ pub struct HttpRequestError {
 pub struct BrowserApp<G> {
     policy: HttpPolicy,
     gateway: G,
+    request_budgets: RequestBudgets,
 }
 
 impl<G> BrowserApp<G> {
     /// Creates a browser app from the supplied policy and gateway.
     pub fn new(policy: HttpPolicy, gateway: G) -> Self {
-        Self { policy, gateway }
+        let request_budgets = RequestBudgets::from_policy(&policy);
+        Self {
+            policy,
+            gateway,
+            request_budgets,
+        }
     }
 
     /// Returns the current request-reading limits.
     pub fn policy(&self) -> &HttpPolicy {
         &self.policy
     }
+
+    fn acquire_search_budget(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+    ) -> Result<(RequestBudgetGuard<'_>, LogEvent), HandledHttpResponse> {
+        self.acquire_request_budget(
+            &self.request_budgets.search_workers,
+            "message_search",
+            context,
+            validated_session,
+        )
+    }
+
+    fn acquire_mailbox_budget(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        route_class: &'static str,
+    ) -> Result<(RequestBudgetGuard<'_>, LogEvent), HandledHttpResponse> {
+        self.acquire_request_budget(
+            &self.request_budgets.mailbox_workers,
+            route_class,
+            context,
+            validated_session,
+        )
+    }
+
+    fn acquire_request_budget<'a>(
+        &self,
+        budget: &'a RequestBudget,
+        route_class: &'static str,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+    ) -> Result<(RequestBudgetGuard<'a>, LogEvent), HandledHttpResponse> {
+        match budget.try_acquire() {
+            Some(guard) => {
+                let active = guard.active_count();
+                let limit = guard.limit();
+                Ok((
+                    guard,
+                    request_budget_event(
+                        LogLevel::Info,
+                        "request_budget_acquired",
+                        "request worker budget slot acquired",
+                        RequestBudgetEventContext {
+                            budget_name: budget.name,
+                            route_class,
+                            active,
+                            limit,
+                            context,
+                            validated_session: Some(validated_session),
+                        },
+                    ),
+                ))
+            }
+            None => {
+                let active = budget.active_count();
+                let limit = budget.limit;
+                let response = html_response(
+                    503,
+                    "Service Unavailable",
+                    "Request Capacity Reached",
+                    "<p>This request class is temporarily busy. Please retry shortly.</p>",
+                )
+                .with_header(
+                    "Retry-After",
+                    self.policy.request_budget_retry_after_secs.to_string(),
+                );
+                Err(HandledHttpResponse {
+                    response,
+                    audit_events: vec![request_budget_event(
+                        LogLevel::Warn,
+                        "request_budget_exhausted",
+                        "request worker budget exhausted",
+                        RequestBudgetEventContext {
+                            budget_name: budget.name,
+                            route_class,
+                            active,
+                            limit,
+                            context,
+                            validated_session: Some(validated_session),
+                        },
+                    )],
+                })
+            }
+        }
+    }
+
+    fn release_request_budget(
+        &self,
+        guard: RequestBudgetGuard<'_>,
+        route_class: &'static str,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+    ) -> LogEvent {
+        let budget_name = guard.budget.name;
+        let limit = guard.limit();
+        let active = guard.release();
+        request_budget_event(
+            LogLevel::Info,
+            "request_budget_released",
+            "request worker budget slot released",
+            RequestBudgetEventContext {
+                budget_name,
+                route_class,
+                active,
+                limit,
+                context,
+                validated_session: Some(validated_session),
+            },
+        )
+    }
+}
+
+struct RequestBudgetEventContext<'a> {
+    budget_name: &'static str,
+    route_class: &'static str,
+    active: usize,
+    limit: usize,
+    context: &'a AuthenticationContext,
+    validated_session: Option<&'a ValidatedSession>,
+}
+
+fn request_budget_event(
+    level: LogLevel,
+    action: &'static str,
+    message: &'static str,
+    budget_context: RequestBudgetEventContext<'_>,
+) -> LogEvent {
+    let mut event = LogEvent::new(level, crate::logging::EventCategory::Http, action, message)
+        .with_field("budget_name", budget_context.budget_name)
+        .with_field("route_class", budget_context.route_class)
+        .with_field("active", budget_context.active.to_string())
+        .with_field("limit", budget_context.limit.to_string())
+        .with_field("request_id", budget_context.context.request_id.clone())
+        .with_field("remote_addr", budget_context.context.remote_addr.clone())
+        .with_field("user_agent", budget_context.context.user_agent.clone());
+    if let Some(validated_session) = budget_context.validated_session {
+        event = event.with_field(
+            "canonical_username",
+            validated_session.record.canonical_username.clone(),
+        );
+    }
+    event
 }
 
 pub use self::http_browser::{
@@ -1150,6 +1412,10 @@ mod tests {
         BrowserApp::new(HttpPolicy::default(), StubGateway)
     }
 
+    fn app_with_policy(policy: HttpPolicy) -> BrowserApp<StubGateway> {
+        BrowserApp::new(policy, StubGateway)
+    }
+
     fn request(method: &str, path: &str, headers: &[(&str, &str)], body: &str) -> HttpRequest {
         request_bytes(method, path, headers, body.as_bytes())
     }
@@ -1616,6 +1882,99 @@ mod tests {
     }
 
     #[test]
+    fn search_budget_exhaustion_returns_retry_after_without_blocking_login() {
+        let policy = HttpPolicy {
+            search_worker_budget: 1,
+            ..HttpPolicy::default()
+        };
+        let app = app_with_policy(policy);
+        let held_budget = app
+            .request_budgets
+            .search_workers
+            .try_acquire()
+            .expect("test should hold the only search slot");
+
+        let response = app.handle_request(
+            &request(
+                "GET",
+                "/search?mailbox=INBOX&q=quarterly+report",
+                &authenticated_headers(),
+                "",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 503);
+        assert!(response
+            .response
+            .headers
+            .iter()
+            .any(|(name, value)| name == "Retry-After" && value == "1"));
+        assert!(response.audit_events.iter().any(|event| event.action
+            == "request_budget_exhausted"
+            && event
+                .fields
+                .iter()
+                .any(|field| field.key == "budget_name" && field.value == "search_workers")));
+
+        let login_response = app.handle_request(
+            &request("GET", "/login", &[("User-Agent", "Firefox/Test")], ""),
+            "127.0.0.1",
+        );
+        assert_eq!(login_response.response.status_code, 200);
+
+        drop(held_budget);
+        let response_after_release = app.handle_request(
+            &request(
+                "GET",
+                "/search?mailbox=INBOX&q=quarterly+report",
+                &authenticated_headers(),
+                "",
+            ),
+            "127.0.0.1",
+        );
+        assert_eq!(response_after_release.response.status_code, 200);
+    }
+
+    #[test]
+    fn search_budget_events_do_not_log_bearer_or_csrf_tokens() {
+        let policy = HttpPolicy {
+            search_worker_budget: 1,
+            ..HttpPolicy::default()
+        };
+        let app = app_with_policy(policy);
+        let _held_budget = app
+            .request_budgets
+            .search_workers
+            .try_acquire()
+            .expect("test should hold the only search slot");
+
+        let response = app.handle_request(
+            &request(
+                "GET",
+                "/search?mailbox=INBOX&q=quarterly+report",
+                &authenticated_headers(),
+                "",
+            ),
+            "127.0.0.1",
+        );
+        let logger = Logger::new(crate::config::LogFormat::Text, LogLevel::Debug);
+        let rendered_events = response
+            .audit_events
+            .iter()
+            .map(|event| logger.render_with_timestamp(event, 1000))
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        assert!(!rendered_events
+            .contains("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+        assert!(!rendered_events
+            .contains("fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"));
+        assert!(rendered_events.contains("request_budget_exhausted"));
+        assert!(rendered_events.contains("canonical_username=\"alice@example.com\""));
+    }
+
+    #[test]
     fn search_page_rejects_missing_query() {
         let response = app().handle_request(
             &request(
@@ -1816,6 +2175,58 @@ mod tests {
         assert!(body.contains(
             "including <strong>1</strong> with Content-ID metadata used by `cid:` HTML references"
         ));
+    }
+
+    #[test]
+    fn mailbox_budget_releases_after_message_view_timeout_like_failure() {
+        let policy = HttpPolicy {
+            mailbox_worker_budget: 1,
+            ..HttpPolicy::default()
+        };
+        let app = app_with_policy(policy);
+
+        let response = app.handle_request(
+            &request(
+                "GET",
+                "/message?mailbox=INBOX&uid=900",
+                &authenticated_headers(),
+                "",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 503);
+        assert_eq!(app.request_budgets.mailbox_workers.active_count(), 0);
+        assert!(response
+            .audit_events
+            .iter()
+            .any(|event| event.action == "request_budget_released"));
+
+        let response_after_failure = app.handle_request(
+            &request(
+                "GET",
+                "/message?mailbox=INBOX&uid=9",
+                &authenticated_headers(),
+                "",
+            ),
+            "127.0.0.1",
+        );
+        assert_eq!(response_after_failure.response.status_code, 200);
+    }
+
+    #[test]
+    fn request_budget_guard_releases_on_panic() {
+        let budget = RequestBudget::new("panic_test_workers", 1);
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let _guard = budget
+                .try_acquire()
+                .expect("test should acquire the budget slot");
+            panic!("simulated route panic");
+        }));
+
+        assert!(result.is_err());
+        assert_eq!(budget.active_count(), 0);
+        assert!(budget.try_acquire().is_some());
     }
 
     #[test]

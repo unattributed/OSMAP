@@ -37,6 +37,8 @@ pub struct AppConfig {
     pub log_format: LogFormat,
     pub state_layout: StateLayout,
     pub http_max_concurrent_connections: u64,
+    pub mailbox_worker_budget: u64,
+    pub search_worker_budget: u64,
     pub session_lifetime_seconds: u64,
     pub session_idle_timeout_seconds: u64,
     pub totp_allowed_skew_steps: i64,
@@ -238,6 +240,8 @@ impl AppConfig {
         let log_format_value = read_value(env_map, "OSMAP_LOG_FORMAT", "text");
         let http_max_concurrent_connections_value =
             read_value(env_map, "OSMAP_HTTP_MAX_CONCURRENT_CONNECTIONS", "16");
+        let mailbox_worker_budget_value = read_value(env_map, "OSMAP_MAILBOX_WORKER_BUDGET", "8");
+        let search_worker_budget_value = read_value(env_map, "OSMAP_SEARCH_WORKER_BUDGET", "4");
         let session_lifetime_value = read_value(env_map, "OSMAP_SESSION_LIFETIME_SECS", "43200");
         let session_idle_timeout_value = read_value(
             env_map,
@@ -354,6 +358,8 @@ impl AppConfig {
             "OSMAP_HTTP_MAX_CONCURRENT_CONNECTIONS",
             &http_max_concurrent_connections_value,
         )?;
+        validate_non_empty("OSMAP_MAILBOX_WORKER_BUDGET", &mailbox_worker_budget_value)?;
+        validate_non_empty("OSMAP_SEARCH_WORKER_BUDGET", &search_worker_budget_value)?;
         validate_non_empty("OSMAP_SESSION_LIFETIME_SECS", &session_lifetime_value)?;
         validate_non_empty(
             "OSMAP_SESSION_IDLE_TIMEOUT_SECS",
@@ -422,6 +428,10 @@ impl AppConfig {
             "OSMAP_HTTP_MAX_CONCURRENT_CONNECTIONS",
             &http_max_concurrent_connections_value,
         )?;
+        let mailbox_worker_budget =
+            parse_u64("OSMAP_MAILBOX_WORKER_BUDGET", &mailbox_worker_budget_value)?;
+        let search_worker_budget =
+            parse_u64("OSMAP_SEARCH_WORKER_BUDGET", &search_worker_budget_value)?;
         let openbsd_confinement_mode =
             OpenbsdConfinementMode::parse(&openbsd_confinement_mode_value)?;
         let session_lifetime_seconds =
@@ -482,6 +492,18 @@ impl AppConfig {
         )?;
         validate_positive_u64(
             "OSMAP_HTTP_MAX_CONCURRENT_CONNECTIONS",
+            http_max_concurrent_connections,
+        )?;
+        validate_positive_u64("OSMAP_MAILBOX_WORKER_BUDGET", mailbox_worker_budget)?;
+        validate_positive_u64("OSMAP_SEARCH_WORKER_BUDGET", search_worker_budget)?;
+        validate_budget_not_above_connection_cap(
+            "OSMAP_MAILBOX_WORKER_BUDGET",
+            mailbox_worker_budget,
+            http_max_concurrent_connections,
+        )?;
+        validate_budget_not_above_connection_cap(
+            "OSMAP_SEARCH_WORKER_BUDGET",
+            search_worker_budget,
             http_max_concurrent_connections,
         )?;
         validate_positive_u64("OSMAP_SESSION_LIFETIME_SECS", session_lifetime_seconds)?;
@@ -571,6 +593,8 @@ impl AppConfig {
             state_root,
             state_layout,
             http_max_concurrent_connections,
+            mailbox_worker_budget,
+            search_worker_budget,
             session_lifetime_seconds,
             session_idle_timeout_seconds,
             totp_allowed_skew_steps,
@@ -750,6 +774,22 @@ fn validate_positive_u64(field: &'static str, value: u64) -> Result<(), Bootstra
     Ok(())
 }
 
+/// Keeps per-route worker budgets inside the global connection cap.
+fn validate_budget_not_above_connection_cap(
+    field: &'static str,
+    value: u64,
+    http_max_concurrent_connections: u64,
+) -> Result<(), BootstrapError> {
+    if value > http_max_concurrent_connections {
+        return Err(BootstrapError::InvalidConfig {
+            field,
+            reason: "value must not exceed OSMAP_HTTP_MAX_CONCURRENT_CONNECTIONS".to_string(),
+        });
+    }
+
+    Ok(())
+}
+
 /// Rejects empty configuration values so later phases do not inherit silent
 /// fallback behavior around important runtime paths.
 fn validate_non_empty(field: &'static str, value: &str) -> Result<(), BootstrapError> {
@@ -826,6 +866,8 @@ mod tests {
         assert_eq!(config.log_level, LogLevel::Info);
         assert_eq!(config.log_format, LogFormat::Text);
         assert_eq!(config.http_max_concurrent_connections, 16);
+        assert_eq!(config.mailbox_worker_budget, 8);
+        assert_eq!(config.search_worker_budget, 4);
         assert_eq!(config.session_lifetime_seconds, 43200);
         assert_eq!(
             config.session_idle_timeout_seconds,
@@ -881,6 +923,8 @@ mod tests {
                 "OSMAP_HTTP_MAX_CONCURRENT_CONNECTIONS".to_string(),
                 "24".to_string(),
             ),
+            ("OSMAP_MAILBOX_WORKER_BUDGET".to_string(), "12".to_string()),
+            ("OSMAP_SEARCH_WORKER_BUDGET".to_string(), "5".to_string()),
             (
                 "OSMAP_SESSION_LIFETIME_SECS".to_string(),
                 "3600".to_string(),
@@ -1000,6 +1044,8 @@ mod tests {
         assert_eq!(config.log_level, LogLevel::Debug);
         assert_eq!(config.log_format, LogFormat::Text);
         assert_eq!(config.http_max_concurrent_connections, 24);
+        assert_eq!(config.mailbox_worker_budget, 12);
+        assert_eq!(config.search_worker_budget, 5);
         assert_eq!(config.session_lifetime_seconds, 3600);
         assert_eq!(config.session_idle_timeout_seconds, 900);
         assert_eq!(config.totp_allowed_skew_steps, 2);
@@ -1120,6 +1166,53 @@ mod tests {
                 reason: "value must be greater than zero".to_string(),
             }
         );
+    }
+
+    #[test]
+    fn rejects_zero_worker_budgets() {
+        for field in ["OSMAP_MAILBOX_WORKER_BUDGET", "OSMAP_SEARCH_WORKER_BUDGET"] {
+            let env_map = BTreeMap::from([(field.to_string(), "0".to_string())]);
+
+            let error =
+                AppConfig::from_env_map(&env_map).expect_err("zero-valued budget must fail");
+
+            assert_eq!(
+                error,
+                BootstrapError::InvalidConfig {
+                    field,
+                    reason: "value must be greater than zero".to_string(),
+                }
+            );
+        }
+    }
+
+    #[test]
+    fn rejects_worker_budgets_above_connection_cap() {
+        for (field, companion_field) in [
+            ("OSMAP_MAILBOX_WORKER_BUDGET", "OSMAP_SEARCH_WORKER_BUDGET"),
+            ("OSMAP_SEARCH_WORKER_BUDGET", "OSMAP_MAILBOX_WORKER_BUDGET"),
+        ] {
+            let env_map = BTreeMap::from([
+                (
+                    "OSMAP_HTTP_MAX_CONCURRENT_CONNECTIONS".to_string(),
+                    "2".to_string(),
+                ),
+                (field.to_string(), "3".to_string()),
+                (companion_field.to_string(), "2".to_string()),
+            ]);
+
+            let error = AppConfig::from_env_map(&env_map)
+                .expect_err("budget above connection cap must fail");
+
+            assert_eq!(
+                error,
+                BootstrapError::InvalidConfig {
+                    field,
+                    reason: "value must not exceed OSMAP_HTTP_MAX_CONCURRENT_CONNECTIONS"
+                        .to_string(),
+                }
+            );
+        }
     }
 
     #[test]

@@ -2,18 +2,18 @@
 
 ## Purpose
 
-This document records the Version 3 design direction for slow synchronous
-request occupancy. It is a design baseline, not an implementation claim.
+This document records the Version 3 design direction and first implementation
+slice for slow synchronous request occupancy.
 
 OSMAP already has a bounded concurrent connection cap, request read/write
 timeouts, external command timeouts, helper I/O limits, parser limits, and
 route-level rendered collection caps. Those controls bound many obvious
-resource paths, but they do not yet distinguish cheap requests from expensive
-authenticated mailbox, search, MIME, attachment, or send work once a request
-has entered a worker thread.
+resource paths. The first worker-budget slice now also distinguishes cheap
+routes from expensive authenticated message-search and message-view work once a
+request has entered a worker thread.
 
-The next runtime hardening step should add explicit work budgets without
-rewriting the server around a broad async stack.
+Future slices should extend the same model without rewriting the server around
+a broad async stack.
 
 ## Current Runtime Shape
 
@@ -28,11 +28,14 @@ The current serve runtime:
 - enforces read and write timeouts around socket I/O
 - enforces external process timeouts and output caps for auth, `doveadm`, and
   sendmail command boundaries
+- enforces `OSMAP_SEARCH_WORKER_BUDGET` around message search and
+  all-visible-mailbox search
+- enforces `OSMAP_MAILBOX_WORKER_BUDGET` around browser message view
 
-This is simple and auditable. The weakness is that the connection cap is the
-only live occupancy budget. A small number of slow authenticated operations can
-consume all request workers until their individual timeout or backend limit
-fires.
+This is simple and auditable. The remaining weakness is that only search and
+message view have route-class budgets today. Other expensive authenticated
+operations can still consume global request workers until their individual
+timeout, throttle, parser, helper, or backend limit fires.
 
 ## Design Goals
 
@@ -60,24 +63,24 @@ This design does not require:
 
 ## Proposed Budget Dimensions
 
-Start with a small set of independent semaphores or counters inside the
-runtime gateway layer:
+Use a small set of independent fail-fast counters inside the browser runtime:
 
 | Budget | Applies to | Initial direction |
 | --- | --- | --- |
 | connection slots | accepted TCP connections | existing `OSMAP_HTTP_MAX_CONCURRENT_CONNECTIONS` |
-| authenticated mailbox workers | mailbox list, message list, message view, attachment download, move | lower than connection slots |
-| search workers | mailbox search and all-visible-mailboxes search | lower than mailbox workers; all-mailbox search should consume one search slot for the whole aggregate request |
+| authenticated mailbox workers | first slice: message view; later: mailbox list, message list, attachment download, move | lower than connection slots |
+| search workers | mailbox search and all-visible-mailboxes search | implemented; lower than mailbox workers; all-mailbox search consumes one search slot for the whole aggregate request |
 | send workers | compose submission through sendmail | lower than connection slots and still submission-throttled |
 | auth workers | password/TOTP login path reaching external auth | low, with existing login throttles still first line of defense |
 
-The first implementation should prefer fail-fast admission over internal
-queues. When a budget is exhausted, return `503 Service Unavailable` with a
-short `Retry-After` and an audit event such as `request_budget_exhausted`.
+The first implementation uses fail-fast admission instead of internal queues.
+When a budget is exhausted, it returns `503 Service Unavailable` with a short
+`Retry-After` and an audit event such as `request_budget_exhausted`.
 
 ## Deadline Propagation
 
-Each admitted expensive operation should carry a request budget deadline in
+The current slice does not add a separate route deadline yet. Each admitted
+expensive operation should eventually carry a request budget deadline in
 addition to existing lower-level timeouts.
 
 The deadline should:
@@ -110,40 +113,55 @@ diagnostics.
 
 ## Configuration
 
-Keep the first configuration small:
+The first implemented configuration is:
 
 - `OSMAP_HTTP_MAX_CONCURRENT_CONNECTIONS`
 - `OSMAP_MAILBOX_WORKER_BUDGET`
 - `OSMAP_SEARCH_WORKER_BUDGET`
+
+Each value rejects zero, defaults conservatively when absent, and the route
+budgets must not exceed the connection cap.
+
+Planned later configuration:
+
 - `OSMAP_SEND_WORKER_BUDGET`
 - `OSMAP_AUTH_WORKER_BUDGET`
 - `OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS`
-
-Each value should reject zero and should default conservatively when absent.
-Budgets should not silently exceed the connection cap unless that is explicitly
-documented and tested.
 
 ## Required Tests
 
 The implementation gate should include tests for:
 
-- cheap routes still working while an expensive budget is full
-- mailbox budget exhaustion returning `503` and releasing after completion
-- search budget exhaustion across all-mailbox search
+- cheap routes still working while an expensive budget is full; implemented for
+  login while search is saturated
+- mailbox budget exhaustion returning `503` and releasing after completion;
+  implemented for message-view failure and success retry
+- search budget exhaustion returning `503` with `Retry-After`; implemented for
+  the shared search budget
 - send budget exhaustion without bypassing submission throttles
 - auth budget exhaustion without leaking which credential stage would have run
-- budget guard release on backend error
-- budget guard release on timeout
-- budget guard release on worker panic
+- budget guard release on backend error; partially implemented through
+  message-view unavailable regression
+- budget guard release on timeout; still pending as a separate route-deadline
+  implementation
+- budget guard release on worker panic; implemented for the shared guard
 - no session id, bearer token, CSRF token, password, TOTP code, message body, or
-  attachment body in budget logs
+  attachment body in budget logs; implemented for search-budget events
 
 ## Rollout Plan
 
 1. Add a small budget guard type and unit tests independent of HTTP routes.
+   Done for the shared atomic guard.
 2. Wire the guard to the runtime gateway around expensive route classes.
+   Done for message search and message view.
 3. Add route tests for exhausted budgets and release behavior.
+   Done for search exhaustion, cheap-route availability, message-view release,
+   panic release, and log redaction.
 4. Add config parsing with zero-value rejection.
+   Done for mailbox and search budgets, including connection-cap validation.
 5. Add operator docs and live-safe validation for one budget exhaustion path.
-6. Only then consider a deeper worker-pool or async design if evidence shows
+   Partially done; continue with live-safe validation evidence.
+6. Extend the guard to send and auth route classes, then add request-deadline
+   propagation.
+7. Only then consider a deeper worker-pool or async design if evidence shows
    the small budget model is not enough.

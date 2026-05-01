@@ -579,6 +579,16 @@ where
                 Ok(result) => result,
                 Err(response) => return response,
             };
+        let (budget_guard, budget_event) =
+            match self.acquire_search_budget(context, &validated_session) {
+                Ok(result) => result,
+                Err(mut response) => {
+                    audit_events.extend(response.audit_events);
+                    response.audit_events = audit_events;
+                    return response;
+                }
+            };
+        audit_events.push(budget_event);
 
         let outcome = self.gateway.search_messages(
             context,
@@ -588,7 +598,7 @@ where
         );
         audit_events.extend(outcome.audit_events);
 
-        match outcome.decision {
+        let mut handled = match outcome.decision {
             BrowserMessageSearchDecision::Listed {
                 canonical_username,
                 mailbox_name,
@@ -630,7 +640,14 @@ where
                     audit_events,
                 }
             }
-        }
+        };
+        handled.audit_events.push(self.release_request_budget(
+            budget_guard,
+            "message_search",
+            context,
+            &validated_session,
+        ));
+        handled
     }
 
     /// Handles per-message view requests for the validated browser session.
@@ -685,13 +702,23 @@ where
                 Ok(result) => result,
                 Err(response) => return response,
             };
+        let (budget_guard, budget_event) =
+            match self.acquire_mailbox_budget(context, &validated_session, "message_view") {
+                Ok(result) => result,
+                Err(mut response) => {
+                    audit_events.extend(response.audit_events);
+                    response.audit_events = audit_events;
+                    return response;
+                }
+            };
+        audit_events.push(budget_event);
 
         let outcome = self
             .gateway
             .view_message(context, &validated_session, &mailbox_name, uid);
         audit_events.extend(outcome.audit_events);
 
-        match outcome.decision {
+        let mut handled = match outcome.decision {
             BrowserMessageViewDecision::Rendered {
                 canonical_username,
                 rendered,
@@ -762,7 +789,14 @@ where
                 },
                 audit_events,
             },
-        }
+        };
+        handled.audit_events.push(self.release_request_budget(
+            budget_guard,
+            "message_view",
+            context,
+            &validated_session,
+        ));
+        handled
     }
 
     /// Handles one session-gated attachment download request.

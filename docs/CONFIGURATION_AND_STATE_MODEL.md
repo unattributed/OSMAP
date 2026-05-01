@@ -41,6 +41,8 @@ The early runtime recognizes:
 - `OSMAP_LOG_LEVEL`
 - `OSMAP_LOG_FORMAT`
 - `OSMAP_HTTP_MAX_CONCURRENT_CONNECTIONS`
+- `OSMAP_MAILBOX_WORKER_BUDGET`
+- `OSMAP_SEARCH_WORKER_BUDGET`
 - `OSMAP_SESSION_LIFETIME_SECS`
 - `OSMAP_SESSION_IDLE_TIMEOUT_SECS`
 - `OSMAP_TOTP_ALLOWED_SKEW_STEPS`
@@ -117,6 +119,22 @@ The runtime now also recognizes one explicit HTTP concurrency setting:
 That setting bounds the number of in-flight HTTP connections the browser
 runtime will handle concurrently before it returns `503 Service Unavailable`
 with `Retry-After`.
+
+The runtime now also recognizes the first explicit authenticated route-class
+worker budgets:
+
+- `OSMAP_MAILBOX_WORKER_BUDGET`
+- `OSMAP_SEARCH_WORKER_BUDGET`
+
+Those settings bound expensive message-view and message-search occupancy inside
+the global HTTP connection cap. They must be greater than zero and must not
+exceed `OSMAP_HTTP_MAX_CONCURRENT_CONNECTIONS`. When a route-class budget is
+full, the browser runtime fails fast with `503 Service Unavailable`,
+`Retry-After`, and a bounded audit event that records the budget name, route
+class, active count, configured limit, request id, effective remote address,
+user agent, and canonical username after session validation. The budget events
+must not include bearer tokens, CSRF tokens, passwords, TOTP codes, message
+bodies, attachment bytes, or backend command detail.
 
 The runtime now also recognizes explicit login-throttle settings for the
 browser authentication path:

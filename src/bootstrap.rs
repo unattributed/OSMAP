@@ -29,6 +29,8 @@ pub struct BootstrapReport {
     pub log_level: String,
     pub log_format: String,
     pub http_max_concurrent_connections: String,
+    pub mailbox_worker_budget: String,
+    pub search_worker_budget: String,
     pub session_lifetime_seconds: String,
     pub session_idle_timeout_seconds: String,
     pub totp_allowed_skew_steps: String,
@@ -92,6 +94,8 @@ impl BootstrapReport {
             "http_max_concurrent_connections",
             self.http_max_concurrent_connections.clone(),
         )
+        .with_field("mailbox_worker_budget", self.mailbox_worker_budget.clone())
+        .with_field("search_worker_budget", self.search_worker_budget.clone())
         .with_field(
             "session_lifetime_seconds",
             self.session_lifetime_seconds.clone(),
@@ -213,6 +217,8 @@ fn report_from_config(config: &AppConfig) -> BootstrapReport {
         log_level: config.log_level.as_str().to_string(),
         log_format: config.log_format.as_str().to_string(),
         http_max_concurrent_connections: config.http_max_concurrent_connections.to_string(),
+        mailbox_worker_budget: config.mailbox_worker_budget.to_string(),
+        search_worker_budget: config.search_worker_budget.to_string(),
         session_lifetime_seconds: config.session_lifetime_seconds.to_string(),
         session_idle_timeout_seconds: config.session_idle_timeout_seconds.to_string(),
         totp_allowed_skew_steps: config.totp_allowed_skew_steps.to_string(),
@@ -281,6 +287,8 @@ mod tests {
             )
             .expect("layout should be valid"),
             http_max_concurrent_connections: 16,
+            mailbox_worker_budget: 8,
+            search_worker_budget: 4,
             session_lifetime_seconds: 43200,
             session_idle_timeout_seconds: 1800,
             totp_allowed_skew_steps: 1,
@@ -378,6 +386,14 @@ mod tests {
                 crate::logging::LogField {
                     key: "http_max_concurrent_connections",
                     value: "16".to_string(),
+                },
+                crate::logging::LogField {
+                    key: "mailbox_worker_budget",
+                    value: "8".to_string(),
+                },
+                crate::logging::LogField {
+                    key: "search_worker_budget",
+                    value: "4".to_string(),
                 },
                 crate::logging::LogField {
                     key: "session_lifetime_seconds",
