@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: security-check-${{ github.workflow }}-${{ github.ref }}
+  group: security-check-${{ github.workflow }}-${{ github.sha }}
   cancel-in-progress: false
 
 jobs:
