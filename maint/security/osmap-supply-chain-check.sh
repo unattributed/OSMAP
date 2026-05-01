@@ -72,7 +72,7 @@ echo "==> cargo deny bans, licenses, and sources"
 cargo deny --locked check bans licenses sources
 
 echo "==> cargo tree duplicate-version backstop"
-duplicates=$(cargo tree -d --locked 2>&1 || true)
+duplicates=$(cargo tree -d --locked --color never 2>&1 || true)
 if printf '%s\n' "$duplicates" | grep -Fq 'warning: nothing to print.'; then
 	echo "no duplicate dependency versions found"
 else
