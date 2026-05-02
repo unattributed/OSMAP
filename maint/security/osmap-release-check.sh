@@ -29,6 +29,7 @@ fi
 : "${OSMAP_RELEASE_WSTG_SUMMARY_PATH:=$OSMAP_RELEASE_EVIDENCE_DIR/osmap-wstg-release-summary.json}"
 : "${OSMAP_RELEASE_V2_CARRY_FORWARD_EVIDENCE:=maint/live/latest-host-v2-readiness-report.txt maint/live/latest-host-v2-readiness-service-guard-report.txt docs/V2_PILOT_STATUS.md docs/V2_PILOT_CLOSEOUT.md}"
 : "${OSMAP_RELEASE_HOST_READINESS_EVIDENCE:=maint/live/latest-host-v2-readiness-report.txt maint/live/latest-host-edge-cutover-report.txt maint/live/latest-host-internet-exposure-report.txt maint/live/latest-host-service-enablement-report.txt}"
+: "${OSMAP_RELEASE_TLS_EDGE_EVIDENCE:=maint/live/osmap-v3-tls-cbc-cleanup-evidence-2026-05-02.txt}"
 : "${OSMAP_RELEASE_SUPPLY_CHAIN_COMMAND:=sh maint/security/osmap-supply-chain-check.sh}"
 
 mkdir -p "$TMPDIR" "$CARGO_HOME" "$CARGO_TARGET_DIR" "$OSMAP_RELEASE_EVIDENCE_DIR"
@@ -54,6 +55,8 @@ authenticated_wstg_status="missing"
 sanitized_archive_status="missing"
 v2_checked=""
 host_checked=""
+tls_checked=""
+tls_cbc_status="missing"
 
 add_skip() {
 	if [ -z "$skipped_checks" ]; then
@@ -140,6 +143,7 @@ write_summary() {
 	skips_json=$(json_array "$skipped_checks")
 	v2_json=$(json_array "$v2_checked")
 	host_json=$(json_array "$host_checked")
+	tls_json=$(json_array "$tls_checked")
 	cat > "$OSMAP_RELEASE_SUMMARY_JSON" <<EOF
 {
   "assessed_ref": $(json_string "$assessed_ref"),
@@ -161,6 +165,8 @@ write_summary() {
   "authenticated_wstg_status": $(json_string "$authenticated_wstg_status"),
   "v2_carry_forward_evidence_files_checked": $v2_json,
   "host_readiness_evidence_files_checked": $host_json,
+  "tls_cbc_status": $(json_string "$tls_cbc_status"),
+  "tls_edge_evidence_files_checked": $tls_json,
   "skipped_checks": $skips_json,
   "sanitized_evidence_archive_path": $(json_string "$OSMAP_RELEASE_SANITIZED_ARCHIVE_PATH"),
   "sanitized_evidence_archive_status": $(json_string "$sanitized_archive_status")
@@ -182,6 +188,7 @@ EOF
 - Dependency inventory: \`$dependency_inventory_result\` at \`$OSMAP_RELEASE_DEPENDENCY_INVENTORY_PATH\`
 - WSTG summary: \`$wstg_result\` at \`$OSMAP_RELEASE_WSTG_SUMMARY_PATH\`
 - Authenticated WSTG: \`$authenticated_wstg_status\`
+- TLS CBC cleanup: \`$tls_cbc_status\`
 - Sanitized evidence archive: \`$sanitized_archive_status\` at \`$OSMAP_RELEASE_SANITIZED_ARCHIVE_PATH\`
 - Skipped checks: \`$(printf '%s' "$skipped_checks" | tr '\n' '; ')\`
 
@@ -192,6 +199,10 @@ $(printf '%s\n' "$v2_checked" | sed '/^$/d; s/^/- `/' | sed 's/$/`/')
 ## Host-Readiness Evidence
 
 $(printf '%s\n' "$host_checked" | sed '/^$/d; s/^/- `/' | sed 's/$/`/')
+
+## TLS Edge Evidence
+
+$(printf '%s\n' "$tls_checked" | sed '/^$/d; s/^/- `/' | sed 's/$/`/')
 EOF
 }
 
@@ -336,6 +347,13 @@ fi
 echo "==> validating required release evidence"
 v2_checked=$(check_path_list "V2 carry-forward" "$OSMAP_RELEASE_V2_CARRY_FORWARD_EVIDENCE")
 host_checked=$(check_path_list "host-readiness" "$OSMAP_RELEASE_HOST_READINESS_EVIDENCE")
+tls_failures_before=$failures
+tls_checked=$(check_path_list "TLS edge" "$OSMAP_RELEASE_TLS_EDGE_EVIDENCE")
+if [ -n "$tls_checked" ] && [ "$failures" -eq "$tls_failures_before" ]; then
+	tls_cbc_status="passed"
+else
+	tls_cbc_status="missing"
+fi
 validate_wstg_summary || true
 
 if [ "$failures" -eq 0 ]; then
@@ -348,6 +366,7 @@ if [ "$failures" -eq 0 ]; then
 		"$OSMAP_RELEASE_DEPENDENCY_INVENTORY_PATH" \
 		$OSMAP_RELEASE_V2_CARRY_FORWARD_EVIDENCE \
 		$OSMAP_RELEASE_HOST_READINESS_EVIDENCE \
+		$OSMAP_RELEASE_TLS_EDGE_EVIDENCE \
 		"$OSMAP_RELEASE_WSTG_SUMMARY_PATH"; then
 		sanitized_archive_status="passed"
 		write_summary
@@ -357,6 +376,7 @@ if [ "$failures" -eq 0 ]; then
 			"$OSMAP_RELEASE_DEPENDENCY_INVENTORY_PATH" \
 			$OSMAP_RELEASE_V2_CARRY_FORWARD_EVIDENCE \
 			$OSMAP_RELEASE_HOST_READINESS_EVIDENCE \
+			$OSMAP_RELEASE_TLS_EDGE_EVIDENCE \
 			"$OSMAP_RELEASE_WSTG_SUMMARY_PATH"; then
 			sanitized_archive_status="failed"
 			fail "sanitized evidence archive generation failed after final summary"

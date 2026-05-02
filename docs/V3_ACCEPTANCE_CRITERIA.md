@@ -27,13 +27,14 @@ Before any Version 3 feature is treated as complete:
 
 Developer validation may report skipped phases clearly.
 
-Release-mode validation must fail when a required phase is skipped. This includes skipped Cargo validation, skipped supply-chain validation, missing host-readiness evidence, missing V2 carry-forward evidence, missing V3 feature-gate evidence, and skipped authenticated WSTG or other security tests when the test requires credential and TOTP coverage.
+Release-mode validation must fail when a required phase is skipped. This includes skipped Cargo validation, skipped supply-chain validation, missing host-readiness evidence, missing V2 carry-forward evidence, missing TLS edge evidence, missing V3 feature-gate evidence, and skipped authenticated WSTG or other security tests when the test requires credential and TOTP coverage.
 
 For WSTG and other security tests that require authenticated coverage, evidence must show that the real browser credential and TOTP path was exercised. The evidence may use a dedicated validation account with stored test secrets in a local uncommitted `.env`, or a human-prompted flow such as `--prompt-auth --auth-email`. The evidence must not commit plaintext passwords, reusable TOTP seeds, active session cookies, private message bodies, or private attachment content.
 
 The release evidence summary is written to
 `maint/live/osmap-v3-release-evidence-summary.json` and
-`maint/live/osmap-v3-release-evidence-summary.md`. Release mode must record an
+`maint/live/osmap-v3-release-evidence-summary.md`. It must include the checked
+TLS edge evidence path and TLS CBC cleanup status. Release mode must record an
 empty `skipped_checks` array before it can pass.
 
 ## Feature Admission Rule

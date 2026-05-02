@@ -135,13 +135,15 @@ make_evidence() {
 	host_a="$case_dir/edge.txt"
 	host_b="$case_dir/exposure.txt"
 	host_c="$case_dir/service.txt"
+	tls="$case_dir/tls-cbc-cleanup.txt"
 	wstg="$case_dir/wstg-summary.json"
-	for path in "$v2_a" "$v2_b" "$host_a" "$host_b" "$host_c"; do
+	for path in "$v2_a" "$v2_b" "$host_a" "$host_b" "$host_c" "$tls"; do
 		printf '%s\n' "sanitized fixture evidence for $(basename "$path")" > "$path"
 	done
 	make_wstg_summary "$wstg" pass
 	printf '%s\n' "$v2_a $v2_b"
 	printf '%s\n' "$host_a $host_b $host_c"
+	printf '%s\n' "$tls"
 	printf '%s\n' "$wstg"
 }
 
@@ -154,7 +156,8 @@ run_release_case() {
 	evidence="$(make_evidence "$case_dir")"
 	v2_paths=$(printf '%s\n' "$evidence" | sed -n '1p')
 	host_paths=$(printf '%s\n' "$evidence" | sed -n '2p')
-	wstg_path=$(printf '%s\n' "$evidence" | sed -n '3p')
+	tls_paths=$(printf '%s\n' "$evidence" | sed -n '3p')
+	wstg_path=$(printf '%s\n' "$evidence" | sed -n '4p')
 	env \
 		PATH="$stub_dir:$PATH" \
 		OSMAP_SECURITY_PROFILE=release \
@@ -166,6 +169,7 @@ run_release_case() {
 		OSMAP_RELEASE_WSTG_SUMMARY_PATH="$wstg_path" \
 		OSMAP_RELEASE_V2_CARRY_FORWARD_EVIDENCE="$v2_paths" \
 		OSMAP_RELEASE_HOST_READINESS_EVIDENCE="$host_paths" \
+		OSMAP_RELEASE_TLS_EDGE_EVIDENCE="$tls_paths" \
 		OSMAP_RELEASE_SUPPLY_CHAIN_COMMAND=true \
 		"$@" \
 		sh "$release_check" > "$case_dir/output.txt" 2>&1
@@ -191,6 +195,7 @@ make_stubs "$skip_case/bin"
 evidence="$(make_evidence "$skip_case")"
 skip_v2=$(printf '%s\n' "$evidence" | sed -n '1p')
 skip_host=$(printf '%s\n' "$evidence" | sed -n '2p')
+skip_tls=$(printf '%s\n' "$evidence" | sed -n '3p')
 skip_wstg="$skip_case/wstg-summary.json"
 make_wstg_summary "$skip_wstg" skip-auth
 if env \
@@ -204,6 +209,7 @@ if env \
 	OSMAP_RELEASE_WSTG_SUMMARY_PATH="$skip_wstg" \
 	OSMAP_RELEASE_V2_CARRY_FORWARD_EVIDENCE="$skip_v2" \
 	OSMAP_RELEASE_HOST_READINESS_EVIDENCE="$skip_host" \
+	OSMAP_RELEASE_TLS_EDGE_EVIDENCE="$skip_tls" \
 	OSMAP_RELEASE_SUPPLY_CHAIN_COMMAND=true \
 	sh "$release_check" > "$skip_case/output.txt" 2>&1; then
 	echo "expected authenticated WSTG skip to fail release mode" >&2
@@ -215,7 +221,8 @@ mkdir -p "$host_case/bin"
 make_stubs "$host_case/bin"
 evidence="$(make_evidence "$host_case")"
 host_v2=$(printf '%s\n' "$evidence" | sed -n '1p')
-host_wstg=$(printf '%s\n' "$evidence" | sed -n '3p')
+host_tls=$(printf '%s\n' "$evidence" | sed -n '3p')
+host_wstg=$(printf '%s\n' "$evidence" | sed -n '4p')
 if env \
 	PATH="$host_case/bin:$PATH" \
 	OSMAP_SECURITY_PROFILE=release \
@@ -227,11 +234,38 @@ if env \
 	OSMAP_RELEASE_WSTG_SUMMARY_PATH="$host_wstg" \
 	OSMAP_RELEASE_V2_CARRY_FORWARD_EVIDENCE="$host_v2" \
 	OSMAP_RELEASE_HOST_READINESS_EVIDENCE="$host_case/missing-host.txt" \
+	OSMAP_RELEASE_TLS_EDGE_EVIDENCE="$host_tls" \
 	OSMAP_RELEASE_SUPPLY_CHAIN_COMMAND=true \
 	sh "$release_check" > "$host_case/output.txt" 2>&1; then
 	echo "expected missing host-readiness evidence to fail release mode" >&2
 	exit 1
 fi
+
+tls_case="$tmp_root/missing-tls"
+mkdir -p "$tls_case/bin"
+make_stubs "$tls_case/bin"
+evidence="$(make_evidence "$tls_case")"
+tls_v2=$(printf '%s\n' "$evidence" | sed -n '1p')
+tls_host=$(printf '%s\n' "$evidence" | sed -n '2p')
+tls_wstg=$(printf '%s\n' "$evidence" | sed -n '4p')
+if env \
+	PATH="$tls_case/bin:$PATH" \
+	OSMAP_SECURITY_PROFILE=release \
+	OSMAP_RELEASE_EVIDENCE_DIR="$tls_case" \
+	OSMAP_RELEASE_DEPENDENCY_INVENTORY_PATH="$tls_case/dependency-inventory.txt" \
+	OSMAP_RELEASE_SUMMARY_JSON="$tls_case/summary.json" \
+	OSMAP_RELEASE_SUMMARY_MD="$tls_case/summary.md" \
+	OSMAP_RELEASE_SANITIZED_ARCHIVE_PATH="$tls_case/evidence.tar.gz" \
+	OSMAP_RELEASE_WSTG_SUMMARY_PATH="$tls_wstg" \
+	OSMAP_RELEASE_V2_CARRY_FORWARD_EVIDENCE="$tls_v2" \
+	OSMAP_RELEASE_HOST_READINESS_EVIDENCE="$tls_host" \
+	OSMAP_RELEASE_TLS_EDGE_EVIDENCE="$tls_case/missing-tls-evidence.txt" \
+	OSMAP_RELEASE_SUPPLY_CHAIN_COMMAND=true \
+	sh "$release_check" > "$tls_case/output.txt" 2>&1; then
+	echo "expected missing TLS edge evidence to fail release mode" >&2
+	exit 1
+fi
+grep -Fq "missing TLS edge evidence" "$tls_case/output.txt"
 
 success_case="$tmp_root/success"
 if ! run_release_case success; then
@@ -246,6 +280,10 @@ test -s "$success_case/evidence.tar.gz"
 grep -Fq '"skipped_checks": []' "$success_case/summary.json"
 grep -Fq '"authenticated_wstg_status": "passed"' "$success_case/summary.json"
 grep -Fq '"dependency_inventory_status": "passed"' "$success_case/summary.json"
+grep -Fq '"tls_cbc_status": "passed"' "$success_case/summary.json"
+grep -Fq '"tls_edge_evidence_files_checked": [' "$success_case/summary.json"
+grep -Fq 'TLS CBC cleanup: `passed`' "$success_case/summary.md"
+tar -tzf "$success_case/evidence.tar.gz" | grep -Fq "tls-cbc-cleanup.txt"
 
 developer_case="$tmp_root/developer"
 developer_bin="$tmp_root/developer-bin"

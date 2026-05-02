@@ -40,6 +40,7 @@ The release profile currently requires pinned versions of `rustc`, `cargo`,
 test, clippy, formatting, and supply-chain phases; generates
 `cargo tree --locked --all-features` dependency inventory evidence; validates
 release-mode WSTG evidence; checks V2 carry-forward and host-readiness evidence;
+requires archived TLS edge evidence proving the TLS CBC disposition;
 and writes `maint/live/osmap-v3-release-evidence-summary.json`,
 `maint/live/osmap-v3-release-evidence-summary.md`, and
 `maint/live/osmap-v3-release-evidence.tar.gz`.
@@ -51,6 +52,7 @@ Release mode must fail on:
 - missing dependency inventory or SBOM evidence required by the release profile
 - missing host-readiness evidence for the intended deployment host
 - missing V2 carry-forward evidence
+- missing TLS CBC cleanup or exception evidence for the intended public edge
 - missing V3 feature-gate evidence
 - skipped authenticated WSTG tests when the mapped test requires credential and TOTP coverage
 - skipped security tests outside WSTG when those tests require credential and TOTP coverage
