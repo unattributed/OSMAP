@@ -175,6 +175,7 @@ pub struct DoveadmMessageViewBackend<E> {
     command_executor: E,
     doveadm_path: PathBuf,
     userdb_socket_path: Option<PathBuf>,
+    command_timeout_secs: u64,
 }
 
 impl<E> DoveadmMessageViewBackend<E> {
@@ -189,12 +190,19 @@ impl<E> DoveadmMessageViewBackend<E> {
             command_executor,
             doveadm_path: doveadm_path.into(),
             userdb_socket_path: None,
+            command_timeout_secs: DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS,
         }
     }
 
     /// Points message-view lookups at an explicit Dovecot userdb-capable socket.
     pub fn with_userdb_socket_path(mut self, userdb_socket_path: Option<PathBuf>) -> Self {
         self.userdb_socket_path = userdb_socket_path;
+        self
+    }
+
+    /// Caps the external `doveadm fetch` execution used for one message view.
+    pub fn with_command_timeout_secs(mut self, timeout_secs: u64) -> Self {
+        self.command_timeout_secs = timeout_secs.max(1);
         self
     }
 }
@@ -240,7 +248,7 @@ where
                 self.doveadm_path.to_string_lossy().as_ref(),
                 &args,
                 "",
-                Duration::from_secs(DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS),
+                Duration::from_secs(self.command_timeout_secs),
             )
             .map_err(|error| MailboxBackendError {
                 backend: "doveadm-message-view",
@@ -258,6 +266,7 @@ pub struct DoveadmMessageSearchBackend<E> {
     command_executor: E,
     doveadm_path: PathBuf,
     userdb_socket_path: Option<PathBuf>,
+    command_timeout_secs: u64,
 }
 
 impl<E> DoveadmMessageSearchBackend<E> {
@@ -272,12 +281,19 @@ impl<E> DoveadmMessageSearchBackend<E> {
             command_executor,
             doveadm_path: doveadm_path.into(),
             userdb_socket_path: None,
+            command_timeout_secs: DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS,
         }
     }
 
     /// Points message-search lookups at an explicit Dovecot userdb-capable socket.
     pub fn with_userdb_socket_path(mut self, userdb_socket_path: Option<PathBuf>) -> Self {
         self.userdb_socket_path = userdb_socket_path;
+        self
+    }
+
+    /// Caps each mailbox-scoped external search command.
+    pub fn with_command_timeout_secs(mut self, timeout_secs: u64) -> Self {
+        self.command_timeout_secs = timeout_secs.max(1);
         self
     }
 }
@@ -323,7 +339,7 @@ where
                 self.doveadm_path.to_string_lossy().as_ref(),
                 &args,
                 "",
-                Duration::from_secs(DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS),
+                Duration::from_secs(self.command_timeout_secs),
             )
             .map_err(|error| MailboxBackendError {
                 backend: "doveadm-message-search",
@@ -339,6 +355,7 @@ pub struct DoveadmMessageMoveBackend<E> {
     command_executor: E,
     doveadm_path: PathBuf,
     userdb_socket_path: Option<PathBuf>,
+    command_timeout_secs: u64,
 }
 
 impl<E> DoveadmMessageMoveBackend<E> {
@@ -348,6 +365,7 @@ impl<E> DoveadmMessageMoveBackend<E> {
             command_executor,
             doveadm_path: doveadm_path.into(),
             userdb_socket_path: None,
+            command_timeout_secs: DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS,
         }
     }
 
@@ -355,6 +373,12 @@ impl<E> DoveadmMessageMoveBackend<E> {
     /// socket.
     pub fn with_userdb_socket_path(mut self, userdb_socket_path: Option<PathBuf>) -> Self {
         self.userdb_socket_path = userdb_socket_path;
+        self
+    }
+
+    /// Caps the external `doveadm move` execution for one move request.
+    pub fn with_command_timeout_secs(mut self, timeout_secs: u64) -> Self {
+        self.command_timeout_secs = timeout_secs.max(1);
         self
     }
 }
@@ -394,7 +418,7 @@ where
                 self.doveadm_path.to_string_lossy().as_ref(),
                 &args,
                 "",
-                Duration::from_secs(DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS),
+                Duration::from_secs(self.command_timeout_secs),
             )
             .map_err(|error| MailboxBackendError {
                 backend: "doveadm-message-move",

@@ -58,6 +58,26 @@ adoption will increase route concurrency. The release gate needs evidence
 that expensive routes fail boundedly under pressure rather than stretching
 unboundedly behind authenticated browser actions.
 
+### Finish the current expensive-route resource-control slice
+
+The next bounded-resource gap was not a new user feature. It was the remaining
+expensive browser routes that still reached helper or `doveadm` work without
+their own route-class admission proof: message move, attachment download,
+reply/forward source loading, and all-mailbox search fanout.
+
+OSMAP now wraps those routes with the same explicit route budgets used by the
+earlier V3 resource-control work. Message move, attachment download, and
+compose source loading consume mailbox-worker slots. All-mailbox search
+continues to consume one search-worker slot for the aggregate request and now
+has an explicit fanout deadline while it walks visible mailboxes.
+
+The runtime also propagates the expensive-route timeout into helper-backed
+move and attachment work plus direct `doveadm` search, view, and move command
+timeouts. The evidence file records focused tests for budget exhaustion,
+fanout-deadline logging, and command-timeout propagation without logging
+private queries, message bodies, attachment bytes, session cookies, CSRF
+tokens, passwords, or TOTP material.
+
 ## 2026-04-29
 
 ### Polish the V3 browser UI without widening the browser trust boundary

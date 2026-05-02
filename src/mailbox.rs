@@ -81,6 +81,7 @@ mod tests {
     use std::fs;
     use std::path::{Path, PathBuf};
     use std::rc::Rc;
+    use std::time::Duration;
 
     struct AcceptingPrimaryBackend;
 
@@ -137,6 +138,7 @@ mod tests {
         execution: Result<CommandExecution, CommandExecutionError>,
         program: Option<String>,
         args: Option<Vec<String>>,
+        timeout_secs: Option<u64>,
     }
 
     impl StubCommandExecutor {
@@ -145,6 +147,7 @@ mod tests {
                 execution: Ok(execution),
                 program: None,
                 args: None,
+                timeout_secs: None,
             }
         }
     }
@@ -160,6 +163,19 @@ mod tests {
             state.program = Some(program.to_string());
             state.args = Some(args.to_vec());
             state.execution.clone()
+        }
+
+        fn run_with_stdin_bytes_timeout(
+            &self,
+            program: &str,
+            args: &[String],
+            stdin_data: &[u8],
+            timeout: Duration,
+        ) -> Result<CommandExecution, CommandExecutionError> {
+            let mut state = self.borrow_mut();
+            state.timeout_secs = Some(timeout.as_secs());
+            drop(state);
+            self.run_with_stdin_bytes(program, args, stdin_data)
         }
     }
 
@@ -527,7 +543,8 @@ mod tests {
             MessageViewPolicy::default(),
             executor.clone(),
             "/usr/local/bin/doveadm",
-        );
+        )
+        .with_command_timeout_secs(4);
         let request = MessageViewRequest::new(MessageViewPolicy::default(), "INBOX", 9)
             .expect("request should be valid");
 
@@ -562,6 +579,7 @@ mod tests {
                 "9".to_string(),
             ]
         );
+        assert_eq!(recorded.timeout_secs, Some(4));
     }
 
     #[test]
@@ -581,7 +599,8 @@ mod tests {
             MessageSearchPolicy::default(),
             executor.clone(),
             "/usr/local/bin/doveadm",
-        );
+        )
+        .with_command_timeout_secs(5);
         let request =
             MessageSearchRequest::new(MessageSearchPolicy::default(), "INBOX", "quarterly report")
                 .expect("request should be valid");
@@ -617,6 +636,7 @@ mod tests {
                 "quarterly report".to_string(),
             ]
         );
+        assert_eq!(recorded.timeout_secs, Some(5));
     }
 
     #[test]
@@ -629,7 +649,8 @@ mod tests {
             },
         )));
         let backend = DoveadmMessageMoveBackend::new(executor.clone(), "/usr/local/bin/doveadm")
-            .with_userdb_socket_path(Some(PathBuf::from("/var/run/osmap-userdb")));
+            .with_userdb_socket_path(Some(PathBuf::from("/var/run/osmap-userdb")))
+            .with_command_timeout_secs(3);
         let request =
             MessageMoveRequest::new(MessageMovePolicy::default(), "INBOX", "Archive/2026", 9)
                 .expect("request should be valid");
@@ -656,6 +677,7 @@ mod tests {
                 "9".to_string(),
             ]
         );
+        assert_eq!(recorded.timeout_secs, Some(3));
     }
 
     #[test]

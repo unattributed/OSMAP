@@ -35,10 +35,30 @@ where
 
         match compose_source_from_request(request) {
             Ok(Some((intent, mailbox_name, uid))) => {
+                let (budget_guard, budget_event) = match self.acquire_mailbox_budget(
+                    context,
+                    &validated_session,
+                    "compose_source",
+                ) {
+                    Ok(result) => result,
+                    Err(mut response) => {
+                        audit_events.extend(response.audit_events);
+                        response.audit_events = audit_events;
+                        return response;
+                    }
+                };
+                audit_events.push(budget_event);
+
                 let outcome =
                     self.gateway
                         .view_message(context, &validated_session, &mailbox_name, uid);
                 audit_events.extend(outcome.audit_events);
+                audit_events.push(self.release_request_budget(
+                    budget_guard,
+                    "compose_source",
+                    context,
+                    &validated_session,
+                ));
 
                 match outcome.decision {
                     BrowserMessageViewDecision::Rendered { rendered, .. } => {
@@ -49,6 +69,14 @@ where
                         ) {
                             Ok(draft) => draft,
                             Err(error) => {
+                                audit_events.push(
+                                    build_http_warning_event(
+                                        "compose_draft_failed",
+                                        "compose draft generation failed",
+                                        context,
+                                    )
+                                    .with_field("reason", error.reason),
+                                );
                                 return HandledHttpResponse {
                                     response: html_response(
                                         503,
@@ -56,12 +84,7 @@ where
                                         "Compose Unavailable",
                                         "<p>The compose draft could not be prepared safely.</p>",
                                     ),
-                                    audit_events: vec![build_http_warning_event(
-                                        "compose_draft_failed",
-                                        "compose draft generation failed",
-                                        context,
-                                    )
-                                    .with_field("reason", error.reason)],
+                                    audit_events,
                                 };
                             }
                         };

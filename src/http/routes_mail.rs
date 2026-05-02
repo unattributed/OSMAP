@@ -311,6 +311,17 @@ where
             }
         };
 
+        let (budget_guard, budget_event) =
+            match self.acquire_mailbox_budget(context, &validated_session, "message_move") {
+                Ok(result) => result,
+                Err(mut response) => {
+                    audit_events.extend(response.audit_events);
+                    response.audit_events = audit_events;
+                    return response;
+                }
+            };
+        audit_events.push(budget_event);
+
         let outcome = self.gateway.move_message(
             context,
             &validated_session,
@@ -320,7 +331,7 @@ where
         );
         audit_events.extend(outcome.audit_events);
 
-        match outcome.decision {
+        let mut handled = match outcome.decision {
             BrowserMessageMoveDecision::Moved {
                 source_mailbox_name,
                 destination_mailbox_name,
@@ -370,7 +381,14 @@ where
                     audit_events,
                 }
             }
-        }
+        };
+        handled.audit_events.push(self.release_request_budget(
+            budget_guard,
+            "message_move",
+            context,
+            &validated_session,
+        ));
+        handled
     }
 
     /// Handles a bounded CSRF-bound selected-message archive request.
@@ -870,6 +888,17 @@ where
                 Err(response) => return response,
             };
 
+        let (budget_guard, budget_event) =
+            match self.acquire_mailbox_budget(context, &validated_session, "attachment_download") {
+                Ok(result) => result,
+                Err(mut response) => {
+                    audit_events.extend(response.audit_events);
+                    response.audit_events = audit_events;
+                    return response;
+                }
+            };
+        audit_events.push(budget_event);
+
         let outcome = self.gateway.download_attachment(
             context,
             &validated_session,
@@ -879,7 +908,7 @@ where
         );
         audit_events.extend(outcome.audit_events);
 
-        match outcome.decision {
+        let mut handled = match outcome.decision {
             BrowserAttachmentDownloadDecision::Downloaded { attachment, .. } => {
                 HandledHttpResponse {
                     response: attachment_download_response(&attachment),
@@ -910,7 +939,14 @@ where
                     audit_events,
                 }
             }
-        }
+        };
+        handled.audit_events.push(self.release_request_budget(
+            budget_guard,
+            "attachment_download",
+            context,
+            &validated_session,
+        ));
+        handled
     }
 }
 

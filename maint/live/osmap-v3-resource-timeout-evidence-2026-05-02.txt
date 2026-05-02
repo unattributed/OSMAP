@@ -1,7 +1,7 @@
 OSMAP V3 resource and timeout hardening evidence
 ================================================
 
-assessed_at_utc=2026-05-02T04:10:00Z
+assessed_at_utc=2026-05-02T13:07:00Z
 assessed_host=local safe fixture plus repo unit tests
 assessed_ref=tracked in the commit that adds this evidence; release summaries record the exact assessed ref
 secret_review=No private keys, passwords, TOTP material, cookies, mailbox bodies, attachment contents, provider tokens, or host secrets are included in this evidence.
@@ -17,9 +17,21 @@ This evidence covers the first V3 resource and timeout proof slice:
 - route-level deadline propagation into helper-backed search/view policy
 - route-class search budget exhaustion and cheap-route availability
 - route-class mailbox budget release after a message-view backend failure
+- route-class mailbox budget exhaustion for compose reply/forward source
+  loading
+- route-class mailbox budget exhaustion for message move
+- route-class mailbox budget exhaustion for attachment download
+- route-class search budget exhaustion for all-mailbox search fanout
 - route-class send budget exhaustion after session and CSRF validation
 - route-class auth budget exhaustion without session or credential-stage leakage
-- route-level command timeout propagation for sendmail and external auth
+- aggregate all-mailbox search fanout deadline detection and redacted deadline
+  audit evidence
+- per-mailbox all-mailbox-search backend construction with the remaining
+  aggregate route deadline
+- route-level command timeout propagation for direct `doveadm` message
+  search/view/move, sendmail, and external auth
+- route-level helper timeout propagation for helper-backed message
+  search/view/move and attachment download
 - bounded public failure rendering for oversized message-view output
 - HTTP read timeout behavior
 - external command timeout behavior
@@ -46,11 +58,47 @@ Result:
 - config::tests::rejects_zero_worker_budgets ... ok
 - config::tests::rejects_worker_budgets_above_connection_cap ... ok
 - http::tests::search_budget_exhaustion_returns_retry_after_without_blocking_login ... ok
+- http::tests::all_mailbox_search_fanout_uses_search_budget ... ok
+- http::tests::compose_source_loading_uses_mailbox_budget ... ok
+- http::tests::message_move_uses_mailbox_budget ... ok
+- http::tests::attachment_download_uses_mailbox_budget ... ok
 - http::tests::auth_budget_exhaustion_returns_retry_after_without_running_login ... ok
 - http::tests::send_budget_exhaustion_returns_retry_after_after_session_validation ... ok
 - http::tests::search_budget_events_do_not_log_bearer_or_csrf_tokens ... ok
 - http::tests::mailbox_budget_releases_after_message_view_timeout_like_failure ... ok
 - http::tests::request_budget_guard_releases_on_panic ... ok
+
+cargo test all_mailbox_search -- --nocapture
+
+Result:
+
+- http::http_gateway::http_gateway_mail::tests::all_mailbox_search_deadline_detects_expired_budget ... ok
+- http::http_gateway::http_gateway_mail::tests::all_mailbox_search_deadline_reports_remaining_whole_seconds ... ok
+- http::http_gateway::http_gateway_mail::tests::all_mailbox_search_deadline_event_omits_private_search_inputs ... ok
+- http::tests::all_mailbox_search_fanout_uses_search_budget ... ok
+
+cargo test mailbox_budget -- --nocapture
+
+Result:
+
+- http::tests::attachment_download_uses_mailbox_budget ... ok
+- http::tests::message_move_uses_mailbox_budget ... ok
+- http::tests::compose_source_loading_uses_mailbox_budget ... ok
+- http::tests::mailbox_budget_releases_after_message_view_timeout_like_failure ... ok
+
+cargo test doveadm_flow_output -- --nocapture
+
+Result:
+
+- mailbox::tests::parses_message_view_from_doveadm_flow_output ... ok
+- mailbox::tests::parses_message_search_results_from_doveadm_flow_output ... ok
+- mailbox::tests::parses_message_summaries_from_doveadm_flow_output ... ok
+
+cargo test message_move_uses_doveadm -- --nocapture
+
+Result:
+
+- mailbox::tests::message_move_uses_doveadm_move_command_shape ... ok
 
 cargo test expensive_route_helper_policy -- --nocapture
 
@@ -87,13 +135,15 @@ if the configured resource-timeout evidence is missing or empty.
 Remaining V3 work
 -----------------
 
-This closes the first evidence path for helper-backed mailbox/search/message
-view timeout behavior and bounded failure mapping. Follow-up implementation now
-propagates `OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS` into helper-backed message
-search and message view, sendmail-backed compose submission, and external-auth
-login. Unit tests prove the helper policy does not exceed the route cap, keeps
-tighter helper defaults when they are already stricter, records send/auth budget
-exhaustion safely, and caps the sendmail and auth command timeout used by those
-routes. Send and auth route budgets are now implemented; deadline propagation
-for any remaining expensive route classes remains separate V3 resource-control
-work.
+This closes the current evidence path for helper-backed mailbox/search/message
+view timeout behavior, route-class budget exhaustion, command/helper deadline
+propagation, and bounded failure mapping for the expensive browser route
+classes currently in scope. Unit tests prove the helper policy does not exceed
+the route cap, keeps tighter helper defaults when they are already stricter,
+records search/mailbox/send/auth budget exhaustion safely, caps direct
+`doveadm`, sendmail, and auth command timeouts used by those routes, and emits
+redacted all-mailbox fanout deadline evidence.
+
+Future V3 resource-control work should add evidence only when a new expensive
+route class is introduced or a live-host validation identifies a specific
+unbounded failure mode.

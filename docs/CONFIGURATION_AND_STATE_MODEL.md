@@ -129,23 +129,26 @@ worker budgets:
 - `OSMAP_AUTH_WORKER_BUDGET`
 - `OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS`
 
-Those settings bound expensive message-view, message-search, send, and login
-occupancy inside the global HTTP connection cap. They must be greater than zero
-and must not exceed `OSMAP_HTTP_MAX_CONCURRENT_CONNECTIONS`. When a route-class
-budget is full, the browser runtime fails fast with `503 Service Unavailable`,
-`Retry-After`, and a bounded audit event that records the budget name, route
-class, active count, configured limit, request id, effective remote address,
-user agent, and canonical username after session validation. The budget events
-must not include bearer tokens, CSRF tokens, passwords, TOTP codes, message
-bodies, attachment bytes, or backend command detail.
+Those settings bound expensive message-view, compose source loading, message
+move, attachment download, message-search, all-mailbox search fanout, send, and
+login occupancy inside the global HTTP connection cap. They must be greater
+than zero and must not exceed `OSMAP_HTTP_MAX_CONCURRENT_CONNECTIONS`. When a
+route-class budget is full, the browser runtime fails fast with
+`503 Service Unavailable`, `Retry-After`, and a bounded audit event that records
+the budget name, route class, active count, configured limit, request id,
+effective remote address, user agent, and canonical username after session
+validation. The budget events must not include bearer tokens, CSRF tokens,
+passwords, TOTP codes, message bodies, attachment bytes, or backend command
+detail.
 
 `OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS` is the route-level cap used for
-helper-backed message search and message view, sendmail-backed compose
-submission, and the external `doveadm auth test` call in the login path. The
-browser-facing runtime propagates it into the local mailbox-helper client
-policy and the command timeout for send/auth backends, capped so it never
-widens the existing external command timeout. The value must be greater than
-zero and defaults to `5`.
+helper-backed message search, message view, message move, and attachment
+download; direct `doveadm` message search/view/move commands; sendmail-backed
+compose submission; and the external `doveadm auth test` call in the login
+path. The browser-facing runtime propagates it into the local mailbox-helper
+client policy and the relevant command timeout, capped so it never widens the
+existing external command timeout. The value must be greater than zero and
+defaults to `5`.
 
 The runtime now also recognizes explicit login-throttle settings for the
 browser authentication path:

@@ -2,15 +2,29 @@ use super::*;
 
 impl RuntimeBrowserGateway {
     /// Caps helper-backed expensive route work to the browser route deadline.
-    fn expensive_route_helper_policy(&self) -> MailboxHelperPolicy {
+    pub(super) fn expensive_route_helper_policy(&self) -> MailboxHelperPolicy {
+        self.expensive_route_helper_policy_with_timeout(self.expensive_request_timeout_secs)
+    }
+
+    /// Caps helper-backed expensive route work to the supplied route deadline.
+    pub(super) fn expensive_route_helper_policy_with_timeout(
+        &self,
+        timeout_secs: u64,
+    ) -> MailboxHelperPolicy {
         let mut policy = MailboxHelperPolicy::default();
-        policy.read_timeout_secs = policy
-            .read_timeout_secs
-            .min(self.expensive_request_timeout_secs);
-        policy.write_timeout_secs = policy
-            .write_timeout_secs
-            .min(self.expensive_request_timeout_secs);
+        policy.read_timeout_secs = policy.read_timeout_secs.min(timeout_secs.max(1));
+        policy.write_timeout_secs = policy.write_timeout_secs.min(timeout_secs.max(1));
         policy
+    }
+
+    /// Caps direct external mailbox commands to the browser route deadline.
+    fn expensive_route_command_timeout_secs(&self) -> u64 {
+        self.expensive_route_command_timeout_secs_with_timeout(self.expensive_request_timeout_secs)
+    }
+
+    /// Caps direct external mailbox commands to the supplied route deadline.
+    fn expensive_route_command_timeout_secs_with_timeout(&self, timeout_secs: u64) -> u64 {
+        timeout_secs.clamp(1, crate::auth::DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS)
     }
 
     /// Selects the current mailbox-list backend without widening the browser
@@ -56,11 +70,18 @@ impl RuntimeBrowserGateway {
     /// Selects the current message-search backend based on whether the local
     /// mailbox helper is configured for read-path proxying.
     pub(super) fn build_message_search_backend(&self) -> MessageSearchRuntimeBackend {
+        self.build_message_search_backend_with_timeout(self.expensive_request_timeout_secs)
+    }
+
+    pub(super) fn build_message_search_backend_with_timeout(
+        &self,
+        timeout_secs: u64,
+    ) -> MessageSearchRuntimeBackend {
         match &self.mailbox_helper_socket_path {
             Some(socket_path) => {
                 MessageSearchRuntimeBackend::Helper(MailboxHelperMessageSearchBackend::new(
                     socket_path,
-                    self.expensive_route_helper_policy(),
+                    self.expensive_route_helper_policy_with_timeout(timeout_secs),
                     MessageSearchPolicy::default(),
                 ))
             }
@@ -70,7 +91,10 @@ impl RuntimeBrowserGateway {
                     SystemCommandExecutor,
                     self.doveadm_path.clone(),
                 )
-                .with_userdb_socket_path(self.doveadm_userdb_socket_path.clone()),
+                .with_userdb_socket_path(self.doveadm_userdb_socket_path.clone())
+                .with_command_timeout_secs(
+                    self.expensive_route_command_timeout_secs_with_timeout(timeout_secs),
+                ),
             ),
         }
     }
@@ -92,7 +116,8 @@ impl RuntimeBrowserGateway {
                     SystemCommandExecutor,
                     self.doveadm_path.clone(),
                 )
-                .with_userdb_socket_path(self.doveadm_userdb_socket_path.clone()),
+                .with_userdb_socket_path(self.doveadm_userdb_socket_path.clone())
+                .with_command_timeout_secs(self.expensive_route_command_timeout_secs()),
             ),
         }
     }
@@ -101,12 +126,16 @@ impl RuntimeBrowserGateway {
     /// mailbox helper is configured for mailbox-authoritative operations.
     pub(super) fn build_message_move_backend(&self) -> MessageMoveRuntimeBackend {
         match &self.mailbox_helper_socket_path {
-            Some(socket_path) => MessageMoveRuntimeBackend::Helper(
-                MailboxHelperMessageMoveBackend::new(socket_path, MailboxHelperPolicy::default()),
-            ),
+            Some(socket_path) => {
+                MessageMoveRuntimeBackend::Helper(MailboxHelperMessageMoveBackend::new(
+                    socket_path,
+                    self.expensive_route_helper_policy(),
+                ))
+            }
             None => MessageMoveRuntimeBackend::Direct(
                 DoveadmMessageMoveBackend::new(SystemCommandExecutor, self.doveadm_path.clone())
-                    .with_userdb_socket_path(self.doveadm_userdb_socket_path.clone()),
+                    .with_userdb_socket_path(self.doveadm_userdb_socket_path.clone())
+                    .with_command_timeout_secs(self.expensive_route_command_timeout_secs()),
             ),
         }
     }

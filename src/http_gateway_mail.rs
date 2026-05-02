@@ -3,6 +3,7 @@ use super::*;
 use crate::config::LogLevel;
 use crate::logging::EventCategory;
 use crate::mailbox::validate_message_search_query;
+use std::time::{Duration, Instant};
 
 fn mailbox_is_browser_visible(mailbox_name: &str) -> bool {
     matches!(mailbox_name, "INBOX" | "Drafts" | "Junk" | "Sent" | "Trash")
@@ -14,6 +15,43 @@ fn mailbox_list_contains(mailboxes: &[MailboxEntry], mailbox_name: &str) -> bool
 }
 
 impl RuntimeBrowserGateway {
+    fn expensive_route_deadline(&self) -> Instant {
+        Instant::now() + Duration::from_secs(self.expensive_request_timeout_secs)
+    }
+
+    fn expensive_route_deadline_exceeded(deadline: Instant) -> bool {
+        Instant::now() >= deadline
+    }
+
+    fn expensive_route_remaining_timeout_secs(deadline: Instant) -> Option<u64> {
+        let remaining = deadline.checked_duration_since(Instant::now())?;
+        if remaining < Duration::from_secs(1) {
+            None
+        } else {
+            Some(remaining.as_secs())
+        }
+    }
+
+    fn build_message_search_fanout_deadline_event(
+        &self,
+        context: &AuthenticationContext,
+        visible_mailbox_count: usize,
+        searched_mailboxes: usize,
+    ) -> LogEvent {
+        build_http_warning_event(
+            "message_search_fanout_deadline_exceeded",
+            "all-mailbox search fanout exceeded route deadline",
+            context,
+        )
+        .with_field("route_class", "message_search")
+        .with_field(
+            "deadline_seconds",
+            self.expensive_request_timeout_secs.to_string(),
+        )
+        .with_field("visible_mailbox_count", visible_mailbox_count.to_string())
+        .with_field("searched_mailboxes", searched_mailboxes.to_string())
+    }
+
     /// Builds the current file-backed submission-throttle service.
     pub(super) fn build_submission_throttle_service(
         &self,
@@ -210,12 +248,31 @@ impl RuntimeBrowserGateway {
                 }
             };
 
-            let search_service = MessageSearchService::new(self.build_message_search_backend());
-            let mut aggregated_results = Vec::new();
-            for mailbox in mailboxes
+            let visible_mailboxes = mailboxes
                 .into_iter()
                 .filter(|mailbox| mailbox_is_browser_visible(&mailbox.name))
-            {
+                .collect::<Vec<_>>();
+            let visible_mailbox_count = visible_mailboxes.len();
+            let deadline = self.expensive_route_deadline();
+            let mut searched_mailboxes = 0usize;
+            let mut aggregated_results = Vec::new();
+            for mailbox in visible_mailboxes {
+                let Some(remaining_timeout_secs) =
+                    Self::expensive_route_remaining_timeout_secs(deadline)
+                else {
+                    audit_events.push(self.build_message_search_fanout_deadline_event(
+                        context,
+                        visible_mailbox_count,
+                        searched_mailboxes,
+                    ));
+                    return BrowserMessageSearchOutcome {
+                        decision: BrowserMessageSearchDecision::Denied {
+                            public_reason: "temporarily_unavailable".to_string(),
+                        },
+                        audit_events,
+                    };
+                };
+
                 let request =
                     match MessageSearchRequest::new(search_policy, mailbox.name.clone(), &query) {
                         Ok(request) => request,
@@ -236,15 +293,32 @@ impl RuntimeBrowserGateway {
                             };
                         }
                     };
+                let search_service = MessageSearchService::new(
+                    self.build_message_search_backend_with_timeout(remaining_timeout_secs),
+                );
                 let outcome = search_service.search_for_validated_session(
                     context,
                     validated_session,
                     &request,
                 );
                 audit_events.push(outcome.audit_event);
+                searched_mailboxes += 1;
 
                 match outcome.decision {
                     MessageSearchDecision::Listed { results, .. } => {
+                        if Self::expensive_route_deadline_exceeded(deadline) {
+                            audit_events.push(self.build_message_search_fanout_deadline_event(
+                                context,
+                                visible_mailbox_count,
+                                searched_mailboxes,
+                            ));
+                            return BrowserMessageSearchOutcome {
+                                decision: BrowserMessageSearchDecision::Denied {
+                                    public_reason: "temporarily_unavailable".to_string(),
+                                },
+                                audit_events,
+                            };
+                        }
                         let remaining = search_policy
                             .max_results
                             .saturating_sub(aggregated_results.len());
@@ -492,7 +566,7 @@ impl RuntimeBrowserGateway {
         if let Some(socket_path) = &self.mailbox_helper_socket_path {
             let helper_backend = MailboxHelperAttachmentDownloadBackend::new(
                 socket_path,
-                MailboxHelperPolicy::default(),
+                self.expensive_route_helper_policy(),
             );
             let canonical_username = validated_session.record.canonical_username.clone();
 
@@ -900,5 +974,71 @@ impl RuntimeBrowserGateway {
                 audit_events,
             },
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn test_context() -> AuthenticationContext {
+        AuthenticationContext::new(
+            AuthenticationPolicy::default(),
+            "req-fanout-deadline",
+            "127.0.0.1",
+            "Firefox/Test",
+        )
+        .expect("context should be valid")
+    }
+
+    #[test]
+    fn all_mailbox_search_deadline_detects_expired_budget() {
+        let expired = Instant::now() - Duration::from_secs(1);
+
+        assert!(RuntimeBrowserGateway::expensive_route_deadline_exceeded(
+            expired
+        ));
+        assert_eq!(
+            RuntimeBrowserGateway::expensive_route_remaining_timeout_secs(expired),
+            None
+        );
+    }
+
+    #[test]
+    fn all_mailbox_search_deadline_reports_remaining_whole_seconds() {
+        let deadline = Instant::now() + Duration::from_secs(3);
+
+        assert_eq!(
+            RuntimeBrowserGateway::expensive_route_remaining_timeout_secs(deadline),
+            Some(2)
+        );
+    }
+
+    #[test]
+    fn all_mailbox_search_deadline_event_omits_private_search_inputs() {
+        let temp_root = std::env::temp_dir().join(format!(
+            "osmap-search-fanout-deadline-{}",
+            std::process::id()
+        ));
+        let mut gateway = RuntimeBrowserGateway::for_test(&temp_root);
+        gateway.expensive_request_timeout_secs = 3;
+
+        let event = gateway.build_message_search_fanout_deadline_event(&test_context(), 7, 2);
+
+        assert_eq!(event.action, "message_search_fanout_deadline_exceeded");
+        assert!(event
+            .fields
+            .iter()
+            .any(|field| field.key == "route_class" && field.value == "message_search"));
+        assert!(event
+            .fields
+            .iter()
+            .any(|field| field.key == "deadline_seconds" && field.value == "3"));
+        assert!(!event.fields.iter().any(|field| {
+            matches!(
+                field.key,
+                "query" | "mailbox_name" | "session_id" | "csrf_token"
+            )
+        }));
     }
 }

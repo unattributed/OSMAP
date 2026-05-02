@@ -2003,6 +2003,202 @@ mod tests {
     }
 
     #[test]
+    fn all_mailbox_search_fanout_uses_search_budget() {
+        let policy = HttpPolicy {
+            search_worker_budget: 1,
+            ..HttpPolicy::default()
+        };
+        let app = app_with_policy(policy);
+        let held_budget = app
+            .request_budgets
+            .search_workers
+            .try_acquire()
+            .expect("test should hold the only search slot");
+
+        let response = app.handle_request(
+            &request(
+                "GET",
+                "/search?q=quarterly+report",
+                &authenticated_headers(),
+                "",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 503);
+        assert!(response.audit_events.iter().any(|event| {
+            event.action == "request_budget_exhausted"
+                && event
+                    .fields
+                    .iter()
+                    .any(|field| field.key == "budget_name" && field.value == "search_workers")
+                && event
+                    .fields
+                    .iter()
+                    .any(|field| field.key == "route_class" && field.value == "message_search")
+        }));
+
+        drop(held_budget);
+        let response_after_release = app.handle_request(
+            &request(
+                "GET",
+                "/search?q=quarterly+report",
+                &authenticated_headers(),
+                "",
+            ),
+            "127.0.0.1",
+        );
+        assert_eq!(response_after_release.response.status_code, 200);
+    }
+
+    #[test]
+    fn compose_source_loading_uses_mailbox_budget() {
+        let policy = HttpPolicy {
+            mailbox_worker_budget: 1,
+            ..HttpPolicy::default()
+        };
+        let app = app_with_policy(policy);
+        let held_budget = app
+            .request_budgets
+            .mailbox_workers
+            .try_acquire()
+            .expect("test should hold the only mailbox slot");
+
+        let response = app.handle_request(
+            &request(
+                "GET",
+                "/compose?mode=reply&mailbox=INBOX&uid=9",
+                &authenticated_headers(),
+                "",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 503);
+        assert!(response.audit_events.iter().any(|event| {
+            event.action == "request_budget_exhausted"
+                && event
+                    .fields
+                    .iter()
+                    .any(|field| field.key == "budget_name" && field.value == "mailbox_workers")
+                && event
+                    .fields
+                    .iter()
+                    .any(|field| field.key == "route_class" && field.value == "compose_source")
+        }));
+
+        drop(held_budget);
+        let response_after_release = app.handle_request(
+            &request(
+                "GET",
+                "/compose?mode=reply&mailbox=INBOX&uid=9",
+                &authenticated_headers(),
+                "",
+            ),
+            "127.0.0.1",
+        );
+        assert_eq!(response_after_release.response.status_code, 200);
+    }
+
+    #[test]
+    fn message_move_uses_mailbox_budget() {
+        let policy = HttpPolicy {
+            mailbox_worker_budget: 1,
+            ..HttpPolicy::default()
+        };
+        let app = app_with_policy(policy);
+        let held_budget = app
+            .request_budgets
+            .mailbox_workers
+            .try_acquire()
+            .expect("test should hold the only mailbox slot");
+
+        let response = app.handle_request(
+            &request(
+                "POST",
+                "/message/move",
+                &authenticated_same_origin_headers(),
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=9&destination_mailbox=Archive%2F2026",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 503);
+        assert!(response.audit_events.iter().any(|event| {
+            event.action == "request_budget_exhausted"
+                && event
+                    .fields
+                    .iter()
+                    .any(|field| field.key == "budget_name" && field.value == "mailbox_workers")
+                && event
+                    .fields
+                    .iter()
+                    .any(|field| field.key == "route_class" && field.value == "message_move")
+        }));
+
+        drop(held_budget);
+        let response_after_release = app.handle_request(
+            &request(
+                "POST",
+                "/message/move",
+                &authenticated_same_origin_headers(),
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=9&destination_mailbox=Archive%2F2026",
+            ),
+            "127.0.0.1",
+        );
+        assert_eq!(response_after_release.response.status_code, 303);
+    }
+
+    #[test]
+    fn attachment_download_uses_mailbox_budget() {
+        let policy = HttpPolicy {
+            mailbox_worker_budget: 1,
+            ..HttpPolicy::default()
+        };
+        let app = app_with_policy(policy);
+        let held_budget = app
+            .request_budgets
+            .mailbox_workers
+            .try_acquire()
+            .expect("test should hold the only mailbox slot");
+
+        let response = app.handle_request(
+            &request(
+                "GET",
+                "/attachment?mailbox=INBOX&uid=9&part=1.2",
+                &authenticated_headers(),
+                "",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 503);
+        assert!(response.audit_events.iter().any(|event| {
+            event.action == "request_budget_exhausted"
+                && event
+                    .fields
+                    .iter()
+                    .any(|field| field.key == "budget_name" && field.value == "mailbox_workers")
+                && event
+                    .fields
+                    .iter()
+                    .any(|field| field.key == "route_class" && field.value == "attachment_download")
+        }));
+
+        drop(held_budget);
+        let response_after_release = app.handle_request(
+            &request(
+                "GET",
+                "/attachment?mailbox=INBOX&uid=9&part=1.2",
+                &authenticated_headers(),
+                "",
+            ),
+            "127.0.0.1",
+        );
+        assert_eq!(response_after_release.response.status_code, 200);
+    }
+
+    #[test]
     fn auth_budget_exhaustion_returns_retry_after_without_running_login() {
         let policy = HttpPolicy {
             auth_worker_budget: 1,
