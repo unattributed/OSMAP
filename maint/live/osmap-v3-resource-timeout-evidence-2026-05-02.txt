@@ -1,0 +1,76 @@
+OSMAP V3 resource and timeout hardening evidence
+================================================
+
+assessed_at_utc=2026-05-02T04:10:00Z
+assessed_host=local safe fixture plus repo unit tests
+assessed_ref=tracked in the commit that adds this evidence; release summaries record the exact assessed ref
+secret_review=No private keys, passwords, TOTP material, cookies, mailbox bodies, attachment contents, provider tokens, or host secrets are included in this evidence.
+
+Scope
+-----
+
+This evidence covers the first V3 resource and timeout proof slice:
+
+- helper-backed mailbox list behavior when the helper does not respond
+- helper-backed message search behavior when the helper does not respond
+- helper-backed message view behavior when the helper does not respond
+- route-class search budget exhaustion and cheap-route availability
+- route-class mailbox budget release after a message-view backend failure
+- bounded public failure rendering for oversized message-view output
+- HTTP read timeout behavior
+- external command timeout behavior
+
+The proof is intentionally safe and non-destructive. It uses unit/integration
+tests with synthetic fixtures and local Unix-domain sockets. It does not access
+real mailboxes or live private message content.
+
+Commands run
+------------
+
+cargo test times_out_when_helper_does_not_respond -- --nocapture
+
+Result:
+
+- mailbox_helper::tests::client_mailbox_list_times_out_when_helper_does_not_respond ... ok
+- mailbox_helper::tests::client_message_search_times_out_when_helper_does_not_respond ... ok
+- mailbox_helper::tests::client_message_view_times_out_when_helper_does_not_respond ... ok
+
+cargo test budget -- --nocapture
+
+Result:
+
+- config::tests::rejects_zero_worker_budgets ... ok
+- config::tests::rejects_worker_budgets_above_connection_cap ... ok
+- http::tests::search_budget_exhaustion_returns_retry_after_without_blocking_login ... ok
+- http::tests::search_budget_events_do_not_log_bearer_or_csrf_tokens ... ok
+- http::tests::mailbox_budget_releases_after_message_view_timeout_like_failure ... ok
+- http::tests::request_budget_guard_releases_on_panic ... ok
+
+cargo test timeout -- --nocapture
+
+Result:
+
+- config::tests::rejects_zero_session_idle_timeout ... ok
+- http::tests::mailbox_budget_releases_after_message_view_timeout_like_failure ... ok
+- http::tests::connection_timeout_returns_request_timeout_response ... ok
+
+Additional covered tests from the full security gate:
+
+- auth::tests::system_command_executor_times_out_slow_command
+- auth::tests::system_command_executor_rejects_oversized_stdout
+- http::tests::message_view_route_maps_oversized_mime_body_to_safe_failure
+
+Release interpretation
+----------------------
+
+The release gate treats this file as the current resource-timeout evidence path
+through `OSMAP_RELEASE_RESOURCE_TIMEOUT_EVIDENCE`. A release-mode run must fail
+if the configured resource-timeout evidence is missing or empty.
+
+Remaining V3 work
+-----------------
+
+This closes the first evidence path for helper-backed mailbox/search/message
+view timeout behavior and bounded failure mapping. It does not yet implement
+full route-deadline propagation, send worker budgets, or auth worker budgets;
+those remain separate V3 resource-control work items.

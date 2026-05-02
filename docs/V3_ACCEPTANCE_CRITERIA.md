@@ -27,15 +27,16 @@ Before any Version 3 feature is treated as complete:
 
 Developer validation may report skipped phases clearly.
 
-Release-mode validation must fail when a required phase is skipped. This includes skipped Cargo validation, skipped supply-chain validation, missing host-readiness evidence, missing V2 carry-forward evidence, missing TLS edge evidence, missing V3 feature-gate evidence, and skipped authenticated WSTG or other security tests when the test requires credential and TOTP coverage.
+Release-mode validation must fail when a required phase is skipped. This includes skipped Cargo validation, skipped supply-chain validation, missing host-readiness evidence, missing V2 carry-forward evidence, missing TLS edge evidence, missing resource-timeout evidence, missing V3 feature-gate evidence, and skipped authenticated WSTG or other security tests when the test requires credential and TOTP coverage.
 
 For WSTG and other security tests that require authenticated coverage, evidence must show that the real browser credential and TOTP path was exercised. The evidence may use a dedicated validation account with stored test secrets in a local uncommitted `.env`, or a human-prompted flow such as `--prompt-auth --auth-email`. The evidence must not commit plaintext passwords, reusable TOTP seeds, active session cookies, private message bodies, or private attachment content.
 
 The release evidence summary is written to
 `maint/live/osmap-v3-release-evidence-summary.json` and
 `maint/live/osmap-v3-release-evidence-summary.md`. It must include the checked
-TLS edge evidence path and TLS CBC cleanup status. Release mode must record an
-empty `skipped_checks` array before it can pass.
+TLS edge evidence path, TLS CBC cleanup status, checked resource-timeout
+evidence path, and resource-timeout status. Release mode must record an empty
+`skipped_checks` array before it can pass.
 
 ## Feature Admission Rule
 
@@ -106,6 +107,7 @@ The Version 3 closeout record must link:
 - current V2 readiness evidence
 - host-readiness and public-edge evidence for the intended deployment host
 - V3 feature-gate evidence for every in-scope feature
+- resource-timeout evidence for helper-backed mailbox, search, and message-view paths
 - WSTG regression evidence
 - authenticated WSTG or other credential-dependent security evidence proving credential and TOTP paths were exercised where required
 - TLS CBC removal or exception evidence

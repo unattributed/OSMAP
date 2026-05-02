@@ -160,7 +160,10 @@ The implementation gate should include tests for:
 4. Add config parsing with zero-value rejection.
    Done for mailbox and search budgets, including connection-cap validation.
 5. Add operator docs and live-safe validation for one budget exhaustion path.
-   Partially done; continue with live-safe validation evidence.
+   The release gate now requires
+   `maint/live/osmap-v3-resource-timeout-evidence-2026-05-02.txt`, which covers
+   helper-backed mailbox-list, message-search, and message-view helper timeout
+   tests plus current search/mailbox budget and HTTP timeout regressions.
 6. Extend the guard to send and auth route classes, then add request-deadline
    propagation.
 7. Only then consider a deeper worker-pool or async design if evidence shows

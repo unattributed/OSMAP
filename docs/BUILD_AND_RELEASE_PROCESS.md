@@ -59,7 +59,8 @@ The release flow should eventually look like:
 4. Strict release validation with `make release-check` on a host or operator
    workstation that has the pinned Rust toolchain, pinned supply-chain tools,
    release WSTG credential and TOTP evidence, V2 carry-forward evidence,
-   host-readiness evidence, TLS edge evidence, and a sanitized evidence archive
+   host-readiness evidence, TLS edge evidence, resource-timeout evidence, and a
+   sanitized evidence archive
 5. Build
 6. Static analysis and required tests
 7. Dependency inventory or SBOM generation
@@ -83,6 +84,9 @@ It writes:
 It also requires the TLS CBC cleanup evidence identified by
 `OSMAP_RELEASE_TLS_EDGE_EVIDENCE`, which defaults to
 `maint/live/osmap-v3-tls-cbc-cleanup-evidence-2026-05-02.txt`.
+Resource and timeout evidence is identified by
+`OSMAP_RELEASE_RESOURCE_TIMEOUT_EVIDENCE`, which defaults to
+`maint/live/osmap-v3-resource-timeout-evidence-2026-05-02.txt`.
 
 The normal GitHub `security-check` workflow remains a developer and CI signal.
 It must not be described as full V3 release validation unless the run also has

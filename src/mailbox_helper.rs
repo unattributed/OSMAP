@@ -1078,6 +1078,32 @@ mod tests {
 
     #[cfg(unix)]
     #[test]
+    fn client_mailbox_list_times_out_when_helper_does_not_respond() {
+        let socket_path = temp_socket_path("mailbox-helper-timeout");
+        let server = spawn_unresponsive_helper(socket_path.clone());
+        wait_for_socket(&socket_path);
+        let client =
+            MailboxHelperMailboxListBackend::new(&socket_path, one_second_helper_timeout_policy());
+        let started_at = Instant::now();
+
+        let error = client
+            .list_mailboxes("alice@example.com")
+            .expect_err("unresponsive helper must time out");
+        let elapsed = started_at.elapsed();
+
+        server.join().expect("helper thread should finish");
+        let _ = fs::remove_file(&socket_path);
+
+        assert_eq!(error.backend, "mailbox-helper-client");
+        assert!(error.reason.contains("failed to read helper payload"));
+        assert!(
+            elapsed < Duration::from_secs(2),
+            "helper read timeout should fire before the silent helper closes"
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
     fn client_lists_messages_over_helper_socket() {
         let socket_path = temp_socket_path("message-helper-ok");
         let backend = StaticHelperBackend {
@@ -1185,6 +1211,38 @@ mod tests {
 
     #[cfg(unix)]
     #[test]
+    fn client_message_search_times_out_when_helper_does_not_respond() {
+        let socket_path = temp_socket_path("message-search-helper-timeout");
+        let server = spawn_unresponsive_helper(socket_path.clone());
+        wait_for_socket(&socket_path);
+        let client = MailboxHelperMessageSearchBackend::new(
+            &socket_path,
+            one_second_helper_timeout_policy(),
+            MessageSearchPolicy::default(),
+        );
+        let request =
+            MessageSearchRequest::new(MessageSearchPolicy::default(), "INBOX", "quarterly report")
+                .expect("request should parse");
+        let started_at = Instant::now();
+
+        let error = client
+            .search_messages("alice@example.com", &request)
+            .expect_err("unresponsive helper must time out");
+        let elapsed = started_at.elapsed();
+
+        server.join().expect("helper thread should finish");
+        let _ = fs::remove_file(&socket_path);
+
+        assert_eq!(error.backend, "mailbox-helper-client");
+        assert!(error.reason.contains("failed to read helper payload"));
+        assert!(
+            elapsed < Duration::from_secs(2),
+            "helper read timeout should fire before the silent helper closes"
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
     fn client_fetches_message_view_over_helper_socket() {
         let socket_path = temp_socket_path("message-view-helper-ok");
         let backend = StaticHelperBackend {
@@ -1222,6 +1280,37 @@ mod tests {
         assert_eq!(message.uid, 12);
         assert_eq!(message.header_block, "Subject: Test message\n");
         assert_eq!(message.body_text, "Hello world\n");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn client_message_view_times_out_when_helper_does_not_respond() {
+        let socket_path = temp_socket_path("message-view-helper-timeout");
+        let server = spawn_unresponsive_helper(socket_path.clone());
+        wait_for_socket(&socket_path);
+        let client = MailboxHelperMessageViewBackend::new(
+            &socket_path,
+            one_second_helper_timeout_policy(),
+            MessageViewPolicy::default(),
+        );
+        let request = MessageViewRequest::new(MessageViewPolicy::default(), "INBOX", 12)
+            .expect("request should parse");
+        let started_at = Instant::now();
+
+        let error = client
+            .fetch_message("alice@example.com", &request)
+            .expect_err("unresponsive helper must time out");
+        let elapsed = started_at.elapsed();
+
+        server.join().expect("helper thread should finish");
+        let _ = fs::remove_file(&socket_path);
+
+        assert_eq!(error.backend, "mailbox-helper-client");
+        assert!(error.reason.contains("failed to read helper payload"));
+        assert!(
+            elapsed < Duration::from_secs(2),
+            "helper read timeout should fire before the silent helper closes"
+        );
     }
 
     #[cfg(unix)]
@@ -1391,6 +1480,28 @@ mod tests {
                 MailboxHelperTrustedCallerPolicy { trusted_peer_uid },
             );
         })
+    }
+
+    #[cfg(unix)]
+    fn spawn_unresponsive_helper(socket_path: PathBuf) -> thread::JoinHandle<()> {
+        thread::spawn(move || {
+            let _ = remove_stale_socket_if_needed(&socket_path);
+            let listener = UnixListener::bind(&socket_path).expect("test helper should bind");
+            let (mut stream, _) = listener.accept().expect("test helper should accept");
+            let mut request = Vec::new();
+            stream
+                .read_to_end(&mut request)
+                .expect("test helper should read request");
+            thread::sleep(Duration::from_secs(3));
+        })
+    }
+
+    fn one_second_helper_timeout_policy() -> MailboxHelperPolicy {
+        MailboxHelperPolicy {
+            read_timeout_secs: 1,
+            write_timeout_secs: 1,
+            ..MailboxHelperPolicy::default()
+        }
     }
 
     #[cfg(unix)]
