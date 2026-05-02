@@ -1,5 +1,63 @@
 # Decision Log
 
+## 2026-05-02
+
+### Make the Version 3 release gate fail closed before expanding features
+
+The first Version 3 roadmap item needed to make release validation honest
+before OSMAP resumed adoption-feature work. The previous developer security
+check was useful for local iteration, but it could still report skipped work
+without providing a separate strict release answer.
+
+OSMAP now has an explicit `make release-check` path backed by
+`OSMAP_SECURITY_PROFILE=release`. Release mode requires pinned Rust tooling,
+Cargo build/test/clippy/fmt, supply-chain tooling, dependency inventory
+evidence, host-readiness evidence, Version 2 carry-forward evidence,
+credentialed WSTG evidence where mapped, and a sanitized evidence archive and
+summary for the assessed commit. Developer mode remains available through
+`make security-check` and can still warn about permitted local skips.
+
+This was chosen as the first V3 implementation slice because Version 3 should
+not grow user-facing scope until the project can distinguish a real release
+gate from a partial developer check.
+
+### Treat TLS CBC cleanup as release evidence, not only config hygiene
+
+The next security finding was the public edge allowing older or weaker TLS
+shapes than the V3 baseline should tolerate. The code and host work narrowed
+the browser-facing TLS floor to TLS 1.2 and TLS 1.3, removed CBC cipher suites
+from the reviewed nginx edge configuration, and archived host evidence from
+the actual `mail.blackbagsecurity.com` edge.
+
+OSMAP now requires that archived TLS edge evidence in the strict release gate.
+The release evidence summary records the TLS artifact so a future release
+cannot silently pass while the edge proof is absent or stale.
+
+This keeps TLS handling in the operational edge slice. It does not treat
+CodeQL or static hints as the final answer when the production behavior is
+owned by nginx and must be proven at the host boundary.
+
+### Bound expensive browser routes with explicit budgets and route deadlines
+
+The next Version 3 hardening stream moved from evidence into implementation:
+helper-backed mailbox/search/message-view routes now acquire route-class
+worker budgets and propagate a hard expensive-route deadline into helper and
+external-command work. That means the browser runtime no longer relies only on
+per-socket or per-command defaults when a route can consume scarce helper or
+mailbox resources.
+
+The first covered classes were mailbox list/view/search work. The second
+covered classes were sendmail-backed compose submission and external-auth/TOTP
+login. OSMAP now has separate route budgets for mailbox, search, send, and
+auth work, one bounded expensive-route timeout knob, startup reporting for
+those values, and test/evidence coverage showing budget exhaustion and
+timeout propagation are observable.
+
+This was chosen before additional V3 feature work because daily-driver
+adoption will increase route concurrency. The release gate needs evidence
+that expensive routes fail boundedly under pressure rather than stretching
+unboundedly behind authenticated browser actions.
+
 ## 2026-04-29
 
 ### Polish the V3 browser UI without widening the browser trust boundary
