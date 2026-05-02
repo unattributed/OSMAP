@@ -31,6 +31,8 @@ The current least-privilege OpenBSD posture is:
 
 - `nginx` stays at the public TLS edge
 - OSMAP `serve` runs as `_osmap`
+- production `serve` refuses non-loopback listeners so browser HTTP cannot be
+  exposed directly outside the reviewed TLS edge
 - OSMAP `mailbox-helper` runs as `vmail`
 - browser auth uses a dedicated Dovecot auth listener such as
   `/var/run/osmap-auth`

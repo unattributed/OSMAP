@@ -570,6 +570,7 @@ impl AppConfig {
             totp_secret_dir,
         )?;
         validate_development_bindings(environment, &listen_addr)?;
+        validate_production_serve_listener(environment, run_mode, &listen_addr)?;
         let mailbox_helper_socket_path =
             parse_mailbox_helper_socket_path(env_map, run_mode, &state_layout.runtime_dir)?;
         validate_mailbox_boundary(
@@ -813,6 +814,26 @@ fn validate_development_bindings(
         return Err(BootstrapError::InvalidConfig {
             field: "OSMAP_LISTEN_ADDR",
             reason: "development listeners must stay on loopback".to_string(),
+        });
+    }
+
+    Ok(())
+}
+
+/// Keeps production browser HTTP behind the reviewed local TLS edge.
+fn validate_production_serve_listener(
+    environment: RuntimeEnvironment,
+    run_mode: AppRunMode,
+    listen_addr: &str,
+) -> Result<(), BootstrapError> {
+    if environment == RuntimeEnvironment::Production
+        && run_mode == AppRunMode::Serve
+        && !is_loopback_listener(listen_addr)
+    {
+        return Err(BootstrapError::InvalidConfig {
+            field: "OSMAP_LISTEN_ADDR",
+            reason: "production serve listeners must stay loopback-bound behind the TLS edge"
+                .to_string(),
         });
     }
 
@@ -1509,6 +1530,31 @@ mod tests {
 
         assert_eq!(config.environment, RuntimeEnvironment::Staging);
         assert_eq!(config.listen_addr, "0.0.0.0:8080");
+    }
+
+    #[test]
+    fn rejects_non_loopback_production_serve_listener() {
+        let env_map = BTreeMap::from([
+            ("OSMAP_RUN_MODE".to_string(), "serve".to_string()),
+            ("OSMAP_ENV".to_string(), "production".to_string()),
+            ("OSMAP_LISTEN_ADDR".to_string(), "0.0.0.0:8080".to_string()),
+            (
+                "OSMAP_MAILBOX_HELPER_SOCKET_PATH".to_string(),
+                "/var/lib/osmap/run/mailbox-helper.sock".to_string(),
+            ),
+        ]);
+
+        let error = AppConfig::from_env_map(&env_map)
+            .expect_err("production serve listeners must stay behind the TLS edge");
+
+        assert_eq!(
+            error,
+            BootstrapError::InvalidConfig {
+                field: "OSMAP_LISTEN_ADDR",
+                reason: "production serve listeners must stay loopback-bound behind the TLS edge"
+                    .to_string(),
+            }
+        );
     }
 
     #[test]
