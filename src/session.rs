@@ -4,6 +4,7 @@
 //! opaque, high-entropy values; the store keeps only a hash-derived session
 //! identifier and bounded metadata under the configured session directory.
 
+use crate::logging::audit_session_ref;
 use std::cmp::Reverse;
 use std::fs;
 use std::io::Write as _;
@@ -354,7 +355,7 @@ where
                 "session_issued",
                 "browser session issued",
             )
-            .with_field("session_id", record.session_id.clone())
+            .with_field("session_ref", audit_session_ref(&record.session_id))
             .with_field("canonical_username", record.canonical_username.clone())
             .with_field("issued_at", record.issued_at.to_string())
             .with_field("expires_at", record.expires_at.to_string())
@@ -412,7 +413,7 @@ where
                 "session_validated",
                 "browser session validated",
             )
-            .with_field("session_id", record.session_id.clone())
+            .with_field("session_ref", audit_session_ref(&record.session_id))
             .with_field("canonical_username", record.canonical_username.clone())
             .with_field("request_id", context.request_id.clone())
             .with_field("remote_addr", context.remote_addr.clone())
@@ -463,7 +464,7 @@ where
                 "session_revoked",
                 "browser session revoked",
             )
-            .with_field("session_id", record.session_id.clone())
+            .with_field("session_ref", audit_session_ref(&record.session_id))
             .with_field("canonical_username", record.canonical_username.clone())
             .with_field("revoked_at", now.to_string())
             .with_field("request_id", context.request_id.clone())

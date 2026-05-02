@@ -6,6 +6,7 @@
 //! - emit audit-quality submission events
 //! - avoid inventing a new SMTP client stack inside the browser runtime
 
+use crate::logging::audit_session_ref;
 use std::path::PathBuf;
 use std::time::Duration;
 
@@ -407,7 +408,10 @@ where
                     "canonical_username",
                     validated_session.record.canonical_username.clone(),
                 )
-                .with_field("session_id", validated_session.record.session_id.clone())
+                .with_field(
+                    "session_ref",
+                    audit_session_ref(&validated_session.record.session_id),
+                )
                 .with_field("recipient_count", request.recipients.len().to_string())
                 .with_field("attachment_count", request.attachments.len().to_string())
                 .with_field(
@@ -440,7 +444,10 @@ where
                     "canonical_username",
                     validated_session.record.canonical_username.clone(),
                 )
-                .with_field("session_id", validated_session.record.session_id.clone())
+                .with_field(
+                    "session_ref",
+                    audit_session_ref(&validated_session.record.session_id),
+                )
                 .with_field("attachment_count", request.attachments.len().to_string())
                 .with_field(
                     "public_reason",
@@ -1476,7 +1483,7 @@ mod tests {
         let rendered = logger.render_with_timestamp(&outcome.audit_event, 8080);
         assert_eq!(
             rendered,
-            "ts=8080 level=info category=submission action=message_submitted msg=\"outbound message submission completed\" canonical_username=\"alice@example.com\" session_id=\"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\" recipient_count=\"1\" attachment_count=\"0\" attachment_bytes_total=\"0\" has_subject=\"true\" request_id=\"req-send\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\""
+            "ts=8080 level=info category=submission action=message_submitted msg=\"outbound message submission completed\" canonical_username=\"alice@example.com\" session_ref=\"asr-cc77477e59365048c995e4c7b47f5654\" recipient_count=\"1\" attachment_count=\"0\" attachment_bytes_total=\"0\" has_subject=\"true\" request_id=\"req-send\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\""
         );
     }
 

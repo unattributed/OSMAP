@@ -8,6 +8,7 @@
 
 use crate::auth::AuthenticationContext;
 use crate::config::LogLevel;
+use crate::logging::audit_session_ref;
 use crate::logging::{EventCategory, LogEvent};
 use crate::mailbox::MessageView;
 use crate::mime::{
@@ -211,7 +212,10 @@ impl PlainTextMessageRenderer {
                 "canonical_username",
                 validated_session.record.canonical_username.clone(),
             )
-            .with_field("session_id", validated_session.record.session_id.clone())
+            .with_field(
+                "session_ref",
+                audit_session_ref(&validated_session.record.session_id),
+            )
             .with_field("mailbox_name", rendered.mailbox_name.clone())
             .with_field("uid", rendered.uid.to_string())
             .with_field(
@@ -847,7 +851,7 @@ mod tests {
         let rendered = logger.render_with_timestamp(&outcome.audit_event, 7373);
         assert_eq!(
             rendered,
-            "ts=7373 level=info category=mailbox action=message_rendered_plain_text msg=\"message rendered with plain-text policy\" canonical_username=\"alice@example.com\" session_id=\"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\" mailbox_name=\"INBOX\" uid=\"9\" mime_top_level_content_type=\"text/plain\" body_source=\"singlepart_plain_text\" attachment_count=\"0\" contains_html_body=\"false\" rendering_mode=\"plain_text_preformatted\" request_id=\"req-render\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\""
+            "ts=7373 level=info category=mailbox action=message_rendered_plain_text msg=\"message rendered with plain-text policy\" canonical_username=\"alice@example.com\" session_ref=\"asr-cc77477e59365048c995e4c7b47f5654\" mailbox_name=\"INBOX\" uid=\"9\" mime_top_level_content_type=\"text/plain\" body_source=\"singlepart_plain_text\" attachment_count=\"0\" contains_html_body=\"false\" rendering_mode=\"plain_text_preformatted\" request_id=\"req-render\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\""
         );
     }
 

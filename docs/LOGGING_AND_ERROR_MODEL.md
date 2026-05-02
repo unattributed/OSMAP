@@ -48,6 +48,33 @@ The early logger currently distinguishes:
 This now covers the runtime foundation plus real browser, auth, session,
 mailbox, and outbound-submission behavior.
 
+## Sensitive Field Handling
+
+Audit logs must support incident review without becoming a secondary secret
+store.
+
+Runtime audit events must not contain:
+
+- browser session cookies
+- raw session tokens
+- raw persisted session lookup identifiers
+- CSRF tokens
+- passwords
+- TOTP codes or TOTP secret material
+- authorization headers
+- message bodies
+- attachment bodies
+
+Session correlation uses `session_ref`, not `session_id`. `session_ref` is an
+audit-only, domain-separated, truncated SHA-256 reference derived from the
+internal persisted session identifier. It is deterministic enough to correlate
+events for one session, but it must not be accepted as a browser cookie, session
+filename, revocation target, or session lookup key.
+
+`LogEvent::with_field()` defensively converts any attempted `session_id` audit
+field into `session_ref`. Runtime call sites should still use `session_ref`
+explicitly so code review does not depend only on the central safety net.
+
 ## Error-Handling Posture
 
 The current bootstrap error model is intentionally handwritten and small.

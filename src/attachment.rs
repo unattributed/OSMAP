@@ -8,6 +8,7 @@
 
 use crate::auth::AuthenticationContext;
 use crate::config::LogLevel;
+use crate::logging::audit_session_ref;
 use crate::logging::{EventCategory, LogEvent};
 use crate::mailbox::MessageView;
 use crate::mime::{AttachmentPart, MimeAnalysisPolicy, MimeAnalyzer};
@@ -298,7 +299,10 @@ impl AttachmentDownloadService {
                 "canonical_username",
                 validated_session.record.canonical_username.clone(),
             )
-            .with_field("session_id", validated_session.record.session_id.clone())
+            .with_field(
+                "session_ref",
+                audit_session_ref(&validated_session.record.session_id),
+            )
             .with_field("mailbox_name", attachment.mailbox_name.clone())
             .with_field("uid", attachment.uid.to_string())
             .with_field("part_path", attachment.part_path.clone())
@@ -332,7 +336,10 @@ fn build_failure_event(
         "canonical_username",
         validated_session.record.canonical_username.clone(),
     )
-    .with_field("session_id", validated_session.record.session_id.clone())
+    .with_field(
+        "session_ref",
+        audit_session_ref(&validated_session.record.session_id),
+    )
     .with_field("mailbox_name", message.mailbox_name.clone())
     .with_field("uid", message.uid.to_string())
     .with_field("part_path", part_path.to_string())

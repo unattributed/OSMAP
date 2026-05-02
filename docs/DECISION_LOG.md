@@ -1,5 +1,44 @@
 # Decision Log
 
+## 2026-05-02, Redact persisted session identifiers from audit logs
+
+Live logging due diligence on `mail.blackbagsecurity.com` found that
+`/var/lib/osmap/audit/serve.log` contained raw `session_id` audit fields.
+The value was not the browser cookie token, but it was the persisted session
+lookup identifier and at least one logged value overlapped a current session
+file. That made the audit log a secondary source of live session material.
+
+Immediate containment revoked current sessions, moved the pre-fix audit log and
+session files into a root-only backup directory, truncated the live serve audit
+log, and restarted `osmap_serve`. Post-containment unauthenticated requests did
+not recreate session files or write new raw `session_id` fields.
+
+The code policy is now:
+
+- runtime audit events use `session_ref`, not `session_id`
+- `session_ref` is a deterministic, audit-only, domain-separated, truncated
+  SHA-256 reference derived from the internal persisted session identifier
+- `session_ref` is not accepted as a cookie, session filename, revocation target,
+  or session lookup key
+- `LogEvent::with_field()` defensively converts attempted `session_id` audit
+  fields into `session_ref`
+- runtime call sites use `session_ref` explicitly so code review does not depend
+  only on the central safety net
+
+Internal session storage, validation, cookie handling, revocation forms, and
+session-file behavior remain unchanged. The change narrows audit exposure while
+preserving incident correlation.
+
+Validation completed locally:
+
+- `cargo fmt --check`
+- `git diff --check`
+- no runtime `with_field("session_id", ...)` call sites outside the logging
+  safety-net test
+- no stale audit fixture strings expecting the known raw session identifier
+- full `cargo test` passed with 348 tests passed, 0 failed, and 4 ignored
+
+
 ## 2026-05-02
 
 ### Make the Version 3 release gate fail closed before expanding features

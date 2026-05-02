@@ -1,4 +1,5 @@
 use super::*;
+use crate::logging::audit_session_ref;
 
 impl RuntimeBrowserGateway {
     /// Builds the current auth service around `doveadm auth test`.
@@ -432,7 +433,7 @@ impl RuntimeBrowserGateway {
                     "canonical_username",
                     validated_session.record.canonical_username.clone(),
                 )
-                .with_field("session_id", session_id.to_string())],
+                .with_field("session_ref", audit_session_ref(session_id))],
             };
         }
 

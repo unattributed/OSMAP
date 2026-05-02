@@ -5,6 +5,7 @@
 //! without widening visibility or changing the current route surface.
 
 use super::*;
+use crate::logging::audit_session_ref;
 
 impl<G> BrowserApp<G>
 where
@@ -503,7 +504,10 @@ where
                     "csrf token missing from state-changing request",
                     context,
                 )
-                .with_field("session_id", validated_session.record.session_id.clone())],
+                .with_field(
+                    "session_ref",
+                    audit_session_ref(&validated_session.record.session_id),
+                )],
             });
         };
 
@@ -523,7 +527,10 @@ where
                     "csrf token validation failed",
                     context,
                 )
-                .with_field("session_id", validated_session.record.session_id.clone())],
+                .with_field(
+                    "session_ref",
+                    audit_session_ref(&validated_session.record.session_id),
+                )],
             });
         }
 
@@ -687,7 +694,11 @@ fn rejected_same_origin_response(
             "Request Origin Rejected",
             "<p>The request did not include accepted same-origin request metadata.</p>",
         ),
-        audit_events: vec![build_http_warning_event(action, message, context)
-            .with_field("session_id", validated_session.record.session_id.clone())],
+        audit_events: vec![
+            build_http_warning_event(action, message, context).with_field(
+                "session_ref",
+                audit_session_ref(&validated_session.record.session_id),
+            ),
+        ],
     }
 }

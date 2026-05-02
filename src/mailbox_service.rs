@@ -5,6 +5,7 @@
 //! while preserving the existing public mailbox API.
 
 use super::*;
+use crate::logging::audit_session_ref;
 
 /// Lists mailboxes for an already validated session.
 pub struct MailboxListingService<B> {
@@ -43,7 +44,7 @@ where
                     "mailbox listing completed",
                 )
                 .with_field("canonical_username", canonical_username)
-                .with_field("session_id", session_id)
+                .with_field("session_ref", audit_session_ref(&session_id))
                 .with_field("mailbox_count", mailboxes.len().to_string())
                 .with_field("request_id", context.request_id.clone())
                 .with_field("remote_addr", context.remote_addr.clone())
@@ -104,7 +105,7 @@ where
                     "message list retrieval completed",
                 )
                 .with_field("canonical_username", canonical_username)
-                .with_field("session_id", session_id)
+                .with_field("session_ref", audit_session_ref(&session_id))
                 .with_field("mailbox_name", request.mailbox_name.clone())
                 .with_field("message_count", messages.len().to_string())
                 .with_field("request_id", context.request_id.clone())
@@ -166,7 +167,7 @@ where
                     "message retrieval completed",
                 )
                 .with_field("canonical_username", canonical_username)
-                .with_field("session_id", session_id)
+                .with_field("session_ref", audit_session_ref(&session_id))
                 .with_field("mailbox_name", message.mailbox_name.clone())
                 .with_field("uid", message.uid.to_string())
                 .with_field("request_id", context.request_id.clone())
@@ -238,7 +239,7 @@ where
                     "message search completed",
                 )
                 .with_field("canonical_username", canonical_username)
-                .with_field("session_id", session_id)
+                .with_field("session_ref", audit_session_ref(&session_id))
                 .with_field("mailbox_name", request.mailbox_name.clone())
                 .with_field("query", request.query.clone())
                 .with_field("result_count", results.len().to_string())
@@ -304,7 +305,7 @@ where
                     "message move completed",
                 )
                 .with_field("canonical_username", canonical_username)
-                .with_field("session_id", session_id)
+                .with_field("session_ref", audit_session_ref(&session_id))
                 .with_field("source_mailbox_name", request.source_mailbox_name.clone())
                 .with_field(
                     "destination_mailbox_name",
@@ -352,7 +353,7 @@ fn build_mailbox_failure_event(
         "mailbox listing failed",
     )
     .with_field("canonical_username", canonical_username.to_string())
-    .with_field("session_id", session_id.to_string())
+    .with_field("session_ref", audit_session_ref(session_id))
     .with_field(
         "public_reason",
         MailboxPublicFailureReason::TemporarilyUnavailable.as_str(),
@@ -385,7 +386,7 @@ fn build_message_list_failure_event(
         "message list retrieval failed",
     )
     .with_field("canonical_username", canonical_username.to_string())
-    .with_field("session_id", session_id.to_string())
+    .with_field("session_ref", audit_session_ref(session_id))
     .with_field("mailbox_name", mailbox_name.to_string())
     .with_field(
         "public_reason",
@@ -421,7 +422,7 @@ fn build_message_view_failure_event(
         "message retrieval failed",
     )
     .with_field("canonical_username", canonical_username.to_string())
-    .with_field("session_id", session_id.to_string())
+    .with_field("session_ref", audit_session_ref(session_id))
     .with_field("mailbox_name", mailbox_name.to_string())
     .with_field("uid", uid.to_string())
     .with_field("public_reason", public_reason.as_str())
@@ -454,7 +455,7 @@ fn build_message_search_failure_event(
         "message search failed",
     )
     .with_field("canonical_username", canonical_username.to_string())
-    .with_field("session_id", session_id.to_string())
+    .with_field("session_ref", audit_session_ref(session_id))
     .with_field("mailbox_name", mailbox_name.to_string())
     .with_field("query", query.to_string())
     .with_field(
@@ -485,7 +486,7 @@ fn build_message_move_failure_event(
         "message move failed",
     )
     .with_field("canonical_username", canonical_username.to_string())
-    .with_field("session_id", session_id.to_string())
+    .with_field("session_ref", audit_session_ref(session_id))
     .with_field("source_mailbox_name", source_mailbox_name.to_string())
     .with_field(
         "destination_mailbox_name",

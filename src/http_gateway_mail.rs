@@ -1,4 +1,5 @@
 use super::*;
+use crate::logging::audit_session_ref;
 
 use crate::config::LogLevel;
 use crate::logging::EventCategory;
@@ -590,7 +591,10 @@ impl RuntimeBrowserGateway {
                         "canonical_username",
                         validated_session.record.canonical_username.clone(),
                     )
-                    .with_field("session_id", validated_session.record.session_id.clone())
+                    .with_field(
+                        "session_ref",
+                        audit_session_ref(&validated_session.record.session_id),
+                    )
                     .with_field("mailbox_name", attachment.mailbox_name.clone())
                     .with_field("uid", attachment.uid.to_string())
                     .with_field("part_path", attachment.part_path.clone())
@@ -610,7 +614,10 @@ impl RuntimeBrowserGateway {
                         "canonical_username",
                         validated_session.record.canonical_username.clone(),
                     )
-                    .with_field("session_id", validated_session.record.session_id.clone())
+                    .with_field(
+                        "session_ref",
+                        audit_session_ref(&validated_session.record.session_id),
+                    )
                     .with_field("mailbox_name", request.mailbox_name.clone())
                     .with_field("uid", request.uid.to_string())
                     .with_field("part_path", part_path.to_string())
