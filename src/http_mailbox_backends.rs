@@ -1,6 +1,18 @@
 use super::*;
 
 impl RuntimeBrowserGateway {
+    /// Caps helper-backed expensive route work to the browser route deadline.
+    fn expensive_route_helper_policy(&self) -> MailboxHelperPolicy {
+        let mut policy = MailboxHelperPolicy::default();
+        policy.read_timeout_secs = policy
+            .read_timeout_secs
+            .min(self.expensive_request_timeout_secs);
+        policy.write_timeout_secs = policy
+            .write_timeout_secs
+            .min(self.expensive_request_timeout_secs);
+        policy
+    }
+
     /// Selects the current mailbox-list backend without widening the browser
     /// runtime's authority when a local helper is configured.
     pub(super) fn build_mailbox_list_backend(&self) -> MailboxListRuntimeBackend {
@@ -48,7 +60,7 @@ impl RuntimeBrowserGateway {
             Some(socket_path) => {
                 MessageSearchRuntimeBackend::Helper(MailboxHelperMessageSearchBackend::new(
                     socket_path,
-                    MailboxHelperPolicy::default(),
+                    self.expensive_route_helper_policy(),
                     MessageSearchPolicy::default(),
                 ))
             }
@@ -70,7 +82,7 @@ impl RuntimeBrowserGateway {
             Some(socket_path) => {
                 MessageViewRuntimeBackend::Helper(MailboxHelperMessageViewBackend::new(
                     socket_path,
-                    MailboxHelperPolicy::default(),
+                    self.expensive_route_helper_policy(),
                     MessageViewPolicy::default(),
                 ))
             }
@@ -196,5 +208,46 @@ impl crate::mailbox::MessageViewBackend for MessageViewRuntimeBackend {
             Self::Direct(backend) => backend.fetch_message(canonical_username, request),
             Self::Helper(backend) => backend.fetch_message(canonical_username, request),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn expensive_route_helper_policy_never_exceeds_route_timeout() {
+        let temp_root = std::env::temp_dir().join(format!(
+            "osmap-expensive-helper-policy-{}",
+            std::process::id()
+        ));
+        let mut gateway = RuntimeBrowserGateway::for_test(&temp_root);
+        gateway.expensive_request_timeout_secs = 2;
+
+        let policy = gateway.expensive_route_helper_policy();
+
+        assert_eq!(policy.read_timeout_secs, 2);
+        assert_eq!(policy.write_timeout_secs, 2);
+    }
+
+    #[test]
+    fn expensive_route_helper_policy_keeps_tighter_helper_defaults() {
+        let temp_root = std::env::temp_dir().join(format!(
+            "osmap-expensive-helper-policy-default-{}",
+            std::process::id()
+        ));
+        let mut gateway = RuntimeBrowserGateway::for_test(&temp_root);
+        gateway.expensive_request_timeout_secs = 30;
+
+        let policy = gateway.expensive_route_helper_policy();
+
+        assert_eq!(
+            policy.read_timeout_secs,
+            crate::mailbox_helper::DEFAULT_MAILBOX_HELPER_READ_TIMEOUT_SECS
+        );
+        assert_eq!(
+            policy.write_timeout_secs,
+            crate::mailbox_helper::DEFAULT_MAILBOX_HELPER_WRITE_TIMEOUT_SECS
+        );
     }
 }

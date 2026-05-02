@@ -79,14 +79,17 @@ When a budget is exhausted, it returns `503 Service Unavailable` with a short
 
 ## Deadline Propagation
 
-The current slice does not add a separate route deadline yet. Each admitted
-expensive operation should eventually carry a request budget deadline in
-addition to existing lower-level timeouts.
+The current implementation adds the first route-level deadline propagation for
+helper-backed message search and message view. `OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS`
+is read during startup, reported in the non-secret bootstrap summary, and
+propagated into the browser-facing helper client policy for the expensive
+search/view routes.
 
 The deadline should:
 
 - be computed once near route admission
-- be passed to external command/helper calls where possible
+- be passed to external command/helper calls where possible; implemented for
+  helper-backed message search and message view
 - never exceed the existing command timeout
 - force a generic browser failure when exceeded
 - release every budget guard on timeout or panic
@@ -118,15 +121,15 @@ The first implemented configuration is:
 - `OSMAP_HTTP_MAX_CONCURRENT_CONNECTIONS`
 - `OSMAP_MAILBOX_WORKER_BUDGET`
 - `OSMAP_SEARCH_WORKER_BUDGET`
+- `OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS`
 
-Each value rejects zero, defaults conservatively when absent, and the route
+Each value rejects zero and defaults conservatively when absent. The route
 budgets must not exceed the connection cap.
 
 Planned later configuration:
 
 - `OSMAP_SEND_WORKER_BUDGET`
 - `OSMAP_AUTH_WORKER_BUDGET`
-- `OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS`
 
 ## Required Tests
 
@@ -142,7 +145,9 @@ The implementation gate should include tests for:
 - auth budget exhaustion without leaking which credential stage would have run
 - budget guard release on backend error; partially implemented through
   message-view unavailable regression
-- budget guard release on timeout; still pending as a separate route-deadline
+- budget guard release on timeout; implemented for helper-backed
+  mailbox/search/message-view helper socket timeouts, and now backed by
+  route-level timeout propagation for helper-backed search and message view
   implementation
 - budget guard release on worker panic; implemented for the shared guard
 - no session id, bearer token, CSRF token, password, TOTP code, message body, or

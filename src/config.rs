@@ -21,6 +21,9 @@ use crate::throttle::{
     DEFAULT_SUBMISSION_THROTTLE_REMOTE_MAX_SUBMISSIONS, DEFAULT_SUBMISSION_THROTTLE_WINDOW_SECONDS,
 };
 
+/// Conservative hard cap for admitted expensive browser route work.
+pub const DEFAULT_EXPENSIVE_REQUEST_TIMEOUT_SECONDS: u64 = 5;
+
 /// Runtime configuration that is safe to print in operator-facing startup
 /// output because it excludes secret-bearing fields.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -39,6 +42,7 @@ pub struct AppConfig {
     pub http_max_concurrent_connections: u64,
     pub mailbox_worker_budget: u64,
     pub search_worker_budget: u64,
+    pub expensive_request_timeout_seconds: u64,
     pub session_lifetime_seconds: u64,
     pub session_idle_timeout_seconds: u64,
     pub totp_allowed_skew_steps: i64,
@@ -242,6 +246,11 @@ impl AppConfig {
             read_value(env_map, "OSMAP_HTTP_MAX_CONCURRENT_CONNECTIONS", "16");
         let mailbox_worker_budget_value = read_value(env_map, "OSMAP_MAILBOX_WORKER_BUDGET", "8");
         let search_worker_budget_value = read_value(env_map, "OSMAP_SEARCH_WORKER_BUDGET", "4");
+        let expensive_request_timeout_value = read_value(
+            env_map,
+            "OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS",
+            &DEFAULT_EXPENSIVE_REQUEST_TIMEOUT_SECONDS.to_string(),
+        );
         let session_lifetime_value = read_value(env_map, "OSMAP_SESSION_LIFETIME_SECS", "43200");
         let session_idle_timeout_value = read_value(
             env_map,
@@ -360,6 +369,10 @@ impl AppConfig {
         )?;
         validate_non_empty("OSMAP_MAILBOX_WORKER_BUDGET", &mailbox_worker_budget_value)?;
         validate_non_empty("OSMAP_SEARCH_WORKER_BUDGET", &search_worker_budget_value)?;
+        validate_non_empty(
+            "OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS",
+            &expensive_request_timeout_value,
+        )?;
         validate_non_empty("OSMAP_SESSION_LIFETIME_SECS", &session_lifetime_value)?;
         validate_non_empty(
             "OSMAP_SESSION_IDLE_TIMEOUT_SECS",
@@ -432,6 +445,10 @@ impl AppConfig {
             parse_u64("OSMAP_MAILBOX_WORKER_BUDGET", &mailbox_worker_budget_value)?;
         let search_worker_budget =
             parse_u64("OSMAP_SEARCH_WORKER_BUDGET", &search_worker_budget_value)?;
+        let expensive_request_timeout_seconds = parse_u64(
+            "OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS",
+            &expensive_request_timeout_value,
+        )?;
         let openbsd_confinement_mode =
             OpenbsdConfinementMode::parse(&openbsd_confinement_mode_value)?;
         let session_lifetime_seconds =
@@ -496,6 +513,10 @@ impl AppConfig {
         )?;
         validate_positive_u64("OSMAP_MAILBOX_WORKER_BUDGET", mailbox_worker_budget)?;
         validate_positive_u64("OSMAP_SEARCH_WORKER_BUDGET", search_worker_budget)?;
+        validate_positive_u64(
+            "OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS",
+            expensive_request_timeout_seconds,
+        )?;
         validate_budget_not_above_connection_cap(
             "OSMAP_MAILBOX_WORKER_BUDGET",
             mailbox_worker_budget,
@@ -596,6 +617,7 @@ impl AppConfig {
             http_max_concurrent_connections,
             mailbox_worker_budget,
             search_worker_budget,
+            expensive_request_timeout_seconds,
             session_lifetime_seconds,
             session_idle_timeout_seconds,
             totp_allowed_skew_steps,
@@ -889,6 +911,10 @@ mod tests {
         assert_eq!(config.http_max_concurrent_connections, 16);
         assert_eq!(config.mailbox_worker_budget, 8);
         assert_eq!(config.search_worker_budget, 4);
+        assert_eq!(
+            config.expensive_request_timeout_seconds,
+            DEFAULT_EXPENSIVE_REQUEST_TIMEOUT_SECONDS
+        );
         assert_eq!(config.session_lifetime_seconds, 43200);
         assert_eq!(
             config.session_idle_timeout_seconds,
@@ -946,6 +972,10 @@ mod tests {
             ),
             ("OSMAP_MAILBOX_WORKER_BUDGET".to_string(), "12".to_string()),
             ("OSMAP_SEARCH_WORKER_BUDGET".to_string(), "5".to_string()),
+            (
+                "OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS".to_string(),
+                "7".to_string(),
+            ),
             (
                 "OSMAP_SESSION_LIFETIME_SECS".to_string(),
                 "3600".to_string(),
@@ -1067,6 +1097,7 @@ mod tests {
         assert_eq!(config.http_max_concurrent_connections, 24);
         assert_eq!(config.mailbox_worker_budget, 12);
         assert_eq!(config.search_worker_budget, 5);
+        assert_eq!(config.expensive_request_timeout_seconds, 7);
         assert_eq!(config.session_lifetime_seconds, 3600);
         assert_eq!(config.session_idle_timeout_seconds, 900);
         assert_eq!(config.totp_allowed_skew_steps, 2);
@@ -1205,6 +1236,25 @@ mod tests {
                 }
             );
         }
+    }
+
+    #[test]
+    fn rejects_zero_expensive_request_timeout() {
+        let env_map = BTreeMap::from([(
+            "OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS".to_string(),
+            "0".to_string(),
+        )]);
+
+        let error = AppConfig::from_env_map(&env_map)
+            .expect_err("zero-valued expensive route timeout must fail");
+
+        assert_eq!(
+            error,
+            BootstrapError::InvalidConfig {
+                field: "OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS",
+                reason: "value must be greater than zero".to_string(),
+            }
+        );
     }
 
     #[test]

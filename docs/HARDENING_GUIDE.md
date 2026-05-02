@@ -165,6 +165,9 @@ independent route-class worker budgets for authenticated message search and
 message view, in addition to the global concurrent connection cap and
 lower-level parser, helper, and command timeouts. Budget exhaustion fails fast
 with `503 Service Unavailable`, `Retry-After`, and bounded audit events. The
-next hardening pass should extend the same model to send and auth paths and add
-true route-deadline propagation. Adjacent controls such as nginx request
-limits, PF, and host monitoring remain part of the credible DoS posture.
+browser runtime now also propagates `OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS`
+into helper-backed search and message-view calls so admitted budget slots have
+a hard helper-client route cap. The next hardening pass should extend the same
+model to send/auth paths and the remaining expensive routes. Adjacent controls
+such as nginx request limits, PF, and host monitoring remain part of the
+credible DoS posture.

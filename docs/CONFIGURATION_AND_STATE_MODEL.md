@@ -125,6 +125,7 @@ worker budgets:
 
 - `OSMAP_MAILBOX_WORKER_BUDGET`
 - `OSMAP_SEARCH_WORKER_BUDGET`
+- `OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS`
 
 Those settings bound expensive message-view and message-search occupancy inside
 the global HTTP connection cap. They must be greater than zero and must not
@@ -135,6 +136,12 @@ class, active count, configured limit, request id, effective remote address,
 user agent, and canonical username after session validation. The budget events
 must not include bearer tokens, CSRF tokens, passwords, TOTP codes, message
 bodies, attachment bytes, or backend command detail.
+
+`OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS` is the route-level cap used for
+helper-backed message search and message view. The browser-facing runtime
+propagates it into the local mailbox-helper client policy so those admitted
+budget slots cannot outlive the configured route cap even when the helper is
+silent or slow. The value must be greater than zero and defaults to `5`.
 
 The runtime now also recognizes explicit login-throttle settings for the
 browser authentication path:

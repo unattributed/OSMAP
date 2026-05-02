@@ -133,6 +133,10 @@ pub const DEFAULT_SEARCH_WORKER_BUDGET: usize = 4;
 /// Short retry hint for fail-fast route-class budget exhaustion.
 pub const DEFAULT_REQUEST_BUDGET_RETRY_AFTER_SECS: u64 = 1;
 
+/// Conservative route-level cap for admitted expensive browser work.
+pub const DEFAULT_EXPENSIVE_REQUEST_TIMEOUT_SECS: u64 =
+    crate::config::DEFAULT_EXPENSIVE_REQUEST_TIMEOUT_SECONDS;
+
 /// The fixed cookie name used by the current browser session slice.
 pub const DEFAULT_SESSION_COOKIE_NAME: &str = "osmap_session";
 
@@ -153,6 +157,7 @@ pub struct HttpPolicy {
     pub max_concurrent_connections: usize,
     pub mailbox_worker_budget: usize,
     pub search_worker_budget: usize,
+    pub expensive_request_timeout_secs: u64,
     pub request_budget_retry_after_secs: u64,
     pub authentication_policy: AuthenticationPolicy,
 }
@@ -175,6 +180,7 @@ impl HttpPolicy {
             max_concurrent_connections: config.http_max_concurrent_connections as usize,
             mailbox_worker_budget: config.mailbox_worker_budget as usize,
             search_worker_budget: config.search_worker_budget as usize,
+            expensive_request_timeout_secs: config.expensive_request_timeout_seconds,
             request_budget_retry_after_secs: DEFAULT_REQUEST_BUDGET_RETRY_AFTER_SECS,
             authentication_policy: AuthenticationPolicy {
                 required_second_factor: RequiredSecondFactor::Totp,
@@ -201,6 +207,7 @@ impl Default for HttpPolicy {
             max_concurrent_connections: DEFAULT_HTTP_MAX_CONCURRENT_CONNECTIONS,
             mailbox_worker_budget: DEFAULT_MAILBOX_WORKER_BUDGET,
             search_worker_budget: DEFAULT_SEARCH_WORKER_BUDGET,
+            expensive_request_timeout_secs: DEFAULT_EXPENSIVE_REQUEST_TIMEOUT_SECS,
             request_budget_retry_after_secs: DEFAULT_REQUEST_BUDGET_RETRY_AFTER_SECS,
             authentication_policy: AuthenticationPolicy::default(),
         }

@@ -14,6 +14,7 @@ This evidence covers the first V3 resource and timeout proof slice:
 - helper-backed mailbox list behavior when the helper does not respond
 - helper-backed message search behavior when the helper does not respond
 - helper-backed message view behavior when the helper does not respond
+- route-level deadline propagation into helper-backed search/view policy
 - route-class search budget exhaustion and cheap-route availability
 - route-class mailbox budget release after a message-view backend failure
 - bounded public failure rendering for oversized message-view output
@@ -46,11 +47,20 @@ Result:
 - http::tests::mailbox_budget_releases_after_message_view_timeout_like_failure ... ok
 - http::tests::request_budget_guard_releases_on_panic ... ok
 
+cargo test expensive_route_helper_policy -- --nocapture
+
+Result:
+
+- http::http_gateway::http_mailbox_backends::tests::expensive_route_helper_policy_never_exceeds_route_timeout ... ok
+- http::http_gateway::http_mailbox_backends::tests::expensive_route_helper_policy_keeps_tighter_helper_defaults ... ok
+
 cargo test timeout -- --nocapture
 
 Result:
 
+- config::tests::rejects_zero_expensive_request_timeout ... ok
 - config::tests::rejects_zero_session_idle_timeout ... ok
+- http::http_gateway::http_mailbox_backends::tests::expensive_route_helper_policy_never_exceeds_route_timeout ... ok
 - http::tests::mailbox_budget_releases_after_message_view_timeout_like_failure ... ok
 - http::tests::connection_timeout_returns_request_timeout_response ... ok
 
@@ -71,6 +81,10 @@ Remaining V3 work
 -----------------
 
 This closes the first evidence path for helper-backed mailbox/search/message
-view timeout behavior and bounded failure mapping. It does not yet implement
-full route-deadline propagation, send worker budgets, or auth worker budgets;
-those remain separate V3 resource-control work items.
+view timeout behavior and bounded failure mapping. The follow-up implementation
+now propagates `OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS` into helper-backed
+message search and message view, with unit tests proving the helper policy does
+not exceed the route cap and keeps tighter helper defaults when they are already
+stricter. Send worker budgets, auth worker budgets, and deadline propagation for
+the remaining expensive route classes remain separate V3 resource-control work
+items.
