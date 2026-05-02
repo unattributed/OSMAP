@@ -73,9 +73,16 @@ where
         let password = form.get("password").cloned().unwrap_or_default();
         let totp_code = form.get("totp_code").cloned().unwrap_or_default();
 
+        let (budget_guard, budget_event) = match self.acquire_auth_budget(context) {
+            Ok(result) => result,
+            Err(response) => return response,
+        };
         let outcome = self
             .gateway
             .login(context, &username, &password, &totp_code);
+        let mut audit_events = outcome.audit_events;
+        audit_events.push(self.release_auth_budget(budget_guard, context));
+        audit_events.insert(0, budget_event);
 
         match outcome.decision {
             BrowserLoginDecision::Authenticated { session_token, .. } => HandledHttpResponse {
@@ -87,7 +94,7 @@ where
                         self.policy.secure_session_cookie,
                     ),
                 ),
-                audit_events: outcome.audit_events,
+                audit_events,
             },
             BrowserLoginDecision::Denied { public_reason } => HandledHttpResponse {
                 response: html_response(
@@ -96,7 +103,7 @@ where
                     "Login Failed",
                     &render_login_page(Some(public_reason_message(&public_reason))),
                 ),
-                audit_events: outcome.audit_events,
+                audit_events,
             },
         }
     }

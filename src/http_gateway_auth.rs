@@ -12,6 +12,10 @@ impl RuntimeBrowserGateway {
                 self.doveadm_path.clone(),
                 self.doveadm_auth_socket_path.clone(),
                 "imap",
+            )
+            .with_command_timeout_secs(
+                self.expensive_request_timeout_secs
+                    .min(crate::auth::DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS),
             ),
         )
     }

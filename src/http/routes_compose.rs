@@ -182,6 +182,17 @@ where
         let recipients = form.get("to").cloned().unwrap_or_default();
         let subject = form.get("subject").cloned().unwrap_or_default();
         let body = form.get("body").cloned().unwrap_or_default();
+        let (budget_guard, budget_event) =
+            match self.acquire_send_budget(context, &validated_session) {
+                Ok(result) => result,
+                Err(mut response) => {
+                    audit_events.extend(response.audit_events);
+                    response.audit_events = audit_events;
+                    return response;
+                }
+            };
+        audit_events.push(budget_event);
+
         let outcome = self.gateway.send_message(
             context,
             &validated_session,
@@ -192,7 +203,7 @@ where
         );
         audit_events.extend(outcome.audit_events);
 
-        match outcome.decision {
+        let mut handled = match outcome.decision {
             BrowserSendDecision::Submitted => HandledHttpResponse {
                 response: redirect_response(303, "See Other", "/compose?sent=1"),
                 audit_events,
@@ -232,6 +243,13 @@ where
                     audit_events,
                 }
             }
-        }
+        };
+        handled.audit_events.push(self.release_request_budget(
+            budget_guard,
+            "message_send",
+            context,
+            &validated_session,
+        ));
+        handled
     }
 }

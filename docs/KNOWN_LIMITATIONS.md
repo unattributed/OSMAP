@@ -20,11 +20,11 @@
 - The implementation now has a bounded browser slice with login, mailbox read,
   message view, compose, send, CSRF handling, and attachment download, and it
   now uses bounded concurrent request handling with an explicit connection cap
-  plus first route-class worker budgets for message search and message view,
-  plus route-deadline propagation for helper-backed search and message view,
-  but it still does not provide a mature worker pool, async runtime, send/auth
-  route budgets, route-deadline propagation for every expensive route, or a
-  complete denial-of-service mitigation story
+  plus route-class worker budgets for message search, message view, send, and
+  login, plus route-deadline propagation for helper-backed search/message view,
+  sendmail-backed submission, and external-auth login, but it still does not
+  provide a mature worker pool, async runtime, route-deadline propagation for
+  every expensive route, or a complete denial-of-service mitigation story
 - The current HTTP runtime now has clearer connection-pressure, write-failure,
   and accept-failure observability, but it still depends on adjacent controls
   and does not yet provide a complete request-resource exhaustion strategy

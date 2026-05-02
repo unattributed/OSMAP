@@ -736,6 +736,7 @@ pub struct DoveadmAuthTestBackend<E> {
     doveadm_path: PathBuf,
     auth_socket_path: Option<PathBuf>,
     service: &'static str,
+    command_timeout_secs: u64,
 }
 
 impl<E> DoveadmAuthTestBackend<E> {
@@ -751,7 +752,14 @@ impl<E> DoveadmAuthTestBackend<E> {
             doveadm_path: doveadm_path.into(),
             auth_socket_path,
             service,
+            command_timeout_secs: DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS,
         }
+    }
+
+    /// Caps the external auth command timeout for route-level deadline use.
+    pub fn with_command_timeout_secs(mut self, command_timeout_secs: u64) -> Self {
+        self.command_timeout_secs = command_timeout_secs;
+        self
     }
 }
 
@@ -793,7 +801,7 @@ where
                 self.doveadm_path.to_string_lossy().as_ref(),
                 &args,
                 &format!("{password}\n"),
-                Duration::from_secs(DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS),
+                Duration::from_secs(self.command_timeout_secs),
             )
             .map_err(|error| PrimaryAuthBackendError {
                 backend: "doveadm-auth-test",
@@ -1201,6 +1209,7 @@ mod tests {
         program: Option<String>,
         args: Option<Vec<String>>,
         stdin_data: Option<String>,
+        timeout_secs: Option<u64>,
     }
 
     impl StubCommandExecutor {
@@ -1210,6 +1219,7 @@ mod tests {
                 program: None,
                 args: None,
                 stdin_data: None,
+                timeout_secs: None,
             }
         }
     }
@@ -1229,6 +1239,18 @@ mod tests {
                     .expect("auth test stdin should remain valid utf-8"),
             );
             state.execution.clone()
+        }
+
+        fn run_with_stdin_bytes_timeout(
+            &self,
+            program: &str,
+            args: &[String],
+            stdin_data: &[u8],
+            timeout: Duration,
+        ) -> Result<CommandExecution, CommandExecutionError> {
+            let result = self.run_with_stdin_bytes(program, args, stdin_data);
+            self.borrow_mut().timeout_secs = Some(timeout.as_secs());
+            result
         }
     }
 
@@ -1409,7 +1431,8 @@ mod tests {
             "/usr/local/bin/doveadm",
             Some(PathBuf::from("/var/run/dovecot/auth-client")),
             "imap",
-        );
+        )
+        .with_command_timeout_secs(3);
 
         let verdict = backend
             .verify_primary(
@@ -1428,6 +1451,7 @@ mod tests {
 
         let recorded = executor.borrow();
         assert_eq!(recorded.program.as_deref(), Some("/usr/local/bin/doveadm"));
+        assert_eq!(recorded.timeout_secs, Some(3));
         assert_eq!(
             recorded.stdin_data.as_deref(),
             Some("correct horse battery staple\n")

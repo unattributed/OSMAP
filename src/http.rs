@@ -130,6 +130,12 @@ pub const DEFAULT_MAILBOX_WORKER_BUDGET: usize = 8;
 /// Conservative bound for expensive authenticated search worker occupancy.
 pub const DEFAULT_SEARCH_WORKER_BUDGET: usize = 4;
 
+/// Conservative bound for expensive outbound send worker occupancy.
+pub const DEFAULT_SEND_WORKER_BUDGET: usize = 2;
+
+/// Conservative bound for expensive external-auth worker occupancy.
+pub const DEFAULT_AUTH_WORKER_BUDGET: usize = 4;
+
 /// Short retry hint for fail-fast route-class budget exhaustion.
 pub const DEFAULT_REQUEST_BUDGET_RETRY_AFTER_SECS: u64 = 1;
 
@@ -157,6 +163,8 @@ pub struct HttpPolicy {
     pub max_concurrent_connections: usize,
     pub mailbox_worker_budget: usize,
     pub search_worker_budget: usize,
+    pub send_worker_budget: usize,
+    pub auth_worker_budget: usize,
     pub expensive_request_timeout_secs: u64,
     pub request_budget_retry_after_secs: u64,
     pub authentication_policy: AuthenticationPolicy,
@@ -180,6 +188,8 @@ impl HttpPolicy {
             max_concurrent_connections: config.http_max_concurrent_connections as usize,
             mailbox_worker_budget: config.mailbox_worker_budget as usize,
             search_worker_budget: config.search_worker_budget as usize,
+            send_worker_budget: config.send_worker_budget as usize,
+            auth_worker_budget: config.auth_worker_budget as usize,
             expensive_request_timeout_secs: config.expensive_request_timeout_seconds,
             request_budget_retry_after_secs: DEFAULT_REQUEST_BUDGET_RETRY_AFTER_SECS,
             authentication_policy: AuthenticationPolicy {
@@ -207,6 +217,8 @@ impl Default for HttpPolicy {
             max_concurrent_connections: DEFAULT_HTTP_MAX_CONCURRENT_CONNECTIONS,
             mailbox_worker_budget: DEFAULT_MAILBOX_WORKER_BUDGET,
             search_worker_budget: DEFAULT_SEARCH_WORKER_BUDGET,
+            send_worker_budget: DEFAULT_SEND_WORKER_BUDGET,
+            auth_worker_budget: DEFAULT_AUTH_WORKER_BUDGET,
             expensive_request_timeout_secs: DEFAULT_EXPENSIVE_REQUEST_TIMEOUT_SECS,
             request_budget_retry_after_secs: DEFAULT_REQUEST_BUDGET_RETRY_AFTER_SECS,
             authentication_policy: AuthenticationPolicy::default(),
@@ -330,6 +342,8 @@ pub struct HandledHttpResponse {
 struct RequestBudgets {
     mailbox_workers: RequestBudget,
     search_workers: RequestBudget,
+    send_workers: RequestBudget,
+    auth_workers: RequestBudget,
 }
 
 impl RequestBudgets {
@@ -337,6 +351,8 @@ impl RequestBudgets {
         Self {
             mailbox_workers: RequestBudget::new("mailbox_workers", policy.mailbox_worker_budget),
             search_workers: RequestBudget::new("search_workers", policy.search_worker_budget),
+            send_workers: RequestBudget::new("send_workers", policy.send_worker_budget),
+            auth_workers: RequestBudget::new("auth_workers", policy.auth_worker_budget),
         }
     }
 }
@@ -467,7 +483,7 @@ impl<G> BrowserApp<G> {
             &self.request_budgets.search_workers,
             "message_search",
             context,
-            validated_session,
+            Some(validated_session),
         )
     }
 
@@ -481,8 +497,28 @@ impl<G> BrowserApp<G> {
             &self.request_budgets.mailbox_workers,
             route_class,
             context,
-            validated_session,
+            Some(validated_session),
         )
+    }
+
+    fn acquire_send_budget(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+    ) -> Result<(RequestBudgetGuard<'_>, LogEvent), HandledHttpResponse> {
+        self.acquire_request_budget(
+            &self.request_budgets.send_workers,
+            "message_send",
+            context,
+            Some(validated_session),
+        )
+    }
+
+    fn acquire_auth_budget(
+        &self,
+        context: &AuthenticationContext,
+    ) -> Result<(RequestBudgetGuard<'_>, LogEvent), HandledHttpResponse> {
+        self.acquire_request_budget(&self.request_budgets.auth_workers, "login", context, None)
     }
 
     fn acquire_request_budget<'a>(
@@ -490,7 +526,7 @@ impl<G> BrowserApp<G> {
         budget: &'a RequestBudget,
         route_class: &'static str,
         context: &AuthenticationContext,
-        validated_session: &ValidatedSession,
+        validated_session: Option<&ValidatedSession>,
     ) -> Result<(RequestBudgetGuard<'a>, LogEvent), HandledHttpResponse> {
         match budget.try_acquire() {
             Some(guard) => {
@@ -508,7 +544,7 @@ impl<G> BrowserApp<G> {
                             active,
                             limit,
                             context,
-                            validated_session: Some(validated_session),
+                            validated_session,
                         },
                     ),
                 ))
@@ -538,7 +574,7 @@ impl<G> BrowserApp<G> {
                             active,
                             limit,
                             context,
-                            validated_session: Some(validated_session),
+                            validated_session,
                         },
                     )],
                 })
@@ -567,6 +603,29 @@ impl<G> BrowserApp<G> {
                 limit,
                 context,
                 validated_session: Some(validated_session),
+            },
+        )
+    }
+
+    fn release_auth_budget(
+        &self,
+        guard: RequestBudgetGuard<'_>,
+        context: &AuthenticationContext,
+    ) -> LogEvent {
+        let budget_name = guard.budget.name;
+        let limit = guard.limit();
+        let active = guard.release();
+        request_budget_event(
+            LogLevel::Info,
+            "request_budget_released",
+            "request worker budget slot released",
+            RequestBudgetEventContext {
+                budget_name,
+                route_class: "login",
+                active,
+                limit,
+                context,
+                validated_session: None,
             },
         )
     }
@@ -1941,6 +2000,113 @@ mod tests {
             "127.0.0.1",
         );
         assert_eq!(response_after_release.response.status_code, 200);
+    }
+
+    #[test]
+    fn auth_budget_exhaustion_returns_retry_after_without_running_login() {
+        let policy = HttpPolicy {
+            auth_worker_budget: 1,
+            ..HttpPolicy::default()
+        };
+        let app = app_with_policy(policy);
+        let held_budget = app
+            .request_budgets
+            .auth_workers
+            .try_acquire()
+            .expect("test should hold the only auth slot");
+
+        let response = app.handle_request(
+            &request(
+                "POST",
+                "/login",
+                &[("content-type", "application/x-www-form-urlencoded")],
+                "username=alice%40example.com&password=correct+horse+battery+staple&totp_code=123456",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 503);
+        assert!(response
+            .response
+            .headers
+            .iter()
+            .any(|(name, value)| name == "Retry-After" && value == "1"));
+        assert!(response.audit_events.iter().any(|event| {
+            event.action == "request_budget_exhausted"
+                && event
+                    .fields
+                    .iter()
+                    .any(|field| field.key == "budget_name" && field.value == "auth_workers")
+                && !event
+                    .fields
+                    .iter()
+                    .any(|field| field.key == "canonical_username")
+        }));
+
+        drop(held_budget);
+        let response_after_release = app.handle_request(
+            &request(
+                "POST",
+                "/login",
+                &[("content-type", "application/x-www-form-urlencoded")],
+                "username=alice%40example.com&password=correct+horse+battery+staple&totp_code=123456",
+            ),
+            "127.0.0.1",
+        );
+        assert_eq!(response_after_release.response.status_code, 303);
+    }
+
+    #[test]
+    fn send_budget_exhaustion_returns_retry_after_after_session_validation() {
+        let policy = HttpPolicy {
+            send_worker_budget: 1,
+            ..HttpPolicy::default()
+        };
+        let app = app_with_policy(policy);
+        let held_budget = app
+            .request_budgets
+            .send_workers
+            .try_acquire()
+            .expect("test should hold the only send slot");
+
+        let response = app.handle_request(
+            &request(
+                "POST",
+                "/send",
+                &authenticated_same_origin_headers(),
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&to=bob%40example.com&subject=Test&body=Hello",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 503);
+        assert!(response
+            .response
+            .headers
+            .iter()
+            .any(|(name, value)| name == "Retry-After" && value == "1"));
+        assert!(response.audit_events.iter().any(|event| {
+            event.action == "request_budget_exhausted"
+                && event
+                    .fields
+                    .iter()
+                    .any(|field| field.key == "budget_name" && field.value == "send_workers")
+                && event.fields.iter().any(|field| {
+                    field.key == "canonical_username" && field.value == "alice@example.com"
+                })
+        }));
+
+        drop(held_budget);
+        let response_after_release = app.handle_request(
+            &request(
+                "POST",
+                "/send",
+                &authenticated_same_origin_headers(),
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&to=bob%40example.com&subject=Test&body=Hello",
+            ),
+            "127.0.0.1",
+        );
+        assert_eq!(response_after_release.response.status_code, 303);
     }
 
     #[test]

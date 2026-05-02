@@ -17,6 +17,9 @@ This evidence covers the first V3 resource and timeout proof slice:
 - route-level deadline propagation into helper-backed search/view policy
 - route-class search budget exhaustion and cheap-route availability
 - route-class mailbox budget release after a message-view backend failure
+- route-class send budget exhaustion after session and CSRF validation
+- route-class auth budget exhaustion without session or credential-stage leakage
+- route-level command timeout propagation for sendmail and external auth
 - bounded public failure rendering for oversized message-view output
 - HTTP read timeout behavior
 - external command timeout behavior
@@ -43,6 +46,8 @@ Result:
 - config::tests::rejects_zero_worker_budgets ... ok
 - config::tests::rejects_worker_budgets_above_connection_cap ... ok
 - http::tests::search_budget_exhaustion_returns_retry_after_without_blocking_login ... ok
+- http::tests::auth_budget_exhaustion_returns_retry_after_without_running_login ... ok
+- http::tests::send_budget_exhaustion_returns_retry_after_after_session_validation ... ok
 - http::tests::search_budget_events_do_not_log_bearer_or_csrf_tokens ... ok
 - http::tests::mailbox_budget_releases_after_message_view_timeout_like_failure ... ok
 - http::tests::request_budget_guard_releases_on_panic ... ok
@@ -66,6 +71,8 @@ Result:
 
 Additional covered tests from the full security gate:
 
+- auth::tests::doveadm_backend_uses_stdin_and_contextual_auth_info
+- send::tests::sendmail_backend_uses_local_submission_surface
 - auth::tests::system_command_executor_times_out_slow_command
 - auth::tests::system_command_executor_rejects_oversized_stdout
 - http::tests::message_view_route_maps_oversized_mime_body_to_safe_failure
@@ -81,10 +88,12 @@ Remaining V3 work
 -----------------
 
 This closes the first evidence path for helper-backed mailbox/search/message
-view timeout behavior and bounded failure mapping. The follow-up implementation
-now propagates `OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS` into helper-backed
-message search and message view, with unit tests proving the helper policy does
-not exceed the route cap and keeps tighter helper defaults when they are already
-stricter. Send worker budgets, auth worker budgets, and deadline propagation for
-the remaining expensive route classes remain separate V3 resource-control work
-items.
+view timeout behavior and bounded failure mapping. Follow-up implementation now
+propagates `OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS` into helper-backed message
+search and message view, sendmail-backed compose submission, and external-auth
+login. Unit tests prove the helper policy does not exceed the route cap, keeps
+tighter helper defaults when they are already stricter, records send/auth budget
+exhaustion safely, and caps the sendmail and auth command timeout used by those
+routes. Send and auth route budgets are now implemented; deadline propagation
+for any remaining expensive route classes remains separate V3 resource-control
+work.

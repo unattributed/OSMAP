@@ -79,17 +79,18 @@ When a budget is exhausted, it returns `503 Service Unavailable` with a short
 
 ## Deadline Propagation
 
-The current implementation adds the first route-level deadline propagation for
-helper-backed message search and message view. `OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS`
+The current implementation adds route-level deadline propagation for
+helper-backed message search and message view, sendmail-backed compose
+submission, and the external-auth stage of login. `OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS`
 is read during startup, reported in the non-secret bootstrap summary, and
-propagated into the browser-facing helper client policy for the expensive
-search/view routes.
+propagated into the browser-facing helper client policy or command timeout for
+those expensive route classes.
 
 The deadline should:
 
 - be computed once near route admission
 - be passed to external command/helper calls where possible; implemented for
-  helper-backed message search and message view
+  helper-backed message search/view plus sendmail and external auth commands
 - never exceed the existing command timeout
 - force a generic browser failure when exceeded
 - release every budget guard on timeout or panic
@@ -121,6 +122,8 @@ The first implemented configuration is:
 - `OSMAP_HTTP_MAX_CONCURRENT_CONNECTIONS`
 - `OSMAP_MAILBOX_WORKER_BUDGET`
 - `OSMAP_SEARCH_WORKER_BUDGET`
+- `OSMAP_SEND_WORKER_BUDGET`
+- `OSMAP_AUTH_WORKER_BUDGET`
 - `OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS`
 
 Each value rejects zero and defaults conservatively when absent. The route
@@ -128,8 +131,7 @@ budgets must not exceed the connection cap.
 
 Planned later configuration:
 
-- `OSMAP_SEND_WORKER_BUDGET`
-- `OSMAP_AUTH_WORKER_BUDGET`
+- additional route budgets if new expensive route classes are added
 
 ## Required Tests
 
@@ -141,13 +143,16 @@ The implementation gate should include tests for:
   implemented for message-view failure and success retry
 - search budget exhaustion returning `503` with `Retry-After`; implemented for
   the shared search budget
-- send budget exhaustion without bypassing submission throttles
-- auth budget exhaustion without leaking which credential stage would have run
+- send budget exhaustion without bypassing session/CSRF validation; implemented
+  for the compose submission route
+- auth budget exhaustion without leaking which credential stage would have run;
+  implemented for the login route before the gateway auth call
 - budget guard release on backend error; partially implemented through
   message-view unavailable regression
 - budget guard release on timeout; implemented for helper-backed
   mailbox/search/message-view helper socket timeouts, and now backed by
-  route-level timeout propagation for helper-backed search and message view
+  route-level timeout propagation for helper-backed search/message view,
+  sendmail-backed submission, and external-auth login
   implementation
 - budget guard release on worker panic; implemented for the shared guard
 - no session id, bearer token, CSRF token, password, TOTP code, message body, or

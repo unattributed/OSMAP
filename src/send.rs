@@ -298,6 +298,7 @@ pub trait SubmissionBackend {
 pub struct SendmailSubmissionBackend<E> {
     command_executor: E,
     sendmail_path: PathBuf,
+    command_timeout_secs: u64,
 }
 
 impl<E> SendmailSubmissionBackend<E> {
@@ -306,7 +307,14 @@ impl<E> SendmailSubmissionBackend<E> {
         Self {
             command_executor,
             sendmail_path: sendmail_path.into(),
+            command_timeout_secs: DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS,
         }
+    }
+
+    /// Caps the sendmail command timeout for route-level deadline use.
+    pub fn with_command_timeout_secs(mut self, command_timeout_secs: u64) -> Self {
+        self.command_timeout_secs = command_timeout_secs;
+        self
     }
 }
 
@@ -337,7 +345,7 @@ where
                     canonical_username.to_string(),
                 ],
                 &submission_message,
-                Duration::from_secs(DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS),
+                Duration::from_secs(self.command_timeout_secs),
             )
             .map_err(|error| SubmissionBackendError {
                 backend: "sendmail-submission",
@@ -1089,6 +1097,7 @@ mod tests {
         program: Option<String>,
         args: Option<Vec<String>>,
         stdin_data: Option<Vec<u8>>,
+        timeout_secs: Option<u64>,
     }
 
     impl StubCommandExecutor {
@@ -1098,6 +1107,7 @@ mod tests {
                 program: None,
                 args: None,
                 stdin_data: None,
+                timeout_secs: None,
             }
         }
     }
@@ -1114,6 +1124,18 @@ mod tests {
             state.args = Some(args.to_vec());
             state.stdin_data = Some(stdin_data.to_vec());
             state.execution.clone()
+        }
+
+        fn run_with_stdin_bytes_timeout(
+            &self,
+            program: &str,
+            args: &[String],
+            stdin_data: &[u8],
+            timeout: Duration,
+        ) -> Result<CommandExecution, CommandExecutionError> {
+            let result = self.run_with_stdin_bytes(program, args, stdin_data);
+            self.borrow_mut().timeout_secs = Some(timeout.as_secs());
+            result
         }
     }
 
@@ -1340,7 +1362,8 @@ mod tests {
                 stderr: String::new(),
             },
         )));
-        let backend = SendmailSubmissionBackend::new(executor.clone(), "/usr/sbin/sendmail");
+        let backend = SendmailSubmissionBackend::new(executor.clone(), "/usr/sbin/sendmail")
+            .with_command_timeout_secs(3);
         let request = ComposeRequest::new(
             ComposePolicy::default(),
             "bob@example.com",
@@ -1355,6 +1378,7 @@ mod tests {
 
         let recorded = executor.borrow();
         assert_eq!(recorded.program.as_deref(), Some("/usr/sbin/sendmail"));
+        assert_eq!(recorded.timeout_secs, Some(3));
         assert_eq!(
             recorded.args.as_ref().expect("args should be captured"),
             &vec![

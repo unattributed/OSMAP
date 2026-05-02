@@ -40,10 +40,13 @@ impl RuntimeBrowserGateway {
     pub(super) fn build_submission_service(
         &self,
     ) -> SubmissionService<SendmailSubmissionBackend<SystemCommandExecutor>> {
-        SubmissionService::new(SendmailSubmissionBackend::new(
-            SystemCommandExecutor,
-            self.sendmail_path.clone(),
-        ))
+        SubmissionService::new(
+            SendmailSubmissionBackend::new(SystemCommandExecutor, self.sendmail_path.clone())
+                .with_command_timeout_secs(
+                    self.expensive_request_timeout_secs
+                        .min(crate::auth::DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS),
+                ),
+        )
     }
 
     /// Builds the current attachment-download service from the MIME policy.

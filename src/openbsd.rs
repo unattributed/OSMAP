@@ -607,6 +607,8 @@ mod tests {
             http_max_concurrent_connections: 16,
             mailbox_worker_budget: 8,
             search_worker_budget: 4,
+            send_worker_budget: 2,
+            auth_worker_budget: 4,
             expensive_request_timeout_seconds: 5,
             session_lifetime_seconds: 43200,
             session_idle_timeout_seconds: 1800,

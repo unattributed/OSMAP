@@ -162,12 +162,13 @@ upstream gateway hands them over-limit collections.
 Slow synchronous request occupancy is tracked in
 `REQUEST_WORKER_BUDGET_MODEL.md`. The current implementation now has the first
 independent route-class worker budgets for authenticated message search and
-message view, in addition to the global concurrent connection cap and
-lower-level parser, helper, and command timeouts. Budget exhaustion fails fast
-with `503 Service Unavailable`, `Retry-After`, and bounded audit events. The
-browser runtime now also propagates `OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS`
-into helper-backed search and message-view calls so admitted budget slots have
-a hard helper-client route cap. The next hardening pass should extend the same
-model to send/auth paths and the remaining expensive routes. Adjacent controls
-such as nginx request limits, PF, and host monitoring remain part of the
-credible DoS posture.
+message view, plus send and login, in addition to the global concurrent
+connection cap and lower-level parser, helper, and command timeouts. Budget
+exhaustion fails fast with `503 Service Unavailable`, `Retry-After`, and
+bounded audit events. The browser runtime now also propagates
+`OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS` into helper-backed search/message
+view calls, sendmail-backed compose submission, and external-auth login so
+admitted budget slots have route-level backend caps. The next hardening pass
+should extend the same model to any remaining expensive routes. Adjacent
+controls such as nginx request limits, PF, and host monitoring remain part of
+the credible DoS posture.
