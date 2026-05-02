@@ -86,7 +86,8 @@ It also requires the TLS CBC cleanup evidence identified by
 `maint/live/osmap-v3-tls-cbc-cleanup-evidence-2026-05-02.txt`.
 Resource and timeout evidence is identified by
 `OSMAP_RELEASE_RESOURCE_TIMEOUT_EVIDENCE`, which defaults to
-`maint/live/osmap-v3-resource-timeout-evidence-2026-05-02.txt`.
+`maint/live/osmap-v3-resource-timeout-evidence-2026-05-02.txt` and
+`maint/live/latest-host-v3-resource-controls-report.txt`.
 
 The normal GitHub `security-check` workflow remains a developer and CI signal.
 It must not be described as full V3 release validation unless the run also has

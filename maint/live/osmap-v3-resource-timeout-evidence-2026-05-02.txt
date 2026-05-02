@@ -1,8 +1,8 @@
 OSMAP V3 resource and timeout hardening evidence
 ================================================
 
-assessed_at_utc=2026-05-02T13:07:00Z
-assessed_host=local safe fixture plus repo unit tests
+assessed_at_utc=2026-05-02T14:36:23Z
+assessed_host=local safe fixture plus mail.blackbagsecurity.com live helper-backed runtime
 assessed_ref=tracked in the commit that adds this evidence; release summaries record the exact assessed ref
 secret_review=No private keys, passwords, TOTP material, cookies, mailbox bodies, attachment contents, provider tokens, or host secrets are included in this evidence.
 
@@ -32,13 +32,18 @@ This evidence covers the first V3 resource and timeout proof slice:
   search/view/move, sendmail, and external auth
 - route-level helper timeout propagation for helper-backed message
   search/view/move and attachment download
+- live helper-backed route-budget evidence for compose reply source loading,
+  attachment download, all-mailbox search fanout, and one-message move on
+  `mail.blackbagsecurity.com`
 - bounded public failure rendering for oversized message-view output
 - HTTP read timeout behavior
 - external command timeout behavior
 
 The proof is intentionally safe and non-destructive. It uses unit/integration
-tests with synthetic fixtures and local Unix-domain sockets. It does not access
-real mailboxes or live private message content.
+tests with synthetic fixtures and local Unix-domain sockets, plus one live
+OpenBSD helper-backed validation that injects and removes a controlled
+synthetic message for the validation mailbox. It does not access private
+message content.
 
 Commands run
 ------------
@@ -125,12 +130,34 @@ Additional covered tests from the full security gate:
 - auth::tests::system_command_executor_rejects_oversized_stdout
 - http::tests::message_view_route_maps_oversized_mime_body_to_safe_failure
 
+ksh ./maint/live/osmap-live-validate-v3-resource-controls.ksh --report ./maint/live/latest-host-v3-resource-controls-report.txt
+
+Result:
+
+- osmap_v3_resource_controls_result=passed
+- assessed_host=mail.blackbagsecurity.com
+- mailbox_boundary_mode=local_helper_socket
+- mailbox_worker_budget=1
+- search_worker_budget=1
+- compose_source_status=HTTP/1.1 200 OK
+- attachment_download_status=HTTP/1.1 200 OK
+- all_mailbox_search_status=HTTP/1.1 200 OK
+- message_move_status=HTTP/1.1 303 See Other
+- matched request_budget_acquired and request_budget_released events for
+  `compose_source`, `attachment_download`, `message_move`, and
+  `message_search`
+- report secret review passed: no passwords, TOTP material, session cookie,
+  CSRF token, private message body, attachment body, provider secret, or host
+  secret included
+
 Release interpretation
 ----------------------
 
-The release gate treats this file as the current resource-timeout evidence path
-through `OSMAP_RELEASE_RESOURCE_TIMEOUT_EVIDENCE`. A release-mode run must fail
-if the configured resource-timeout evidence is missing or empty.
+The release gate treats this file and
+`maint/live/latest-host-v3-resource-controls-report.txt` as the current
+resource-timeout evidence paths through
+`OSMAP_RELEASE_RESOURCE_TIMEOUT_EVIDENCE`. A release-mode run must fail if the
+configured resource-timeout evidence is missing or empty.
 
 Remaining V3 work
 -----------------
@@ -142,7 +169,9 @@ classes currently in scope. Unit tests prove the helper policy does not exceed
 the route cap, keeps tighter helper defaults when they are already stricter,
 records search/mailbox/send/auth budget exhaustion safely, caps direct
 `doveadm`, sendmail, and auth command timeouts used by those routes, and emits
-redacted all-mailbox fanout deadline evidence.
+redacted all-mailbox fanout deadline evidence. The live helper-backed report
+proves the current route classes also emit acquire/release budget evidence on
+`mail.blackbagsecurity.com` with the real helper socket boundary.
 
 Future V3 resource-control work should add evidence only when a new expensive
 route class is introduced or a live-host validation identifies a specific

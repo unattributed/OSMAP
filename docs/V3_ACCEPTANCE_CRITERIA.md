@@ -107,7 +107,9 @@ The Version 3 closeout record must link:
 - current V2 readiness evidence
 - host-readiness and public-edge evidence for the intended deployment host
 - V3 feature-gate evidence for every in-scope feature
-- resource-timeout evidence for helper-backed mailbox, search, and message-view paths
+- resource-timeout evidence for helper-backed mailbox, search, message-view,
+  compose source loading, attachment download, all-mailbox search fanout, and
+  message-move paths
 - WSTG regression evidence
 - authenticated WSTG or other credential-dependent security evidence proving credential and TOTP paths were exercised where required
 - TLS CBC removal or exception evidence

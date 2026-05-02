@@ -30,7 +30,7 @@ fi
 : "${OSMAP_RELEASE_V2_CARRY_FORWARD_EVIDENCE:=maint/live/latest-host-v2-readiness-report.txt maint/live/latest-host-v2-readiness-service-guard-report.txt docs/V2_PILOT_STATUS.md docs/V2_PILOT_CLOSEOUT.md}"
 : "${OSMAP_RELEASE_HOST_READINESS_EVIDENCE:=maint/live/latest-host-v2-readiness-report.txt maint/live/latest-host-edge-cutover-report.txt maint/live/latest-host-internet-exposure-report.txt maint/live/latest-host-service-enablement-report.txt}"
 : "${OSMAP_RELEASE_TLS_EDGE_EVIDENCE:=maint/live/osmap-v3-tls-cbc-cleanup-evidence-2026-05-02.txt}"
-: "${OSMAP_RELEASE_RESOURCE_TIMEOUT_EVIDENCE:=maint/live/osmap-v3-resource-timeout-evidence-2026-05-02.txt}"
+: "${OSMAP_RELEASE_RESOURCE_TIMEOUT_EVIDENCE:=maint/live/osmap-v3-resource-timeout-evidence-2026-05-02.txt maint/live/latest-host-v3-resource-controls-report.txt}"
 : "${OSMAP_RELEASE_SUPPLY_CHAIN_COMMAND:=sh maint/security/osmap-supply-chain-check.sh}"
 
 mkdir -p "$TMPDIR" "$CARGO_HOME" "$CARGO_TARGET_DIR" "$OSMAP_RELEASE_EVIDENCE_DIR"
