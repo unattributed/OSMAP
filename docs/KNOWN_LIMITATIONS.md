@@ -177,8 +177,9 @@ The following remain out of scope for Version 3:
 
 The April 2026 WSTG backlog maps into Version 3 as follows:
 
-- TLS 1.2 CBC suite removal is required unless a dated, owned compatibility
-  exception with compensating controls is documented.
+- TLS 1.2 CBC suites have been removed from the reviewed nginx public-edge
+  artifact and live edge evidence is archived at
+  `maint/live/osmap-v3-tls-cbc-cleanup-evidence-2026-05-02.txt`.
 - Concurrent-session caps, device limits, richer session labels, and anomaly
   handling are Version 3 policy work. Version 3 must choose and test an
   explicit policy rather than leaving concurrent sessions as an implicit

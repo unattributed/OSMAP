@@ -89,6 +89,12 @@ The evidence must not commit or archive plaintext passwords, reusable TOTP seeds
 
 The preferred Version 3 outcome is removal of TLS 1.2 CBC suites from the reviewed public-edge configuration.
 
+As of 2026-05-02, the reviewed nginx public-edge artifact in
+`openbsd-mailstack` commit `c285d98` limits web TLS to `TLSv1.2` and
+`TLSv1.3`, with an explicit AEAD-only TLS 1.2 cipher list. Live evidence for
+`mail.blackbagsecurity.com:443` is archived at
+`maint/live/osmap-v3-tls-cbc-cleanup-evidence-2026-05-02.txt`.
+
 An exception is allowed only when all of the following are documented:
 
 - affected client population

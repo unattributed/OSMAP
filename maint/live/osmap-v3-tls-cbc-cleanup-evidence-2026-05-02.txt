@@ -1,0 +1,95 @@
+OSMAP V3 TLS CBC cleanup evidence
+=================================
+
+assessed_at_utc=2026-05-02T03:35:00Z
+assessed_host=mail.blackbagsecurity.com
+assessed_port=443
+edge_artifact_repo=/home/foo/Workspace/openbsd-mailstack
+edge_artifact_commit=c285d98 remove nginx tls cbc suites
+live_template=/etc/nginx/templates/ssl.tmpl
+secret_review=No private keys, passwords, TOTP material, cookies, mailbox bodies, attachment contents, provider tokens, or host secrets are included in this evidence.
+
+Configuration applied
+---------------------
+
+The source and rendered edge artifacts now pin nginx web TLS to:
+
+ssl_protocols TLSv1.2 TLSv1.3;
+ssl_ciphers ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256;
+
+Live host validation
+--------------------
+
+Command:
+ssh mail 'doas awk "/^ssl_protocols|^ssl_ciphers/ {print}" /etc/nginx/templates/ssl.tmpl; doas nginx -t; doas rcctl check nginx'
+
+Output:
+ssl_protocols TLSv1.2 TLSv1.3;
+ssl_ciphers ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256;
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+nginx(ok)
+
+External TLS enumeration
+------------------------
+
+Command:
+nmap --script ssl-enum-ciphers -p 443 mail.blackbagsecurity.com
+
+Relevant output:
+TLSv1.2:
+  TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 - A
+  TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 - A
+  TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256 - A
+TLSv1.3:
+  TLS_AKE_WITH_AES_256_GCM_SHA384 - A
+  TLS_AKE_WITH_CHACHA20_POLY1305_SHA256 - A
+  TLS_AKE_WITH_AES_128_GCM_SHA256 - A
+least_strength=A
+
+No TLS 1.0, TLS 1.1, or TLS 1.2 CBC suites were reported by the external
+enumeration.
+
+Focused handshake probes
+------------------------
+
+Allowed TLS 1.2 AEAD:
+openssl s_client -connect mail.blackbagsecurity.com:443 -servername mail.blackbagsecurity.com -tls1_2 -cipher ECDHE-ECDSA-AES128-GCM-SHA256
+Result:
+Protocol  : TLSv1.2
+Cipher    : ECDHE-ECDSA-AES128-GCM-SHA256
+Verify return code: 0 (ok)
+
+Allowed TLS 1.3:
+openssl s_client -connect mail.blackbagsecurity.com:443 -servername mail.blackbagsecurity.com -tls1_3
+Result:
+New, TLSv1.3, Cipher is TLS_AES_256_GCM_SHA384
+Protocol: TLSv1.3
+Verify return code: 0 (ok)
+
+Rejected TLS 1.2 CBC:
+openssl s_client -connect mail.blackbagsecurity.com:443 -servername mail.blackbagsecurity.com -tls1_2 -cipher ECDHE-ECDSA-AES128-SHA
+Result:
+tls alert handshake failure
+New, (NONE), Cipher is (NONE)
+Cipher    : 0000
+
+Rejected TLS 1.2 CBC:
+openssl s_client -connect mail.blackbagsecurity.com:443 -servername mail.blackbagsecurity.com -tls1_2 -cipher ECDHE-ECDSA-AES256-SHA
+Result:
+tls alert handshake failure
+New, (NONE), Cipher is (NONE)
+Cipher    : 0000
+
+Artifact verifier note
+----------------------
+
+The OpenBSD ksh verifier was run against a clean archive of the updated
+openbsd-mailstack tree on mail. The new nginx TLS policy checks passed:
+
+- nginx TLS protocols limited to TLS 1.2 and TLS 1.3
+- nginx TLS 1.2 ciphers are explicit AEAD-only suites
+- nginx TLS template has no CBC-capable broad cipher tokens
+
+The full verifier still exited non-zero on existing sanitized Postfixadmin and
+Roundcube fixture expectations that are unrelated to the TLS CBC cleanup.
