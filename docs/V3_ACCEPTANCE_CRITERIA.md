@@ -12,8 +12,9 @@ Before any Version 3 feature is treated as complete:
 
 - the project distinguishes developer partial checks from release-mode validation
 - release-mode validation fails when required validation is skipped or incomplete
-- `make security-check` or its release-mode successor passes in a compatible local, CI, or host toolchain without skipping required release phases
-- Cargo build, tests, clippy when available, formatting checks when available, and Rust supply-chain checks have successful evidence for the assessed commit
+- `make security-check` remains available for developer partial checks
+- `make release-check` passes in a compatible local or host toolchain without skipping required release phases
+- Cargo build, tests, clippy, formatting checks, dependency inventory generation, and Rust supply-chain checks have successful release evidence for the assessed commit
 - the Version 2 readiness wrapper still passes on the validated host posture
 - public-edge exposure remains gated by the existing internet-exposure, edge-cutover, rollback, observability, and service-health evidence
 - production `serve` mode still requires the mailbox helper
@@ -29,6 +30,11 @@ Developer validation may report skipped phases clearly.
 Release-mode validation must fail when a required phase is skipped. This includes skipped Cargo validation, skipped supply-chain validation, missing host-readiness evidence, missing V2 carry-forward evidence, missing V3 feature-gate evidence, and skipped authenticated WSTG or other security tests when the test requires credential and TOTP coverage.
 
 For WSTG and other security tests that require authenticated coverage, evidence must show that the real browser credential and TOTP path was exercised. The evidence may use a dedicated validation account with stored test secrets in a local uncommitted `.env`, or a human-prompted flow such as `--prompt-auth --auth-email`. The evidence must not commit plaintext passwords, reusable TOTP seeds, active session cookies, private message bodies, or private attachment content.
+
+The release evidence summary is written to
+`maint/live/osmap-v3-release-evidence-summary.json` and
+`maint/live/osmap-v3-release-evidence-summary.md`. Release mode must record an
+empty `skipped_checks` array before it can pass.
 
 ## Feature Admission Rule
 

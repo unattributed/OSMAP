@@ -53,15 +53,36 @@ predictable.
 The release flow should eventually look like:
 
 1. Source and dependency review
-2. Shared security gate such as `make security-check`, including the
-   supply-chain subgate from `make supply-chain-check`
+2. Developer validation with `make security-check`, including the supply-chain
+   subgate from `make supply-chain-check`
 3. Matching CI confirmation from the repo-owned `security-check` workflow
-4. Build
-5. Static analysis and required tests
-6. SBOM generation
-7. Artifact signing
-8. Staged deployment validation
-9. Controlled production rollout
+4. Strict release validation with `make release-check` on a host or operator
+   workstation that has the pinned Rust toolchain, pinned supply-chain tools,
+   release WSTG credential and TOTP evidence, V2 carry-forward evidence,
+   host-readiness evidence, and a sanitized evidence archive
+5. Build
+6. Static analysis and required tests
+7. Dependency inventory or SBOM generation
+8. Artifact signing
+9. Staged deployment validation
+10. Controlled production rollout
+
+The current strict command is:
+
+```bash
+make release-check
+```
+
+It writes:
+
+- `maint/live/osmap-v3-dependency-inventory.txt`
+- `maint/live/osmap-v3-release-evidence-summary.json`
+- `maint/live/osmap-v3-release-evidence-summary.md`
+- `maint/live/osmap-v3-release-evidence.tar.gz`
+
+The normal GitHub `security-check` workflow remains a developer and CI signal.
+It must not be described as full V3 release validation unless the run also has
+the required host, credential, TOTP, WSTG, and sanitized evidence inputs.
 
 ## Rollback Strategy
 

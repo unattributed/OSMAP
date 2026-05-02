@@ -61,6 +61,9 @@ The repository now includes a first-class Rust dependency gate:
 - `make supply-chain-check` runs only the dependency gate.
 - `make security-check` runs the dependency gate after the normal Rust build,
   test, lint, and formatting phases.
+- `make release-check` requires the pinned supply-chain tools, reruns the
+  supply-chain gate, and generates deterministic dependency inventory evidence
+  with `cargo tree --locked --all-features --color never`.
 - The repo-owned GitHub Actions `security-check` workflow bootstraps the
   pinned `cargo-audit` and `cargo-deny` versions before running the shared
   security gate.
@@ -103,7 +106,11 @@ Releases should eventually produce a software bill of materials that identifies:
 - version information
 - build-relevant toolchain components
 
-Every release candidate should have a corresponding SBOM or equivalent manifest.
+Every release candidate must have a corresponding SBOM or equivalent manifest.
+The current accepted release evidence is the deterministic dependency inventory
+written by `make release-check` to
+`maint/live/osmap-v3-dependency-inventory.txt`. A future SBOM tool may replace
+or augment this inventory only when the tool version is pinned and documented.
 
 ## License Considerations
 

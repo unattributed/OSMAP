@@ -328,6 +328,18 @@ The highest-risk Version 3 technical concerns are:
 - TLS CBC disposition needs either closure or a documented exception
 - Live-host evidence must be sanitized and reviewable without committing secrets
 
+The implemented validation entry points are:
+
+- `make security-check` for developer and CI-oriented partial validation
+- `make release-check` for strict V3 release validation with `OSMAP_SECURITY_PROFILE=release`
+
+`make release-check` requires the pinned Rust toolchain and supply-chain tools,
+dependency inventory generation, V2 carry-forward evidence, host-readiness
+evidence, a release-mode WSTG summary with authenticated credential and TOTP
+coverage, and a sanitized release evidence archive. It is expected to fail on a
+normal workstation until those operator-provided evidence files and credentials
+are available.
+
 Unless a narrower daily-driver need is proven and covered by tests, the following remain beyond Version 3:
 
 - Plugin support

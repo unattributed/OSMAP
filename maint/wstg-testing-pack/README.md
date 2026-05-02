@@ -100,6 +100,19 @@ Each run writes a timestamped directory under `OSMAP_OUTPUT_DIR` or
 The runner exits nonzero only when a test has confirmed `fail`. Skipped
 credential-gated tests do not fail the run.
 
+Release mode is stricter:
+
+```bash
+./run.sh --release --prompt-auth --auth-email pilot-primary@example.invalid
+```
+
+Release mode enables authenticated and host-assisted coverage, rejects selected
+test subsets, and exits nonzero when release-required tests are skipped,
+missing, warning, failing, or incomplete. Authenticated release evidence must
+show login, TOTP, session issuance, protected route access, logout, and session
+invalidation. The summary contains `release_mode`, `authenticated_proof`, and
+`release_errors` fields for the top-level `make release-check` gate to inspect.
+
 ## Statuses
 
 - `pass`: expected secure behavior was observed

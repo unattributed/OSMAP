@@ -15,6 +15,10 @@
       "test_type": ["unauthenticated", "dynamic test"],
       "expected_result": "HTTPS responds successfully and cleartext HTTP either redirects to HTTPS or is not exposed.",
       "evidence_produced": ["tls_https_login.headers", "http_redirect.headers"],
+      "release_required": true,
+      "requires_authenticated_coverage": false,
+      "requires_totp": false,
+      "safe_for_release": true,
       "severity_if_failed": "high"
     },
     {
@@ -28,6 +32,10 @@
       "test_type": ["unauthenticated", "dynamic test"],
       "expected_result": "Responses include HSTS, CSP, X-Frame-Options, Referrer-Policy, X-Content-Type-Options, CORP, and no-store where appropriate.",
       "evidence_produced": ["security_headers.headers"],
+      "release_required": true,
+      "requires_authenticated_coverage": false,
+      "requires_totp": false,
+      "safe_for_release": true,
       "severity_if_failed": "medium"
     },
     {
@@ -41,6 +49,10 @@
       "test_type": ["unauthenticated", "dynamic test"],
       "expected_result": "CSP is default-deny, disallows script execution, limits forms to self, and denies framing.",
       "evidence_produced": ["csp.headers"],
+      "release_required": true,
+      "requires_authenticated_coverage": false,
+      "requires_totp": false,
+      "safe_for_release": true,
       "severity_if_failed": "high"
     },
     {
@@ -54,6 +66,10 @@
       "test_type": ["unauthenticated", "dynamic test"],
       "expected_result": "Login form is HTTPS-served and contains username, password, and TOTP fields without exposing implementation details.",
       "evidence_produced": ["login_form.headers", "login_form.body"],
+      "release_required": true,
+      "requires_authenticated_coverage": false,
+      "requires_totp": false,
+      "safe_for_release": true,
       "severity_if_failed": "medium"
     },
     {
@@ -67,6 +83,10 @@
       "test_type": ["unauthenticated", "dynamic test"],
       "expected_result": "Invalid username and invalid password attempts produce generic failure behavior without user enumeration.",
       "evidence_produced": ["invalid_login_unknown_user.headers", "invalid_login_known_shape.headers"],
+      "release_required": true,
+      "requires_authenticated_coverage": false,
+      "requires_totp": false,
+      "safe_for_release": true,
       "severity_if_failed": "high"
     },
     {
@@ -80,6 +100,10 @@
       "test_type": ["unauthenticated", "dynamic test"],
       "expected_result": "A bounded invalid-login probe observes 401 responses or a throttled response without triggering uncontrolled lockout.",
       "evidence_produced": ["throttle_probe_attempt_*.headers"],
+      "release_required": true,
+      "requires_authenticated_coverage": false,
+      "requires_totp": false,
+      "safe_for_release": true,
       "severity_if_failed": "medium"
     },
     {
@@ -93,6 +117,10 @@
       "test_type": ["authenticated", "dynamic test"],
       "expected_result": "Valid credentials plus current TOTP create an authenticated browser session.",
       "evidence_produced": ["auth_login.headers", "auth_mailboxes.headers"],
+      "release_required": true,
+      "requires_authenticated_coverage": true,
+      "requires_totp": true,
+      "safe_for_release": true,
       "severity_if_failed": "high"
     },
     {
@@ -106,6 +134,10 @@
       "test_type": ["authenticated", "dynamic test"],
       "expected_result": "The session cookie uses Secure, HttpOnly, SameSite=Strict, and Path=/.",
       "evidence_produced": ["auth_login.headers"],
+      "release_required": true,
+      "requires_authenticated_coverage": true,
+      "requires_totp": true,
+      "safe_for_release": true,
       "severity_if_failed": "high"
     },
     {
@@ -119,6 +151,10 @@
       "test_type": ["authenticated", "dynamic test"],
       "expected_result": "A caller-supplied pre-login session value is not retained after authentication.",
       "evidence_produced": ["session_fixation.headers"],
+      "release_required": true,
+      "requires_authenticated_coverage": true,
+      "requires_totp": true,
+      "safe_for_release": true,
       "severity_if_failed": "high"
     },
     {
@@ -132,6 +168,10 @@
       "test_type": ["authenticated", "dynamic test"],
       "expected_result": "POST /logout without a valid CSRF token is rejected and does not revoke the session.",
       "evidence_produced": ["logout_missing_csrf.headers", "logout_postcheck.headers"],
+      "release_required": true,
+      "requires_authenticated_coverage": true,
+      "requires_totp": true,
+      "safe_for_release": true,
       "severity_if_failed": "high"
     },
     {
@@ -145,6 +185,10 @@
       "test_type": ["authenticated", "dynamic test"],
       "expected_result": "Sensitive authenticated POST routes reject missing CSRF tokens and cross-origin request metadata.",
       "evidence_produced": ["csrf_settings_missing.headers", "csrf_settings_cross_origin.headers"],
+      "release_required": true,
+      "requires_authenticated_coverage": true,
+      "requires_totp": true,
+      "safe_for_release": true,
       "severity_if_failed": "high"
     },
     {
@@ -158,6 +202,10 @@
       "test_type": ["authenticated", "dynamic test"],
       "expected_result": "Authenticated pages include Cache-Control: no-store.",
       "evidence_produced": ["auth_mailboxes.headers", "auth_settings.headers"],
+      "release_required": true,
+      "requires_authenticated_coverage": true,
+      "requires_totp": true,
+      "safe_for_release": true,
       "severity_if_failed": "medium"
     },
     {
@@ -171,6 +219,10 @@
       "test_type": ["unauthenticated", "dynamic test"],
       "expected_result": "Unsupported methods are rejected and TRACE does not echo request data.",
       "evidence_produced": ["method_options.headers", "method_trace.headers"],
+      "release_required": true,
+      "requires_authenticated_coverage": false,
+      "requires_totp": false,
+      "safe_for_release": true,
       "severity_if_failed": "high"
     },
     {
@@ -184,6 +236,10 @@
       "test_type": ["unauthenticated", "dynamic test"],
       "expected_result": "Metafiles do not disclose sensitive paths or credentials; security.txt may be absent or safe.",
       "evidence_produced": ["robots_txt.headers", "security_txt.headers"],
+      "release_required": true,
+      "requires_authenticated_coverage": false,
+      "requires_totp": false,
+      "safe_for_release": true,
       "severity_if_failed": "low"
     },
     {
@@ -197,6 +253,10 @@
       "test_type": ["unauthenticated", "dynamic test"],
       "expected_result": "Unauthenticated pages and errors do not expose stack traces, secrets, private paths, or framework banners.",
       "evidence_produced": ["info_disclosure_*.headers", "info_disclosure_*.body"],
+      "release_required": true,
+      "requires_authenticated_coverage": false,
+      "requires_totp": false,
+      "safe_for_release": true,
       "severity_if_failed": "medium"
     },
     {
@@ -210,6 +270,10 @@
       "test_type": ["unauthenticated", "dynamic test"],
       "expected_result": "Dot segments and traversal encodings are rejected or routed to a safe error without sensitive content.",
       "evidence_produced": ["path_traversal_*.headers"],
+      "release_required": true,
+      "requires_authenticated_coverage": false,
+      "requires_totp": false,
+      "safe_for_release": true,
       "severity_if_failed": "high"
     },
     {
@@ -223,6 +287,10 @@
       "test_type": ["unauthenticated", "dynamic test"],
       "expected_result": "Probe strings are not reflected as executable markup on unauthenticated or redirect-gated routes.",
       "evidence_produced": ["reflected_input_*.body"],
+      "release_required": true,
+      "requires_authenticated_coverage": false,
+      "requires_totp": false,
+      "safe_for_release": true,
       "severity_if_failed": "high"
     },
     {
@@ -236,6 +304,10 @@
       "test_type": ["unauthenticated", "dynamic test"],
       "expected_result": "Cross-origin probes do not receive permissive credentialed CORS headers.",
       "evidence_produced": ["cors_*.headers"],
+      "release_required": true,
+      "requires_authenticated_coverage": false,
+      "requires_totp": false,
+      "safe_for_release": true,
       "severity_if_failed": "high"
     },
     {
@@ -249,6 +321,10 @@
       "test_type": ["static review"],
       "expected_result": "Source and docs show conservative sanitized HTML rendering, external fetch blocking, and escaped plaintext fallback.",
       "evidence_produced": ["static_html_rendering.txt"],
+      "release_required": true,
+      "requires_authenticated_coverage": false,
+      "requires_totp": false,
+      "safe_for_release": true,
       "severity_if_failed": "high"
     },
     {
@@ -262,6 +338,10 @@
       "test_type": ["static review"],
       "expected_result": "Source shows bounded multipart parsing and forced-download attachment responses with nosniff and no-store.",
       "evidence_produced": ["static_attachment_handling.txt"],
+      "release_required": true,
+      "requires_authenticated_coverage": false,
+      "requires_totp": false,
+      "safe_for_release": true,
       "severity_if_failed": "high"
     },
     {
@@ -275,6 +355,10 @@
       "test_type": ["host assisted", "static review"],
       "expected_result": "nginx, OSMAP serve, and helper are running; OSMAP serve binds to loopback only; public HTTPS is the exposed browser path.",
       "evidence_produced": ["host_services.txt", "host_bindings.txt", "host_nginx.txt"],
+      "release_required": true,
+      "requires_authenticated_coverage": false,
+      "requires_totp": false,
+      "safe_for_release": true,
       "severity_if_failed": "high"
     },
     {
@@ -288,6 +372,10 @@
       "test_type": ["host assisted", "static review"],
       "expected_result": "pf is enabled with default drop posture and narrow exposed services.",
       "evidence_produced": ["host_pf.txt"],
+      "release_required": true,
+      "requires_authenticated_coverage": false,
+      "requires_totp": false,
+      "safe_for_release": true,
       "severity_if_failed": "high"
     },
     {
@@ -301,6 +389,10 @@
       "test_type": ["static review"],
       "expected_result": "Repo contains lockfile and supply-chain documentation or tooling for dependency inventory and security review.",
       "evidence_produced": ["static_dependency_alignment.txt"],
+      "release_required": true,
+      "requires_authenticated_coverage": false,
+      "requires_totp": false,
+      "safe_for_release": true,
       "severity_if_failed": "medium"
     }
   ],

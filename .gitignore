@@ -1,4 +1,9 @@
 PKCB/
 target/
 maint/live/latest-*.txt
+maint/live/osmap-v3-dependency-inventory.txt
+maint/live/osmap-v3-release-evidence-summary.json
+maint/live/osmap-v3-release-evidence-summary.md
+maint/live/osmap-v3-release-evidence.tar.gz
+maint/live/osmap-wstg-release-summary.json
 *.bz2

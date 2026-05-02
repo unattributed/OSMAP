@@ -54,6 +54,7 @@ class Config:
     allow_host_assisted: bool
     throttle_attempts: int
     timeout: float
+    release_mode: bool
 
     @property
     def parsed_base(self) -> urllib.parse.ParseResult:
@@ -116,6 +117,14 @@ class Runner:
         self.csrf_token = ""
         self.prompted_password = ""
         self.last_login_set_cookie_headers: list[str] = []
+        self.authenticated_proof: dict[str, bool] = {
+            "login": False,
+            "totp": False,
+            "session_issued": False,
+            "protected_route_access": False,
+            "logout": False,
+            "session_invalidated": False,
+        }
         self.secrets = [
             value
             for value in (
@@ -337,11 +346,13 @@ class Runner:
 
     def auth_totp_code(self, reason: str) -> str:
         if self.config.totp_secret:
+            self.authenticated_proof["totp"] = True
             return generate_totp(self.config.totp_secret)
         prompt = f"Current TOTP for {self.config.test_email} ({reason}): "
         code = getpass.getpass(prompt).strip().replace(" ", "")
         if code:
             self.secrets.append(code)
+            self.authenticated_proof["totp"] = True
         return code
 
     def authenticated_login(
@@ -377,6 +388,8 @@ class Runner:
         self.last_login_set_cookie_headers = evidence.header_values("Set-Cookie")
         if evidence.status != 303 or "osmap_session" not in self.cookie_jar:
             return False, f"login failed with HTTP {evidence.status}"
+        self.authenticated_proof["login"] = True
+        self.authenticated_proof["session_issued"] = True
         mailboxes = self.request(
             "auth_mailboxes",
             "GET",
@@ -385,9 +398,42 @@ class Runner:
         )
         if mailboxes.status != 200:
             return False, f"mailbox check failed with HTTP {mailboxes.status}"
+        self.authenticated_proof["protected_route_access"] = True
         self.csrf_token = extract_csrf(mailboxes.body_text())
         self.authenticated = True
         return True, "authenticated"
+
+    def finalize_release_authentication_proof(self) -> list[str]:
+        errors: list[str] = []
+        if not self.config.release_mode:
+            return errors
+        if not self.authenticated:
+            errors.append("release mode did not establish an authenticated session")
+            return errors
+        if not self.csrf_token:
+            errors.append("release mode did not capture a CSRF token for logout proof")
+            return errors
+        logout = self.form_post(
+            "auth_release_logout",
+            "/logout",
+            {"csrf_token": self.csrf_token},
+            cookies=self.cookie_jar,
+            headers=same_origin_headers(self.config),
+        )
+        if logout.status in {200, 303}:
+            self.authenticated_proof["logout"] = True
+        postlogout = self.request(
+            "auth_release_postlogout_mailboxes",
+            "GET",
+            "/mailboxes",
+            cookies=self.cookie_jar,
+        )
+        if postlogout.status != 200:
+            self.authenticated_proof["session_invalidated"] = True
+        for key, observed in self.authenticated_proof.items():
+            if not observed:
+                errors.append(f"release authenticated proof missing {key}")
+        return errors
 
     def test_tls_and_redirect(self) -> TestResult:
         https = self.request("tls_https_login", "GET", "/login")
@@ -1007,6 +1053,14 @@ def build_config(args: argparse.Namespace) -> Config:
     if args.unauthenticated:
         allow_auth = False
     prompt_auth = args.prompt_auth or parse_bool(merged.get("OSMAP_PROMPT_AUTH"), False)
+    release_mode = (
+        args.release
+        or merged.get("OSMAP_WSTG_PROFILE") == "release"
+        or merged.get("OSMAP_SECURITY_PROFILE") == "release"
+    )
+    if release_mode:
+        allow_auth = True
+        allow_host = True
     return Config(
         base_url=base_url.rstrip("/"),
         host=host,
@@ -1022,6 +1076,7 @@ def build_config(args: argparse.Namespace) -> Config:
         allow_host_assisted=allow_host,
         throttle_attempts=max(1, int(merged.get("OSMAP_THROTTLE_PROBE_ATTEMPTS", "3") or "3")),
         timeout=float(merged.get("OSMAP_REQUEST_TIMEOUT_SECONDS", "12") or "12"),
+        release_mode=release_mode,
     )
 
 
@@ -1042,12 +1097,15 @@ def generate_totp(secret: str, *, timestamp: int | None = None, digits: int = 6,
     return str(code_int % (10**digits)).zfill(digits)
 
 
-def write_summary(runner: Runner, args: argparse.Namespace) -> None:
+def write_summary(runner: Runner, args: argparse.Namespace, release_errors: list[str]) -> None:
     data = {
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "target": runner.config.base_url,
         "commands": [" ".join(shlex.quote(part) for part in sys.argv)],
+        "release_mode": runner.config.release_mode,
         "standards": runner.mapping["standards"],
+        "authenticated_proof": runner.authenticated_proof,
+        "release_errors": release_errors,
         "results": [
             {
                 "test_id": result.test_id,
@@ -1082,12 +1140,16 @@ def render_markdown_report(runner: Runner, data: dict[str, object]) -> str:
         f"- Target: `{runner.config.base_url}`",
         f"- Generated: `{data['generated_at']}`",
         f"- Mapping: `{data['mapping_file']}`",
+        f"- Release mode: `{data['release_mode']}`",
         f"- Results: pass={counts.get(STATUS_PASS, 0)}, fail={counts.get(STATUS_FAIL, 0)}, warning={counts.get(STATUS_WARNING, 0)}, skip={counts.get(STATUS_SKIP, 0)}, not_applicable={counts.get(STATUS_NA, 0)}",
         "",
         "## Commands",
         "",
     ]
     lines.extend(f"- `{cmd}`" for cmd in data["commands"])
+    if data.get("release_errors"):
+        lines.extend(["", "## Release Errors", ""])
+        lines.extend(f"- {escape_md(error)}" for error in data["release_errors"])
     lines.extend(["", "## Results", "", "| Status | Test ID | Test | Message | Evidence |", "| --- | --- | --- | --- | --- |"])
     for result in runner.results:
         evidence = "<br>".join(f"`{item}`" for item in result.evidence) if result.evidence else ""
@@ -1107,17 +1169,21 @@ def write_coverage_markdown(mapping: dict[str, object], path: Path) -> None:
         "",
         "Generated from `wstg-asvs-mapping.json`.",
         "",
-        "| Test ID | Test | WSTG v4.2 | ASVS 5.0.0 | Type | Severity |",
-        "| --- | --- | --- | --- | --- | --- |",
+        "| Test ID | Test | WSTG v4.2 | ASVS 5.0.0 | Type | Release Required | Auth Required | TOTP Required | Safe For Release | Severity |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     for item in mapping["tests"]:
         lines.append(
-            "| `{}` | {} | {} | {} | {} | {} |".format(
+            "| `{}` | {} | {} | {} | {} | {} | {} | {} | {} | {} |".format(
                 item["test_id"],
                 escape_md(item["test_name"]),
                 ", ".join(f"`{x}`" for x in item["wstg"]),
                 ", ".join(f"`{x}`" for x in item["asvs"]),
                 ", ".join(item["test_type"]),
+                str(item["release_required"]).lower(),
+                str(item["requires_authenticated_coverage"]).lower(),
+                str(item["requires_totp"]).lower(),
+                str(item["safe_for_release"]).lower(),
                 item["severity_if_failed"],
             )
         )
@@ -1150,8 +1216,35 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--prompt-auth", action="store_true", help="Prompt locally for password and fresh TOTP codes instead of requiring stored auth secrets")
     parser.add_argument("--auth-email", help="Authenticated test email address, used with --authenticated or --prompt-auth")
     parser.add_argument("--unauthenticated", action="store_true", help="Force credential-gated tests to skip")
+    parser.add_argument("--release", action="store_true", help="Fail closed on skipped, incomplete, or missing release-required WSTG coverage")
     parser.add_argument("--test-id", action="append", help="Run one test id; may be repeated")
     return parser.parse_args(argv)
+
+
+def release_errors(mapping: dict[str, object], results: list[TestResult], runner: Runner, selected: set[str] | None) -> list[str]:
+    if not runner.config.release_mode:
+        return []
+    errors: list[str] = []
+    if selected:
+        errors.append("release mode must run the full WSTG pack, not selected tests")
+    by_id = {result.test_id: result for result in results}
+    for item in mapping["tests"]:
+        test_id = item["test_id"]
+        if item.get("release_required") is not True:
+            continue
+        result = by_id.get(test_id)
+        if result is None:
+            errors.append(f"{test_id} missing from release run")
+            continue
+        if result.status != STATUS_PASS:
+            errors.append(f"{test_id} has release-blocking status {result.status}")
+        if item.get("requires_authenticated_coverage") is True:
+            if "authenticated" not in item.get("test_type", []):
+                errors.append(f"{test_id} requires authenticated coverage but is not typed authenticated")
+            if item.get("requires_totp") is not True:
+                errors.append(f"{test_id} requires authenticated coverage without TOTP metadata")
+    errors.extend(runner.finalize_release_authentication_proof())
+    return errors
 
 
 def main(argv: list[str]) -> int:
@@ -1164,11 +1257,15 @@ def main(argv: list[str]) -> int:
     runner = Runner(config, mapping, run_dir)
     print(f"Run directory: {run_dir}")
     selected = set(args.test_id) if args.test_id else None
-    runner.run(selected)
-    write_summary(runner, args)
+    results = runner.run(selected)
+    errors = release_errors(mapping, results, runner, selected)
+    write_summary(runner, args, errors)
     print(f"Summary: {run_dir / 'summary.json'}")
     print(f"Report:  {run_dir / 'report.md'}")
-    return 1 if any(result.status == STATUS_FAIL for result in runner.results) else 0
+    if errors:
+        for error in errors:
+            print(f"RELEASE-ERROR {error}", file=sys.stderr)
+    return 1 if errors or any(result.status == STATUS_FAIL for result in runner.results) else 0
 
 
 if __name__ == "__main__":

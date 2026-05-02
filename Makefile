@@ -1,7 +1,7 @@
 # Keep developer entrypoints obvious and conservative so operators and
 # collaborating developers do not have to memorize cargo subcommands.
 
-.PHONY: build check test lint fmt-check supply-chain-check security-check install-hooks run
+.PHONY: build check test lint fmt-check supply-chain-check security-check release-check install-hooks run
 
 build:
 	cargo build
@@ -31,10 +31,13 @@ supply-chain-check:
 	sh maint/security/osmap-supply-chain-check.sh
 
 security-check:
-	sh maint/security/osmap-security-check.sh
+	OSMAP_SECURITY_PROFILE=developer sh maint/security/osmap-security-check.sh
+
+release-check:
+	OSMAP_SECURITY_PROFILE=release sh maint/security/osmap-release-check.sh
 
 install-hooks:
-	chmod +x .githooks/pre-commit .githooks/pre-push maint/security/osmap-security-check.sh maint/security/osmap-supply-chain-check.sh
+	chmod +x .githooks/pre-commit .githooks/pre-push maint/security/osmap-security-check.sh maint/security/osmap-supply-chain-check.sh maint/security/osmap-release-check.sh
 	git config core.hooksPath .githooks
 
 run:

@@ -207,4 +207,11 @@ sh maint/security/test-osmap-openbsd-rcd-health.sh
 echo "==> validating reusable WSTG testing pack"
 sh maint/security/test-osmap-wstg-testing-pack.sh
 
+if [ "${OSMAP_SKIP_V3_RELEASE_CHECK_TEST:-0}" = "1" ]; then
+	echo "note: skipping nested V3 release-check test harness"
+else
+	echo "==> validating V3 release-check fail-closed behavior"
+	sh maint/security/test-osmap-v3-release-check.sh
+fi
+
 echo "==> security-check complete"

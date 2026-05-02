@@ -87,3 +87,9 @@ A release candidate should not be treated as credible if:
 - required workflow coverage is missing
 - critical auth or session paths are untested
 - integration behavior changed without corresponding validation
+
+For Version 3, `make security-check` remains the developer and CI-oriented
+partial validation path. `make release-check` is the strict release path and
+must fail on skipped Cargo, clippy, rustfmt, supply-chain, dependency
+inventory, host-readiness, V2 carry-forward, sanitized evidence archive, or
+credential and TOTP-backed WSTG coverage.

@@ -37,6 +37,13 @@ This roadmap sequences Version 3 work so OSMAP becomes a focused daily-driver ha
 
 Start by making the V3 release gate honest before adding more daily-driver surface.
 
+The first release-gate foundation implementation is now `make release-check`.
+It keeps `make security-check` as developer partial validation and adds a
+strict release profile that fails on skipped required phases, missing pinned
+tools, missing dependency inventory, missing V2 or host evidence, missing
+release-mode WSTG evidence, or missing sanitized evidence summary/archive
+generation.
+
 The first implementation plan should inspect and extend:
 
 - `Makefile`
