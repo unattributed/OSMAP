@@ -182,6 +182,104 @@ mod tests {
     }
 
     #[test]
+    fn strips_unsafe_link_schemes_and_relative_urls() {
+        let sanitized = sanitize_html_body(
+            HtmlRenderingPolicy::default(),
+            concat!(
+                "<p>Links</p>",
+                "<a href=\"https://example.com/safe\">safe https</a>",
+                "<a href=\"http://example.com/safe\">safe http</a>",
+                "<a href=\"mailto:ops@example.com\">safe mailto</a>",
+                "<a href=\"/relative/path\">relative</a>",
+                "<a href=\"//evil.example/protocol-relative\">protocol relative</a>",
+                "<a href=\"cid:logo@example.com\">cid link</a>",
+                "<a href=\"data:text/html;base64,PHNjcmlwdA==\">data link</a>",
+                "<a href=\"javascript:alert(1)\">javascript link</a>"
+            ),
+            None,
+            16 * 1024,
+        )
+        .expect("sanitization should succeed")
+        .expect("sanitized html should remain");
+
+        assert!(sanitized
+            .body_html
+            .contains("href=\"https://example.com/safe\""));
+        assert!(sanitized
+            .body_html
+            .contains("href=\"http://example.com/safe\""));
+        assert!(sanitized
+            .body_html
+            .contains("href=\"mailto:ops@example.com\""));
+        assert!(sanitized
+            .body_html
+            .contains("rel=\"noopener noreferrer nofollow\""));
+
+        assert!(!sanitized.body_html.contains("href=\"/relative/path\""));
+        assert!(!sanitized
+            .body_html
+            .contains("href=\"//evil.example/protocol-relative\""));
+        assert!(!sanitized
+            .body_html
+            .contains("href=\"cid:logo@example.com\""));
+        assert!(!sanitized.body_html.contains("href=\"data:"));
+        assert!(!sanitized.body_html.contains("href=\"javascript:"));
+    }
+
+    #[test]
+    fn strips_scriptable_attributes_forms_remote_fetch_surfaces_and_comments() {
+        let sanitized = sanitize_html_body(
+            HtmlRenderingPolicy::default(),
+            concat!(
+                "<!-- hidden operator note -->",
+                "<head>",
+                "<meta http-equiv=\"refresh\" content=\"0; url=https://evil.example/\">",
+                "<style>@import url(\"https://evil.example/style.css\");</style>",
+                "</head>",
+                "<p style=\"background-image:url('https://evil.example/bg.png')\" ",
+                "onclick=\"alert(1)\">Visible text</p>",
+                "<form action=\"https://evil.example/post\"><input name=\"secret\" value=\"x\"></form>",
+                "<img src=\"https://evil.example/tracker.png\">",
+                "<svg><a href=\"https://evil.example/svg\">svg text</a></svg>",
+                "<iframe src=\"https://evil.example/frame\">frame text</iframe>",
+                "<object data=\"https://evil.example/object\">object text</object>",
+                "<embed src=\"https://evil.example/embed\">",
+                "<template><p>template text</p></template>"
+            ),
+            None,
+            16 * 1024,
+        )
+        .expect("sanitization should succeed")
+        .expect("sanitized html should remain");
+
+        assert!(sanitized.body_html.contains("Visible text"));
+
+        assert!(!sanitized.body_html.contains("hidden operator note"));
+        assert!(!sanitized.body_html.contains("<head"));
+        assert!(!sanitized.body_html.contains("<meta"));
+        assert!(!sanitized.body_html.contains("<style"));
+        assert!(!sanitized.body_html.contains("<form"));
+        assert!(!sanitized.body_html.contains("<input"));
+        assert!(!sanitized.body_html.contains("<img"));
+        assert!(!sanitized.body_html.contains("<svg"));
+        assert!(!sanitized.body_html.contains("<iframe"));
+        assert!(!sanitized.body_html.contains("<object"));
+        assert!(!sanitized.body_html.contains("<embed"));
+        assert!(!sanitized.body_html.contains("<template"));
+
+        assert!(!sanitized.body_html.contains("style="));
+        assert!(!sanitized.body_html.contains("onclick"));
+        assert!(!sanitized.body_html.contains("http-equiv"));
+        assert!(!sanitized.body_html.contains("@import"));
+        assert!(!sanitized.body_html.contains("background-image"));
+        assert!(!sanitized.body_html.contains("evil.example"));
+        assert!(!sanitized.body_html.contains("svg text"));
+        assert!(!sanitized.body_html.contains("frame text"));
+        assert!(!sanitized.body_html.contains("object text"));
+        assert!(!sanitized.body_html.contains("template text"));
+    }
+
+    #[test]
     fn returns_none_when_html_sanitizes_to_no_visible_output() {
         let sanitized = sanitize_html_body(
             HtmlRenderingPolicy::default(),

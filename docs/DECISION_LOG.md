@@ -1,5 +1,35 @@
 # Decision Log
 
+## 2026-05-03, Harden V3 sanitized HTML regression coverage
+
+The next MIME and HTML correctness slice adds focused sanitizer regression
+coverage without changing the sanitizer allowlist or widening browser trust.
+
+This slice proves that sanitized HTML continues to reject or neutralize:
+
+- relative and protocol-relative links
+- `cid:`, `data:`, and `javascript:` links
+- inline styles and event handlers
+- forms and inputs
+- metadata refresh
+- embedded style blocks and remote CSS references
+- image tags
+- SVG, iframe, object, embed, and template surfaces
+- HTML comments
+
+The implementation remains test-only. It does not add remote content loading,
+inline image rendering, attachment preview behavior, draft persistence, broader
+HTML layout support, or new trusted URL schemes.
+
+Validation completed locally:
+
+- `cargo fmt --check`
+- `git diff --check`
+- `cargo test rendering_html:: -- --nocapture`
+- `cargo test rendering:: -- --nocapture`
+- full `cargo test` passed with 359 tests passed, 0 failed, and 4 ignored
+
+
 ## 2026-05-03, Expand V3 header decoding coverage
 
 The next MIME and HTML correctness slice adds bounded header-summary regression

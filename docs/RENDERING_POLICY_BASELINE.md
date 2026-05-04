@@ -147,6 +147,12 @@ This slice now proves that:
 - hostile HTML fixtures strip unsafe link schemes, inline styles, event
   handlers, forms, metadata refresh, embedded styles, images, and external
   tracking references
+- focused sanitizer regressions now prove relative URLs, protocol-relative
+  URLs, `cid:`, `data:`, and `javascript:` links do not survive as trusted
+  browser navigation targets
+- focused sanitizer regressions now prove comments, remote CSS, image tags,
+  SVG, iframe, object, embed, template, form, and input surfaces are stripped
+  or neutralized before browser presentation
 
 ## What Is Still Missing
 
