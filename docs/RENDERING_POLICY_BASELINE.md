@@ -136,6 +136,11 @@ This slice now proves that:
   HTML mail client
 - the current sanitized-HTML path and plain-text fallback both work against a
   real OpenBSD host mailbox under the `_osmap` plus `vmail` runtime split
+- HTML-first multipart alternatives can render sanitized HTML while retaining
+  the plain-text part as the compose-safe fallback
+- hostile HTML fixtures strip unsafe link schemes, inline styles, event
+  handlers, forms, metadata refresh, embedded styles, images, and external
+  tracking references
 
 ## What Is Still Missing
 
@@ -144,8 +149,8 @@ This slice still does not yet include:
 - attachment preview behavior
 - inline image rendering
 - richer browser presentation beyond the current server-rendered route set
-- permissive HTML layout support, broad inline styling, or any external
-  resource loading
+- permissive HTML layout support, broad inline styling, forms, scriptable
+  attributes, or any external resource loading
 
 The first bounded attachment-download route now exists separately from the
 renderer, which preserves the current conservative browser posture.

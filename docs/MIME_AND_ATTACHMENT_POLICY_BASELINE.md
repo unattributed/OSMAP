@@ -117,6 +117,14 @@ The current logic is intentionally aimed at common mail shapes first:
   `message/rfc822` attachment parts
 - unsupported HTML charsets that are classified without rendering undecoded
   bytes
+- quoted-printable soft line breaks in selected plain-text bodies
+- wrapped base64 selected plain-text bodies
+- `multipart/alternative` messages where the HTML part appears before the
+  plain-text part
+- suspicious RFC 2231 continuation filenames surfaced as metadata without path
+  trust
+- hostile HTML link-scheme fixtures handed to the rendering sanitizer without
+  changing MIME trust
 
 That coverage is practical enough to move the prototype forward while staying
 reviewable.
@@ -133,6 +141,10 @@ This slice now proves that:
   metadata without changing attachment preview or download trust
 - common transfer-encoded text bodies can be decoded for browser-safe
   rendering without changing attachment behavior or the trust model
+- quoted-printable soft line breaks and wrapped base64 plain-text bodies remain
+  decoded only through the bounded MIME text-body path
+- HTML-first multipart alternatives still preserve the plain-text body as the
+  compose fallback while allowing the rendering layer to sanitize selected HTML
 - surfaced attachment metadata can carry bounded `Content-ID` values for
   `cid:`-style inline assets on the validated OpenBSD host
 - sanitized HTML fixtures strip or neutralize remote images, protocol-relative
@@ -150,8 +162,9 @@ This slice does not yet include:
 
 - full encoded-word and RFC 2231 parameter coverage beyond the current bounded
   header-summary and attachment-filename cases
-- a broad real-world corpus from many mail generators and language/localization
-  combinations
+- a broader real-world corpus from many mail generators and
+  language/localization combinations beyond the current synthetic regression
+  set
 - rich attachment preview behavior
 - inline image rendering
 - nested message/rfc822 presentation

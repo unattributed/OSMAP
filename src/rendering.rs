@@ -1104,6 +1104,71 @@ mod tests {
     }
 
     #[test]
+    fn fixture_alternative_html_first_sanitizes_html_and_keeps_plain_compose_fallback() {
+        let renderer = PlainTextMessageRenderer::new(RenderingPolicy::default());
+        let message = message_view_from_fixture(include_str!(
+            "../tests/fixtures/mime/alternative_html_first_plain_second.eml"
+        ));
+
+        let outcome = renderer
+            .render_for_validated_session(&test_context(), &validated_session_fixture(), &message)
+            .expect("html-first alternative fixture should render safely");
+
+        assert_eq!(
+            outcome.rendered.body_source,
+            MimeBodySource::MultipartHtmlSanitized
+        );
+        assert!(outcome
+            .rendered
+            .body_html
+            .contains("<strong>but plain text remains compose-safe</strong>"));
+        assert!(!outcome.rendered.body_html.contains("<img"));
+        assert!(!outcome.rendered.body_html.contains("tracker.example"));
+        assert_eq!(
+            outcome.rendered.body_text_for_compose,
+            "Plain text arrives second and should remain the compose fallback."
+        );
+        assert_eq!(
+            outcome.rendered.rendering_mode,
+            RenderingMode::SanitizedHtml
+        );
+    }
+
+    #[test]
+    fn fixture_html_link_scheme_probe_strips_unsafe_links_styles_and_forms() {
+        let renderer = PlainTextMessageRenderer::new(RenderingPolicy::default());
+        let message = message_view_from_fixture(include_str!(
+            "../tests/fixtures/mime/html_link_scheme_probe.eml"
+        ));
+
+        let outcome = renderer
+            .render_for_validated_session(&test_context(), &validated_session_fixture(), &message)
+            .expect("html link scheme probe should render safely");
+        let body = &outcome.rendered.body_html;
+
+        assert_eq!(outcome.rendered.body_source, MimeBodySource::HtmlSanitized);
+        assert!(body.contains("Visible update"));
+        assert!(body.contains("href=\"https://example.com/safe\""));
+        assert!(body.contains("rel=\"noopener noreferrer nofollow\""));
+        assert!(!body.contains("style="));
+        assert!(!body.contains("onclick"));
+        assert!(!body.contains("<form"));
+        assert!(!body.contains("<input"));
+        assert!(!body.contains("<img"));
+        assert!(!body.contains("<meta"));
+        assert!(!body.contains("<style"));
+        assert!(!body.contains("href=\"/relative/path\""));
+        assert!(!body.contains("href=\"//evil.example/protocol-relative\""));
+        assert!(!body.contains("href=\"cid:logo@example.com\""));
+        assert!(!body.contains("href=\"data:"));
+        assert!(!body.contains("evil.example"));
+        assert_eq!(
+            outcome.rendered.rendering_mode,
+            RenderingMode::SanitizedHtml
+        );
+    }
+
+    #[test]
     fn rejects_oversized_rendered_headers() {
         let error = extract_header_value(&format!("Subject: {}\n", "A".repeat(64)), "Subject", 16)
             .expect_err("oversized header values must fail");

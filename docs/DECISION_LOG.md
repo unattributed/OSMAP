@@ -1,5 +1,41 @@
 # Decision Log
 
+## 2026-05-03, Expand V3 MIME and HTML regression corpus
+
+The next Version 3 development slice continues MIME and HTML correctness before
+draft persistence. This keeps draft, reply, forward, search, and attachment
+workflow work behind a stronger parsing and rendering baseline.
+
+This slice adds synthetic regression fixtures for:
+
+- quoted-printable soft line breaks in selected plain-text bodies
+- wrapped base64 selected plain-text bodies
+- `multipart/alternative` mail where HTML appears before the plain-text part
+- hostile HTML links, styles, forms, metadata refresh, images, and unsafe URL
+  schemes
+- suspicious RFC 2231 continuation filenames surfaced as attachment metadata
+
+The change is intentionally regression-first. It adds fixture coverage and tests
+without widening runtime trust:
+
+- no remote content loading
+- no inline image rendering
+- no attachment preview behavior
+- no draft persistence
+- no message body or attachment body audit logging
+- no change to the conservative forced-download attachment posture
+
+Validation completed locally:
+
+- `cargo fmt --check`
+- `git diff --check`
+- `cargo test mime:: -- --nocapture`
+- `cargo test rendering:: -- --nocapture`
+- `cargo test rendering_html:: -- --nocapture`
+- `cargo test attachment:: -- --nocapture`
+- full `cargo test` passed with 354 tests passed, 0 failed, and 4 ignored
+
+
 ## 2026-05-02, Redact persisted session identifiers from audit logs
 
 Live logging due diligence on `mail.blackbagsecurity.com` found that

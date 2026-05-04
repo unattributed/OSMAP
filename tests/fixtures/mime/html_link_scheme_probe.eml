@@ -1,0 +1,20 @@
+Subject: HTML link scheme probe
+From: Test Sender <sender@example.com>
+Content-Type: text/html; charset=utf-8
+
+<html>
+  <head>
+    <meta http-equiv="refresh" content="0; url=https://evil.example/">
+    <style>@import url("https://evil.example/style.css");</style>
+  </head>
+  <body>
+    <p style="background-image:url('https://evil.example/bg.png')" onclick="alert(1)">Visible update</p>
+    <a href="https://example.com/safe">safe link</a>
+    <a href="/relative/path">relative link</a>
+    <a href="//evil.example/protocol-relative">protocol relative</a>
+    <a href="cid:logo@example.com">cid link</a>
+    <a href="data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==">data link</a>
+    <form action="https://evil.example/post"><input name="secret" value="x"></form>
+    <img src="https://evil.example/tracker.png">
+  </body>
+</html>

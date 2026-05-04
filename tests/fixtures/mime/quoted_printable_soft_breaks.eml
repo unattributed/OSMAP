@@ -1,0 +1,8 @@
+Subject: Quoted printable soft breaks
+From: Test Sender <sender@example.com>
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+This line is folded by quoted-printable soft=
+ breaks.
+Second line keeps accents: caf=C3=A9.

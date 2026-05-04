@@ -1,0 +1,15 @@
+Subject: Suspicious RFC2231 filename
+From: Test Sender <sender@example.com>
+Content-Type: multipart/mixed; boundary="mixed-rfc2231"
+
+--mixed-rfc2231
+Content-Type: text/plain; charset=utf-8
+
+Attachment metadata should be surfaced without trusting it as a path.
+--mixed-rfc2231
+Content-Type: application/octet-stream
+Content-Disposition: attachment; filename*0*=utf-8''..%2Fquarterly-; filename*1*=report%E2%9C%93.html
+Content-Transfer-Encoding: base64
+
+SGVsbG8=
+--mixed-rfc2231--

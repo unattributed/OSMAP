@@ -1,0 +1,8 @@
+Subject: Wrapped base64 plain text
+From: Test Sender <sender@example.com>
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: base64
+
+SGVsbG8gd3Jh
+cHBlZCBiYXNl
+NjQKU2Vjb25kIGxpbmUK

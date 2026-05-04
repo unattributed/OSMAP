@@ -1864,6 +1864,104 @@ mod tests {
     }
 
     #[test]
+    fn fixture_quoted_printable_soft_breaks_decodes_plain_text() {
+        let analyzer = MimeAnalyzer::new(MimeAnalysisPolicy::default());
+        let message = message_view_from_fixture(include_str!(
+            "../tests/fixtures/mime/quoted_printable_soft_breaks.eml"
+        ));
+        let analysis = analyzer
+            .analyze_message(&message)
+            .expect("quoted-printable fixture should decode safely");
+
+        assert_eq!(analysis.top_level_content_type, "text/plain");
+        assert_eq!(analysis.body_source, MimeBodySource::SinglePartPlainText);
+        assert_eq!(
+            analysis.selected_plain_text_body.as_deref(),
+            Some(
+                "This line is folded by quoted-printable soft breaks.\nSecond line keeps accents: café.\n"
+            )
+        );
+        assert!(analysis.selected_html_body.is_none());
+        assert!(analysis.attachments.is_empty());
+    }
+
+    #[test]
+    fn fixture_base64_wrapped_plain_text_decodes_body() {
+        let analyzer = MimeAnalyzer::new(MimeAnalysisPolicy::default());
+        let message = message_view_from_fixture(include_str!(
+            "../tests/fixtures/mime/base64_wrapped_plain_text.eml"
+        ));
+        let analysis = analyzer
+            .analyze_message(&message)
+            .expect("wrapped base64 fixture should decode safely");
+
+        assert_eq!(analysis.top_level_content_type, "text/plain");
+        assert_eq!(analysis.body_source, MimeBodySource::SinglePartPlainText);
+        assert_eq!(
+            analysis.selected_plain_text_body.as_deref(),
+            Some("Hello wrapped base64\nSecond line\n")
+        );
+        assert!(analysis.selected_html_body.is_none());
+        assert!(analysis.attachments.is_empty());
+    }
+
+    #[test]
+    fn fixture_alternative_html_first_still_selects_plain_text_body() {
+        let analyzer = MimeAnalyzer::new(MimeAnalysisPolicy::default());
+        let message = message_view_from_fixture(include_str!(
+            "../tests/fixtures/mime/alternative_html_first_plain_second.eml"
+        ));
+        let analysis = analyzer
+            .analyze_message(&message)
+            .expect("html-first alternative fixture should analyze safely");
+
+        assert_eq!(analysis.top_level_content_type, "multipart/alternative");
+        assert_eq!(analysis.body_source, MimeBodySource::MultipartPlainTextPart);
+        assert_eq!(
+            analysis.selected_plain_text_body.as_deref(),
+            Some("Plain text arrives second and should remain the compose fallback.")
+        );
+        assert!(analysis
+            .selected_html_body
+            .as_deref()
+            .expect("html body should be retained for sanitizer")
+            .contains("tracker.example"));
+        assert!(analysis.contains_html_body);
+        assert!(analysis.attachments.is_empty());
+    }
+
+    #[test]
+    fn fixture_rfc2231_suspicious_filename_surfaces_metadata_without_path_trust() {
+        let analyzer = MimeAnalyzer::new(MimeAnalysisPolicy::default());
+        let message = message_view_from_fixture(include_str!(
+            "../tests/fixtures/mime/rfc2231_suspicious_filename.eml"
+        ));
+        let analysis = analyzer
+            .analyze_message(&message)
+            .expect("suspicious filename fixture should analyze safely");
+
+        assert_eq!(analysis.top_level_content_type, "multipart/mixed");
+        assert_eq!(
+            analysis.selected_plain_text_body.as_deref(),
+            Some("Attachment metadata should be surfaced without trusting it as a path.")
+        );
+        assert_eq!(analysis.attachments.len(), 1);
+        assert_eq!(analysis.attachments[0].part_path, "1.2");
+        assert_eq!(
+            analysis.attachments[0].filename.as_deref(),
+            Some("../quarterly-report✓.html")
+        );
+        assert_eq!(
+            analysis.attachments[0].content_type,
+            "application/octet-stream"
+        );
+        assert_eq!(
+            analysis.attachments[0].disposition,
+            AttachmentDisposition::Attachment
+        );
+    }
+
+    #[test]
     fn rejects_pathological_multipart_part_counts() {
         let analyzer = MimeAnalyzer::new(MimeAnalysisPolicy {
             max_parts: 1,

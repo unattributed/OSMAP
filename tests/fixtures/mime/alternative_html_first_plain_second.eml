@@ -1,0 +1,13 @@
+Subject: HTML first alternative
+From: Test Sender <sender@example.com>
+Content-Type: multipart/alternative; boundary="alt-html-first"
+
+--alt-html-first
+Content-Type: text/html; charset=utf-8
+
+<html><body><p>HTML arrives first <strong>but plain text remains compose-safe</strong>.</p><img src="https://tracker.example/pixel.png"></body></html>
+--alt-html-first
+Content-Type: text/plain; charset=utf-8
+
+Plain text arrives second and should remain the compose fallback.
+--alt-html-first--
