@@ -881,6 +881,94 @@ mod tests {
     }
 
     #[test]
+    fn fixture_encoded_header_matrix_decodes_subject_from_and_date() {
+        let renderer = PlainTextMessageRenderer::new(RenderingPolicy::default());
+        let message = message_view_from_fixture(include_str!(
+            "../tests/fixtures/mime/encoded_header_matrix.eml"
+        ));
+        let unfolded = unfold_headers(&message.header_block);
+
+        let decoded_date =
+            extract_header_value(&unfolded, "Date", DEFAULT_RENDERED_HEADER_VALUE_MAX_LEN)
+                .expect("date extraction should succeed");
+
+        let outcome = renderer
+            .render_for_validated_session(&test_context(), &validated_session_fixture(), &message)
+            .expect("encoded header matrix should render safely");
+
+        assert_eq!(
+            outcome.rendered.subject.as_deref(),
+            Some("Quarterly ✓ café")
+        );
+        assert_eq!(
+            outcome.rendered.from.as_deref(),
+            Some("José Niño <jose@example.com>")
+        );
+        assert_eq!(
+            decoded_date.as_deref(),
+            Some("Fri, 27 Mar 2026 12:30:00 +0000")
+        );
+        assert_eq!(outcome.rendered.date_received, "2026-03-27 12:00:00 +0000");
+        assert_eq!(
+            outcome.rendered.body_text_for_compose,
+            "Header decoding fixture body.\n"
+        );
+    }
+
+    #[test]
+    fn fixture_unsupported_header_charset_preserves_bounded_literal_without_panic() {
+        let renderer = PlainTextMessageRenderer::new(RenderingPolicy::default());
+        let message = message_view_from_fixture(include_str!(
+            "../tests/fixtures/mime/unsupported_header_charset.eml"
+        ));
+        let unfolded = unfold_headers(&message.header_block);
+
+        let subject =
+            extract_header_value(&unfolded, "Subject", DEFAULT_RENDERED_HEADER_VALUE_MAX_LEN)
+                .expect("subject extraction should not fail for unsupported charset");
+        let date = extract_header_value(&unfolded, "Date", DEFAULT_RENDERED_HEADER_VALUE_MAX_LEN)
+            .expect("date extraction should succeed");
+
+        let outcome = renderer
+            .render_for_validated_session(&test_context(), &validated_session_fixture(), &message)
+            .expect("unsupported header charset fixture should render safely");
+
+        assert_eq!(subject.as_deref(), Some("=?KOI8-R?B?8NLJ18XU?="));
+        assert_eq!(
+            outcome.rendered.subject.as_deref(),
+            Some("=?KOI8-R?B?8NLJ18XU?=")
+        );
+        assert_eq!(
+            outcome.rendered.from.as_deref(),
+            Some("Safe Sender <safe@example.com>")
+        );
+        assert_eq!(date.as_deref(), Some("Fri, 27 Mar 2026 12:35:00 +0000"));
+        assert_eq!(
+            outcome.rendered.body_text_for_compose,
+            "Unsupported header charset should not panic or widen decoding.\n"
+        );
+    }
+
+    #[test]
+    fn encoded_date_header_obeys_rendered_header_bound() {
+        let unfolded = unfold_headers(&format!(
+            "Date: =?US-ASCII?Q?{}?=\n",
+            "A".repeat(DEFAULT_RENDERED_HEADER_VALUE_MAX_LEN + 1)
+        ));
+
+        let error = extract_header_value(&unfolded, "Date", DEFAULT_RENDERED_HEADER_VALUE_MAX_LEN)
+            .expect_err("oversized encoded date header should be rejected");
+
+        assert_eq!(
+            error.reason,
+            format!(
+                "header Date exceeded maximum length of {} bytes",
+                DEFAULT_RENDERED_HEADER_VALUE_MAX_LEN
+            )
+        );
+    }
+
+    #[test]
     fn fixture_encoded_headers_render_with_selected_sanitized_html() {
         let renderer = PlainTextMessageRenderer::new(RenderingPolicy::default());
         let message = message_view_from_fixture(include_str!(

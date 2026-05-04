@@ -1,0 +1,6 @@
+Subject: =?KOI8-R?B?8NLJ18XU?=
+From: =?UTF-8?Q?Safe_Sender?= <safe@example.com>
+Date: Fri, 27 Mar 2026 12:35:00 +0000
+Content-Type: text/plain; charset=utf-8
+
+Unsupported header charset should not panic or widen decoding.

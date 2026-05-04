@@ -162,6 +162,8 @@ This slice does not yet include:
 
 - full encoded-word and RFC 2231 parameter coverage beyond the current bounded
   header-summary and attachment-filename cases
+- broader encoded-header coverage beyond the current bounded synthetic
+  `Subject`, `From`, and `Date` regression fixtures
 - a broader real-world corpus from many mail generators and
   language/localization combinations beyond the current synthetic regression
   set

@@ -129,6 +129,12 @@ This slice now proves that:
 - the project can turn a fetched message into browser-safe output without
   trusting live message HTML
 - header summary extraction can stay bounded and reviewable
+- encoded `Subject`, `From`, and `Date` header fixtures can be decoded through
+  the bounded header-summary path
+- unsupported encoded header charsets remain bounded literal values instead of
+  causing panic, unsafe fallback decoding, or widened charset trust
+- oversized encoded `Date` headers are rejected by the same rendered-header
+  length bound used for other summary fields
 - rendering can be modeled as a separate layer after message retrieval
 - transfer-encoded text bodies can be rendered only after bounded MIME-layer
   decoding, with malformed encoded text withheld instead of shown raw

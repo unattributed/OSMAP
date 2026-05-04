@@ -1,5 +1,37 @@
 # Decision Log
 
+## 2026-05-03, Expand V3 header decoding coverage
+
+The next MIME and HTML correctness slice adds bounded header-summary regression
+coverage before draft persistence or broader workflow state is introduced.
+
+This slice adds fixtures and tests for:
+
+- multi-encoded `Subject` headers
+- mixed encoded `From` headers
+- encoded `Date` headers
+- unsupported encoded header charsets
+- oversized encoded `Date` header rejection
+
+The implementation keeps the existing trust boundary:
+
+- Dovecot-provided `date_received` remains the authoritative mailbox timeline
+  field
+- decoded `Date` remains a bounded header-summary value only
+- unsupported header charsets are preserved as bounded literals instead of
+  widening charset support implicitly
+- oversized encoded headers fail deterministically
+- no draft persistence, attachment preview, inline image rendering, or remote
+  content loading is introduced
+
+Validation completed locally:
+
+- `cargo fmt --check`
+- `git diff --check`
+- `cargo test rendering:: -- --nocapture`
+- full `cargo test` passed with 357 tests passed, 0 failed, and 4 ignored
+
+
 ## 2026-05-03, Expand V3 MIME and HTML regression corpus
 
 The next Version 3 development slice continues MIME and HTML correctness before
