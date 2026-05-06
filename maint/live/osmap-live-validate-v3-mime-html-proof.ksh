@@ -293,6 +293,14 @@ response_body() {
   '
 }
 
+response_headers() {
+  printf '%s' "$1" | awk '
+    BEGIN { body = 0 }
+    /^\r?$/ { body = 1 }
+    body == 0 { gsub("\r", ""); print }
+  '
+}
+
 lookup_uid() {
   mailbox_name="$1"
   subject="$2"
@@ -369,6 +377,12 @@ HTML_SAFE_TEXT="safe visible html proof text ${NOW}-$$"
 HTML_REMOTE_MARKER="evil-v3-proof.example"
 HTML_UNSAFE_MARKER="unsafe-active-marker-${NOW}-$$"
 
+INLINE_SUBJECT="OSMAP V3 MIME inline image proof ${NOW}-$$"
+INLINE_BOUNDARY="osmap-v3-inline-${NOW}-$$"
+INLINE_CONTENT_ID="v3-inline-proof-${NOW}-$$@osmap"
+INLINE_FILENAME="v3-inline-proof.png"
+INLINE_TEXT_MARKER="inline image metadata body marker ${NOW}-$$"
+
 
 inject_encoded_message() {
   {
@@ -410,6 +424,29 @@ inject_html_message() {
     printf '<template><p>template text</p></template>'
     printf '<!-- hidden operator note -->'
     printf '</body></html>\n'
+  } | /usr/sbin/sendmail -t
+}
+
+inject_inline_message() {
+  {
+    printf 'From: OSMAP Inline Image Proof <%s>\n' "${VALIDATION_USER}"
+    printf 'To: %s\n' "${VALIDATION_USER}"
+    printf 'Subject: %s\n' "${INLINE_SUBJECT}"
+    printf 'MIME-Version: 1.0\n'
+    printf 'Content-Type: multipart/related; boundary="%s"\n' "${INLINE_BOUNDARY}"
+    printf '\n'
+    printf -- '--%s\n' "${INLINE_BOUNDARY}"
+    printf 'Content-Type: text/html; charset=utf-8\n'
+    printf '\n'
+    printf '<html><body><p>%s</p><img src="cid:%s" alt="chart"></body></html>\n' "${INLINE_TEXT_MARKER}" "${INLINE_CONTENT_ID}"
+    printf -- '--%s\n' "${INLINE_BOUNDARY}"
+    printf 'Content-Type: image/png; name="%s"\n' "${INLINE_FILENAME}"
+    printf 'Content-Transfer-Encoding: base64\n'
+    printf 'Content-Disposition: inline; filename="%s"\n' "${INLINE_FILENAME}"
+    printf 'Content-ID: <%s>\n' "${INLINE_CONTENT_ID}"
+    printf '\n'
+    printf 'UE5HREFUQQ==\n'
+    printf -- '--%s--\n' "${INLINE_BOUNDARY}"
   } | /usr/sbin/sendmail -t
 }
 
@@ -488,11 +525,51 @@ if doas grep -Fq "${HTML_SAFE_TEXT}" "${HTTP_LOG_PATH}" 2>/dev/null; then
 fi
 write_report "sanitized_html_body_marker_audit_leakage" "absent"
 
+log "injecting controlled inline image proof message"
+inject_inline_message
+write_report "inline_image_injection" "attempted"
+
+inline_location="$(wait_for_message_location inline_image "${INLINE_SUBJECT}")"
+inline_mailbox="${inline_location%%:*}"
+inline_uid="${inline_location#*:}"
+
+log "validating inline image metadata message view"
+inline_response="$(request_get "/message?mailbox=${inline_mailbox}&uid=${inline_uid}")"
+printf '%s' "${inline_response}" > "${WORK_ROOT}/inline-image-response.txt"
+inline_status="$(status_line "${inline_response}")"
+inline_body="$(response_body "${inline_response}")"
+
+assert_status_ok "inline_image_message_view" "${inline_status}"
+assert_contains "inline_sanitized_html_mode" "${inline_body}" "<dd>sanitized_html</dd>"
+assert_contains "inline_content_id_metadata" "${inline_body}" "Content-ID <strong>cid:${INLINE_CONTENT_ID}</strong>"
+assert_contains "inline_cid_notice" "${inline_body}" "with Content-ID metadata used by"
+assert_contains "inline_attachment_filename" "${inline_body}" "${INLINE_FILENAME}"
+assert_contains "inline_attachment_link" "${inline_body}" "/attachment?mailbox=${inline_mailbox}&amp;uid=${inline_uid}&amp;part=1.2"
+assert_absent "inline_img_payload" "${inline_body}" "<img"
+
+log "validating inline image forced-download route"
+inline_attachment_response="$(request_get "/attachment?mailbox=${inline_mailbox}&uid=${inline_uid}&part=1.2")"
+printf '%s' "${inline_attachment_response}" > "${WORK_ROOT}/inline-image-attachment-response.txt"
+inline_attachment_status="$(status_line "${inline_attachment_response}")"
+inline_attachment_headers="$(response_headers "${inline_attachment_response}")"
+
+assert_status_ok "inline_image_attachment_download" "${inline_attachment_status}"
+assert_contains "inline_attachment_forced_download" "${inline_attachment_headers}" 'Content-Disposition: attachment; filename="v3-inline-proof.png"'
+assert_contains "inline_attachment_content_type" "${inline_attachment_headers}" "Content-Type: image/png"
+assert_contains "inline_attachment_nosniff" "${inline_attachment_headers}" "X-Content-Type-Options: nosniff"
+assert_contains "inline_attachment_corp" "${inline_attachment_headers}" "Cross-Origin-Resource-Policy: same-origin"
+
+if doas grep -Fq "${INLINE_TEXT_MARKER}" "${HTTP_LOG_PATH}" 2>/dev/null; then
+  fail "audit log contained inline image body marker"
+fi
+write_report "inline_image_body_marker_audit_leakage" "absent"
+
 cleanup_one_subject "${ENCODED_SUBJECT_FILTER}"
 cleanup_one_subject "${HTML_SUBJECT}"
+cleanup_one_subject "${INLINE_SUBJECT}"
 write_report "message_cleanup" "attempted"
 
-write_report "result" "encoded_and_sanitized_html_proof_passed"
+write_report "result" "encoded_sanitized_html_and_inline_image_proof_passed"
 
-log "live V3 MIME encoded-header and sanitized HTML proof passed"
+log "live V3 MIME encoded-header, sanitized HTML, and inline image proof passed"
 log "report=${REPORT_PATH}"
