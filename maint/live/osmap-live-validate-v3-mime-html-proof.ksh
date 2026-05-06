@@ -294,28 +294,40 @@ response_body() {
 }
 
 lookup_uid() {
-  subject="$1"
+  mailbox_name="$1"
+  subject="$2"
+
   doas -u vmail /usr/local/bin/doveadm -o stats_writer_socket_path= \
-    search -u "${VALIDATION_USER}" mailbox INBOX header Subject "${subject}" \
+    search -u "${VALIDATION_USER}" mailbox "${mailbox_name}" header Subject "${subject}" \
     | awk 'NF > 0 { print $NF; exit }'
 }
 
-wait_for_uid() {
+wait_for_message_location() {
   label="$1"
   subject="$2"
 
+  found_mailbox=""
   found_uid=""
   tries=0
+
   while [ -z "${found_uid}" ] && [ "${tries}" -lt 30 ]; do
-    sleep 1
-    found_uid="$(lookup_uid "${subject}" || true)"
+    for mailbox_name in INBOX Junk; do
+      found_uid="$(lookup_uid "${mailbox_name}" "${subject}" || true)"
+      if [ -n "${found_uid}" ]; then
+        found_mailbox="${mailbox_name}"
+        break
+      fi
+    done
+
+    [ -n "${found_uid}" ] || sleep 1
     tries="$((tries + 1))"
   done
 
   [ -n "${found_uid}" ] || fail "failed to locate injected ${label} message uid"
 
+  write_report "${label}_mailbox" "${found_mailbox}"
   write_report "${label}_uid" "${found_uid}"
-  printf '%s\n' "${found_uid}"
+  printf '%s:%s\n' "${found_mailbox}" "${found_uid}"
 }
 
 assert_contains() {
@@ -339,9 +351,11 @@ cleanup_one_subject() {
   subject="$1"
   [ -n "${subject}" ] || return 0
 
-  doas -u vmail /usr/local/bin/doveadm -o stats_writer_socket_path= \
-    expunge -u "${VALIDATION_USER}" mailbox INBOX header Subject "${subject}" \
-    >/dev/null 2>&1 || true
+  for mailbox_name in INBOX Junk; do
+    doas -u vmail /usr/local/bin/doveadm -o stats_writer_socket_path= \
+      expunge -u "${VALIDATION_USER}" mailbox "${mailbox_name}" header Subject "${subject}" \
+      >/dev/null 2>&1 || true
+  done
 }
 
 ENCODED_SUBJECT_FILTER="OSMAP V3 MIME encoded header proof ${NOW}-$$"
@@ -417,10 +431,12 @@ log "injecting controlled encoded-header proof message"
 inject_encoded_message
 write_report "encoded_header_injection" "attempted"
 
-encoded_uid="$(wait_for_uid encoded_header "${ENCODED_SUBJECT_FILTER}")"
+encoded_location="$(wait_for_message_location encoded_header "${ENCODED_SUBJECT_FILTER}")"
+encoded_mailbox="${encoded_location%%:*}"
+encoded_uid="${encoded_location#*:}"
 
 log "validating encoded-header message view"
-encoded_response="$(request_get "/message?mailbox=INBOX&uid=${encoded_uid}")"
+encoded_response="$(request_get "/message?mailbox=${encoded_mailbox}&uid=${encoded_uid}")"
 printf '%s' "${encoded_response}" > "${WORK_ROOT}/encoded-header-response.txt"
 encoded_status="$(status_line "${encoded_response}")"
 encoded_body="$(response_body "${encoded_response}")"
@@ -439,10 +455,12 @@ log "injecting controlled sanitized HTML proof message"
 inject_html_message
 write_report "sanitized_html_injection" "attempted"
 
-html_uid="$(wait_for_uid sanitized_html "${HTML_SUBJECT}")"
+html_location="$(wait_for_message_location sanitized_html "${HTML_SUBJECT}")"
+html_mailbox="${html_location%%:*}"
+html_uid="${html_location#*:}"
 
 log "validating sanitized HTML message view"
-html_response="$(request_get "/message?mailbox=INBOX&uid=${html_uid}")"
+html_response="$(request_get "/message?mailbox=${html_mailbox}&uid=${html_uid}")"
 printf '%s' "${html_response}" > "${WORK_ROOT}/sanitized-html-response.txt"
 html_status="$(status_line "${html_response}")"
 html_body="$(response_body "${html_response}")"
