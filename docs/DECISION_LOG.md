@@ -1,5 +1,34 @@
 # Decision Log
 
+## 2026-05-03, Define V3 live MIME and HTML proof plan
+
+The next Version 3 MIME and HTML correctness slice starts with a live-host proof
+plan before adding a combined live validation script.
+
+The proof plan defines how `mail.blackbagsecurity.com` should validate the
+current MIME parsing, header decoding, sanitized HTML, inline image metadata,
+attachment metadata, forced-download behavior, and audit redaction posture
+without turning the validator or its evidence files into a source of sensitive
+material.
+
+The plan requires the future live validator to avoid printing or storing:
+
+- mailbox passwords
+- TOTP codes
+- TOTP secret material
+- browser session cookies
+- CSRF tokens
+- raw persisted session identifiers
+- full message bodies
+- full attachment bodies
+- authorization headers
+
+The current decision is to implement the proof as a synthetic-session live
+validation first. Real password-plus-TOTP login remains covered by the existing
+login-send validator, and any combined real-login MIME proof should wait until
+the synthetic live proof is stable.
+
+
 ## 2026-05-03, Harden V3 attachment metadata regressions
 
 The next MIME and HTML correctness slice strengthens attachment metadata
