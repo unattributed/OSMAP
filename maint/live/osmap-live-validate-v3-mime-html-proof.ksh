@@ -350,6 +350,11 @@ EXPECTED_ENCODED_SUBJECT="${ENCODED_SUBJECT_FILTER} ✓ Header résumé"
 ENCODED_FROM="=?UTF-8?Q?Andr=C3=A9_Proof?= <alice@example.com>"
 EXPECTED_FROM_HTML="from André Proof &lt;alice@example.com&gt;"
 ENCODED_BODY_MARKER="encoded header body marker ${NOW}-$$"
+HTML_SUBJECT="OSMAP V3 MIME hostile HTML proof ${NOW}-$$"
+HTML_SAFE_TEXT="safe visible html proof text ${NOW}-$$"
+HTML_REMOTE_MARKER="evil-v3-proof.example"
+HTML_UNSAFE_MARKER="unsafe-active-marker-${NOW}-$$"
+
 
 inject_encoded_message() {
   {
@@ -361,6 +366,48 @@ inject_encoded_message() {
     printf '\n'
     printf '%s\n' "${ENCODED_BODY_MARKER}"
   } | /usr/sbin/sendmail -t
+}
+
+inject_html_message() {
+  {
+    printf 'From: OSMAP HTML Proof <%s>\n' "${VALIDATION_USER}"
+    printf 'To: %s\n' "${VALIDATION_USER}"
+    printf 'Subject: %s\n' "${HTML_SUBJECT}"
+    printf 'MIME-Version: 1.0\n'
+    printf 'Content-Type: text/html; charset=utf-8\n'
+    printf '\n'
+    printf '<html><head>'
+    printf '<meta http-equiv="refresh" content="0; url=https://%s/">\n' "${HTML_REMOTE_MARKER}"
+    printf '<style>@import url("https://%s/style.css");</style>' "${HTML_REMOTE_MARKER}"
+    printf '</head><body>'
+    printf '<p style="background-image:url(https://%s/bg.png)" onclick="alert(1)">%s</p>' "${HTML_REMOTE_MARKER}" "${HTML_SAFE_TEXT}"
+    printf '<a href="https://example.com/safe">safe link</a>'
+    printf '<a href="/relative/path">relative link</a>'
+    printf '<a href="//%s/protocol-relative">protocol relative link</a>' "${HTML_REMOTE_MARKER}"
+    printf '<a href="cid:logo@example.com">cid link</a>'
+    printf '<a href="data:text/html;base64,PHNjcmlwdA==">data link</a>'
+    printf '<a href="javascript:alert(1)">javascript link</a>'
+    printf '<form action="https://%s/post"><input name="secret" value="%s"></form>' "${HTML_REMOTE_MARKER}" "${HTML_UNSAFE_MARKER}"
+    printf '<img src="https://%s/tracker.png">' "${HTML_REMOTE_MARKER}"
+    printf '<svg><a href="https://%s/svg">svg text</a></svg>' "${HTML_REMOTE_MARKER}"
+    printf '<iframe src="https://%s/frame">frame text</iframe>' "${HTML_REMOTE_MARKER}"
+    printf '<object data="https://%s/object">object text</object>' "${HTML_REMOTE_MARKER}"
+    printf '<embed src="https://%s/embed">' "${HTML_REMOTE_MARKER}"
+    printf '<template><p>template text</p></template>'
+    printf '<!-- hidden operator note -->'
+    printf '</body></html>\n'
+  } | /usr/sbin/sendmail -t
+}
+
+assert_absent() {
+  label="$1"
+  haystack="$2"
+  needle="$3"
+
+  if printf '%s' "${haystack}" | grep -Fq "${needle}"; then
+    fail "${label} contained forbidden marker"
+  fi
+  write_report "${label}" "absent"
 }
 
 wait_for_helper_socket
@@ -388,10 +435,46 @@ if doas grep -Fq "${ENCODED_BODY_MARKER}" "${HTTP_LOG_PATH}" 2>/dev/null; then
 fi
 write_report "encoded_body_marker_audit_leakage" "absent"
 
+log "injecting controlled sanitized HTML proof message"
+inject_html_message
+write_report "sanitized_html_injection" "attempted"
+
+html_uid="$(wait_for_uid sanitized_html "${HTML_SUBJECT}")"
+
+log "validating sanitized HTML message view"
+html_response="$(request_get "/message?mailbox=INBOX&uid=${html_uid}")"
+printf '%s' "${html_response}" > "${WORK_ROOT}/sanitized-html-response.txt"
+html_status="$(status_line "${html_response}")"
+html_body="$(response_body "${html_response}")"
+
+assert_status_ok "sanitized_html_message_view" "${html_status}"
+assert_contains "sanitized_html_mode" "${html_body}" "<dd>sanitized_html</dd>"
+assert_contains "sanitized_html_safe_text" "${html_body}" "${HTML_SAFE_TEXT}"
+assert_contains "sanitized_html_safe_link" "${html_body}" 'href="https://example.com/safe"'
+assert_contains "sanitized_html_link_rel" "${html_body}" 'rel="noopener noreferrer nofollow"'
+assert_absent "sanitized_html_remote_marker" "${html_body}" "${HTML_REMOTE_MARKER}"
+assert_absent "sanitized_html_unsafe_marker" "${html_body}" "${HTML_UNSAFE_MARKER}"
+assert_absent "sanitized_html_javascript_scheme" "${html_body}" 'href="javascript:'
+assert_absent "sanitized_html_data_scheme" "${html_body}" 'href="data:'
+assert_absent "sanitized_html_cid_scheme" "${html_body}" 'href="cid:'
+assert_absent "sanitized_html_form" "${html_body}" "<form"
+assert_absent "sanitized_html_img" "${html_body}" "<img"
+assert_absent "sanitized_html_iframe" "${html_body}" "<iframe"
+assert_absent "sanitized_html_object" "${html_body}" "<object"
+assert_absent "sanitized_html_embed" "${html_body}" "<embed"
+assert_absent "sanitized_html_template" "${html_body}" "<template"
+assert_absent "sanitized_html_svg" "${html_body}" "<svg"
+
+if doas grep -Fq "${HTML_SAFE_TEXT}" "${HTTP_LOG_PATH}" 2>/dev/null; then
+  fail "audit log contained sanitized HTML body marker"
+fi
+write_report "sanitized_html_body_marker_audit_leakage" "absent"
+
 cleanup_one_subject "${ENCODED_SUBJECT_FILTER}"
-write_report "encoded_header_cleanup" "attempted"
+cleanup_one_subject "${HTML_SUBJECT}"
+write_report "message_cleanup" "attempted"
 
-write_report "result" "encoded_header_proof_passed"
+write_report "result" "encoded_and_sanitized_html_proof_passed"
 
-log "live V3 MIME and HTML encoded-header proof passed"
+log "live V3 MIME encoded-header and sanitized HTML proof passed"
 log "report=${REPORT_PATH}"
