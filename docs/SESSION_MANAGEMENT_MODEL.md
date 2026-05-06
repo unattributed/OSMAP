@@ -150,8 +150,13 @@ session investigation.
 
 The current session slice deliberately favors explicitness over convenience:
 
+- concurrent browser sessions are allowed by policy
 - session lifetime is bounded by configuration
 - logout is a real revocation path
+- users can revoke the current session, other sessions, or all sessions
+- browser-visible session rows include a bounded device label derived from the
+  existing user-agent metadata; OSMAP does not create remembered-device cookies
+  or persistent device identifiers
 - raw bearer tokens are not written to the file-backed store
 - non-required SHA-1 is no longer used in session or CSRF derivation
 - the browser runtime uses a strict cookie posture around the session token
@@ -171,16 +176,19 @@ The current validation state is:
 3. local concurrency tests now cover simultaneous session validation, logout
    racing with validation, revoke-all racing with listing, automatic idle and
    absolute expiry revocation, and rejected token reuse after revocation
-4. OpenBSD host validation on `mail.blackbagsecurity.com` now includes the
+4. local browser-route tests now prove the `/sessions` view states the
+   concurrent-session policy and renders a normalized device label alongside
+   remote address, user-agent metadata, and revocation controls
+5. OpenBSD host validation on `mail.blackbagsecurity.com` now includes the
    browser-visible `/sessions` page, single-session revoke, revoke-other
    sessions, revoke-all sessions, automatic idle-timeout revocation, and
    `POST /logout` under the real `_osmap` plus `vmail` helper split with
    `OSMAP_OPENBSD_CONFINEMENT_MODE=enforce`
-5. that broader live proof used a synthetic persisted session store so the
+6. that broader live proof used a synthetic persisted session store so the
    session UI, logout invalidation, and stale-session rejection could be
    validated without widening the harness to depend on live mailbox
    credentials for this slice
-6. the session-surface proof captures `HTTP/1.1 200 OK` for `/sessions`, `303
+7. the session-surface proof captures `HTTP/1.1 200 OK` for `/sessions`, `303
    See Other` for single revoke, revoke-other, revoke-all, and logout,
    persisted `revoked_at` values for revoked and idle-timed-out records, and a
    stale-session redirect back to `/login`
@@ -197,8 +205,8 @@ This slice does not yet include:
   and the current same-process critical section
 - stronger session fixation defenses around future auth-flow refinements
 - persistent audit-log storage beyond the current structured event stream
-- richer device interpretation, geolocation, or anomaly scoring around the
-  current session metadata
+- richer device interpretation beyond the current browser and platform label,
+  geolocation, or anomaly scoring around the current session metadata
 - operator-facing session revocation controls in the browser layer
 
 Those belong to the later HTTP and mailbox/runtime slices rather than to this

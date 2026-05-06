@@ -656,9 +656,10 @@ pub(crate) fn render_sessions_page(
             .unwrap_or_else(|| "-".to_string());
 
         rows.push_str(&format!(
-            "<tr><td><code>{}</code></td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>",
+            "<tr><td><code>{}</code></td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>",
             escape_html(&session.session_id),
             escape_html(state),
+            escape_html(&session.device_label),
             session.issued_at,
             session.last_seen_at,
             session.expires_at,
@@ -683,9 +684,9 @@ pub(crate) fn render_sessions_page(
             "{}",
             "<section class=\"content-pane\">",
             "<h1>Sessions</h1>",
-            "<p class=\"muted\">This first self-service session view exposes the persisted session metadata already tracked by the runtime so users can see and revoke their own browser sessions without introducing a heavier device-management model.</p>",
+            "<p class=\"muted\">Concurrent browser sessions are allowed. Use the device label, remote address, and last-seen time to identify sessions before revoking one, other sessions, or all sessions.</p>",
             "{}{}",
-            "<div class=\"table-wrap\"><table><thead><tr><th>Session ID</th><th>Status</th><th>Issued</th><th>Last Seen</th><th>Expires</th><th>Revoked</th><th>Remote Address</th><th>User Agent</th><th>Action</th></tr></thead><tbody>{}</tbody></table></div>",
+            "<div class=\"table-wrap\"><table><thead><tr><th>Session ID</th><th>Status</th><th>Device</th><th>Issued</th><th>Last Seen</th><th>Expires</th><th>Revoked</th><th>Remote Address</th><th>User Agent</th><th>Action</th></tr></thead><tbody>{}</tbody></table></div>",
             "</section>",
             "</main>"
         ),

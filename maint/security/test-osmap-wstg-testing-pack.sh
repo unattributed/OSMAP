@@ -36,6 +36,7 @@ required_test_fields = {
     "wstg_section",
     "asvs",
     "asvs_section",
+    "owasp_top_10_2025",
     "test_type",
     "expected_result",
     "evidence_produced",
@@ -45,7 +46,20 @@ required_test_fields = {
     "safe_for_release",
     "severity_if_failed",
 }
+top10_categories = {
+    "A01:2025",
+    "A02:2025",
+    "A03:2025",
+    "A04:2025",
+    "A05:2025",
+    "A06:2025",
+    "A07:2025",
+    "A08:2025",
+    "A09:2025",
+    "A10:2025",
+}
 seen = set()
+top10_release_tests = {category: [] for category in top10_categories}
 for item in mapping["tests"]:
     missing = required_test_fields - set(item)
     if missing:
@@ -57,6 +71,11 @@ for item in mapping["tests"]:
         raise SystemExit(f"{item['test_id']} contains non-v4.2 WSTG identifier")
     if not all(value.startswith("v5.0.0-") for value in item["asvs"]):
         raise SystemExit(f"{item['test_id']} contains non-ASVS-5.0.0 identifier")
+    if not item["owasp_top_10_2025"]:
+        raise SystemExit(f"{item['test_id']} must map to at least one OWASP Top 10 2025 category")
+    unknown_top10 = set(item["owasp_top_10_2025"]) - top10_categories
+    if unknown_top10:
+        raise SystemExit(f"{item['test_id']} contains unknown OWASP Top 10 2025 category: {sorted(unknown_top10)}")
     for field in ["release_required", "requires_authenticated_coverage", "requires_totp", "safe_for_release"]:
         if not isinstance(item[field], bool):
             raise SystemExit(f"{item['test_id']} {field} must be boolean")
@@ -67,9 +86,21 @@ for item in mapping["tests"]:
         raise SystemExit(f"{item['test_id']} TOTP metadata must match authenticated coverage requirement")
     if item["release_required"] and not item["safe_for_release"]:
         raise SystemExit(f"{item['test_id']} is release-required but not safe_for_release")
+    if item["release_required"] and item["safe_for_release"]:
+        for category in item["owasp_top_10_2025"]:
+            top10_release_tests[category].append(item["test_id"])
     script_path = pack / item["script_path"]
     if not script_path.exists():
         raise SystemExit(f"{item['test_id']} script_path does not exist: {script_path}")
+
+for gap in mapping.get("gaps", []):
+    unknown_top10 = set(gap.get("owasp_top_10_2025", [])) - top10_categories
+    if unknown_top10:
+        raise SystemExit(f"{gap.get('gap_id', '<unknown>')} contains unknown OWASP Top 10 2025 category: {sorted(unknown_top10)}")
+
+missing_top10 = [category for category, tests in sorted(top10_release_tests.items()) if not tests]
+if missing_top10:
+    raise SystemExit(f"missing release-required OWASP Top 10 2025 test coverage: {missing_top10}")
 
 manifest_paths = []
 with (pack / "MANIFEST.csv").open(newline="") as handle:
@@ -95,7 +126,7 @@ for key in [
     if key not in env_text:
         raise SystemExit(f".env.example missing {key}")
 
-print(f"validated {len(mapping['tests'])} mapped WSTG tests")
+print(f"validated {len(mapping['tests'])} mapped WSTG tests across all OWASP Top 10 2025 categories")
 PY
 
 echo "validating WSTG release mode fails on skipped authenticated coverage"

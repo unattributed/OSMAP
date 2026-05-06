@@ -86,6 +86,7 @@ mode = sys.argv[3]
 mapping = json.loads((repo / "maint/wstg-testing-pack/wstg-asvs-mapping.json").read_text())
 results = []
 skip_used = False
+top10_coverage = {}
 for item in mapping["tests"]:
     status = "pass"
     message = "fixture pass"
@@ -103,12 +104,19 @@ for item in mapping["tests"]:
             "details": {},
         }
     )
+    if item.get("release_required") is True and item.get("safe_for_release") is True:
+        for category in item.get("owasp_top_10_2025", []):
+            top10_coverage.setdefault(category, {"tests": [], "gaps": []})["tests"].append(item["test_id"])
+for gap in mapping.get("gaps", []):
+    for category in gap.get("owasp_top_10_2025", []):
+        top10_coverage.setdefault(category, {"tests": [], "gaps": []})["gaps"].append(gap["gap_id"])
 counts = {"pass": sum(1 for item in results if item["status"] == "pass"), "fail": 0, "warning": 0, "skip": sum(1 for item in results if item["status"] == "skip"), "not_applicable": 0}
 summary = {
     "generated_at": "2026-05-02T00:00:00+00:00",
     "target": "https://mail.blackbagsecurity.com",
     "commands": ["fixture"],
     "release_mode": True,
+    "owasp_top_10_2025_coverage": top10_coverage,
     "authenticated_proof": {
         "login": True,
         "totp": True,

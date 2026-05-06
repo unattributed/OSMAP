@@ -1,7 +1,8 @@
 # OSMAP WSTG Testing Pack
 
 This pack performs safe, repeatable OWASP WSTG validation for the OSMAP browser
-interface at `https://mail.blackbagsecurity.com`.
+interface at `https://mail.blackbagsecurity.com`, with ASVS 5.0.0 as the
+primary secure-web-application control mapping.
 
 It validates OSMAP only. It does not claim to validate the whole mail stack,
 all private control-plane applications, or complete ASVS compliance.
@@ -10,11 +11,16 @@ all private control-plane applications, or complete ASVS compliance.
 
 - OWASP Web Security Testing Guide v4.2
 - OWASP Application Security Verification Standard 5.0.0
+- OWASP Top 10 2025
 - WSTG identifiers use `WSTG-v42-CAT-NN`
 - ASVS identifiers use `v5.0.0-C.S.R`
+- OWASP Top 10 identifiers use `A01:2025` through `A10:2025`
 
 The canonical mapping is `wstg-asvs-mapping.json`. The rendered coverage table
-is `COVERAGE.md`.
+is `COVERAGE.md`. Every release-required WSTG test must keep ASVS 5.0.0
+requirement IDs and also maps to one or more OWASP Top 10 2025 categories. The
+pack validation fails if any category from `A01:2025` through `A10:2025` lacks
+release-required mapped coverage.
 
 ## Setup
 
@@ -125,10 +131,12 @@ invalidation. The summary contains `release_mode`, `authenticated_proof`, and
 
 1. Add a new object to `wstg-asvs-mapping.json`.
 2. Use WSTG v4.2 and ASVS 5.0.0 versioned identifiers.
-3. Implement a deterministic runner method in `run-wstg-pack.py`.
-4. Produce redacted evidence under the run directory.
-5. Prefer skip or warning over unsafe probing.
-6. Run `python3 -m py_compile run-wstg-pack.py` and the relevant runner test.
+3. Map the check to one or more OWASP Top 10 2025 categories with
+   `owasp_top_10_2025`.
+4. Implement a deterministic runner method in `run-wstg-pack.py`.
+5. Produce redacted evidence under the run directory.
+6. Prefer skip or warning over unsafe probing.
+7. Run `python3 -m py_compile run-wstg-pack.py` and the relevant runner test.
 
 If a check cannot map cleanly to WSTG v4.2 or ASVS 5.0.0, document it as a gap
 instead of presenting it as compliance coverage.

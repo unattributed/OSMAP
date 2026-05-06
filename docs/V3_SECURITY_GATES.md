@@ -117,12 +117,17 @@ An exception without expiry does not satisfy the Version 3 gate.
 
 ## Session And Device Policy Rule
 
-Version 3 must choose one policy and implement it consistently:
+Version 3 chooses to allow concurrent browser sessions. This keeps multi-device
+daily use explicit while relying on bounded lifetime, idle timeout, visible
+session metadata, and user-driven revocation instead of silent eviction.
 
-- allow concurrent sessions with clear device labels and user-driven revocation, or
-- cap sessions per user or per device class with deterministic eviction or denial behavior
-
-The chosen policy must be visible in documentation, user-facing session pages, logs, and tests. The April 2026 revoke-race observation must be retested with isolated cookie jars before it is classified as fixed, not reproducible, or a confirmed server-side defect.
+The chosen policy must be visible in documentation, user-facing session pages,
+logs, and tests. Browser-visible session metadata must include a stable device
+label, remote address, user-agent metadata, issued time, last-seen time, expiry,
+and revocation state without adding remembered-device cookies or persistent
+device identifiers. The April 2026 revoke-race observation must be retested
+with isolated cookie jars before it is classified as fixed, not reproducible, or
+a confirmed server-side defect.
 
 ## WSTG Regression Rule
 

@@ -367,15 +367,38 @@ mapping = json.loads(Path(sys.argv[2]).read_text(encoding="utf-8"))
 results = {item.get("test_id"): item for item in summary.get("results", [])}
 errors = []
 auth_required = []
+top10_categories = {
+    "A01:2025",
+    "A02:2025",
+    "A03:2025",
+    "A04:2025",
+    "A05:2025",
+    "A06:2025",
+    "A07:2025",
+    "A08:2025",
+    "A09:2025",
+    "A10:2025",
+}
+top10_release_tests = {category: [] for category in top10_categories}
 
 for item in mapping.get("tests", []):
     test_id = item["test_id"]
     release_required = item.get("release_required") is True
     auth_required_flag = item.get("requires_authenticated_coverage") is True
+    top10_values = item.get("owasp_top_10_2025", [])
+    unknown_top10 = set(top10_values) - top10_categories
+    if unknown_top10:
+        errors.append(f"{test_id} contains unknown OWASP Top 10 2025 categories {sorted(unknown_top10)}")
     if auth_required_flag:
         auth_required.append(test_id)
     if not release_required:
         continue
+    if not top10_values:
+        errors.append(f"{test_id} missing OWASP Top 10 2025 mapping")
+    if item.get("safe_for_release") is True:
+        for category in top10_values:
+            if category in top10_release_tests:
+                top10_release_tests[category].append(test_id)
     result = results.get(test_id)
     if result is None:
         errors.append(f"{test_id} missing from WSTG release summary")
@@ -398,6 +421,16 @@ if summary.get("release_mode") is not True:
     errors.append("WSTG summary was not produced in release mode")
 if summary.get("counts", {}).get("skip", 0) != 0:
     errors.append("WSTG release summary contains skipped tests")
+
+for category, tests in sorted(top10_release_tests.items()):
+    if not tests:
+        errors.append(f"WSTG mapping lacks release-required OWASP Top 10 2025 coverage for {category}")
+
+summary_top10 = summary.get("owasp_top_10_2025_coverage", {})
+for category in sorted(top10_categories):
+    tests = summary_top10.get(category, {}).get("tests", [])
+    if not tests:
+        errors.append(f"WSTG summary lacks OWASP Top 10 2025 coverage evidence for {category}")
 
 if errors:
     for error in errors:

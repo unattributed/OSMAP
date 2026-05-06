@@ -843,6 +843,7 @@ mod tests {
                             expires_at: validated_session.record.expires_at,
                             last_seen_at: validated_session.record.last_seen_at,
                             revoked_at: None,
+                            device_label: "Firefox".to_string(),
                             remote_addr: validated_session.record.remote_addr.clone(),
                             user_agent: validated_session.record.user_agent.clone(),
                             factor: validated_session.record.factor,
@@ -855,6 +856,7 @@ mod tests {
                             expires_at: 95,
                             last_seen_at: 15,
                             revoked_at: None,
+                            device_label: "Firefox".to_string(),
                             remote_addr: "203.0.113.9".to_string(),
                             user_agent: "Firefox/Secondary".to_string(),
                             factor: RequiredSecondFactor::Totp,
@@ -2933,6 +2935,9 @@ mod tests {
         assert_eq!(response.response.status_code, 200);
         let body = body_text(&response);
         assert!(body.contains("<h1>Sessions</h1>"));
+        assert!(body.contains("Concurrent browser sessions are allowed."));
+        assert!(body.contains("<th>Device</th>"));
+        assert!(body.contains(">Firefox<"));
         assert!(body.contains("203.0.113.9"));
         assert!(body.contains("Revoke This Session"));
         assert!(body.contains("Revoke Other Sessions"));

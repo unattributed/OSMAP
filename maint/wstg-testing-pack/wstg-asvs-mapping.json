@@ -1,422 +1,819 @@
 {
   "standards": {
     "wstg": "OWASP Web Security Testing Guide v4.2",
-    "asvs": "OWASP Application Security Verification Standard 5.0.0"
+    "asvs": "OWASP Application Security Verification Standard 5.0.0",
+    "owasp_top_10_2025": "OWASP Top 10 2025"
   },
   "tests": [
     {
       "test_id": "OSMAP-WSTG-CONF-001",
       "test_name": "WSTG-v42-CONF-01 Test Network Infrastructure Configuration - TLS and HTTP exposure",
       "script_path": "run-wstg-pack.py",
-      "wstg": ["WSTG-v42-CONF-01"],
+      "wstg": [
+        "WSTG-v42-CONF-01"
+      ],
       "wstg_section": "Test Network Infrastructure Configuration",
-      "asvs": ["v5.0.0-9.1.1", "v5.0.0-9.1.2"],
+      "asvs": [
+        "v5.0.0-9.1.1",
+        "v5.0.0-9.1.2"
+      ],
       "asvs_section": "Communications Security",
-      "test_type": ["unauthenticated", "dynamic test"],
+      "test_type": [
+        "unauthenticated",
+        "dynamic test"
+      ],
       "expected_result": "HTTPS responds successfully and cleartext HTTP either redirects to HTTPS or is not exposed.",
-      "evidence_produced": ["tls_https_login.headers", "http_redirect.headers"],
+      "evidence_produced": [
+        "tls_https_login.headers",
+        "http_redirect.headers"
+      ],
       "release_required": true,
       "requires_authenticated_coverage": false,
       "requires_totp": false,
       "safe_for_release": true,
-      "severity_if_failed": "high"
+      "severity_if_failed": "high",
+      "owasp_top_10_2025": [
+        "A02:2025",
+        "A04:2025"
+      ]
     },
     {
       "test_id": "OSMAP-WSTG-CONF-002",
       "test_name": "WSTG-v42-CONF-07 Test HTTP Strict Transport Security - browser header baseline",
       "script_path": "run-wstg-pack.py",
-      "wstg": ["WSTG-v42-CONF-07", "WSTG-v42-CLNT-09"],
+      "wstg": [
+        "WSTG-v42-CONF-07",
+        "WSTG-v42-CLNT-09"
+      ],
       "wstg_section": "Test HTTP Strict Transport Security; Testing for Clickjacking",
-      "asvs": ["v5.0.0-3.4.5", "v5.0.0-3.4.6", "v5.0.0-14.4.3", "v5.0.0-14.4.4"],
+      "asvs": [
+        "v5.0.0-3.4.5",
+        "v5.0.0-3.4.6",
+        "v5.0.0-14.4.3",
+        "v5.0.0-14.4.4"
+      ],
       "asvs_section": "Browser Security and HTTP Response Headers",
-      "test_type": ["unauthenticated", "dynamic test"],
+      "test_type": [
+        "unauthenticated",
+        "dynamic test"
+      ],
       "expected_result": "Responses include HSTS, CSP, X-Frame-Options, Referrer-Policy, X-Content-Type-Options, CORP, and no-store where appropriate.",
-      "evidence_produced": ["security_headers.headers"],
+      "evidence_produced": [
+        "security_headers.headers"
+      ],
       "release_required": true,
       "requires_authenticated_coverage": false,
       "requires_totp": false,
       "safe_for_release": true,
-      "severity_if_failed": "medium"
+      "severity_if_failed": "medium",
+      "owasp_top_10_2025": [
+        "A02:2025",
+        "A04:2025"
+      ]
     },
     {
       "test_id": "OSMAP-WSTG-CONF-003",
       "test_name": "WSTG-v42-CONF-12 Testing for Content Security Policy - OSMAP CSP regression",
       "script_path": "run-wstg-pack.py",
-      "wstg": ["WSTG-v42-CONF-12"],
+      "wstg": [
+        "WSTG-v42-CONF-12"
+      ],
       "wstg_section": "Testing for Content Security Policy",
-      "asvs": ["v5.0.0-3.4.6", "v5.0.0-14.4.3"],
+      "asvs": [
+        "v5.0.0-3.4.6",
+        "v5.0.0-14.4.3"
+      ],
       "asvs_section": "Browser Security and Content Security Policy",
-      "test_type": ["unauthenticated", "dynamic test"],
+      "test_type": [
+        "unauthenticated",
+        "dynamic test"
+      ],
       "expected_result": "CSP is default-deny, disallows script execution, limits forms to self, and denies framing.",
-      "evidence_produced": ["csp.headers"],
+      "evidence_produced": [
+        "csp.headers"
+      ],
       "release_required": true,
       "requires_authenticated_coverage": false,
       "requires_totp": false,
       "safe_for_release": true,
-      "severity_if_failed": "high"
+      "severity_if_failed": "high",
+      "owasp_top_10_2025": [
+        "A02:2025",
+        "A05:2025"
+      ]
     },
     {
       "test_id": "OSMAP-WSTG-ATHN-001",
       "test_name": "WSTG-v42-ATHN-01 Testing for Credentials Transported over an Encrypted Channel - login form",
       "script_path": "run-wstg-pack.py",
-      "wstg": ["WSTG-v42-ATHN-01", "WSTG-v42-ATHN-10"],
+      "wstg": [
+        "WSTG-v42-ATHN-01",
+        "WSTG-v42-ATHN-10"
+      ],
       "wstg_section": "Testing for Credentials Transported over an Encrypted Channel; Testing for Weaker Authentication in Alternative Channel",
-      "asvs": ["v5.0.0-6.2.6", "v5.0.0-6.2.7", "v5.0.0-6.3.3"],
+      "asvs": [
+        "v5.0.0-6.2.6",
+        "v5.0.0-6.2.7",
+        "v5.0.0-6.3.3"
+      ],
       "asvs_section": "Authentication and MFA",
-      "test_type": ["unauthenticated", "dynamic test"],
+      "test_type": [
+        "unauthenticated",
+        "dynamic test"
+      ],
       "expected_result": "Login form is HTTPS-served and contains username, password, and TOTP fields without exposing implementation details.",
-      "evidence_produced": ["login_form.headers", "login_form.body"],
+      "evidence_produced": [
+        "login_form.headers",
+        "login_form.body"
+      ],
       "release_required": true,
       "requires_authenticated_coverage": false,
       "requires_totp": false,
       "safe_for_release": true,
-      "severity_if_failed": "medium"
+      "severity_if_failed": "medium",
+      "owasp_top_10_2025": [
+        "A04:2025",
+        "A07:2025"
+      ]
     },
     {
       "test_id": "OSMAP-WSTG-ATHN-002",
       "test_name": "WSTG-v42-IDNT-04 Testing for Account Enumeration and Guessable User Account - login failure normalization",
       "script_path": "run-wstg-pack.py",
-      "wstg": ["WSTG-v42-IDNT-04", "WSTG-v42-ATHN-03"],
+      "wstg": [
+        "WSTG-v42-IDNT-04",
+        "WSTG-v42-ATHN-03"
+      ],
       "wstg_section": "Testing for Account Enumeration and Guessable User Account; Testing for Weak Lock Out Mechanism",
-      "asvs": ["v5.0.0-6.3.1", "v5.0.0-6.3.8"],
+      "asvs": [
+        "v5.0.0-6.3.1",
+        "v5.0.0-6.3.8"
+      ],
       "asvs_section": "Authentication Abuse Resistance",
-      "test_type": ["unauthenticated", "dynamic test"],
+      "test_type": [
+        "unauthenticated",
+        "dynamic test"
+      ],
       "expected_result": "Invalid username and invalid password attempts produce generic failure behavior without user enumeration.",
-      "evidence_produced": ["invalid_login_unknown_user.headers", "invalid_login_known_shape.headers"],
+      "evidence_produced": [
+        "invalid_login_unknown_user.headers",
+        "invalid_login_known_shape.headers"
+      ],
       "release_required": true,
       "requires_authenticated_coverage": false,
       "requires_totp": false,
       "safe_for_release": true,
-      "severity_if_failed": "high"
+      "severity_if_failed": "high",
+      "owasp_top_10_2025": [
+        "A07:2025"
+      ]
     },
     {
       "test_id": "OSMAP-WSTG-ATHN-003",
       "test_name": "WSTG-v42-ATHN-03 Testing for Weak Lock Out Mechanism - bounded login throttle probe",
       "script_path": "run-wstg-pack.py",
-      "wstg": ["WSTG-v42-ATHN-03"],
+      "wstg": [
+        "WSTG-v42-ATHN-03"
+      ],
       "wstg_section": "Testing for Weak Lock Out Mechanism",
-      "asvs": ["v5.0.0-6.1.1", "v5.0.0-6.3.1"],
+      "asvs": [
+        "v5.0.0-6.1.1",
+        "v5.0.0-6.3.1"
+      ],
       "asvs_section": "Authentication Rate Limiting",
-      "test_type": ["unauthenticated", "dynamic test"],
+      "test_type": [
+        "unauthenticated",
+        "dynamic test"
+      ],
       "expected_result": "A bounded invalid-login probe observes 401 responses or a throttled response without triggering uncontrolled lockout.",
-      "evidence_produced": ["throttle_probe_attempt_*.headers"],
+      "evidence_produced": [
+        "throttle_probe_attempt_*.headers"
+      ],
       "release_required": true,
       "requires_authenticated_coverage": false,
       "requires_totp": false,
       "safe_for_release": true,
-      "severity_if_failed": "medium"
+      "severity_if_failed": "medium",
+      "owasp_top_10_2025": [
+        "A07:2025",
+        "A10:2025"
+      ]
     },
     {
       "test_id": "OSMAP-WSTG-ATHN-004",
       "test_name": "WSTG-v42-ATHN-10 Testing for Weaker Authentication in Alternative Channel - TOTP login flow",
       "script_path": "run-wstg-pack.py",
-      "wstg": ["WSTG-v42-ATHN-10"],
+      "wstg": [
+        "WSTG-v42-ATHN-10"
+      ],
       "wstg_section": "Testing for Weaker Authentication in Alternative Channel",
-      "asvs": ["v5.0.0-6.3.3", "v5.0.0-6.5.5", "v5.0.0-6.5.8"],
+      "asvs": [
+        "v5.0.0-6.3.3",
+        "v5.0.0-6.5.5",
+        "v5.0.0-6.5.8"
+      ],
       "asvs_section": "Multi-Factor Authentication",
-      "test_type": ["authenticated", "dynamic test"],
+      "test_type": [
+        "authenticated",
+        "dynamic test"
+      ],
       "expected_result": "Valid credentials plus current TOTP create an authenticated browser session.",
-      "evidence_produced": ["auth_login.headers", "auth_mailboxes.headers"],
+      "evidence_produced": [
+        "auth_login.headers",
+        "auth_mailboxes.headers"
+      ],
       "release_required": true,
       "requires_authenticated_coverage": true,
       "requires_totp": true,
       "safe_for_release": true,
-      "severity_if_failed": "high"
+      "severity_if_failed": "high",
+      "owasp_top_10_2025": [
+        "A07:2025"
+      ]
     },
     {
       "test_id": "OSMAP-WSTG-SESS-001",
       "test_name": "WSTG-v42-SESS-02 Testing for Cookies Attributes - OSMAP session cookie",
       "script_path": "run-wstg-pack.py",
-      "wstg": ["WSTG-v42-SESS-02"],
+      "wstg": [
+        "WSTG-v42-SESS-02"
+      ],
       "wstg_section": "Testing for Cookies Attributes",
-      "asvs": ["v5.0.0-3.2.1", "v5.0.0-3.2.2", "v5.0.0-7.2.1"],
+      "asvs": [
+        "v5.0.0-3.2.1",
+        "v5.0.0-3.2.2",
+        "v5.0.0-7.2.1"
+      ],
       "asvs_section": "Session Cookie Security",
-      "test_type": ["authenticated", "dynamic test"],
+      "test_type": [
+        "authenticated",
+        "dynamic test"
+      ],
       "expected_result": "The session cookie uses Secure, HttpOnly, SameSite=Strict, and Path=/.",
-      "evidence_produced": ["auth_login.headers"],
+      "evidence_produced": [
+        "auth_login.headers"
+      ],
       "release_required": true,
       "requires_authenticated_coverage": true,
       "requires_totp": true,
       "safe_for_release": true,
-      "severity_if_failed": "high"
+      "severity_if_failed": "high",
+      "owasp_top_10_2025": [
+        "A04:2025",
+        "A07:2025"
+      ]
     },
     {
       "test_id": "OSMAP-WSTG-SESS-002",
       "test_name": "WSTG-v42-SESS-03 Testing for Session Fixation - pre-login cookie replacement",
       "script_path": "run-wstg-pack.py",
-      "wstg": ["WSTG-v42-SESS-03"],
+      "wstg": [
+        "WSTG-v42-SESS-03"
+      ],
       "wstg_section": "Testing for Session Fixation",
-      "asvs": ["v5.0.0-7.2.3", "v5.0.0-7.2.4"],
+      "asvs": [
+        "v5.0.0-7.2.3",
+        "v5.0.0-7.2.4"
+      ],
       "asvs_section": "Session Token Generation",
-      "test_type": ["authenticated", "dynamic test"],
+      "test_type": [
+        "authenticated",
+        "dynamic test"
+      ],
       "expected_result": "A caller-supplied pre-login session value is not retained after authentication.",
-      "evidence_produced": ["session_fixation.headers"],
+      "evidence_produced": [
+        "session_fixation.headers"
+      ],
       "release_required": true,
       "requires_authenticated_coverage": true,
       "requires_totp": true,
       "safe_for_release": true,
-      "severity_if_failed": "high"
+      "severity_if_failed": "high",
+      "owasp_top_10_2025": [
+        "A07:2025"
+      ]
     },
     {
       "test_id": "OSMAP-WSTG-SESS-003",
       "test_name": "WSTG-v42-SESS-05 Testing for Cross Site Request Forgery - logout enforcement",
       "script_path": "run-wstg-pack.py",
-      "wstg": ["WSTG-v42-SESS-05"],
+      "wstg": [
+        "WSTG-v42-SESS-05"
+      ],
       "wstg_section": "Testing for Cross Site Request Forgery",
-      "asvs": ["v5.0.0-3.5.1", "v5.0.0-3.5.3", "v5.0.0-7.4.1"],
+      "asvs": [
+        "v5.0.0-3.5.1",
+        "v5.0.0-3.5.3",
+        "v5.0.0-7.4.1"
+      ],
       "asvs_section": "CSRF and Session Termination",
-      "test_type": ["authenticated", "dynamic test"],
+      "test_type": [
+        "authenticated",
+        "dynamic test"
+      ],
       "expected_result": "POST /logout without a valid CSRF token is rejected and does not revoke the session.",
-      "evidence_produced": ["logout_missing_csrf.headers", "logout_postcheck.headers"],
+      "evidence_produced": [
+        "logout_missing_csrf.headers",
+        "logout_postcheck.headers"
+      ],
       "release_required": true,
       "requires_authenticated_coverage": true,
       "requires_totp": true,
       "safe_for_release": true,
-      "severity_if_failed": "high"
+      "severity_if_failed": "high",
+      "owasp_top_10_2025": [
+        "A01:2025",
+        "A07:2025"
+      ]
     },
     {
       "test_id": "OSMAP-WSTG-SESS-004",
       "test_name": "WSTG-v42-SESS-05 Testing for Cross Site Request Forgery - authenticated mutations",
       "script_path": "run-wstg-pack.py",
-      "wstg": ["WSTG-v42-SESS-05"],
+      "wstg": [
+        "WSTG-v42-SESS-05"
+      ],
       "wstg_section": "Testing for Cross Site Request Forgery",
-      "asvs": ["v5.0.0-3.5.1", "v5.0.0-3.5.3"],
+      "asvs": [
+        "v5.0.0-3.5.1",
+        "v5.0.0-3.5.3"
+      ],
       "asvs_section": "CSRF Protection",
-      "test_type": ["authenticated", "dynamic test"],
+      "test_type": [
+        "authenticated",
+        "dynamic test"
+      ],
       "expected_result": "Sensitive authenticated POST routes reject missing CSRF tokens and cross-origin request metadata.",
-      "evidence_produced": ["csrf_settings_missing.headers", "csrf_settings_cross_origin.headers"],
+      "evidence_produced": [
+        "csrf_settings_missing.headers",
+        "csrf_settings_cross_origin.headers"
+      ],
       "release_required": true,
       "requires_authenticated_coverage": true,
       "requires_totp": true,
       "safe_for_release": true,
-      "severity_if_failed": "high"
+      "severity_if_failed": "high",
+      "owasp_top_10_2025": [
+        "A01:2025",
+        "A08:2025"
+      ]
     },
     {
       "test_id": "OSMAP-WSTG-SESS-005",
       "test_name": "WSTG-v42-ATHN-06 Testing for Browser Cache Weaknesses - authenticated pages",
       "script_path": "run-wstg-pack.py",
-      "wstg": ["WSTG-v42-ATHN-06", "WSTG-v42-SESS-06"],
+      "wstg": [
+        "WSTG-v42-ATHN-06",
+        "WSTG-v42-SESS-06"
+      ],
       "wstg_section": "Testing for Browser Cache Weaknesses; Testing for Logout Functionality",
-      "asvs": ["v5.0.0-3.4.2", "v5.0.0-7.4.1"],
+      "asvs": [
+        "v5.0.0-3.4.2",
+        "v5.0.0-7.4.1"
+      ],
       "asvs_section": "Session Logout and Cache Management",
-      "test_type": ["authenticated", "dynamic test"],
+      "test_type": [
+        "authenticated",
+        "dynamic test"
+      ],
       "expected_result": "Authenticated pages include Cache-Control: no-store.",
-      "evidence_produced": ["auth_mailboxes.headers", "auth_settings.headers"],
+      "evidence_produced": [
+        "auth_mailboxes.headers",
+        "auth_settings.headers"
+      ],
       "release_required": true,
       "requires_authenticated_coverage": true,
       "requires_totp": true,
       "safe_for_release": true,
-      "severity_if_failed": "medium"
+      "severity_if_failed": "medium",
+      "owasp_top_10_2025": [
+        "A02:2025",
+        "A07:2025"
+      ]
     },
     {
       "test_id": "OSMAP-WSTG-CONF-004",
       "test_name": "WSTG-v42-CONF-06 Test HTTP Methods - OPTIONS and TRACE",
       "script_path": "run-wstg-pack.py",
-      "wstg": ["WSTG-v42-CONF-06"],
+      "wstg": [
+        "WSTG-v42-CONF-06"
+      ],
       "wstg_section": "Test HTTP Methods",
-      "asvs": ["v5.0.0-4.1.4", "v5.0.0-4.2.1"],
+      "asvs": [
+        "v5.0.0-4.1.4",
+        "v5.0.0-4.2.1"
+      ],
       "asvs_section": "HTTP Request Handling",
-      "test_type": ["unauthenticated", "dynamic test"],
+      "test_type": [
+        "unauthenticated",
+        "dynamic test"
+      ],
       "expected_result": "Unsupported methods are rejected and TRACE does not echo request data.",
-      "evidence_produced": ["method_options.headers", "method_trace.headers"],
+      "evidence_produced": [
+        "method_options.headers",
+        "method_trace.headers"
+      ],
       "release_required": true,
       "requires_authenticated_coverage": false,
       "requires_totp": false,
       "safe_for_release": true,
-      "severity_if_failed": "high"
+      "severity_if_failed": "high",
+      "owasp_top_10_2025": [
+        "A02:2025",
+        "A10:2025"
+      ]
     },
     {
       "test_id": "OSMAP-WSTG-INFO-001",
       "test_name": "WSTG-v42-INFO-03 Review Webserver Metafiles for Information Leakage",
       "script_path": "run-wstg-pack.py",
-      "wstg": ["WSTG-v42-INFO-03", "WSTG-v42-INFO-05"],
+      "wstg": [
+        "WSTG-v42-INFO-03",
+        "WSTG-v42-INFO-05"
+      ],
       "wstg_section": "Review Webserver Metafiles; Identify Application Entry Points",
-      "asvs": ["v5.0.0-14.3.1"],
+      "asvs": [
+        "v5.0.0-14.3.1"
+      ],
       "asvs_section": "Configuration and Deployment",
-      "test_type": ["unauthenticated", "dynamic test"],
+      "test_type": [
+        "unauthenticated",
+        "dynamic test"
+      ],
       "expected_result": "Metafiles do not disclose sensitive paths or credentials; security.txt may be absent or safe.",
-      "evidence_produced": ["robots_txt.headers", "security_txt.headers"],
+      "evidence_produced": [
+        "robots_txt.headers",
+        "security_txt.headers"
+      ],
       "release_required": true,
       "requires_authenticated_coverage": false,
       "requires_totp": false,
       "safe_for_release": true,
-      "severity_if_failed": "low"
+      "severity_if_failed": "low",
+      "owasp_top_10_2025": [
+        "A02:2025"
+      ]
     },
     {
       "test_id": "OSMAP-WSTG-INFO-002",
       "test_name": "WSTG-v42-INFO-02 Fingerprint Web Server - unauthenticated disclosure and error handling",
       "script_path": "run-wstg-pack.py",
-      "wstg": ["WSTG-v42-INFO-02", "WSTG-v42-ERRH-01"],
+      "wstg": [
+        "WSTG-v42-INFO-02",
+        "WSTG-v42-ERRH-01"
+      ],
       "wstg_section": "Fingerprint Web Server; Testing for Improper Error Handling",
-      "asvs": ["v5.0.0-14.3.1", "v5.0.0-8.2.1"],
+      "asvs": [
+        "v5.0.0-14.3.1",
+        "v5.0.0-8.2.1"
+      ],
       "asvs_section": "Error Handling and Secure Configuration",
-      "test_type": ["unauthenticated", "dynamic test"],
+      "test_type": [
+        "unauthenticated",
+        "dynamic test"
+      ],
       "expected_result": "Unauthenticated pages and errors do not expose stack traces, secrets, private paths, or framework banners.",
-      "evidence_produced": ["info_disclosure_*.headers", "info_disclosure_*.body"],
+      "evidence_produced": [
+        "info_disclosure_*.headers",
+        "info_disclosure_*.body"
+      ],
       "release_required": true,
       "requires_authenticated_coverage": false,
       "requires_totp": false,
       "safe_for_release": true,
-      "severity_if_failed": "medium"
+      "severity_if_failed": "medium",
+      "owasp_top_10_2025": [
+        "A02:2025",
+        "A10:2025"
+      ]
     },
     {
       "test_id": "OSMAP-WSTG-INPV-001",
       "test_name": "WSTG-v42-ATHZ-01 Testing Directory Traversal File Include - safe endpoint probes",
       "script_path": "run-wstg-pack.py",
-      "wstg": ["WSTG-v42-ATHZ-01"],
+      "wstg": [
+        "WSTG-v42-ATHZ-01"
+      ],
       "wstg_section": "Testing Directory Traversal File Include",
-      "asvs": ["v5.0.0-2.2.1", "v5.0.0-4.2.5", "v5.0.0-8.2.2"],
+      "asvs": [
+        "v5.0.0-2.2.1",
+        "v5.0.0-4.2.5",
+        "v5.0.0-8.2.2"
+      ],
       "asvs_section": "Input Validation and Access Control",
-      "test_type": ["unauthenticated", "dynamic test"],
+      "test_type": [
+        "unauthenticated",
+        "dynamic test"
+      ],
       "expected_result": "Dot segments and traversal encodings are rejected or routed to a safe error without sensitive content.",
-      "evidence_produced": ["path_traversal_*.headers"],
+      "evidence_produced": [
+        "path_traversal_*.headers"
+      ],
       "release_required": true,
       "requires_authenticated_coverage": false,
       "requires_totp": false,
       "safe_for_release": true,
-      "severity_if_failed": "high"
+      "severity_if_failed": "high",
+      "owasp_top_10_2025": [
+        "A01:2025",
+        "A05:2025",
+        "A10:2025"
+      ]
     },
     {
       "test_id": "OSMAP-WSTG-INPV-002",
       "test_name": "WSTG-v42-INPV-01 Testing for Reflected Cross Site Scripting - safe parameters",
       "script_path": "run-wstg-pack.py",
-      "wstg": ["WSTG-v42-INPV-01"],
+      "wstg": [
+        "WSTG-v42-INPV-01"
+      ],
       "wstg_section": "Testing for Reflected Cross Site Scripting",
-      "asvs": ["v5.0.0-1.1.2", "v5.0.0-1.2.1", "v5.0.0-2.2.1"],
+      "asvs": [
+        "v5.0.0-1.1.2",
+        "v5.0.0-1.2.1",
+        "v5.0.0-2.2.1"
+      ],
       "asvs_section": "Output Encoding and Input Validation",
-      "test_type": ["unauthenticated", "dynamic test"],
+      "test_type": [
+        "unauthenticated",
+        "dynamic test"
+      ],
       "expected_result": "Probe strings are not reflected as executable markup on unauthenticated or redirect-gated routes.",
-      "evidence_produced": ["reflected_input_*.body"],
+      "evidence_produced": [
+        "reflected_input_*.body"
+      ],
       "release_required": true,
       "requires_authenticated_coverage": false,
       "requires_totp": false,
       "safe_for_release": true,
-      "severity_if_failed": "high"
+      "severity_if_failed": "high",
+      "owasp_top_10_2025": [
+        "A05:2025"
+      ]
     },
     {
       "test_id": "OSMAP-WSTG-CLNT-001",
       "test_name": "WSTG-v42-CLNT-07 Testing Cross Origin Resource Sharing",
       "script_path": "run-wstg-pack.py",
-      "wstg": ["WSTG-v42-CLNT-07"],
+      "wstg": [
+        "WSTG-v42-CLNT-07"
+      ],
       "wstg_section": "Testing Cross Origin Resource Sharing",
-      "asvs": ["v5.0.0-14.4.4", "v5.0.0-3.5.8"],
+      "asvs": [
+        "v5.0.0-14.4.4",
+        "v5.0.0-3.5.8"
+      ],
       "asvs_section": "Cross-Origin Controls",
-      "test_type": ["unauthenticated", "dynamic test"],
+      "test_type": [
+        "unauthenticated",
+        "dynamic test"
+      ],
       "expected_result": "Cross-origin probes do not receive permissive credentialed CORS headers.",
-      "evidence_produced": ["cors_*.headers"],
+      "evidence_produced": [
+        "cors_*.headers"
+      ],
       "release_required": true,
       "requires_authenticated_coverage": false,
       "requires_totp": false,
       "safe_for_release": true,
-      "severity_if_failed": "high"
+      "severity_if_failed": "high",
+      "owasp_top_10_2025": [
+        "A01:2025",
+        "A02:2025"
+      ]
     },
     {
       "test_id": "OSMAP-WSTG-CLNT-002",
       "test_name": "WSTG-v42-INPV-02 Testing for Stored Cross Site Scripting - HTML email rendering policy",
       "script_path": "run-wstg-pack.py",
-      "wstg": ["WSTG-v42-INPV-02", "WSTG-v42-CLNT-01"],
+      "wstg": [
+        "WSTG-v42-INPV-02",
+        "WSTG-v42-CLNT-01"
+      ],
       "wstg_section": "Testing for Stored Cross Site Scripting; Testing for DOM-Based Cross Site Scripting",
-      "asvs": ["v5.0.0-1.3.1", "v5.0.0-1.2.1", "v5.0.0-3.4.6"],
+      "asvs": [
+        "v5.0.0-1.3.1",
+        "v5.0.0-1.2.1",
+        "v5.0.0-3.4.6"
+      ],
       "asvs_section": "HTML Sanitization and Browser Rendering",
-      "test_type": ["static review"],
+      "test_type": [
+        "static review"
+      ],
       "expected_result": "Source and docs show conservative sanitized HTML rendering, external fetch blocking, and escaped plaintext fallback.",
-      "evidence_produced": ["static_html_rendering.txt"],
+      "evidence_produced": [
+        "static_html_rendering.txt"
+      ],
       "release_required": true,
       "requires_authenticated_coverage": false,
       "requires_totp": false,
       "safe_for_release": true,
-      "severity_if_failed": "high"
+      "severity_if_failed": "high",
+      "owasp_top_10_2025": [
+        "A05:2025",
+        "A06:2025"
+      ]
     },
     {
       "test_id": "OSMAP-WSTG-BUSL-001",
       "test_name": "WSTG-v42-BUSL-08 Test Upload of Unexpected File Types - attachment handling policy",
       "script_path": "run-wstg-pack.py",
-      "wstg": ["WSTG-v42-BUSL-08", "WSTG-v42-BUSL-09"],
+      "wstg": [
+        "WSTG-v42-BUSL-08",
+        "WSTG-v42-BUSL-09"
+      ],
       "wstg_section": "Test Upload of Unexpected File Types; Test Upload of Malicious Files",
-      "asvs": ["v5.0.0-10.1.1", "v5.0.0-10.2.1", "v5.0.0-14.4.4"],
+      "asvs": [
+        "v5.0.0-10.1.1",
+        "v5.0.0-10.2.1",
+        "v5.0.0-14.4.4"
+      ],
       "asvs_section": "File Handling",
-      "test_type": ["static review"],
+      "test_type": [
+        "static review"
+      ],
       "expected_result": "Source shows bounded multipart parsing and forced-download attachment responses with nosniff and no-store.",
-      "evidence_produced": ["static_attachment_handling.txt"],
+      "evidence_produced": [
+        "static_attachment_handling.txt"
+      ],
       "release_required": true,
       "requires_authenticated_coverage": false,
       "requires_totp": false,
       "safe_for_release": true,
-      "severity_if_failed": "high"
+      "severity_if_failed": "high",
+      "owasp_top_10_2025": [
+        "A06:2025",
+        "A08:2025"
+      ]
     },
     {
       "test_id": "OSMAP-WSTG-CONF-005",
       "test_name": "WSTG-v42-CONF-05 Enumerate Infrastructure and Application Admin Interfaces - host bindings",
       "script_path": "run-wstg-pack.py",
-      "wstg": ["WSTG-v42-CONF-05", "WSTG-v42-CONF-01"],
+      "wstg": [
+        "WSTG-v42-CONF-05",
+        "WSTG-v42-CONF-01"
+      ],
       "wstg_section": "Test Network Infrastructure Configuration; Enumerate Infrastructure and Application Admin Interfaces",
-      "asvs": ["v5.0.0-14.3.1", "v5.0.0-14.4.1"],
+      "asvs": [
+        "v5.0.0-14.3.1",
+        "v5.0.0-14.4.1"
+      ],
       "asvs_section": "Secure Deployment",
-      "test_type": ["host assisted", "static review"],
+      "test_type": [
+        "host assisted",
+        "static review"
+      ],
       "expected_result": "nginx, OSMAP serve, and helper are running; OSMAP serve binds to loopback only; public HTTPS is the exposed browser path.",
-      "evidence_produced": ["host_services.txt", "host_bindings.txt", "host_nginx.txt"],
+      "evidence_produced": [
+        "host_services.txt",
+        "host_bindings.txt",
+        "host_nginx.txt"
+      ],
       "release_required": true,
       "requires_authenticated_coverage": false,
       "requires_totp": false,
       "safe_for_release": true,
-      "severity_if_failed": "high"
+      "severity_if_failed": "high",
+      "owasp_top_10_2025": [
+        "A01:2025",
+        "A02:2025"
+      ]
     },
     {
       "test_id": "OSMAP-WSTG-CONF-006",
       "test_name": "WSTG-v42-CONF-01 Test Network Infrastructure Configuration - pf posture",
       "script_path": "run-wstg-pack.py",
-      "wstg": ["WSTG-v42-CONF-01"],
+      "wstg": [
+        "WSTG-v42-CONF-01"
+      ],
       "wstg_section": "Test Network Infrastructure Configuration",
-      "asvs": ["v5.0.0-14.3.1", "v5.0.0-14.4.1"],
+      "asvs": [
+        "v5.0.0-14.3.1",
+        "v5.0.0-14.4.1"
+      ],
       "asvs_section": "Network Security Configuration",
-      "test_type": ["host assisted", "static review"],
+      "test_type": [
+        "host assisted",
+        "static review"
+      ],
       "expected_result": "pf is enabled with default drop posture and narrow exposed services.",
-      "evidence_produced": ["host_pf.txt"],
+      "evidence_produced": [
+        "host_pf.txt"
+      ],
       "release_required": true,
       "requires_authenticated_coverage": false,
       "requires_totp": false,
       "safe_for_release": true,
-      "severity_if_failed": "high"
+      "severity_if_failed": "high",
+      "owasp_top_10_2025": [
+        "A02:2025"
+      ]
     },
     {
       "test_id": "OSMAP-WSTG-CONF-007",
       "test_name": "WSTG-v42-CONF-02 Test Application Platform Configuration - SBOM and dependency alignment",
       "script_path": "run-wstg-pack.py",
-      "wstg": ["WSTG-v42-CONF-02"],
+      "wstg": [
+        "WSTG-v42-CONF-02"
+      ],
       "wstg_section": "Test Application Platform Configuration",
-      "asvs": ["v5.0.0-14.2.1", "v5.0.0-14.2.2", "v5.0.0-14.2.3"],
+      "asvs": [
+        "v5.0.0-14.2.1",
+        "v5.0.0-14.2.2",
+        "v5.0.0-14.2.3"
+      ],
       "asvs_section": "Dependency and Supply Chain Security",
-      "test_type": ["static review"],
+      "test_type": [
+        "static review"
+      ],
       "expected_result": "Repo contains lockfile and supply-chain documentation or tooling for dependency inventory and security review.",
-      "evidence_produced": ["static_dependency_alignment.txt"],
+      "evidence_produced": [
+        "static_dependency_alignment.txt"
+      ],
       "release_required": true,
       "requires_authenticated_coverage": false,
       "requires_totp": false,
       "safe_for_release": true,
-      "severity_if_failed": "medium"
+      "severity_if_failed": "medium",
+      "owasp_top_10_2025": [
+        "A03:2025",
+        "A08:2025"
+      ]
+    },
+    {
+      "test_id": "OSMAP-WSTG-LOGG-001",
+      "test_name": "OWASP Top 10 2025 A09 Security Logging and Alerting Failures - audit event and redaction posture",
+      "script_path": "run-wstg-pack.py",
+      "wstg": [
+        "WSTG-v42-ERRH-01"
+      ],
+      "wstg_section": "Testing for Improper Error Handling; OSMAP security logging review",
+      "asvs": [
+        "v5.0.0-8.2.1"
+      ],
+      "asvs_section": "Logging, Error Handling, and Sensitive Data Protection",
+      "owasp_top_10_2025": [
+        "A09:2025"
+      ],
+      "test_type": [
+        "static review"
+      ],
+      "expected_result": "Source and docs show structured auth, session, mailbox, request, and release-gate events with redaction for passwords, TOTP material, session tokens, CSRF tokens, and message bodies.",
+      "evidence_produced": [
+        "static_security_logging.txt"
+      ],
+      "release_required": true,
+      "requires_authenticated_coverage": false,
+      "requires_totp": false,
+      "safe_for_release": true,
+      "severity_if_failed": "high"
     }
   ],
   "gaps": [
     {
       "gap_id": "OSMAP-WSTG-GAP-001",
       "area": "Authenticated destructive business workflows",
-      "wstg": ["WSTG-v42-BUSL-04", "WSTG-v42-BUSL-08"],
-      "asvs": ["v5.0.0-2.3.2", "v5.0.0-8.2.2"],
-      "reason": "Tests that send real mail, move real messages, or alter durable settings require controlled validation accounts and fixtures. The runner skips these unless explicitly credential-enabled."
+      "wstg": [
+        "WSTG-v42-BUSL-04",
+        "WSTG-v42-BUSL-08"
+      ],
+      "asvs": [
+        "v5.0.0-2.3.2",
+        "v5.0.0-8.2.2"
+      ],
+      "reason": "Tests that send real mail, move real messages, or alter durable settings require controlled validation accounts and fixtures. The runner skips these unless explicitly credential-enabled.",
+      "owasp_top_10_2025": [
+        "A01:2025",
+        "A06:2025",
+        "A08:2025"
+      ]
     },
     {
       "gap_id": "OSMAP-WSTG-GAP-002",
       "area": "Full attachment upload malware/content scanning",
-      "wstg": ["WSTG-v42-BUSL-08", "WSTG-v42-BUSL-09"],
-      "asvs": ["v5.0.0-10.2.1"],
-      "reason": "The pack validates OSMAP browser boundaries and source controls. Mail-stack content filtering belongs to the mailstack validation tooling and is not broadened here."
+      "wstg": [
+        "WSTG-v42-BUSL-08",
+        "WSTG-v42-BUSL-09"
+      ],
+      "asvs": [
+        "v5.0.0-10.2.1"
+      ],
+      "reason": "The pack validates OSMAP browser boundaries and source controls. Mail-stack content filtering belongs to the mailstack validation tooling and is not broadened here.",
+      "owasp_top_10_2025": [
+        "A06:2025",
+        "A08:2025"
+      ]
     },
     {
       "gap_id": "OSMAP-WSTG-GAP-003",
       "area": "Full ASVS compliance",
       "wstg": [],
-      "asvs": ["v5.0.0"],
-      "reason": "This pack validates OSMAP-relevant browser, auth, session, rendering, attachment, host-binding, and deployment controls. It is not a complete ASVS verification program for the full mail platform."
+      "asvs": [
+        "v5.0.0"
+      ],
+      "reason": "This pack validates OSMAP-relevant browser, auth, session, rendering, attachment, host-binding, and deployment controls. It is not a complete ASVS verification program for the full mail platform.",
+      "owasp_top_10_2025": []
     }
   ]
 }

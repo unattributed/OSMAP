@@ -1,5 +1,17 @@
 # Decision Log
 
+## 2026-05-06, Choose explicit V3 concurrent-session policy
+
+Version 3 now treats concurrent browser sessions as the intentional policy
+rather than an implicit default. The session surface keeps bounded absolute and
+idle lifetimes, visible session metadata, and user-driven revocation for the
+current session, other sessions, or all sessions.
+
+The browser-visible session list now includes a normalized device label derived
+from the existing user-agent metadata. OSMAP does not add remembered-device
+cookies, persistent device identifiers, geolocation, or anomaly scoring in this
+slice.
+
 ## 2026-05-06, Integrate V3 live MIME and HTML proof into release gate
 
 The strict V3 release path now treats the live MIME and HTML proof as required

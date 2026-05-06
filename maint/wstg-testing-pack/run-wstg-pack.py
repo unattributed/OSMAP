@@ -34,6 +34,19 @@ STATUS_NA = "not_applicable"
 PACK_ROOT = Path(__file__).resolve().parent
 REPO_ROOT = PACK_ROOT.parents[1]
 MAPPING_PATH = PACK_ROOT / "wstg-asvs-mapping.json"
+
+OWASP_TOP_10_2025 = {
+    "A01:2025": "Broken Access Control",
+    "A02:2025": "Security Misconfiguration",
+    "A03:2025": "Software Supply Chain Failures",
+    "A04:2025": "Cryptographic Failures",
+    "A05:2025": "Injection",
+    "A06:2025": "Insecure Design",
+    "A07:2025": "Authentication Failures",
+    "A08:2025": "Software or Data Integrity Failures",
+    "A09:2025": "Security Logging and Alerting Failures",
+    "A10:2025": "Mishandling of Exceptional Conditions",
+}
 DEFAULT_BODY_LIMIT = 256 * 1024
 SECRET_REPLACEMENT = "[REDACTED]"
 
@@ -161,6 +174,7 @@ class Runner:
             "OSMAP-WSTG-CONF-005": self.test_host_bindings,
             "OSMAP-WSTG-CONF-006": self.test_host_pf,
             "OSMAP-WSTG-CONF-007": self.test_dependency_alignment,
+            "OSMAP-WSTG-LOGG-001": self.test_security_logging_static,
         }
         for item in self.mapping["tests"]:
             test_id = item["test_id"]
@@ -949,6 +963,47 @@ class Runner:
             return self.result("OSMAP-WSTG-CONF-007", STATUS_FAIL, "dependency alignment files are missing", [evidence], {"missing": missing_files})
         return self.result("OSMAP-WSTG-CONF-007", STATUS_PASS, "lockfile and supply-chain security documentation/tooling are present", [evidence])
 
+    def test_security_logging_static(self) -> TestResult:
+        files = [
+            REPO_ROOT / "src" / "auth.rs",
+            REPO_ROOT / "src" / "session.rs",
+            REPO_ROOT / "src" / "logging.rs",
+            REPO_ROOT / "src" / "http_support.rs",
+            REPO_ROOT / "docs" / "OBSERVABILITY_AND_MONITORING.md",
+            REPO_ROOT / "docs" / "REQUEST_WORKER_BUDGET_MODEL.md",
+            REPO_ROOT / "maint" / "security" / "osmap-release-check.sh",
+        ]
+        text = "\n".join(path.read_text(encoding="utf-8", errors="replace") for path in files if path.exists())
+        markers = [
+            "audit_session_ref",
+            "redact",
+            "session_ref",
+            "auth",
+            "session",
+            "request_id",
+            "password",
+            "TOTP",
+            "CSRF",
+            "message body",
+            "skipped_checks",
+        ]
+        missing = [marker for marker in markers if marker.lower() not in text.lower()]
+        evidence = self.write_text_evidence("static_security_logging.txt", summarize_static_files(files, missing))
+        if missing:
+            return self.result(
+                "OSMAP-WSTG-LOGG-001",
+                STATUS_FAIL,
+                "security logging and redaction markers were missing from source/docs",
+                [evidence],
+                {"missing": missing},
+            )
+        return self.result(
+            "OSMAP-WSTG-LOGG-001",
+            STATUS_PASS,
+            "source and docs show structured security logging and sensitive-data redaction posture",
+            [evidence],
+        )
+
     def run_ssh(self, filename: str, command: str) -> str:
         try:
             completed = subprocess.run(
@@ -1104,6 +1159,7 @@ def write_summary(runner: Runner, args: argparse.Namespace, release_errors: list
         "commands": [" ".join(shlex.quote(part) for part in sys.argv)],
         "release_mode": runner.config.release_mode,
         "standards": runner.mapping["standards"],
+        "owasp_top_10_2025_coverage": top10_coverage(runner.mapping),
         "authenticated_proof": runner.authenticated_proof,
         "release_errors": release_errors,
         "results": [
@@ -1150,6 +1206,13 @@ def render_markdown_report(runner: Runner, data: dict[str, object]) -> str:
     if data.get("release_errors"):
         lines.extend(["", "## Release Errors", ""])
         lines.extend(f"- {escape_md(error)}" for error in data["release_errors"])
+    lines.extend(["", "## OWASP Top 10 2025 Coverage", "", "| Category | Name | Tests | Gaps |", "| --- | --- | --- | --- |"])
+    coverage = data["owasp_top_10_2025_coverage"]
+    for category, name in OWASP_TOP_10_2025.items():
+        item = coverage[category]
+        tests = ", ".join(f"`{test_id}`" for test_id in item["tests"]) or "none"
+        gaps = ", ".join(f"`{gap_id}`" for gap_id in item["gaps"]) or "none"
+        lines.append(f"| `{category}` | {escape_md(name)} | {tests} | {gaps} |")
     lines.extend(["", "## Results", "", "| Status | Test ID | Test | Message | Evidence |", "| --- | --- | --- | --- | --- |"])
     for result in runner.results:
         evidence = "<br>".join(f"`{item}`" for item in result.evidence) if result.evidence else ""
@@ -1165,20 +1228,36 @@ def render_markdown_report(runner: Runner, data: dict[str, object]) -> str:
 
 def write_coverage_markdown(mapping: dict[str, object], path: Path) -> None:
     lines = [
-        "# OSMAP WSTG and ASVS Coverage",
+        "# OSMAP WSTG, ASVS, And OWASP Top 10 Coverage",
         "",
         "Generated from `wstg-asvs-mapping.json`.",
         "",
-        "| Test ID | Test | WSTG v4.2 | ASVS 5.0.0 | Type | Release Required | Auth Required | TOTP Required | Safe For Release | Severity |",
-        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+        "## OWASP Top 10 2025 Crosswalk",
+        "",
+        "| Category | Name | Release-required tests | Explicit gaps |",
+        "| --- | --- | --- | --- |",
     ]
+    coverage = top10_coverage(mapping)
+    for category, name in OWASP_TOP_10_2025.items():
+        item = coverage[category]
+        tests = ", ".join(f"`{test_id}`" for test_id in item["tests"]) or "none"
+        gaps = ", ".join(f"`{gap_id}`" for gap_id in item["gaps"]) or "none"
+        lines.append(f"| `{category}` | {escape_md(name)} | {tests} | {gaps} |")
+    lines.extend([
+        "",
+        "## Mapped Tests",
+        "",
+        "| Test ID | Test | WSTG v4.2 | ASVS 5.0.0 | OWASP Top 10 2025 | Type | Release Required | Auth Required | TOTP Required | Safe For Release | Severity |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+    ])
     for item in mapping["tests"]:
         lines.append(
-            "| `{}` | {} | {} | {} | {} | {} | {} | {} | {} | {} |".format(
+            "| `{}` | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} |".format(
                 item["test_id"],
                 escape_md(item["test_name"]),
                 ", ".join(f"`{x}`" for x in item["wstg"]),
                 ", ".join(f"`{x}`" for x in item["asvs"]),
+                ", ".join(f"`{x}`" for x in item["owasp_top_10_2025"]),
                 ", ".join(item["test_type"]),
                 str(item["release_required"]).lower(),
                 str(item["requires_authenticated_coverage"]).lower(),
@@ -1187,18 +1266,35 @@ def write_coverage_markdown(mapping: dict[str, object], path: Path) -> None:
                 item["severity_if_failed"],
             )
         )
-    lines.extend(["", "## Explicit Gaps", "", "| Gap ID | Area | WSTG | ASVS | Reason |", "| --- | --- | --- | --- | --- |"])
+    lines.extend(["", "## Explicit Gaps", "", "| Gap ID | Area | WSTG | ASVS | OWASP Top 10 2025 | Reason |", "| --- | --- | --- | --- | --- | --- |"])
     for gap in mapping.get("gaps", []):
         lines.append(
-            "| `{}` | {} | {} | {} | {} |".format(
+            "| `{}` | {} | {} | {} | {} | {} |".format(
                 gap["gap_id"],
                 escape_md(gap["area"]),
                 ", ".join(f"`{x}`" for x in gap["wstg"]) or "n/a",
                 ", ".join(f"`{x}`" for x in gap["asvs"]) or "n/a",
+                ", ".join(f"`{x}`" for x in gap.get("owasp_top_10_2025", [])) or "n/a",
                 escape_md(gap["reason"]),
             )
         )
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def top10_coverage(mapping: dict[str, object]) -> dict[str, dict[str, list[str]]]:
+    coverage = {
+        category: {"tests": [], "gaps": []}
+        for category in OWASP_TOP_10_2025
+    }
+    for item in mapping["tests"]:
+        if item.get("release_required") is not True or item.get("safe_for_release") is not True:
+            continue
+        for category in item.get("owasp_top_10_2025", []):
+            coverage[category]["tests"].append(item["test_id"])
+    for gap in mapping.get("gaps", []):
+        for category in gap.get("owasp_top_10_2025", []):
+            coverage[category]["gaps"].append(gap["gap_id"])
+    return coverage
 
 
 def escape_md(value: object) -> str:

@@ -67,6 +67,7 @@ impl RuntimeBrowserGateway {
             expires_at: record.expires_at,
             last_seen_at: record.last_seen_at,
             revoked_at: record.revoked_at,
+            device_label: session_device_label(&record.user_agent),
             remote_addr: record.remote_addr,
             user_agent: record.user_agent,
             factor: record.factor,
@@ -543,6 +544,50 @@ fn normalized_login_public_reason(public_reason: PublicFailureReason) -> &'stati
     }
 }
 
+fn session_device_label(user_agent: &str) -> String {
+    let user_agent = user_agent.trim();
+    if user_agent.is_empty() {
+        return "Unknown device".to_string();
+    }
+
+    let browser = if user_agent.contains("Edg/") || user_agent.contains("EdgiOS/") {
+        "Edge"
+    } else if user_agent.contains("Firefox/") || user_agent.contains("FxiOS/") {
+        "Firefox"
+    } else if user_agent.contains("Chrome/") || user_agent.contains("CriOS/") {
+        "Chrome"
+    } else if user_agent.contains("Safari/") {
+        "Safari"
+    } else if user_agent.contains("OSMAP") || user_agent.contains("osmap") {
+        "OSMAP validation client"
+    } else {
+        "Other browser"
+    };
+
+    let platform = if user_agent.contains("OpenBSD") {
+        Some("OpenBSD")
+    } else if user_agent.contains("FreeBSD") {
+        Some("FreeBSD")
+    } else if user_agent.contains("Windows") {
+        Some("Windows")
+    } else if user_agent.contains("Mac OS X") || user_agent.contains("Macintosh") {
+        Some("macOS")
+    } else if user_agent.contains("Android") {
+        Some("Android")
+    } else if user_agent.contains("iPhone") || user_agent.contains("iPad") {
+        Some("iOS")
+    } else if user_agent.contains("Linux") || user_agent.contains("X11") {
+        Some("Linux")
+    } else {
+        None
+    };
+
+    match platform {
+        Some(platform) => format!("{browser} on {platform}"),
+        None => browser.to_string(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -569,5 +614,26 @@ mod tests {
             normalized_login_public_reason(PublicFailureReason::TemporarilyUnavailable),
             PublicFailureReason::TemporarilyUnavailable.as_str()
         );
+    }
+
+    #[test]
+    fn derives_stable_browser_visible_device_labels() {
+        assert_eq!(
+            session_device_label(
+                "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0"
+            ),
+            "Firefox on Linux"
+        );
+        assert_eq!(
+            session_device_label(
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_4) AppleWebKit/605.1.15 Version/17.4 Safari/605.1.15"
+            ),
+            "Safari on macOS"
+        );
+        assert_eq!(
+            session_device_label("osmap-live-v3-mime-html-proof"),
+            "OSMAP validation client"
+        );
+        assert_eq!(session_device_label("   "), "Unknown device");
     }
 }

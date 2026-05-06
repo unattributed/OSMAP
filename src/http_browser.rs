@@ -164,6 +164,7 @@ pub struct BrowserVisibleSession {
     pub expires_at: u64,
     pub last_seen_at: u64,
     pub revoked_at: Option<u64>,
+    pub device_label: String,
     pub remote_addr: String,
     pub user_agent: String,
     pub factor: RequiredSecondFactor,

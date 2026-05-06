@@ -64,8 +64,9 @@
   mailbox plus UID before reporting move success.
 - The implementation now provides a first browser-visible session list,
   self-service revocation for one session, other sessions, or all sessions, and
-  automatic revocation for expired or inactive sessions, but it does not yet
-  provide richer device labeling, cross-process session-store locking, or
+  automatic revocation for expired or inactive sessions. Version 3 now makes
+  concurrent sessions the explicit policy and surfaces normalized device labels,
+  but it does not yet provide cross-process session-store locking or
   anomaly-oriented session analysis
 - The implementation now provides a first bounded end-user settings surface,
   but it currently exposes only one user-facing preference rather than a broad
