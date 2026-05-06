@@ -31,6 +31,8 @@ fi
 : "${OSMAP_RELEASE_HOST_READINESS_EVIDENCE:=maint/live/latest-host-v2-readiness-report.txt maint/live/latest-host-edge-cutover-report.txt maint/live/latest-host-internet-exposure-report.txt maint/live/latest-host-service-enablement-report.txt}"
 : "${OSMAP_RELEASE_TLS_EDGE_EVIDENCE:=maint/live/osmap-v3-tls-cbc-cleanup-evidence-2026-05-02.txt}"
 : "${OSMAP_RELEASE_RESOURCE_TIMEOUT_EVIDENCE:=maint/live/osmap-v3-resource-timeout-evidence-2026-05-02.txt maint/live/latest-host-v3-resource-controls-report.txt}"
+: "${OSMAP_RELEASE_V3_MIME_HTML_PROOF_VALIDATOR:=maint/live/osmap-live-validate-v3-mime-html-proof.ksh}"
+: "${OSMAP_RELEASE_V3_MIME_HTML_PROOF_REPORT:=$OSMAP_RELEASE_EVIDENCE_DIR/latest-host-v3-mime-html-proof-report.txt}"
 : "${OSMAP_RELEASE_SUPPLY_CHAIN_COMMAND:=sh maint/security/osmap-supply-chain-check.sh}"
 
 mkdir -p "$TMPDIR" "$CARGO_HOME" "$CARGO_TARGET_DIR" "$OSMAP_RELEASE_EVIDENCE_DIR"
@@ -60,6 +62,8 @@ tls_checked=""
 tls_cbc_status="missing"
 resource_timeout_checked=""
 resource_timeout_status="missing"
+v3_mime_html_proof_status="missing"
+v3_mime_html_proof_checked=""
 
 add_skip() {
 	if [ -z "$skipped_checks" ]; then
@@ -148,6 +152,7 @@ write_summary() {
 	host_json=$(json_array "$host_checked")
 	tls_json=$(json_array "$tls_checked")
 	resource_timeout_json=$(json_array "$resource_timeout_checked")
+	v3_mime_html_proof_json=$(json_array "$v3_mime_html_proof_checked")
 	cat > "$OSMAP_RELEASE_SUMMARY_JSON" <<EOF
 {
   "assessed_ref": $(json_string "$assessed_ref"),
@@ -173,6 +178,8 @@ write_summary() {
   "tls_edge_evidence_files_checked": $tls_json,
   "resource_timeout_status": $(json_string "$resource_timeout_status"),
   "resource_timeout_evidence_files_checked": $resource_timeout_json,
+  "v3_mime_html_proof_status": $(json_string "$v3_mime_html_proof_status"),
+  "v3_mime_html_proof_evidence_files_checked": $v3_mime_html_proof_json,
   "skipped_checks": $skips_json,
   "sanitized_evidence_archive_path": $(json_string "$OSMAP_RELEASE_SANITIZED_ARCHIVE_PATH"),
   "sanitized_evidence_archive_status": $(json_string "$sanitized_archive_status")
@@ -196,6 +203,7 @@ EOF
 - Authenticated WSTG: \`$authenticated_wstg_status\`
 - TLS CBC cleanup: \`$tls_cbc_status\`
 - Resource and timeout hardening: \`$resource_timeout_status\`
+- V3 live MIME and HTML proof: \`$v3_mime_html_proof_status\`
 - Sanitized evidence archive: \`$sanitized_archive_status\` at \`$OSMAP_RELEASE_SANITIZED_ARCHIVE_PATH\`
 - Skipped checks: \`$(printf '%s' "$skipped_checks" | tr '\n' '; ')\`
 
@@ -214,7 +222,133 @@ $(printf '%s\n' "$tls_checked" | sed '/^$/d; s/^/- `/' | sed 's/$/`/')
 ## Resource And Timeout Evidence
 
 $(printf '%s\n' "$resource_timeout_checked" | sed '/^$/d; s/^/- `/' | sed 's/$/`/')
+
+## V3 Live MIME And HTML Proof Evidence
+
+$(printf '%s\n' "$v3_mime_html_proof_checked" | sed '/^$/d; s/^/- `/' | sed 's/$/`/')
 EOF
+}
+
+validate_v3_mime_html_proof() {
+	validator=$OSMAP_RELEASE_V3_MIME_HTML_PROOF_VALIDATOR
+	report=$OSMAP_RELEASE_V3_MIME_HTML_PROOF_REPORT
+	errors=0
+
+	if [ ! -f "$validator" ]; then
+		add_skip "missing V3 live MIME/HTML validator: $validator"
+		fail "missing V3 live MIME/HTML validator: $validator"
+		errors=$((errors + 1))
+	elif [ ! -x "$validator" ]; then
+		add_skip "V3 live MIME/HTML validator is not executable: $validator"
+		fail "V3 live MIME/HTML validator is not executable: $validator"
+		errors=$((errors + 1))
+	elif ! sh -n "$validator"; then
+		fail "V3 live MIME/HTML validator shell syntax failed: $validator"
+		errors=$((errors + 1))
+	fi
+
+	if ! grep -R -F -q "$validator" docs 2>/dev/null; then
+		fail "V3 live MIME/HTML validator is not referenced by docs"
+		errors=$((errors + 1))
+	fi
+
+	if ! grep -R -F -q "maint/live/latest-host-v3-mime-html-proof-report.txt" docs 2>/dev/null; then
+		fail "V3 live MIME/HTML proof report is not referenced by docs"
+		errors=$((errors + 1))
+	fi
+
+	if [ ! -s "$report" ]; then
+		add_skip "missing V3 live MIME/HTML proof evidence: $report"
+		fail "missing V3 live MIME/HTML proof evidence: $report"
+		errors=$((errors + 1))
+	else
+		if ! python3 - "$report" "$assessed_ref" <<'PY'
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+report_path = Path(sys.argv[1])
+assessed_ref = sys.argv[2]
+text = report_path.read_text(encoding="utf-8", errors="replace")
+lines = text.splitlines()
+values = {}
+errors = []
+
+for line in lines:
+    if "=" not in line:
+        continue
+    key, value = line.split("=", 1)
+    values[key] = value
+
+required = {
+    "result": "v3_mime_html_live_proof_passed",
+    "helper_runtime_result": "passed",
+    "browser_runtime_result": "passed",
+    "healthz_status": "HTTP/1.1 200 OK",
+    "encoded_header_message_view_status": "HTTP/1.1 200 OK",
+    "sanitized_html_message_view_status": "HTTP/1.1 200 OK",
+    "inline_image_message_view_status": "HTTP/1.1 200 OK",
+    "inline_image_attachment_download_status": "HTTP/1.1 200 OK",
+    "attachment_metadata_message_view_status": "HTTP/1.1 200 OK",
+    "delivery_status_attachment_download_status": "HTTP/1.1 200 OK",
+    "original_message_attachment_download_status": "HTTP/1.1 200 OK",
+    "encoded_body_marker_audit_leakage": "absent",
+    "sanitized_html_body_marker_audit_leakage": "absent",
+    "inline_image_body_marker_audit_leakage": "absent",
+    "delivery_status_body_marker_audit_leakage": "absent",
+    "original_message_body_marker_audit_leakage": "absent",
+}
+
+for key, expected in required.items():
+    actual = values.get(key)
+    if actual != expected:
+        errors.append(f"{key} expected {expected!r}, found {actual!r}")
+
+try:
+    assessed_short = subprocess.check_output(
+        ["git", "rev-parse", "--short", assessed_ref],
+        text=True,
+        stderr=subprocess.DEVNULL,
+    ).strip()
+except Exception:
+    assessed_short = assessed_ref[:7]
+
+report_commit = values.get("commit")
+if assessed_short and report_commit != assessed_short:
+    errors.append(f"commit expected {assessed_short!r}, found {report_commit!r}")
+
+for forbidden in [
+    'session_id="',
+    "osmap_session=",
+    "csrf_token=",
+    "totp",
+    "password",
+    "delivery status body marker",
+    "original rfc822 body marker",
+    "encoded header body marker",
+    "inline image metadata body marker",
+]:
+    if re.search(re.escape(forbidden), text, flags=re.IGNORECASE):
+        errors.append(f"forbidden proof content present: {forbidden}")
+
+if errors:
+    for error in errors:
+        print(error, file=sys.stderr)
+    raise SystemExit(1)
+PY
+		then
+			fail "V3 live MIME/HTML proof report did not satisfy release mode"
+			errors=$((errors + 1))
+		fi
+	fi
+
+	if [ "$errors" -eq 0 ]; then
+		v3_mime_html_proof_status="passed"
+		v3_mime_html_proof_checked=$(printf '%s\n%s\n' "$validator" "$report")
+	else
+		v3_mime_html_proof_status="failed"
+	fi
 }
 
 validate_wstg_summary() {
@@ -372,6 +506,7 @@ if [ -n "$resource_timeout_checked" ] && [ "$failures" -eq "$resource_failures_b
 else
 	resource_timeout_status="missing"
 fi
+validate_v3_mime_html_proof || true
 validate_wstg_summary || true
 
 if [ "$failures" -eq 0 ]; then
@@ -386,6 +521,7 @@ if [ "$failures" -eq 0 ]; then
 		$OSMAP_RELEASE_HOST_READINESS_EVIDENCE \
 		$OSMAP_RELEASE_TLS_EDGE_EVIDENCE \
 		$OSMAP_RELEASE_RESOURCE_TIMEOUT_EVIDENCE \
+		"$OSMAP_RELEASE_V3_MIME_HTML_PROOF_REPORT" \
 		"$OSMAP_RELEASE_WSTG_SUMMARY_PATH"; then
 		sanitized_archive_status="passed"
 		write_summary
@@ -397,6 +533,7 @@ if [ "$failures" -eq 0 ]; then
 			$OSMAP_RELEASE_HOST_READINESS_EVIDENCE \
 			$OSMAP_RELEASE_TLS_EDGE_EVIDENCE \
 			$OSMAP_RELEASE_RESOURCE_TIMEOUT_EVIDENCE \
+			"$OSMAP_RELEASE_V3_MIME_HTML_PROOF_REPORT" \
 			"$OSMAP_RELEASE_WSTG_SUMMARY_PATH"; then
 			sanitized_archive_status="failed"
 			fail "sanitized evidence archive generation failed after final summary"

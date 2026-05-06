@@ -1,5 +1,17 @@
 # Decision Log
 
+## 2026-05-06, Integrate V3 live MIME and HTML proof into release gate
+
+The strict V3 release path now treats the live MIME and HTML proof as required
+release evidence. `make release-check` validates the repo-owned live validator,
+requires a current redacted `maint/live/latest-host-v3-mime-html-proof-report.txt`
+for the assessed commit, records the proof status in the release evidence
+summary, and includes the safe report in the sanitized evidence archive.
+
+Release mode fails closed when the proof report is missing, stale, incomplete,
+or contains forbidden session, CSRF, password, TOTP, full message body, or full
+attachment body markers.
+
 ## 2026-05-06, Implement V3 live MIME and HTML proof validator
 
 The Version 3 live MIME and HTML proof plan now has a repository-owned live

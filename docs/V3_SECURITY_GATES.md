@@ -43,6 +43,8 @@ release-mode WSTG evidence; checks V2 carry-forward and host-readiness evidence;
 requires archived TLS edge evidence proving the TLS CBC disposition;
 requires archived resource-timeout evidence for helper-backed mailbox, search,
 and message-view timeout behavior;
+requires the V3 live MIME and HTML proof validator and current redacted live
+proof report;
 and writes `maint/live/osmap-v3-release-evidence-summary.json`,
 `maint/live/osmap-v3-release-evidence-summary.md`, and
 `maint/live/osmap-v3-release-evidence.tar.gz`.
@@ -56,6 +58,7 @@ Release mode must fail on:
 - missing V2 carry-forward evidence
 - missing TLS CBC cleanup or exception evidence for the intended public edge
 - missing resource-timeout evidence for helper-backed mailbox, search, and message-view paths
+- missing current V3 live MIME and HTML proof evidence
 - missing V3 feature-gate evidence
 - skipped authenticated WSTG tests when the mapped test requires credential and TOTP coverage
 - skipped security tests outside WSTG when those tests require credential and TOTP coverage
@@ -81,7 +84,7 @@ The evidence must not commit or archive plaintext passwords, reusable TOTP seeds
 | Release-mode validation | Evidence that a release-mode path exists and fails closed when required checks are skipped. The path must distinguish release failures from developer partial skips. |
 | Supply-chain assurance | `make supply-chain-check`, `make security-check`, or `make release-check` evidence showing RustSec advisory checks, duplicate dependency rejection, approved-source enforcement, license allowlist enforcement, dependency inventory generation, and exception handling. Any exception must be dated, owned, justified, and scoped to a specific crate, version, advisory, source, or license. |
 | Resource and timeout control | Tests and docs proving bounded behavior for expensive HTTP parsing, authentication, helper calls, mailbox access, search, MIME parsing, attachment upload and download, send, move, and future bulk paths. External command and helper boundaries must have timeout behavior or a documented reason why the path is not external or blocking. Current resource-timeout evidence is `maint/live/osmap-v3-resource-timeout-evidence-2026-05-02.txt`, with live helper-backed route-budget evidence in `maint/live/latest-host-v3-resource-controls-report.txt`. |
-| MIME and HTML regression | Unit or route tests plus live or fixture evidence for encoded headers, transfer-encoded text bodies, multipart alternatives, nested multipart, sanitized hostile HTML, malformed MIME, inline `cid:` metadata, attachment metadata, suspicious filenames, remote-content neutralization, unsupported charsets, and oversized input rejection. |
+| MIME and HTML regression | Unit or route tests plus live or fixture evidence for encoded headers, transfer-encoded text bodies, multipart alternatives, nested multipart, sanitized hostile HTML, malformed MIME, inline `cid:` metadata, attachment metadata, suspicious filenames, remote-content neutralization, unsupported charsets, and oversized input rejection. Release mode requires `maint/live/osmap-live-validate-v3-mime-html-proof.ksh` to exist, be executable, pass `sh -n`, and produce a current redacted `maint/live/latest-host-v3-mime-html-proof-report.txt` for the assessed commit. |
 | Draft storage boundary | Tests and docs proving draft ownership isolation, restrictive state paths, bounded draft and attachment sizes, CSRF and same-origin enforcement, expired-session rejection, cleanup behavior, and deterministic storage failure handling. |
 | Reply/forward attachment safety | Tests proving selected original attachments are helper-fetched, revalidated at send time, included in aggregate limits, and not silently dropped after confirmation. |
 | Richer bounded search guardrails | Tests proving query validation, mailbox visibility limits, backend and rendered result caps, sorting determinism, invalid-query 400-class behavior, backend-unavailable behavior, and timeout behavior where applicable. |

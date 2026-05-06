@@ -127,6 +127,38 @@ out.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n")
 PY
 }
 
+make_mime_html_proof_report() {
+	path=$1
+	mode=${2:-pass}
+	commit_short=$(git -C "$repo_root" rev-parse --short HEAD)
+	{
+		printf '%s\n' "host=mail.blackbagsecurity.com"
+		printf '%s\n' "project_root=${repo_root}"
+		printf '%s\n' "commit=${commit_short}"
+		printf '%s\n' "build_result=passed"
+		printf '%s\n' "helper_runtime_result=passed"
+		printf '%s\n' "browser_runtime_result=passed"
+		printf '%s\n' "healthz_status=HTTP/1.1 200 OK"
+		printf '%s\n' "encoded_header_message_view_status=HTTP/1.1 200 OK"
+		printf '%s\n' "sanitized_html_message_view_status=HTTP/1.1 200 OK"
+		printf '%s\n' "inline_image_message_view_status=HTTP/1.1 200 OK"
+		printf '%s\n' "inline_image_attachment_download_status=HTTP/1.1 200 OK"
+		printf '%s\n' "attachment_metadata_message_view_status=HTTP/1.1 200 OK"
+		printf '%s\n' "delivery_status_attachment_download_status=HTTP/1.1 200 OK"
+		printf '%s\n' "original_message_attachment_download_status=HTTP/1.1 200 OK"
+		printf '%s\n' "encoded_body_marker_audit_leakage=absent"
+		printf '%s\n' "sanitized_html_body_marker_audit_leakage=absent"
+		printf '%s\n' "inline_image_body_marker_audit_leakage=absent"
+		printf '%s\n' "delivery_status_body_marker_audit_leakage=absent"
+		printf '%s\n' "original_message_body_marker_audit_leakage=absent"
+		if [ "$mode" = "forbidden" ]; then
+			printf '%s\n' "leaked_cookie=osmap_session=redacted-fixture"
+		fi
+		printf '%s\n' "message_cleanup=attempted"
+		printf '%s\n' "result=v3_mime_html_live_proof_passed"
+	} > "$path"
+}
+
 make_evidence() {
 	case_dir=$1
 	mkdir -p "$case_dir"
@@ -137,15 +169,18 @@ make_evidence() {
 	host_c="$case_dir/service.txt"
 	tls="$case_dir/tls-cbc-cleanup.txt"
 	resource_timeout="$case_dir/resource-timeout.txt"
+	mime_html_proof="$case_dir/latest-host-v3-mime-html-proof-report.txt"
 	wstg="$case_dir/wstg-summary.json"
 	for path in "$v2_a" "$v2_b" "$host_a" "$host_b" "$host_c" "$tls" "$resource_timeout"; do
 		printf '%s\n' "sanitized fixture evidence for $(basename "$path")" > "$path"
 	done
+	make_mime_html_proof_report "$mime_html_proof" pass
 	make_wstg_summary "$wstg" pass
 	printf '%s\n' "$v2_a $v2_b"
 	printf '%s\n' "$host_a $host_b $host_c"
 	printf '%s\n' "$tls"
 	printf '%s\n' "$resource_timeout"
+	printf '%s\n' "$mime_html_proof"
 	printf '%s\n' "$wstg"
 }
 
@@ -160,7 +195,8 @@ run_release_case() {
 	host_paths=$(printf '%s\n' "$evidence" | sed -n '2p')
 	tls_paths=$(printf '%s\n' "$evidence" | sed -n '3p')
 	resource_timeout_paths=$(printf '%s\n' "$evidence" | sed -n '4p')
-	wstg_path=$(printf '%s\n' "$evidence" | sed -n '5p')
+	mime_html_proof_path=$(printf '%s\n' "$evidence" | sed -n '5p')
+	wstg_path=$(printf '%s\n' "$evidence" | sed -n '6p')
 	env \
 		PATH="$stub_dir:$PATH" \
 		OSMAP_SECURITY_PROFILE=release \
@@ -174,6 +210,7 @@ run_release_case() {
 		OSMAP_RELEASE_HOST_READINESS_EVIDENCE="$host_paths" \
 		OSMAP_RELEASE_TLS_EDGE_EVIDENCE="$tls_paths" \
 		OSMAP_RELEASE_RESOURCE_TIMEOUT_EVIDENCE="$resource_timeout_paths" \
+		OSMAP_RELEASE_V3_MIME_HTML_PROOF_REPORT="$mime_html_proof_path" \
 		OSMAP_RELEASE_SUPPLY_CHAIN_COMMAND=true \
 		"$@" \
 		sh "$release_check" > "$case_dir/output.txt" 2>&1
@@ -201,6 +238,7 @@ skip_v2=$(printf '%s\n' "$evidence" | sed -n '1p')
 skip_host=$(printf '%s\n' "$evidence" | sed -n '2p')
 skip_tls=$(printf '%s\n' "$evidence" | sed -n '3p')
 skip_resource_timeout=$(printf '%s\n' "$evidence" | sed -n '4p')
+skip_mime_html_proof=$(printf '%s\n' "$evidence" | sed -n '5p')
 skip_wstg="$skip_case/wstg-summary.json"
 make_wstg_summary "$skip_wstg" skip-auth
 if env \
@@ -216,6 +254,7 @@ if env \
 	OSMAP_RELEASE_HOST_READINESS_EVIDENCE="$skip_host" \
 	OSMAP_RELEASE_TLS_EDGE_EVIDENCE="$skip_tls" \
 	OSMAP_RELEASE_RESOURCE_TIMEOUT_EVIDENCE="$skip_resource_timeout" \
+	OSMAP_RELEASE_V3_MIME_HTML_PROOF_REPORT="$skip_mime_html_proof" \
 	OSMAP_RELEASE_SUPPLY_CHAIN_COMMAND=true \
 	sh "$release_check" > "$skip_case/output.txt" 2>&1; then
 	echo "expected authenticated WSTG skip to fail release mode" >&2
@@ -229,7 +268,8 @@ evidence="$(make_evidence "$host_case")"
 host_v2=$(printf '%s\n' "$evidence" | sed -n '1p')
 host_tls=$(printf '%s\n' "$evidence" | sed -n '3p')
 host_resource_timeout=$(printf '%s\n' "$evidence" | sed -n '4p')
-host_wstg=$(printf '%s\n' "$evidence" | sed -n '5p')
+host_mime_html_proof=$(printf '%s\n' "$evidence" | sed -n '5p')
+host_wstg=$(printf '%s\n' "$evidence" | sed -n '6p')
 if env \
 	PATH="$host_case/bin:$PATH" \
 	OSMAP_SECURITY_PROFILE=release \
@@ -243,6 +283,7 @@ if env \
 	OSMAP_RELEASE_HOST_READINESS_EVIDENCE="$host_case/missing-host.txt" \
 	OSMAP_RELEASE_TLS_EDGE_EVIDENCE="$host_tls" \
 	OSMAP_RELEASE_RESOURCE_TIMEOUT_EVIDENCE="$host_resource_timeout" \
+	OSMAP_RELEASE_V3_MIME_HTML_PROOF_REPORT="$host_mime_html_proof" \
 	OSMAP_RELEASE_SUPPLY_CHAIN_COMMAND=true \
 	sh "$release_check" > "$host_case/output.txt" 2>&1; then
 	echo "expected missing host-readiness evidence to fail release mode" >&2
@@ -256,7 +297,8 @@ evidence="$(make_evidence "$tls_case")"
 tls_v2=$(printf '%s\n' "$evidence" | sed -n '1p')
 tls_host=$(printf '%s\n' "$evidence" | sed -n '2p')
 tls_resource_timeout=$(printf '%s\n' "$evidence" | sed -n '4p')
-tls_wstg=$(printf '%s\n' "$evidence" | sed -n '5p')
+tls_mime_html_proof=$(printf '%s\n' "$evidence" | sed -n '5p')
+tls_wstg=$(printf '%s\n' "$evidence" | sed -n '6p')
 if env \
 	PATH="$tls_case/bin:$PATH" \
 	OSMAP_SECURITY_PROFILE=release \
@@ -270,6 +312,7 @@ if env \
 	OSMAP_RELEASE_HOST_READINESS_EVIDENCE="$tls_host" \
 	OSMAP_RELEASE_TLS_EDGE_EVIDENCE="$tls_case/missing-tls-evidence.txt" \
 	OSMAP_RELEASE_RESOURCE_TIMEOUT_EVIDENCE="$tls_resource_timeout" \
+	OSMAP_RELEASE_V3_MIME_HTML_PROOF_REPORT="$tls_mime_html_proof" \
 	OSMAP_RELEASE_SUPPLY_CHAIN_COMMAND=true \
 	sh "$release_check" > "$tls_case/output.txt" 2>&1; then
 	echo "expected missing TLS edge evidence to fail release mode" >&2
@@ -284,7 +327,8 @@ evidence="$(make_evidence "$resource_case")"
 resource_v2=$(printf '%s\n' "$evidence" | sed -n '1p')
 resource_host=$(printf '%s\n' "$evidence" | sed -n '2p')
 resource_tls=$(printf '%s\n' "$evidence" | sed -n '3p')
-resource_wstg=$(printf '%s\n' "$evidence" | sed -n '5p')
+resource_mime_html_proof=$(printf '%s\n' "$evidence" | sed -n '5p')
+resource_wstg=$(printf '%s\n' "$evidence" | sed -n '6p')
 if env \
 	PATH="$resource_case/bin:$PATH" \
 	OSMAP_SECURITY_PROFILE=release \
@@ -298,12 +342,75 @@ if env \
 	OSMAP_RELEASE_HOST_READINESS_EVIDENCE="$resource_host" \
 	OSMAP_RELEASE_TLS_EDGE_EVIDENCE="$resource_tls" \
 	OSMAP_RELEASE_RESOURCE_TIMEOUT_EVIDENCE="$resource_case/missing-resource-timeout-evidence.txt" \
+	OSMAP_RELEASE_V3_MIME_HTML_PROOF_REPORT="$resource_mime_html_proof" \
 	OSMAP_RELEASE_SUPPLY_CHAIN_COMMAND=true \
 	sh "$release_check" > "$resource_case/output.txt" 2>&1; then
 	echo "expected missing resource-timeout evidence to fail release mode" >&2
 	exit 1
 fi
 grep -Fq "missing resource-timeout evidence" "$resource_case/output.txt"
+
+mime_missing_case="$tmp_root/missing-mime-html-proof"
+mkdir -p "$mime_missing_case/bin"
+make_stubs "$mime_missing_case/bin"
+evidence="$(make_evidence "$mime_missing_case")"
+mime_missing_v2=$(printf '%s\n' "$evidence" | sed -n '1p')
+mime_missing_host=$(printf '%s\n' "$evidence" | sed -n '2p')
+mime_missing_tls=$(printf '%s\n' "$evidence" | sed -n '3p')
+mime_missing_resource_timeout=$(printf '%s\n' "$evidence" | sed -n '4p')
+mime_missing_wstg=$(printf '%s\n' "$evidence" | sed -n '6p')
+if env \
+	PATH="$mime_missing_case/bin:$PATH" \
+	OSMAP_SECURITY_PROFILE=release \
+	OSMAP_RELEASE_EVIDENCE_DIR="$mime_missing_case" \
+	OSMAP_RELEASE_DEPENDENCY_INVENTORY_PATH="$mime_missing_case/dependency-inventory.txt" \
+	OSMAP_RELEASE_SUMMARY_JSON="$mime_missing_case/summary.json" \
+	OSMAP_RELEASE_SUMMARY_MD="$mime_missing_case/summary.md" \
+	OSMAP_RELEASE_SANITIZED_ARCHIVE_PATH="$mime_missing_case/evidence.tar.gz" \
+	OSMAP_RELEASE_WSTG_SUMMARY_PATH="$mime_missing_wstg" \
+	OSMAP_RELEASE_V2_CARRY_FORWARD_EVIDENCE="$mime_missing_v2" \
+	OSMAP_RELEASE_HOST_READINESS_EVIDENCE="$mime_missing_host" \
+	OSMAP_RELEASE_TLS_EDGE_EVIDENCE="$mime_missing_tls" \
+	OSMAP_RELEASE_RESOURCE_TIMEOUT_EVIDENCE="$mime_missing_resource_timeout" \
+	OSMAP_RELEASE_V3_MIME_HTML_PROOF_REPORT="$mime_missing_case/missing-mime-html-proof.txt" \
+	OSMAP_RELEASE_SUPPLY_CHAIN_COMMAND=true \
+	sh "$release_check" > "$mime_missing_case/output.txt" 2>&1; then
+	echo "expected missing V3 live MIME/HTML proof evidence to fail release mode" >&2
+	exit 1
+fi
+grep -Fq "missing V3 live MIME/HTML proof evidence" "$mime_missing_case/output.txt"
+
+mime_forbidden_case="$tmp_root/forbidden-mime-html-proof"
+mkdir -p "$mime_forbidden_case/bin"
+make_stubs "$mime_forbidden_case/bin"
+evidence="$(make_evidence "$mime_forbidden_case")"
+mime_forbidden_v2=$(printf '%s\n' "$evidence" | sed -n '1p')
+mime_forbidden_host=$(printf '%s\n' "$evidence" | sed -n '2p')
+mime_forbidden_tls=$(printf '%s\n' "$evidence" | sed -n '3p')
+mime_forbidden_resource_timeout=$(printf '%s\n' "$evidence" | sed -n '4p')
+mime_forbidden_proof=$(printf '%s\n' "$evidence" | sed -n '5p')
+mime_forbidden_wstg=$(printf '%s\n' "$evidence" | sed -n '6p')
+make_mime_html_proof_report "$mime_forbidden_proof" forbidden
+if env \
+	PATH="$mime_forbidden_case/bin:$PATH" \
+	OSMAP_SECURITY_PROFILE=release \
+	OSMAP_RELEASE_EVIDENCE_DIR="$mime_forbidden_case" \
+	OSMAP_RELEASE_DEPENDENCY_INVENTORY_PATH="$mime_forbidden_case/dependency-inventory.txt" \
+	OSMAP_RELEASE_SUMMARY_JSON="$mime_forbidden_case/summary.json" \
+	OSMAP_RELEASE_SUMMARY_MD="$mime_forbidden_case/summary.md" \
+	OSMAP_RELEASE_SANITIZED_ARCHIVE_PATH="$mime_forbidden_case/evidence.tar.gz" \
+	OSMAP_RELEASE_WSTG_SUMMARY_PATH="$mime_forbidden_wstg" \
+	OSMAP_RELEASE_V2_CARRY_FORWARD_EVIDENCE="$mime_forbidden_v2" \
+	OSMAP_RELEASE_HOST_READINESS_EVIDENCE="$mime_forbidden_host" \
+	OSMAP_RELEASE_TLS_EDGE_EVIDENCE="$mime_forbidden_tls" \
+	OSMAP_RELEASE_RESOURCE_TIMEOUT_EVIDENCE="$mime_forbidden_resource_timeout" \
+	OSMAP_RELEASE_V3_MIME_HTML_PROOF_REPORT="$mime_forbidden_proof" \
+	OSMAP_RELEASE_SUPPLY_CHAIN_COMMAND=true \
+	sh "$release_check" > "$mime_forbidden_case/output.txt" 2>&1; then
+	echo "expected forbidden V3 live MIME/HTML proof evidence to fail release mode" >&2
+	exit 1
+fi
+grep -Fq "forbidden proof content present: osmap_session=" "$mime_forbidden_case/output.txt"
 
 success_case="$tmp_root/success"
 if ! run_release_case success; then
@@ -322,10 +429,14 @@ grep -Fq '"tls_cbc_status": "passed"' "$success_case/summary.json"
 grep -Fq '"tls_edge_evidence_files_checked": [' "$success_case/summary.json"
 grep -Fq '"resource_timeout_status": "passed"' "$success_case/summary.json"
 grep -Fq '"resource_timeout_evidence_files_checked": [' "$success_case/summary.json"
+grep -Fq '"v3_mime_html_proof_status": "passed"' "$success_case/summary.json"
+grep -Fq '"v3_mime_html_proof_evidence_files_checked": [' "$success_case/summary.json"
 grep -Fq 'TLS CBC cleanup: `passed`' "$success_case/summary.md"
 grep -Fq 'Resource and timeout hardening: `passed`' "$success_case/summary.md"
+grep -Fq 'V3 live MIME and HTML proof: `passed`' "$success_case/summary.md"
 tar -tzf "$success_case/evidence.tar.gz" | grep -Fq "tls-cbc-cleanup.txt"
 tar -tzf "$success_case/evidence.tar.gz" | grep -Fq "resource-timeout.txt"
+tar -tzf "$success_case/evidence.tar.gz" | grep -Fq "latest-host-v3-mime-html-proof-report.txt"
 
 developer_case="$tmp_root/developer"
 developer_bin="$tmp_root/developer-bin"

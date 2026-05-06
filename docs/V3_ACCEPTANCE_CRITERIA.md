@@ -29,6 +29,14 @@ Developer validation may report skipped phases clearly.
 
 Release-mode validation must fail when a required phase is skipped. This includes skipped Cargo validation, skipped supply-chain validation, missing host-readiness evidence, missing V2 carry-forward evidence, missing TLS edge evidence, missing resource-timeout evidence, missing V3 feature-gate evidence, and skipped authenticated WSTG or other security tests when the test requires credential and TOTP coverage.
 
+The MIME and HTML correctness gate must include a current redacted live proof
+report from `maint/live/osmap-live-validate-v3-mime-html-proof.ksh`. Release
+mode must fail when `maint/live/latest-host-v3-mime-html-proof-report.txt` is
+missing, belongs to a different assessed commit, lacks the required runtime,
+message-view, forced-download, and audit non-leakage pass markers, or contains
+session cookies, CSRF tokens, passwords, TOTP material, raw session identifiers,
+synthetic full body markers, or full attachment body markers.
+
 For WSTG and other security tests that require authenticated coverage, evidence must show that the real browser credential and TOTP path was exercised. The evidence may use a dedicated validation account with stored test secrets in a local uncommitted `.env`, or a human-prompted flow such as `--prompt-auth --auth-email`. The evidence must not commit plaintext passwords, reusable TOTP seeds, active session cookies, private message bodies, or private attachment content.
 
 The release evidence summary is written to
@@ -107,6 +115,7 @@ The Version 3 closeout record must link:
 - current V2 readiness evidence
 - host-readiness and public-edge evidence for the intended deployment host
 - V3 feature-gate evidence for every in-scope feature
+- current redacted V3 live MIME and HTML proof evidence
 - resource-timeout evidence for helper-backed mailbox, search, message-view,
   compose source loading, attachment download, all-mailbox search fanout, and
   message-move paths

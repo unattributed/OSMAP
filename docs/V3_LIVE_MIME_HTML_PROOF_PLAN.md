@@ -259,3 +259,12 @@ The validator has passed on mail.blackbagsecurity.com at commit af7c8ab. The
 current live proof covers encoded headers, sanitized HTML, inline image metadata,
 forced-download inline attachment handling, delivery-status attachment metadata,
 original message attachment metadata, and audit marker non-leakage.
+
+The formal V3 release gate now requires that same proof path. `make
+release-check` verifies `maint/live/osmap-live-validate-v3-mime-html-proof.ksh`
+is present, executable, syntactically valid under `sh -n`, and documented, then
+requires a current redacted
+`maint/live/latest-host-v3-mime-html-proof-report.txt` for the assessed commit.
+The release gate fails closed if the report is missing, lacks any required pass
+marker, or contains session, CSRF, password, TOTP, full message body, or full
+attachment body evidence.
