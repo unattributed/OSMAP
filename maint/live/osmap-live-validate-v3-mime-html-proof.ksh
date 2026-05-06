@@ -475,13 +475,13 @@ assert_absent "sanitized_html_unsafe_marker" "${html_body}" "${HTML_UNSAFE_MARKE
 assert_absent "sanitized_html_javascript_scheme" "${html_body}" 'href="javascript:'
 assert_absent "sanitized_html_data_scheme" "${html_body}" 'href="data:'
 assert_absent "sanitized_html_cid_scheme" "${html_body}" 'href="cid:'
-assert_absent "sanitized_html_form" "${html_body}" "<form"
-assert_absent "sanitized_html_img" "${html_body}" "<img"
-assert_absent "sanitized_html_iframe" "${html_body}" "<iframe"
-assert_absent "sanitized_html_object" "${html_body}" "<object"
-assert_absent "sanitized_html_embed" "${html_body}" "<embed"
-assert_absent "sanitized_html_template" "${html_body}" "<template"
-assert_absent "sanitized_html_svg" "${html_body}" "<svg"
+assert_absent "sanitized_html_form_payload" "${html_body}" "${HTML_UNSAFE_MARKER}"
+assert_absent "sanitized_html_remote_payload" "${html_body}" "${HTML_REMOTE_MARKER}"
+assert_absent "sanitized_html_template_payload" "${html_body}" "template text"
+assert_absent "sanitized_html_comment_payload" "${html_body}" "hidden operator note"
+assert_absent "sanitized_html_svg_payload" "${html_body}" "svg text"
+assert_absent "sanitized_html_iframe_payload" "${html_body}" "frame text"
+assert_absent "sanitized_html_object_payload" "${html_body}" "object text"
 
 if doas grep -Fq "${HTML_SAFE_TEXT}" "${HTTP_LOG_PATH}" 2>/dev/null; then
   fail "audit log contained sanitized HTML body marker"
