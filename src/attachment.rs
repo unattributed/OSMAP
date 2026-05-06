@@ -910,6 +910,97 @@ mod tests {
     }
 
     #[test]
+    fn falls_back_to_generated_filename_when_metadata_is_not_path_trusted() {
+        let message = multipart_message_view(concat!(
+            "--mix-1\n",
+            "Content-Type: text/plain\n",
+            "\n",
+            "Body text\n",
+            "--mix-1\n",
+            "Content-Type: application/octet-stream\n",
+            "Content-Disposition: attachment; filename=\"../../...___\"\n",
+            "\n",
+            "payload\n",
+            "--mix-1--\n",
+        ));
+
+        let outcome = AttachmentDownloadService::new(AttachmentDownloadPolicy::default())
+            .download_for_validated_session(
+                &test_context(),
+                &validated_session_fixture(),
+                &message,
+                "1.2",
+            );
+
+        match outcome.decision {
+            AttachmentDownloadDecision::Downloaded { attachment, .. } => {
+                assert_eq!(attachment.filename, "attachment-9-1-2.bin");
+                assert_eq!(attachment.content_type, "application/octet-stream");
+                assert_eq!(attachment.body, b"payload");
+            }
+            other => panic!("expected downloaded attachment, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn unsafe_download_content_type_falls_back_to_octet_stream() {
+        let message = multipart_message_view(concat!(
+            "--mix-1\n",
+            "Content-Type: text/plain\n",
+            "\n",
+            "Body text\n",
+            "--mix-1\n",
+            "Content-Type: not-a-media-type\n",
+            "Content-Disposition: attachment; filename=\"report.bin\"\n",
+            "\n",
+            "payload\n",
+            "--mix-1--\n",
+        ));
+
+        let outcome = AttachmentDownloadService::new(AttachmentDownloadPolicy::default())
+            .download_for_validated_session(
+                &test_context(),
+                &validated_session_fixture(),
+                &message,
+                "1.2",
+            );
+
+        match outcome.decision {
+            AttachmentDownloadDecision::Downloaded { attachment, .. } => {
+                assert_eq!(attachment.filename, "report.bin");
+                assert_eq!(attachment.content_type, "application/octet-stream");
+                assert_eq!(attachment.body, b"payload");
+            }
+            other => panic!("expected downloaded attachment, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn fixture_delivery_status_part_downloads_as_forced_attachment_metadata() {
+        let message = message_view_from_fixture(include_str!(
+            "../tests/fixtures/mime/delivery_status_notification.eml"
+        ));
+
+        let outcome = AttachmentDownloadService::new(AttachmentDownloadPolicy::default())
+            .download_for_validated_session(
+                &test_context(),
+                &validated_session_fixture(),
+                &message,
+                "1.2",
+            );
+
+        match outcome.decision {
+            AttachmentDownloadDecision::Downloaded { attachment, .. } => {
+                assert_eq!(attachment.filename, "delivery-status.txt");
+                assert_eq!(attachment.content_type, "message/delivery-status");
+                assert!(String::from_utf8_lossy(&attachment.body).contains("Final-Recipient"));
+                assert!(!String::from_utf8_lossy(&attachment.body).contains("Original body"));
+            }
+            other => panic!("expected downloaded attachment, got {other:?}"),
+        }
+    }
+
+    #[test]
     fn decodes_quoted_printable_attachment_bodies() {
         let decoded = decode_quoted_printable_bytes("line=0Awith=20space", 64)
             .expect("quoted-printable should decode");

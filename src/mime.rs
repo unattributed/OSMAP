@@ -1133,7 +1133,7 @@ fn normalize_content_id(
     if trimmed.len() > policy.header_value_max_len {
         return Err(MimeAnalysisError {
             reason: format!(
-                "content-id exceeded maximum length of {} bytes",
+                "header Content-ID exceeded maximum length of {} bytes",
                 policy.header_value_max_len
             ),
         });
@@ -1928,6 +1928,85 @@ mod tests {
             .contains("tracker.example"));
         assert!(analysis.contains_html_body);
         assert!(analysis.attachments.is_empty());
+    }
+
+    #[test]
+    fn rejects_oversized_content_id_metadata_without_rendering_attachment() {
+        let oversized_content_id = format!(
+            "{}@example.com",
+            "a".repeat(DEFAULT_MIME_HEADER_VALUE_MAX_LEN)
+        );
+        let raw_message = format!(
+            "{}{}{}",
+            "Subject: Oversized Content-ID\n",
+            "Content-Type: multipart/mixed; boundary=\"cid-bound\"\n\n",
+            format_args!(
+                "--cid-bound\n\
+                 Content-Type: text/plain\n\n\
+                 Body text\n\
+                 --cid-bound\n\
+                 Content-Type: image/png\n\
+                 Content-Disposition: inline; filename=\"chart.png\"\n\
+                 Content-ID: <{}>\n\n\
+                 image-body\n\
+                 --cid-bound--\n",
+                oversized_content_id
+            )
+        );
+
+        let analyzer = MimeAnalyzer::new(MimeAnalysisPolicy::default());
+        let message = message_view_from_fixture(&raw_message);
+
+        let error = analyzer
+            .analyze_message(&message)
+            .expect_err("oversized Content-ID metadata should be rejected");
+
+        assert_eq!(
+            error.reason,
+            format!(
+                "header Content-ID exceeded maximum length of {} bytes",
+                DEFAULT_MIME_HEADER_VALUE_MAX_LEN
+            )
+        );
+    }
+
+    #[test]
+    fn named_part_with_unspecified_disposition_is_metadata_only() {
+        let analyzer = MimeAnalyzer::new(MimeAnalysisPolicy::default());
+        let message = message_view_from_fixture(concat!(
+            "Subject: Named part metadata\n",
+            "Content-Type: multipart/mixed; boundary=\"named-part\"\n",
+            "\n",
+            "--named-part\n",
+            "Content-Type: text/plain\n",
+            "\n",
+            "Body text\n",
+            "--named-part\n",
+            "Content-Type: application/octet-stream; name=\"export.dat\"\n",
+            "\n",
+            "export-body\n",
+            "--named-part--\n",
+        ));
+
+        let analysis = analyzer
+            .analyze_message(&message)
+            .expect("named part should analyze safely");
+
+        assert_eq!(analysis.attachments.len(), 1);
+        assert_eq!(analysis.attachments[0].part_path, "1.2");
+        assert_eq!(
+            analysis.attachments[0].filename.as_deref(),
+            Some("export.dat")
+        );
+        assert_eq!(
+            analysis.attachments[0].content_type,
+            "application/octet-stream"
+        );
+        assert_eq!(
+            analysis.attachments[0].disposition,
+            AttachmentDisposition::Unspecified
+        );
+        assert_eq!(analysis.attachments[0].content_id.as_deref(), None);
     }
 
     #[test]

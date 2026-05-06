@@ -1,5 +1,40 @@
 # Decision Log
 
+## 2026-05-03, Harden V3 attachment metadata regressions
+
+The next MIME and HTML correctness slice strengthens attachment metadata
+regression coverage before draft persistence, reply/forward attachment re-use,
+or attachment preview behavior is considered.
+
+This slice proves that:
+
+- path-like or unsafe surfaced filenames are not trusted as download paths
+- unsafe download content types fall back to `application/octet-stream`
+- delivery-status report parts remain forced-download metadata
+- original `message/rfc822` parts remain forced-download metadata
+- oversized `Content-ID` metadata is rejected before rendering or browser
+  presentation
+- named parts without explicit disposition are surfaced as metadata only
+
+The implementation keeps the existing trust boundary:
+
+- no attachment preview
+- no inline image rendering
+- no remote content loading
+- no draft persistence
+- no attachment body audit logging
+- forced-download remains the only attachment retrieval behavior
+
+Validation completed locally:
+
+- `cargo fmt --check`
+- `git diff --check`
+- `cargo test mime:: -- --nocapture`
+- `cargo test attachment:: -- --nocapture`
+- `cargo test rendering:: -- --nocapture`
+- full `cargo test` passed with 364 tests passed, 0 failed, and 4 ignored
+
+
 ## 2026-05-03, Harden V3 sanitized HTML regression coverage
 
 The next MIME and HTML correctness slice adds focused sanitizer regression

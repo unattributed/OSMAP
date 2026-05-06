@@ -123,6 +123,14 @@ The current logic is intentionally aimed at common mail shapes first:
   plain-text part
 - suspicious RFC 2231 continuation filenames surfaced as metadata without path
   trust
+- generated fallback download filenames when surfaced metadata reduces to unsafe
+  or path-like characters
+- unsafe response content types falling back to `application/octet-stream`
+- `message/delivery-status` and `message/rfc822` parts remaining explicit
+  forced-download attachment metadata
+- oversized `Content-ID` metadata rejected before rendering or browser
+  presentation
+- named parts without explicit disposition surfaced as metadata only
 - hostile HTML link-scheme fixtures handed to the rendering sanitizer without
   changing MIME trust
 
