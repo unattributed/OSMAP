@@ -1,5 +1,34 @@
 # Decision Log
 
+## 2026-05-06, Implement V3 live MIME and HTML proof validator
+
+The Version 3 live MIME and HTML proof plan now has a repository-owned live
+validator:
+
+- `maint/live/osmap-live-validate-v3-mime-html-proof.ksh`
+
+The validator was run on `mail.blackbagsecurity.com` from the feature branch and
+passed at commit `af7c8ab`.
+
+The live proof validated:
+
+- current tree build on the OpenBSD host
+- enforced mailbox helper startup under `vmail`
+- enforced browser runtime startup under `_osmap`
+- `/healthz` returning `HTTP/1.1 200 OK`
+- encoded `Subject` and `From` rendering
+- sanitized HTML rendering with hostile markers removed
+- `Junk` mailbox lookup for hostile HTML delivery
+- inline image metadata surfacing without inline image rendering
+- forced-download inline image attachment handling
+- delivery-status attachment metadata and forced-download handling
+- original `message/rfc822` attachment metadata and forced-download handling
+- absence of synthetic body and attachment markers from the runtime audit log
+
+The generated live report remains ignored locally and is not committed as a
+tracked artifact. The validator itself is the reproducible evidence path.
+
+
 ## 2026-05-03, Define V3 live MIME and HTML proof plan
 
 The next Version 3 MIME and HTML correctness slice starts with a live-host proof

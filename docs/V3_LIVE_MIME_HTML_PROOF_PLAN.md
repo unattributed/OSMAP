@@ -249,7 +249,13 @@ The report should contain:
 
 ## Current Decision
 
-Slice 5 starts with this proof plan first.
+Slice 5 started with this proof plan first.
 
-The combined live validation script should only be implemented after this
-document is reviewed and accepted.
+Slice 6 implemented the combined live validation script as:
+
+maint/live/osmap-live-validate-v3-mime-html-proof.ksh
+
+The validator has passed on mail.blackbagsecurity.com at commit af7c8ab. The
+current live proof covers encoded headers, sanitized HTML, inline image metadata,
+forced-download inline attachment handling, delivery-status attachment metadata,
+original message attachment metadata, and audit marker non-leakage.
