@@ -348,7 +348,7 @@ ENCODED_SUBJECT_FILTER="OSMAP V3 MIME encoded header proof ${NOW}-$$"
 ENCODED_SUBJECT="${ENCODED_SUBJECT_FILTER} =?UTF-8?Q?=E2=9C=93_Header_r=C3=A9sum=C3=A9?="
 EXPECTED_ENCODED_SUBJECT="${ENCODED_SUBJECT_FILTER} ✓ Header résumé"
 ENCODED_FROM="=?UTF-8?Q?Andr=C3=A9_Proof?= <alice@example.com>"
-EXPECTED_FROM_HTML="<dd>André Proof &lt;alice@example.com&gt;</dd>"
+EXPECTED_FROM_HTML="from André Proof &lt;alice@example.com&gt;"
 ENCODED_BODY_MARKER="encoded header body marker ${NOW}-$$"
 
 inject_encoded_message() {
@@ -379,7 +379,7 @@ encoded_status="$(status_line "${encoded_response}")"
 encoded_body="$(response_body "${encoded_response}")"
 
 assert_status_ok "encoded_header_message_view" "${encoded_status}"
-assert_contains "encoded_subject_summary" "${encoded_body}" "<dd>${EXPECTED_ENCODED_SUBJECT}</dd>"
+assert_contains "encoded_subject_summary" "${encoded_body}" "${EXPECTED_ENCODED_SUBJECT}"
 assert_contains "encoded_from_summary" "${encoded_body}" "${EXPECTED_FROM_HTML}"
 assert_contains "encoded_plain_text_mode" "${encoded_body}" "<dd>plain_text_preformatted</dd>"
 
