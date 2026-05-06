@@ -383,6 +383,11 @@ INLINE_CONTENT_ID="v3-inline-proof-${NOW}-$$@osmap"
 INLINE_FILENAME="v3-inline-proof.png"
 INLINE_TEXT_MARKER="inline image metadata body marker ${NOW}-$$"
 
+ATTACHMENT_SUBJECT="OSMAP V3 MIME attachment metadata proof ${NOW}-$$"
+ATTACHMENT_BOUNDARY="osmap-v3-attachment-${NOW}-$$"
+DELIVERY_STATUS_MARKER="delivery status body marker ${NOW}-$$"
+ORIGINAL_BODY_MARKER="original rfc822 body marker ${NOW}-$$"
+
 
 inject_encoded_message() {
   {
@@ -447,6 +452,40 @@ inject_inline_message() {
     printf '\n'
     printf 'UE5HREFUQQ==\n'
     printf -- '--%s--\n' "${INLINE_BOUNDARY}"
+  } | /usr/sbin/sendmail -t
+}
+
+inject_attachment_message() {
+  {
+    printf 'From: OSMAP Attachment Proof <%s>\n' "${VALIDATION_USER}"
+    printf 'To: %s\n' "${VALIDATION_USER}"
+    printf 'Subject: %s\n' "${ATTACHMENT_SUBJECT}"
+    printf 'MIME-Version: 1.0\n'
+    printf 'Content-Type: multipart/report; report-type=delivery-status; boundary="%s"\n' "${ATTACHMENT_BOUNDARY}"
+    printf '\n'
+    printf -- '--%s\n' "${ATTACHMENT_BOUNDARY}"
+    printf 'Content-Type: text/plain; charset=utf-8\n'
+    printf '\n'
+    printf 'Delivery status attachment proof text.\n'
+    printf -- '--%s\n' "${ATTACHMENT_BOUNDARY}"
+    printf 'Content-Type: message/delivery-status\n'
+    printf 'Content-Disposition: attachment; filename="delivery-status.txt"\n'
+    printf '\n'
+    printf 'Reporting-MTA: dns; mail.blackbagsecurity.com\n'
+    printf 'Final-Recipient: rfc822; %s\n' "${VALIDATION_USER}"
+    printf 'Action: failed\n'
+    printf 'Status: 5.0.0\n'
+    printf 'Diagnostic-Code: smtp; %s\n' "${DELIVERY_STATUS_MARKER}"
+    printf -- '--%s\n' "${ATTACHMENT_BOUNDARY}"
+    printf 'Content-Type: message/rfc822\n'
+    printf 'Content-Disposition: attachment; filename="original-message.eml"\n'
+    printf '\n'
+    printf 'From: original@example.com\n'
+    printf 'To: %s\n' "${VALIDATION_USER}"
+    printf 'Subject: Original enclosed message\n'
+    printf '\n'
+    printf '%s\n' "${ORIGINAL_BODY_MARKER}"
+    printf -- '--%s--\n' "${ATTACHMENT_BOUNDARY}"
   } | /usr/sbin/sendmail -t
 }
 
@@ -564,12 +603,67 @@ if doas grep -Fq "${INLINE_TEXT_MARKER}" "${HTTP_LOG_PATH}" 2>/dev/null; then
 fi
 write_report "inline_image_body_marker_audit_leakage" "absent"
 
+log "injecting controlled attachment metadata proof message"
+inject_attachment_message
+write_report "attachment_metadata_injection" "attempted"
+
+attachment_location="$(wait_for_message_location attachment_metadata "${ATTACHMENT_SUBJECT}")"
+attachment_mailbox="${attachment_location%%:*}"
+attachment_uid="${attachment_location#*:}"
+
+log "validating attachment metadata message view"
+attachment_response="$(request_get "/message?mailbox=${attachment_mailbox}&uid=${attachment_uid}")"
+printf '%s' "${attachment_response}" > "${WORK_ROOT}/attachment-metadata-response.txt"
+attachment_status="$(status_line "${attachment_response}")"
+attachment_body="$(response_body "${attachment_response}")"
+
+assert_status_ok "attachment_metadata_message_view" "${attachment_status}"
+assert_contains "attachment_delivery_status_filename" "${attachment_body}" "delivery-status.txt"
+assert_contains "attachment_original_message_filename" "${attachment_body}" "original-message.eml"
+assert_contains "attachment_delivery_status_link" "${attachment_body}" "/attachment?mailbox=${attachment_mailbox}&amp;uid=${attachment_uid}&amp;part=1.2"
+assert_contains "attachment_original_message_link" "${attachment_body}" "/attachment?mailbox=${attachment_mailbox}&amp;uid=${attachment_uid}&amp;part=1.3"
+
+log "validating delivery-status forced-download route"
+delivery_response="$(request_get "/attachment?mailbox=${attachment_mailbox}&uid=${attachment_uid}&part=1.2")"
+printf '%s' "${delivery_response}" > "${WORK_ROOT}/delivery-status-attachment-response.txt"
+delivery_status="$(status_line "${delivery_response}")"
+delivery_headers="$(response_headers "${delivery_response}")"
+
+assert_status_ok "delivery_status_attachment_download" "${delivery_status}"
+assert_contains "delivery_status_forced_download" "${delivery_headers}" 'Content-Disposition: attachment; filename="delivery-status.txt"'
+assert_contains "delivery_status_content_type" "${delivery_headers}" "Content-Type: message/delivery-status"
+assert_contains "delivery_status_nosniff" "${delivery_headers}" "X-Content-Type-Options: nosniff"
+assert_contains "delivery_status_corp" "${delivery_headers}" "Cross-Origin-Resource-Policy: same-origin"
+
+log "validating original-message forced-download route"
+original_response="$(request_get "/attachment?mailbox=${attachment_mailbox}&uid=${attachment_uid}&part=1.3")"
+printf '%s' "${original_response}" > "${WORK_ROOT}/original-message-attachment-response.txt"
+original_status="$(status_line "${original_response}")"
+original_headers="$(response_headers "${original_response}")"
+
+assert_status_ok "original_message_attachment_download" "${original_status}"
+assert_contains "original_message_forced_download" "${original_headers}" 'Content-Disposition: attachment; filename="original-message.eml"'
+assert_contains "original_message_content_type" "${original_headers}" "Content-Type: message/rfc822"
+assert_contains "original_message_nosniff" "${original_headers}" "X-Content-Type-Options: nosniff"
+assert_contains "original_message_corp" "${original_headers}" "Cross-Origin-Resource-Policy: same-origin"
+
+if doas grep -Fq "${DELIVERY_STATUS_MARKER}" "${HTTP_LOG_PATH}" 2>/dev/null; then
+  fail "audit log contained delivery-status attachment marker"
+fi
+write_report "delivery_status_body_marker_audit_leakage" "absent"
+
+if doas grep -Fq "${ORIGINAL_BODY_MARKER}" "${HTTP_LOG_PATH}" 2>/dev/null; then
+  fail "audit log contained original-message attachment marker"
+fi
+write_report "original_message_body_marker_audit_leakage" "absent"
+
 cleanup_one_subject "${ENCODED_SUBJECT_FILTER}"
 cleanup_one_subject "${HTML_SUBJECT}"
 cleanup_one_subject "${INLINE_SUBJECT}"
+cleanup_one_subject "${ATTACHMENT_SUBJECT}"
 write_report "message_cleanup" "attempted"
 
-write_report "result" "encoded_sanitized_html_and_inline_image_proof_passed"
+write_report "result" "v3_mime_html_live_proof_passed"
 
-log "live V3 MIME encoded-header, sanitized HTML, and inline image proof passed"
+log "live V3 MIME and HTML proof passed"
 log "report=${REPORT_PATH}"
