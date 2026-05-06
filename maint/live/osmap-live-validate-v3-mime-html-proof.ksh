@@ -55,7 +55,8 @@ fail() {
   {
     printf '%s\n' "result=failed"
     printf '%s\n' "failure_reason=$*"
-  } > "${REPORT_PATH}"
+    printf '%s\n' "failed_work_root=${WORK_ROOT}"
+  } >> "${REPORT_PATH}"
   exit 1
 }
 
@@ -373,6 +374,7 @@ encoded_uid="$(wait_for_uid encoded_header "${ENCODED_SUBJECT_FILTER}")"
 
 log "validating encoded-header message view"
 encoded_response="$(request_get "/message?mailbox=INBOX&uid=${encoded_uid}")"
+printf '%s' "${encoded_response}" > "${WORK_ROOT}/encoded-header-response.txt"
 encoded_status="$(status_line "${encoded_response}")"
 encoded_body="$(response_body "${encoded_response}")"
 
