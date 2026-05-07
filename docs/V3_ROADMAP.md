@@ -96,9 +96,13 @@ implementation slice must satisfy.
 The first storage primitive now exists in `src/draft.rs`, and authenticated
 browser routes now cover draft list, resume, save, delete, and send-success
 cleanup. The WSTG testing pack now has release-required ASVS-mapped draft route
-coverage in `OSMAP-WSTG-BUSL-002`. The next step is host-safe authenticated
-evidence collection before any workflow disposition changes from
-`roundcube_fallback`.
+coverage in `OSMAP-WSTG-BUSL-002`. Host-safe authenticated evidence from
+`mail.blackbagsecurity.com` passed on 2026-05-07 in
+`maint/wstg-testing-pack/output/osmap-wstg-20260507-173210/`, so draft save and
+resume may be treated as `supported_with_limits` for Version 3 pilot planning.
+The limits still exclude browser-local drafts, attachment preview, inline image
+rendering, remote content loading, and automatic original-message attachment
+reattach.
 
 ## Security Foundation Track
 

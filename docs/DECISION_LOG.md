@@ -1,5 +1,25 @@
 # Decision Log
 
+## 2026-05-07, Admit limited V3 draft save and resume pilot workflow
+
+`OSMAP-WSTG-BUSL-002` now has host-safe authenticated evidence from
+`mail.blackbagsecurity.com` proving the V3 draft route lifecycle with
+password-plus-TOTP authentication. The passing report is
+`maint/wstg-testing-pack/output/osmap-wstg-20260507-173210/report.md`, with
+summary counts `pass=1`, `fail=0`. The evidence covers save, list, resume,
+delete, send-success cleanup, CSRF rejection, same-origin rejection,
+stale-session rejection, attachment-limit rejection, and redacted evidence
+output.
+
+The operator redaction scan found no stored session cookie, raw session id,
+CSRF token, TOTP, password, raw draft id, or validation draft body markers in
+the generated report or evidence directory. Draft save and resume can therefore
+move from `roundcube_fallback` to `supported_with_limits` for Version 3 pilot
+planning. The limits remain explicit: no browser-local drafts, no attachment
+preview, no inline image rendering, no remote content loading, no weakening of
+HTML sanitization, send-only use of newly uploaded persisted draft attachments,
+and no automatic original-message attachment reattach.
+
 ## 2026-05-07, Add V3 draft WSTG route evidence
 
 The WSTG testing pack now includes `OSMAP-WSTG-BUSL-002`, a release-required

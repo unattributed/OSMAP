@@ -251,6 +251,13 @@ ASVS 5.0.0 mappings and OWASP Top 10 2025 reporting. That check covers:
 The OWASP Top 10 2025 crosswalk remains a secondary reporting layer over the
 ASVS-backed checks.
 
+Host-safe authenticated evidence for `OSMAP-WSTG-BUSL-002` passed against
+`mail.blackbagsecurity.com` on 2026-05-07 in
+`maint/wstg-testing-pack/output/osmap-wstg-20260507-173210/`. The generated
+report and evidence redaction scan did not expose stored session cookies, raw
+session ids, CSRF tokens, TOTP values, passwords, raw draft ids, full draft
+bodies, or validation draft body markers.
+
 ## Implementation Closeout Gate
 
 The later implementation slice is complete only when all of the following are

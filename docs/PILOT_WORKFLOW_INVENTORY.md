@@ -37,7 +37,7 @@ The current best-fit Version 2 pilot user is someone who needs:
 
 The current repo state is not yet a good fit for users who depend daily on:
 
-- draft persistence
+- draft persistence beyond the limited Version 3 server-side draft behavior
 - bulk message organization
 - original-message attachment reattachment during reply or forward
 - ManageSieve-style mail filtering UI
@@ -65,7 +65,7 @@ The current repo state is not yet a good fit for users who depend daily on:
 | Session list, revoke, logout | `supported` | admit | Included in current browser security surface. |
 | Safe HTML view | `supported_with_limits` | admit | Sanitized HTML only; no active content or remote loads. |
 | Plain-text preference for message display | `supported` | admit | Small bounded settings surface only. |
-| Draft save and resume later | `roundcube_fallback` | do not admit if required daily | Design boundary, storage primitives, authenticated browser routes, and ASVS-mapped WSTG coverage exist; host-safe authenticated evidence is still pending. |
+| Draft save and resume later | `supported_with_limits` | admit only if limits are acceptable | Version 3 server-side draft save, list, resume, delete, and send-success cleanup have host-safe authenticated WSTG/ASVS evidence in `OSMAP-WSTG-BUSL-002` from `mail.blackbagsecurity.com` on 2026-05-07. Limits remain: explicit save only, no browser-local draft storage, no attachment preview, no inline image rendering, no remote content loading, send-only preservation of newly uploaded draft attachments, and no automatic original-message attachment reattach. |
 | Reply or forward with original attachments preserved automatically | `roundcube_fallback` | do not admit if required daily | Not implemented. |
 | General bulk move or other bulk mailbox actions | `roundcube_fallback` | do not admit if required daily | OSMAP supports bounded selected archive, not arbitrary bulk mailbox operations. |
 | Rich mailbox-management ergonomics | `roundcube_fallback` | admit only if unnecessary | OSMAP Version 2 intentionally stays narrower than Roundcube. |
@@ -84,7 +84,8 @@ Users can still be reasonable pilot candidates if they:
 
 - mainly need read, search, send, and light folder organization
 - can tolerate conservative HTML handling
-- do not rely on browser draft persistence or bulk mailbox actions
+- can accept the limited Version 3 server-side draft workflow
+- do not rely on broad bulk mailbox actions
 
 ## Version 2 Pilot Closeout Confirmation
 
@@ -106,7 +107,8 @@ Version 2 closeout scope.
 
 Before moving an additional real user into a future pilot, confirm explicitly:
 
-- whether they need browser draft persistence
+- whether they need draft behavior beyond the limited Version 3 server-side
+  save/resume workflow
 - whether they need reply or forward with original attachments preserved
 - whether they rely on general bulk mailbox actions beyond bounded selected
   archive
