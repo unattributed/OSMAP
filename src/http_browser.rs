@@ -112,6 +112,43 @@ pub trait BrowserGateway {
         body: &str,
         attachments: &[UploadedAttachment],
     ) -> BrowserSendOutcome;
+
+    fn list_drafts(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+    ) -> BrowserDraftListOutcome;
+
+    fn load_draft(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        draft_id: &str,
+    ) -> BrowserDraftLoadOutcome;
+
+    fn save_draft(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        request: BrowserDraftSaveRequest<'_>,
+    ) -> BrowserDraftSaveOutcome;
+
+    fn delete_draft(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        draft_id: &str,
+    ) -> BrowserDraftDeleteOutcome;
+}
+
+/// Draft save fields parsed by the browser route layer.
+#[derive(Debug, Clone, Copy)]
+pub struct BrowserDraftSaveRequest<'a> {
+    pub draft_id: Option<&'a str>,
+    pub recipients: &'a str,
+    pub subject: &'a str,
+    pub body: &'a str,
+    pub attachments: &'a [UploadedAttachment],
 }
 
 /// The result of a browser login attempt.
@@ -395,4 +432,72 @@ pub enum BrowserSendDecision {
         public_reason: String,
         retry_after_seconds: Option<u64>,
     },
+}
+
+/// The result of listing browser-visible drafts.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BrowserDraftListOutcome {
+    pub decision: BrowserDraftListDecision,
+    pub audit_events: Vec<LogEvent>,
+}
+
+/// Draft-list decisions visible to the browser layer.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BrowserDraftListDecision {
+    Listed {
+        canonical_username: String,
+        drafts: Vec<DraftSummary>,
+    },
+    Denied {
+        public_reason: String,
+    },
+}
+
+/// The result of loading one draft.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BrowserDraftLoadOutcome {
+    pub decision: BrowserDraftLoadDecision,
+    pub audit_events: Vec<LogEvent>,
+}
+
+/// Draft-load decisions visible to the browser layer.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BrowserDraftLoadDecision {
+    Loaded {
+        canonical_username: String,
+        draft: Box<DraftRecord>,
+    },
+    NotFound,
+    Denied {
+        public_reason: String,
+    },
+}
+
+/// The result of saving one browser draft.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BrowserDraftSaveOutcome {
+    pub decision: BrowserDraftSaveDecision,
+    pub audit_events: Vec<LogEvent>,
+}
+
+/// Draft-save decisions visible to the browser layer.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BrowserDraftSaveDecision {
+    Saved { draft_id: String },
+    Denied { public_reason: String },
+}
+
+/// The result of deleting one browser draft.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BrowserDraftDeleteOutcome {
+    pub decision: BrowserDraftDeleteDecision,
+    pub audit_events: Vec<LogEvent>,
+}
+
+/// Draft-delete decisions visible to the browser layer.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BrowserDraftDeleteDecision {
+    Deleted,
+    NotFound,
+    Denied { public_reason: String },
 }

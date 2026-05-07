@@ -2,6 +2,8 @@ use super::*;
 
 #[path = "http_gateway_auth.rs"]
 mod http_gateway_auth;
+#[path = "http_gateway_draft.rs"]
+mod http_gateway_draft;
 #[path = "http_gateway_mail.rs"]
 mod http_gateway_mail;
 #[path = "http_gateway_settings.rs"]
@@ -22,6 +24,7 @@ pub struct RuntimeBrowserGateway {
     expensive_request_timeout_secs: u64,
     session_dir: PathBuf,
     settings_dir: PathBuf,
+    draft_dir: PathBuf,
     login_throttle_dir: PathBuf,
     submission_throttle_dir: PathBuf,
     message_move_throttle_dir: PathBuf,
@@ -66,6 +69,7 @@ impl RuntimeBrowserGateway {
             expensive_request_timeout_secs: config.expensive_request_timeout_seconds,
             session_dir: config.state_layout.session_dir.clone(),
             settings_dir: config.state_layout.settings_dir.clone(),
+            draft_dir: config.state_layout.draft_dir.clone(),
             login_throttle_dir: config.state_layout.cache_dir.join("login-throttle"),
             submission_throttle_dir: config.state_layout.cache_dir.join("submission-throttle"),
             message_move_throttle_dir: config.state_layout.cache_dir.join("message-move-throttle"),
@@ -107,6 +111,7 @@ impl RuntimeBrowserGateway {
             expensive_request_timeout_secs: DEFAULT_EXPENSIVE_REQUEST_TIMEOUT_SECS,
             session_dir: temp_root.join("sessions"),
             settings_dir: temp_root.join("settings"),
+            draft_dir: temp_root.join("drafts"),
             login_throttle_dir: temp_root.join("cache").join("login-throttle"),
             submission_throttle_dir: temp_root.join("cache").join("submission-throttle"),
             message_move_throttle_dir: temp_root.join("cache").join("message-move-throttle"),
@@ -279,5 +284,40 @@ impl BrowserGateway for RuntimeBrowserGateway {
             uid,
             destination_mailbox_name,
         )
+    }
+
+    fn list_drafts(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+    ) -> BrowserDraftListOutcome {
+        self.list_drafts_impl(context, validated_session)
+    }
+
+    fn load_draft(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        draft_id: &str,
+    ) -> BrowserDraftLoadOutcome {
+        self.load_draft_impl(context, validated_session, draft_id)
+    }
+
+    fn save_draft(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        request: BrowserDraftSaveRequest<'_>,
+    ) -> BrowserDraftSaveOutcome {
+        self.save_draft_impl(context, validated_session, request)
+    }
+
+    fn delete_draft(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        draft_id: &str,
+    ) -> BrowserDraftDeleteOutcome {
+        self.delete_draft_impl(context, validated_session, draft_id)
     }
 }

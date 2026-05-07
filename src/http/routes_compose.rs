@@ -148,6 +148,8 @@ where
                     to_value: &to_value,
                     subject_value: &subject_value,
                     body_value: &body_value,
+                    draft_id: None,
+                    draft_attachment_count: 0,
                 }),
             ),
             audit_events,
@@ -205,6 +207,51 @@ where
         let recipients = form.get("to").cloned().unwrap_or_default();
         let subject = form.get("subject").cloned().unwrap_or_default();
         let body = form.get("body").cloned().unwrap_or_default();
+        let draft_id = form
+            .get("draft_id")
+            .filter(|value| !value.trim().is_empty())
+            .cloned();
+        let mut send_attachments = attachments;
+        let mut persisted_draft_attachment_count = 0;
+        if let Some(draft_id) = draft_id.as_deref() {
+            let draft_outcome = self
+                .gateway
+                .load_draft(context, &validated_session, draft_id);
+            audit_events.extend(draft_outcome.audit_events);
+            match draft_outcome.decision {
+                BrowserDraftLoadDecision::Loaded { draft, .. } => {
+                    let mut persisted = draft.request.attachments.clone();
+                    persisted_draft_attachment_count = persisted.len();
+                    persisted.extend(send_attachments);
+                    send_attachments = persisted;
+                }
+                BrowserDraftLoadDecision::NotFound => {
+                    return HandledHttpResponse {
+                        response: html_response(
+                            404,
+                            "Not Found",
+                            "Draft Not Found",
+                            "<p>The draft selected for sending was not found.</p>",
+                        ),
+                        audit_events,
+                    };
+                }
+                BrowserDraftLoadDecision::Denied { public_reason } => {
+                    return HandledHttpResponse {
+                        response: html_response(
+                            503,
+                            "Service Unavailable",
+                            "Draft Unavailable",
+                            &format!(
+                                "<p>{}</p>",
+                                escape_html(public_reason_message(&public_reason))
+                            ),
+                        ),
+                        audit_events,
+                    };
+                }
+            }
+        }
         let (budget_guard, budget_event) =
             match self.acquire_send_budget(context, &validated_session) {
                 Ok(result) => result,
@@ -222,15 +269,23 @@ where
             &recipients,
             &subject,
             &body,
-            &attachments,
+            &send_attachments,
         );
         audit_events.extend(outcome.audit_events);
 
         let mut handled = match outcome.decision {
-            BrowserSendDecision::Submitted => HandledHttpResponse {
-                response: redirect_response(303, "See Other", "/compose?sent=1"),
-                audit_events,
-            },
+            BrowserSendDecision::Submitted => {
+                if let Some(draft_id) = draft_id.as_deref() {
+                    let delete_outcome =
+                        self.gateway
+                            .delete_draft(context, &validated_session, draft_id);
+                    audit_events.extend(delete_outcome.audit_events);
+                }
+                HandledHttpResponse {
+                    response: redirect_response(303, "See Other", "/compose?sent=1"),
+                    audit_events,
+                }
+            }
             BrowserSendDecision::Denied {
                 public_reason,
                 retry_after_seconds,
@@ -256,6 +311,8 @@ where
                         to_value: &recipients,
                         subject_value: &subject,
                         body_value: &body,
+                        draft_id: draft_id.as_deref(),
+                        draft_attachment_count: persisted_draft_attachment_count,
                     }),
                 );
                 if let Some(retry_after_seconds) = retry_after_seconds {

@@ -93,11 +93,10 @@ compose-policy limits, attachment persistence boundary, cleanup behavior,
 failure behavior, WSTG/ASVS disposition, and evidence hygiene that the
 implementation slice must satisfy.
 
-The next implementation step should add the smallest server-side draft store
-that follows that design. The first storage primitive now exists in
-`src/draft.rs`; the next step is authenticated browser route wiring, route
-tests, and WSTG updates before any workflow disposition changes from
-`roundcube_fallback`.
+The first storage primitive now exists in `src/draft.rs`, and authenticated
+browser routes now cover draft list, resume, save, delete, and send-success
+cleanup. The next step is WSTG/ASVS updates plus host-safe evidence before any
+workflow disposition changes from `roundcube_fallback`.
 
 ## Security Foundation Track
 

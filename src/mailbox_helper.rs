@@ -694,15 +694,16 @@ mod tests {
             state_root: temp_root.clone(),
             log_level: LogLevel::Info,
             log_format: crate::config::LogFormat::Text,
-            state_layout: crate::state::StateLayout::new(
-                temp_root.clone(),
-                temp_root.join("run"),
-                temp_root.join("sessions"),
-                temp_root.join("settings"),
-                temp_root.join("audit"),
-                temp_root.join("cache"),
-                temp_root.join("totp"),
-            )
+            state_layout: crate::state::StateLayout::new(crate::state::StateLayoutPaths {
+                root_dir: temp_root.clone(),
+                runtime_dir: temp_root.join("run"),
+                session_dir: temp_root.join("sessions"),
+                settings_dir: temp_root.join("settings"),
+                draft_dir: temp_root.join("drafts"),
+                audit_dir: temp_root.join("audit"),
+                cache_dir: temp_root.join("cache"),
+                totp_secret_dir: temp_root.join("totp"),
+            })
             .expect("layout should be valid"),
             http_max_concurrent_connections: 16,
             mailbox_worker_budget: 8,
@@ -768,15 +769,16 @@ mod tests {
             state_root: temp_root.clone(),
             log_level: LogLevel::Info,
             log_format: crate::config::LogFormat::Text,
-            state_layout: crate::state::StateLayout::new(
-                temp_root.clone(),
-                temp_root.join("run"),
-                temp_root.join("sessions"),
-                temp_root.join("settings"),
-                temp_root.join("audit"),
-                temp_root.join("cache"),
-                temp_root.join("totp"),
-            )
+            state_layout: crate::state::StateLayout::new(crate::state::StateLayoutPaths {
+                root_dir: temp_root.clone(),
+                runtime_dir: temp_root.join("run"),
+                session_dir: temp_root.join("sessions"),
+                settings_dir: temp_root.join("settings"),
+                draft_dir: temp_root.join("drafts"),
+                audit_dir: temp_root.join("audit"),
+                cache_dir: temp_root.join("cache"),
+                totp_secret_dir: temp_root.join("totp"),
+            })
             .expect("layout should be valid"),
             http_max_concurrent_connections: 16,
             mailbox_worker_budget: 8,

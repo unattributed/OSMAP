@@ -13,6 +13,7 @@ mod http_gateway;
 mod http_runtime;
 mod routes_auth;
 mod routes_compose;
+mod routes_draft;
 mod routes_mail;
 mod routes_settings;
 
@@ -30,6 +31,9 @@ use crate::auth::{
     SystemCommandExecutor,
 };
 use crate::config::{AppConfig, LogLevel, RuntimeEnvironment};
+use crate::draft::{
+    DraftPolicy, DraftRecord, DraftRecordInput, DraftStore, DraftSummary, FileDraftStore,
+};
 use crate::http_form::{parse_compose_form, parse_urlencoded_form};
 use crate::http_parse::{
     allows_urlencoded_request_body, build_session_cookie, clear_session_cookie,
@@ -41,9 +45,10 @@ use crate::http_support::{
     redirect_response, session_error_label, throttle_store_error_label, url_encode,
 };
 use crate::http_ui::{
-    render_compose_page, render_login_page, render_mailboxes_page, render_message_list_page,
-    render_message_search_page, render_message_view_page, render_sessions_page,
-    render_settings_page, ComposePageModel, SettingsPageModel,
+    render_compose_page, render_draft_list_page, render_login_page, render_mailboxes_page,
+    render_message_list_page, render_message_search_page, render_message_view_page,
+    render_sessions_page, render_settings_page, ComposePageModel, DraftListPageModel,
+    SettingsPageModel,
 };
 use crate::logging::LogEvent;
 #[cfg(test)]
@@ -664,7 +669,10 @@ fn request_budget_event(
 }
 
 pub use self::http_browser::{
-    BrowserAttachmentDownloadDecision, BrowserAttachmentDownloadOutcome, BrowserGateway,
+    BrowserAttachmentDownloadDecision, BrowserAttachmentDownloadOutcome,
+    BrowserDraftDeleteDecision, BrowserDraftDeleteOutcome, BrowserDraftListDecision,
+    BrowserDraftListOutcome, BrowserDraftLoadDecision, BrowserDraftLoadOutcome,
+    BrowserDraftSaveDecision, BrowserDraftSaveOutcome, BrowserDraftSaveRequest, BrowserGateway,
     BrowserLoginDecision, BrowserLoginOutcome, BrowserLogoutOutcome, BrowserMailboxDecision,
     BrowserMailboxOutcome, BrowserMessageListDecision, BrowserMessageListOutcome,
     BrowserMessageMoveDecision, BrowserMessageMoveOutcome, BrowserMessageSearchDecision,
@@ -692,12 +700,22 @@ mod tests {
     use std::net::{Shutdown, TcpListener};
     use std::path::PathBuf;
     use std::sync::atomic::{AtomicUsize, Ordering};
-    use std::sync::Arc;
+    use std::sync::{Arc, Mutex};
     use std::thread;
     use std::time::Duration;
 
     #[derive(Debug, Clone)]
-    struct StubGateway;
+    struct StubGateway {
+        drafts: Arc<Mutex<BTreeMap<String, DraftRecord>>>,
+    }
+
+    impl Default for StubGateway {
+        fn default() -> Self {
+            Self {
+                drafts: Arc::new(Mutex::new(BTreeMap::new())),
+            }
+        }
+    }
 
     impl StubGateway {
         fn validated_session() -> ValidatedSession {
@@ -723,6 +741,11 @@ mod tests {
                     "browser session validated",
                 ),
             }
+        }
+
+        fn next_draft_id(&self) -> String {
+            let next = self.drafts.lock().expect("stub drafts should lock").len() + 1;
+            format!("{next:032x}")
         }
     }
 
@@ -1474,14 +1497,180 @@ mod tests {
                 }
             }
         }
+
+        fn list_drafts(
+            &self,
+            _context: &AuthenticationContext,
+            validated_session: &ValidatedSession,
+        ) -> BrowserDraftListOutcome {
+            let drafts = self
+                .drafts
+                .lock()
+                .expect("stub drafts should lock")
+                .values()
+                .filter(|draft| {
+                    draft.canonical_username == validated_session.record.canonical_username
+                })
+                .map(DraftRecord::summary)
+                .collect();
+            BrowserDraftListOutcome {
+                decision: BrowserDraftListDecision::Listed {
+                    canonical_username: validated_session.record.canonical_username.clone(),
+                    drafts,
+                },
+                audit_events: vec![LogEvent::new(
+                    LogLevel::Info,
+                    EventCategory::Http,
+                    "stub_draft_list",
+                    "stub draft list returned",
+                )],
+            }
+        }
+
+        fn load_draft(
+            &self,
+            _context: &AuthenticationContext,
+            validated_session: &ValidatedSession,
+            draft_id: &str,
+        ) -> BrowserDraftLoadOutcome {
+            let draft = self
+                .drafts
+                .lock()
+                .expect("stub drafts should lock")
+                .get(draft_id)
+                .filter(|draft| {
+                    draft.canonical_username == validated_session.record.canonical_username
+                })
+                .cloned();
+            match draft {
+                Some(draft) => BrowserDraftLoadOutcome {
+                    decision: BrowserDraftLoadDecision::Loaded {
+                        canonical_username: validated_session.record.canonical_username.clone(),
+                        draft: Box::new(draft),
+                    },
+                    audit_events: vec![LogEvent::new(
+                        LogLevel::Info,
+                        EventCategory::Http,
+                        "stub_draft_load",
+                        "stub draft loaded",
+                    )],
+                },
+                None => BrowserDraftLoadOutcome {
+                    decision: BrowserDraftLoadDecision::NotFound,
+                    audit_events: vec![LogEvent::new(
+                        LogLevel::Warn,
+                        EventCategory::Http,
+                        "stub_draft_missing",
+                        "stub draft missing",
+                    )],
+                },
+            }
+        }
+
+        fn save_draft(
+            &self,
+            _context: &AuthenticationContext,
+            validated_session: &ValidatedSession,
+            request: BrowserDraftSaveRequest<'_>,
+        ) -> BrowserDraftSaveOutcome {
+            let draft_id = request
+                .draft_id
+                .filter(|value| !value.trim().is_empty())
+                .map(str::to_string)
+                .unwrap_or_else(|| self.next_draft_id());
+            let existing = self
+                .drafts
+                .lock()
+                .expect("stub drafts should lock")
+                .get(&draft_id)
+                .cloned();
+            let attachments = if request.attachments.is_empty() {
+                existing
+                    .as_ref()
+                    .map(|draft| draft.request.attachments.clone())
+                    .unwrap_or_default()
+            } else {
+                request.attachments.to_vec()
+            };
+            let mut record = match DraftRecord::new(
+                DraftPolicy::default(),
+                DraftRecordInput {
+                    draft_id: draft_id.clone(),
+                    canonical_username: validated_session.record.canonical_username.clone(),
+                    now: 100,
+                    recipients_text: request.recipients.to_string(),
+                    subject: request.subject.to_string(),
+                    body: request.body.to_string(),
+                    attachments,
+                },
+            ) {
+                Ok(record) => record,
+                Err(_) => {
+                    return BrowserDraftSaveOutcome {
+                        decision: BrowserDraftSaveDecision::Denied {
+                            public_reason: "invalid_request".to_string(),
+                        },
+                        audit_events: vec![LogEvent::new(
+                            LogLevel::Warn,
+                            EventCategory::Http,
+                            "stub_draft_save_denied",
+                            "stub draft save denied",
+                        )],
+                    }
+                }
+            };
+            if let Some(existing) = existing {
+                record.created_at = existing.created_at;
+            }
+            self.drafts
+                .lock()
+                .expect("stub drafts should lock")
+                .insert(draft_id.clone(), record);
+            BrowserDraftSaveOutcome {
+                decision: BrowserDraftSaveDecision::Saved { draft_id },
+                audit_events: vec![LogEvent::new(
+                    LogLevel::Info,
+                    EventCategory::Http,
+                    "stub_draft_save",
+                    "stub draft saved",
+                )],
+            }
+        }
+
+        fn delete_draft(
+            &self,
+            _context: &AuthenticationContext,
+            _validated_session: &ValidatedSession,
+            draft_id: &str,
+        ) -> BrowserDraftDeleteOutcome {
+            let removed = self
+                .drafts
+                .lock()
+                .expect("stub drafts should lock")
+                .remove(draft_id)
+                .is_some();
+            BrowserDraftDeleteOutcome {
+                decision: if removed {
+                    BrowserDraftDeleteDecision::Deleted
+                } else {
+                    BrowserDraftDeleteDecision::NotFound
+                },
+                audit_events: vec![LogEvent::new(
+                    LogLevel::Info,
+                    EventCategory::Http,
+                    "stub_draft_delete",
+                    "stub draft delete completed",
+                )],
+            }
+        }
     }
 
     fn app() -> BrowserApp<StubGateway> {
-        BrowserApp::new(HttpPolicy::default(), StubGateway)
+        BrowserApp::new(HttpPolicy::default(), StubGateway::default())
     }
 
     fn app_with_policy(policy: HttpPolicy) -> BrowserApp<StubGateway> {
-        BrowserApp::new(policy, StubGateway)
+        BrowserApp::new(policy, StubGateway::default())
     }
 
     fn request(method: &str, path: &str, headers: &[(&str, &str)], body: &str) -> HttpRequest {
@@ -1508,6 +1697,15 @@ mod tests {
 
     fn body_text(response: &HandledHttpResponse) -> String {
         String::from_utf8_lossy(&response.response.body).into_owned()
+    }
+
+    fn location_header(response: &HandledHttpResponse) -> String {
+        response
+            .response
+            .headers
+            .iter()
+            .find_map(|(name, value)| (name == "Location").then_some(value.clone()))
+            .expect("response should include Location header")
     }
 
     fn authenticated_headers() -> [(&'static str, &'static str); 2] {
@@ -2912,6 +3110,253 @@ mod tests {
         let body = body_text(&response);
         assert!(body.contains("name=\"csrf_token\""));
         assert!(body.contains("action=\"/send\""));
+        assert!(body.contains("formaction=\"/drafts/save\""));
+        assert!(body.contains("href=\"/drafts\""));
+    }
+
+    #[test]
+    fn draft_save_resume_and_list_are_authenticated_and_redacted() {
+        let app = app();
+        let save_response = app.handle_request(
+            &request(
+                "POST",
+                "/drafts/save",
+                &authenticated_same_origin_headers(),
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&to=bob%40example.com&subject=Draft%20Subject&body=Private%20draft%20body",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(save_response.response.status_code, 303);
+        let location = location_header(&save_response);
+        assert!(location.starts_with("/draft?id="));
+
+        let resume_response = app.handle_request(
+            &request("GET", &location, &authenticated_headers(), ""),
+            "127.0.0.1",
+        );
+        assert_eq!(resume_response.response.status_code, 200);
+        let resume_body = body_text(&resume_response);
+        assert!(resume_body.contains("Resume Draft"));
+        assert!(resume_body.contains("Draft Subject"));
+        assert!(resume_body.contains("Private draft body"));
+        assert!(resume_body.contains("name=\"draft_id\""));
+
+        let list_response = app.handle_request(
+            &request("GET", "/drafts", &authenticated_headers(), ""),
+            "127.0.0.1",
+        );
+        assert_eq!(list_response.response.status_code, 200);
+        let list_body = body_text(&list_response);
+        assert!(list_body.contains("Resume"));
+        assert!(list_body.contains("Body Bytes"));
+        assert!(!list_body.contains("Private draft body"));
+        assert!(!list_body.contains("Draft Subject"));
+    }
+
+    #[test]
+    fn draft_delete_removes_saved_draft() {
+        let app = app();
+        let save_response = app.handle_request(
+            &request(
+                "POST",
+                "/drafts/save",
+                &authenticated_same_origin_headers(),
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&to=bob%40example.com&subject=Delete%20Me&body=Body",
+            ),
+            "127.0.0.1",
+        );
+        let location = location_header(&save_response);
+        let draft_id = location.trim_start_matches("/draft?id=");
+
+        let delete_response = app.handle_request(
+            &request(
+                "POST",
+                "/drafts/delete",
+                &authenticated_same_origin_headers(),
+                &format!(
+                    "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&draft_id={draft_id}"
+                ),
+            ),
+            "127.0.0.1",
+        );
+        assert_eq!(delete_response.response.status_code, 303);
+
+        let resume_response = app.handle_request(
+            &request("GET", &location, &authenticated_headers(), ""),
+            "127.0.0.1",
+        );
+        assert_eq!(resume_response.response.status_code, 404);
+    }
+
+    #[test]
+    fn send_success_deletes_draft_after_accepted_handoff() {
+        let app = app();
+        let save_response = app.handle_request(
+            &request(
+                "POST",
+                "/drafts/save",
+                &authenticated_same_origin_headers(),
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&to=bob%40example.com&subject=Send%20Me&body=Body",
+            ),
+            "127.0.0.1",
+        );
+        let location = location_header(&save_response);
+        let draft_id = location.trim_start_matches("/draft?id=");
+
+        let send_response = app.handle_request(
+            &request(
+                "POST",
+                "/send",
+                &authenticated_same_origin_headers(),
+                &format!(
+                    "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&draft_id={draft_id}&to=bob%40example.com&subject=Send%20Me&body=Body"
+                ),
+            ),
+            "127.0.0.1",
+        );
+        assert_eq!(send_response.response.status_code, 303);
+        assert_eq!(location_header(&send_response), "/compose?sent=1");
+
+        let resume_response = app.handle_request(
+            &request("GET", &location, &authenticated_headers(), ""),
+            "127.0.0.1",
+        );
+        assert_eq!(resume_response.response.status_code, 404);
+    }
+
+    #[test]
+    fn send_failure_preserves_draft() {
+        let app = app();
+        let save_response = app.handle_request(
+            &request(
+                "POST",
+                "/drafts/save",
+                &authenticated_same_origin_headers(),
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&to=locked%40example.com&subject=Retry%20Later&body=Body",
+            ),
+            "127.0.0.1",
+        );
+        let location = location_header(&save_response);
+        let draft_id = location.trim_start_matches("/draft?id=");
+
+        let send_response = app.handle_request(
+            &request(
+                "POST",
+                "/send",
+                &authenticated_same_origin_headers(),
+                &format!(
+                    "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&draft_id={draft_id}&to=locked%40example.com&subject=Retry%20Later&body=Body"
+                ),
+            ),
+            "127.0.0.1",
+        );
+        assert_eq!(send_response.response.status_code, 429);
+
+        let resume_response = app.handle_request(
+            &request("GET", &location, &authenticated_headers(), ""),
+            "127.0.0.1",
+        );
+        assert_eq!(resume_response.response.status_code, 200);
+        assert!(body_text(&resume_response).contains("Retry Later"));
+    }
+
+    #[test]
+    fn draft_save_preserves_stored_attachments_until_send() {
+        let app = app();
+        let mut multipart_body = String::new();
+        multipart_body.push_str("--draft-boundary\r\n");
+        multipart_body.push_str("Content-Disposition: form-data; name=\"csrf_token\"\r\n\r\n");
+        multipart_body
+            .push_str("fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210\r\n");
+        multipart_body.push_str("--draft-boundary\r\n");
+        multipart_body.push_str("Content-Disposition: form-data; name=\"to\"\r\n\r\n");
+        multipart_body.push_str("bob@example.com\r\n");
+        multipart_body.push_str("--draft-boundary\r\n");
+        multipart_body.push_str("Content-Disposition: form-data; name=\"subject\"\r\n\r\n");
+        multipart_body.push_str("Attachment Draft\r\n");
+        multipart_body.push_str("--draft-boundary\r\n");
+        multipart_body.push_str("Content-Disposition: form-data; name=\"body\"\r\n\r\n");
+        multipart_body.push_str("Body\r\n");
+        multipart_body.push_str("--draft-boundary\r\n");
+        multipart_body.push_str(
+            "Content-Disposition: form-data; name=\"attachment\"; filename=\"report.txt\"\r\n",
+        );
+        multipart_body.push_str("Content-Type: text/plain\r\n\r\n");
+        multipart_body.push_str("draft attachment\r\n");
+        multipart_body.push_str("--draft-boundary--\r\n");
+
+        let save_response = app.handle_request(
+            &request(
+                "POST",
+                "/drafts/save",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                    ("Origin", "https://localhost"),
+                    ("Content-Type", "multipart/form-data; boundary=draft-boundary"),
+                ],
+                &multipart_body,
+            ),
+            "127.0.0.1",
+        );
+        assert_eq!(save_response.response.status_code, 303);
+        let location = location_header(&save_response);
+        let draft_id = location.trim_start_matches("/draft?id=");
+
+        let resume_response = app.handle_request(
+            &request("GET", &location, &authenticated_headers(), ""),
+            "127.0.0.1",
+        );
+        assert!(body_text(&resume_response).contains("1 stored attachment"));
+
+        let send_response = app.handle_request(
+            &request(
+                "POST",
+                "/send",
+                &authenticated_same_origin_headers(),
+                &format!(
+                    "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&draft_id={draft_id}&to=bob%40example.com&subject=Attachment%20Draft&body=Body"
+                ),
+            ),
+            "127.0.0.1",
+        );
+        assert_eq!(send_response.response.status_code, 303);
+    }
+
+    #[test]
+    fn draft_save_requires_valid_csrf_token() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/drafts/save",
+                &authenticated_same_origin_headers(),
+                "csrf_token=wrong&to=bob%40example.com&subject=Draft&body=Body",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 403);
+        assert!(body_text(&response).contains("CSRF Validation Failed"));
+    }
+
+    #[test]
+    fn draft_delete_requires_same_origin_request_metadata() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/drafts/delete",
+                &authenticated_headers(),
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&draft_id=00000000000000000000000000000001",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 403);
+        assert!(body_text(&response).contains("Request Origin Rejected"));
     }
 
     #[test]
@@ -3590,6 +4035,14 @@ mod tests {
                 "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=Archive%2F2026&uid_9=9",
             ),
             (
+                "/drafts/save",
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&to=bob%40example.com&subject=Draft&body=Body",
+            ),
+            (
+                "/drafts/delete",
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&draft_id=00000000000000000000000000000001",
+            ),
+            (
                 "/sessions/revoke",
                 "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&session_id=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
             ),
@@ -3963,7 +4416,7 @@ mod tests {
                 read_timeout_secs: 1,
                 ..HttpPolicy::default()
             };
-            let app = BrowserApp::new(policy, StubGateway);
+            let app = BrowserApp::new(policy, StubGateway::default());
             let logger = Logger::new(crate::config::LogFormat::Text, LogLevel::Debug);
             super::http_runtime::handle_client_stream(&app, &logger, &mut stream);
         });
@@ -3980,7 +4433,7 @@ mod tests {
         let addr = listener.local_addr().expect("listener addr should exist");
         let server = thread::spawn(move || {
             let (mut stream, _) = listener.accept().expect("server should accept client");
-            let app = BrowserApp::new(HttpPolicy::default(), StubGateway);
+            let app = BrowserApp::new(HttpPolicy::default(), StubGateway::default());
             let logger = Logger::new(crate::config::LogFormat::Text, LogLevel::Debug);
             super::http_runtime::handle_client_stream(&app, &logger, &mut stream);
         });
@@ -4004,7 +4457,7 @@ mod tests {
         let addr = listener.local_addr().expect("listener addr should exist");
         let server = thread::spawn(move || {
             let (mut stream, _) = listener.accept().expect("server should accept client");
-            let app = BrowserApp::new(HttpPolicy::default(), StubGateway);
+            let app = BrowserApp::new(HttpPolicy::default(), StubGateway::default());
             let logger = Logger::new(crate::config::LogFormat::Text, LogLevel::Debug);
             super::http_runtime::handle_client_stream(&app, &logger, &mut stream);
         });
@@ -4206,7 +4659,10 @@ mod tests {
         let _client = std::net::TcpStream::connect(addr).expect("client should connect");
         let (stream, _) = listener.accept().expect("server should accept client");
         let active_connections = Arc::new(AtomicUsize::new(1));
-        let app = Arc::new(BrowserApp::new(HttpPolicy::default(), StubGateway));
+        let app = Arc::new(BrowserApp::new(
+            HttpPolicy::default(),
+            StubGateway::default(),
+        ));
         let logger = Logger::new(crate::config::LogFormat::Text, LogLevel::Debug);
         let write_failures = Arc::new(AtomicUsize::new(0));
 
@@ -4259,7 +4715,7 @@ mod tests {
         let _client = std::net::TcpStream::connect(addr).expect("client should connect");
         let (mut stream, _) = listener.accept().expect("server should accept client");
         let active_connections = Arc::new(AtomicUsize::new(1));
-        let app = BrowserApp::new(HttpPolicy::default(), StubGateway);
+        let app = BrowserApp::new(HttpPolicy::default(), StubGateway::default());
         let logger = Logger::new(crate::config::LogFormat::Text, LogLevel::Debug);
         let write_failures = AtomicUsize::new(0);
 

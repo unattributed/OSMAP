@@ -15,6 +15,20 @@ pub struct StateLayout {
     pub runtime_dir: PathBuf,
     pub session_dir: PathBuf,
     pub settings_dir: PathBuf,
+    pub draft_dir: PathBuf,
+    pub audit_dir: PathBuf,
+    pub cache_dir: PathBuf,
+    pub totp_secret_dir: PathBuf,
+}
+
+/// Input paths for building a validated state layout.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StateLayoutPaths {
+    pub root_dir: PathBuf,
+    pub runtime_dir: PathBuf,
+    pub session_dir: PathBuf,
+    pub settings_dir: PathBuf,
+    pub draft_dir: PathBuf,
     pub audit_dir: PathBuf,
     pub cache_dir: PathBuf,
     pub totp_secret_dir: PathBuf,
@@ -22,30 +36,28 @@ pub struct StateLayout {
 
 impl StateLayout {
     /// Builds the state layout from a root directory and explicit subpaths.
-    pub fn new(
-        root_dir: PathBuf,
-        runtime_dir: PathBuf,
-        session_dir: PathBuf,
-        settings_dir: PathBuf,
-        audit_dir: PathBuf,
-        cache_dir: PathBuf,
-        totp_secret_dir: PathBuf,
-    ) -> Result<Self, BootstrapError> {
-        validate_child_path("OSMAP_RUNTIME_DIR", &root_dir, &runtime_dir)?;
-        validate_child_path("OSMAP_SESSION_DIR", &root_dir, &session_dir)?;
-        validate_child_path("OSMAP_SETTINGS_DIR", &root_dir, &settings_dir)?;
-        validate_child_path("OSMAP_AUDIT_DIR", &root_dir, &audit_dir)?;
-        validate_child_path("OSMAP_CACHE_DIR", &root_dir, &cache_dir)?;
-        validate_child_path("OSMAP_TOTP_SECRET_DIR", &root_dir, &totp_secret_dir)?;
+    pub fn new(paths: StateLayoutPaths) -> Result<Self, BootstrapError> {
+        validate_child_path("OSMAP_RUNTIME_DIR", &paths.root_dir, &paths.runtime_dir)?;
+        validate_child_path("OSMAP_SESSION_DIR", &paths.root_dir, &paths.session_dir)?;
+        validate_child_path("OSMAP_SETTINGS_DIR", &paths.root_dir, &paths.settings_dir)?;
+        validate_child_path("OSMAP_DRAFT_DIR", &paths.root_dir, &paths.draft_dir)?;
+        validate_child_path("OSMAP_AUDIT_DIR", &paths.root_dir, &paths.audit_dir)?;
+        validate_child_path("OSMAP_CACHE_DIR", &paths.root_dir, &paths.cache_dir)?;
+        validate_child_path(
+            "OSMAP_TOTP_SECRET_DIR",
+            &paths.root_dir,
+            &paths.totp_secret_dir,
+        )?;
 
         Ok(Self {
-            root_dir,
-            runtime_dir,
-            session_dir,
-            settings_dir,
-            audit_dir,
-            cache_dir,
-            totp_secret_dir,
+            root_dir: paths.root_dir,
+            runtime_dir: paths.runtime_dir,
+            session_dir: paths.session_dir,
+            settings_dir: paths.settings_dir,
+            draft_dir: paths.draft_dir,
+            audit_dir: paths.audit_dir,
+            cache_dir: paths.cache_dir,
+            totp_secret_dir: paths.totp_secret_dir,
         })
     }
 }
@@ -75,15 +87,16 @@ mod tests {
 
     #[test]
     fn accepts_state_children_under_root() {
-        let layout = StateLayout::new(
-            PathBuf::from("/var/lib/osmap"),
-            PathBuf::from("/var/lib/osmap/run"),
-            PathBuf::from("/var/lib/osmap/sessions"),
-            PathBuf::from("/var/lib/osmap/settings"),
-            PathBuf::from("/var/lib/osmap/audit"),
-            PathBuf::from("/var/lib/osmap/cache"),
-            PathBuf::from("/var/lib/osmap/secrets/totp"),
-        )
+        let layout = StateLayout::new(StateLayoutPaths {
+            root_dir: PathBuf::from("/var/lib/osmap"),
+            runtime_dir: PathBuf::from("/var/lib/osmap/run"),
+            session_dir: PathBuf::from("/var/lib/osmap/sessions"),
+            settings_dir: PathBuf::from("/var/lib/osmap/settings"),
+            draft_dir: PathBuf::from("/var/lib/osmap/drafts"),
+            audit_dir: PathBuf::from("/var/lib/osmap/audit"),
+            cache_dir: PathBuf::from("/var/lib/osmap/cache"),
+            totp_secret_dir: PathBuf::from("/var/lib/osmap/secrets/totp"),
+        })
         .expect("state children under the root should be accepted");
 
         assert_eq!(layout.runtime_dir, PathBuf::from("/var/lib/osmap/run"));
@@ -91,6 +104,7 @@ mod tests {
             layout.settings_dir,
             PathBuf::from("/var/lib/osmap/settings")
         );
+        assert_eq!(layout.draft_dir, PathBuf::from("/var/lib/osmap/drafts"));
         assert_eq!(
             layout.totp_secret_dir,
             PathBuf::from("/var/lib/osmap/secrets/totp")
@@ -99,15 +113,16 @@ mod tests {
 
     #[test]
     fn rejects_state_paths_outside_root() {
-        let error = StateLayout::new(
-            PathBuf::from("/var/lib/osmap"),
-            PathBuf::from("/var/run/osmap"),
-            PathBuf::from("/var/lib/osmap/sessions"),
-            PathBuf::from("/var/lib/osmap/settings"),
-            PathBuf::from("/var/lib/osmap/audit"),
-            PathBuf::from("/var/lib/osmap/cache"),
-            PathBuf::from("/var/lib/osmap/secrets/totp"),
-        )
+        let error = StateLayout::new(StateLayoutPaths {
+            root_dir: PathBuf::from("/var/lib/osmap"),
+            runtime_dir: PathBuf::from("/var/run/osmap"),
+            session_dir: PathBuf::from("/var/lib/osmap/sessions"),
+            settings_dir: PathBuf::from("/var/lib/osmap/settings"),
+            draft_dir: PathBuf::from("/var/lib/osmap/drafts"),
+            audit_dir: PathBuf::from("/var/lib/osmap/audit"),
+            cache_dir: PathBuf::from("/var/lib/osmap/cache"),
+            totp_secret_dir: PathBuf::from("/var/lib/osmap/secrets/totp"),
+        })
         .expect_err("state paths outside the root must fail");
 
         assert_eq!(

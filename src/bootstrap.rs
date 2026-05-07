@@ -23,6 +23,7 @@ pub struct BootstrapReport {
     pub runtime_dir: String,
     pub session_dir: String,
     pub settings_dir: String,
+    pub draft_dir: String,
     pub audit_dir: String,
     pub cache_dir: String,
     pub totp_secret_dir: String,
@@ -88,6 +89,7 @@ impl BootstrapReport {
         .with_field("runtime_dir", self.runtime_dir.clone())
         .with_field("session_dir", self.session_dir.clone())
         .with_field("settings_dir", self.settings_dir.clone())
+        .with_field("draft_dir", self.draft_dir.clone())
         .with_field("audit_dir", self.audit_dir.clone())
         .with_field("cache_dir", self.cache_dir.clone())
         .with_field("totp_secret_dir", self.totp_secret_dir.clone())
@@ -220,6 +222,7 @@ fn report_from_config(config: &AppConfig) -> BootstrapReport {
         runtime_dir: config.state_layout.runtime_dir.display().to_string(),
         session_dir: config.state_layout.session_dir.display().to_string(),
         settings_dir: config.state_layout.settings_dir.display().to_string(),
+        draft_dir: config.state_layout.draft_dir.display().to_string(),
         audit_dir: config.state_layout.audit_dir.display().to_string(),
         cache_dir: config.state_layout.cache_dir.display().to_string(),
         totp_secret_dir: config.state_layout.totp_secret_dir.display().to_string(),
@@ -269,7 +272,7 @@ fn mailbox_boundary_mode(config: &AppConfig) -> &'static str {
 mod tests {
     use super::*;
     use crate::config::{AppRunMode, LogFormat, LogLevel, RuntimeEnvironment};
-    use crate::state::StateLayout;
+    use crate::state::{StateLayout, StateLayoutPaths};
     use std::path::PathBuf;
 
     #[test]
@@ -288,15 +291,16 @@ mod tests {
             state_root: PathBuf::from("/var/lib/osmap"),
             log_level: LogLevel::Info,
             log_format: LogFormat::Text,
-            state_layout: StateLayout::new(
-                PathBuf::from("/var/lib/osmap"),
-                PathBuf::from("/var/lib/osmap/run"),
-                PathBuf::from("/var/lib/osmap/sessions"),
-                PathBuf::from("/var/lib/osmap/settings"),
-                PathBuf::from("/var/lib/osmap/audit"),
-                PathBuf::from("/var/lib/osmap/cache"),
-                PathBuf::from("/var/lib/osmap/secrets/totp"),
-            )
+            state_layout: StateLayout::new(StateLayoutPaths {
+                root_dir: PathBuf::from("/var/lib/osmap"),
+                runtime_dir: PathBuf::from("/var/lib/osmap/run"),
+                session_dir: PathBuf::from("/var/lib/osmap/sessions"),
+                settings_dir: PathBuf::from("/var/lib/osmap/settings"),
+                draft_dir: PathBuf::from("/var/lib/osmap/drafts"),
+                audit_dir: PathBuf::from("/var/lib/osmap/audit"),
+                cache_dir: PathBuf::from("/var/lib/osmap/cache"),
+                totp_secret_dir: PathBuf::from("/var/lib/osmap/secrets/totp"),
+            })
             .expect("layout should be valid"),
             http_max_concurrent_connections: 16,
             mailbox_worker_budget: 8,
@@ -377,6 +381,10 @@ mod tests {
                 crate::logging::LogField {
                     key: "settings_dir",
                     value: "/var/lib/osmap/settings".to_string(),
+                },
+                crate::logging::LogField {
+                    key: "draft_dir",
+                    value: "/var/lib/osmap/drafts".to_string(),
                 },
                 crate::logging::LogField {
                     key: "audit_dir",

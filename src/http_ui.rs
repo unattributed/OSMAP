@@ -3,6 +3,7 @@
 //! Keeping these rendering helpers separate from routing reduces the amount of
 //! browser-facing template code inside the request parser and route logic.
 
+use crate::draft::DraftSummary;
 use crate::http::BrowserVisibleSession;
 use crate::http_support::{escape_html, url_encode};
 use crate::mailbox::{
@@ -29,6 +30,17 @@ pub(crate) struct ComposePageModel<'a> {
     pub to_value: &'a str,
     pub subject_value: &'a str,
     pub body_value: &'a str,
+    pub draft_id: Option<&'a str>,
+    pub draft_attachment_count: usize,
+}
+
+/// Small view model for the draft list page.
+pub(crate) struct DraftListPageModel<'a> {
+    pub canonical_username: &'a str,
+    pub csrf_token: &'a str,
+    pub success_message: Option<&'a str>,
+    pub error_message: Option<&'a str>,
+    pub drafts: &'a [DraftSummary],
 }
 
 /// Small view model for the first bounded settings page.
@@ -56,6 +68,7 @@ fn app_header(canonical_username: &str, csrf_token: &str, current: &str) -> Stri
             "<nav class=\"top-actions\" aria-label=\"Primary\">",
             "<a href=\"/mailboxes\"{}>Mailboxes</a>",
             "<a href=\"/compose\"{}>Compose</a>",
+            "<a href=\"/drafts\"{}>Drafts</a>",
             "<a href=\"/sessions\"{}>Sessions</a>",
             "<a href=\"/settings\"{}>Settings</a>",
             "{}",
@@ -72,6 +85,11 @@ fn app_header(canonical_username: &str, csrf_token: &str, current: &str) -> Stri
             ""
         },
         if current == "compose" {
+            " aria-current=\"page\""
+        } else {
+            ""
+        },
+        if current == "drafts" {
             " aria-current=\"page\""
         } else {
             ""
@@ -720,6 +738,23 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> String {
         ),
         None => String::new(),
     };
+    let draft_id_field = model
+        .draft_id
+        .map(|draft_id| {
+            format!(
+                "<input type=\"hidden\" name=\"draft_id\" value=\"{}\">",
+                escape_html(draft_id)
+            )
+        })
+        .unwrap_or_default();
+    let draft_attachment_notice = if model.draft_attachment_count > 0 {
+        format!(
+            "<div class=\"notice\"><strong>Draft attachments:</strong> {} stored attachment(s) will stay send-only and are not previewed.</div>",
+            model.draft_attachment_count
+        )
+    } else {
+        String::new()
+    };
 
     format!(
         concat!(
@@ -728,14 +763,16 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> String {
             "<section class=\"content-pane\">",
             "<h1>{}</h1>",
             "<p class=\"muted\">This send slice uses the local submission surface, keeps the browser body plain-text-first, accepts bounded new file uploads, and still does not reattach files from the source message automatically.</p>",
-            "{}{}{}",
+            "{}{}{}{}",
             "<form method=\"post\" action=\"/send\" enctype=\"multipart/form-data\">",
             "<input type=\"hidden\" name=\"csrf_token\" value=\"{}\">",
+            "{}",
             "<label for=\"compose-to\">To<input id=\"compose-to\" type=\"text\" name=\"to\" value=\"{}\" autocomplete=\"off\"></label>",
             "<label for=\"compose-subject\">Subject<input id=\"compose-subject\" type=\"text\" name=\"subject\" value=\"{}\"></label>",
             "<label for=\"compose-body\">Body<textarea id=\"compose-body\" name=\"body\">{}</textarea></label>",
             "<label for=\"compose-attachment\">Attachments<input id=\"compose-attachment\" type=\"file\" name=\"attachment\" multiple></label>",
             "<button class=\"primary-button\" type=\"submit\">Send Message</button>",
+            "<button type=\"submit\" formaction=\"/drafts/save\">Save Draft</button>",
             "</form>",
             "</section>",
             "</main>"
@@ -745,10 +782,83 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> String {
         success_banner,
         error_banner,
         context_banner,
+        draft_attachment_notice,
         escape_html(model.csrf_token),
+        draft_id_field,
         escape_html(model.to_value),
         escape_html(model.subject_value),
         escape_html(model.body_value),
+    )
+}
+
+/// Renders the bounded draft list page.
+pub(crate) fn render_draft_list_page(model: &DraftListPageModel<'_>) -> String {
+    let success_banner = match model.success_message {
+        Some(success_message) => format!(
+            "<div class=\"notice notice-success\" role=\"status\"><strong>Draft update:</strong> {}</div>",
+            escape_html(success_message)
+        ),
+        None => String::new(),
+    };
+    let error_banner = match model.error_message {
+        Some(error_message) => format!(
+            "<div class=\"notice notice-error\" role=\"alert\"><strong>Request failed:</strong> {}</div>",
+            escape_html(error_message)
+        ),
+        None => String::new(),
+    };
+    let mut rows = String::new();
+    for draft in model.drafts {
+        let resume_href = format!("/draft?id={}", url_encode(&draft.draft_id));
+        rows.push_str(&format!(
+            concat!(
+                "<tr>",
+                "<td><a href=\"{}\">Resume</a></td>",
+                "<td>{}</td>",
+                "<td>{}</td>",
+                "<td>{}</td>",
+                "<td>{}</td>",
+                "<td>",
+                "<form method=\"post\" action=\"/drafts/delete\">",
+                "<input type=\"hidden\" name=\"csrf_token\" value=\"{}\">",
+                "<input type=\"hidden\" name=\"draft_id\" value=\"{}\">",
+                "<button type=\"submit\">Delete</button>",
+                "</form>",
+                "</td>",
+                "</tr>"
+            ),
+            escape_html(&resume_href),
+            draft.updated_at,
+            draft.recipient_count,
+            draft.body_len,
+            draft.attachment_count,
+            escape_html(model.csrf_token),
+            escape_html(&draft.draft_id),
+        ));
+    }
+    if rows.is_empty() {
+        rows.push_str("<tr><td colspan=\"6\" class=\"muted\">No saved drafts.</td></tr>");
+    }
+
+    format!(
+        concat!(
+            "<main class=\"page-shell\">",
+            "{}",
+            "<section class=\"content-pane\">",
+            "<h1>Drafts</h1>{}{}",
+            "<p class=\"muted\">Saved drafts are bounded server-side compose state. Stored attachments remain send-only and are not previewed.</p>",
+            "<p><a class=\"primary-button\" href=\"/compose\">New Message</a></p>",
+            "<table>",
+            "<thead><tr><th>Action</th><th>Updated</th><th>Recipients</th><th>Body Bytes</th><th>Attachments</th><th>Delete</th></tr></thead>",
+            "<tbody>{}</tbody>",
+            "</table>",
+            "</section>",
+            "</main>"
+        ),
+        app_header(model.canonical_username, model.csrf_token, "drafts"),
+        success_banner,
+        error_banner,
+        rows,
     )
 }
 

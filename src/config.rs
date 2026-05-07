@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 
 use crate::error::BootstrapError;
 use crate::session::DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS;
-use crate::state::StateLayout;
+use crate::state::{StateLayout, StateLayoutPaths};
 use crate::throttle::{
     DEFAULT_LOGIN_THROTTLE_LOCKOUT_SECONDS, DEFAULT_LOGIN_THROTTLE_MAX_FAILURES,
     DEFAULT_LOGIN_THROTTLE_REMOTE_MAX_FAILURES, DEFAULT_LOGIN_THROTTLE_WINDOW_SECONDS,
@@ -347,6 +347,11 @@ impl AppConfig {
             "OSMAP_SETTINGS_DIR",
             PathBuf::from(&state_root_value).join("settings"),
         )?;
+        let draft_dir = parse_optional_absolute_path(
+            env_map,
+            "OSMAP_DRAFT_DIR",
+            PathBuf::from(&state_root_value).join("drafts"),
+        )?;
         let audit_dir = parse_optional_absolute_path(
             env_map,
             "OSMAP_AUDIT_DIR",
@@ -601,15 +606,16 @@ impl AppConfig {
             message_move_throttle_lockout_seconds,
         )?;
 
-        let state_layout = StateLayout::new(
-            state_root.clone(),
+        let state_layout = StateLayout::new(StateLayoutPaths {
+            root_dir: state_root.clone(),
             runtime_dir,
             session_dir,
             settings_dir,
+            draft_dir,
             audit_dir,
             cache_dir,
             totp_secret_dir,
-        )?;
+        })?;
         validate_development_bindings(environment, &listen_addr)?;
         validate_production_serve_listener(environment, run_mode, &listen_addr)?;
         let mailbox_helper_socket_path =
@@ -917,6 +923,10 @@ mod tests {
             std::path::Path::new("/var/lib/osmap/sessions")
         );
         assert_eq!(
+            config.state_layout.draft_dir,
+            std::path::Path::new("/var/lib/osmap/drafts")
+        );
+        assert_eq!(
             config.state_layout.audit_dir,
             std::path::Path::new("/var/lib/osmap/audit")
         );
@@ -983,6 +993,10 @@ mod tests {
             (
                 "OSMAP_SESSION_DIR".to_string(),
                 "/var/lib/osmap-staging/session-store".to_string(),
+            ),
+            (
+                "OSMAP_DRAFT_DIR".to_string(),
+                "/var/lib/osmap-staging/draft-store".to_string(),
             ),
             (
                 "OSMAP_TOTP_SECRET_DIR".to_string(),
@@ -1113,6 +1127,10 @@ mod tests {
         assert_eq!(
             config.state_layout.session_dir,
             std::path::Path::new("/var/lib/osmap-staging/session-store")
+        );
+        assert_eq!(
+            config.state_layout.draft_dir,
+            std::path::Path::new("/var/lib/osmap-staging/draft-store")
         );
         assert_eq!(
             config.state_layout.totp_secret_dir,

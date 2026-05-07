@@ -65,7 +65,7 @@ The current repo state is not yet a good fit for users who depend daily on:
 | Session list, revoke, logout | `supported` | admit | Included in current browser security surface. |
 | Safe HTML view | `supported_with_limits` | admit | Sanitized HTML only; no active content or remote loads. |
 | Plain-text preference for message display | `supported` | admit | Small bounded settings surface only. |
-| Draft save and resume later | `roundcube_fallback` | do not admit if required daily | Design boundary and storage primitives exist; authenticated browser routes are not implemented. |
+| Draft save and resume later | `roundcube_fallback` | do not admit if required daily | Design boundary, storage primitives, and authenticated browser routes exist; WSTG/ASVS and host-safe evidence are still pending. |
 | Reply or forward with original attachments preserved automatically | `roundcube_fallback` | do not admit if required daily | Not implemented. |
 | General bulk move or other bulk mailbox actions | `roundcube_fallback` | do not admit if required daily | OSMAP supports bounded selected archive, not arbitrary bulk mailbox operations. |
 | Rich mailbox-management ergonomics | `roundcube_fallback` | admit only if unnecessary | OSMAP Version 2 intentionally stays narrower than Roundcube. |

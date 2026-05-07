@@ -16,13 +16,11 @@ This remains the design gate for the feature.
 
 The current runtime supports server-generated reply and forward compose
 prefills through `ComposeDraft`. It now also has file-backed draft persistence
-primitives in `src/draft.rs`, including owner-scoped paths, compose-policy
-validation, generated draft ids, attachment body storage, quota checks, and
-expired-draft cleanup.
+primitives in `src/draft.rs` and authenticated browser routes for list, resume,
+save, delete, and send-success cleanup.
 
-Browser draft persistence remains incomplete until the route slice wires those
-primitives into authenticated browser flows with CSRF and same-origin checks,
-route tests, WSTG coverage, and live or fixture evidence.
+Browser draft persistence remains incomplete for the full Version 3 acceptance
+gate until WSTG/ASVS coverage and live or fixture release evidence are updated.
 
 ## Non-Goals
 
@@ -63,15 +61,14 @@ identifier.
 
 Drafts are server-side state under the configured OSMAP state root.
 
-The implementation should derive a draft root equivalent to:
+The implementation derives a draft root equivalent to:
 
 - `<OSMAP_STATE_DIR>/drafts`
 
-If a future configuration variable is added for the draft directory, bootstrap
-validation must require it to be absolute and under the validated state root.
-The draft implementation must not write drafts under mailbox storage, web
-static assets, temporary upload directories shared with unrelated processes, or
-browser-accessible paths.
+`OSMAP_DRAFT_DIR` can override that default. Bootstrap validation requires it to
+be absolute and under the validated state root. The draft implementation must
+not write drafts under mailbox storage, web static assets, temporary upload
+directories shared with unrelated processes, or browser-accessible paths.
 
 The storage layout should be:
 

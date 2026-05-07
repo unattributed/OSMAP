@@ -108,6 +108,7 @@ impl OpenbsdConfinementPlan {
                 add_rule(&mut rules, &config.state_layout.runtime_dir, "rwc");
                 add_rule(&mut rules, &config.state_layout.session_dir, "rwc");
                 add_rule(&mut rules, &config.state_layout.settings_dir, "rwc");
+                add_rule(&mut rules, &config.state_layout.draft_dir, "rwc");
                 add_rule(&mut rules, &config.state_layout.audit_dir, "rwc");
                 add_rule(&mut rules, &config.state_layout.cache_dir, "rwc");
                 add_rule(&mut rules, &config.state_layout.totp_secret_dir, "rwc");
@@ -579,7 +580,7 @@ mod imp {
 mod tests {
     use super::*;
     use crate::config::{AppRunMode, LogFormat, RuntimeEnvironment};
-    use crate::state::StateLayout;
+    use crate::state::{StateLayout, StateLayoutPaths};
     use std::time::{SystemTime, UNIX_EPOCH};
 
     fn config_fixture(mode: OpenbsdConfinementMode) -> AppConfig {
@@ -594,15 +595,16 @@ mod tests {
             state_root: PathBuf::from("/var/lib/osmap"),
             log_level: LogLevel::Info,
             log_format: LogFormat::Text,
-            state_layout: StateLayout::new(
-                PathBuf::from("/var/lib/osmap"),
-                PathBuf::from("/var/lib/osmap/run"),
-                PathBuf::from("/var/lib/osmap/sessions"),
-                PathBuf::from("/var/lib/osmap/settings"),
-                PathBuf::from("/var/lib/osmap/audit"),
-                PathBuf::from("/var/lib/osmap/cache"),
-                PathBuf::from("/var/lib/osmap/secrets/totp"),
-            )
+            state_layout: StateLayout::new(StateLayoutPaths {
+                root_dir: PathBuf::from("/var/lib/osmap"),
+                runtime_dir: PathBuf::from("/var/lib/osmap/run"),
+                session_dir: PathBuf::from("/var/lib/osmap/sessions"),
+                settings_dir: PathBuf::from("/var/lib/osmap/settings"),
+                draft_dir: PathBuf::from("/var/lib/osmap/drafts"),
+                audit_dir: PathBuf::from("/var/lib/osmap/audit"),
+                cache_dir: PathBuf::from("/var/lib/osmap/cache"),
+                totp_secret_dir: PathBuf::from("/var/lib/osmap/secrets/totp"),
+            })
             .expect("layout should be valid"),
             http_max_concurrent_connections: 16,
             mailbox_worker_budget: 8,

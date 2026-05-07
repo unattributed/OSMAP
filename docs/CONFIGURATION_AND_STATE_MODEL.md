@@ -35,6 +35,7 @@ The early runtime recognizes:
 - `OSMAP_RUNTIME_DIR`
 - `OSMAP_SESSION_DIR`
 - `OSMAP_SETTINGS_DIR`
+- `OSMAP_DRAFT_DIR`
 - `OSMAP_AUDIT_DIR`
 - `OSMAP_CACHE_DIR`
 - `OSMAP_TOTP_SECRET_DIR`
@@ -356,3 +357,28 @@ The current file-backed store:
 This keeps the first end-user settings slice inside the same explicit state
 boundary as sessions, audit files, TOTP secrets, and throttle state rather
 than introducing a separate browser-local or database-local preference store.
+
+## Draft State
+
+The runtime now includes bounded server-side draft state under:
+
+- `OSMAP_DRAFT_DIR`
+
+When unset, that directory defaults to `<OSMAP_STATE_DIR>/drafts`.
+
+The current file-backed draft store:
+
+- keeps one owner directory per hashed canonical username
+- keeps one draft directory per generated draft id
+- stores metadata and newly uploaded compose attachment bodies under that draft
+  directory
+- validates compose fields and attachments with the existing compose policy
+  before persistence
+- uses `0700` permissions for draft directories on Unix-like systems
+- uses `0600` permissions for draft metadata and attachment files on Unix-like
+  systems
+- removes expired drafts opportunistically during draft operations
+
+Draft state remains server-side authenticated browser state. It does not add
+browser-local storage, attachment preview, inline image rendering, remote
+content loading, or original-message attachment reattachment.

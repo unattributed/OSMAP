@@ -1,5 +1,17 @@
 # Decision Log
 
+## 2026-05-06, Wire V3 draft browser routes
+
+The draft slice now exposes authenticated browser routes for draft list,
+resume, save, delete, and send-success cleanup. Draft POST routes use the
+existing CSRF and same-origin guardrails. Resumed drafts preserve stored
+new-upload attachments as send-only data, and `/send` deletes the draft only
+after accepted submission handoff. Submission denial leaves the draft available
+for retry.
+
+The workflow remains `roundcube_fallback` in the pilot inventory until WSTG/ASVS
+coverage and host-safe evidence are updated for the new browser route surface.
+
 ## 2026-05-06, Add V3 draft persistence primitives
 
 The first draft implementation slice adds `src/draft.rs`, a file-backed draft
