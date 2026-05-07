@@ -1472,6 +1472,8 @@ def build_config(args: argparse.Namespace) -> Config:
         or merged.get("OSMAP_WSTG_PROFILE") == "release"
         or merged.get("OSMAP_SECURITY_PROFILE") == "release"
     )
+    throttle_attempts_default = "6" if release_mode else "3"
+    throttle_attempts_raw = merged.get("OSMAP_THROTTLE_PROBE_ATTEMPTS", throttle_attempts_default)
     if release_mode:
         allow_auth = True
         allow_host = True
@@ -1488,7 +1490,7 @@ def build_config(args: argparse.Namespace) -> Config:
         allow_authenticated=allow_auth,
         prompt_auth=prompt_auth,
         allow_host_assisted=allow_host,
-        throttle_attempts=max(1, int(merged.get("OSMAP_THROTTLE_PROBE_ATTEMPTS", "3") or "3")),
+        throttle_attempts=max(1, int(throttle_attempts_raw or throttle_attempts_default)),
         timeout=float(merged.get("OSMAP_REQUEST_TIMEOUT_SECONDS", "12") or "12"),
         release_mode=release_mode,
     )

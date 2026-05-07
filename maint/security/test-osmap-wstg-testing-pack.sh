@@ -170,6 +170,7 @@ for marker in [
     "store_body_evidence=False",
     "draft_save_attachment_limit",
     "if send_draft_id:",
+    'throttle_attempts_default = "6" if release_mode else "3"',
 ]:
     if marker not in runner:
         raise SystemExit(f"runner missing draft marker {marker}")
