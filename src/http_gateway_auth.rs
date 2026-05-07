@@ -237,9 +237,10 @@ impl RuntimeBrowserGateway {
                                 );
                                 BrowserLoginOutcome {
                                     decision: BrowserLoginDecision::Denied {
-                                        public_reason: PublicFailureReason::TemporarilyUnavailable
-                                            .as_str()
-                                            .to_string(),
+                                        public_reason: normalized_login_public_reason(
+                                            PublicFailureReason::TemporarilyUnavailable,
+                                        )
+                                        .to_string(),
                                     },
                                     audit_events,
                                 }
@@ -248,9 +249,10 @@ impl RuntimeBrowserGateway {
                     }
                     AuthenticationDecision::MfaRequired { .. } => BrowserLoginOutcome {
                         decision: BrowserLoginDecision::Denied {
-                            public_reason: PublicFailureReason::TemporarilyUnavailable
-                                .as_str()
-                                .to_string(),
+                            public_reason: normalized_login_public_reason(
+                                PublicFailureReason::TemporarilyUnavailable,
+                            )
+                            .to_string(),
                         },
                         audit_events,
                     },
@@ -258,9 +260,10 @@ impl RuntimeBrowserGateway {
             }
             AuthenticationDecision::AuthenticatedPendingSession { .. } => BrowserLoginOutcome {
                 decision: BrowserLoginDecision::Denied {
-                    public_reason: PublicFailureReason::TemporarilyUnavailable
-                        .as_str()
-                        .to_string(),
+                    public_reason: normalized_login_public_reason(
+                        PublicFailureReason::TemporarilyUnavailable,
+                    )
+                    .to_string(),
                 },
                 audit_events,
             },
@@ -537,7 +540,7 @@ impl RuntimeBrowserGateway {
 
 fn normalized_login_public_reason(public_reason: PublicFailureReason) -> &'static str {
     match public_reason {
-        PublicFailureReason::InvalidSecondFactor => {
+        PublicFailureReason::InvalidSecondFactor | PublicFailureReason::TemporarilyUnavailable => {
             PublicFailureReason::InvalidCredentials.as_str()
         }
         _ => public_reason.as_str(),
@@ -601,7 +604,7 @@ mod tests {
     }
 
     #[test]
-    fn preserves_non_second_factor_login_failure_reasons() {
+    fn normalizes_login_backend_failures_to_generic_login_failure_reason() {
         assert_eq!(
             normalized_login_public_reason(PublicFailureReason::InvalidCredentials),
             PublicFailureReason::InvalidCredentials.as_str()
@@ -612,7 +615,7 @@ mod tests {
         );
         assert_eq!(
             normalized_login_public_reason(PublicFailureReason::TemporarilyUnavailable),
-            PublicFailureReason::TemporarilyUnavailable.as_str()
+            PublicFailureReason::InvalidCredentials.as_str()
         );
     }
 
