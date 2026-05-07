@@ -95,8 +95,10 @@ implementation slice must satisfy.
 
 The first storage primitive now exists in `src/draft.rs`, and authenticated
 browser routes now cover draft list, resume, save, delete, and send-success
-cleanup. The next step is WSTG/ASVS updates plus host-safe evidence before any
-workflow disposition changes from `roundcube_fallback`.
+cleanup. The WSTG testing pack now has release-required ASVS-mapped draft route
+coverage in `OSMAP-WSTG-BUSL-002`. The next step is host-safe authenticated
+evidence collection before any workflow disposition changes from
+`roundcube_fallback`.
 
 ## Security Foundation Track
 

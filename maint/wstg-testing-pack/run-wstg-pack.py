@@ -171,6 +171,7 @@ class Runner:
             "OSMAP-WSTG-CLNT-001": self.test_cors,
             "OSMAP-WSTG-CLNT-002": self.test_html_rendering_static,
             "OSMAP-WSTG-BUSL-001": self.test_attachment_static,
+            "OSMAP-WSTG-BUSL-002": self.test_draft_routes_authenticated,
             "OSMAP-WSTG-CONF-005": self.test_host_bindings,
             "OSMAP-WSTG-CONF-006": self.test_host_pf,
             "OSMAP-WSTG-CONF-007": self.test_dependency_alignment,
@@ -230,6 +231,7 @@ class Runner:
         body: bytes | str = b"",
         cookies: dict[str, str] | None = None,
         store_cookies: bool = False,
+        store_body_evidence: bool = True,
     ) -> HttpEvidence:
         scheme = scheme or self.config.scheme
         host = host or self.config.host
@@ -267,7 +269,7 @@ class Runner:
             conn.close()
         except (OSError, ssl.SSLError, socket.timeout) as exc:
             evidence = HttpEvidence(label, None, "", [], b"", error=str(exc))
-        self.write_http_evidence(evidence)
+        self.write_http_evidence(evidence, store_body=store_body_evidence)
         return evidence
 
     def form_post(
@@ -279,6 +281,7 @@ class Runner:
         cookies: dict[str, str] | None = None,
         store_cookies: bool = False,
         headers: dict[str, str] | None = None,
+        store_body_evidence: bool = True,
     ) -> HttpEvidence:
         encoded = urllib.parse.urlencode(values)
         merged_headers = {"Content-Type": "application/x-www-form-urlencoded"}
@@ -292,9 +295,10 @@ class Runner:
             body=encoded,
             cookies=cookies,
             store_cookies=store_cookies,
+            store_body_evidence=store_body_evidence,
         )
 
-    def write_http_evidence(self, evidence: HttpEvidence) -> None:
+    def write_http_evidence(self, evidence: HttpEvidence, *, store_body: bool = True) -> None:
         stem = safe_label(evidence.label)
         headers_path = self.evidence_dir / f"{stem}.headers"
         body_path = self.evidence_dir / f"{stem}.body"
@@ -308,7 +312,13 @@ class Runner:
                     value = SECRET_REPLACEMENT
                 lines.append(f"{key}: {self.redact(value)}\n")
         headers_path.write_text("".join(lines), encoding="utf-8")
-        body_path.write_text(self.redact(evidence.body_text()), encoding="utf-8")
+        if store_body:
+            body_path.write_text(self.redact(evidence.body_text()), encoding="utf-8")
+        else:
+            body_path.write_text(
+                "[BODY OMITTED: authenticated page may contain draft body or other user content]\n",
+                encoding="utf-8",
+            )
 
     def write_text_evidence(self, label: str, text: str) -> str:
         path = self.evidence_dir / safe_label(label)
@@ -323,6 +333,26 @@ class Runner:
         redacted = re.sub(
             r"(?i)(osmap_session=)[A-Za-z0-9._~+/=-]+",
             r"\1[REDACTED]",
+            redacted,
+        )
+        redacted = re.sub(
+            r'(?i)(name=["\']csrf_token["\']\s+value=["\'])[^"\']+(["\'])',
+            r"\1[REDACTED]\2",
+            redacted,
+        )
+        redacted = re.sub(
+            r"(?i)(csrf_token=)[^&\s\"']+",
+            r"\1[REDACTED]",
+            redacted,
+        )
+        redacted = re.sub(
+            r'(?i)(name=["\']draft_id["\']\s+value=["\'])[0-9a-f]{32}(["\'])',
+            r"\1[DRAFT_ID]\2",
+            redacted,
+        )
+        redacted = re.sub(
+            r"(?i)((?:/draft\?id=|draft_id=))[0-9a-f]{32}",
+            r"\1[DRAFT_ID]",
             redacted,
         )
         redacted = re.sub(
@@ -900,6 +930,294 @@ class Runner:
             return self.result("OSMAP-WSTG-BUSL-001", STATUS_FAIL, "attachment handling markers were missing from source/docs", [evidence], {"missing": missing})
         return self.result("OSMAP-WSTG-BUSL-001", STATUS_PASS, "source and docs show bounded upload parsing and forced-download controls", [evidence])
 
+    def test_draft_routes_authenticated(self) -> TestResult:
+        ok, message = self.ensure_login()
+        if not ok:
+            return self.result("OSMAP-WSTG-BUSL-002", STATUS_SKIP, message)
+
+        nonce = hashlib.sha256(f"{time.time()}:{os.getpid()}".encode("utf-8")).hexdigest()[:12]
+        subject = f"OSMAP WSTG draft route proof {nonce}"
+        body = f"OSMAP WSTG draft body proof {nonce}"
+        delete_subject = f"OSMAP WSTG draft delete proof {nonce}"
+        delete_body = f"OSMAP WSTG draft delete body {nonce}"
+        for value in [subject, body, delete_subject, delete_body, nonce]:
+            self.secrets.append(value)
+
+        evidence_paths = [
+            "evidence/draft_save_missing_csrf.headers",
+            "evidence/draft_save_cross_origin.headers",
+            "evidence/draft_save_attachment_limit.headers",
+            "evidence/draft_delete_create.headers",
+            "evidence/draft_delete.headers",
+            "evidence/draft_delete_resume.headers",
+            "evidence/draft_send_create.headers",
+            "evidence/draft_list_before_send.headers",
+            "evidence/draft_list_before_send.body",
+            "evidence/draft_resume_before_send.headers",
+            "evidence/draft_resume_before_send.body",
+            "evidence/draft_send_cleanup.headers",
+            "evidence/draft_send_resume_after_cleanup.headers",
+            "evidence/draft_stale_session_rejected.headers",
+            "evidence/draft_route_static_boundary.txt",
+            "evidence/draft_route_evidence_redaction.txt",
+        ]
+
+        missing = self.form_post(
+            "draft_save_missing_csrf",
+            "/drafts/save",
+            {"to": self.config.test_email, "subject": subject, "body": body},
+            cookies=self.cookie_jar,
+            headers=same_origin_headers(self.config),
+        )
+        cross = self.form_post(
+            "draft_save_cross_origin",
+            "/drafts/save",
+            {
+                "csrf_token": self.csrf_token,
+                "to": self.config.test_email,
+                "subject": subject,
+                "body": body,
+            },
+            cookies=self.cookie_jar,
+            headers={"Origin": "https://attacker.invalid"},
+        )
+        attachment_limit = self.request(
+            "draft_save_attachment_limit",
+            "POST",
+            "/drafts/save",
+            headers={
+                "Content-Type": "multipart/form-data; boundary=osmap-wstg-draft-limit",
+                **same_origin_headers(self.config),
+            },
+            body=build_multipart_form(
+                "osmap-wstg-draft-limit",
+                {
+                    "csrf_token": self.csrf_token,
+                    "to": self.config.test_email,
+                    "subject": subject,
+                    "body": body,
+                },
+                [
+                    ("attachment", f"limit-{index}.txt", "text/plain", b"x")
+                    for index in range(4)
+                ],
+            ),
+            cookies=self.cookie_jar,
+        )
+
+        delete_create = self.form_post(
+            "draft_delete_create",
+            "/drafts/save",
+            {
+                "csrf_token": self.csrf_token,
+                "to": self.config.test_email,
+                "subject": delete_subject,
+                "body": delete_body,
+            },
+            cookies=self.cookie_jar,
+            headers=same_origin_headers(self.config),
+        )
+        delete_draft_id = draft_id_from_location(delete_create.first_header("Location"))
+        delete = self.form_post(
+            "draft_delete",
+            "/drafts/delete",
+            {"csrf_token": self.csrf_token, "draft_id": delete_draft_id},
+            cookies=self.cookie_jar,
+            headers=same_origin_headers(self.config),
+        )
+        delete_resume = self.request(
+            "draft_delete_resume",
+            "GET",
+            f"/draft?id={urllib.parse.quote(delete_draft_id)}",
+            cookies=self.cookie_jar,
+            store_body_evidence=False,
+        )
+
+        send_create = self.form_post(
+            "draft_send_create",
+            "/drafts/save",
+            {
+                "csrf_token": self.csrf_token,
+                "to": self.config.test_email,
+                "subject": subject,
+                "body": body,
+            },
+            cookies=self.cookie_jar,
+            headers=same_origin_headers(self.config),
+        )
+        send_draft_id = draft_id_from_location(send_create.first_header("Location"))
+        draft_list = self.request("draft_list_before_send", "GET", "/drafts", cookies=self.cookie_jar)
+        draft_resume = self.request(
+            "draft_resume_before_send",
+            "GET",
+            f"/draft?id={urllib.parse.quote(send_draft_id)}",
+            cookies=self.cookie_jar,
+            store_body_evidence=False,
+        )
+        send = self.form_post(
+            "draft_send_cleanup",
+            "/send",
+            {
+                "csrf_token": self.csrf_token,
+                "draft_id": send_draft_id,
+                "to": self.config.test_email,
+                "subject": subject,
+                "body": body,
+            },
+            cookies=self.cookie_jar,
+            headers=same_origin_headers(self.config),
+            store_body_evidence=False,
+        )
+        send_resume = self.request(
+            "draft_send_resume_after_cleanup",
+            "GET",
+            f"/draft?id={urllib.parse.quote(send_draft_id)}",
+            cookies=self.cookie_jar,
+            store_body_evidence=False,
+        )
+        stale = self.request(
+            "draft_stale_session_rejected",
+            "GET",
+            "/drafts",
+            cookies={"osmap_session": "e" * 64},
+            store_body_evidence=False,
+        )
+
+        static_evidence = self.write_draft_static_boundary_evidence()
+        redaction_evidence = self.write_draft_evidence_redaction_evidence(
+            [subject, body, delete_subject, delete_body, nonce, self.csrf_token],
+        )
+
+        expected_statuses = {
+            "missing_csrf": missing.status,
+            "cross_origin": cross.status,
+            "attachment_limit": attachment_limit.status,
+            "delete_create": delete_create.status,
+            "delete": delete.status,
+            "delete_resume": delete_resume.status,
+            "send_create": send_create.status,
+            "list": draft_list.status,
+            "resume": draft_resume.status,
+            "send": send.status,
+            "send_resume": send_resume.status,
+            "stale_session": stale.status,
+        }
+        failures: dict[str, int | None] = {}
+        if missing.status != 403:
+            failures["missing_csrf"] = missing.status
+        if cross.status != 403:
+            failures["cross_origin"] = cross.status
+        if attachment_limit.status not in {400, 413}:
+            failures["attachment_limit"] = attachment_limit.status
+        if delete_create.status != 303 or not delete_draft_id:
+            failures["delete_create"] = delete_create.status
+        if delete.status != 303:
+            failures["delete"] = delete.status
+        if delete_resume.status != 404:
+            failures["delete_resume"] = delete_resume.status
+        if send_create.status != 303 or not send_draft_id:
+            failures["send_create"] = send_create.status
+        if draft_list.status != 200:
+            failures["list"] = draft_list.status
+        if draft_resume.status != 200:
+            failures["resume"] = draft_resume.status
+        if send.status != 303:
+            failures["send"] = send.status
+        if send_resume.status != 404:
+            failures["send_resume"] = send_resume.status
+        if stale.status == 200:
+            failures["stale_session"] = stale.status
+        if not static_evidence:
+            failures["static_boundary"] = None
+        if not redaction_evidence:
+            failures["redaction"] = None
+
+        if failures:
+            return self.result(
+                "OSMAP-WSTG-BUSL-002",
+                STATUS_FAIL,
+                "draft route evidence did not meet one or more expected outcomes",
+                evidence_paths,
+                {"statuses": expected_statuses, "failures": failures},
+            )
+        return self.result(
+            "OSMAP-WSTG-BUSL-002",
+            STATUS_PASS,
+            "draft save, list, resume, delete, send cleanup, CSRF, same-origin, stale-session, attachment-limit, and redaction evidence passed",
+            evidence_paths,
+            {"statuses": expected_statuses},
+        )
+
+    def write_draft_static_boundary_evidence(self) -> bool:
+        files = [
+            REPO_ROOT / "src" / "draft.rs",
+            REPO_ROOT / "src" / "http.rs",
+            REPO_ROOT / "src" / "http_gateway_draft.rs",
+            REPO_ROOT / "src" / "http" / "routes_compose.rs",
+            REPO_ROOT / "src" / "http" / "routes_draft.rs",
+            REPO_ROOT / "docs" / "V3_DRAFT_SAVE_RESUME_DESIGN.md",
+        ]
+        text = "\n".join(path.read_text(encoding="utf-8", errors="replace") for path in files if path.exists())
+        markers = [
+            "file_draft_store_scopes_loads_by_owner",
+            "expired_drafts_are_removed_on_load",
+            "draft_save_existing_load_failed",
+            "draft_save_failed",
+            "draft_save_request_rejected",
+            "draft attachment metadata exceeded maximum count",
+            "send_success_deletes_draft_after_accepted_handoff",
+            "send_failure_preserves_draft",
+            "draft_save_requires_valid_csrf_token",
+            "draft_delete_requires_same_origin_request_metadata",
+            "audit_session_ref",
+            "draft_ref",
+            "full draft bodies",
+        ]
+        missing = [marker for marker in markers if marker.lower() not in text.lower()]
+        self.write_text_evidence(
+            "draft_route_static_boundary.txt",
+            summarize_static_files(files, missing)
+            + "\nCovered boundaries:\n"
+            + "- owner-scoped file store and cross-owner load isolation\n"
+            + "- expired draft cleanup during load/list operations\n"
+            + "- generic storage failure and validation responses\n"
+            + "- bounded attachment count and byte validation through compose policy\n"
+            + "- send-success cleanup and send-failure preservation route tests\n"
+            + "- audit fields use draft_ref rather than raw draft ids\n",
+        )
+        return not missing
+
+    def write_draft_evidence_redaction_evidence(self, forbidden_values: list[str]) -> bool:
+        leaks: dict[str, list[str]] = {}
+        forbidden_patterns = [
+            ("csrf_token_value", re.escape(self.csrf_token) if self.csrf_token else r"$^"),
+            ("raw_session_cookie", r"osmap_session=[A-Za-z0-9._~+/=-]{16,}"),
+            ("raw_draft_id", r"(?i)(?:/draft\?id=|draft_id=)[0-9a-f]{32}"),
+        ]
+        for value in forbidden_values:
+            if value:
+                forbidden_patterns.append((f"value_{len(forbidden_patterns)}", re.escape(value)))
+        for path in sorted(self.evidence_dir.glob("draft_*")):
+            if path.name == "draft_route_evidence_redaction.txt":
+                continue
+            text = path.read_text(encoding="utf-8", errors="replace")
+            matches = [name for name, pattern in forbidden_patterns if re.search(pattern, text)]
+            if matches:
+                leaks[path.name] = matches
+        lines = [
+            "Draft evidence redaction scan:",
+            "- checked draft_* evidence files only",
+            "- raw session cookies, CSRF token values, raw draft ids, generated draft subjects, generated draft bodies, and nonce markers must be absent",
+        ]
+        if leaks:
+            lines.append("Leaks detected:")
+            for path, matches in leaks.items():
+                lines.append(f"- {path}: {', '.join(matches)}")
+        else:
+            lines.append("result=passed")
+        self.write_text_evidence("draft_route_evidence_redaction.txt", "\n".join(lines) + "\n")
+        return not leaks
+
     def test_host_bindings(self) -> TestResult:
         if not self.config.allow_host_assisted:
             return self.result("OSMAP-WSTG-CONF-005", STATUS_SKIP, "host-assisted tests disabled")
@@ -1038,6 +1356,36 @@ def cookie_jar_from_set_cookie_headers(headers: list[str]) -> dict[str, str]:
             name, value = first.split("=", 1)
             jar[name] = value
     return jar
+
+
+def draft_id_from_location(location: str) -> str:
+    parsed = urllib.parse.urlparse(location)
+    query = urllib.parse.parse_qs(parsed.query)
+    draft_id = query.get("id", [""])[0]
+    return draft_id if re.fullmatch(r"[0-9a-f]{32}", draft_id) else ""
+
+
+def build_multipart_form(
+    boundary: str,
+    fields: dict[str, str],
+    files: list[tuple[str, str, str, bytes]],
+) -> bytes:
+    body = bytearray()
+    for name, value in fields.items():
+        body.extend(f"--{boundary}\r\n".encode("utf-8"))
+        body.extend(f'Content-Disposition: form-data; name="{name}"\r\n\r\n'.encode("utf-8"))
+        body.extend(value.encode("utf-8"))
+        body.extend(b"\r\n")
+    for name, filename, content_type, content in files:
+        body.extend(f"--{boundary}\r\n".encode("utf-8"))
+        body.extend(
+            f'Content-Disposition: form-data; name="{name}"; filename="{filename}"\r\n'.encode("utf-8")
+        )
+        body.extend(f"Content-Type: {content_type}\r\n\r\n".encode("utf-8"))
+        body.extend(content)
+        body.extend(b"\r\n")
+    body.extend(f"--{boundary}--\r\n".encode("utf-8"))
+    return bytes(body)
 
 
 def safe_label(label: str) -> str:

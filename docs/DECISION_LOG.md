@@ -1,5 +1,17 @@
 # Decision Log
 
+## 2026-05-07, Add V3 draft WSTG route evidence
+
+The WSTG testing pack now includes `OSMAP-WSTG-BUSL-002`, a release-required
+authenticated dynamic test for the V3 draft route lifecycle. It maps to ASVS
+5.0.0 as the primary control standard and reports through the OWASP Top 10 2025
+crosswalk. The test exercises draft save, list, resume, delete, send-success
+cleanup, CSRF rejection, same-origin rejection, stale-session rejection,
+attachment-limit rejection, and redacted evidence output.
+
+The pilot workflow disposition remains `roundcube_fallback` until host-safe
+authenticated evidence is collected and reviewed.
+
 ## 2026-05-06, Wire V3 draft browser routes
 
 The draft slice now exposes authenticated browser routes for draft list,

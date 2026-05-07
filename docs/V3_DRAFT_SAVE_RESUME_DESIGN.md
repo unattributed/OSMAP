@@ -234,9 +234,10 @@ Draft evidence must not include:
 
 ## WSTG And ASVS Disposition
 
-Draft routes are authenticated browser routes and must remain mapped to ASVS as
-the primary secure-web-application standard. The WSTG testing pack should add
-or update checks for:
+Draft routes are authenticated browser routes and remain mapped to ASVS as the
+primary secure-web-application standard. The WSTG testing pack now includes
+`OSMAP-WSTG-BUSL-002`, a release-required authenticated dynamic test with
+ASVS 5.0.0 mappings and OWASP Top 10 2025 reporting. That check covers:
 
 - access control and ownership isolation
 - session expiry and revocation

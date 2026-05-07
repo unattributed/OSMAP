@@ -87,6 +87,11 @@ wait for each prompt before generating or reading the current code. The password
 and TOTP codes are redacted from evidence and are not written to `.env`,
 reports, or shell history.
 
+The authenticated draft lifecycle check `OSMAP-WSTG-BUSL-002` creates bounded
+server-side drafts and submits one message to the authenticated validation
+account to prove send-success cleanup. Run it only with a controlled account or
+during an approved validation window.
+
 Run one mapped test:
 
 ```bash

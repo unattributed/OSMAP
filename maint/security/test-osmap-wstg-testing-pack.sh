@@ -129,6 +129,63 @@ for key in [
 print(f"validated {len(mapping['tests'])} mapped WSTG tests across all OWASP Top 10 2025 categories")
 PY
 
+echo "validating authenticated draft route WSTG mapping"
+python3 - "$pack_dir" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+pack = Path(sys.argv[1])
+mapping = json.loads((pack / "wstg-asvs-mapping.json").read_text())
+tests = {item["test_id"]: item for item in mapping["tests"]}
+draft = tests.get("OSMAP-WSTG-BUSL-002")
+if not draft:
+    raise SystemExit("OSMAP-WSTG-BUSL-002 missing from WSTG mapping")
+required_evidence = {
+    "draft_save_missing_csrf.headers",
+    "draft_save_cross_origin.headers",
+    "draft_save_attachment_limit.headers",
+    "draft_delete.headers",
+    "draft_send_cleanup.headers",
+    "draft_send_resume_after_cleanup.headers",
+    "draft_stale_session_rejected.headers",
+    "draft_route_static_boundary.txt",
+    "draft_route_evidence_redaction.txt",
+}
+missing = sorted(required_evidence - set(draft["evidence_produced"]))
+if missing:
+    raise SystemExit(f"OSMAP-WSTG-BUSL-002 missing evidence markers: {missing}")
+if draft["requires_authenticated_coverage"] is not True or draft["requires_totp"] is not True:
+    raise SystemExit("OSMAP-WSTG-BUSL-002 must remain authenticated and TOTP-gated")
+for category in ["A01:2025", "A06:2025", "A07:2025", "A08:2025", "A09:2025", "A10:2025"]:
+    if category not in draft["owasp_top_10_2025"]:
+        raise SystemExit(f"OSMAP-WSTG-BUSL-002 missing {category} mapping")
+coverage = (pack / "COVERAGE.md").read_text()
+if "OSMAP-WSTG-BUSL-002" not in coverage:
+    raise SystemExit("COVERAGE.md missing OSMAP-WSTG-BUSL-002")
+runner = (pack / "run-wstg-pack.py").read_text()
+for marker in [
+    "test_draft_routes_authenticated",
+    "draft_route_evidence_redaction",
+    "store_body_evidence=False",
+    "draft_save_attachment_limit",
+]:
+    if marker not in runner:
+        raise SystemExit(f"runner missing draft marker {marker}")
+print("authenticated draft route WSTG mapping validated")
+PY
+
+echo "validating authenticated draft route skips without credentials"
+if ! python3 "$pack_dir/run-wstg-pack.py" \
+	--unauthenticated \
+	--test-id OSMAP-WSTG-BUSL-002 \
+	--base-url http://127.0.0.1:9 \
+	--host 127.0.0.1 \
+	--output-dir "$tmp_root" >/dev/null 2>&1; then
+	echo "expected credential-gated draft route test to skip cleanly without credentials" >&2
+	exit 1
+fi
+
 echo "validating WSTG release mode fails on skipped authenticated coverage"
 if python3 "$pack_dir/run-wstg-pack.py" \
 	--release \
