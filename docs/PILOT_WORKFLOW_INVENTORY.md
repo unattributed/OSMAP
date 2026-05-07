@@ -65,7 +65,7 @@ The current repo state is not yet a good fit for users who depend daily on:
 | Session list, revoke, logout | `supported` | admit | Included in current browser security surface. |
 | Safe HTML view | `supported_with_limits` | admit | Sanitized HTML only; no active content or remote loads. |
 | Plain-text preference for message display | `supported` | admit | Small bounded settings surface only. |
-| Draft save and resume later | `roundcube_fallback` | do not admit if required daily | Not implemented. |
+| Draft save and resume later | `roundcube_fallback` | do not admit if required daily | Design boundary and storage primitives exist; authenticated browser routes are not implemented. |
 | Reply or forward with original attachments preserved automatically | `roundcube_fallback` | do not admit if required daily | Not implemented. |
 | General bulk move or other bulk mailbox actions | `roundcube_fallback` | do not admit if required daily | OSMAP supports bounded selected archive, not arbitrary bulk mailbox operations. |
 | Rich mailbox-management ergonomics | `roundcube_fallback` | admit only if unnecessary | OSMAP Version 2 intentionally stays narrower than Roundcube. |
@@ -150,7 +150,7 @@ requirements:
 | Workflow gap | Version 3 disposition | Acceptance gate |
 | --- | --- | --- |
 | MIME and HTML correctness | in scope | `docs/V3_ACCEPTANCE_CRITERIA.md` |
-| Draft save and resume later | in scope | `docs/V3_ACCEPTANCE_CRITERIA.md` |
+| Draft save and resume later | in scope | `docs/V3_DRAFT_SAVE_RESUME_DESIGN.md` and `docs/V3_ACCEPTANCE_CRITERIA.md` |
 | Reply or forward with original attachments preserved explicitly | in scope | `docs/V3_ACCEPTANCE_CRITERIA.md` |
 | Richer search ergonomics | in scope | `docs/V3_ACCEPTANCE_CRITERIA.md` |
 | Bounded bulk folder actions | in scope | `docs/V3_ACCEPTANCE_CRITERIA.md` |

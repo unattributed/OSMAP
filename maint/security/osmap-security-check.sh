@@ -201,6 +201,9 @@ sh maint/security/test-osmap-live-validate-public-send-audit-correlation.sh
 echo "==> validating live V3 resource-control wrapper behavior"
 sh maint/security/test-osmap-live-validate-v3-resource-controls.sh
 
+echo "==> validating V3 draft save/resume design gate"
+sh maint/security/test-osmap-v3-draft-design.sh
+
 echo "==> validating nginx OCSP stapling wrapper behavior"
 sh maint/security/test-osmap-live-validate-nginx-ocsp-stapling.sh
 

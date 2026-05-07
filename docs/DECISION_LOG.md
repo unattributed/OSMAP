@@ -1,5 +1,34 @@
 # Decision Log
 
+## 2026-05-06, Add V3 draft persistence primitives
+
+The first draft implementation slice adds `src/draft.rs`, a file-backed draft
+store below the HTTP route layer. It generates lower-case hex draft ids, scopes
+draft directories by a hash of the canonical username, validates compose fields
+and newly uploaded attachments with the existing compose policy before writing,
+uses generated attachment body file names, writes metadata and attachment files
+with restrictive permissions, enforces per-user quota, returns redacted list
+summaries, and removes expired drafts opportunistically.
+
+This does not yet make browser draft save/resume user-visible. The next slice
+must wire authenticated routes with CSRF and same-origin checks, preserve drafts
+on send backend failure, delete them only after accepted send handoff, and add
+route plus WSTG/ASVS evidence before the pilot workflow disposition changes.
+
+## 2026-05-06, Define V3 draft save and resume boundary
+
+Version 3 now has a draft save and resume design gate at
+`docs/V3_DRAFT_SAVE_RESUME_DESIGN.md`.
+
+The design keeps the next slice server-side and explicit: draft state belongs
+under the reviewed OSMAP state root, is scoped by validated canonical username,
+reuses the existing compose limits, keeps POST routes CSRF-bound and
+same-origin-bound, and preserves the `_osmap` plus `vmail` runtime split.
+
+This is not a runtime persistence claim. The pilot workflow inventory still
+keeps draft save and resume in `roundcube_fallback` until implementation,
+route tests, WSTG/ASVS coverage, cleanup behavior, and redacted evidence land.
+
 ## 2026-05-06, Choose explicit V3 concurrent-session policy
 
 Version 3 now treats concurrent browser sessions as the intentional policy

@@ -25,7 +25,7 @@ This roadmap sequences Version 3 work so OSMAP becomes a focused daily-driver ha
 | 3 | WSTG release-mode coverage | update WSTG pack and documentation so authenticated security checks cannot be counted complete when credential and TOTP-dependent tests are skipped | WSTG evidence shows unauthenticated coverage, authenticated coverage where applicable, and sanitized prompt-auth or dedicated validation-account proof |
 | 4 | MIME and HTML correctness | tighten representative message correctness before expanding compose continuity | MIME/HTML feature gate passes with regression tests and no remote content loading |
 | 5 | Session and device policy | choose concurrent-session behavior, device labels, revocation semantics, and isolated-cookie race retest | session/device security gate passes |
-| 6 | Draft save and resume design | define draft storage, ownership, limits, routes, cleanup, and failure behavior before code | design reviewed against session, CSRF, state-path, resource, and confinement constraints |
+| 6 | Draft save and resume design | define draft storage, ownership, limits, routes, cleanup, and failure behavior before code in `V3_DRAFT_SAVE_RESUME_DESIGN.md` | design reviewed against session, CSRF, state-path, resource, and confinement constraints |
 | 7 | Draft save and resume implementation | authenticated draft create, list, update, resume, send, and delete | draft feature gate passes |
 | 8 | Reply and forward attachment handling | explicit original-attachment selection and bounded reattachment | reply/forward attachment gate passes |
 | 9 | Richer bounded search | practical refinements, sorting, result caps, deterministic invalid-query handling, and timeout behavior where applicable | richer bounded search gate passes |
@@ -81,6 +81,23 @@ delivery-status notifications, unsupported charsets, nested multipart, encoded
 headers, and suspicious attachment metadata. The next MIME slice should broaden
 that corpus with more mail-generator samples, language and charset variety, and
 larger but still bounded body and attachment metadata cases.
+
+## Draft Save And Resume Track
+
+The draft save and resume design gate is now
+`docs/V3_DRAFT_SAVE_RESUME_DESIGN.md`.
+
+That document intentionally stops short of runtime persistence. It defines the
+storage root, owner scoping, route shape, CSRF and same-origin requirements,
+compose-policy limits, attachment persistence boundary, cleanup behavior,
+failure behavior, WSTG/ASVS disposition, and evidence hygiene that the
+implementation slice must satisfy.
+
+The next implementation step should add the smallest server-side draft store
+that follows that design. The first storage primitive now exists in
+`src/draft.rs`; the next step is authenticated browser route wiring, route
+tests, and WSTG updates before any workflow disposition changes from
+`roundcube_fallback`.
 
 ## Security Foundation Track
 

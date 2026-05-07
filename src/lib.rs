@@ -8,6 +8,7 @@ pub mod attachment;
 pub mod auth;
 pub mod bootstrap;
 pub mod config;
+pub mod draft;
 pub mod error;
 pub mod http;
 pub mod http_form;
