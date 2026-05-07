@@ -1018,20 +1018,23 @@ class Runner:
             headers=same_origin_headers(self.config),
         )
         delete_draft_id = draft_id_from_location(delete_create.first_header("Location"))
-        delete = self.form_post(
-            "draft_delete",
-            "/drafts/delete",
-            {"csrf_token": self.csrf_token, "draft_id": delete_draft_id},
-            cookies=self.cookie_jar,
-            headers=same_origin_headers(self.config),
-        )
-        delete_resume = self.request(
-            "draft_delete_resume",
-            "GET",
-            f"/draft?id={urllib.parse.quote(delete_draft_id)}",
-            cookies=self.cookie_jar,
-            store_body_evidence=False,
-        )
+        delete: HttpEvidence | None = None
+        delete_resume: HttpEvidence | None = None
+        if delete_draft_id:
+            delete = self.form_post(
+                "draft_delete",
+                "/drafts/delete",
+                {"csrf_token": self.csrf_token, "draft_id": delete_draft_id},
+                cookies=self.cookie_jar,
+                headers=same_origin_headers(self.config),
+            )
+            delete_resume = self.request(
+                "draft_delete_resume",
+                "GET",
+                f"/draft?id={urllib.parse.quote(delete_draft_id)}",
+                cookies=self.cookie_jar,
+                store_body_evidence=False,
+            )
 
         send_create = self.form_post(
             "draft_send_create",
@@ -1047,34 +1050,38 @@ class Runner:
         )
         send_draft_id = draft_id_from_location(send_create.first_header("Location"))
         draft_list = self.request("draft_list_before_send", "GET", "/drafts", cookies=self.cookie_jar)
-        draft_resume = self.request(
-            "draft_resume_before_send",
-            "GET",
-            f"/draft?id={urllib.parse.quote(send_draft_id)}",
-            cookies=self.cookie_jar,
-            store_body_evidence=False,
-        )
-        send = self.form_post(
-            "draft_send_cleanup",
-            "/send",
-            {
-                "csrf_token": self.csrf_token,
-                "draft_id": send_draft_id,
-                "to": self.config.test_email,
-                "subject": subject,
-                "body": body,
-            },
-            cookies=self.cookie_jar,
-            headers=same_origin_headers(self.config),
-            store_body_evidence=False,
-        )
-        send_resume = self.request(
-            "draft_send_resume_after_cleanup",
-            "GET",
-            f"/draft?id={urllib.parse.quote(send_draft_id)}",
-            cookies=self.cookie_jar,
-            store_body_evidence=False,
-        )
+        draft_resume: HttpEvidence | None = None
+        send: HttpEvidence | None = None
+        send_resume: HttpEvidence | None = None
+        if send_draft_id:
+            draft_resume = self.request(
+                "draft_resume_before_send",
+                "GET",
+                f"/draft?id={urllib.parse.quote(send_draft_id)}",
+                cookies=self.cookie_jar,
+                store_body_evidence=False,
+            )
+            send = self.form_post(
+                "draft_send_cleanup",
+                "/send",
+                {
+                    "csrf_token": self.csrf_token,
+                    "draft_id": send_draft_id,
+                    "to": self.config.test_email,
+                    "subject": subject,
+                    "body": body,
+                },
+                cookies=self.cookie_jar,
+                headers=same_origin_headers(self.config),
+                store_body_evidence=False,
+            )
+            send_resume = self.request(
+                "draft_send_resume_after_cleanup",
+                "GET",
+                f"/draft?id={urllib.parse.quote(send_draft_id)}",
+                cookies=self.cookie_jar,
+                store_body_evidence=False,
+            )
         stale = self.request(
             "draft_stale_session_rejected",
             "GET",
@@ -1093,13 +1100,13 @@ class Runner:
             "cross_origin": cross.status,
             "attachment_limit": attachment_limit.status,
             "delete_create": delete_create.status,
-            "delete": delete.status,
-            "delete_resume": delete_resume.status,
+            "delete": status_of(delete),
+            "delete_resume": status_of(delete_resume),
             "send_create": send_create.status,
             "list": draft_list.status,
-            "resume": draft_resume.status,
-            "send": send.status,
-            "send_resume": send_resume.status,
+            "resume": status_of(draft_resume),
+            "send": status_of(send),
+            "send_resume": status_of(send_resume),
             "stale_session": stale.status,
         }
         failures: dict[str, int | None] = {}
@@ -1111,20 +1118,20 @@ class Runner:
             failures["attachment_limit"] = attachment_limit.status
         if delete_create.status != 303 or not delete_draft_id:
             failures["delete_create"] = delete_create.status
-        if delete.status != 303:
-            failures["delete"] = delete.status
-        if delete_resume.status != 404:
-            failures["delete_resume"] = delete_resume.status
+        if delete_draft_id and status_of(delete) != 303:
+            failures["delete"] = status_of(delete)
+        if delete_draft_id and status_of(delete_resume) != 404:
+            failures["delete_resume"] = status_of(delete_resume)
         if send_create.status != 303 or not send_draft_id:
             failures["send_create"] = send_create.status
         if draft_list.status != 200:
             failures["list"] = draft_list.status
-        if draft_resume.status != 200:
-            failures["resume"] = draft_resume.status
-        if send.status != 303:
-            failures["send"] = send.status
-        if send_resume.status != 404:
-            failures["send_resume"] = send_resume.status
+        if send_draft_id and status_of(draft_resume) != 200:
+            failures["resume"] = status_of(draft_resume)
+        if send_draft_id and status_of(send) != 303:
+            failures["send"] = status_of(send)
+        if send_draft_id and status_of(send_resume) != 404:
+            failures["send_resume"] = status_of(send_resume)
         if stale.status == 200:
             failures["stale_session"] = stale.status
         if not static_evidence:
@@ -1363,6 +1370,10 @@ def draft_id_from_location(location: str) -> str:
     query = urllib.parse.parse_qs(parsed.query)
     draft_id = query.get("id", [""])[0]
     return draft_id if re.fullmatch(r"[0-9a-f]{32}", draft_id) else ""
+
+
+def status_of(evidence: HttpEvidence | None) -> int | None:
+    return evidence.status if evidence else None
 
 
 def build_multipart_form(

@@ -169,6 +169,7 @@ for marker in [
     "draft_route_evidence_redaction",
     "store_body_evidence=False",
     "draft_save_attachment_limit",
+    "if send_draft_id:",
 ]:
     if marker not in runner:
         raise SystemExit(f"runner missing draft marker {marker}")
