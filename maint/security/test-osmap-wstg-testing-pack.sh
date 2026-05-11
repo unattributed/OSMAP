@@ -177,13 +177,78 @@ for marker in [
 print("authenticated draft route WSTG mapping validated")
 PY
 
+echo "validating authenticated source-attachment WSTG mapping"
+python3 - "$pack_dir" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+pack = Path(sys.argv[1])
+mapping = json.loads((pack / "wstg-asvs-mapping.json").read_text())
+tests = {item["test_id"]: item for item in mapping["tests"]}
+source = tests.get("OSMAP-WSTG-BUSL-003")
+if not source:
+    raise SystemExit("OSMAP-WSTG-BUSL-003 missing from WSTG mapping")
+required_evidence = {
+    "source_attachment_live_report.txt",
+    "source_attachment_static_boundary.txt",
+    "source_attachment_evidence_redaction.txt",
+}
+missing = sorted(required_evidence - set(source["evidence_produced"]))
+if missing:
+    raise SystemExit(f"OSMAP-WSTG-BUSL-003 missing evidence markers: {missing}")
+if source["requires_authenticated_coverage"] is not True or source["requires_totp"] is not True:
+    raise SystemExit("OSMAP-WSTG-BUSL-003 must remain authenticated and TOTP-gated")
+for category in ["A01:2025", "A06:2025", "A07:2025", "A08:2025", "A09:2025", "A10:2025"]:
+    if category not in source["owasp_top_10_2025"]:
+        raise SystemExit(f"OSMAP-WSTG-BUSL-003 missing {category} mapping")
+coverage = (pack / "COVERAGE.md").read_text()
+if "OSMAP-WSTG-BUSL-003" not in coverage:
+    raise SystemExit("COVERAGE.md missing OSMAP-WSTG-BUSL-003")
+runner = (pack / "run-wstg-pack.py").read_text()
+for marker in [
+    "test_source_attachments_authenticated",
+    "source_attachment_live_report",
+    "source_attachment_evidence_redaction",
+    "osmap-live-validate-v3-source-attachments.ksh",
+    "selected_attachment_body_marker_preserved=yes",
+    "real_password_plus_totp_with_temporary_mailbox_hash",
+]:
+    if marker not in runner:
+        raise SystemExit(f"runner missing source-attachment marker {marker}")
+validator = (pack.parents[1] / "maint" / "live" / "osmap-live-validate-v3-source-attachments.ksh").read_text()
+for marker in [
+    "include_original_attachment_1",
+    "include_original_attachment_2",
+    "tampered_mailbox_status",
+    "tampered_uid_status",
+    "tampered_part_status",
+    "stale_source_status",
+    "No password, password hash, TOTP material, session cookie, CSRF token, private message body, attachment body",
+]:
+    if marker not in validator:
+        raise SystemExit(f"source-attachment validator missing marker {marker}")
+print("authenticated source-attachment WSTG mapping validated")
+PY
+
+echo "validating authenticated source-attachment route skips without credentials"
+if ! python3 "$pack_dir/run-wstg-pack.py" \
+	--unauthenticated \
+	--test-id OSMAP-WSTG-BUSL-003 \
+	--base-url http://127.0.0.1:9 \
+	--host 127.0.0.1 \
+	--output-dir "$tmp_root/source-attachment-skip" >/dev/null 2>&1; then
+	echo "expected credential-gated source-attachment route test to skip cleanly without credentials" >&2
+	exit 1
+fi
+
 echo "validating authenticated draft route skips without credentials"
 if ! python3 "$pack_dir/run-wstg-pack.py" \
 	--unauthenticated \
 	--test-id OSMAP-WSTG-BUSL-002 \
 	--base-url http://127.0.0.1:9 \
 	--host 127.0.0.1 \
-	--output-dir "$tmp_root" >/dev/null 2>&1; then
+	--output-dir "$tmp_root/draft-skip" >/dev/null 2>&1; then
 	echo "expected credential-gated draft route test to skip cleanly without credentials" >&2
 	exit 1
 fi
@@ -194,7 +259,7 @@ if python3 "$pack_dir/run-wstg-pack.py" \
 	--test-id OSMAP-WSTG-ATHN-004 \
 	--base-url http://127.0.0.1:9 \
 	--host 127.0.0.1 \
-	--output-dir "$tmp_root" >/dev/null 2>&1; then
+	--output-dir "$tmp_root/release-skip" >/dev/null 2>&1; then
 	echo "expected WSTG release mode to fail when authenticated coverage is skipped" >&2
 	exit 1
 fi

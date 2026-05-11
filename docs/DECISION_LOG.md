@@ -1,5 +1,23 @@
 # Decision Log
 
+## 2026-05-11, Add credential-backed source-attachment WSTG evidence lane
+
+The reply/forward selected source-attachment gate now has a credential-backed
+live evidence lane: `maint/live/osmap-live-validate-v3-source-attachments.ksh`
+starts an isolated helper-backed runtime on `mail.blackbagsecurity.com`, applies
+a temporary validation mailbox password hash, performs a real
+password-plus-TOTP browser login, injects controlled source messages, and proves
+positive selected-source attachment inclusion plus duplicate, tampered mailbox,
+tampered UID, tampered part, missing-CSRF, cross-origin, stale-source, and
+report-redaction outcomes.
+
+The WSTG testing pack maps that lane as `OSMAP-WSTG-BUSL-003`, with ASVS and
+OWASP Top 10 2025 coverage for access control, CSRF/request integrity, session
+proof, file/resource handling, logging, and exceptional-condition behavior. The
+remaining design question is whether draft save/resume should persist bounded
+source-attachment references; the send-time selected attachment path itself now
+has route, live, and WSTG closeout coverage.
+
 ## 2026-05-11, Cover source-attachment send failure edges
 
 The reply/forward source-attachment slice now has route regressions for the

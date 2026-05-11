@@ -49,10 +49,14 @@ The brute-force throttle probe defaults to three invalid attempts with a delay
 between requests. Increase `OSMAP_THROTTLE_PROBE_ATTEMPTS` only for a controlled
 validation window.
 
-Host-assisted tests use `ssh $OSMAP_SSH_HOST` and read-only commands. The
-default host is `mail.blackbagsecurity.com`; the shorter `mail` alias may not be
-available from every operator network. Host-assisted checks are disabled unless
-`--include-host` or `OSMAP_ALLOW_HOST_ASSISTED_TESTS=true` is used.
+Most host-assisted tests use `ssh $OSMAP_SSH_HOST` and read-only commands. The
+selected source-attachment check is the exception: it runs a repo-owned live
+validator that temporarily swaps the dedicated validation mailbox password
+hash, restores it on exit, injects controlled messages, and cleans up its
+subjects. The default host is `mail.blackbagsecurity.com`; the shorter `mail`
+alias may not be available from every operator network. Host-assisted checks are
+disabled unless `--include-host` or `OSMAP_ALLOW_HOST_ASSISTED_TESTS=true` is
+used.
 
 ## Running
 
@@ -91,6 +95,12 @@ The authenticated draft lifecycle check `OSMAP-WSTG-BUSL-002` creates bounded
 server-side drafts and submits one message to the authenticated validation
 account to prove send-success cleanup. Run it only with a controlled account or
 during an approved validation window.
+
+The authenticated selected source-attachment check `OSMAP-WSTG-BUSL-003` is
+host-assisted. It runs the live validator on `mail.blackbagsecurity.com`, uses a
+temporary validation mailbox password plus isolated TOTP state, sends one
+controlled selected-source attachment proof message, and confirms duplicate,
+tampered, stale, CSRF, same-origin, and report-redaction behavior.
 
 Run one mapped test:
 

@@ -28,13 +28,19 @@ OSMAP currently supports:
 
 OSMAP still does not automatically reattach original-message attachments during
 reply or forward. The current first implementation slice keeps selection
-explicit and does not yet close the full V3 gate for WSTG evidence, stale-source
-failure coverage, or draft save/resume of source references.
+explicit and does not attempt draft save/resume of source references yet.
 
 Current route regression coverage includes duplicate selections, missing source
 mailbox metadata, stale or missing selected source parts, and aggregate
 attachment count overflow when selected source attachments are combined with
 new uploads.
+
+Credential-backed live/WSTG coverage for the send-time selected source
+attachment path is mapped as `OSMAP-WSTG-BUSL-003`. The live validator performs
+a real password-plus-TOTP login on `mail.blackbagsecurity.com`, injects
+controlled source messages, proves positive selected-source attachment
+inclusion, rejects duplicate/tampered/stale selections, and checks report
+redaction.
 
 ## User Workflow
 
@@ -178,6 +184,13 @@ non-applicability decision for each relevant class. Expected applicable areas:
   selections
 - upload and aggregate size-limit behavior
 - audit redaction for selected original attachments
+
+`OSMAP-WSTG-BUSL-003` is the release-required authenticated dynamic WSTG lane
+for the send-time selected source-attachment path. It produces a redacted live
+report plus static boundary and evidence-redaction files. It is credential and
+TOTP gated because the proof depends on the real browser login path, even though
+the host validator uses a temporary validation mailbox password and isolated
+TOTP state.
 
 The primary acceptance source remains `docs/V3_ACCEPTANCE_CRITERIA.md`.
 

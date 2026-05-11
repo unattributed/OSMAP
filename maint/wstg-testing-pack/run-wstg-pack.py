@@ -172,6 +172,7 @@ class Runner:
             "OSMAP-WSTG-CLNT-002": self.test_html_rendering_static,
             "OSMAP-WSTG-BUSL-001": self.test_attachment_static,
             "OSMAP-WSTG-BUSL-002": self.test_draft_routes_authenticated,
+            "OSMAP-WSTG-BUSL-003": self.test_source_attachments_authenticated,
             "OSMAP-WSTG-CONF-005": self.test_host_bindings,
             "OSMAP-WSTG-CONF-006": self.test_host_pf,
             "OSMAP-WSTG-CONF-007": self.test_dependency_alignment,
@@ -1223,6 +1224,168 @@ class Runner:
         else:
             lines.append("result=passed")
         self.write_text_evidence("draft_route_evidence_redaction.txt", "\n".join(lines) + "\n")
+        return not leaks
+
+    def test_source_attachments_authenticated(self) -> TestResult:
+        ok, message = self.ensure_login()
+        if not ok:
+            return self.result("OSMAP-WSTG-BUSL-003", STATUS_SKIP, message)
+        if not self.config.allow_host_assisted:
+            return self.result("OSMAP-WSTG-BUSL-003", STATUS_SKIP, "host-assisted live source-attachment evidence disabled")
+
+        evidence_paths = [
+            "evidence/source_attachment_live_report.txt",
+            "evidence/source_attachment_static_boundary.txt",
+            "evidence/source_attachment_evidence_redaction.txt",
+        ]
+        static_ok = self.write_source_attachment_static_boundary_evidence()
+        remote_repo = os.environ.get("OSMAP_WSTG_REMOTE_REPO", "/tmp/osmap-codex-v3")
+        live = self.run_ssh(
+            "source_attachment_live_report.txt",
+            "set -eu; "
+            f"cd {shlex.quote(remote_repo)}; "
+            "git fetch origin main >/dev/null 2>&1 || true; "
+            "git checkout main >/dev/null 2>&1 || true; "
+            "git reset --hard origin/main >/dev/null 2>&1 || true; "
+            "report=\"$HOME/osmap-wstg-busl-003-source-attachments-$(date +%Y%m%d-%H%M%S).txt\"; "
+            "ksh ./maint/live/osmap-live-validate-v3-source-attachments.ksh --report \"$report\" >/tmp/osmap-wstg-busl-003-live.log 2>&1 || { cat /tmp/osmap-wstg-busl-003-live.log; exit 1; }; "
+            "cat \"$report\"",
+        )
+        redaction_ok = self.write_source_attachment_evidence_redaction_evidence()
+        required_markers = [
+            "osmap_wstg_busl_003_result=passed",
+            "credential_proof=real_password_plus_totp_with_temporary_mailbox_hash",
+            "positive_send_status=HTTP/1.1 303 See Other",
+            "positive_delivered_attachment_status=HTTP/1.1 200 OK",
+            "duplicate_selection_status=HTTP/1.1 400 Bad Request",
+            "missing_csrf_status=HTTP/1.1 403 Forbidden",
+            "cross_origin_status=HTTP/1.1 403 Forbidden",
+            "selected_attachment_body_marker_preserved=yes",
+            "rejected_cases_delivered=no",
+            "audit_original_attachment_budget_observed=yes",
+            "secret_review=No password, password hash, TOTP material, session cookie, CSRF token, private message body, attachment body, provider secret, or host secret is included.",
+        ]
+        missing = [marker for marker in required_markers if marker not in live]
+        for prefix in [
+            "tampered_mailbox_status=HTTP/1.1 400 Bad Request",
+            "tampered_mailbox_status=HTTP/1.1 503 Service Unavailable",
+        ]:
+            if prefix in live:
+                break
+        else:
+            missing.append("tampered_mailbox_status rejected")
+        for prefix in [
+            "tampered_uid_status=HTTP/1.1 400 Bad Request",
+            "tampered_uid_status=HTTP/1.1 503 Service Unavailable",
+        ]:
+            if prefix in live:
+                break
+        else:
+            missing.append("tampered_uid_status rejected")
+        for prefix in [
+            "tampered_part_status=HTTP/1.1 400 Bad Request",
+            "tampered_part_status=HTTP/1.1 503 Service Unavailable",
+        ]:
+            if prefix in live:
+                break
+        else:
+            missing.append("tampered_part_status rejected")
+        for prefix in [
+            "stale_source_status=HTTP/1.1 400 Bad Request",
+            "stale_source_status=HTTP/1.1 503 Service Unavailable",
+        ]:
+            if prefix in live:
+                break
+        else:
+            missing.append("stale_source_status rejected")
+
+        failures: dict[str, object] = {}
+        if "ERROR:" in live:
+            failures["ssh"] = "host-assisted live validator was unavailable"
+        if not static_ok:
+            failures["static_boundary"] = "missing source attachment boundary markers"
+        if not redaction_ok:
+            failures["redaction"] = "source attachment evidence redaction scan failed"
+        if missing:
+            failures["missing_live_markers"] = missing
+        if failures:
+            return self.result(
+                "OSMAP-WSTG-BUSL-003",
+                STATUS_FAIL,
+                "selected source-attachment WSTG evidence did not meet expected outcomes",
+                evidence_paths,
+                failures,
+            )
+        return self.result(
+            "OSMAP-WSTG-BUSL-003",
+            STATUS_PASS,
+            "credential-backed selected source-attachment positive, tamper, duplicate, stale, and redaction evidence passed",
+            evidence_paths,
+        )
+
+    def write_source_attachment_static_boundary_evidence(self) -> bool:
+        files = [
+            REPO_ROOT / "src" / "http" / "routes_compose.rs",
+            REPO_ROOT / "src" / "http_ui.rs",
+            REPO_ROOT / "src" / "send.rs",
+            REPO_ROOT / "docs" / "V3_REPLY_FORWARD_ATTACHMENT_HANDLING_DESIGN.md",
+            REPO_ROOT / "maint" / "live" / "osmap-live-validate-v3-source-attachments.ksh",
+        ]
+        text = "\n".join(path.read_text(encoding="utf-8", errors="replace") for path in files if path.exists())
+        markers = [
+            "selected_original_attachment_parts",
+            "include_original_attachment_",
+            "source_mailbox",
+            "source_uid",
+            "original_attachment_send",
+            "http_send_original_attachment_selection_rejected",
+            "http_send_original_attachment_fetch_failed",
+            "osmap_wstg_busl_003_result=passed",
+            "real_password_plus_totp_with_temporary_mailbox_hash",
+            "OSMAP-WSTG-BUSL-003",
+        ]
+        missing = [marker for marker in markers if marker.lower() not in text.lower()]
+        self.write_text_evidence(
+            "source_attachment_static_boundary.txt",
+            summarize_static_files(files, missing)
+            + "\nCovered boundaries:\n"
+            + "- explicit source attachment selection fields only\n"
+            + "- send-time helper-backed source attachment re-fetch\n"
+            + "- duplicate, tampered, stale, CSRF, and same-origin rejection evidence\n"
+            + "- selected source attachments share compose attachment limits\n"
+            + "- report redaction excludes credentials, tokens, message bodies, and attachment bodies\n",
+        )
+        return not missing
+
+    def write_source_attachment_evidence_redaction_evidence(self) -> bool:
+        leaks: dict[str, list[str]] = {}
+        forbidden_patterns = [
+            ("raw_session_cookie", r"osmap_session=[A-Za-z0-9._~+/=-]{16,}"),
+            ("csrf_token_value", r"(?i)csrf_token=[A-Za-z0-9._~+/=-]{16,}"),
+            ("password_hash", r"\$2[aby]\$[0-9]{2}\$"),
+            ("totp_secret", r"(?i)(totp|secret)[_=][A-Z2-7]{16,}"),
+            ("attachment_body_marker", r"osmap selected source attachment marker"),
+            ("private_body_text", r"selected source attachment proof body"),
+        ]
+        for path in sorted(self.evidence_dir.glob("source_attachment_*")):
+            if path.name == "source_attachment_evidence_redaction.txt":
+                continue
+            text = path.read_text(encoding="utf-8", errors="replace")
+            matches = [name for name, pattern in forbidden_patterns if re.search(pattern, text)]
+            if matches:
+                leaks[path.name] = matches
+        lines = [
+            "Source attachment evidence redaction scan:",
+            "- checked source_attachment_* evidence files only",
+            "- raw session cookies, CSRF token values, password hashes, TOTP secrets, generated message bodies, and attachment body markers must be absent",
+        ]
+        if leaks:
+            lines.append("Leaks detected:")
+            for path, matches in leaks.items():
+                lines.append(f"- {path}: {', '.join(matches)}")
+        else:
+            lines.append("result=passed")
+        self.write_text_evidence("source_attachment_evidence_redaction.txt", "\n".join(lines) + "\n")
         return not leaks
 
     def test_host_bindings(self) -> TestResult:

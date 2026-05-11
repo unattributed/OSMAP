@@ -6,16 +6,16 @@ Generated from `wstg-asvs-mapping.json`.
 
 | Category | Name | Release-required tests | Explicit gaps |
 | --- | --- | --- | --- |
-| `A01:2025` | Broken Access Control | `OSMAP-WSTG-SESS-003`, `OSMAP-WSTG-SESS-004`, `OSMAP-WSTG-INPV-001`, `OSMAP-WSTG-CLNT-001`, `OSMAP-WSTG-CONF-005`, `OSMAP-WSTG-BUSL-002` | `OSMAP-WSTG-GAP-001` |
+| `A01:2025` | Broken Access Control | `OSMAP-WSTG-SESS-003`, `OSMAP-WSTG-SESS-004`, `OSMAP-WSTG-INPV-001`, `OSMAP-WSTG-CLNT-001`, `OSMAP-WSTG-CONF-005`, `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003` | `OSMAP-WSTG-GAP-001` |
 | `A02:2025` | Security Misconfiguration | `OSMAP-WSTG-CONF-001`, `OSMAP-WSTG-CONF-002`, `OSMAP-WSTG-CONF-003`, `OSMAP-WSTG-SESS-005`, `OSMAP-WSTG-CONF-004`, `OSMAP-WSTG-INFO-001`, `OSMAP-WSTG-INFO-002`, `OSMAP-WSTG-CLNT-001`, `OSMAP-WSTG-CONF-005`, `OSMAP-WSTG-CONF-006` | none |
 | `A03:2025` | Software Supply Chain Failures | `OSMAP-WSTG-CONF-007` | none |
 | `A04:2025` | Cryptographic Failures | `OSMAP-WSTG-CONF-001`, `OSMAP-WSTG-CONF-002`, `OSMAP-WSTG-ATHN-001`, `OSMAP-WSTG-SESS-001` | none |
 | `A05:2025` | Injection | `OSMAP-WSTG-CONF-003`, `OSMAP-WSTG-INPV-001`, `OSMAP-WSTG-INPV-002`, `OSMAP-WSTG-CLNT-002` | none |
-| `A06:2025` | Insecure Design | `OSMAP-WSTG-CLNT-002`, `OSMAP-WSTG-BUSL-001`, `OSMAP-WSTG-BUSL-002` | `OSMAP-WSTG-GAP-001`, `OSMAP-WSTG-GAP-002` |
-| `A07:2025` | Authentication Failures | `OSMAP-WSTG-ATHN-001`, `OSMAP-WSTG-ATHN-002`, `OSMAP-WSTG-ATHN-003`, `OSMAP-WSTG-ATHN-004`, `OSMAP-WSTG-SESS-001`, `OSMAP-WSTG-SESS-002`, `OSMAP-WSTG-SESS-003`, `OSMAP-WSTG-SESS-005`, `OSMAP-WSTG-BUSL-002` | none |
-| `A08:2025` | Software or Data Integrity Failures | `OSMAP-WSTG-SESS-004`, `OSMAP-WSTG-BUSL-001`, `OSMAP-WSTG-CONF-007`, `OSMAP-WSTG-BUSL-002` | `OSMAP-WSTG-GAP-001`, `OSMAP-WSTG-GAP-002` |
-| `A09:2025` | Security Logging and Alerting Failures | `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-LOGG-001` | none |
-| `A10:2025` | Mishandling of Exceptional Conditions | `OSMAP-WSTG-ATHN-003`, `OSMAP-WSTG-CONF-004`, `OSMAP-WSTG-INFO-002`, `OSMAP-WSTG-INPV-001`, `OSMAP-WSTG-BUSL-002` | none |
+| `A06:2025` | Insecure Design | `OSMAP-WSTG-CLNT-002`, `OSMAP-WSTG-BUSL-001`, `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003` | `OSMAP-WSTG-GAP-001`, `OSMAP-WSTG-GAP-002` |
+| `A07:2025` | Authentication Failures | `OSMAP-WSTG-ATHN-001`, `OSMAP-WSTG-ATHN-002`, `OSMAP-WSTG-ATHN-003`, `OSMAP-WSTG-ATHN-004`, `OSMAP-WSTG-SESS-001`, `OSMAP-WSTG-SESS-002`, `OSMAP-WSTG-SESS-003`, `OSMAP-WSTG-SESS-005`, `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003` | none |
+| `A08:2025` | Software or Data Integrity Failures | `OSMAP-WSTG-SESS-004`, `OSMAP-WSTG-BUSL-001`, `OSMAP-WSTG-CONF-007`, `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003` | `OSMAP-WSTG-GAP-001`, `OSMAP-WSTG-GAP-002` |
+| `A09:2025` | Security Logging and Alerting Failures | `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003`, `OSMAP-WSTG-LOGG-001` | none |
+| `A10:2025` | Mishandling of Exceptional Conditions | `OSMAP-WSTG-ATHN-003`, `OSMAP-WSTG-CONF-004`, `OSMAP-WSTG-INFO-002`, `OSMAP-WSTG-INPV-001`, `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003` | none |
 
 ## Mapped Tests
 
@@ -45,6 +45,7 @@ Generated from `wstg-asvs-mapping.json`.
 | `OSMAP-WSTG-CONF-006` | WSTG-v42-CONF-01 Test Network Infrastructure Configuration - pf posture | `WSTG-v42-CONF-01` | `v5.0.0-14.3.1`, `v5.0.0-14.4.1` | `A02:2025` | host assisted, static review | true | false | false | true | high |
 | `OSMAP-WSTG-CONF-007` | WSTG-v42-CONF-02 Test Application Platform Configuration - SBOM and dependency alignment | `WSTG-v42-CONF-02` | `v5.0.0-14.2.1`, `v5.0.0-14.2.2`, `v5.0.0-14.2.3` | `A03:2025`, `A08:2025` | static review | true | false | false | true | medium |
 | `OSMAP-WSTG-BUSL-002` | WSTG-v42-BUSL-04 Test Process Timing - authenticated draft route lifecycle | `WSTG-v42-BUSL-04`, `WSTG-v42-BUSL-08`, `WSTG-v42-SESS-05`, `WSTG-v42-ATHZ-04` | `v5.0.0-2.2.1`, `v5.0.0-2.3.2`, `v5.0.0-3.5.1`, `v5.0.0-3.5.3`, `v5.0.0-7.4.1`, `v5.0.0-8.2.1`, `v5.0.0-10.1.1`, `v5.0.0-10.2.1` | `A01:2025`, `A06:2025`, `A07:2025`, `A08:2025`, `A09:2025`, `A10:2025` | authenticated, dynamic test | true | true | true | true | high |
+| `OSMAP-WSTG-BUSL-003` | WSTG-v42-BUSL-08 Test Upload of Unexpected File Types - authenticated selected source attachments | `WSTG-v42-BUSL-08`, `WSTG-v42-BUSL-09`, `WSTG-v42-SESS-05`, `WSTG-v42-ATHZ-04` | `v5.0.0-2.2.1`, `v5.0.0-2.3.2`, `v5.0.0-3.5.1`, `v5.0.0-3.5.3`, `v5.0.0-7.4.1`, `v5.0.0-8.2.1`, `v5.0.0-10.1.1`, `v5.0.0-10.2.1`, `v5.0.0-14.4.4` | `A01:2025`, `A06:2025`, `A07:2025`, `A08:2025`, `A09:2025`, `A10:2025` | authenticated, dynamic test | true | true | true | true | high |
 | `OSMAP-WSTG-LOGG-001` | OWASP Top 10 2025 A09 Security Logging and Alerting Failures - audit event and redaction posture | `WSTG-v42-ERRH-01` | `v5.0.0-8.2.1` | `A09:2025` | static review | true | false | false | true | high |
 
 ## Explicit Gaps
