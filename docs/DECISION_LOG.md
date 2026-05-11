@@ -17,6 +17,18 @@ the generic example, the OpenBSD examples, and the reviewed
 `mail.blackbagsecurity.com` env artifacts together. This keeps future V3
 resource-control tuning from leaving the operator-facing examples stale.
 
+## 2026-05-11, Surface the V3 draft state path in env examples
+
+The Version 3 draft store already defaults to `<OSMAP_STATE_DIR>/drafts` and
+supports an explicit `OSMAP_DRAFT_DIR` override, but the committed environment
+examples did not show that state path next to sessions and settings. The
+generic, OpenBSD, and reviewed `mail.blackbagsecurity.com` env artifacts now
+name the draft directory explicitly.
+
+The draft design gate regression now checks those env examples so the
+operator-facing state model stays aligned with the implemented V3 draft
+storage boundary.
+
 ## 2026-05-07, Admit limited V3 draft save and resume pilot workflow
 
 `OSMAP-WSTG-BUSL-002` now has host-safe authenticated evidence from
