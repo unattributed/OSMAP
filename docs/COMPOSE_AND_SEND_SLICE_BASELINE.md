@@ -91,14 +91,18 @@ still staying honest about original-message attachment behavior.
 Today that means:
 
 - compose can submit new uploaded files as MIME attachments
-- reply drafts warn when the source message had attachments
+- reply and forward compose pages show surfaced source attachments with
+  explicit include checkboxes
+- selected source attachments are fetched again through the bounded
+  attachment-download path at send time
+- reply drafts warn that source attachments are not selected automatically
 - forward drafts include surfaced attachment metadata in the generated body
-- forward drafts warn that files are not actually reattached by the current
-  slice
+- forward drafts warn that source attachments are not selected automatically
 
 This keeps the send path honest. Operators and developers can add new files to
-an outbound message, but the code still does not silently claim that reply or
-forward rebuilt the source message's attachment set.
+an outbound message or explicitly select surfaced source attachments, but the
+code still does not silently claim that reply or forward rebuilt the source
+message's attachment set automatically.
 
 ## Submission Model
 
@@ -178,7 +182,7 @@ still intentionally narrow.
 This slice does not yet include:
 
 - draft management
-- original-message attachment re-submission
+- draft save/resume of original-message attachment source references
 - message threading hints
 - richer per-recipient validation policy
 - operator-visible send queue or retry visibility

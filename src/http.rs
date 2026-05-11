@@ -3444,7 +3444,11 @@ mod tests {
         assert!(body.contains("<h1>Reply</h1>"));
         assert!(body.contains("alice@example.com"));
         assert!(body.contains("Re: Example"));
-        assert!(body.contains("does not resend attachments automatically"));
+        assert!(body.contains("source attachments are not selected automatically"));
+        assert!(body.contains("Source Attachments"));
+        assert!(body.contains("include_original_attachment_1"));
+        assert!(body.contains("source_mailbox"));
+        assert!(body.contains("source_uid"));
     }
 
     #[test]
@@ -3470,7 +3474,61 @@ mod tests {
         assert!(body.contains("<h1>Forward</h1>"));
         assert!(body.contains("Fwd: Example"));
         assert!(body.contains("report.pdf"));
-        assert!(body.contains("does not reattach files yet"));
+        assert!(body.contains("source attachments are not selected automatically"));
+        assert!(body.contains("Source Attachments"));
+        assert!(body.contains("include_original_attachment_1"));
+    }
+
+    #[test]
+    fn send_route_refetches_selected_original_attachment() {
+        let body = concat!(
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"csrf_token\"\r\n\r\n",
+            "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"to\"\r\n\r\n",
+            "bob@example.com\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"subject\"\r\n\r\n",
+            "Forwarded report\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"body\"\r\n\r\n",
+            "See selected source attachment.\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"source_mailbox\"\r\n\r\n",
+            "INBOX\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"source_uid\"\r\n\r\n",
+            "9\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"include_original_attachment_1\"\r\n\r\n",
+            "1.2\r\n",
+            "--test-boundary--\r\n",
+        );
+
+        let response = app().handle_request(
+            &request_bytes(
+                "POST",
+                "/send",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                    ("Origin", "https://localhost"),
+                    ("Content-Type", "multipart/form-data; boundary=test-boundary"),
+                ],
+                body.as_bytes(),
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 303);
+        assert!(response
+            .audit_events
+            .iter()
+            .any(|event| event.action == "stub_attachment_download"));
     }
 
     #[test]

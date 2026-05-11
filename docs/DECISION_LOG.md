@@ -1,5 +1,21 @@
 # Decision Log
 
+## 2026-05-11, Start explicit reply and forward attachment selection
+
+The first implementation slice for `docs/V3_REPLY_FORWARD_ATTACHMENT_HANDLING_DESIGN.md`
+now makes source-message attachments visible and selectable on reply and
+forward compose pages. Selected source attachments are not trusted from browser
+metadata; `/send` re-fetches each selected part through the existing bounded
+attachment-download path before turning it into a normal compose attachment.
+
+The slice keeps the conservative defaults: no automatic original-message
+reattach, no inline preview, no inline image rendering, and no remote content
+loading. The current tests cover default reply and forward compose rendering,
+explicit source-attachment selection, send-time re-fetch, and the existing
+aggregate compose attachment validation path. Remaining closeout work includes
+WSTG coverage, stale-source failure coverage, and draft save/resume of source
+attachment references if that behavior is admitted.
+
 ## 2026-05-11, Define V3 reply and forward attachment boundary
 
 Version 3 now has a design gate for explicit original-message attachment

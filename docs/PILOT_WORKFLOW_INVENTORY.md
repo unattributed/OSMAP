@@ -56,8 +56,8 @@ The current repo state is not yet a good fit for users who depend daily on:
 | Search in one mailbox | `supported` | admit | Current bounded search is sufficient for ordinary pilot use. |
 | Search across all visible mailboxes | `supported` | admit | Included in the Version 2 readiness proof set. |
 | Compose new message | `supported` | admit | Plain browser compose only. |
-| Reply | `supported_with_limits` | admit | No automatic original-attachment reattach. |
-| Forward | `supported_with_limits` | admit | No automatic original-attachment reattach. |
+| Reply | `supported_with_limits` | admit | No automatic original-attachment reattach; surfaced source attachments require explicit selection. |
+| Forward | `supported_with_limits` | admit | No automatic original-attachment reattach; surfaced source attachments require explicit selection. |
 | Upload new attachment and send | `supported` | admit | Bounded upload path only. |
 | One-message move | `supported` | admit | Narrow organization workflow, not broad mailbox management. |
 | Archive shortcut | `supported_with_limits` | admit | Depends on configured archive mailbox rather than discovery-heavy UX. |

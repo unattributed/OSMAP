@@ -64,8 +64,9 @@ The pilot may rely on the currently implemented bounded workflows:
 The pilot should be communicated with the current limitations up front:
 
 - OSMAP remains prototype-grade
-- draft persistence is not available
-- reply and forward do not automatically reattach original attachments
+- draft persistence is limited to the Version 3 server-side draft slice
+- reply and forward do not automatically reattach original attachments; the
+  current V3 path requires explicit source-attachment selection
 - folder organization remains intentionally smaller than legacy webmail
 - broader request-abuse hardening still depends on nginx, PF, and operator
   monitoring

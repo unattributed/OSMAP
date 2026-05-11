@@ -10,7 +10,7 @@ use crate::mailbox::{
     MailboxEntry, MessageSearchResult, MessageSummary, DEFAULT_MAX_MAILBOXES,
     DEFAULT_MAX_SEARCH_RESULTS,
 };
-use crate::mime::DEFAULT_MIME_PARTS_MAX;
+use crate::mime::{AttachmentMetadata, DEFAULT_MIME_PARTS_MAX};
 use crate::rendering::{HtmlDisplayPreference, RenderedMessageView};
 
 /// Defense-in-depth cap for attachment metadata rows rendered by one route.
@@ -32,6 +32,9 @@ pub(crate) struct ComposePageModel<'a> {
     pub body_value: &'a str,
     pub draft_id: Option<&'a str>,
     pub draft_attachment_count: usize,
+    pub source_mailbox_name: Option<&'a str>,
+    pub source_uid: Option<u64>,
+    pub source_attachments: &'a [AttachmentMetadata],
 }
 
 /// Small view model for the draft list page.
@@ -755,6 +758,11 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> String {
     } else {
         String::new()
     };
+    let source_attachment_controls = render_source_attachment_controls(
+        model.source_mailbox_name,
+        model.source_uid,
+        model.source_attachments,
+    );
 
     format!(
         concat!(
@@ -762,10 +770,12 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> String {
             "{}",
             "<section class=\"content-pane\">",
             "<h1>{}</h1>",
-            "<p class=\"muted\">This send slice uses the local submission surface, keeps the browser body plain-text-first, accepts bounded new file uploads, and still does not reattach files from the source message automatically.</p>",
+            "<p class=\"muted\">This send slice uses the local submission surface, keeps the browser body plain-text-first, and accepts bounded new file uploads or explicitly selected source-message attachments.</p>",
             "{}{}{}{}",
             "<form method=\"post\" action=\"/send\" enctype=\"multipart/form-data\">",
             "<input type=\"hidden\" name=\"csrf_token\" value=\"{}\">",
+            "{}",
+            "{}",
             "{}",
             "<label for=\"compose-to\">To<input id=\"compose-to\" type=\"text\" name=\"to\" value=\"{}\" autocomplete=\"off\"></label>",
             "<label for=\"compose-subject\">Subject<input id=\"compose-subject\" type=\"text\" name=\"subject\" value=\"{}\"></label>",
@@ -785,9 +795,87 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> String {
         draft_attachment_notice,
         escape_html(model.csrf_token),
         draft_id_field,
+        render_source_attachment_hidden_fields(model.source_mailbox_name, model.source_uid),
+        source_attachment_controls,
         escape_html(model.to_value),
         escape_html(model.subject_value),
         escape_html(model.body_value),
+    )
+}
+
+fn render_source_attachment_hidden_fields(
+    source_mailbox_name: Option<&str>,
+    source_uid: Option<u64>,
+) -> String {
+    match (source_mailbox_name, source_uid) {
+        (Some(mailbox), Some(uid)) => format!(
+            concat!(
+                "<input type=\"hidden\" name=\"source_mailbox\" value=\"{}\">",
+                "<input type=\"hidden\" name=\"source_uid\" value=\"{}\">"
+            ),
+            escape_html(mailbox),
+            uid,
+        ),
+        _ => String::new(),
+    }
+}
+
+fn render_source_attachment_controls(
+    source_mailbox_name: Option<&str>,
+    source_uid: Option<u64>,
+    attachments: &[AttachmentMetadata],
+) -> String {
+    if source_mailbox_name.is_none() || source_uid.is_none() || attachments.is_empty() {
+        return String::new();
+    }
+
+    let mut rows = String::new();
+    for (index, attachment) in attachments
+        .iter()
+        .take(DEFAULT_RENDERED_ATTACHMENT_METADATA_MAX)
+        .enumerate()
+    {
+        let field_name = format!("include_original_attachment_{}", index + 1);
+        let label = format!(
+            "{} ({}, {}, {} bytes, part {})",
+            attachment.filename.as_deref().unwrap_or("<unnamed>"),
+            attachment.content_type,
+            attachment.disposition.as_str(),
+            attachment.size_hint_bytes,
+            attachment.part_path,
+        );
+        rows.push_str(&format!(
+            concat!(
+                "<label class=\"checkbox-row\" for=\"{}\">",
+                "<input id=\"{}\" type=\"checkbox\" name=\"{}\" value=\"{}\">",
+                "{}",
+                "</label>"
+            ),
+            escape_html(&field_name),
+            escape_html(&field_name),
+            escape_html(&field_name),
+            escape_html(&attachment.part_path),
+            escape_html(&label),
+        ));
+    }
+
+    if attachments.len() > DEFAULT_RENDERED_ATTACHMENT_METADATA_MAX {
+        rows.push_str(&format!(
+            "<p class=\"muted\">Attachment selection display limit reached: showing first {} of {} surfaced attachments.</p>",
+            DEFAULT_RENDERED_ATTACHMENT_METADATA_MAX,
+            attachments.len(),
+        ));
+    }
+
+    format!(
+        concat!(
+            "<fieldset class=\"panel\">",
+            "<legend>Source Attachments</legend>",
+            "<p class=\"muted\">Selected source attachments are fetched again at send time and count against the compose attachment limits.</p>",
+            "{}",
+            "</fieldset>"
+        ),
+        rows,
     )
 }
 

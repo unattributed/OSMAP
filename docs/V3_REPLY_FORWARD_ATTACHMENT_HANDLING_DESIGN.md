@@ -22,9 +22,14 @@ OSMAP currently supports:
 - forced-download retrieval through the existing attachment route
 - bounded new attachment uploads during compose
 - persisted draft attachments for newly uploaded compose files
+- explicit source-attachment checkboxes on reply and forward compose pages
+- send-time re-fetch of selected source attachments through the existing
+  bounded attachment-download path
 
-OSMAP currently does not reattach original-message attachments during reply or
-forward. The compose page warns users about that limit.
+OSMAP still does not automatically reattach original-message attachments during
+reply or forward. The current first implementation slice keeps selection
+explicit and does not yet close the full V3 gate for WSTG evidence, stale-source
+failure coverage, or draft save/resume of source references.
 
 ## User Workflow
 

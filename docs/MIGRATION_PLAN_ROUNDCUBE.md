@@ -43,8 +43,8 @@ The repo now provides real implementation and proof for:
 The repo does not yet prove a full production migration by itself. Important
 limits still include:
 
-- no draft persistence
-- no original-message attachment reattachment in reply/forward flows
+- no browser-local draft persistence
+- no automatic original-message attachment reattachment in reply/forward flows
 - no bulk message organization workflow
 - prototype-grade rather than production-grade hardening posture
 

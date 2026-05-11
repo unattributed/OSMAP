@@ -791,11 +791,11 @@ fn build_attachment_notice(
 
     let notice = match intent {
         ComposeIntent::Reply => format!(
-            "Original message included {} attachment(s); the current reply slice does not resend attachments automatically.",
+            "Original message included {} attachment(s); source attachments are not selected automatically.",
             attachments.len()
         ),
         ComposeIntent::Forward => format!(
-            "Original message included {} attachment(s); the current forward slice preserves attachment metadata in the draft but does not reattach files yet.",
+            "Original message included {} attachment(s); source attachments are not selected automatically.",
             attachments.len()
         ),
     };
@@ -1334,7 +1334,7 @@ mod tests {
             .context_notice
             .as_deref()
             .unwrap_or_default()
-            .contains("does not resend attachments automatically"));
+            .contains("source attachments are not selected automatically"));
     }
 
     #[test]
@@ -1357,7 +1357,7 @@ mod tests {
             .context_notice
             .as_deref()
             .unwrap_or_default()
-            .contains("does not reattach files yet"));
+            .contains("source attachments are not selected automatically"));
     }
 
     #[test]
