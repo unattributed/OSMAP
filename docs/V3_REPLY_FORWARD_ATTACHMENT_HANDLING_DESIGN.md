@@ -31,6 +31,11 @@ reply or forward. The current first implementation slice keeps selection
 explicit and does not yet close the full V3 gate for WSTG evidence, stale-source
 failure coverage, or draft save/resume of source references.
 
+Current route regression coverage includes duplicate selections, missing source
+mailbox metadata, stale or missing selected source parts, and aggregate
+attachment count overflow when selected source attachments are combined with
+new uploads.
+
 ## User Workflow
 
 The Version 3 target workflow is:

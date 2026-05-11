@@ -1,5 +1,21 @@
 # Decision Log
 
+## 2026-05-11, Cover source-attachment send failure edges
+
+The reply/forward source-attachment slice now has route regressions for the
+send-time failure edges called out in
+`docs/V3_REPLY_FORWARD_ATTACHMENT_HANDLING_DESIGN.md`: duplicate selected part
+paths, missing source mailbox metadata, stale or missing selected source parts,
+and aggregate count overflow when new uploads and selected source attachments
+are combined.
+
+These tests prove that selected originals are re-fetched before submission,
+that stale selections fail visibly instead of silently dropping files, and that
+confirmed source attachments count against the same compose attachment limits
+as new uploads. The remaining closeout gap for the full V3 gate is
+credential-backed WSTG/live evidence and, if admitted, draft save/resume of
+source attachment references.
+
 ## 2026-05-11, Start explicit reply and forward attachment selection
 
 The first implementation slice for `docs/V3_REPLY_FORWARD_ATTACHMENT_HANDLING_DESIGN.md`

@@ -3532,6 +3532,240 @@ mod tests {
     }
 
     #[test]
+    fn send_route_rejects_duplicate_original_attachment_selection() {
+        let body = concat!(
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"csrf_token\"\r\n\r\n",
+            "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"to\"\r\n\r\n",
+            "bob@example.com\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"subject\"\r\n\r\n",
+            "Forwarded report\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"body\"\r\n\r\n",
+            "Duplicate selection should fail.\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"source_mailbox\"\r\n\r\n",
+            "INBOX\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"source_uid\"\r\n\r\n",
+            "9\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"include_original_attachment_1\"\r\n\r\n",
+            "1.2\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"include_original_attachment_2\"\r\n\r\n",
+            "1.2\r\n",
+            "--test-boundary--\r\n",
+        );
+
+        let response = app().handle_request(
+            &request_bytes(
+                "POST",
+                "/send",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                    ("Origin", "https://localhost"),
+                    ("Content-Type", "multipart/form-data; boundary=test-boundary"),
+                ],
+                body.as_bytes(),
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 400);
+        assert!(response
+            .audit_events
+            .iter()
+            .any(|event| event.action == "http_send_original_attachment_selection_rejected"));
+        assert!(!response
+            .audit_events
+            .iter()
+            .any(|event| event.action == "stub_attachment_download"));
+    }
+
+    #[test]
+    fn send_route_rejects_original_attachment_without_source_mailbox() {
+        let body = concat!(
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"csrf_token\"\r\n\r\n",
+            "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"to\"\r\n\r\n",
+            "bob@example.com\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"subject\"\r\n\r\n",
+            "Forwarded report\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"body\"\r\n\r\n",
+            "Missing source should fail.\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"source_uid\"\r\n\r\n",
+            "9\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"include_original_attachment_1\"\r\n\r\n",
+            "1.2\r\n",
+            "--test-boundary--\r\n",
+        );
+
+        let response = app().handle_request(
+            &request_bytes(
+                "POST",
+                "/send",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                    ("Origin", "https://localhost"),
+                    ("Content-Type", "multipart/form-data; boundary=test-boundary"),
+                ],
+                body.as_bytes(),
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 400);
+        assert!(body_text(&response).contains("missing a source mailbox"));
+        assert!(!response
+            .audit_events
+            .iter()
+            .any(|event| event.action == "stub_attachment_download"));
+    }
+
+    #[test]
+    fn send_route_fails_visibly_for_stale_original_attachment_selection() {
+        let body = concat!(
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"csrf_token\"\r\n\r\n",
+            "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"to\"\r\n\r\n",
+            "bob@example.com\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"subject\"\r\n\r\n",
+            "Forwarded report\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"body\"\r\n\r\n",
+            "Stale source should fail.\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"source_mailbox\"\r\n\r\n",
+            "INBOX\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"source_uid\"\r\n\r\n",
+            "9\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"include_original_attachment_1\"\r\n\r\n",
+            "1.99\r\n",
+            "--test-boundary--\r\n",
+        );
+
+        let response = app().handle_request(
+            &request_bytes(
+                "POST",
+                "/send",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                    ("Origin", "https://localhost"),
+                    ("Content-Type", "multipart/form-data; boundary=test-boundary"),
+                ],
+                body.as_bytes(),
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 503);
+        assert!(body_text(&response).contains("could not be fetched safely"));
+        assert!(response
+            .audit_events
+            .iter()
+            .any(|event| event.action == "http_send_original_attachment_fetch_failed"));
+        assert!(!response
+            .audit_events
+            .iter()
+            .any(|event| event.action == "stub_send_ok"));
+    }
+
+    #[test]
+    fn send_route_counts_original_attachments_against_upload_limit() {
+        let body_prefix = concat!(
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"csrf_token\"\r\n\r\n",
+            "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"to\"\r\n\r\n",
+            "bob@example.com\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"subject\"\r\n\r\n",
+            "Forwarded report\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"body\"\r\n\r\n",
+            "Aggregate attachment limit should fail.\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"source_mailbox\"\r\n\r\n",
+            "INBOX\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"source_uid\"\r\n\r\n",
+            "9\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"include_original_attachment_1\"\r\n\r\n",
+            "1.2\r\n",
+        );
+        let uploads = concat!(
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"attachment\"; filename=\"one.txt\"\r\n",
+            "Content-Type: text/plain\r\n\r\n",
+            "one\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"attachment\"; filename=\"two.txt\"\r\n",
+            "Content-Type: text/plain\r\n\r\n",
+            "two\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"attachment\"; filename=\"three.txt\"\r\n",
+            "Content-Type: text/plain\r\n\r\n",
+            "three\r\n",
+            "--test-boundary--\r\n",
+        );
+        let body = format!("{body_prefix}{uploads}");
+
+        let response = app().handle_request(
+            &request_bytes(
+                "POST",
+                "/send",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                    ("Origin", "https://localhost"),
+                    ("Content-Type", "multipart/form-data; boundary=test-boundary"),
+                ],
+                body.as_bytes(),
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 400);
+        assert!(body_text(&response).contains("attachment count limit"));
+        assert!(!response
+            .audit_events
+            .iter()
+            .any(|event| event.action == "stub_attachment_download"));
+    }
+
+    #[test]
     fn attachment_download_returns_forced_download_headers() {
         let response = app().handle_request(
             &request(
