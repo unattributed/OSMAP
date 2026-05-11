@@ -1,5 +1,21 @@
 # Decision Log
 
+## 2026-05-11, Define V3 reply and forward attachment boundary
+
+Version 3 now has a design gate for explicit original-message attachment
+handling at `docs/V3_REPLY_FORWARD_ATTACHMENT_HANDLING_DESIGN.md`.
+
+The design keeps the next implementation slice narrow: reply and forward
+compose may show surfaced source attachments and allow explicit selection, but
+send must revalidate every selected original attachment through the existing
+bounded message and attachment path. Selected originals and newly uploaded
+attachments share the existing compose aggregate limits, and failures must be
+visible rather than silently dropping a confirmed selection.
+
+The boundary remains conservative: no inline preview, no inline image
+rendering, no remote content loading, no automatic reattach, no browser-local
+message cache, and no broad MIME-client behavior.
+
 ## 2026-05-11, Keep V3 worker-budget env examples aligned
 
 The generic `config/osmap.env.example` now carries the same Version 3

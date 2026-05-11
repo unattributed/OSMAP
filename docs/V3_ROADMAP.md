@@ -27,7 +27,7 @@ This roadmap sequences Version 3 work so OSMAP becomes a focused daily-driver ha
 | 5 | Session and device policy | choose concurrent-session behavior, device labels, revocation semantics, and isolated-cookie race retest | session/device security gate passes |
 | 6 | Draft save and resume design | define draft storage, ownership, limits, routes, cleanup, and failure behavior before code in `V3_DRAFT_SAVE_RESUME_DESIGN.md` | design reviewed against session, CSRF, state-path, resource, and confinement constraints |
 | 7 | Draft save and resume implementation | authenticated draft create, list, update, resume, send, and delete | draft feature gate passes |
-| 8 | Reply and forward attachment handling | explicit original-attachment selection and bounded reattachment | reply/forward attachment gate passes |
+| 8 | Reply and forward attachment handling | explicit original-attachment selection and bounded reattachment through `docs/V3_REPLY_FORWARD_ATTACHMENT_HANDLING_DESIGN.md` | reply/forward attachment gate passes |
 | 9 | Richer bounded search | practical refinements, sorting, result caps, deterministic invalid-query handling, and timeout behavior where applicable | richer bounded search gate passes |
 | 10 | Bounded bulk folder actions | selected-message cleanup beyond archive only, with per-message revalidation | bulk folder-action gate passes |
 | 11 | TLS CBC cleanup | remove TLS 1.2 CBC suites or document a reviewed exception | TLS gate passes |
@@ -103,6 +103,18 @@ resume may be treated as `supported_with_limits` for Version 3 pilot planning.
 The limits still exclude browser-local drafts, attachment preview, inline image
 rendering, remote content loading, and automatic original-message attachment
 reattach.
+
+## Reply And Forward Attachment Track
+
+The reply and forward attachment handling design gate is now
+`docs/V3_REPLY_FORWARD_ATTACHMENT_HANDLING_DESIGN.md`.
+
+The next implementation slice must keep selection explicit, fetch selected
+original attachments through the existing bounded helper-backed message and
+attachment path, include selected originals in the aggregate compose attachment
+limits, and fail visibly rather than silently dropping a confirmed selection.
+It must not add inline preview, inline image rendering, remote content loading,
+automatic reattach, or broad MIME-client behavior.
 
 ## Security Foundation Track
 
