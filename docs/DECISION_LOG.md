@@ -1,5 +1,22 @@
 # Decision Log
 
+## 2026-05-11, Keep V3 worker-budget env examples aligned
+
+The generic `config/osmap.env.example` now carries the same Version 3
+route-class worker-budget and expensive-request-timeout controls already
+present in the OpenBSD service examples:
+
+- `OSMAP_MAILBOX_WORKER_BUDGET`
+- `OSMAP_SEARCH_WORKER_BUDGET`
+- `OSMAP_SEND_WORKER_BUDGET`
+- `OSMAP_AUTH_WORKER_BUDGET`
+- `OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS`
+
+The shared developer security gate now includes a small regression that checks
+the generic example, the OpenBSD examples, and the reviewed
+`mail.blackbagsecurity.com` env artifacts together. This keeps future V3
+resource-control tuning from leaving the operator-facing examples stale.
+
 ## 2026-05-07, Admit limited V3 draft save and resume pilot workflow
 
 `OSMAP-WSTG-BUSL-002` now has host-safe authenticated evidence from
