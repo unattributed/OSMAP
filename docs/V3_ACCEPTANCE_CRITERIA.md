@@ -27,7 +27,7 @@ Before any Version 3 feature is treated as complete:
 
 Developer validation may report skipped phases clearly.
 
-Release-mode validation must fail when a required phase is skipped. This includes skipped Cargo validation, skipped supply-chain validation, missing host-readiness evidence, missing V2 carry-forward evidence, missing TLS edge evidence, missing resource-timeout evidence, missing V3 feature-gate evidence, and skipped authenticated WSTG or other security tests when the test requires credential and TOTP coverage.
+Release-mode validation must fail when a required phase is skipped. This includes skipped Cargo validation, skipped supply-chain validation, missing host-readiness evidence, missing V2 carry-forward evidence, missing TLS edge evidence, missing TLS standard evidence, missing resource-timeout evidence, missing V3 feature-gate evidence, and skipped authenticated WSTG or other security tests when the test requires credential and TOTP coverage.
 
 The MIME and HTML correctness gate must include a current redacted live proof
 report from `maint/live/osmap-live-validate-v3-mime-html-proof.ksh`. Release
@@ -42,9 +42,10 @@ For WSTG and other security tests that require authenticated coverage, evidence 
 The release evidence summary is written to
 `maint/live/osmap-v3-release-evidence-summary.json` and
 `maint/live/osmap-v3-release-evidence-summary.md`. It must include the checked
-TLS edge evidence path, TLS CBC cleanup status, checked resource-timeout
-evidence path, and resource-timeout status. Release mode must record an empty
-`skipped_checks` array before it can pass.
+TLS edge evidence path, TLS CBC cleanup status, checked TLS standard evidence
+path, TLS standard validation status, checked resource-timeout evidence path,
+and resource-timeout status. Release mode must record an empty `skipped_checks`
+array before it can pass.
 
 ## Feature Admission Rule
 
@@ -71,7 +72,7 @@ A Version 3 feature may enter implementation only when the following are named i
 | Richer bounded search | Users can search one mailbox or all visible mailboxes with documented query fields, refinements if implemented, result sorting, empty-state behavior, and bounded result limits. Unsupported query syntax returns deterministic 400-class responses. All-mailbox search stays limited to browser-visible mailboxes. Search does not expose backend-only mailbox names. Expensive searches have bounded execution and result behavior. Tests cover valid refinements, invalid refinements, sorting, result caps, unknown mailbox rejection, backend-unavailable behavior, and timeout behavior where applicable. |
 | Bounded bulk folder actions | Users can select a bounded number of visible messages and perform approved actions such as archive, move to a visible mailbox, mark read or unread if implemented, or delete only if separately approved by the roadmap. Every action revalidates each mailbox and UID tuple at action time. Partial success is reported explicitly. Existing move throttles or equivalent abuse controls apply. Tests cover valid selection, empty selection, over-limit selection, invalid destination, stale UID, mixed partial results, CSRF rejection, same-origin rejection, and backend failure. |
 | Session and device policy | Concurrent browser sessions are allowed by policy, with bounded lifetime, idle timeout, visible metadata, and user-driven revocation. Session list displays normalized device labels, remote address, user-agent metadata, timestamps, and revocation state without exposing secrets or adding remembered-device cookies. Tests cover concurrent session behavior, device label normalization, revocation of one session, revocation of other sessions, revoke-all, expired sessions, idle sessions, and isolated-cookie race retesting. |
-| TLS CBC cleanup or exception | TLS 1.2 CBC suites are removed from the reviewed public-edge configuration, or `V3_SECURITY_GATES.md` records a dated compatibility exception with evidence, owner, expiry, exact suites retained, and compensating controls. Evidence includes an external TLS scan or equivalent command output archived under a reviewed evidence path. Current cleanup evidence is `maint/live/osmap-v3-tls-cbc-cleanup-evidence-2026-05-02.txt`. |
+| TLS standard and CBC cleanup | `docs/TLS_STANDARD.md` defines the required transport policy: TLS 1.2 minimum, TLS 1.3 preferred, certificate and hostname verification enabled in client validation tooling, weak protocols rejected, and only strong forward-secret AEAD TLS 1.2 ciphers accepted. `maint/security/osmap-tls-policy-guard.sh` must pass. Live evidence from `maint/security/osmap-live-tls-standard-validate.py` must prove TLS 1.0 fails, TLS 1.1 fails, TLS 1.2 succeeds with a strong cipher only, TLS 1.3 succeeds where supported, and no weak legacy cipher is accepted. TLS 1.2 CBC suites are removed from the reviewed public-edge configuration, or `V3_SECURITY_GATES.md` records a dated compatibility exception with evidence, owner, expiry, exact suites retained, and compensating controls. Current CBC cleanup evidence is `maint/live/osmap-v3-tls-cbc-cleanup-evidence-2026-05-02.txt`; current TLS standard evidence defaults to `maint/live/latest-host-tls-standard-report.json`. |
 | WSTG regression evidence | The WSTG testing pack is current for the V3 browser surface. All applicable scripts pass or have documented non-applicability. Authenticated WSTG tests that require credential and TOTP coverage must not be counted complete if skipped. New V3 routes are covered by route, auth, CSRF, same-origin, injection, upload, business-logic, session, and transport checks as applicable. |
 
 ## Daily-Driver Gate
@@ -121,6 +122,6 @@ The Version 3 closeout record must link:
   message-move paths
 - WSTG regression evidence
 - authenticated WSTG or other credential-dependent security evidence proving credential and TOTP paths were exercised where required
-- TLS CBC removal or exception evidence
+- TLS standard evidence and TLS CBC removal or exception evidence
 - a pilot or rehearsal workflow inventory showing that daily-driver gaps are closed for the selected cohort
 - a sanitized evidence archive that excludes plaintext passwords, reusable TOTP seeds, active session cookies, private message bodies, private attachment content, and host secrets

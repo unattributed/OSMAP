@@ -30,6 +30,7 @@ fi
 : "${OSMAP_RELEASE_V2_CARRY_FORWARD_EVIDENCE:=maint/live/latest-host-v2-readiness-report.txt maint/live/latest-host-v2-readiness-service-guard-report.txt docs/V2_PILOT_STATUS.md docs/V2_PILOT_CLOSEOUT.md}"
 : "${OSMAP_RELEASE_HOST_READINESS_EVIDENCE:=maint/live/latest-host-v2-readiness-report.txt maint/live/latest-host-edge-cutover-report.txt maint/live/latest-host-internet-exposure-report.txt maint/live/latest-host-service-enablement-report.txt}"
 : "${OSMAP_RELEASE_TLS_EDGE_EVIDENCE:=maint/live/osmap-v3-tls-cbc-cleanup-evidence-2026-05-02.txt}"
+: "${OSMAP_RELEASE_TLS_STANDARD_EVIDENCE:=maint/live/latest-host-tls-standard-report.json}"
 : "${OSMAP_RELEASE_RESOURCE_TIMEOUT_EVIDENCE:=maint/live/osmap-v3-resource-timeout-evidence-2026-05-02.txt maint/live/latest-host-v3-resource-controls-report.txt}"
 : "${OSMAP_RELEASE_V3_MIME_HTML_PROOF_VALIDATOR:=maint/live/osmap-live-validate-v3-mime-html-proof.ksh}"
 : "${OSMAP_RELEASE_V3_MIME_HTML_PROOF_REPORT:=$OSMAP_RELEASE_EVIDENCE_DIR/latest-host-v3-mime-html-proof-report.txt}"
@@ -60,6 +61,8 @@ v2_checked=""
 host_checked=""
 tls_checked=""
 tls_cbc_status="missing"
+tls_standard_checked=""
+tls_standard_status="missing"
 resource_timeout_checked=""
 resource_timeout_status="missing"
 v3_mime_html_proof_status="missing"
@@ -151,6 +154,7 @@ write_summary() {
 	v2_json=$(json_array "$v2_checked")
 	host_json=$(json_array "$host_checked")
 	tls_json=$(json_array "$tls_checked")
+	tls_standard_json=$(json_array "$tls_standard_checked")
 	resource_timeout_json=$(json_array "$resource_timeout_checked")
 	v3_mime_html_proof_json=$(json_array "$v3_mime_html_proof_checked")
 	cat > "$OSMAP_RELEASE_SUMMARY_JSON" <<EOF
@@ -176,6 +180,8 @@ write_summary() {
   "host_readiness_evidence_files_checked": $host_json,
   "tls_cbc_status": $(json_string "$tls_cbc_status"),
   "tls_edge_evidence_files_checked": $tls_json,
+  "tls_standard_status": $(json_string "$tls_standard_status"),
+  "tls_standard_evidence_files_checked": $tls_standard_json,
   "resource_timeout_status": $(json_string "$resource_timeout_status"),
   "resource_timeout_evidence_files_checked": $resource_timeout_json,
   "v3_mime_html_proof_status": $(json_string "$v3_mime_html_proof_status"),
@@ -202,6 +208,7 @@ EOF
 - WSTG summary: \`$wstg_result\` at \`$OSMAP_RELEASE_WSTG_SUMMARY_PATH\`
 - Authenticated WSTG: \`$authenticated_wstg_status\`
 - TLS CBC cleanup: \`$tls_cbc_status\`
+- TLS standard validation: \`$tls_standard_status\`
 - Resource and timeout hardening: \`$resource_timeout_status\`
 - V3 live MIME and HTML proof: \`$v3_mime_html_proof_status\`
 - Sanitized evidence archive: \`$sanitized_archive_status\` at \`$OSMAP_RELEASE_SANITIZED_ARCHIVE_PATH\`
@@ -218,6 +225,10 @@ $(printf '%s\n' "$host_checked" | sed '/^$/d; s/^/- `/' | sed 's/$/`/')
 ## TLS Edge Evidence
 
 $(printf '%s\n' "$tls_checked" | sed '/^$/d; s/^/- `/' | sed 's/$/`/')
+
+## TLS Standard Evidence
+
+$(printf '%s\n' "$tls_standard_checked" | sed '/^$/d; s/^/- `/' | sed 's/$/`/')
 
 ## Resource And Timeout Evidence
 
@@ -349,6 +360,80 @@ PY
 	else
 		v3_mime_html_proof_status="failed"
 	fi
+}
+
+validate_tls_standard_evidence() {
+	report=$OSMAP_RELEASE_TLS_STANDARD_EVIDENCE
+	if [ ! -s "$report" ]; then
+		add_skip "missing TLS standard evidence: $report"
+		fail "missing TLS standard evidence: $report"
+		tls_standard_status="missing"
+		return 1
+	fi
+	if python3 - "$report" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+report = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+errors = []
+probes = report.get("probes", {})
+
+if report.get("result") != "tls_standard_passed":
+    errors.append("result is not tls_standard_passed")
+if report.get("minimum_tls_version") != "TLSv1.2":
+    errors.append("minimum_tls_version is not TLSv1.2")
+if report.get("preferred_tls_version") != "TLSv1.3":
+    errors.append("preferred_tls_version is not TLSv1.3")
+if report.get("certificate_validation") is not True:
+    errors.append("certificate_validation is not true")
+if report.get("hostname_validation") is not True:
+    errors.append("hostname_validation is not true")
+
+expected_status = {
+    "tls10": "rejected",
+    "tls11": "rejected",
+    "tls12": "passed",
+    "tls13": "passed",
+}
+for key, expected in expected_status.items():
+    status = probes.get(key, {}).get("status")
+    if status != expected:
+        errors.append(f"{key} expected {expected}, found {status}")
+
+tls12 = probes.get("tls12", {})
+if tls12.get("protocol") != "TLSv1.2":
+    errors.append("TLS 1.2 probe did not negotiate TLSv1.2")
+if tls12.get("strong_cipher") is not True:
+    errors.append("TLS 1.2 probe did not record a strong cipher")
+if tls12.get("verify_ok") is not True:
+    errors.append("TLS 1.2 probe did not verify certificate and hostname")
+
+tls13 = probes.get("tls13", {})
+if tls13.get("protocol") != "TLSv1.3":
+    errors.append("TLS 1.3 probe did not negotiate TLSv1.3")
+if tls13.get("strong_cipher") is not True:
+    errors.append("TLS 1.3 probe did not record a strong cipher")
+if tls13.get("verify_ok") is not True:
+    errors.append("TLS 1.3 probe did not verify certificate and hostname")
+
+for key in ["tls10", "tls11"]:
+    if probes.get(key, {}).get("protocol") or probes.get(key, {}).get("cipher"):
+        errors.append(f"{key} unexpectedly negotiated a protocol or cipher")
+
+if errors:
+    for error in errors:
+        print(error, file=sys.stderr)
+    raise SystemExit(1)
+PY
+	then
+		tls_standard_status="passed"
+		tls_standard_checked=$report
+		return 0
+	fi
+	tls_standard_status="failed"
+	fail "TLS standard evidence did not satisfy release mode"
+	return 1
 }
 
 validate_wstg_summary() {
@@ -523,6 +608,15 @@ else
 fi
 
 echo "==> validating required release evidence"
+echo "==> validating documentation governance invariants"
+if ! sh maint/security/osmap-doc-governance-guard.sh; then
+	fail "documentation governance guard failed"
+fi
+echo "==> validating TLS policy invariants"
+if ! sh maint/security/osmap-tls-policy-guard.sh; then
+	fail "TLS policy guard failed"
+fi
+
 v2_checked=$(check_path_list "V2 carry-forward" "$OSMAP_RELEASE_V2_CARRY_FORWARD_EVIDENCE")
 host_checked=$(check_path_list "host-readiness" "$OSMAP_RELEASE_HOST_READINESS_EVIDENCE")
 tls_failures_before=$failures
@@ -532,6 +626,7 @@ if [ -n "$tls_checked" ] && [ "$failures" -eq "$tls_failures_before" ]; then
 else
 	tls_cbc_status="missing"
 fi
+validate_tls_standard_evidence || true
 resource_failures_before=$failures
 resource_timeout_checked=$(check_path_list "resource-timeout" "$OSMAP_RELEASE_RESOURCE_TIMEOUT_EVIDENCE")
 if [ -n "$resource_timeout_checked" ] && [ "$failures" -eq "$resource_failures_before" ]; then
@@ -553,6 +648,7 @@ if [ "$failures" -eq 0 ]; then
 		$OSMAP_RELEASE_V2_CARRY_FORWARD_EVIDENCE \
 		$OSMAP_RELEASE_HOST_READINESS_EVIDENCE \
 		$OSMAP_RELEASE_TLS_EDGE_EVIDENCE \
+		"$OSMAP_RELEASE_TLS_STANDARD_EVIDENCE" \
 		$OSMAP_RELEASE_RESOURCE_TIMEOUT_EVIDENCE \
 		"$OSMAP_RELEASE_V3_MIME_HTML_PROOF_REPORT" \
 		"$OSMAP_RELEASE_WSTG_SUMMARY_PATH"; then
@@ -565,6 +661,7 @@ if [ "$failures" -eq 0 ]; then
 			$OSMAP_RELEASE_V2_CARRY_FORWARD_EVIDENCE \
 			$OSMAP_RELEASE_HOST_READINESS_EVIDENCE \
 			$OSMAP_RELEASE_TLS_EDGE_EVIDENCE \
+			"$OSMAP_RELEASE_TLS_STANDARD_EVIDENCE" \
 			$OSMAP_RELEASE_RESOURCE_TIMEOUT_EVIDENCE \
 			"$OSMAP_RELEASE_V3_MIME_HTML_PROOF_REPORT" \
 			"$OSMAP_RELEASE_WSTG_SUMMARY_PATH"; then

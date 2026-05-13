@@ -6,6 +6,10 @@ It is intended to replace broad, plugin-heavy webmail interfaces such as Roundcu
 
 OSMAP does not replace the mail stack. Postfix, Dovecot, Rspamd, nginx, TLS, PF, and the surrounding OpenBSD host controls remain authoritative.
 
+The project-wide TLS floor is defined in [`docs/TLS_STANDARD.md`](docs/TLS_STANDARD.md):
+TLS 1.2 minimum, TLS 1.3 preferred, certificate and hostname verification on,
+and no legacy weak protocol or cipher fallback.
+
 ---
 
 ## Project Goals
@@ -222,6 +226,11 @@ The repository-owned security validation currently has two lanes:
 
 - GitHub default CodeQL setup for CodeQL scanning
 - Repo-owned `security-check` workflow for Rust checks, tests, clippy, formatting, and current shell-based security guards
+
+The TLS validation gate is:
+
+- [`maint/security/osmap-tls-policy-guard.sh`](maint/security/osmap-tls-policy-guard.sh) for static repository policy drift
+- [`maint/security/osmap-live-tls-standard-validate.py`](maint/security/osmap-live-tls-standard-validate.py) for live edge evidence, defaulting to `https://mail.blackbagsecurity.com`
 
 Further supply-chain assurance work is planned for Version 3.
 

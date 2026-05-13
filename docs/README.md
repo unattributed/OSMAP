@@ -44,6 +44,7 @@ Current primary documents:
 - `SECURITY_MODEL.md`
 - `SECURE_SDLC.md`
 - `SUPPLY_CHAIN_POLICY.md`
+- `TLS_STANDARD.md`
 - `TEST_STRATEGY.md`
 - `BUILD_AND_RELEASE_PROCESS.md`
 - `IMPLEMENTATION_PLAN.md`

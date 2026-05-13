@@ -8,6 +8,15 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      run_live_tls_probes:
+        description: "Run live TLS probes against the configured OSMAP HTTPS endpoint"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
 
 permissions:
   contents: read
@@ -36,3 +45,21 @@ jobs:
           OSMAP_BOOTSTRAP_CARGO_AUDIT: "1"
           OSMAP_BOOTSTRAP_CARGO_DENY: "1"
         run: make security-check
+
+  live-tls-probe:
+    name: security-check / live tls
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: ${{ (github.event_name == 'workflow_dispatch' && inputs.run_live_tls_probes == 'true') || vars.RUN_LIVE_TLS_PROBES == '1' }}
+    env:
+      OSMAP_TLS_PROBE_TARGET: ${{ vars.OSMAP_TLS_PROBE_TARGET }}
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v6
+
+      - name: run live TLS standard probe
+        run: |
+          python3 maint/security/osmap-live-tls-standard-validate.py \
+            "${OSMAP_TLS_PROBE_TARGET:-https://mail.blackbagsecurity.com}" \
+            --report maint/live/latest-host-tls-standard-report.json

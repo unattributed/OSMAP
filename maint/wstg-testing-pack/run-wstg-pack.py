@@ -51,6 +51,12 @@ DEFAULT_BODY_LIMIT = 256 * 1024
 SECRET_REPLACEMENT = "[REDACTED]"
 
 
+def osmap_tls_client_context() -> ssl.SSLContext:
+    context = ssl.create_default_context()
+    context.minimum_version = ssl.TLSVersion.TLSv1_2
+    return context
+
+
 @dataclass
 class Config:
     base_url: str
@@ -249,7 +255,7 @@ class Runner:
         evidence = HttpEvidence(label, None, "", [], b"")
         try:
             if scheme == "https":
-                context = ssl.create_default_context()
+                context = osmap_tls_client_context()
                 conn: http.client.HTTPConnection = http.client.HTTPSConnection(
                     host, port=port, timeout=self.config.timeout, context=context
                 )

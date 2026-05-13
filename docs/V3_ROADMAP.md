@@ -30,7 +30,7 @@ This roadmap sequences Version 3 work so OSMAP becomes a focused daily-driver ha
 | 8 | Reply and forward attachment handling | explicit original-attachment selection and bounded reattachment through `docs/V3_REPLY_FORWARD_ATTACHMENT_HANDLING_DESIGN.md` | reply/forward attachment gate passes |
 | 9 | Richer bounded search | practical refinements, sorting, result caps, deterministic invalid-query handling, and timeout behavior where applicable | richer bounded search gate passes |
 | 10 | Bounded bulk folder actions | selected-message cleanup beyond archive only, with per-message revalidation | bulk folder-action gate passes |
-| 11 | TLS CBC cleanup | remove TLS 1.2 CBC suites or document a reviewed exception | TLS gate passes |
+| 11 | TLS standard and CBC cleanup | enforce `docs/TLS_STANDARD.md` across code, tooling, CI, release evidence, and the public edge; remove TLS 1.2 CBC suites or document a reviewed exception | TLS standard gate passes, including static guard evidence and live proof that weak protocols fail while TLS 1.2 and TLS 1.3 pass with acceptable ciphers |
 | 12 | V3 pilot rehearsal | run daily-driver workflow rehearsal with selected users and archive sanitized evidence | V3 closeout evidence is ready |
 
 ## First Next Step
@@ -130,7 +130,7 @@ The security foundation track continues throughout Version 3 and blocks release 
 - worker-budget design and implementation evidence for slow synchronous request
   occupancy
 - session/device policy evidence
-- TLS CBC disposition evidence
+- TLS standard and TLS CBC disposition evidence
 
 Feature work may proceed only when it does not obscure or defer these gates.
 

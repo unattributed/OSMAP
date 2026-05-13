@@ -1,5 +1,20 @@
 # Decision Log
 
+## 2026-05-13, Enforce project-wide TLS standard and evidence gate
+
+OSMAP now treats TLS policy as a project-wide security invariant rather than a
+host-edge note. `docs/TLS_STANDARD.md` defines the standard: TLS 1.2 minimum,
+TLS 1.3 preferred, weak protocol versions prohibited, TLS 1.2 limited to
+strong forward-secret AEAD suites, and certificate plus hostname verification
+kept enabled in validation clients.
+
+The repository gate now includes `maint/security/osmap-tls-policy-guard.sh`,
+which scans tracked code including Rust sources for prohibited TLS drift and
+checks Python validation contexts for the TLS 1.2 floor. Live public-edge
+evidence is produced by `maint/security/osmap-live-tls-standard-validate.py`
+and strict release validation requires that report through
+`OSMAP_RELEASE_TLS_STANDARD_EVIDENCE`.
+
 ## 2026-05-11, Add credential-backed source-attachment WSTG evidence lane
 
 The reply/forward selected source-attachment gate now has a credential-backed

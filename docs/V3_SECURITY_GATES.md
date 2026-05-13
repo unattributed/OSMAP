@@ -40,7 +40,8 @@ The release profile currently requires pinned versions of `rustc`, `cargo`,
 test, clippy, formatting, and supply-chain phases; generates
 `cargo tree --locked --all-features` dependency inventory evidence; validates
 release-mode WSTG evidence; checks V2 carry-forward and host-readiness evidence;
-requires archived TLS edge evidence proving the TLS CBC disposition;
+requires archived TLS edge evidence proving the TLS CBC disposition and current
+TLS standard evidence proving the project-wide policy in `docs/TLS_STANDARD.md`;
 requires archived resource-timeout evidence for helper-backed mailbox, search,
 and message-view timeout behavior;
 requires the V3 live MIME and HTML proof validator and current redacted live
@@ -57,6 +58,8 @@ Release mode must fail on:
 - missing host-readiness evidence for the intended deployment host
 - missing V2 carry-forward evidence
 - missing TLS CBC cleanup or exception evidence for the intended public edge
+- missing TLS standard evidence proving the intended public edge rejects weak
+  protocols and ciphers while preserving certificate and hostname validation
 - missing resource-timeout evidence for helper-backed mailbox, search, and message-view paths
 - missing current V3 live MIME and HTML proof evidence
 - missing V3 feature-gate evidence
@@ -91,7 +94,28 @@ The evidence must not commit or archive plaintext passwords, reusable TOTP seeds
 | Bounded bulk action safety | Tests proving selection caps, per-message revalidation, partial-result reporting, move/delete/archive policy limits, throttling or equivalent abuse controls, CSRF rejection, same-origin rejection, and backend failure behavior. |
 | Session/device policy | Tests and docs proving the chosen concurrent-session policy, device labels, revocation semantics, idle and absolute timeout behavior, and isolated-cookie retest of the revoke-race scenario. |
 | TLS CBC disposition | Archived evidence that TLS 1.2 CBC suites are removed, or a documented exception with owner, date, reason, expiry, exact suites retained, compatibility evidence, and compensating controls. |
+| TLS standard validation | `docs/TLS_STANDARD.md` defines the required floor. Static policy evidence from `maint/security/osmap-tls-policy-guard.sh` and live evidence from `maint/security/osmap-live-tls-standard-validate.py` must prove TLS 1.0 and TLS 1.1 fail, TLS 1.2 succeeds with a strong forward-secret AEAD cipher, TLS 1.3 succeeds where supported, no weak legacy cipher is accepted, and Python validation clients set a minimum TLS 1.2 context while preserving certificate and hostname verification. |
 | WSTG regression | Current WSTG testing-pack run covering the V3 browser surface, with pass, fail, warning, skip, and non-applicable disposition archived under `maint/live/` or a successor evidence path. Release mode must fail when authenticated WSTG tests that require credential and TOTP coverage are skipped. |
+
+## TLS Standard Rule
+
+The authoritative OSMAP TLS policy is `docs/TLS_STANDARD.md`.
+
+The public HTTPS edge must reject TLS 1.0 and TLS 1.1, accept TLS 1.2 only with
+strong forward-secret AEAD suites, prefer TLS 1.3 where supported, and reject
+anonymous, null, export, MD5, RC4, 3DES, DES, and CBC-mode legacy suites.
+
+Client-side validation tooling must keep certificate and hostname verification
+enabled and must set the client protocol floor to TLS 1.2. The static guard
+`maint/security/osmap-tls-policy-guard.sh` is required in developer and release
+validation, including for future Rust TLS drift. Live proof is produced by
+`maint/security/osmap-live-tls-standard-validate.py`, defaulting to
+`https://mail.blackbagsecurity.com`, and release mode expects the current
+sanitized report at `maint/live/latest-host-tls-standard-report.json` unless
+`OSMAP_RELEASE_TLS_STANDARD_EVIDENCE` names another reviewed report.
+
+Release mode must fail when TLS standard evidence is missing, skipped, or shows
+that weak protocol or cipher negotiation succeeded.
 
 ## TLS CBC Rule
 
@@ -145,7 +169,7 @@ At Version 3 closeout, archive evidence for:
 - business-logic checks for draft, send, move, bulk action, session revocation, and workflow circumvention
 - HTML, CSS, DOM, template, and client-side injection applicability
 - CORS, clickjacking, XSSI, reverse-tabnabbing, and API reconnaissance checks
-- TLS transport checks, including CBC disposition
+- TLS transport checks, including the project-wide TLS standard and CBC disposition
 
 Credential-gated WSTG checks may still be skipped in developer partial mode, but a skipped credential-gated security check cannot satisfy Version 3 release mode when that check is applicable.
 

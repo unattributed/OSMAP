@@ -95,6 +95,18 @@ fi
 echo "==> validating publication hygiene"
 sh maint/security/osmap-publication-guard.sh
 
+echo "==> validating documentation governance invariants"
+sh maint/security/osmap-doc-governance-guard.sh
+
+echo "==> validating TLS policy invariants"
+sh maint/security/osmap-tls-policy-guard.sh
+
+echo "==> validating Python security tooling syntax"
+python3 -m py_compile \
+	maint/border-testing-pack/run-border-pack.py \
+	maint/wstg-testing-pack/run-wstg-pack.py \
+	maint/security/osmap-live-tls-standard-validate.py
+
 echo "==> scanning for disallowed unsafe outside src/openbsd.rs"
 unsafe_hits=$(grep -RInE 'unsafe[[:space:]]*(fn|impl|trait|\{)' src 2>/dev/null || true)
 disallowed_unsafe=$(printf '%s\n' "$unsafe_hits" | grep -v 'src/openbsd.rs:' | sed '/^$/d' || true)

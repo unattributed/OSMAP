@@ -59,9 +59,9 @@ The release flow should eventually look like:
 4. Strict release validation with `make release-check` on a host or operator
    workstation that has the pinned Rust toolchain, pinned supply-chain tools,
    release WSTG credential and TOTP evidence, V2 carry-forward evidence,
-   host-readiness evidence, TLS edge evidence, resource-timeout evidence,
-   current redacted V3 live MIME and HTML proof evidence, and a sanitized
-   evidence archive
+   host-readiness evidence, TLS edge evidence, TLS standard evidence,
+   resource-timeout evidence, current redacted V3 live MIME and HTML proof
+   evidence, and a sanitized evidence archive
 5. Build
 6. Static analysis and required tests
 7. Dependency inventory or SBOM generation
@@ -85,6 +85,14 @@ It writes:
 It also requires the TLS CBC cleanup evidence identified by
 `OSMAP_RELEASE_TLS_EDGE_EVIDENCE`, which defaults to
 `maint/live/osmap-v3-tls-cbc-cleanup-evidence-2026-05-02.txt`.
+It requires project-wide TLS standard evidence identified by
+`OSMAP_RELEASE_TLS_STANDARD_EVIDENCE`, which defaults to
+`maint/live/latest-host-tls-standard-report.json`. That report is produced by
+`python3 maint/security/osmap-live-tls-standard-validate.py --report maint/live/latest-host-tls-standard-report.json`
+and must prove the standard in `TLS_STANDARD.md`: weak protocol versions fail,
+TLS 1.2 and TLS 1.3 negotiate correctly, TLS 1.2 uses only a strong
+forward-secret AEAD cipher, no weak legacy cipher is accepted, and certificate
+plus hostname validation remain enabled.
 Resource and timeout evidence is identified by
 `OSMAP_RELEASE_RESOURCE_TIMEOUT_EVIDENCE`, which defaults to
 `maint/live/osmap-v3-resource-timeout-evidence-2026-05-02.txt` and
