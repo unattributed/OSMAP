@@ -33,6 +33,7 @@ pub struct RuntimeBrowserGateway {
     doveadm_auth_socket_path: Option<PathBuf>,
     doveadm_userdb_socket_path: Option<PathBuf>,
     mailbox_helper_socket_path: Option<PathBuf>,
+    mailbox_helper_grant_key_path: Option<PathBuf>,
     sendmail_path: PathBuf,
     render_policy: RenderingPolicy,
 }
@@ -78,6 +79,7 @@ impl RuntimeBrowserGateway {
             doveadm_auth_socket_path: config.doveadm_auth_socket_path.clone(),
             doveadm_userdb_socket_path: config.doveadm_userdb_socket_path.clone(),
             mailbox_helper_socket_path: config.mailbox_helper_socket_path.clone(),
+            mailbox_helper_grant_key_path: config.mailbox_helper_grant_key_path.clone(),
             sendmail_path: PathBuf::from("/usr/sbin/sendmail"),
             render_policy: RenderingPolicy::default(),
         }
@@ -120,6 +122,7 @@ impl RuntimeBrowserGateway {
             doveadm_auth_socket_path: None,
             doveadm_userdb_socket_path: None,
             mailbox_helper_socket_path: None,
+            mailbox_helper_grant_key_path: None,
             sendmail_path: PathBuf::from("/usr/sbin/sendmail"),
             render_policy: RenderingPolicy::default(),
         }

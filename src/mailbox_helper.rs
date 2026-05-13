@@ -6,6 +6,7 @@
 //! - one small line-oriented protocol that is easy to review
 //! - no new RPC framework and only one bounded mailbox mutation behavior
 
+use std::collections::BTreeMap;
 use std::fs;
 use std::io::{Read, Write};
 use std::net::Shutdown;
@@ -16,7 +17,7 @@ use std::os::unix::fs::{FileTypeExt as _, PermissionsExt as _};
 #[cfg(unix)]
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::{Path, PathBuf};
-use std::time::Duration;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 #[path = "mailbox_helper_client.rs"]
 mod mailbox_helper_client;
@@ -31,8 +32,11 @@ pub use self::mailbox_helper_client::{
     MailboxHelperMessageSearchBackend, MailboxHelperMessageViewBackend,
 };
 use self::mailbox_helper_dispatch::{dispatch_helper_request, log_helper_response, HelperBackends};
+#[cfg(test)]
+use self::mailbox_helper_protocol::issue_request_grant_with_nonce;
 use self::mailbox_helper_protocol::{
-    encode_request, encode_response, parse_request, parse_response, MailboxHelperRequest,
+    encode_request, encode_response, issue_request_grant, parse_request, parse_response,
+    request_grant, verify_request_grant, MailboxHelperGrant, MailboxHelperRequest,
     MailboxHelperResponse,
 };
 use crate::auth::SystemCommandExecutor;
@@ -72,9 +76,10 @@ pub struct MailboxHelperPolicy {
 }
 
 #[cfg(unix)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 struct MailboxHelperTrustedCallerPolicy {
     trusted_peer_uid: u32,
+    grant_key: Vec<u8>,
 }
 
 impl Default for MailboxHelperPolicy {
@@ -152,6 +157,7 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
             DoveadmMessageMoveBackend::new(SystemCommandExecutor, "/usr/local/bin/doveadm")
                 .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone());
         let policy = MailboxHelperPolicy::default();
+        let mut replay_cache = BTreeMap::<String, u64>::new();
 
         logger.emit(
             &LogEvent::new(
@@ -177,7 +183,8 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
                     logger,
                     &mut stream,
                     policy,
-                    trusted_caller_policy,
+                    trusted_caller_policy.clone(),
+                    &mut replay_cache,
                 ),
                 Err(error) => logger.emit(
                     &LogEvent::new(
@@ -202,6 +209,7 @@ fn handle_helper_client<MB, MLB, MSB, MVB, MMB>(
     stream: &mut UnixStream,
     policy: MailboxHelperPolicy,
     trusted_caller_policy: MailboxHelperTrustedCallerPolicy,
+    replay_cache: &mut BTreeMap<String, u64>,
 ) where
     MB: MailboxBackend,
     MLB: MessageListBackend,
@@ -212,7 +220,7 @@ fn handle_helper_client<MB, MLB, MSB, MVB, MMB>(
     configure_stream_timeouts(stream, policy);
 
     match helper_stream_peer_uid(stream)
-        .and_then(|peer_uid| authorize_helper_peer_uid(peer_uid, trusted_caller_policy))
+        .and_then(|peer_uid| authorize_helper_peer_uid(peer_uid, &trusted_caller_policy))
     {
         Ok(()) => {}
         Err(reason) => {
@@ -261,6 +269,18 @@ fn handle_helper_client<MB, MLB, MSB, MVB, MMB>(
         }
     };
 
+    if let Err(reason) =
+        verify_helper_request_authority(&request, &trusted_caller_policy.grant_key, replay_cache)
+    {
+        let response = MailboxHelperResponse::Error {
+            backend: "mailbox-helper-grant".to_string(),
+            reason,
+        };
+        let _ = write_response(stream, &response);
+        log_helper_response(logger, &response, None);
+        return;
+    }
+
     let response = dispatch_helper_request(backends, &request);
 
     let _ = write_response(stream, &response);
@@ -300,13 +320,87 @@ fn trusted_caller_policy_from_config(
 
     Ok(MailboxHelperTrustedCallerPolicy {
         trusted_peer_uid: derived_trusted_peer_uid,
+        grant_key: load_helper_grant_key_from_config(config)?,
     })
+}
+
+fn load_helper_grant_key_from_config(config: &AppConfig) -> Result<Vec<u8>, String> {
+    let grant_key_path = config
+        .mailbox_helper_grant_key_path
+        .as_ref()
+        .ok_or_else(|| "mailbox helper requires OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH".to_string())?;
+    load_helper_grant_key(grant_key_path)
+}
+
+pub(crate) fn load_helper_grant_key(path: &Path) -> Result<Vec<u8>, String> {
+    let metadata = fs::symlink_metadata(path).map_err(|error| {
+        format!(
+            "failed to inspect helper grant key {}: {error}",
+            path.display()
+        )
+    })?;
+    if !metadata.file_type().is_file() {
+        return Err(format!(
+            "helper grant key {} must be a regular file",
+            path.display()
+        ));
+    }
+
+    #[cfg(unix)]
+    {
+        let mode = metadata.mode() & 0o777;
+        if mode & 0o077 != 0 {
+            return Err(format!(
+                "helper grant key {} must not grant group or other access",
+                path.display()
+            ));
+        }
+    }
+
+    let mut key = fs::read(path).map_err(|error| {
+        format!(
+            "failed to read helper grant key {}: {error}",
+            path.display()
+        )
+    })?;
+    while matches!(key.last(), Some(b'\n' | b'\r')) {
+        key.pop();
+    }
+    if key.len() < 32 {
+        return Err("helper grant key must contain at least 32 bytes".to_string());
+    }
+    Ok(key)
+}
+
+#[cfg(unix)]
+fn verify_helper_request_authority(
+    request: &MailboxHelperRequest,
+    grant_key: &[u8],
+    replay_cache: &mut BTreeMap<String, u64>,
+) -> Result<(), String> {
+    let now = current_unix_time_secs()?;
+    verify_request_grant(request, grant_key, now)?;
+    replay_cache.retain(|_, expires_at| *expires_at >= now);
+    let grant = request_grant(request);
+    let replay_key = grant.signature.clone();
+    if replay_cache.contains_key(&replay_key) {
+        return Err("helper request grant replay was rejected".to_string());
+    }
+    replay_cache.insert(replay_key, grant.expires_at);
+    Ok(())
+}
+
+fn current_unix_time_secs() -> Result<u64, String> {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|duration| duration.as_secs())
+        .map_err(|error| format!("system clock was before Unix epoch: {error}"))
 }
 
 #[cfg(unix)]
 fn authorize_helper_peer_uid(
     peer_uid: u32,
-    trusted_caller_policy: MailboxHelperTrustedCallerPolicy,
+    trusted_caller_policy: &MailboxHelperTrustedCallerPolicy,
 ) -> Result<(), String> {
     if peer_uid == trusted_caller_policy.trusted_peer_uid {
         return Ok(());
@@ -416,6 +510,9 @@ mod tests {
     use std::thread;
     use std::time::{Duration, Instant};
 
+    const TEST_HELPER_GRANT_KEY: &[u8] =
+        b"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+
     #[derive(Clone)]
     struct StaticHelperBackend {
         mailbox_result: Arc<Result<Vec<MailboxEntry>, MailboxBackendError>>,
@@ -474,18 +571,42 @@ mod tests {
         }
     }
 
+    fn sign_test_request(request: &mut MailboxHelperRequest) -> String {
+        issue_request_grant_with_nonce(
+            request,
+            TEST_HELPER_GRANT_KEY,
+            100,
+            "00112233445566778899aabbccddeeff",
+        )
+        .expect("test request grant should sign");
+        encode_request(request)
+    }
+
+    fn signed_mailbox_list_request_text(username: &str) -> String {
+        let mut request = MailboxHelperRequest::MailboxList {
+            canonical_username: username.to_string(),
+            grant: MailboxHelperGrant::unsigned(),
+        };
+        issue_request_grant_with_nonce(
+            &mut request,
+            TEST_HELPER_GRANT_KEY,
+            current_unix_time_secs().expect("test clock should be valid"),
+            "ffeeddccbbaa99887766554433221100",
+        )
+        .expect("test request grant should sign");
+        encode_request(&request)
+    }
+
     #[test]
     fn parses_mailbox_list_request() {
-        let request =
-            parse_request("operation=mailbox_list\ncanonical_username=alice@example.com\n")
-                .expect("request should parse");
+        let mut expected = MailboxHelperRequest::MailboxList {
+            canonical_username: "alice@example.com".to_string(),
+            grant: MailboxHelperGrant::unsigned(),
+        };
+        let text = sign_test_request(&mut expected);
+        let request = parse_request(&text).expect("request should parse");
 
-        assert_eq!(
-            request,
-            MailboxHelperRequest::MailboxList {
-                canonical_username: "alice@example.com".to_string(),
-            }
-        );
+        assert_eq!(request, expected);
     }
 
     #[test]
@@ -499,89 +620,111 @@ mod tests {
     }
 
     #[test]
-    fn parses_message_list_request() {
-        let request = parse_request(
-            "operation=message_list\ncanonical_username=alice@example.com\nmailbox_name=INBOX\n",
-        )
-        .expect("message-list request should parse");
+    fn rejects_legacy_raw_request_fields() {
+        let mut request = MailboxHelperRequest::MailboxList {
+            canonical_username: "alice@example.com".to_string(),
+            grant: MailboxHelperGrant::unsigned(),
+        };
+        let mut text = sign_test_request(&mut request);
+        text.push_str("canonical_username=alice@example.com\n");
 
-        assert_eq!(
-            request,
-            MailboxHelperRequest::MessageList {
-                canonical_username: "alice@example.com".to_string(),
-                mailbox_name: "INBOX".to_string(),
-            }
-        );
+        let error = parse_request(&text).expect_err("legacy raw fields must fail");
+
+        assert_eq!(error, "unexpected helper request field: canonical_username");
+    }
+
+    #[test]
+    fn rejects_unknown_request_fields() {
+        let mut request = MailboxHelperRequest::MessageList {
+            canonical_username: "alice@example.com".to_string(),
+            mailbox_name: "INBOX".to_string(),
+            grant: MailboxHelperGrant::unsigned(),
+        };
+        let mut text = sign_test_request(&mut request);
+        text.push_str("surprise_b64=dmFsdWU=\n");
+
+        let error = parse_request(&text).expect_err("unknown fields must fail");
+
+        assert_eq!(error, "unexpected helper request field: surprise_b64");
+    }
+
+    #[test]
+    fn rejects_malformed_control_character_request_fields() {
+        let error = parse_request("operation=mailbox_list\ncanonical_username_b64=YWxpY2U=\u{1}\n")
+            .expect_err("control characters must fail");
+
+        assert!(error.contains("control characters"));
+    }
+
+    #[test]
+    fn parses_message_list_request() {
+        let mut expected = MailboxHelperRequest::MessageList {
+            canonical_username: "alice@example.com".to_string(),
+            mailbox_name: "INBOX".to_string(),
+            grant: MailboxHelperGrant::unsigned(),
+        };
+        let text = sign_test_request(&mut expected);
+        let request = parse_request(&text).expect("message-list request should parse");
+
+        assert_eq!(request, expected);
     }
 
     #[test]
     fn parses_message_view_request() {
-        let request = parse_request(
-            "operation=message_view\ncanonical_username=alice@example.com\nmailbox_name=INBOX\nuid=9\n",
-        )
-        .expect("message-view request should parse");
+        let mut expected = MailboxHelperRequest::MessageView {
+            canonical_username: "alice@example.com".to_string(),
+            mailbox_name: "INBOX".to_string(),
+            uid: 9,
+            grant: MailboxHelperGrant::unsigned(),
+        };
+        let text = sign_test_request(&mut expected);
+        let request = parse_request(&text).expect("message-view request should parse");
 
-        assert_eq!(
-            request,
-            MailboxHelperRequest::MessageView {
-                canonical_username: "alice@example.com".to_string(),
-                mailbox_name: "INBOX".to_string(),
-                uid: 9,
-            }
-        );
+        assert_eq!(request, expected);
     }
 
     #[test]
     fn parses_attachment_download_request() {
-        let request = parse_request(
-            "operation=attachment_download\ncanonical_username=alice@example.com\nmailbox_name=INBOX\nuid=9\npart_path=1.2\n",
-        )
-        .expect("attachment-download request should parse");
+        let mut expected = MailboxHelperRequest::AttachmentDownload {
+            canonical_username: "alice@example.com".to_string(),
+            mailbox_name: "INBOX".to_string(),
+            uid: 9,
+            part_path: "1.2".to_string(),
+            grant: MailboxHelperGrant::unsigned(),
+        };
+        let text = sign_test_request(&mut expected);
+        let request = parse_request(&text).expect("attachment-download request should parse");
 
-        assert_eq!(
-            request,
-            MailboxHelperRequest::AttachmentDownload {
-                canonical_username: "alice@example.com".to_string(),
-                mailbox_name: "INBOX".to_string(),
-                uid: 9,
-                part_path: "1.2".to_string(),
-            }
-        );
+        assert_eq!(request, expected);
     }
 
     #[test]
     fn parses_message_search_request() {
-        let request = parse_request(
-            "operation=message_search\ncanonical_username=alice@example.com\nmailbox_name=INBOX\nquery=quarterly report\n",
-        )
-        .expect("message-search request should parse");
+        let mut expected = MailboxHelperRequest::MessageSearch {
+            canonical_username: "alice@example.com".to_string(),
+            mailbox_name: "INBOX".to_string(),
+            query: "quarterly report".to_string(),
+            grant: MailboxHelperGrant::unsigned(),
+        };
+        let text = sign_test_request(&mut expected);
+        let request = parse_request(&text).expect("message-search request should parse");
 
-        assert_eq!(
-            request,
-            MailboxHelperRequest::MessageSearch {
-                canonical_username: "alice@example.com".to_string(),
-                mailbox_name: "INBOX".to_string(),
-                query: "quarterly report".to_string(),
-            }
-        );
+        assert_eq!(request, expected);
     }
 
     #[test]
     fn parses_message_move_request() {
-        let request = parse_request(
-            "operation=message_move\ncanonical_username=alice@example.com\nsource_mailbox_name=INBOX\ndestination_mailbox_name=Archive/2026\nuid=9\n",
-        )
-        .expect("message-move request should parse");
+        let mut expected = MailboxHelperRequest::MessageMove {
+            canonical_username: "alice@example.com".to_string(),
+            source_mailbox_name: "INBOX".to_string(),
+            destination_mailbox_name: "Archive/2026".to_string(),
+            uid: 9,
+            grant: MailboxHelperGrant::unsigned(),
+        };
+        let text = sign_test_request(&mut expected);
+        let request = parse_request(&text).expect("message-move request should parse");
 
-        assert_eq!(
-            request,
-            MailboxHelperRequest::MessageMove {
-                canonical_username: "alice@example.com".to_string(),
-                source_mailbox_name: "INBOX".to_string(),
-                destination_mailbox_name: "Archive/2026".to_string(),
-                uid: 9,
-            }
-        );
+        assert_eq!(request, expected);
     }
 
     fn helper_test_backends() -> StaticHelperBackend {
@@ -640,7 +783,7 @@ mod tests {
         let current_uid = test_runtime_uid();
         let response = run_helper_round_trip(
             current_uid.saturating_add(1),
-            "operation=mailbox_list\ncanonical_username=alice@example.com\n",
+            &signed_mailbox_list_request_text("alice@example.com"),
         );
 
         assert_eq!(
@@ -657,7 +800,7 @@ mod tests {
         let current_uid = test_runtime_uid();
         let response = run_helper_round_trip(
             current_uid,
-            "operation=mailbox_list\ncanonical_username=alice@example.com\n",
+            &signed_mailbox_list_request_text("alice@example.com"),
         );
 
         assert_eq!(
@@ -668,6 +811,123 @@ mod tests {
                 }],
             }
         );
+    }
+
+    #[test]
+    fn helper_rejects_missing_request_grant() {
+        let current_uid = test_runtime_uid();
+        let response = run_helper_round_trip(
+            current_uid,
+            "operation=mailbox_list\ncanonical_username_b64=YWxpY2VAZXhhbXBsZS5jb20=\n",
+        );
+
+        assert_eq!(
+            response,
+            MailboxHelperResponse::Error {
+                backend: "mailbox-helper-request".to_string(),
+                reason: "missing helper field: grant_issued_at".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn helper_rejects_altered_grant_username() {
+        let current_uid = test_runtime_uid();
+        let tampered = signed_mailbox_list_request_text("alice@example.com")
+            .replace("YWxpY2VAZXhhbXBsZS5jb20=", "Ym9iQGV4YW1wbGUuY29t");
+        let response = run_helper_round_trip(current_uid, &tampered);
+
+        assert_eq!(
+            response,
+            MailboxHelperResponse::Error {
+                backend: "mailbox-helper-grant".to_string(),
+                reason: "helper request grant signature was invalid".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn helper_rejects_expired_request_grant() {
+        let current_uid = test_runtime_uid();
+        let mut request = MailboxHelperRequest::MailboxList {
+            canonical_username: "alice@example.com".to_string(),
+            grant: MailboxHelperGrant::unsigned(),
+        };
+        let now = current_unix_time_secs().expect("test clock should be valid");
+        issue_request_grant_with_nonce(
+            &mut request,
+            TEST_HELPER_GRANT_KEY,
+            now.saturating_sub(120),
+            "11112222333344445555666677778888",
+        )
+        .expect("expired test grant should sign");
+        let response = run_helper_round_trip(current_uid, &encode_request(&request));
+
+        assert_eq!(
+            response,
+            MailboxHelperResponse::Error {
+                backend: "mailbox-helper-grant".to_string(),
+                reason: "helper request grant expired".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn helper_rejects_read_grant_reused_for_mutation() {
+        let current_uid = test_runtime_uid();
+        let mut read_request = MailboxHelperRequest::MessageList {
+            canonical_username: "alice@example.com".to_string(),
+            mailbox_name: "INBOX".to_string(),
+            grant: MailboxHelperGrant::unsigned(),
+        };
+        issue_request_grant_with_nonce(
+            &mut read_request,
+            TEST_HELPER_GRANT_KEY,
+            current_unix_time_secs().expect("test clock should be valid"),
+            "22223333444455556666777788889999",
+        )
+        .expect("read grant should sign");
+        let read_grant = request_grant(&read_request).clone();
+        let move_request = MailboxHelperRequest::MessageMove {
+            canonical_username: "alice@example.com".to_string(),
+            source_mailbox_name: "INBOX".to_string(),
+            destination_mailbox_name: "Archive".to_string(),
+            uid: 9,
+            grant: read_grant,
+        };
+        let response = run_helper_round_trip(current_uid, &encode_request(&move_request));
+
+        assert_eq!(
+            response,
+            MailboxHelperResponse::Error {
+                backend: "mailbox-helper-grant".to_string(),
+                reason: "helper request grant signature was invalid".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn helper_rejects_replayed_request_grant() {
+        let mut request = MailboxHelperRequest::MailboxList {
+            canonical_username: "alice@example.com".to_string(),
+            grant: MailboxHelperGrant::unsigned(),
+        };
+        issue_request_grant_with_nonce(
+            &mut request,
+            TEST_HELPER_GRANT_KEY,
+            current_unix_time_secs().expect("test clock should be valid"),
+            "3333444455556666777788889999aaaa",
+        )
+        .expect("test grant should sign");
+        let mut replay_cache = BTreeMap::<String, u64>::new();
+
+        verify_helper_request_authority(&request, TEST_HELPER_GRANT_KEY, &mut replay_cache)
+            .expect("first grant use should pass");
+        let error =
+            verify_helper_request_authority(&request, TEST_HELPER_GRANT_KEY, &mut replay_cache)
+                .expect_err("second grant use must fail");
+
+        assert_eq!(error, "helper request grant replay was rejected");
     }
 
     #[test]
@@ -683,6 +943,10 @@ mod tests {
         fs::create_dir_all(&temp_root).expect("temp root should be created");
         let socket_path = temp_socket_path("trusted-auth");
         let _listener = UnixListener::bind(&socket_path).expect("test auth socket should bind");
+        let grant_key_path = temp_root.join("mailbox-helper-grant.key");
+        fs::write(&grant_key_path, TEST_HELPER_GRANT_KEY).expect("grant key should be written");
+        fs::set_permissions(&grant_key_path, fs::Permissions::from_mode(0o600))
+            .expect("grant key permissions should be restricted");
         let config = AppConfig {
             run_mode: AppRunMode::MailboxHelper,
             environment: crate::config::RuntimeEnvironment::Development,
@@ -691,6 +955,7 @@ mod tests {
             trusted_web_runtime_uid: Some(test_runtime_uid()),
             doveadm_userdb_socket_path: None,
             mailbox_helper_socket_path: Some(temp_root.join("mailbox-helper.sock")),
+            mailbox_helper_grant_key_path: Some(grant_key_path),
             state_root: temp_root.clone(),
             log_level: LogLevel::Info,
             log_format: crate::config::LogFormat::Text,
@@ -766,6 +1031,7 @@ mod tests {
             trusted_web_runtime_uid: Some(mismatched_uid),
             doveadm_userdb_socket_path: None,
             mailbox_helper_socket_path: Some(temp_root.join("mailbox-helper.sock")),
+            mailbox_helper_grant_key_path: Some(temp_root.join("mailbox-helper-grant.key")),
             state_root: temp_root.clone(),
             log_level: LogLevel::Info,
             log_format: crate::config::LogFormat::Text,
@@ -819,190 +1085,183 @@ mod tests {
 
     #[test]
     fn parses_success_response() {
+        let expected = MailboxHelperResponse::MailboxListOk {
+            mailboxes: vec![
+                MailboxEntry {
+                    name: "INBOX".to_string(),
+                },
+                MailboxEntry {
+                    name: "Sent Items".to_string(),
+                },
+            ],
+        };
+        let text = encode_response(&expected);
         let response = parse_response(
             MailboxListingPolicy::default(),
             MessageListPolicy::default(),
             MessageSearchPolicy::default(),
             MessageViewPolicy::default(),
-            "status=ok\noperation=mailbox_list\nmailbox_count=2\nmailbox=INBOX\nmailbox=Sent Items\n",
+            &text,
         )
         .expect("response should parse");
 
-        assert_eq!(
-            response,
-            MailboxHelperResponse::MailboxListOk {
-                mailboxes: vec![
-                    MailboxEntry {
-                        name: "INBOX".to_string(),
-                    },
-                    MailboxEntry {
-                        name: "Sent Items".to_string(),
-                    },
-                ],
-            }
-        );
+        assert_eq!(response, expected);
     }
 
     #[test]
     fn parses_error_response() {
+        let expected = MailboxHelperResponse::Error {
+            backend: "doveadm-mailbox-list".to_string(),
+            reason: "temporarily unavailable".to_string(),
+        };
+        let text = encode_response(&expected);
         let response = parse_response(
             MailboxListingPolicy::default(),
             MessageListPolicy::default(),
             MessageSearchPolicy::default(),
             MessageViewPolicy::default(),
-            "status=error\nbackend=doveadm-mailbox-list\nreason=temporarily unavailable\n",
+            &text,
         )
         .expect("error response should parse");
 
-        assert_eq!(
-            response,
-            MailboxHelperResponse::Error {
-                backend: "doveadm-mailbox-list".to_string(),
-                reason: "temporarily unavailable".to_string(),
-            }
-        );
+        assert_eq!(response, expected);
     }
 
     #[test]
     fn parses_message_list_response() {
+        let expected = MailboxHelperResponse::MessageListOk {
+            mailbox_name: "INBOX".to_string(),
+            messages: vec![
+                MessageSummary {
+                    mailbox_name: "INBOX".to_string(),
+                    uid: 7,
+                    flags: vec!["\\Seen".to_string()],
+                    date_received: "2026-03-27 12:00:00 +0000".to_string(),
+                    size_virtual: 42,
+                    subject: Some("Quarterly report".to_string()),
+                    from: Some("Alice <alice@example.com>".to_string()),
+                },
+                MessageSummary {
+                    mailbox_name: "INBOX".to_string(),
+                    uid: 8,
+                    flags: Vec::new(),
+                    date_received: "2026-03-27 13:00:00 +0000".to_string(),
+                    size_virtual: 43,
+                    subject: Some("Follow-up".to_string()),
+                    from: Some("Bob <bob@example.com>".to_string()),
+                },
+            ],
+        };
+        let text = encode_response(&expected);
         let response = parse_response(
             MailboxListingPolicy::default(),
             MessageListPolicy::default(),
             MessageSearchPolicy::default(),
             MessageViewPolicy::default(),
-            "status=ok\noperation=message_list\nmailbox_name=INBOX\nmessage_count=2\nmessage_uid=7\nmessage_flags=\\Seen\nmessage_date_received=2026-03-27 12:00:00 +0000\nmessage_size_virtual=42\nmessage_mailbox=INBOX\nmessage_subject=Quarterly report\nmessage_from=Alice <alice@example.com>\nmessage_end=1\nmessage_uid=8\nmessage_flags=\nmessage_date_received=2026-03-27 13:00:00 +0000\nmessage_size_virtual=43\nmessage_mailbox=INBOX\nmessage_subject=Follow-up\nmessage_from=Bob <bob@example.com>\nmessage_end=1\n",
+            &text,
         )
         .expect("message-list response should parse");
 
-        assert_eq!(
-            response,
-            MailboxHelperResponse::MessageListOk {
-                mailbox_name: "INBOX".to_string(),
-                messages: vec![
-                    MessageSummary {
-                        mailbox_name: "INBOX".to_string(),
-                        uid: 7,
-                        flags: vec!["\\Seen".to_string()],
-                        date_received: "2026-03-27 12:00:00 +0000".to_string(),
-                        size_virtual: 42,
-                        subject: Some("Quarterly report".to_string()),
-                        from: Some("Alice <alice@example.com>".to_string()),
-                    },
-                    MessageSummary {
-                        mailbox_name: "INBOX".to_string(),
-                        uid: 8,
-                        flags: Vec::new(),
-                        date_received: "2026-03-27 13:00:00 +0000".to_string(),
-                        size_virtual: 43,
-                        subject: Some("Follow-up".to_string()),
-                        from: Some("Bob <bob@example.com>".to_string()),
-                    },
-                ],
-            }
-        );
+        assert_eq!(response, expected);
     }
 
     #[test]
     fn parses_message_search_response() {
+        let expected = MailboxHelperResponse::MessageSearchOk {
+            mailbox_name: "INBOX".to_string(),
+            query: "quarterly report".to_string(),
+            results: vec![MessageSearchResult {
+                mailbox_name: "INBOX".to_string(),
+                uid: 9,
+                flags: vec!["\\Seen".to_string()],
+                date_received: "2026-03-27 14:00:00 +0000".to_string(),
+                size_virtual: 44,
+                subject: Some("Quarterly report".to_string()),
+                from: Some("Alice <alice@example.com>".to_string()),
+            }],
+        };
+        let text = encode_response(&expected);
         let response = parse_response(
             MailboxListingPolicy::default(),
             MessageListPolicy::default(),
             MessageSearchPolicy::default(),
             MessageViewPolicy::default(),
-            "status=ok\noperation=message_search\nmailbox_name=INBOX\nquery=quarterly report\nmessage_count=1\nmessage_uid=9\nmessage_flags=\\Seen\nmessage_date_received=2026-03-27 14:00:00 +0000\nmessage_size_virtual=44\nmessage_mailbox=INBOX\nmessage_subject=Quarterly report\nmessage_from=Alice <alice@example.com>\nmessage_end=1\n",
+            &text,
         )
         .expect("message-search response should parse");
 
-        assert_eq!(
-            response,
-            MailboxHelperResponse::MessageSearchOk {
-                mailbox_name: "INBOX".to_string(),
-                query: "quarterly report".to_string(),
-                results: vec![MessageSearchResult {
-                    mailbox_name: "INBOX".to_string(),
-                    uid: 9,
-                    flags: vec!["\\Seen".to_string()],
-                    date_received: "2026-03-27 14:00:00 +0000".to_string(),
-                    size_virtual: 44,
-                    subject: Some("Quarterly report".to_string()),
-                    from: Some("Alice <alice@example.com>".to_string()),
-                }],
-            }
-        );
+        assert_eq!(response, expected);
     }
 
     #[test]
     fn parses_message_view_response() {
+        let expected = MailboxHelperResponse::MessageViewOk {
+            message: Box::new(MessageView {
+                mailbox_name: "INBOX".to_string(),
+                uid: 9,
+                flags: vec!["\\Seen".to_string()],
+                date_received: "2026-03-27 14:00:00 +0000".to_string(),
+                size_virtual: 44,
+                header_block: "Subject: Test message\n".to_string(),
+                body_text: "Hello world\n".to_string(),
+            }),
+        };
+        let text = encode_response(&expected);
         let response = parse_response(
             MailboxListingPolicy::default(),
             MessageListPolicy::default(),
             MessageSearchPolicy::default(),
             MessageViewPolicy::default(),
-            "status=ok\noperation=message_view\nmessage_uid=9\nmessage_flags=\\Seen\nmessage_date_received=2026-03-27 14:00:00 +0000\nmessage_size_virtual=44\nmessage_mailbox=INBOX\nmessage_header_block_b64=U3ViamVjdDogVGVzdCBtZXNzYWdlCg==\nmessage_body_text_b64=SGVsbG8gd29ybGQK\n",
+            &text,
         )
         .expect("message-view response should parse");
 
-        assert_eq!(
-            response,
-            MailboxHelperResponse::MessageViewOk {
-                message: Box::new(MessageView {
-                    mailbox_name: "INBOX".to_string(),
-                    uid: 9,
-                    flags: vec!["\\Seen".to_string()],
-                    date_received: "2026-03-27 14:00:00 +0000".to_string(),
-                    size_virtual: 44,
-                    header_block: "Subject: Test message\n".to_string(),
-                    body_text: "Hello world\n".to_string(),
-                }),
-            }
-        );
+        assert_eq!(response, expected);
     }
 
     #[test]
     fn parses_attachment_download_response() {
+        let expected = MailboxHelperResponse::AttachmentDownloadOk {
+            attachment: Box::new(crate::attachment::DownloadedAttachment {
+                mailbox_name: "INBOX".to_string(),
+                uid: 9,
+                part_path: "1.2".to_string(),
+                filename: "report.pdf".to_string(),
+                content_type: "application/pdf".to_string(),
+                body: b"Hello".to_vec(),
+            }),
+        };
+        let text = encode_response(&expected);
         let response = parse_response(
             MailboxListingPolicy::default(),
             MessageListPolicy::default(),
             MessageSearchPolicy::default(),
             MessageViewPolicy::default(),
-            "status=ok\noperation=attachment_download\nattachment_mailbox_name=INBOX\nattachment_uid=9\nattachment_part_path=1.2\nattachment_filename=report.pdf\nattachment_content_type=application/pdf\nattachment_body_b64=SGVsbG8=\n",
+            &text,
         )
         .expect("attachment-download response should parse");
 
-        assert_eq!(
-            response,
-            MailboxHelperResponse::AttachmentDownloadOk {
-                attachment: Box::new(crate::attachment::DownloadedAttachment {
-                    mailbox_name: "INBOX".to_string(),
-                    uid: 9,
-                    part_path: "1.2".to_string(),
-                    filename: "report.pdf".to_string(),
-                    content_type: "application/pdf".to_string(),
-                    body: b"Hello".to_vec(),
-                }),
-            }
-        );
+        assert_eq!(response, expected);
     }
 
     #[test]
     fn parses_message_move_response() {
+        let expected = MailboxHelperResponse::MessageMoveOk {
+            source_mailbox_name: "INBOX".to_string(),
+            destination_mailbox_name: "Archive/2026".to_string(),
+            uid: 9,
+        };
+        let text = encode_response(&expected);
         let response = parse_response(
             MailboxListingPolicy::default(),
             MessageListPolicy::default(),
             MessageSearchPolicy::default(),
             MessageViewPolicy::default(),
-            "status=ok\noperation=message_move\nsource_mailbox_name=INBOX\ndestination_mailbox_name=Archive/2026\nuid=9\n",
+            &text,
         )
         .expect("message-move response should parse");
 
-        assert_eq!(
-            response,
-            MailboxHelperResponse::MessageMoveOk {
-                source_mailbox_name: "INBOX".to_string(),
-                destination_mailbox_name: "Archive/2026".to_string(),
-                uid: 9,
-            }
-        );
+        assert_eq!(response, expected);
     }
 
     #[cfg(unix)]
@@ -1028,8 +1287,12 @@ mod tests {
         };
         let server = spawn_test_helper(socket_path.clone(), backend);
         wait_for_socket(&socket_path);
-        let client =
-            MailboxHelperMailboxListBackend::new(&socket_path, MailboxHelperPolicy::default());
+        let grant_key_path = temp_grant_key_path("mailbox-helper-ok");
+        let client = MailboxHelperMailboxListBackend::new(
+            &socket_path,
+            &grant_key_path,
+            MailboxHelperPolicy::default(),
+        );
 
         let mailboxes = client
             .list_mailboxes("alice@example.com")
@@ -1070,8 +1333,12 @@ mod tests {
         };
         let server = spawn_test_helper(socket_path.clone(), backend);
         wait_for_socket(&socket_path);
-        let client =
-            MailboxHelperMailboxListBackend::new(&socket_path, MailboxHelperPolicy::default());
+        let grant_key_path = temp_grant_key_path("mailbox-helper-error");
+        let client = MailboxHelperMailboxListBackend::new(
+            &socket_path,
+            &grant_key_path,
+            MailboxHelperPolicy::default(),
+        );
 
         let error = client
             .list_mailboxes("alice@example.com")
@@ -1090,8 +1357,12 @@ mod tests {
         let socket_path = temp_socket_path("mailbox-helper-timeout");
         let server = spawn_unresponsive_helper(socket_path.clone());
         wait_for_socket(&socket_path);
-        let client =
-            MailboxHelperMailboxListBackend::new(&socket_path, one_second_helper_timeout_policy());
+        let grant_key_path = temp_grant_key_path("mailbox-helper-timeout");
+        let client = MailboxHelperMailboxListBackend::new(
+            &socket_path,
+            &grant_key_path,
+            one_second_helper_timeout_policy(),
+        );
         let started_at = Instant::now();
 
         let error = client
@@ -1145,8 +1416,10 @@ mod tests {
         };
         let server = spawn_test_helper(socket_path.clone(), backend);
         wait_for_socket(&socket_path);
+        let grant_key_path = temp_grant_key_path("message-helper-ok");
         let client = MailboxHelperMessageListBackend::new(
             &socket_path,
+            &grant_key_path,
             MailboxHelperPolicy::default(),
             MessageListPolicy::default(),
         );
@@ -1196,8 +1469,10 @@ mod tests {
         };
         let server = spawn_test_helper(socket_path.clone(), backend);
         wait_for_socket(&socket_path);
+        let grant_key_path = temp_grant_key_path("message-search-helper-ok");
         let client = MailboxHelperMessageSearchBackend::new(
             &socket_path,
+            &grant_key_path,
             MailboxHelperPolicy::default(),
             MessageSearchPolicy::default(),
         );
@@ -1223,8 +1498,10 @@ mod tests {
         let socket_path = temp_socket_path("message-search-helper-timeout");
         let server = spawn_unresponsive_helper(socket_path.clone());
         wait_for_socket(&socket_path);
+        let grant_key_path = temp_grant_key_path("message-search-helper-timeout");
         let client = MailboxHelperMessageSearchBackend::new(
             &socket_path,
+            &grant_key_path,
             one_second_helper_timeout_policy(),
             MessageSearchPolicy::default(),
         );
@@ -1270,8 +1547,10 @@ mod tests {
         };
         let server = spawn_test_helper(socket_path.clone(), backend);
         wait_for_socket(&socket_path);
+        let grant_key_path = temp_grant_key_path("message-view-helper-ok");
         let client = MailboxHelperMessageViewBackend::new(
             &socket_path,
+            &grant_key_path,
             MailboxHelperPolicy::default(),
             MessageViewPolicy::default(),
         );
@@ -1296,8 +1575,10 @@ mod tests {
         let socket_path = temp_socket_path("message-view-helper-timeout");
         let server = spawn_unresponsive_helper(socket_path.clone());
         wait_for_socket(&socket_path);
+        let grant_key_path = temp_grant_key_path("message-view-helper-timeout");
         let client = MailboxHelperMessageViewBackend::new(
             &socket_path,
+            &grant_key_path,
             one_second_helper_timeout_policy(),
             MessageViewPolicy::default(),
         );
@@ -1356,8 +1637,10 @@ mod tests {
         };
         let server = spawn_test_helper(socket_path.clone(), backend);
         wait_for_socket(&socket_path);
+        let grant_key_path = temp_grant_key_path("attachment-helper-ok");
         let client = MailboxHelperAttachmentDownloadBackend::new(
             &socket_path,
+            &grant_key_path,
             MailboxHelperPolicy::default(),
         );
 
@@ -1392,8 +1675,10 @@ mod tests {
         };
         let server = spawn_test_helper(socket_path.clone(), backend);
         wait_for_socket(&socket_path);
+        let grant_key_path = temp_grant_key_path("attachment-helper-missing");
         let client = MailboxHelperAttachmentDownloadBackend::new(
             &socket_path,
+            &grant_key_path,
             MailboxHelperPolicy::default(),
         );
 
@@ -1426,8 +1711,12 @@ mod tests {
         };
         let server = spawn_test_helper(socket_path.clone(), backend);
         wait_for_socket(&socket_path);
-        let client =
-            MailboxHelperMessageMoveBackend::new(&socket_path, MailboxHelperPolicy::default());
+        let grant_key_path = temp_grant_key_path("message-move-helper-ok");
+        let client = MailboxHelperMessageMoveBackend::new(
+            &socket_path,
+            &grant_key_path,
+            MailboxHelperPolicy::default(),
+        );
         let request =
             MessageMoveRequest::new(MessageMovePolicy::default(), "INBOX", "Archive/2026", 9)
                 .expect("request should parse");
@@ -1474,6 +1763,7 @@ mod tests {
             let listener = UnixListener::bind(&socket_path).expect("test helper should bind");
             let logger = Logger::new(crate::config::LogFormat::Text, LogLevel::Info);
             let (mut stream, _) = listener.accept().expect("test helper should accept");
+            let mut replay_cache = BTreeMap::<String, u64>::new();
             handle_helper_client(
                 HelperBackends {
                     mailbox_backend: &backend,
@@ -1485,7 +1775,11 @@ mod tests {
                 &logger,
                 &mut stream,
                 MailboxHelperPolicy::default(),
-                MailboxHelperTrustedCallerPolicy { trusted_peer_uid },
+                MailboxHelperTrustedCallerPolicy {
+                    trusted_peer_uid,
+                    grant_key: TEST_HELPER_GRANT_KEY.to_vec(),
+                },
+                &mut replay_cache,
             );
         })
     }
@@ -1523,6 +1817,15 @@ mod tests {
                 .as_nanos()
         );
         std::env::temp_dir().join(unique)
+    }
+
+    #[cfg(unix)]
+    fn temp_grant_key_path(prefix: &str) -> PathBuf {
+        let path = temp_socket_path(prefix).with_extension("key");
+        fs::write(&path, TEST_HELPER_GRANT_KEY).expect("test grant key should be written");
+        fs::set_permissions(&path, fs::Permissions::from_mode(0o600))
+            .expect("test grant key permissions should be restricted");
+        path
     }
 
     #[cfg(unix)]

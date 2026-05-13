@@ -32,6 +32,7 @@ fi
 : "${OSMAP_RELEASE_TLS_EDGE_EVIDENCE:=maint/live/osmap-v3-tls-cbc-cleanup-evidence-2026-05-02.txt}"
 : "${OSMAP_RELEASE_TLS_STANDARD_EVIDENCE:=maint/live/latest-host-tls-standard-report.json}"
 : "${OSMAP_RELEASE_RESOURCE_TIMEOUT_EVIDENCE:=maint/live/osmap-v3-resource-timeout-evidence-2026-05-02.txt maint/live/latest-host-v3-resource-controls-report.txt}"
+: "${OSMAP_RELEASE_HELPER_BOUNDARY_EVIDENCE:=$OSMAP_RELEASE_EVIDENCE_DIR/latest-host-helper-boundary-report.txt maint/live/osmap-live-validate-helper-peer-auth.ksh}"
 : "${OSMAP_RELEASE_V3_MIME_HTML_PROOF_VALIDATOR:=maint/live/osmap-live-validate-v3-mime-html-proof.ksh}"
 : "${OSMAP_RELEASE_V3_MIME_HTML_PROOF_REPORT:=$OSMAP_RELEASE_EVIDENCE_DIR/latest-host-v3-mime-html-proof-report.txt}"
 : "${OSMAP_RELEASE_SUPPLY_CHAIN_COMMAND:=sh maint/security/osmap-supply-chain-check.sh}"
@@ -65,6 +66,8 @@ tls_standard_checked=""
 tls_standard_status="missing"
 resource_timeout_checked=""
 resource_timeout_status="missing"
+helper_boundary_checked=""
+helper_boundary_status="missing"
 v3_mime_html_proof_status="missing"
 v3_mime_html_proof_checked=""
 
@@ -156,6 +159,7 @@ write_summary() {
 	tls_json=$(json_array "$tls_checked")
 	tls_standard_json=$(json_array "$tls_standard_checked")
 	resource_timeout_json=$(json_array "$resource_timeout_checked")
+	helper_boundary_json=$(json_array "$helper_boundary_checked")
 	v3_mime_html_proof_json=$(json_array "$v3_mime_html_proof_checked")
 	cat > "$OSMAP_RELEASE_SUMMARY_JSON" <<EOF
 {
@@ -184,6 +188,8 @@ write_summary() {
   "tls_standard_evidence_files_checked": $tls_standard_json,
   "resource_timeout_status": $(json_string "$resource_timeout_status"),
   "resource_timeout_evidence_files_checked": $resource_timeout_json,
+  "helper_boundary_status": $(json_string "$helper_boundary_status"),
+  "helper_boundary_evidence_files_checked": $helper_boundary_json,
   "v3_mime_html_proof_status": $(json_string "$v3_mime_html_proof_status"),
   "v3_mime_html_proof_evidence_files_checked": $v3_mime_html_proof_json,
   "skipped_checks": $skips_json,
@@ -210,6 +216,7 @@ EOF
 - TLS CBC cleanup: \`$tls_cbc_status\`
 - TLS standard validation: \`$tls_standard_status\`
 - Resource and timeout hardening: \`$resource_timeout_status\`
+- Helper boundary evidence: \`$helper_boundary_status\`
 - V3 live MIME and HTML proof: \`$v3_mime_html_proof_status\`
 - Sanitized evidence archive: \`$sanitized_archive_status\` at \`$OSMAP_RELEASE_SANITIZED_ARCHIVE_PATH\`
 - Skipped checks: \`$(printf '%s' "$skipped_checks" | tr '\n' '; ')\`
@@ -233,6 +240,10 @@ $(printf '%s\n' "$tls_standard_checked" | sed '/^$/d; s/^/- `/' | sed 's/$/`/')
 ## Resource And Timeout Evidence
 
 $(printf '%s\n' "$resource_timeout_checked" | sed '/^$/d; s/^/- `/' | sed 's/$/`/')
+
+## Helper Boundary Evidence
+
+$(printf '%s\n' "$helper_boundary_checked" | sed '/^$/d; s/^/- `/' | sed 's/$/`/')
 
 ## V3 Live MIME And HTML Proof Evidence
 
@@ -634,6 +645,13 @@ if [ -n "$resource_timeout_checked" ] && [ "$failures" -eq "$resource_failures_b
 else
 	resource_timeout_status="missing"
 fi
+helper_boundary_failures_before=$failures
+helper_boundary_checked=$(check_path_list "helper-boundary" "$OSMAP_RELEASE_HELPER_BOUNDARY_EVIDENCE")
+if [ -n "$helper_boundary_checked" ] && [ "$failures" -eq "$helper_boundary_failures_before" ]; then
+	helper_boundary_status="passed"
+else
+	helper_boundary_status="missing"
+fi
 validate_v3_mime_html_proof || true
 validate_wstg_summary || true
 
@@ -650,6 +668,7 @@ if [ "$failures" -eq 0 ]; then
 		$OSMAP_RELEASE_TLS_EDGE_EVIDENCE \
 		"$OSMAP_RELEASE_TLS_STANDARD_EVIDENCE" \
 		$OSMAP_RELEASE_RESOURCE_TIMEOUT_EVIDENCE \
+		$OSMAP_RELEASE_HELPER_BOUNDARY_EVIDENCE \
 		"$OSMAP_RELEASE_V3_MIME_HTML_PROOF_REPORT" \
 		"$OSMAP_RELEASE_WSTG_SUMMARY_PATH"; then
 		sanitized_archive_status="passed"
@@ -663,6 +682,7 @@ if [ "$failures" -eq 0 ]; then
 			$OSMAP_RELEASE_TLS_EDGE_EVIDENCE \
 			"$OSMAP_RELEASE_TLS_STANDARD_EVIDENCE" \
 			$OSMAP_RELEASE_RESOURCE_TIMEOUT_EVIDENCE \
+			$OSMAP_RELEASE_HELPER_BOUNDARY_EVIDENCE \
 			"$OSMAP_RELEASE_V3_MIME_HTML_PROOF_REPORT" \
 			"$OSMAP_RELEASE_WSTG_SUMMARY_PATH"; then
 			sanitized_archive_status="failed"

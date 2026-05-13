@@ -35,6 +35,7 @@ pub struct AppConfig {
     pub trusted_web_runtime_uid: Option<u32>,
     pub doveadm_userdb_socket_path: Option<PathBuf>,
     pub mailbox_helper_socket_path: Option<PathBuf>,
+    pub mailbox_helper_grant_key_path: Option<PathBuf>,
     pub state_root: PathBuf,
     pub log_level: LogLevel,
     pub log_format: LogFormat,
@@ -329,6 +330,8 @@ impl AppConfig {
         let trusted_web_runtime_uid = parse_optional_u32(env_map, "OSMAP_TRUSTED_WEB_RUNTIME_UID")?;
         let doveadm_userdb_socket_path =
             parse_optional_absolute_optional_path(env_map, "OSMAP_DOVEADM_USERDB_SOCKET_PATH")?;
+        let mailbox_helper_grant_key_path =
+            parse_optional_absolute_optional_path(env_map, "OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH")?;
 
         validate_non_empty("OSMAP_RUN_MODE", &run_mode_value)?;
         validate_non_empty("OSMAP_ENV", &environment_value)?;
@@ -626,6 +629,7 @@ impl AppConfig {
             mailbox_helper_socket_path.as_deref(),
             doveadm_auth_socket_path.as_deref(),
             trusted_web_runtime_uid,
+            mailbox_helper_grant_key_path.as_deref(),
         )?;
 
         Ok(Self {
@@ -636,6 +640,7 @@ impl AppConfig {
             trusted_web_runtime_uid,
             doveadm_userdb_socket_path,
             mailbox_helper_socket_path,
+            mailbox_helper_grant_key_path,
             log_level,
             log_format,
             state_root,
@@ -673,6 +678,7 @@ fn validate_mailbox_boundary(
     mailbox_helper_socket_path: Option<&Path>,
     doveadm_auth_socket_path: Option<&Path>,
     trusted_web_runtime_uid: Option<u32>,
+    mailbox_helper_grant_key_path: Option<&Path>,
 ) -> Result<(), BootstrapError> {
     if environment == RuntimeEnvironment::Production
         && run_mode == AppRunMode::Serve
@@ -695,6 +701,17 @@ fn validate_mailbox_boundary(
         return Err(BootstrapError::InvalidConfig {
             field: "OSMAP_TRUSTED_WEB_RUNTIME_UID",
             reason: "mailbox helper run mode requires the dedicated web runtime uid so startup can verify the trusted auth-socket owner".to_string(),
+        });
+    }
+
+    if (run_mode == AppRunMode::MailboxHelper || mailbox_helper_socket_path.is_some())
+        && mailbox_helper_grant_key_path.is_none()
+    {
+        return Err(BootstrapError::InvalidConfig {
+            field: "OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH",
+            reason:
+                "helper-backed mailbox operations require a permission-restricted request grant key"
+                    .to_string(),
         });
     }
 
@@ -913,6 +930,7 @@ mod tests {
         assert_eq!(config.trusted_web_runtime_uid, None);
         assert_eq!(config.doveadm_userdb_socket_path, None);
         assert_eq!(config.mailbox_helper_socket_path, None);
+        assert_eq!(config.mailbox_helper_grant_key_path, None);
         assert_eq!(config.state_root, std::path::Path::new("/var/lib/osmap"));
         assert_eq!(
             config.state_layout.runtime_dir,
@@ -1093,6 +1111,10 @@ mod tests {
                 "OSMAP_MAILBOX_HELPER_SOCKET_PATH".to_string(),
                 "/var/lib/osmap-staging/run/mailbox-helper.sock".to_string(),
             ),
+            (
+                "OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH".to_string(),
+                "/var/lib/osmap-staging/secrets/mailbox-helper-grant.key".to_string(),
+            ),
         ]);
 
         let config = AppConfig::from_env_map(&env_map).expect("explicit values should be valid");
@@ -1113,6 +1135,13 @@ mod tests {
             config.mailbox_helper_socket_path,
             Some(
                 std::path::Path::new("/var/lib/osmap-staging/run/mailbox-helper.sock")
+                    .to_path_buf()
+            )
+        );
+        assert_eq!(
+            config.mailbox_helper_grant_key_path,
+            Some(
+                std::path::Path::new("/var/lib/osmap-staging/secrets/mailbox-helper-grant.key")
                     .to_path_buf()
             )
         );
@@ -1524,6 +1553,10 @@ mod tests {
                 "OSMAP_TRUSTED_WEB_RUNTIME_UID".to_string(),
                 "1001".to_string(),
             ),
+            (
+                "OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH".to_string(),
+                "/var/lib/osmap/secrets/mailbox-helper-grant.key".to_string(),
+            ),
         ]);
 
         let config = AppConfig::from_env_map(&env_map).expect("helper mode should parse");
@@ -1594,6 +1627,32 @@ mod tests {
     }
 
     #[test]
+    fn mailbox_helper_mode_requires_grant_key_path() {
+        let env_map = BTreeMap::from([
+            ("OSMAP_RUN_MODE".to_string(), "mailbox-helper".to_string()),
+            (
+                "OSMAP_DOVEADM_AUTH_SOCKET_PATH".to_string(),
+                "/var/run/osmap-auth".to_string(),
+            ),
+            (
+                "OSMAP_TRUSTED_WEB_RUNTIME_UID".to_string(),
+                "1001".to_string(),
+            ),
+        ]);
+
+        let error = AppConfig::from_env_map(&env_map)
+            .expect_err("mailbox helper mode must require the helper grant key");
+
+        assert_eq!(
+            error,
+            BootstrapError::InvalidConfig {
+                field: "OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH",
+                reason: "helper-backed mailbox operations require a permission-restricted request grant key".to_string(),
+            }
+        );
+    }
+
+    #[test]
     fn rejects_zero_trusted_web_runtime_uid() {
         let env_map =
             BTreeMap::from([("OSMAP_TRUSTED_WEB_RUNTIME_UID".to_string(), "0".to_string())]);
@@ -1650,6 +1709,10 @@ mod tests {
                 "OSMAP_MAILBOX_HELPER_SOCKET_PATH".to_string(),
                 "/var/lib/osmap/run/mailbox-helper.sock".to_string(),
             ),
+            (
+                "OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH".to_string(),
+                "/var/lib/osmap/secrets/mailbox-helper-grant.key".to_string(),
+            ),
         ]);
 
         let error = AppConfig::from_env_map(&env_map)
@@ -1693,6 +1756,10 @@ mod tests {
             (
                 "OSMAP_MAILBOX_HELPER_SOCKET_PATH".to_string(),
                 "/var/lib/osmap/run/mailbox-helper.sock".to_string(),
+            ),
+            (
+                "OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH".to_string(),
+                "/var/lib/osmap/secrets/mailbox-helper-grant.key".to_string(),
             ),
         ]);
 

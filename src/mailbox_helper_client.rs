@@ -7,14 +7,20 @@ use crate::attachment::{
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MailboxHelperMailboxListBackend {
     socket_path: PathBuf,
+    grant_key_path: PathBuf,
     policy: MailboxHelperPolicy,
 }
 
 impl MailboxHelperMailboxListBackend {
     /// Creates a mailbox-list client backend for the supplied helper socket.
-    pub fn new(socket_path: impl Into<PathBuf>, policy: MailboxHelperPolicy) -> Self {
+    pub fn new(
+        socket_path: impl Into<PathBuf>,
+        grant_key_path: impl Into<PathBuf>,
+        policy: MailboxHelperPolicy,
+    ) -> Self {
         Self {
             socket_path: socket_path.into(),
+            grant_key_path: grant_key_path.into(),
             policy,
         }
     }
@@ -25,10 +31,11 @@ impl MailboxBackend for MailboxHelperMailboxListBackend {
         &self,
         canonical_username: &str,
     ) -> Result<Vec<MailboxEntry>, MailboxBackendError> {
-        let request = MailboxHelperRequest::MailboxList {
+        let mut request = MailboxHelperRequest::MailboxList {
             canonical_username: canonical_username.to_string(),
+            grant: MailboxHelperGrant::unsigned(),
         };
-        let request_bytes = encode_request(&request).into_bytes();
+        let request_bytes = encode_authorized_request(&self.grant_key_path, &mut request);
 
         #[cfg(not(unix))]
         {
@@ -41,6 +48,10 @@ impl MailboxBackend for MailboxHelperMailboxListBackend {
 
         #[cfg(unix)]
         {
+            let request_bytes = request_bytes.map_err(|reason| MailboxBackendError {
+                backend: "mailbox-helper-client",
+                reason,
+            })?;
             let mut stream =
                 UnixStream::connect(&self.socket_path).map_err(|error| MailboxBackendError {
                     backend: "mailbox-helper-client",
@@ -127,6 +138,7 @@ impl MailboxBackend for MailboxHelperMailboxListBackend {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MailboxHelperMessageListBackend {
     socket_path: PathBuf,
+    grant_key_path: PathBuf,
     policy: MailboxHelperPolicy,
     message_policy: MessageListPolicy,
 }
@@ -135,11 +147,13 @@ impl MailboxHelperMessageListBackend {
     /// Creates a message-list client backend for the supplied helper socket.
     pub fn new(
         socket_path: impl Into<PathBuf>,
+        grant_key_path: impl Into<PathBuf>,
         policy: MailboxHelperPolicy,
         message_policy: MessageListPolicy,
     ) -> Self {
         Self {
             socket_path: socket_path.into(),
+            grant_key_path: grant_key_path.into(),
             policy,
             message_policy,
         }
@@ -152,11 +166,12 @@ impl MessageListBackend for MailboxHelperMessageListBackend {
         canonical_username: &str,
         request: &MessageListRequest,
     ) -> Result<Vec<MessageSummary>, MailboxBackendError> {
-        let helper_request = MailboxHelperRequest::MessageList {
+        let mut helper_request = MailboxHelperRequest::MessageList {
             canonical_username: canonical_username.to_string(),
             mailbox_name: request.mailbox_name.clone(),
+            grant: MailboxHelperGrant::unsigned(),
         };
-        let request_bytes = encode_request(&helper_request).into_bytes();
+        let request_bytes = encode_authorized_request(&self.grant_key_path, &mut helper_request);
 
         #[cfg(not(unix))]
         {
@@ -169,6 +184,10 @@ impl MessageListBackend for MailboxHelperMessageListBackend {
 
         #[cfg(unix)]
         {
+            let request_bytes = request_bytes.map_err(|reason| MailboxBackendError {
+                backend: "mailbox-helper-client",
+                reason,
+            })?;
             let mut stream =
                 UnixStream::connect(&self.socket_path).map_err(|error| MailboxBackendError {
                     backend: "mailbox-helper-client",
@@ -269,6 +288,7 @@ impl MessageListBackend for MailboxHelperMessageListBackend {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MailboxHelperMessageSearchBackend {
     socket_path: PathBuf,
+    grant_key_path: PathBuf,
     policy: MailboxHelperPolicy,
     search_policy: MessageSearchPolicy,
 }
@@ -277,11 +297,13 @@ impl MailboxHelperMessageSearchBackend {
     /// Creates a message-search client backend for the supplied helper socket.
     pub fn new(
         socket_path: impl Into<PathBuf>,
+        grant_key_path: impl Into<PathBuf>,
         policy: MailboxHelperPolicy,
         search_policy: MessageSearchPolicy,
     ) -> Self {
         Self {
             socket_path: socket_path.into(),
+            grant_key_path: grant_key_path.into(),
             policy,
             search_policy,
         }
@@ -294,12 +316,13 @@ impl MessageSearchBackend for MailboxHelperMessageSearchBackend {
         canonical_username: &str,
         request: &MessageSearchRequest,
     ) -> Result<Vec<MessageSearchResult>, MailboxBackendError> {
-        let helper_request = MailboxHelperRequest::MessageSearch {
+        let mut helper_request = MailboxHelperRequest::MessageSearch {
             canonical_username: canonical_username.to_string(),
             mailbox_name: request.mailbox_name.clone(),
             query: request.query.clone(),
+            grant: MailboxHelperGrant::unsigned(),
         };
-        let request_bytes = encode_request(&helper_request).into_bytes();
+        let request_bytes = encode_authorized_request(&self.grant_key_path, &mut helper_request);
 
         #[cfg(not(unix))]
         {
@@ -312,6 +335,10 @@ impl MessageSearchBackend for MailboxHelperMessageSearchBackend {
 
         #[cfg(unix)]
         {
+            let request_bytes = request_bytes.map_err(|reason| MailboxBackendError {
+                backend: "mailbox-helper-client",
+                reason,
+            })?;
             let mut stream =
                 UnixStream::connect(&self.socket_path).map_err(|error| MailboxBackendError {
                     backend: "mailbox-helper-client",
@@ -423,6 +450,7 @@ impl MessageSearchBackend for MailboxHelperMessageSearchBackend {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MailboxHelperMessageViewBackend {
     socket_path: PathBuf,
+    grant_key_path: PathBuf,
     policy: MailboxHelperPolicy,
     message_view_policy: MessageViewPolicy,
 }
@@ -431,11 +459,13 @@ impl MailboxHelperMessageViewBackend {
     /// Creates a message-view client backend for the supplied helper socket.
     pub fn new(
         socket_path: impl Into<PathBuf>,
+        grant_key_path: impl Into<PathBuf>,
         policy: MailboxHelperPolicy,
         message_view_policy: MessageViewPolicy,
     ) -> Self {
         Self {
             socket_path: socket_path.into(),
+            grant_key_path: grant_key_path.into(),
             policy,
             message_view_policy,
         }
@@ -448,12 +478,13 @@ impl MessageViewBackend for MailboxHelperMessageViewBackend {
         canonical_username: &str,
         request: &MessageViewRequest,
     ) -> Result<MessageView, MailboxBackendError> {
-        let helper_request = MailboxHelperRequest::MessageView {
+        let mut helper_request = MailboxHelperRequest::MessageView {
             canonical_username: canonical_username.to_string(),
             mailbox_name: request.mailbox_name.clone(),
             uid: request.uid,
+            grant: MailboxHelperGrant::unsigned(),
         };
-        let request_bytes = encode_request(&helper_request).into_bytes();
+        let request_bytes = encode_authorized_request(&self.grant_key_path, &mut helper_request);
 
         #[cfg(not(unix))]
         {
@@ -466,6 +497,10 @@ impl MessageViewBackend for MailboxHelperMessageViewBackend {
 
         #[cfg(unix)]
         {
+            let request_bytes = request_bytes.map_err(|reason| MailboxBackendError {
+                backend: "mailbox-helper-client",
+                reason,
+            })?;
             let mut stream =
                 UnixStream::connect(&self.socket_path).map_err(|error| MailboxBackendError {
                     backend: "mailbox-helper-client",
@@ -572,15 +607,21 @@ impl MessageViewBackend for MailboxHelperMessageViewBackend {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MailboxHelperAttachmentDownloadBackend {
     socket_path: PathBuf,
+    grant_key_path: PathBuf,
     policy: MailboxHelperPolicy,
 }
 
 impl MailboxHelperAttachmentDownloadBackend {
     /// Creates an attachment-download client backend for the supplied helper
     /// socket.
-    pub fn new(socket_path: impl Into<PathBuf>, policy: MailboxHelperPolicy) -> Self {
+    pub fn new(
+        socket_path: impl Into<PathBuf>,
+        grant_key_path: impl Into<PathBuf>,
+        policy: MailboxHelperPolicy,
+    ) -> Self {
         Self {
             socket_path: socket_path.into(),
+            grant_key_path: grant_key_path.into(),
             policy,
         }
     }
@@ -592,13 +633,14 @@ impl MailboxHelperAttachmentDownloadBackend {
         uid: u64,
         part_path: &str,
     ) -> Result<DownloadedAttachment, AttachmentDownloadError> {
-        let helper_request = MailboxHelperRequest::AttachmentDownload {
+        let mut helper_request = MailboxHelperRequest::AttachmentDownload {
             canonical_username: canonical_username.to_string(),
             mailbox_name: mailbox_name.to_string(),
             uid,
             part_path: part_path.to_string(),
+            grant: MailboxHelperGrant::unsigned(),
         };
-        let request_bytes = encode_request(&helper_request).into_bytes();
+        let request_bytes = encode_authorized_request(&self.grant_key_path, &mut helper_request);
 
         #[cfg(not(unix))]
         {
@@ -611,6 +653,7 @@ impl MailboxHelperAttachmentDownloadBackend {
 
         #[cfg(unix)]
         {
+            let request_bytes = request_bytes.map_err(transport_error)?;
             let mut stream = UnixStream::connect(&self.socket_path).map_err(|error| {
                 transport_error(format!(
                     "failed to connect to mailbox helper {}: {error}",
@@ -694,14 +737,20 @@ impl MailboxHelperAttachmentDownloadBackend {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MailboxHelperMessageMoveBackend {
     socket_path: PathBuf,
+    grant_key_path: PathBuf,
     policy: MailboxHelperPolicy,
 }
 
 impl MailboxHelperMessageMoveBackend {
     /// Creates a message-move client backend for the supplied helper socket.
-    pub fn new(socket_path: impl Into<PathBuf>, policy: MailboxHelperPolicy) -> Self {
+    pub fn new(
+        socket_path: impl Into<PathBuf>,
+        grant_key_path: impl Into<PathBuf>,
+        policy: MailboxHelperPolicy,
+    ) -> Self {
         Self {
             socket_path: socket_path.into(),
+            grant_key_path: grant_key_path.into(),
             policy,
         }
     }
@@ -713,13 +762,14 @@ impl MessageMoveBackend for MailboxHelperMessageMoveBackend {
         canonical_username: &str,
         request: &MessageMoveRequest,
     ) -> Result<(), MailboxBackendError> {
-        let helper_request = MailboxHelperRequest::MessageMove {
+        let mut helper_request = MailboxHelperRequest::MessageMove {
             canonical_username: canonical_username.to_string(),
             source_mailbox_name: request.source_mailbox_name.clone(),
             destination_mailbox_name: request.destination_mailbox_name.clone(),
             uid: request.uid,
+            grant: MailboxHelperGrant::unsigned(),
         };
-        let request_bytes = encode_request(&helper_request).into_bytes();
+        let request_bytes = encode_authorized_request(&self.grant_key_path, &mut helper_request);
 
         #[cfg(not(unix))]
         {
@@ -732,6 +782,10 @@ impl MessageMoveBackend for MailboxHelperMessageMoveBackend {
 
         #[cfg(unix)]
         {
+            let request_bytes = request_bytes.map_err(|reason| MailboxBackendError {
+                backend: "mailbox-helper-client",
+                reason,
+            })?;
             let mut stream =
                 UnixStream::connect(&self.socket_path).map_err(|error| MailboxBackendError {
                     backend: "mailbox-helper-client",
@@ -848,6 +902,15 @@ impl MessageMoveBackend for MailboxHelperMessageMoveBackend {
 
 fn transport_error(reason: impl Into<String>) -> AttachmentDownloadError {
     AttachmentDownloadError::new(AttachmentDownloadFailureKind::OutputRejected, reason)
+}
+
+fn encode_authorized_request(
+    grant_key_path: &Path,
+    request: &mut MailboxHelperRequest,
+) -> Result<Vec<u8>, String> {
+    let key = load_helper_grant_key(grant_key_path)?;
+    issue_request_grant(request, &key, current_unix_time_secs()?)?;
+    Ok(encode_request(request).into_bytes())
 }
 
 fn map_attachment_helper_error(backend: &str, reason: String) -> AttachmentDownloadError {

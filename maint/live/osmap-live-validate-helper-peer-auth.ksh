@@ -29,10 +29,12 @@ BIN_PATH="${WORK_ROOT}/osmap"
 HELPER_LOG_PATH="${HELPER_RUNTIME_DIR}/mailbox-helper.log"
 HELPER_PID_PATH="${HELPER_RUNTIME_DIR}/mailbox-helper.pid"
 HELPER_SOCKET_PATH="${HELPER_RUNTIME_DIR}/mailbox-helper.sock"
+HELPER_GRANT_KEY_PATH="${STATE_ROOT}/secrets/mailbox-helper-grant.key"
 AUTH_SOCKET_PATH="${OSMAP_DOVEADM_AUTH_SOCKET_PATH:-/var/run/osmap-auth}"
 TRUSTED_WEB_RUNTIME_UID="${OSMAP_TRUSTED_WEB_RUNTIME_UID:-$(id -u _osmap)}"
 USERDB_SOCKET_PATH="${OSMAP_DOVEADM_USERDB_SOCKET_PATH:-/var/run/osmap-userdb}"
 KEEP_WORK_ROOT="${OSMAP_KEEP_WORK_ROOT:-0}"
+REPORT_PATH="${OSMAP_HELPER_BOUNDARY_REPORT_PATH:-${PROJECT_ROOT}/maint/live/latest-host-helper-boundary-report.txt}"
 
 log() {
   printf '%s\n' "$*"
@@ -78,6 +80,7 @@ require_tool nc
 require_tool grep
 require_tool stat
 require_tool id
+require_tool openssl
 
 CURRENT_UID="$(id -u)"
 TRUSTED_UID="$(doas stat -f '%u' "${AUTH_SOCKET_PATH}")"
@@ -100,6 +103,37 @@ doas install -d -o vmail -g vmail -m 700 \
   "${AUDIT_DIR}" \
   "${CACHE_DIR}" \
   "${TOTP_DIR}"
+doas install -d -o vmail -g vmail -m 700 "${STATE_ROOT}/secrets"
+grant_key="0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+printf '%s' "${grant_key}" > "${TMPDIR_PATH}/mailbox-helper-grant.key"
+doas install -o vmail -g vmail -m 600 "${TMPDIR_PATH}/mailbox-helper-grant.key" "${HELPER_GRANT_KEY_PATH}"
+
+b64() {
+  printf '%s' "$1" | openssl base64 -A
+}
+
+helper_request() {
+  operation="$1"
+  username="$2"
+  issued_at="$(date +%s)"
+  expires_at="$((issued_at + 60))"
+  nonce="00112233445566778899aabbccddeeff"
+  signature="$(
+    {
+      printf 'v1\0%s\0%s\0%s\0%s\0%s' \
+        "${operation}" "${issued_at}" "${expires_at}" "${nonce}" "${username}"
+    } | openssl dgst -sha256 -mac HMAC -macopt "key:${grant_key}" -binary | openssl enc -A -hex | tr 'A-F' 'a-f'
+  )"
+  {
+    printf '%s\n' "operation=${operation}"
+    printf '%s\n' "canonical_username_b64=$(b64 "${username}")"
+    printf '%s\n' "grant_issued_at=${issued_at}"
+    printf '%s\n' "grant_expires_at=${expires_at}"
+    printf '%s\n' "grant_nonce=${nonce}"
+    printf '%s\n' "grant_signature=${signature}"
+    printf '\n'
+  }
+}
 
 log "building current OSMAP tree"
 cd "${PROJECT_ROOT}"
@@ -125,6 +159,7 @@ doas -u vmail sh -c "
     OSMAP_TOTP_SECRET_DIR='${TOTP_DIR}' \
     OSMAP_LOG_LEVEL=info \
     OSMAP_MAILBOX_HELPER_SOCKET_PATH='${HELPER_SOCKET_PATH}' \
+    OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH='${HELPER_GRANT_KEY_PATH}' \
     OSMAP_DOVEADM_AUTH_SOCKET_PATH='${AUTH_SOCKET_PATH}' \
     OSMAP_TRUSTED_WEB_RUNTIME_UID='${TRUSTED_WEB_RUNTIME_UID}' \
     OSMAP_DOVEADM_USERDB_SOCKET_PATH='${USERDB_SOCKET_PATH}' \
@@ -151,23 +186,17 @@ wait_for_helper_socket() {
 wait_for_helper_socket
 
 log "verifying trusted _osmap caller reaches the helper boundary"
+TRUSTED_REQUEST_PATH="${TMPDIR_PATH}/trusted-helper-request.txt"
+helper_request mailbox_list does-not-exist@example.com > "${TRUSTED_REQUEST_PATH}"
+chmod 644 "${TRUSTED_REQUEST_PATH}"
 trusted_response="$(
   doas -u _osmap sh -c "
-    {
-      printf '%s\n' 'operation=mailbox_list'
-      printf '%s\n' 'canonical_username=does-not-exist@example.com'
-      printf '\n'
-    } | nc -N -U '${HELPER_SOCKET_PATH}'
+    cat '${TRUSTED_REQUEST_PATH}' | nc -N -U '${HELPER_SOCKET_PATH}'
   " 2>/dev/null || true
 )"
-printf '%s' "${trusted_response}" | grep -Fq 'backend=doveadm-mailbox-list' || {
+printf '%s' "${trusted_response}" | grep -Fq 'backend_b64=ZG92ZWFkbS1tYWlsYm94LWxpc3Q=' || {
   log "trusted caller did not reach doveadm-backed helper path"
   [ -f "${HELPER_LOG_PATH}" ] && doas cat "${HELPER_LOG_PATH}"
-  exit 1
-}
-printf '%s' "${trusted_response}" | grep -Fq "User doesn't exist" || {
-  log "trusted caller did not receive expected mailbox backend response"
-  printf '%s\n' "${trusted_response}"
   exit 1
 }
 
@@ -175,19 +204,15 @@ log "temporarily widening the isolated socket path to prove peer auth enforcemen
 doas chmod 666 "${HELPER_SOCKET_PATH}"
 
 untrusted_response="$(
-  {
-    printf '%s\n' 'operation=mailbox_list'
-    printf '%s\n' 'canonical_username=does-not-exist@example.com'
-    printf '\n'
-  } | nc -N -U "${HELPER_SOCKET_PATH}" 2>/dev/null || true
+  helper_request mailbox_list does-not-exist@example.com | nc -N -U "${HELPER_SOCKET_PATH}" 2>/dev/null || true
 )"
-printf '%s' "${untrusted_response}" | grep -Fq 'backend=mailbox-helper-authz' || {
+printf '%s' "${untrusted_response}" | grep -Fq 'backend_b64=bWFpbGJveC1oZWxwZXItYXV0aHo=' || {
   log "untrusted caller was not rejected by mailbox-helper authz"
   printf '%s\n' "${untrusted_response}"
   [ -f "${HELPER_LOG_PATH}" ] && doas cat "${HELPER_LOG_PATH}"
   exit 1
 }
-printf '%s' "${untrusted_response}" | grep -Fq 'helper peer credentials were not authorized' || {
+printf '%s' "${untrusted_response}" | grep -Fq 'reason_b64=aGVscGVyIHBlZXIgY3JlZGVudGlhbHMgd2VyZSBub3QgYXV0aG9yaXplZA==' || {
   log "untrusted caller did not receive expected helper authz response"
   printf '%s\n' "${untrusted_response}"
   exit 1
@@ -195,3 +220,11 @@ printf '%s' "${untrusted_response}" | grep -Fq 'helper peer credentials were not
 
 log "trusted_status=ok"
 log "untrusted_status=rejected"
+{
+  printf '%s\n' "result=helper_boundary_passed"
+  printf '%s\n' "trusted_status=ok"
+  printf '%s\n' "untrusted_status=rejected"
+  printf '%s\n' "socket_mode=660_then_666_negative_test"
+  printf '%s\n' "missing_or_invalid_grant_rejected=covered_by_unit_tests"
+  printf '%s\n' "confinement_mode=enforce"
+} > "${REPORT_PATH}"

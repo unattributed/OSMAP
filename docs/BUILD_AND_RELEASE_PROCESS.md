@@ -97,6 +97,13 @@ Resource and timeout evidence is identified by
 `OSMAP_RELEASE_RESOURCE_TIMEOUT_EVIDENCE`, which defaults to
 `maint/live/osmap-v3-resource-timeout-evidence-2026-05-02.txt` and
 `maint/live/latest-host-v3-resource-controls-report.txt`.
+Helper-boundary evidence is identified by
+`OSMAP_RELEASE_HELPER_BOUNDARY_EVIDENCE`, which defaults to
+`maint/live/latest-host-helper-boundary-report.txt` plus the repo-owned
+`maint/live/osmap-live-validate-helper-peer-auth.ksh` validator. This evidence
+must prove more than service liveness: unauthorized peer rejection, helper
+socket ownership and mode, malformed request rejection, missing or invalid
+grant rejection, and the active confinement posture.
 The V3 MIME and HTML live proof report is identified by
 `OSMAP_RELEASE_V3_MIME_HTML_PROOF_REPORT`, which defaults to
 `maint/live/latest-host-v3-mime-html-proof-report.txt`. Release validation also

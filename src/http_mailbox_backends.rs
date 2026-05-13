@@ -1,4 +1,5 @@
 use super::*;
+use std::path::Path;
 
 impl RuntimeBrowserGateway {
     /// Caps helper-backed expensive route work to the browser route deadline.
@@ -31,9 +32,13 @@ impl RuntimeBrowserGateway {
     /// runtime's authority when a local helper is configured.
     pub(super) fn build_mailbox_list_backend(&self) -> MailboxListRuntimeBackend {
         match &self.mailbox_helper_socket_path {
-            Some(socket_path) => MailboxListRuntimeBackend::Helper(
-                MailboxHelperMailboxListBackend::new(socket_path, MailboxHelperPolicy::default()),
-            ),
+            Some(socket_path) => {
+                MailboxListRuntimeBackend::Helper(MailboxHelperMailboxListBackend::new(
+                    socket_path,
+                    self.helper_grant_key_path(),
+                    MailboxHelperPolicy::default(),
+                ))
+            }
             None => MailboxListRuntimeBackend::Direct(
                 DoveadmMailboxListBackend::new(
                     MailboxListingPolicy::default(),
@@ -52,6 +57,7 @@ impl RuntimeBrowserGateway {
             Some(socket_path) => {
                 MessageListRuntimeBackend::Helper(MailboxHelperMessageListBackend::new(
                     socket_path,
+                    self.helper_grant_key_path(),
                     MailboxHelperPolicy::default(),
                     MessageListPolicy::default(),
                 ))
@@ -81,6 +87,7 @@ impl RuntimeBrowserGateway {
             Some(socket_path) => {
                 MessageSearchRuntimeBackend::Helper(MailboxHelperMessageSearchBackend::new(
                     socket_path,
+                    self.helper_grant_key_path(),
                     self.expensive_route_helper_policy_with_timeout(timeout_secs),
                     MessageSearchPolicy::default(),
                 ))
@@ -106,6 +113,7 @@ impl RuntimeBrowserGateway {
             Some(socket_path) => {
                 MessageViewRuntimeBackend::Helper(MailboxHelperMessageViewBackend::new(
                     socket_path,
+                    self.helper_grant_key_path(),
                     self.expensive_route_helper_policy(),
                     MessageViewPolicy::default(),
                 ))
@@ -129,6 +137,7 @@ impl RuntimeBrowserGateway {
             Some(socket_path) => {
                 MessageMoveRuntimeBackend::Helper(MailboxHelperMessageMoveBackend::new(
                     socket_path,
+                    self.helper_grant_key_path(),
                     self.expensive_route_helper_policy(),
                 ))
             }
@@ -138,6 +147,12 @@ impl RuntimeBrowserGateway {
                     .with_command_timeout_secs(self.expensive_route_command_timeout_secs()),
             ),
         }
+    }
+
+    fn helper_grant_key_path(&self) -> &Path {
+        self.mailbox_helper_grant_key_path
+            .as_deref()
+            .expect("validated helper-backed runtime config includes a grant key path")
     }
 }
 

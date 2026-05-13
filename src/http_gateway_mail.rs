@@ -567,6 +567,9 @@ impl RuntimeBrowserGateway {
         if let Some(socket_path) = &self.mailbox_helper_socket_path {
             let helper_backend = MailboxHelperAttachmentDownloadBackend::new(
                 socket_path,
+                self.mailbox_helper_grant_key_path
+                    .as_deref()
+                    .expect("validated helper-backed runtime config includes a grant key path"),
                 self.expensive_route_helper_policy(),
             );
             let canonical_username = validated_session.record.canonical_username.clone();

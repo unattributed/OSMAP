@@ -36,18 +36,19 @@ where
     MMB: MessageMoveBackend,
 {
     match request {
-        MailboxHelperRequest::MailboxList { canonical_username } => {
-            match backends.mailbox_backend.list_mailboxes(canonical_username) {
-                Ok(mailboxes) => MailboxHelperResponse::MailboxListOk { mailboxes },
-                Err(error) => MailboxHelperResponse::Error {
-                    backend: error.backend.to_string(),
-                    reason: error.reason,
-                },
-            }
-        }
+        MailboxHelperRequest::MailboxList {
+            canonical_username, ..
+        } => match backends.mailbox_backend.list_mailboxes(canonical_username) {
+            Ok(mailboxes) => MailboxHelperResponse::MailboxListOk { mailboxes },
+            Err(error) => MailboxHelperResponse::Error {
+                backend: error.backend.to_string(),
+                reason: error.reason,
+            },
+        },
         MailboxHelperRequest::MessageList {
             canonical_username,
             mailbox_name,
+            ..
         } => {
             match MessageListRequest::new(MessageListPolicy::default(), mailbox_name.clone())
                 .map_err(|error| MailboxHelperResponse::Error {
@@ -74,6 +75,7 @@ where
             canonical_username,
             mailbox_name,
             query,
+            ..
         } => {
             match MessageSearchRequest::new(
                 MessageSearchPolicy::default(),
@@ -105,6 +107,7 @@ where
             canonical_username,
             mailbox_name,
             uid,
+            ..
         } => {
             match MessageViewRequest::new(MessageViewPolicy::default(), mailbox_name.clone(), *uid)
                 .map_err(|error| MailboxHelperResponse::Error {
@@ -131,6 +134,7 @@ where
             mailbox_name,
             uid,
             part_path,
+            ..
         } => {
             match MessageViewRequest::new(MessageViewPolicy::default(), mailbox_name.clone(), *uid)
                 .map_err(|error| MailboxHelperResponse::Error {
@@ -166,6 +170,7 @@ where
             source_mailbox_name,
             destination_mailbox_name,
             uid,
+            ..
         } => {
             match MessageMoveRequest::new(
                 MessageMovePolicy::default(),
@@ -206,7 +211,9 @@ pub(super) fn log_helper_response(
     match (response, request) {
         (
             MailboxHelperResponse::MailboxListOk { mailboxes },
-            Some(MailboxHelperRequest::MailboxList { canonical_username }),
+            Some(MailboxHelperRequest::MailboxList {
+                canonical_username, ..
+            }),
         ) => logger.emit(
             &LogEvent::new(
                 LogLevel::Info,

@@ -17,6 +17,7 @@ pub struct BootstrapReport {
     pub trusted_web_runtime_uid: String,
     pub doveadm_userdb_socket_path: String,
     pub mailbox_helper_socket_path: String,
+    pub mailbox_helper_grant_key_path: String,
     pub mailbox_boundary_mode: String,
     pub openbsd_confinement_mode: String,
     pub state_root: String,
@@ -79,6 +80,10 @@ impl BootstrapReport {
         .with_field(
             "mailbox_helper_socket_path",
             self.mailbox_helper_socket_path.clone(),
+        )
+        .with_field(
+            "mailbox_helper_grant_key_path",
+            self.mailbox_helper_grant_key_path.clone(),
         )
         .with_field("mailbox_boundary_mode", self.mailbox_boundary_mode.clone())
         .with_field(
@@ -216,6 +221,11 @@ fn report_from_config(config: &AppConfig) -> BootstrapReport {
             .as_ref()
             .map(|path| path.display().to_string())
             .unwrap_or_default(),
+        mailbox_helper_grant_key_path: config
+            .mailbox_helper_grant_key_path
+            .as_ref()
+            .map(|path| path.display().to_string())
+            .unwrap_or_default(),
         mailbox_boundary_mode: mailbox_boundary_mode(config).to_string(),
         openbsd_confinement_mode: config.openbsd_confinement_mode.as_str().to_string(),
         state_root: config.state_root.display().to_string(),
@@ -287,6 +297,9 @@ mod tests {
             mailbox_helper_socket_path: Some(PathBuf::from(
                 "/var/lib/osmap/run/mailbox-helper.sock",
             )),
+            mailbox_helper_grant_key_path: Some(PathBuf::from(
+                "/var/lib/osmap/secrets/mailbox-helper-grant.key",
+            )),
             openbsd_confinement_mode: crate::config::OpenbsdConfinementMode::Disabled,
             state_root: PathBuf::from("/var/lib/osmap"),
             log_level: LogLevel::Info,
@@ -357,6 +370,10 @@ mod tests {
                 crate::logging::LogField {
                     key: "mailbox_helper_socket_path",
                     value: "/var/lib/osmap/run/mailbox-helper.sock".to_string(),
+                },
+                crate::logging::LogField {
+                    key: "mailbox_helper_grant_key_path",
+                    value: "/var/lib/osmap/secrets/mailbox-helper-grant.key".to_string(),
                 },
                 crate::logging::LogField {
                     key: "mailbox_boundary_mode",

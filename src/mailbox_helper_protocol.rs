@@ -6,6 +6,9 @@
 
 use std::collections::BTreeMap;
 
+use hmac::{Hmac, Mac};
+use sha2::Sha256;
+
 use crate::attachment::{
     AttachmentDownloadPolicy, AttachmentDownloadRequest, DownloadedAttachment,
 };
@@ -20,33 +23,59 @@ use crate::mailbox::{
 pub(super) enum MailboxHelperRequest {
     MailboxList {
         canonical_username: String,
+        grant: MailboxHelperGrant,
     },
     MessageList {
         canonical_username: String,
         mailbox_name: String,
+        grant: MailboxHelperGrant,
     },
     MessageSearch {
         canonical_username: String,
         mailbox_name: String,
         query: String,
+        grant: MailboxHelperGrant,
     },
     MessageView {
         canonical_username: String,
         mailbox_name: String,
         uid: u64,
+        grant: MailboxHelperGrant,
     },
     AttachmentDownload {
         canonical_username: String,
         mailbox_name: String,
         uid: u64,
         part_path: String,
+        grant: MailboxHelperGrant,
     },
     MessageMove {
         canonical_username: String,
         source_mailbox_name: String,
         destination_mailbox_name: String,
         uid: u64,
+        grant: MailboxHelperGrant,
     },
+}
+
+/// Short-lived helper request grant issued by the browser-facing runtime.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(super) struct MailboxHelperGrant {
+    pub issued_at: u64,
+    pub expires_at: u64,
+    pub nonce: String,
+    pub signature: String,
+}
+
+impl MailboxHelperGrant {
+    pub(super) fn unsigned() -> Self {
+        Self {
+            issued_at: 0,
+            expires_at: 0,
+            nonce: String::new(),
+            signature: String::new(),
+        }
+    }
 }
 
 /// Supported helper responses for the first mailbox-read slice.
@@ -83,44 +112,72 @@ pub(super) enum MailboxHelperResponse {
 
 pub(super) fn encode_request(request: &MailboxHelperRequest) -> String {
     match request {
-        MailboxHelperRequest::MailboxList { canonical_username } => format!(
-            "operation=mailbox_list\ncanonical_username={canonical_username}\n"
+        MailboxHelperRequest::MailboxList {
+            canonical_username,
+            grant,
+        } => format!(
+            "operation=mailbox_list\ncanonical_username_b64={}\n{}",
+            encode_base64(canonical_username.as_bytes()),
+            encode_grant_fields(grant),
         ),
         MailboxHelperRequest::MessageList {
             canonical_username,
             mailbox_name,
+            grant,
         } => format!(
-            "operation=message_list\ncanonical_username={canonical_username}\nmailbox_name={mailbox_name}\n"
+            "operation=message_list\ncanonical_username_b64={}\nmailbox_name_b64={}\n{}",
+            encode_base64(canonical_username.as_bytes()),
+            encode_base64(mailbox_name.as_bytes()),
+            encode_grant_fields(grant),
         ),
         MailboxHelperRequest::MessageSearch {
             canonical_username,
             mailbox_name,
             query,
+            grant,
         } => format!(
-            "operation=message_search\ncanonical_username={canonical_username}\nmailbox_name={mailbox_name}\nquery={query}\n"
+            "operation=message_search\ncanonical_username_b64={}\nmailbox_name_b64={}\nquery_b64={}\n{}",
+            encode_base64(canonical_username.as_bytes()),
+            encode_base64(mailbox_name.as_bytes()),
+            encode_base64(query.as_bytes()),
+            encode_grant_fields(grant),
         ),
         MailboxHelperRequest::MessageView {
             canonical_username,
             mailbox_name,
             uid,
+            grant,
         } => format!(
-            "operation=message_view\ncanonical_username={canonical_username}\nmailbox_name={mailbox_name}\nuid={uid}\n"
+            "operation=message_view\ncanonical_username_b64={}\nmailbox_name_b64={}\nuid={uid}\n{}",
+            encode_base64(canonical_username.as_bytes()),
+            encode_base64(mailbox_name.as_bytes()),
+            encode_grant_fields(grant),
         ),
         MailboxHelperRequest::AttachmentDownload {
             canonical_username,
             mailbox_name,
             uid,
             part_path,
+            grant,
         } => format!(
-            "operation=attachment_download\ncanonical_username={canonical_username}\nmailbox_name={mailbox_name}\nuid={uid}\npart_path={part_path}\n"
+            "operation=attachment_download\ncanonical_username_b64={}\nmailbox_name_b64={}\nuid={uid}\npart_path_b64={}\n{}",
+            encode_base64(canonical_username.as_bytes()),
+            encode_base64(mailbox_name.as_bytes()),
+            encode_base64(part_path.as_bytes()),
+            encode_grant_fields(grant),
         ),
         MailboxHelperRequest::MessageMove {
             canonical_username,
             source_mailbox_name,
             destination_mailbox_name,
             uid,
+            grant,
         } => format!(
-            "operation=message_move\ncanonical_username={canonical_username}\nsource_mailbox_name={source_mailbox_name}\ndestination_mailbox_name={destination_mailbox_name}\nuid={uid}\n"
+            "operation=message_move\ncanonical_username_b64={}\nsource_mailbox_name_b64={}\ndestination_mailbox_name_b64={}\nuid={uid}\n{}",
+            encode_base64(canonical_username.as_bytes()),
+            encode_base64(source_mailbox_name.as_bytes()),
+            encode_base64(destination_mailbox_name.as_bytes()),
+            encode_grant_fields(grant),
         ),
     }
 }
@@ -128,23 +185,45 @@ pub(super) fn encode_request(request: &MailboxHelperRequest) -> String {
 pub(super) fn parse_request(input: &str) -> Result<MailboxHelperRequest, String> {
     let fields = parse_kv_lines(input)?;
     let operation = require_field(&fields, "operation")?;
-    let canonical_username = require_field(&fields, "canonical_username")?.to_string();
+    reject_unknown_request_fields(&fields, operation)?;
+    let canonical_username = decode_base64_text(
+        require_field(&fields, "canonical_username_b64")?,
+        crate::auth::DEFAULT_USERNAME_MAX_LEN,
+        "canonical_username",
+    )?;
     validate_canonical_username(&canonical_username)?;
+    let grant = parse_grant_fields(&fields)?;
 
     match operation {
-        "mailbox_list" => Ok(MailboxHelperRequest::MailboxList { canonical_username }),
+        "mailbox_list" => Ok(MailboxHelperRequest::MailboxList {
+            canonical_username,
+            grant,
+        }),
         "message_list" => {
-            let mailbox_name = require_field(&fields, "mailbox_name")?.to_string();
+            let mailbox_name = decode_base64_text(
+                require_field(&fields, "mailbox_name_b64")?,
+                crate::mailbox::DEFAULT_MAILBOX_NAME_MAX_LEN,
+                "mailbox_name",
+            )?;
             let _ = MessageListRequest::new(MessageListPolicy::default(), mailbox_name.clone())
                 .map_err(|error| error.reason)?;
             Ok(MailboxHelperRequest::MessageList {
                 canonical_username,
                 mailbox_name,
+                grant,
             })
         }
         "message_search" => {
-            let mailbox_name = require_field(&fields, "mailbox_name")?.to_string();
-            let query = require_field(&fields, "query")?.to_string();
+            let mailbox_name = decode_base64_text(
+                require_field(&fields, "mailbox_name_b64")?,
+                crate::mailbox::DEFAULT_MAILBOX_NAME_MAX_LEN,
+                "mailbox_name",
+            )?;
+            let query = decode_base64_text(
+                require_field(&fields, "query_b64")?,
+                crate::mailbox::DEFAULT_SEARCH_QUERY_MAX_LEN,
+                "query",
+            )?;
             let request = MessageSearchRequest::new(
                 MessageSearchPolicy::default(),
                 mailbox_name.clone(),
@@ -155,10 +234,15 @@ pub(super) fn parse_request(input: &str) -> Result<MailboxHelperRequest, String>
                 canonical_username,
                 mailbox_name: request.mailbox_name,
                 query: request.query,
+                grant,
             })
         }
         "message_view" => {
-            let mailbox_name = require_field(&fields, "mailbox_name")?.to_string();
+            let mailbox_name = decode_base64_text(
+                require_field(&fields, "mailbox_name_b64")?,
+                crate::mailbox::DEFAULT_MAILBOX_NAME_MAX_LEN,
+                "mailbox_name",
+            )?;
             let uid = require_field(&fields, "uid")?
                 .parse::<u64>()
                 .map_err(|error| format!("invalid helper uid: {error}"))?;
@@ -169,10 +253,15 @@ pub(super) fn parse_request(input: &str) -> Result<MailboxHelperRequest, String>
                 canonical_username,
                 mailbox_name: request.mailbox_name,
                 uid: request.uid,
+                grant,
             })
         }
         "attachment_download" => {
-            let mailbox_name = require_field(&fields, "mailbox_name")?.to_string();
+            let mailbox_name = decode_base64_text(
+                require_field(&fields, "mailbox_name_b64")?,
+                crate::mailbox::DEFAULT_MAILBOX_NAME_MAX_LEN,
+                "mailbox_name",
+            )?;
             let uid = require_field(&fields, "uid")?
                 .parse::<u64>()
                 .map_err(|error| format!("invalid helper uid: {error}"))?;
@@ -181,7 +270,11 @@ pub(super) fn parse_request(input: &str) -> Result<MailboxHelperRequest, String>
                     .map_err(|error| error.reason)?;
             let attachment_request = AttachmentDownloadRequest::new(
                 AttachmentDownloadPolicy::default(),
-                require_field(&fields, "part_path")?.to_string(),
+                decode_base64_text(
+                    require_field(&fields, "part_path_b64")?,
+                    crate::attachment::DEFAULT_ATTACHMENT_PART_PATH_MAX_LEN,
+                    "part_path",
+                )?,
             )
             .map_err(|error| error.reason)?;
             Ok(MailboxHelperRequest::AttachmentDownload {
@@ -189,12 +282,20 @@ pub(super) fn parse_request(input: &str) -> Result<MailboxHelperRequest, String>
                 mailbox_name: message_request.mailbox_name,
                 uid: message_request.uid,
                 part_path: attachment_request.part_path,
+                grant,
             })
         }
         "message_move" => {
-            let source_mailbox_name = require_field(&fields, "source_mailbox_name")?.to_string();
-            let destination_mailbox_name =
-                require_field(&fields, "destination_mailbox_name")?.to_string();
+            let source_mailbox_name = decode_base64_text(
+                require_field(&fields, "source_mailbox_name_b64")?,
+                crate::mailbox::DEFAULT_MAILBOX_NAME_MAX_LEN,
+                "source_mailbox_name",
+            )?;
+            let destination_mailbox_name = decode_base64_text(
+                require_field(&fields, "destination_mailbox_name_b64")?,
+                crate::mailbox::DEFAULT_MAILBOX_NAME_MAX_LEN,
+                "destination_mailbox_name",
+            )?;
             let uid = require_field(&fields, "uid")?
                 .parse::<u64>()
                 .map_err(|error| format!("invalid helper uid: {error}"))?;
@@ -210,10 +311,250 @@ pub(super) fn parse_request(input: &str) -> Result<MailboxHelperRequest, String>
                 source_mailbox_name: request.source_mailbox_name,
                 destination_mailbox_name: request.destination_mailbox_name,
                 uid: request.uid,
+                grant,
             })
         }
         _ => Err(format!("unsupported helper operation: {operation}")),
     }
+}
+
+pub(super) fn issue_request_grant(
+    request: &mut MailboxHelperRequest,
+    key: &[u8],
+    now_secs: u64,
+) -> Result<(), String> {
+    let mut nonce = [0_u8; 16];
+    getrandom::getrandom(&mut nonce)
+        .map_err(|error| format!("failed to create helper grant nonce: {error}"))?;
+    issue_request_grant_with_nonce(request, key, now_secs, &hex_lower(&nonce))
+}
+
+#[cfg(test)]
+pub(super) fn issue_request_grant_with_nonce(
+    request: &mut MailboxHelperRequest,
+    key: &[u8],
+    now_secs: u64,
+    nonce: &str,
+) -> Result<(), String> {
+    issue_request_grant_with_nonce_impl(request, key, now_secs, nonce)
+}
+
+#[cfg(not(test))]
+fn issue_request_grant_with_nonce(
+    request: &mut MailboxHelperRequest,
+    key: &[u8],
+    now_secs: u64,
+    nonce: &str,
+) -> Result<(), String> {
+    issue_request_grant_with_nonce_impl(request, key, now_secs, nonce)
+}
+
+fn issue_request_grant_with_nonce_impl(
+    request: &mut MailboxHelperRequest,
+    key: &[u8],
+    now_secs: u64,
+    nonce: &str,
+) -> Result<(), String> {
+    let issued_at = now_secs;
+    let expires_at = now_secs.saturating_add(60);
+    let mut grant = MailboxHelperGrant {
+        issued_at,
+        expires_at,
+        nonce: nonce.to_string(),
+        signature: String::new(),
+    };
+    grant.signature = sign_request_grant(request, &grant, key)?;
+    set_request_grant(request, grant);
+    Ok(())
+}
+
+pub(super) fn verify_request_grant(
+    request: &MailboxHelperRequest,
+    key: &[u8],
+    now_secs: u64,
+) -> Result<(), String> {
+    let grant = request_grant(request);
+    if grant.signature.is_empty() {
+        return Err("helper request grant signature was missing".to_string());
+    }
+    if grant.nonce.is_empty() {
+        return Err("helper request grant nonce was missing".to_string());
+    }
+    if grant.expires_at < grant.issued_at {
+        return Err("helper request grant expiry preceded issue time".to_string());
+    }
+    if now_secs < grant.issued_at {
+        return Err("helper request grant was issued in the future".to_string());
+    }
+    if now_secs > grant.expires_at {
+        return Err("helper request grant expired".to_string());
+    }
+
+    let expected = sign_request_grant(request, grant, key)?;
+    let expected_bytes = decode_hex_bytes(&expected)?;
+    let actual_bytes = decode_hex_bytes(&grant.signature)?;
+    if expected_bytes.len() != actual_bytes.len() {
+        return Err("helper request grant signature was invalid".to_string());
+    }
+    let mut diff = 0_u8;
+    for (left, right) in expected_bytes.iter().zip(actual_bytes.iter()) {
+        diff |= left ^ right;
+    }
+    if diff != 0 {
+        return Err("helper request grant signature was invalid".to_string());
+    }
+    Ok(())
+}
+
+pub(super) fn request_grant(request: &MailboxHelperRequest) -> &MailboxHelperGrant {
+    match request {
+        MailboxHelperRequest::MailboxList { grant, .. }
+        | MailboxHelperRequest::MessageList { grant, .. }
+        | MailboxHelperRequest::MessageSearch { grant, .. }
+        | MailboxHelperRequest::MessageView { grant, .. }
+        | MailboxHelperRequest::AttachmentDownload { grant, .. }
+        | MailboxHelperRequest::MessageMove { grant, .. } => grant,
+    }
+}
+
+fn set_request_grant(request: &mut MailboxHelperRequest, new_grant: MailboxHelperGrant) {
+    match request {
+        MailboxHelperRequest::MailboxList { grant, .. }
+        | MailboxHelperRequest::MessageList { grant, .. }
+        | MailboxHelperRequest::MessageSearch { grant, .. }
+        | MailboxHelperRequest::MessageView { grant, .. }
+        | MailboxHelperRequest::AttachmentDownload { grant, .. }
+        | MailboxHelperRequest::MessageMove { grant, .. } => *grant = new_grant,
+    }
+}
+
+pub(super) fn helper_operation_label(request: &MailboxHelperRequest) -> &'static str {
+    match request {
+        MailboxHelperRequest::MailboxList { .. } => "mailbox_list",
+        MailboxHelperRequest::MessageList { .. } => "message_list",
+        MailboxHelperRequest::MessageSearch { .. } => "message_search",
+        MailboxHelperRequest::MessageView { .. } => "message_view",
+        MailboxHelperRequest::AttachmentDownload { .. } => "attachment_download",
+        MailboxHelperRequest::MessageMove { .. } => "message_move",
+    }
+}
+
+fn sign_request_grant(
+    request: &MailboxHelperRequest,
+    grant: &MailboxHelperGrant,
+    key: &[u8],
+) -> Result<String, String> {
+    type HmacSha256 = Hmac<Sha256>;
+    let mut mac = HmacSha256::new_from_slice(key)
+        .map_err(|error| format!("helper grant key was invalid: {error}"))?;
+    mac.update(canonical_grant_payload(request, grant).as_bytes());
+    Ok(hex_lower(&mac.finalize().into_bytes()))
+}
+
+fn canonical_grant_payload(request: &MailboxHelperRequest, grant: &MailboxHelperGrant) -> String {
+    let mut fields = vec![
+        "v1".to_string(),
+        helper_operation_label(request).to_string(),
+        grant.issued_at.to_string(),
+        grant.expires_at.to_string(),
+        grant.nonce.clone(),
+    ];
+    match request {
+        MailboxHelperRequest::MailboxList {
+            canonical_username, ..
+        } => fields.push(canonical_username.clone()),
+        MailboxHelperRequest::MessageList {
+            canonical_username,
+            mailbox_name,
+            ..
+        } => {
+            fields.push(canonical_username.clone());
+            fields.push(mailbox_name.clone());
+        }
+        MailboxHelperRequest::MessageSearch {
+            canonical_username,
+            mailbox_name,
+            query,
+            ..
+        } => {
+            fields.push(canonical_username.clone());
+            fields.push(mailbox_name.clone());
+            fields.push(query.clone());
+        }
+        MailboxHelperRequest::MessageView {
+            canonical_username,
+            mailbox_name,
+            uid,
+            ..
+        } => {
+            fields.push(canonical_username.clone());
+            fields.push(mailbox_name.clone());
+            fields.push(uid.to_string());
+        }
+        MailboxHelperRequest::AttachmentDownload {
+            canonical_username,
+            mailbox_name,
+            uid,
+            part_path,
+            ..
+        } => {
+            fields.push(canonical_username.clone());
+            fields.push(mailbox_name.clone());
+            fields.push(uid.to_string());
+            fields.push(part_path.clone());
+        }
+        MailboxHelperRequest::MessageMove {
+            canonical_username,
+            source_mailbox_name,
+            destination_mailbox_name,
+            uid,
+            ..
+        } => {
+            fields.push(canonical_username.clone());
+            fields.push(source_mailbox_name.clone());
+            fields.push(destination_mailbox_name.clone());
+            fields.push(uid.to_string());
+        }
+    }
+    fields.join("\0")
+}
+
+fn encode_grant_fields(grant: &MailboxHelperGrant) -> String {
+    format!(
+        "grant_issued_at={}\ngrant_expires_at={}\ngrant_nonce={}\ngrant_signature={}\n",
+        grant.issued_at, grant.expires_at, grant.nonce, grant.signature
+    )
+}
+
+fn parse_grant_fields(fields: &BTreeMap<String, String>) -> Result<MailboxHelperGrant, String> {
+    let issued_at = require_field(fields, "grant_issued_at")?
+        .parse::<u64>()
+        .map_err(|error| format!("invalid helper grant issued_at: {error}"))?;
+    let expires_at = require_field(fields, "grant_expires_at")?
+        .parse::<u64>()
+        .map_err(|error| format!("invalid helper grant expires_at: {error}"))?;
+    let nonce = require_field(fields, "grant_nonce")?.to_string();
+    if !nonce
+        .bytes()
+        .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+    {
+        return Err("helper grant nonce must be lower-case hex".to_string());
+    }
+    let signature = require_field(fields, "grant_signature")?.to_string();
+    if signature.len() != 64
+        || !signature
+            .bytes()
+            .all(|byte| byte.is_ascii_hexdigit() && !byte.is_ascii_uppercase())
+    {
+        return Err("helper grant signature must be a lower-case sha256 hex digest".to_string());
+    }
+
+    Ok(MailboxHelperGrant {
+        issued_at,
+        expires_at,
+        nonce,
+        signature,
+    })
 }
 
 pub(super) fn encode_response(response: &MailboxHelperResponse) -> String {
@@ -224,8 +565,8 @@ pub(super) fn encode_response(response: &MailboxHelperResponse) -> String {
                 mailboxes.len()
             );
             for mailbox in mailboxes {
-                output.push_str("mailbox=");
-                output.push_str(&mailbox.name);
+                output.push_str("mailbox_b64=");
+                output.push_str(&encode_base64(mailbox.name.as_bytes()));
                 output.push('\n');
             }
             output
@@ -235,30 +576,35 @@ pub(super) fn encode_response(response: &MailboxHelperResponse) -> String {
             messages,
         } => {
             let mut output = format!(
-                "status=ok\noperation=message_list\nmailbox_name={mailbox_name}\nmessage_count={}\n",
+                "status=ok\noperation=message_list\nmailbox_name_b64={}\nmessage_count={}\n",
+                encode_base64(mailbox_name.as_bytes()),
                 messages.len()
             );
             for message in messages {
                 output.push_str("message_uid=");
                 output.push_str(&message.uid.to_string());
                 output.push('\n');
-                output.push_str("message_flags=");
-                output.push_str(&message.flags.join(","));
+                output.push_str("message_flags_b64=");
+                output.push_str(&encode_base64(message.flags.join(",").as_bytes()));
                 output.push('\n');
-                output.push_str("message_date_received=");
-                output.push_str(&message.date_received);
+                output.push_str("message_date_received_b64=");
+                output.push_str(&encode_base64(message.date_received.as_bytes()));
                 output.push('\n');
                 output.push_str("message_size_virtual=");
                 output.push_str(&message.size_virtual.to_string());
                 output.push('\n');
-                output.push_str("message_mailbox=");
-                output.push_str(&message.mailbox_name);
+                output.push_str("message_mailbox_b64=");
+                output.push_str(&encode_base64(message.mailbox_name.as_bytes()));
                 output.push('\n');
-                output.push_str("message_subject=");
-                output.push_str(message.subject.as_deref().unwrap_or(""));
+                output.push_str("message_subject_b64=");
+                output.push_str(&encode_base64(
+                    message.subject.as_deref().unwrap_or("").as_bytes(),
+                ));
                 output.push('\n');
-                output.push_str("message_from=");
-                output.push_str(message.from.as_deref().unwrap_or(""));
+                output.push_str("message_from_b64=");
+                output.push_str(&encode_base64(
+                    message.from.as_deref().unwrap_or("").as_bytes(),
+                ));
                 output.push('\n');
                 output.push_str("message_end=1\n");
             }
@@ -270,52 +616,56 @@ pub(super) fn encode_response(response: &MailboxHelperResponse) -> String {
             results,
         } => {
             let mut output = format!(
-                "status=ok\noperation=message_search\nmailbox_name={mailbox_name}\nquery={query}\nmessage_count={}\n",
+                "status=ok\noperation=message_search\nmailbox_name_b64={}\nquery_b64={}\nmessage_count={}\n",
+                encode_base64(mailbox_name.as_bytes()),
+                encode_base64(query.as_bytes()),
                 results.len()
             );
             for result in results {
                 output.push_str("message_uid=");
                 output.push_str(&result.uid.to_string());
                 output.push('\n');
-                output.push_str("message_flags=");
-                output.push_str(&result.flags.join(","));
+                output.push_str("message_flags_b64=");
+                output.push_str(&encode_base64(result.flags.join(",").as_bytes()));
                 output.push('\n');
-                output.push_str("message_date_received=");
-                output.push_str(&result.date_received);
+                output.push_str("message_date_received_b64=");
+                output.push_str(&encode_base64(result.date_received.as_bytes()));
                 output.push('\n');
                 output.push_str("message_size_virtual=");
                 output.push_str(&result.size_virtual.to_string());
                 output.push('\n');
-                output.push_str("message_mailbox=");
-                output.push_str(&result.mailbox_name);
+                output.push_str("message_mailbox_b64=");
+                output.push_str(&encode_base64(result.mailbox_name.as_bytes()));
                 output.push('\n');
-                output.push_str("message_subject=");
-                output.push_str(result.subject.as_deref().unwrap_or(""));
+                output.push_str("message_subject_b64=");
+                output.push_str(&encode_base64(
+                    result.subject.as_deref().unwrap_or("").as_bytes(),
+                ));
                 output.push('\n');
-                output.push_str("message_from=");
-                output.push_str(result.from.as_deref().unwrap_or(""));
+                output.push_str("message_from_b64=");
+                output.push_str(&encode_base64(result.from.as_deref().unwrap_or("").as_bytes()));
                 output.push('\n');
                 output.push_str("message_end=1\n");
             }
             output
         }
         MailboxHelperResponse::MessageViewOk { message } => format!(
-            "status=ok\noperation=message_view\nmessage_uid={}\nmessage_flags={}\nmessage_date_received={}\nmessage_size_virtual={}\nmessage_mailbox={}\nmessage_header_block_b64={}\nmessage_body_text_b64={}\n",
+            "status=ok\noperation=message_view\nmessage_uid={}\nmessage_flags_b64={}\nmessage_date_received_b64={}\nmessage_size_virtual={}\nmessage_mailbox_b64={}\nmessage_header_block_b64={}\nmessage_body_text_b64={}\n",
             message.uid,
-            message.flags.join(","),
-            message.date_received,
+            encode_base64(message.flags.join(",").as_bytes()),
+            encode_base64(message.date_received.as_bytes()),
             message.size_virtual,
-            message.mailbox_name,
+            encode_base64(message.mailbox_name.as_bytes()),
             encode_base64(message.header_block.as_bytes()),
             encode_base64(message.body_text.as_bytes()),
         ),
         MailboxHelperResponse::AttachmentDownloadOk { attachment } => format!(
-            "status=ok\noperation=attachment_download\nattachment_mailbox_name={}\nattachment_uid={}\nattachment_part_path={}\nattachment_filename={}\nattachment_content_type={}\nattachment_body_b64={}\n",
-            attachment.mailbox_name,
+            "status=ok\noperation=attachment_download\nattachment_mailbox_name_b64={}\nattachment_uid={}\nattachment_part_path_b64={}\nattachment_filename_b64={}\nattachment_content_type_b64={}\nattachment_body_b64={}\n",
+            encode_base64(attachment.mailbox_name.as_bytes()),
             attachment.uid,
-            attachment.part_path,
-            attachment.filename,
-            attachment.content_type,
+            encode_base64(attachment.part_path.as_bytes()),
+            encode_base64(attachment.filename.as_bytes()),
+            encode_base64(attachment.content_type.as_bytes()),
             encode_base64(&attachment.body),
         ),
         MailboxHelperResponse::MessageMoveOk {
@@ -323,10 +673,16 @@ pub(super) fn encode_response(response: &MailboxHelperResponse) -> String {
             destination_mailbox_name,
             uid,
         } => format!(
-            "status=ok\noperation=message_move\nsource_mailbox_name={source_mailbox_name}\ndestination_mailbox_name={destination_mailbox_name}\nuid={uid}\n"
+            "status=ok\noperation=message_move\nsource_mailbox_name_b64={}\ndestination_mailbox_name_b64={}\nuid={uid}\n",
+            encode_base64(source_mailbox_name.as_bytes()),
+            encode_base64(destination_mailbox_name.as_bytes()),
         ),
         MailboxHelperResponse::Error { backend, reason } => {
-            format!("status=error\nbackend={backend}\nreason={reason}\n")
+            format!(
+                "status=error\nbackend_b64={}\nreason_b64={}\n",
+                encode_base64(backend.as_bytes()),
+                encode_base64(reason.as_bytes())
+            )
         }
     }
 }
@@ -363,17 +719,43 @@ pub(super) fn parse_response(
         match key {
             "status" => status = Some(value.to_string()),
             "operation" => operation = Some(value.to_string()),
-            "backend" => backend = Some(value.to_string()),
-            "reason" => reason = Some(value.to_string()),
-            "mailbox_name" => mailbox_name = Some(value.to_string()),
-            "query" => query = Some(value.to_string()),
-            "source_mailbox_name" => source_mailbox_name = Some(value.to_string()),
-            "destination_mailbox_name" => destination_mailbox_name = Some(value.to_string()),
-            "attachment_mailbox_name"
+            "backend_b64" => {
+                backend = Some(decode_base64_text(value, 128, "helper error backend")?)
+            }
+            "reason_b64" => reason = Some(decode_base64_text(value, 2048, "helper error reason")?),
+            "mailbox_name_b64" => {
+                mailbox_name = Some(decode_base64_text(
+                    value,
+                    crate::mailbox::DEFAULT_MAILBOX_NAME_MAX_LEN,
+                    "helper mailbox_name",
+                )?)
+            }
+            "query_b64" => {
+                query = Some(decode_base64_text(
+                    value,
+                    crate::mailbox::DEFAULT_SEARCH_QUERY_MAX_LEN,
+                    "helper query",
+                )?)
+            }
+            "source_mailbox_name_b64" => {
+                source_mailbox_name = Some(decode_base64_text(
+                    value,
+                    crate::mailbox::DEFAULT_MAILBOX_NAME_MAX_LEN,
+                    "helper source_mailbox_name",
+                )?)
+            }
+            "destination_mailbox_name_b64" => {
+                destination_mailbox_name = Some(decode_base64_text(
+                    value,
+                    crate::mailbox::DEFAULT_MAILBOX_NAME_MAX_LEN,
+                    "helper destination_mailbox_name",
+                )?)
+            }
+            "attachment_mailbox_name_b64"
             | "attachment_uid"
-            | "attachment_part_path"
-            | "attachment_filename"
-            | "attachment_content_type"
+            | "attachment_part_path_b64"
+            | "attachment_filename_b64"
+            | "attachment_content_type_b64"
             | "attachment_body_b64" => {
                 if attachment_fields
                     .insert(key.to_string(), value.to_string())
@@ -391,9 +773,14 @@ pub(super) fn parse_response(
                         .map_err(|error| format!("invalid helper move uid: {error}"))?,
                 )
             }
-            "mailbox" => {
+            "mailbox_b64" => {
+                let mailbox_name = decode_base64_text(
+                    value,
+                    mailbox_policy.mailbox_name_max_len,
+                    "helper mailbox",
+                )?;
                 mailboxes.push(
-                    MailboxEntry::new(mailbox_policy, value.to_string()).map_err(|error| {
+                    MailboxEntry::new(mailbox_policy, mailbox_name).map_err(|error| {
                         format!("invalid helper mailbox entry: {}", error.reason)
                     })?,
                 );
@@ -401,12 +788,12 @@ pub(super) fn parse_response(
             "mailbox_count" => {}
             "message_count" => {}
             "message_uid"
-            | "message_flags"
-            | "message_date_received"
+            | "message_flags_b64"
+            | "message_date_received_b64"
             | "message_size_virtual"
-            | "message_mailbox"
-            | "message_subject"
-            | "message_from"
+            | "message_mailbox_b64"
+            | "message_subject_b64"
+            | "message_from_b64"
             | "message_header_block_b64"
             | "message_body_text_b64" => {
                 if current_message_fields
@@ -502,12 +889,93 @@ fn parse_kv_lines(input: &str) -> Result<BTreeMap<String, String>, String> {
         let (key, value) = raw_line
             .split_once('=')
             .ok_or_else(|| format!("malformed helper line: {raw_line:?}"))?;
+        if key.is_empty() || key.chars().any(|ch| ch.is_control()) {
+            return Err(format!("malformed helper field name: {key:?}"));
+        }
+        if value.chars().any(|ch| ch.is_control()) {
+            return Err(format!("helper field {key} contains control characters"));
+        }
         if fields.insert(key.to_string(), value.to_string()).is_some() {
             return Err(format!("duplicate helper field: {key}"));
         }
     }
 
     Ok(fields)
+}
+
+fn reject_unknown_request_fields(
+    fields: &BTreeMap<String, String>,
+    operation: &str,
+) -> Result<(), String> {
+    let allowed: &[&str] = match operation {
+        "mailbox_list" => &[
+            "operation",
+            "canonical_username_b64",
+            "grant_issued_at",
+            "grant_expires_at",
+            "grant_nonce",
+            "grant_signature",
+        ],
+        "message_list" => &[
+            "operation",
+            "canonical_username_b64",
+            "mailbox_name_b64",
+            "grant_issued_at",
+            "grant_expires_at",
+            "grant_nonce",
+            "grant_signature",
+        ],
+        "message_search" => &[
+            "operation",
+            "canonical_username_b64",
+            "mailbox_name_b64",
+            "query_b64",
+            "grant_issued_at",
+            "grant_expires_at",
+            "grant_nonce",
+            "grant_signature",
+        ],
+        "message_view" => &[
+            "operation",
+            "canonical_username_b64",
+            "mailbox_name_b64",
+            "uid",
+            "grant_issued_at",
+            "grant_expires_at",
+            "grant_nonce",
+            "grant_signature",
+        ],
+        "attachment_download" => &[
+            "operation",
+            "canonical_username_b64",
+            "mailbox_name_b64",
+            "uid",
+            "part_path_b64",
+            "grant_issued_at",
+            "grant_expires_at",
+            "grant_nonce",
+            "grant_signature",
+        ],
+        "message_move" => &[
+            "operation",
+            "canonical_username_b64",
+            "source_mailbox_name_b64",
+            "destination_mailbox_name_b64",
+            "uid",
+            "grant_issued_at",
+            "grant_expires_at",
+            "grant_nonce",
+            "grant_signature",
+        ],
+        _ => return Ok(()),
+    };
+
+    for key in fields.keys() {
+        if !allowed.contains(&key.as_str()) {
+            return Err(format!("unexpected helper request field: {key}"));
+        }
+    }
+    Ok(())
 }
 
 fn require_field<'a>(fields: &'a BTreeMap<String, String>, key: &str) -> Result<&'a str, String> {
@@ -538,7 +1006,11 @@ fn parse_message_summary_fields(
     policy: MessageListPolicy,
     fields: &BTreeMap<String, String>,
 ) -> Result<MessageSummary, String> {
-    let mailbox_name = require_field(fields, "message_mailbox")?.to_string();
+    let mailbox_name = decode_base64_text(
+        require_field(fields, "message_mailbox_b64")?,
+        policy.mailbox_name_max_len,
+        "message mailbox",
+    )?;
     let _ = MailboxEntry::new(
         MailboxListingPolicy {
             mailbox_name_max_len: policy.mailbox_name_max_len,
@@ -555,7 +1027,11 @@ fn parse_message_summary_fields(
         return Err("helper message uid must be greater than zero".to_string());
     }
 
-    let date_received = require_field(fields, "message_date_received")?.to_string();
+    let date_received = decode_base64_text(
+        require_field(fields, "message_date_received_b64")?,
+        policy.message_date_max_len,
+        "message date_received",
+    )?;
     if date_received.is_empty() {
         return Err("helper message date_received must not be empty".to_string());
     }
@@ -573,7 +1049,11 @@ fn parse_message_summary_fields(
         .parse::<u64>()
         .map_err(|error| format!("invalid helper message size_virtual: {error}"))?;
 
-    let flags_string = require_field(fields, "message_flags")?.to_string();
+    let flags_string = decode_base64_text(
+        require_field(fields, "message_flags_b64")?,
+        policy.message_flag_string_max_len,
+        "message flags",
+    )?;
     if flags_string.len() > policy.message_flag_string_max_len {
         return Err(format!(
             "helper message flags exceeded maximum length of {} bytes",
@@ -592,31 +1072,33 @@ fn parse_message_summary_fields(
             .collect()
     };
     let subject = fields
-        .get("message_subject")
+        .get("message_subject_b64")
         .filter(|value| !value.is_empty())
         .map(|value| {
+            let value = decode_base64_text(value, policy.header_value_max_len, "message subject")?;
             validate_helper_string(
                 "message subject",
-                value,
+                &value,
                 policy.header_value_max_len,
                 true,
                 false,
             )?;
-            Ok::<String, String>(value.clone())
+            Ok::<String, String>(value)
         })
         .transpose()?;
     let from = fields
-        .get("message_from")
+        .get("message_from_b64")
         .filter(|value| !value.is_empty())
         .map(|value| {
+            let value = decode_base64_text(value, policy.header_value_max_len, "message from")?;
             validate_helper_string(
                 "message from",
-                value,
+                &value,
                 policy.header_value_max_len,
                 true,
                 false,
             )?;
-            Ok::<String, String>(value.clone())
+            Ok::<String, String>(value)
         })
         .transpose()?;
 
@@ -635,7 +1117,11 @@ fn parse_message_search_fields(
     policy: MessageSearchPolicy,
     fields: &BTreeMap<String, String>,
 ) -> Result<MessageSearchResult, String> {
-    let mailbox_name = require_field(fields, "message_mailbox")?.to_string();
+    let mailbox_name = decode_base64_text(
+        require_field(fields, "message_mailbox_b64")?,
+        policy.mailbox_name_max_len,
+        "message mailbox",
+    )?;
     let _ = MailboxEntry::new(
         MailboxListingPolicy {
             mailbox_name_max_len: policy.mailbox_name_max_len,
@@ -652,7 +1138,11 @@ fn parse_message_search_fields(
         return Err("helper message uid must be greater than zero".to_string());
     }
 
-    let date_received = require_field(fields, "message_date_received")?.to_string();
+    let date_received = decode_base64_text(
+        require_field(fields, "message_date_received_b64")?,
+        policy.message_date_max_len,
+        "message date_received",
+    )?;
     validate_helper_string(
         "message date_received",
         &date_received,
@@ -665,7 +1155,11 @@ fn parse_message_search_fields(
         .parse::<u64>()
         .map_err(|error| format!("invalid helper message size_virtual: {error}"))?;
 
-    let flags_text = require_field(fields, "message_flags")?.to_string();
+    let flags_text = decode_base64_text(
+        require_field(fields, "message_flags_b64")?,
+        policy.message_flag_string_max_len,
+        "message flags",
+    )?;
     validate_helper_string(
         "message flags",
         &flags_text,
@@ -683,31 +1177,33 @@ fn parse_message_search_fields(
     };
 
     let subject = fields
-        .get("message_subject")
+        .get("message_subject_b64")
         .filter(|value| !value.is_empty())
         .map(|value| {
+            let value = decode_base64_text(value, policy.header_value_max_len, "message subject")?;
             validate_helper_string(
                 "message subject",
-                value,
+                &value,
                 policy.header_value_max_len,
                 true,
                 false,
             )?;
-            Ok::<String, String>(value.clone())
+            Ok::<String, String>(value)
         })
         .transpose()?;
     let from = fields
-        .get("message_from")
+        .get("message_from_b64")
         .filter(|value| !value.is_empty())
         .map(|value| {
+            let value = decode_base64_text(value, policy.header_value_max_len, "message from")?;
             validate_helper_string(
                 "message from",
-                value,
+                &value,
                 policy.header_value_max_len,
                 true,
                 false,
             )?;
-            Ok::<String, String>(value.clone())
+            Ok::<String, String>(value)
         })
         .transpose()?;
 
@@ -726,7 +1222,11 @@ fn parse_message_view_fields(
     policy: MessageViewPolicy,
     fields: &BTreeMap<String, String>,
 ) -> Result<MessageView, String> {
-    let mailbox_name = require_field(fields, "message_mailbox")?.to_string();
+    let mailbox_name = decode_base64_text(
+        require_field(fields, "message_mailbox_b64")?,
+        policy.mailbox_name_max_len,
+        "message mailbox",
+    )?;
     let _ = MailboxEntry::new(
         MailboxListingPolicy {
             mailbox_name_max_len: policy.mailbox_name_max_len,
@@ -743,7 +1243,11 @@ fn parse_message_view_fields(
         return Err("helper message uid must be greater than zero".to_string());
     }
 
-    let date_received = require_field(fields, "message_date_received")?.to_string();
+    let date_received = decode_base64_text(
+        require_field(fields, "message_date_received_b64")?,
+        policy.message_date_max_len,
+        "message date_received",
+    )?;
     validate_helper_string(
         "message date_received",
         &date_received,
@@ -756,7 +1260,11 @@ fn parse_message_view_fields(
         .parse::<u64>()
         .map_err(|error| format!("invalid helper message size_virtual: {error}"))?;
 
-    let flags_text = require_field(fields, "message_flags")?.to_string();
+    let flags_text = decode_base64_text(
+        require_field(fields, "message_flags_b64")?,
+        policy.message_flag_string_max_len,
+        "message flags",
+    )?;
     validate_helper_string(
         "message flags",
         &flags_text,
@@ -814,7 +1322,11 @@ fn parse_attachment_download_fields(
     fields: &BTreeMap<String, String>,
 ) -> Result<DownloadedAttachment, String> {
     let policy = AttachmentDownloadPolicy::default();
-    let mailbox_name = require_field(fields, "attachment_mailbox_name")?.to_string();
+    let mailbox_name = decode_base64_text(
+        require_field(fields, "attachment_mailbox_name_b64")?,
+        crate::mailbox::DEFAULT_MAILBOX_NAME_MAX_LEN,
+        "attachment mailbox_name",
+    )?;
     let _ = MailboxEntry::new(
         MailboxListingPolicy {
             mailbox_name_max_len: crate::mailbox::DEFAULT_MAILBOX_NAME_MAX_LEN,
@@ -833,12 +1345,20 @@ fn parse_attachment_download_fields(
 
     let part_path = AttachmentDownloadRequest::new(
         policy,
-        require_field(fields, "attachment_part_path")?.to_string(),
+        decode_base64_text(
+            require_field(fields, "attachment_part_path_b64")?,
+            policy.part_path_max_len,
+            "attachment part_path",
+        )?,
     )
     .map_err(|error| error.reason)?
     .part_path;
 
-    let filename = require_field(fields, "attachment_filename")?.to_string();
+    let filename = decode_base64_text(
+        require_field(fields, "attachment_filename_b64")?,
+        policy.filename_max_len,
+        "attachment filename",
+    )?;
     validate_helper_string(
         "attachment filename",
         &filename,
@@ -847,7 +1367,11 @@ fn parse_attachment_download_fields(
         false,
     )?;
 
-    let content_type = require_field(fields, "attachment_content_type")?.to_string();
+    let content_type = decode_base64_text(
+        require_field(fields, "attachment_content_type_b64")?,
+        policy.content_type_max_len,
+        "attachment content_type",
+    )?;
     validate_helper_string(
         "attachment content_type",
         &content_type,
@@ -927,6 +1451,46 @@ fn encode_base64(bytes: &[u8]) -> String {
     }
 
     output
+}
+
+fn hex_lower(bytes: &[u8]) -> String {
+    let mut output = String::with_capacity(bytes.len() * 2);
+    for byte in bytes {
+        output.push(nibble_to_hex(byte >> 4));
+        output.push(nibble_to_hex(byte & 0x0f));
+    }
+    output
+}
+
+fn nibble_to_hex(value: u8) -> char {
+    match value {
+        0..=9 => (b'0' + value) as char,
+        10..=15 => (b'a' + (value - 10)) as char,
+        _ => unreachable!("nibble values are always <= 15"),
+    }
+}
+
+fn decode_hex_bytes(value: &str) -> Result<Vec<u8>, String> {
+    let bytes = value.as_bytes();
+    if (bytes.len() & 1) != 0 {
+        return Err("hex field length was not even".to_string());
+    }
+
+    let mut output = Vec::with_capacity(bytes.len() / 2);
+    let mut index = 0;
+    while index < bytes.len() {
+        output.push((hex_value(bytes[index])? << 4) | hex_value(bytes[index + 1])?);
+        index += 2;
+    }
+    Ok(output)
+}
+
+fn hex_value(byte: u8) -> Result<u8, String> {
+    match byte {
+        b'0'..=b'9' => Ok(byte - b'0'),
+        b'a'..=b'f' => Ok(byte - b'a' + 10),
+        _ => Err("hex field contained invalid characters".to_string()),
+    }
 }
 
 fn decode_base64_text(input: &str, max_len: usize, field: &str) -> Result<String, String> {

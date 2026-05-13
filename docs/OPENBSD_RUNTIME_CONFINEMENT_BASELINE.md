@@ -105,6 +105,11 @@ When configured, the runtime also adds explicit read/write unveil rules for:
 
 plus read-only visibility for their parent directory chains.
 
+Helper-backed deployments also add read-only visibility for
+`OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH` and its parent directory chain. The key
+itself is not logged; it is only used to issue and verify short-lived helper
+request grants.
+
 Follow-on live validation now also shows that the serve and helper runtimes do
 not need direct unveil access to `/var/dovecot` or `/var/log/dovecot.log` for
 the current auth, mailbox, message-view, and attachment-read workflows. Those
@@ -253,6 +258,10 @@ The runtime now supports that operator path explicitly:
   `OSMAP_TRUSTED_WEB_RUNTIME_UID` so startup can fail closed unless the
   auth-socket owner still matches the dedicated `_osmap` UID expected for the
   deployment
+- helper-backed `serve` and `mailbox-helper` modes require
+  `OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH`, a permission-restricted shared HMAC
+  key used to bind helper requests to the operation and mailbox authority they
+  need
 - when configured, the OpenBSD confinement plan now adds the explicit socket
   paths plus read-only parent-directory visibility for those paths
 

@@ -78,6 +78,10 @@ What is implemented:
   identity derived from `OSMAP_DOVEADM_AUTH_SOCKET_PATH`
 - helper startup validation that fails closed unless that derived caller UID
   matches the configured dedicated web-runtime UID for the deployment
+- short-lived HMAC request grants, read from the permission-restricted
+  `OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH`, that bind the requested operation,
+  canonical username, mailbox fields, UID or MIME part where applicable,
+  issue/expiry time, and nonce before the helper executes `doveadm`
 - a helper-backed mailbox-list client backend in the web runtime
 - a helper-backed message-search client backend in the web runtime
 - a helper-backed message-list client backend in the web runtime
@@ -123,12 +127,14 @@ The helper protocol should stay small and explicit.
 Current request properties in the first slice:
 
 - one explicit operation name
-- canonical username
-- mailbox name where required
-- query text for message-search requests
+- base64-encoded canonical username
+- base64-encoded mailbox name where required
+- base64-encoded query text for message-search requests
 - UID where required
-- MIME part path where required
-- destination mailbox name for one-message move requests
+- base64-encoded MIME part path where required
+- base64-encoded destination mailbox name for one-message move requests
+- one request grant with `issued_at`, `expires_at`, `nonce`, and HMAC
+  signature fields
 
 Current response properties:
 
@@ -142,8 +148,10 @@ Current response properties:
 - operator-usable but bounded failure labels
 
 The current wire format is a small line-oriented key/value protocol over a
-Unix-domain socket. That is intentionally simpler than introducing a general RPC
-framework in the first helper slice.
+Unix-domain socket. Untrusted string values are encoded rather than sent as raw
+line values, and unknown, duplicate, missing, or legacy raw fields fail closed.
+That is intentionally simpler than introducing a general RPC framework in the
+first helper slice.
 
 ## Why A Helper Is Better Here
 

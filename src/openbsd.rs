@@ -137,6 +137,10 @@ impl OpenbsdConfinementPlan {
                     add_rule(&mut rules, mailbox_helper_socket_path, "rw");
                     add_parent_dir_rules(&mut rules, mailbox_helper_socket_path);
                 }
+                if let Some(grant_key_path) = &config.mailbox_helper_grant_key_path {
+                    add_rule(&mut rules, grant_key_path, "r");
+                    add_parent_dir_rules(&mut rules, grant_key_path);
+                }
 
                 Self {
                     promises_before_lock: if config.mailbox_helper_socket_path.is_some() {
@@ -175,6 +179,10 @@ impl OpenbsdConfinementPlan {
                     // connect-only view used by the web runtime.
                     add_rule(&mut rules, mailbox_helper_socket_path, "rwc");
                     add_parent_dir_rules(&mut rules, mailbox_helper_socket_path);
+                }
+                if let Some(grant_key_path) = &config.mailbox_helper_grant_key_path {
+                    add_rule(&mut rules, grant_key_path, "r");
+                    add_parent_dir_rules(&mut rules, grant_key_path);
                 }
 
                 Self {
@@ -592,6 +600,7 @@ mod tests {
             trusted_web_runtime_uid: None,
             doveadm_userdb_socket_path: None,
             mailbox_helper_socket_path: None,
+            mailbox_helper_grant_key_path: None,
             state_root: PathBuf::from("/var/lib/osmap"),
             log_level: LogLevel::Info,
             log_format: LogFormat::Text,
@@ -745,6 +754,9 @@ mod tests {
         let mut config = config_fixture(OpenbsdConfinementMode::LogOnly);
         config.mailbox_helper_socket_path =
             Some(PathBuf::from("/var/lib/osmap/run/mailbox-helper.sock"));
+        config.mailbox_helper_grant_key_path = Some(PathBuf::from(
+            "/var/lib/osmap/secrets/mailbox-helper-grant.key",
+        ));
 
         let plan = OpenbsdConfinementPlan::from_config(&config);
 
@@ -758,6 +770,10 @@ mod tests {
             .iter()
             .any(|rule| rule.path == Path::new("/var/lib/osmap/run")
                 && rule.permissions.contains('r')));
+        assert!(plan.unveil_rules.iter().any(|rule| {
+            rule.path == Path::new("/var/lib/osmap/secrets/mailbox-helper-grant.key")
+                && rule.permissions == "r"
+        }));
     }
 
     #[test]
@@ -767,6 +783,9 @@ mod tests {
         config.mailbox_helper_socket_path =
             Some(PathBuf::from("/var/lib/osmap/run/mailbox-helper.sock"));
         config.doveadm_userdb_socket_path = Some(PathBuf::from("/var/run/osmap-userdb"));
+        config.mailbox_helper_grant_key_path = Some(PathBuf::from(
+            "/var/lib/osmap/secrets/mailbox-helper-grant.key",
+        ));
 
         let plan = OpenbsdConfinementPlan::from_config(&config);
 
@@ -797,6 +816,10 @@ mod tests {
                 && rule.permissions.contains('r')
                 && rule.permissions.contains('w')
         }));
+        assert!(plan.unveil_rules.iter().any(|rule| {
+            rule.path == Path::new("/var/lib/osmap/secrets/mailbox-helper-grant.key")
+                && rule.permissions == "r"
+        }));
         assert!(plan
             .unveil_rules
             .iter()
@@ -821,6 +844,9 @@ mod tests {
         config.mailbox_helper_socket_path =
             Some(PathBuf::from("/var/lib/osmap/run/mailbox-helper.sock"));
         config.doveadm_userdb_socket_path = Some(PathBuf::from("/var/run/osmap-userdb"));
+        config.mailbox_helper_grant_key_path = Some(PathBuf::from(
+            "/var/lib/osmap/secrets/mailbox-helper-grant.key",
+        ));
 
         let plan = OpenbsdConfinementPlan::from_config(&config);
 

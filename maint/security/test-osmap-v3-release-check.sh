@@ -219,9 +219,10 @@ make_evidence() {
 	tls="$case_dir/tls-cbc-cleanup.txt"
 	tls_standard="$case_dir/tls-standard.json"
 	resource_timeout="$case_dir/resource-timeout.txt"
+	helper_boundary="$case_dir/latest-host-helper-boundary-report.txt"
 	mime_html_proof="$case_dir/latest-host-v3-mime-html-proof-report.txt"
 	wstg="$case_dir/wstg-summary.json"
-	for path in "$v2_a" "$v2_b" "$host_a" "$host_b" "$host_c" "$tls" "$resource_timeout"; do
+	for path in "$v2_a" "$v2_b" "$host_a" "$host_b" "$host_c" "$tls" "$resource_timeout" "$helper_boundary"; do
 		printf '%s\n' "sanitized fixture evidence for $(basename "$path")" > "$path"
 	done
 	make_tls_standard_report "$tls_standard"
