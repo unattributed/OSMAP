@@ -125,6 +125,7 @@ def openssl_probe(
     version_flag: str,
     *,
     cipher: str | None = None,
+    verify_hostname_supported: bool = True,
 ) -> dict[str, Any]:
     command = [
         openssl_bin,
@@ -134,10 +135,10 @@ def openssl_probe(
         "-servername",
         host,
         "-verify_return_error",
-        "-verify_hostname",
-        host,
-        version_flag,
     ]
+    if verify_hostname_supported:
+        command.extend(["-verify_hostname", host])
+    command.append(version_flag)
     if cipher:
         command.extend(["-cipher", cipher])
     try:
@@ -169,6 +170,21 @@ def openssl_probe(
         }
 
 
+def openssl_s_client_supports_option(openssl_bin: str, option: str) -> bool:
+    try:
+        completed = subprocess.run(
+            [openssl_bin, "s_client", "-help"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            timeout=5,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    output = completed.stdout.decode("utf-8", errors="replace")
+    return option in output
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("target", nargs="?", default=None, help="HTTPS URL or host to validate")
@@ -182,6 +198,7 @@ def main() -> int:
     report_path = Path(args.report) if args.report else None
     failures: list[str] = []
     probes: dict[str, Any] = {}
+    verify_hostname_supported = openssl_s_client_supports_option(args.openssl_bin, "-verify_hostname")
 
     try:
         probes["python_default_context"] = python_verified_probe(host, port, args.timeout)
@@ -190,7 +207,14 @@ def main() -> int:
         failures.append(f"verified Python TLS client probe failed: {exc}")
 
     for label, flag in (("tls10", "-tls1"), ("tls11", "-tls1_1")):
-        probe = openssl_probe(args.openssl_bin, host, port, args.timeout, flag)
+        probe = openssl_probe(
+            args.openssl_bin,
+            host,
+            port,
+            args.timeout,
+            flag,
+            verify_hostname_supported=verify_hostname_supported,
+        )
         negotiated = bool(probe.get("protocol") and probe.get("cipher"))
         if negotiated:
             probe["status"] = "failed"
@@ -202,7 +226,14 @@ def main() -> int:
             probe["verify_ok"] = False
         probes[label] = probe
 
-    tls12 = openssl_probe(args.openssl_bin, host, port, args.timeout, "-tls1_2")
+    tls12 = openssl_probe(
+        args.openssl_bin,
+        host,
+        port,
+        args.timeout,
+        "-tls1_2",
+        verify_hostname_supported=verify_hostname_supported,
+    )
     tls12_ok, tls12_reason = tls12_cipher_is_strong(str(tls12.get("cipher", "")))
     tls12["strong_cipher"] = tls12_ok
     if tls12.get("protocol") != "TLSv1.2" or not tls12.get("cipher") or not tls12.get("verify_ok") or not tls12_ok:
@@ -217,7 +248,14 @@ def main() -> int:
         tls12["cipher_reason"] = tls12_reason
     probes["tls12"] = tls12
 
-    tls13 = openssl_probe(args.openssl_bin, host, port, args.timeout, "-tls1_3")
+    tls13 = openssl_probe(
+        args.openssl_bin,
+        host,
+        port,
+        args.timeout,
+        "-tls1_3",
+        verify_hostname_supported=verify_hostname_supported,
+    )
     tls13_ok, tls13_reason = tls13_cipher_is_strong(str(tls13.get("cipher", "")))
     tls13["strong_cipher"] = tls13_ok
     if tls13.get("protocol") != "TLSv1.3" or not tls13.get("cipher") or not tls13.get("verify_ok") or not tls13_ok:
@@ -242,6 +280,7 @@ def main() -> int:
         "preferred_tls_version": "TLSv1.3",
         "certificate_validation": probes.get("python_default_context", {}).get("certificate_validation") is True,
         "hostname_validation": probes.get("python_default_context", {}).get("hostname_validation") is True,
+        "openssl_verify_hostname_supported": verify_hostname_supported,
         "probes": probes,
         "failures": failures,
     }
