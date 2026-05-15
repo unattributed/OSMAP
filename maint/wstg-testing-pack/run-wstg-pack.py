@@ -73,6 +73,7 @@ class Config:
     allow_host_assisted: bool
     throttle_attempts: int
     timeout: float
+    ssh_timeout: float
     release_mode: bool
 
     @property
@@ -1512,7 +1513,7 @@ class Runner:
                 text=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
-                timeout=max(20, int(self.config.timeout) + 10),
+                timeout=self.config.ssh_timeout,
             )
             output = completed.stdout
         except (OSError, subprocess.TimeoutExpired) as exc:
@@ -1667,6 +1668,7 @@ def build_config(args: argparse.Namespace) -> Config:
         allow_host_assisted=allow_host,
         throttle_attempts=max(1, int(throttle_attempts_raw or throttle_attempts_default)),
         timeout=float(merged.get("OSMAP_REQUEST_TIMEOUT_SECONDS", "12") or "12"),
+        ssh_timeout=max(1.0, float(merged.get("OSMAP_SSH_TIMEOUT_SECONDS", "300") or "300")),
         release_mode=release_mode,
     )
 

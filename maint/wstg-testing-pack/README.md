@@ -56,7 +56,9 @@ hash, restores it on exit, injects controlled messages, and cleans up its
 subjects. The default host is `mail.blackbagsecurity.com`; the shorter `mail`
 alias may not be available from every operator network. Host-assisted checks are
 disabled unless `--include-host` or `OSMAP_ALLOW_HOST_ASSISTED_TESTS=true` is
-used.
+used. SSH-assisted host checks use `OSMAP_SSH_TIMEOUT_SECONDS`, defaulting to
+300 seconds, so slower release hosts can finish bounded live validators without
+relaxing the browser request timeout.
 
 ## Running
 
