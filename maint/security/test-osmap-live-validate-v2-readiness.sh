@@ -4,6 +4,7 @@ set -eu
 
 repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
 source_wrapper="${repo_root}/maint/live/osmap-live-validate-v2-readiness.ksh"
+login_send_validator="${repo_root}/maint/live/osmap-live-validate-login-send.ksh"
 tmp_root=$(mktemp -d "${TMPDIR:-/tmp}/osmap-v2-readiness-local-test.XXXXXX")
 fake_repo="${tmp_root}/repo"
 fake_live_dir="${fake_repo}/maint/live"
@@ -18,6 +19,10 @@ trap cleanup EXIT INT TERM
 
 mkdir -p "${fake_live_dir}" "${bin_dir}" "${log_dir}"
 cp "${source_wrapper}" "${fake_live_dir}/osmap-live-validate-v2-readiness.ksh"
+
+sh -n "${login_send_validator}"
+grep -Fq 'OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH=' "${login_send_validator}"
+grep -Fq 'mailbox-helper-grant.key' "${login_send_validator}"
 
 cat > "${bin_dir}/ksh" <<'EOF'
 #!/bin/sh
