@@ -127,7 +127,7 @@ impl RuntimeBrowserGateway {
             AuthenticationDecision::Denied { public_reason } => {
                 let mut effective_public_reason =
                     normalized_login_public_reason(public_reason).to_string();
-                if public_reason == PublicFailureReason::InvalidCredentials {
+                if records_login_throttle_failure(public_reason) {
                     match throttle_service.record_failure(context, username) {
                         Ok(record) => {
                             audit_events.extend(record.audit_events);
@@ -170,7 +170,7 @@ impl RuntimeBrowserGateway {
                     AuthenticationDecision::Denied { public_reason } => {
                         let mut effective_public_reason =
                             normalized_login_public_reason(public_reason).to_string();
-                        if public_reason == PublicFailureReason::InvalidSecondFactor {
+                        if records_login_throttle_failure(public_reason) {
                             match throttle_service.record_failure(context, username) {
                                 Ok(record) => {
                                     audit_events.extend(record.audit_events);
@@ -547,6 +547,15 @@ fn normalized_login_public_reason(public_reason: PublicFailureReason) -> &'stati
     }
 }
 
+fn records_login_throttle_failure(public_reason: PublicFailureReason) -> bool {
+    matches!(
+        public_reason,
+        PublicFailureReason::InvalidCredentials
+            | PublicFailureReason::InvalidSecondFactor
+            | PublicFailureReason::TemporarilyUnavailable
+    )
+}
+
 fn session_device_label(user_agent: &str) -> String {
     let user_agent = user_agent.trim();
     if user_agent.is_empty() {
@@ -617,6 +626,22 @@ mod tests {
             normalized_login_public_reason(PublicFailureReason::TemporarilyUnavailable),
             PublicFailureReason::InvalidCredentials.as_str()
         );
+    }
+
+    #[test]
+    fn records_generic_login_failures_into_throttle_buckets() {
+        assert!(records_login_throttle_failure(
+            PublicFailureReason::InvalidCredentials
+        ));
+        assert!(records_login_throttle_failure(
+            PublicFailureReason::InvalidSecondFactor
+        ));
+        assert!(records_login_throttle_failure(
+            PublicFailureReason::TemporarilyUnavailable
+        ));
+        assert!(!records_login_throttle_failure(
+            PublicFailureReason::InvalidRequest
+        ));
     }
 
     #[test]
