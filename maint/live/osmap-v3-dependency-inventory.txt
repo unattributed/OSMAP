@@ -1,0 +1,159 @@
+osmap v0.1.0 (/home/foo/Workspace/OSMAP)
+├── ammonia v4.1.2
+│   ├── cssparser v0.35.0
+│   │   ├── cssparser-macros v0.6.1 (proc-macro)
+│   │   │   ├── quote v1.0.45
+│   │   │   │   └── proc-macro2 v1.0.106
+│   │   │   │       └── unicode-ident v1.0.24
+│   │   │   └── syn v2.0.117
+│   │   │       ├── proc-macro2 v1.0.106 (*)
+│   │   │       ├── quote v1.0.45 (*)
+│   │   │       └── unicode-ident v1.0.24
+│   │   ├── dtoa-short v0.3.5
+│   │   │   └── dtoa v1.0.11
+│   │   ├── itoa v1.0.18
+│   │   ├── phf v0.11.3
+│   │   │   ├── phf_macros v0.11.3 (proc-macro)
+│   │   │   │   ├── phf_generator v0.11.3
+│   │   │   │   │   ├── phf_shared v0.11.3
+│   │   │   │   │   │   └── siphasher v1.0.2
+│   │   │   │   │   └── rand v0.8.6
+│   │   │   │   │       └── rand_core v0.6.4
+│   │   │   │   ├── phf_shared v0.11.3 (*)
+│   │   │   │   ├── proc-macro2 v1.0.106 (*)
+│   │   │   │   ├── quote v1.0.45 (*)
+│   │   │   │   └── syn v2.0.117 (*)
+│   │   │   └── phf_shared v0.11.3 (*)
+│   │   └── smallvec v1.15.1
+│   ├── html5ever v0.35.0
+│   │   ├── log v0.4.29
+│   │   ├── markup5ever v0.35.0
+│   │   │   ├── log v0.4.29
+│   │   │   ├── tendril v0.4.3
+│   │   │   │   ├── futf v0.1.5
+│   │   │   │   │   ├── mac v0.1.1
+│   │   │   │   │   └── new_debug_unreachable v1.0.6
+│   │   │   │   ├── mac v0.1.1
+│   │   │   │   └── utf-8 v0.7.6
+│   │   │   └── web_atoms v0.1.3
+│   │   │       ├── phf v0.11.3 (*)
+│   │   │       └── string_cache v0.8.9
+│   │   │           ├── new_debug_unreachable v1.0.6
+│   │   │           ├── parking_lot v0.12.5
+│   │   │           │   ├── lock_api v0.4.14
+│   │   │           │   │   └── scopeguard v1.2.0
+│   │   │           │   └── parking_lot_core v0.9.12
+│   │   │           │       ├── cfg-if v1.0.4
+│   │   │           │       ├── libc v0.2.183
+│   │   │           │       └── smallvec v1.15.1
+│   │   │           ├── phf_shared v0.11.3 (*)
+│   │   │           ├── precomputed-hash v0.1.1
+│   │   │           └── serde v1.0.228
+│   │   │               └── serde_core v1.0.228
+│   │   │       [build-dependencies]
+│   │   │       ├── phf_codegen v0.11.3
+│   │   │       │   ├── phf_generator v0.11.3 (*)
+│   │   │       │   └── phf_shared v0.11.3 (*)
+│   │   │       └── string_cache_codegen v0.5.4
+│   │   │           ├── phf_generator v0.11.3 (*)
+│   │   │           ├── phf_shared v0.11.3 (*)
+│   │   │           ├── proc-macro2 v1.0.106 (*)
+│   │   │           └── quote v1.0.45 (*)
+│   │   └── match_token v0.35.0 (proc-macro)
+│   │       ├── proc-macro2 v1.0.106 (*)
+│   │       ├── quote v1.0.45 (*)
+│   │       └── syn v2.0.117 (*)
+│   ├── maplit v1.0.2
+│   ├── tendril v0.4.3 (*)
+│   └── url v2.5.8
+│       ├── form_urlencoded v1.2.2
+│       │   └── percent-encoding v2.3.2
+│       ├── idna v1.1.0
+│       │   ├── idna_adapter v1.2.1
+│       │   │   ├── icu_normalizer v2.2.0
+│       │   │   │   ├── icu_collections v2.2.0
+│       │   │   │   │   ├── displaydoc v0.2.5 (proc-macro)
+│       │   │   │   │   │   ├── proc-macro2 v1.0.106 (*)
+│       │   │   │   │   │   ├── quote v1.0.45 (*)
+│       │   │   │   │   │   └── syn v2.0.117 (*)
+│       │   │   │   │   ├── potential_utf v0.1.5
+│       │   │   │   │   │   └── zerovec v0.11.6
+│       │   │   │   │   │       ├── yoke v0.8.2
+│       │   │   │   │   │       │   ├── stable_deref_trait v1.2.1
+│       │   │   │   │   │       │   ├── yoke-derive v0.8.2 (proc-macro)
+│       │   │   │   │   │       │   │   ├── proc-macro2 v1.0.106 (*)
+│       │   │   │   │   │       │   │   ├── quote v1.0.45 (*)
+│       │   │   │   │   │       │   │   ├── syn v2.0.117 (*)
+│       │   │   │   │   │       │   │   └── synstructure v0.13.2
+│       │   │   │   │   │       │   │       ├── proc-macro2 v1.0.106 (*)
+│       │   │   │   │   │       │   │       ├── quote v1.0.45 (*)
+│       │   │   │   │   │       │   │       └── syn v2.0.117 (*)
+│       │   │   │   │   │       │   └── zerofrom v0.1.7
+│       │   │   │   │   │       │       └── zerofrom-derive v0.1.7 (proc-macro)
+│       │   │   │   │   │       │           ├── proc-macro2 v1.0.106 (*)
+│       │   │   │   │   │       │           ├── quote v1.0.45 (*)
+│       │   │   │   │   │       │           ├── syn v2.0.117 (*)
+│       │   │   │   │   │       │           └── synstructure v0.13.2 (*)
+│       │   │   │   │   │       ├── zerofrom v0.1.7 (*)
+│       │   │   │   │   │       └── zerovec-derive v0.11.3 (proc-macro)
+│       │   │   │   │   │           ├── proc-macro2 v1.0.106 (*)
+│       │   │   │   │   │           ├── quote v1.0.45 (*)
+│       │   │   │   │   │           └── syn v2.0.117 (*)
+│       │   │   │   │   ├── utf8_iter v1.0.4
+│       │   │   │   │   ├── yoke v0.8.2 (*)
+│       │   │   │   │   ├── zerofrom v0.1.7 (*)
+│       │   │   │   │   └── zerovec v0.11.6 (*)
+│       │   │   │   ├── icu_normalizer_data v2.2.0
+│       │   │   │   ├── icu_provider v2.2.0
+│       │   │   │   │   ├── displaydoc v0.2.5 (proc-macro) (*)
+│       │   │   │   │   ├── icu_locale_core v2.2.0
+│       │   │   │   │   │   ├── displaydoc v0.2.5 (proc-macro) (*)
+│       │   │   │   │   │   ├── litemap v0.8.2
+│       │   │   │   │   │   ├── tinystr v0.8.3
+│       │   │   │   │   │   │   ├── displaydoc v0.2.5 (proc-macro) (*)
+│       │   │   │   │   │   │   └── zerovec v0.11.6 (*)
+│       │   │   │   │   │   ├── writeable v0.6.2
+│       │   │   │   │   │   └── zerovec v0.11.6 (*)
+│       │   │   │   │   ├── writeable v0.6.2
+│       │   │   │   │   ├── yoke v0.8.2 (*)
+│       │   │   │   │   ├── zerofrom v0.1.7 (*)
+│       │   │   │   │   ├── zerotrie v0.2.4
+│       │   │   │   │   │   ├── displaydoc v0.2.5 (proc-macro) (*)
+│       │   │   │   │   │   ├── yoke v0.8.2 (*)
+│       │   │   │   │   │   └── zerofrom v0.1.7 (*)
+│       │   │   │   │   └── zerovec v0.11.6 (*)
+│       │   │   │   ├── smallvec v1.15.1
+│       │   │   │   └── zerovec v0.11.6 (*)
+│       │   │   └── icu_properties v2.2.0
+│       │   │       ├── icu_collections v2.2.0 (*)
+│       │   │       ├── icu_locale_core v2.2.0 (*)
+│       │   │       ├── icu_properties_data v2.2.0
+│       │   │       ├── icu_provider v2.2.0 (*)
+│       │   │       ├── zerotrie v0.2.4 (*)
+│       │   │       └── zerovec v0.11.6 (*)
+│       │   ├── smallvec v1.15.1
+│       │   └── utf8_iter v1.0.4
+│       └── percent-encoding v2.3.2
+├── getrandom v0.2.17
+│   ├── cfg-if v1.0.4
+│   └── libc v0.2.183
+├── hmac v0.12.1
+│   └── digest v0.10.7
+│       ├── block-buffer v0.10.4
+│       │   └── generic-array v0.14.7
+│       │       └── typenum v1.19.0
+│       │       [build-dependencies]
+│       │       └── version_check v0.9.5
+│       ├── crypto-common v0.1.7
+│       │   ├── generic-array v0.14.7 (*)
+│       │   └── typenum v1.19.0
+│       └── subtle v2.6.1
+├── libc v0.2.183
+├── sha1 v0.10.6
+│   ├── cfg-if v1.0.4
+│   ├── cpufeatures v0.2.17
+│   └── digest v0.10.7 (*)
+└── sha2 v0.10.9
+    ├── cfg-if v1.0.4
+    ├── cpufeatures v0.2.17
+    └── digest v0.10.7 (*)

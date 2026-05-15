@@ -1,0 +1,61 @@
+{
+  "certificate_validation": true,
+  "failures": [],
+  "generated_at_utc": "2026-05-15T09:42:38+00:00",
+  "host": "mail.blackbagsecurity.com",
+  "hostname_validation": true,
+  "minimum_tls_version": "TLSv1.2",
+  "openssl_verify_hostname_supported": true,
+  "port": 443,
+  "preferred_tls_version": "TLSv1.3",
+  "probes": {
+    "python_default_context": {
+      "certificate_validation": true,
+      "cipher": "TLS_AES_256_GCM_SHA384",
+      "hostname_validation": true,
+      "minimum_version": "TLSv1_2",
+      "protocol": "TLSv1.3",
+      "status": "passed"
+    },
+    "tls10": {
+      "cipher": "",
+      "command": "openssl s_client -connect mail.blackbagsecurity.com:443 -servername mail.blackbagsecurity.com -verify_return_error -verify_hostname mail.blackbagsecurity.com -tls1",
+      "output_excerpt": "Connecting to 124.121.242.189\n4057AD8FBE7F0000:error:0A0000BF:SSL routines:tls_setup_handshake:no protocols available:../ssl/statem/statem_lib.c:155:\nCONNECTED(00000003)\n---\nno peer certificate available\n---\nNo client certificate CA names sent\nNegotiated TLS1.3 group: <NULL>\n---\nSSL handshake has read 0 bytes and written 7 bytes\nVerification: OK\n---\nNew, (NONE), Cipher is (NONE)\nProtocol: TLSv1.3\nThis TLS version forbids renegotiation.\nCompression: NONE\nExpansion: NONE\nNo ALPN negotiated\nEarly data was not sent\nVerify return code: 0 (ok)",
+      "protocol": "",
+      "returncode": 1,
+      "status": "rejected",
+      "verify_ok": false
+    },
+    "tls11": {
+      "cipher": "",
+      "command": "openssl s_client -connect mail.blackbagsecurity.com:443 -servername mail.blackbagsecurity.com -verify_return_error -verify_hostname mail.blackbagsecurity.com -tls1_1",
+      "output_excerpt": "Connecting to 124.121.242.189\n4017AE34947F0000:error:0A0000BF:SSL routines:tls_setup_handshake:no protocols available:../ssl/statem/statem_lib.c:155:\nCONNECTED(00000003)\n---\nno peer certificate available\n---\nNo client certificate CA names sent\nNegotiated TLS1.3 group: <NULL>\n---\nSSL handshake has read 0 bytes and written 7 bytes\nVerification: OK\n---\nNew, (NONE), Cipher is (NONE)\nProtocol: TLSv1.3\nThis TLS version forbids renegotiation.\nCompression: NONE\nExpansion: NONE\nNo ALPN negotiated\nEarly data was not sent\nVerify return code: 0 (ok)",
+      "protocol": "",
+      "returncode": 1,
+      "status": "rejected",
+      "verify_ok": false
+    },
+    "tls12": {
+      "cipher": "ECDHE-ECDSA-AES256-GCM-SHA384",
+      "command": "openssl s_client -connect mail.blackbagsecurity.com:443 -servername mail.blackbagsecurity.com -verify_return_error -verify_hostname mail.blackbagsecurity.com -tls1_2",
+      "output_excerpt": "Connecting to 124.121.242.189\ndepth=2 C=US, O=Internet Security Research Group, CN=ISRG Root X1\nverify return:1\ndepth=1 C=US, O=Let's Encrypt, CN=E7\nverify return:1\ndepth=0 CN=mail.blackbagsecurity.com\nverify return:1\nCONNECTED(00000003)\n---\nCertificate chain\n 0 s:CN=mail.blackbagsecurity.com\n   i:C=US, O=Let's Encrypt, CN=E7\n   a:PKEY: EC, (prime256v1); sigalg: ecdsa-with-SHA384\n   v:NotBefore: Mar 23 18:06:49 2026 GMT; NotAfter: Jun 21 18:06:48 2026 GMT\n 1 s:C=US, O=Let's Encrypt, CN=E7\n   i:C=US, O=Internet Security Research Group, CN=ISRG Root X1\n   a:PKEY: EC, (secp384r1); sigalg: sha256WithRSAEncryption\n   v:NotBefore: Mar 13 00:00:00 2024 GMT; NotAfter: Mar 12 23:59:59 2027 GMT\n---\nServer certificate",
+      "protocol": "TLSv1.2",
+      "returncode": 0,
+      "status": "passed",
+      "strong_cipher": true,
+      "verify_ok": true
+    },
+    "tls13": {
+      "cipher": "TLS_AES_256_GCM_SHA384",
+      "command": "openssl s_client -connect mail.blackbagsecurity.com:443 -servername mail.blackbagsecurity.com -verify_return_error -verify_hostname mail.blackbagsecurity.com -tls1_3",
+      "output_excerpt": "Connecting to 124.121.242.189\ndepth=2 C=US, O=Internet Security Research Group, CN=ISRG Root X1\nverify return:1\ndepth=1 C=US, O=Let's Encrypt, CN=E7\nverify return:1\ndepth=0 CN=mail.blackbagsecurity.com\nverify return:1\nCONNECTED(00000003)\n---\nCertificate chain\n 0 s:CN=mail.blackbagsecurity.com\n   i:C=US, O=Let's Encrypt, CN=E7\n   a:PKEY: EC, (prime256v1); sigalg: ecdsa-with-SHA384\n   v:NotBefore: Mar 23 18:06:49 2026 GMT; NotAfter: Jun 21 18:06:48 2026 GMT\n 1 s:C=US, O=Let's Encrypt, CN=E7\n   i:C=US, O=Internet Security Research Group, CN=ISRG Root X1\n   a:PKEY: EC, (secp384r1); sigalg: sha256WithRSAEncryption\n   v:NotBefore: Mar 13 00:00:00 2024 GMT; NotAfter: Mar 12 23:59:59 2027 GMT\n---\nServer certificate",
+      "protocol": "TLSv1.3",
+      "returncode": 0,
+      "status": "passed",
+      "strong_cipher": true,
+      "verify_ok": true
+    }
+  },
+  "result": "tls_standard_passed",
+  "target": "https://mail.blackbagsecurity.com:443"
+}

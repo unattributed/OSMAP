@@ -1,0 +1,492 @@
+{
+  "authenticated_proof": {
+    "login": true,
+    "logout": true,
+    "protected_route_access": true,
+    "session_invalidated": true,
+    "session_issued": true,
+    "totp": true
+  },
+  "commands": [
+    "./run-wstg-pack.py --release --prompt-auth --auth-email duncan@blackbagsecurity.com"
+  ],
+  "counts": {
+    "fail": 0,
+    "not_applicable": 0,
+    "pass": 26,
+    "skip": 0,
+    "warning": 0
+  },
+  "generated_at": "2026-05-15T08:32:23.423292+00:00",
+  "mapping_file": "wstg-asvs-mapping.json",
+  "owasp_top_10_2025_coverage": {
+    "A01:2025": {
+      "gaps": [
+        "OSMAP-WSTG-GAP-001"
+      ],
+      "tests": [
+        "OSMAP-WSTG-SESS-003",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-001",
+        "OSMAP-WSTG-CLNT-001",
+        "OSMAP-WSTG-CONF-005",
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-BUSL-003"
+      ]
+    },
+    "A02:2025": {
+      "gaps": [],
+      "tests": [
+        "OSMAP-WSTG-CONF-001",
+        "OSMAP-WSTG-CONF-002",
+        "OSMAP-WSTG-CONF-003",
+        "OSMAP-WSTG-SESS-005",
+        "OSMAP-WSTG-CONF-004",
+        "OSMAP-WSTG-INFO-001",
+        "OSMAP-WSTG-INFO-002",
+        "OSMAP-WSTG-CLNT-001",
+        "OSMAP-WSTG-CONF-005",
+        "OSMAP-WSTG-CONF-006"
+      ]
+    },
+    "A03:2025": {
+      "gaps": [],
+      "tests": [
+        "OSMAP-WSTG-CONF-007"
+      ]
+    },
+    "A04:2025": {
+      "gaps": [],
+      "tests": [
+        "OSMAP-WSTG-CONF-001",
+        "OSMAP-WSTG-CONF-002",
+        "OSMAP-WSTG-ATHN-001",
+        "OSMAP-WSTG-SESS-001"
+      ]
+    },
+    "A05:2025": {
+      "gaps": [],
+      "tests": [
+        "OSMAP-WSTG-CONF-003",
+        "OSMAP-WSTG-INPV-001",
+        "OSMAP-WSTG-INPV-002",
+        "OSMAP-WSTG-CLNT-002"
+      ]
+    },
+    "A06:2025": {
+      "gaps": [
+        "OSMAP-WSTG-GAP-001",
+        "OSMAP-WSTG-GAP-002"
+      ],
+      "tests": [
+        "OSMAP-WSTG-CLNT-002",
+        "OSMAP-WSTG-BUSL-001",
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-BUSL-003"
+      ]
+    },
+    "A07:2025": {
+      "gaps": [],
+      "tests": [
+        "OSMAP-WSTG-ATHN-001",
+        "OSMAP-WSTG-ATHN-002",
+        "OSMAP-WSTG-ATHN-003",
+        "OSMAP-WSTG-ATHN-004",
+        "OSMAP-WSTG-SESS-001",
+        "OSMAP-WSTG-SESS-002",
+        "OSMAP-WSTG-SESS-003",
+        "OSMAP-WSTG-SESS-005",
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-BUSL-003"
+      ]
+    },
+    "A08:2025": {
+      "gaps": [
+        "OSMAP-WSTG-GAP-001",
+        "OSMAP-WSTG-GAP-002"
+      ],
+      "tests": [
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-001",
+        "OSMAP-WSTG-CONF-007",
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-BUSL-003"
+      ]
+    },
+    "A09:2025": {
+      "gaps": [],
+      "tests": [
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-BUSL-003",
+        "OSMAP-WSTG-LOGG-001"
+      ]
+    },
+    "A10:2025": {
+      "gaps": [],
+      "tests": [
+        "OSMAP-WSTG-ATHN-003",
+        "OSMAP-WSTG-CONF-004",
+        "OSMAP-WSTG-INFO-002",
+        "OSMAP-WSTG-INPV-001",
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-BUSL-003"
+      ]
+    }
+  },
+  "release_errors": [],
+  "release_mode": true,
+  "results": [
+    {
+      "details": {
+        "http_error": "[Errno 110] Connection timed out"
+      },
+      "evidence": [
+        "evidence/tls_https_login.headers",
+        "evidence/http_redirect.headers"
+      ],
+      "message": "HTTPS is available and cleartext HTTP is not reachable",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-CONF-001",
+      "test_name": "WSTG-v42-CONF-01 Test Network Infrastructure Configuration - TLS and HTTP exposure"
+    },
+    {
+      "details": {},
+      "evidence": [
+        "evidence/security_headers.headers"
+      ],
+      "message": "required browser security headers are present",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-CONF-002",
+      "test_name": "WSTG-v42-CONF-07 Test HTTP Strict Transport Security - browser header baseline"
+    },
+    {
+      "details": {},
+      "evidence": [
+        "evidence/csp.headers"
+      ],
+      "message": "CSP remains narrow and default-deny",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-CONF-003",
+      "test_name": "WSTG-v42-CONF-12 Testing for Content Security Policy - OSMAP CSP regression"
+    },
+    {
+      "details": {},
+      "evidence": [
+        "evidence/login_form.headers",
+        "evidence/login_form.body"
+      ],
+      "message": "login form exposes username, password, and TOTP fields over HTTPS",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-ATHN-001",
+      "test_name": "WSTG-v42-ATHN-01 Testing for Credentials Transported over an Encrypted Channel - login form"
+    },
+    {
+      "details": {},
+      "evidence": [
+        "evidence/invalid_login_unknown_user.headers",
+        "evidence/invalid_login_known_shape.headers"
+      ],
+      "message": "invalid login responses are generic and non-enumerating",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-ATHN-002",
+      "test_name": "WSTG-v42-IDNT-04 Testing for Account Enumeration and Guessable User Account - login failure normalization"
+    },
+    {
+      "details": {
+        "statuses": [
+          401,
+          401,
+          401,
+          401,
+          401,
+          401,
+          401,
+          401,
+          401,
+          401,
+          401,
+          401,
+          401
+        ]
+      },
+      "evidence": [
+        "evidence/throttle_probe_attempt_1.headers",
+        "evidence/throttle_probe_attempt_2.headers",
+        "evidence/throttle_probe_attempt_3.headers",
+        "evidence/throttle_probe_attempt_4.headers",
+        "evidence/throttle_probe_attempt_5.headers",
+        "evidence/throttle_probe_attempt_6.headers",
+        "evidence/throttle_probe_attempt_7.headers",
+        "evidence/throttle_probe_attempt_8.headers",
+        "evidence/throttle_probe_attempt_9.headers",
+        "evidence/throttle_probe_attempt_10.headers",
+        "evidence/throttle_probe_attempt_11.headers",
+        "evidence/throttle_probe_attempt_12.headers",
+        "evidence/throttle_probe_attempt_13.headers"
+      ],
+      "message": "bounded probe observed login throttling",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-ATHN-003",
+      "test_name": "WSTG-v42-ATHN-03 Testing for Weak Lock Out Mechanism - bounded login throttle probe"
+    },
+    {
+      "details": {},
+      "evidence": [
+        "evidence/auth_login.headers",
+        "evidence/auth_mailboxes.headers"
+      ],
+      "message": "authenticated login and mailbox access succeeded",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-ATHN-004",
+      "test_name": "WSTG-v42-ATHN-10 Testing for Weaker Authentication in Alternative Channel - TOTP login flow"
+    },
+    {
+      "details": {},
+      "evidence": [
+        "evidence/auth_login.headers"
+      ],
+      "message": "session cookie has Secure, HttpOnly, SameSite=Strict, and Path=/",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-SESS-001",
+      "test_name": "WSTG-v42-SESS-02 Testing for Cookies Attributes - OSMAP session cookie"
+    },
+    {
+      "details": {},
+      "evidence": [
+        "evidence/session_fixation.headers"
+      ],
+      "message": "authentication issued a fresh session cookie",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-SESS-002",
+      "test_name": "WSTG-v42-SESS-03 Testing for Session Fixation - pre-login cookie replacement"
+    },
+    {
+      "details": {},
+      "evidence": [
+        "evidence/logout_missing_csrf.headers",
+        "evidence/logout_postcheck.headers"
+      ],
+      "message": "logout requires CSRF token and preserved the session after rejection",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-SESS-003",
+      "test_name": "WSTG-v42-SESS-05 Testing for Cross Site Request Forgery - logout enforcement"
+    },
+    {
+      "details": {},
+      "evidence": [
+        "evidence/csrf_settings_missing.headers",
+        "evidence/csrf_settings_cross_origin.headers"
+      ],
+      "message": "authenticated mutation rejects missing CSRF and cross-origin metadata",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-SESS-004",
+      "test_name": "WSTG-v42-SESS-05 Testing for Cross Site Request Forgery - authenticated mutations"
+    },
+    {
+      "details": {},
+      "evidence": [
+        "evidence/auth_mailboxes.headers",
+        "evidence/auth_settings.headers"
+      ],
+      "message": "authenticated pages suppress browser cache storage",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-SESS-005",
+      "test_name": "WSTG-v42-ATHN-06 Testing for Browser Cache Weaknesses - authenticated pages"
+    },
+    {
+      "details": {},
+      "evidence": [
+        "evidence/method_options.headers",
+        "evidence/method_trace.headers"
+      ],
+      "message": "OPTIONS and TRACE are not accepted as application methods",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-CONF-004",
+      "test_name": "WSTG-v42-CONF-06 Test HTTP Methods - OPTIONS and TRACE"
+    },
+    {
+      "details": {},
+      "evidence": [
+        "evidence/robots_txt.headers",
+        "evidence/security_txt.headers"
+      ],
+      "message": "robots.txt and security.txt did not disclose sensitive paths or secrets",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-INFO-001",
+      "test_name": "WSTG-v42-INFO-03 Review Webserver Metafiles for Information Leakage"
+    },
+    {
+      "details": {},
+      "evidence": [
+        "evidence/info_disclosure_login.headers",
+        "evidence/info_disclosure_login.body",
+        "evidence/info_disclosure_missing.headers",
+        "evidence/info_disclosure_missing.body",
+        "evidence/info_disclosure_bad_query.headers",
+        "evidence/info_disclosure_bad_query.body"
+      ],
+      "message": "unauthenticated pages and errors did not expose sensitive diagnostics",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-INFO-002",
+      "test_name": "WSTG-v42-INFO-02 Fingerprint Web Server - unauthenticated disclosure and error handling"
+    },
+    {
+      "details": {},
+      "evidence": [
+        "evidence/path_traversal_dotdot.headers",
+        "evidence/path_traversal_dotdot.body",
+        "evidence/path_traversal_encoded.headers",
+        "evidence/path_traversal_encoded.body",
+        "evidence/path_traversal_attachment.headers",
+        "evidence/path_traversal_attachment.body"
+      ],
+      "message": "path traversal probes were rejected or safely gated",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-INPV-001",
+      "test_name": "WSTG-v42-ATHZ-01 Testing Directory Traversal File Include - safe endpoint probes"
+    },
+    {
+      "details": {},
+      "evidence": [
+        "evidence/reflected_input_login.body",
+        "evidence/reflected_input_search.body",
+        "evidence/reflected_input_mailbox.body"
+      ],
+      "message": "probe payloads were not reflected as executable markup",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-INPV-002",
+      "test_name": "WSTG-v42-INPV-01 Testing for Reflected Cross Site Scripting - safe parameters"
+    },
+    {
+      "details": {},
+      "evidence": [
+        "evidence/cors_https___attacker.invalid.headers",
+        "evidence/cors_null.headers"
+      ],
+      "message": "cross-origin probes did not receive permissive credentialed CORS",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-CLNT-001",
+      "test_name": "WSTG-v42-CLNT-07 Testing Cross Origin Resource Sharing"
+    },
+    {
+      "details": {},
+      "evidence": [
+        "evidence/static_html_rendering.txt"
+      ],
+      "message": "source and docs align with conservative HTML rendering policy",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-CLNT-002",
+      "test_name": "WSTG-v42-INPV-02 Testing for Stored Cross Site Scripting - HTML email rendering policy"
+    },
+    {
+      "details": {},
+      "evidence": [
+        "evidence/static_attachment_handling.txt"
+      ],
+      "message": "source and docs show bounded upload parsing and forced-download controls",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-BUSL-001",
+      "test_name": "WSTG-v42-BUSL-08 Test Upload of Unexpected File Types - attachment handling policy"
+    },
+    {
+      "details": {},
+      "evidence": [
+        "evidence/host_services.txt",
+        "evidence/host_bindings.txt",
+        "evidence/host_nginx.txt"
+      ],
+      "message": "host shows nginx and OSMAP services running with loopback OSMAP binding",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-CONF-005",
+      "test_name": "WSTG-v42-CONF-05 Enumerate Infrastructure and Application Admin Interfaces - host bindings"
+    },
+    {
+      "details": {},
+      "evidence": [
+        "evidence/host_pf.txt"
+      ],
+      "message": "pf is enabled and rules include drop posture",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-CONF-006",
+      "test_name": "WSTG-v42-CONF-01 Test Network Infrastructure Configuration - pf posture"
+    },
+    {
+      "details": {},
+      "evidence": [
+        "evidence/static_dependency_alignment.txt"
+      ],
+      "message": "lockfile and supply-chain security documentation/tooling are present",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-CONF-007",
+      "test_name": "WSTG-v42-CONF-02 Test Application Platform Configuration - SBOM and dependency alignment"
+    },
+    {
+      "details": {
+        "statuses": {
+          "attachment_limit": 400,
+          "cross_origin": 403,
+          "delete": 303,
+          "delete_create": 303,
+          "delete_resume": 404,
+          "list": 200,
+          "missing_csrf": 403,
+          "resume": 200,
+          "send": 303,
+          "send_create": 303,
+          "send_resume": 404,
+          "stale_session": 303
+        }
+      },
+      "evidence": [
+        "evidence/draft_save_missing_csrf.headers",
+        "evidence/draft_save_cross_origin.headers",
+        "evidence/draft_save_attachment_limit.headers",
+        "evidence/draft_delete_create.headers",
+        "evidence/draft_delete.headers",
+        "evidence/draft_delete_resume.headers",
+        "evidence/draft_send_create.headers",
+        "evidence/draft_list_before_send.headers",
+        "evidence/draft_list_before_send.body",
+        "evidence/draft_resume_before_send.headers",
+        "evidence/draft_resume_before_send.body",
+        "evidence/draft_send_cleanup.headers",
+        "evidence/draft_send_resume_after_cleanup.headers",
+        "evidence/draft_stale_session_rejected.headers",
+        "evidence/draft_route_static_boundary.txt",
+        "evidence/draft_route_evidence_redaction.txt"
+      ],
+      "message": "draft save, list, resume, delete, send cleanup, CSRF, same-origin, stale-session, attachment-limit, and redaction evidence passed",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-BUSL-002",
+      "test_name": "WSTG-v42-BUSL-04 Test Process Timing - authenticated draft route lifecycle"
+    },
+    {
+      "details": {},
+      "evidence": [
+        "evidence/source_attachment_live_report.txt",
+        "evidence/source_attachment_static_boundary.txt",
+        "evidence/source_attachment_evidence_redaction.txt"
+      ],
+      "message": "credential-backed selected source-attachment positive, tamper, duplicate, stale, and redaction evidence passed",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-BUSL-003",
+      "test_name": "WSTG-v42-BUSL-08 Test Upload of Unexpected File Types - authenticated selected source attachments"
+    },
+    {
+      "details": {},
+      "evidence": [
+        "evidence/static_security_logging.txt"
+      ],
+      "message": "source and docs show structured security logging and sensitive-data redaction posture",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-LOGG-001",
+      "test_name": "OWASP Top 10 2025 A09 Security Logging and Alerting Failures - audit event and redaction posture"
+    }
+  ],
+  "standards": {
+    "asvs": "OWASP Application Security Verification Standard 5.0.0",
+    "owasp_top_10_2025": "OWASP Top 10 2025",
+    "wstg": "OWASP Web Security Testing Guide v4.2"
+  },
+  "target": "https://mail.blackbagsecurity.com"
+}
