@@ -22,6 +22,8 @@ SETTINGS_DIR="${STATE_ROOT}/settings"
 AUDIT_DIR="${STATE_ROOT}/audit"
 CACHE_DIR="${STATE_ROOT}/cache"
 TOTP_DIR="${STATE_ROOT}/totp"
+SECRET_DIR="${STATE_ROOT}/secrets"
+WEB_GRANT_KEY_PATH="${SECRET_DIR}/mailbox-helper-grant.key"
 TMPDIR_PATH="${WORK_ROOT}/tmp"
 CARGO_HOME_PATH="${WORK_ROOT}/cargo-home"
 CARGO_TARGET_DIR_PATH="${WORK_ROOT}/target"
@@ -159,7 +161,8 @@ doas install -d -o _osmap -g _osmap -m 700 \
   "${SETTINGS_DIR}" \
   "${AUDIT_DIR}" \
   "${CACHE_DIR}" \
-  "${TOTP_DIR}"
+  "${TOTP_DIR}" \
+  "${SECRET_DIR}"
 
 log "building current OSMAP tree"
 cd "${PROJECT_ROOT}"
@@ -175,6 +178,16 @@ secret=${TOTP_SECRET_BASE32}
 EOF
 chmod 600 '${TOTP_SECRET_PATH}'
 chown _osmap:_osmap '${TOTP_SECRET_PATH}'"
+
+log "writing isolated helper request grant key"
+GRANT_KEY="$(
+  openssl rand -base64 48
+)"
+doas sh -c "cat > '${WEB_GRANT_KEY_PATH}' <<'EOF'
+${GRANT_KEY}
+EOF
+chmod 600 '${WEB_GRANT_KEY_PATH}'
+chown _osmap:_osmap '${WEB_GRANT_KEY_PATH}'"
 
 generate_totp_code() {
   python3 - "$TOTP_SECRET_BASE32" <<'PY'
@@ -229,6 +242,7 @@ doas -u _osmap sh -c "
     OSMAP_TOTP_SECRET_DIR='${TOTP_DIR}' \
     OSMAP_DOVEADM_AUTH_SOCKET_PATH='${AUTH_SOCKET_PATH}' \
     OSMAP_MAILBOX_HELPER_SOCKET_PATH='${RUNTIME_DIR}/unused-mailbox-helper.sock' \
+    OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH='${WEB_GRANT_KEY_PATH}' \
     OSMAP_LOG_LEVEL=info \
     OSMAP_OPENBSD_CONFINEMENT_MODE=enforce \
     '${BIN_PATH}' >'${HTTP_LOG_PATH}' 2>&1

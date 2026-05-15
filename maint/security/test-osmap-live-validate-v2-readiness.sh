@@ -4,7 +4,19 @@ set -eu
 
 repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
 source_wrapper="${repo_root}/maint/live/osmap-live-validate-v2-readiness.ksh"
-login_send_validator="${repo_root}/maint/live/osmap-live-validate-login-send.ksh"
+helper_grant_validators="
+${repo_root}/maint/live/osmap-live-validate-login-send.ksh
+${repo_root}/maint/live/osmap-live-validate-inline-image-metadata.ksh
+${repo_root}/maint/live/osmap-live-validate-login-failure-normalization.ksh
+${repo_root}/maint/live/osmap-live-validate-all-mailbox-search.ksh
+${repo_root}/maint/live/osmap-live-validate-archive-shortcut.ksh
+${repo_root}/maint/live/osmap-live-validate-session-surface.ksh
+${repo_root}/maint/live/osmap-live-validate-send-throttle.ksh
+${repo_root}/maint/live/osmap-live-validate-move-throttle.ksh
+${repo_root}/maint/live/osmap-live-validate-helper-peer-auth.ksh
+${repo_root}/maint/live/osmap-live-validate-request-guardrails.ksh
+${repo_root}/maint/live/osmap-live-validate-mailbox-backend-unavailable.ksh
+"
 tmp_root=$(mktemp -d "${TMPDIR:-/tmp}/osmap-v2-readiness-local-test.XXXXXX")
 fake_repo="${tmp_root}/repo"
 fake_live_dir="${fake_repo}/maint/live"
@@ -20,9 +32,11 @@ trap cleanup EXIT INT TERM
 mkdir -p "${fake_live_dir}" "${bin_dir}" "${log_dir}"
 cp "${source_wrapper}" "${fake_live_dir}/osmap-live-validate-v2-readiness.ksh"
 
-sh -n "${login_send_validator}"
-grep -Fq 'OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH=' "${login_send_validator}"
-grep -Fq 'mailbox-helper-grant.key' "${login_send_validator}"
+for helper_grant_validator in ${helper_grant_validators}; do
+  sh -n "${helper_grant_validator}"
+  grep -Fq 'OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH=' "${helper_grant_validator}"
+  grep -Fq 'mailbox-helper-grant.key' "${helper_grant_validator}"
+done
 
 cat > "${bin_dir}/ksh" <<'EOF'
 #!/bin/sh
