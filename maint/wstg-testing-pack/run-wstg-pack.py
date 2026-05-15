@@ -643,12 +643,18 @@ class Runner:
     def test_throttle_probe(self) -> TestResult:
         statuses: list[int | None] = []
         throttled = False
+        throttle_domain = (
+            self.config.test_email.rsplit("@", 1)[1]
+            if "@" in self.config.test_email
+            else self.config.host
+        )
+        throttle_username = f"wstg-throttle@{throttle_domain}"
         for attempt in range(1, self.config.throttle_attempts + 1):
             evidence = self.form_post(
                 f"throttle_probe_attempt_{attempt}",
                 "/login",
                 {
-                    "username": "wstg-throttle@example.invalid",
+                    "username": throttle_username,
                     "password": f"bad-password-{attempt}",
                     "totp_code": "000000",
                 },
