@@ -11,6 +11,8 @@ test -x "${validator}"
 grep -Fq 'real_password_plus_totp_with_temporary_mailbox_hash' "${validator}"
 grep -Fq 'OSMAP_MAILBOX_WORKER_BUDGET=1' "${validator}"
 grep -Fq 'mailbox_boundary_mode=local_helper_socket' "${validator}"
+grep -Fq 'OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH=' "${validator}"
+grep -Fq 'mailbox-helper-grant.key' "${validator}"
 
 grep -Fq 'include_original_attachment_1' "${validator}"
 grep -Fq 'include_original_attachment_2' "${validator}"
