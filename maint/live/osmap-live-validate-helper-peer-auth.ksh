@@ -81,6 +81,7 @@ require_tool grep
 require_tool stat
 require_tool id
 require_tool openssl
+require_tool od
 
 CURRENT_UID="$(id -u)"
 TRUSTED_UID="$(doas stat -f '%u' "${AUTH_SOCKET_PATH}")"
@@ -122,7 +123,7 @@ helper_request() {
     {
       printf 'v1\0%s\0%s\0%s\0%s\0%s' \
         "${operation}" "${issued_at}" "${expires_at}" "${nonce}" "${username}"
-    } | openssl dgst -sha256 -mac HMAC -macopt "key:${grant_key}" -binary | openssl enc -A -hex | tr 'A-F' 'a-f'
+    } | openssl dgst -sha256 -mac HMAC -macopt "key:${grant_key}" -binary | od -An -tx1 | tr -d ' \n'
   )"
   {
     printf '%s\n' "operation=${operation}"

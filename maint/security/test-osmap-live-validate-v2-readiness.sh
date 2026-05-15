@@ -37,6 +37,8 @@ for helper_grant_validator in ${helper_grant_validators}; do
   grep -Fq 'OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH=' "${helper_grant_validator}"
   grep -Fq 'mailbox-helper-grant.key' "${helper_grant_validator}"
 done
+grep -Fq "od -An -tx1" "${repo_root}/maint/live/osmap-live-validate-helper-peer-auth.ksh"
+! grep -Fq "openssl enc -A -hex" "${repo_root}/maint/live/osmap-live-validate-helper-peer-auth.ksh"
 
 cat > "${bin_dir}/ksh" <<'EOF'
 #!/bin/sh
