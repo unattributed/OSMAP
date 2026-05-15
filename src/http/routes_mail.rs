@@ -189,13 +189,28 @@ where
             BrowserMessageListDecision::Listed {
                 canonical_username,
                 mailbox_name,
-                messages,
+                mut messages,
             } => {
                 let archive_mailbox_name = self.validated_archive_mailbox_name(
                     context,
                     &validated_session,
                     &mut audit_events,
                 );
+                let sort = MessageSort::from_query_values(
+                    request.query_params.get("sort").map(String::as_str),
+                    request.query_params.get("dir").map(String::as_str),
+                );
+                sort_message_summaries(&mut messages, sort);
+                let search_query = request
+                    .query_params
+                    .get("q")
+                    .map(String::as_str)
+                    .filter(|query| !query.is_empty());
+                let search_scope = request
+                    .query_params
+                    .get("scope")
+                    .map(String::as_str)
+                    .filter(|scope| *scope == "all");
 
                 HandledHttpResponse {
                     response: html_response(
@@ -209,6 +224,11 @@ where
                             &messages,
                             success_message.as_deref(),
                             archive_mailbox_name.as_deref(),
+                            MessageListSortLinks {
+                                active_sort: sort,
+                                search_query,
+                                search_scope,
+                            },
                         ),
                     ),
                     audit_events,
@@ -621,22 +641,31 @@ where
                 canonical_username,
                 mailbox_name,
                 query,
-                results,
-            } => HandledHttpResponse {
-                response: html_response(
-                    200,
-                    "OK",
-                    "Message Search",
-                    &render_message_search_page(
-                        &canonical_username,
-                        &validated_session.record.csrf_token,
-                        mailbox_name.as_deref(),
-                        &query,
-                        &results,
+                mut results,
+            } => {
+                let sort = MessageSort::from_query_values(
+                    request.query_params.get("sort").map(String::as_str),
+                    request.query_params.get("dir").map(String::as_str),
+                );
+                sort_message_search_results(&mut results, sort);
+
+                HandledHttpResponse {
+                    response: html_response(
+                        200,
+                        "OK",
+                        "Message Search",
+                        &render_message_search_page(
+                            &canonical_username,
+                            &validated_session.record.csrf_token,
+                            mailbox_name.as_deref(),
+                            &query,
+                            &results,
+                            sort,
+                        ),
                     ),
-                ),
-                audit_events,
-            },
+                    audit_events,
+                }
+            }
             BrowserMessageSearchDecision::Denied { public_reason } => {
                 let (status_code, reason_phrase, title) = match public_reason.as_str() {
                     "invalid_mailbox" | "invalid_request" => {

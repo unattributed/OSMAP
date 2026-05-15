@@ -154,6 +154,7 @@ The current implementation includes:
 - CSRF protection for state-changing browser routes
 - Mailbox listing
 - Message listing and viewing
+- Server-rendered mailbox sorting by UID, subject, sender, received time, flags, and size
 - Bounded one-mailbox and all-mailbox search
 - MIME-aware message inspection
 - Safe HTML rendering through a narrow sanitizer

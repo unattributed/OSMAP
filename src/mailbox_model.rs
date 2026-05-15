@@ -1,4 +1,5 @@
 use super::*;
+use std::cmp::Ordering;
 
 /// Conservative maximum length for a mailbox name returned by the backend.
 pub const DEFAULT_MAILBOX_NAME_MAX_LEN: usize = 255;
@@ -194,6 +195,119 @@ pub struct MessageSummary {
     pub from: Option<String>,
 }
 
+/// Sortable message-list columns accepted from browser query parameters.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MessageSortColumn {
+    Uid,
+    Subject,
+    From,
+    Received,
+    Flags,
+    Size,
+}
+
+impl MessageSortColumn {
+    pub fn from_query_value(value: &str) -> Option<Self> {
+        match value {
+            "uid" => Some(Self::Uid),
+            "subject" => Some(Self::Subject),
+            "from" => Some(Self::From),
+            "received" => Some(Self::Received),
+            "flags" => Some(Self::Flags),
+            "size" => Some(Self::Size),
+            _ => None,
+        }
+    }
+
+    pub fn query_value(self) -> &'static str {
+        match self {
+            Self::Uid => "uid",
+            Self::Subject => "subject",
+            Self::From => "from",
+            Self::Received => "received",
+            Self::Flags => "flags",
+            Self::Size => "size",
+        }
+    }
+
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Uid => "UID",
+            Self::Subject => "Subject",
+            Self::From => "From",
+            Self::Received => "Received",
+            Self::Flags => "Flags",
+            Self::Size => "Size",
+        }
+    }
+
+    pub fn default_direction(self) -> MessageSortDirection {
+        match self {
+            Self::Received => MessageSortDirection::Desc,
+            Self::Uid | Self::Subject | Self::From | Self::Flags | Self::Size => {
+                MessageSortDirection::Asc
+            }
+        }
+    }
+}
+
+/// Sort direction accepted from browser query parameters.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MessageSortDirection {
+    Asc,
+    Desc,
+}
+
+impl MessageSortDirection {
+    pub fn from_query_value(value: &str) -> Option<Self> {
+        match value {
+            "asc" => Some(Self::Asc),
+            "desc" => Some(Self::Desc),
+            _ => None,
+        }
+    }
+
+    pub fn query_value(self) -> &'static str {
+        match self {
+            Self::Asc => "asc",
+            Self::Desc => "desc",
+        }
+    }
+
+    pub fn toggled(self) -> Self {
+        match self {
+            Self::Asc => Self::Desc,
+            Self::Desc => Self::Asc,
+        }
+    }
+}
+
+/// Validated message-list sort request.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct MessageSort {
+    pub column: MessageSortColumn,
+    pub direction: MessageSortDirection,
+}
+
+impl MessageSort {
+    pub fn from_query_values(sort: Option<&str>, dir: Option<&str>) -> Option<Self> {
+        let column = MessageSortColumn::from_query_value(sort?)?;
+        let direction = dir
+            .and_then(MessageSortDirection::from_query_value)
+            .unwrap_or_else(|| column.default_direction());
+
+        Some(Self { column, direction })
+    }
+}
+
+pub fn sort_message_summaries(messages: &mut [MessageSummary], sort: Option<MessageSort>) {
+    let Some(sort) = sort else {
+        return;
+    };
+
+    messages.sort_by(|left, right| compare_message_summary(left, right, sort));
+}
+
 pub(crate) fn validate_message_search_query(
     policy: MessageSearchPolicy,
     query: impl Into<String>,
@@ -266,6 +380,194 @@ pub struct MessageSearchResult {
     pub size_virtual: u64,
     pub subject: Option<String>,
     pub from: Option<String>,
+}
+
+pub fn sort_message_search_results(results: &mut [MessageSearchResult], sort: Option<MessageSort>) {
+    let Some(sort) = sort else {
+        return;
+    };
+
+    results.sort_by(|left, right| compare_message_search_result(left, right, sort));
+}
+
+fn compare_message_summary(
+    left: &MessageSummary,
+    right: &MessageSummary,
+    sort: MessageSort,
+) -> Ordering {
+    match sort.column {
+        MessageSortColumn::Uid => compare_ord(left.uid, right.uid, sort.direction),
+        MessageSortColumn::Subject => compare_optional_text(
+            left.subject.as_deref(),
+            right.subject.as_deref(),
+            sort.direction,
+        ),
+        MessageSortColumn::From => {
+            compare_optional_text(left.from.as_deref(), right.from.as_deref(), sort.direction)
+        }
+        MessageSortColumn::Received => compare_optional_ord(
+            parse_received_timestamp(&left.date_received),
+            parse_received_timestamp(&right.date_received),
+            sort.direction,
+        ),
+        MessageSortColumn::Flags => compare_text(
+            &left.flags.join(" ").to_lowercase(),
+            &right.flags.join(" ").to_lowercase(),
+            sort.direction,
+        ),
+        MessageSortColumn::Size => {
+            compare_ord(left.size_virtual, right.size_virtual, sort.direction)
+        }
+    }
+}
+
+fn compare_message_search_result(
+    left: &MessageSearchResult,
+    right: &MessageSearchResult,
+    sort: MessageSort,
+) -> Ordering {
+    match sort.column {
+        MessageSortColumn::Uid => compare_ord(left.uid, right.uid, sort.direction),
+        MessageSortColumn::Subject => compare_optional_text(
+            left.subject.as_deref(),
+            right.subject.as_deref(),
+            sort.direction,
+        ),
+        MessageSortColumn::From => {
+            compare_optional_text(left.from.as_deref(), right.from.as_deref(), sort.direction)
+        }
+        MessageSortColumn::Received => compare_optional_ord(
+            parse_received_timestamp(&left.date_received),
+            parse_received_timestamp(&right.date_received),
+            sort.direction,
+        ),
+        MessageSortColumn::Flags => compare_text(
+            &left.flags.join(" ").to_lowercase(),
+            &right.flags.join(" ").to_lowercase(),
+            sort.direction,
+        ),
+        MessageSortColumn::Size => {
+            compare_ord(left.size_virtual, right.size_virtual, sort.direction)
+        }
+    }
+}
+
+fn compare_ord<T: Ord>(left: T, right: T, direction: MessageSortDirection) -> Ordering {
+    apply_sort_direction(left.cmp(&right), direction)
+}
+
+fn compare_optional_ord<T: Ord>(
+    left: Option<T>,
+    right: Option<T>,
+    direction: MessageSortDirection,
+) -> Ordering {
+    match (left, right) {
+        (Some(left), Some(right)) => compare_ord(left, right, direction),
+        (Some(_), None) => Ordering::Less,
+        (None, Some(_)) => Ordering::Greater,
+        (None, None) => Ordering::Equal,
+    }
+}
+
+fn compare_optional_text(
+    left: Option<&str>,
+    right: Option<&str>,
+    direction: MessageSortDirection,
+) -> Ordering {
+    match (left, right) {
+        (Some(left), Some(right)) => {
+            compare_text(&left.to_lowercase(), &right.to_lowercase(), direction)
+        }
+        (Some(_), None) => Ordering::Less,
+        (None, Some(_)) => Ordering::Greater,
+        (None, None) => Ordering::Equal,
+    }
+}
+
+fn compare_text(left: &str, right: &str, direction: MessageSortDirection) -> Ordering {
+    apply_sort_direction(left.cmp(right), direction)
+}
+
+fn apply_sort_direction(ordering: Ordering, direction: MessageSortDirection) -> Ordering {
+    match direction {
+        MessageSortDirection::Asc => ordering,
+        MessageSortDirection::Desc => ordering.reverse(),
+    }
+}
+
+fn parse_received_timestamp(value: &str) -> Option<i64> {
+    let mut fields = value.split_whitespace();
+    let date = fields.next()?;
+    let time = fields.next()?;
+    let offset = fields.next().unwrap_or("+0000");
+
+    let mut date_parts = date.split('-');
+    let year = date_parts.next()?.parse::<i64>().ok()?;
+    let month = date_parts.next()?.parse::<u32>().ok()?;
+    let day = date_parts.next()?.parse::<u32>().ok()?;
+    if date_parts.next().is_some() || !valid_month_day(year, month, day) {
+        return None;
+    }
+
+    let mut time_parts = time.split(':');
+    let hour = time_parts.next()?.parse::<i64>().ok()?;
+    let minute = time_parts.next()?.parse::<i64>().ok()?;
+    let second = time_parts.next()?.parse::<i64>().ok()?;
+    if time_parts.next().is_some()
+        || !(0..=23).contains(&hour)
+        || !(0..=59).contains(&minute)
+        || !(0..=60).contains(&second)
+    {
+        return None;
+    }
+
+    let offset_seconds = parse_timezone_offset_seconds(offset)?;
+    let day_seconds = hour * 3600 + minute * 60 + second;
+
+    Some(days_from_civil(year, month, day) * 86_400 + day_seconds - offset_seconds)
+}
+
+fn parse_timezone_offset_seconds(value: &str) -> Option<i64> {
+    let bytes = value.as_bytes();
+    if bytes.len() != 5 || (bytes[0] != b'+' && bytes[0] != b'-') {
+        return None;
+    }
+    let sign = if bytes[0] == b'+' { 1 } else { -1 };
+    let hours = value[1..3].parse::<i64>().ok()?;
+    let minutes = value[3..5].parse::<i64>().ok()?;
+    if !(0..=23).contains(&hours) || !(0..=59).contains(&minutes) {
+        return None;
+    }
+
+    Some(sign * (hours * 3600 + minutes * 60))
+}
+
+fn valid_month_day(year: i64, month: u32, day: u32) -> bool {
+    let max_day = match month {
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+        4 | 6 | 9 | 11 => 30,
+        2 if is_leap_year(year) => 29,
+        2 => 28,
+        _ => return false,
+    };
+
+    (1..=max_day).contains(&day)
+}
+
+fn is_leap_year(year: i64) -> bool {
+    (year % 4 == 0 && year % 100 != 0) || year % 400 == 0
+}
+
+fn days_from_civil(year: i64, month: u32, day: u32) -> i64 {
+    let year = year - i64::from(month <= 2);
+    let era = if year >= 0 { year } else { year - 399 } / 400;
+    let year_of_era = year - era * 400;
+    let month = month as i64;
+    let day = day as i64;
+    let day_of_year = (153 * (month + if month > 2 { -3 } else { 9 }) + 2) / 5 + day - 1;
+    let day_of_era = year_of_era * 365 + year_of_era / 4 - year_of_era / 100 + day_of_year;
+
+    era * 146_097 + day_of_era - 719_468
 }
 
 /// A validated request for retrieving one message from a mailbox.

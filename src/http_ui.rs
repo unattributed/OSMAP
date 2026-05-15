@@ -7,8 +7,8 @@ use crate::draft::DraftSummary;
 use crate::http::BrowserVisibleSession;
 use crate::http_support::{escape_html, url_encode};
 use crate::mailbox::{
-    MailboxEntry, MessageSearchResult, MessageSummary, DEFAULT_MAX_MAILBOXES,
-    DEFAULT_MAX_SEARCH_RESULTS,
+    MailboxEntry, MessageSearchResult, MessageSort, MessageSortColumn, MessageSortDirection,
+    MessageSummary, DEFAULT_MAX_MAILBOXES, DEFAULT_MAX_SEARCH_RESULTS,
 };
 use crate::mime::{AttachmentMetadata, DEFAULT_MIME_PARTS_MAX};
 use crate::rendering::{HtmlDisplayPreference, RenderedMessageView};
@@ -44,6 +44,13 @@ pub(crate) struct DraftListPageModel<'a> {
     pub success_message: Option<&'a str>,
     pub error_message: Option<&'a str>,
     pub drafts: &'a [DraftSummary],
+}
+
+/// Small view model for mailbox message-list sort links.
+pub(crate) struct MessageListSortLinks<'a> {
+    pub active_sort: Option<MessageSort>,
+    pub search_query: Option<&'a str>,
+    pub search_scope: Option<&'a str>,
 }
 
 /// Small view model for the first bounded settings page.
@@ -215,6 +222,107 @@ pub(crate) fn render_mailboxes_page(
     )
 }
 
+const MESSAGE_SORT_COLUMNS: [MessageSortColumn; 6] = [
+    MessageSortColumn::Uid,
+    MessageSortColumn::Subject,
+    MessageSortColumn::From,
+    MessageSortColumn::Received,
+    MessageSortColumn::Flags,
+    MessageSortColumn::Size,
+];
+
+fn message_sort_indicator(
+    column: MessageSortColumn,
+    active_sort: Option<MessageSort>,
+) -> &'static str {
+    match active_sort {
+        Some(sort) if sort.column == column && sort.direction == MessageSortDirection::Asc => " ↑",
+        Some(sort) if sort.column == column && sort.direction == MessageSortDirection::Desc => " ↓",
+        _ => "",
+    }
+}
+
+fn next_message_sort_direction(
+    column: MessageSortColumn,
+    active_sort: Option<MessageSort>,
+) -> MessageSortDirection {
+    match active_sort {
+        Some(sort) if sort.column == column => sort.direction.toggled(),
+        _ => column.default_direction(),
+    }
+}
+
+fn render_mailbox_sort_headers(
+    mailbox_name: &str,
+    active_sort: Option<MessageSort>,
+    search_query: Option<&str>,
+    search_scope: Option<&str>,
+) -> String {
+    MESSAGE_SORT_COLUMNS
+        .iter()
+        .map(|column| {
+            let direction = next_message_sort_direction(*column, active_sort);
+            let mut href = format!("/mailbox?name={}", url_encode(mailbox_name));
+            if let Some(query) = search_query {
+                href.push_str("&q=");
+                href.push_str(&url_encode(query));
+            }
+            if let Some(scope) = search_scope {
+                href.push_str("&scope=");
+                href.push_str(&url_encode(scope));
+            }
+            href.push_str("&sort=");
+            href.push_str(column.query_value());
+            href.push_str("&dir=");
+            href.push_str(direction.query_value());
+
+            format!(
+                "<th><a href=\"{}\">{}{}</a></th>",
+                escape_html(&href),
+                column.label(),
+                message_sort_indicator(*column, active_sort),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("")
+}
+
+fn render_search_sort_headers(
+    mailbox_name: Option<&str>,
+    query: &str,
+    active_sort: Option<MessageSort>,
+) -> String {
+    let mut headers = String::new();
+    for column in MESSAGE_SORT_COLUMNS {
+        let direction = next_message_sort_direction(column, active_sort);
+        let mut href = String::from("/search?");
+        if let Some(mailbox_name) = mailbox_name {
+            href.push_str("mailbox=");
+            href.push_str(&url_encode(mailbox_name));
+            href.push('&');
+        } else {
+            href.push_str("scope=all&");
+        }
+        href.push_str("q=");
+        href.push_str(&url_encode(query));
+        href.push_str("&sort=");
+        href.push_str(column.query_value());
+        href.push_str("&dir=");
+        href.push_str(direction.query_value());
+
+        headers.push_str(&format!(
+            "<th><a href=\"{}\">{}{}</a></th>",
+            escape_html(&href),
+            column.label(),
+            message_sort_indicator(column, active_sort),
+        ));
+        if column == MessageSortColumn::Uid {
+            headers.push_str("<th>Mailbox</th>");
+        }
+    }
+    headers
+}
+
 /// Renders the message-list page for one mailbox.
 pub(crate) fn render_message_list_page(
     canonical_username: &str,
@@ -223,6 +331,7 @@ pub(crate) fn render_message_list_page(
     messages: &[MessageSummary],
     success_message: Option<&str>,
     archive_mailbox_name: Option<&str>,
+    sort_links: MessageListSortLinks<'_>,
 ) -> String {
     let success_banner = match success_message {
         Some(success_message) => format!(
@@ -296,6 +405,12 @@ pub(crate) fn render_message_list_page(
         Some(_) => "<p class=\"muted\">This mailbox matches your configured archive destination, so archive shortcuts are hidden here.</p>".to_string(),
         None => "<p class=\"muted\">Set an archive mailbox in Settings to add one-click archive actions on list and message pages.</p>".to_string(),
     };
+    let sort_headers = render_mailbox_sort_headers(
+        mailbox_name,
+        sort_links.active_sort,
+        sort_links.search_query,
+        sort_links.search_scope,
+    );
 
     format!(
         concat!(
@@ -307,7 +422,7 @@ pub(crate) fn render_message_list_page(
             "{}{}",
             "<form class=\"search-row\" method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><label for=\"mailbox-search\">Search query<input id=\"mailbox-search\" type=\"text\" name=\"q\" autocomplete=\"off\"></label><button type=\"submit\">Search</button><label><input type=\"checkbox\" name=\"scope\" value=\"all\"> Search all mailboxes</label></form>",
             "<div class=\"toolbar\" aria-label=\"Mailbox actions\">{}</div>",
-            "<div class=\"table-wrap\"><table class=\"message-list-table\"><thead><tr>{}<th>UID</th><th>Subject</th><th>From</th><th>Received</th><th>Flags</th><th>Size</th>{}</tr></thead><tbody>{}</tbody></table></div>",
+            "<div class=\"table-wrap\"><table class=\"message-list-table\"><thead><tr>{}{}{}</tr></thead><tbody>{}</tbody></table></div>",
             "</section>",
             "</main>"
         ),
@@ -323,6 +438,7 @@ pub(crate) fn render_message_list_page(
         } else {
             ""
         },
+        sort_headers,
         if archive_actions_available {
             "<th>Action</th>"
         } else {
@@ -339,6 +455,7 @@ pub(crate) fn render_message_search_page(
     mailbox_name: Option<&str>,
     query: &str,
     results: &[MessageSearchResult],
+    active_sort: Option<MessageSort>,
 ) -> String {
     let displayed_results = results
         .iter()
@@ -372,6 +489,7 @@ pub(crate) fn render_message_search_page(
     } else {
         ""
     };
+    let sort_headers = render_search_sort_headers(mailbox_name, query, active_sort);
     let mut rows = String::new();
     if results.is_empty() {
         rows.push_str("<tr><td colspan=\"7\">No messages matched this search.</td></tr>");
@@ -407,7 +525,7 @@ pub(crate) fn render_message_search_page(
             "{}",
             "<form class=\"search-row\" method=\"get\" action=\"/search\">{}<label for=\"search-query\">Search query<input id=\"search-query\" type=\"text\" name=\"q\" value=\"{}\" autocomplete=\"off\"></label><button type=\"submit\">Search</button><label><input type=\"checkbox\" name=\"scope\" value=\"all\"{}> Search all mailboxes</label></form>",
             "<p><strong>Scope:</strong> {}<br><strong>Query:</strong> {}<br><strong>Results:</strong> {}</p>",
-            "<div class=\"table-wrap\"><table><thead><tr><th>UID</th><th>Mailbox</th><th>Subject</th><th>From</th><th>Received</th><th>Flags</th><th>Size</th></tr></thead><tbody>{}</tbody></table></div>",
+            "<div class=\"table-wrap\"><table><thead><tr>{}</tr></thead><tbody>{}</tbody></table></div>",
             "</section>",
             "</main>"
         ),
@@ -420,6 +538,7 @@ pub(crate) fn render_message_search_page(
         escape_html(search_scope),
         escape_html(query),
         displayed_results.len(),
+        sort_headers,
         rows,
     )
 }

@@ -48,19 +48,20 @@ use crate::http_ui::{
     render_compose_page, render_draft_list_page, render_login_page, render_mailboxes_page,
     render_message_list_page, render_message_search_page, render_message_view_page,
     render_sessions_page, render_settings_page, ComposePageModel, DraftListPageModel,
-    SettingsPageModel,
+    MessageListSortLinks, SettingsPageModel,
 };
 use crate::logging::LogEvent;
 #[cfg(test)]
 use crate::logging::{EventCategory, Logger};
 use crate::mailbox::{
-    DoveadmMailboxListBackend, DoveadmMessageListBackend, DoveadmMessageMoveBackend,
-    DoveadmMessageSearchBackend, DoveadmMessageViewBackend, MailboxEntry, MailboxListingDecision,
-    MailboxListingPolicy, MailboxListingService, MessageListDecision, MessageListPolicy,
-    MessageListRequest, MessageListService, MessageMoveDecision, MessageMoveOutcome,
-    MessageMovePolicy, MessageMoveRequest, MessageMoveService, MessageSearchDecision,
-    MessageSearchPolicy, MessageSearchRequest, MessageSearchResult, MessageSearchService,
-    MessageSummary, MessageViewDecision, MessageViewPolicy, MessageViewRequest, MessageViewService,
+    sort_message_search_results, sort_message_summaries, DoveadmMailboxListBackend,
+    DoveadmMessageListBackend, DoveadmMessageMoveBackend, DoveadmMessageSearchBackend,
+    DoveadmMessageViewBackend, MailboxEntry, MailboxListingDecision, MailboxListingPolicy,
+    MailboxListingService, MessageListDecision, MessageListPolicy, MessageListRequest,
+    MessageListService, MessageMoveDecision, MessageMoveOutcome, MessageMovePolicy,
+    MessageMoveRequest, MessageMoveService, MessageSearchDecision, MessageSearchPolicy,
+    MessageSearchRequest, MessageSearchResult, MessageSearchService, MessageSort, MessageSummary,
+    MessageViewDecision, MessageViewPolicy, MessageViewRequest, MessageViewService,
 };
 use crate::mailbox_helper::{
     MailboxHelperAttachmentDownloadBackend, MailboxHelperMailboxListBackend,
@@ -1699,6 +1700,27 @@ mod tests {
         String::from_utf8_lossy(&response.response.body).into_owned()
     }
 
+    fn authenticated_get(path: &str) -> HandledHttpResponse {
+        app().handle_request(
+            &request("GET", path, &authenticated_headers(), ""),
+            "127.0.0.1",
+        )
+    }
+
+    fn assert_body_order(body: &str, before: &str, after: &str) {
+        let before_index = body
+            .find(before)
+            .unwrap_or_else(|| panic!("body should contain {before}"));
+        let after_index = body
+            .find(after)
+            .unwrap_or_else(|| panic!("body should contain {after}"));
+
+        assert!(
+            before_index < after_index,
+            "expected {before} to appear before {after}"
+        );
+    }
+
     fn location_header(response: &HandledHttpResponse) -> String {
         response
             .response
@@ -2114,10 +2136,139 @@ mod tests {
         assert!(body.contains("Archive shortcut sends messages"));
         assert!(body.contains("name=\"destination_mailbox\" value=\"Archive/2026\""));
         assert!(body.contains(">Archive</button>"));
-        assert!(body.contains("<th>Subject</th>"));
-        assert!(body.contains("<th>From</th>"));
+        assert!(body.contains(">Subject</a></th>"));
+        assert!(body.contains(">From</a></th>"));
         assert!(body.contains("Quarterly report"));
         assert!(body.contains("Alice &lt;alice@example.com&gt;"));
+    }
+
+    #[test]
+    fn mailbox_message_list_preserves_default_order_without_sort() {
+        let response = authenticated_get("/mailbox?name=INBOX");
+        assert_eq!(response.response.status_code, 200);
+        assert_body_order(&body_text(&response), "Quarterly report", "Follow-up");
+    }
+
+    #[test]
+    fn mailbox_message_list_sorts_by_uid() {
+        let ascending = authenticated_get("/mailbox?name=INBOX&sort=uid&dir=asc");
+        assert_eq!(ascending.response.status_code, 200);
+        assert_body_order(&body_text(&ascending), "Quarterly report", "Follow-up");
+
+        let descending = authenticated_get("/mailbox?name=INBOX&sort=uid&dir=desc");
+        assert_eq!(descending.response.status_code, 200);
+        assert_body_order(&body_text(&descending), "Follow-up", "Quarterly report");
+    }
+
+    #[test]
+    fn mailbox_message_list_sorts_by_subject() {
+        let ascending = authenticated_get("/mailbox?name=INBOX&sort=subject&dir=asc");
+        assert_eq!(ascending.response.status_code, 200);
+        assert_body_order(&body_text(&ascending), "Follow-up", "Quarterly report");
+
+        let descending = authenticated_get("/mailbox?name=INBOX&sort=subject&dir=desc");
+        assert_eq!(descending.response.status_code, 200);
+        assert_body_order(&body_text(&descending), "Quarterly report", "Follow-up");
+    }
+
+    #[test]
+    fn mailbox_message_list_sorts_by_from() {
+        let ascending = authenticated_get("/mailbox?name=INBOX&sort=from&dir=asc");
+        assert_eq!(ascending.response.status_code, 200);
+        assert_body_order(&body_text(&ascending), "Quarterly report", "Follow-up");
+
+        let descending = authenticated_get("/mailbox?name=INBOX&sort=from&dir=desc");
+        assert_eq!(descending.response.status_code, 200);
+        assert_body_order(&body_text(&descending), "Follow-up", "Quarterly report");
+    }
+
+    #[test]
+    fn mailbox_message_list_sorts_by_received() {
+        let ascending = authenticated_get("/mailbox?name=INBOX&sort=received&dir=asc");
+        assert_eq!(ascending.response.status_code, 200);
+        assert_body_order(&body_text(&ascending), "Quarterly report", "Follow-up");
+
+        let descending = authenticated_get("/mailbox?name=INBOX&sort=received&dir=desc");
+        assert_eq!(descending.response.status_code, 200);
+        assert_body_order(&body_text(&descending), "Follow-up", "Quarterly report");
+    }
+
+    #[test]
+    fn mailbox_message_list_sorts_by_flags() {
+        let ascending = authenticated_get("/mailbox?name=INBOX&sort=flags&dir=asc");
+        assert_eq!(ascending.response.status_code, 200);
+        assert_body_order(&body_text(&ascending), "Follow-up", "Quarterly report");
+
+        let descending = authenticated_get("/mailbox?name=INBOX&sort=flags&dir=desc");
+        assert_eq!(descending.response.status_code, 200);
+        assert_body_order(&body_text(&descending), "Quarterly report", "Follow-up");
+    }
+
+    #[test]
+    fn mailbox_message_list_sorts_by_size() {
+        let ascending = authenticated_get("/mailbox?name=INBOX&sort=size&dir=asc");
+        assert_eq!(ascending.response.status_code, 200);
+        assert_body_order(&body_text(&ascending), "Quarterly report", "Follow-up");
+
+        let descending = authenticated_get("/mailbox?name=INBOX&sort=size&dir=desc");
+        assert_eq!(descending.response.status_code, 200);
+        assert_body_order(&body_text(&descending), "Follow-up", "Quarterly report");
+    }
+
+    #[test]
+    fn mailbox_message_list_ignores_invalid_sort_values() {
+        let response = authenticated_get("/mailbox?name=INBOX&sort=mailbox_name&dir=desc");
+        assert_eq!(response.response.status_code, 200);
+        let body = body_text(&response);
+        assert_body_order(&body, "Quarterly report", "Follow-up");
+        assert!(!body.contains("UID ↓"));
+        assert!(!body.contains("Subject ↓"));
+        assert!(!body.contains("From ↓"));
+        assert!(!body.contains("Received ↓"));
+        assert!(!body.contains("Flags ↓"));
+        assert!(!body.contains("Size ↓"));
+    }
+
+    #[test]
+    fn mailbox_message_list_defaults_invalid_sort_direction() {
+        let response = authenticated_get("/mailbox?name=INBOX&sort=subject&dir=sideways");
+        assert_eq!(response.response.status_code, 200);
+        let body = body_text(&response);
+        assert_body_order(&body, "Follow-up", "Quarterly report");
+        assert!(body.contains("Subject ↑"));
+    }
+
+    #[test]
+    fn mailbox_sort_links_preserve_mailbox_name_and_search_parameters() {
+        let response = authenticated_get(
+            "/mailbox?name=Archive%2F2026&q=quarterly+report&scope=all&sort=subject&dir=asc",
+        );
+        assert_eq!(response.response.status_code, 200);
+        let body = body_text(&response);
+
+        assert!(body.contains(
+            "/mailbox?name=Archive%2F2026&amp;q=quarterly+report&amp;scope=all&amp;sort=subject&amp;dir=desc"
+        ));
+        assert!(body.contains(
+            "/mailbox?name=Archive%2F2026&amp;q=quarterly+report&amp;scope=all&amp;sort=received&amp;dir=desc"
+        ));
+        assert!(body.contains("Subject ↑"));
+    }
+
+    #[test]
+    fn search_sort_links_preserve_mailbox_name_and_query() {
+        let response =
+            authenticated_get("/search?mailbox=INBOX&q=quarterly+report&sort=uid&dir=asc");
+        assert_eq!(response.response.status_code, 200);
+        let body = body_text(&response);
+
+        assert!(
+            body.contains("/search?mailbox=INBOX&amp;q=quarterly+report&amp;sort=uid&amp;dir=desc")
+        );
+        assert!(body.contains(
+            "/search?mailbox=INBOX&amp;q=quarterly+report&amp;sort=received&amp;dir=desc"
+        ));
+        assert!(body.contains("UID ↑"));
     }
 
     #[test]

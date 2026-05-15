@@ -22,13 +22,14 @@ pub use self::mailbox_backend::{
 };
 pub(crate) use self::mailbox_model::validate_message_search_query;
 pub use self::mailbox_model::{
-    MailboxAuditFailureReason, MailboxBackend, MailboxBackendError, MailboxEntry,
-    MailboxListingDecision, MailboxListingOutcome, MailboxListingPolicy,
-    MailboxPublicFailureReason, MessageListBackend, MessageListDecision, MessageListOutcome,
-    MessageListPolicy, MessageListRequest, MessageMoveBackend, MessageMoveDecision,
-    MessageMoveOutcome, MessageMovePolicy, MessageMoveRequest, MessageSearchBackend,
-    MessageSearchDecision, MessageSearchOutcome, MessageSearchPolicy, MessageSearchRequest,
-    MessageSearchResult, MessageSummary, MessageView, MessageViewBackend, MessageViewDecision,
+    sort_message_search_results, sort_message_summaries, MailboxAuditFailureReason, MailboxBackend,
+    MailboxBackendError, MailboxEntry, MailboxListingDecision, MailboxListingOutcome,
+    MailboxListingPolicy, MailboxPublicFailureReason, MessageListBackend, MessageListDecision,
+    MessageListOutcome, MessageListPolicy, MessageListRequest, MessageMoveBackend,
+    MessageMoveDecision, MessageMoveOutcome, MessageMovePolicy, MessageMoveRequest,
+    MessageSearchBackend, MessageSearchDecision, MessageSearchOutcome, MessageSearchPolicy,
+    MessageSearchRequest, MessageSearchResult, MessageSort, MessageSortColumn,
+    MessageSortDirection, MessageSummary, MessageView, MessageViewBackend, MessageViewDecision,
     MessageViewOutcome, MessageViewPolicy, MessageViewRequest, DEFAULT_MAILBOX_NAME_MAX_LEN,
     DEFAULT_MAX_MAILBOXES, DEFAULT_MAX_MESSAGES, DEFAULT_MAX_SEARCH_RESULTS,
     DEFAULT_MESSAGE_BODY_MAX_LEN, DEFAULT_MESSAGE_DATE_MAX_LEN,
