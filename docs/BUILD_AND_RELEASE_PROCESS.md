@@ -58,7 +58,7 @@ The release flow should eventually look like:
 3. Matching CI confirmation from the repo-owned `security-check` workflow
 4. Strict release validation with `make release-check` on a host or operator
    workstation that has the pinned Rust toolchain, pinned supply-chain tools,
-   release WSTG credential and TOTP evidence, V2 carry-forward evidence,
+   release WSTG human-prompt credential and TOTP evidence, V2 carry-forward evidence,
    host-readiness evidence, TLS edge evidence, TLS standard evidence,
    resource-timeout evidence, current redacted V3 live MIME and HTML proof
    evidence, and a sanitized evidence archive
@@ -112,7 +112,7 @@ executable, passes `sh -n`, and remains documented.
 
 The normal GitHub `security-check` workflow remains a developer and CI signal.
 It must not be described as full V3 release validation unless the run also has
-the required host, credential, TOTP, WSTG, and sanitized evidence inputs.
+the required host, human-prompt credential, TOTP, WSTG, and sanitized evidence inputs.
 
 ## Rollback Strategy
 

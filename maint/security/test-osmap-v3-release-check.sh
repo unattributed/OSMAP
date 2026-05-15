@@ -114,7 +114,7 @@ counts = {"pass": sum(1 for item in results if item["status"] == "pass"), "fail"
 summary = {
     "generated_at": "2026-05-02T00:00:00+00:00",
     "target": "https://mail.blackbagsecurity.com",
-    "commands": ["fixture"],
+    "commands": ["./run.sh --release --auth-email pilot-primary@example.invalid"] if mode == "missing-human-proof" else ["./run.sh --release --prompt-auth --auth-email pilot-primary@example.invalid"],
     "release_mode": True,
     "owasp_top_10_2025_coverage": top10_coverage,
     "authenticated_proof": {
@@ -317,6 +317,40 @@ if env \
 	echo "expected authenticated WSTG skip to fail release mode" >&2
 	exit 1
 fi
+
+human_proof_case="$tmp_root/missing-human-proof"
+mkdir -p "$human_proof_case/bin"
+make_stubs "$human_proof_case/bin"
+evidence="$(make_evidence "$human_proof_case")"
+human_proof_v2=$(printf '%s\n' "$evidence" | sed -n '1p')
+human_proof_host=$(printf '%s\n' "$evidence" | sed -n '2p')
+human_proof_tls=$(printf '%s\n' "$evidence" | sed -n '3p')
+human_proof_tls_standard=$(printf '%s\n' "$evidence" | sed -n '4p')
+human_proof_resource_timeout=$(printf '%s\n' "$evidence" | sed -n '5p')
+human_proof_mime_html_proof=$(printf '%s\n' "$evidence" | sed -n '6p')
+human_proof_wstg="$human_proof_case/wstg-summary.json"
+make_wstg_summary "$human_proof_wstg" missing-human-proof
+if env \
+	PATH="$human_proof_case/bin:$PATH" \
+	OSMAP_SECURITY_PROFILE=release \
+	OSMAP_RELEASE_EVIDENCE_DIR="$human_proof_case" \
+	OSMAP_RELEASE_DEPENDENCY_INVENTORY_PATH="$human_proof_case/dependency-inventory.txt" \
+	OSMAP_RELEASE_SUMMARY_JSON="$human_proof_case/summary.json" \
+	OSMAP_RELEASE_SUMMARY_MD="$human_proof_case/summary.md" \
+	OSMAP_RELEASE_SANITIZED_ARCHIVE_PATH="$human_proof_case/evidence.tar.gz" \
+	OSMAP_RELEASE_WSTG_SUMMARY_PATH="$human_proof_wstg" \
+	OSMAP_RELEASE_V2_CARRY_FORWARD_EVIDENCE="$human_proof_v2" \
+	OSMAP_RELEASE_HOST_READINESS_EVIDENCE="$human_proof_host" \
+	OSMAP_RELEASE_TLS_EDGE_EVIDENCE="$human_proof_tls" \
+	OSMAP_RELEASE_TLS_STANDARD_EVIDENCE="$human_proof_tls_standard" \
+	OSMAP_RELEASE_RESOURCE_TIMEOUT_EVIDENCE="$human_proof_resource_timeout" \
+	OSMAP_RELEASE_V3_MIME_HTML_PROOF_REPORT="$human_proof_mime_html_proof" \
+	OSMAP_RELEASE_SUPPLY_CHAIN_COMMAND=true \
+	sh "$release_check" > "$human_proof_case/output.txt" 2>&1; then
+	echo "expected missing human credential/TOTP proof evidence to fail release mode" >&2
+	exit 1
+fi
+grep -Fq "authenticated proof missing human credential/TOTP prompt evidence" "$human_proof_case/output.txt"
 
 host_case="$tmp_root/missing-host"
 mkdir -p "$host_case/bin"

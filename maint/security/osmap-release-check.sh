@@ -512,6 +512,9 @@ proof_required = ["login", "totp", "session_issued", "protected_route_access", "
 for key in proof_required:
     if proof.get(key) is not True:
         errors.append(f"authenticated proof missing {key}")
+commands = summary.get("commands", [])
+if not any("--prompt-auth" in command for command in commands):
+    errors.append("authenticated proof missing human credential/TOTP prompt evidence")
 
 if summary.get("release_mode") is not True:
     errors.append("WSTG summary was not produced in release mode")
