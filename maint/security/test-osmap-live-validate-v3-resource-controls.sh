@@ -12,6 +12,8 @@ grep -Fq 'OSMAP_MAILBOX_WORKER_BUDGET=1' "${validator}"
 grep -Fq 'OSMAP_SEARCH_WORKER_BUDGET=1' "${validator}"
 grep -Fq 'OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS=5' "${validator}"
 grep -Fq 'mailbox_boundary_mode=local_helper_socket' "${validator}"
+grep -Fq 'OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH=' "${validator}"
+grep -Fq 'mailbox-helper-grant.key' "${validator}"
 
 grep -Fq 'require_budget_event request_budget_acquired compose_source mailbox_workers' "${validator}"
 grep -Fq 'require_budget_event request_budget_released compose_source mailbox_workers' "${validator}"

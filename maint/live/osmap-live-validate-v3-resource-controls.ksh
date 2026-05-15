@@ -30,6 +30,10 @@ SETTINGS_DIR="${STATE_ROOT}/settings"
 AUDIT_DIR="${STATE_ROOT}/audit"
 CACHE_DIR="${STATE_ROOT}/cache"
 TOTP_DIR="${STATE_ROOT}/totp"
+SECRET_DIR="${STATE_ROOT}/secrets"
+HELPER_SECRET_DIR="${HELPER_STATE_RUNTIME_DIR}/secrets"
+WEB_GRANT_KEY_PATH="${SECRET_DIR}/mailbox-helper-grant.key"
+HELPER_GRANT_KEY_PATH="${HELPER_SECRET_DIR}/mailbox-helper-grant.key"
 TMPDIR_PATH="${WORK_ROOT}/tmp"
 CARGO_HOME_PATH="${WORK_ROOT}/cargo-home"
 CARGO_TARGET_DIR_PATH="${WORK_ROOT}/target"
@@ -165,9 +169,10 @@ doas install -d -o _osmap -g _osmap -m 700 \
   "${SETTINGS_DIR}" \
   "${AUDIT_DIR}" \
   "${CACHE_DIR}" \
-  "${TOTP_DIR}"
+  "${TOTP_DIR}" \
+  "${SECRET_DIR}"
 doas install -d -o vmail -g vmail -m 755 "${HELPER_RUNTIME_DIR}"
-doas install -d -o vmail -g vmail -m 700 "${HELPER_STATE_RUNTIME_DIR}"
+doas install -d -o vmail -g vmail -m 700 "${HELPER_STATE_RUNTIME_DIR}" "${HELPER_SECRET_DIR}"
 
 log "building current OSMAP tree"
 cd "${PROJECT_ROOT}"
@@ -200,6 +205,21 @@ EOF
 chmod 600 '${SESSION_DIR}/${SESSION_ID}.session'
 chown _osmap:_osmap '${SESSION_DIR}/${SESSION_ID}.session'"
 
+log "writing isolated helper request grant keys"
+GRANT_KEY="$(
+  openssl rand -base64 48
+)"
+doas sh -c "cat > '${WEB_GRANT_KEY_PATH}' <<'EOF'
+${GRANT_KEY}
+EOF
+chmod 600 '${WEB_GRANT_KEY_PATH}'
+chown _osmap:_osmap '${WEB_GRANT_KEY_PATH}'
+cat > '${HELPER_GRANT_KEY_PATH}' <<'EOF'
+${GRANT_KEY}
+EOF
+chmod 600 '${HELPER_GRANT_KEY_PATH}'
+chown vmail:vmail '${HELPER_GRANT_KEY_PATH}'"
+
 log "starting enforced mailbox helper as vmail"
 doas -u vmail sh -c "
   umask 077
@@ -215,6 +235,7 @@ doas -u vmail sh -c "
     OSMAP_CACHE_DIR='${CACHE_DIR}' \
     OSMAP_TOTP_SECRET_DIR='${TOTP_DIR}' \
     OSMAP_MAILBOX_HELPER_SOCKET_PATH='${HELPER_SOCKET_PATH}' \
+    OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH='${HELPER_GRANT_KEY_PATH}' \
     OSMAP_DOVEADM_AUTH_SOCKET_PATH='${AUTH_SOCKET_PATH}' \
     OSMAP_TRUSTED_WEB_RUNTIME_UID='${TRUSTED_WEB_RUNTIME_UID}' \
     OSMAP_DOVEADM_USERDB_SOCKET_PATH='${USERDB_SOCKET_PATH}' \
@@ -255,6 +276,7 @@ doas -u _osmap sh -c "
     OSMAP_CACHE_DIR='${CACHE_DIR}' \
     OSMAP_TOTP_SECRET_DIR='${TOTP_DIR}' \
     OSMAP_MAILBOX_HELPER_SOCKET_PATH='${HELPER_SOCKET_PATH}' \
+    OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH='${WEB_GRANT_KEY_PATH}' \
     OSMAP_LOG_LEVEL=info \
     OSMAP_SESSION_LIFETIME_SECS=3600 \
     OSMAP_MAILBOX_WORKER_BUDGET=1 \
