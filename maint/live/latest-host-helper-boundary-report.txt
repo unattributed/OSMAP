@@ -1,6 +1,0 @@
-result=helper_boundary_passed
-trusted_status=ok
-untrusted_status=rejected
-socket_mode=660_then_666_negative_test
-missing_or_invalid_grant_rejected=covered_by_unit_tests
-confinement_mode=enforce

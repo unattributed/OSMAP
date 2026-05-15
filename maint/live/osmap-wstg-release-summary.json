@@ -8,7 +8,7 @@
     "totp": true
   },
   "commands": [
-    "./run-wstg-pack.py --release --prompt-auth --auth-email duncan@blackbagsecurity.com"
+    "./run-wstg-pack.py --release --prompt-auth --auth-email pilot-primary@example.invalid"
   ],
   "counts": {
     "fail": 0,
