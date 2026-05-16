@@ -10,3 +10,4 @@ maint/live/osmap-wstg-release-summary.json
 
 # Local raw human WSTG proof captures; sanitized release evidence is committed separately.
 maint/live/human-wstg-proof-*/
+maint/wstg-testing-pack/output/*
