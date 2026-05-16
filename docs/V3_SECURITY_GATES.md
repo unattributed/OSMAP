@@ -157,6 +157,16 @@ a confirmed server-side defect.
 
 The WSTG testing pack must be treated as a living regression suite for the browser slice. When Version 3 adds or changes routes, update the pack or record why an existing script already covers the route.
 
+During ordinary V3 feature-slice development, route tests, unit tests, and
+`make security-check` may be sufficient developer evidence when the slice does
+not materially change authentication, session, CSRF, helper-boundary, or
+public-edge behavior. That developer evidence is not a substitute for release
+evidence. Before a V3 release candidate is claimed complete, the standard
+`mail.blackbagsecurity.com` checkout and deployed runtime must be updated to
+the assessed commit or tag, and an interactive or dedicated-account
+credential-backed WSTG release capture must pass for that same assessed commit
+or tag.
+
 At Version 3 closeout, archive evidence for:
 
 - baseline routes

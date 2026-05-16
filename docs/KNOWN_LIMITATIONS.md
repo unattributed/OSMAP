@@ -192,6 +192,8 @@ The April 2026 WSTG backlog maps into Version 3 as follows:
   expiry, and token reuse. A browser-level isolated-cookie retest against the
   live service is still required before the Version 3 session/device gate is
   closed.
-- Richer search, bounded bulk folder actions, and folder ergonomics are
-  Version 3 workflow refinements only to the extent required by the
-  daily-driver adoption boundary.
+- Richer search ergonomics are partially supported through bounded result
+  sorting and whitelisted all-text/subject/from refinement. Advanced search,
+  bounded bulk folder actions, and folder ergonomics remain Version 3 workflow
+  refinements only to the extent required by the daily-driver adoption
+  boundary.

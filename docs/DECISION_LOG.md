@@ -1,5 +1,89 @@
 # Decision Log
 
+## 2026-05-16, Treat richer bounded search as a whitelist-only V3 slice
+
+The next incomplete V3 workflow gap after draft and reply/forward attachment
+work was richer bounded search. OSMAP intentionally did not add a broad search
+language, saved searches, facets, client-side JavaScript search behavior, or
+arbitrary backend query syntax.
+
+The implemented V3 search refinements are deliberately small and
+server-rendered:
+
+- mailbox and search result tables can sort UID, subject, from, received,
+  flags, and size
+- search can be refined with `field=all|subject|from`
+- invalid search field values return a deterministic 400-class response before
+  reaching the backend
+- helper requests sign the selected search field into the grant payload
+- the Dovecot backend receives only fixed server-side search keys: `TEXT`,
+  `SUBJECT`, or `FROM`
+- sort and search links preserve mailbox and query context without adding
+  client-side script
+
+This keeps the richer-search slice inside the existing mailbox-helper and
+server-rendered browser trust model while making ordinary mail lookup more
+usable for daily-driver testing.
+
+Validation for commit `0dac311648fbaffd210afc13d416021b0b8419bf` passed:
+
+- `cargo fmt --check`
+- `cargo clippy --all-targets --all-features -- -D warnings`
+- `cargo test --all-features`
+- `make security-check`
+
+## 2026-05-16, Defer the next interactive WSTG run until the V3 release candidate unless a security boundary changes
+
+After the search field refinement landed, the local repository and
+`origin/main` were at `0dac311648fbaffd210afc13d416021b0b8419bf`, but the
+standard host checkout on `mail.blackbagsecurity.com` was still at
+`722f48461d80736d39be1e85a145d8c736a8ddff`.
+
+The latest credential-backed WSTG release capture found locally was:
+
+- `maint/wstg-testing-pack/output/release-20260516T015431Z/osmap-wstg-20260515-215432/summary.json`
+- generated at `2026-05-16T02:00:06Z`
+- 26 mapped WSTG tests passed
+
+That WSTG run remains useful evidence for the host state it assessed, but it
+does not prove the later `0dac311` search-field commit because the host was not
+updated to that commit.
+
+The operating decision is therefore:
+
+- continue the remaining V3 slices in the authoritative roadmap order
+- do not repeatedly deploy and prompt for interactive WSTG after every narrow
+  feature slice that does not materially change auth, session, CSRF,
+  helper-boundary, or public-edge behavior
+- update the standard host checkout, deploy the reviewed runtime, and run the
+  interactive credential-backed WSTG release capture against the final V3
+  release candidate
+- run an earlier live/WSTG proof if a future slice changes an authentication,
+  session, CSRF, helper-boundary, or public-edge security boundary
+
+This avoids treating old live evidence as current while also avoiding noisy
+credential-backed release captures for each small internal V3 slice.
+
+## 2026-05-16, Keep the next V3 implementation target as bounded bulk folder actions
+
+With bounded search sorting and `all`/`subject`/`from` field refinement in
+place, the next roadmap item remains bounded bulk folder actions. Advanced
+search refinements beyond the current whitelist remain open product-scope work
+rather than an implicit requirement for the next slice.
+
+The bounded bulk folder-action slice must keep the current archive and move
+security posture:
+
+- selected messages are bounded by count
+- every source mailbox, destination mailbox, and UID tuple is revalidated at
+  action time
+- CSRF and same-origin enforcement remain mandatory
+- existing move throttles or equivalent abuse controls apply
+- partial success must be reported explicitly rather than hidden behind a
+  success-style redirect
+- arbitrary mailbox-wide operations and broad Roundcube-style mailbox
+  management remain out of scope
+
 ## 2026-05-13, Enforce project-wide TLS standard and evidence gate
 
 OSMAP now treats TLS policy as a project-wide security invariant rather than a

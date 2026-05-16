@@ -33,6 +33,27 @@ This roadmap sequences Version 3 work so OSMAP becomes a focused daily-driver ha
 | 11 | TLS standard and CBC cleanup | enforce `docs/TLS_STANDARD.md` across code, tooling, CI, release evidence, and the public edge; remove TLS 1.2 CBC suites or document a reviewed exception | TLS standard gate passes, including static guard evidence and live proof that weak protocols fail while TLS 1.2 and TLS 1.3 pass with acceptable ciphers |
 | 12 | V3 pilot rehearsal | run daily-driver workflow rehearsal with selected users and archive sanitized evidence | V3 closeout evidence is ready |
 
+## Current Status
+
+As of commit `0dac311648fbaffd210afc13d416021b0b8419bf`, the active V3
+implementation order is still the table above. The richer bounded search slice
+now has two implemented sub-slices:
+
+- mailbox and search-result table sorting for UID, subject, from, received,
+  flags, and size
+- whitelisted search field refinement with `field=all|subject|from`
+
+Those sub-slices passed local Rust validation and the developer
+`make security-check` gate. They have not yet been deployed to the standard
+`mail.blackbagsecurity.com` checkout, and they have not yet received a fresh
+interactive credential-backed WSTG release capture for that exact commit.
+
+The current operating decision is to continue the remaining V3 slices in order
+and perform one deliberate host update plus interactive WSTG release capture
+against the final V3 release candidate, unless an intervening slice changes an
+authentication, session, CSRF, helper-boundary, or public-edge security
+boundary enough to require immediate live proof.
+
 ## First Next Step
 
 Start by making the V3 release gate honest before adding more daily-driver surface.
@@ -109,12 +130,27 @@ reattach.
 The reply and forward attachment handling design gate is now
 `docs/V3_REPLY_FORWARD_ATTACHMENT_HANDLING_DESIGN.md`.
 
-The next implementation slice must keep selection explicit, fetch selected
-original attachments through the existing bounded helper-backed message and
-attachment path, include selected originals in the aggregate compose attachment
-limits, and fail visibly rather than silently dropping a confirmed selection.
-It must not add inline preview, inline image rendering, remote content loading,
+The implementation keeps selection explicit, fetches selected original
+attachments through the existing bounded helper-backed message and attachment
+path, includes selected originals in the aggregate compose attachment limits,
+and fails visibly rather than silently dropping a confirmed selection.
+It does not add inline preview, inline image rendering, remote content loading,
 automatic reattach, or broad MIME-client behavior.
+
+## Richer Bounded Search Track
+
+The richer bounded search slice remains intentionally narrow. OSMAP now
+supports server-rendered sorting controls for mailbox and search result tables
+and whitelisted search field refinement for all message text, subject, and
+from. The field refinement is carried through the helper protocol as a signed
+whitelisted value and maps to fixed Dovecot search keys rather than
+user-controlled backend syntax.
+
+The remaining search decision is product scope, not another parser shortcut:
+Version 3 can either stop at the current bounded controls or explicitly design
+a future advanced-search surface. Broad query languages, saved searches,
+facets, JavaScript-heavy search UI, and arbitrary backend search syntax remain
+out of scope unless a later roadmap revision names them.
 
 ## Security Foundation Track
 
@@ -133,6 +169,11 @@ The security foundation track continues throughout Version 3 and blocks release 
 - TLS standard and TLS CBC disposition evidence
 
 Feature work may proceed only when it does not obscure or defer these gates.
+During feature-slice development, local unit/route coverage plus
+`make security-check` is the normal developer gate. Host deployment and
+interactive credential-backed WSTG release capture are required for the final
+V3 release candidate, and earlier whenever a slice materially changes auth,
+session, CSRF, helper-boundary, or public-edge behavior.
 
 ## Design-Only Investigation Track
 
