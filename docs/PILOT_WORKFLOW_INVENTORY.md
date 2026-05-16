@@ -129,7 +129,8 @@ browser-mail use:
 
 - draft save and resume
 - explicit reply and forward attachment handling
-- richer search refinement and result clarity
+- richer search refinement and result clarity, with bounded result sorting now
+  available for the current search surface
 - bounded selected-message folder cleanup beyond archive-only behavior
 - clearer session and device policy
 - more reliable MIME and HTML correctness for common mail received from
@@ -154,7 +155,7 @@ requirements:
 | MIME and HTML correctness | in scope | `docs/V3_ACCEPTANCE_CRITERIA.md` |
 | Draft save and resume later | in scope | `docs/V3_DRAFT_SAVE_RESUME_DESIGN.md` and `docs/V3_ACCEPTANCE_CRITERIA.md` |
 | Reply or forward with original attachments preserved explicitly | in scope | `docs/V3_REPLY_FORWARD_ATTACHMENT_HANDLING_DESIGN.md` and `docs/V3_ACCEPTANCE_CRITERIA.md` |
-| Richer search ergonomics | in scope | `docs/V3_ACCEPTANCE_CRITERIA.md` |
+| Richer search ergonomics | partially supported with limits; advanced refinement remains in scope | `docs/V3_ACCEPTANCE_CRITERIA.md` |
 | Bounded bulk folder actions | in scope | `docs/V3_ACCEPTANCE_CRITERIA.md` |
 | Concurrent-session and device policy | in scope | `docs/V3_SECURITY_GATES.md` |
 | TLS 1.2 CBC disposition | in scope | `docs/V3_SECURITY_GATES.md` |

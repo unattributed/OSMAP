@@ -1200,6 +1200,52 @@ mod tests {
                     )],
                 };
             }
+            if query.trim() == "searchsort" {
+                let results = vec![
+                    MessageSearchResult {
+                        mailbox_name: "INBOX".to_string(),
+                        uid: 30,
+                        flags: vec!["\\Seen".to_string()],
+                        date_received: "2026-03-29 09:00:00 +0000".to_string(),
+                        size_virtual: 2048,
+                        subject: Some("Search Middle".to_string()),
+                        from: Some("Carol <carol@example.com>".to_string()),
+                    },
+                    MessageSearchResult {
+                        mailbox_name: "Archive/2026".to_string(),
+                        uid: 10,
+                        flags: vec!["\\Answered".to_string()],
+                        date_received: "2026-03-27 07:00:00 +0000".to_string(),
+                        size_virtual: 512,
+                        subject: Some("Search Alpha".to_string()),
+                        from: Some("Bob <bob@example.com>".to_string()),
+                    },
+                    MessageSearchResult {
+                        mailbox_name: "Sent".to_string(),
+                        uid: 20,
+                        flags: vec!["\\Flagged".to_string()],
+                        date_received: "2026-03-28 08:00:00 +0000".to_string(),
+                        size_virtual: 1024,
+                        subject: Some("Search Zulu".to_string()),
+                        from: Some("Alice <alice@example.com>".to_string()),
+                    },
+                ];
+
+                return BrowserMessageSearchOutcome {
+                    decision: BrowserMessageSearchDecision::Listed {
+                        canonical_username: validated_session.record.canonical_username.clone(),
+                        mailbox_name,
+                        query: query.trim().to_string(),
+                        results,
+                    },
+                    audit_events: vec![LogEvent::new(
+                        LogLevel::Info,
+                        EventCategory::Mailbox,
+                        "stub_search_sort_results",
+                        "stub sortable message search results returned",
+                    )],
+                };
+            }
             let results = match mailbox_name.as_deref() {
                 Some(mailbox_name) => vec![MessageSearchResult {
                     mailbox_name: mailbox_name.to_string(),
@@ -2269,6 +2315,73 @@ mod tests {
             "/search?mailbox=INBOX&amp;q=quarterly+report&amp;sort=received&amp;dir=desc"
         ));
         assert!(body.contains("UID ↑"));
+    }
+
+    #[test]
+    fn search_page_sorts_results_by_supported_columns() {
+        for (column, asc_order, desc_order) in [
+            (
+                "uid",
+                ["Search Alpha", "Search Zulu", "Search Middle"],
+                ["Search Middle", "Search Zulu", "Search Alpha"],
+            ),
+            (
+                "subject",
+                ["Search Alpha", "Search Middle", "Search Zulu"],
+                ["Search Zulu", "Search Middle", "Search Alpha"],
+            ),
+            (
+                "from",
+                ["Search Zulu", "Search Alpha", "Search Middle"],
+                ["Search Middle", "Search Alpha", "Search Zulu"],
+            ),
+            (
+                "received",
+                ["Search Alpha", "Search Zulu", "Search Middle"],
+                ["Search Middle", "Search Zulu", "Search Alpha"],
+            ),
+            (
+                "flags",
+                ["Search Alpha", "Search Zulu", "Search Middle"],
+                ["Search Middle", "Search Zulu", "Search Alpha"],
+            ),
+            (
+                "size",
+                ["Search Alpha", "Search Zulu", "Search Middle"],
+                ["Search Middle", "Search Zulu", "Search Alpha"],
+            ),
+        ] {
+            let ascending =
+                authenticated_get(&format!("/search?q=searchsort&sort={column}&dir=asc"));
+            assert_eq!(ascending.response.status_code, 200);
+            let ascending_body = body_text(&ascending);
+            assert_body_order(&ascending_body, asc_order[0], asc_order[1]);
+            assert_body_order(&ascending_body, asc_order[1], asc_order[2]);
+
+            let descending =
+                authenticated_get(&format!("/search?q=searchsort&sort={column}&dir=desc"));
+            assert_eq!(descending.response.status_code, 200);
+            let descending_body = body_text(&descending);
+            assert_body_order(&descending_body, desc_order[0], desc_order[1]);
+            assert_body_order(&descending_body, desc_order[1], desc_order[2]);
+        }
+    }
+
+    #[test]
+    fn search_page_ignores_invalid_sort_values_and_defaults_invalid_direction() {
+        let invalid_sort = authenticated_get("/search?q=searchsort&sort=mailbox_name&dir=desc");
+        assert_eq!(invalid_sort.response.status_code, 200);
+        let invalid_sort_body = body_text(&invalid_sort);
+        assert_body_order(&invalid_sort_body, "Search Middle", "Search Alpha");
+        assert_body_order(&invalid_sort_body, "Search Alpha", "Search Zulu");
+        assert!(!invalid_sort_body.contains(" ↓"));
+
+        let invalid_dir = authenticated_get("/search?q=searchsort&sort=subject&dir=sideways");
+        assert_eq!(invalid_dir.response.status_code, 200);
+        let invalid_dir_body = body_text(&invalid_dir);
+        assert_body_order(&invalid_dir_body, "Search Alpha", "Search Middle");
+        assert_body_order(&invalid_dir_body, "Search Middle", "Search Zulu");
+        assert!(invalid_dir_body.contains("Subject ↑"));
     }
 
     #[test]
