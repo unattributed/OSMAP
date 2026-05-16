@@ -14,8 +14,8 @@ use crate::attachment::{
 };
 use crate::mailbox::{
     MailboxEntry, MailboxListingPolicy, MessageListPolicy, MessageListRequest, MessageMovePolicy,
-    MessageMoveRequest, MessageSearchPolicy, MessageSearchRequest, MessageSearchResult,
-    MessageSummary, MessageView, MessageViewPolicy, MessageViewRequest,
+    MessageMoveRequest, MessageSearchField, MessageSearchPolicy, MessageSearchRequest,
+    MessageSearchResult, MessageSummary, MessageView, MessageViewPolicy, MessageViewRequest,
 };
 
 /// Supported helper requests for the first mailbox-read slice.
@@ -34,6 +34,7 @@ pub(super) enum MailboxHelperRequest {
         canonical_username: String,
         mailbox_name: String,
         query: String,
+        field: MessageSearchField,
         grant: MailboxHelperGrant,
     },
     MessageView {
@@ -91,6 +92,7 @@ pub(super) enum MailboxHelperResponse {
     MessageSearchOk {
         mailbox_name: String,
         query: String,
+        field: MessageSearchField,
         results: Vec<MessageSearchResult>,
     },
     MessageViewOk {
@@ -134,12 +136,14 @@ pub(super) fn encode_request(request: &MailboxHelperRequest) -> String {
             canonical_username,
             mailbox_name,
             query,
+            field,
             grant,
         } => format!(
-            "operation=message_search\ncanonical_username_b64={}\nmailbox_name_b64={}\nquery_b64={}\n{}",
+            "operation=message_search\ncanonical_username_b64={}\nmailbox_name_b64={}\nquery_b64={}\nsearch_field={}\n{}",
             encode_base64(canonical_username.as_bytes()),
             encode_base64(mailbox_name.as_bytes()),
             encode_base64(query.as_bytes()),
+            field.query_value(),
             encode_grant_fields(grant),
         ),
         MailboxHelperRequest::MessageView {
@@ -224,16 +228,23 @@ pub(super) fn parse_request(input: &str) -> Result<MailboxHelperRequest, String>
                 crate::mailbox::DEFAULT_SEARCH_QUERY_MAX_LEN,
                 "query",
             )?;
-            let request = MessageSearchRequest::new(
+            let field = match fields.get("search_field").map(String::as_str) {
+                Some(value) => MessageSearchField::from_query_value(value)
+                    .ok_or_else(|| "invalid helper search_field".to_string())?,
+                None => MessageSearchField::All,
+            };
+            let request = MessageSearchRequest::new_with_field(
                 MessageSearchPolicy::default(),
                 mailbox_name.clone(),
                 query,
+                field,
             )
             .map_err(|error| error.reason)?;
             Ok(MailboxHelperRequest::MessageSearch {
                 canonical_username,
                 mailbox_name: request.mailbox_name,
                 query: request.query,
+                field: request.field,
                 grant,
             })
         }
@@ -475,11 +486,13 @@ fn canonical_grant_payload(request: &MailboxHelperRequest, grant: &MailboxHelper
             canonical_username,
             mailbox_name,
             query,
+            field,
             ..
         } => {
             fields.push(canonical_username.clone());
             fields.push(mailbox_name.clone());
             fields.push(query.clone());
+            fields.push(field.query_value().to_string());
         }
         MailboxHelperRequest::MessageView {
             canonical_username,
@@ -613,12 +626,14 @@ pub(super) fn encode_response(response: &MailboxHelperResponse) -> String {
         MailboxHelperResponse::MessageSearchOk {
             mailbox_name,
             query,
+            field,
             results,
         } => {
             let mut output = format!(
-                "status=ok\noperation=message_search\nmailbox_name_b64={}\nquery_b64={}\nmessage_count={}\n",
+                "status=ok\noperation=message_search\nmailbox_name_b64={}\nquery_b64={}\nsearch_field={}\nmessage_count={}\n",
                 encode_base64(mailbox_name.as_bytes()),
                 encode_base64(query.as_bytes()),
+                field.query_value(),
                 results.len()
             );
             for result in results {
@@ -701,6 +716,7 @@ pub(super) fn parse_response(
     let mut mailboxes = Vec::<MailboxEntry>::new();
     let mut mailbox_name = None::<String>;
     let mut query = None::<String>;
+    let mut search_field = MessageSearchField::All;
     let mut messages = Vec::<MessageSummary>::new();
     let mut search_results = Vec::<MessageSearchResult>::new();
     let mut current_message_fields = BTreeMap::<String, String>::new();
@@ -736,6 +752,10 @@ pub(super) fn parse_response(
                     crate::mailbox::DEFAULT_SEARCH_QUERY_MAX_LEN,
                     "helper query",
                 )?)
+            }
+            "search_field" => {
+                search_field = MessageSearchField::from_query_value(value)
+                    .ok_or_else(|| "invalid helper response search_field".to_string())?
             }
             "source_mailbox_name_b64" => {
                 source_mailbox_name = Some(decode_base64_text(
@@ -847,6 +867,7 @@ pub(super) fn parse_response(
             Some("message_search") => Ok(MailboxHelperResponse::MessageSearchOk {
                 mailbox_name: mailbox_name.unwrap_or_else(|| "unknown".to_string()),
                 query: query.unwrap_or_default(),
+                field: search_field,
                 results: search_results,
             }),
             Some("message_view") => Ok(MailboxHelperResponse::MessageViewOk {
@@ -930,6 +951,7 @@ fn reject_unknown_request_fields(
             "canonical_username_b64",
             "mailbox_name_b64",
             "query_b64",
+            "search_field",
             "grant_issued_at",
             "grant_expires_at",
             "grant_nonce",

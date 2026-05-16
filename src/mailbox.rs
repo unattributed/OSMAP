@@ -27,8 +27,8 @@ pub use self::mailbox_model::{
     MailboxListingPolicy, MailboxPublicFailureReason, MessageListBackend, MessageListDecision,
     MessageListOutcome, MessageListPolicy, MessageListRequest, MessageMoveBackend,
     MessageMoveDecision, MessageMoveOutcome, MessageMovePolicy, MessageMoveRequest,
-    MessageSearchBackend, MessageSearchDecision, MessageSearchOutcome, MessageSearchPolicy,
-    MessageSearchRequest, MessageSearchResult, MessageSort, MessageSortColumn,
+    MessageSearchBackend, MessageSearchDecision, MessageSearchField, MessageSearchOutcome,
+    MessageSearchPolicy, MessageSearchRequest, MessageSearchResult, MessageSort, MessageSortColumn,
     MessageSortDirection, MessageSummary, MessageView, MessageViewBackend, MessageViewDecision,
     MessageViewOutcome, MessageViewPolicy, MessageViewRequest, DEFAULT_MAILBOX_NAME_MAX_LEN,
     DEFAULT_MAX_MAILBOXES, DEFAULT_MAX_MESSAGES, DEFAULT_MAX_SEARCH_RESULTS,
@@ -638,6 +638,39 @@ mod tests {
             ]
         );
         assert_eq!(recorded.timeout_secs, Some(5));
+    }
+
+    #[test]
+    fn message_search_uses_whitelisted_doveadm_field_shape() {
+        let executor = Rc::new(std::cell::RefCell::new(StubCommandExecutor::success(
+            CommandExecution {
+                status_code: 0,
+                stdout: String::new(),
+                stderr: String::new(),
+            },
+        )));
+        let backend = DoveadmMessageSearchBackend::new(
+            MessageSearchPolicy::default(),
+            executor.clone(),
+            "/usr/local/bin/doveadm",
+        );
+        let request = MessageSearchRequest::new_with_field(
+            MessageSearchPolicy::default(),
+            "INBOX",
+            "quarterly report",
+            MessageSearchField::Subject,
+        )
+        .expect("request should be valid");
+
+        backend
+            .search_messages("alice@example.com", &request)
+            .expect("message search should succeed");
+
+        let recorded = executor.borrow();
+        let args = recorded.args.as_ref().expect("args should be captured");
+        assert!(args.contains(&"SUBJECT".to_string()));
+        assert!(args.contains(&"quarterly report".to_string()));
+        assert!(!args.contains(&"subject".to_string()));
     }
 
     #[test]

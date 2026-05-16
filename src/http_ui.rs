@@ -7,8 +7,8 @@ use crate::draft::DraftSummary;
 use crate::http::BrowserVisibleSession;
 use crate::http_support::{escape_html, url_encode};
 use crate::mailbox::{
-    MailboxEntry, MessageSearchResult, MessageSort, MessageSortColumn, MessageSortDirection,
-    MessageSummary, DEFAULT_MAX_MAILBOXES, DEFAULT_MAX_SEARCH_RESULTS,
+    MailboxEntry, MessageSearchField, MessageSearchResult, MessageSort, MessageSortColumn,
+    MessageSortDirection, MessageSummary, DEFAULT_MAX_MAILBOXES, DEFAULT_MAX_SEARCH_RESULTS,
 };
 use crate::mime::{AttachmentMetadata, DEFAULT_MIME_PARTS_MAX};
 use crate::rendering::{HtmlDisplayPreference, RenderedMessageView};
@@ -210,6 +210,7 @@ pub(crate) fn render_mailboxes_page(
             "<div class=\"badge-list\"><span class=\"badge badge-ok\">2FA active</span><span class=\"badge\">mail access bounded by helper policy</span></div></div>",
             "<form class=\"search-row\" method=\"get\" action=\"/search\">",
             "<label for=\"mailbox-global-search\">Search all mailboxes<input id=\"mailbox-global-search\" type=\"text\" name=\"q\" autocomplete=\"off\"></label>",
+            "{}",
             "<button type=\"submit\">Search</button>",
             "</form>",
             "<div class=\"notice\"><strong>Security posture:</strong> Remote content is not loaded by the browser, message rendering remains server-side, and state-changing actions stay CSRF-bound.</div>",
@@ -219,6 +220,7 @@ pub(crate) fn render_mailboxes_page(
         ),
         app_header(canonical_username, csrf_token, "mailboxes"),
         folder_pane(mailboxes, None),
+        render_search_field_select(MessageSearchField::All),
     )
 }
 
@@ -229,6 +231,12 @@ const MESSAGE_SORT_COLUMNS: [MessageSortColumn; 6] = [
     MessageSortColumn::Received,
     MessageSortColumn::Flags,
     MessageSortColumn::Size,
+];
+
+const MESSAGE_SEARCH_FIELDS: [MessageSearchField; 3] = [
+    MessageSearchField::All,
+    MessageSearchField::Subject,
+    MessageSearchField::From,
 ];
 
 fn message_sort_indicator(
@@ -291,6 +299,7 @@ fn render_search_sort_headers(
     mailbox_name: Option<&str>,
     query: &str,
     active_sort: Option<MessageSort>,
+    search_field: MessageSearchField,
 ) -> String {
     let mut headers = String::new();
     for column in MESSAGE_SORT_COLUMNS {
@@ -305,6 +314,8 @@ fn render_search_sort_headers(
         }
         href.push_str("q=");
         href.push_str(&url_encode(query));
+        href.push_str("&field=");
+        href.push_str(search_field.query_value());
         href.push_str("&sort=");
         href.push_str(column.query_value());
         href.push_str("&dir=");
@@ -321,6 +332,28 @@ fn render_search_sort_headers(
         }
     }
     headers
+}
+
+fn render_search_field_select(active_field: MessageSearchField) -> String {
+    let mut options = String::new();
+    for field in MESSAGE_SEARCH_FIELDS {
+        let selected = if field == active_field {
+            " selected"
+        } else {
+            ""
+        };
+        options.push_str(&format!(
+            "<option value=\"{}\"{}>{}</option>",
+            field.query_value(),
+            selected,
+            escape_html(field.label()),
+        ));
+    }
+
+    format!(
+        "<label for=\"search-field\">Search field<select id=\"search-field\" name=\"field\">{}</select></label>",
+        options
+    )
 }
 
 /// Renders the message-list page for one mailbox.
@@ -420,7 +453,7 @@ pub(crate) fn render_message_list_page(
             "<div class=\"section-header\"><div><h1 id=\"mailbox-title\" class=\"section-title\">Mailbox: {}</h1><p class=\"muted\">Signed in as <strong>{}</strong>. Message data remains fetched through the reviewed mailbox route.</p></div>",
             "<div class=\"badge-list\"><span class=\"badge badge-ok\">2FA active</span><span class=\"badge\">Remote content blocked</span></div></div>",
             "{}{}",
-            "<form class=\"search-row\" method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><label for=\"mailbox-search\">Search query<input id=\"mailbox-search\" type=\"text\" name=\"q\" autocomplete=\"off\"></label><button type=\"submit\">Search</button><label><input type=\"checkbox\" name=\"scope\" value=\"all\"> Search all mailboxes</label></form>",
+            "<form class=\"search-row\" method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><label for=\"mailbox-search\">Search query<input id=\"mailbox-search\" type=\"text\" name=\"q\" autocomplete=\"off\"></label>{}<button type=\"submit\">Search</button><label><input type=\"checkbox\" name=\"scope\" value=\"all\"> Search all mailboxes</label></form>",
             "<div class=\"toolbar\" aria-label=\"Mailbox actions\">{}</div>",
             "<div class=\"table-wrap\"><table class=\"message-list-table\"><thead><tr>{}{}{}</tr></thead><tbody>{}</tbody></table></div>",
             "</section>",
@@ -432,6 +465,7 @@ pub(crate) fn render_message_list_page(
         success_banner,
         archive_notice,
         escape_html(mailbox_name),
+        render_search_field_select(MessageSearchField::All),
         bulk_archive_form,
         if archive_actions_available {
             "<th>Select</th>"
@@ -456,6 +490,7 @@ pub(crate) fn render_message_search_page(
     query: &str,
     results: &[MessageSearchResult],
     active_sort: Option<MessageSort>,
+    search_field: MessageSearchField,
 ) -> String {
     let displayed_results = results
         .iter()
@@ -489,7 +524,8 @@ pub(crate) fn render_message_search_page(
     } else {
         ""
     };
-    let sort_headers = render_search_sort_headers(mailbox_name, query, active_sort);
+    let search_field_select = render_search_field_select(search_field);
+    let sort_headers = render_search_sort_headers(mailbox_name, query, active_sort, search_field);
     let mut rows = String::new();
     if results.is_empty() {
         rows.push_str("<tr><td colspan=\"7\">No messages matched this search.</td></tr>");
@@ -523,8 +559,8 @@ pub(crate) fn render_message_search_page(
             "<h1>Search Results</h1>",
             "<p class=\"muted\">This bounded retrieval slice keeps Dovecot authoritative for the query while letting the browser search one mailbox or all visible mailboxes without turning OSMAP into a broad search product.</p>",
             "{}",
-            "<form class=\"search-row\" method=\"get\" action=\"/search\">{}<label for=\"search-query\">Search query<input id=\"search-query\" type=\"text\" name=\"q\" value=\"{}\" autocomplete=\"off\"></label><button type=\"submit\">Search</button><label><input type=\"checkbox\" name=\"scope\" value=\"all\"{}> Search all mailboxes</label></form>",
-            "<p><strong>Scope:</strong> {}<br><strong>Query:</strong> {}<br><strong>Results:</strong> {}</p>",
+            "<form class=\"search-row\" method=\"get\" action=\"/search\">{}<label for=\"search-query\">Search query<input id=\"search-query\" type=\"text\" name=\"q\" value=\"{}\" autocomplete=\"off\"></label>{}<button type=\"submit\">Search</button><label><input type=\"checkbox\" name=\"scope\" value=\"all\"{}> Search all mailboxes</label></form>",
+            "<p><strong>Scope:</strong> {}<br><strong>Field:</strong> {}<br><strong>Query:</strong> {}<br><strong>Results:</strong> {}</p>",
             "<div class=\"table-wrap\"><table><thead><tr>{}</tr></thead><tbody>{}</tbody></table></div>",
             "</section>",
             "</main>"
@@ -534,8 +570,10 @@ pub(crate) fn render_message_search_page(
         truncation_notice,
         mailbox_hidden_input,
         escape_html(query),
+        search_field_select,
         search_all_checked,
         escape_html(search_scope),
+        escape_html(search_field.label()),
         escape_html(query),
         displayed_results.len(),
         sort_headers,

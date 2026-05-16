@@ -129,8 +129,9 @@ browser-mail use:
 
 - draft save and resume
 - explicit reply and forward attachment handling
-- richer search refinement and result clarity, with bounded result sorting now
-  available for the current search surface
+- richer search refinement and result clarity, with bounded result sorting and
+  all-text/subject/from field refinement now available for the current search
+  surface
 - bounded selected-message folder cleanup beyond archive-only behavior
 - clearer session and device policy
 - more reliable MIME and HTML correctness for common mail received from

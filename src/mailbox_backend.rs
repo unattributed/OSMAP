@@ -260,7 +260,7 @@ where
 }
 
 /// Searches message summaries through `doveadm fetch` using a mailbox-scoped
-/// Dovecot `TEXT` search term.
+/// whitelisted Dovecot search term.
 pub struct DoveadmMessageSearchBackend<E> {
     policy: MessageSearchPolicy,
     command_executor: E,
@@ -329,7 +329,7 @@ where
             "uid flags date.received size.virtual mailbox hdr.subject hdr.from".to_string(),
             "mailbox".to_string(),
             request.mailbox_name.clone(),
-            "TEXT".to_string(),
+            request.field.doveadm_search_key().to_string(),
             request.query.clone(),
         ]);
 

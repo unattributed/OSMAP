@@ -209,6 +209,7 @@ impl RuntimeBrowserGateway {
         validated_session: &ValidatedSession,
         mailbox_name: Option<&str>,
         query: &str,
+        field: MessageSearchField,
     ) -> BrowserMessageSearchOutcome {
         let search_policy = MessageSearchPolicy::default();
         let query = match validate_message_search_query(search_policy, query) {
@@ -274,26 +275,30 @@ impl RuntimeBrowserGateway {
                     };
                 };
 
-                let request =
-                    match MessageSearchRequest::new(search_policy, mailbox.name.clone(), &query) {
-                        Ok(request) => request,
-                        Err(error) => {
-                            audit_events.push(
-                                build_http_warning_event(
-                                    "message_search_request_rejected",
-                                    "message search request validation failed",
-                                    context,
-                                )
-                                .with_field("reason", error.reason),
-                            );
-                            return BrowserMessageSearchOutcome {
-                                decision: BrowserMessageSearchDecision::Denied {
-                                    public_reason: "invalid_request".to_string(),
-                                },
-                                audit_events,
-                            };
-                        }
-                    };
+                let request = match MessageSearchRequest::new_with_field(
+                    search_policy,
+                    mailbox.name.clone(),
+                    &query,
+                    field,
+                ) {
+                    Ok(request) => request,
+                    Err(error) => {
+                        audit_events.push(
+                            build_http_warning_event(
+                                "message_search_request_rejected",
+                                "message search request validation failed",
+                                context,
+                            )
+                            .with_field("reason", error.reason),
+                        );
+                        return BrowserMessageSearchOutcome {
+                            decision: BrowserMessageSearchDecision::Denied {
+                                public_reason: "invalid_request".to_string(),
+                            },
+                            audit_events,
+                        };
+                    }
+                };
                 let search_service = MessageSearchService::new(
                     self.build_message_search_backend_with_timeout(remaining_timeout_secs),
                 );
@@ -384,7 +389,12 @@ impl RuntimeBrowserGateway {
             };
         }
 
-        let request = match MessageSearchRequest::new(search_policy, mailbox_name, &query) {
+        let request = match MessageSearchRequest::new_with_field(
+            search_policy,
+            mailbox_name,
+            &query,
+            field,
+        ) {
             Ok(request) => request,
             Err(error) => {
                 return BrowserMessageSearchOutcome {

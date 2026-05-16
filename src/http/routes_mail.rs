@@ -611,6 +611,28 @@ where
         if request.query_params.get("scope").map(String::as_str) == Some("all") {
             mailbox_name = None;
         }
+        let search_field = match request.query_params.get("field").map(String::as_str) {
+            Some(value) => match MessageSearchField::from_query_value(value) {
+                Some(field) => field,
+                None => {
+                    return HandledHttpResponse {
+                        response: html_response(
+                            400,
+                            "Bad Request",
+                            "Invalid Search Request",
+                            "<p>The selected search field is not supported.</p>",
+                        ),
+                        audit_events: vec![build_http_warning_event(
+                            "http_search_field_rejected",
+                            "search field parameter rejected",
+                            context,
+                        )
+                        .with_field("field", "unsupported")],
+                    };
+                }
+            },
+            None => MessageSearchField::All,
+        };
 
         let (validated_session, mut audit_events) =
             match self.require_validated_session(request, context) {
@@ -633,6 +655,7 @@ where
             &validated_session,
             mailbox_name.as_deref(),
             &query,
+            search_field,
         );
         audit_events.extend(outcome.audit_events);
 
@@ -661,6 +684,7 @@ where
                             &query,
                             &results,
                             sort,
+                            search_field,
                         ),
                     ),
                     audit_events,

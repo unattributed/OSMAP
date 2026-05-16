@@ -343,6 +343,7 @@ pub(crate) fn validate_message_search_query(
 pub struct MessageSearchRequest {
     pub mailbox_name: String,
     pub query: String,
+    pub field: MessageSearchField,
 }
 
 impl MessageSearchRequest {
@@ -351,6 +352,17 @@ impl MessageSearchRequest {
         policy: MessageSearchPolicy,
         mailbox_name: impl Into<String>,
         query: impl Into<String>,
+    ) -> Result<Self, MailboxBackendError> {
+        Self::new_with_field(policy, mailbox_name, query, MessageSearchField::All)
+    }
+
+    /// Validates the mailbox name, free-text query, and whitelisted field
+    /// refinement used for message search.
+    pub fn new_with_field(
+        policy: MessageSearchPolicy,
+        mailbox_name: impl Into<String>,
+        query: impl Into<String>,
+        field: MessageSearchField,
     ) -> Result<Self, MailboxBackendError> {
         let mailbox_name = mailbox_name.into();
         let _ = MailboxEntry::new(
@@ -366,7 +378,51 @@ impl MessageSearchRequest {
         Ok(Self {
             mailbox_name,
             query,
+            field,
         })
+    }
+}
+
+/// Bounded search fields accepted from browser query parameters.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MessageSearchField {
+    All,
+    Subject,
+    From,
+}
+
+impl MessageSearchField {
+    pub fn from_query_value(value: &str) -> Option<Self> {
+        match value {
+            "all" => Some(Self::All),
+            "subject" => Some(Self::Subject),
+            "from" => Some(Self::From),
+            _ => None,
+        }
+    }
+
+    pub fn query_value(self) -> &'static str {
+        match self {
+            Self::All => "all",
+            Self::Subject => "subject",
+            Self::From => "from",
+        }
+    }
+
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::All => "All message text",
+            Self::Subject => "Subject",
+            Self::From => "From",
+        }
+    }
+
+    pub(crate) fn doveadm_search_key(self) -> &'static str {
+        match self {
+            Self::All => "TEXT",
+            Self::Subject => "SUBJECT",
+            Self::From => "FROM",
+        }
     }
 }
 

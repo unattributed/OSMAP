@@ -49,11 +49,13 @@
   and suspicious attachment names, but it is not yet a broad real-world corpus.
 - The implementation now provides a bounded, backend-authoritative browser
   search path across one mailbox or all visible mailboxes, but it does not yet
-  provide advanced query ergonomics or richer search refinement behavior. The
-  Version 3 browser surface now provides bounded result sorting controls for
-  UID, subject, from, received date, flags, and size while continuing to fail
-  deterministically for invalid inputs. The browser route caps rendered search
-  rows, but richer search still needs product-level refinement decisions.
+  provide a broad query language, saved searches, or faceted search behavior.
+  The Version 3 browser surface now provides bounded result sorting controls
+  for UID, subject, from, received date, flags, and size plus whitelisted
+  all-text, subject-only, and from-only field refinement while continuing to
+  fail deterministically for invalid inputs. The browser route caps rendered
+  search rows, but broader advanced search still needs product-level refinement
+  decisions.
 - The implementation now provides a first one-message move path between
   existing mailboxes plus settings-backed archive shortcuts, including bounded
   selected-message archive from mailbox-list pages, but it does not yet provide

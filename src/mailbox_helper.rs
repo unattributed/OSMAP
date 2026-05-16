@@ -42,8 +42,6 @@ use self::mailbox_helper_protocol::{
 use crate::auth::SystemCommandExecutor;
 use crate::config::{AppConfig, AppRunMode, LogLevel};
 use crate::logging::{EventCategory, LogEvent, Logger};
-#[cfg(test)]
-use crate::mailbox::MessageMovePolicy;
 use crate::mailbox::{
     DoveadmMailboxListBackend, DoveadmMessageListBackend, DoveadmMessageMoveBackend,
     DoveadmMessageSearchBackend, DoveadmMessageViewBackend, MailboxBackend, MailboxBackendError,
@@ -52,6 +50,8 @@ use crate::mailbox::{
     MessageSearchRequest, MessageSearchResult, MessageSummary, MessageView, MessageViewBackend,
     MessageViewPolicy, MessageViewRequest,
 };
+#[cfg(test)]
+use crate::mailbox::{MessageMovePolicy, MessageSearchField};
 use crate::openbsd::{apply_runtime_confinement, unix_stream_peer_uid};
 
 /// Conservative upper bound for one helper request payload.
@@ -704,12 +704,30 @@ mod tests {
             canonical_username: "alice@example.com".to_string(),
             mailbox_name: "INBOX".to_string(),
             query: "quarterly report".to_string(),
+            field: MessageSearchField::Subject,
             grant: MailboxHelperGrant::unsigned(),
         };
         let text = sign_test_request(&mut expected);
         let request = parse_request(&text).expect("message-search request should parse");
 
         assert_eq!(request, expected);
+    }
+
+    #[test]
+    fn rejects_invalid_message_search_request_field() {
+        let mut request = MailboxHelperRequest::MessageSearch {
+            canonical_username: "alice@example.com".to_string(),
+            mailbox_name: "INBOX".to_string(),
+            query: "quarterly report".to_string(),
+            field: MessageSearchField::Subject,
+            grant: MailboxHelperGrant::unsigned(),
+        };
+        let text =
+            sign_test_request(&mut request).replace("search_field=subject", "search_field=to");
+
+        let error = parse_request(&text).expect_err("invalid search field should fail");
+
+        assert!(error.contains("invalid helper search_field"));
     }
 
     #[test]
@@ -1170,6 +1188,7 @@ mod tests {
         let expected = MailboxHelperResponse::MessageSearchOk {
             mailbox_name: "INBOX".to_string(),
             query: "quarterly report".to_string(),
+            field: MessageSearchField::Subject,
             results: vec![MessageSearchResult {
                 mailbox_name: "INBOX".to_string(),
                 uid: 9,
@@ -1191,6 +1210,29 @@ mod tests {
         .expect("message-search response should parse");
 
         assert_eq!(response, expected);
+    }
+
+    #[test]
+    fn rejects_invalid_message_search_response_field() {
+        let response_text = concat!(
+            "status=ok\n",
+            "operation=message_search\n",
+            "mailbox_name_b64=SU5CT1g=\n",
+            "query_b64=cXVhcnRlcmx5IHJlcG9ydA==\n",
+            "search_field=to\n",
+            "message_count=0\n",
+        );
+
+        let error = parse_response(
+            MailboxListingPolicy::default(),
+            MessageListPolicy::default(),
+            MessageSearchPolicy::default(),
+            MessageViewPolicy::default(),
+            response_text,
+        )
+        .expect_err("invalid response search field should fail");
+
+        assert!(error.contains("invalid helper response search_field"));
     }
 
     #[test]
@@ -1476,9 +1518,13 @@ mod tests {
             MailboxHelperPolicy::default(),
             MessageSearchPolicy::default(),
         );
-        let request =
-            MessageSearchRequest::new(MessageSearchPolicy::default(), "INBOX", "quarterly report")
-                .expect("request should parse");
+        let request = MessageSearchRequest::new_with_field(
+            MessageSearchPolicy::default(),
+            "INBOX",
+            "quarterly report",
+            MessageSearchField::Subject,
+        )
+        .expect("request should parse");
 
         let results = client
             .search_messages("alice@example.com", &request)

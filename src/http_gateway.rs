@@ -228,8 +228,9 @@ impl BrowserGateway for RuntimeBrowserGateway {
         validated_session: &ValidatedSession,
         mailbox_name: Option<&str>,
         query: &str,
+        field: MessageSearchField,
     ) -> BrowserMessageSearchOutcome {
-        self.search_messages_impl(context, validated_session, mailbox_name, query)
+        self.search_messages_impl(context, validated_session, mailbox_name, query, field)
     }
 
     fn view_message(

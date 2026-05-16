@@ -75,6 +75,7 @@ pub trait BrowserGateway {
         validated_session: &ValidatedSession,
         mailbox_name: Option<&str>,
         query: &str,
+        field: MessageSearchField,
     ) -> BrowserMessageSearchOutcome;
 
     fn view_message(

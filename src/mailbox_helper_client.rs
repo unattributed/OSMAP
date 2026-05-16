@@ -320,6 +320,7 @@ impl MessageSearchBackend for MailboxHelperMessageSearchBackend {
             canonical_username: canonical_username.to_string(),
             mailbox_name: request.mailbox_name.clone(),
             query: request.query.clone(),
+            field: request.field,
             grant: MailboxHelperGrant::unsigned(),
         };
         let request_bytes = encode_authorized_request(&self.grant_key_path, &mut helper_request);
@@ -388,6 +389,7 @@ impl MessageSearchBackend for MailboxHelperMessageSearchBackend {
                 MailboxHelperResponse::MessageSearchOk {
                     mailbox_name,
                     query,
+                    field,
                     results,
                 } => {
                     if mailbox_name != request.mailbox_name {
@@ -405,6 +407,15 @@ impl MessageSearchBackend for MailboxHelperMessageSearchBackend {
                             reason: format!(
                                 "helper response query mismatch: expected {:?}, got {:?}",
                                 request.query, query
+                            ),
+                        });
+                    }
+                    if field != request.field {
+                        return Err(MailboxBackendError {
+                            backend: "mailbox-helper-client",
+                            reason: format!(
+                                "helper response search field mismatch: expected {:?}, got {:?}",
+                                request.field, field
                             ),
                         });
                     }

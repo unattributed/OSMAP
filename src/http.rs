@@ -59,9 +59,10 @@ use crate::mailbox::{
     DoveadmMessageViewBackend, MailboxEntry, MailboxListingDecision, MailboxListingPolicy,
     MailboxListingService, MessageListDecision, MessageListPolicy, MessageListRequest,
     MessageListService, MessageMoveDecision, MessageMoveOutcome, MessageMovePolicy,
-    MessageMoveRequest, MessageMoveService, MessageSearchDecision, MessageSearchPolicy,
-    MessageSearchRequest, MessageSearchResult, MessageSearchService, MessageSort, MessageSummary,
-    MessageViewDecision, MessageViewPolicy, MessageViewRequest, MessageViewService,
+    MessageMoveRequest, MessageMoveService, MessageSearchDecision, MessageSearchField,
+    MessageSearchPolicy, MessageSearchRequest, MessageSearchResult, MessageSearchService,
+    MessageSort, MessageSummary, MessageViewDecision, MessageViewPolicy, MessageViewRequest,
+    MessageViewService,
 };
 use crate::mailbox_helper::{
     MailboxHelperAttachmentDownloadBackend, MailboxHelperMailboxListBackend,
@@ -1157,6 +1158,7 @@ mod tests {
             validated_session: &ValidatedSession,
             mailbox_name: Option<&str>,
             query: &str,
+            field: MessageSearchField,
         ) -> BrowserMessageSearchOutcome {
             let mailbox_name = mailbox_name.map(str::to_string);
             if mailbox_name.as_deref() == Some("MissingArchive") {
@@ -1243,6 +1245,36 @@ mod tests {
                         EventCategory::Mailbox,
                         "stub_search_sort_results",
                         "stub sortable message search results returned",
+                    )],
+                };
+            }
+            if query.trim() == "fieldfilter" {
+                let subject = match field {
+                    MessageSearchField::All => "All field selected",
+                    MessageSearchField::Subject => "Subject field selected",
+                    MessageSearchField::From => "From field selected",
+                };
+
+                return BrowserMessageSearchOutcome {
+                    decision: BrowserMessageSearchDecision::Listed {
+                        canonical_username: validated_session.record.canonical_username.clone(),
+                        mailbox_name,
+                        query: query.trim().to_string(),
+                        results: vec![MessageSearchResult {
+                            mailbox_name: "INBOX".to_string(),
+                            uid: 19,
+                            flags: Vec::new(),
+                            date_received: "2026-03-29 10:00:00 +0000".to_string(),
+                            size_virtual: 333,
+                            subject: Some(subject.to_string()),
+                            from: Some("Field Test <field@example.com>".to_string()),
+                        }],
+                    },
+                    audit_events: vec![LogEvent::new(
+                        LogLevel::Info,
+                        EventCategory::Mailbox,
+                        "stub_search_field_results",
+                        "stub search field result returned",
                     )],
                 };
             }
@@ -2303,18 +2335,20 @@ mod tests {
 
     #[test]
     fn search_sort_links_preserve_mailbox_name_and_query() {
-        let response =
-            authenticated_get("/search?mailbox=INBOX&q=quarterly+report&sort=uid&dir=asc");
+        let response = authenticated_get(
+            "/search?mailbox=INBOX&q=quarterly+report&field=subject&sort=uid&dir=asc",
+        );
         assert_eq!(response.response.status_code, 200);
         let body = body_text(&response);
 
-        assert!(
-            body.contains("/search?mailbox=INBOX&amp;q=quarterly+report&amp;sort=uid&amp;dir=desc")
-        );
         assert!(body.contains(
-            "/search?mailbox=INBOX&amp;q=quarterly+report&amp;sort=received&amp;dir=desc"
+            "/search?mailbox=INBOX&amp;q=quarterly+report&amp;field=subject&amp;sort=uid&amp;dir=desc"
+        ));
+        assert!(body.contains(
+            "/search?mailbox=INBOX&amp;q=quarterly+report&amp;field=subject&amp;sort=received&amp;dir=desc"
         ));
         assert!(body.contains("UID ↑"));
+        assert!(body.contains("<option value=\"subject\" selected>Subject</option>"));
     }
 
     #[test]
@@ -2382,6 +2416,42 @@ mod tests {
         assert_body_order(&invalid_dir_body, "Search Alpha", "Search Middle");
         assert_body_order(&invalid_dir_body, "Search Middle", "Search Zulu");
         assert!(invalid_dir_body.contains("Subject ↑"));
+    }
+
+    #[test]
+    fn search_page_applies_whitelisted_field_refinements() {
+        let all = authenticated_get("/search?q=fieldfilter");
+        assert_eq!(all.response.status_code, 200);
+        let all_body = body_text(&all);
+        assert!(all_body.contains("All field selected"));
+        assert!(all_body.contains("<strong>Field:</strong> All message text"));
+        assert!(all_body.contains(
+            "/search?scope=all&amp;q=fieldfilter&amp;field=all&amp;sort=uid&amp;dir=asc"
+        ));
+
+        let subject = authenticated_get("/search?q=fieldfilter&field=subject");
+        assert_eq!(subject.response.status_code, 200);
+        let subject_body = body_text(&subject);
+        assert!(subject_body.contains("Subject field selected"));
+        assert!(subject_body.contains("<option value=\"subject\" selected>Subject</option>"));
+
+        let from = authenticated_get("/search?q=fieldfilter&field=from");
+        assert_eq!(from.response.status_code, 200);
+        let from_body = body_text(&from);
+        assert!(from_body.contains("From field selected"));
+        assert!(from_body.contains("<option value=\"from\" selected>From</option>"));
+    }
+
+    #[test]
+    fn search_page_rejects_invalid_field_values() {
+        let response = authenticated_get("/search?q=fieldfilter&field=to");
+        assert_eq!(response.response.status_code, 400);
+        let body = body_text(&response);
+        assert!(body.contains("selected search field is not supported"));
+        assert!(response
+            .audit_events
+            .iter()
+            .any(|event| event.action == "http_search_field_rejected"));
     }
 
     #[test]
@@ -2873,6 +2943,7 @@ mod tests {
         let body = body_text(&response);
         assert!(body.contains("Search all mailboxes"));
         assert!(body.contains("action=\"/search\""));
+        assert!(body.contains("name=\"field\""));
         assert!(!body.contains("name=\"mailbox\""));
     }
 

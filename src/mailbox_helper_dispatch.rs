@@ -75,12 +75,14 @@ where
             canonical_username,
             mailbox_name,
             query,
+            field,
             ..
         } => {
-            match MessageSearchRequest::new(
+            match MessageSearchRequest::new_with_field(
                 MessageSearchPolicy::default(),
                 mailbox_name.clone(),
                 query.clone(),
+                *field,
             )
             .map_err(|error| MailboxHelperResponse::Error {
                 backend: error.backend.to_string(),
@@ -98,6 +100,7 @@ where
                 Ok(results) => MailboxHelperResponse::MessageSearchOk {
                     mailbox_name: mailbox_name.clone(),
                     query: query.clone(),
+                    field: *field,
                     results,
                 },
                 Err(error_response) => error_response,
@@ -247,6 +250,7 @@ pub(super) fn log_helper_response(
             MailboxHelperResponse::MessageSearchOk {
                 mailbox_name,
                 query,
+                field,
                 results,
             },
             Some(MailboxHelperRequest::MessageSearch {
@@ -262,6 +266,7 @@ pub(super) fn log_helper_response(
             .with_field("canonical_username", canonical_username.clone())
             .with_field("mailbox_name", mailbox_name.clone())
             .with_field("query", query.clone())
+            .with_field("search_field", field.query_value())
             .with_field("result_count", results.len().to_string()),
         ),
         (
