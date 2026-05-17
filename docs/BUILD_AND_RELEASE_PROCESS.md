@@ -61,7 +61,8 @@ The release flow should eventually look like:
    release WSTG human-prompt credential and TOTP evidence, V2 carry-forward evidence,
    host-readiness evidence, TLS edge evidence, TLS standard evidence,
    resource-timeout evidence, current redacted V3 live MIME and HTML proof
-   evidence, and a sanitized evidence archive
+   evidence, current redacted V3 pilot rehearsal evidence, and a sanitized
+   evidence archive
 5. Build
 6. Static analysis and required tests
 7. Dependency inventory or SBOM generation
@@ -109,10 +110,17 @@ The V3 MIME and HTML live proof report is identified by
 `maint/live/latest-host-v3-mime-html-proof-report.txt`. Release validation also
 checks that `maint/live/osmap-live-validate-v3-mime-html-proof.ksh` exists, is
 executable, passes `sh -n`, and remains documented.
+The V3 pilot rehearsal evidence is identified by
+`OSMAP_RELEASE_V3_PILOT_REHEARSAL_EVIDENCE`, which defaults to
+`maint/live/latest-host-v3-pilot-rehearsal-report.txt` and
+`docs/PILOT_WORKFLOW_INVENTORY.md`. The report must be sanitized and must prove
+the assessed commit closed the selected cohort's daily-driver workflows without
+Roundcube fallback for those workflows.
 
 The normal GitHub `security-check` workflow remains a developer and CI signal.
 It must not be described as full V3 release validation unless the run also has
-the required host, human-prompt credential, TOTP, WSTG, and sanitized evidence inputs.
+the required host, human-prompt credential, TOTP, WSTG, pilot rehearsal, and
+sanitized evidence inputs.
 
 ## Rollback Strategy
 

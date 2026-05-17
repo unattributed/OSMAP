@@ -46,6 +46,8 @@ requires archived resource-timeout evidence for helper-backed mailbox, search,
 and message-view timeout behavior;
 requires the V3 live MIME and HTML proof validator and current redacted live
 proof report;
+requires a current sanitized V3 pilot rehearsal report plus the workflow
+inventory proving daily-driver gaps are closed for the selected cohort;
 and writes `maint/live/osmap-v3-release-evidence-summary.json`,
 `maint/live/osmap-v3-release-evidence-summary.md`, and
 `maint/live/osmap-v3-release-evidence.tar.gz`.
@@ -62,6 +64,7 @@ Release mode must fail on:
   protocols and ciphers while preserving certificate and hostname validation
 - missing resource-timeout evidence for helper-backed mailbox, search, and message-view paths
 - missing current V3 live MIME and HTML proof evidence
+- missing current V3 pilot rehearsal evidence for the selected daily-driver cohort
 - missing V3 feature-gate evidence
 - skipped authenticated WSTG tests when the mapped test requires credential and TOTP coverage
 - skipped security tests outside WSTG when those tests require credential and TOTP coverage
@@ -96,6 +99,7 @@ The evidence must not commit or archive plaintext passwords, reusable TOTP seeds
 | TLS CBC disposition | Archived evidence that TLS 1.2 CBC suites are removed, or a documented exception with owner, date, reason, expiry, exact suites retained, compatibility evidence, and compensating controls. |
 | TLS standard validation | `docs/TLS_STANDARD.md` defines the required floor. Static policy evidence from `maint/security/osmap-tls-policy-guard.sh` and live evidence from `maint/security/osmap-live-tls-standard-validate.py` must prove TLS 1.0 and TLS 1.1 fail, TLS 1.2 succeeds with a strong forward-secret AEAD cipher, TLS 1.3 succeeds where supported, no weak legacy cipher is accepted, and Python validation clients set a minimum TLS 1.2 context while preserving certificate and hostname verification. |
 | WSTG regression | Current WSTG testing-pack run covering the V3 browser surface, with pass, fail, warning, skip, and non-applicable disposition archived under `maint/live/` or a successor evidence path. Release mode must fail when authenticated WSTG tests that require credential and TOTP coverage are skipped. |
+| V3 pilot rehearsal | A sanitized `maint/live/latest-host-v3-pilot-rehearsal-report.txt` for the assessed commit, plus `docs/PILOT_WORKFLOW_INVENTORY.md`, must prove selected daily-driver users completed password-plus-TOTP login, listing, message view, attachment download, bounded search, compose/send, reply/forward, draft save/resume, explicit source-attachment handling, bounded bulk folder actions, and session logout/revoke without Roundcube fallback for those workflows. |
 
 ## TLS Standard Rule
 

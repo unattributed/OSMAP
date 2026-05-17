@@ -150,6 +150,13 @@ requirements:
   investigation
 - users requiring broad admin-console workflows
 
+Before Version 3 is called daily-driver ready, release evidence must include a
+sanitized `maint/live/latest-host-v3-pilot-rehearsal-report.txt` for the
+assessed commit. That report must show the selected cohort completed the
+Version 3 daily-driver workflows without Roundcube fallback for those workflows,
+while excluding plaintext passwords, reusable TOTP seeds, session cookies,
+private message bodies, private attachment content, and host secrets.
+
 ## Version 3 Gap Map
 
 | Workflow gap | Version 3 disposition | Acceptance gate |

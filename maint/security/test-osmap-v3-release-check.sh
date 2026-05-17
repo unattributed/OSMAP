@@ -225,6 +225,30 @@ make_tls_standard_report() {
 EOF
 }
 
+make_pilot_rehearsal_report() {
+	path=$1
+	commit_short=$(git -C "$repo_root" rev-parse --short HEAD)
+	{
+		printf '%s\n' "host=mail.blackbagsecurity.com"
+		printf '%s\n' "commit=${commit_short}"
+		printf '%s\n' "workflow_inventory=docs/PILOT_WORKFLOW_INVENTORY.md"
+		printf '%s\n' "credential_totp_login=passed"
+		printf '%s\n' "mailbox_listing=passed"
+		printf '%s\n' "message_view=passed"
+		printf '%s\n' "attachment_download=passed"
+		printf '%s\n' "bounded_search=passed"
+		printf '%s\n' "compose_send=passed"
+		printf '%s\n' "reply_forward=passed"
+		printf '%s\n' "draft_save_resume=passed"
+		printf '%s\n' "selected_source_attachments=passed"
+		printf '%s\n' "bounded_bulk_folder_actions=passed"
+		printf '%s\n' "session_logout_revoke=passed"
+		printf '%s\n' "roundcube_fallback_required=none"
+		printf '%s\n' "sanitized_evidence=true"
+		printf '%s\n' "result=v3_pilot_rehearsal_passed"
+	} > "$path"
+}
+
 make_evidence() {
 	case_dir=$1
 	mkdir -p "$case_dir"
@@ -238,12 +262,14 @@ make_evidence() {
 	resource_timeout="$case_dir/resource-timeout.txt"
 	helper_boundary="$case_dir/latest-host-helper-boundary-report.txt"
 	mime_html_proof="$case_dir/latest-host-v3-mime-html-proof-report.txt"
+	pilot_rehearsal="$case_dir/latest-host-v3-pilot-rehearsal-report.txt"
 	wstg="$case_dir/wstg-summary.json"
 	for path in "$v2_a" "$v2_b" "$host_a" "$host_b" "$host_c" "$tls" "$resource_timeout" "$helper_boundary"; do
 		printf '%s\n' "sanitized fixture evidence for $(basename "$path")" > "$path"
 	done
 	make_tls_standard_report "$tls_standard"
 	make_mime_html_proof_report "$mime_html_proof" pass
+	make_pilot_rehearsal_report "$pilot_rehearsal"
 	make_wstg_summary "$wstg" pass
 	printf '%s\n' "$v2_a $v2_b"
 	printf '%s\n' "$host_a $host_b $host_c"
@@ -605,6 +631,40 @@ if env \
 fi
 grep -Fq "forbidden proof content present: osmap_session=" "$mime_forbidden_case/output.txt"
 
+pilot_missing_case="$tmp_root/missing-v3-pilot-rehearsal"
+mkdir -p "$pilot_missing_case/bin"
+make_stubs "$pilot_missing_case/bin"
+evidence="$(make_evidence "$pilot_missing_case")"
+pilot_missing_v2=$(printf '%s\n' "$evidence" | sed -n '1p')
+pilot_missing_host=$(printf '%s\n' "$evidence" | sed -n '2p')
+pilot_missing_tls=$(printf '%s\n' "$evidence" | sed -n '3p')
+pilot_missing_tls_standard=$(printf '%s\n' "$evidence" | sed -n '4p')
+pilot_missing_resource_timeout=$(printf '%s\n' "$evidence" | sed -n '5p')
+pilot_missing_mime_html_proof=$(printf '%s\n' "$evidence" | sed -n '6p')
+pilot_missing_wstg=$(printf '%s\n' "$evidence" | sed -n '7p')
+if env \
+	PATH="$pilot_missing_case/bin:$PATH" \
+	OSMAP_SECURITY_PROFILE=release \
+	OSMAP_RELEASE_EVIDENCE_DIR="$pilot_missing_case" \
+	OSMAP_RELEASE_DEPENDENCY_INVENTORY_PATH="$pilot_missing_case/dependency-inventory.txt" \
+	OSMAP_RELEASE_SUMMARY_JSON="$pilot_missing_case/summary.json" \
+	OSMAP_RELEASE_SUMMARY_MD="$pilot_missing_case/summary.md" \
+	OSMAP_RELEASE_SANITIZED_ARCHIVE_PATH="$pilot_missing_case/evidence.tar.gz" \
+	OSMAP_RELEASE_WSTG_SUMMARY_PATH="$pilot_missing_wstg" \
+	OSMAP_RELEASE_V2_CARRY_FORWARD_EVIDENCE="$pilot_missing_v2" \
+	OSMAP_RELEASE_HOST_READINESS_EVIDENCE="$pilot_missing_host" \
+	OSMAP_RELEASE_TLS_EDGE_EVIDENCE="$pilot_missing_tls" \
+	OSMAP_RELEASE_TLS_STANDARD_EVIDENCE="$pilot_missing_tls_standard" \
+	OSMAP_RELEASE_RESOURCE_TIMEOUT_EVIDENCE="$pilot_missing_resource_timeout" \
+	OSMAP_RELEASE_V3_MIME_HTML_PROOF_REPORT="$pilot_missing_mime_html_proof" \
+	OSMAP_RELEASE_V3_PILOT_REHEARSAL_EVIDENCE="$pilot_missing_case/missing-v3-pilot-rehearsal.txt docs/PILOT_WORKFLOW_INVENTORY.md" \
+	OSMAP_RELEASE_SUPPLY_CHAIN_COMMAND=true \
+	sh "$release_check" > "$pilot_missing_case/output.txt" 2>&1; then
+	echo "expected missing V3 pilot rehearsal evidence to fail release mode" >&2
+	exit 1
+fi
+grep -Fq "missing V3 pilot rehearsal evidence" "$pilot_missing_case/output.txt"
+
 success_case="$tmp_root/success"
 if ! run_release_case success; then
 	echo "expected success fixture to pass release mode" >&2
@@ -626,14 +686,18 @@ grep -Fq '"resource_timeout_status": "passed"' "$success_case/summary.json"
 grep -Fq '"resource_timeout_evidence_files_checked": [' "$success_case/summary.json"
 grep -Fq '"v3_mime_html_proof_status": "passed"' "$success_case/summary.json"
 grep -Fq '"v3_mime_html_proof_evidence_files_checked": [' "$success_case/summary.json"
+grep -Fq '"v3_pilot_rehearsal_status": "passed"' "$success_case/summary.json"
+grep -Fq '"v3_pilot_rehearsal_evidence_files_checked": [' "$success_case/summary.json"
 grep -Fq 'TLS CBC cleanup: `passed`' "$success_case/summary.md"
 grep -Fq 'TLS standard validation: `passed`' "$success_case/summary.md"
 grep -Fq 'Resource and timeout hardening: `passed`' "$success_case/summary.md"
 grep -Fq 'V3 live MIME and HTML proof: `passed`' "$success_case/summary.md"
+grep -Fq 'V3 pilot rehearsal: `passed`' "$success_case/summary.md"
 tar -tzf "$success_case/evidence.tar.gz" | grep -Fq "tls-cbc-cleanup.txt"
 tar -tzf "$success_case/evidence.tar.gz" | grep -Fq "tls-standard.json"
 tar -tzf "$success_case/evidence.tar.gz" | grep -Fq "resource-timeout.txt"
 tar -tzf "$success_case/evidence.tar.gz" | grep -Fq "latest-host-v3-mime-html-proof-report.txt"
+tar -tzf "$success_case/evidence.tar.gz" | grep -Fq "latest-host-v3-pilot-rehearsal-report.txt"
 
 developer_case="$tmp_root/developer"
 developer_bin="$tmp_root/developer-bin"

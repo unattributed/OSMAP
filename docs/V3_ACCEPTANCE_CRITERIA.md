@@ -125,5 +125,5 @@ The Version 3 closeout record must link:
 - WSTG regression evidence
 - authenticated WSTG or other credential-dependent security evidence proving credential and TOTP paths were exercised where required
 - TLS standard evidence and TLS CBC removal or exception evidence
-- a pilot or rehearsal workflow inventory showing that daily-driver gaps are closed for the selected cohort
+- pilot rehearsal evidence, defaulting to `maint/live/latest-host-v3-pilot-rehearsal-report.txt` plus `docs/PILOT_WORKFLOW_INVENTORY.md`, showing that daily-driver gaps are closed for the selected cohort
 - a sanitized evidence archive that excludes plaintext passwords, reusable TOTP seeds, active session cookies, private message bodies, private attachment content, and host secrets

@@ -33,6 +33,12 @@ This roadmap sequences Version 3 work so OSMAP becomes a focused daily-driver ha
 | 11 | TLS standard and CBC cleanup | enforce `docs/TLS_STANDARD.md` across code, tooling, CI, release evidence, and the public edge; remove TLS 1.2 CBC suites or document a reviewed exception | TLS standard gate passes, including static guard evidence and live proof that weak protocols fail while TLS 1.2 and TLS 1.3 pass with acceptable ciphers |
 | 12 | V3 pilot rehearsal | run daily-driver workflow rehearsal with selected users and archive sanitized evidence | V3 closeout evidence is ready |
 
+Slice 12 is represented in release mode by
+`OSMAP_RELEASE_V3_PILOT_REHEARSAL_EVIDENCE`, defaulting to
+`maint/live/latest-host-v3-pilot-rehearsal-report.txt` plus
+`docs/PILOT_WORKFLOW_INVENTORY.md`. A V3 release candidate must fail until that
+sanitized selected-cohort rehearsal evidence exists for the assessed commit.
+
 ## Current Status
 
 As of commit `0dac311648fbaffd210afc13d416021b0b8419bf`, the active V3

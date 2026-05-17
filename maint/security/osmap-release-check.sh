@@ -35,6 +35,7 @@ fi
 : "${OSMAP_RELEASE_HELPER_BOUNDARY_EVIDENCE:=$OSMAP_RELEASE_EVIDENCE_DIR/latest-host-helper-boundary-report.txt maint/live/osmap-live-validate-helper-peer-auth.ksh}"
 : "${OSMAP_RELEASE_V3_MIME_HTML_PROOF_VALIDATOR:=maint/live/osmap-live-validate-v3-mime-html-proof.ksh}"
 : "${OSMAP_RELEASE_V3_MIME_HTML_PROOF_REPORT:=$OSMAP_RELEASE_EVIDENCE_DIR/latest-host-v3-mime-html-proof-report.txt}"
+: "${OSMAP_RELEASE_V3_PILOT_REHEARSAL_EVIDENCE:=$OSMAP_RELEASE_EVIDENCE_DIR/latest-host-v3-pilot-rehearsal-report.txt docs/PILOT_WORKFLOW_INVENTORY.md}"
 : "${OSMAP_RELEASE_SUPPLY_CHAIN_COMMAND:=sh maint/security/osmap-supply-chain-check.sh}"
 
 mkdir -p "$TMPDIR" "$CARGO_HOME" "$CARGO_TARGET_DIR" "$OSMAP_RELEASE_EVIDENCE_DIR"
@@ -70,6 +71,8 @@ helper_boundary_checked=""
 helper_boundary_status="missing"
 v3_mime_html_proof_status="missing"
 v3_mime_html_proof_checked=""
+v3_pilot_rehearsal_status="missing"
+v3_pilot_rehearsal_checked=""
 
 add_skip() {
 	if [ -z "$skipped_checks" ]; then
@@ -161,6 +164,7 @@ write_summary() {
 	resource_timeout_json=$(json_array "$resource_timeout_checked")
 	helper_boundary_json=$(json_array "$helper_boundary_checked")
 	v3_mime_html_proof_json=$(json_array "$v3_mime_html_proof_checked")
+	v3_pilot_rehearsal_json=$(json_array "$v3_pilot_rehearsal_checked")
 	cat > "$OSMAP_RELEASE_SUMMARY_JSON" <<EOF
 {
   "assessed_ref": $(json_string "$assessed_ref"),
@@ -192,6 +196,8 @@ write_summary() {
   "helper_boundary_evidence_files_checked": $helper_boundary_json,
   "v3_mime_html_proof_status": $(json_string "$v3_mime_html_proof_status"),
   "v3_mime_html_proof_evidence_files_checked": $v3_mime_html_proof_json,
+  "v3_pilot_rehearsal_status": $(json_string "$v3_pilot_rehearsal_status"),
+  "v3_pilot_rehearsal_evidence_files_checked": $v3_pilot_rehearsal_json,
   "skipped_checks": $skips_json,
   "sanitized_evidence_archive_path": $(json_string "$OSMAP_RELEASE_SANITIZED_ARCHIVE_PATH"),
   "sanitized_evidence_archive_status": $(json_string "$sanitized_archive_status")
@@ -218,6 +224,7 @@ EOF
 - Resource and timeout hardening: \`$resource_timeout_status\`
 - Helper boundary evidence: \`$helper_boundary_status\`
 - V3 live MIME and HTML proof: \`$v3_mime_html_proof_status\`
+- V3 pilot rehearsal: \`$v3_pilot_rehearsal_status\`
 - Sanitized evidence archive: \`$sanitized_archive_status\` at \`$OSMAP_RELEASE_SANITIZED_ARCHIVE_PATH\`
 - Skipped checks: \`$(printf '%s' "$skipped_checks" | tr '\n' '; ')\`
 
@@ -248,7 +255,105 @@ $(printf '%s\n' "$helper_boundary_checked" | sed '/^$/d; s/^/- `/' | sed 's/$/`/
 ## V3 Live MIME And HTML Proof Evidence
 
 $(printf '%s\n' "$v3_mime_html_proof_checked" | sed '/^$/d; s/^/- `/' | sed 's/$/`/')
+
+## V3 Pilot Rehearsal Evidence
+
+$(printf '%s\n' "$v3_pilot_rehearsal_checked" | sed '/^$/d; s/^/- `/' | sed 's/$/`/')
 EOF
+}
+
+validate_v3_pilot_rehearsal() {
+	checked=$(check_path_list "V3 pilot rehearsal" "$OSMAP_RELEASE_V3_PILOT_REHEARSAL_EVIDENCE")
+	if [ -z "$checked" ]; then
+		fail "missing V3 pilot rehearsal evidence"
+		v3_pilot_rehearsal_status="missing"
+		return 1
+	fi
+
+	set -- $OSMAP_RELEASE_V3_PILOT_REHEARSAL_EVIDENCE
+	report=$1
+	if python3 - "$report" "$assessed_ref" <<'PY'
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+report_path = Path(sys.argv[1])
+assessed_ref = sys.argv[2]
+text = report_path.read_text(encoding="utf-8", errors="replace")
+values = {}
+errors = []
+
+for line in text.splitlines():
+    if "=" not in line:
+        continue
+    key, value = line.split("=", 1)
+    values[key.strip()] = value.strip()
+
+required = {
+    "result": "v3_pilot_rehearsal_passed",
+    "host": "mail.blackbagsecurity.com",
+    "workflow_inventory": "docs/PILOT_WORKFLOW_INVENTORY.md",
+    "credential_totp_login": "passed",
+    "mailbox_listing": "passed",
+    "message_view": "passed",
+    "attachment_download": "passed",
+    "bounded_search": "passed",
+    "compose_send": "passed",
+    "reply_forward": "passed",
+    "draft_save_resume": "passed",
+    "selected_source_attachments": "passed",
+    "bounded_bulk_folder_actions": "passed",
+    "session_logout_revoke": "passed",
+    "roundcube_fallback_required": "none",
+    "sanitized_evidence": "true",
+}
+
+for key, expected in required.items():
+    actual = values.get(key)
+    if actual != expected:
+        errors.append(f"{key} expected {expected!r}, found {actual!r}")
+
+try:
+    assessed_short = subprocess.check_output(
+        ["git", "rev-parse", "--short", assessed_ref],
+        text=True,
+        stderr=subprocess.DEVNULL,
+    ).strip()
+except Exception:
+    assessed_short = assessed_ref[:7]
+
+report_commit = values.get("commit")
+if assessed_short and report_commit != assessed_short:
+    errors.append(f"commit expected {assessed_short!r}, found {report_commit!r}")
+
+for forbidden in [
+    'session_id="',
+    "osmap_session=",
+    "csrf_token=",
+    "totp seed",
+    "password",
+    "private message body",
+    "private attachment",
+    "secret=",
+]:
+    if re.search(re.escape(forbidden), text, flags=re.IGNORECASE):
+        errors.append(f"forbidden pilot rehearsal content present: {forbidden}")
+
+if errors:
+    for error in errors:
+        print(error, file=sys.stderr)
+    raise SystemExit(1)
+PY
+	then
+		v3_pilot_rehearsal_status="passed"
+		v3_pilot_rehearsal_checked=$checked
+		return 0
+	fi
+
+	v3_pilot_rehearsal_status="failed"
+	fail "V3 pilot rehearsal evidence did not satisfy release mode"
+	return 1
 }
 
 validate_v3_mime_html_proof() {
@@ -671,6 +776,7 @@ else
 fi
 validate_v3_mime_html_proof || true
 validate_wstg_summary || true
+validate_v3_pilot_rehearsal || true
 
 if [ "$failures" -eq 0 ]; then
 	echo "==> writing sanitized release evidence archive"
@@ -687,6 +793,7 @@ if [ "$failures" -eq 0 ]; then
 		$OSMAP_RELEASE_RESOURCE_TIMEOUT_EVIDENCE \
 		$OSMAP_RELEASE_HELPER_BOUNDARY_EVIDENCE \
 		"$OSMAP_RELEASE_V3_MIME_HTML_PROOF_REPORT" \
+		$OSMAP_RELEASE_V3_PILOT_REHEARSAL_EVIDENCE \
 		"$OSMAP_RELEASE_WSTG_SUMMARY_PATH"; then
 		sanitized_archive_status="passed"
 		write_summary
@@ -701,6 +808,7 @@ if [ "$failures" -eq 0 ]; then
 			$OSMAP_RELEASE_RESOURCE_TIMEOUT_EVIDENCE \
 			$OSMAP_RELEASE_HELPER_BOUNDARY_EVIDENCE \
 			"$OSMAP_RELEASE_V3_MIME_HTML_PROOF_REPORT" \
+			$OSMAP_RELEASE_V3_PILOT_REHEARSAL_EVIDENCE \
 			"$OSMAP_RELEASE_WSTG_SUMMARY_PATH"; then
 			sanitized_archive_status="failed"
 			fail "sanitized evidence archive generation failed after final summary"

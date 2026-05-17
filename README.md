@@ -346,9 +346,9 @@ The implemented validation entry points are:
 `make release-check` requires the pinned Rust toolchain and supply-chain tools,
 dependency inventory generation, V2 carry-forward evidence, host-readiness
 evidence, a release-mode WSTG summary with authenticated credential and TOTP
-coverage, and a sanitized release evidence archive. It is expected to fail on a
-normal workstation until those operator-provided evidence files and credentials
-are available.
+coverage, current V3 pilot rehearsal evidence, and a sanitized release evidence
+archive. It is expected to fail on a normal workstation until those
+operator-provided evidence files and credentials are available.
 
 Unless a narrower daily-driver need is proven and covered by tests, the following remain beyond Version 3:
 

@@ -1,5 +1,20 @@
 # Decision Log
 
+## 2026-05-18, Require V3 pilot rehearsal evidence in release mode
+
+The final V3 roadmap slice is pilot rehearsal evidence, not another feature.
+Release validation already failed closed on missing WSTG, credential/TOTP,
+resource, TLS, helper-boundary, and MIME/HTML evidence, but it did not yet
+require the selected-cohort daily-driver rehearsal record named by the V3
+acceptance criteria.
+
+`make release-check` now requires a sanitized
+`maint/live/latest-host-v3-pilot-rehearsal-report.txt` plus
+`docs/PILOT_WORKFLOW_INVENTORY.md`. The report must match the assessed commit
+and prove password-plus-TOTP login, core mailbox workflows, draft continuity,
+reply/forward source attachments, bounded bulk folder actions, and session
+logout/revoke without Roundcube fallback for those workflows.
+
 ## 2026-05-17, Require explicit weak TLS cipher rejection evidence
 
 The V3 TLS standard already required TLS 1.0 and TLS 1.1 rejection, TLS 1.2
