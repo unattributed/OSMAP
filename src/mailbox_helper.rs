@@ -510,9 +510,6 @@ mod tests {
     use std::thread;
     use std::time::{Duration, Instant};
 
-    const TEST_HELPER_GRANT_KEY: &[u8] =
-        b"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
-
     #[derive(Clone)]
     struct StaticHelperBackend {
         mailbox_result: Arc<Result<Vec<MailboxEntry>, MailboxBackendError>>,
@@ -520,6 +517,18 @@ mod tests {
         message_search_result: Arc<Result<Vec<MessageSearchResult>, MailboxBackendError>>,
         message_view_result: Arc<Result<MessageView, MailboxBackendError>>,
         message_move_result: Arc<Result<(), MailboxBackendError>>,
+    }
+
+    fn test_helper_grant_key() -> Vec<u8> {
+        (0..64).map(|index| b'a' + (index % 26) as u8).collect()
+    }
+
+    fn test_grant_nonce(seed: u8) -> String {
+        let mut nonce = String::new();
+        for offset in 0..16 {
+            nonce.push_str(&format!("{:02x}", seed.wrapping_add(offset)));
+        }
+        nonce
     }
 
     impl MailboxBackend for StaticHelperBackend {
@@ -572,13 +581,10 @@ mod tests {
     }
 
     fn sign_test_request(request: &mut MailboxHelperRequest) -> String {
-        issue_request_grant_with_nonce(
-            request,
-            TEST_HELPER_GRANT_KEY,
-            100,
-            "00112233445566778899aabbccddeeff",
-        )
-        .expect("test request grant should sign");
+        let key = test_helper_grant_key();
+        let nonce = test_grant_nonce(0);
+        issue_request_grant_with_nonce(request, &key, 100, &nonce)
+            .expect("test request grant should sign");
         encode_request(request)
     }
 
@@ -587,11 +593,13 @@ mod tests {
             canonical_username: username.to_string(),
             grant: MailboxHelperGrant::unsigned(),
         };
+        let key = test_helper_grant_key();
+        let nonce = test_grant_nonce(16);
         issue_request_grant_with_nonce(
             &mut request,
-            TEST_HELPER_GRANT_KEY,
+            &key,
             current_unix_time_secs().expect("test clock should be valid"),
-            "ffeeddccbbaa99887766554433221100",
+            &nonce,
         )
         .expect("test request grant should sign");
         encode_request(&request)
@@ -872,13 +880,10 @@ mod tests {
             grant: MailboxHelperGrant::unsigned(),
         };
         let now = current_unix_time_secs().expect("test clock should be valid");
-        issue_request_grant_with_nonce(
-            &mut request,
-            TEST_HELPER_GRANT_KEY,
-            now.saturating_sub(120),
-            "11112222333344445555666677778888",
-        )
-        .expect("expired test grant should sign");
+        let key = test_helper_grant_key();
+        let nonce = test_grant_nonce(32);
+        issue_request_grant_with_nonce(&mut request, &key, now.saturating_sub(120), &nonce)
+            .expect("expired test grant should sign");
         let response = run_helper_round_trip(current_uid, &encode_request(&request));
 
         assert_eq!(
@@ -898,11 +903,13 @@ mod tests {
             mailbox_name: "INBOX".to_string(),
             grant: MailboxHelperGrant::unsigned(),
         };
+        let key = test_helper_grant_key();
+        let nonce = test_grant_nonce(48);
         issue_request_grant_with_nonce(
             &mut read_request,
-            TEST_HELPER_GRANT_KEY,
+            &key,
             current_unix_time_secs().expect("test clock should be valid"),
-            "22223333444455556666777788889999",
+            &nonce,
         )
         .expect("read grant should sign");
         let read_grant = request_grant(&read_request).clone();
@@ -930,20 +937,21 @@ mod tests {
             canonical_username: "alice@example.com".to_string(),
             grant: MailboxHelperGrant::unsigned(),
         };
+        let key = test_helper_grant_key();
+        let nonce = test_grant_nonce(64);
         issue_request_grant_with_nonce(
             &mut request,
-            TEST_HELPER_GRANT_KEY,
+            &key,
             current_unix_time_secs().expect("test clock should be valid"),
-            "3333444455556666777788889999aaaa",
+            &nonce,
         )
         .expect("test grant should sign");
         let mut replay_cache = BTreeMap::<String, u64>::new();
 
-        verify_helper_request_authority(&request, TEST_HELPER_GRANT_KEY, &mut replay_cache)
+        verify_helper_request_authority(&request, &key, &mut replay_cache)
             .expect("first grant use should pass");
-        let error =
-            verify_helper_request_authority(&request, TEST_HELPER_GRANT_KEY, &mut replay_cache)
-                .expect_err("second grant use must fail");
+        let error = verify_helper_request_authority(&request, &key, &mut replay_cache)
+            .expect_err("second grant use must fail");
 
         assert_eq!(error, "helper request grant replay was rejected");
     }
@@ -962,7 +970,7 @@ mod tests {
         let socket_path = temp_socket_path("trusted-auth");
         let _listener = UnixListener::bind(&socket_path).expect("test auth socket should bind");
         let grant_key_path = temp_root.join("mailbox-helper-grant.key");
-        fs::write(&grant_key_path, TEST_HELPER_GRANT_KEY).expect("grant key should be written");
+        fs::write(&grant_key_path, test_helper_grant_key()).expect("grant key should be written");
         fs::set_permissions(&grant_key_path, fs::Permissions::from_mode(0o600))
             .expect("grant key permissions should be restricted");
         let config = AppConfig {
@@ -1823,7 +1831,7 @@ mod tests {
                 MailboxHelperPolicy::default(),
                 MailboxHelperTrustedCallerPolicy {
                     trusted_peer_uid,
-                    grant_key: TEST_HELPER_GRANT_KEY.to_vec(),
+                    grant_key: test_helper_grant_key(),
                 },
                 &mut replay_cache,
             );
@@ -1868,7 +1876,7 @@ mod tests {
     #[cfg(unix)]
     fn temp_grant_key_path(prefix: &str) -> PathBuf {
         let path = temp_socket_path(prefix).with_extension("key");
-        fs::write(&path, TEST_HELPER_GRANT_KEY).expect("test grant key should be written");
+        fs::write(&path, test_helper_grant_key()).expect("test grant key should be written");
         fs::set_permissions(&path, fs::Permissions::from_mode(0o600))
             .expect("test grant key permissions should be restricted");
         path
