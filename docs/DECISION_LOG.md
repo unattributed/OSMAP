@@ -1,5 +1,20 @@
 # Decision Log
 
+## 2026-05-17, Require explicit weak TLS cipher rejection evidence
+
+The V3 TLS standard already required TLS 1.0 and TLS 1.1 rejection, TLS 1.2
+and TLS 1.3 success, certificate validation, hostname validation, and strong
+negotiated ciphers. The remaining evidence gap was proving that deliberately
+forced weak TLS 1.2 cipher offers are rejected, rather than only proving the
+default negotiated TLS 1.2 cipher is acceptable.
+
+`maint/security/osmap-live-tls-standard-validate.py` now records rejected weak
+TLS 1.2 cipher probes for legacy SHA and non-AEAD suites, and
+`make release-check` fails when that probe set is missing, incomplete, accepted,
+or records any negotiated protocol/cipher. This keeps the CBC cleanup and TLS
+standard gate evidence-driven instead of relying on static configuration review
+alone.
+
 ## 2026-05-17, Add bounded selected-message folder cleanup
 
 The bounded bulk folder-action slice extends mailbox-list cleanup without

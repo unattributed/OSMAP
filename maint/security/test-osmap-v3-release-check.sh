@@ -200,6 +200,23 @@ make_tls_standard_report() {
       "status": "passed",
       "strong_cipher": true,
       "verify_ok": true
+    },
+    "weak_tls12_ciphers": {
+      "AES128-SHA": {
+        "cipher": "",
+        "protocol": "",
+        "status": "rejected"
+      },
+      "AES256-SHA": {
+        "cipher": "",
+        "protocol": "",
+        "status": "rejected"
+      },
+      "ECDHE-RSA-AES256-SHA384": {
+        "cipher": "",
+        "protocol": "",
+        "status": "rejected"
+      }
     }
   },
   "result": "tls_standard_passed",
@@ -446,6 +463,49 @@ if env \
 	exit 1
 fi
 grep -Fq "missing TLS standard evidence" "$tls_standard_case/output.txt"
+
+tls_weak_case="$tmp_root/missing-weak-tls-cipher-evidence"
+mkdir -p "$tls_weak_case/bin"
+make_stubs "$tls_weak_case/bin"
+evidence="$(make_evidence "$tls_weak_case")"
+tls_weak_v2=$(printf '%s\n' "$evidence" | sed -n '1p')
+tls_weak_host=$(printf '%s\n' "$evidence" | sed -n '2p')
+tls_weak_tls=$(printf '%s\n' "$evidence" | sed -n '3p')
+tls_weak_tls_standard=$(printf '%s\n' "$evidence" | sed -n '4p')
+tls_weak_resource_timeout=$(printf '%s\n' "$evidence" | sed -n '5p')
+tls_weak_mime_html_proof=$(printf '%s\n' "$evidence" | sed -n '6p')
+tls_weak_wstg=$(printf '%s\n' "$evidence" | sed -n '7p')
+python3 - "$tls_weak_tls_standard" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+path = Path(sys.argv[1])
+report = json.loads(path.read_text(encoding="utf-8"))
+report["probes"].pop("weak_tls12_ciphers", None)
+path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+PY
+if env \
+	PATH="$tls_weak_case/bin:$PATH" \
+	OSMAP_SECURITY_PROFILE=release \
+	OSMAP_RELEASE_EVIDENCE_DIR="$tls_weak_case" \
+	OSMAP_RELEASE_DEPENDENCY_INVENTORY_PATH="$tls_weak_case/dependency-inventory.txt" \
+	OSMAP_RELEASE_SUMMARY_JSON="$tls_weak_case/summary.json" \
+	OSMAP_RELEASE_SUMMARY_MD="$tls_weak_case/summary.md" \
+	OSMAP_RELEASE_SANITIZED_ARCHIVE_PATH="$tls_weak_case/evidence.tar.gz" \
+	OSMAP_RELEASE_WSTG_SUMMARY_PATH="$tls_weak_wstg" \
+	OSMAP_RELEASE_V2_CARRY_FORWARD_EVIDENCE="$tls_weak_v2" \
+	OSMAP_RELEASE_HOST_READINESS_EVIDENCE="$tls_weak_host" \
+	OSMAP_RELEASE_TLS_EDGE_EVIDENCE="$tls_weak_tls" \
+	OSMAP_RELEASE_TLS_STANDARD_EVIDENCE="$tls_weak_tls_standard" \
+	OSMAP_RELEASE_RESOURCE_TIMEOUT_EVIDENCE="$tls_weak_resource_timeout" \
+	OSMAP_RELEASE_V3_MIME_HTML_PROOF_REPORT="$tls_weak_mime_html_proof" \
+	OSMAP_RELEASE_SUPPLY_CHAIN_COMMAND=true \
+	sh "$release_check" > "$tls_weak_case/output.txt" 2>&1; then
+	echo "expected missing weak TLS cipher evidence to fail release mode" >&2
+	exit 1
+fi
+grep -Fq "weak TLS 1.2 cipher rejection probes are missing" "$tls_weak_case/output.txt"
 
 resource_case="$tmp_root/missing-resource-timeout"
 mkdir -p "$resource_case/bin"

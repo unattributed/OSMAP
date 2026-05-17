@@ -1,7 +1,7 @@
 {
   "certificate_validation": true,
   "failures": [],
-  "generated_at_utc": "2026-05-15T09:42:38+00:00",
+  "generated_at_utc": "2026-05-17T16:55:42+00:00",
   "host": "mail.blackbagsecurity.com",
   "hostname_validation": true,
   "minimum_tls_version": "TLSv1.2",
@@ -20,7 +20,7 @@
     "tls10": {
       "cipher": "",
       "command": "openssl s_client -connect mail.blackbagsecurity.com:443 -servername mail.blackbagsecurity.com -verify_return_error -verify_hostname mail.blackbagsecurity.com -tls1",
-      "output_excerpt": "Connecting to 124.121.242.189\n4057AD8FBE7F0000:error:0A0000BF:SSL routines:tls_setup_handshake:no protocols available:../ssl/statem/statem_lib.c:155:\nCONNECTED(00000003)\n---\nno peer certificate available\n---\nNo client certificate CA names sent\nNegotiated TLS1.3 group: <NULL>\n---\nSSL handshake has read 0 bytes and written 7 bytes\nVerification: OK\n---\nNew, (NONE), Cipher is (NONE)\nProtocol: TLSv1.3\nThis TLS version forbids renegotiation.\nCompression: NONE\nExpansion: NONE\nNo ALPN negotiated\nEarly data was not sent\nVerify return code: 0 (ok)",
+      "output_excerpt": "Connecting to 124.121.242.189\n40476602527F0000:error:0A0000BF:SSL routines:tls_setup_handshake:no protocols available:../ssl/statem/statem_lib.c:155:\nCONNECTED(00000003)\n---\nno peer certificate available\n---\nNo client certificate CA names sent\nNegotiated TLS1.3 group: <NULL>\n---\nSSL handshake has read 0 bytes and written 7 bytes\nVerification: OK\n---\nNew, (NONE), Cipher is (NONE)\nProtocol: TLSv1.3\nThis TLS version forbids renegotiation.\nCompression: NONE\nExpansion: NONE\nNo ALPN negotiated\nEarly data was not sent\nVerify return code: 0 (ok)",
       "protocol": "",
       "returncode": 1,
       "status": "rejected",
@@ -29,7 +29,7 @@
     "tls11": {
       "cipher": "",
       "command": "openssl s_client -connect mail.blackbagsecurity.com:443 -servername mail.blackbagsecurity.com -verify_return_error -verify_hostname mail.blackbagsecurity.com -tls1_1",
-      "output_excerpt": "Connecting to 124.121.242.189\n4017AE34947F0000:error:0A0000BF:SSL routines:tls_setup_handshake:no protocols available:../ssl/statem/statem_lib.c:155:\nCONNECTED(00000003)\n---\nno peer certificate available\n---\nNo client certificate CA names sent\nNegotiated TLS1.3 group: <NULL>\n---\nSSL handshake has read 0 bytes and written 7 bytes\nVerification: OK\n---\nNew, (NONE), Cipher is (NONE)\nProtocol: TLSv1.3\nThis TLS version forbids renegotiation.\nCompression: NONE\nExpansion: NONE\nNo ALPN negotiated\nEarly data was not sent\nVerify return code: 0 (ok)",
+      "output_excerpt": "Connecting to 124.121.242.189\n4037C516477F0000:error:0A0000BF:SSL routines:tls_setup_handshake:no protocols available:../ssl/statem/statem_lib.c:155:\nCONNECTED(00000003)\n---\nno peer certificate available\n---\nNo client certificate CA names sent\nNegotiated TLS1.3 group: <NULL>\n---\nSSL handshake has read 0 bytes and written 7 bytes\nVerification: OK\n---\nNew, (NONE), Cipher is (NONE)\nProtocol: TLSv1.3\nThis TLS version forbids renegotiation.\nCompression: NONE\nExpansion: NONE\nNo ALPN negotiated\nEarly data was not sent\nVerify return code: 0 (ok)",
       "protocol": "",
       "returncode": 1,
       "status": "rejected",
@@ -54,6 +54,35 @@
       "status": "passed",
       "strong_cipher": true,
       "verify_ok": true
+    },
+    "weak_tls12_ciphers": {
+      "AES128-SHA": {
+        "cipher": "",
+        "command": "openssl s_client -connect mail.blackbagsecurity.com:443 -servername mail.blackbagsecurity.com -verify_return_error -verify_hostname mail.blackbagsecurity.com -tls1_2 -cipher AES128-SHA",
+        "output_excerpt": "Connecting to 124.121.242.189\n40D70590197F0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec_layer_s3.c:918:SSL alert number 40\nCONNECTED(00000003)\n---\nno peer certificate available\n---\nNo client certificate CA names sent\n---\nSSL handshake has read 7 bytes and written 149 bytes\nVerification: OK\n---\nNew, (NONE), Cipher is (NONE)\nProtocol: TLSv1.2\nSecure Renegotiation IS NOT supported\nCompression: NONE\nExpansion: NONE\nNo ALPN negotiated\nSSL-Session:\n    Protocol  : TLSv1.2\n    Cipher    : 0000",
+        "protocol": "",
+        "returncode": 1,
+        "status": "rejected",
+        "verify_ok": false
+      },
+      "AES256-SHA": {
+        "cipher": "",
+        "command": "openssl s_client -connect mail.blackbagsecurity.com:443 -servername mail.blackbagsecurity.com -verify_return_error -verify_hostname mail.blackbagsecurity.com -tls1_2 -cipher AES256-SHA",
+        "output_excerpt": "Connecting to 124.121.242.189\n40872A529B7F0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec_layer_s3.c:918:SSL alert number 40\nCONNECTED(00000003)\n---\nno peer certificate available\n---\nNo client certificate CA names sent\n---\nSSL handshake has read 7 bytes and written 149 bytes\nVerification: OK\n---\nNew, (NONE), Cipher is (NONE)\nProtocol: TLSv1.2\nSecure Renegotiation IS NOT supported\nCompression: NONE\nExpansion: NONE\nNo ALPN negotiated\nSSL-Session:\n    Protocol  : TLSv1.2\n    Cipher    : 0000",
+        "protocol": "",
+        "returncode": 1,
+        "status": "rejected",
+        "verify_ok": false
+      },
+      "ECDHE-RSA-AES256-SHA384": {
+        "cipher": "",
+        "command": "openssl s_client -connect mail.blackbagsecurity.com:443 -servername mail.blackbagsecurity.com -verify_return_error -verify_hostname mail.blackbagsecurity.com -tls1_2 -cipher ECDHE-RSA-AES256-SHA384",
+        "output_excerpt": "Connecting to 124.121.242.189\n40178B34A27F0000:error:0A000410:SSL routines:ssl3_read_bytes:ssl/tls alert handshake failure:../ssl/record/rec_layer_s3.c:918:SSL alert number 40\nCONNECTED(00000003)\n---\nno peer certificate available\n---\nNo client certificate CA names sent\n---\nSSL handshake has read 7 bytes and written 173 bytes\nVerification: OK\n---\nNew, (NONE), Cipher is (NONE)\nProtocol: TLSv1.2\nSecure Renegotiation IS NOT supported\nCompression: NONE\nExpansion: NONE\nNo ALPN negotiated\nSSL-Session:\n    Protocol  : TLSv1.2\n    Cipher    : 0000",
+        "protocol": "",
+        "returncode": 1,
+        "status": "rejected",
+        "verify_ok": false
+      }
     }
   },
   "result": "tls_standard_passed",

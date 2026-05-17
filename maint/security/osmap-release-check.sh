@@ -432,6 +432,20 @@ for key in ["tls10", "tls11"]:
     if probes.get(key, {}).get("protocol") or probes.get(key, {}).get("cipher"):
         errors.append(f"{key} unexpectedly negotiated a protocol or cipher")
 
+weak_tls12_ciphers = probes.get("weak_tls12_ciphers")
+if not isinstance(weak_tls12_ciphers, dict) or not weak_tls12_ciphers:
+    errors.append("weak TLS 1.2 cipher rejection probes are missing")
+else:
+    required_weak_ciphers = {"AES256-SHA", "AES128-SHA", "ECDHE-RSA-AES256-SHA384"}
+    missing = sorted(required_weak_ciphers - set(weak_tls12_ciphers))
+    if missing:
+        errors.append(f"weak TLS 1.2 cipher rejection probes missing {missing}")
+    for cipher, probe in sorted(weak_tls12_ciphers.items()):
+        if probe.get("status") != "rejected":
+            errors.append(f"weak TLS 1.2 cipher {cipher} was not rejected")
+        if probe.get("protocol") or probe.get("cipher"):
+            errors.append(f"weak TLS 1.2 cipher {cipher} unexpectedly negotiated")
+
 if errors:
     for error in errors:
         print(error, file=sys.stderr)

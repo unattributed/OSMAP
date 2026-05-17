@@ -18,6 +18,11 @@ from typing import Any
 
 DEFAULT_TARGET = "https://mail.blackbagsecurity.com"
 WEAK_CIPHER_MARKERS = ("ANON", "NULL", "EXPORT", "MD5", "RC4", "3DES", "DES", "CBC")
+WEAK_TLS12_CIPHER_PROBES = (
+    "AES256-SHA",
+    "AES128-SHA",
+    "ECDHE-RSA-AES256-SHA384",
+)
 
 
 def osmap_tls_client_context() -> ssl.SSLContext:
@@ -247,6 +252,32 @@ def main() -> int:
     if tls12_reason:
         tls12["cipher_reason"] = tls12_reason
     probes["tls12"] = tls12
+
+    weak_tls12_ciphers: dict[str, Any] = {}
+    for cipher in WEAK_TLS12_CIPHER_PROBES:
+        probe = openssl_probe(
+            args.openssl_bin,
+            host,
+            port,
+            args.timeout,
+            "-tls1_2",
+            cipher=cipher,
+            verify_hostname_supported=verify_hostname_supported,
+        )
+        negotiated = bool(probe.get("protocol") and probe.get("cipher"))
+        if negotiated:
+            probe["status"] = "failed"
+            failures.append(
+                f"weak TLS 1.2 cipher probe {cipher} unexpectedly negotiated "
+                f"{probe.get('protocol')} {probe.get('cipher')}"
+            )
+        else:
+            probe["status"] = "rejected"
+            probe["protocol"] = ""
+            probe["cipher"] = ""
+            probe["verify_ok"] = False
+        weak_tls12_ciphers[cipher] = probe
+    probes["weak_tls12_ciphers"] = weak_tls12_ciphers
 
     tls13 = openssl_probe(
         args.openssl_bin,

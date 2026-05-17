@@ -19,6 +19,8 @@ tracked = subprocess.check_output(["git", "ls-files"], cwd=repo, text=True).spli
 allow_pattern_files = {
     "maint/security/osmap-tls-policy-guard.sh": "the guard owns the prohibited-pattern list",
     "maint/security/osmap-live-tls-standard-validate.py": "the live validator must intentionally probe rejected legacy TLS versions and ciphers",
+    "maint/security/osmap-release-check.sh": "the release gate validates rejected weak TLS cipher evidence",
+    "maint/security/test-osmap-v3-release-check.sh": "release-check tests fixture rejected weak TLS cipher evidence",
 }
 
 skip_prefixes = (

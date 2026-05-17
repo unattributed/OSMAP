@@ -71,7 +71,8 @@ Release evidence must prove:
 - TLS 1.1 fails.
 - TLS 1.2 succeeds with a strong forward-secret AEAD cipher only.
 - TLS 1.3 succeeds where supported.
-- No weak legacy TLS ciphers are accepted.
+- Forced weak TLS 1.2 cipher probes, including legacy SHA and non-AEAD
+  suites, are rejected.
 - Python validation clients set minimum TLS 1.2 and keep certificate and hostname verification enabled.
 
 Release mode must fail when this evidence is missing, stale, or fails the
