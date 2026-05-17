@@ -116,6 +116,10 @@ The V3 pilot rehearsal evidence is identified by
 `docs/PILOT_WORKFLOW_INVENTORY.md`. The report must be sanitized and must prove
 the assessed commit closed the selected cohort's daily-driver workflows without
 Roundcube fallback for those workflows.
+After the actual selected-cohort rehearsal is complete, operators can write the
+sanitized report with `maint/live/osmap-live-record-v3-pilot-rehearsal.ksh`.
+The helper requires explicit `passed` confirmations for each required workflow
+and refuses to write the report when any confirmation is missing.
 
 The normal GitHub `security-check` workflow remains a developer and CI signal.
 It must not be described as full V3 release validation unless the run also has

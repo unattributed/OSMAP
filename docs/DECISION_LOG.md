@@ -1,5 +1,18 @@
 # Decision Log
 
+## 2026-05-18, Add a sanitized V3 pilot rehearsal capture helper
+
+The final V3 selected-cohort rehearsal cannot be manufactured from fixture
+data. It needs real user workflow completion, but the resulting release report
+must still be narrow, repeatable, and secret-free.
+
+`maint/live/osmap-live-record-v3-pilot-rehearsal.ksh` now writes
+`maint/live/latest-host-v3-pilot-rehearsal-report.txt` only after every required
+daily-driver workflow is explicitly confirmed as `passed`, Roundcube fallback
+is confirmed as `none`, and evidence sanitization is confirmed as `true`. This
+keeps the actual human rehearsal separate from the repo-owned sanitized release
+artifact shape.
+
 ## 2026-05-18, Require V3 pilot rehearsal evidence in release mode
 
 The final V3 roadmap slice is pilot rehearsal evidence, not another feature.

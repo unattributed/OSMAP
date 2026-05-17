@@ -156,6 +156,9 @@ assessed commit. That report must show the selected cohort completed the
 Version 3 daily-driver workflows without Roundcube fallback for those workflows,
 while excluding plaintext passwords, reusable TOTP seeds, session cookies,
 private message bodies, private attachment content, and host secrets.
+After the actual selected-cohort walkthrough, use
+`maint/live/osmap-live-record-v3-pilot-rehearsal.ksh` to record only the
+sanitized workflow dispositions accepted by release mode.
 
 ## Version 3 Gap Map
 
