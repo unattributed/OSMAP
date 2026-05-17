@@ -38,7 +38,7 @@ The current best-fit Version 2 pilot user is someone who needs:
 The current repo state is not yet a good fit for users who depend daily on:
 
 - draft persistence beyond the limited Version 3 server-side draft behavior
-- bulk message organization
+- broad mailbox-wide or unbounded bulk message organization
 - original-message attachment reattachment during reply or forward
 - ManageSieve-style mail filtering UI
 - rich HTML convenience behavior such as inline remote resources or inline image
@@ -62,12 +62,13 @@ The current repo state is not yet a good fit for users who depend daily on:
 | One-message move | `supported` | admit | Narrow organization workflow, not broad mailbox management. |
 | Archive shortcut | `supported_with_limits` | admit | Depends on configured archive mailbox rather than discovery-heavy UX. |
 | Selected-message archive from mailbox list | `supported_with_limits` | admit | Bounded archive-only selection reuses the existing move path once per selected UID. |
+| Selected-message move from mailbox list | `supported_with_limits` | admit | Bounded selected-message folder cleanup reuses the existing move path once per selected UID, caps selection count, limits destinations to visible mailboxes plus the configured archive target, and reports partial success explicitly. |
 | Session list, revoke, logout | `supported` | admit | Included in current browser security surface. |
 | Safe HTML view | `supported_with_limits` | admit | Sanitized HTML only; no active content or remote loads. |
 | Plain-text preference for message display | `supported` | admit | Small bounded settings surface only. |
 | Draft save and resume later | `supported_with_limits` | admit only if limits are acceptable | Version 3 server-side draft save, list, resume, delete, and send-success cleanup have host-safe authenticated WSTG/ASVS evidence in `OSMAP-WSTG-BUSL-002` from `mail.blackbagsecurity.com` on 2026-05-07. Limits remain: explicit save only, no browser-local draft storage, no attachment preview, no inline image rendering, no remote content loading, send-only preservation of newly uploaded draft attachments, and no automatic original-message attachment reattach. |
 | Reply or forward with original attachments preserved automatically | `roundcube_fallback` | do not admit if required daily | Not implemented. |
-| General bulk move or other bulk mailbox actions | `roundcube_fallback` | do not admit if required daily | OSMAP supports bounded selected archive, not arbitrary bulk mailbox operations. |
+| General bulk move or other bulk mailbox actions | `roundcube_fallback` | do not admit if required daily | OSMAP supports bounded selected-message move and archive, not arbitrary bulk mailbox operations. |
 | Rich mailbox-management ergonomics | `roundcube_fallback` | admit only if unnecessary | OSMAP Version 2 intentionally stays narrower than Roundcube. |
 | ManageSieve filter editing in browser | `roundcube_fallback` | do not admit if required daily | No OSMAP UI for this. |
 | Contacts, calendar, or groupware | `out_of_scope` | exclude | Not part of OSMAP Version 2. |

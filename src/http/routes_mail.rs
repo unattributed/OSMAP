@@ -196,6 +196,13 @@ where
                     &validated_session,
                     &mut audit_events,
                 );
+                let bulk_move_destinations = self.bulk_move_destinations(
+                    context,
+                    &validated_session,
+                    &mut audit_events,
+                    &mailbox_name,
+                    archive_mailbox_name.as_deref(),
+                );
                 let sort = MessageSort::from_query_values(
                     request.query_params.get("sort").map(String::as_str),
                     request.query_params.get("dir").map(String::as_str),
@@ -223,7 +230,10 @@ where
                             &mailbox_name,
                             &messages,
                             success_message.as_deref(),
-                            archive_mailbox_name.as_deref(),
+                            MessageListBulkActions {
+                                archive_mailbox_name: archive_mailbox_name.as_deref(),
+                                move_destinations: &bulk_move_destinations,
+                            },
                             MessageListSortLinks {
                                 active_sort: sort,
                                 search_query,
@@ -247,6 +257,50 @@ where
                 audit_events,
             },
         }
+    }
+
+    fn bulk_move_destinations(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        audit_events: &mut Vec<LogEvent>,
+        source_mailbox_name: &str,
+        archive_mailbox_name: Option<&str>,
+    ) -> Vec<String> {
+        let outcome = self.gateway.list_mailboxes(context, validated_session);
+        audit_events.extend(outcome.audit_events);
+        let mailboxes = match outcome.decision {
+            BrowserMailboxDecision::Listed { mailboxes, .. } => mailboxes,
+            BrowserMailboxDecision::Denied { public_reason } => {
+                audit_events.push(
+                    build_http_warning_event(
+                        "bulk_move_destinations_unresolved",
+                        "bulk move visible destinations could not be resolved",
+                        context,
+                    )
+                    .with_field("public_reason", public_reason),
+                );
+                return Vec::new();
+            }
+        };
+
+        let mut destinations = Vec::new();
+        for mailbox in filter_user_visible_mailboxes(&mailboxes) {
+            if mailbox.name != source_mailbox_name && !destinations.contains(&mailbox.name) {
+                destinations.push(mailbox.name);
+            }
+        }
+        if let Some(archive_mailbox_name) = archive_mailbox_name {
+            if archive_mailbox_name != source_mailbox_name
+                && mailbox_name_exists(&mailboxes, archive_mailbox_name)
+                && !destinations
+                    .iter()
+                    .any(|destination| destination == archive_mailbox_name)
+            {
+                destinations.insert(0, archive_mailbox_name.to_string());
+            }
+        }
+        destinations
     }
 
     /// Handles one CSRF-bound message-move request from the message view.
@@ -509,7 +563,22 @@ where
             }
         };
 
+        let (budget_guard, budget_event) = match self.acquire_mailbox_budget(
+            context,
+            &validated_session,
+            "bulk_message_archive",
+        ) {
+            Ok(result) => result,
+            Err(mut response) => {
+                audit_events.extend(response.audit_events);
+                response.audit_events = audit_events;
+                return response;
+            }
+        };
+        audit_events.push(budget_event);
+
         let mut moved_count = 0_usize;
+        let mut handled = None;
         for uid in selected_uids {
             let outcome = self.gateway.move_message(
                 context,
@@ -556,15 +625,16 @@ where
                         response =
                             response.with_header("Retry-After", retry_after_seconds.to_string());
                     }
-                    return HandledHttpResponse {
+                    handled = Some(HandledHttpResponse {
                         response,
-                        audit_events,
-                    };
+                        audit_events: audit_events.clone(),
+                    });
+                    break;
                 }
             }
         }
 
-        HandledHttpResponse {
+        let mut handled = handled.unwrap_or_else(|| HandledHttpResponse {
             response: redirect_response(
                 303,
                 "See Other",
@@ -576,6 +646,271 @@ where
                 ),
             ),
             audit_events,
+        });
+        handled.audit_events.push(self.release_request_budget(
+            budget_guard,
+            "bulk_message_archive",
+            context,
+            &validated_session,
+        ));
+        handled
+    }
+
+    /// Handles a bounded CSRF-bound selected-message move request.
+    pub(super) fn handle_bulk_move(
+        &self,
+        request: &HttpRequest,
+        context: &AuthenticationContext,
+    ) -> HandledHttpResponse {
+        if !allows_urlencoded_request_body(request.headers.get("content-type").map(String::as_str))
+        {
+            return HandledHttpResponse {
+                response: html_response(
+                    400,
+                    "Bad Request",
+                    "Invalid Bulk Move Request",
+                    "<p>The move form content type was not supported.</p>",
+                ),
+                audit_events: vec![build_http_warning_event(
+                    "http_bulk_move_content_type_rejected",
+                    "bulk move form content type was not supported",
+                    context,
+                )],
+            };
+        }
+
+        let form = match parse_urlencoded_form(
+            &request.body,
+            self.policy.max_form_fields,
+            self.policy.max_body_bytes,
+        ) {
+            Ok(form) => form,
+            Err(error) => {
+                return HandledHttpResponse {
+                    response: html_response(
+                        400,
+                        "Bad Request",
+                        "Invalid Bulk Move Request",
+                        "<p>The move form could not be parsed.</p>",
+                    ),
+                    audit_events: vec![build_http_warning_event(
+                        "http_bulk_move_parse_failed",
+                        "bulk move form parsing failed",
+                        context,
+                    )
+                    .with_field("reason", error.reason)],
+                };
+            }
+        };
+
+        let (validated_session, mut audit_events) =
+            match self.require_validated_session(request, context) {
+                Ok(result) => result,
+                Err(response) => return response,
+            };
+        if let Some(response) = self.require_valid_csrf(
+            request,
+            form.get("csrf_token").map(String::as_str),
+            &validated_session,
+            context,
+        ) {
+            return response;
+        }
+
+        let source_mailbox_name = form.get("mailbox").cloned().unwrap_or_default();
+        let destination_mailbox_name = form.get("destination_mailbox").cloned().unwrap_or_default();
+        let selected_uids = match selected_bulk_archive_uids(&form) {
+            Ok(selected_uids) if !selected_uids.is_empty() => selected_uids,
+            Ok(_) => {
+                return HandledHttpResponse {
+                    response: html_response(
+                        400,
+                        "Bad Request",
+                        "Invalid Bulk Move Request",
+                        "<p>Select at least one message to move.</p>",
+                    ),
+                    audit_events: vec![build_http_warning_event(
+                        "http_bulk_move_empty_selection",
+                        "bulk move request did not include selected messages",
+                        context,
+                    )],
+                };
+            }
+            Err(reason) => {
+                return HandledHttpResponse {
+                    response: html_response(
+                        400,
+                        "Bad Request",
+                        "Invalid Bulk Move Request",
+                        "<p>The move selection was not valid.</p>",
+                    ),
+                    audit_events: vec![build_http_warning_event(
+                        "http_bulk_move_uid_rejected",
+                        "bulk move uid parameter invalid",
+                        context,
+                    )
+                    .with_field("reason", reason)],
+                };
+            }
+        };
+
+        let (budget_guard, budget_event) =
+            match self.acquire_mailbox_budget(context, &validated_session, "bulk_message_move") {
+                Ok(result) => result,
+                Err(mut response) => {
+                    audit_events.extend(response.audit_events);
+                    response.audit_events = audit_events;
+                    return response;
+                }
+            };
+        audit_events.push(budget_event);
+
+        if !self.bulk_move_destination_allowed(
+            context,
+            &validated_session,
+            &mut audit_events,
+            &source_mailbox_name,
+            &destination_mailbox_name,
+        ) {
+            audit_events.push(
+                build_http_warning_event(
+                    "http_bulk_move_destination_rejected",
+                    "bulk move destination was not visible or approved",
+                    context,
+                )
+                .with_field("source_mailbox_name", source_mailbox_name.clone())
+                .with_field("destination_mailbox_name", destination_mailbox_name.clone()),
+            );
+            let mut handled = HandledHttpResponse {
+                response: html_response(
+                    400,
+                    "Bad Request",
+                    "Invalid Bulk Move Request",
+                    "<p>The selected destination mailbox is not available for bulk move.</p>",
+                ),
+                audit_events,
+            };
+            handled.audit_events.push(self.release_request_budget(
+                budget_guard,
+                "bulk_message_move",
+                context,
+                &validated_session,
+            ));
+            return handled;
+        }
+
+        let mut moved_count = 0_usize;
+        let mut handled = None;
+        for uid in selected_uids {
+            let outcome = self.gateway.move_message(
+                context,
+                &validated_session,
+                &source_mailbox_name,
+                uid,
+                &destination_mailbox_name,
+            );
+            audit_events.extend(outcome.audit_events);
+
+            match outcome.decision {
+                BrowserMessageMoveDecision::Moved { .. } => moved_count += 1,
+                BrowserMessageMoveDecision::Denied {
+                    public_reason,
+                    retry_after_seconds,
+                } => {
+                    let (status_code, reason_phrase, title) = match public_reason.as_str() {
+                        "invalid_mailbox" | "invalid_request" => {
+                            (400, "Bad Request", "Invalid Bulk Move Request")
+                        }
+                        "invalid_message_reference" => {
+                            (404, "Not Found", "Bulk Move Not Available")
+                        }
+                        "not_found" => (404, "Not Found", "Bulk Move Not Available"),
+                        TOO_MANY_MESSAGE_MOVES_PUBLIC_REASON => {
+                            (429, "Too Many Requests", "Bulk Move Temporarily Limited")
+                        }
+                        _ => (503, "Service Unavailable", "Bulk Move Unavailable"),
+                    };
+                    let mut response = html_response(
+                        status_code,
+                        reason_phrase,
+                        title,
+                        &format!(
+                            "<p>{}</p><p>{} message(s) were moved before this request stopped.</p>",
+                            escape_html(public_reason_message(&public_reason)),
+                            moved_count
+                        ),
+                    );
+                    if let Some(retry_after_seconds) = retry_after_seconds {
+                        response =
+                            response.with_header("Retry-After", retry_after_seconds.to_string());
+                    }
+                    handled = Some(HandledHttpResponse {
+                        response,
+                        audit_events: audit_events.clone(),
+                    });
+                    break;
+                }
+            }
+        }
+
+        let mut handled = handled.unwrap_or_else(|| HandledHttpResponse {
+            response: redirect_response(
+                303,
+                "See Other",
+                &format!(
+                    "/mailbox?name={}&moved_to={}&moved_count={}",
+                    url_encode(&source_mailbox_name),
+                    url_encode(&destination_mailbox_name),
+                    moved_count
+                ),
+            ),
+            audit_events,
+        });
+        handled.audit_events.push(self.release_request_budget(
+            budget_guard,
+            "bulk_message_move",
+            context,
+            &validated_session,
+        ));
+        handled
+    }
+
+    fn bulk_move_destination_allowed(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        audit_events: &mut Vec<LogEvent>,
+        source_mailbox_name: &str,
+        destination_mailbox_name: &str,
+    ) -> bool {
+        if destination_mailbox_name.is_empty() || destination_mailbox_name == source_mailbox_name {
+            return false;
+        }
+        let archive_mailbox_name =
+            self.validated_archive_mailbox_name(context, validated_session, audit_events);
+        if archive_mailbox_name.as_deref() == Some(destination_mailbox_name) {
+            return true;
+        }
+
+        let outcome = self.gateway.list_mailboxes(context, validated_session);
+        audit_events.extend(outcome.audit_events);
+        match outcome.decision {
+            BrowserMailboxDecision::Listed { mailboxes, .. } => {
+                filter_user_visible_mailboxes(&mailboxes)
+                    .iter()
+                    .any(|mailbox| mailbox.name == destination_mailbox_name)
+            }
+            BrowserMailboxDecision::Denied { public_reason } => {
+                audit_events.push(
+                    build_http_warning_event(
+                        "bulk_move_destination_unresolved",
+                        "bulk move destination could not be resolved",
+                        context,
+                    )
+                    .with_field("public_reason", public_reason),
+                );
+                false
+            }
         }
     }
 

@@ -53,6 +53,12 @@ pub(crate) struct MessageListSortLinks<'a> {
     pub search_scope: Option<&'a str>,
 }
 
+/// Small view model for bounded selected-message mailbox actions.
+pub(crate) struct MessageListBulkActions<'a> {
+    pub archive_mailbox_name: Option<&'a str>,
+    pub move_destinations: &'a [String],
+}
+
 /// Small view model for the first bounded settings page.
 pub(crate) struct SettingsPageModel<'a> {
     pub canonical_username: &'a str,
@@ -363,7 +369,7 @@ pub(crate) fn render_message_list_page(
     mailbox_name: &str,
     messages: &[MessageSummary],
     success_message: Option<&str>,
-    archive_mailbox_name: Option<&str>,
+    bulk_actions: MessageListBulkActions<'_>,
     sort_links: MessageListSortLinks<'_>,
 ) -> String {
     let success_banner = match success_message {
@@ -374,15 +380,17 @@ pub(crate) fn render_message_list_page(
         None => String::new(),
     };
     let mut rows = String::new();
-    let archive_actions_available = archive_mailbox_name
+    let archive_actions_available = bulk_actions
+        .archive_mailbox_name
         .is_some_and(|archive_mailbox_name| archive_mailbox_name != mailbox_name);
+    let bulk_actions_available = !bulk_actions.move_destinations.is_empty();
     for message in messages {
         let message_href = format!(
             "/message?mailbox={}&uid={}",
             url_encode(mailbox_name),
             message.uid
         );
-        let archive_action = if let Some(archive_mailbox_name) = archive_mailbox_name {
+        let archive_action = if let Some(archive_mailbox_name) = bulk_actions.archive_mailbox_name {
             if archive_mailbox_name != mailbox_name {
                 format!(
                     "<form method=\"post\" action=\"/message/move\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"uid\" value=\"{}\"><input type=\"hidden\" name=\"destination_mailbox\" value=\"{}\"><button type=\"submit\">Archive</button></form>",
@@ -399,9 +407,9 @@ pub(crate) fn render_message_list_page(
         };
         rows.push_str(&format!(
             "<tr>{}<td><a href=\"{}\">{}</a></td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td>{}</tr>",
-            if archive_actions_available {
+            if bulk_actions_available {
                 format!(
-                    "<td><input form=\"bulk-archive-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\"></td>",
+                    "<td><input form=\"bulk-move-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\"></td>",
                     message.uid, message.uid
                 )
             } else {
@@ -421,16 +429,29 @@ pub(crate) fn render_message_list_page(
             },
         ));
     }
-    let bulk_archive_form = match archive_mailbox_name {
-        Some(archive_mailbox_name) if archive_mailbox_name != mailbox_name && !messages.is_empty() => format!(
-            "<form id=\"bulk-archive-form\" method=\"post\" action=\"/messages/archive\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"destination_mailbox\" value=\"{}\"><button type=\"submit\">Archive Selected</button></form>",
+    let bulk_move_form = if bulk_actions_available && !messages.is_empty() {
+        let destination_options = bulk_actions
+            .move_destinations
+            .iter()
+            .map(|destination| {
+                format!(
+                    "<option value=\"{}\">{}</option>",
+                    escape_html(destination),
+                    escape_html(destination)
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("");
+        format!(
+            "<form id=\"bulk-move-form\" method=\"post\" action=\"/messages/move\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><label for=\"bulk-destination-mailbox\">Move selected to<select id=\"bulk-destination-mailbox\" name=\"destination_mailbox\">{}</select></label><button type=\"submit\">Move Selected</button></form>",
             escape_html(csrf_token),
             escape_html(mailbox_name),
-            escape_html(archive_mailbox_name),
-        ),
-        _ => String::new(),
+            destination_options,
+        )
+    } else {
+        String::new()
     };
-    let archive_notice = match archive_mailbox_name {
+    let archive_notice = match bulk_actions.archive_mailbox_name {
         Some(archive_mailbox_name) if archive_mailbox_name != mailbox_name => format!(
             "<p class=\"muted\">Archive shortcut sends messages from this mailbox to <strong>{}</strong>.</p>",
             escape_html(archive_mailbox_name)
@@ -466,8 +487,8 @@ pub(crate) fn render_message_list_page(
         archive_notice,
         escape_html(mailbox_name),
         render_search_field_select(MessageSearchField::All),
-        bulk_archive_form,
-        if archive_actions_available {
+        bulk_move_form,
+        if bulk_actions_available {
             "<th>Select</th>"
         } else {
             ""

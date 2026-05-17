@@ -180,6 +180,7 @@ class Runner:
             "OSMAP-WSTG-BUSL-001": self.test_attachment_static,
             "OSMAP-WSTG-BUSL-002": self.test_draft_routes_authenticated,
             "OSMAP-WSTG-BUSL-003": self.test_source_attachments_authenticated,
+            "OSMAP-WSTG-BUSL-004": self.test_bulk_folder_actions_static,
             "OSMAP-WSTG-CONF-005": self.test_host_bindings,
             "OSMAP-WSTG-CONF-006": self.test_host_pf,
             "OSMAP-WSTG-CONF-007": self.test_dependency_alignment,
@@ -943,6 +944,32 @@ class Runner:
         if missing:
             return self.result("OSMAP-WSTG-BUSL-001", STATUS_FAIL, "attachment handling markers were missing from source/docs", [evidence], {"missing": missing})
         return self.result("OSMAP-WSTG-BUSL-001", STATUS_PASS, "source and docs show bounded upload parsing and forced-download controls", [evidence])
+
+    def test_bulk_folder_actions_static(self) -> TestResult:
+        files = [
+            REPO_ROOT / "src" / "http_runtime.rs",
+            REPO_ROOT / "src" / "http" / "routes_mail.rs",
+            REPO_ROOT / "src" / "http_ui.rs",
+            REPO_ROOT / "src" / "http.rs",
+            REPO_ROOT / "docs" / "V3_ACCEPTANCE_CRITERIA.md",
+            REPO_ROOT / "docs" / "V3_SECURITY_GATES.md",
+        ]
+        text = "\n".join(path.read_text(encoding="utf-8", errors="replace") for path in files if path.exists())
+        markers = [
+            '"/messages/move"',
+            "bulk_message_move",
+            "bulk_message_archive",
+            "MAX_BULK_ARCHIVE_MESSAGES",
+            "bulk_move_destination_allowed",
+            "require_valid_csrf",
+            "bulk_move_rejects_unapproved_destination_before_moving",
+            "bulk_move_reports_partial_success_when_later_uid_is_stale",
+        ]
+        missing = [marker for marker in markers if marker not in text]
+        evidence = self.write_text_evidence("static_bulk_folder_actions.txt", summarize_static_files(files, missing))
+        if missing:
+            return self.result("OSMAP-WSTG-BUSL-004", STATUS_FAIL, "bulk folder-action guardrail markers were missing from source/docs", [evidence], {"missing": missing})
+        return self.result("OSMAP-WSTG-BUSL-004", STATUS_PASS, "source and route tests show bounded selected-message move controls, caps, CSRF, budget, destination validation, and partial-result handling", [evidence])
 
     def test_draft_routes_authenticated(self) -> TestResult:
         ok, message = self.ensure_login()

@@ -164,7 +164,7 @@ The current implementation includes:
 - Compose and send
 - Reply and forward draft generation
 - One-message move support between existing mailboxes
-- Selected-message archive controls when an archive mailbox is configured
+- Selected-message move and archive controls with capped selections
 - Login, send, and message-move throttling
 - Bounded concurrent connection handling
 - Runtime observability for capacity, timeouts, accept failures, and response-write failures

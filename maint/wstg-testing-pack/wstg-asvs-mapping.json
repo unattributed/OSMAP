@@ -848,6 +848,44 @@
       "severity_if_failed": "high"
     },
     {
+      "test_id": "OSMAP-WSTG-BUSL-004",
+      "test_name": "WSTG-v42-BUSL-04 Test Process Timing - bounded bulk folder actions",
+      "script_path": "run-wstg-pack.py",
+      "wstg": [
+        "WSTG-v42-BUSL-04",
+        "WSTG-v42-SESS-05",
+        "WSTG-v42-ATHZ-04"
+      ],
+      "wstg_section": "Test Process Timing; Testing for Cross Site Request Forgery; Testing for Insecure Direct Object References",
+      "asvs": [
+        "v5.0.0-2.2.1",
+        "v5.0.0-2.3.2",
+        "v5.0.0-3.5.1",
+        "v5.0.0-3.5.3",
+        "v5.0.0-7.4.1",
+        "v5.0.0-8.2.1"
+      ],
+      "asvs_section": "Access Control; CSRF and Request Integrity; Session Management; Logging",
+      "owasp_top_10_2025": [
+        "A01:2025",
+        "A06:2025",
+        "A08:2025",
+        "A10:2025"
+      ],
+      "test_type": [
+        "static review"
+      ],
+      "expected_result": "Source and route tests show selected-message folder actions are capped, CSRF-bound, budget-bound, limited to approved destinations, revalidated per message, and report partial success explicitly.",
+      "evidence_produced": [
+        "static_bulk_folder_actions.txt"
+      ],
+      "release_required": true,
+      "requires_authenticated_coverage": false,
+      "requires_totp": false,
+      "safe_for_release": true,
+      "severity_if_failed": "high"
+    },
+    {
       "test_id": "OSMAP-WSTG-LOGG-001",
       "test_name": "OWASP Top 10 2025 A09 Security Logging and Alerting Failures - audit event and redaction posture",
       "script_path": "run-wstg-pack.py",

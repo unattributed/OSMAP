@@ -1,5 +1,20 @@
 # Decision Log
 
+## 2026-05-17, Add bounded selected-message folder cleanup
+
+The bounded bulk folder-action slice extends mailbox-list cleanup without
+adding broad mailbox management. The browser now exposes a selected-message
+move form that reuses the existing one-message move path once per UID, caps the
+selection count, holds the mailbox worker budget for the whole bulk request,
+limits destinations to visible mailboxes plus the configured archive target,
+and reports partial success if a later UID becomes stale or otherwise fails.
+
+The older selected archive route remains as a compatibility path and now uses
+the same mailbox worker budget class. WSTG disposition is recorded as
+`OSMAP-WSTG-BUSL-004`, a release-required static guardrail check for the source,
+route tests, and V3 bulk-action acceptance markers; destructive live mailbox
+mutation evidence remains reserved for controlled validation accounts.
+
 ## 2026-05-16, Treat richer bounded search as a whitelist-only V3 slice
 
 The next incomplete V3 workflow gap after draft and reply/forward attachment

@@ -48,7 +48,7 @@ use crate::http_ui::{
     render_compose_page, render_draft_list_page, render_login_page, render_mailboxes_page,
     render_message_list_page, render_message_search_page, render_message_view_page,
     render_sessions_page, render_settings_page, ComposePageModel, DraftListPageModel,
-    MessageListSortLinks, SettingsPageModel,
+    MessageListBulkActions, MessageListSortLinks, SettingsPageModel,
 };
 use crate::logging::LogEvent;
 #[cfg(test)]
@@ -2684,6 +2684,103 @@ mod tests {
     }
 
     #[test]
+    fn bulk_message_move_uses_mailbox_budget() {
+        let policy = HttpPolicy {
+            mailbox_worker_budget: 1,
+            ..HttpPolicy::default()
+        };
+        let app = app_with_policy(policy);
+        let held_budget = app
+            .request_budgets
+            .mailbox_workers
+            .try_acquire()
+            .expect("test should hold the only mailbox slot");
+
+        let response = app.handle_request(
+            &request(
+                "POST",
+                "/messages/move",
+                &authenticated_same_origin_headers(),
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=INBOX.Projects&uid_9=9",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 503);
+        assert!(response.audit_events.iter().any(|event| {
+            event.action == "request_budget_exhausted"
+                && event
+                    .fields
+                    .iter()
+                    .any(|field| field.key == "budget_name" && field.value == "mailbox_workers")
+                && event
+                    .fields
+                    .iter()
+                    .any(|field| field.key == "route_class" && field.value == "bulk_message_move")
+        }));
+
+        drop(held_budget);
+        let response_after_release = app.handle_request(
+            &request(
+                "POST",
+                "/messages/move",
+                &authenticated_same_origin_headers(),
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=INBOX.Projects&uid_9=9",
+            ),
+            "127.0.0.1",
+        );
+        assert_eq!(response_after_release.response.status_code, 303);
+    }
+
+    #[test]
+    fn bulk_archive_uses_mailbox_budget() {
+        let policy = HttpPolicy {
+            mailbox_worker_budget: 1,
+            ..HttpPolicy::default()
+        };
+        let app = app_with_policy(policy);
+        let held_budget = app
+            .request_budgets
+            .mailbox_workers
+            .try_acquire()
+            .expect("test should hold the only mailbox slot");
+
+        let response = app.handle_request(
+            &request(
+                "POST",
+                "/messages/archive",
+                &authenticated_same_origin_headers(),
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=Archive%2F2026&uid_9=9",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 503);
+        assert!(response.audit_events.iter().any(|event| {
+            event.action == "request_budget_exhausted"
+                && event
+                    .fields
+                    .iter()
+                    .any(|field| field.key == "budget_name" && field.value == "mailbox_workers")
+                && event.fields.iter().any(|field| {
+                    field.key == "route_class" && field.value == "bulk_message_archive"
+                })
+        }));
+
+        drop(held_budget);
+        let response_after_release = app.handle_request(
+            &request(
+                "POST",
+                "/messages/archive",
+                &authenticated_same_origin_headers(),
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=Archive%2F2026&uid_9=9",
+            ),
+            "127.0.0.1",
+        );
+        assert_eq!(response_after_release.response.status_code, 303);
+    }
+
+    #[test]
     fn attachment_download_uses_mailbox_budget() {
         let policy = HttpPolicy {
             mailbox_worker_budget: 1,
@@ -3233,12 +3330,13 @@ mod tests {
 
         assert_eq!(response.response.status_code, 200);
         let body = body_text(&response);
-        assert!(body.contains("id=\"bulk-archive-form\""));
-        assert!(body.contains("action=\"/messages/archive\""));
-        assert!(body.contains("name=\"destination_mailbox\" value=\"Archive/2026\""));
-        assert!(body.contains("form=\"bulk-archive-form\" type=\"checkbox\" name=\"uid_9\""));
-        assert!(body.contains("form=\"bulk-archive-form\" type=\"checkbox\" name=\"uid_10\""));
-        assert!(body.contains(">Archive Selected</button>"));
+        assert!(body.contains("id=\"bulk-move-form\""));
+        assert!(body.contains("action=\"/messages/move\""));
+        assert!(body.contains("<option value=\"Archive/2026\">Archive/2026</option>"));
+        assert!(body.contains("<option value=\"INBOX.Projects\">INBOX.Projects</option>"));
+        assert!(body.contains("form=\"bulk-move-form\" type=\"checkbox\" name=\"uid_9\""));
+        assert!(body.contains("form=\"bulk-move-form\" type=\"checkbox\" name=\"uid_10\""));
+        assert!(body.contains(">Move Selected</button>"));
     }
 
     #[test]
@@ -3348,6 +3446,25 @@ mod tests {
     }
 
     #[test]
+    fn bulk_move_redirects_back_to_mailbox_after_success() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/messages/move",
+                &authenticated_same_origin_headers(),
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=INBOX.Projects&uid_9=9&uid_10=10",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 303);
+        assert!(response.response.headers.iter().any(|(name, value)| {
+            name == "Location"
+                && value == "/mailbox?name=INBOX&moved_to=INBOX.Projects&moved_count=2"
+        }));
+    }
+
+    #[test]
     fn bulk_archive_requires_at_least_one_selected_message() {
         let response = app().handle_request(
             &request(
@@ -3364,6 +3481,22 @@ mod tests {
     }
 
     #[test]
+    fn bulk_move_rejects_empty_selection() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/messages/move",
+                &authenticated_same_origin_headers(),
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=INBOX.Projects",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 400);
+        assert!(body_text(&response).contains("Select at least one message to move."));
+    }
+
+    #[test]
     fn bulk_archive_rejects_oversized_selection_before_moving() {
         let response = app().handle_request(
             &request(
@@ -3377,6 +3510,57 @@ mod tests {
 
         assert_eq!(response.response.status_code, 400);
         assert!(body_text(&response).contains("The archive selection was not valid."));
+    }
+
+    #[test]
+    fn bulk_move_rejects_oversized_selection_before_moving() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/messages/move",
+                &authenticated_same_origin_headers(),
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=INBOX.Projects&uid_1=1&uid_2=2&uid_3=3&uid_4=4&uid_5=5&uid_6=6&uid_7=7&uid_8=8&uid_9=9&uid_10=10&uid_11=11",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 400);
+        assert!(body_text(&response).contains("The move selection was not valid."));
+    }
+
+    #[test]
+    fn bulk_move_rejects_unapproved_destination_before_moving() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/messages/move",
+                &authenticated_same_origin_headers(),
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=dovecot&uid_9=9",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 400);
+        assert!(body_text(&response)
+            .contains("The selected destination mailbox is not available for bulk move."));
+    }
+
+    #[test]
+    fn bulk_move_reports_partial_success_when_later_uid_is_stale() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/messages/move",
+                &authenticated_same_origin_headers(),
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=INBOX.Projects&uid_9=9&uid_100156=100156",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 404);
+        assert!(
+            body_text(&response).contains("1 message(s) were moved before this request stopped.")
+        );
     }
 
     #[test]
