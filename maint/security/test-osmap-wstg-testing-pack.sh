@@ -120,6 +120,7 @@ for key in [
     "OSMAP_TOTP_SECRET=",
     "OSMAP_SECONDARY_EMAIL=",
     "OSMAP_OUTPUT_DIR=",
+    "OSMAP_WSTG_REMOTE_REPO=/home/foo/OSMAP",
     "OSMAP_RATE_LIMIT_DELAY_SECONDS=",
     "OSMAP_ALLOW_AUTHENTICATED_TESTS=false",
 ]:
@@ -211,6 +212,7 @@ for marker in [
     "source_attachment_live_report",
     "source_attachment_evidence_redaction",
     "osmap-live-validate-v3-source-attachments.ksh",
+    'os.environ.get("OSMAP_WSTG_REMOTE_REPO", "/home/foo/OSMAP")',
     "selected_attachment_body_marker_preserved=yes",
     "real_password_plus_totp_with_temporary_mailbox_hash",
 ]:

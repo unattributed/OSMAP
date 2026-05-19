@@ -263,8 +263,23 @@ EOF
 }
 
 validate_v3_pilot_rehearsal() {
-	checked=$(check_path_list "V3 pilot rehearsal" "$OSMAP_RELEASE_V3_PILOT_REHEARSAL_EVIDENCE")
-	if [ -z "$checked" ]; then
+	checked=""
+	pilot_missing=0
+	for path in $OSMAP_RELEASE_V3_PILOT_REHEARSAL_EVIDENCE; do
+		if [ ! -s "$path" ]; then
+			add_skip "missing V3 pilot rehearsal evidence: $path"
+			fail "missing V3 pilot rehearsal evidence: $path"
+			pilot_missing=1
+		else
+			if [ -z "$checked" ]; then
+				checked=$path
+			else
+				checked="${checked}
+$path"
+			fi
+		fi
+	done
+	if [ "$pilot_missing" -ne 0 ]; then
 		fail "missing V3 pilot rehearsal evidence"
 		v3_pilot_rehearsal_status="missing"
 		return 1

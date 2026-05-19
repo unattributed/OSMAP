@@ -41,24 +41,31 @@ sanitized selected-cohort rehearsal evidence exists for the assessed commit.
 
 ## Current Status
 
-As of commit `0dac311648fbaffd210afc13d416021b0b8419bf`, the active V3
-implementation order is still the table above. The richer bounded search slice
-now has two implemented sub-slices:
+As of commit `1b02a44c55a83cdfa2b412a51c43f7125430f7de`, the active V3
+implementation order is still the table above. The release gate, supply-chain
+gate, resource and timeout evidence path, WSTG release-mode coverage,
+MIME/HTML live proof path, draft save/resume slice, reply/forward attachment
+selection slice, bounded search refinements, TLS standard evidence, and pilot
+rehearsal capture helper are present in the repository.
+
+The richer bounded search slice has two implemented sub-slices:
 
 - mailbox and search-result table sorting for UID, subject, from, received,
   flags, and size
 - whitelisted search field refinement with `field=all|subject|from`
 
 Those sub-slices passed local Rust validation and the developer
-`make security-check` gate. They have not yet been deployed to the standard
-`mail.blackbagsecurity.com` checkout, and they have not yet received a fresh
-interactive credential-backed WSTG release capture for that exact commit.
+`make security-check` gate. The checked-in release evidence summary is older
+than the current repository tip and predates the pilot-rehearsal status fields
+now emitted by `make release-check`.
 
-The current operating decision is to continue the remaining V3 slices in order
-and perform one deliberate host update plus interactive WSTG release capture
-against the final V3 release candidate, unless an intervening slice changes an
-authentication, session, CSRF, helper-boundary, or public-edge security
-boundary enough to require immediate live proof.
+The current operating decision is to stop treating the checked-in release
+summary as current V3 closeout evidence. The next best effort is one deliberate
+standard-host update, selected-cohort pilot rehearsal capture with
+`maint/live/osmap-live-record-v3-pilot-rehearsal.ksh`, fresh interactive
+credential-backed WSTG release capture for the assessed commit, and a strict
+`make release-check` rerun that regenerates the sanitized evidence summary and
+archive for that same commit.
 
 ## First Next Step
 

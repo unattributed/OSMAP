@@ -1279,7 +1279,7 @@ class Runner:
             "evidence/source_attachment_evidence_redaction.txt",
         ]
         static_ok = self.write_source_attachment_static_boundary_evidence()
-        remote_repo = os.environ.get("OSMAP_WSTG_REMOTE_REPO", "/tmp/osmap-codex-v3")
+        remote_repo = os.environ.get("OSMAP_WSTG_REMOTE_REPO", "/home/foo/OSMAP")
         live = self.run_ssh(
             "source_attachment_live_report.txt",
             "set -eu; "

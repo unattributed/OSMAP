@@ -664,6 +664,11 @@ if env \
 	exit 1
 fi
 grep -Fq "missing V3 pilot rehearsal evidence" "$pilot_missing_case/output.txt"
+if grep -Fq "Traceback" "$pilot_missing_case/output.txt"; then
+	echo "missing V3 pilot rehearsal evidence should fail without a Python traceback" >&2
+	cat "$pilot_missing_case/output.txt" >&2
+	exit 1
+fi
 
 success_case="$tmp_root/success"
 if ! run_release_case success; then
