@@ -104,6 +104,15 @@ temporary validation mailbox password plus isolated TOTP state, sends one
 controlled selected-source attachment proof message, and confirms duplicate,
 tampered, stale, CSRF, same-origin, and report-redaction behavior.
 
+The authenticated command-injection check `OSMAP-WSTG-INPV-003` is first-party
+OSMAP coverage for `WSTG-v42-INPV-12`. It does not run Commix and does not use
+destructive payloads. It sends safe shell-shaped, encoded, canary, newline,
+redirect, and bounded timing probes across `/login`, `/mailbox`, `/message`,
+`/attachment`, `/search`, `/drafts/save`, `/send`, and `/messages/move`, then
+checks responses and nonce-filtered host logs for command output, shell or
+OpenBSD diagnostics, HTTP 500s, stack traces, truncation, timing anomalies, and
+secret leakage.
+
 Run one mapped test:
 
 ```bash

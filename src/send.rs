@@ -1408,6 +1408,53 @@ mod tests {
     }
 
     #[test]
+    fn sendmail_backend_keeps_shell_shaped_sender_as_one_arg_and_body_on_stdin() {
+        let executor = Rc::new(RefCell::new(StubCommandExecutor::success(
+            CommandExecution {
+                status_code: 0,
+                stdout: String::new(),
+                stderr: String::new(),
+            },
+        )));
+        let backend = SendmailSubmissionBackend::new(executor.clone(), "/usr/sbin/sendmail");
+        let request = ComposeRequest::new(
+            ComposePolicy::default(),
+            "bob@example.com",
+            "OSMAP INPV12 subject ; id $(id)",
+            "OSMAP_INPV12_BODY; id\n$(id)\n2>&1 >/dev/null\n",
+        )
+        .expect("shell-shaped body text should remain valid compose content");
+        let hostile_sender = "alice@example.com; id $(id) 2>&1";
+
+        backend
+            .submit_message(hostile_sender, &request)
+            .expect("submission should reach captured executor");
+
+        let recorded = executor.borrow();
+        let args = recorded.args.as_ref().expect("args should be captured");
+        assert_eq!(
+            args,
+            &vec![
+                "-t".to_string(),
+                "-oi".to_string(),
+                "-f".to_string(),
+                hostile_sender.to_string(),
+            ]
+        );
+        assert!(!args.iter().any(|arg| arg == "id"));
+        assert!(!args.iter().any(|arg| arg == "$(id)"));
+        assert!(!args.iter().any(|arg| arg.contains("OSMAP_INPV12_BODY")));
+
+        let stdin_data = recorded
+            .stdin_data
+            .as_ref()
+            .expect("stdin data should be captured");
+        let stdin_text = String::from_utf8(stdin_data.clone()).expect("submission should be utf-8");
+        assert!(stdin_text.contains("Subject: OSMAP INPV12 subject ; id $(id)\r\n"));
+        assert!(stdin_text.contains("OSMAP_INPV12_BODY; id\r\n$(id)\r\n2>&1 >/dev/null\r\n"));
+    }
+
+    #[test]
     fn sendmail_backend_builds_multipart_message_for_uploaded_attachments() {
         let executor = Rc::new(RefCell::new(StubCommandExecutor::success(
             CommandExecution {

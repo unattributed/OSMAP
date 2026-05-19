@@ -8,6 +8,7 @@ import base64
 import datetime as dt
 import getpass
 import hashlib
+import html
 import hmac
 import http.client
 import json
@@ -62,6 +63,19 @@ PATH_TRAVERSAL_PROBES = {
     "path_traversal_attachment": "/attachment?mailbox=..%2f..%2fetc&uid=1&part=1",
     "path_traversal_absolute": "/attachment?mailbox=%2fetc%2fpasswd&uid=1&part=1",
 }
+COMMAND_INJECTION_SLEEP_SECONDS = 2
+COMMAND_INJECTION_DIAGNOSTIC_PATTERNS = [
+    r"(?i)\b(?:sh|ksh|bash|dash|zsh): .*?(?:not found|syntax error|bad substitution|unexpected|unterminated|permission denied|cannot)",
+    r"(?i)\b(?:execve|posix_spawn|pledge|unveil)\b.*?(?:failed|denied|not permitted|permission denied)",
+    r"(?i)\bcommand not found\b",
+]
+COMMAND_INJECTION_PANIC_PATTERNS = [
+    r"(?i)\bpanic(?:ked)?\b",
+    r"(?i)stack backtrace",
+    r"(?i)rust_backtrace",
+    r"(?i)thread '.*' panicked",
+    r"(?i)traceback \(most recent call last\)",
+]
 
 
 def osmap_tls_client_context() -> ssl.SSLContext:
@@ -190,6 +204,7 @@ class Runner:
             "OSMAP-WSTG-INFO-002": self.test_info_disclosure,
             "OSMAP-WSTG-INPV-001": self.test_path_traversal,
             "OSMAP-WSTG-INPV-002": self.test_reflected_input,
+            "OSMAP-WSTG-INPV-003": self.test_command_injection,
             "OSMAP-WSTG-CLNT-001": self.test_cors,
             "OSMAP-WSTG-CLNT-002": self.test_html_rendering_live,
             "OSMAP-WSTG-BUSL-001": self.test_attachment_live,
@@ -924,6 +939,216 @@ class Runner:
         if bad:
             return self.result("OSMAP-WSTG-INPV-002", STATUS_FAIL, "probe payload was reflected as executable markup", evidence_paths, {"bad": bad})
         return self.result("OSMAP-WSTG-INPV-002", STATUS_PASS, "probe payloads were not reflected as executable markup", evidence_paths)
+
+    def test_command_injection(self) -> TestResult:
+        ok, message = self.ensure_login()
+        if not ok:
+            return self.result("OSMAP-WSTG-INPV-003", STATUS_SKIP, message)
+
+        nonce = hashlib.sha256(f"inpv12:{time.time()}:{os.getpid()}".encode("utf-8")).hexdigest()[:12]
+        input_marker = f"OSMAP_INPV12_INPUT_{nonce}"
+        output_canary = f"OSMAP_INPV12_OUTPUT_{nonce}"
+        payloads = command_injection_payloads(input_marker, output_canary)
+        surfaces = command_injection_surfaces(self.config, self.csrf_token)
+        baseline_by_surface: dict[str, float] = {}
+        findings: dict[str, list[str]] = {}
+        statuses: dict[str, int | None] = {}
+        elapsed: dict[str, float] = {}
+        evidence_paths: list[str] = []
+
+        for surface in surfaces:
+            baseline_label = f"command_injection_baseline_{surface['name']}"
+            baseline_started = time.monotonic()
+            baseline = self.command_injection_surface_request(
+                baseline_label,
+                surface,
+                input_marker,
+                cookies=self.cookie_jar if surface["authenticated"] else None,
+            )
+            baseline_elapsed = time.monotonic() - baseline_started
+            baseline_by_surface[surface["name"]] = baseline_elapsed
+            evidence_paths.extend([
+                f"evidence/{baseline_label}.headers",
+                f"evidence/{baseline_label}.body",
+            ])
+            statuses[baseline_label] = baseline.status
+            elapsed[baseline_label] = round(baseline_elapsed, 3)
+
+        for surface in surfaces:
+            baseline_elapsed = baseline_by_surface[surface["name"]]
+            for payload in payloads:
+                label = f"command_injection_{surface['name']}_{payload['name']}"
+                started = time.monotonic()
+                evidence = self.command_injection_surface_request(
+                    label,
+                    surface,
+                    str(payload["payload"]),
+                    cookies=self.cookie_jar if surface["authenticated"] else None,
+                )
+                probe_elapsed = time.monotonic() - started
+                evidence_paths.extend([f"evidence/{label}.headers", f"evidence/{label}.body"])
+                statuses[label] = evidence.status
+                elapsed[label] = round(probe_elapsed, 3)
+                probe_findings = command_injection_findings(
+                    evidence,
+                    raw_payload=str(payload["payload"]),
+                    output_canary=output_canary,
+                    elapsed=probe_elapsed,
+                    baseline_elapsed=baseline_elapsed,
+                    timing_probe=bool(payload["timing_probe"]),
+                )
+                if probe_findings:
+                    findings[label] = probe_findings
+                time.sleep(min(self.config.rate_delay, 0.25))
+
+        host_evidence = ""
+        if self.config.allow_host_assisted:
+            host_evidence = self.command_injection_host_evidence(nonce)
+            evidence_paths.append("evidence/command_injection_host_evidence.txt")
+            host_findings = command_injection_text_findings(
+                host_evidence,
+                output_canary=output_canary,
+                source_payloads=[str(item["payload"]) for item in payloads],
+            )
+            if host_findings:
+                findings["host_logs"] = host_findings
+
+        matrix_path = self.write_command_injection_matrix_evidence(
+            nonce,
+            payloads,
+            surfaces,
+            statuses,
+            elapsed,
+            findings,
+        )
+        redaction_path = self.write_command_injection_redaction_evidence(nonce)
+        evidence_paths.extend([matrix_path, redaction_path])
+
+        if findings:
+            return self.result(
+                "OSMAP-WSTG-INPV-003",
+                STATUS_FAIL,
+                "safe command-injection probes found shell execution, diagnostic leakage, truncation, HTTP 500, or timing evidence",
+                evidence_paths,
+                {"nonce": nonce, "findings": findings},
+            )
+        return self.result(
+            "OSMAP-WSTG-INPV-003",
+            STATUS_PASS,
+            "safe command-injection due-diligence probes across unauthenticated and authenticated OSMAP surfaces found no shell execution, diagnostic leakage, truncation, HTTP 500, or abnormal timing",
+            evidence_paths,
+            {"nonce": nonce, "probed_surfaces": [surface["name"] for surface in surfaces]},
+        )
+
+    def command_injection_surface_request(
+        self,
+        label: str,
+        surface: dict[str, object],
+        payload: str,
+        *,
+        cookies: dict[str, str] | None,
+    ) -> HttpEvidence:
+        method = str(surface["method"])
+        path_template = str(surface["path"])
+        headers = dict(surface.get("headers", {}))
+        fields = dict(surface.get("fields", {}))
+        path = path_template.format(payload=urllib.parse.quote(payload, safe=""))
+        if fields:
+            body_fields = {
+                key: str(value).format(payload=payload)
+                for key, value in fields.items()
+            }
+            return self.form_post(
+                label,
+                path,
+                body_fields,
+                cookies=cookies,
+                headers=headers,
+            )
+        return self.request(label, method, path, headers=headers, cookies=cookies)
+
+    def command_injection_host_evidence(self, nonce: str) -> str:
+        quoted_nonce = shlex.quote(nonce)
+        command = (
+            "set -eu; "
+            f"nonce={quoted_nonce}; "
+            "printf '%s\\n' '--- services after OSMAP-WSTG-INPV-003 ---'; "
+            "hostname; rcctl check nginx || true; rcctl check osmap_serve || true; rcctl check osmap_mailbox_helper || true; "
+            "printf '%s\\n' '--- nginx access log nonce matches ---'; "
+            "doas grep -F \"$nonce\" /var/log/nginx/mail.access.log 2>/dev/null | tail -40 || true; "
+            "printf '%s\\n' '--- nginx error log nonce matches ---'; "
+            "doas grep -F \"$nonce\" /var/log/nginx/mail.error.log 2>/dev/null | tail -40 || true; "
+            "printf '%s\\n' '--- osmap serve log nonce matches ---'; "
+            "doas grep -F \"$nonce\" /var/lib/osmap/audit/serve.log 2>/dev/null | tail -80 || true; "
+            "printf '%s\\n' '--- osmap helper log nonce matches ---'; "
+            "doas grep -F \"$nonce\" /var/lib/osmap/audit/helper.log 2>/dev/null | tail -80 || true"
+        )
+        return self.run_ssh("command_injection_host_evidence.txt", command)
+
+    def write_command_injection_matrix_evidence(
+        self,
+        nonce: str,
+        payloads: list[dict[str, object]],
+        surfaces: list[dict[str, object]],
+        statuses: dict[str, int | None],
+        elapsed: dict[str, float],
+        findings: dict[str, list[str]],
+    ) -> str:
+        lines = [
+            "OSMAP-WSTG-INPV-003 command-injection probe matrix:",
+            f"nonce={nonce}",
+            "safe_payload_classes=shell separators, command substitution syntax, redirects, newlines, percent-encoded variants, double-encoded variants, bounded timing probes, output canaries",
+            "destructive_payloads=none",
+            f"bounded_timing_sleep_seconds={COMMAND_INJECTION_SLEEP_SECONDS}",
+            "",
+            "Surfaces:",
+        ]
+        for surface in surfaces:
+            auth = "authenticated" if surface["authenticated"] else "unauthenticated"
+            lines.append(f"- {surface['name']}: {auth} {surface['method']} {surface['path']}")
+        lines.extend(["", "Payload classes:"])
+        for payload in payloads:
+            lines.append(f"- {payload['name']}: {payload['class']}")
+        lines.extend(["", "Observed statuses and timings:"])
+        for label in sorted(statuses):
+            lines.append(f"- {label}: status={statuses[label]} elapsed_seconds={elapsed.get(label)}")
+        lines.extend(["", "Findings:"])
+        if findings:
+            for label, probe_findings in sorted(findings.items()):
+                lines.append(f"- {label}: {', '.join(probe_findings)}")
+        else:
+            lines.append("result=passed")
+        return self.write_text_evidence("command_injection_probe_matrix.txt", "\n".join(lines) + "\n")
+
+    def write_command_injection_redaction_evidence(self, nonce: str) -> str:
+        leaks: dict[str, list[str]] = {}
+        forbidden_patterns = [
+            ("raw_session_cookie", r"osmap_session=[A-Za-z0-9._~+/=-]{16,}"),
+            ("csrf_token_value", r"(?i)csrf_token=(?!\[REDACTED\])[^&\s\"']+"),
+            ("csrf_token_field", r'(?i)name=["\']csrf_token["\']\s+value=["\'](?!\[REDACTED\])[^"\']+["\']'),
+            ("password_hash", r"\$2[aby]\$[0-9]{2}\$"),
+            ("totp_secret", r"(?i)(totp_secret|totp seed|otpauth://|secret=)[A-Z2-7]{16,}"),
+            ("authorization_secret", r"(?i)authorization:\s*(bearer|basic)\s+[A-Za-z0-9._~+/=-]+"),
+        ]
+        for path in sorted(self.evidence_dir.glob("command_injection_*")):
+            if path.name == "command_injection_redaction.txt":
+                continue
+            text = path.read_text(encoding="utf-8", errors="replace")
+            matches = [name for name, pattern in forbidden_patterns if re.search(pattern, text)]
+            if matches:
+                leaks[path.name] = matches
+        lines = [
+            "Command-injection evidence redaction scan:",
+            f"nonce={nonce}",
+            "- checked command_injection_* evidence files only",
+            "- raw session cookies, CSRF token values, password hashes, TOTP material, and authorization secrets must be absent",
+        ]
+        if leaks:
+            for path, matches in leaks.items():
+                lines.append(f"- {path}: {', '.join(matches)}")
+        else:
+            lines.append("result=passed")
+        return self.write_text_evidence("command_injection_redaction.txt", "\n".join(lines) + "\n")
 
     def test_cors(self) -> TestResult:
         bad: dict[str, dict[str, str]] = {}
@@ -1833,6 +2058,272 @@ def build_multipart_form(
         body.extend(b"\r\n")
     body.extend(f"--{boundary}--\r\n".encode("utf-8"))
     return bytes(body)
+
+
+def command_injection_payloads(input_marker: str, output_canary: str) -> list[dict[str, object]]:
+    separator_canary = f"{input_marker}; printf {output_canary}"
+    return [
+        {
+            "name": "separator_canary",
+            "class": "shell separator with output canary",
+            "payload": separator_canary,
+            "timing_probe": False,
+        },
+        {
+            "name": "separator_uid",
+            "class": "shell separator with uid/gid output probe",
+            "payload": f"{input_marker}; id",
+            "timing_probe": False,
+        },
+        {
+            "name": "command_substitution_canary",
+            "class": "command substitution syntax with output canary",
+            "payload": f"{input_marker}$(printf {output_canary})",
+            "timing_probe": False,
+        },
+        {
+            "name": "command_substitution_uid",
+            "class": "command substitution syntax with uid/gid output probe",
+            "payload": f"{input_marker}$(id)",
+            "timing_probe": False,
+        },
+        {
+            "name": "redirect",
+            "class": "redirect metacharacters",
+            "payload": f"{input_marker} 2>&1 >/dev/null",
+            "timing_probe": False,
+        },
+        {
+            "name": "newline_canary",
+            "class": "newline command separator with output canary",
+            "payload": f"{input_marker}\nprintf {output_canary}",
+            "timing_probe": False,
+        },
+        {
+            "name": "double_encoded_separator",
+            "class": "double-encoded shell separator with output canary",
+            "payload": urllib.parse.quote(separator_canary, safe=""),
+            "timing_probe": False,
+        },
+        {
+            "name": "bounded_timing",
+            "class": "bounded timing probe",
+            "payload": f"{input_marker}; sleep {COMMAND_INJECTION_SLEEP_SECONDS}",
+            "timing_probe": True,
+        },
+    ]
+
+
+def command_injection_surfaces(config: Config, csrf_token: str) -> list[dict[str, object]]:
+    invalid_csrf = f"invalid-inpv12-{csrf_token[:8] if csrf_token else 'missing'}"
+    mutation_headers = same_origin_headers(config)
+    return [
+        {
+            "name": "unauth_login",
+            "authenticated": False,
+            "method": "GET",
+            "path": "/login?inpv12={payload}",
+        },
+        {
+            "name": "unauth_mailbox",
+            "authenticated": False,
+            "method": "GET",
+            "path": "/mailbox?name={payload}",
+        },
+        {
+            "name": "unauth_message",
+            "authenticated": False,
+            "method": "GET",
+            "path": "/message?mailbox={payload}&uid=1",
+        },
+        {
+            "name": "unauth_attachment",
+            "authenticated": False,
+            "method": "GET",
+            "path": "/attachment?mailbox={payload}&uid=1&part=1",
+        },
+        {
+            "name": "unauth_search",
+            "authenticated": False,
+            "method": "GET",
+            "path": "/search?q={payload}",
+        },
+        {
+            "name": "unauth_drafts_save",
+            "authenticated": False,
+            "method": "POST",
+            "path": "/drafts/save",
+            "headers": mutation_headers,
+            "fields": {
+                "csrf_token": invalid_csrf,
+                "to": config.test_email or "wstg@example.invalid",
+                "subject": "{payload}",
+                "body": "{payload}",
+            },
+        },
+        {
+            "name": "unauth_send",
+            "authenticated": False,
+            "method": "POST",
+            "path": "/send",
+            "headers": mutation_headers,
+            "fields": {
+                "csrf_token": invalid_csrf,
+                "to": config.test_email or "wstg@example.invalid",
+                "subject": "{payload}",
+                "body": "{payload}",
+            },
+        },
+        {
+            "name": "unauth_messages_move",
+            "authenticated": False,
+            "method": "POST",
+            "path": "/messages/move",
+            "headers": mutation_headers,
+            "fields": {
+                "csrf_token": invalid_csrf,
+                "mailbox": "{payload}",
+                "destination_mailbox": "{payload}",
+                "uid_1": "1",
+            },
+        },
+        {
+            "name": "auth_login",
+            "authenticated": True,
+            "method": "GET",
+            "path": "/login?inpv12={payload}",
+        },
+        {
+            "name": "auth_mailbox",
+            "authenticated": True,
+            "method": "GET",
+            "path": "/mailbox?name={payload}",
+        },
+        {
+            "name": "auth_message",
+            "authenticated": True,
+            "method": "GET",
+            "path": "/message?mailbox={payload}&uid=1",
+        },
+        {
+            "name": "auth_attachment",
+            "authenticated": True,
+            "method": "GET",
+            "path": "/attachment?mailbox={payload}&uid=1&part=1",
+        },
+        {
+            "name": "auth_search",
+            "authenticated": True,
+            "method": "GET",
+            "path": "/search?q={payload}",
+        },
+        {
+            "name": "auth_drafts_save",
+            "authenticated": True,
+            "method": "POST",
+            "path": "/drafts/save",
+            "headers": mutation_headers,
+            "fields": {
+                "csrf_token": invalid_csrf,
+                "to": config.test_email or "wstg@example.invalid",
+                "subject": "{payload}",
+                "body": "{payload}",
+            },
+        },
+        {
+            "name": "auth_send",
+            "authenticated": True,
+            "method": "POST",
+            "path": "/send",
+            "headers": mutation_headers,
+            "fields": {
+                "csrf_token": invalid_csrf,
+                "to": config.test_email or "wstg@example.invalid",
+                "subject": "{payload}",
+                "body": "{payload}",
+            },
+        },
+        {
+            "name": "auth_messages_move",
+            "authenticated": True,
+            "method": "POST",
+            "path": "/messages/move",
+            "headers": mutation_headers,
+            "fields": {
+                "csrf_token": invalid_csrf,
+                "mailbox": "{payload}",
+                "destination_mailbox": "{payload}",
+                "uid_1": "1",
+            },
+        },
+    ]
+
+
+def command_injection_findings(
+    evidence: HttpEvidence,
+    *,
+    raw_payload: str,
+    output_canary: str,
+    elapsed: float,
+    baseline_elapsed: float,
+    timing_probe: bool,
+) -> list[str]:
+    text = evidence.body_text()
+    header_text = "\n".join(f"{key}: {value}" for key, value in evidence.headers)
+    combined = f"{text}\n{header_text}"
+    findings = command_injection_text_findings(
+        combined,
+        output_canary=output_canary,
+        source_payloads=[raw_payload],
+    )
+    if evidence.truncated:
+        findings.append("response_truncated_before_absence_assertions_completed")
+    if evidence.status == 500:
+        findings.append("http_500")
+    if evidence.status is None:
+        findings.append("request_error")
+    if timing_probe:
+        timing_threshold = max(baseline_elapsed + 1.5, baseline_elapsed * 3.0 + 0.5)
+        if elapsed >= timing_threshold and elapsed >= COMMAND_INJECTION_SLEEP_SECONDS * 0.75:
+            findings.append(
+                f"abnormal_timing elapsed={elapsed:.3f}s baseline={baseline_elapsed:.3f}s"
+            )
+    return findings
+
+
+def command_injection_text_findings(
+    text: str,
+    *,
+    output_canary: str,
+    source_payloads: list[str],
+) -> list[str]:
+    normalized = html.unescape(text)
+    findings: list[str] = []
+    if output_canary in normalized:
+        source_reflected = any(payload and payload in normalized for payload in source_payloads)
+        command_source_reflected = any(
+            marker in normalized
+            for marker in [
+                f"printf {output_canary}",
+                f"echo {output_canary}",
+                urllib.parse.quote(output_canary, safe=""),
+            ]
+        )
+        if not source_reflected and not command_source_reflected:
+            findings.append("reflected_command_output_canary")
+    if re.search(r"\buid=\d+(?:\([^)]+\))?\s+gid=\d+", normalized):
+        findings.append("uid_gid_output")
+    if re.search(r"(?m)^root:[^:\n]*:\d+:\d+:", normalized):
+        findings.append("passwd_style_output")
+    for pattern in COMMAND_INJECTION_DIAGNOSTIC_PATTERNS:
+        if re.search(pattern, normalized):
+            findings.append("shell_or_openbsd_diagnostic_leakage")
+            break
+    for pattern in COMMAND_INJECTION_PANIC_PATTERNS:
+        if re.search(pattern, normalized):
+            findings.append("panic_or_stack_trace_leakage")
+            break
+    return findings
 
 
 def safe_label(label: str) -> str:

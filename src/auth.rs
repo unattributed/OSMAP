@@ -1475,6 +1475,46 @@ mod tests {
     }
 
     #[test]
+    fn doveadm_auth_keeps_shell_shaped_username_as_one_argument_and_password_on_stdin() {
+        let hostile_username = "alice@example.com; id $(id) 2>&1";
+        let executor = Rc::new(std::cell::RefCell::new(StubCommandExecutor::success(
+            CommandExecution {
+                status_code: 0,
+                stdout: format!(
+                    "passdb: {hostile_username} auth succeeded\nextra fields:\n  user={hostile_username}\n"
+                ),
+                stderr: String::new(),
+            },
+        )));
+        let backend =
+            DoveadmAuthTestBackend::new(executor.clone(), "/usr/local/bin/doveadm", None, "imap");
+
+        let verdict = backend
+            .verify_primary(&test_context(), hostile_username, "pw; id $(id)")
+            .expect("backend should treat shell-shaped auth fields as data");
+
+        assert_eq!(
+            verdict,
+            PrimaryAuthVerdict::Accept {
+                canonical_username: hostile_username.to_string(),
+            }
+        );
+
+        let recorded = executor.borrow();
+        let args = recorded.args.as_ref().expect("args should be captured");
+        assert_eq!(
+            args.iter()
+                .filter(|arg| arg.contains("alice@example.com"))
+                .count(),
+            1
+        );
+        assert_eq!(args.last().map(String::as_str), Some(hostile_username));
+        assert!(!args.iter().any(|arg| arg == "id"));
+        assert!(!args.iter().any(|arg| arg == "$(id)"));
+        assert_eq!(recorded.stdin_data.as_deref(), Some("pw; id $(id)\n"));
+    }
+
+    #[test]
     fn doveadm_failure_exit_is_treated_as_invalid_credentials() {
         let backend = DoveadmAuthTestBackend::new(
             Rc::new(std::cell::RefCell::new(StubCommandExecutor::success(

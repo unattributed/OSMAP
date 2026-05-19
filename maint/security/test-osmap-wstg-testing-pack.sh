@@ -238,6 +238,57 @@ for marker in [
 print("authenticated source-attachment WSTG mapping validated")
 PY
 
+echo "validating command-injection WSTG mapping"
+python3 - "$pack_dir" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+pack = Path(sys.argv[1])
+mapping = json.loads((pack / "wstg-asvs-mapping.json").read_text())
+tests = {item["test_id"]: item for item in mapping["tests"]}
+command = tests.get("OSMAP-WSTG-INPV-003")
+if not command:
+    raise SystemExit("OSMAP-WSTG-INPV-003 missing from WSTG mapping")
+required_evidence = {
+    "command_injection_probe_matrix.txt",
+    "command_injection_host_evidence.txt",
+    "command_injection_redaction.txt",
+}
+missing = sorted(required_evidence - set(command["evidence_produced"]))
+if missing:
+    raise SystemExit(f"OSMAP-WSTG-INPV-003 missing evidence markers: {missing}")
+if command["wstg"] != ["WSTG-v42-INPV-12"]:
+    raise SystemExit("OSMAP-WSTG-INPV-003 must map to WSTG-v42-INPV-12")
+if command["requires_authenticated_coverage"] is not True or command["requires_totp"] is not True:
+    raise SystemExit("OSMAP-WSTG-INPV-003 must remain authenticated and TOTP-gated")
+for category in ["A05:2025", "A09:2025", "A10:2025"]:
+    if category not in command["owasp_top_10_2025"]:
+        raise SystemExit(f"OSMAP-WSTG-INPV-003 missing {category} mapping")
+coverage = (pack / "COVERAGE.md").read_text()
+if "OSMAP-WSTG-INPV-003" not in coverage or "WSTG-v42-INPV-12" not in coverage:
+    raise SystemExit("COVERAGE.md missing command-injection coverage")
+readme = (pack / "README.md").read_text()
+if "OSMAP-WSTG-INPV-003" not in readme or "command-injection" not in readme.lower():
+    raise SystemExit("README.md missing command-injection operator wording")
+runner = (pack / "run-wstg-pack.py").read_text()
+for marker in [
+    "test_command_injection",
+    "OSMAP_INPV12_OUTPUT_",
+    "COMMAND_INJECTION_SLEEP_SECONDS",
+    "command_injection_host_evidence",
+    "response_truncated_before_absence_assertions_completed",
+    "reflected_command_output_canary",
+    "uid_gid_output",
+    "passwd_style_output",
+    "/var/log/nginx/mail.access.log",
+    "/var/lib/osmap/audit/serve.log",
+]:
+    if marker not in runner:
+        raise SystemExit(f"runner missing command-injection marker {marker}")
+print("command-injection WSTG mapping validated")
+PY
+
 echo "validating live WSTG evidence mappings"
 python3 - "$pack_dir" <<'PY'
 import json
@@ -296,6 +347,17 @@ if ! python3 "$pack_dir/run-wstg-pack.py" \
 	--host 127.0.0.1 \
 	--output-dir "$tmp_root/draft-skip" >/dev/null 2>&1; then
 	echo "expected credential-gated draft route test to skip cleanly without credentials" >&2
+	exit 1
+fi
+
+echo "validating command-injection route skips without credentials"
+if ! python3 "$pack_dir/run-wstg-pack.py" \
+	--unauthenticated \
+	--test-id OSMAP-WSTG-INPV-003 \
+	--base-url http://127.0.0.1:9 \
+	--host 127.0.0.1 \
+	--output-dir "$tmp_root/command-injection-skip" >/dev/null 2>&1; then
+	echo "expected credential-gated command-injection route test to skip cleanly without credentials" >&2
 	exit 1
 fi
 

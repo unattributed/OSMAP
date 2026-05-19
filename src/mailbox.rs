@@ -674,6 +674,48 @@ mod tests {
     }
 
     #[test]
+    fn doveadm_search_keeps_shell_shaped_query_as_one_argument() {
+        let executor = Rc::new(std::cell::RefCell::new(StubCommandExecutor::success(
+            CommandExecution {
+                status_code: 0,
+                stdout: String::new(),
+                stderr: String::new(),
+            },
+        )));
+        let backend = DoveadmMessageSearchBackend::new(
+            MessageSearchPolicy::default(),
+            executor.clone(),
+            "/usr/local/bin/doveadm",
+        );
+        let hostile_query = "OSMAP_INPV12_TEST; id $(id) 2>&1 >/dev/null";
+        let request =
+            MessageSearchRequest::new(MessageSearchPolicy::default(), "INBOX", hostile_query)
+                .expect("shell-shaped search text should remain valid inert text");
+
+        backend
+            .search_messages("alice@example.com", &request)
+            .expect("message search should reach captured executor");
+
+        let recorded = executor.borrow();
+        let args = recorded.args.as_ref().expect("args should be captured");
+        assert_eq!(
+            args.iter()
+                .filter(|arg| arg.contains("OSMAP_INPV12_TEST"))
+                .count(),
+            1
+        );
+        assert_eq!(
+            args.iter()
+                .position(|arg| arg == hostile_query)
+                .expect("hostile query should be one argv element"),
+            args.len() - 1
+        );
+        assert!(!args.iter().any(|arg| arg == "id"));
+        assert!(!args.iter().any(|arg| arg == "$(id)"));
+        assert!(!args.iter().any(|arg| arg == ">/dev/null"));
+    }
+
+    #[test]
     fn message_move_uses_doveadm_move_command_shape() {
         let executor = Rc::new(std::cell::RefCell::new(StubCommandExecutor::success(
             CommandExecution {
@@ -712,6 +754,39 @@ mod tests {
             ]
         );
         assert_eq!(recorded.timeout_secs, Some(3));
+    }
+
+    #[test]
+    fn doveadm_move_keeps_shell_shaped_mailboxes_as_single_arguments() {
+        let executor = Rc::new(std::cell::RefCell::new(StubCommandExecutor::success(
+            CommandExecution {
+                status_code: 0,
+                stdout: String::new(),
+                stderr: String::new(),
+            },
+        )));
+        let backend = DoveadmMessageMoveBackend::new(executor.clone(), "/usr/local/bin/doveadm");
+        let source_mailbox = "INBOX; id";
+        let destination_mailbox = "Archive$(id) 2>&1";
+        let request = MessageMoveRequest::new(
+            MessageMovePolicy::default(),
+            source_mailbox,
+            destination_mailbox,
+            9,
+        )
+        .expect("shell-shaped mailbox names should remain valid inert mailbox text");
+
+        backend
+            .move_message("alice@example.com", &request)
+            .expect("message move should reach captured executor");
+
+        let recorded = executor.borrow();
+        let args = recorded.args.as_ref().expect("args should be captured");
+        assert_eq!(args[5], destination_mailbox);
+        assert_eq!(args[7], source_mailbox);
+        assert!(!args.iter().any(|arg| arg == "id"));
+        assert!(!args.iter().any(|arg| arg == "$(id)"));
+        assert!(!args.iter().any(|arg| arg == "2>&1"));
     }
 
     #[test]

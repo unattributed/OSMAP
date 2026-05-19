@@ -10,12 +10,12 @@ Generated from `wstg-asvs-mapping.json`.
 | `A02:2025` | Security Misconfiguration | `OSMAP-WSTG-CONF-001`, `OSMAP-WSTG-CONF-002`, `OSMAP-WSTG-CONF-003`, `OSMAP-WSTG-SESS-005`, `OSMAP-WSTG-CONF-004`, `OSMAP-WSTG-INFO-001`, `OSMAP-WSTG-INFO-002`, `OSMAP-WSTG-CLNT-001`, `OSMAP-WSTG-CONF-005`, `OSMAP-WSTG-CONF-006` | none |
 | `A03:2025` | Software Supply Chain Failures | `OSMAP-WSTG-CONF-007` | none |
 | `A04:2025` | Cryptographic Failures | `OSMAP-WSTG-CONF-001`, `OSMAP-WSTG-CONF-002`, `OSMAP-WSTG-ATHN-001`, `OSMAP-WSTG-SESS-001` | none |
-| `A05:2025` | Injection | `OSMAP-WSTG-CONF-003`, `OSMAP-WSTG-INPV-001`, `OSMAP-WSTG-INPV-002`, `OSMAP-WSTG-CLNT-002` | none |
+| `A05:2025` | Injection | `OSMAP-WSTG-CONF-003`, `OSMAP-WSTG-INPV-001`, `OSMAP-WSTG-INPV-002`, `OSMAP-WSTG-INPV-003`, `OSMAP-WSTG-CLNT-002` | none |
 | `A06:2025` | Insecure Design | `OSMAP-WSTG-CLNT-002`, `OSMAP-WSTG-BUSL-001`, `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003`, `OSMAP-WSTG-BUSL-004` | `OSMAP-WSTG-GAP-001`, `OSMAP-WSTG-GAP-002` |
 | `A07:2025` | Authentication Failures | `OSMAP-WSTG-ATHN-001`, `OSMAP-WSTG-ATHN-002`, `OSMAP-WSTG-ATHN-003`, `OSMAP-WSTG-ATHN-004`, `OSMAP-WSTG-SESS-001`, `OSMAP-WSTG-SESS-002`, `OSMAP-WSTG-SESS-003`, `OSMAP-WSTG-SESS-005`, `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003` | none |
 | `A08:2025` | Software or Data Integrity Failures | `OSMAP-WSTG-SESS-004`, `OSMAP-WSTG-BUSL-001`, `OSMAP-WSTG-CONF-007`, `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003`, `OSMAP-WSTG-BUSL-004` | `OSMAP-WSTG-GAP-001`, `OSMAP-WSTG-GAP-002` |
-| `A09:2025` | Security Logging and Alerting Failures | `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003`, `OSMAP-WSTG-LOGG-001` | none |
-| `A10:2025` | Mishandling of Exceptional Conditions | `OSMAP-WSTG-ATHN-003`, `OSMAP-WSTG-CONF-004`, `OSMAP-WSTG-INFO-002`, `OSMAP-WSTG-INPV-001`, `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003`, `OSMAP-WSTG-BUSL-004` | none |
+| `A09:2025` | Security Logging and Alerting Failures | `OSMAP-WSTG-INPV-003`, `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003`, `OSMAP-WSTG-LOGG-001` | none |
+| `A10:2025` | Mishandling of Exceptional Conditions | `OSMAP-WSTG-ATHN-003`, `OSMAP-WSTG-CONF-004`, `OSMAP-WSTG-INFO-002`, `OSMAP-WSTG-INPV-001`, `OSMAP-WSTG-INPV-003`, `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003`, `OSMAP-WSTG-BUSL-004` | none |
 
 ## Mapped Tests
 
@@ -38,6 +38,7 @@ Generated from `wstg-asvs-mapping.json`.
 | `OSMAP-WSTG-INFO-002` | WSTG-v42-INFO-02 Fingerprint Web Server - unauthenticated disclosure and error handling | `WSTG-v42-INFO-02`, `WSTG-v42-ERRH-01` | `v5.0.0-14.3.1`, `v5.0.0-8.2.1` | `A02:2025`, `A10:2025` | unauthenticated, dynamic test | true | false | false | true | medium |
 | `OSMAP-WSTG-INPV-001` | WSTG-v42-ATHZ-01 Testing Directory Traversal File Include - safe endpoint probes | `WSTG-v42-ATHZ-01` | `v5.0.0-2.2.1`, `v5.0.0-4.2.5`, `v5.0.0-8.2.2` | `A01:2025`, `A05:2025`, `A10:2025` | unauthenticated, dynamic test | true | false | false | true | high |
 | `OSMAP-WSTG-INPV-002` | WSTG-v42-INPV-01 Testing for Reflected Cross Site Scripting - safe parameters | `WSTG-v42-INPV-01` | `v5.0.0-1.1.2`, `v5.0.0-1.2.1`, `v5.0.0-2.2.1` | `A05:2025` | unauthenticated, dynamic test | true | false | false | true | high |
+| `OSMAP-WSTG-INPV-003` | WSTG-v42-INPV-12 Testing for Command Injection - safe OSMAP command-boundary due diligence | `WSTG-v42-INPV-12` | `v5.0.0-1.2.1`, `v5.0.0-2.2.1`, `v5.0.0-5.2.4`, `v5.0.0-8.2.1` | `A05:2025`, `A09:2025`, `A10:2025` | authenticated, dynamic test, host assisted | true | true | true | true | critical |
 | `OSMAP-WSTG-CLNT-001` | WSTG-v42-CLNT-07 Testing Cross Origin Resource Sharing | `WSTG-v42-CLNT-07` | `v5.0.0-14.4.4`, `v5.0.0-3.5.8` | `A01:2025`, `A02:2025` | unauthenticated, dynamic test | true | false | false | true | high |
 | `OSMAP-WSTG-CLNT-002` | WSTG-v42-INPV-02 Testing for Stored Cross Site Scripting - HTML email rendering policy | `WSTG-v42-INPV-02`, `WSTG-v42-CLNT-01` | `v5.0.0-1.3.1`, `v5.0.0-1.2.1`, `v5.0.0-3.4.6` | `A05:2025`, `A06:2025` | host assisted, dynamic test, static boundary review | true | false | false | true | high |
 | `OSMAP-WSTG-BUSL-001` | WSTG-v42-BUSL-08 Test Upload of Unexpected File Types - attachment handling policy | `WSTG-v42-BUSL-08`, `WSTG-v42-BUSL-09` | `v5.0.0-10.1.1`, `v5.0.0-10.2.1`, `v5.0.0-14.4.4` | `A06:2025`, `A08:2025` | host assisted, dynamic test, static boundary review | true | false | false | true | high |

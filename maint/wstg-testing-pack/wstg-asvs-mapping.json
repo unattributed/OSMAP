@@ -552,6 +552,46 @@
       ]
     },
     {
+      "test_id": "OSMAP-WSTG-INPV-003",
+      "test_name": "WSTG-v42-INPV-12 Testing for Command Injection - safe OSMAP command-boundary due diligence",
+      "script_path": "run-wstg-pack.py",
+      "wstg": [
+        "WSTG-v42-INPV-12"
+      ],
+      "wstg_section": "Testing for Command Injection",
+      "asvs": [
+        "v5.0.0-1.2.1",
+        "v5.0.0-2.2.1",
+        "v5.0.0-5.2.4",
+        "v5.0.0-8.2.1"
+      ],
+      "asvs_section": "Input Validation; Injection Prevention; Error Handling and Logging",
+      "test_type": [
+        "authenticated",
+        "dynamic test",
+        "host assisted"
+      ],
+      "expected_result": "Safe shell-shaped, encoded, canary, and bounded timing probes across login, mailbox, message, attachment, search, draft, send, and bulk-move routes remain inert, produce no command output or shell diagnostics, avoid HTTP 500s, and leave services healthy.",
+      "evidence_produced": [
+        "command_injection_baseline_*.headers",
+        "command_injection_*.headers",
+        "command_injection_*.body",
+        "command_injection_probe_matrix.txt",
+        "command_injection_host_evidence.txt",
+        "command_injection_redaction.txt"
+      ],
+      "release_required": true,
+      "requires_authenticated_coverage": true,
+      "requires_totp": true,
+      "safe_for_release": true,
+      "severity_if_failed": "critical",
+      "owasp_top_10_2025": [
+        "A05:2025",
+        "A09:2025",
+        "A10:2025"
+      ]
+    },
+    {
       "test_id": "OSMAP-WSTG-CLNT-001",
       "test_name": "WSTG-v42-CLNT-07 Testing Cross Origin Resource Sharing",
       "script_path": "run-wstg-pack.py",
