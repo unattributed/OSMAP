@@ -3332,11 +3332,17 @@ mod tests {
         let body = body_text(&response);
         assert!(body.contains("id=\"bulk-move-form\""));
         assert!(body.contains("action=\"/messages/move\""));
+        assert!(body.contains("id=\"bulk-archive-form\""));
+        assert!(body.contains("action=\"/messages/archive\""));
+        assert!(body.contains("name=\"destination_mailbox\" value=\"Archive/2026\""));
         assert!(body.contains("<option value=\"Archive/2026\">Archive/2026</option>"));
         assert!(body.contains("<option value=\"INBOX.Projects\">INBOX.Projects</option>"));
         assert!(body.contains("form=\"bulk-move-form\" type=\"checkbox\" name=\"uid_9\""));
         assert!(body.contains("form=\"bulk-move-form\" type=\"checkbox\" name=\"uid_10\""));
+        assert!(body.contains("form=\"bulk-archive-form\" type=\"checkbox\" name=\"uid_9\""));
+        assert!(body.contains("form=\"bulk-archive-form\" type=\"checkbox\" name=\"uid_10\""));
         assert!(body.contains(">Move Selected</button>"));
+        assert!(body.contains(">Archive Selected</button>"));
     }
 
     #[test]

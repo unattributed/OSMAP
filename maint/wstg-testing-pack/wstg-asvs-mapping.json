@@ -598,10 +598,13 @@
       ],
       "asvs_section": "HTML Sanitization and Browser Rendering",
       "test_type": [
-        "static review"
+        "host assisted",
+        "dynamic test",
+        "static boundary review"
       ],
-      "expected_result": "Source and docs show conservative sanitized HTML rendering, external fetch blocking, and escaped plaintext fallback.",
+      "expected_result": "Live injected HTML email evidence shows sanitized rendering, unsafe scheme rejection, external fetch blocking, and escaped plaintext fallback.",
       "evidence_produced": [
+        "mime_html_live_report.txt",
         "static_html_rendering.txt"
       ],
       "release_required": true,
@@ -630,10 +633,13 @@
       ],
       "asvs_section": "File Handling",
       "test_type": [
-        "static review"
+        "host assisted",
+        "dynamic test",
+        "static boundary review"
       ],
-      "expected_result": "Source shows bounded multipart parsing and forced-download attachment responses with nosniff and no-store.",
+      "expected_result": "Live attachment evidence shows bounded multipart handling and forced-download attachment responses with nosniff and no-store.",
       "evidence_produced": [
+        "mime_html_live_report.txt",
         "static_attachment_handling.txt"
       ],
       "release_required": true,
@@ -725,11 +731,13 @@
       ],
       "asvs_section": "Dependency and Supply Chain Security",
       "test_type": [
-        "static review"
+        "tool execution",
+        "static boundary review"
       ],
-      "expected_result": "Repo contains lockfile and supply-chain documentation or tooling for dependency inventory and security review.",
+      "expected_result": "Repo contains lockfile and supply-chain documentation or tooling, and locked Cargo metadata resolves successfully.",
       "evidence_produced": [
-        "static_dependency_alignment.txt"
+        "static_dependency_alignment.txt",
+        "dependency_metadata_locked.txt"
       ],
       "release_required": true,
       "requires_authenticated_coverage": false,
@@ -873,10 +881,13 @@
         "A10:2025"
       ],
       "test_type": [
-        "static review"
+        "host assisted",
+        "dynamic test",
+        "static boundary review"
       ],
-      "expected_result": "Source and route tests show selected-message folder actions are capped, CSRF-bound, budget-bound, limited to approved destinations, revalidated per message, and report partial success explicitly.",
+      "expected_result": "Live selected-message archive evidence shows folder actions are capped, CSRF-bound, budget-bound, limited to approved destinations, revalidated per message, and report partial success explicitly.",
       "evidence_produced": [
+        "bulk_folder_actions_live_report.txt",
         "static_bulk_folder_actions.txt"
       ],
       "release_required": true,
@@ -901,11 +912,13 @@
         "A09:2025"
       ],
       "test_type": [
-        "static review"
+        "evidence validation",
+        "static boundary review"
       ],
-      "expected_result": "Source and docs show structured auth, session, mailbox, request, and release-gate events with redaction for passwords, TOTP material, session tokens, CSRF tokens, and message bodies.",
+      "expected_result": "Source and docs show structured auth, session, mailbox, request, and release-gate events, and dynamic WSTG evidence redaction finds no passwords, TOTP material, session tokens, CSRF tokens, or message bodies.",
       "evidence_produced": [
-        "static_security_logging.txt"
+        "static_security_logging.txt",
+        "security_logging_evidence_redaction.txt"
       ],
       "release_required": true,
       "requires_authenticated_coverage": false,

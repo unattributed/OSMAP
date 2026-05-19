@@ -405,16 +405,24 @@ pub(crate) fn render_message_list_page(
         } else {
             String::new()
         };
+        let selection_cells = match (bulk_actions_available, archive_actions_available) {
+            (true, true) => format!(
+                "<td><input form=\"bulk-move-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\"></td><td><input form=\"bulk-archive-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\"></td>",
+                message.uid, message.uid, message.uid, message.uid
+            ),
+            (true, false) => format!(
+                "<td><input form=\"bulk-move-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\"></td>",
+                message.uid, message.uid
+            ),
+            (false, true) => format!(
+                "<td><input form=\"bulk-archive-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\"></td>",
+                message.uid, message.uid
+            ),
+            (false, false) => String::new(),
+        };
         rows.push_str(&format!(
             "<tr>{}<td><a href=\"{}\">{}</a></td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td>{}</tr>",
-            if bulk_actions_available {
-                format!(
-                    "<td><input form=\"bulk-move-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\"></td>",
-                    message.uid, message.uid
-                )
-            } else {
-                String::new()
-            },
+            selection_cells,
             escape_html(&message_href),
             message.uid,
             escape_html(message.subject.as_deref().unwrap_or("<none>")),
@@ -451,6 +459,17 @@ pub(crate) fn render_message_list_page(
     } else {
         String::new()
     };
+    let bulk_archive_form = if archive_actions_available && !messages.is_empty() {
+        let archive_mailbox_name = bulk_actions.archive_mailbox_name.unwrap_or_default();
+        format!(
+            "<form id=\"bulk-archive-form\" method=\"post\" action=\"/messages/archive\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"destination_mailbox\" value=\"{}\"><button type=\"submit\">Archive Selected</button></form>",
+            escape_html(csrf_token),
+            escape_html(mailbox_name),
+            escape_html(archive_mailbox_name),
+        )
+    } else {
+        String::new()
+    };
     let archive_notice = match bulk_actions.archive_mailbox_name {
         Some(archive_mailbox_name) if archive_mailbox_name != mailbox_name => format!(
             "<p class=\"muted\">Archive shortcut sends messages from this mailbox to <strong>{}</strong>.</p>",
@@ -475,8 +494,8 @@ pub(crate) fn render_message_list_page(
             "<div class=\"badge-list\"><span class=\"badge badge-ok\">2FA active</span><span class=\"badge\">Remote content blocked</span></div></div>",
             "{}{}",
             "<form class=\"search-row\" method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><label for=\"mailbox-search\">Search query<input id=\"mailbox-search\" type=\"text\" name=\"q\" autocomplete=\"off\"></label>{}<button type=\"submit\">Search</button><label><input type=\"checkbox\" name=\"scope\" value=\"all\"> Search all mailboxes</label></form>",
-            "<div class=\"toolbar\" aria-label=\"Mailbox actions\">{}</div>",
-            "<div class=\"table-wrap\"><table class=\"message-list-table\"><thead><tr>{}{}{}</tr></thead><tbody>{}</tbody></table></div>",
+            "<div class=\"toolbar\" aria-label=\"Mailbox actions\">{}{}</div>",
+            "<div class=\"table-wrap\"><table class=\"message-list-table\"><thead><tr>{}{}{}{}</tr></thead><tbody>{}</tbody></table></div>",
             "</section>",
             "</main>"
         ),
@@ -488,8 +507,14 @@ pub(crate) fn render_message_list_page(
         escape_html(mailbox_name),
         render_search_field_select(MessageSearchField::All),
         bulk_move_form,
+        bulk_archive_form,
         if bulk_actions_available {
-            "<th>Select</th>"
+            "<th>Move</th>"
+        } else {
+            ""
+        },
+        if archive_actions_available {
+            "<th>Archive</th>"
         } else {
             ""
         },

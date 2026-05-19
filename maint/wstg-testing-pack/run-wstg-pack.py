@@ -49,6 +49,19 @@ OWASP_TOP_10_2025 = {
 }
 DEFAULT_BODY_LIMIT = 256 * 1024
 SECRET_REPLACEMENT = "[REDACTED]"
+REFLECTED_INPUT_PAYLOADS = [
+    "<script>alert(1)</script>",
+    '"><img src=x onerror=alert(1)>',
+    "' autofocus onfocus=alert(1) x='",
+    "javascript:alert(1)",
+]
+PATH_TRAVERSAL_PROBES = {
+    "path_traversal_dotdot": "/mailboxes/../login",
+    "path_traversal_encoded": "/mailboxes/%2e%2e/login",
+    "path_traversal_double_encoded": "/attachment?mailbox=%252e%252e%252f%252e%252e%252fetc&uid=1&part=1",
+    "path_traversal_attachment": "/attachment?mailbox=..%2f..%2fetc&uid=1&part=1",
+    "path_traversal_absolute": "/attachment?mailbox=%2fetc%2fpasswd&uid=1&part=1",
+}
 
 
 def osmap_tls_client_context() -> ssl.SSLContext:
@@ -98,6 +111,7 @@ class HttpEvidence:
     reason: str
     headers: list[tuple[str, str]]
     body: bytes
+    truncated: bool = False
     error: str = ""
 
     def header_values(self, name: str) -> list[str]:
@@ -137,6 +151,7 @@ class Runner:
         self.csrf_token = ""
         self.prompted_password = ""
         self.last_login_set_cookie_headers: list[str] = []
+        self.mime_html_live_report: str | None = None
         self.authenticated_proof: dict[str, bool] = {
             "login": False,
             "totp": False,
@@ -176,11 +191,11 @@ class Runner:
             "OSMAP-WSTG-INPV-001": self.test_path_traversal,
             "OSMAP-WSTG-INPV-002": self.test_reflected_input,
             "OSMAP-WSTG-CLNT-001": self.test_cors,
-            "OSMAP-WSTG-CLNT-002": self.test_html_rendering_static,
-            "OSMAP-WSTG-BUSL-001": self.test_attachment_static,
+            "OSMAP-WSTG-CLNT-002": self.test_html_rendering_live,
+            "OSMAP-WSTG-BUSL-001": self.test_attachment_live,
             "OSMAP-WSTG-BUSL-002": self.test_draft_routes_authenticated,
             "OSMAP-WSTG-BUSL-003": self.test_source_attachments_authenticated,
-            "OSMAP-WSTG-BUSL-004": self.test_bulk_folder_actions_static,
+            "OSMAP-WSTG-BUSL-004": self.test_bulk_folder_actions_live,
             "OSMAP-WSTG-CONF-005": self.test_host_bindings,
             "OSMAP-WSTG-CONF-006": self.test_host_pf,
             "OSMAP-WSTG-CONF-007": self.test_dependency_alignment,
@@ -266,12 +281,14 @@ class Runner:
             conn.request(method, path, body=body_bytes, headers=headers)
             response = conn.getresponse()
             body_data = response.read(DEFAULT_BODY_LIMIT)
+            truncated = bool(response.read(1))
             evidence = HttpEvidence(
                 label=label,
                 status=response.status,
                 reason=response.reason,
                 headers=response.getheaders(),
                 body=body_data,
+                truncated=truncated,
             )
             if store_cookies:
                 self.store_response_cookies(evidence)
@@ -316,6 +333,7 @@ class Runner:
             lines.append(f"ERROR: {self.redact(evidence.error)}\n")
         else:
             lines.append(f"HTTP {evidence.status} {evidence.reason}\n")
+            lines.append(f"X-OSMAP-WSTG-Body-Truncated: {str(evidence.truncated).lower()}\n")
             for key, value in evidence.headers:
                 if key.lower() in {"set-cookie", "cookie", "authorization"}:
                     value = SECRET_REPLACEMENT
@@ -863,58 +881,76 @@ class Runner:
         return self.result("OSMAP-WSTG-INFO-002", STATUS_PASS, "unauthenticated pages and errors did not expose sensitive diagnostics", evidence_paths)
 
     def test_path_traversal(self) -> TestResult:
-        probes = {
-            "path_traversal_dotdot": "/mailboxes/../login",
-            "path_traversal_encoded": "/mailboxes/%2e%2e/login",
-            "path_traversal_attachment": "/attachment?mailbox=..%2f..%2fetc&uid=1&part=1",
-        }
         bad: dict[str, int | None] = {}
+        truncated: list[str] = []
         evidence_paths: list[str] = []
-        for label, path in probes.items():
+        for label, path in PATH_TRAVERSAL_PROBES.items():
             evidence = self.request(label, "GET", path)
             evidence_paths.extend([f"evidence/{label}.headers", f"evidence/{label}.body"])
             body = evidence.body_text().lower()
-            if evidence.status == 200 or "root:" in body or "osmap_session" in body:
+            if evidence.truncated:
+                truncated.append(label)
+            if evidence.status == 200 or "root:" in body or "/bin/" in body or "osmap_session" in body:
                 bad[label] = evidence.status
+        if truncated:
+            return self.result("OSMAP-WSTG-INPV-001", STATUS_FAIL, "path traversal evidence was truncated before sensitive-content checks completed", evidence_paths, {"truncated": truncated})
         if bad:
             return self.result("OSMAP-WSTG-INPV-001", STATUS_FAIL, "path traversal probe reached sensitive-looking content or succeeded", evidence_paths, {"bad": bad})
         return self.result("OSMAP-WSTG-INPV-001", STATUS_PASS, "path traversal probes were rejected or safely gated", evidence_paths)
 
     def test_reflected_input(self) -> TestResult:
-        payload = "<script>alert(1)</script>"
-        encoded = urllib.parse.quote(payload, safe="")
-        probes = {
-            "reflected_input_login": f"/login?probe={encoded}",
-            "reflected_input_search": f"/search?q={encoded}",
-            "reflected_input_mailbox": f"/mailbox?name={encoded}",
-        }
         bad: list[str] = []
+        truncated: list[str] = []
         evidence_paths: list[str] = []
-        for label, path in probes.items():
-            evidence = self.request(label, "GET", path)
-            evidence_paths.append(f"evidence/{label}.body")
-            if payload in evidence.body_text() or "<script>alert(1)</script>" in evidence.body_text().lower():
-                bad.append(label)
+        route_templates = {
+            "login": "/login?probe={payload}",
+            "search": "/search?q={payload}",
+            "mailbox": "/mailbox?name={payload}",
+        }
+        dangerous = ["<script", "onerror=", "onfocus=", "javascript:"]
+        for index, payload in enumerate(REFLECTED_INPUT_PAYLOADS, start=1):
+            encoded = urllib.parse.quote(payload, safe="")
+            for route, template in route_templates.items():
+                label = f"reflected_input_{route}_{index}"
+                evidence = self.request(label, "GET", template.format(payload=encoded))
+                body = evidence.body_text().lower()
+                evidence_paths.append(f"evidence/{label}.body")
+                if evidence.truncated:
+                    truncated.append(label)
+                if any(token in body for token in dangerous):
+                    bad.append(label)
+        if truncated:
+            return self.result("OSMAP-WSTG-INPV-002", STATUS_FAIL, "reflected-input evidence was truncated before executable-markup checks completed", evidence_paths, {"truncated": truncated})
         if bad:
-            return self.result("OSMAP-WSTG-INPV-002", STATUS_FAIL, "probe payload was reflected as raw script markup", evidence_paths, {"bad": bad})
+            return self.result("OSMAP-WSTG-INPV-002", STATUS_FAIL, "probe payload was reflected as executable markup", evidence_paths, {"bad": bad})
         return self.result("OSMAP-WSTG-INPV-002", STATUS_PASS, "probe payloads were not reflected as executable markup", evidence_paths)
 
     def test_cors(self) -> TestResult:
         bad: dict[str, dict[str, str]] = {}
         evidence_paths: list[str] = []
+        probes = [
+            ("GET", "/login", {}),
+            ("GET", "/mailboxes", {}),
+            ("OPTIONS", "/login", {"Access-Control-Request-Method": "POST"}),
+            ("OPTIONS", "/messages/move", {"Access-Control-Request-Method": "POST"}),
+            ("OPTIONS", "/send", {"Access-Control-Request-Method": "POST"}),
+        ]
         for origin in ["https://attacker.invalid", "null"]:
-            label = f"cors_{origin.replace(':', '_').replace('/', '_')}"
-            evidence = self.request(label, "GET", "/login", headers={"Origin": origin})
-            evidence_paths.append(f"evidence/{safe_label(label)}.headers")
-            acao = evidence.first_header("Access-Control-Allow-Origin")
-            acac = evidence.first_header("Access-Control-Allow-Credentials")
-            if acao == origin and acac.lower() == "true":
-                bad[origin] = {"acao": acao, "acac": acac}
+            for method, path, extra_headers in probes:
+                label = f"cors_{method.lower()}_{safe_label(path)}_{origin.replace(':', '_').replace('/', '_')}"
+                headers = {"Origin": origin}
+                headers.update(extra_headers)
+                evidence = self.request(label, method, path, headers=headers)
+                evidence_paths.append(f"evidence/{safe_label(label)}.headers")
+                acao = evidence.first_header("Access-Control-Allow-Origin")
+                acac = evidence.first_header("Access-Control-Allow-Credentials")
+                if acac.lower() == "true" and acao in {origin, "*"}:
+                    bad[f"{method} {path} {origin}"] = {"acao": acao, "acac": acac}
         if bad:
             return self.result("OSMAP-WSTG-CLNT-001", STATUS_FAIL, "credentialed cross-origin CORS was allowed", evidence_paths, {"bad": bad})
-        return self.result("OSMAP-WSTG-CLNT-001", STATUS_PASS, "cross-origin probes did not receive permissive credentialed CORS", evidence_paths)
+        return self.result("OSMAP-WSTG-CLNT-001", STATUS_PASS, "cross-origin simple and preflight probes did not receive permissive credentialed CORS", evidence_paths)
 
-    def test_html_rendering_static(self) -> TestResult:
+    def write_html_rendering_static_boundary_evidence(self) -> bool:
         files = [
             REPO_ROOT / "src" / "rendering.rs",
             REPO_ROOT / "src" / "rendering_html.rs",
@@ -924,12 +960,10 @@ class Runner:
         text = "\n".join(path.read_text(encoding="utf-8", errors="replace") for path in files if path.exists())
         markers = ["sanitize", "escape_html", "default-src 'none'", "external", "script"]
         missing = [marker for marker in markers if marker.lower() not in text.lower()]
-        evidence = self.write_text_evidence("static_html_rendering.txt", summarize_static_files(files, missing))
-        if missing:
-            return self.result("OSMAP-WSTG-CLNT-002", STATUS_FAIL, "HTML rendering policy markers were missing from source/docs", [evidence], {"missing": missing})
-        return self.result("OSMAP-WSTG-CLNT-002", STATUS_PASS, "source and docs align with conservative HTML rendering policy", [evidence])
+        self.write_text_evidence("static_html_rendering.txt", summarize_static_files(files, missing))
+        return not missing
 
-    def test_attachment_static(self) -> TestResult:
+    def write_attachment_static_boundary_evidence(self) -> bool:
         files = [
             REPO_ROOT / "src" / "http.rs",
             REPO_ROOT / "src" / "http_form.rs",
@@ -940,12 +974,82 @@ class Runner:
         text = "\n".join(path.read_text(encoding="utf-8", errors="replace") for path in files if path.exists())
         markers = ["multipart", "max_upload_body", "Content-Disposition", "attachment", "nosniff", "no-store"]
         missing = [marker for marker in markers if marker.lower() not in text.lower()]
-        evidence = self.write_text_evidence("static_attachment_handling.txt", summarize_static_files(files, missing))
-        if missing:
-            return self.result("OSMAP-WSTG-BUSL-001", STATUS_FAIL, "attachment handling markers were missing from source/docs", [evidence], {"missing": missing})
-        return self.result("OSMAP-WSTG-BUSL-001", STATUS_PASS, "source and docs show bounded upload parsing and forced-download controls", [evidence])
+        self.write_text_evidence("static_attachment_handling.txt", summarize_static_files(files, missing))
+        return not missing
 
-    def test_bulk_folder_actions_static(self) -> TestResult:
+    def mime_html_live_evidence(self) -> str:
+        if self.mime_html_live_report is not None:
+            return self.mime_html_live_report
+        remote_repo = os.environ.get("OSMAP_WSTG_REMOTE_REPO", "/home/foo/OSMAP")
+        expected_ref = os.environ.get("OSMAP_WSTG_EXPECTED_REF", local_git_head())
+        self.mime_html_live_report = self.run_ssh(
+            "mime_html_live_report.txt",
+            "set -eu; "
+            f"cd {shlex.quote(remote_repo)}; "
+            "remote_ref=$(git rev-parse HEAD); "
+            f"expected_ref={shlex.quote(expected_ref)}; "
+            "if [ \"$remote_ref\" != \"$expected_ref\" ]; then "
+            "printf 'ERROR: remote repo ref mismatch expected=%s actual=%s\\n' \"$expected_ref\" \"$remote_ref\"; exit 1; "
+            "fi; "
+            "ksh ./maint/live/osmap-live-validate-v3-mime-html-proof.ksh >/tmp/osmap-wstg-mime-html-live.log 2>&1 || { cat /tmp/osmap-wstg-mime-html-live.log; exit 1; }; "
+            "cat ./maint/live/latest-host-v3-mime-html-proof-report.txt; printf '\\n--- validator log ---\\n'; cat /tmp/osmap-wstg-mime-html-live.log",
+        )
+        return self.mime_html_live_report
+
+    def test_html_rendering_live(self) -> TestResult:
+        if not self.config.allow_host_assisted:
+            return self.result("OSMAP-WSTG-CLNT-002", STATUS_SKIP, "host-assisted live HTML rendering evidence disabled")
+        static_ok = self.write_html_rendering_static_boundary_evidence()
+        live = self.mime_html_live_evidence()
+        evidence_paths = ["evidence/mime_html_live_report.txt", "evidence/static_html_rendering.txt"]
+        required = [
+            "result=v3_mime_html_live_proof_passed",
+            "sanitized_html_mode=present",
+            "sanitized_html_javascript_scheme=absent",
+            "sanitized_html_data_scheme=absent",
+            "sanitized_html_remote_payload=absent",
+            "sanitized_html_body_marker_audit_leakage=absent",
+        ]
+        missing = [marker for marker in required if marker not in live]
+        failures: dict[str, object] = {}
+        if "ERROR:" in live:
+            failures["ssh"] = "host-assisted MIME/HTML validator was unavailable or ran against the wrong ref"
+        if not static_ok:
+            failures["static_boundary"] = "missing HTML rendering boundary markers"
+        if missing:
+            failures["missing_live_markers"] = missing
+        if failures:
+            return self.result("OSMAP-WSTG-CLNT-002", STATUS_FAIL, "live HTML rendering WSTG evidence did not meet expected outcomes", evidence_paths, failures)
+        return self.result("OSMAP-WSTG-CLNT-002", STATUS_PASS, "host-backed HTML sanitization and unsafe-content rejection evidence passed", evidence_paths)
+
+    def test_attachment_live(self) -> TestResult:
+        if not self.config.allow_host_assisted:
+            return self.result("OSMAP-WSTG-BUSL-001", STATUS_SKIP, "host-assisted live attachment evidence disabled")
+        static_ok = self.write_attachment_static_boundary_evidence()
+        live = self.mime_html_live_evidence()
+        evidence_paths = ["evidence/mime_html_live_report.txt", "evidence/static_attachment_handling.txt"]
+        required = [
+            "result=v3_mime_html_live_proof_passed",
+            "inline_image_attachment_download_status=HTTP/1.1 200 OK",
+            "delivery_status_attachment_download_status=HTTP/1.1 200 OK",
+            "original_message_attachment_download_status=HTTP/1.1 200 OK",
+            "inline_image_body_marker_audit_leakage=absent",
+            "delivery_status_body_marker_audit_leakage=absent",
+            "original_message_body_marker_audit_leakage=absent",
+        ]
+        missing = [marker for marker in required if marker not in live]
+        failures: dict[str, object] = {}
+        if "ERROR:" in live:
+            failures["ssh"] = "host-assisted MIME/HTML validator was unavailable or ran against the wrong ref"
+        if not static_ok:
+            failures["static_boundary"] = "missing attachment handling boundary markers"
+        if missing:
+            failures["missing_live_markers"] = missing
+        if failures:
+            return self.result("OSMAP-WSTG-BUSL-001", STATUS_FAIL, "live attachment WSTG evidence did not meet expected outcomes", evidence_paths, failures)
+        return self.result("OSMAP-WSTG-BUSL-001", STATUS_PASS, "host-backed attachment download, forced-download, and redaction evidence passed", evidence_paths)
+
+    def write_bulk_folder_actions_static_boundary_evidence(self) -> bool:
         files = [
             REPO_ROOT / "src" / "http_runtime.rs",
             REPO_ROOT / "src" / "http" / "routes_mail.rs",
@@ -966,10 +1070,64 @@ class Runner:
             "bulk_move_reports_partial_success_when_later_uid_is_stale",
         ]
         missing = [marker for marker in markers if marker not in text]
-        evidence = self.write_text_evidence("static_bulk_folder_actions.txt", summarize_static_files(files, missing))
+        self.write_text_evidence("static_bulk_folder_actions.txt", summarize_static_files(files, missing))
+        return not missing
+
+    def test_bulk_folder_actions_live(self) -> TestResult:
+        if not self.config.allow_host_assisted:
+            return self.result("OSMAP-WSTG-BUSL-004", STATUS_SKIP, "host-assisted live bulk folder-action evidence disabled")
+        evidence_paths = [
+            "evidence/bulk_folder_actions_live_report.txt",
+            "evidence/static_bulk_folder_actions.txt",
+        ]
+        static_ok = self.write_bulk_folder_actions_static_boundary_evidence()
+        remote_repo = os.environ.get("OSMAP_WSTG_REMOTE_REPO", "/home/foo/OSMAP")
+        expected_ref = os.environ.get("OSMAP_WSTG_EXPECTED_REF", local_git_head())
+        live = self.run_ssh(
+            "bulk_folder_actions_live_report.txt",
+            "set -eu; "
+            f"cd {shlex.quote(remote_repo)}; "
+            "remote_ref=$(git rev-parse HEAD); "
+            f"expected_ref={shlex.quote(expected_ref)}; "
+            "if [ \"$remote_ref\" != \"$expected_ref\" ]; then "
+            "printf 'ERROR: remote repo ref mismatch expected=%s actual=%s\\n' \"$expected_ref\" \"$remote_ref\"; exit 1; "
+            "fi; "
+            "ksh ./maint/live/osmap-live-validate-archive-shortcut.ksh >/tmp/osmap-wstg-busl-004-live.log 2>&1 || { cat /tmp/osmap-wstg-busl-004-live.log; exit 1; }; "
+            "cat /tmp/osmap-wstg-busl-004-live.log",
+        )
+        required_markers = [
+            "live archive shortcut validation passed",
+            "settings_status=HTTP/1.1 303 See Other",
+            "move_status=HTTP/1.1 303 See Other",
+            "selected_archive_status=HTTP/1.1 303 See Other",
+            "mailbox page did not render selected archive form",
+        ]
+        forbidden_markers = [marker for marker in required_markers if marker.startswith("mailbox page did not")]
+        required_markers = [marker for marker in required_markers if marker not in forbidden_markers]
+        missing = [marker for marker in required_markers if marker not in live]
+        failures: dict[str, object] = {}
+        if "ERROR:" in live:
+            failures["ssh"] = "host-assisted live validator was unavailable or ran against the wrong ref"
+        if not static_ok:
+            failures["static_boundary"] = "missing bulk folder-action route markers"
         if missing:
-            return self.result("OSMAP-WSTG-BUSL-004", STATUS_FAIL, "bulk folder-action guardrail markers were missing from source/docs", [evidence], {"missing": missing})
-        return self.result("OSMAP-WSTG-BUSL-004", STATUS_PASS, "source and route tests show bounded selected-message move controls, caps, CSRF, budget, destination validation, and partial-result handling", [evidence])
+            failures["missing_live_markers"] = missing
+        if any(marker in live for marker in forbidden_markers):
+            failures["unexpected_live_failures"] = forbidden_markers
+        if failures:
+            return self.result(
+                "OSMAP-WSTG-BUSL-004",
+                STATUS_FAIL,
+                "bounded bulk folder-action WSTG evidence did not meet expected outcomes",
+                evidence_paths,
+                failures,
+            )
+        return self.result(
+            "OSMAP-WSTG-BUSL-004",
+            STATUS_PASS,
+            "host-backed selected archive and bulk folder-action controls passed live request/response validation",
+            evidence_paths,
+        )
 
     def test_draft_routes_authenticated(self) -> TestResult:
         ok, message = self.ensure_login()
@@ -1280,13 +1438,16 @@ class Runner:
         ]
         static_ok = self.write_source_attachment_static_boundary_evidence()
         remote_repo = os.environ.get("OSMAP_WSTG_REMOTE_REPO", "/home/foo/OSMAP")
+        expected_ref = os.environ.get("OSMAP_WSTG_EXPECTED_REF", local_git_head())
         live = self.run_ssh(
             "source_attachment_live_report.txt",
             "set -eu; "
             f"cd {shlex.quote(remote_repo)}; "
-            "git fetch origin main >/dev/null 2>&1 || true; "
-            "git checkout main >/dev/null 2>&1 || true; "
-            "git reset --hard origin/main >/dev/null 2>&1 || true; "
+            "remote_ref=$(git rev-parse HEAD); "
+            f"expected_ref={shlex.quote(expected_ref)}; "
+            "if [ \"$remote_ref\" != \"$expected_ref\" ]; then "
+            "printf 'ERROR: remote repo ref mismatch expected=%s actual=%s\\n' \"$expected_ref\" \"$remote_ref\"; exit 1; "
+            "fi; "
             "report=\"$HOME/osmap-wstg-busl-003-source-attachments-$(date +%Y%m%d-%H%M%S).txt\"; "
             "ksh ./maint/live/osmap-live-validate-v3-source-attachments.ksh --report \"$report\" >/tmp/osmap-wstg-busl-003-live.log 2>&1 || { cat /tmp/osmap-wstg-busl-003-live.log; exit 1; }; "
             "cat \"$report\"",
@@ -1487,9 +1648,28 @@ class Runner:
             "Checked dependency and supply-chain files:\n"
             + "\n".join(f"- {path.relative_to(REPO_ROOT)}: {'present' if path.exists() else 'missing'}" for path in files),
         )
+        metadata_text = ""
+        metadata_ok = False
+        try:
+            completed = subprocess.run(
+                ["cargo", "metadata", "--locked", "--format-version", "1", "--no-deps"],
+                cwd=REPO_ROOT,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                timeout=60,
+                check=False,
+            )
+            metadata_text = completed.stdout
+            metadata_ok = completed.returncode == 0 and '"packages"' in metadata_text and '"workspace_members"' in metadata_text
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            metadata_text = f"ERROR: {exc}\n"
+        metadata_evidence = self.write_text_evidence("dependency_metadata_locked.txt", metadata_text)
         if missing_files:
-            return self.result("OSMAP-WSTG-CONF-007", STATUS_FAIL, "dependency alignment files are missing", [evidence], {"missing": missing_files})
-        return self.result("OSMAP-WSTG-CONF-007", STATUS_PASS, "lockfile and supply-chain security documentation/tooling are present", [evidence])
+            return self.result("OSMAP-WSTG-CONF-007", STATUS_FAIL, "dependency alignment files are missing", [evidence, metadata_evidence], {"missing": missing_files})
+        if not metadata_ok:
+            return self.result("OSMAP-WSTG-CONF-007", STATUS_FAIL, "locked dependency metadata command failed", [evidence, metadata_evidence])
+        return self.result("OSMAP-WSTG-CONF-007", STATUS_PASS, "lockfile, supply-chain policy, and locked dependency metadata validated", [evidence, metadata_evidence])
 
     def test_security_logging_static(self) -> TestResult:
         files = [
@@ -1516,20 +1696,62 @@ class Runner:
             "skipped_checks",
         ]
         missing = [marker for marker in markers if marker.lower() not in text.lower()]
-        evidence = self.write_text_evidence("static_security_logging.txt", summarize_static_files(files, missing))
+        static_evidence = self.write_text_evidence("static_security_logging.txt", summarize_static_files(files, missing))
+        leaks: dict[str, list[str]] = {}
+        dynamic_files = [
+            path
+            for path in sorted(self.evidence_dir.iterdir())
+            if path.is_file() and not path.name.startswith("static_") and path.name != "security_logging_evidence_redaction.txt"
+        ]
+        forbidden_patterns = [
+            ("raw_session_cookie", r"osmap_session=[A-Za-z0-9._~+/=-]+"),
+            ("csrf_token_value", r"(?i)csrf_token=(?!\[REDACTED\])[^&\s\"']+"),
+            ("csrf_token_field", r'(?i)name=["\']csrf_token["\']\s+value=["\'](?!\[REDACTED\])[^"\']+["\']'),
+            ("password_hash", r"\$2[aby]\$[0-9]{2}\$"),
+            ("totp_secret", r"(?i)(totp_secret|totp seed|otpauth://|secret=)[A-Z2-7]{16,}"),
+            ("authorization_secret", r"(?i)authorization:\s*(bearer|basic)\s+[A-Za-z0-9._~+/=-]+"),
+        ]
+        for path in dynamic_files:
+            body = path.read_text(encoding="utf-8", errors="replace")
+            matches = [name for name, pattern in forbidden_patterns if re.search(pattern, body)]
+            if matches:
+                leaks[path.name] = matches
+        redaction_lines = [
+            "Security logging and evidence redaction scan:",
+            "- checked dynamic WSTG evidence files",
+            "- raw session cookies, CSRF token values, password hashes, TOTP material, and authorization secrets must be absent",
+        ]
+        if dynamic_files:
+            redaction_lines.append(f"checked_files={len(dynamic_files)}")
+        else:
+            redaction_lines.append("checked_files=0")
+        if leaks:
+            for path, matches in leaks.items():
+                redaction_lines.append(f"- {path}: {', '.join(matches)}")
+        else:
+            redaction_lines.append("result=passed")
+        redaction_evidence = self.write_text_evidence("security_logging_evidence_redaction.txt", "\n".join(redaction_lines) + "\n")
         if missing:
             return self.result(
                 "OSMAP-WSTG-LOGG-001",
                 STATUS_FAIL,
                 "security logging and redaction markers were missing from source/docs",
-                [evidence],
+                [static_evidence, redaction_evidence],
                 {"missing": missing},
+            )
+        if leaks:
+            return self.result(
+                "OSMAP-WSTG-LOGG-001",
+                STATUS_FAIL,
+                "dynamic WSTG evidence disclosed sensitive logging or token material",
+                [static_evidence, redaction_evidence],
+                {"leaks": leaks},
             )
         return self.result(
             "OSMAP-WSTG-LOGG-001",
             STATUS_PASS,
-            "source and docs show structured security logging and sensitive-data redaction posture",
-            [evidence],
+            "structured logging markers and dynamic evidence redaction scan passed",
+            [static_evidence, redaction_evidence],
         )
 
     def run_ssh(self, filename: str, command: str) -> str:
@@ -1551,6 +1773,17 @@ class Runner:
 
 def same_origin_headers(config: Config) -> dict[str, str]:
     return {"Origin": f"{config.scheme}://{config.host}", "Referer": f"{config.base_url}/mailboxes"}
+
+
+def local_git_head() -> str:
+    try:
+        return subprocess.check_output(
+            ["git", "-C", str(REPO_ROOT), "rev-parse", "HEAD"],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+    except (OSError, subprocess.CalledProcessError):
+        return "unknown"
 
 
 def extract_csrf(text: str) -> str:
@@ -1724,7 +1957,8 @@ def write_summary(runner: Runner, args: argparse.Namespace, release_errors: list
         "commands": [" ".join(shlex.quote(part) for part in sys.argv)],
         "release_mode": runner.config.release_mode,
         "standards": runner.mapping["standards"],
-        "owasp_top_10_2025_coverage": top10_coverage(runner.mapping),
+        "declared_owasp_top_10_2025_coverage": top10_coverage(runner.mapping),
+        "owasp_top_10_2025_coverage": proven_top10_coverage(runner.mapping, runner.results),
         "authenticated_proof": runner.authenticated_proof,
         "release_errors": release_errors,
         "results": [
@@ -1771,13 +2005,15 @@ def render_markdown_report(runner: Runner, data: dict[str, object]) -> str:
     if data.get("release_errors"):
         lines.extend(["", "## Release Errors", ""])
         lines.extend(f"- {escape_md(error)}" for error in data["release_errors"])
-    lines.extend(["", "## OWASP Top 10 2025 Coverage", "", "| Category | Name | Tests | Gaps |", "| --- | --- | --- | --- |"])
+    lines.extend(["", "## OWASP Top 10 2025 Coverage", "", "| Category | Name | Passed tests | Failed/skipped | Static-only | Gaps |", "| --- | --- | --- | --- | --- | --- |"])
     coverage = data["owasp_top_10_2025_coverage"]
     for category, name in OWASP_TOP_10_2025.items():
         item = coverage[category]
         tests = ", ".join(f"`{test_id}`" for test_id in item["tests"]) or "none"
+        incomplete = ", ".join(f"`{test_id}`" for test_id in item.get("incomplete_tests", [])) or "none"
+        static_only = ", ".join(f"`{test_id}`" for test_id in item.get("static_only_tests", [])) or "none"
         gaps = ", ".join(f"`{gap_id}`" for gap_id in item["gaps"]) or "none"
-        lines.append(f"| `{category}` | {escape_md(name)} | {tests} | {gaps} |")
+        lines.append(f"| `{category}` | {escape_md(name)} | {tests} | {incomplete} | {static_only} | {gaps} |")
     lines.extend(["", "## Results", "", "| Status | Test ID | Test | Message | Evidence |", "| --- | --- | --- | --- | --- |"])
     for result in runner.results:
         evidence = "<br>".join(f"`{item}`" for item in result.evidence) if result.evidence else ""
@@ -1859,6 +2095,33 @@ def top10_coverage(mapping: dict[str, object]) -> dict[str, dict[str, list[str]]
     for gap in mapping.get("gaps", []):
         for category in gap.get("owasp_top_10_2025", []):
             coverage[category]["gaps"].append(gap["gap_id"])
+    return coverage
+
+
+def proven_top10_coverage(mapping: dict[str, object], results: list[TestResult]) -> dict[str, dict[str, list[str]]]:
+    coverage = top10_coverage(mapping)
+    for item in coverage.values():
+        item["tests"] = []
+        item["incomplete_tests"] = []
+        item["static_only_tests"] = []
+    by_id = {result.test_id: result for result in results}
+    for item in mapping["tests"]:
+        if item.get("release_required") is not True or item.get("safe_for_release") is not True:
+            continue
+        test_id = str(item["test_id"])
+        result = by_id.get(test_id)
+        if result is None:
+            status = "missing"
+        else:
+            status = result.status
+        is_static_only = set(item.get("test_type", [])) == {"static review"}
+        for category in item.get("owasp_top_10_2025", []):
+            if status == STATUS_PASS:
+                coverage[category]["tests"].append(test_id)
+            else:
+                coverage[category]["incomplete_tests"].append(test_id)
+            if is_static_only:
+                coverage[category]["static_only_tests"].append(test_id)
     return coverage
 
 

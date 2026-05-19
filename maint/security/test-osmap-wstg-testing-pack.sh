@@ -121,6 +121,7 @@ for key in [
     "OSMAP_SECONDARY_EMAIL=",
     "OSMAP_OUTPUT_DIR=",
     "OSMAP_WSTG_REMOTE_REPO=/home/foo/OSMAP",
+    "OSMAP_WSTG_EXPECTED_REF=",
     "OSMAP_RATE_LIMIT_DELAY_SECONDS=",
     "OSMAP_ALLOW_AUTHENTICATED_TESTS=false",
 ]:
@@ -213,11 +214,15 @@ for marker in [
     "source_attachment_evidence_redaction",
     "osmap-live-validate-v3-source-attachments.ksh",
     'os.environ.get("OSMAP_WSTG_REMOTE_REPO", "/home/foo/OSMAP")',
+    'os.environ.get("OSMAP_WSTG_EXPECTED_REF", local_git_head())',
+    "remote repo ref mismatch",
     "selected_attachment_body_marker_preserved=yes",
     "real_password_plus_totp_with_temporary_mailbox_hash",
 ]:
     if marker not in runner:
         raise SystemExit(f"runner missing source-attachment marker {marker}")
+if "git reset --hard origin/main" in runner:
+    raise SystemExit("runner must not mutate the remote checkout before host-assisted WSTG evidence")
 validator = (pack.parents[1] / "maint" / "live" / "osmap-live-validate-v3-source-attachments.ksh").read_text()
 for marker in [
     "include_original_attachment_1",
@@ -231,6 +236,45 @@ for marker in [
     if marker not in validator:
         raise SystemExit(f"source-attachment validator missing marker {marker}")
 print("authenticated source-attachment WSTG mapping validated")
+PY
+
+echo "validating live WSTG evidence mappings"
+python3 - "$pack_dir" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+pack = Path(sys.argv[1])
+mapping = json.loads((pack / "wstg-asvs-mapping.json").read_text())
+tests = {item["test_id"]: item for item in mapping["tests"]}
+expected = {
+    "OSMAP-WSTG-CLNT-002": {"mime_html_live_report.txt", "static_html_rendering.txt"},
+    "OSMAP-WSTG-BUSL-001": {"mime_html_live_report.txt", "static_attachment_handling.txt"},
+    "OSMAP-WSTG-BUSL-004": {"bulk_folder_actions_live_report.txt", "static_bulk_folder_actions.txt"},
+    "OSMAP-WSTG-CONF-007": {"static_dependency_alignment.txt", "dependency_metadata_locked.txt"},
+    "OSMAP-WSTG-LOGG-001": {"static_security_logging.txt", "security_logging_evidence_redaction.txt"},
+}
+for test_id, evidence in expected.items():
+    item = tests[test_id]
+    missing = sorted(evidence - set(item["evidence_produced"]))
+    if missing:
+        raise SystemExit(f"{test_id} missing evidence markers: {missing}")
+    if item["test_type"] == ["static review"]:
+        raise SystemExit(f"{test_id} must not be mapped as static-only WSTG evidence")
+runner = (pack / "run-wstg-pack.py").read_text()
+for marker in [
+    "test_html_rendering_live",
+    "test_attachment_live",
+    "mime_html_live_evidence",
+    "test_bulk_folder_actions_live",
+    "osmap-live-validate-v3-mime-html-proof.ksh",
+    "osmap-live-validate-archive-shortcut.ksh",
+    "X-OSMAP-WSTG-Body-Truncated",
+    "proven_top10_coverage",
+]:
+    if marker not in runner:
+        raise SystemExit(f"runner missing live WSTG marker {marker}")
+print("live WSTG evidence mappings validated")
 PY
 
 echo "validating authenticated source-attachment route skips without credentials"
