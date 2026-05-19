@@ -293,14 +293,16 @@ Unless a narrower migration-capable need is proven, the following remain beyond 
 
 Version 3 is the focused daily-driver hardening cycle for the known OpenBSD mail environment.
 
-It preserves all Version 2 security gates while moving OSMAP from controlled pilot usefulness toward safer routine use by selected real users. Version 3 is not a broad feature-expansion release. Its purpose is to close the most important assurance, correctness, resource-control, and workflow gaps exposed by Version 2 before OSMAP grows a larger browser surface.
+It preserves all Version 2 security gates while moving OSMAP from controlled pilot usefulness toward safer routine use by selected real users. Version 3 is not a broad feature-expansion release. Its purpose is to close the most important assurance, correctness, resource-control, workflow, and WSTG due-diligence gaps exposed by Version 2 before OSMAP grows a larger browser surface.
 
-The authoritative Version 3 definition and release gate live in:
+The authoritative Version 3 definition, acceptance criteria, release gates, and WSTG due-diligence gates live in:
 
 - [`docs/V3_DEFINITION.md`](docs/V3_DEFINITION.md)
 - [`docs/V3_ACCEPTANCE_CRITERIA.md`](docs/V3_ACCEPTANCE_CRITERIA.md)
 - [`docs/V3_ROADMAP.md`](docs/V3_ROADMAP.md)
 - [`docs/V3_SECURITY_GATES.md`](docs/V3_SECURITY_GATES.md)
+- [`docs/V3_WSTG_DUE_DILIGENCE_PLAN.md`](docs/V3_WSTG_DUE_DILIGENCE_PLAN.md)
+- [`docs/V3_WSTG_COVERAGE_GATE.md`](docs/V3_WSTG_COVERAGE_GATE.md)
 
 The short form is:
 
@@ -311,6 +313,9 @@ The short form is:
 - Make release-mode validation fail on skipped required checks or missing evidence
 - Make Rust supply-chain assurance a first-class release gate
 - Require credential and TOTP-backed evidence for WSTG and other security tests that need authenticated coverage
+- Pin the WSTG source used for coverage analysis, including version, upstream URL, capture date, and commit hash when testing against the OWASP `master` branch
+- Treat the current WSTG pack as a living regression suite, not a one-time checklist
+- Require every WSTG item to have one of these dispositions: automated, manual, not applicable, deferred, blocked, or covered by another named evidence artifact
 - Add strict timeout and resource-control evidence around expensive browser, helper, mailbox, MIME, attachment, send, search, and move paths
 - Strengthen MIME and HTML correctness through fixture-driven tests before adding richer mail behavior
 - Prove session revocation, expiry, and concurrent-session behavior with regression tests
@@ -321,34 +326,51 @@ Version 3 priority work is:
 1. Release-mode validation that cannot pass on skipped required security checks
 2. Supply-chain assurance for Rust dependencies, CI, local checks, and release evidence
 3. Explicit resource limits and timeout behavior for expensive browser, helper, mailbox, MIME, attachment, send, search, and move operations
-4. WSTG and security-test release evidence, including credential and TOTP-backed authenticated coverage where required
-5. Fixture-driven MIME, attachment, charset, transfer-encoding, encoded-header, and sanitized-HTML validation
-6. Session-store concurrency, revocation, expiry, and device-policy correctness
-7. Daily-driver improvements such as draft continuity, reply and forward correctness, safer attachment handling, richer bounded search, and bounded bulk folder actions
+4. WSTG due-diligence automation that closes the current coverage gaps in managed slices
+5. Credential and TOTP-backed authenticated WSTG evidence for all applicable authenticated browser surfaces
+6. Fixture-driven MIME, attachment, charset, transfer-encoding, encoded-header, and sanitized-HTML validation
+7. Session-store concurrency, revocation, expiry, and device-policy correctness
+8. Daily-driver improvements such as draft continuity, reply and forward correctness, safer attachment handling, richer bounded search, and bounded bulk folder actions
+
+The V3 WSTG due-diligence work is sliced so it can be completed without losing control of scope:
+
+| Slice | Area | V3 close status |
+| --- | --- | --- |
+| 1 | Coverage inventory and WSTG source pinning | Required |
+| 2 | Authorization and account isolation | Critical, required |
+| 3 | Session lifecycle and cookie security | Critical, required |
+| 4 | IMAP, SMTP, and webmail-specific input validation | Critical, required |
+| 5 | Weak cryptography and transport security | Critical, required |
+| 6 | API-style route and state-transition testing | High, required unless not applicable with evidence |
+| 7 | Business logic and workflow abuse | High, required |
+| 8 | Client-side, browser storage, and UI security | High, required unless not applicable with evidence |
+| 9 | Error handling and information disclosure | High, required |
+| 10 | Release gate integration | Critical, required |
 
 The highest-risk Version 3 technical concerns are:
 
-- Developer checks can currently appear useful even when required release evidence is missing or skipped
+- Developer checks can appear useful even when required release evidence is missing or skipped
 - Credential-gated WSTG tests can skip in ordinary runner mode, which is acceptable for developer partial testing but not for release evidence when authenticated coverage is required
+- The existing WSTG matrix is anchored to WSTG v4.2 and must also track current OWASP WSTG latest or a pinned upstream commit when used as a V3 due-diligence target
+- Authorization and account-isolation testing must prove that one mailbox user cannot access, mutate, move, delete, draft, send from, or attach another user's mail data
+- IMAP, SMTP, and webmail-specific injection risks must be tested with safe synthetic payloads against controlled validation accounts and fixtures
 - Dependency and supply-chain assurance must be strong enough to block release candidates, not just advise developers
 - External command and helper paths need hard timeout behavior and consistent error mapping
-- Resource-exhaustion controls need to cover more expensive mailbox and rendering paths
+- Resource-exhaustion controls need to cover expensive mailbox and rendering paths
 - MIME and HTML behavior needs a larger hostile fixture corpus
 - Session-store race and revocation behavior needs stronger concurrency coverage
-- TLS CBC disposition needs either closure or a documented exception
+- TLS weak-protocol and weak-cipher rejection needs explicit evidence tied to the assessed host and commit
 - Live-host evidence must be sanitized and reviewable without committing secrets
 
 The implemented validation entry points are:
 
 - `make security-check` for developer and CI-oriented partial validation
 - `make release-check` for strict V3 release validation with `OSMAP_SECURITY_PROFILE=release`
+- `maint/wstg-testing-pack/run.sh` for WSTG pack execution
 
-`make release-check` requires the pinned Rust toolchain and supply-chain tools,
-dependency inventory generation, V2 carry-forward evidence, host-readiness
-evidence, a release-mode WSTG summary with authenticated credential and TOTP
-coverage, current V3 pilot rehearsal evidence, and a sanitized release evidence
-archive. It is expected to fail on a normal workstation until those
-operator-provided evidence files and credentials are available.
+`make release-check` requires the pinned Rust toolchain and supply-chain tools, dependency inventory generation, V2 carry-forward evidence, host-readiness evidence, a release-mode WSTG summary with authenticated credential and TOTP coverage where required, current V3 pilot rehearsal evidence, and a sanitized release evidence archive. It is expected to fail on a normal workstation until those operator-provided evidence files and credentials are available.
+
+V3 cannot close until every critical WSTG due-diligence slice is coded, tested, and evidenced, or explicitly recorded as not applicable with a reviewed reason. High-priority WSTG gaps may not be silently deferred. A deferral requires a dated decision-log entry, owner, reason, expiry or follow-up trigger, and evidence explaining why the item does not block the selected V3 daily-driver release.
 
 Unless a narrower daily-driver need is proven and covered by tests, the following remain beyond Version 3:
 
@@ -358,11 +380,6 @@ Unless a narrower daily-driver need is proven and covered by tests, the followin
 - Multi-tenant hosting
 - Enterprise identity federation
 - ProtonMail-style zero-access encryption
-- Broad JavaScript-heavy webmail behavior
-- Remote external content loading
-- Unbounded mailbox-wide operations
-- Attachment preview behavior that widens browser trust
-- Runtime redesign that is not directly justified by measured security or reliability needs
 
 ## Target Users
 

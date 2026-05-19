@@ -1,5 +1,18 @@
 # Decision Log
 
+## 2026-05-19, Make V3 WSTG due diligence a release-blocking workstream
+
+The existing WSTG testing pack provides useful browser, edge, authentication, session, CSP, CSRF, MIME, attachment, and selected business-logic regression evidence, but the current matrix is anchored to WSTG v4.2 and does not yet represent complete WSTG due diligence for Version 3.
+
+Version 3 now treats WSTG coverage closure as a managed release workstream. The project records two required documents:
+
+- `docs/V3_WSTG_DUE_DILIGENCE_PLAN.md`
+- `docs/V3_WSTG_COVERAGE_GATE.md`
+
+The due-diligence work is sliced into coverage inventory and source pinning, authorization and account isolation, session lifecycle and cookie security, IMAP/SMTP and webmail-specific input validation, weak cryptography, API-style route testing, business-logic abuse, client-side and browser-storage testing, error handling, and release-gate integration.
+
+V3 cannot close while critical WSTG slices are incomplete, while required authenticated WSTG tests are skipped, while TOTP evidence is missing for applicable checks, or while not-applicable and deferred items lack written evidence. Developer partial mode may still skip credential-gated checks, but release mode must fail closed.
+
 ## 2026-05-18, Add a sanitized V3 pilot rehearsal capture helper
 
 The final V3 selected-cohort rehearsal cannot be manufactured from fixture
