@@ -1,0 +1,1059 @@
+{
+  "generated_for": "OSMAP current uploaded repo review, 2026-05-19",
+  "source_repo_zip": "OSMAP-main.zip",
+  "wstg_source": "OWASP WSTG v4.2 stable table of contents retrieved 2026-05-19",
+  "note": "This is an applicability and evidence matrix starter. It is not a pass/fail report until each item has an executed evidence reference or a documented not-applicable proof.",
+  "current_osmap_pack": {
+    "mapped_tests": 27,
+    "unique_mapped_wstg_ids": 29,
+    "official_toc_scenarios_listed_here": 97,
+    "official_toc_scenarios_mapped_by_current_pack": 28,
+    "official_toc_scenarios_not_mapped_by_current_pack": 69,
+    "supplemental_wstg_ids_in_current_mapping_not_seen_in_retrieved_official_toc": [
+      "WSTG-v42-CONF-12"
+    ]
+  },
+  "scenarios": [
+    {
+      "wstg_id": "WSTG-v42-INFO-01",
+      "category": "INFO",
+      "section": "4.1 Information Gathering",
+      "title": "Conduct Search Engine Discovery Reconnaissance for Information Leakage",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-INFO-02",
+      "category": "INFO",
+      "section": "4.1 Information Gathering",
+      "title": "Fingerprint Web Server",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INFO-002"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+    },
+    {
+      "wstg_id": "WSTG-v42-INFO-03",
+      "category": "INFO",
+      "section": "4.1 Information Gathering",
+      "title": "Review Webserver Metafiles for Information Leakage",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INFO-001"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+    },
+    {
+      "wstg_id": "WSTG-v42-INFO-04",
+      "category": "INFO",
+      "section": "4.1 Information Gathering",
+      "title": "Enumerate Applications on Webserver",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-INFO-05",
+      "category": "INFO",
+      "section": "4.1 Information Gathering",
+      "title": "Review Webpage Content for Information Leakage",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INFO-001"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+    },
+    {
+      "wstg_id": "WSTG-v42-INFO-06",
+      "category": "INFO",
+      "section": "4.1 Information Gathering",
+      "title": "Identify Application Entry Points",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-INFO-07",
+      "category": "INFO",
+      "section": "4.1 Information Gathering",
+      "title": "Map Execution Paths Through Application",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-INFO-08",
+      "category": "INFO",
+      "section": "4.1 Information Gathering",
+      "title": "Fingerprint Web Application Framework",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-INFO-09",
+      "category": "INFO",
+      "section": "4.1 Information Gathering",
+      "title": "Fingerprint Web Application",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-INFO-10",
+      "category": "INFO",
+      "section": "4.1 Information Gathering",
+      "title": "Map Application Architecture",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-CONF-01",
+      "category": "CONF",
+      "section": "4.2 Configuration and Deployment Management Testing",
+      "title": "Test Network Infrastructure Configuration",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CONF-001",
+        "OSMAP-WSTG-CONF-005",
+        "OSMAP-WSTG-CONF-006"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+    },
+    {
+      "wstg_id": "WSTG-v42-CONF-02",
+      "category": "CONF",
+      "section": "4.2 Configuration and Deployment Management Testing",
+      "title": "Test Application Platform Configuration",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CONF-007"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+    },
+    {
+      "wstg_id": "WSTG-v42-CONF-03",
+      "category": "CONF",
+      "section": "4.2 Configuration and Deployment Management Testing",
+      "title": "Test File Extensions Handling for Sensitive Information",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-CONF-04",
+      "category": "CONF",
+      "section": "4.2 Configuration and Deployment Management Testing",
+      "title": "Review Old Backup and Unreferenced Files for Sensitive Information",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-CONF-05",
+      "category": "CONF",
+      "section": "4.2 Configuration and Deployment Management Testing",
+      "title": "Enumerate Infrastructure and Application Admin Interfaces",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CONF-005"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+    },
+    {
+      "wstg_id": "WSTG-v42-CONF-06",
+      "category": "CONF",
+      "section": "4.2 Configuration and Deployment Management Testing",
+      "title": "Test HTTP Methods",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CONF-004"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+    },
+    {
+      "wstg_id": "WSTG-v42-CONF-07",
+      "category": "CONF",
+      "section": "4.2 Configuration and Deployment Management Testing",
+      "title": "Test HTTP Strict Transport Security",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CONF-002"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+    },
+    {
+      "wstg_id": "WSTG-v42-CONF-08",
+      "category": "CONF",
+      "section": "4.2 Configuration and Deployment Management Testing",
+      "title": "Test RIA Cross Domain Policy",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-CONF-09",
+      "category": "CONF",
+      "section": "4.2 Configuration and Deployment Management Testing",
+      "title": "Test File Permission",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-CONF-10",
+      "category": "CONF",
+      "section": "4.2 Configuration and Deployment Management Testing",
+      "title": "Test for Subdomain Takeover",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-CONF-11",
+      "category": "CONF",
+      "section": "4.2 Configuration and Deployment Management Testing",
+      "title": "Test Cloud Storage",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "not_applicable_candidate_but_requires_repo_or_live_proof"
+    },
+    {
+      "wstg_id": "WSTG-v42-IDNT-01",
+      "category": "IDNT",
+      "section": "4.3 Identity Management Testing",
+      "title": "Test Role Definitions",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-IDNT-02",
+      "category": "IDNT",
+      "section": "4.3 Identity Management Testing",
+      "title": "Test User Registration Process",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "not_applicable_candidate_but_requires_repo_or_live_proof"
+    },
+    {
+      "wstg_id": "WSTG-v42-IDNT-03",
+      "category": "IDNT",
+      "section": "4.3 Identity Management Testing",
+      "title": "Test Account Provisioning Process",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-IDNT-04",
+      "category": "IDNT",
+      "section": "4.3 Identity Management Testing",
+      "title": "Testing for Account Enumeration and Guessable User Account",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-ATHN-002"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+    },
+    {
+      "wstg_id": "WSTG-v42-IDNT-05",
+      "category": "IDNT",
+      "section": "4.3 Identity Management Testing",
+      "title": "Testing for Weak or Unenforced Username Policy",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-ATHN-01",
+      "category": "ATHN",
+      "section": "4.4 Authentication Testing",
+      "title": "Testing for Credentials Transported over an Encrypted Channel",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-ATHN-001"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+    },
+    {
+      "wstg_id": "WSTG-v42-ATHN-02",
+      "category": "ATHN",
+      "section": "4.4 Authentication Testing",
+      "title": "Testing for Default Credentials",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-ATHN-03",
+      "category": "ATHN",
+      "section": "4.4 Authentication Testing",
+      "title": "Testing for Weak Lock Out Mechanism",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-ATHN-002",
+        "OSMAP-WSTG-ATHN-003"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+    },
+    {
+      "wstg_id": "WSTG-v42-ATHN-04",
+      "category": "ATHN",
+      "section": "4.4 Authentication Testing",
+      "title": "Testing for Bypassing Authentication Schema",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-ATHN-05",
+      "category": "ATHN",
+      "section": "4.4 Authentication Testing",
+      "title": "Testing for Vulnerable Remember Password",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "not_applicable_candidate_but_requires_repo_or_live_proof"
+    },
+    {
+      "wstg_id": "WSTG-v42-ATHN-06",
+      "category": "ATHN",
+      "section": "4.4 Authentication Testing",
+      "title": "Testing for Browser Cache Weaknesses",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-SESS-005"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+    },
+    {
+      "wstg_id": "WSTG-v42-ATHN-07",
+      "category": "ATHN",
+      "section": "4.4 Authentication Testing",
+      "title": "Testing for Weak Password Policy",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-ATHN-08",
+      "category": "ATHN",
+      "section": "4.4 Authentication Testing",
+      "title": "Testing for Weak Security Question Answer",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "not_applicable_candidate_but_requires_repo_or_live_proof"
+    },
+    {
+      "wstg_id": "WSTG-v42-ATHN-09",
+      "category": "ATHN",
+      "section": "4.4 Authentication Testing",
+      "title": "Testing for Weak Password Change or Reset Functionalities",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "not_applicable_candidate_but_requires_repo_or_live_proof"
+    },
+    {
+      "wstg_id": "WSTG-v42-ATHN-10",
+      "category": "ATHN",
+      "section": "4.4 Authentication Testing",
+      "title": "Testing for Weaker Authentication in Alternative Channel",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-ATHN-001",
+        "OSMAP-WSTG-ATHN-004"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+    },
+    {
+      "wstg_id": "WSTG-v42-ATHZ-01",
+      "category": "ATHZ",
+      "section": "4.5 Authorization Testing",
+      "title": "Testing Directory Traversal File Include",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-001"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+    },
+    {
+      "wstg_id": "WSTG-v42-ATHZ-02",
+      "category": "ATHZ",
+      "section": "4.5 Authorization Testing",
+      "title": "Testing for Bypassing Authorization Schema",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-ATHZ-03",
+      "category": "ATHZ",
+      "section": "4.5 Authorization Testing",
+      "title": "Testing for Privilege Escalation",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-ATHZ-04",
+      "category": "ATHZ",
+      "section": "4.5 Authorization Testing",
+      "title": "Testing for Insecure Direct Object References",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-BUSL-003",
+        "OSMAP-WSTG-BUSL-004"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+    },
+    {
+      "wstg_id": "WSTG-v42-SESS-01",
+      "category": "SESS",
+      "section": "4.6 Session Management Testing",
+      "title": "Testing for Session Management Schema",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-SESS-02",
+      "category": "SESS",
+      "section": "4.6 Session Management Testing",
+      "title": "Testing for Cookies Attributes",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-SESS-001"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+    },
+    {
+      "wstg_id": "WSTG-v42-SESS-03",
+      "category": "SESS",
+      "section": "4.6 Session Management Testing",
+      "title": "Testing for Session Fixation",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-SESS-002"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+    },
+    {
+      "wstg_id": "WSTG-v42-SESS-04",
+      "category": "SESS",
+      "section": "4.6 Session Management Testing",
+      "title": "Testing for Exposed Session Variables",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-SESS-05",
+      "category": "SESS",
+      "section": "4.6 Session Management Testing",
+      "title": "Testing for Cross Site Request Forgery",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-SESS-003",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-BUSL-003",
+        "OSMAP-WSTG-BUSL-004"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+    },
+    {
+      "wstg_id": "WSTG-v42-SESS-06",
+      "category": "SESS",
+      "section": "4.6 Session Management Testing",
+      "title": "Testing for Logout Functionality",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-SESS-005"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+    },
+    {
+      "wstg_id": "WSTG-v42-SESS-07",
+      "category": "SESS",
+      "section": "4.6 Session Management Testing",
+      "title": "Testing Session Timeout",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-SESS-08",
+      "category": "SESS",
+      "section": "4.6 Session Management Testing",
+      "title": "Testing for Session Puzzling",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-SESS-09",
+      "category": "SESS",
+      "section": "4.6 Session Management Testing",
+      "title": "Testing for Session Hijacking",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-INPV-01",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for Reflected Cross Site Scripting",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-002"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+    },
+    {
+      "wstg_id": "WSTG-v42-INPV-02",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for Stored Cross Site Scripting",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CLNT-002"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+    },
+    {
+      "wstg_id": "WSTG-v42-INPV-03",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for HTTP Verb Tampering",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-INPV-04",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for HTTP Parameter Pollution",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-INPV-05",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for SQL Injection",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-INPV-06",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for LDAP Injection",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-INPV-07",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for XML Injection",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-INPV-08",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for SSI Injection",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-INPV-09",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for XPath Injection",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-INPV-10",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for IMAP SMTP Injection",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-INPV-11",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for Code Injection",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-INPV-12",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for Command Injection",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-INPV-13",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for Format String Injection",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-INPV-14",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for Incubated Vulnerability",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-INPV-15",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for HTTP Splitting Smuggling",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-INPV-16",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for HTTP Incoming Requests",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-INPV-17",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for Host Header Injection",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-INPV-18",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for Server-side Template Injection",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-INPV-19",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for Server-Side Request Forgery",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-ERRH-01",
+      "category": "ERRH",
+      "section": "4.8 Testing for Error Handling",
+      "title": "Testing for Improper Error Handling",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INFO-002",
+        "OSMAP-WSTG-LOGG-001"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+    },
+    {
+      "wstg_id": "WSTG-v42-ERRH-02",
+      "category": "ERRH",
+      "section": "4.8 Testing for Error Handling",
+      "title": "Testing for Stack Traces",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-CRYP-01",
+      "category": "CRYP",
+      "section": "4.9 Testing for Weak Cryptography",
+      "title": "Testing for Weak Transport Layer Security",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-CRYP-02",
+      "category": "CRYP",
+      "section": "4.9 Testing for Weak Cryptography",
+      "title": "Testing for Padding Oracle",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-CRYP-03",
+      "category": "CRYP",
+      "section": "4.9 Testing for Weak Cryptography",
+      "title": "Testing for Sensitive Information Sent via Unencrypted Channels",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-CRYP-04",
+      "category": "CRYP",
+      "section": "4.9 Testing for Weak Cryptography",
+      "title": "Testing for Weak Encryption",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-BUSL-01",
+      "category": "BUSL",
+      "section": "4.10 Business Logic Testing",
+      "title": "Test Business Logic Data Validation",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-BUSL-02",
+      "category": "BUSL",
+      "section": "4.10 Business Logic Testing",
+      "title": "Test Ability to Forge Requests",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-BUSL-03",
+      "category": "BUSL",
+      "section": "4.10 Business Logic Testing",
+      "title": "Test Integrity Checks",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-BUSL-04",
+      "category": "BUSL",
+      "section": "4.10 Business Logic Testing",
+      "title": "Test for Process Timing",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-BUSL-004"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+    },
+    {
+      "wstg_id": "WSTG-v42-BUSL-05",
+      "category": "BUSL",
+      "section": "4.10 Business Logic Testing",
+      "title": "Test Number of Times a Function Can Be Used Limits",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-BUSL-06",
+      "category": "BUSL",
+      "section": "4.10 Business Logic Testing",
+      "title": "Testing for the Circumvention of Work Flows",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-BUSL-07",
+      "category": "BUSL",
+      "section": "4.10 Business Logic Testing",
+      "title": "Test Defenses Against Application Misuse",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-BUSL-08",
+      "category": "BUSL",
+      "section": "4.10 Business Logic Testing",
+      "title": "Test Upload of Unexpected File Types",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-BUSL-001",
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-BUSL-003"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+    },
+    {
+      "wstg_id": "WSTG-v42-BUSL-09",
+      "category": "BUSL",
+      "section": "4.10 Business Logic Testing",
+      "title": "Test Upload of Malicious Files",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-BUSL-001",
+        "OSMAP-WSTG-BUSL-003"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+    },
+    {
+      "wstg_id": "WSTG-v42-CLNT-01",
+      "category": "CLNT",
+      "section": "4.11 Client-side Testing",
+      "title": "Testing for DOM-Based Cross Site Scripting",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CLNT-002"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+    },
+    {
+      "wstg_id": "WSTG-v42-CLNT-02",
+      "category": "CLNT",
+      "section": "4.11 Client-side Testing",
+      "title": "Testing for JavaScript Execution",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-CLNT-03",
+      "category": "CLNT",
+      "section": "4.11 Client-side Testing",
+      "title": "Testing for HTML Injection",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-CLNT-04",
+      "category": "CLNT",
+      "section": "4.11 Client-side Testing",
+      "title": "Testing for Client-side URL Redirect",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-CLNT-05",
+      "category": "CLNT",
+      "section": "4.11 Client-side Testing",
+      "title": "Testing for CSS Injection",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-CLNT-06",
+      "category": "CLNT",
+      "section": "4.11 Client-side Testing",
+      "title": "Testing for Client-side Resource Manipulation",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-CLNT-07",
+      "category": "CLNT",
+      "section": "4.11 Client-side Testing",
+      "title": "Testing Cross Origin Resource Sharing",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CLNT-001"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+    },
+    {
+      "wstg_id": "WSTG-v42-CLNT-08",
+      "category": "CLNT",
+      "section": "4.11 Client-side Testing",
+      "title": "Testing for Cross Site Flashing",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "not_applicable_candidate_but_requires_repo_or_live_proof"
+    },
+    {
+      "wstg_id": "WSTG-v42-CLNT-09",
+      "category": "CLNT",
+      "section": "4.11 Client-side Testing",
+      "title": "Testing for Clickjacking",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CONF-002"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+    },
+    {
+      "wstg_id": "WSTG-v42-CLNT-10",
+      "category": "CLNT",
+      "section": "4.11 Client-side Testing",
+      "title": "Testing WebSockets",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "not_applicable_candidate_but_requires_repo_or_live_proof"
+    },
+    {
+      "wstg_id": "WSTG-v42-CLNT-11",
+      "category": "CLNT",
+      "section": "4.11 Client-side Testing",
+      "title": "Testing Web Messaging",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "not_applicable_candidate_but_requires_repo_or_live_proof"
+    },
+    {
+      "wstg_id": "WSTG-v42-CLNT-12",
+      "category": "CLNT",
+      "section": "4.11 Client-side Testing",
+      "title": "Testing Browser Storage",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-CLNT-13",
+      "category": "CLNT",
+      "section": "4.11 Client-side Testing",
+      "title": "Testing for Cross Site Script Inclusion",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+    },
+    {
+      "wstg_id": "WSTG-v42-APIT-01",
+      "category": "APIT",
+      "section": "4.12 API Testing",
+      "title": "Testing GraphQL",
+      "current_osmap_mapping_status": "not_mapped_in_current_pack",
+      "current_osmap_tests": [],
+      "due_diligence_status": "requires_applicability_decision_and_evidence",
+      "recommended_triage": "not_applicable_candidate_but_requires_repo_or_live_proof"
+    }
+  ]
+}
