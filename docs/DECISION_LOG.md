@@ -1,5 +1,24 @@
 # Decision Log
 
+## 2026-05-22, Start WSTG Slice 2 authorization account-isolation evidence
+
+The Version 3 WSTG workstream now has an explicit authorization and
+account-isolation lane:
+
+- `OSMAP-WSTG-ATHZ-001` maps WSTG ATHZ-02, ATHZ-03, and ATHZ-04
+- release evidence requires a primary authenticated password-plus-TOTP session
+  and a host-assisted secondary mailbox fixture
+- the dynamic probes assert that primary-session requests cannot expose the
+  secondary mailbox/message/attachment/sent/search markers, and that missing or
+  stale session cookies cannot reach protected mailbox content
+- static evidence ties draft, send, search, bulk action, and mailbox-helper
+  boundaries to the validated session canonical username
+- the WSTG v4.2 matrix moves ATHZ-02 and ATHZ-03 from blocked to automated,
+  leaving 67 blocked rows for remaining due diligence slices
+
+This still keeps developer-mode runs skippable without credentials or host
+access. V3 release mode must provide the authenticated host-assisted evidence.
+
 ## 2026-05-22, Start WSTG Slice 1 source metadata and dispositions
 
 The Version 3 WSTG due-diligence workstream now has the first mechanical

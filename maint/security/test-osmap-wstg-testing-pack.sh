@@ -175,6 +175,67 @@ for marker in [
 print(f"validated {len(mapping['tests'])} mapped WSTG tests across all OWASP Top 10 2025 categories")
 PY
 
+echo "validating authorization account-isolation WSTG mapping"
+python3 - "$pack_dir" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+pack = Path(sys.argv[1])
+repo = pack.parents[1]
+mapping = json.loads((pack / "wstg-asvs-mapping.json").read_text())
+tests = {item["test_id"]: item for item in mapping["tests"]}
+authz = tests.get("OSMAP-WSTG-ATHZ-001")
+if not authz:
+    raise SystemExit("OSMAP-WSTG-ATHZ-001 missing from WSTG mapping")
+if authz["wstg"] != ["WSTG-v42-ATHZ-02", "WSTG-v42-ATHZ-03", "WSTG-v42-ATHZ-04"]:
+    raise SystemExit("OSMAP-WSTG-ATHZ-001 must map ATHZ-02/03/04")
+if authz["requires_authenticated_coverage"] is not True or authz["requires_totp"] is not True:
+    raise SystemExit("OSMAP-WSTG-ATHZ-001 must remain authenticated and TOTP-gated")
+required_evidence = {
+    "authorization_account_isolation_fixture.txt",
+    "authz_cross_user_message.headers",
+    "authz_cross_user_attachment.headers",
+    "authz_cross_user_sent.headers",
+    "authz_cross_user_search.headers",
+    "authz_route_bypass_no_cookie.headers",
+    "authz_route_bypass_stale_cookie.headers",
+    "authorization_account_isolation_static.txt",
+    "authorization_account_isolation_redaction.txt",
+}
+missing = sorted(required_evidence - set(authz["evidence_produced"]))
+if missing:
+    raise SystemExit(f"OSMAP-WSTG-ATHZ-001 missing evidence markers: {missing}")
+coverage = (pack / "COVERAGE.md").read_text()
+if "OSMAP-WSTG-ATHZ-001" not in coverage or "WSTG-v42-ATHZ-02" not in coverage:
+    raise SystemExit("COVERAGE.md missing authorization account-isolation coverage")
+runner = (pack / "run-wstg-pack.py").read_text()
+for marker in [
+    "test_authorization_account_isolation",
+    "provision_secondary_authorization_fixture",
+    "OSMAP_SECONDARY_EMAIL is required",
+    "authz_cross_user_message",
+    "authz_cross_user_attachment",
+    "authz_cross_user_sent",
+    "authz_cross_user_search",
+    "authorization_account_isolation_redaction",
+]:
+    if marker not in runner:
+        raise SystemExit(f"runner missing authorization account-isolation marker {marker}")
+doc = (repo / "docs" / "V3_AUTHORIZATION_ACCOUNT_ISOLATION.md").read_text()
+for marker in [
+    "OSMAP-WSTG-ATHZ-001",
+    "primary authenticated account",
+    "secondary controlled mailbox fixture",
+    "file_draft_store_scopes_loads_by_owner",
+    "MessageMoveThrottleKey::for_canonical_user_and_remote_addr",
+    "grant canonical_username",
+]:
+    if marker not in doc:
+        raise SystemExit(f"authorization account-isolation doc missing marker {marker}")
+print("authorization account-isolation WSTG mapping validated")
+PY
+
 echo "validating authenticated draft route WSTG mapping"
 python3 - "$pack_dir" <<'PY'
 import json

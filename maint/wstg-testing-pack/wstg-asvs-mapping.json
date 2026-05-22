@@ -693,6 +693,57 @@
       ]
     },
     {
+      "test_id": "OSMAP-WSTG-ATHZ-001",
+      "test_name": "WSTG-v42-ATHZ authorization account-isolation negative evidence",
+      "script_path": "run-wstg-pack.py",
+      "wstg": [
+        "WSTG-v42-ATHZ-02",
+        "WSTG-v42-ATHZ-03",
+        "WSTG-v42-ATHZ-04"
+      ],
+      "wstg_section": "Testing for Bypassing Authorization Schema; Testing for Privilege Escalation; Testing for Insecure Direct Object References",
+      "asvs": [
+        "v5.0.0-2.2.1",
+        "v5.0.0-2.3.2",
+        "v5.0.0-7.4.1",
+        "v5.0.0-8.2.1",
+        "v5.0.0-8.2.2"
+      ],
+      "asvs_section": "Access Control; CSRF and Request Integrity; Session Management; Logging",
+      "test_type": [
+        "authenticated",
+        "host assisted",
+        "dynamic test",
+        "static boundary review"
+      ],
+      "expected_result": "A primary authenticated session cannot expose host-injected secondary mailbox, message, attachment, sent-mail, search, stale-session, or route-bypass evidence; static evidence shows draft, send, helper, search, and bulk routes bind authority to the validated session.",
+      "evidence_produced": [
+        "authorization_account_isolation_fixture.txt",
+        "authz_cross_user_mailbox_tamper.headers",
+        "authz_cross_user_message.headers",
+        "authz_cross_user_attachment.headers",
+        "authz_cross_user_sent.headers",
+        "authz_cross_user_search.headers",
+        "authz_route_bypass_no_cookie.headers",
+        "authz_route_bypass_stale_cookie.headers",
+        "authorization_account_isolation_cleanup.txt",
+        "authorization_account_isolation_static.txt",
+        "authorization_account_isolation_redaction.txt"
+      ],
+      "release_required": true,
+      "requires_authenticated_coverage": true,
+      "requires_totp": true,
+      "safe_for_release": true,
+      "severity_if_failed": "high",
+      "owasp_top_10_2025": [
+        "A01:2025",
+        "A06:2025",
+        "A07:2025",
+        "A09:2025",
+        "A10:2025"
+      ]
+    },
+    {
       "test_id": "OSMAP-WSTG-CONF-005",
       "test_name": "WSTG-v42-CONF-05 Enumerate Infrastructure and Application Admin Interfaces - host bindings",
       "script_path": "run-wstg-pack.py",

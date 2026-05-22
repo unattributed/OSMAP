@@ -222,6 +222,7 @@ class Runner:
             "OSMAP-WSTG-CLNT-001": self.test_cors,
             "OSMAP-WSTG-CLNT-002": self.test_html_rendering_live,
             "OSMAP-WSTG-BUSL-001": self.test_attachment_live,
+            "OSMAP-WSTG-ATHZ-001": self.test_authorization_account_isolation,
             "OSMAP-WSTG-BUSL-002": self.test_draft_routes_authenticated,
             "OSMAP-WSTG-BUSL-003": self.test_source_attachments_authenticated,
             "OSMAP-WSTG-BUSL-004": self.test_bulk_folder_actions_live,
@@ -1367,6 +1368,299 @@ class Runner:
             "host-backed selected archive and bulk folder-action controls passed live request/response validation",
             evidence_paths,
         )
+
+    def test_authorization_account_isolation(self) -> TestResult:
+        ok, message = self.ensure_login()
+        if not ok:
+            return self.result("OSMAP-WSTG-ATHZ-001", STATUS_SKIP, message)
+        if not self.config.allow_host_assisted:
+            return self.result("OSMAP-WSTG-ATHZ-001", STATUS_SKIP, "host-assisted account-isolation evidence disabled")
+        if not self.config.secondary_email:
+            return self.result("OSMAP-WSTG-ATHZ-001", STATUS_SKIP, "OSMAP_SECONDARY_EMAIL is required for account-isolation evidence")
+
+        token = f"osmap-athz-{int(time.time())}-{os.getpid()}"
+        inbox_subject = f"OSMAP ATHZ isolation inbox {token}"
+        sent_subject = f"OSMAP ATHZ isolation sent {token}"
+        attachment_marker = f"OSMAP ATHZ attachment marker {token}"
+        self.secrets.extend([token, inbox_subject, sent_subject, attachment_marker])
+
+        remote_report = self.provision_secondary_authorization_fixture(
+            inbox_subject,
+            sent_subject,
+            attachment_marker,
+        )
+        fields = {}
+        for line in remote_report.splitlines():
+            if "=" in line:
+                key, value = line.split("=", 1)
+                fields[key.strip()] = value.strip()
+
+        evidence_paths = [
+            "evidence/authorization_account_isolation_fixture.txt",
+            "evidence/authz_cross_user_mailbox_tamper.headers",
+            "evidence/authz_cross_user_message.headers",
+            "evidence/authz_cross_user_attachment.headers",
+            "evidence/authz_cross_user_sent.headers",
+            "evidence/authz_cross_user_search.headers",
+            "evidence/authz_route_bypass_no_cookie.headers",
+            "evidence/authz_route_bypass_stale_cookie.headers",
+            "evidence/authorization_account_isolation_cleanup.txt",
+            "evidence/authorization_account_isolation_static.txt",
+            "evidence/authorization_account_isolation_redaction.txt",
+        ]
+        inbox_uid = fields.get("secondary_inbox_uid", "1")
+        sent_uid = fields.get("secondary_sent_uid", "1")
+        mailbox_tamper = self.request(
+            "authz_cross_user_mailbox_tamper",
+            "GET",
+            "/mailbox?name=NotARealMailbox",
+            cookies=self.cookie_jar,
+            store_body_evidence=False,
+        )
+        message_probe = self.request(
+            "authz_cross_user_message",
+            "GET",
+            f"/message?mailbox=INBOX&uid={urllib.parse.quote(inbox_uid)}",
+            cookies=self.cookie_jar,
+            store_body_evidence=False,
+        )
+        attachment_probe = self.request(
+            "authz_cross_user_attachment",
+            "GET",
+            f"/attachment?mailbox=INBOX&uid={urllib.parse.quote(inbox_uid)}&part=1.2",
+            cookies=self.cookie_jar,
+            store_body_evidence=False,
+        )
+        sent_probe = self.request(
+            "authz_cross_user_sent",
+            "GET",
+            f"/message?mailbox=Sent&uid={urllib.parse.quote(sent_uid)}",
+            cookies=self.cookie_jar,
+            store_body_evidence=False,
+        )
+        search_probe = self.request(
+            "authz_cross_user_search",
+            "GET",
+            f"/search?q={urllib.parse.quote(token)}&scope=all",
+            cookies=self.cookie_jar,
+            store_body_evidence=False,
+        )
+        no_cookie = self.request("authz_route_bypass_no_cookie", "GET", "/mailboxes", store_body_evidence=False)
+        stale_cookie = self.request(
+            "authz_route_bypass_stale_cookie",
+            "GET",
+            "/mailboxes",
+            cookies={"osmap_session": "f" * 64},
+            store_body_evidence=False,
+        )
+        self.cleanup_secondary_authorization_fixture(inbox_subject, sent_subject)
+
+        static_ok = self.write_authorization_account_isolation_static_evidence()
+        redaction_ok = self.write_authorization_account_isolation_redaction_evidence(
+            [token, inbox_subject, sent_subject, attachment_marker],
+        )
+        forbidden_exposure = {
+            "message_subject": inbox_subject in message_probe.body_text(),
+            "attachment_marker": attachment_marker in attachment_probe.body_text(),
+            "sent_subject": sent_subject in sent_probe.body_text(),
+            "search_subject": token in search_probe.body_text(),
+        }
+        statuses = {
+            "mailbox_tamper": mailbox_tamper.status,
+            "message_probe": message_probe.status,
+            "attachment_probe": attachment_probe.status,
+            "sent_probe": sent_probe.status,
+            "search_probe": search_probe.status,
+            "no_cookie": no_cookie.status,
+            "stale_cookie": stale_cookie.status,
+        }
+        failures: dict[str, object] = {}
+        missing_fields = [field for field in ["secondary_inbox_uid", "secondary_sent_uid", "fixture_result"] if not fields.get(field)]
+        if "ERROR:" in remote_report or fields.get("fixture_result") != "prepared":
+            failures["fixture"] = "secondary fixture was not prepared"
+        if missing_fields:
+            failures["missing_fixture_fields"] = missing_fields
+        if mailbox_tamper.status not in {400, 404, 503}:
+            failures["mailbox_tamper_status"] = mailbox_tamper.status
+        if no_cookie.status == 200 or stale_cookie.status == 200:
+            failures["route_authorization_bypass"] = statuses
+        exposed = [name for name, exposed in forbidden_exposure.items() if exposed]
+        if exposed:
+            failures["cross_user_exposure"] = exposed
+        if not static_ok:
+            failures["static_boundary"] = "missing authorization boundary markers"
+        if not redaction_ok:
+            failures["redaction"] = "authorization evidence redaction scan failed"
+        if failures:
+            return self.result(
+                "OSMAP-WSTG-ATHZ-001",
+                STATUS_FAIL,
+                "authorization account-isolation evidence did not meet expected outcomes",
+                evidence_paths,
+                {"statuses": statuses, "failures": failures},
+            )
+        return self.result(
+            "OSMAP-WSTG-ATHZ-001",
+            STATUS_PASS,
+            "primary session could not expose secondary mailbox, message, attachment, sent, search, stale-session, or route-bypass evidence",
+            evidence_paths,
+            {"statuses": statuses},
+        )
+
+    def provision_secondary_authorization_fixture(
+        self,
+        inbox_subject: str,
+        sent_subject: str,
+        attachment_marker: str,
+    ) -> str:
+        command = f"""
+set -eu
+secondary={shlex.quote(self.config.secondary_email)}
+inbox_subject={shlex.quote(inbox_subject)}
+sent_subject={shlex.quote(sent_subject)}
+attachment_marker={shlex.quote(attachment_marker)}
+doveadm='/usr/local/bin/doveadm -o stats_writer_socket_path='
+doas -u vmail $doveadm mailbox list -u "$secondary" | grep -Fxq INBOX
+doas -u vmail $doveadm mailbox list -u "$secondary" | grep -Fxq Sent
+{{
+  printf 'From: OSMAP ATHZ Proof <%s>\\n' "$secondary"
+  printf 'To: %s\\n' "$secondary"
+  printf 'Subject: %s\\n' "$inbox_subject"
+  printf 'MIME-Version: 1.0\\n'
+  printf 'Content-Type: multipart/mixed; boundary="osmap-athz-boundary"\\n'
+  printf '\\n--osmap-athz-boundary\\n'
+  printf 'Content-Type: text/plain; charset=utf-8\\n\\n'
+  printf 'secondary account isolation proof body\\n'
+  printf '\\n--osmap-athz-boundary\\n'
+  printf 'Content-Type: text/plain; name="athz-proof.txt"\\n'
+  printf 'Content-Disposition: attachment; filename="athz-proof.txt"\\n\\n'
+  printf '%s\\n' "$attachment_marker"
+  printf '\\n--osmap-athz-boundary--\\n'
+}} | /usr/sbin/sendmail -t
+{{
+  printf 'From: OSMAP ATHZ Proof <%s>\\n' "$secondary"
+  printf 'To: %s\\n' "$secondary"
+  printf 'Subject: %s\\n' "$sent_subject"
+  printf 'Content-Type: text/plain; charset=utf-8\\n\\n'
+  printf 'secondary sent isolation proof body\\n'
+}} | /usr/sbin/sendmail -t
+lookup_uid() {{
+  mailbox=$1
+  subject=$2
+  doas -u vmail $doveadm search -u "$secondary" mailbox "$mailbox" header Subject "$subject" | awk 'NF > 0 {{ print $NF; exit }}'
+}}
+inbox_uid=''
+sent_uid=''
+tries=0
+while {{ [ -z "$inbox_uid" ] || [ -z "$sent_uid" ]; }} && [ "$tries" -lt 30 ]; do
+  [ -n "$inbox_uid" ] || inbox_uid=$(lookup_uid INBOX "$inbox_subject" || true)
+  [ -n "$sent_uid" ] || sent_uid=$(lookup_uid INBOX "$sent_subject" || true)
+  [ -n "$inbox_uid" ] && [ -n "$sent_uid" ] && break
+  sleep 1
+  tries=$((tries + 1))
+done
+[ -n "$inbox_uid" ]
+[ -n "$sent_uid" ]
+doas -u vmail $doveadm move -u "$secondary" Sent mailbox INBOX uid "$sent_uid" >/dev/null
+sent_uid_after=''
+tries=0
+while [ -z "$sent_uid_after" ] && [ "$tries" -lt 20 ]; do
+  sent_uid_after=$(lookup_uid Sent "$sent_subject" || true)
+  [ -n "$sent_uid_after" ] && break
+  sleep 1
+  tries=$((tries + 1))
+done
+[ -n "$sent_uid_after" ]
+printf 'fixture_result=prepared\\n'
+printf 'secondary_mailboxes=INBOX,Sent\\n'
+printf 'secondary_inbox_uid=%s\\n' "$inbox_uid"
+printf 'secondary_sent_uid=%s\\n' "$sent_uid_after"
+printf 'secret_review=No password, password hash, TOTP material, session cookie, CSRF token, private message body, attachment body, provider secret, or host secret is included.\\n'
+"""
+        return self.run_ssh("authorization_account_isolation_fixture.txt", command)
+
+    def cleanup_secondary_authorization_fixture(self, inbox_subject: str, sent_subject: str) -> None:
+        command = (
+            "set -u; "
+            f"secondary={shlex.quote(self.config.secondary_email)}; "
+            f"inbox_subject={shlex.quote(inbox_subject)}; "
+            f"sent_subject={shlex.quote(sent_subject)}; "
+            "doveadm='/usr/local/bin/doveadm -o stats_writer_socket_path='; "
+            'doas -u vmail $doveadm expunge -u "$secondary" mailbox INBOX header Subject "$inbox_subject" >/dev/null 2>&1 || true; '
+            'doas -u vmail $doveadm expunge -u "$secondary" mailbox INBOX header Subject "$sent_subject" >/dev/null 2>&1 || true; '
+            'doas -u vmail $doveadm expunge -u "$secondary" mailbox Sent header Subject "$sent_subject" >/dev/null 2>&1 || true; '
+            "printf 'cleanup_result=attempted\\n'"
+        )
+        self.run_ssh("authorization_account_isolation_cleanup.txt", command)
+
+    def write_authorization_account_isolation_static_evidence(self) -> bool:
+        files = [
+            REPO_ROOT / "src" / "http" / "routes_mail.rs",
+            REPO_ROOT / "src" / "http" / "routes_compose.rs",
+            REPO_ROOT / "src" / "http_gateway_mail.rs",
+            REPO_ROOT / "src" / "http_gateway_draft.rs",
+            REPO_ROOT / "src" / "draft.rs",
+            REPO_ROOT / "src" / "mailbox_helper_protocol.rs",
+            REPO_ROOT / "docs" / "V3_AUTHORIZATION_ACCOUNT_ISOLATION.md",
+        ]
+        text = "\n".join(path.read_text(encoding="utf-8", errors="replace") for path in files if path.exists())
+        markers = [
+            "validated_session.record.canonical_username",
+            "list_for_validated_session",
+            "fetch_for_validated_session",
+            "download_for_validated_session",
+            "submit_for_validated_session",
+            "delete_draft",
+            "file_draft_store_scopes_loads_by_owner",
+            "message_search_mailbox_rejected",
+            "MessageMoveThrottleKey::for_canonical_user_and_remote_addr",
+            "grant canonical_username",
+            "OSMAP-WSTG-ATHZ-001",
+        ]
+        missing = [marker for marker in markers if marker.lower() not in text.lower()]
+        self.write_text_evidence(
+            "authorization_account_isolation_static.txt",
+            summarize_static_files(files, missing)
+            + "\nCovered boundaries:\n"
+            + "- browser routes derive mailbox, message, attachment, draft, send, search, and bulk-action authority from the validated session\n"
+            + "- mailbox helper grants bind canonical username to mailbox, UID, part, and mutation operation fields\n"
+            + "- secondary account fixture probes are redacted and assert marker absence through the primary session\n"
+            + "- draft ownership isolation is covered by owner-hashed storage and cross-owner load tests\n",
+        )
+        return not missing
+
+    def write_authorization_account_isolation_redaction_evidence(self, forbidden_values: list[str]) -> bool:
+        leaks: dict[str, list[str]] = {}
+        forbidden_patterns = [
+            ("raw_session_cookie", r"osmap_session=[A-Za-z0-9._~+/=-]{16,}"),
+            ("csrf_token_value", r"(?i)csrf_token=[A-Za-z0-9._~+/=-]{16,}"),
+            ("password_hash", r"\$2[aby]\$[0-9]{2}\$"),
+            ("totp_secret", r"(?i)(totp|secret)[_=][A-Z2-7]{16,}"),
+        ]
+        for value in forbidden_values:
+            if value:
+                forbidden_patterns.append((f"value_{len(forbidden_patterns)}", re.escape(value)))
+        paths = sorted(self.evidence_dir.glob("authz_*")) + sorted(self.evidence_dir.glob("authorization_account_isolation_*"))
+        for path in paths:
+            if path.name == "authorization_account_isolation_redaction.txt":
+                continue
+            text = path.read_text(encoding="utf-8", errors="replace")
+            matches = [name for name, pattern in forbidden_patterns if re.search(pattern, text)]
+            if matches:
+                leaks[path.name] = matches
+        lines = [
+            "Authorization account-isolation evidence redaction scan:",
+            "- checked authz_* and authorization_account_isolation_* evidence files only",
+            "- raw session cookies, CSRF token values, password hashes, TOTP material, fixture subjects, and attachment markers must be absent",
+        ]
+        if leaks:
+            lines.append("Leaks detected:")
+            for path, matches in leaks.items():
+                lines.append(f"- {path}: {', '.join(matches)}")
+        else:
+            lines.append("result=passed")
+        self.write_text_evidence("authorization_account_isolation_redaction.txt", "\n".join(lines) + "\n")
+        return not leaks
 
     def test_draft_routes_authenticated(self) -> TestResult:
         ok, message = self.ensure_login()

@@ -57,15 +57,15 @@ The current WSTG pack is useful targeted regression coverage, but it is not full
 
 | Baseline item | Current state |
 | --- | --- |
-| Existing OSMAP WSTG runner tests | 27 mapped tests |
+| Existing OSMAP WSTG runner tests | 28 mapped tests |
 | Existing explicit gaps | 3 gaps |
 | Existing WSTG scenario matrix | WSTG v4.2 |
 | WSTG v4.2 scenario rows | 97 |
-| WSTG v4.2 rows mapped by current pack | 28 |
-| WSTG v4.2 rows not mapped by current pack | 69 |
+| WSTG v4.2 rows mapped by current pack | 30 |
+| WSTG v4.2 rows not mapped by current pack | 67 |
 | WSTG v4.2 rows with explicit Slice 1 disposition | 97 |
-| WSTG v4.2 automated dispositions | 28 |
-| WSTG v4.2 blocked dispositions pending due diligence | 69 |
+| WSTG v4.2 automated dispositions | 30 |
+| WSTG v4.2 blocked dispositions pending due diligence | 67 |
 | Current OWASP latest coverage | Must be pinned and tracked before V3 closeout |
 
 The Version 3 workstream therefore treats the current pack as a starting point. It must be extended into a slice-based due-diligence program.
@@ -119,6 +119,14 @@ Acceptance evidence:
 - Two controlled validation accounts or an equivalent isolated fixture model.
 - Redacted requests and responses for cross-user denial cases.
 - No private message body or attachment content in committed evidence.
+
+Slice 2 implementation evidence starts with:
+
+- `docs/V3_AUTHORIZATION_ACCOUNT_ISOLATION.md`
+- `OSMAP-WSTG-ATHZ-001`
+- authenticated, TOTP-backed, host-assisted primary-vs-secondary negative
+  evidence for mailbox, message, attachment, sent-mail, search, stale-session,
+  and route-bypass probes
 
 ### Slice 3, Session lifecycle and cookie security
 
