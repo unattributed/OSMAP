@@ -1,5 +1,25 @@
 # Decision Log
 
+## 2026-05-22, Start WSTG Slice 4 webmail input-validation evidence
+
+The Version 3 WSTG workstream now has a webmail-specific input-validation lane:
+
+- `OSMAP-WSTG-INPV-004` maps WSTG INPV-10 for IMAP/SMTP injection
+- dynamic evidence uses an authenticated password-plus-TOTP session but only
+  sends rejected probes, so no synthetic probe mail should be delivered
+- the probes cover subject newline injection, recipient newline injection,
+  display-name-shaped recipient input, mailbox-name tampering, UID tampering,
+  search tampering, path-like attachment filenames, and dangerous attachment
+  content-type input
+- static evidence ties those probes to compose/send validation, Dovecot
+  argument boundaries, attachment filename/content-type handling, stored HTML
+  sanitization, and CSV export non-applicability
+- the WSTG v4.2 matrix moves INPV-10 from blocked to automated, leaving 61
+  blocked rows for remaining due-diligence slices
+
+Developer-mode runs may still skip this check without credentials. V3 release
+mode must provide the authenticated TOTP-backed evidence.
+
 ## 2026-05-22, Start WSTG Slice 3 session lifecycle evidence
 
 The Version 3 WSTG workstream now has a dedicated session lifecycle lane:

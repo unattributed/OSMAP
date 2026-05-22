@@ -458,6 +458,67 @@ for marker in [
 print("command-injection WSTG mapping validated")
 PY
 
+echo "validating webmail input-validation WSTG mapping"
+python3 - "$pack_dir" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+pack = Path(sys.argv[1])
+repo = pack.parents[1]
+mapping = json.loads((pack / "wstg-asvs-mapping.json").read_text())
+tests = {item["test_id"]: item for item in mapping["tests"]}
+webmail = tests.get("OSMAP-WSTG-INPV-004")
+if not webmail:
+    raise SystemExit("OSMAP-WSTG-INPV-004 missing from WSTG mapping")
+if webmail["wstg"] != ["WSTG-v42-INPV-10"]:
+    raise SystemExit("OSMAP-WSTG-INPV-004 must map to WSTG-v42-INPV-10")
+if webmail["requires_authenticated_coverage"] is not True or webmail["requires_totp"] is not True:
+    raise SystemExit("OSMAP-WSTG-INPV-004 must remain authenticated and TOTP-gated")
+required_evidence = {
+    "webmail_inpv10_subject_newline.headers",
+    "webmail_inpv10_recipient_newline.headers",
+    "webmail_inpv10_display_name.headers",
+    "webmail_inpv10_mailbox_tamper.headers",
+    "webmail_inpv10_uid_tamper.headers",
+    "webmail_inpv10_search_tamper.headers",
+    "webmail_inpv10_attachment_filename.headers",
+    "webmail_inpv10_dangerous_content_type.headers",
+    "webmail_input_validation_static.txt",
+    "webmail_input_validation_redaction.txt",
+}
+missing = sorted(required_evidence - set(webmail["evidence_produced"]))
+if missing:
+    raise SystemExit(f"OSMAP-WSTG-INPV-004 missing evidence markers: {missing}")
+coverage = (pack / "COVERAGE.md").read_text()
+if "OSMAP-WSTG-INPV-004" not in coverage or "WSTG-v42-INPV-10" not in coverage:
+    raise SystemExit("COVERAGE.md missing webmail input-validation coverage")
+runner = (pack / "run-wstg-pack.py").read_text()
+for marker in [
+    "test_webmail_input_validation",
+    "webmail_inpv10_subject_newline",
+    "webmail_inpv10_recipient_newline",
+    "webmail_inpv10_attachment_filename",
+    "webmail_inpv10_dangerous_content_type",
+    "write_webmail_input_validation_static_evidence",
+]:
+    if marker not in runner:
+        raise SystemExit(f"runner missing webmail input-validation marker {marker}")
+doc = (repo / "docs" / "V3_WEBMAIL_INPUT_VALIDATION_EVIDENCE.md").read_text()
+for marker in [
+    "OSMAP-WSTG-INPV-004",
+    "WSTG-v42-INPV-10",
+    "subject newline injection",
+    "recipient newline injection",
+    "attachment filenames reject control characters",
+    "application/octet-stream",
+    "CSV injection remains not applicable",
+]:
+    if marker not in doc:
+        raise SystemExit(f"webmail input-validation doc missing marker {marker}")
+print("webmail input-validation WSTG mapping validated")
+PY
+
 echo "validating live WSTG evidence mappings"
 python3 - "$pack_dir" <<'PY'
 import json
@@ -527,6 +588,17 @@ if ! python3 "$pack_dir/run-wstg-pack.py" \
 	--host 127.0.0.1 \
 	--output-dir "$tmp_root/command-injection-skip" >/dev/null 2>&1; then
 	echo "expected credential-gated command-injection route test to skip cleanly without credentials" >&2
+	exit 1
+fi
+
+echo "validating webmail input-validation route skips without credentials"
+if ! python3 "$pack_dir/run-wstg-pack.py" \
+	--unauthenticated \
+	--test-id OSMAP-WSTG-INPV-004 \
+	--base-url http://127.0.0.1:9 \
+	--host 127.0.0.1 \
+	--output-dir "$tmp_root/webmail-input-validation-skip" >/dev/null 2>&1; then
+	echo "expected credential-gated webmail input-validation route test to skip cleanly without credentials" >&2
 	exit 1
 fi
 

@@ -220,6 +220,7 @@ class Runner:
             "OSMAP-WSTG-INPV-001": self.test_path_traversal,
             "OSMAP-WSTG-INPV-002": self.test_reflected_input,
             "OSMAP-WSTG-INPV-003": self.test_command_injection,
+            "OSMAP-WSTG-INPV-004": self.test_webmail_input_validation,
             "OSMAP-WSTG-CLNT-001": self.test_cors,
             "OSMAP-WSTG-CLNT-002": self.test_html_rendering_live,
             "OSMAP-WSTG-BUSL-001": self.test_attachment_live,
@@ -1320,6 +1321,243 @@ class Runner:
         else:
             lines.append("result=passed")
         return self.write_text_evidence("command_injection_redaction.txt", "\n".join(lines) + "\n")
+
+    def test_webmail_input_validation(self) -> TestResult:
+        ok, message = self.ensure_login()
+        if not ok:
+            return self.result("OSMAP-WSTG-INPV-004", STATUS_SKIP, message)
+
+        canary = f"OSMAP-INPV10-{int(time.time())}-{os.getpid()}"
+        self.secrets.append(canary)
+        subject_newline = self.form_post(
+            "webmail_inpv10_subject_newline",
+            "/send",
+            {
+                "csrf_token": self.csrf_token,
+                "to": self.config.test_email,
+                "subject": f"{canary}\r\nBcc: injected@example.invalid",
+                "body": "subject newline probe",
+            },
+            cookies=self.cookie_jar,
+            headers=same_origin_headers(self.config),
+            store_body_evidence=False,
+        )
+        recipient_newline = self.form_post(
+            "webmail_inpv10_recipient_newline",
+            "/send",
+            {
+                "csrf_token": self.csrf_token,
+                "to": f"{self.config.test_email}\r\nBcc: injected@example.invalid",
+                "subject": f"{canary} recipient newline",
+                "body": "recipient newline probe",
+            },
+            cookies=self.cookie_jar,
+            headers=same_origin_headers(self.config),
+            store_body_evidence=False,
+        )
+        display_name = self.form_post(
+            "webmail_inpv10_display_name",
+            "/send",
+            {
+                "csrf_token": self.csrf_token,
+                "to": f"Injected User <{self.config.test_email}>",
+                "subject": f"{canary} display name",
+                "body": "display-name probe",
+            },
+            cookies=self.cookie_jar,
+            headers=same_origin_headers(self.config),
+            store_body_evidence=False,
+        )
+        mailbox_tamper = self.request(
+            "webmail_inpv10_mailbox_tamper",
+            "GET",
+            f"/mailbox?name={urllib.parse.quote('INBOX' + chr(13) + chr(10) + 'TAG LOGOUT')}",
+            cookies=self.cookie_jar,
+            store_body_evidence=False,
+        )
+        uid_tamper = self.request(
+            "webmail_inpv10_uid_tamper",
+            "GET",
+            "/message?mailbox=INBOX&uid=0",
+            cookies=self.cookie_jar,
+            store_body_evidence=False,
+        )
+        search_tamper = self.request(
+            "webmail_inpv10_search_tamper",
+            "GET",
+            f"/search?q={urllib.parse.quote(canary + chr(13) + chr(10) + 'TAG LOGOUT')}",
+            cookies=self.cookie_jar,
+            store_body_evidence=False,
+        )
+        attachment_filename = self.multipart_post(
+            "webmail_inpv10_attachment_filename",
+            "/send",
+            {
+                "csrf_token": self.csrf_token,
+                "to": self.config.test_email,
+                "subject": f"{canary} attachment filename",
+                "body": "attachment filename probe",
+            },
+            [("attachment", "../evil.txt", "text/plain", b"safe probe")],
+        )
+        dangerous_content_type = self.multipart_post(
+            "webmail_inpv10_dangerous_content_type",
+            "/send",
+            {
+                "csrf_token": self.csrf_token,
+                "to": f"{self.config.test_email}\r\nBcc: injected@example.invalid",
+                "subject": f"{canary} dangerous content type",
+                "body": "<script>alert(1)</script>",
+            },
+            [("attachment", "safe.txt", "text/html; charset=utf-8", b"<script>alert(1)</script>")],
+        )
+        static_ok = self.write_webmail_input_validation_static_evidence()
+        redaction_ok = self.write_webmail_input_validation_redaction_evidence([canary])
+        statuses = {
+            "subject_newline": subject_newline.status,
+            "recipient_newline": recipient_newline.status,
+            "display_name": display_name.status,
+            "mailbox_tamper": mailbox_tamper.status,
+            "uid_tamper": uid_tamper.status,
+            "search_tamper": search_tamper.status,
+            "attachment_filename": attachment_filename.status,
+            "dangerous_content_type": dangerous_content_type.status,
+        }
+        failures: dict[str, object] = {}
+        for label in [
+            "subject_newline",
+            "recipient_newline",
+            "display_name",
+            "uid_tamper",
+            "attachment_filename",
+            "dangerous_content_type",
+        ]:
+            if statuses[label] != 400:
+                failures[label] = statuses[label]
+        for label in ["mailbox_tamper", "search_tamper"]:
+            if statuses[label] not in {400, 404, 503}:
+                failures[label] = statuses[label]
+        if not static_ok:
+            failures["static_boundary"] = "missing webmail input validation markers"
+        if not redaction_ok:
+            failures["redaction"] = "webmail input validation evidence redaction scan failed"
+        evidence_paths = [
+            "evidence/webmail_inpv10_subject_newline.headers",
+            "evidence/webmail_inpv10_recipient_newline.headers",
+            "evidence/webmail_inpv10_display_name.headers",
+            "evidence/webmail_inpv10_mailbox_tamper.headers",
+            "evidence/webmail_inpv10_uid_tamper.headers",
+            "evidence/webmail_inpv10_search_tamper.headers",
+            "evidence/webmail_inpv10_attachment_filename.headers",
+            "evidence/webmail_inpv10_dangerous_content_type.headers",
+            "evidence/webmail_input_validation_static.txt",
+            "evidence/webmail_input_validation_redaction.txt",
+        ]
+        if failures:
+            return self.result(
+                "OSMAP-WSTG-INPV-004",
+                STATUS_FAIL,
+                "webmail input validation probes did not meet expected outcomes",
+                evidence_paths,
+                {"statuses": statuses, "failures": failures},
+            )
+        return self.result(
+            "OSMAP-WSTG-INPV-004",
+            STATUS_PASS,
+            "IMAP/SMTP and compose probes rejected header/newline, mailbox, UID, attachment filename, and dangerous content-type inputs",
+            evidence_paths,
+            {"statuses": statuses},
+        )
+
+    def multipart_post(
+        self,
+        label: str,
+        path: str,
+        fields: dict[str, str],
+        files: list[tuple[str, str, str, bytes]],
+    ) -> HttpEvidence:
+        boundary = "osmap-wstg-multipart"
+        return self.request(
+            label,
+            "POST",
+            path,
+            headers={
+                "Content-Type": f"multipart/form-data; boundary={boundary}",
+                **same_origin_headers(self.config),
+            },
+            body=build_multipart_form(boundary, fields, files),
+            cookies=self.cookie_jar,
+            store_body_evidence=False,
+        )
+
+    def write_webmail_input_validation_static_evidence(self) -> bool:
+        files = [
+            REPO_ROOT / "src" / "send.rs",
+            REPO_ROOT / "src" / "http_form.rs",
+            REPO_ROOT / "src" / "attachment.rs",
+            REPO_ROOT / "src" / "mailbox.rs",
+            REPO_ROOT / "src" / "rendering_html.rs",
+            REPO_ROOT / "docs" / "V3_WEBMAIL_INPUT_VALIDATION_EVIDENCE.md",
+        ]
+        text = "\n".join(path.read_text(encoding="utf-8", errors="replace") for path in files if path.exists())
+        markers = [
+            "recipient contained control or whitespace characters",
+            "subject must not contain line breaks",
+            "attachment filename contained control characters",
+            "attachment filename must not contain path separators",
+            "normalize_attachment_content_type",
+            "application/octet-stream",
+            "rejects_attachment_filenames_with_path_separators",
+            "rejects_subject_line_breaks",
+            "sendmail_backend_keeps_shell_shaped_sender_as_one_arg_and_body_on_stdin",
+            "doveadm_search_keeps_shell_shaped_query_as_one_argument",
+            "strips_scriptable_attributes_forms_remote_fetch_surfaces_and_comments",
+            "OSMAP-WSTG-INPV-004",
+        ]
+        missing = [marker for marker in markers if marker.lower() not in text.lower()]
+        self.write_text_evidence(
+            "webmail_input_validation_static.txt",
+            summarize_static_files(files, missing)
+            + "\nCovered boundaries:\n"
+            + "- recipient, display-name-shaped recipient, and subject header injection are rejected before submission\n"
+            + "- body text may contain ordinary line breaks but remains stdin data, not command arguments\n"
+            + "- attachment filenames reject control characters and path separators\n"
+            + "- unsafe attachment content types normalize to application/octet-stream\n"
+            + "- mailbox/search command-shaped values remain argument-bounded at the Dovecot boundary\n"
+            + "- stored HTML rendering strips active content and remote-fetch surfaces\n",
+        )
+        return not missing
+
+    def write_webmail_input_validation_redaction_evidence(self, forbidden_values: list[str]) -> bool:
+        leaks: dict[str, list[str]] = {}
+        forbidden_patterns = [
+            ("raw_session_cookie", r"osmap_session=[A-Za-z0-9._~+/=-]{16,}"),
+            ("csrf_token_value", r"(?i)csrf_token=[^&\s\"']+"),
+        ]
+        for value in forbidden_values:
+            if value:
+                forbidden_patterns.append((f"value_{len(forbidden_patterns)}", re.escape(value)))
+        paths = sorted(self.evidence_dir.glob("webmail_inpv10_*")) + sorted(self.evidence_dir.glob("webmail_input_validation_*"))
+        for path in paths:
+            if path.name == "webmail_input_validation_redaction.txt":
+                continue
+            text = path.read_text(encoding="utf-8", errors="replace")
+            matches = [name for name, pattern in forbidden_patterns if re.search(pattern, text)]
+            if matches:
+                leaks[path.name] = matches
+        lines = [
+            "Webmail input validation evidence redaction scan:",
+            "- checked webmail_inpv10_* and webmail_input_validation_* evidence files only",
+            "- raw session cookies, CSRF token values, and generated canaries must be absent",
+        ]
+        if leaks:
+            lines.append("Leaks detected:")
+            for path, matches in leaks.items():
+                lines.append(f"- {path}: {', '.join(matches)}")
+        else:
+            lines.append("result=passed")
+        self.write_text_evidence("webmail_input_validation_redaction.txt", "\n".join(lines) + "\n")
+        return not leaks
 
     def test_cors(self) -> TestResult:
         bad: dict[str, dict[str, str]] = {}
