@@ -690,6 +690,52 @@
       ]
     },
     {
+      "test_id": "OSMAP-WSTG-INPV-005",
+      "test_name": "WSTG-v42-INPV-03/04 Testing HTTP Verb Tampering and HTTP Parameter Pollution",
+      "script_path": "run-wstg-pack.py",
+      "wstg": [
+        "WSTG-v42-INPV-03",
+        "WSTG-v42-INPV-04"
+      ],
+      "wstg_section": "Testing for HTTP Verb Tampering; Testing for HTTP Parameter Pollution",
+      "asvs": [
+        "v5.0.0-1.2.1",
+        "v5.0.0-4.1.4",
+        "v5.0.0-5.2.4",
+        "v5.0.0-8.2.1"
+      ],
+      "asvs_section": "Input Validation; Access Control; Injection Prevention; Error Handling",
+      "test_type": [
+        "unauthenticated",
+        "dynamic test",
+        "static boundary review"
+      ],
+      "expected_result": "Unsupported HTTP methods, GET bodies, method mismatches, unsupported form content types, duplicate query parameters, and duplicate form fields are rejected without creating alternate state-changing paths.",
+      "evidence_produced": [
+        "http_inpv03_options_send.headers",
+        "http_inpv03_put_login.headers",
+        "http_inpv03_get_body_mailboxes.headers",
+        "http_inpv03_post_mailboxes.headers",
+        "http_inpv04_login_json_content_type.headers",
+        "http_inpv04_send_json_content_type.headers",
+        "http_inpv04_duplicate_query.headers",
+        "http_inpv04_duplicate_login_field.headers",
+        "http_inpv04_duplicate_send_field.headers",
+        "http_input_tampering_static.txt"
+      ],
+      "release_required": true,
+      "requires_authenticated_coverage": false,
+      "requires_totp": false,
+      "safe_for_release": true,
+      "severity_if_failed": "high",
+      "owasp_top_10_2025": [
+        "A01:2025",
+        "A05:2025",
+        "A06:2025",
+        "A10:2025"
+      ]
+    },
+    {
       "test_id": "OSMAP-WSTG-CLNT-001",
       "test_name": "WSTG-v42-CLNT-07 Testing Cross Origin Resource Sharing",
       "script_path": "run-wstg-pack.py",

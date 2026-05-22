@@ -221,6 +221,7 @@ class Runner:
             "OSMAP-WSTG-INPV-002": self.test_reflected_input,
             "OSMAP-WSTG-INPV-003": self.test_command_injection,
             "OSMAP-WSTG-INPV-004": self.test_webmail_input_validation,
+            "OSMAP-WSTG-INPV-005": self.test_http_input_tampering,
             "OSMAP-WSTG-CLNT-001": self.test_cors,
             "OSMAP-WSTG-CLNT-002": self.test_html_rendering_live,
             "OSMAP-WSTG-BUSL-001": self.test_attachment_live,
@@ -1468,6 +1469,134 @@ class Runner:
             evidence_paths,
             {"statuses": statuses},
         )
+
+    def test_http_input_tampering(self) -> TestResult:
+        probes = {
+            "http_inpv03_options_send": self.request("http_inpv03_options_send", "OPTIONS", "/send"),
+            "http_inpv03_put_login": self.request(
+                "http_inpv03_put_login",
+                "PUT",
+                "/login",
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
+                body="username=probe&password=probe&totp_code=000000",
+            ),
+            "http_inpv03_get_body_mailboxes": self.request(
+                "http_inpv03_get_body_mailboxes",
+                "GET",
+                "/mailboxes",
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
+                body="name=INBOX",
+            ),
+            "http_inpv03_post_mailboxes": self.request(
+                "http_inpv03_post_mailboxes",
+                "POST",
+                "/mailboxes",
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
+                body="name=INBOX",
+            ),
+            "http_inpv04_login_json_content_type": self.request(
+                "http_inpv04_login_json_content_type",
+                "POST",
+                "/login",
+                headers={"Content-Type": "application/json"},
+                body='{"username":"probe","password":"probe","totp_code":"000000"}',
+            ),
+            "http_inpv04_send_json_content_type": self.request(
+                "http_inpv04_send_json_content_type",
+                "POST",
+                "/send",
+                headers={"Content-Type": "application/json", **same_origin_headers(self.config)},
+                body='{"to":"probe@example.invalid","subject":"probe","body":"probe"}',
+            ),
+            "http_inpv04_duplicate_query": self.request(
+                "http_inpv04_duplicate_query",
+                "GET",
+                "/mailbox?name=INBOX&name=Archive",
+            ),
+            "http_inpv04_duplicate_login_field": self.request(
+                "http_inpv04_duplicate_login_field",
+                "POST",
+                "/login",
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
+                body="username=probe&username=admin&password=probe&totp_code=000000",
+            ),
+            "http_inpv04_duplicate_send_field": self.request(
+                "http_inpv04_duplicate_send_field",
+                "POST",
+                "/send",
+                headers={
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    **same_origin_headers(self.config),
+                },
+                body="csrf_token=one&csrf_token=two&to=probe@example.invalid&subject=probe&body=probe",
+            ),
+        }
+        static_ok = self.write_http_input_tampering_static_evidence()
+        failures: dict[str, object] = {}
+        for label, evidence in probes.items():
+            if evidence.status is None:
+                failures[label] = evidence.error or "request failed without HTTP response"
+                continue
+            if 200 <= evidence.status < 400:
+                failures[label] = evidence.status
+        if not static_ok:
+            failures["static_boundary"] = "missing HTTP input tampering markers"
+
+        evidence_paths = [
+            f"evidence/{label}.headers"
+            for label in probes
+        ] + ["evidence/http_input_tampering_static.txt"]
+        statuses = {label: evidence.status for label, evidence in probes.items()}
+        if failures:
+            return self.result(
+                "OSMAP-WSTG-INPV-005",
+                STATUS_FAIL,
+                "HTTP method, content-type, or duplicate-parameter tampering was accepted",
+                evidence_paths,
+                {"statuses": statuses, "failures": failures},
+            )
+        return self.result(
+            "OSMAP-WSTG-INPV-005",
+            STATUS_PASS,
+            "HTTP method, content-type, and duplicate-parameter tampering probes were rejected",
+            evidence_paths,
+            {"statuses": statuses},
+        )
+
+    def write_http_input_tampering_static_evidence(self) -> bool:
+        files = [
+            REPO_ROOT / "src" / "http.rs",
+            REPO_ROOT / "src" / "http_parse.rs",
+            REPO_ROOT / "src" / "http_form.rs",
+            REPO_ROOT / "src" / "http_runtime.rs",
+            REPO_ROOT / "src" / "http" / "routes_auth.rs",
+            REPO_ROOT / "src" / "http" / "routes_compose.rs",
+            REPO_ROOT / "src" / "http" / "routes_mail.rs",
+            REPO_ROOT / "docs" / "V3_HTTP_INPUT_TAMPERING_EVIDENCE.md",
+        ]
+        text = "\n".join(path.read_text(encoding="utf-8", errors="replace") for path in files if path.exists())
+        markers = [
+            "unsupported http method",
+            "get requests must not send a request body",
+            "post requests must send content-length",
+            "allows_urlencoded_request_body",
+            "unsupported compose content-type",
+            "duplicate form field",
+            "duplicate query fields must be rejected",
+            "OSMAP-WSTG-INPV-005",
+        ]
+        missing = [marker for marker in markers if marker.lower() not in text.lower()]
+        self.write_text_evidence(
+            "http_input_tampering_static.txt",
+            summarize_static_files(files, missing)
+            + "\nCovered boundaries:\n"
+            + "- the HTTP parser admits only GET and POST and rejects unsupported verbs before routing\n"
+            + "- GET requests with bodies and malformed POST bodies fail at the parser boundary\n"
+            + "- form routes accept URL-encoded bodies only, except compose/draft routes that also accept bounded multipart form-data\n"
+            + "- URL query, URL-encoded body, and multipart field parsers reject duplicate field names\n"
+            + "- method mismatches on browser routes do not create alternate state-changing entry points\n",
+        )
+        return not missing
 
     def multipart_post(
         self,

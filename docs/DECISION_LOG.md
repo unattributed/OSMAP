@@ -1,5 +1,26 @@
 # Decision Log
 
+## 2026-05-23, Extend WSTG Slice 4 with HTTP input tampering evidence
+
+The Version 3 WSTG Slice 4 input-validation workstream now includes a
+request-shape tampering lane:
+
+- `OSMAP-WSTG-INPV-005` maps WSTG INPV-03 and INPV-04 for HTTP verb
+  tampering and HTTP parameter pollution
+- unauthenticated dynamic evidence uses rejected probes only, covering
+  unsupported methods, GET requests with bodies, POST method mismatches,
+  unsupported JSON content-types on form routes, duplicate query parameters,
+  and duplicate URL-encoded form fields
+- static evidence ties the probes to the HTTP parser, route table, form
+  content-type gates, and duplicate-field rejection in URL query, URL-encoded,
+  and multipart form parsing
+- the WSTG v4.2 matrix moves INPV-03 and INPV-04 from blocked to automated,
+  leaving 59 blocked rows for remaining due-diligence slices
+
+This lane complements `OSMAP-WSTG-CONF-004`, which remains the narrower
+configuration check that `OPTIONS` and `TRACE` are not accepted as application
+methods.
+
 ## 2026-05-22, Start WSTG Slice 4 webmail input-validation evidence
 
 The Version 3 WSTG workstream now has a webmail-specific input-validation lane:

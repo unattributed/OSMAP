@@ -818,26 +818,34 @@
       "category": "INPV",
       "section": "4.7 Input Validation Testing",
       "title": "Testing for HTTP Verb Tampering",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-005"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-005"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-INPV-04",
       "category": "INPV",
       "section": "4.7 Input Validation Testing",
       "title": "Testing for HTTP Parameter Pollution",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-005"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-005"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-INPV-05",

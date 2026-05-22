@@ -57,15 +57,15 @@ The current WSTG pack is useful targeted regression coverage, but it is not full
 
 | Baseline item | Current state |
 | --- | --- |
-| Existing OSMAP WSTG runner tests | 30 mapped tests |
+| Existing OSMAP WSTG runner tests | 32 mapped tests |
 | Existing explicit gaps | 3 gaps |
 | Existing WSTG scenario matrix | WSTG v4.2 |
 | WSTG v4.2 scenario rows | 97 |
-| WSTG v4.2 rows mapped by current pack | 36 |
-| WSTG v4.2 rows not mapped by current pack | 61 |
+| WSTG v4.2 rows mapped by current pack | 38 |
+| WSTG v4.2 rows not mapped by current pack | 59 |
 | WSTG v4.2 rows with explicit Slice 1 disposition | 97 |
-| WSTG v4.2 automated dispositions | 36 |
-| WSTG v4.2 blocked dispositions pending due diligence | 61 |
+| WSTG v4.2 automated dispositions | 38 |
+| WSTG v4.2 blocked dispositions pending due diligence | 59 |
 | Current OWASP latest coverage | Must be pinned and tracked before V3 closeout |
 
 The Version 3 workstream therefore treats the current pack as a starting point. It must be extended into a slice-based due-diligence program.
@@ -190,12 +190,16 @@ Acceptance evidence:
 Slice 4 implementation evidence starts with:
 
 - `docs/V3_WEBMAIL_INPUT_VALIDATION_EVIDENCE.md`
+- `docs/V3_HTTP_INPUT_TAMPERING_EVIDENCE.md`
 - `OSMAP-WSTG-INPV-004`
+- `OSMAP-WSTG-INPV-005`
 - authenticated rejected probes for SMTP header/newline, display-name-shaped
   recipient, mailbox, UID, search, attachment filename, and dangerous
   content-type inputs
 - static proof for body handling, attachment content-type normalization, stored
   HTML sanitization, and CSV export non-applicability
+- unauthenticated rejected probes for HTTP verb tampering, unsupported
+  content-types, duplicate query parameters, and duplicate form fields
 
 ### Slice 5, Weak cryptography and transport security
 

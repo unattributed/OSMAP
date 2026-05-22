@@ -519,6 +519,71 @@ for marker in [
 print("webmail input-validation WSTG mapping validated")
 PY
 
+echo "validating HTTP input-tampering WSTG mapping"
+python3 - "$pack_dir" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+pack = Path(sys.argv[1])
+repo = pack.parents[1]
+mapping = json.loads((pack / "wstg-asvs-mapping.json").read_text())
+tests = {item["test_id"]: item for item in mapping["tests"]}
+tampering = tests.get("OSMAP-WSTG-INPV-005")
+if not tampering:
+    raise SystemExit("OSMAP-WSTG-INPV-005 missing from WSTG mapping")
+if tampering["wstg"] != ["WSTG-v42-INPV-03", "WSTG-v42-INPV-04"]:
+    raise SystemExit("OSMAP-WSTG-INPV-005 must map to WSTG-v42-INPV-03 and WSTG-v42-INPV-04")
+if tampering["requires_authenticated_coverage"] is not False or tampering["requires_totp"] is not False:
+    raise SystemExit("OSMAP-WSTG-INPV-005 must remain unauthenticated")
+required_evidence = {
+    "http_inpv03_options_send.headers",
+    "http_inpv03_put_login.headers",
+    "http_inpv03_get_body_mailboxes.headers",
+    "http_inpv03_post_mailboxes.headers",
+    "http_inpv04_login_json_content_type.headers",
+    "http_inpv04_send_json_content_type.headers",
+    "http_inpv04_duplicate_query.headers",
+    "http_inpv04_duplicate_login_field.headers",
+    "http_inpv04_duplicate_send_field.headers",
+    "http_input_tampering_static.txt",
+}
+missing = sorted(required_evidence - set(tampering["evidence_produced"]))
+if missing:
+    raise SystemExit(f"OSMAP-WSTG-INPV-005 missing evidence markers: {missing}")
+coverage = (pack / "COVERAGE.md").read_text()
+for marker in ["OSMAP-WSTG-INPV-005", "WSTG-v42-INPV-03", "WSTG-v42-INPV-04"]:
+    if marker not in coverage:
+        raise SystemExit(f"COVERAGE.md missing HTTP input-tampering marker {marker}")
+runner = (pack / "run-wstg-pack.py").read_text()
+for marker in [
+    "test_http_input_tampering",
+    "http_inpv03_get_body_mailboxes",
+    "http_inpv04_duplicate_query",
+    "http_inpv04_duplicate_send_field",
+    "write_http_input_tampering_static_evidence",
+]:
+    if marker not in runner:
+        raise SystemExit(f"runner missing HTTP input-tampering marker {marker}")
+doc = (repo / "docs" / "V3_HTTP_INPUT_TAMPERING_EVIDENCE.md").read_text()
+for marker in [
+    "OSMAP-WSTG-INPV-005",
+    "WSTG-v42-INPV-03",
+    "WSTG-v42-INPV-04",
+    "GET requests carrying a request body",
+    "duplicate URL-encoded form fields",
+]:
+    if marker not in doc:
+        raise SystemExit(f"HTTP input-tampering doc missing marker {marker}")
+matrix = json.loads((pack / "wstg-scenario-matrix.v42.json").read_text())
+rows = {item["wstg_id"]: item for item in matrix["scenarios"]}
+for wstg_id in ["WSTG-v42-INPV-03", "WSTG-v42-INPV-04"]:
+    row = rows[wstg_id]
+    if row["disposition"] != "automated" or "OSMAP-WSTG-INPV-005" not in row["evidence_reference"]:
+        raise SystemExit(f"{wstg_id} must be automated by OSMAP-WSTG-INPV-005")
+print("HTTP input-tampering WSTG mapping validated")
+PY
+
 echo "validating live WSTG evidence mappings"
 python3 - "$pack_dir" <<'PY'
 import json
