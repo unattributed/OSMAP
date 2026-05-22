@@ -1,5 +1,24 @@
 # Decision Log
 
+## 2026-05-22, Start WSTG Slice 1 source metadata and dispositions
+
+The Version 3 WSTG due-diligence workstream now has the first mechanical
+inventory controls needed before deeper coverage closure:
+
+- the WSTG runner summary and report record source name, source URL, source
+  version, source commit when applicable, active matrix file, OSMAP commit,
+  target host, authentication mode, and evidence path
+- release mode fails if a latest-track WSTG source is claimed without a pinned
+  source commit
+- the active v4.2 scenario matrix assigns one explicit Slice 1 disposition to
+  every row: 28 `automated` rows mapped to current runner evidence and 69
+  `blocked` rows requiring applicability decision and evidence before closeout
+- the WSTG pack regression now validates the matrix dispositions and source
+  metadata hooks
+
+This does not close the 69 blocked WSTG rows. It makes them visible,
+machine-checkable release work instead of implicit spreadsheet debt.
+
 ## 2026-05-19, Make V3 WSTG due diligence a release-blocking workstream
 
 The existing WSTG testing pack provides useful browser, edge, authentication, session, CSP, CSRF, MIME, attachment, and selected business-logic regression evidence, but the current matrix is anchored to WSTG v4.2 and does not yet represent complete WSTG due diligence for Version 3.

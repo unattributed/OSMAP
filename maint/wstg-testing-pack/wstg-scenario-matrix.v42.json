@@ -22,7 +22,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-INFO-02",
@@ -34,7 +37,12 @@
         "OSMAP-WSTG-INFO-002"
       ],
       "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
-      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INFO-002"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-INFO-03",
@@ -46,7 +54,12 @@
         "OSMAP-WSTG-INFO-001"
       ],
       "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
-      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INFO-001"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-INFO-04",
@@ -56,7 +69,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-INFO-05",
@@ -68,7 +84,12 @@
         "OSMAP-WSTG-INFO-001"
       ],
       "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
-      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INFO-001"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-INFO-06",
@@ -78,7 +99,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-INFO-07",
@@ -88,7 +112,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-INFO-08",
@@ -98,7 +125,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-INFO-09",
@@ -108,7 +138,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-INFO-10",
@@ -118,7 +151,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-CONF-01",
@@ -132,7 +168,14 @@
         "OSMAP-WSTG-CONF-006"
       ],
       "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
-      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CONF-001",
+        "OSMAP-WSTG-CONF-005",
+        "OSMAP-WSTG-CONF-006"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-CONF-02",
@@ -144,7 +187,12 @@
         "OSMAP-WSTG-CONF-007"
       ],
       "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
-      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CONF-007"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-CONF-03",
@@ -154,7 +202,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-CONF-04",
@@ -164,7 +215,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-CONF-05",
@@ -176,7 +230,12 @@
         "OSMAP-WSTG-CONF-005"
       ],
       "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
-      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CONF-005"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-CONF-06",
@@ -188,7 +247,12 @@
         "OSMAP-WSTG-CONF-004"
       ],
       "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
-      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CONF-004"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-CONF-07",
@@ -200,7 +264,12 @@
         "OSMAP-WSTG-CONF-002"
       ],
       "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
-      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CONF-002"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-CONF-08",
@@ -210,7 +279,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-CONF-09",
@@ -220,7 +292,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-CONF-10",
@@ -230,7 +305,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-CONF-11",
@@ -240,7 +318,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "not_applicable_candidate_but_requires_repo_or_live_proof"
+      "recommended_triage": "not_applicable_candidate_but_requires_repo_or_live_proof",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-IDNT-01",
@@ -250,7 +331,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-IDNT-02",
@@ -260,7 +344,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "not_applicable_candidate_but_requires_repo_or_live_proof"
+      "recommended_triage": "not_applicable_candidate_but_requires_repo_or_live_proof",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-IDNT-03",
@@ -270,7 +357,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-IDNT-04",
@@ -282,7 +372,12 @@
         "OSMAP-WSTG-ATHN-002"
       ],
       "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
-      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-ATHN-002"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-IDNT-05",
@@ -292,7 +387,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-ATHN-01",
@@ -304,7 +402,12 @@
         "OSMAP-WSTG-ATHN-001"
       ],
       "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
-      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-ATHN-001"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-ATHN-02",
@@ -314,7 +417,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-ATHN-03",
@@ -327,7 +433,13 @@
         "OSMAP-WSTG-ATHN-003"
       ],
       "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
-      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-ATHN-002",
+        "OSMAP-WSTG-ATHN-003"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-ATHN-04",
@@ -337,7 +449,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-ATHN-05",
@@ -347,7 +462,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "not_applicable_candidate_but_requires_repo_or_live_proof"
+      "recommended_triage": "not_applicable_candidate_but_requires_repo_or_live_proof",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-ATHN-06",
@@ -359,7 +477,12 @@
         "OSMAP-WSTG-SESS-005"
       ],
       "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
-      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-SESS-005"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-ATHN-07",
@@ -369,7 +492,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-ATHN-08",
@@ -379,7 +505,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "not_applicable_candidate_but_requires_repo_or_live_proof"
+      "recommended_triage": "not_applicable_candidate_but_requires_repo_or_live_proof",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-ATHN-09",
@@ -389,7 +518,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "not_applicable_candidate_but_requires_repo_or_live_proof"
+      "recommended_triage": "not_applicable_candidate_but_requires_repo_or_live_proof",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-ATHN-10",
@@ -402,7 +534,13 @@
         "OSMAP-WSTG-ATHN-004"
       ],
       "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
-      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-ATHN-001",
+        "OSMAP-WSTG-ATHN-004"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-ATHZ-01",
@@ -414,7 +552,12 @@
         "OSMAP-WSTG-INPV-001"
       ],
       "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
-      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-001"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-ATHZ-02",
@@ -424,7 +567,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-ATHZ-03",
@@ -434,7 +580,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-ATHZ-04",
@@ -448,7 +597,14 @@
         "OSMAP-WSTG-BUSL-004"
       ],
       "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
-      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-BUSL-003",
+        "OSMAP-WSTG-BUSL-004"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-SESS-01",
@@ -458,7 +614,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-SESS-02",
@@ -470,7 +629,12 @@
         "OSMAP-WSTG-SESS-001"
       ],
       "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
-      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-SESS-001"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-SESS-03",
@@ -482,7 +646,12 @@
         "OSMAP-WSTG-SESS-002"
       ],
       "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
-      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-SESS-002"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-SESS-04",
@@ -492,7 +661,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-SESS-05",
@@ -508,7 +680,16 @@
         "OSMAP-WSTG-BUSL-004"
       ],
       "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
-      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-SESS-003",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-BUSL-003",
+        "OSMAP-WSTG-BUSL-004"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-SESS-06",
@@ -520,7 +701,12 @@
         "OSMAP-WSTG-SESS-005"
       ],
       "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
-      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-SESS-005"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-SESS-07",
@@ -530,7 +716,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-SESS-08",
@@ -540,7 +729,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-SESS-09",
@@ -550,7 +742,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-INPV-01",
@@ -562,7 +757,12 @@
         "OSMAP-WSTG-INPV-002"
       ],
       "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
-      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-002"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-INPV-02",
@@ -574,7 +774,12 @@
         "OSMAP-WSTG-CLNT-002"
       ],
       "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
-      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CLNT-002"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-INPV-03",
@@ -584,7 +789,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-INPV-04",
@@ -594,7 +802,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-INPV-05",
@@ -604,7 +815,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-INPV-06",
@@ -614,7 +828,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-INPV-07",
@@ -624,7 +841,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-INPV-08",
@@ -634,7 +854,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-INPV-09",
@@ -644,7 +867,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-INPV-10",
@@ -654,7 +880,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-INPV-11",
@@ -664,7 +893,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-INPV-12",
@@ -674,7 +906,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-INPV-13",
@@ -684,7 +919,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-INPV-14",
@@ -694,7 +932,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-INPV-15",
@@ -704,7 +945,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-INPV-16",
@@ -714,7 +958,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-INPV-17",
@@ -724,7 +971,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-INPV-18",
@@ -734,7 +984,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-INPV-19",
@@ -744,7 +997,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-ERRH-01",
@@ -757,7 +1013,13 @@
         "OSMAP-WSTG-LOGG-001"
       ],
       "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
-      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INFO-002",
+        "OSMAP-WSTG-LOGG-001"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-ERRH-02",
@@ -767,7 +1029,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-CRYP-01",
@@ -777,7 +1042,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-CRYP-02",
@@ -787,7 +1055,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-CRYP-03",
@@ -797,7 +1068,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-CRYP-04",
@@ -807,7 +1081,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-BUSL-01",
@@ -817,7 +1094,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-BUSL-02",
@@ -827,7 +1107,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-BUSL-03",
@@ -837,7 +1120,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-BUSL-04",
@@ -850,7 +1136,13 @@
         "OSMAP-WSTG-BUSL-004"
       ],
       "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
-      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-BUSL-004"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-BUSL-05",
@@ -860,7 +1152,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-BUSL-06",
@@ -870,7 +1165,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-BUSL-07",
@@ -880,7 +1178,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-BUSL-08",
@@ -894,7 +1195,14 @@
         "OSMAP-WSTG-BUSL-003"
       ],
       "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
-      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-BUSL-001",
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-BUSL-003"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-BUSL-09",
@@ -907,7 +1215,13 @@
         "OSMAP-WSTG-BUSL-003"
       ],
       "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
-      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-BUSL-001",
+        "OSMAP-WSTG-BUSL-003"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-CLNT-01",
@@ -919,7 +1233,12 @@
         "OSMAP-WSTG-CLNT-002"
       ],
       "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
-      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CLNT-002"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-CLNT-02",
@@ -929,7 +1248,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-CLNT-03",
@@ -939,7 +1261,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-CLNT-04",
@@ -949,7 +1274,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-CLNT-05",
@@ -959,7 +1287,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-CLNT-06",
@@ -969,7 +1300,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-CLNT-07",
@@ -981,7 +1315,12 @@
         "OSMAP-WSTG-CLNT-001"
       ],
       "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
-      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CLNT-001"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-CLNT-08",
@@ -991,7 +1330,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "not_applicable_candidate_but_requires_repo_or_live_proof"
+      "recommended_triage": "not_applicable_candidate_but_requires_repo_or_live_proof",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-CLNT-09",
@@ -1003,7 +1345,12 @@
         "OSMAP-WSTG-CONF-002"
       ],
       "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
-      "recommended_triage": "validate_evidence_strength_and_keep_or_expand"
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CONF-002"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-CLNT-10",
@@ -1013,7 +1360,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "not_applicable_candidate_but_requires_repo_or_live_proof"
+      "recommended_triage": "not_applicable_candidate_but_requires_repo_or_live_proof",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-CLNT-11",
@@ -1023,7 +1373,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "not_applicable_candidate_but_requires_repo_or_live_proof"
+      "recommended_triage": "not_applicable_candidate_but_requires_repo_or_live_proof",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-CLNT-12",
@@ -1033,7 +1386,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-CLNT-13",
@@ -1043,7 +1399,10 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog"
+      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     },
     {
       "wstg_id": "WSTG-v42-APIT-01",
@@ -1053,7 +1412,22 @@
       "current_osmap_mapping_status": "not_mapped_in_current_pack",
       "current_osmap_tests": [],
       "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "not_applicable_candidate_but_requires_repo_or_live_proof"
+      "recommended_triage": "not_applicable_candidate_but_requires_repo_or_live_proof",
+      "disposition": "blocked",
+      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
+      "evidence_reference": []
     }
-  ]
+  ],
+  "active_matrix_schema": {
+    "disposition_field": "disposition",
+    "allowed_dispositions": [
+      "automated",
+      "manual",
+      "not_applicable",
+      "covered_by_other_evidence",
+      "deferred",
+      "blocked"
+    ],
+    "status": "inventory_in_progress"
+  }
 }

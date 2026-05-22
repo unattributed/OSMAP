@@ -35,6 +35,15 @@ STATUS_NA = "not_applicable"
 PACK_ROOT = Path(__file__).resolve().parent
 REPO_ROOT = PACK_ROOT.parents[1]
 MAPPING_PATH = PACK_ROOT / "wstg-asvs-mapping.json"
+DEFAULT_WSTG_MATRIX_FILE = "wstg-scenario-matrix.v42.json"
+ALLOWED_MATRIX_DISPOSITIONS = {
+    "automated",
+    "manual",
+    "not_applicable",
+    "covered_by_other_evidence",
+    "deferred",
+    "blocked",
+}
 
 OWASP_TOP_10_2025 = {
     "A01:2025": "Broken Access Control",
@@ -102,6 +111,11 @@ class Config:
     timeout: float
     ssh_timeout: float
     release_mode: bool
+    wstg_source_name: str
+    wstg_source_url: str
+    wstg_source_version: str
+    wstg_source_commit: str
+    wstg_matrix_file: str
 
     @property
     def parsed_base(self) -> urllib.parse.ParseResult:
@@ -2421,6 +2435,11 @@ def build_config(args: argparse.Namespace) -> Config:
         timeout=float(merged.get("OSMAP_REQUEST_TIMEOUT_SECONDS", "12") or "12"),
         ssh_timeout=max(1.0, float(merged.get("OSMAP_SSH_TIMEOUT_SECONDS", "300") or "300")),
         release_mode=release_mode,
+        wstg_source_name=merged.get("OSMAP_WSTG_SOURCE_NAME", "OWASP Web Security Testing Guide"),
+        wstg_source_url=merged.get("OSMAP_WSTG_SOURCE_URL", "https://owasp.org/www-project-web-security-testing-guide/v42/"),
+        wstg_source_version=merged.get("OSMAP_WSTG_SOURCE_VERSION", "v4.2"),
+        wstg_source_commit=merged.get("OSMAP_WSTG_SOURCE_COMMIT", ""),
+        wstg_matrix_file=merged.get("OSMAP_WSTG_MATRIX_FILE", DEFAULT_WSTG_MATRIX_FILE),
     )
 
 
@@ -2441,12 +2460,90 @@ def generate_totp(secret: str, *, timestamp: int | None = None, digits: int = 6,
     return str(code_int % (10**digits)).zfill(digits)
 
 
+def active_matrix_metadata(config: Config) -> dict[str, object]:
+    matrix_path = (PACK_ROOT / config.wstg_matrix_file).resolve()
+    try:
+        relative_matrix = str(matrix_path.relative_to(PACK_ROOT))
+    except ValueError:
+        relative_matrix = str(matrix_path)
+
+    metadata: dict[str, object] = {
+        "matrix_file": relative_matrix,
+        "exists": matrix_path.is_file(),
+        "scenario_count": 0,
+        "disposition_counts": {},
+        "missing_disposition_count": 0,
+        "invalid_disposition_count": 0,
+    }
+    if not matrix_path.is_file():
+        return metadata
+
+    try:
+        payload = json.loads(matrix_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as error:
+        metadata["error"] = str(error)
+        return metadata
+
+    scenarios = payload.get("scenarios", [])
+    if not isinstance(scenarios, list):
+        metadata["error"] = "matrix scenarios field was not a list"
+        return metadata
+
+    disposition_counts: dict[str, int] = {}
+    missing = 0
+    invalid = 0
+    for scenario in scenarios:
+        if not isinstance(scenario, dict):
+            invalid += 1
+            continue
+        disposition = str(scenario.get("disposition", "")).strip()
+        if not disposition:
+            missing += 1
+            continue
+        disposition_counts[disposition] = disposition_counts.get(disposition, 0) + 1
+        if disposition not in ALLOWED_MATRIX_DISPOSITIONS:
+            invalid += 1
+
+    metadata["scenario_count"] = len(scenarios)
+    metadata["disposition_counts"] = disposition_counts
+    metadata["missing_disposition_count"] = missing
+    metadata["invalid_disposition_count"] = invalid
+    metadata["wstg_source"] = payload.get("wstg_source", "")
+    return metadata
+
+
+def wstg_source_metadata(runner: Runner, matrix_metadata: dict[str, object]) -> dict[str, object]:
+    if runner.config.prompt_auth:
+        auth_mode = "prompt-auth"
+    elif runner.config.allow_authenticated:
+        auth_mode = "authenticated"
+    else:
+        auth_mode = "unauthenticated"
+
+    return {
+        "source_name": runner.config.wstg_source_name,
+        "source_url": runner.config.wstg_source_url,
+        "source_version": runner.config.wstg_source_version,
+        "source_commit": runner.config.wstg_source_commit,
+        "capture_date": dt.datetime.now(dt.timezone.utc).date().isoformat(),
+        "matrix_file": matrix_metadata.get("matrix_file", runner.config.wstg_matrix_file),
+        "osmap_commit": local_git_head(),
+        "target_host": runner.config.host,
+        "base_url": runner.config.base_url,
+        "auth_mode": auth_mode,
+        "evidence_path": str(runner.run_dir),
+    }
+
+
 def write_summary(runner: Runner, args: argparse.Namespace, release_errors: list[str]) -> None:
+    matrix_metadata = active_matrix_metadata(runner.config)
     data = {
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "target": runner.config.base_url,
         "commands": [" ".join(shlex.quote(part) for part in sys.argv)],
         "release_mode": runner.config.release_mode,
+        "wstg_source_metadata": wstg_source_metadata(runner, matrix_metadata),
+        "active_wstg_matrix": matrix_metadata,
         "standards": runner.mapping["standards"],
         "declared_owasp_top_10_2025_coverage": top10_coverage(runner.mapping),
         "owasp_top_10_2025_coverage": proven_top10_coverage(runner.mapping, runner.results),
@@ -2468,7 +2565,7 @@ def write_summary(runner: Runner, args: argparse.Namespace, release_errors: list
     }
     (runner.run_dir / "summary.json").write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     (runner.run_dir / "report.md").write_text(render_markdown_report(runner, data), encoding="utf-8")
-    write_coverage_markdown(runner.mapping, PACK_ROOT / "COVERAGE.md")
+    write_coverage_markdown(runner.mapping, PACK_ROOT / "COVERAGE.md", matrix_metadata)
 
 
 def status_counts(results: list[TestResult]) -> dict[str, int]:
@@ -2488,6 +2585,17 @@ def render_markdown_report(runner: Runner, data: dict[str, object]) -> str:
         f"- Mapping: `{data['mapping_file']}`",
         f"- Release mode: `{data['release_mode']}`",
         f"- Results: pass={counts.get(STATUS_PASS, 0)}, fail={counts.get(STATUS_FAIL, 0)}, warning={counts.get(STATUS_WARNING, 0)}, skip={counts.get(STATUS_SKIP, 0)}, not_applicable={counts.get(STATUS_NA, 0)}",
+        "",
+        "## WSTG Source",
+        "",
+        f"- Source: `{data['wstg_source_metadata']['source_name']}`",
+        f"- Version: `{data['wstg_source_metadata']['source_version']}`",
+        f"- URL: `{data['wstg_source_metadata']['source_url']}`",
+        f"- Source commit: `{data['wstg_source_metadata']['source_commit'] or 'not applicable'}`",
+        f"- Active matrix: `{data['active_wstg_matrix']['matrix_file']}`",
+        f"- OSMAP commit: `{data['wstg_source_metadata']['osmap_commit']}`",
+        f"- Auth mode: `{data['wstg_source_metadata']['auth_mode']}`",
+        f"- Evidence path: `{data['wstg_source_metadata']['evidence_path']}`",
         "",
         "## Commands",
         "",
@@ -2518,11 +2626,35 @@ def render_markdown_report(runner: Runner, data: dict[str, object]) -> str:
     return "\n".join(lines)
 
 
-def write_coverage_markdown(mapping: dict[str, object], path: Path) -> None:
+def write_coverage_markdown(mapping: dict[str, object], path: Path, matrix_metadata: dict[str, object]) -> None:
+    disposition_counts = matrix_metadata.get("disposition_counts", {})
     lines = [
         "# OSMAP WSTG, ASVS, And OWASP Top 10 Coverage",
         "",
-        "Generated from `wstg-asvs-mapping.json`.",
+        "Generated from `wstg-asvs-mapping.json` and the active WSTG due-diligence matrix.",
+        "",
+        "## Standards",
+        "",
+        "| Standard | Current repository use |",
+        "| --- | --- |",
+        "| OWASP WSTG v4.2 | Current implemented matrix and mapped runner tests. |",
+        "| OWASP WSTG latest | Required for V3 latest-track due diligence when pinned to an upstream commit. |",
+        "| OWASP ASVS 5.0.0 | Control mapping for implemented tests where applicable. |",
+        "| Project Top 10 crosswalk | Risk grouping for release-required WSTG tests and explicit gaps. |",
+        "",
+        "## Active Matrix Summary",
+        "",
+        "| Item | Count |",
+        "| --- | ---: |",
+        f"| Active matrix rows | {matrix_metadata.get('scenario_count', 0)} |",
+        f"| Automated dispositions | {disposition_counts.get('automated', 0) if isinstance(disposition_counts, dict) else 0} |",
+        f"| Manual dispositions | {disposition_counts.get('manual', 0) if isinstance(disposition_counts, dict) else 0} |",
+        f"| Not-applicable dispositions | {disposition_counts.get('not_applicable', 0) if isinstance(disposition_counts, dict) else 0} |",
+        f"| Covered-by-other-evidence dispositions | {disposition_counts.get('covered_by_other_evidence', 0) if isinstance(disposition_counts, dict) else 0} |",
+        f"| Deferred dispositions | {disposition_counts.get('deferred', 0) if isinstance(disposition_counts, dict) else 0} |",
+        f"| Blocked dispositions | {disposition_counts.get('blocked', 0) if isinstance(disposition_counts, dict) else 0} |",
+        f"| Missing dispositions | {matrix_metadata.get('missing_disposition_count', 0)} |",
+        f"| Invalid dispositions | {matrix_metadata.get('invalid_disposition_count', 0)} |",
         "",
         "## OWASP Top 10 2025 Crosswalk",
         "",
@@ -2642,6 +2774,13 @@ def release_errors(mapping: dict[str, object], results: list[TestResult], runner
     errors: list[str] = []
     if selected:
         errors.append("release mode must run the full WSTG pack, not selected tests")
+    matrix_metadata = active_matrix_metadata(runner.config)
+    if matrix_metadata.get("missing_disposition_count"):
+        errors.append("active WSTG matrix has rows without a release disposition")
+    if matrix_metadata.get("invalid_disposition_count"):
+        errors.append("active WSTG matrix has rows with invalid release dispositions")
+    if runner.config.wstg_source_version.lower() == "latest" and not runner.config.wstg_source_commit:
+        errors.append("latest-track WSTG release evidence must include OSMAP_WSTG_SOURCE_COMMIT")
     by_id = {result.test_id: result for result in results}
     for item in mapping["tests"]:
         test_id = item["test_id"]

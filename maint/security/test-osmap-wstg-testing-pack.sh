@@ -122,11 +122,55 @@ for key in [
     "OSMAP_OUTPUT_DIR=",
     "OSMAP_WSTG_REMOTE_REPO=/home/foo/OSMAP",
     "OSMAP_WSTG_EXPECTED_REF=",
+    "OSMAP_WSTG_SOURCE_NAME=OWASP Web Security Testing Guide",
+    "OSMAP_WSTG_SOURCE_URL=https://owasp.org/www-project-web-security-testing-guide/v42/",
+    "OSMAP_WSTG_SOURCE_VERSION=v4.2",
+    "OSMAP_WSTG_SOURCE_COMMIT=",
+    "OSMAP_WSTG_MATRIX_FILE=wstg-scenario-matrix.v42.json",
     "OSMAP_RATE_LIMIT_DELAY_SECONDS=",
     "OSMAP_ALLOW_AUTHENTICATED_TESTS=false",
 ]:
     if key not in env_text:
         raise SystemExit(f".env.example missing {key}")
+
+matrix = json.loads((pack / "wstg-scenario-matrix.v42.json").read_text())
+allowed_dispositions = {
+    "automated",
+    "manual",
+    "not_applicable",
+    "covered_by_other_evidence",
+    "deferred",
+    "blocked",
+}
+scenarios = matrix.get("scenarios", [])
+if len(scenarios) != 97:
+    raise SystemExit(f"unexpected WSTG v4.2 scenario count: {len(scenarios)}")
+missing_disposition = [row.get("wstg_id", "<unknown>") for row in scenarios if not row.get("disposition")]
+if missing_disposition:
+    raise SystemExit(f"WSTG matrix rows missing disposition: {missing_disposition[:10]}")
+invalid_disposition = [
+    row.get("wstg_id", "<unknown>")
+    for row in scenarios
+    if row.get("disposition") and row.get("disposition") not in allowed_dispositions
+]
+if invalid_disposition:
+    raise SystemExit(f"WSTG matrix rows have invalid disposition: {invalid_disposition[:10]}")
+if not any(row.get("disposition") == "automated" for row in scenarios):
+    raise SystemExit("WSTG matrix must identify automated rows")
+if not any(row.get("disposition") == "blocked" for row in scenarios):
+    raise SystemExit("WSTG matrix must identify blocked rows for remaining due diligence")
+
+runner_text = (pack / "run-wstg-pack.py").read_text()
+for marker in [
+    "active_matrix_metadata",
+    "wstg_source_metadata",
+    "OSMAP_WSTG_SOURCE_VERSION",
+    "OSMAP_WSTG_SOURCE_COMMIT",
+    "OSMAP_WSTG_MATRIX_FILE",
+    "latest-track WSTG release evidence must include OSMAP_WSTG_SOURCE_COMMIT",
+]:
+    if marker not in runner_text:
+        raise SystemExit(f"runner missing WSTG source metadata marker {marker}")
 
 print(f"validated {len(mapping['tests'])} mapped WSTG tests across all OWASP Top 10 2025 categories")
 PY

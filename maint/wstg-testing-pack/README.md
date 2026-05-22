@@ -78,6 +78,10 @@ Most host-assisted tests use `ssh $OSMAP_SSH_HOST` and read-only commands. Host-
 
 Any test that sends mail, moves mail, deletes mail, mutates drafts, changes settings, or injects controlled messages must use dedicated validation accounts and controlled fixtures only.
 
+`OSMAP-WSTG-INPV-003` is the command-injection due-diligence lane. It uses safe
+shell-shaped strings, output canaries, bounded timing probes, and host log
+review; it does not execute destructive payloads or uncontrolled fuzzing.
+
 ## Running
 
 Unauthenticated dynamic and static checks:
@@ -127,7 +131,7 @@ Each run writes a timestamped directory under `OSMAP_OUTPUT_DIR` or `maint/wstg-
 - `evidence/`, redacted request, response, static, and host evidence
 - `logs/`, runner logs where applicable
 
-Version 3 summaries must include or be extended to include:
+Version 3 summaries include:
 
 - WSTG source version or branch
 - WSTG source URL
@@ -137,13 +141,11 @@ Version 3 summaries must include or be extended to include:
 - test timestamp
 - target hostname and base URL
 - authenticated or unauthenticated mode
-- test account labels without secrets
 - result
 - evidence path
 - WSTG mapping
 - ASVS mapping where applicable
-- not-applicable reason where relevant
-- manual evidence requirement where automation is not safe or not possible
+- active-matrix disposition counts for automated, manual, not applicable, covered-by-other-evidence, deferred, and blocked rows
 
 ## Statuses
 
