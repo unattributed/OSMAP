@@ -57,15 +57,15 @@ The current WSTG pack is useful targeted regression coverage, but it is not full
 
 | Baseline item | Current state |
 | --- | --- |
-| Existing OSMAP WSTG runner tests | 28 mapped tests |
+| Existing OSMAP WSTG runner tests | 29 mapped tests |
 | Existing explicit gaps | 3 gaps |
 | Existing WSTG scenario matrix | WSTG v4.2 |
 | WSTG v4.2 scenario rows | 97 |
-| WSTG v4.2 rows mapped by current pack | 30 |
-| WSTG v4.2 rows not mapped by current pack | 67 |
+| WSTG v4.2 rows mapped by current pack | 35 |
+| WSTG v4.2 rows not mapped by current pack | 62 |
 | WSTG v4.2 rows with explicit Slice 1 disposition | 97 |
-| WSTG v4.2 automated dispositions | 30 |
-| WSTG v4.2 blocked dispositions pending due diligence | 67 |
+| WSTG v4.2 automated dispositions | 35 |
+| WSTG v4.2 blocked dispositions pending due diligence | 62 |
 | Current OWASP latest coverage | Must be pinned and tracked before V3 closeout |
 
 The Version 3 workstream therefore treats the current pack as a starting point. It must be extended into a slice-based due-diligence program.
@@ -152,6 +152,14 @@ Acceptance evidence:
 - Authenticated WSTG release run with credential and TOTP proof.
 - Session invalidation evidence.
 - Concurrent-session or device-policy evidence.
+
+Slice 3 implementation evidence starts with:
+
+- `docs/V3_SESSION_LIFECYCLE_EVIDENCE.md`
+- `OSMAP-WSTG-SESS-006`
+- authenticated old-cookie-after-logout and stale-cookie rejection evidence
+- static timeout, exposed-token, concurrent-session, puzzling, and revocation
+  race evidence
 
 ### Slice 4, IMAP, SMTP, and webmail-specific input validation
 

@@ -392,6 +392,57 @@
       ]
     },
     {
+      "test_id": "OSMAP-WSTG-SESS-006",
+      "test_name": "WSTG-v42-SESS lifecycle, timeout, and stale-cookie controls",
+      "script_path": "run-wstg-pack.py",
+      "wstg": [
+        "WSTG-v42-SESS-01",
+        "WSTG-v42-SESS-04",
+        "WSTG-v42-SESS-06",
+        "WSTG-v42-SESS-07",
+        "WSTG-v42-SESS-08",
+        "WSTG-v42-SESS-09"
+      ],
+      "wstg_section": "Testing for Session Management Schema; Testing for Exposed Session Variables; Testing for Logout Functionality; Testing Session Timeout; Testing for Session Puzzling; Testing for Session Hijacking",
+      "asvs": [
+        "v5.0.0-3.2.1",
+        "v5.0.0-3.4.2",
+        "v5.0.0-7.1.2",
+        "v5.0.0-7.2.1",
+        "v5.0.0-7.4.1",
+        "v5.0.0-7.4.4",
+        "v5.0.0-8.2.1"
+      ],
+      "asvs_section": "Session Management; Logout; Secret Hygiene; Logging",
+      "test_type": [
+        "authenticated",
+        "dynamic test",
+        "static boundary review"
+      ],
+      "expected_result": "A real authenticated session can access a protected route, valid logout revokes the server-side session, the old cookie and a synthetic stale cookie cannot reuse protected access, and static evidence covers idle timeout, absolute timeout, concurrent-session policy, exposed-token controls, session puzzling, and revocation race behavior.",
+      "evidence_produced": [
+        "session_lifecycle_login.headers",
+        "session_lifecycle_mailboxes.headers",
+        "session_lifecycle_mailboxes.body",
+        "session_lifecycle_logout.headers",
+        "session_lifecycle_old_cookie_after_logout.headers",
+        "session_lifecycle_stale_cookie.headers",
+        "session_lifecycle_static.txt",
+        "session_lifecycle_redaction.txt"
+      ],
+      "release_required": true,
+      "requires_authenticated_coverage": true,
+      "requires_totp": true,
+      "safe_for_release": true,
+      "severity_if_failed": "high",
+      "owasp_top_10_2025": [
+        "A02:2025",
+        "A07:2025",
+        "A09:2025",
+        "A10:2025"
+      ]
+    },
+    {
       "test_id": "OSMAP-WSTG-CONF-004",
       "test_name": "WSTG-v42-CONF-06 Test HTTP Methods - OPTIONS and TRACE",
       "script_path": "run-wstg-pack.py",

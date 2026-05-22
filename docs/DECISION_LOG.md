@@ -1,5 +1,24 @@
 # Decision Log
 
+## 2026-05-22, Start WSTG Slice 3 session lifecycle evidence
+
+The Version 3 WSTG workstream now has a dedicated session lifecycle lane:
+
+- `OSMAP-WSTG-SESS-006` maps WSTG SESS-01, SESS-04, SESS-06, SESS-07,
+  SESS-08, and SESS-09
+- dynamic evidence logs in through the real password-plus-TOTP browser path,
+  loads protected mailbox state, logs out with a valid CSRF token, and proves
+  the old cookie and a synthetic stale cookie cannot reach protected content
+- static evidence records idle timeout, absolute timeout, concurrent-session
+  policy, exposed-token controls, session-puzzling resistance, and revocation
+  race coverage
+- the WSTG v4.2 matrix moves SESS-01, SESS-04, SESS-07, SESS-08, and SESS-09
+  from blocked to automated, leaving 62 blocked rows for remaining due
+  diligence slices
+
+Developer-mode runs may still skip this check without credentials. V3 release
+mode must provide the authenticated TOTP-backed evidence.
+
 ## 2026-05-22, Start WSTG Slice 2 authorization account-isolation evidence
 
 The Version 3 WSTG workstream now has an explicit authorization and

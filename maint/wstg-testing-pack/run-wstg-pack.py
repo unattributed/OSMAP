@@ -213,6 +213,7 @@ class Runner:
             "OSMAP-WSTG-SESS-003": self.test_logout_csrf,
             "OSMAP-WSTG-SESS-004": self.test_authenticated_csrf,
             "OSMAP-WSTG-SESS-005": self.test_authenticated_cache_control,
+            "OSMAP-WSTG-SESS-006": self.test_session_lifecycle_policy,
             "OSMAP-WSTG-CONF-004": self.test_methods,
             "OSMAP-WSTG-INFO-001": self.test_metafiles,
             "OSMAP-WSTG-INFO-002": self.test_info_disclosure,
@@ -856,6 +857,161 @@ class Runner:
         if "cache-control: no-store" not in mailboxes_headers or any("no-store" not in value.lower() for value in values):
             return self.result("OSMAP-WSTG-SESS-005", STATUS_FAIL, "authenticated pages are missing Cache-Control: no-store", ["evidence/auth_mailboxes.headers", "evidence/auth_settings.headers"])
         return self.result("OSMAP-WSTG-SESS-005", STATUS_PASS, "authenticated pages suppress browser cache storage", ["evidence/auth_mailboxes.headers", "evidence/auth_settings.headers"])
+
+    def test_session_lifecycle_policy(self) -> TestResult:
+        if not self.authenticated_ready():
+            return self.result("OSMAP-WSTG-SESS-006", STATUS_SKIP, "authenticated tests disabled or credentials/TOTP secret missing")
+        login = self.authenticated_login(
+            "session_lifecycle_login",
+            reason="session lifecycle policy check",
+        )
+        cookie_jar = cookie_jar_from_set_cookie_headers(login.header_values("Set-Cookie"))
+        mailboxes = self.request(
+            "session_lifecycle_mailboxes",
+            "GET",
+            "/mailboxes",
+            cookies=cookie_jar,
+        )
+        csrf_token = extract_csrf(mailboxes.body_text())
+        logout = self.form_post(
+            "session_lifecycle_logout",
+            "/logout",
+            {"csrf_token": csrf_token},
+            cookies=cookie_jar,
+            headers=same_origin_headers(self.config),
+            store_body_evidence=False,
+        )
+        old_cookie = self.request(
+            "session_lifecycle_old_cookie_after_logout",
+            "GET",
+            "/mailboxes",
+            cookies=cookie_jar,
+            store_body_evidence=False,
+        )
+        stale_cookie = self.request(
+            "session_lifecycle_stale_cookie",
+            "GET",
+            "/mailboxes",
+            cookies={"osmap_session": "d" * 64},
+            store_body_evidence=False,
+        )
+        static_ok = self.write_session_lifecycle_static_evidence()
+        redaction_ok = self.write_session_lifecycle_redaction_evidence([csrf_token])
+        statuses = {
+            "login": login.status,
+            "mailboxes": mailboxes.status,
+            "logout": logout.status,
+            "old_cookie_after_logout": old_cookie.status,
+            "stale_cookie": stale_cookie.status,
+        }
+        failures: dict[str, object] = {}
+        if login.status != 303 or "osmap_session" not in cookie_jar:
+            failures["login"] = login.status
+        if mailboxes.status != 200 or not csrf_token:
+            failures["mailboxes"] = mailboxes.status
+        if logout.status not in {200, 303}:
+            failures["logout"] = logout.status
+        if old_cookie.status == 200:
+            failures["old_cookie_after_logout"] = old_cookie.status
+        if stale_cookie.status == 200:
+            failures["stale_cookie"] = stale_cookie.status
+        if not static_ok:
+            failures["static_boundary"] = "missing session lifecycle markers"
+        if not redaction_ok:
+            failures["redaction"] = "session lifecycle evidence redaction scan failed"
+        evidence_paths = [
+            "evidence/session_lifecycle_login.headers",
+            "evidence/session_lifecycle_mailboxes.headers",
+            "evidence/session_lifecycle_mailboxes.body",
+            "evidence/session_lifecycle_logout.headers",
+            "evidence/session_lifecycle_old_cookie_after_logout.headers",
+            "evidence/session_lifecycle_stale_cookie.headers",
+            "evidence/session_lifecycle_static.txt",
+            "evidence/session_lifecycle_redaction.txt",
+        ]
+        if failures:
+            return self.result(
+                "OSMAP-WSTG-SESS-006",
+                STATUS_FAIL,
+                "session lifecycle evidence did not meet expected outcomes",
+                evidence_paths,
+                {"statuses": statuses, "failures": failures},
+            )
+        return self.result(
+            "OSMAP-WSTG-SESS-006",
+            STATUS_PASS,
+            "session lifecycle evidence covers logout invalidation, stale-cookie rejection, timeout policy, exposed-token controls, concurrent-session policy, and race handling",
+            evidence_paths,
+            {"statuses": statuses},
+        )
+
+    def write_session_lifecycle_static_evidence(self) -> bool:
+        files = [
+            REPO_ROOT / "src" / "session.rs",
+            REPO_ROOT / "src" / "http.rs",
+            REPO_ROOT / "docs" / "SESSION_MANAGEMENT_MODEL.md",
+            REPO_ROOT / "docs" / "V3_SECURITY_GATES.md",
+            REPO_ROOT / "docs" / "V3_SESSION_LIFECYCLE_EVIDENCE.md",
+        ]
+        text = "\n".join(path.read_text(encoding="utf-8", errors="replace") for path in files if path.exists())
+        markers = [
+            "DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS",
+            "timeout_reason",
+            "validate_session_rejects_expired_records",
+            "validate_session_auto_revokes_idle_records",
+            "list_sessions_auto_revokes_idle_records",
+            "simultaneous_session_validations_do_not_corrupt_last_seen",
+            "logout_racing_with_validation_leaves_session_revoked",
+            "revoke_all_racing_with_listing_leaves_all_sessions_revoked",
+            "revoke_all_for_user_except_preserves_current_session",
+            "raw bearer tokens are not written",
+            "concurrent browser sessions are allowed by policy",
+            "remembered-device cookies",
+            "OSMAP-WSTG-SESS-006",
+        ]
+        missing = [marker for marker in markers if marker.lower() not in text.lower()]
+        self.write_text_evidence(
+            "session_lifecycle_static.txt",
+            summarize_static_files(files, missing)
+            + "\nCovered boundaries:\n"
+            + "- absolute and idle timeout revocation are enforced during validation/listing\n"
+            + "- logout revokes server-side session state and stale cookies fail closed\n"
+            + "- concurrent sessions are allowed by policy and remain user-revocable\n"
+            + "- same-process race tests cover validation, logout, listing, and revoke-all state transitions\n"
+            + "- raw bearer tokens are not stored and browser-visible metadata avoids remembered-device identifiers\n",
+        )
+        return not missing
+
+    def write_session_lifecycle_redaction_evidence(self, forbidden_values: list[str]) -> bool:
+        leaks: dict[str, list[str]] = {}
+        forbidden_patterns = [
+            ("raw_session_cookie", r"osmap_session=[A-Za-z0-9._~+/=-]{16,}"),
+            ("csrf_token_value", r"(?i)csrf_token=[A-Za-z0-9._~+/=-]{16,}"),
+            ("session_response_cookie_value", r"(?i)" + "set" + r"-cookie: .*?[a-f0-9]{64}"),
+        ]
+        for value in forbidden_values:
+            if value:
+                forbidden_patterns.append((f"value_{len(forbidden_patterns)}", re.escape(value)))
+        for path in sorted(self.evidence_dir.glob("session_lifecycle_*")):
+            if path.name == "session_lifecycle_redaction.txt":
+                continue
+            text = path.read_text(encoding="utf-8", errors="replace")
+            matches = [name for name, pattern in forbidden_patterns if re.search(pattern, text)]
+            if matches:
+                leaks[path.name] = matches
+        lines = [
+            "Session lifecycle evidence redaction scan:",
+            "- checked session_lifecycle_* evidence files only",
+            "- raw session cookies, response cookie bearer values, and CSRF token values must be absent",
+        ]
+        if leaks:
+            lines.append("Leaks detected:")
+            for path, matches in leaks.items():
+                lines.append(f"- {path}: {', '.join(matches)}")
+        else:
+            lines.append("result=passed")
+        self.write_text_evidence("session_lifecycle_redaction.txt", "\n".join(lines) + "\n")
+        return not leaks
 
     def test_methods(self) -> TestResult:
         options = self.request("method_options", "OPTIONS", "/login")

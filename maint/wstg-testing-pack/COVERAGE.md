@@ -16,12 +16,12 @@ Generated from `wstg-asvs-mapping.json` and the active WSTG due-diligence matrix
 | Item | Count |
 | --- | ---: |
 | Active matrix rows | 97 |
-| Automated dispositions | 30 |
+| Automated dispositions | 35 |
 | Manual dispositions | 0 |
 | Not-applicable dispositions | 0 |
 | Covered-by-other-evidence dispositions | 0 |
 | Deferred dispositions | 0 |
-| Blocked dispositions | 67 |
+| Blocked dispositions | 62 |
 | Missing dispositions | 0 |
 | Invalid dispositions | 0 |
 
@@ -30,15 +30,15 @@ Generated from `wstg-asvs-mapping.json` and the active WSTG due-diligence matrix
 | Category | Name | Release-required tests | Explicit gaps |
 | --- | --- | --- | --- |
 | `A01:2025` | Broken Access Control | `OSMAP-WSTG-SESS-003`, `OSMAP-WSTG-SESS-004`, `OSMAP-WSTG-INPV-001`, `OSMAP-WSTG-CLNT-001`, `OSMAP-WSTG-ATHZ-001`, `OSMAP-WSTG-CONF-005`, `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003`, `OSMAP-WSTG-BUSL-004` | `OSMAP-WSTG-GAP-001` |
-| `A02:2025` | Security Misconfiguration | `OSMAP-WSTG-CONF-001`, `OSMAP-WSTG-CONF-002`, `OSMAP-WSTG-CONF-003`, `OSMAP-WSTG-SESS-005`, `OSMAP-WSTG-CONF-004`, `OSMAP-WSTG-INFO-001`, `OSMAP-WSTG-INFO-002`, `OSMAP-WSTG-CLNT-001`, `OSMAP-WSTG-CONF-005`, `OSMAP-WSTG-CONF-006` | none |
+| `A02:2025` | Security Misconfiguration | `OSMAP-WSTG-CONF-001`, `OSMAP-WSTG-CONF-002`, `OSMAP-WSTG-CONF-003`, `OSMAP-WSTG-SESS-005`, `OSMAP-WSTG-SESS-006`, `OSMAP-WSTG-CONF-004`, `OSMAP-WSTG-INFO-001`, `OSMAP-WSTG-INFO-002`, `OSMAP-WSTG-CLNT-001`, `OSMAP-WSTG-CONF-005`, `OSMAP-WSTG-CONF-006` | none |
 | `A03:2025` | Software Supply Chain Failures | `OSMAP-WSTG-CONF-007` | none |
 | `A04:2025` | Cryptographic Failures | `OSMAP-WSTG-CONF-001`, `OSMAP-WSTG-CONF-002`, `OSMAP-WSTG-ATHN-001`, `OSMAP-WSTG-SESS-001` | none |
 | `A05:2025` | Injection | `OSMAP-WSTG-CONF-003`, `OSMAP-WSTG-INPV-001`, `OSMAP-WSTG-INPV-002`, `OSMAP-WSTG-INPV-003`, `OSMAP-WSTG-CLNT-002` | none |
 | `A06:2025` | Insecure Design | `OSMAP-WSTG-CLNT-002`, `OSMAP-WSTG-BUSL-001`, `OSMAP-WSTG-ATHZ-001`, `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003`, `OSMAP-WSTG-BUSL-004` | `OSMAP-WSTG-GAP-001`, `OSMAP-WSTG-GAP-002` |
-| `A07:2025` | Authentication Failures | `OSMAP-WSTG-ATHN-001`, `OSMAP-WSTG-ATHN-002`, `OSMAP-WSTG-ATHN-003`, `OSMAP-WSTG-ATHN-004`, `OSMAP-WSTG-SESS-001`, `OSMAP-WSTG-SESS-002`, `OSMAP-WSTG-SESS-003`, `OSMAP-WSTG-SESS-005`, `OSMAP-WSTG-ATHZ-001`, `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003` | none |
+| `A07:2025` | Authentication Failures | `OSMAP-WSTG-ATHN-001`, `OSMAP-WSTG-ATHN-002`, `OSMAP-WSTG-ATHN-003`, `OSMAP-WSTG-ATHN-004`, `OSMAP-WSTG-SESS-001`, `OSMAP-WSTG-SESS-002`, `OSMAP-WSTG-SESS-003`, `OSMAP-WSTG-SESS-005`, `OSMAP-WSTG-SESS-006`, `OSMAP-WSTG-ATHZ-001`, `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003` | none |
 | `A08:2025` | Software or Data Integrity Failures | `OSMAP-WSTG-SESS-004`, `OSMAP-WSTG-BUSL-001`, `OSMAP-WSTG-CONF-007`, `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003`, `OSMAP-WSTG-BUSL-004` | `OSMAP-WSTG-GAP-001`, `OSMAP-WSTG-GAP-002` |
-| `A09:2025` | Security Logging and Alerting Failures | `OSMAP-WSTG-INPV-003`, `OSMAP-WSTG-ATHZ-001`, `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003`, `OSMAP-WSTG-LOGG-001` | none |
-| `A10:2025` | Mishandling of Exceptional Conditions | `OSMAP-WSTG-ATHN-003`, `OSMAP-WSTG-CONF-004`, `OSMAP-WSTG-INFO-002`, `OSMAP-WSTG-INPV-001`, `OSMAP-WSTG-INPV-003`, `OSMAP-WSTG-ATHZ-001`, `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003`, `OSMAP-WSTG-BUSL-004` | none |
+| `A09:2025` | Security Logging and Alerting Failures | `OSMAP-WSTG-SESS-006`, `OSMAP-WSTG-INPV-003`, `OSMAP-WSTG-ATHZ-001`, `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003`, `OSMAP-WSTG-LOGG-001` | none |
+| `A10:2025` | Mishandling of Exceptional Conditions | `OSMAP-WSTG-ATHN-003`, `OSMAP-WSTG-SESS-006`, `OSMAP-WSTG-CONF-004`, `OSMAP-WSTG-INFO-002`, `OSMAP-WSTG-INPV-001`, `OSMAP-WSTG-INPV-003`, `OSMAP-WSTG-ATHZ-001`, `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003`, `OSMAP-WSTG-BUSL-004` | none |
 
 ## Mapped Tests
 
@@ -56,6 +56,7 @@ Generated from `wstg-asvs-mapping.json` and the active WSTG due-diligence matrix
 | `OSMAP-WSTG-SESS-003` | WSTG-v42-SESS-05 Testing for Cross Site Request Forgery - logout enforcement | `WSTG-v42-SESS-05` | `v5.0.0-3.5.1`, `v5.0.0-3.5.3`, `v5.0.0-7.4.1` | `A01:2025`, `A07:2025` | authenticated, dynamic test | true | true | true | true | high |
 | `OSMAP-WSTG-SESS-004` | WSTG-v42-SESS-05 Testing for Cross Site Request Forgery - authenticated mutations | `WSTG-v42-SESS-05` | `v5.0.0-3.5.1`, `v5.0.0-3.5.3` | `A01:2025`, `A08:2025` | authenticated, dynamic test | true | true | true | true | high |
 | `OSMAP-WSTG-SESS-005` | WSTG-v42-ATHN-06 Testing for Browser Cache Weaknesses - authenticated pages | `WSTG-v42-ATHN-06`, `WSTG-v42-SESS-06` | `v5.0.0-3.4.2`, `v5.0.0-7.4.1` | `A02:2025`, `A07:2025` | authenticated, dynamic test | true | true | true | true | medium |
+| `OSMAP-WSTG-SESS-006` | WSTG-v42-SESS lifecycle, timeout, and stale-cookie controls | `WSTG-v42-SESS-01`, `WSTG-v42-SESS-04`, `WSTG-v42-SESS-06`, `WSTG-v42-SESS-07`, `WSTG-v42-SESS-08`, `WSTG-v42-SESS-09` | `v5.0.0-3.2.1`, `v5.0.0-3.4.2`, `v5.0.0-7.1.2`, `v5.0.0-7.2.1`, `v5.0.0-7.4.1`, `v5.0.0-7.4.4`, `v5.0.0-8.2.1` | `A02:2025`, `A07:2025`, `A09:2025`, `A10:2025` | authenticated, dynamic test, static boundary review | true | true | true | true | high |
 | `OSMAP-WSTG-CONF-004` | WSTG-v42-CONF-06 Test HTTP Methods - OPTIONS and TRACE | `WSTG-v42-CONF-06` | `v5.0.0-4.1.4`, `v5.0.0-4.2.1` | `A02:2025`, `A10:2025` | unauthenticated, dynamic test | true | false | false | true | high |
 | `OSMAP-WSTG-INFO-001` | WSTG-v42-INFO-03 Review Webserver Metafiles for Information Leakage | `WSTG-v42-INFO-03`, `WSTG-v42-INFO-05` | `v5.0.0-14.3.1` | `A02:2025` | unauthenticated, dynamic test | true | false | false | true | low |
 | `OSMAP-WSTG-INFO-002` | WSTG-v42-INFO-02 Fingerprint Web Server - unauthenticated disclosure and error handling | `WSTG-v42-INFO-02`, `WSTG-v42-ERRH-01` | `v5.0.0-14.3.1`, `v5.0.0-8.2.1` | `A02:2025`, `A10:2025` | unauthenticated, dynamic test | true | false | false | true | medium |

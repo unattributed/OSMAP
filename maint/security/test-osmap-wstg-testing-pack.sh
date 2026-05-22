@@ -175,6 +175,70 @@ for marker in [
 print(f"validated {len(mapping['tests'])} mapped WSTG tests across all OWASP Top 10 2025 categories")
 PY
 
+echo "validating session lifecycle WSTG mapping"
+python3 - "$pack_dir" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+pack = Path(sys.argv[1])
+repo = pack.parents[1]
+mapping = json.loads((pack / "wstg-asvs-mapping.json").read_text())
+tests = {item["test_id"]: item for item in mapping["tests"]}
+session = tests.get("OSMAP-WSTG-SESS-006")
+if not session:
+    raise SystemExit("OSMAP-WSTG-SESS-006 missing from WSTG mapping")
+expected_wstg = {
+    "WSTG-v42-SESS-01",
+    "WSTG-v42-SESS-04",
+    "WSTG-v42-SESS-06",
+    "WSTG-v42-SESS-07",
+    "WSTG-v42-SESS-08",
+    "WSTG-v42-SESS-09",
+}
+if set(session["wstg"]) != expected_wstg:
+    raise SystemExit("OSMAP-WSTG-SESS-006 must map the remaining session lifecycle rows")
+if session["requires_authenticated_coverage"] is not True or session["requires_totp"] is not True:
+    raise SystemExit("OSMAP-WSTG-SESS-006 must remain authenticated and TOTP-gated")
+required_evidence = {
+    "session_lifecycle_login.headers",
+    "session_lifecycle_mailboxes.headers",
+    "session_lifecycle_logout.headers",
+    "session_lifecycle_old_cookie_after_logout.headers",
+    "session_lifecycle_stale_cookie.headers",
+    "session_lifecycle_static.txt",
+    "session_lifecycle_redaction.txt",
+}
+missing = sorted(required_evidence - set(session["evidence_produced"]))
+if missing:
+    raise SystemExit(f"OSMAP-WSTG-SESS-006 missing evidence markers: {missing}")
+coverage = (pack / "COVERAGE.md").read_text()
+if "OSMAP-WSTG-SESS-006" not in coverage or "WSTG-v42-SESS-07" not in coverage:
+    raise SystemExit("COVERAGE.md missing session lifecycle coverage")
+runner = (pack / "run-wstg-pack.py").read_text()
+for marker in [
+    "test_session_lifecycle_policy",
+    "session_lifecycle_old_cookie_after_logout",
+    "session_lifecycle_stale_cookie",
+    "write_session_lifecycle_static_evidence",
+    "write_session_lifecycle_redaction_evidence",
+]:
+    if marker not in runner:
+        raise SystemExit(f"runner missing session lifecycle marker {marker}")
+doc = (repo / "docs" / "V3_SESSION_LIFECYCLE_EVIDENCE.md").read_text()
+for marker in [
+    "OSMAP-WSTG-SESS-006",
+    "validate_session_rejects_expired_records",
+    "validate_session_auto_revokes_idle_records",
+    "simultaneous_session_validations_do_not_corrupt_last_seen",
+    "logout_racing_with_validation_leaves_session_revoked",
+    "remembered-device cookies",
+]:
+    if marker not in doc:
+        raise SystemExit(f"session lifecycle doc missing marker {marker}")
+print("session lifecycle WSTG mapping validated")
+PY
+
 echo "validating authorization account-isolation WSTG mapping"
 python3 - "$pack_dir" <<'PY'
 import json
