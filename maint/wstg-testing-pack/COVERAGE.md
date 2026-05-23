@@ -16,12 +16,12 @@ Generated from `wstg-asvs-mapping.json` and the active WSTG due-diligence matrix
 | Item | Count |
 | --- | ---: |
 | Active matrix rows | 97 |
-| Automated dispositions | 44 |
+| Automated dispositions | 50 |
 | Manual dispositions | 0 |
-| Not-applicable dispositions | 12 |
+| Not-applicable dispositions | 13 |
 | Covered-by-other-evidence dispositions | 0 |
 | Deferred dispositions | 0 |
-| Blocked dispositions | 41 |
+| Blocked dispositions | 34 |
 | Missing dispositions | 0 |
 | Invalid dispositions | 0 |
 
@@ -29,16 +29,16 @@ Generated from `wstg-asvs-mapping.json` and the active WSTG due-diligence matrix
 
 | Category | Name | Release-required tests | Explicit gaps |
 | --- | --- | --- | --- |
-| `A01:2025` | Broken Access Control | `OSMAP-WSTG-SESS-003`, `OSMAP-WSTG-SESS-004`, `OSMAP-WSTG-INPV-001`, `OSMAP-WSTG-INPV-005`, `OSMAP-WSTG-INPV-006`, `OSMAP-WSTG-CLNT-001`, `OSMAP-WSTG-ATHZ-001`, `OSMAP-WSTG-CONF-005`, `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003`, `OSMAP-WSTG-BUSL-004` | `OSMAP-WSTG-GAP-001` |
+| `A01:2025` | Broken Access Control | `OSMAP-WSTG-SESS-003`, `OSMAP-WSTG-SESS-004`, `OSMAP-WSTG-INPV-001`, `OSMAP-WSTG-INPV-005`, `OSMAP-WSTG-INPV-006`, `OSMAP-WSTG-CLNT-001`, `OSMAP-WSTG-ATHZ-001`, `OSMAP-WSTG-CONF-005`, `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003`, `OSMAP-WSTG-BUSL-004`, `OSMAP-WSTG-BUSL-005` | `OSMAP-WSTG-GAP-001` |
 | `A02:2025` | Security Misconfiguration | `OSMAP-WSTG-CONF-001`, `OSMAP-WSTG-CONF-002`, `OSMAP-WSTG-CONF-003`, `OSMAP-WSTG-SESS-005`, `OSMAP-WSTG-SESS-006`, `OSMAP-WSTG-CONF-004`, `OSMAP-WSTG-INFO-001`, `OSMAP-WSTG-INFO-002`, `OSMAP-WSTG-INPV-006`, `OSMAP-WSTG-CLNT-001`, `OSMAP-WSTG-CONF-005`, `OSMAP-WSTG-CONF-006`, `OSMAP-WSTG-CRYP-001` | none |
 | `A03:2025` | Software Supply Chain Failures | `OSMAP-WSTG-CONF-007` | none |
 | `A04:2025` | Cryptographic Failures | `OSMAP-WSTG-CONF-001`, `OSMAP-WSTG-CONF-002`, `OSMAP-WSTG-ATHN-001`, `OSMAP-WSTG-SESS-001`, `OSMAP-WSTG-CRYP-001`, `OSMAP-WSTG-CRYP-002` | none |
-| `A05:2025` | Injection | `OSMAP-WSTG-CONF-003`, `OSMAP-WSTG-INPV-001`, `OSMAP-WSTG-INPV-002`, `OSMAP-WSTG-INPV-003`, `OSMAP-WSTG-INPV-004`, `OSMAP-WSTG-INPV-005`, `OSMAP-WSTG-INPV-006`, `OSMAP-WSTG-INPV-007`, `OSMAP-WSTG-CLNT-002` | none |
-| `A06:2025` | Insecure Design | `OSMAP-WSTG-INPV-004`, `OSMAP-WSTG-INPV-005`, `OSMAP-WSTG-INPV-006`, `OSMAP-WSTG-INPV-007`, `OSMAP-WSTG-CLNT-002`, `OSMAP-WSTG-BUSL-001`, `OSMAP-WSTG-ATHZ-001`, `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003`, `OSMAP-WSTG-BUSL-004`, `OSMAP-WSTG-CRYP-002` | `OSMAP-WSTG-GAP-001`, `OSMAP-WSTG-GAP-002` |
+| `A05:2025` | Injection | `OSMAP-WSTG-CONF-003`, `OSMAP-WSTG-INPV-001`, `OSMAP-WSTG-INPV-002`, `OSMAP-WSTG-INPV-003`, `OSMAP-WSTG-INPV-004`, `OSMAP-WSTG-INPV-005`, `OSMAP-WSTG-INPV-006`, `OSMAP-WSTG-INPV-007`, `OSMAP-WSTG-CLNT-002`, `OSMAP-WSTG-APIT-001` | none |
+| `A06:2025` | Insecure Design | `OSMAP-WSTG-INPV-004`, `OSMAP-WSTG-INPV-005`, `OSMAP-WSTG-INPV-006`, `OSMAP-WSTG-INPV-007`, `OSMAP-WSTG-CLNT-002`, `OSMAP-WSTG-BUSL-001`, `OSMAP-WSTG-ATHZ-001`, `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003`, `OSMAP-WSTG-BUSL-004`, `OSMAP-WSTG-CRYP-002`, `OSMAP-WSTG-BUSL-005`, `OSMAP-WSTG-APIT-001` | `OSMAP-WSTG-GAP-001`, `OSMAP-WSTG-GAP-002` |
 | `A07:2025` | Authentication Failures | `OSMAP-WSTG-ATHN-001`, `OSMAP-WSTG-ATHN-002`, `OSMAP-WSTG-ATHN-003`, `OSMAP-WSTG-ATHN-004`, `OSMAP-WSTG-SESS-001`, `OSMAP-WSTG-SESS-002`, `OSMAP-WSTG-SESS-003`, `OSMAP-WSTG-SESS-005`, `OSMAP-WSTG-SESS-006`, `OSMAP-WSTG-ATHZ-001`, `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003`, `OSMAP-WSTG-CRYP-001` | none |
-| `A08:2025` | Software or Data Integrity Failures | `OSMAP-WSTG-SESS-004`, `OSMAP-WSTG-BUSL-001`, `OSMAP-WSTG-CONF-007`, `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003`, `OSMAP-WSTG-BUSL-004` | `OSMAP-WSTG-GAP-001`, `OSMAP-WSTG-GAP-002` |
+| `A08:2025` | Software or Data Integrity Failures | `OSMAP-WSTG-SESS-004`, `OSMAP-WSTG-BUSL-001`, `OSMAP-WSTG-CONF-007`, `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003`, `OSMAP-WSTG-BUSL-004`, `OSMAP-WSTG-BUSL-005` | `OSMAP-WSTG-GAP-001`, `OSMAP-WSTG-GAP-002` |
 | `A09:2025` | Security Logging and Alerting Failures | `OSMAP-WSTG-SESS-006`, `OSMAP-WSTG-INPV-003`, `OSMAP-WSTG-INPV-004`, `OSMAP-WSTG-ATHZ-001`, `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003`, `OSMAP-WSTG-LOGG-001` | none |
-| `A10:2025` | Mishandling of Exceptional Conditions | `OSMAP-WSTG-ATHN-003`, `OSMAP-WSTG-SESS-006`, `OSMAP-WSTG-CONF-004`, `OSMAP-WSTG-INFO-002`, `OSMAP-WSTG-INPV-001`, `OSMAP-WSTG-INPV-003`, `OSMAP-WSTG-INPV-004`, `OSMAP-WSTG-INPV-005`, `OSMAP-WSTG-INPV-006`, `OSMAP-WSTG-INPV-007`, `OSMAP-WSTG-ATHZ-001`, `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003`, `OSMAP-WSTG-BUSL-004`, `OSMAP-WSTG-CRYP-002` | none |
+| `A10:2025` | Mishandling of Exceptional Conditions | `OSMAP-WSTG-ATHN-003`, `OSMAP-WSTG-SESS-006`, `OSMAP-WSTG-CONF-004`, `OSMAP-WSTG-INFO-002`, `OSMAP-WSTG-INPV-001`, `OSMAP-WSTG-INPV-003`, `OSMAP-WSTG-INPV-004`, `OSMAP-WSTG-INPV-005`, `OSMAP-WSTG-INPV-006`, `OSMAP-WSTG-INPV-007`, `OSMAP-WSTG-ATHZ-001`, `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003`, `OSMAP-WSTG-BUSL-004`, `OSMAP-WSTG-CRYP-002`, `OSMAP-WSTG-BUSL-005`, `OSMAP-WSTG-APIT-001` | none |
 
 ## Mapped Tests
 
@@ -79,6 +79,8 @@ Generated from `wstg-asvs-mapping.json` and the active WSTG due-diligence matrix
 | `OSMAP-WSTG-BUSL-004` | WSTG-v42-BUSL-04 Test Process Timing - bounded bulk folder actions | `WSTG-v42-BUSL-04`, `WSTG-v42-SESS-05`, `WSTG-v42-ATHZ-04` | `v5.0.0-2.2.1`, `v5.0.0-2.3.2`, `v5.0.0-3.5.1`, `v5.0.0-3.5.3`, `v5.0.0-7.4.1`, `v5.0.0-8.2.1` | `A01:2025`, `A06:2025`, `A08:2025`, `A10:2025` | host assisted, dynamic test, static boundary review | true | false | false | true | high |
 | `OSMAP-WSTG-CRYP-001` | WSTG-v42-CRYP-01/03 TLS and cleartext transport evidence | `WSTG-v42-CRYP-01`, `WSTG-v42-CRYP-03` | `v5.0.0-6.2.6`, `v5.0.0-7.2.1`, `v5.0.0-9.1.1`, `v5.0.0-9.1.2` | `A02:2025`, `A04:2025`, `A07:2025` | unauthenticated, dynamic test, static boundary review | true | false | false | true | critical |
 | `OSMAP-WSTG-CRYP-002` | WSTG-v42-CRYP-02/04 Crypto Primitive Applicability Review | `WSTG-v42-CRYP-02`, `WSTG-v42-CRYP-04` | `v5.0.0-1.2.1`, `v5.0.0-6.2.6`, `v5.0.0-8.2.1` | `A04:2025`, `A06:2025`, `A10:2025` | static applicability review | true | false | false | true | high |
+| `OSMAP-WSTG-BUSL-005` | WSTG-v42-BUSL-01/02/03/05/06/07 Form Route State-Transition Review | `WSTG-v42-BUSL-01`, `WSTG-v42-BUSL-02`, `WSTG-v42-BUSL-03`, `WSTG-v42-BUSL-05`, `WSTG-v42-BUSL-06`, `WSTG-v42-BUSL-07` | `v5.0.0-1.2.1`, `v5.0.0-2.2.1`, `v5.0.0-3.5.1`, `v5.0.0-5.2.4`, `v5.0.0-8.2.1` | `A01:2025`, `A06:2025`, `A08:2025`, `A10:2025` | static boundary review | true | false | false | true | high |
+| `OSMAP-WSTG-APIT-001` | WSTG-v42-APIT-01 GraphQL Applicability Review | `WSTG-v42-APIT-01` | `v5.0.0-1.2.1`, `v5.0.0-4.1.4`, `v5.0.0-8.2.1` | `A05:2025`, `A06:2025`, `A10:2025` | static applicability review | true | false | false | true | medium |
 | `OSMAP-WSTG-LOGG-001` | OWASP Top 10 2025 A09 Security Logging and Alerting Failures - audit event and redaction posture | `WSTG-v42-ERRH-01` | `v5.0.0-8.2.1` | `A09:2025` | evidence validation, static boundary review | true | false | false | true | high |
 
 ## Explicit Gaps

@@ -57,16 +57,16 @@ The current WSTG pack is useful targeted regression coverage, but it is not full
 
 | Baseline item | Current state |
 | --- | --- |
-| Existing OSMAP WSTG runner tests | 36 mapped tests |
+| Existing OSMAP WSTG runner tests | 38 mapped tests |
 | Existing explicit gaps | 3 gaps |
 | Existing WSTG scenario matrix | WSTG v4.2 |
 | WSTG v4.2 scenario rows | 97 |
-| WSTG v4.2 rows mapped by current pack | 56 |
-| WSTG v4.2 rows not mapped by current pack | 41 |
+| WSTG v4.2 rows mapped by current pack | 63 |
+| WSTG v4.2 rows not mapped by current pack | 34 |
 | WSTG v4.2 rows with explicit Slice 1 disposition | 97 |
-| WSTG v4.2 automated dispositions | 44 |
-| WSTG v4.2 not-applicable dispositions | 12 |
-| WSTG v4.2 blocked dispositions pending due diligence | 41 |
+| WSTG v4.2 automated dispositions | 50 |
+| WSTG v4.2 not-applicable dispositions | 13 |
+| WSTG v4.2 blocked dispositions pending due diligence | 34 |
 | Current OWASP latest coverage | Must be pinned and tracked before V3 closeout |
 
 The Version 3 workstream therefore treats the current pack as a starting point. It must be extended into a slice-based due-diligence program.
@@ -242,7 +242,7 @@ Slice 5 implementation evidence starts with:
 - unauthenticated HTTPS, HSTS, cleartext HTTP, TLS-standard, and
   cryptographic primitive applicability evidence for CRYP-01 through CRYP-04
 
-### Slice 6, API-style route and state-transition testing
+### Slice 6, Form-backed route and state-transition testing
 
 Priority: high.
 
@@ -250,7 +250,7 @@ Required before V3 close: yes, unless not applicable with evidence.
 
 Required outcomes:
 
-- Inventory all API-like or form-backed endpoints.
+- Inventory all browser form-backed endpoints.
 - Test broken object-level authorization.
 - Test broken function-level authorization.
 - Test excessive data exposure.
@@ -266,6 +266,15 @@ Acceptance evidence:
 - Endpoint inventory.
 - Redacted state-transition evidence.
 - Not-applicable proof for GraphQL if unused.
+
+Slice 6 implementation evidence starts with:
+
+- `docs/V3_FORM_ROUTE_STATE_TRANSITIONS.md`
+- `OSMAP-WSTG-BUSL-005`
+- `OSMAP-WSTG-APIT-001`
+- static browser form route/state-transition evidence for BUSL-01, BUSL-02,
+  BUSL-03, BUSL-05, BUSL-06, and BUSL-07
+- GraphQL not-applicable evidence for APIT-01
 
 ### Slice 7, Business logic and workflow abuse
 

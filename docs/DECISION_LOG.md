@@ -1,5 +1,24 @@
 # Decision Log
 
+## 2026-05-23, Add WSTG Slice 6 form route state-transition evidence
+
+The Version 3 WSTG Slice 6 wording is narrowed from API-style testing to
+form-backed route and state-transition testing, matching OSMAP's browser
+surface:
+
+- `OSMAP-WSTG-BUSL-005` maps BUSL-01, BUSL-02, BUSL-03, BUSL-05, BUSL-06,
+  and BUSL-07 with static evidence for CSRF, same-origin metadata,
+  duplicate-field rejection, tampered mailbox/UID rejection, bulk misuse
+  limits, draft lifecycle transitions, send/draft transition integrity, and
+  session revocation state changes
+- `OSMAP-WSTG-APIT-001` maps APIT-01 as not applicable because OSMAP has no
+  GraphQL endpoint, schema, resolver layer, or dependency
+- the WSTG v4.2 matrix moves six BUSL rows from blocked to automated and
+  APIT-01 from blocked to not applicable, leaving 34 blocked rows
+
+Future JSON/REST, GraphQL, or other non-browser-form state-transition
+protocols must get their own dynamic negative tests.
+
 ## 2026-05-23, Add WSTG Slice 5 crypto and transport evidence
 
 The Version 3 WSTG Slice 5 weak-cryptography workstream now records the

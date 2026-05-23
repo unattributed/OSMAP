@@ -264,6 +264,8 @@ class Runner:
             "OSMAP-WSTG-BUSL-002": self.test_draft_routes_authenticated,
             "OSMAP-WSTG-BUSL-003": self.test_source_attachments_authenticated,
             "OSMAP-WSTG-BUSL-004": self.test_bulk_folder_actions_live,
+            "OSMAP-WSTG-BUSL-005": self.test_form_route_state_transitions_static,
+            "OSMAP-WSTG-APIT-001": self.test_graphql_applicability_static,
             "OSMAP-WSTG-CONF-005": self.test_host_bindings,
             "OSMAP-WSTG-CONF-006": self.test_host_pf,
             "OSMAP-WSTG-CONF-007": self.test_dependency_alignment,
@@ -2985,6 +2987,100 @@ printf 'secret_review=No password, password hash, TOTP material, session cookie,
             lines.append("result=passed")
         self.write_text_evidence("source_attachment_evidence_redaction.txt", "\n".join(lines) + "\n")
         return not leaks
+
+    def test_form_route_state_transitions_static(self) -> TestResult:
+        static_ok = self.write_form_route_state_transitions_static_evidence()
+        evidence = ["evidence/form_route_state_transitions_static.txt"]
+        if not static_ok:
+            return self.result("OSMAP-WSTG-BUSL-005", STATUS_FAIL, "form-backed route and state-transition evidence is missing expected guards", evidence)
+        return self.result("OSMAP-WSTG-BUSL-005", STATUS_PASS, "form-backed route inventory and state-transition guard evidence is present", evidence)
+
+    def write_form_route_state_transitions_static_evidence(self) -> bool:
+        files = [
+            REPO_ROOT / "src" / "http.rs",
+            REPO_ROOT / "src" / "http_form.rs",
+            REPO_ROOT / "src" / "http" / "routes_auth.rs",
+            REPO_ROOT / "src" / "http" / "routes_compose.rs",
+            REPO_ROOT / "src" / "http" / "routes_draft.rs",
+            REPO_ROOT / "src" / "http" / "routes_mail.rs",
+            REPO_ROOT / "src" / "http" / "routes_settings.rs",
+            REPO_ROOT / "docs" / "V3_FORM_ROUTE_STATE_TRANSITIONS.md",
+        ]
+        text = "\n".join(path.read_text(encoding="utf-8", errors="replace") for path in files if path.exists())
+        markers = [
+            "OSMAP-WSTG-BUSL-005",
+            "WSTG-v42-BUSL-01",
+            "WSTG-v42-BUSL-02",
+            "WSTG-v42-BUSL-03",
+            "WSTG-v42-BUSL-05",
+            "WSTG-v42-BUSL-06",
+            "WSTG-v42-BUSL-07",
+            "require_valid_csrf",
+            "authenticated_post_routes_reject_cross_origin_headers",
+            "rejects_duplicate_urlencoded_fields",
+            "message_move_rejects_tampered_invalid_uid_without_success_redirect",
+            "message_move_rejects_mismatched_mailbox_uid_tuple",
+            "bulk_move_rejects_oversized_selection_before_moving",
+            "draft_delete_removes_saved_draft",
+            "send_success_deletes_draft_after_accepted_handoff",
+            "send_failure_preserves_draft",
+            "session_revoke_all_sessions_clears_current_cookie",
+        ]
+        missing = [marker for marker in markers if marker.lower() not in text.lower()]
+        self.write_text_evidence(
+            "form_route_state_transitions_static.txt",
+            summarize_static_files(files, missing)
+            + "\nRoute/state decisions:\n"
+            + "- OSMAP has browser form-backed routes, not JSON/REST API routes.\n"
+            + "- state-changing form routes require authenticated sessions, CSRF, and same-origin request metadata.\n"
+            + "- duplicate fields, malformed IDs, tampered mailbox/UID pairs, oversized bulk actions, and stale draft transitions fail closed.\n"
+            + "- successful send deletes the accepted draft while failed send preserves it for retry.\n",
+        )
+        return not missing
+
+    def test_graphql_applicability_static(self) -> TestResult:
+        source_files = list(sorted((REPO_ROOT / "src").glob("*.rs"))) + [REPO_ROOT / "Cargo.toml", REPO_ROOT / "Cargo.lock"]
+        source_text = "\n".join(path.read_text(encoding="utf-8", errors="replace") for path in source_files if path.exists()).lower()
+        markers = ["graphql", "juniper", "async-graphql", "/graphql"]
+        matched = [marker for marker in markers if marker in source_text]
+        static_ok = self.write_graphql_applicability_static_evidence(matched)
+        evidence = ["evidence/graphql_applicability_static.txt"]
+        if matched or not static_ok:
+            return self.result("OSMAP-WSTG-APIT-001", STATUS_FAIL, "GraphQL/API applicability review found unexpected source markers", evidence, {"unexpected_markers": matched})
+        return self.result("OSMAP-WSTG-APIT-001", STATUS_PASS, "GraphQL is not applicable; OSMAP exposes browser form routes rather than API routes", evidence, {"markers_checked": markers})
+
+    def write_graphql_applicability_static_evidence(self, matched: list[str]) -> bool:
+        files = [
+            REPO_ROOT / "Cargo.toml",
+            REPO_ROOT / "Cargo.lock",
+            REPO_ROOT / "src" / "http.rs",
+            REPO_ROOT / "src" / "http" / "routes_auth.rs",
+            REPO_ROOT / "src" / "http" / "routes_compose.rs",
+            REPO_ROOT / "src" / "http" / "routes_draft.rs",
+            REPO_ROOT / "src" / "http" / "routes_mail.rs",
+            REPO_ROOT / "src" / "http" / "routes_settings.rs",
+            REPO_ROOT / "docs" / "V3_FORM_ROUTE_STATE_TRANSITIONS.md",
+        ]
+        text = "\n".join(path.read_text(encoding="utf-8", errors="replace") for path in files if path.exists())
+        markers = [
+            "OSMAP-WSTG-APIT-001",
+            "WSTG-v42-APIT-01",
+            "no GraphQL endpoint",
+            "no GraphQL dependency",
+            "browser form routes rather than API routes",
+        ]
+        missing = [marker for marker in markers if marker.lower() not in text.lower()]
+        lines = [
+            summarize_static_files(files, missing),
+            "",
+            "Applicability decisions:",
+            "- GraphQL is not applicable; OSMAP has no GraphQL endpoint, schema, resolver layer, or GraphQL dependency.",
+            "- OSMAP exposes browser form routes rather than API routes; state-transition evidence is tracked under OSMAP-WSTG-BUSL-005.",
+        ]
+        if matched:
+            lines.extend(["", "Unexpected GraphQL markers:", json.dumps(matched, indent=2)])
+        self.write_text_evidence("graphql_applicability_static.txt", "\n".join(lines) + "\n")
+        return not missing
 
     def test_host_bindings(self) -> TestResult:
         if not self.config.allow_host_assisted:

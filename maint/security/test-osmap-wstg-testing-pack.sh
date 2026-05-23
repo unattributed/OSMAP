@@ -795,6 +795,55 @@ for wstg_id in ["WSTG-v42-CRYP-02", "WSTG-v42-CRYP-04"]:
 print("weak cryptography WSTG mapping validated")
 PY
 
+echo "validating form route and GraphQL applicability WSTG mapping"
+python3 - "$pack_dir" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+pack = Path(sys.argv[1])
+repo = pack.parents[1]
+mapping = json.loads((pack / "wstg-asvs-mapping.json").read_text())
+tests = {item["test_id"]: item for item in mapping["tests"]}
+busl = tests.get("OSMAP-WSTG-BUSL-005")
+apit = tests.get("OSMAP-WSTG-APIT-001")
+if not busl or not apit:
+    raise SystemExit("Slice 6 form route/APIT mappings missing")
+expected_busl = [
+    "WSTG-v42-BUSL-01",
+    "WSTG-v42-BUSL-02",
+    "WSTG-v42-BUSL-03",
+    "WSTG-v42-BUSL-05",
+    "WSTG-v42-BUSL-06",
+    "WSTG-v42-BUSL-07",
+]
+if busl["wstg"] != expected_busl:
+    raise SystemExit("OSMAP-WSTG-BUSL-005 must map the Slice 6 BUSL set")
+if apit["wstg"] != ["WSTG-v42-APIT-01"]:
+    raise SystemExit("OSMAP-WSTG-APIT-001 must map APIT-01")
+coverage = (pack / "COVERAGE.md").read_text()
+for marker in ["OSMAP-WSTG-BUSL-005", "OSMAP-WSTG-APIT-001", *expected_busl, "WSTG-v42-APIT-01"]:
+    if marker not in coverage:
+        raise SystemExit(f"COVERAGE.md missing Slice 6 marker {marker}")
+runner = (pack / "run-wstg-pack.py").read_text()
+for marker in ["test_form_route_state_transitions_static", "test_graphql_applicability_static", "browser form-backed routes"]:
+    if marker not in runner:
+        raise SystemExit(f"runner missing Slice 6 marker {marker}")
+doc = (repo / "docs" / "V3_FORM_ROUTE_STATE_TRANSITIONS.md").read_text()
+for marker in ["no GraphQL endpoint", "no GraphQL dependency", "browser form routes rather than API routes"]:
+    if marker not in doc:
+        raise SystemExit(f"Slice 6 doc missing marker {marker}")
+rows = {item["wstg_id"]: item for item in json.loads((pack / "wstg-scenario-matrix.v42.json").read_text())["scenarios"]}
+for wstg_id in expected_busl:
+    row = rows[wstg_id]
+    if row["disposition"] != "automated" or "OSMAP-WSTG-BUSL-005" not in row["evidence_reference"]:
+        raise SystemExit(f"{wstg_id} must be automated by OSMAP-WSTG-BUSL-005")
+row = rows["WSTG-v42-APIT-01"]
+if row["disposition"] != "not_applicable" or "OSMAP-WSTG-APIT-001" not in row["evidence_reference"]:
+    raise SystemExit("APIT-01 must be not_applicable with OSMAP-WSTG-APIT-001 evidence")
+print("form route and GraphQL applicability WSTG mapping validated")
+PY
+
 echo "validating live WSTG evidence mappings"
 python3 - "$pack_dir" <<'PY'
 import json

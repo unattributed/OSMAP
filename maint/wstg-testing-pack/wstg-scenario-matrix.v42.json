@@ -1207,39 +1207,51 @@
       "category": "BUSL",
       "section": "4.10 Business Logic Testing",
       "title": "Test Business Logic Data Validation",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-BUSL-005"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "covered by static OSMAP browser form route and state-transition evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-BUSL-005"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-BUSL-02",
       "category": "BUSL",
       "section": "4.10 Business Logic Testing",
       "title": "Test Ability to Forge Requests",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-BUSL-005"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "covered by static OSMAP browser form route and state-transition evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-BUSL-005"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-BUSL-03",
       "category": "BUSL",
       "section": "4.10 Business Logic Testing",
       "title": "Test Integrity Checks",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-BUSL-005"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "covered by static OSMAP browser form route and state-transition evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-BUSL-005"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-BUSL-04",
@@ -1265,39 +1277,51 @@
       "category": "BUSL",
       "section": "4.10 Business Logic Testing",
       "title": "Test Number of Times a Function Can Be Used Limits",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-BUSL-005"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "covered by static OSMAP browser form route and state-transition evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-BUSL-005"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-BUSL-06",
       "category": "BUSL",
       "section": "4.10 Business Logic Testing",
       "title": "Testing for the Circumvention of Work Flows",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-BUSL-005"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "covered by static OSMAP browser form route and state-transition evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-BUSL-005"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-BUSL-07",
       "category": "BUSL",
       "section": "4.10 Business Logic Testing",
       "title": "Test Defenses Against Application Misuse",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-BUSL-005"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "covered by static OSMAP browser form route and state-transition evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-BUSL-005"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-BUSL-08",
@@ -1525,13 +1549,17 @@
       "category": "APIT",
       "section": "4.12 API Testing",
       "title": "Testing GraphQL",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "not_applicable_candidate_but_requires_repo_or_live_proof",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-APIT-001"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "OSMAP has browser form routes and no GraphQL endpoint, schema, resolver, or dependency",
+      "evidence_reference": [
+        "OSMAP-WSTG-APIT-001"
+      ]
     }
   ],
   "active_matrix_schema": {
