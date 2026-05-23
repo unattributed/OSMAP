@@ -1139,52 +1139,68 @@
       "category": "CRYP",
       "section": "4.9 Testing for Weak Cryptography",
       "title": "Testing for Weak Transport Layer Security",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CRYP-001"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "covered by unauthenticated OSMAP TLS standard and cleartext transport evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CRYP-001"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-CRYP-02",
       "category": "CRYP",
       "section": "4.9 Testing for Weak Cryptography",
       "title": "Testing for Padding Oracle",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CRYP-002"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface has no application encryption/decryption primitive or CBC decrypt route",
+      "evidence_reference": [
+        "OSMAP-WSTG-CRYP-002"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-CRYP-03",
       "category": "CRYP",
       "section": "4.9 Testing for Weak Cryptography",
       "title": "Testing for Sensitive Information Sent via Unencrypted Channels",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CRYP-001"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "covered by unauthenticated OSMAP TLS standard and cleartext transport evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CRYP-001"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-CRYP-04",
       "category": "CRYP",
       "section": "4.9 Testing for Weak Cryptography",
       "title": "Testing for Weak Encryption",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CRYP-002"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface has no application encryption/decryption primitive or CBC decrypt route",
+      "evidence_reference": [
+        "OSMAP-WSTG-CRYP-002"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-BUSL-01",

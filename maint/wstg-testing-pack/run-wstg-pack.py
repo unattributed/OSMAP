@@ -267,6 +267,8 @@ class Runner:
             "OSMAP-WSTG-CONF-005": self.test_host_bindings,
             "OSMAP-WSTG-CONF-006": self.test_host_pf,
             "OSMAP-WSTG-CONF-007": self.test_dependency_alignment,
+            "OSMAP-WSTG-CRYP-001": self.test_crypto_transport_security,
+            "OSMAP-WSTG-CRYP-002": self.test_crypto_primitive_applicability_static,
             "OSMAP-WSTG-LOGG-001": self.test_security_logging_static,
         }
         for item in self.mapping["tests"]:
@@ -3065,6 +3067,227 @@ printf 'secret_review=No password, password hash, TOTP material, session cookie,
         if not metadata_ok:
             return self.result("OSMAP-WSTG-CONF-007", STATUS_FAIL, "locked dependency metadata command failed", [evidence, metadata_evidence])
         return self.result("OSMAP-WSTG-CONF-007", STATUS_PASS, "lockfile, supply-chain policy, and locked dependency metadata validated", [evidence, metadata_evidence])
+
+    def test_crypto_transport_security(self) -> TestResult:
+        https = self.request("crypto_https_login", "GET", "/login")
+        hsts = https.first_header("Strict-Transport-Security")
+        http = self.request("crypto_cleartext_login", "GET", "/login", scheme="http", port=80)
+        static_ok = self.write_crypto_transport_static_evidence()
+        tls_guard, tls_report, tls_stdout, tls_ok, tls_details = self.write_crypto_tls_standard_evidence()
+        evidence_paths = [
+            "evidence/crypto_https_login.headers",
+            "evidence/crypto_cleartext_login.headers",
+            "evidence/crypto_transport_static.txt",
+            tls_guard,
+            tls_report,
+            tls_stdout,
+        ]
+        failures: dict[str, object] = {}
+        if self.config.scheme != "https":
+            failures["base_url_scheme"] = self.config.scheme
+        if https.status != 200:
+            failures["https_login_status"] = https.status or https.error
+        if "max-age=" not in hsts.lower():
+            failures["hsts"] = hsts or "missing"
+        if http.status in {301, 302, 307, 308}:
+            location = http.first_header("Location")
+            if not (location.startswith("https://") or location.startswith(self.config.base_url)):
+                failures["cleartext_redirect_location"] = location
+        elif http.status is None:
+            pass
+        else:
+            failures["cleartext_http_status"] = http.status
+        if not static_ok:
+            failures["static_boundary"] = "missing crypto transport markers"
+        if not tls_ok:
+            failures["tls_standard"] = tls_details
+        if failures:
+            return self.result(
+                "OSMAP-WSTG-CRYP-001",
+                STATUS_FAIL,
+                "weak-transport or cleartext-channel evidence did not meet the TLS standard",
+                evidence_paths,
+                {"failures": failures},
+            )
+        return self.result(
+            "OSMAP-WSTG-CRYP-001",
+            STATUS_PASS,
+            "TLS standard, HSTS, HTTPS login, and cleartext HTTP controls passed",
+            evidence_paths,
+            {"tls_standard": tls_details},
+        )
+
+    def write_crypto_tls_standard_evidence(self) -> tuple[str, str, str, bool, dict[str, object]]:
+        guard = subprocess.run(
+            ["sh", "maint/security/osmap-tls-policy-guard.sh"],
+            cwd=REPO_ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            timeout=60,
+            check=False,
+        )
+        guard_path = self.write_text_evidence("crypto_tls_policy_guard.txt", guard.stdout)
+        report_path = self.evidence_dir / "crypto_tls_standard_report.json"
+        stdout_path = self.evidence_dir / "crypto_tls_standard_validate.txt"
+        command = [
+            sys.executable,
+            "maint/security/osmap-live-tls-standard-validate.py",
+            self.config.base_url,
+            "--report",
+            str(report_path),
+            "--timeout",
+            str(self.config.timeout),
+        ]
+        try:
+            completed = subprocess.run(
+                command,
+                cwd=REPO_ROOT,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                timeout=max(30.0, self.config.timeout * 8),
+                check=False,
+            )
+            stdout_path.write_text(self.redact(completed.stdout), encoding="utf-8")
+            returncode = completed.returncode
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            stdout_path.write_text(f"ERROR: {exc}\n", encoding="utf-8")
+            returncode = 124 if isinstance(exc, subprocess.TimeoutExpired) else 127
+        details: dict[str, object] = {"guard_returncode": guard.returncode, "validator_returncode": returncode}
+        report_ok = False
+        if report_path.exists():
+            try:
+                report = json.loads(report_path.read_text(encoding="utf-8"))
+                report_ok = report.get("result") == "tls_standard_passed"
+                details.update(
+                    {
+                        "result": report.get("result"),
+                        "minimum_tls_version": report.get("minimum_tls_version"),
+                        "preferred_tls_version": report.get("preferred_tls_version"),
+                        "certificate_validation": report.get("certificate_validation"),
+                        "hostname_validation": report.get("hostname_validation"),
+                        "failures": report.get("failures", []),
+                    }
+                )
+            except json.JSONDecodeError as exc:
+                details["report_error"] = str(exc)
+        else:
+            report_path.write_text("ERROR: TLS standard validator did not write report\n", encoding="utf-8")
+            details["report_error"] = "missing report"
+        ok = guard.returncode == 0 and returncode == 0 and report_ok
+        return (
+            guard_path,
+            str(report_path.relative_to(self.run_dir)),
+            str(stdout_path.relative_to(self.run_dir)),
+            ok,
+            details,
+        )
+
+    def write_crypto_transport_static_evidence(self) -> bool:
+        files = [
+            REPO_ROOT / "docs" / "TLS_STANDARD.md",
+            REPO_ROOT / "docs" / "HTTP_HARDENING_BASELINE.md",
+            REPO_ROOT / "docs" / "V3_CRYPTO_TRANSPORT_EVIDENCE.md",
+            REPO_ROOT / "src" / "http.rs",
+            REPO_ROOT / "src" / "http_parse.rs",
+            REPO_ROOT / "maint" / "security" / "osmap-tls-policy-guard.sh",
+            REPO_ROOT / "maint" / "security" / "osmap-live-tls-standard-validate.py",
+            REPO_ROOT / "maint" / "openbsd" / "mail.blackbagsecurity.com" / "nginx" / "templates" / "osmap-root.tmpl",
+        ]
+        text = "\n".join(path.read_text(encoding="utf-8", errors="replace") for path in files if path.exists())
+        markers = [
+            "OSMAP-WSTG-CRYP-001",
+            "WSTG-v42-CRYP-01",
+            "WSTG-v42-CRYP-03",
+            "TLS 1.2 is the minimum allowed protocol version.",
+            "TLS 1.3 is preferred where supported.",
+            "CBC-mode legacy suites are prohibited.",
+            "Strict-Transport-Security",
+            "build_session_cookie",
+            "Secure",
+            "X-Forwarded-Proto https",
+        ]
+        missing = [marker for marker in markers if marker.lower() not in text.lower()]
+        self.write_text_evidence(
+            "crypto_transport_static.txt",
+            summarize_static_files(files, missing)
+            + "\nTransport decisions:\n"
+            + "- public TLS terminates at nginx with TLS 1.2 minimum and TLS 1.3 preferred.\n"
+            + "- weak protocols and legacy TLS 1.2 ciphers are rejected by the live TLS standard validator.\n"
+            + "- browser login evidence is collected over HTTPS and the cleartext listener must redirect or be unreachable.\n"
+            + "- production session cookies are marked Secure and the reverse proxy forwards HTTPS scheme context.\n",
+        )
+        return not missing
+
+    def test_crypto_primitive_applicability_static(self) -> TestResult:
+        source_text = "\n".join(
+            path.read_text(encoding="utf-8", errors="replace")
+            for path in sorted((REPO_ROOT / "src").glob("*.rs"))
+        ).lower()
+        banned_source_markers = [
+            "decrypt(",
+            "encrypt(",
+            "openssl::",
+            "ring::aead",
+            "aes::",
+            "cbc::",
+            "block_modes",
+            "pkcs7",
+            "rsa::",
+        ]
+        matched = [marker for marker in banned_source_markers if marker in source_text]
+        static_ok = self.write_crypto_primitive_applicability_evidence(matched)
+        evidence_paths = ["evidence/crypto_primitive_applicability_static.txt"]
+        if matched or not static_ok:
+            return self.result(
+                "OSMAP-WSTG-CRYP-002",
+                STATUS_FAIL,
+                "cryptographic primitive applicability review found unexpected reversible-crypto surfaces",
+                evidence_paths,
+                {"unexpected_source_markers": matched},
+            )
+        return self.result(
+            "OSMAP-WSTG-CRYP-002",
+            STATUS_PASS,
+            "padding-oracle and weak-encryption rows are not applicable to the current OSMAP browser surface",
+            evidence_paths,
+            {"source_markers_checked": banned_source_markers},
+        )
+
+    def write_crypto_primitive_applicability_evidence(self, matched: list[str]) -> bool:
+        files = [
+            REPO_ROOT / "Cargo.toml",
+            REPO_ROOT / "Cargo.lock",
+            REPO_ROOT / "src" / "session.rs",
+            REPO_ROOT / "src" / "totp.rs",
+            REPO_ROOT / "src" / "http_parse.rs",
+            REPO_ROOT / "docs" / "TLS_STANDARD.md",
+            REPO_ROOT / "docs" / "V3_CRYPTO_TRANSPORT_EVIDENCE.md",
+        ]
+        text = "\n".join(path.read_text(encoding="utf-8", errors="replace") for path in files if path.exists())
+        markers = [
+            "OSMAP-WSTG-CRYP-002",
+            "WSTG-v42-CRYP-02",
+            "WSTG-v42-CRYP-04",
+            "no application encryption/decryption primitive",
+            "no CBC decryptor",
+            "no padding oracle surface",
+            "no custom reversible encryption",
+        ]
+        missing = [marker for marker in markers if marker.lower() not in text.lower()]
+        lines = [
+            summarize_static_files(files, missing),
+            "",
+            "Applicability decisions:",
+            "- Padding oracle: not applicable; OSMAP has no application encryption/decryption primitive, no CBC decryptor, and no attacker-controlled ciphertext decrypt route.",
+            "- Weak encryption: not applicable; OSMAP has no custom reversible encryption or browser-exposed cryptographic primitive.",
+            "- Current cryptographic use is limited to TOTP HMAC-SHA1 verification, session-token randomness, and non-reversible token references/hashes; public transport cryptography is delegated to the nginx TLS edge and validated separately.",
+        ]
+        if matched:
+            lines.extend(["", "Unexpected reversible-crypto markers:", json.dumps(matched, indent=2)])
+        self.write_text_evidence("crypto_primitive_applicability_static.txt", "\n".join(lines) + "\n")
+        return not missing
 
     def test_security_logging_static(self) -> TestResult:
         files = [

@@ -716,6 +716,85 @@ for wstg_id in expected_wstg:
 print("remaining injection applicability WSTG mapping validated")
 PY
 
+echo "validating weak cryptography WSTG mapping"
+python3 - "$pack_dir" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+pack = Path(sys.argv[1])
+repo = pack.parents[1]
+mapping = json.loads((pack / "wstg-asvs-mapping.json").read_text())
+tests = {item["test_id"]: item for item in mapping["tests"]}
+transport = tests.get("OSMAP-WSTG-CRYP-001")
+primitive = tests.get("OSMAP-WSTG-CRYP-002")
+if not transport or not primitive:
+    raise SystemExit("Slice 5 CRYP mappings missing")
+if transport["wstg"] != ["WSTG-v42-CRYP-01", "WSTG-v42-CRYP-03"]:
+    raise SystemExit("OSMAP-WSTG-CRYP-001 must map CRYP-01 and CRYP-03")
+if primitive["wstg"] != ["WSTG-v42-CRYP-02", "WSTG-v42-CRYP-04"]:
+    raise SystemExit("OSMAP-WSTG-CRYP-002 must map CRYP-02 and CRYP-04")
+if transport["requires_authenticated_coverage"] or transport["requires_totp"]:
+    raise SystemExit("OSMAP-WSTG-CRYP-001 must remain unauthenticated")
+if primitive["requires_authenticated_coverage"] or primitive["requires_totp"]:
+    raise SystemExit("OSMAP-WSTG-CRYP-002 must remain unauthenticated")
+expected_transport_evidence = {
+    "crypto_https_login.headers",
+    "crypto_cleartext_login.headers",
+    "crypto_transport_static.txt",
+    "crypto_tls_policy_guard.txt",
+    "crypto_tls_standard_report.json",
+    "crypto_tls_standard_validate.txt",
+}
+if set(transport["evidence_produced"]) != expected_transport_evidence:
+    raise SystemExit("OSMAP-WSTG-CRYP-001 evidence set changed unexpectedly")
+if set(primitive["evidence_produced"]) != {"crypto_primitive_applicability_static.txt"}:
+    raise SystemExit("OSMAP-WSTG-CRYP-002 evidence set changed unexpectedly")
+coverage = (pack / "COVERAGE.md").read_text()
+for marker in [
+    "OSMAP-WSTG-CRYP-001",
+    "OSMAP-WSTG-CRYP-002",
+    "WSTG-v42-CRYP-01",
+    "WSTG-v42-CRYP-02",
+    "WSTG-v42-CRYP-03",
+    "WSTG-v42-CRYP-04",
+]:
+    if marker not in coverage:
+        raise SystemExit(f"COVERAGE.md missing CRYP marker {marker}")
+runner = (pack / "run-wstg-pack.py").read_text()
+for marker in [
+    "test_crypto_transport_security",
+    "write_crypto_tls_standard_evidence",
+    "test_crypto_primitive_applicability_static",
+    "no padding oracle surface",
+]:
+    if marker not in runner:
+        raise SystemExit(f"runner missing CRYP marker {marker}")
+doc = (repo / "docs" / "V3_CRYPTO_TRANSPORT_EVIDENCE.md").read_text()
+for marker in [
+    "OSMAP-WSTG-CRYP-001",
+    "OSMAP-WSTG-CRYP-002",
+    "Strict-Transport-Security",
+    "no application encryption/decryption primitive",
+    "no CBC decryptor",
+    "no padding oracle surface",
+    "no custom reversible encryption",
+]:
+    if marker not in doc:
+        raise SystemExit(f"crypto evidence doc missing marker {marker}")
+matrix = json.loads((pack / "wstg-scenario-matrix.v42.json").read_text())
+rows = {item["wstg_id"]: item for item in matrix["scenarios"]}
+for wstg_id in ["WSTG-v42-CRYP-01", "WSTG-v42-CRYP-03"]:
+    row = rows[wstg_id]
+    if row["disposition"] != "automated" or "OSMAP-WSTG-CRYP-001" not in row["evidence_reference"]:
+        raise SystemExit(f"{wstg_id} must be automated by OSMAP-WSTG-CRYP-001")
+for wstg_id in ["WSTG-v42-CRYP-02", "WSTG-v42-CRYP-04"]:
+    row = rows[wstg_id]
+    if row["disposition"] != "not_applicable" or "OSMAP-WSTG-CRYP-002" not in row["evidence_reference"]:
+        raise SystemExit(f"{wstg_id} must be not_applicable with OSMAP-WSTG-CRYP-002 evidence")
+print("weak cryptography WSTG mapping validated")
+PY
+
 echo "validating live WSTG evidence mappings"
 python3 - "$pack_dir" <<'PY'
 import json

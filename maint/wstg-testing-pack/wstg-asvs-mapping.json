@@ -1221,6 +1221,80 @@
       "severity_if_failed": "high"
     },
     {
+      "test_id": "OSMAP-WSTG-CRYP-001",
+      "test_name": "WSTG-v42-CRYP-01/03 TLS and cleartext transport evidence",
+      "script_path": "run-wstg-pack.py",
+      "wstg": [
+        "WSTG-v42-CRYP-01",
+        "WSTG-v42-CRYP-03"
+      ],
+      "wstg_section": "Testing for Weak Transport Layer Security; Testing for Sensitive Information Sent via Unencrypted Channels",
+      "asvs": [
+        "v5.0.0-6.2.6",
+        "v5.0.0-7.2.1",
+        "v5.0.0-9.1.1",
+        "v5.0.0-9.1.2"
+      ],
+      "asvs_section": "Communications Security and Session Token Transport",
+      "test_type": [
+        "unauthenticated",
+        "dynamic test",
+        "static boundary review"
+      ],
+      "expected_result": "TLS standard validation passes, HTTPS login is available, HSTS is present, and cleartext HTTP redirects to HTTPS or is unreachable.",
+      "evidence_produced": [
+        "crypto_https_login.headers",
+        "crypto_cleartext_login.headers",
+        "crypto_transport_static.txt",
+        "crypto_tls_policy_guard.txt",
+        "crypto_tls_standard_report.json",
+        "crypto_tls_standard_validate.txt"
+      ],
+      "release_required": true,
+      "requires_authenticated_coverage": false,
+      "requires_totp": false,
+      "safe_for_release": true,
+      "severity_if_failed": "critical",
+      "owasp_top_10_2025": [
+        "A02:2025",
+        "A04:2025",
+        "A07:2025"
+      ]
+    },
+    {
+      "test_id": "OSMAP-WSTG-CRYP-002",
+      "test_name": "WSTG-v42-CRYP-02/04 Crypto Primitive Applicability Review",
+      "script_path": "run-wstg-pack.py",
+      "wstg": [
+        "WSTG-v42-CRYP-02",
+        "WSTG-v42-CRYP-04"
+      ],
+      "wstg_section": "Testing for Padding Oracle; Testing for Weak Encryption",
+      "asvs": [
+        "v5.0.0-1.2.1",
+        "v5.0.0-6.2.6",
+        "v5.0.0-8.2.1"
+      ],
+      "asvs_section": "Architecture, Authentication, and Error Handling Boundaries",
+      "test_type": [
+        "static applicability review"
+      ],
+      "expected_result": "Padding-oracle and weak-encryption rows are not applicable because OSMAP has no application encryption/decryption primitive or CBC decrypt route.",
+      "evidence_produced": [
+        "crypto_primitive_applicability_static.txt"
+      ],
+      "release_required": true,
+      "requires_authenticated_coverage": false,
+      "requires_totp": false,
+      "safe_for_release": true,
+      "severity_if_failed": "high",
+      "owasp_top_10_2025": [
+        "A04:2025",
+        "A06:2025",
+        "A10:2025"
+      ]
+    },
+    {
       "test_id": "OSMAP-WSTG-LOGG-001",
       "test_name": "OWASP Top 10 2025 A09 Security Logging and Alerting Failures - audit event and redaction posture",
       "script_path": "run-wstg-pack.py",

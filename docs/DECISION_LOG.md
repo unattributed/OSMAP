@@ -1,5 +1,27 @@
 # Decision Log
 
+## 2026-05-23, Add WSTG Slice 5 crypto and transport evidence
+
+The Version 3 WSTG Slice 5 weak-cryptography workstream now records the
+browser-facing transport and primitive applicability decisions:
+
+- `OSMAP-WSTG-CRYP-001` maps WSTG CRYP-01 and CRYP-03 with unauthenticated
+  HTTPS login, HSTS, cleartext HTTP, static TLS policy, and live TLS standard
+  validation evidence
+- `OSMAP-WSTG-CRYP-002` maps WSTG CRYP-02 and CRYP-04 with static
+  not-applicable evidence for padding-oracle and weak-encryption classes
+- static evidence confirms OSMAP does not terminate public TLS in Rust, keeps
+  public TLS at the nginx edge, builds production cookies with `Secure`, and
+  has no application encryption/decryption primitive, CBC decryptor,
+  attacker-controlled ciphertext decrypt route, or custom reversible encryption
+- the WSTG v4.2 matrix moves CRYP-01 and CRYP-03 from blocked to automated,
+  CRYP-02 and CRYP-04 from blocked to not applicable, leaving 41 blocked rows
+  for remaining due-diligence slices
+
+If OSMAP adds a Rust TLS endpoint, application encryption/decryption primitive,
+encrypted object format, or browser-exposed decrypt route, the affected CRYP
+row must move from not-applicable proof to dynamic negative testing.
+
 ## 2026-05-23, Finish WSTG Slice 4 remaining injection applicability evidence
 
 The Version 3 WSTG Slice 4 input-validation workstream now records the
