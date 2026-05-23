@@ -1,5 +1,28 @@
 # Decision Log
 
+## 2026-05-23, Finish WSTG Slice 4 remaining injection applicability evidence
+
+The Version 3 WSTG Slice 4 input-validation workstream now records the
+remaining injection-class applicability decisions:
+
+- `OSMAP-WSTG-INPV-007` maps WSTG INPV-05, INPV-06, INPV-07, INPV-08,
+  INPV-09, INPV-11, INPV-13, INPV-14, INPV-18, and INPV-19
+- static evidence confirms the current OSMAP browser surface has no SQL, LDAP,
+  XML, XPath, SSI, runtime-code, format-string, server-side template, or SSRF
+  backend surface
+- incubated vulnerability coverage is represented by the named Slice 4 lanes:
+  reflected and stored HTML, command-boundary checks, IMAP/SMTP and MIME input
+  validation, HTTP method and parameter tampering, raw HTTP host/smuggling
+  checks, and this applicability review
+- the WSTG v4.2 matrix moves those ten rows from blocked to not applicable,
+  and reconciles the already-mapped command-injection row to
+  `OSMAP-WSTG-INPV-003`, leaving 45 blocked rows for remaining due-diligence
+  slices
+
+If a future OSMAP slice adds one of these interpreters, parsers, backend query
+surfaces, template engines, or outbound fetch surfaces, the affected row must
+move from not-applicable proof to dynamic negative testing.
+
 ## 2026-05-23, Extend WSTG Slice 4 with raw HTTP host and smuggling evidence
 
 The Version 3 WSTG Slice 4 input-validation workstream now includes a raw HTTP

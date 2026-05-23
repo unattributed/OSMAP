@@ -256,6 +256,7 @@ class Runner:
             "OSMAP-WSTG-INPV-004": self.test_webmail_input_validation,
             "OSMAP-WSTG-INPV-005": self.test_http_input_tampering,
             "OSMAP-WSTG-INPV-006": self.test_http_host_and_smuggling_input,
+            "OSMAP-WSTG-INPV-007": self.test_injection_applicability_static,
             "OSMAP-WSTG-CLNT-001": self.test_cors,
             "OSMAP-WSTG-CLNT-002": self.test_html_rendering_live,
             "OSMAP-WSTG-BUSL-001": self.test_attachment_live,
@@ -1737,6 +1738,137 @@ class Runner:
             evidence_paths,
             {"statuses": statuses},
         )
+
+    def test_injection_applicability_static(self) -> TestResult:
+        banned_dependency_markers = [
+            "diesel",
+            "rusqlite",
+            "sqlx",
+            "postgres",
+            "mysql",
+            "ldap3",
+            "quick-xml",
+            "roxmltree",
+            "sxd-xpath",
+            "xpath",
+            "tera",
+            "handlebars",
+            "minijinja",
+            "askama",
+            "reqwest",
+            "ureq",
+            "hyper",
+        ]
+        cargo_text = "\n".join(
+            path.read_text(encoding="utf-8", errors="replace")
+            for path in [REPO_ROOT / "Cargo.toml", REPO_ROOT / "Cargo.lock"]
+            if path.exists()
+        ).lower()
+        source_text = "\n".join(
+            path.read_text(encoding="utf-8", errors="replace")
+            for path in sorted((REPO_ROOT / "src").glob("*.rs"))
+        ).lower()
+        source_block_markers = [
+            "eval(",
+            "reqwest::",
+            "ureq::",
+            "hyper::client",
+            "std::process::command",
+        ]
+        failures: dict[str, object] = {}
+        matched_deps = [marker for marker in banned_dependency_markers if re.search(rf'(?m)^name = "{re.escape(marker)}"$|{re.escape(marker)}\s*=', cargo_text)]
+        if matched_deps:
+            failures["unexpected_dependency_markers"] = matched_deps
+        matched_source = [marker for marker in source_block_markers if marker in source_text]
+        if matched_source:
+            failures["unexpected_source_markers"] = matched_source
+        if not self.write_injection_applicability_static_evidence(failures):
+            failures["static_boundary"] = "missing injection applicability markers"
+
+        evidence_paths = ["evidence/injection_applicability_static.txt"]
+        details = {
+            "wstg_not_applicable": [
+                "WSTG-v42-INPV-05",
+                "WSTG-v42-INPV-06",
+                "WSTG-v42-INPV-07",
+                "WSTG-v42-INPV-08",
+                "WSTG-v42-INPV-09",
+                "WSTG-v42-INPV-11",
+                "WSTG-v42-INPV-13",
+                "WSTG-v42-INPV-14",
+                "WSTG-v42-INPV-18",
+                "WSTG-v42-INPV-19",
+            ],
+            "dependency_markers_checked": banned_dependency_markers,
+            "source_markers_checked": source_block_markers,
+            "failures": failures,
+        }
+        if failures:
+            return self.result(
+                "OSMAP-WSTG-INPV-007",
+                STATUS_FAIL,
+                "remaining Slice 4 injection applicability review found unexpected surfaces",
+                evidence_paths,
+                details,
+            )
+        return self.result(
+            "OSMAP-WSTG-INPV-007",
+            STATUS_PASS,
+            "remaining Slice 4 injection classes are not applicable to the current OSMAP browser surface",
+            evidence_paths,
+            details,
+        )
+
+    def write_injection_applicability_static_evidence(self, failures: dict[str, object]) -> bool:
+        files = [
+            REPO_ROOT / "Cargo.toml",
+            REPO_ROOT / "Cargo.lock",
+            REPO_ROOT / "src" / "http_form.rs",
+            REPO_ROOT / "src" / "http_parse.rs",
+            REPO_ROOT / "src" / "rendering.rs",
+            REPO_ROOT / "src" / "rendering_html.rs",
+            REPO_ROOT / "src" / "send.rs",
+            REPO_ROOT / "src" / "mailbox.rs",
+            REPO_ROOT / "docs" / "V3_INJECTION_APPLICABILITY_EVIDENCE.md",
+        ]
+        text = "\n".join(path.read_text(encoding="utf-8", errors="replace") for path in files if path.exists())
+        markers = [
+            "OSMAP-WSTG-INPV-007",
+            "WSTG-v42-INPV-05",
+            "WSTG-v42-INPV-06",
+            "WSTG-v42-INPV-07",
+            "WSTG-v42-INPV-08",
+            "WSTG-v42-INPV-09",
+            "WSTG-v42-INPV-11",
+            "WSTG-v42-INPV-13",
+            "WSTG-v42-INPV-14",
+            "WSTG-v42-INPV-18",
+            "WSTG-v42-INPV-19",
+            "no SQL database driver",
+            "no LDAP client",
+            "no XML parser",
+            "no XPath engine",
+            "no server-side template engine",
+            "no outbound HTTP client",
+        ]
+        missing = [marker for marker in markers if marker.lower() not in text.lower()]
+        lines = [
+            summarize_static_files(files, missing),
+            "",
+            "Applicability decisions:",
+            "- SQL injection: not applicable; OSMAP has no SQL database driver or query surface.",
+            "- LDAP injection: not applicable; OSMAP has no LDAP client or LDAP filter construction surface.",
+            "- XML and XPath injection: not applicable; OSMAP has no XML parser, XPath engine, XSLT, SOAP, or XML upload route.",
+            "- SSI injection: not applicable; OSMAP has no server-side include interpreter.",
+            "- code injection and SSTI: not applicable; OSMAP has no eval, plugin loader, or server-side template engine.",
+            "- format-string injection: not applicable to Rust format macros because user input is data arguments, not runtime format strings.",
+            "- SSRF: not applicable; OSMAP has no outbound HTTP client or user-controlled URL fetch surface.",
+            "- incubated vulnerability: covered for the current surface by the named Slice 4 lanes plus this applicability review.",
+        ]
+        if failures:
+            lines.extend(["", "Unexpected surface markers:", json.dumps(failures, indent=2, sort_keys=True)])
+        self.write_text_evidence("injection_applicability_static.txt", "\n".join(lines) + "\n")
+        return not missing
 
     def write_http_host_smuggling_static_evidence(self) -> bool:
         files = [

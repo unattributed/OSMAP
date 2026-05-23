@@ -852,65 +852,85 @@
       "category": "INPV",
       "section": "4.7 Input Validation Testing",
       "title": "Testing for SQL Injection",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-007"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface lacks this interpreter, parser, backend, or outbound fetch class",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-007"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-INPV-06",
       "category": "INPV",
       "section": "4.7 Input Validation Testing",
       "title": "Testing for LDAP Injection",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-007"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface lacks this interpreter, parser, backend, or outbound fetch class",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-007"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-INPV-07",
       "category": "INPV",
       "section": "4.7 Input Validation Testing",
       "title": "Testing for XML Injection",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-007"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface lacks this interpreter, parser, backend, or outbound fetch class",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-007"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-INPV-08",
       "category": "INPV",
       "section": "4.7 Input Validation Testing",
       "title": "Testing for SSI Injection",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-007"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface lacks this interpreter, parser, backend, or outbound fetch class",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-007"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-INPV-09",
       "category": "INPV",
       "section": "4.7 Input Validation Testing",
       "title": "Testing for XPath Injection",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-007"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface lacks this interpreter, parser, backend, or outbound fetch class",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-007"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-INPV-10",
@@ -934,52 +954,68 @@
       "category": "INPV",
       "section": "4.7 Input Validation Testing",
       "title": "Testing for Code Injection",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-007"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface lacks this interpreter, parser, backend, or outbound fetch class",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-007"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-INPV-12",
       "category": "INPV",
       "section": "4.7 Input Validation Testing",
       "title": "Testing for Command Injection",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-003"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "covered by authenticated OSMAP command-boundary WSTG evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-003"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-INPV-13",
       "category": "INPV",
       "section": "4.7 Input Validation Testing",
       "title": "Testing for Format String Injection",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-007"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface lacks this interpreter, parser, backend, or outbound fetch class",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-007"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-INPV-14",
       "category": "INPV",
       "section": "4.7 Input Validation Testing",
       "title": "Testing for Incubated Vulnerability",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-007"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface lacks this interpreter, parser, backend, or outbound fetch class",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-007"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-INPV-15",
@@ -1037,26 +1073,34 @@
       "category": "INPV",
       "section": "4.7 Input Validation Testing",
       "title": "Testing for Server-side Template Injection",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-007"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface lacks this interpreter, parser, backend, or outbound fetch class",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-007"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-INPV-19",
       "category": "INPV",
       "section": "4.7 Input Validation Testing",
       "title": "Testing for Server-Side Request Forgery",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-007"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface lacks this interpreter, parser, backend, or outbound fetch class",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-007"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-ERRH-01",

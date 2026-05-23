@@ -784,6 +784,47 @@
       ]
     },
     {
+      "test_id": "OSMAP-WSTG-INPV-007",
+      "test_name": "WSTG-v42-INPV-05/06/07/08/09/11/13/14/18/19 Injection Applicability Review",
+      "script_path": "run-wstg-pack.py",
+      "wstg": [
+        "WSTG-v42-INPV-05",
+        "WSTG-v42-INPV-06",
+        "WSTG-v42-INPV-07",
+        "WSTG-v42-INPV-08",
+        "WSTG-v42-INPV-09",
+        "WSTG-v42-INPV-11",
+        "WSTG-v42-INPV-13",
+        "WSTG-v42-INPV-14",
+        "WSTG-v42-INPV-18",
+        "WSTG-v42-INPV-19"
+      ],
+      "wstg_section": "Remaining input-validation injection classes without current OSMAP browser surfaces",
+      "asvs": [
+        "v5.0.0-1.2.1",
+        "v5.0.0-5.2.4",
+        "v5.0.0-8.2.1"
+      ],
+      "asvs_section": "Input Validation; Injection Prevention; Error Handling",
+      "test_type": [
+        "static applicability review"
+      ],
+      "expected_result": "The current OSMAP browser surface has no SQL, LDAP, XML, XPath, SSI, runtime code, format-string, server-side template, or SSRF-capable backend surface; incubated injection coverage is represented by the named Slice 4 lanes.",
+      "evidence_produced": [
+        "injection_applicability_static.txt"
+      ],
+      "release_required": true,
+      "requires_authenticated_coverage": false,
+      "requires_totp": false,
+      "safe_for_release": true,
+      "severity_if_failed": "high",
+      "owasp_top_10_2025": [
+        "A05:2025",
+        "A06:2025",
+        "A10:2025"
+      ]
+    },
+    {
       "test_id": "OSMAP-WSTG-CLNT-001",
       "test_name": "WSTG-v42-CLNT-07 Testing Cross Origin Resource Sharing",
       "script_path": "run-wstg-pack.py",

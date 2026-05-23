@@ -651,6 +651,71 @@ for wstg_id in ["WSTG-v42-INPV-15", "WSTG-v42-INPV-16", "WSTG-v42-INPV-17"]:
 print("HTTP host/smuggling WSTG mapping validated")
 PY
 
+echo "validating remaining injection applicability WSTG mapping"
+python3 - "$pack_dir" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+pack = Path(sys.argv[1])
+repo = pack.parents[1]
+mapping = json.loads((pack / "wstg-asvs-mapping.json").read_text())
+tests = {item["test_id"]: item for item in mapping["tests"]}
+applicability = tests.get("OSMAP-WSTG-INPV-007")
+if not applicability:
+    raise SystemExit("OSMAP-WSTG-INPV-007 missing from WSTG mapping")
+expected_wstg = [
+    "WSTG-v42-INPV-05",
+    "WSTG-v42-INPV-06",
+    "WSTG-v42-INPV-07",
+    "WSTG-v42-INPV-08",
+    "WSTG-v42-INPV-09",
+    "WSTG-v42-INPV-11",
+    "WSTG-v42-INPV-13",
+    "WSTG-v42-INPV-14",
+    "WSTG-v42-INPV-18",
+    "WSTG-v42-INPV-19",
+]
+if applicability["wstg"] != expected_wstg:
+    raise SystemExit("OSMAP-WSTG-INPV-007 must map the remaining Slice 4 injection applicability set")
+if applicability["requires_authenticated_coverage"] is not False or applicability["requires_totp"] is not False:
+    raise SystemExit("OSMAP-WSTG-INPV-007 must remain unauthenticated")
+if set(applicability["evidence_produced"]) != {"injection_applicability_static.txt"}:
+    raise SystemExit("OSMAP-WSTG-INPV-007 evidence set changed unexpectedly")
+coverage = (pack / "COVERAGE.md").read_text()
+for marker in ["OSMAP-WSTG-INPV-007", *expected_wstg]:
+    if marker not in coverage:
+        raise SystemExit(f"COVERAGE.md missing injection applicability marker {marker}")
+runner = (pack / "run-wstg-pack.py").read_text()
+for marker in [
+    "test_injection_applicability_static",
+    "write_injection_applicability_static_evidence",
+    "no SQL database driver",
+    "no outbound HTTP client",
+]:
+    if marker not in runner:
+        raise SystemExit(f"runner missing injection applicability marker {marker}")
+doc = (repo / "docs" / "V3_INJECTION_APPLICABILITY_EVIDENCE.md").read_text()
+for marker in [
+    "OSMAP-WSTG-INPV-007",
+    "no SQL database driver",
+    "no LDAP client",
+    "no XML parser",
+    "no XPath engine",
+    "no server-side template engine",
+    "no outbound HTTP client",
+]:
+    if marker not in doc:
+        raise SystemExit(f"injection applicability doc missing marker {marker}")
+matrix = json.loads((pack / "wstg-scenario-matrix.v42.json").read_text())
+rows = {item["wstg_id"]: item for item in matrix["scenarios"]}
+for wstg_id in expected_wstg:
+    row = rows[wstg_id]
+    if row["disposition"] != "not_applicable" or "OSMAP-WSTG-INPV-007" not in row["evidence_reference"]:
+        raise SystemExit(f"{wstg_id} must be not_applicable with OSMAP-WSTG-INPV-007 evidence")
+print("remaining injection applicability WSTG mapping validated")
+PY
+
 echo "validating live WSTG evidence mappings"
 python3 - "$pack_dir" <<'PY'
 import json
