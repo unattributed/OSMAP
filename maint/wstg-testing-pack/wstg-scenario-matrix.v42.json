@@ -986,39 +986,51 @@
       "category": "INPV",
       "section": "4.7 Input Validation Testing",
       "title": "Testing for HTTP Splitting Smuggling",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-006"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-006"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-INPV-16",
       "category": "INPV",
       "section": "4.7 Input Validation Testing",
       "title": "Testing for HTTP Incoming Requests",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-006"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-006"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-INPV-17",
       "category": "INPV",
       "section": "4.7 Input Validation Testing",
       "title": "Testing for Host Header Injection",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-006"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-006"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-INPV-18",

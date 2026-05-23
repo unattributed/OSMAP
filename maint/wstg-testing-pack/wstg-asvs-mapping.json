@@ -736,6 +736,54 @@
       ]
     },
     {
+      "test_id": "OSMAP-WSTG-INPV-006",
+      "test_name": "WSTG-v42-INPV-15/16/17 Testing HTTP Host Header and Smuggling Inputs",
+      "script_path": "run-wstg-pack.py",
+      "wstg": [
+        "WSTG-v42-INPV-15",
+        "WSTG-v42-INPV-16",
+        "WSTG-v42-INPV-17"
+      ],
+      "wstg_section": "Testing for HTTP Splitting Smuggling; Testing for HTTP Incoming Requests; Testing for Host Header Injection",
+      "asvs": [
+        "v5.0.0-1.2.1",
+        "v5.0.0-4.1.4",
+        "v5.0.0-5.2.4",
+        "v5.0.0-8.2.1"
+      ],
+      "asvs_section": "Input Validation; Access Control; Injection Prevention; Error Handling",
+      "test_type": [
+        "unauthenticated",
+        "dynamic raw HTTP test",
+        "static boundary review"
+      ],
+      "expected_result": "Raw HTTP probes for CL.TE smuggling shape, duplicate Content-Length, encoded CRLF targets, missing or malformed Host, folded headers, non-normalized targets, duplicate Host, and untrusted Host input fail closed or avoid host reflection.",
+      "evidence_produced": [
+        "http_inpv15_cl_te_smuggling.headers",
+        "http_inpv15_duplicate_content_length.headers",
+        "http_inpv15_encoded_crlf_target.headers",
+        "http_inpv16_missing_host.headers",
+        "http_inpv16_folded_header.headers",
+        "http_inpv16_non_normalized_target.headers",
+        "http_inpv17_duplicate_host.headers",
+        "http_inpv17_malformed_host.headers",
+        "http_inpv17_untrusted_host.headers",
+        "http_host_smuggling_static.txt"
+      ],
+      "release_required": true,
+      "requires_authenticated_coverage": false,
+      "requires_totp": false,
+      "safe_for_release": true,
+      "severity_if_failed": "high",
+      "owasp_top_10_2025": [
+        "A01:2025",
+        "A02:2025",
+        "A05:2025",
+        "A06:2025",
+        "A10:2025"
+      ]
+    },
+    {
       "test_id": "OSMAP-WSTG-CLNT-001",
       "test_name": "WSTG-v42-CLNT-07 Testing Cross Origin Resource Sharing",
       "script_path": "run-wstg-pack.py",

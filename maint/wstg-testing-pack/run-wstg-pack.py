@@ -93,6 +93,39 @@ def osmap_tls_client_context() -> ssl.SSLContext:
     return context
 
 
+def parse_raw_http_evidence(
+    label: str,
+    response: bytes,
+    *,
+    error: str = "",
+    truncated: bool = False,
+) -> HttpEvidence:
+    if not response:
+        return HttpEvidence(label, None, "", [], b"", truncated=truncated, error=error)
+    header_bytes, separator, body = response.partition(b"\r\n\r\n")
+    if not separator:
+        header_bytes, separator, body = response.partition(b"\n\n")
+    header_text = header_bytes.decode("iso-8859-1", errors="replace")
+    lines = header_text.replace("\r\n", "\n").split("\n")
+    status = None
+    reason = ""
+    headers: list[tuple[str, str]] = []
+    if lines:
+        match = re.match(r"^HTTP/\S+\s+(\d{3})(?:\s+(.*))?$", lines[0])
+        if match:
+            status = int(match.group(1))
+            reason = match.group(2) or ""
+            for line in lines[1:]:
+                if not line or ":" not in line:
+                    continue
+                key, value = line.split(":", 1)
+                headers.append((key.strip(), value.strip()))
+        else:
+            error = error or "raw response did not start with an HTTP status line"
+            body = response
+    return HttpEvidence(label, status, reason, headers, body, truncated=truncated, error=error)
+
+
 @dataclass
 class Config:
     base_url: str
@@ -222,6 +255,7 @@ class Runner:
             "OSMAP-WSTG-INPV-003": self.test_command_injection,
             "OSMAP-WSTG-INPV-004": self.test_webmail_input_validation,
             "OSMAP-WSTG-INPV-005": self.test_http_input_tampering,
+            "OSMAP-WSTG-INPV-006": self.test_http_host_and_smuggling_input,
             "OSMAP-WSTG-CLNT-001": self.test_cors,
             "OSMAP-WSTG-CLNT-002": self.test_html_rendering_live,
             "OSMAP-WSTG-BUSL-001": self.test_attachment_live,
@@ -329,6 +363,33 @@ class Runner:
         except (OSError, ssl.SSLError, socket.timeout) as exc:
             evidence = HttpEvidence(label, None, "", [], b"", error=str(exc))
         self.write_http_evidence(evidence, store_body=store_body_evidence)
+        return evidence
+
+    def raw_http_request(self, label: str, raw_request: bytes) -> HttpEvidence:
+        host = self.config.host
+        response = b""
+        error = ""
+        truncated = False
+        try:
+            sock = socket.create_connection((host, self.config.port), timeout=self.config.timeout)
+            if self.config.scheme == "https":
+                context = osmap_tls_client_context()
+                sock = context.wrap_socket(sock, server_hostname=host)
+            sock.settimeout(self.config.timeout)
+            sock.sendall(raw_request)
+            while len(response) < DEFAULT_BODY_LIMIT:
+                chunk = sock.recv(min(4096, DEFAULT_BODY_LIMIT - len(response)))
+                if not chunk:
+                    break
+                response += chunk
+            if len(response) >= DEFAULT_BODY_LIMIT:
+                truncated = True
+            sock.close()
+        except (OSError, ssl.SSLError, socket.timeout) as exc:
+            error = str(exc)
+
+        evidence = parse_raw_http_evidence(label, response, error=error, truncated=truncated)
+        self.write_http_evidence(evidence)
         return evidence
 
     def form_post(
@@ -1562,6 +1623,152 @@ class Runner:
             evidence_paths,
             {"statuses": statuses},
         )
+
+    def test_http_host_and_smuggling_input(self) -> TestResult:
+        host = self.config.host
+        evil_host = "evil.example"
+        raw_probes = {
+            "http_inpv15_cl_te_smuggling": (
+                b"POST /login HTTP/1.1\r\n"
+                + f"Host: {host}\r\n".encode("ascii")
+                + b"Content-Length: 4\r\n"
+                + b"Transfer-Encoding: chunked\r\n"
+                + b"Connection: close\r\n\r\n"
+                + b"0\r\n\r\n"
+            ),
+            "http_inpv15_duplicate_content_length": (
+                b"POST /login HTTP/1.1\r\n"
+                + f"Host: {host}\r\n".encode("ascii")
+                + b"Content-Length: 0\r\n"
+                + b"Content-Length: 5\r\n"
+                + b"Connection: close\r\n\r\nabcde"
+            ),
+            "http_inpv15_encoded_crlf_target": (
+                b"GET /login%0d%0aX-Injected:%20yes HTTP/1.1\r\n"
+                + f"Host: {host}\r\n".encode("ascii")
+                + b"Connection: close\r\n\r\n"
+            ),
+            "http_inpv16_missing_host": b"GET /login HTTP/1.1\r\nConnection: close\r\n\r\n",
+            "http_inpv16_folded_header": (
+                b"GET /login HTTP/1.1\r\n"
+                + f"Host: {host}\r\n".encode("ascii")
+                + b"X-OSMAP-WSTG: first\r\n second\r\n"
+                + b"Connection: close\r\n\r\n"
+            ),
+            "http_inpv16_non_normalized_target": (
+                b"GET //login HTTP/1.1\r\n"
+                + f"Host: {host}\r\n".encode("ascii")
+                + b"Connection: close\r\n\r\n"
+            ),
+            "http_inpv17_duplicate_host": (
+                b"GET /login HTTP/1.1\r\n"
+                + f"Host: {host}\r\n".encode("ascii")
+                + f"Host: {evil_host}\r\n".encode("ascii")
+                + b"Connection: close\r\n\r\n"
+            ),
+            "http_inpv17_malformed_host": (
+                b"GET /login HTTP/1.1\r\n"
+                + f"Host: {host}/evil\r\n".encode("ascii")
+                + b"Connection: close\r\n\r\n"
+            ),
+            "http_inpv17_untrusted_host": (
+                b"GET /login HTTP/1.1\r\n"
+                + f"Host: {evil_host}\r\n".encode("ascii")
+                + b"Connection: close\r\n\r\n"
+            ),
+        }
+        evidence_by_label = {
+            label: self.raw_http_request(label, raw_request)
+            for label, raw_request in raw_probes.items()
+        }
+        static_ok = self.write_http_host_smuggling_static_evidence()
+        failures: dict[str, object] = {}
+        reject_labels = [
+            "http_inpv15_cl_te_smuggling",
+            "http_inpv15_duplicate_content_length",
+            "http_inpv16_missing_host",
+            "http_inpv16_folded_header",
+            "http_inpv16_non_normalized_target",
+            "http_inpv17_duplicate_host",
+            "http_inpv17_malformed_host",
+        ]
+        for label in reject_labels:
+            evidence = evidence_by_label[label]
+            if evidence.status != 400:
+                failures[label] = evidence.status or evidence.error
+
+        crlf = evidence_by_label["http_inpv15_encoded_crlf_target"]
+        crlf_text = "\n".join([crlf.body_text(), "\n".join(f"{k}: {v}" for k, v in crlf.headers)])
+        if crlf.status is None or 200 <= crlf.status < 400 or "x-injected" in crlf_text.lower():
+            failures["http_inpv15_encoded_crlf_target"] = {
+                "status": crlf.status,
+                "reflected_injection_marker": "x-injected" in crlf_text.lower(),
+            }
+
+        untrusted_host = evidence_by_label["http_inpv17_untrusted_host"]
+        untrusted_text = "\n".join(
+            [untrusted_host.body_text(), "\n".join(f"{k}: {v}" for k, v in untrusted_host.headers)]
+        ).lower()
+        if "evil.example" in untrusted_text or untrusted_host.status is None or untrusted_host.status >= 500:
+            failures["http_inpv17_untrusted_host"] = {
+                "status": untrusted_host.status,
+                "reflected_untrusted_host": "evil.example" in untrusted_text,
+            }
+        if not static_ok:
+            failures["static_boundary"] = "missing HTTP host/smuggling markers"
+
+        evidence_paths = [
+            f"evidence/{label}.headers"
+            for label in raw_probes
+        ] + ["evidence/http_host_smuggling_static.txt"]
+        statuses = {label: evidence.status for label, evidence in evidence_by_label.items()}
+        if failures:
+            return self.result(
+                "OSMAP-WSTG-INPV-006",
+                STATUS_FAIL,
+                "HTTP host-header, incoming-request, or smuggling probes did not meet expected outcomes",
+                evidence_paths,
+                {"statuses": statuses, "failures": failures},
+            )
+        return self.result(
+            "OSMAP-WSTG-INPV-006",
+            STATUS_PASS,
+            "HTTP host-header, incoming-request, and splitting/smuggling probes failed closed or avoided host reflection",
+            evidence_paths,
+            {"statuses": statuses},
+        )
+
+    def write_http_host_smuggling_static_evidence(self) -> bool:
+        files = [
+            REPO_ROOT / "src" / "http.rs",
+            REPO_ROOT / "src" / "http_parse.rs",
+            REPO_ROOT / "src" / "http_runtime.rs",
+            REPO_ROOT / "docs" / "V3_HTTP_HOST_SMUGGLING_EVIDENCE.md",
+        ]
+        text = "\n".join(path.read_text(encoding="utf-8", errors="replace") for path in files if path.exists())
+        markers = [
+            "duplicate http header",
+            "host header must not be empty",
+            "host header contained unsupported characters",
+            "http/1.1 requests must include host",
+            "unsupported transfer-encoding header",
+            "http body length did not match content-length",
+            "request target path must be normalized",
+            "request target fragments are not supported",
+            "OSMAP-WSTG-INPV-006",
+        ]
+        missing = [marker for marker in markers if marker.lower() not in text.lower()]
+        self.write_text_evidence(
+            "http_host_smuggling_static.txt",
+            summarize_static_files(files, missing)
+            + "\nCovered boundaries:\n"
+            + "- duplicate Host and Content-Length headers are rejected at the parser or edge boundary\n"
+            + "- empty, missing, and malformed Host headers fail closed\n"
+            + "- Transfer-Encoding is not accepted by the OSMAP parser and CL.TE probes fail at the public edge\n"
+            + "- non-normalized request targets and encoded CRLF target probes do not reach successful browser routes\n"
+            + "- the application uses relative redirects and does not derive trusted URLs from arbitrary Host input\n",
+        )
+        return not missing
 
     def write_http_input_tampering_static_evidence(self) -> bool:
         files = [

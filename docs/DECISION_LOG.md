@@ -1,5 +1,26 @@
 # Decision Log
 
+## 2026-05-23, Extend WSTG Slice 4 with raw HTTP host and smuggling evidence
+
+The Version 3 WSTG Slice 4 input-validation workstream now includes a raw HTTP
+request-shape lane:
+
+- `OSMAP-WSTG-INPV-006` maps WSTG INPV-15, INPV-16, and INPV-17 for HTTP
+  splitting/smuggling, incoming request validation, and host-header injection
+- unauthenticated dynamic evidence uses raw TLS requests for CL.TE, duplicate
+  `Content-Length`, encoded CRLF target, missing `Host`, obsolete folded
+  header, non-normalized target, duplicate `Host`, malformed `Host`, and
+  untrusted `Host` probes
+- static evidence ties the probes to parser controls for duplicate headers,
+  host syntax, transfer-encoding rejection, content-length consistency, and
+  normalized request targets
+- the WSTG v4.2 matrix moves INPV-15, INPV-16, and INPV-17 from blocked to
+  automated, leaving 56 blocked rows for remaining due-diligence slices
+
+The arbitrary-host probe is not required to be rejected by the edge, but it
+must not reflect the untrusted host into the response body, redirects, or cookie
+metadata.
+
 ## 2026-05-23, Extend WSTG Slice 4 with HTTP input tampering evidence
 
 The Version 3 WSTG Slice 4 input-validation workstream now includes a

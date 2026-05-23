@@ -584,6 +584,73 @@ for wstg_id in ["WSTG-v42-INPV-03", "WSTG-v42-INPV-04"]:
 print("HTTP input-tampering WSTG mapping validated")
 PY
 
+echo "validating HTTP host/smuggling WSTG mapping"
+python3 - "$pack_dir" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+pack = Path(sys.argv[1])
+repo = pack.parents[1]
+mapping = json.loads((pack / "wstg-asvs-mapping.json").read_text())
+tests = {item["test_id"]: item for item in mapping["tests"]}
+host = tests.get("OSMAP-WSTG-INPV-006")
+if not host:
+    raise SystemExit("OSMAP-WSTG-INPV-006 missing from WSTG mapping")
+if host["wstg"] != ["WSTG-v42-INPV-15", "WSTG-v42-INPV-16", "WSTG-v42-INPV-17"]:
+    raise SystemExit("OSMAP-WSTG-INPV-006 must map to WSTG-v42-INPV-15/16/17")
+if host["requires_authenticated_coverage"] is not False or host["requires_totp"] is not False:
+    raise SystemExit("OSMAP-WSTG-INPV-006 must remain unauthenticated")
+required_evidence = {
+    "http_inpv15_cl_te_smuggling.headers",
+    "http_inpv15_duplicate_content_length.headers",
+    "http_inpv15_encoded_crlf_target.headers",
+    "http_inpv16_missing_host.headers",
+    "http_inpv16_folded_header.headers",
+    "http_inpv16_non_normalized_target.headers",
+    "http_inpv17_duplicate_host.headers",
+    "http_inpv17_malformed_host.headers",
+    "http_inpv17_untrusted_host.headers",
+    "http_host_smuggling_static.txt",
+}
+missing = sorted(required_evidence - set(host["evidence_produced"]))
+if missing:
+    raise SystemExit(f"OSMAP-WSTG-INPV-006 missing evidence markers: {missing}")
+coverage = (pack / "COVERAGE.md").read_text()
+for marker in ["OSMAP-WSTG-INPV-006", "WSTG-v42-INPV-15", "WSTG-v42-INPV-16", "WSTG-v42-INPV-17"]:
+    if marker not in coverage:
+        raise SystemExit(f"COVERAGE.md missing HTTP host/smuggling marker {marker}")
+runner = (pack / "run-wstg-pack.py").read_text()
+for marker in [
+    "raw_http_request",
+    "parse_raw_http_evidence",
+    "test_http_host_and_smuggling_input",
+    "http_inpv15_cl_te_smuggling",
+    "http_inpv17_untrusted_host",
+    "write_http_host_smuggling_static_evidence",
+]:
+    if marker not in runner:
+        raise SystemExit(f"runner missing HTTP host/smuggling marker {marker}")
+doc = (repo / "docs" / "V3_HTTP_HOST_SMUGGLING_EVIDENCE.md").read_text()
+for marker in [
+    "OSMAP-WSTG-INPV-006",
+    "WSTG-v42-INPV-15",
+    "WSTG-v42-INPV-16",
+    "WSTG-v42-INPV-17",
+    "CL.TE request smuggling",
+    "arbitrary untrusted `Host`",
+]:
+    if marker not in doc:
+        raise SystemExit(f"HTTP host/smuggling doc missing marker {marker}")
+matrix = json.loads((pack / "wstg-scenario-matrix.v42.json").read_text())
+rows = {item["wstg_id"]: item for item in matrix["scenarios"]}
+for wstg_id in ["WSTG-v42-INPV-15", "WSTG-v42-INPV-16", "WSTG-v42-INPV-17"]:
+    row = rows[wstg_id]
+    if row["disposition"] != "automated" or "OSMAP-WSTG-INPV-006" not in row["evidence_reference"]:
+        raise SystemExit(f"{wstg_id} must be automated by OSMAP-WSTG-INPV-006")
+print("HTTP host/smuggling WSTG mapping validated")
+PY
+
 echo "validating live WSTG evidence mappings"
 python3 - "$pack_dir" <<'PY'
 import json
