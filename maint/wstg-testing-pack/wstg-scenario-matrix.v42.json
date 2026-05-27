@@ -1385,65 +1385,85 @@
       "category": "CLNT",
       "section": "4.11 Client-side Testing",
       "title": "Testing for JavaScript Execution",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CLNT-003"
+      ],
+      "due_diligence_status": "not_applicable_or_covered_by_static_client_boundary_evidence",
+      "recommended_triage": "keep_static_client_boundary_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface is server-rendered and lacks client-side scripting, browser storage, websocket, web messaging, flash, or script-inclusion surfaces; HTML/CSS risks are covered by sanitizer/CSP evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CLNT-003"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-CLNT-03",
       "category": "CLNT",
       "section": "4.11 Client-side Testing",
       "title": "Testing for HTML Injection",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CLNT-003"
+      ],
+      "due_diligence_status": "not_applicable_or_covered_by_static_client_boundary_evidence",
+      "recommended_triage": "keep_static_client_boundary_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface is server-rendered and lacks client-side scripting, browser storage, websocket, web messaging, flash, or script-inclusion surfaces; HTML/CSS risks are covered by sanitizer/CSP evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CLNT-003"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-CLNT-04",
       "category": "CLNT",
       "section": "4.11 Client-side Testing",
       "title": "Testing for Client-side URL Redirect",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CLNT-003"
+      ],
+      "due_diligence_status": "not_applicable_or_covered_by_static_client_boundary_evidence",
+      "recommended_triage": "keep_static_client_boundary_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface is server-rendered and lacks client-side scripting, browser storage, websocket, web messaging, flash, or script-inclusion surfaces; HTML/CSS risks are covered by sanitizer/CSP evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CLNT-003"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-CLNT-05",
       "category": "CLNT",
       "section": "4.11 Client-side Testing",
       "title": "Testing for CSS Injection",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CLNT-003"
+      ],
+      "due_diligence_status": "not_applicable_or_covered_by_static_client_boundary_evidence",
+      "recommended_triage": "keep_static_client_boundary_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface is server-rendered and lacks client-side scripting, browser storage, websocket, web messaging, flash, or script-inclusion surfaces; HTML/CSS risks are covered by sanitizer/CSP evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CLNT-003"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-CLNT-06",
       "category": "CLNT",
       "section": "4.11 Client-side Testing",
       "title": "Testing for Client-side Resource Manipulation",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CLNT-003"
+      ],
+      "due_diligence_status": "not_applicable_or_covered_by_static_client_boundary_evidence",
+      "recommended_triage": "keep_static_client_boundary_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface is server-rendered and lacks client-side scripting, browser storage, websocket, web messaging, flash, or script-inclusion surfaces; HTML/CSS risks are covered by sanitizer/CSP evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CLNT-003"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-CLNT-07",
@@ -1467,13 +1487,17 @@
       "category": "CLNT",
       "section": "4.11 Client-side Testing",
       "title": "Testing for Cross Site Flashing",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "not_applicable_candidate_but_requires_repo_or_live_proof",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CLNT-003"
+      ],
+      "due_diligence_status": "not_applicable_or_covered_by_static_client_boundary_evidence",
+      "recommended_triage": "keep_static_client_boundary_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface is server-rendered and lacks client-side scripting, browser storage, websocket, web messaging, flash, or script-inclusion surfaces; HTML/CSS risks are covered by sanitizer/CSP evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CLNT-003"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-CLNT-09",
@@ -1497,52 +1521,68 @@
       "category": "CLNT",
       "section": "4.11 Client-side Testing",
       "title": "Testing WebSockets",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "not_applicable_candidate_but_requires_repo_or_live_proof",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CLNT-003"
+      ],
+      "due_diligence_status": "not_applicable_or_covered_by_static_client_boundary_evidence",
+      "recommended_triage": "keep_static_client_boundary_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface is server-rendered and lacks client-side scripting, browser storage, websocket, web messaging, flash, or script-inclusion surfaces; HTML/CSS risks are covered by sanitizer/CSP evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CLNT-003"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-CLNT-11",
       "category": "CLNT",
       "section": "4.11 Client-side Testing",
       "title": "Testing Web Messaging",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "not_applicable_candidate_but_requires_repo_or_live_proof",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CLNT-003"
+      ],
+      "due_diligence_status": "not_applicable_or_covered_by_static_client_boundary_evidence",
+      "recommended_triage": "keep_static_client_boundary_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface is server-rendered and lacks client-side scripting, browser storage, websocket, web messaging, flash, or script-inclusion surfaces; HTML/CSS risks are covered by sanitizer/CSP evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CLNT-003"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-CLNT-12",
       "category": "CLNT",
       "section": "4.11 Client-side Testing",
       "title": "Testing Browser Storage",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CLNT-003"
+      ],
+      "due_diligence_status": "not_applicable_or_covered_by_static_client_boundary_evidence",
+      "recommended_triage": "keep_static_client_boundary_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface is server-rendered and lacks client-side scripting, browser storage, websocket, web messaging, flash, or script-inclusion surfaces; HTML/CSS risks are covered by sanitizer/CSP evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CLNT-003"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-CLNT-13",
       "category": "CLNT",
       "section": "4.11 Client-side Testing",
       "title": "Testing for Cross Site Script Inclusion",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CLNT-003"
+      ],
+      "due_diligence_status": "not_applicable_or_covered_by_static_client_boundary_evidence",
+      "recommended_triage": "keep_static_client_boundary_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface is server-rendered and lacks client-side scripting, browser storage, websocket, web messaging, flash, or script-inclusion surfaces; HTML/CSS risks are covered by sanitizer/CSP evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CLNT-003"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-APIT-01",

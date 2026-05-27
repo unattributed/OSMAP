@@ -57,16 +57,16 @@ The current WSTG pack is useful targeted regression coverage, but it is not full
 
 | Baseline item | Current state |
 | --- | --- |
-| Existing OSMAP WSTG runner tests | 38 mapped tests |
+| Existing OSMAP WSTG runner tests | 39 mapped tests |
 | Existing explicit gaps | 3 gaps |
 | Existing WSTG scenario matrix | WSTG v4.2 |
 | WSTG v4.2 scenario rows | 97 |
-| WSTG v4.2 rows mapped by current pack | 63 |
-| WSTG v4.2 rows not mapped by current pack | 34 |
+| WSTG v4.2 rows mapped by current pack | 73 |
+| WSTG v4.2 rows not mapped by current pack | 24 |
 | WSTG v4.2 rows with explicit Slice 1 disposition | 97 |
 | WSTG v4.2 automated dispositions | 50 |
-| WSTG v4.2 not-applicable dispositions | 13 |
-| WSTG v4.2 blocked dispositions pending due diligence | 34 |
+| WSTG v4.2 not-applicable dispositions | 23 |
+| WSTG v4.2 blocked dispositions pending due diligence | 24 |
 | Current OWASP latest coverage | Must be pinned and tracked before V3 closeout |
 
 The Version 3 workstream therefore treats the current pack as a starting point. It must be extended into a slice-based due-diligence program.
@@ -325,6 +325,14 @@ Acceptance evidence:
 - Browser header evidence.
 - Route evidence.
 - Source review evidence where client-side behavior is intentionally absent.
+
+Slice 8 implementation evidence starts with:
+
+- `docs/V3_CLIENT_SIDE_BROWSER_SECURITY.md`
+- `OSMAP-WSTG-CLNT-003`
+- static client-side and browser-storage applicability evidence for CLNT-02,
+  CLNT-03, CLNT-04, CLNT-05, CLNT-06, CLNT-08, CLNT-10, CLNT-11, CLNT-12, and
+  CLNT-13
 
 ### Slice 9, Error handling and information disclosure
 

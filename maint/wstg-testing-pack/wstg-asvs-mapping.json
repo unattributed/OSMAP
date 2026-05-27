@@ -891,6 +891,49 @@
       ]
     },
     {
+      "test_id": "OSMAP-WSTG-CLNT-003",
+      "test_name": "WSTG-v42-CLNT Client-Side Browser Applicability Review",
+      "script_path": "run-wstg-pack.py",
+      "wstg": [
+        "WSTG-v42-CLNT-02",
+        "WSTG-v42-CLNT-03",
+        "WSTG-v42-CLNT-04",
+        "WSTG-v42-CLNT-05",
+        "WSTG-v42-CLNT-06",
+        "WSTG-v42-CLNT-08",
+        "WSTG-v42-CLNT-10",
+        "WSTG-v42-CLNT-11",
+        "WSTG-v42-CLNT-12",
+        "WSTG-v42-CLNT-13"
+      ],
+      "wstg_section": "Client-side Testing - browser scripting, storage, and resource-loading applicability",
+      "asvs": [
+        "v5.0.0-1.2.1",
+        "v5.0.0-3.4.6",
+        "v5.0.0-14.4.3",
+        "v5.0.0-14.4.4"
+      ],
+      "asvs_section": "Architecture and Browser Security",
+      "test_type": [
+        "static applicability review"
+      ],
+      "expected_result": "Remaining client-side rows are covered or not applicable because OSMAP is server-rendered, has no client-side scripting dependency, no browser storage use, no WebSocket or web messaging route, and strips scriptable/remote HTML surfaces.",
+      "evidence_produced": [
+        "client_side_applicability_static.txt"
+      ],
+      "release_required": true,
+      "requires_authenticated_coverage": false,
+      "requires_totp": false,
+      "safe_for_release": true,
+      "severity_if_failed": "high",
+      "owasp_top_10_2025": [
+        "A01:2025",
+        "A02:2025",
+        "A05:2025",
+        "A06:2025"
+      ]
+    },
+    {
       "test_id": "OSMAP-WSTG-BUSL-001",
       "test_name": "WSTG-v42-BUSL-08 Test Upload of Unexpected File Types - attachment handling policy",
       "script_path": "run-wstg-pack.py",

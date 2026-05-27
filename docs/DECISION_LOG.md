@@ -1,5 +1,25 @@
 # Decision Log
 
+## 2026-05-27, Add WSTG Slice 8 client-side browser evidence
+
+The Version 3 WSTG Slice 8 client-side and browser-storage workstream now
+records static applicability evidence for the remaining CLNT rows:
+
+- `OSMAP-WSTG-CLNT-003` maps CLNT-02, CLNT-03, CLNT-04, CLNT-05, CLNT-06,
+  CLNT-08, CLNT-10, CLNT-11, CLNT-12, and CLNT-13
+- evidence confirms OSMAP is server-rendered, has no client-side scripting
+  dependency, no WebSocket route, no web messaging surface, no browser storage
+  use, and no Flash/SWF surface
+- HTML/CSS risks are tied to existing sanitizer, escaping, CSP,
+  `UrlRelative::Deny`, stripped scriptable/remote-fetch surfaces, and
+  `noopener noreferrer nofollow` link evidence
+- the WSTG v4.2 matrix moves ten CLNT rows from blocked to not applicable,
+  leaving 24 blocked rows
+
+Future JavaScript, browser storage, WebSocket, web messaging, service-worker,
+client-side redirect, or browser-executed resource-loading features must move
+the affected CLNT rows from static proof to dynamic browser tests.
+
 ## 2026-05-23, Add WSTG Slice 6 form route state-transition evidence
 
 The Version 3 WSTG Slice 6 wording is narrowed from API-style testing to

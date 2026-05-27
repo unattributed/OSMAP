@@ -844,6 +844,55 @@ if row["disposition"] != "not_applicable" or "OSMAP-WSTG-APIT-001" not in row["e
 print("form route and GraphQL applicability WSTG mapping validated")
 PY
 
+echo "validating client-side browser WSTG mapping"
+python3 - "$pack_dir" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+pack = Path(sys.argv[1])
+repo = pack.parents[1]
+mapping = json.loads((pack / "wstg-asvs-mapping.json").read_text())
+tests = {item["test_id"]: item for item in mapping["tests"]}
+client = tests.get("OSMAP-WSTG-CLNT-003")
+if not client:
+    raise SystemExit("OSMAP-WSTG-CLNT-003 missing")
+expected = [
+    "WSTG-v42-CLNT-02",
+    "WSTG-v42-CLNT-03",
+    "WSTG-v42-CLNT-04",
+    "WSTG-v42-CLNT-05",
+    "WSTG-v42-CLNT-06",
+    "WSTG-v42-CLNT-08",
+    "WSTG-v42-CLNT-10",
+    "WSTG-v42-CLNT-11",
+    "WSTG-v42-CLNT-12",
+    "WSTG-v42-CLNT-13",
+]
+if client["wstg"] != expected:
+    raise SystemExit("OSMAP-WSTG-CLNT-003 must map remaining Slice 8 CLNT rows")
+if client["requires_authenticated_coverage"] or client["requires_totp"]:
+    raise SystemExit("OSMAP-WSTG-CLNT-003 must remain unauthenticated")
+coverage = (pack / "COVERAGE.md").read_text()
+for marker in ["OSMAP-WSTG-CLNT-003", *expected]:
+    if marker not in coverage:
+        raise SystemExit(f"COVERAGE.md missing client-side marker {marker}")
+runner = (pack / "run-wstg-pack.py").read_text()
+for marker in ["test_client_side_applicability_static", "no WebSocket route", "no browser storage use", "UrlRelative::Deny"]:
+    if marker not in runner:
+        raise SystemExit(f"runner missing client-side marker {marker}")
+doc = (repo / "docs" / "V3_CLIENT_SIDE_BROWSER_SECURITY.md").read_text()
+for marker in ["no client-side scripting dependency", "no WebSocket route", "no browser storage use", "no web messaging surface"]:
+    if marker not in doc:
+        raise SystemExit(f"client-side doc missing marker {marker}")
+rows = {item["wstg_id"]: item for item in json.loads((pack / "wstg-scenario-matrix.v42.json").read_text())["scenarios"]}
+for wstg_id in expected:
+    row = rows[wstg_id]
+    if row["disposition"] != "not_applicable" or "OSMAP-WSTG-CLNT-003" not in row["evidence_reference"]:
+        raise SystemExit(f"{wstg_id} must be not_applicable with OSMAP-WSTG-CLNT-003 evidence")
+print("client-side browser WSTG mapping validated")
+PY
+
 echo "validating live WSTG evidence mappings"
 python3 - "$pack_dir" <<'PY'
 import json

@@ -259,6 +259,7 @@ class Runner:
             "OSMAP-WSTG-INPV-007": self.test_injection_applicability_static,
             "OSMAP-WSTG-CLNT-001": self.test_cors,
             "OSMAP-WSTG-CLNT-002": self.test_html_rendering_live,
+            "OSMAP-WSTG-CLNT-003": self.test_client_side_applicability_static,
             "OSMAP-WSTG-BUSL-001": self.test_attachment_live,
             "OSMAP-WSTG-ATHZ-001": self.test_authorization_account_isolation,
             "OSMAP-WSTG-BUSL-002": self.test_draft_routes_authenticated,
@@ -2067,6 +2068,66 @@ class Runner:
         markers = ["sanitize", "escape_html", "default-src 'none'", "external", "script"]
         missing = [marker for marker in markers if marker.lower() not in text.lower()]
         self.write_text_evidence("static_html_rendering.txt", summarize_static_files(files, missing))
+        return not missing
+
+    def test_client_side_applicability_static(self) -> TestResult:
+        source_files = list(sorted((REPO_ROOT / "src").glob("*.rs"))) + [REPO_ROOT / "Cargo.toml", REPO_ROOT / "Cargo.lock"]
+        source_text = "\n".join(path.read_text(encoding="utf-8", errors="replace") for path in source_files if path.exists()).lower()
+        absent_markers = ["localstorage", "sessionstorage", "websocket", "postmessage", "serviceworker", "indexeddb", "swf"]
+        matched = [marker for marker in absent_markers if marker in source_text]
+        static_ok = self.write_client_side_applicability_static_evidence(matched)
+        evidence = ["evidence/client_side_applicability_static.txt"]
+        if matched or not static_ok:
+            return self.result("OSMAP-WSTG-CLNT-003", STATUS_FAIL, "client-side/browser-storage applicability review found unexpected source markers", evidence, {"unexpected_markers": matched})
+        return self.result("OSMAP-WSTG-CLNT-003", STATUS_PASS, "remaining client-side and browser-storage rows are covered or not applicable to the current server-rendered surface", evidence, {"absent_markers_checked": absent_markers})
+
+    def write_client_side_applicability_static_evidence(self, matched: list[str]) -> bool:
+        files = [
+            REPO_ROOT / "Cargo.toml",
+            REPO_ROOT / "Cargo.lock",
+            REPO_ROOT / "src" / "http_support.rs",
+            REPO_ROOT / "src" / "http_ui.rs",
+            REPO_ROOT / "src" / "rendering_html.rs",
+            REPO_ROOT / "src" / "rendering.rs",
+            REPO_ROOT / "docs" / "HTTP_HARDENING_BASELINE.md",
+            REPO_ROOT / "docs" / "RENDERING_POLICY_BASELINE.md",
+            REPO_ROOT / "docs" / "V3_CLIENT_SIDE_BROWSER_SECURITY.md",
+        ]
+        text = "\n".join(path.read_text(encoding="utf-8", errors="replace") for path in files if path.exists())
+        markers = [
+            "OSMAP-WSTG-CLNT-003",
+            "WSTG-v42-CLNT-02",
+            "WSTG-v42-CLNT-03",
+            "WSTG-v42-CLNT-04",
+            "WSTG-v42-CLNT-05",
+            "WSTG-v42-CLNT-06",
+            "WSTG-v42-CLNT-08",
+            "WSTG-v42-CLNT-10",
+            "WSTG-v42-CLNT-11",
+            "WSTG-v42-CLNT-12",
+            "WSTG-v42-CLNT-13",
+            "default-src 'none'",
+            "frame-ancestors 'none'",
+            "no client-side scripting dependency",
+            "UrlRelative::Deny",
+            "noopener noreferrer nofollow",
+            "no WebSocket route",
+            "no browser storage use",
+            "no web messaging surface",
+        ]
+        missing = [marker for marker in markers if marker.lower() not in text.lower()]
+        lines = [
+            summarize_static_files(files, missing),
+            "",
+            "Applicability decisions:",
+            "- JavaScript execution, client-side redirects, resource manipulation, web messaging, browser storage, and XSSI are not applicable to the current server-rendered surface because OSMAP has no client-side scripting dependency.",
+            "- HTML and CSS injection are covered by the sanitizer, escaping, default-deny CSP, stripped scriptable tags, denied relative URLs, and stripped remote-fetch surfaces.",
+            "- Cross Site Flashing, WebSockets, and browser storage are not applicable: OSMAP has no Flash/SWF, no WebSocket route, and no browser storage use.",
+            "- Reverse-tabnabbing and cross-site script inclusion are constrained by rel=\"noopener noreferrer nofollow\" links and default-src 'none'.",
+        ]
+        if matched:
+            lines.extend(["", "Unexpected client-side markers:", json.dumps(matched, indent=2)])
+        self.write_text_evidence("client_side_applicability_static.txt", "\n".join(lines) + "\n")
         return not missing
 
     def write_attachment_static_boundary_evidence(self) -> bool:
