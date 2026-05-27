@@ -946,6 +946,60 @@ for wstg_id in expected:
 print("error handling and information disclosure WSTG mapping validated")
 PY
 
+echo "validating public reconnaissance and fingerprinting WSTG mapping"
+python3 - "$pack_dir" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+pack = Path(sys.argv[1])
+repo = pack.parents[1]
+mapping = json.loads((pack / "wstg-asvs-mapping.json").read_text())
+tests = {item["test_id"]: item for item in mapping["tests"]}
+recon = tests.get("OSMAP-WSTG-INFO-004")
+if not recon:
+    raise SystemExit("OSMAP-WSTG-INFO-004 missing")
+expected = [
+    "WSTG-v42-INFO-01",
+    "WSTG-v42-INFO-04",
+    "WSTG-v42-INFO-08",
+    "WSTG-v42-INFO-09",
+]
+if recon["wstg"] != expected:
+    raise SystemExit("OSMAP-WSTG-INFO-004 must map remaining Slice 9 INFO rows")
+if recon["requires_authenticated_coverage"] or recon["requires_totp"]:
+    raise SystemExit("OSMAP-WSTG-INFO-004 must remain unauthenticated")
+coverage = (pack / "COVERAGE.md").read_text()
+for marker in ["OSMAP-WSTG-INFO-004", *expected]:
+    if marker not in coverage:
+        raise SystemExit(f"COVERAGE.md missing public reconnaissance marker {marker}")
+runner = (pack / "run-wstg-pack.py").read_text()
+for marker in [
+    "test_public_reconnaissance_fingerprinting",
+    "public_recon_fingerprinting_static.txt",
+    "bounded public reconnaissance",
+    "no X-Powered-By",
+    "no secondary webmail app",
+]:
+    if marker not in runner:
+        raise SystemExit(f"runner missing public reconnaissance marker {marker}")
+doc = (repo / "docs" / "V3_ERROR_INFO_DISCLOSURE_EVIDENCE.md").read_text()
+for marker in [
+    "OSMAP-WSTG-INFO-004",
+    "Public Reconnaissance And Fingerprinting",
+    "Search engine discovery reconnaissance",
+    "no framework version banner",
+]:
+    if marker not in doc:
+        raise SystemExit(f"Slice 9 doc missing public reconnaissance marker {marker}")
+rows = {item["wstg_id"]: item for item in json.loads((pack / "wstg-scenario-matrix.v42.json").read_text())["scenarios"]}
+for wstg_id in expected:
+    row = rows[wstg_id]
+    if row["disposition"] != "automated" or "OSMAP-WSTG-INFO-004" not in row["evidence_reference"]:
+        raise SystemExit(f"{wstg_id} must be automated by OSMAP-WSTG-INFO-004")
+print("public reconnaissance and fingerprinting WSTG mapping validated")
+PY
+
 echo "validating live WSTG evidence mappings"
 python3 - "$pack_dir" <<'PY'
 import json

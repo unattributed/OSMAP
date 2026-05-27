@@ -251,6 +251,7 @@ class Runner:
             "OSMAP-WSTG-INFO-001": self.test_metafiles,
             "OSMAP-WSTG-INFO-002": self.test_info_disclosure,
             "OSMAP-WSTG-INFO-003": self.test_error_and_route_inventory,
+            "OSMAP-WSTG-INFO-004": self.test_public_reconnaissance_fingerprinting,
             "OSMAP-WSTG-INPV-001": self.test_path_traversal,
             "OSMAP-WSTG-INPV-002": self.test_reflected_input,
             "OSMAP-WSTG-INPV-003": self.test_command_injection,
@@ -1275,6 +1276,114 @@ class Runner:
             "- Stack traces are not browser-visible: public error bodies use stable generic messages, while detailed failure reasons stay in structured audit events and redacted WSTG evidence.",
         ]
         self.write_text_evidence("error_route_inventory_static.txt", "\n".join(lines) + "\n")
+        return not missing
+
+    def test_public_reconnaissance_fingerprinting(self) -> TestResult:
+        expected_public = {
+            "info_recon_root": "/",
+            "info_recon_login": "/login",
+            "info_recon_healthz": "/healthz",
+            "info_recon_robots": "/robots.txt",
+            "info_recon_security": "/.well-known/security.txt",
+        }
+        common_unexpected = {
+            "info_recon_admin": "/admin",
+            "info_recon_api": "/api",
+            "info_recon_graphql": "/graphql",
+            "info_recon_phpmyadmin": "/phpmyadmin",
+            "info_recon_roundcube": "/roundcube",
+            "info_recon_webmail": "/webmail",
+            "info_recon_git_config": "/.git/config",
+            "info_recon_server_status": "/server-status",
+        }
+        framework_patterns = [
+            r"(?i)\bx-powered-by\b",
+            r"(?i)\b(?:actix|axum|rocket|warp|hyper|django|flask|rails|laravel|express|next\.js|phpmyadmin|roundcube)\b",
+            r"(?i)\b(?:apache|nginx|opensmtpd|dovecot|postfix|rspamd)/\d",
+            r"(?i)\bserver: [^\n\r]+/\d",
+        ]
+        evidence_paths: list[str] = []
+        failures: dict[str, object] = {}
+        statuses: dict[str, int | None] = {}
+        for label, path in {**expected_public, **common_unexpected}.items():
+            evidence = self.request(label, "GET", path)
+            evidence_paths.extend([f"evidence/{label}.headers", f"evidence/{label}.body"])
+            statuses[label] = evidence.status
+            text = "\n".join(
+                [evidence.body_text(), "\n".join(f"{key}: {value}" for key, value in evidence.headers)]
+            )
+            matches = [pattern for pattern in framework_patterns if re.search(pattern, text)]
+            if matches:
+                failures[f"{label}_fingerprint"] = matches
+            if label in common_unexpected and evidence.status is not None and 200 <= evidence.status < 300:
+                failures[f"{label}_unexpected_public_app"] = evidence.status
+
+        static_ok = self.write_public_reconnaissance_fingerprinting_static_evidence()
+        evidence_paths.append("evidence/public_recon_fingerprinting_static.txt")
+        if not static_ok:
+            failures["static_boundary"] = "missing public reconnaissance/fingerprinting markers"
+        if failures:
+            return self.result(
+                "OSMAP-WSTG-INFO-004",
+                STATUS_FAIL,
+                "public reconnaissance or fingerprinting probes exposed unexpected app or framework signals",
+                evidence_paths,
+                {"statuses": statuses, "failures": failures},
+            )
+        return self.result(
+            "OSMAP-WSTG-INFO-004",
+            STATUS_PASS,
+            "bounded public reconnaissance found only expected OSMAP entry points and no framework/version fingerprints",
+            evidence_paths,
+            {"statuses": statuses},
+        )
+
+    def write_public_reconnaissance_fingerprinting_static_evidence(self) -> bool:
+        files = [
+            REPO_ROOT / "src" / "http_runtime.rs",
+            REPO_ROOT / "src" / "http_support.rs",
+            REPO_ROOT / "src" / "http_ui.rs",
+            REPO_ROOT / "src" / "config.rs",
+            REPO_ROOT / "docs" / "V3_ERROR_INFO_DISCLOSURE_EVIDENCE.md",
+            REPO_ROOT / "docs" / "ARCHITECTURE.md",
+            REPO_ROOT / "maint" / "openbsd" / "mail.blackbagsecurity.com" / "nginx" / "sites-enabled" / "main-ssl.conf",
+            REPO_ROOT / "maint" / "openbsd" / "mail.blackbagsecurity.com" / "nginx" / "templates" / "osmap-root.tmpl",
+        ]
+        text = "\n".join(path.read_text(encoding="utf-8", errors="replace") for path in files if path.exists())
+        markers = [
+            "OSMAP-WSTG-INFO-004",
+            "WSTG-v42-INFO-01",
+            "WSTG-v42-INFO-04",
+            "WSTG-v42-INFO-08",
+            "WSTG-v42-INFO-09",
+            "bounded public reconnaissance",
+            "public app enumeration",
+            "framework fingerprinting",
+            "web application fingerprinting",
+            "search engine discovery reconnaissance",
+            "GET /login",
+            "GET /healthz",
+            "GET /robots.txt",
+            "GET /.well-known/security.txt",
+            "no X-Powered-By",
+            "no framework version banner",
+            "no secondary webmail app",
+            "OSMAP Login",
+        ]
+        missing = [marker for marker in markers if marker.lower() not in text.lower()]
+        lines = [
+            summarize_static_files(files, missing),
+            "",
+            "Bounded public reconnaissance:",
+            "- Expected public entry points are /, /login, /healthz, /robots.txt, and /.well-known/security.txt.",
+            "- Common secondary application paths such as /admin, /api, /graphql, /phpmyadmin, /roundcube, /webmail, /.git/config, and /server-status must not expose another public app.",
+            "- Search engine discovery reconnaissance is represented by the same public-footprint evidence plus robots/security metadata review; committed evidence must not depend on a mutable third-party search result page.",
+            "",
+            "Fingerprinting decision:",
+            "- Public responses must not expose X-Powered-By, framework version banners, Rust web-framework names, or backend mail-stack version strings.",
+            "- The intended web application fingerprint is the OSMAP login/mailbox browser surface only; no secondary webmail app is part of this boundary.",
+        ]
+        self.write_text_evidence("public_recon_fingerprinting_static.txt", "\n".join(lines) + "\n")
         return not missing
 
     def test_path_traversal(self) -> TestResult:

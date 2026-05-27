@@ -578,6 +578,45 @@
       ]
     },
     {
+      "test_id": "OSMAP-WSTG-INFO-004",
+      "test_name": "WSTG-v42-INFO-01/04/08/09 Public Reconnaissance and Fingerprinting",
+      "script_path": "run-wstg-pack.py",
+      "wstg": [
+        "WSTG-v42-INFO-01",
+        "WSTG-v42-INFO-04",
+        "WSTG-v42-INFO-08",
+        "WSTG-v42-INFO-09"
+      ],
+      "wstg_section": "Search Engine Discovery Reconnaissance; Enumerate Applications on Webserver; Fingerprint Web Application Framework; Fingerprint Web Application",
+      "asvs": [
+        "v5.0.0-1.2.1",
+        "v5.0.0-4.1.4",
+        "v5.0.0-8.2.1",
+        "v5.0.0-14.3.1"
+      ],
+      "asvs_section": "Architecture, HTTP Request Validation, Error Handling, and Information Disclosure",
+      "test_type": [
+        "unauthenticated",
+        "dynamic test",
+        "static boundary review"
+      ],
+      "expected_result": "Bounded public reconnaissance finds only expected OSMAP entry points and no secondary web app, framework banner, X-Powered-By header, or backend version fingerprint.",
+      "evidence_produced": [
+        "info_recon_*.headers",
+        "info_recon_*.body",
+        "public_recon_fingerprinting_static.txt"
+      ],
+      "release_required": true,
+      "requires_authenticated_coverage": false,
+      "requires_totp": false,
+      "safe_for_release": true,
+      "severity_if_failed": "medium",
+      "owasp_top_10_2025": [
+        "A02:2025",
+        "A10:2025"
+      ]
+    },
+    {
       "test_id": "OSMAP-WSTG-INPV-001",
       "test_name": "WSTG-v42-ATHZ-01 Testing Directory Traversal File Include - safe endpoint probes",
       "script_path": "run-wstg-pack.py",

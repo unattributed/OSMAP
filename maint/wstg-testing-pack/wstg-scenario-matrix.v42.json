@@ -4,11 +4,11 @@
   "wstg_source": "OWASP WSTG v4.2 stable table of contents retrieved 2026-05-19",
   "note": "This is an applicability and evidence matrix starter. It is not a pass/fail report until each item has an executed evidence reference or a documented not-applicable proof.",
   "current_osmap_pack": {
-    "mapped_tests": 40,
-    "unique_mapped_wstg_ids": 78,
+    "mapped_tests": 41,
+    "unique_mapped_wstg_ids": 82,
     "official_toc_scenarios_listed_here": 97,
-    "official_toc_scenarios_mapped_by_current_pack": 77,
-    "official_toc_scenarios_not_mapped_by_current_pack": 20,
+    "official_toc_scenarios_mapped_by_current_pack": 81,
+    "official_toc_scenarios_not_mapped_by_current_pack": 16,
     "supplemental_wstg_ids_in_current_mapping_not_seen_in_retrieved_official_toc": [
       "WSTG-v42-CONF-12"
     ]
@@ -19,13 +19,17 @@
       "category": "INFO",
       "section": "4.1 Information Gathering",
       "title": "Conduct Search Engine Discovery Reconnaissance for Information Leakage",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INFO-004"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to Slice 9 public reconnaissance and fingerprinting evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INFO-004"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-INFO-02",
@@ -66,13 +70,17 @@
       "category": "INFO",
       "section": "4.1 Information Gathering",
       "title": "Enumerate Applications on Webserver",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INFO-004"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to Slice 9 public reconnaissance and fingerprinting evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INFO-004"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-INFO-05",
@@ -130,26 +138,34 @@
       "category": "INFO",
       "section": "4.1 Information Gathering",
       "title": "Fingerprint Web Application Framework",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INFO-004"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to Slice 9 public reconnaissance and fingerprinting evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INFO-004"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-INFO-09",
       "category": "INFO",
       "section": "4.1 Information Gathering",
       "title": "Fingerprint Web Application",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INFO-004"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to Slice 9 public reconnaissance and fingerprinting evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INFO-004"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-INFO-10",

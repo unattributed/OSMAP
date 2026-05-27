@@ -1,5 +1,25 @@
 # Decision Log
 
+## 2026-05-27, Finish WSTG Slice 9 public reconnaissance coverage
+
+The Version 3 WSTG Slice 9 workstream now records bounded public
+reconnaissance and fingerprinting evidence for the remaining INFO rows:
+
+- `OSMAP-WSTG-INFO-004` maps INFO-01, INFO-04, INFO-08, and INFO-09
+- dynamic probes cover expected public OSMAP paths plus common secondary app
+  paths such as `/admin`, `/api`, `/graphql`, `/phpmyadmin`, `/roundcube`,
+  `/webmail`, `/.git/config`, and `/server-status`
+- static evidence records that search engine discovery reconnaissance is
+  represented by deterministic public-footprint and robots/security metadata
+  review rather than mutable third-party search-result pages
+- framework and web-app fingerprinting fail closed on `X-Powered-By`,
+  framework banners, backend version strings, or exposed secondary webmail apps
+- the WSTG v4.2 matrix moves four INFO rows from blocked to automated, leaving
+  16 blocked rows
+
+Future public apps, route aliases, or framework-visible response changes must
+update this bounded reconnaissance lane.
+
 ## 2026-05-27, Add WSTG Slice 9 error and information-disclosure evidence
 
 The Version 3 WSTG Slice 9 workstream now records deterministic evidence for

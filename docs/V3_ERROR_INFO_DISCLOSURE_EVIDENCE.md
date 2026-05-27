@@ -3,11 +3,19 @@
 `OSMAP-WSTG-INFO-003` records the Slice 9 evidence lane for stack-trace,
 route-inventory, execution-path, and architecture mapping coverage.
 
+`OSMAP-WSTG-INFO-004` records the Slice 9 bounded public reconnaissance lane
+for search-discovery metadata, public app enumeration, framework
+fingerprinting, and web application fingerprinting.
+
 Mapped WSTG rows:
 
 - `WSTG-v42-ERRH-02`
+- `WSTG-v42-INFO-01`
+- `WSTG-v42-INFO-04`
 - `WSTG-v42-INFO-06`
 - `WSTG-v42-INFO-07`
+- `WSTG-v42-INFO-08`
+- `WSTG-v42-INFO-09`
 - `WSTG-v42-INFO-10`
 
 ## Stack-Trace And Error Leakage
@@ -67,3 +75,29 @@ Postfix, Dovecot, and Rspamd mail stack.
 
 There is no JSON/GraphQL API surface in this lane; state changes are browser
 form-backed routes.
+
+## Public Reconnaissance And Fingerprinting
+
+`OSMAP-WSTG-INFO-004` keeps the public reconnaissance checks bounded to the
+OSMAP host and deterministic. Expected public entry points are:
+
+- `GET /`
+- `GET /login`
+- `GET /healthz`
+- `GET /robots.txt`
+- `GET /.well-known/security.txt`
+
+The public app enumeration probe also checks common secondary application
+paths, including `/admin`, `/api`, `/graphql`, `/phpmyadmin`, `/roundcube`,
+`/webmail`, `/.git/config`, and `/server-status`. Those paths must not expose
+another public app.
+
+Search engine discovery reconnaissance is represented by the same
+public-footprint evidence plus robots/security metadata review; committed
+evidence must not depend on a mutable third-party search result page.
+
+Framework fingerprinting and web application fingerprinting fail closed when
+public responses expose `X-Powered-By`, framework version banners, Rust
+web-framework names, or backend mail-stack version strings. The intended web
+application fingerprint is the OSMAP login/mailbox browser surface only. There
+is no secondary webmail app in this boundary, no X-Powered-By header, and no framework version banner.
