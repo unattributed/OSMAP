@@ -1000,6 +1000,55 @@ for wstg_id in expected:
 print("public reconnaissance and fingerprinting WSTG mapping validated")
 PY
 
+echo "validating sensitive extension and backup exposure WSTG mapping"
+python3 - "$pack_dir" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+pack = Path(sys.argv[1])
+repo = pack.parents[1]
+mapping = json.loads((pack / "wstg-asvs-mapping.json").read_text())
+tests = {item["test_id"]: item for item in mapping["tests"]}
+conf = tests.get("OSMAP-WSTG-CONF-008")
+if not conf:
+    raise SystemExit("OSMAP-WSTG-CONF-008 missing")
+expected = ["WSTG-v42-CONF-03", "WSTG-v42-CONF-04"]
+if conf["wstg"] != expected:
+    raise SystemExit("OSMAP-WSTG-CONF-008 must map CONF-03 and CONF-04")
+if conf["requires_authenticated_coverage"] or conf["requires_totp"]:
+    raise SystemExit("OSMAP-WSTG-CONF-008 must remain unauthenticated")
+coverage = (pack / "COVERAGE.md").read_text()
+for marker in ["OSMAP-WSTG-CONF-008", *expected]:
+    if marker not in coverage:
+        raise SystemExit(f"COVERAGE.md missing sensitive extension marker {marker}")
+runner = (pack / "run-wstg-pack.py").read_text()
+for marker in [
+    "test_sensitive_extension_and_backup_exposure",
+    "sensitive_extension_backup_static.txt",
+    "backup and unreferenced file exposure",
+    "no public static repository root",
+    "no source archive exposure",
+]:
+    if marker not in runner:
+        raise SystemExit(f"runner missing sensitive extension marker {marker}")
+doc = (repo / "docs" / "V3_CONFIG_DEPLOYMENT_EVIDENCE.md").read_text()
+for marker in [
+    "OSMAP-WSTG-CONF-008",
+    "sensitive extension handling",
+    "backup and unreferenced file exposure",
+    "no public backup directory",
+]:
+    if marker not in doc:
+        raise SystemExit(f"Slice 10 doc missing marker {marker}")
+rows = {item["wstg_id"]: item for item in json.loads((pack / "wstg-scenario-matrix.v42.json").read_text())["scenarios"]}
+for wstg_id in expected:
+    row = rows[wstg_id]
+    if row["disposition"] != "automated" or "OSMAP-WSTG-CONF-008" not in row["evidence_reference"]:
+        raise SystemExit(f"{wstg_id} must be automated by OSMAP-WSTG-CONF-008")
+print("sensitive extension and backup exposure WSTG mapping validated")
+PY
+
 echo "validating live WSTG evidence mappings"
 python3 - "$pack_dir" <<'PY'
 import json

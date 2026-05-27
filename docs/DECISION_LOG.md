@@ -1,5 +1,23 @@
 # Decision Log
 
+## 2026-05-27, Add WSTG Slice 10 sensitive-file exposure evidence
+
+The Version 3 WSTG Slice 10 configuration and deployment workstream now
+records deterministic evidence for sensitive extension handling and backup
+file exposure:
+
+- `OSMAP-WSTG-CONF-008` maps CONF-03 and CONF-04
+- dynamic probes cover `.env`, Cargo files, README, key/config/source-like
+  names, editor backups, SQL dumps, archives, and old env names
+- static evidence records that the public WAN OSMAP vhost proxies to the Rust
+  router rather than exposing a repository root, backup directory, or source
+  archive directory
+- the WSTG v4.2 matrix moves two CONF rows from blocked to automated, leaving
+  14 blocked rows
+
+Future static-file serving, public asset roots, deployment artifact locations,
+or backup publication paths must update this lane before V3 closeout.
+
 ## 2026-05-27, Finish WSTG Slice 9 public reconnaissance coverage
 
 The Version 3 WSTG Slice 9 workstream now records bounded public

@@ -237,6 +237,7 @@ class Runner:
             "OSMAP-WSTG-CONF-001": self.test_tls_and_redirect,
             "OSMAP-WSTG-CONF-002": self.test_security_headers,
             "OSMAP-WSTG-CONF-003": self.test_csp,
+            "OSMAP-WSTG-CONF-008": self.test_sensitive_extension_and_backup_exposure,
             "OSMAP-WSTG-ATHN-001": self.test_login_form,
             "OSMAP-WSTG-ATHN-002": self.test_invalid_login,
             "OSMAP-WSTG-ATHN-003": self.test_throttle_probe,
@@ -707,6 +708,105 @@ class Runner:
                 {"missing": missing, "csp": csp},
             )
         return self.result("OSMAP-WSTG-CONF-003", STATUS_PASS, "CSP remains narrow and default-deny", ["evidence/csp.headers"])
+
+    def test_sensitive_extension_and_backup_exposure(self) -> TestResult:
+        probes = {
+            "conf03_env": "/.env",
+            "conf03_env_example": "/.env.example",
+            "conf03_cargo_toml": "/Cargo.toml",
+            "conf03_cargo_lock": "/Cargo.lock",
+            "conf03_readme": "/README.md",
+            "conf03_private_key": "/server.key",
+            "conf03_certificate_key": "/mail.blackbagsecurity.com.key",
+            "conf03_config_php": "/config.php",
+            "conf03_nginx_conf": "/nginx.conf",
+            "conf04_config_backup": "/config.php.bak",
+            "conf04_index_backup": "/index.php~",
+            "conf04_swap_file": "/.index.php.swp",
+            "conf04_sql_backup": "/backup.sql",
+            "conf04_archive_zip": "/backup.zip",
+            "conf04_archive_tar": "/osmap.tar.gz",
+            "conf04_old_env": "/.env.old",
+        }
+        sensitive_patterns = [
+            r"(?i)BEGIN (?:RSA |OPENSSH |EC |)PRIVATE KEY",
+            r"(?i)(?:password|passwd|secret|totp|session|csrf)[A-Z0-9_ -]*=",
+            r"(?i)\[package\]",
+            r"(?i)proxy_pass",
+            r"(?i)server_name\s+mail\.blackbagsecurity\.com",
+            r"(?i)CREATE TABLE|INSERT INTO",
+        ]
+        evidence_paths: list[str] = []
+        statuses: dict[str, int | None] = {}
+        failures: dict[str, object] = {}
+        for label, path in probes.items():
+            evidence = self.request(label, "GET", path)
+            evidence_paths.extend([f"evidence/{label}.headers", f"evidence/{label}.body"])
+            statuses[label] = evidence.status
+            if evidence.status is not None and 200 <= evidence.status < 300:
+                failures[f"{label}_served"] = evidence.status
+            text = "\n".join(
+                [evidence.body_text(), "\n".join(f"{key}: {value}" for key, value in evidence.headers)]
+            )
+            matches = [pattern for pattern in sensitive_patterns if re.search(pattern, text)]
+            if matches:
+                failures[f"{label}_sensitive_content"] = matches
+
+        static_ok = self.write_sensitive_extension_and_backup_static_evidence()
+        evidence_paths.append("evidence/sensitive_extension_backup_static.txt")
+        if not static_ok:
+            failures["static_boundary"] = "missing sensitive extension/backup exposure markers"
+        if failures:
+            return self.result(
+                "OSMAP-WSTG-CONF-008",
+                STATUS_FAIL,
+                "sensitive extension, source, or backup probes exposed public content",
+                evidence_paths,
+                {"statuses": statuses, "failures": failures},
+            )
+        return self.result(
+            "OSMAP-WSTG-CONF-008",
+            STATUS_PASS,
+            "sensitive extension, source, and backup probes were not served as public files",
+            evidence_paths,
+            {"statuses": statuses},
+        )
+
+    def write_sensitive_extension_and_backup_static_evidence(self) -> bool:
+        files = [
+            REPO_ROOT / "src" / "http_runtime.rs",
+            REPO_ROOT / "src" / "http_parse.rs",
+            REPO_ROOT / "src" / "http_support.rs",
+            REPO_ROOT / "docs" / "V3_CONFIG_DEPLOYMENT_EVIDENCE.md",
+            REPO_ROOT / "maint" / "openbsd" / "mail.blackbagsecurity.com" / "nginx" / "sites-enabled" / "main-ssl.conf",
+            REPO_ROOT / "maint" / "openbsd" / "mail.blackbagsecurity.com" / "nginx" / "templates" / "osmap-root.tmpl",
+        ]
+        text = "\n".join(path.read_text(encoding="utf-8", errors="replace") for path in files if path.exists())
+        markers = [
+            "OSMAP-WSTG-CONF-008",
+            "WSTG-v42-CONF-03",
+            "WSTG-v42-CONF-04",
+            "sensitive extension handling",
+            "backup and unreferenced file exposure",
+            "proxy_pass http://127.0.0.1:8080",
+            "http_route_not_found",
+            "request target path must not contain dot segments",
+            "no public static repository root",
+            "no public backup directory",
+            "no source archive exposure",
+        ]
+        missing = [marker for marker in markers if marker.lower() not in text.lower()]
+        lines = [
+            summarize_static_files(files, missing),
+            "",
+            "Public file exposure decision:",
+            "- The WAN OSMAP vhost proxies browser requests to the reviewed Rust router instead of serving the repository, Cargo files, environment templates, or deployment backups from a public static root.",
+            "- Sensitive extension handling covers .env, .toml, .lock, .md, .key, .conf, .php, .bak, .old, .swp, .sql, .zip, and .tar.gz style probes.",
+            "- Backup and unreferenced file exposure checks cover common editor backups, archive names, SQL dumps, old env files, and source/deployment filenames.",
+            "- Dot-segment request targets fail in the HTTP parser before route handling.",
+        ]
+        self.write_text_evidence("sensitive_extension_backup_static.txt", "\n".join(lines) + "\n")
+        return not missing
 
     def test_login_form(self) -> TestResult:
         evidence = self.request("login_form", "GET", "/login")

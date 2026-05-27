@@ -103,6 +103,44 @@
       ]
     },
     {
+      "test_id": "OSMAP-WSTG-CONF-008",
+      "test_name": "WSTG-v42-CONF-03/04 Sensitive Extension and Backup File Exposure",
+      "script_path": "run-wstg-pack.py",
+      "wstg": [
+        "WSTG-v42-CONF-03",
+        "WSTG-v42-CONF-04"
+      ],
+      "wstg_section": "Test File Extensions Handling for Sensitive Information; Review Old Backup and Unreferenced Files for Sensitive Information",
+      "asvs": [
+        "v5.0.0-4.1.4",
+        "v5.0.0-8.2.1",
+        "v5.0.0-14.3.1"
+      ],
+      "asvs_section": "HTTP Request Validation, Error Handling, and Information Disclosure",
+      "test_type": [
+        "unauthenticated",
+        "dynamic test",
+        "static boundary review"
+      ],
+      "expected_result": "Sensitive extension, source, key, environment, backup, archive, and SQL dump probes are not served as public files and do not disclose sensitive content.",
+      "evidence_produced": [
+        "conf03_*.headers",
+        "conf03_*.body",
+        "conf04_*.headers",
+        "conf04_*.body",
+        "sensitive_extension_backup_static.txt"
+      ],
+      "release_required": true,
+      "requires_authenticated_coverage": false,
+      "requires_totp": false,
+      "safe_for_release": true,
+      "severity_if_failed": "high",
+      "owasp_top_10_2025": [
+        "A02:2025",
+        "A10:2025"
+      ]
+    },
+    {
       "test_id": "OSMAP-WSTG-ATHN-001",
       "test_name": "WSTG-v42-ATHN-01 Testing for Credentials Transported over an Encrypted Channel - login form",
       "script_path": "run-wstg-pack.py",
