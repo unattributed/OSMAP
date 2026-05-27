@@ -539,6 +539,45 @@
       ]
     },
     {
+      "test_id": "OSMAP-WSTG-INFO-003",
+      "test_name": "WSTG-v42-ERRH-02 and INFO-06/07/10 Error Leakage and Route Architecture Inventory",
+      "script_path": "run-wstg-pack.py",
+      "wstg": [
+        "WSTG-v42-ERRH-02",
+        "WSTG-v42-INFO-06",
+        "WSTG-v42-INFO-07",
+        "WSTG-v42-INFO-10"
+      ],
+      "wstg_section": "Testing for Stack Traces; Identify Application Entry Points; Map Execution Paths Through Application; Map Application Architecture",
+      "asvs": [
+        "v5.0.0-1.2.1",
+        "v5.0.0-4.1.4",
+        "v5.0.0-8.2.1",
+        "v5.0.0-14.3.1"
+      ],
+      "asvs_section": "Architecture, HTTP Request Validation, Error Handling, and Information Disclosure",
+      "test_type": [
+        "unauthenticated",
+        "dynamic test",
+        "static boundary review"
+      ],
+      "expected_result": "Unauthenticated error responses do not expose stack traces, source locations, private paths, or unwrap diagnostics, and the browser route and architecture inventory remains explicit.",
+      "evidence_produced": [
+        "errh02_*.headers",
+        "errh02_*.body",
+        "error_route_inventory_static.txt"
+      ],
+      "release_required": true,
+      "requires_authenticated_coverage": false,
+      "requires_totp": false,
+      "safe_for_release": true,
+      "severity_if_failed": "high",
+      "owasp_top_10_2025": [
+        "A02:2025",
+        "A10:2025"
+      ]
+    },
+    {
       "test_id": "OSMAP-WSTG-INPV-001",
       "test_name": "WSTG-v42-ATHZ-01 Testing Directory Traversal File Include - safe endpoint probes",
       "script_path": "run-wstg-pack.py",

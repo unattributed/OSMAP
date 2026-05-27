@@ -57,16 +57,16 @@ The current WSTG pack is useful targeted regression coverage, but it is not full
 
 | Baseline item | Current state |
 | --- | --- |
-| Existing OSMAP WSTG runner tests | 39 mapped tests |
+| Existing OSMAP WSTG runner tests | 40 mapped tests |
 | Existing explicit gaps | 3 gaps |
 | Existing WSTG scenario matrix | WSTG v4.2 |
 | WSTG v4.2 scenario rows | 97 |
-| WSTG v4.2 rows mapped by current pack | 73 |
-| WSTG v4.2 rows not mapped by current pack | 24 |
+| WSTG v4.2 rows mapped by current pack | 77 |
+| WSTG v4.2 rows not mapped by current pack | 20 |
 | WSTG v4.2 rows with explicit Slice 1 disposition | 97 |
-| WSTG v4.2 automated dispositions | 50 |
+| WSTG v4.2 automated dispositions | 54 |
 | WSTG v4.2 not-applicable dispositions | 23 |
-| WSTG v4.2 blocked dispositions pending due diligence | 24 |
+| WSTG v4.2 blocked dispositions pending due diligence | 20 |
 | Current OWASP latest coverage | Must be pinned and tracked before V3 closeout |
 
 The Version 3 workstream therefore treats the current pack as a starting point. It must be extended into a slice-based due-diligence program.
@@ -354,6 +354,15 @@ Acceptance evidence:
 - Error-route evidence.
 - Redaction evidence.
 - Static review of logging and error paths.
+
+Slice 9 implementation evidence starts with:
+
+- `docs/V3_ERROR_INFO_DISCLOSURE_EVIDENCE.md`
+- `OSMAP-WSTG-INFO-003`
+- unauthenticated stack-trace leakage probes for invalid routes and malformed
+  route inputs
+- static browser route inventory and architecture mapping evidence for
+  ERRH-02, INFO-06, INFO-07, and INFO-10
 
 ### Slice 10, Release gate integration
 

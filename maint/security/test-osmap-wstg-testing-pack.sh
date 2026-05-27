@@ -893,6 +893,59 @@ for wstg_id in expected:
 print("client-side browser WSTG mapping validated")
 PY
 
+echo "validating error handling and information disclosure WSTG mapping"
+python3 - "$pack_dir" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+pack = Path(sys.argv[1])
+repo = pack.parents[1]
+mapping = json.loads((pack / "wstg-asvs-mapping.json").read_text())
+tests = {item["test_id"]: item for item in mapping["tests"]}
+info = tests.get("OSMAP-WSTG-INFO-003")
+if not info:
+    raise SystemExit("OSMAP-WSTG-INFO-003 missing")
+expected = [
+    "WSTG-v42-ERRH-02",
+    "WSTG-v42-INFO-06",
+    "WSTG-v42-INFO-07",
+    "WSTG-v42-INFO-10",
+]
+if info["wstg"] != expected:
+    raise SystemExit("OSMAP-WSTG-INFO-003 must map ERRH-02 and INFO-06/07/10")
+if info["requires_authenticated_coverage"] or info["requires_totp"]:
+    raise SystemExit("OSMAP-WSTG-INFO-003 must remain unauthenticated")
+coverage = (pack / "COVERAGE.md").read_text()
+for marker in ["OSMAP-WSTG-INFO-003", *expected]:
+    if marker not in coverage:
+        raise SystemExit(f"COVERAGE.md missing Slice 9 marker {marker}")
+runner = (pack / "run-wstg-pack.py").read_text()
+for marker in [
+    "test_error_and_route_inventory",
+    "error_route_inventory_static.txt",
+    "stack traces are not browser-visible",
+    "http_route_not_found",
+]:
+    if marker not in runner:
+        raise SystemExit(f"runner missing Slice 9 marker {marker}")
+doc = (repo / "docs" / "V3_ERROR_INFO_DISCLOSURE_EVIDENCE.md").read_text()
+for marker in [
+    "OSMAP-WSTG-INFO-003",
+    "stack traces are not browser-visible",
+    "Route And Entry-Point Inventory",
+    "Architecture Inventory",
+]:
+    if marker not in doc:
+        raise SystemExit(f"Slice 9 doc missing marker {marker}")
+rows = {item["wstg_id"]: item for item in json.loads((pack / "wstg-scenario-matrix.v42.json").read_text())["scenarios"]}
+for wstg_id in expected:
+    row = rows[wstg_id]
+    if row["disposition"] != "automated" or "OSMAP-WSTG-INFO-003" not in row["evidence_reference"]:
+        raise SystemExit(f"{wstg_id} must be automated by OSMAP-WSTG-INFO-003")
+print("error handling and information disclosure WSTG mapping validated")
+PY
+
 echo "validating live WSTG evidence mappings"
 python3 - "$pack_dir" <<'PY'
 import json

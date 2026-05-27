@@ -8,18 +8,18 @@ The matrix is a due-diligence control, not a test result. A scenario is not comp
 
 | Category | WSTG v4.2 scenario entries | Mapped by current OSMAP pack | Needs applicability or evidence decision |
 | --- | ---: | ---: | ---: |
-| INFO | 10 | 3 | 7 |
+| INFO | 10 | 6 | 4 |
 | CONF | 11 | 5 | 6 |
 | IDNT | 5 | 1 | 4 |
 | ATHN | 10 | 4 | 6 |
-| ATHZ | 4 | 2 | 2 |
-| SESS | 9 | 4 | 5 |
-| INPV | 19 | 2 | 17 |
-| ERRH | 2 | 1 | 1 |
-| CRYP | 4 | 0 | 4 |
-| BUSL | 9 | 3 | 6 |
-| CLNT | 13 | 3 | 10 |
-| APIT | 1 | 0 | 1 |
+| ATHZ | 4 | 4 | 0 |
+| SESS | 9 | 9 | 0 |
+| INPV | 19 | 19 | 0 |
+| ERRH | 2 | 2 | 0 |
+| CRYP | 4 | 4 | 0 |
+| BUSL | 9 | 9 | 0 |
+| CLNT | 13 | 13 | 0 |
+| APIT | 1 | 1 | 0 |
 
 ## Interpretation
 

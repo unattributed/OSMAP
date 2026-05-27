@@ -250,6 +250,7 @@ class Runner:
             "OSMAP-WSTG-CONF-004": self.test_methods,
             "OSMAP-WSTG-INFO-001": self.test_metafiles,
             "OSMAP-WSTG-INFO-002": self.test_info_disclosure,
+            "OSMAP-WSTG-INFO-003": self.test_error_and_route_inventory,
             "OSMAP-WSTG-INPV-001": self.test_path_traversal,
             "OSMAP-WSTG-INPV-002": self.test_reflected_input,
             "OSMAP-WSTG-INPV-003": self.test_command_injection,
@@ -1134,6 +1135,147 @@ class Runner:
         if leaked:
             return self.result("OSMAP-WSTG-INFO-002", STATUS_FAIL, "unauthenticated response disclosed sensitive diagnostic content", evidence_paths, {"matches": leaked})
         return self.result("OSMAP-WSTG-INFO-002", STATUS_PASS, "unauthenticated pages and errors did not expose sensitive diagnostics", evidence_paths)
+
+    def test_error_and_route_inventory(self) -> TestResult:
+        probes = {
+            "errh02_missing_route": "/does-not-exist-wstg-slice9",
+            "errh02_bad_uid": "/message?mailbox=INBOX&uid=not-a-number",
+            "errh02_bad_mailbox": "/mailbox?name=",
+            "errh02_bad_attachment": "/attachment?mailbox=INBOX&uid=not-a-number&part=1.2",
+            "errh02_bad_search": "/search?q=",
+        }
+        leak_patterns = [
+            r"(?i)\bpanic(?:ked)?\b",
+            r"(?i)stack backtrace",
+            r"(?i)rust_backtrace",
+            r"(?i)thread '.*' panicked",
+            r"(?i)traceback \(most recent call last\)",
+            r"(?i)src/[A-Za-z0-9_./-]+\.rs:\d+",
+            r"(?i)/home/[A-Za-z0-9_./-]+",
+            r"(?i)/var/(?:lib|www|log)/[A-Za-z0-9_./-]+",
+            r"(?i)called `(?:Option::unwrap|Result::unwrap|expect)`",
+        ]
+        evidence_paths: list[str] = []
+        leaked: dict[str, list[str]] = {}
+        statuses: dict[str, int | None] = {}
+        for label, path in probes.items():
+            evidence = self.request(label, "GET", path)
+            evidence_paths.extend([f"evidence/{label}.headers", f"evidence/{label}.body"])
+            statuses[label] = evidence.status
+            text = "\n".join(
+                [evidence.body_text(), "\n".join(f"{key}: {value}" for key, value in evidence.headers)]
+            )
+            matches = [pattern for pattern in leak_patterns if re.search(pattern, text)]
+            if matches:
+                leaked[label] = matches
+
+        static_ok = self.write_error_and_route_inventory_static_evidence()
+        evidence_paths.append("evidence/error_route_inventory_static.txt")
+        failures: dict[str, object] = {}
+        if leaked:
+            failures["diagnostic_leaks"] = leaked
+        if not static_ok:
+            failures["static_boundary"] = "missing error/route inventory markers"
+        if failures:
+            return self.result(
+                "OSMAP-WSTG-INFO-003",
+                STATUS_FAIL,
+                "error responses or route inventory evidence exposed stack/architecture leakage risk",
+                evidence_paths,
+                {"statuses": statuses, "failures": failures},
+            )
+        return self.result(
+            "OSMAP-WSTG-INFO-003",
+            STATUS_PASS,
+            "stack-trace probes stayed generic and the browser route/architecture inventory is documented",
+            evidence_paths,
+            {"statuses": statuses},
+        )
+
+    def write_error_and_route_inventory_static_evidence(self) -> bool:
+        files = [
+            REPO_ROOT / "src" / "http_runtime.rs",
+            REPO_ROOT / "src" / "http.rs",
+            REPO_ROOT / "src" / "http" / "routes_auth.rs",
+            REPO_ROOT / "src" / "http" / "routes_mail.rs",
+            REPO_ROOT / "src" / "http" / "routes_compose.rs",
+            REPO_ROOT / "src" / "http" / "routes_draft.rs",
+            REPO_ROOT / "src" / "http" / "routes_settings.rs",
+            REPO_ROOT / "src" / "http_support.rs",
+            REPO_ROOT / "src" / "mailbox_helper_client.rs",
+            REPO_ROOT / "src" / "mailbox_backend.rs",
+            REPO_ROOT / "src" / "send.rs",
+            REPO_ROOT / "docs" / "ARCHITECTURE.md",
+            REPO_ROOT / "docs" / "V3_ERROR_INFO_DISCLOSURE_EVIDENCE.md",
+        ]
+        text = "\n".join(path.read_text(encoding="utf-8", errors="replace") for path in files if path.exists())
+        markers = [
+            "OSMAP-WSTG-INFO-003",
+            "WSTG-v42-ERRH-02",
+            "WSTG-v42-INFO-06",
+            "WSTG-v42-INFO-07",
+            "WSTG-v42-INFO-10",
+            "handle_request",
+            "http_route_not_found",
+            "The requested path does not exist in the current OSMAP browser slice.",
+            "Request context could not be validated.",
+            "public_reason_message",
+            "/login",
+            "/mailboxes",
+            "/mailbox",
+            "/search",
+            "/message",
+            "/attachment",
+            "/compose",
+            "/drafts",
+            "/draft",
+            "/sessions",
+            "/settings",
+            "/message/move",
+            "/messages/move",
+            "/messages/archive",
+            "/send",
+            "/drafts/save",
+            "/drafts/delete",
+            "/sessions/revoke",
+            "/logout",
+            "nginx edge",
+            "Postfix",
+            "Dovecot",
+            "Rspamd",
+            "mailbox helper",
+            "sendmail",
+            "stack traces are not browser-visible",
+        ]
+        missing = [marker for marker in markers if marker.lower() not in text.lower()]
+        route_inventory = [
+            "GET /healthz -> health check",
+            "GET /login and POST /login -> authentication",
+            "GET / and GET /mailboxes -> mailbox landing",
+            "GET /mailbox, /search, /message, /attachment -> mailbox read paths",
+            "GET /compose, /drafts, /draft -> compose and draft read paths",
+            "GET /sessions and /settings -> account settings read paths",
+            "POST /message/move, /messages/move, /messages/archive -> message state changes",
+            "POST /send, /drafts/save, /drafts/delete -> compose and draft state changes",
+            "POST /sessions/revoke, /settings, /logout -> session/settings state changes",
+        ]
+        lines = [
+            summarize_static_files(files, missing),
+            "",
+            "Browser route inventory:",
+            *[f"- {item}" for item in route_inventory],
+            "",
+            "Architecture inventory:",
+            "- Public HTTPS and response-header policy terminate at the nginx edge.",
+            "- OSMAP is the Rust browser access layer; it uses bounded form routes, no JSON/GraphQL API, and no client-side scripting dependency.",
+            "- Authentication/session decisions use local auth, TOTP, filesystem-backed session state, and CSRF-bound browser forms.",
+            "- Mailbox reads and moves cross a mailbox helper or doveadm boundary; sending hands off through sendmail to the existing Postfix/Dovecot/Rspamd mail stack.",
+            "",
+            "Error disclosure decision:",
+            "- Stack traces are not browser-visible: public error bodies use stable generic messages, while detailed failure reasons stay in structured audit events and redacted WSTG evidence.",
+        ]
+        self.write_text_evidence("error_route_inventory_static.txt", "\n".join(lines) + "\n")
+        return not missing
 
     def test_path_traversal(self) -> TestResult:
         bad: dict[str, int | None] = {}

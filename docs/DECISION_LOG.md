@@ -1,5 +1,22 @@
 # Decision Log
 
+## 2026-05-27, Add WSTG Slice 9 error and information-disclosure evidence
+
+The Version 3 WSTG Slice 9 workstream now records deterministic evidence for
+stack-trace leakage and browser route/architecture inventory:
+
+- `OSMAP-WSTG-INFO-003` maps ERRH-02, INFO-06, INFO-07, and INFO-10
+- unauthenticated probes cover missing routes and malformed mailbox, message,
+  attachment, and search inputs
+- static evidence records the explicit browser route inventory, generic
+  browser-visible error text, public reason mapping, and the nginx, OSMAP,
+  mailbox-helper, doveadm, sendmail, Postfix, Dovecot, and Rspamd boundaries
+- the WSTG v4.2 matrix moves four rows from blocked to automated, leaving 20
+  blocked rows
+
+Future routes or backend boundaries must update the route inventory and stack
+leakage probes before V3 closeout.
+
 ## 2026-05-27, Add WSTG Slice 8 client-side browser evidence
 
 The Version 3 WSTG Slice 8 client-side and browser-storage workstream now
