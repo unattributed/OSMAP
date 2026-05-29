@@ -75,7 +75,7 @@ use crate::rendering::{
 use crate::send::{
     ComposeDraft, ComposeIntent, ComposePolicy, ComposeRequest, SendmailSubmissionBackend,
     SubmissionDecision, SubmissionOutcome, SubmissionPublicFailureReason, SubmissionService,
-    UploadedAttachment,
+    UploadedAttachment, DEFAULT_ATTACHMENT_MAX_BYTES, DEFAULT_TOTAL_ATTACHMENT_MAX_BYTES,
 };
 use crate::session::{
     FileSessionStore, SessionService, SessionToken, SystemRandomSource, ValidatedSession,
@@ -105,7 +105,7 @@ pub const DEFAULT_HTTP_MAX_BODY_BYTES: usize = 8 * 1024;
 pub const DEFAULT_HTTP_MAX_QUERY_FIELDS: usize = 16;
 
 /// Conservative upper bound for a multipart upload request body.
-pub const DEFAULT_HTTP_MAX_UPLOAD_BODY_BYTES: usize = 1024 * 1024;
+pub const DEFAULT_HTTP_MAX_UPLOAD_BODY_BYTES: usize = 32 * 1024 * 1024;
 
 /// Conservative upper bound for parsed HTML form fields.
 pub const DEFAULT_HTTP_MAX_FORM_FIELDS: usize = 16;
@@ -4625,6 +4625,108 @@ mod tests {
             .headers
             .iter()
             .any(|(name, value)| name == "Location" && value == "/compose?sent=1"));
+    }
+
+    #[test]
+    fn send_route_accepts_attachment_larger_than_legacy_tiny_limit() {
+        let body = concat!(
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"csrf_token\"\r\n\r\n",
+            "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"to\"\r\n\r\n",
+            "bob@example.com\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"subject\"\r\n\r\n",
+            "Policy sized attachment\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"body\"\r\n\r\n",
+            "See attachment.\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"attachment\"; filename=\"report.pdf\"\r\n",
+            "Content-Type: application/pdf\r\n\r\n",
+        );
+        let mut multipart_body = body.as_bytes().to_vec();
+        multipart_body.extend(std::iter::repeat_n(b'A', 300 * 1024));
+        multipart_body.extend_from_slice(b"\r\n--test-boundary--\r\n");
+
+        let response = app().handle_request(
+            &request_bytes(
+                "POST",
+                "/send",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                    ("Origin", "https://localhost"),
+                    ("Content-Type", "multipart/form-data; boundary=test-boundary"),
+                ],
+                &multipart_body,
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 303);
+        assert!(!response
+            .audit_events
+            .iter()
+            .any(|event| event.action == "http_send_parse_failed"));
+    }
+
+    #[test]
+    fn send_route_reports_oversized_attachment_limit() {
+        let body = concat!(
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"csrf_token\"\r\n\r\n",
+            "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"to\"\r\n\r\n",
+            "bob@example.com\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"subject\"\r\n\r\n",
+            "Oversized attachment\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"body\"\r\n\r\n",
+            "See attachment.\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"attachment\"; filename=\"large.pdf\"\r\n",
+            "Content-Type: application/pdf\r\n\r\n",
+        );
+        let mut multipart_body = body.as_bytes().to_vec();
+        multipart_body.extend(std::iter::repeat_n(b'A', DEFAULT_ATTACHMENT_MAX_BYTES + 1));
+        multipart_body.extend_from_slice(b"\r\n--test-boundary--\r\n");
+
+        let response = app().handle_request(
+            &request_bytes(
+                "POST",
+                "/send",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                    ("Origin", "https://localhost"),
+                    ("Content-Type", "multipart/form-data; boundary=test-boundary"),
+                ],
+                &multipart_body,
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 400);
+        assert!(body_text(&response).contains("10 MiB per-file compose limit"));
+        assert!(response.audit_events.iter().any(|event| {
+            event.action == "http_send_parse_failed"
+                && event.fields.iter().any(|field| {
+                    field.key == "reason"
+                        && field
+                            .value
+                            .starts_with("attachment body exceeded maximum length")
+                })
+        }));
     }
 
     #[test]

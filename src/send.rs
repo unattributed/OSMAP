@@ -38,10 +38,10 @@ pub const DEFAULT_BODY_MAX_LEN: usize = 65_536;
 pub const DEFAULT_MAX_ATTACHMENTS: usize = 3;
 
 /// Conservative upper bound for one uploaded attachment body.
-pub const DEFAULT_ATTACHMENT_MAX_BYTES: usize = 256 * 1024;
+pub const DEFAULT_ATTACHMENT_MAX_BYTES: usize = 10 * 1024 * 1024;
 
 /// Conservative upper bound for total uploaded attachment bytes.
-pub const DEFAULT_TOTAL_ATTACHMENT_MAX_BYTES: usize = 768 * 1024;
+pub const DEFAULT_TOTAL_ATTACHMENT_MAX_BYTES: usize = 30 * 1024 * 1024;
 
 /// Conservative upper bound for one uploaded attachment file name.
 pub const DEFAULT_ATTACHMENT_FILENAME_MAX_LEN: usize = 128;

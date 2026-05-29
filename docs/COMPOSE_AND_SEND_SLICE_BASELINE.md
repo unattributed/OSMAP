@@ -61,8 +61,8 @@ submission surface:
 - subject length is capped and line breaks are rejected
 - body length is capped
 - attachment count is capped
-- each uploaded attachment is byte-bounded
-- total uploaded attachment bytes are capped
+- each uploaded attachment is byte-bounded at 10 MiB
+- total uploaded attachment bytes are capped at 30 MiB
 - attachment names are validated to reject path-like and control-bearing values
 - attachment content types are normalized conservatively
 - generated notices and generated quoted bodies are bounded too

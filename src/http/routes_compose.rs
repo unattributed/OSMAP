@@ -182,12 +182,13 @@ where
         ) {
             Ok(form) => form,
             Err(error) => {
+                let public_body = compose_form_parse_failure_body(&error.reason);
                 return HandledHttpResponse {
                     response: html_response(
                         400,
                         "Bad Request",
                         "Invalid Compose Request",
-                        "<p>The compose form could not be parsed.</p>",
+                        &public_body,
                     ),
                     audit_events: vec![build_http_warning_event(
                         "http_send_parse_failed",
@@ -510,6 +511,30 @@ where
         ));
         handled
     }
+}
+
+fn compose_form_parse_failure_body(reason: &str) -> String {
+    if reason.starts_with("attachment body exceeded maximum length") {
+        return format!(
+            "<p>One attachment exceeded the {} MiB per-file compose limit.</p>",
+            bytes_to_mib(DEFAULT_ATTACHMENT_MAX_BYTES)
+        );
+    }
+    if reason == "form body exceeded maximum length" {
+        return "<p>The uploaded compose form exceeded the request size limit.</p>".to_string();
+    }
+    if reason.starts_with("attachment bytes exceeded maximum") {
+        return format!(
+            "<p>The selected attachments exceeded the {} MiB total compose limit.</p>",
+            bytes_to_mib(DEFAULT_TOTAL_ATTACHMENT_MAX_BYTES)
+        );
+    }
+
+    "<p>The compose form could not be parsed.</p>".to_string()
+}
+
+fn bytes_to_mib(bytes: usize) -> usize {
+    bytes / (1024 * 1024)
 }
 
 fn selected_original_attachment_parts(
