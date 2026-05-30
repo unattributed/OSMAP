@@ -1049,6 +1049,55 @@ for wstg_id in expected:
 print("sensitive extension and backup exposure WSTG mapping validated")
 PY
 
+echo "validating RIA and cloud storage applicability WSTG mapping"
+python3 - "$pack_dir" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+pack = Path(sys.argv[1])
+repo = pack.parents[1]
+mapping = json.loads((pack / "wstg-asvs-mapping.json").read_text())
+tests = {item["test_id"]: item for item in mapping["tests"]}
+conf = tests.get("OSMAP-WSTG-CONF-009")
+if not conf:
+    raise SystemExit("OSMAP-WSTG-CONF-009 missing")
+expected = ["WSTG-v42-CONF-08", "WSTG-v42-CONF-11"]
+if conf["wstg"] != expected:
+    raise SystemExit("OSMAP-WSTG-CONF-009 must map CONF-08 and CONF-11")
+if conf["requires_authenticated_coverage"] or conf["requires_totp"]:
+    raise SystemExit("OSMAP-WSTG-CONF-009 must remain unauthenticated")
+coverage = (pack / "COVERAGE.md").read_text()
+for marker in ["OSMAP-WSTG-CONF-009", *expected]:
+    if marker not in coverage:
+        raise SystemExit(f"COVERAGE.md missing RIA/cloud marker {marker}")
+runner = (pack / "run-wstg-pack.py").read_text()
+for marker in [
+    "test_ria_cloud_storage_applicability",
+    "ria_cloud_storage_static.txt",
+    "crossdomain.xml",
+    "clientaccesspolicy.xml",
+    "no cloud storage dependency",
+]:
+    if marker not in runner:
+        raise SystemExit(f"runner missing RIA/cloud marker {marker}")
+doc = (repo / "docs" / "V3_CONFIG_DEPLOYMENT_EVIDENCE.md").read_text()
+for marker in [
+    "OSMAP-WSTG-CONF-009",
+    "no public RIA cross-domain policy",
+    "no cloud object storage surface",
+    "no cloud storage dependency",
+]:
+    if marker not in doc:
+        raise SystemExit(f"Slice 10 doc missing RIA/cloud marker {marker}")
+rows = {item["wstg_id"]: item for item in json.loads((pack / "wstg-scenario-matrix.v42.json").read_text())["scenarios"]}
+for wstg_id in expected:
+    row = rows[wstg_id]
+    if row["disposition"] != "not_applicable" or "OSMAP-WSTG-CONF-009" not in row["evidence_reference"]:
+        raise SystemExit(f"{wstg_id} must be not-applicable with OSMAP-WSTG-CONF-009 evidence")
+print("RIA and cloud storage applicability WSTG mapping validated")
+PY
+
 echo "validating live WSTG evidence mappings"
 python3 - "$pack_dir" <<'PY'
 import json

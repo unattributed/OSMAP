@@ -4,11 +4,11 @@
   "wstg_source": "OWASP WSTG v4.2 stable table of contents retrieved 2026-05-19",
   "note": "This is an applicability and evidence matrix starter. It is not a pass/fail report until each item has an executed evidence reference or a documented not-applicable proof.",
   "current_osmap_pack": {
-    "mapped_tests": 42,
-    "unique_mapped_wstg_ids": 84,
+    "mapped_tests": 43,
+    "unique_mapped_wstg_ids": 86,
     "official_toc_scenarios_listed_here": 97,
-    "official_toc_scenarios_mapped_by_current_pack": 83,
-    "official_toc_scenarios_not_mapped_by_current_pack": 14,
+    "official_toc_scenarios_mapped_by_current_pack": 85,
+    "official_toc_scenarios_not_mapped_by_current_pack": 12,
     "supplemental_wstg_ids_in_current_mapping_not_seen_in_retrieved_official_toc": [
       "WSTG-v42-CONF-12"
     ]
@@ -312,13 +312,17 @@
       "category": "CONF",
       "section": "4.2 Configuration and Deployment Management Testing",
       "title": "Test RIA Cross Domain Policy",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CONF-009"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface has no Flash, Silverlight, or RIA client boundary and does not serve legacy policy files",
+      "evidence_reference": [
+        "OSMAP-WSTG-CONF-009"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-CONF-09",
@@ -351,13 +355,17 @@
       "category": "CONF",
       "section": "4.2 Configuration and Deployment Management Testing",
       "title": "Test Cloud Storage",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "not_applicable_candidate_but_requires_repo_or_live_proof",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CONF-009"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface has no public cloud object storage bucket, dependency, or static object-storage root",
+      "evidence_reference": [
+        "OSMAP-WSTG-CONF-009"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-IDNT-01",

@@ -2,11 +2,15 @@
 
 `OSMAP-WSTG-CONF-008` records the Slice 10 evidence lane for sensitive
 extension handling plus backup and unreferenced file exposure.
+`OSMAP-WSTG-CONF-009` records the Slice 10 applicability lane for legacy RIA
+cross-domain policy files and cloud storage exposure.
 
 Mapped WSTG rows:
 
 - `WSTG-v42-CONF-03`
 - `WSTG-v42-CONF-04`
+- `WSTG-v42-CONF-08`
+- `WSTG-v42-CONF-11`
 
 ## Public File Exposure
 
@@ -33,3 +37,20 @@ source/deployment filenames using `.bak`, `.old`, `.swp`, `.sql`, `.zip`, and
 
 Dot-segment request targets fail in the HTTP parser with the reviewed invariant
 `request target path must not contain dot segments` before route handling.
+
+## RIA Cross-Domain Policy
+
+RIA cross-domain policy is not applicable to the current OSMAP browser surface.
+OSMAP has no Flash or Silverlight boundary; no public RIA cross-domain policy
+exists in the OSMAP browser boundary. `OSMAP-WSTG-CONF-009`
+probes `/crossdomain.xml` and `/clientaccesspolicy.xml` and fails if either
+legacy policy file is served or contains permissive cross-domain policy
+directives.
+
+## Cloud Storage Exposure
+
+Cloud storage testing is not applicable to the current OSMAP browser surface.
+OSMAP has no cloud object storage surface, no cloud storage dependency, and no
+public S3, GCS, Azure Blob, CloudFront, or object-storage bucket endpoint for
+mail data. The public WAN OSMAP vhost proxies browser routes to the Rust
+service rather than mounting a cloud bucket or static object-storage root.

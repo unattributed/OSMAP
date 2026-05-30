@@ -1,5 +1,24 @@
 # Decision Log
 
+## 2026-05-30, Add WSTG Slice 10 RIA and cloud storage applicability evidence
+
+The Version 3 WSTG Slice 10 configuration and deployment workstream now
+records deterministic applicability evidence for legacy RIA cross-domain policy
+files and cloud storage exposure:
+
+- `OSMAP-WSTG-CONF-009` maps CONF-08 and CONF-11
+- unauthenticated probes cover `/crossdomain.xml` and
+  `/clientaccesspolicy.xml`
+- static evidence records that OSMAP has no Flash, Silverlight, RIA client,
+  public object-storage bucket, cloud storage dependency, or static cloud
+  storage root in the browser mail boundary
+- the WSTG v4.2 matrix moves two CONF rows from blocked to not-applicable
+  with evidence, leaving 12 blocked rows
+
+Future browser asset hosting, RIA clients, CDN-backed public roots, object
+storage buckets, or cloud storage dependencies must update this lane before V3
+closeout.
+
 ## 2026-05-27, Add WSTG Slice 10 sensitive-file exposure evidence
 
 The Version 3 WSTG Slice 10 configuration and deployment workstream now

@@ -238,6 +238,7 @@ class Runner:
             "OSMAP-WSTG-CONF-002": self.test_security_headers,
             "OSMAP-WSTG-CONF-003": self.test_csp,
             "OSMAP-WSTG-CONF-008": self.test_sensitive_extension_and_backup_exposure,
+            "OSMAP-WSTG-CONF-009": self.test_ria_cloud_storage_applicability,
             "OSMAP-WSTG-ATHN-001": self.test_login_form,
             "OSMAP-WSTG-ATHN-002": self.test_invalid_login,
             "OSMAP-WSTG-ATHN-003": self.test_throttle_probe,
@@ -807,6 +808,104 @@ class Runner:
         ]
         self.write_text_evidence("sensitive_extension_backup_static.txt", "\n".join(lines) + "\n")
         return not missing
+
+    def test_ria_cloud_storage_applicability(self) -> TestResult:
+        probes = {
+            "conf08_crossdomain_xml": "/crossdomain.xml",
+            "conf08_clientaccesspolicy_xml": "/clientaccesspolicy.xml",
+        }
+        policy_patterns = [
+            r"(?i)<cross-domain-policy\b",
+            r"(?i)<allow-access-from\b",
+            r"(?i)<allow-http-request-headers-from\b",
+            r"(?i)<access-policy\b",
+            r"(?i)<cross-domain-access\b",
+        ]
+        evidence_paths: list[str] = []
+        statuses: dict[str, int | None] = {}
+        failures: dict[str, object] = {}
+        for label, path in probes.items():
+            evidence = self.request(label, "GET", path)
+            evidence_paths.extend([f"evidence/{label}.headers", f"evidence/{label}.body"])
+            statuses[label] = evidence.status
+            body = evidence.body_text()
+            if evidence.status is not None and 200 <= evidence.status < 300:
+                failures[f"{label}_served"] = evidence.status
+            matches = [pattern for pattern in policy_patterns if re.search(pattern, body)]
+            if matches:
+                failures[f"{label}_policy_content"] = matches
+
+        static_ok, static_findings = self.write_ria_cloud_storage_static_evidence()
+        evidence_paths.append("evidence/ria_cloud_storage_static.txt")
+        if not static_ok:
+            failures["static_boundary"] = static_findings
+        if failures:
+            return self.result(
+                "OSMAP-WSTG-CONF-009",
+                STATUS_FAIL,
+                "RIA policy or cloud storage applicability evidence found an exposed surface",
+                evidence_paths,
+                {"statuses": statuses, "failures": failures},
+            )
+        return self.result(
+            "OSMAP-WSTG-CONF-009",
+            STATUS_PASS,
+            "RIA cross-domain policy and cloud storage are not applicable to the OSMAP browser surface",
+            evidence_paths,
+            {"statuses": statuses},
+        )
+
+    def write_ria_cloud_storage_static_evidence(self) -> tuple[bool, dict[str, object]]:
+        boundary_files = [
+            REPO_ROOT / "Cargo.toml",
+            REPO_ROOT / "Cargo.lock",
+            REPO_ROOT / "src" / "http_runtime.rs",
+            REPO_ROOT / "src" / "http.rs",
+            REPO_ROOT / "src" / "http" / "routes_auth.rs",
+            REPO_ROOT / "src" / "http" / "routes_compose.rs",
+            REPO_ROOT / "src" / "http" / "routes_mail.rs",
+            REPO_ROOT / "maint" / "openbsd" / "mail.blackbagsecurity.com" / "nginx" / "sites-enabled" / "main-ssl.conf",
+            REPO_ROOT / "maint" / "openbsd" / "mail.blackbagsecurity.com" / "nginx" / "templates" / "osmap-root.tmpl",
+        ]
+        doc_file = REPO_ROOT / "docs" / "V3_CONFIG_DEPLOYMENT_EVIDENCE.md"
+        forbidden = {
+            "crossdomain.xml": r"(?i)\bcrossdomain\.xml\b",
+            "clientaccesspolicy.xml": r"(?i)\bclientaccesspolicy\.xml\b",
+            "aws_s3": r"(?i)\b(?:aws_access_key|s3\.amazonaws\.com|amazonaws\.com)\b",
+            "gcp_storage": r"(?i)\b(?:storage\.googleapis\.com|googleapis\.com/storage)\b",
+            "azure_blob": r"(?i)\b(?:blob\.core\.windows\.net|azure_storage)\b",
+            "cloudfront": r"(?i)\bcloudfront\b",
+        }
+        findings: dict[str, list[str]] = {}
+        for path in boundary_files:
+            if not path.exists():
+                continue
+            text = path.read_text(encoding="utf-8", errors="replace")
+            hits = [name for name, pattern in forbidden.items() if re.search(pattern, text)]
+            if hits:
+                findings[str(path.relative_to(REPO_ROOT))] = hits
+        doc_text = doc_file.read_text(encoding="utf-8", errors="replace") if doc_file.exists() else ""
+        required_markers = [
+            "OSMAP-WSTG-CONF-009",
+            "WSTG-v42-CONF-08",
+            "WSTG-v42-CONF-11",
+            "no public RIA cross-domain policy",
+            "no cloud object storage surface",
+            "no cloud storage dependency",
+        ]
+        missing = [marker for marker in required_markers if marker.lower() not in doc_text.lower()]
+        lines = [
+            summarize_static_files(boundary_files + [doc_file], missing),
+            "",
+            "Applicability decisions:",
+            "- RIA cross-domain policy is not applicable; OSMAP does not publish crossdomain.xml or clientaccesspolicy.xml and has no Flash, Silverlight, or RIA client boundary.",
+            "- Cloud storage testing is not applicable; OSMAP does not use public S3, GCS, Azure Blob, CloudFront, or object-storage bucket endpoints for browser mail data.",
+            "- The public WAN OSMAP vhost proxies browser routes to the Rust service rather than mounting a cloud bucket or static object-storage root.",
+        ]
+        if findings:
+            lines.extend(["", "Unexpected cloud/RIA markers:", json.dumps(findings, indent=2)])
+        self.write_text_evidence("ria_cloud_storage_static.txt", "\n".join(lines) + "\n")
+        return not missing and not findings, {"missing_markers": missing, "unexpected_markers": findings}
 
     def test_login_form(self) -> TestResult:
         evidence = self.request("login_form", "GET", "/login")

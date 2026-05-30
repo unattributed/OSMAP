@@ -141,6 +141,43 @@
       ]
     },
     {
+      "test_id": "OSMAP-WSTG-CONF-009",
+      "test_name": "WSTG-v42-CONF-08/11 RIA Cross-Domain and Cloud Storage Applicability",
+      "script_path": "run-wstg-pack.py",
+      "wstg": [
+        "WSTG-v42-CONF-08",
+        "WSTG-v42-CONF-11"
+      ],
+      "wstg_section": "Test RIA Cross Domain Policy; Test Cloud Storage",
+      "asvs": [
+        "v5.0.0-4.1.4",
+        "v5.0.0-8.2.1",
+        "v5.0.0-14.3.1"
+      ],
+      "asvs_section": "HTTP Request Validation, Error Handling, and Information Disclosure",
+      "test_type": [
+        "unauthenticated",
+        "dynamic test",
+        "static applicability review"
+      ],
+      "expected_result": "Legacy RIA policy files are not served and repository/deployment evidence shows no browser-facing cloud object storage surface.",
+      "evidence_produced": [
+        "conf08_crossdomain_xml.headers",
+        "conf08_crossdomain_xml.body",
+        "conf08_clientaccesspolicy_xml.headers",
+        "conf08_clientaccesspolicy_xml.body",
+        "ria_cloud_storage_static.txt"
+      ],
+      "release_required": true,
+      "requires_authenticated_coverage": false,
+      "requires_totp": false,
+      "safe_for_release": true,
+      "severity_if_failed": "medium",
+      "owasp_top_10_2025": [
+        "A02:2025"
+      ]
+    },
+    {
       "test_id": "OSMAP-WSTG-ATHN-001",
       "test_name": "WSTG-v42-ATHN-01 Testing for Credentials Transported over an Encrypted Channel - login form",
       "script_path": "run-wstg-pack.py",
