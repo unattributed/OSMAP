@@ -239,6 +239,7 @@ class Runner:
             "OSMAP-WSTG-CONF-003": self.test_csp,
             "OSMAP-WSTG-CONF-008": self.test_sensitive_extension_and_backup_exposure,
             "OSMAP-WSTG-CONF-009": self.test_ria_cloud_storage_applicability,
+            "OSMAP-WSTG-CONF-010": self.test_file_permissions_and_subdomain_takeover,
             "OSMAP-WSTG-ATHN-001": self.test_login_form,
             "OSMAP-WSTG-ATHN-002": self.test_invalid_login,
             "OSMAP-WSTG-ATHN-003": self.test_throttle_probe,
@@ -906,6 +907,142 @@ class Runner:
             lines.extend(["", "Unexpected cloud/RIA markers:", json.dumps(findings, indent=2)])
         self.write_text_evidence("ria_cloud_storage_static.txt", "\n".join(lines) + "\n")
         return not missing and not findings, {"missing_markers": missing, "unexpected_markers": findings}
+
+    def test_file_permissions_and_subdomain_takeover(self) -> TestResult:
+        if not self.config.allow_host_assisted:
+            return self.result("OSMAP-WSTG-CONF-010", STATUS_SKIP, "host-assisted tests disabled")
+        file_permissions = self.run_ssh(
+            "host_file_permissions.txt",
+            "doas stat -f '%Sp %u %g %N' "
+            "/etc/osmap /etc/osmap/osmap-serve.env /etc/osmap/osmap-mailbox-helper.env "
+            "/usr/local/bin/osmap /usr/local/libexec/osmap/osmap-serve-run.ksh "
+            "/usr/local/libexec/osmap/osmap-mailbox-helper-run.ksh "
+            "/etc/rc.d/osmap_serve /etc/rc.d/osmap_mailbox_helper "
+            "/var/lib/osmap /var/lib/osmap/sessions /var/lib/osmap/settings "
+            "/var/lib/osmap/audit /var/lib/osmap/cache /var/lib/osmap/secrets "
+            "/var/lib/osmap/secrets/totp /var/lib/osmap-helper /var/lib/osmap-helper/run "
+            "/var/lib/osmap-helper/sessions /var/lib/osmap-helper/settings "
+            "/var/lib/osmap-helper/audit /var/lib/osmap-helper/cache "
+            "/var/lib/osmap-helper/secrets /var/lib/osmap-helper/secrets/totp "
+            "/var/lib/osmap-helper/run/mailbox-helper.sock 2>&1 || true",
+        )
+        dns = self.run_ssh(
+            "subdomain_takeover_dns.txt",
+            "for name in mail.blackbagsecurity.com webmail.blackbagsecurity.com osmap.blackbagsecurity.com; do "
+            "printf '== %s ==\\n' \"$name\"; "
+            "host -t CNAME \"$name\" 2>&1 || true; "
+            "host -t A \"$name\" 2>&1 || true; "
+            "host -t AAAA \"$name\" 2>&1 || true; "
+            "done",
+        )
+        static_ok, static_findings = self.write_file_permission_subdomain_static_evidence()
+        evidence = [
+            "evidence/host_file_permissions.txt",
+            "evidence/subdomain_takeover_dns.txt",
+            "evidence/file_permission_subdomain_static.txt",
+        ]
+        if "ERROR:" in f"{file_permissions}\n{dns}":
+            return self.result(
+                "OSMAP-WSTG-CONF-010",
+                STATUS_WARNING,
+                "host-assisted file-permission or DNS evidence was unavailable from the current network path",
+                evidence,
+            )
+
+        required_permission_markers = [
+            "-rw-r----- 0 1001 /etc/osmap/osmap-serve.env",
+            "-rw-r----- 0 2000 /etc/osmap/osmap-mailbox-helper.env",
+            "-r-xr-xr-x 0 0 /usr/local/libexec/osmap/osmap-serve-run.ksh",
+            "-r-xr-xr-x 0 0 /usr/local/libexec/osmap/osmap-mailbox-helper-run.ksh",
+            "-r-xr-xr-x 0 0 /etc/rc.d/osmap_serve",
+            "-r-xr-xr-x 0 0 /etc/rc.d/osmap_mailbox_helper",
+            "drwxr-x--- 1001 1001 /var/lib/osmap",
+            "drwx------ 1001 1001 /var/lib/osmap/secrets/totp",
+            "drwx--x--- 2000 1002 /var/lib/osmap-helper",
+            "drwxrws--- 2000 1002 /var/lib/osmap-helper/run",
+            "drwx------ 2000 2000 /var/lib/osmap-helper/secrets/totp",
+            "srw-rw---- 2000 1002 /var/lib/osmap-helper/run/mailbox-helper.sock",
+        ]
+        missing_permissions = [marker for marker in required_permission_markers if marker not in file_permissions]
+        required_dns_markers = [
+            "mail.blackbagsecurity.com has no CNAME record",
+            "mail.blackbagsecurity.com has address",
+            "Host webmail.blackbagsecurity.com not found: 3(NXDOMAIN)",
+            "Host osmap.blackbagsecurity.com not found: 3(NXDOMAIN)",
+        ]
+        missing_dns = [marker for marker in required_dns_markers if marker not in dns]
+        dangling_patterns = [
+            r"(?i)is an alias for .*amazonaws\.com",
+            r"(?i)is an alias for .*azurewebsites\.net",
+            r"(?i)is an alias for .*blob\.core\.windows\.net",
+            r"(?i)is an alias for .*cloudapp\.net",
+            r"(?i)is an alias for .*cloudfront\.net",
+            r"(?i)is an alias for .*github\.io",
+            r"(?i)is an alias for .*herokuapp\.com",
+        ]
+        dangling = [pattern for pattern in dangling_patterns if re.search(pattern, dns)]
+        failures: dict[str, object] = {}
+        if missing_permissions:
+            failures["missing_permission_markers"] = missing_permissions
+        if missing_dns:
+            failures["missing_dns_markers"] = missing_dns
+        if dangling:
+            failures["dangling_cname_patterns"] = dangling
+        if not static_ok:
+            failures["static_boundary"] = static_findings
+        if failures:
+            return self.result(
+                "OSMAP-WSTG-CONF-010",
+                STATUS_FAIL,
+                "file-permission or subdomain takeover evidence did not match the reviewed posture",
+                evidence,
+                failures,
+            )
+        return self.result(
+            "OSMAP-WSTG-CONF-010",
+            STATUS_PASS,
+            "host permissions are restrictive and OSMAP public names have no dangling takeover CNAMEs",
+            evidence,
+        )
+
+    def write_file_permission_subdomain_static_evidence(self) -> tuple[bool, dict[str, object]]:
+        files = [
+            REPO_ROOT / "maint" / "live" / "osmap-live-rehearse-service-enablement.ksh",
+            REPO_ROOT / "maint" / "live" / "osmap-live-rehearse-service-artifacts.ksh",
+            REPO_ROOT / "maint" / "openbsd" / "libexec" / "osmap-serve-run.ksh",
+            REPO_ROOT / "maint" / "openbsd" / "libexec" / "osmap-mailbox-helper-run.ksh",
+            REPO_ROOT / "maint" / "openbsd" / "rc.d" / "osmap_serve",
+            REPO_ROOT / "maint" / "openbsd" / "rc.d" / "osmap_mailbox_helper",
+            REPO_ROOT / "maint" / "openbsd" / "mail.blackbagsecurity.com" / "etc" / "osmap" / "osmap-serve.env",
+            REPO_ROOT / "maint" / "openbsd" / "mail.blackbagsecurity.com" / "etc" / "osmap" / "osmap-mailbox-helper.env",
+            REPO_ROOT / "maint" / "openbsd" / "mail.blackbagsecurity.com" / "nginx" / "sites-enabled" / "main-ssl.conf",
+            REPO_ROOT / "docs" / "V3_CONFIG_DEPLOYMENT_EVIDENCE.md",
+        ]
+        text = "\n".join(path.read_text(encoding="utf-8", errors="replace") for path in files if path.exists())
+        markers = [
+            "OSMAP-WSTG-CONF-010",
+            "WSTG-v42-CONF-09",
+            "WSTG-v42-CONF-10",
+            "0640",
+            "0555",
+            "0750",
+            "0700",
+            "2770",
+            "mail.blackbagsecurity.com",
+            "no dangling takeover CNAME",
+        ]
+        missing = [marker for marker in markers if marker.lower() not in text.lower()]
+        lines = [
+            summarize_static_files(files, missing),
+            "",
+            "Configuration and deployment decisions:",
+            "- File-permission evidence covers reviewed env files, launchers, rc.d files, state roots, secret directories, audit/cache directories, and the helper socket.",
+            "- Service env files install as 0640; launchers and rc.d files install as 0555.",
+            "- Serve state uses owner-only or _osmap-only directories; helper runtime uses the osmaprt shared group only where the web runtime needs the socket.",
+            "- Subdomain takeover evidence covers mail.blackbagsecurity.com plus the unused OSMAP/webmail candidate names and requires no dangling takeover CNAME.",
+        ]
+        self.write_text_evidence("file_permission_subdomain_static.txt", "\n".join(lines) + "\n")
+        return not missing, {"missing_markers": missing}
 
     def test_login_form(self) -> TestResult:
         evidence = self.request("login_form", "GET", "/login")

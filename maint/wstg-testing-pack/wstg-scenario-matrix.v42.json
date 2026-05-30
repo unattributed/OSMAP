@@ -4,11 +4,11 @@
   "wstg_source": "OWASP WSTG v4.2 stable table of contents retrieved 2026-05-19",
   "note": "This is an applicability and evidence matrix starter. It is not a pass/fail report until each item has an executed evidence reference or a documented not-applicable proof.",
   "current_osmap_pack": {
-    "mapped_tests": 43,
-    "unique_mapped_wstg_ids": 86,
+    "mapped_tests": 44,
+    "unique_mapped_wstg_ids": 88,
     "official_toc_scenarios_listed_here": 97,
-    "official_toc_scenarios_mapped_by_current_pack": 85,
-    "official_toc_scenarios_not_mapped_by_current_pack": 12,
+    "official_toc_scenarios_mapped_by_current_pack": 87,
+    "official_toc_scenarios_not_mapped_by_current_pack": 10,
     "supplemental_wstg_ids_in_current_mapping_not_seen_in_retrieved_official_toc": [
       "WSTG-v42-CONF-12"
     ]
@@ -329,26 +329,34 @@
       "category": "CONF",
       "section": "4.2 Configuration and Deployment Management Testing",
       "title": "Test File Permission",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CONF-010"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "covered by host-assisted OSMAP file-permission evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CONF-010"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-CONF-10",
       "category": "CONF",
       "section": "4.2 Configuration and Deployment Management Testing",
       "title": "Test for Subdomain Takeover",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CONF-010"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "covered by host-assisted OSMAP DNS evidence for the browser host and candidate OSMAP webmail names",
+      "evidence_reference": [
+        "OSMAP-WSTG-CONF-010"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-CONF-11",

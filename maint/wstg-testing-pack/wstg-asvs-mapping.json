@@ -178,6 +178,41 @@
       ]
     },
     {
+      "test_id": "OSMAP-WSTG-CONF-010",
+      "test_name": "WSTG-v42-CONF-09/10 File Permissions and Subdomain Takeover",
+      "script_path": "run-wstg-pack.py",
+      "wstg": [
+        "WSTG-v42-CONF-09",
+        "WSTG-v42-CONF-10"
+      ],
+      "wstg_section": "Test File Permission; Test for Subdomain Takeover",
+      "asvs": [
+        "v5.0.0-8.2.1",
+        "v5.0.0-14.3.1",
+        "v5.0.0-14.4.1"
+      ],
+      "asvs_section": "Secure Deployment and Information Disclosure",
+      "test_type": [
+        "host assisted",
+        "dynamic DNS test",
+        "static boundary review"
+      ],
+      "expected_result": "Live OSMAP env files, launchers, rc.d files, state directories, secret directories, and helper socket use restrictive reviewed permissions, and OSMAP public names have no dangling takeover CNAMEs.",
+      "evidence_produced": [
+        "host_file_permissions.txt",
+        "subdomain_takeover_dns.txt",
+        "file_permission_subdomain_static.txt"
+      ],
+      "release_required": true,
+      "requires_authenticated_coverage": false,
+      "requires_totp": false,
+      "safe_for_release": true,
+      "severity_if_failed": "high",
+      "owasp_top_10_2025": [
+        "A02:2025"
+      ]
+    },
+    {
       "test_id": "OSMAP-WSTG-ATHN-001",
       "test_name": "WSTG-v42-ATHN-01 Testing for Credentials Transported over an Encrypted Channel - login form",
       "script_path": "run-wstg-pack.py",

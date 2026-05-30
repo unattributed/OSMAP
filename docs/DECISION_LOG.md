@@ -1,5 +1,23 @@
 # Decision Log
 
+## 2026-05-30, Finish WSTG Slice 10 file-permission and subdomain evidence
+
+The Version 3 WSTG Slice 10 configuration and deployment workstream now
+records host-assisted evidence for the remaining CONF rows:
+
+- `OSMAP-WSTG-CONF-010` maps CONF-09 and CONF-10
+- file-permission evidence covers live env files, launchers, `rc.d` files,
+  state roots, secret directories, audit/cache directories, and the
+  mailbox-helper socket
+- DNS evidence covers `mail.blackbagsecurity.com` plus unused OSMAP/webmail
+  candidate names and fails on dangling takeover CNAMEs
+- the WSTG v4.2 matrix moves two CONF rows from blocked to automated, leaving
+  10 blocked rows
+
+Future public OSMAP names, CDN/static hosting, service artifact paths, runtime
+directory layouts, or helper-socket permissions must update this lane before V3
+closeout.
+
 ## 2026-05-30, Add WSTG Slice 10 RIA and cloud storage applicability evidence
 
 The Version 3 WSTG Slice 10 configuration and deployment workstream now

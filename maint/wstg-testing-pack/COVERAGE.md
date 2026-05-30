@@ -16,12 +16,12 @@ Generated from `wstg-asvs-mapping.json` and the active WSTG due-diligence matrix
 | Item | Count |
 | --- | ---: |
 | Active matrix rows | 97 |
-| Automated dispositions | 60 |
+| Automated dispositions | 62 |
 | Manual dispositions | 0 |
 | Not-applicable dispositions | 25 |
 | Covered-by-other-evidence dispositions | 0 |
 | Deferred dispositions | 0 |
-| Blocked dispositions | 12 |
+| Blocked dispositions | 10 |
 | Missing dispositions | 0 |
 | Invalid dispositions | 0 |
 
@@ -30,7 +30,7 @@ Generated from `wstg-asvs-mapping.json` and the active WSTG due-diligence matrix
 | Category | Name | Release-required tests | Explicit gaps |
 | --- | --- | --- | --- |
 | `A01:2025` | Broken Access Control | `OSMAP-WSTG-SESS-003`, `OSMAP-WSTG-SESS-004`, `OSMAP-WSTG-INPV-001`, `OSMAP-WSTG-INPV-005`, `OSMAP-WSTG-INPV-006`, `OSMAP-WSTG-CLNT-001`, `OSMAP-WSTG-CLNT-003`, `OSMAP-WSTG-ATHZ-001`, `OSMAP-WSTG-CONF-005`, `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003`, `OSMAP-WSTG-BUSL-004`, `OSMAP-WSTG-BUSL-005` | `OSMAP-WSTG-GAP-001` |
-| `A02:2025` | Security Misconfiguration | `OSMAP-WSTG-CONF-001`, `OSMAP-WSTG-CONF-002`, `OSMAP-WSTG-CONF-003`, `OSMAP-WSTG-CONF-008`, `OSMAP-WSTG-CONF-009`, `OSMAP-WSTG-SESS-005`, `OSMAP-WSTG-SESS-006`, `OSMAP-WSTG-CONF-004`, `OSMAP-WSTG-INFO-001`, `OSMAP-WSTG-INFO-002`, `OSMAP-WSTG-INFO-003`, `OSMAP-WSTG-INFO-004`, `OSMAP-WSTG-INPV-006`, `OSMAP-WSTG-CLNT-001`, `OSMAP-WSTG-CLNT-003`, `OSMAP-WSTG-CONF-005`, `OSMAP-WSTG-CONF-006`, `OSMAP-WSTG-CRYP-001` | none |
+| `A02:2025` | Security Misconfiguration | `OSMAP-WSTG-CONF-001`, `OSMAP-WSTG-CONF-002`, `OSMAP-WSTG-CONF-003`, `OSMAP-WSTG-CONF-008`, `OSMAP-WSTG-CONF-009`, `OSMAP-WSTG-CONF-010`, `OSMAP-WSTG-SESS-005`, `OSMAP-WSTG-SESS-006`, `OSMAP-WSTG-CONF-004`, `OSMAP-WSTG-INFO-001`, `OSMAP-WSTG-INFO-002`, `OSMAP-WSTG-INFO-003`, `OSMAP-WSTG-INFO-004`, `OSMAP-WSTG-INPV-006`, `OSMAP-WSTG-CLNT-001`, `OSMAP-WSTG-CLNT-003`, `OSMAP-WSTG-CONF-005`, `OSMAP-WSTG-CONF-006`, `OSMAP-WSTG-CRYP-001` | none |
 | `A03:2025` | Software Supply Chain Failures | `OSMAP-WSTG-CONF-007` | none |
 | `A04:2025` | Cryptographic Failures | `OSMAP-WSTG-CONF-001`, `OSMAP-WSTG-CONF-002`, `OSMAP-WSTG-ATHN-001`, `OSMAP-WSTG-SESS-001`, `OSMAP-WSTG-CRYP-001`, `OSMAP-WSTG-CRYP-002` | none |
 | `A05:2025` | Injection | `OSMAP-WSTG-CONF-003`, `OSMAP-WSTG-INPV-001`, `OSMAP-WSTG-INPV-002`, `OSMAP-WSTG-INPV-003`, `OSMAP-WSTG-INPV-004`, `OSMAP-WSTG-INPV-005`, `OSMAP-WSTG-INPV-006`, `OSMAP-WSTG-INPV-007`, `OSMAP-WSTG-CLNT-002`, `OSMAP-WSTG-CLNT-003`, `OSMAP-WSTG-APIT-001` | none |
@@ -49,6 +49,7 @@ Generated from `wstg-asvs-mapping.json` and the active WSTG due-diligence matrix
 | `OSMAP-WSTG-CONF-003` | WSTG-v42-CONF-12 Testing for Content Security Policy - OSMAP CSP regression | `WSTG-v42-CONF-12` | `v5.0.0-3.4.6`, `v5.0.0-14.4.3` | `A02:2025`, `A05:2025` | unauthenticated, dynamic test | true | false | false | true | high |
 | `OSMAP-WSTG-CONF-008` | WSTG-v42-CONF-03/04 Sensitive Extension and Backup File Exposure | `WSTG-v42-CONF-03`, `WSTG-v42-CONF-04` | `v5.0.0-4.1.4`, `v5.0.0-8.2.1`, `v5.0.0-14.3.1` | `A02:2025`, `A10:2025` | unauthenticated, dynamic test, static boundary review | true | false | false | true | high |
 | `OSMAP-WSTG-CONF-009` | WSTG-v42-CONF-08/11 RIA Cross-Domain and Cloud Storage Applicability | `WSTG-v42-CONF-08`, `WSTG-v42-CONF-11` | `v5.0.0-4.1.4`, `v5.0.0-8.2.1`, `v5.0.0-14.3.1` | `A02:2025` | unauthenticated, dynamic test, static applicability review | true | false | false | true | medium |
+| `OSMAP-WSTG-CONF-010` | WSTG-v42-CONF-09/10 File Permissions and Subdomain Takeover | `WSTG-v42-CONF-09`, `WSTG-v42-CONF-10` | `v5.0.0-8.2.1`, `v5.0.0-14.3.1`, `v5.0.0-14.4.1` | `A02:2025` | host assisted, dynamic DNS test, static boundary review | true | false | false | true | high |
 | `OSMAP-WSTG-ATHN-001` | WSTG-v42-ATHN-01 Testing for Credentials Transported over an Encrypted Channel - login form | `WSTG-v42-ATHN-01`, `WSTG-v42-ATHN-10` | `v5.0.0-6.2.6`, `v5.0.0-6.2.7`, `v5.0.0-6.3.3` | `A04:2025`, `A07:2025` | unauthenticated, dynamic test | true | false | false | true | medium |
 | `OSMAP-WSTG-ATHN-002` | WSTG-v42-IDNT-04 Testing for Account Enumeration and Guessable User Account - login failure normalization | `WSTG-v42-IDNT-04`, `WSTG-v42-ATHN-03` | `v5.0.0-6.3.1`, `v5.0.0-6.3.8` | `A07:2025` | unauthenticated, dynamic test | true | false | false | true | high |
 | `OSMAP-WSTG-ATHN-003` | WSTG-v42-ATHN-03 Testing for Weak Lock Out Mechanism - bounded login throttle probe | `WSTG-v42-ATHN-03` | `v5.0.0-6.1.1`, `v5.0.0-6.3.1` | `A07:2025`, `A10:2025` | unauthenticated, dynamic test | true | false | false | true | medium |

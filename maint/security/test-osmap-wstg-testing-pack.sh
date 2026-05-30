@@ -1098,6 +1098,56 @@ for wstg_id in expected:
 print("RIA and cloud storage applicability WSTG mapping validated")
 PY
 
+echo "validating file-permission and subdomain takeover WSTG mapping"
+python3 - "$pack_dir" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+pack = Path(sys.argv[1])
+repo = pack.parents[1]
+mapping = json.loads((pack / "wstg-asvs-mapping.json").read_text())
+tests = {item["test_id"]: item for item in mapping["tests"]}
+conf = tests.get("OSMAP-WSTG-CONF-010")
+if not conf:
+    raise SystemExit("OSMAP-WSTG-CONF-010 missing")
+expected = ["WSTG-v42-CONF-09", "WSTG-v42-CONF-10"]
+if conf["wstg"] != expected:
+    raise SystemExit("OSMAP-WSTG-CONF-010 must map CONF-09 and CONF-10")
+if conf["requires_authenticated_coverage"] or conf["requires_totp"]:
+    raise SystemExit("OSMAP-WSTG-CONF-010 must remain unauthenticated")
+coverage = (pack / "COVERAGE.md").read_text()
+for marker in ["OSMAP-WSTG-CONF-010", *expected]:
+    if marker not in coverage:
+        raise SystemExit(f"COVERAGE.md missing file-permission/subdomain marker {marker}")
+runner = (pack / "run-wstg-pack.py").read_text()
+for marker in [
+    "test_file_permissions_and_subdomain_takeover",
+    "host_file_permissions.txt",
+    "subdomain_takeover_dns.txt",
+    "file_permission_subdomain_static.txt",
+    "mail.blackbagsecurity.com has no CNAME record",
+    "no dangling takeover CNAME",
+]:
+    if marker not in runner:
+        raise SystemExit(f"runner missing file-permission/subdomain marker {marker}")
+doc = (repo / "docs" / "V3_CONFIG_DEPLOYMENT_EVIDENCE.md").read_text()
+for marker in [
+    "OSMAP-WSTG-CONF-010",
+    "file-permission evidence",
+    "Subdomain Takeover",
+    "no dangling takeover CNAME",
+]:
+    if marker not in doc:
+        raise SystemExit(f"Slice 10 doc missing file-permission/subdomain marker {marker}")
+rows = {item["wstg_id"]: item for item in json.loads((pack / "wstg-scenario-matrix.v42.json").read_text())["scenarios"]}
+for wstg_id in expected:
+    row = rows[wstg_id]
+    if row["disposition"] != "automated" or "OSMAP-WSTG-CONF-010" not in row["evidence_reference"]:
+        raise SystemExit(f"{wstg_id} must be automated by OSMAP-WSTG-CONF-010")
+print("file-permission and subdomain takeover WSTG mapping validated")
+PY
+
 echo "validating live WSTG evidence mappings"
 python3 - "$pack_dir" <<'PY'
 import json
