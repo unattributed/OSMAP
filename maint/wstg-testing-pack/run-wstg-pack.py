@@ -245,6 +245,7 @@ class Runner:
             "OSMAP-WSTG-ATHN-002": self.test_invalid_login,
             "OSMAP-WSTG-ATHN-003": self.test_throttle_probe,
             "OSMAP-WSTG-ATHN-004": self.test_authenticated_login,
+            "OSMAP-WSTG-ATHN-005": self.test_authentication_feature_applicability,
             "OSMAP-WSTG-SESS-001": self.test_session_cookie_flags,
             "OSMAP-WSTG-SESS-002": self.test_session_fixation,
             "OSMAP-WSTG-SESS-003": self.test_logout_csrf,
@@ -1256,6 +1257,160 @@ class Runner:
         if not ok:
             return self.result("OSMAP-WSTG-ATHN-004", STATUS_SKIP, message)
         return self.result("OSMAP-WSTG-ATHN-004", STATUS_PASS, "authenticated login and mailbox access succeeded", ["evidence/auth_login.headers", "evidence/auth_mailboxes.headers"])
+
+    def test_authentication_feature_applicability(self) -> TestResult:
+        evidence_paths: list[str] = []
+        statuses: dict[str, int | None] = {}
+        failures: dict[str, object] = {}
+
+        protected_routes = {
+            "athn04_mailboxes_unauth": "/mailboxes",
+            "athn04_sessions_unauth": "/sessions",
+            "athn04_settings_unauth": "/settings",
+        }
+        for label, path in protected_routes.items():
+            evidence = self.request(label, "GET", path)
+            evidence_paths.extend([f"evidence/{label}.headers", f"evidence/{label}.body"])
+            statuses[label] = evidence.status
+            if evidence.status == 200:
+                failures[f"{label}_bypassed"] = evidence.status
+            if evidence.status == 303 and evidence.first_header("Location") != "/login":
+                failures[f"{label}_redirect"] = evidence.first_header("Location")
+            if evidence.status not in {303, 401, 403, None}:
+                failures[f"{label}_status"] = evidence.status
+
+        default_attempts = {
+            "athn02_default_admin": ("admin", "admin"),
+            "athn02_default_osmap": ("osmap", "osmap"),
+        }
+        for label, (username, password) in default_attempts.items():
+            evidence = self.form_post(
+                label,
+                "/login",
+                {"username": username, "password": password, "totp_code": "000000"},
+            )
+            evidence_paths.extend([f"evidence/{label}.headers", f"evidence/{label}.body"])
+            statuses[label] = evidence.status
+            if evidence.status == 303:
+                failures[f"{label}_accepted"] = "default credential attempt produced a login redirect"
+            if evidence.status not in {401, 429, None}:
+                failures[f"{label}_status"] = evidence.status
+
+        feature_routes = {
+            "athn05_remember_password": "/remember-password",
+            "athn08_security_question": "/security-question",
+            "athn09_forgot_password": "/forgot-password",
+            "athn09_reset_password": "/reset-password",
+            "athn09_password_change": "/password/change",
+            "athn04_auth_bypass": "/auth/bypass",
+        }
+        feature_patterns = [
+            r"(?i)remember\s+(?:my\s+)?password",
+            r"(?i)forgot\s+password",
+            r"(?i)reset\s+password",
+            r"(?i)change\s+password",
+            r"(?i)security\s+question",
+            r"(?i)bypass\s+authentication",
+        ]
+        for label, path in feature_routes.items():
+            evidence = self.request(label, "GET", path)
+            evidence_paths.extend([f"evidence/{label}.headers", f"evidence/{label}.body"])
+            statuses[label] = evidence.status
+            if evidence.status is not None and 200 <= evidence.status < 300:
+                failures[f"{label}_served"] = evidence.status
+            body = evidence.body_text()
+            matches = [pattern for pattern in feature_patterns if re.search(pattern, body)]
+            if matches:
+                failures[f"{label}_feature_body"] = matches
+
+        login_form = self.request("athn05_login_form_feature_scan", "GET", "/login")
+        evidence_paths.extend(["evidence/athn05_login_form_feature_scan.headers", "evidence/athn05_login_form_feature_scan.body"])
+        statuses["athn05_login_form_feature_scan"] = login_form.status
+        login_matches = [pattern for pattern in feature_patterns if re.search(pattern, login_form.body_text())]
+        if login_matches:
+            failures["login_form_auth_feature_markers"] = login_matches
+
+        static_ok, static_findings = self.write_authentication_feature_static_evidence()
+        evidence_paths.append("evidence/authentication_feature_static.txt")
+        if not static_ok:
+            failures["static_boundary"] = static_findings
+
+        if failures:
+            return self.result(
+                "OSMAP-WSTG-ATHN-005",
+                STATUS_FAIL,
+                "authentication applicability evidence found an unexpected browser auth feature",
+                evidence_paths,
+                {"statuses": statuses, "failures": failures},
+            )
+        return self.result(
+            "OSMAP-WSTG-ATHN-005",
+            STATUS_PASS,
+            "OSMAP exposes no browser default-account, bypass, remember-password, security-question, or password reset surface",
+            evidence_paths,
+            {"statuses": statuses},
+        )
+
+    def write_authentication_feature_static_evidence(self) -> tuple[bool, dict[str, object]]:
+        files = [
+            REPO_ROOT / "src" / "auth.rs",
+            REPO_ROOT / "src" / "http.rs",
+            REPO_ROOT / "src" / "http_runtime.rs",
+            REPO_ROOT / "src" / "http" / "routes_auth.rs",
+            REPO_ROOT / "src" / "totp.rs",
+            REPO_ROOT / "docs" / "IDENTITY_AND_AUTHENTICATION.md",
+            REPO_ROOT / "docs" / "PRODUCT_REQUIREMENTS_V1.md",
+            REPO_ROOT / "docs" / "V3_AUTHENTICATION_APPLICABILITY_EVIDENCE.md",
+        ]
+        text = "\n".join(path.read_text(encoding="utf-8", errors="replace") for path in files if path.exists())
+        required_markers = [
+            "OSMAP-WSTG-ATHN-005",
+            "WSTG-v42-ATHN-02",
+            "WSTG-v42-ATHN-04",
+            "WSTG-v42-ATHN-05",
+            "WSTG-v42-ATHN-07",
+            "WSTG-v42-ATHN-08",
+            "WSTG-v42-ATHN-09",
+            "no default credentials",
+            "no browser authentication bypass route",
+            "no remember-password feature",
+            "no browser password policy surface",
+            "no security questions",
+            "no browser password change or reset functionality",
+            "mailbox credentials as the primary identity input",
+            "RequiredSecondFactor::Totp",
+            "DEFAULT_PASSWORD_MAX_LEN",
+        ]
+        missing = [marker for marker in required_markers if marker.lower() not in text.lower()]
+        forbidden_source_patterns = {
+            "remember_password_route": r'(?i)"/(?:remember-password|remember_password)"',
+            "forgot_password_route": r'(?i)"/(?:forgot-password|forgot_password)"',
+            "reset_password_route": r'(?i)"/(?:reset-password|password/reset|password/change)"',
+            "security_question_route": r'(?i)"/(?:security-question|security_question)"',
+            "auth_bypass_route": r'(?i)"/(?:auth/bypass|bypass-auth|impersonate)"',
+        }
+        source_files = [path for path in files[:5] if path.exists()]
+        findings: dict[str, list[str]] = {}
+        for path in source_files:
+            source = path.read_text(encoding="utf-8", errors="replace")
+            hits = [name for name, pattern in forbidden_source_patterns.items() if re.search(pattern, source)]
+            if hits:
+                findings[str(path.relative_to(REPO_ROOT))] = hits
+        lines = [
+            summarize_static_files(files, missing),
+            "",
+            "Authentication feature decisions:",
+            "- OSMAP has no default credentials because it has no browser-local account database or seeded accounts.",
+            "- OSMAP has no browser authentication bypass route; authenticated routes call require_validated_session before serving protected state.",
+            "- OSMAP has no remember-password feature and does not persist submitted mailbox passwords.",
+            "- OSMAP has no browser password policy surface; mailbox password policy remains external to the browser app and mail stack.",
+            "- OSMAP has no security questions and no browser password change or reset functionality.",
+            "- Browser auth requires mailbox credentials plus RequiredSecondFactor::Totp, with bounded DEFAULT_PASSWORD_MAX_LEN input before backend auth.",
+        ]
+        if findings:
+            lines.extend(["", "Unexpected authentication feature source markers:", json.dumps(findings, indent=2)])
+        self.write_text_evidence("authentication_feature_static.txt", "\n".join(lines) + "\n")
+        return not missing and not findings, {"missing_markers": missing, "unexpected_markers": findings}
 
     def test_session_cookie_flags(self) -> TestResult:
         ok, message = self.ensure_login()

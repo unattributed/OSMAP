@@ -157,8 +157,16 @@ if invalid_disposition:
     raise SystemExit(f"WSTG matrix rows have invalid disposition: {invalid_disposition[:10]}")
 if not any(row.get("disposition") == "automated" for row in scenarios):
     raise SystemExit("WSTG matrix must identify automated rows")
-if not any(row.get("disposition") == "blocked" for row in scenarios):
-    raise SystemExit("WSTG matrix must identify blocked rows for remaining due diligence")
+blocked = [row.get("wstg_id", "<unknown>") for row in scenarios if row.get("disposition") == "blocked"]
+if blocked:
+    raise SystemExit(f"WSTG matrix must have no blocked rows after ATHN applicability closeout: {blocked[:10]}")
+unmapped = [
+    row.get("wstg_id", "<unknown>")
+    for row in scenarios
+    if row.get("current_osmap_mapping_status") != "mapped_in_current_pack"
+]
+if unmapped:
+    raise SystemExit(f"WSTG matrix must map every listed row after ATHN applicability closeout: {unmapped[:10]}")
 
 runner_text = (pack / "run-wstg-pack.py").read_text()
 for marker in [
@@ -229,6 +237,75 @@ for wstg_id in ["WSTG-v42-IDNT-01", "WSTG-v42-IDNT-02", "WSTG-v42-IDNT-03"]:
     if rows[wstg_id]["disposition"] != "not_applicable":
         raise SystemExit(f"{wstg_id} must be not-applicable with evidence")
 print("identity lifecycle WSTG mapping validated")
+PY
+
+echo "validating authentication applicability WSTG mapping"
+python3 - "$pack_dir" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+pack = Path(sys.argv[1])
+repo = pack.parents[1]
+mapping = json.loads((pack / "wstg-asvs-mapping.json").read_text())
+tests = {item["test_id"]: item for item in mapping["tests"]}
+athn = tests.get("OSMAP-WSTG-ATHN-005")
+if not athn:
+    raise SystemExit("OSMAP-WSTG-ATHN-005 missing")
+expected = [
+    "WSTG-v42-ATHN-02",
+    "WSTG-v42-ATHN-04",
+    "WSTG-v42-ATHN-05",
+    "WSTG-v42-ATHN-07",
+    "WSTG-v42-ATHN-08",
+    "WSTG-v42-ATHN-09",
+]
+if athn["wstg"] != expected:
+    raise SystemExit("OSMAP-WSTG-ATHN-005 must map the remaining ATHN blocked rows")
+if athn["requires_authenticated_coverage"] or athn["requires_totp"]:
+    raise SystemExit("OSMAP-WSTG-ATHN-005 must remain unauthenticated")
+coverage = (pack / "COVERAGE.md").read_text()
+for marker in ["OSMAP-WSTG-ATHN-005", *expected]:
+    if marker not in coverage:
+        raise SystemExit(f"COVERAGE.md missing authentication applicability marker {marker}")
+runner = (pack / "run-wstg-pack.py").read_text()
+for marker in [
+    "test_authentication_feature_applicability",
+    "authentication_feature_static.txt",
+    "no default credentials",
+    "no browser authentication bypass route",
+    "no remember-password feature",
+    "no browser password policy surface",
+    "no security questions",
+    "no browser password change or reset functionality",
+    "DEFAULT_PASSWORD_MAX_LEN",
+]:
+    if marker not in runner:
+        raise SystemExit(f"runner missing authentication applicability marker {marker}")
+doc = (repo / "docs" / "V3_AUTHENTICATION_APPLICABILITY_EVIDENCE.md").read_text()
+for marker in [
+    "OSMAP-WSTG-ATHN-005",
+    "no default credentials",
+    "no browser authentication bypass route",
+    "no remember-password feature",
+    "no browser password policy surface",
+    "no security questions",
+    "no browser password change or reset functionality",
+    "RequiredSecondFactor::Totp",
+]:
+    if marker not in doc:
+        raise SystemExit(f"authentication applicability doc missing marker {marker}")
+rows = {item["wstg_id"]: item for item in json.loads((pack / "wstg-scenario-matrix.v42.json").read_text())["scenarios"]}
+for wstg_id in expected:
+    row = rows[wstg_id]
+    if "OSMAP-WSTG-ATHN-005" not in row["evidence_reference"]:
+        raise SystemExit(f"{wstg_id} must reference OSMAP-WSTG-ATHN-005")
+if rows["WSTG-v42-ATHN-04"]["disposition"] != "automated":
+    raise SystemExit("ATHN-04 must be automated by OSMAP-WSTG-ATHN-005")
+for wstg_id in ["WSTG-v42-ATHN-02", "WSTG-v42-ATHN-05", "WSTG-v42-ATHN-07", "WSTG-v42-ATHN-08", "WSTG-v42-ATHN-09"]:
+    if rows[wstg_id]["disposition"] != "not_applicable":
+        raise SystemExit(f"{wstg_id} must be not-applicable with evidence")
+print("authentication applicability WSTG mapping validated")
 PY
 
 echo "validating session lifecycle WSTG mapping"

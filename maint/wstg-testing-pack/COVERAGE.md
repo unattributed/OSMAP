@@ -16,12 +16,12 @@ Generated from `wstg-asvs-mapping.json` and the active WSTG due-diligence matrix
 | Item | Count |
 | --- | ---: |
 | Active matrix rows | 97 |
-| Automated dispositions | 63 |
+| Automated dispositions | 64 |
 | Manual dispositions | 0 |
-| Not-applicable dispositions | 28 |
+| Not-applicable dispositions | 33 |
 | Covered-by-other-evidence dispositions | 0 |
 | Deferred dispositions | 0 |
-| Blocked dispositions | 6 |
+| Blocked dispositions | 0 |
 | Missing dispositions | 0 |
 | Invalid dispositions | 0 |
 
@@ -35,7 +35,7 @@ Generated from `wstg-asvs-mapping.json` and the active WSTG due-diligence matrix
 | `A04:2025` | Cryptographic Failures | `OSMAP-WSTG-CONF-001`, `OSMAP-WSTG-CONF-002`, `OSMAP-WSTG-ATHN-001`, `OSMAP-WSTG-SESS-001`, `OSMAP-WSTG-CRYP-001`, `OSMAP-WSTG-CRYP-002` | none |
 | `A05:2025` | Injection | `OSMAP-WSTG-CONF-003`, `OSMAP-WSTG-INPV-001`, `OSMAP-WSTG-INPV-002`, `OSMAP-WSTG-INPV-003`, `OSMAP-WSTG-INPV-004`, `OSMAP-WSTG-INPV-005`, `OSMAP-WSTG-INPV-006`, `OSMAP-WSTG-INPV-007`, `OSMAP-WSTG-CLNT-002`, `OSMAP-WSTG-CLNT-003`, `OSMAP-WSTG-APIT-001` | none |
 | `A06:2025` | Insecure Design | `OSMAP-WSTG-IDNT-001`, `OSMAP-WSTG-INPV-004`, `OSMAP-WSTG-INPV-005`, `OSMAP-WSTG-INPV-006`, `OSMAP-WSTG-INPV-007`, `OSMAP-WSTG-CLNT-002`, `OSMAP-WSTG-CLNT-003`, `OSMAP-WSTG-BUSL-001`, `OSMAP-WSTG-ATHZ-001`, `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003`, `OSMAP-WSTG-BUSL-004`, `OSMAP-WSTG-CRYP-002`, `OSMAP-WSTG-BUSL-005`, `OSMAP-WSTG-APIT-001` | `OSMAP-WSTG-GAP-001`, `OSMAP-WSTG-GAP-002` |
-| `A07:2025` | Authentication Failures | `OSMAP-WSTG-IDNT-001`, `OSMAP-WSTG-ATHN-001`, `OSMAP-WSTG-ATHN-002`, `OSMAP-WSTG-ATHN-003`, `OSMAP-WSTG-ATHN-004`, `OSMAP-WSTG-SESS-001`, `OSMAP-WSTG-SESS-002`, `OSMAP-WSTG-SESS-003`, `OSMAP-WSTG-SESS-005`, `OSMAP-WSTG-SESS-006`, `OSMAP-WSTG-ATHZ-001`, `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003`, `OSMAP-WSTG-CRYP-001` | none |
+| `A07:2025` | Authentication Failures | `OSMAP-WSTG-IDNT-001`, `OSMAP-WSTG-ATHN-001`, `OSMAP-WSTG-ATHN-002`, `OSMAP-WSTG-ATHN-003`, `OSMAP-WSTG-ATHN-004`, `OSMAP-WSTG-ATHN-005`, `OSMAP-WSTG-SESS-001`, `OSMAP-WSTG-SESS-002`, `OSMAP-WSTG-SESS-003`, `OSMAP-WSTG-SESS-005`, `OSMAP-WSTG-SESS-006`, `OSMAP-WSTG-ATHZ-001`, `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003`, `OSMAP-WSTG-CRYP-001` | none |
 | `A08:2025` | Software or Data Integrity Failures | `OSMAP-WSTG-SESS-004`, `OSMAP-WSTG-BUSL-001`, `OSMAP-WSTG-CONF-007`, `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003`, `OSMAP-WSTG-BUSL-004`, `OSMAP-WSTG-BUSL-005` | `OSMAP-WSTG-GAP-001`, `OSMAP-WSTG-GAP-002` |
 | `A09:2025` | Security Logging and Alerting Failures | `OSMAP-WSTG-SESS-006`, `OSMAP-WSTG-INPV-003`, `OSMAP-WSTG-INPV-004`, `OSMAP-WSTG-ATHZ-001`, `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003`, `OSMAP-WSTG-LOGG-001` | none |
 | `A10:2025` | Mishandling of Exceptional Conditions | `OSMAP-WSTG-CONF-008`, `OSMAP-WSTG-ATHN-003`, `OSMAP-WSTG-SESS-006`, `OSMAP-WSTG-CONF-004`, `OSMAP-WSTG-INFO-002`, `OSMAP-WSTG-INFO-003`, `OSMAP-WSTG-INFO-004`, `OSMAP-WSTG-INPV-001`, `OSMAP-WSTG-INPV-003`, `OSMAP-WSTG-INPV-004`, `OSMAP-WSTG-INPV-005`, `OSMAP-WSTG-INPV-006`, `OSMAP-WSTG-INPV-007`, `OSMAP-WSTG-ATHZ-001`, `OSMAP-WSTG-BUSL-002`, `OSMAP-WSTG-BUSL-003`, `OSMAP-WSTG-BUSL-004`, `OSMAP-WSTG-CRYP-002`, `OSMAP-WSTG-BUSL-005`, `OSMAP-WSTG-APIT-001` | none |
@@ -55,6 +55,7 @@ Generated from `wstg-asvs-mapping.json` and the active WSTG due-diligence matrix
 | `OSMAP-WSTG-ATHN-002` | WSTG-v42-IDNT-04 Testing for Account Enumeration and Guessable User Account - login failure normalization | `WSTG-v42-IDNT-04`, `WSTG-v42-ATHN-03` | `v5.0.0-6.3.1`, `v5.0.0-6.3.8` | `A07:2025` | unauthenticated, dynamic test | true | false | false | true | high |
 | `OSMAP-WSTG-ATHN-003` | WSTG-v42-ATHN-03 Testing for Weak Lock Out Mechanism - bounded login throttle probe | `WSTG-v42-ATHN-03` | `v5.0.0-6.1.1`, `v5.0.0-6.3.1` | `A07:2025`, `A10:2025` | unauthenticated, dynamic test | true | false | false | true | medium |
 | `OSMAP-WSTG-ATHN-004` | WSTG-v42-ATHN-10 Testing for Weaker Authentication in Alternative Channel - TOTP login flow | `WSTG-v42-ATHN-10` | `v5.0.0-6.3.3`, `v5.0.0-6.5.5`, `v5.0.0-6.5.8` | `A07:2025` | authenticated, dynamic test | true | true | true | true | high |
+| `OSMAP-WSTG-ATHN-005` | WSTG-v42-ATHN-02/04/05/07/08/09 Authentication Feature Applicability | `WSTG-v42-ATHN-02`, `WSTG-v42-ATHN-04`, `WSTG-v42-ATHN-05`, `WSTG-v42-ATHN-07`, `WSTG-v42-ATHN-08`, `WSTG-v42-ATHN-09` | `v5.0.0-1.2.1`, `v5.0.0-6.1.1`, `v5.0.0-6.2.1`, `v5.0.0-6.3.1`, `v5.0.0-6.5.5`, `v5.0.0-8.2.1` | `A07:2025` | unauthenticated, dynamic test, static applicability review | true | false | false | true | high |
 | `OSMAP-WSTG-SESS-001` | WSTG-v42-SESS-02 Testing for Cookies Attributes - OSMAP session cookie | `WSTG-v42-SESS-02` | `v5.0.0-3.2.1`, `v5.0.0-3.2.2`, `v5.0.0-7.2.1` | `A04:2025`, `A07:2025` | authenticated, dynamic test | true | true | true | true | high |
 | `OSMAP-WSTG-SESS-002` | WSTG-v42-SESS-03 Testing for Session Fixation - pre-login cookie replacement | `WSTG-v42-SESS-03` | `v5.0.0-7.2.3`, `v5.0.0-7.2.4` | `A07:2025` | authenticated, dynamic test | true | true | true | true | high |
 | `OSMAP-WSTG-SESS-003` | WSTG-v42-SESS-05 Testing for Cross Site Request Forgery - logout enforcement | `WSTG-v42-SESS-05` | `v5.0.0-3.5.1`, `v5.0.0-3.5.3`, `v5.0.0-7.4.1` | `A01:2025`, `A07:2025` | authenticated, dynamic test | true | true | true | true | high |

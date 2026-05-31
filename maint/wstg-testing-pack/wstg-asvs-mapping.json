@@ -385,6 +385,56 @@
       ]
     },
     {
+      "test_id": "OSMAP-WSTG-ATHN-005",
+      "test_name": "WSTG-v42-ATHN-02/04/05/07/08/09 Authentication Feature Applicability",
+      "script_path": "run-wstg-pack.py",
+      "wstg": [
+        "WSTG-v42-ATHN-02",
+        "WSTG-v42-ATHN-04",
+        "WSTG-v42-ATHN-05",
+        "WSTG-v42-ATHN-07",
+        "WSTG-v42-ATHN-08",
+        "WSTG-v42-ATHN-09"
+      ],
+      "wstg_section": "Default Credentials; Bypassing Authentication Schema; Remember Password; Weak Password Policy; Security Questions; Password Change or Reset",
+      "asvs": [
+        "v5.0.0-1.2.1",
+        "v5.0.0-6.1.1",
+        "v5.0.0-6.2.1",
+        "v5.0.0-6.3.1",
+        "v5.0.0-6.5.5",
+        "v5.0.0-8.2.1"
+      ],
+      "asvs_section": "Authentication Feature Applicability",
+      "test_type": [
+        "unauthenticated",
+        "dynamic test",
+        "static applicability review"
+      ],
+      "expected_result": "OSMAP exposes no browser-local default accounts, auth-bypass route, remember-password feature, security-question flow, or password change/reset surface; mailbox password policy remains outside OSMAP.",
+      "evidence_produced": [
+        "athn02_*.headers",
+        "athn02_*.body",
+        "athn04_*.headers",
+        "athn04_*.body",
+        "athn05_*.headers",
+        "athn05_*.body",
+        "athn08_*.headers",
+        "athn08_*.body",
+        "athn09_*.headers",
+        "athn09_*.body",
+        "authentication_feature_static.txt"
+      ],
+      "release_required": true,
+      "requires_authenticated_coverage": false,
+      "requires_totp": false,
+      "safe_for_release": true,
+      "severity_if_failed": "high",
+      "owasp_top_10_2025": [
+        "A07:2025"
+      ]
+    },
+    {
       "test_id": "OSMAP-WSTG-SESS-001",
       "test_name": "WSTG-v42-SESS-02 Testing for Cookies Attributes - OSMAP session cookie",
       "script_path": "run-wstg-pack.py",

@@ -11,7 +11,7 @@ The matrix is a due-diligence control, not a test result. A scenario is not comp
 | INFO | 10 | 10 | 0 |
 | CONF | 11 | 11 | 0 |
 | IDNT | 5 | 5 | 0 |
-| ATHN | 10 | 4 | 6 |
+| ATHN | 10 | 10 | 0 |
 | ATHZ | 4 | 4 | 0 |
 | SESS | 9 | 9 | 0 |
 | INPV | 19 | 19 | 0 |

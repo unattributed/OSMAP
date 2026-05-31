@@ -57,16 +57,16 @@ The current WSTG pack is useful targeted regression coverage, but it is not full
 
 | Baseline item | Current state |
 | --- | --- |
-| Existing OSMAP WSTG runner tests | 45 mapped tests |
+| Existing OSMAP WSTG runner tests | 46 mapped tests |
 | Existing explicit gaps | 3 gaps |
 | Existing WSTG scenario matrix | WSTG v4.2 |
 | WSTG v4.2 scenario rows | 97 |
-| WSTG v4.2 rows mapped by current pack | 91 |
-| WSTG v4.2 rows not mapped by current pack | 6 |
+| WSTG v4.2 rows mapped by current pack | 97 |
+| WSTG v4.2 rows not mapped by current pack | 0 |
 | WSTG v4.2 rows with explicit Slice 1 disposition | 97 |
-| WSTG v4.2 automated dispositions | 63 |
-| WSTG v4.2 not-applicable dispositions | 28 |
-| WSTG v4.2 blocked dispositions pending due diligence | 6 |
+| WSTG v4.2 automated dispositions | 64 |
+| WSTG v4.2 not-applicable dispositions | 33 |
+| WSTG v4.2 blocked dispositions pending due diligence | 0 |
 | Current OWASP latest coverage | Must be pinned and tracked before V3 closeout |
 
 The Version 3 workstream therefore treats the current pack as a starting point. It must be extended into a slice-based due-diligence program.

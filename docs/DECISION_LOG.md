@@ -1,5 +1,27 @@
 # Decision Log
 
+## 2026-05-31, Add WSTG authentication feature applicability evidence
+
+The Version 3 WSTG authentication workstream now records deterministic evidence
+for default credentials, authentication-schema bypass, remember-password
+behavior, password-policy applicability, security questions, and password
+change/reset applicability:
+
+- `OSMAP-WSTG-ATHN-005` maps ATHN-02, ATHN-04, ATHN-05, ATHN-07, ATHN-08,
+  and ATHN-09
+- dynamic probes cover protected-route unauthenticated access, common
+  remember/recovery/security-question paths, and bounded default-credential
+  login attempts
+- static evidence records that OSMAP has no browser-local account database, no
+  default credentials, no browser authentication bypass route, no
+  remember-password feature, no security questions, and no browser password
+  change or reset functionality
+- the WSTG v4.2 matrix now maps all 97 listed rows, leaving 0 blocked rows
+
+Future browser-local account storage, password lifecycle features,
+remember-password behavior, recovery features, or authentication bypass
+mechanisms must update this lane before V3 closeout.
+
 ## 2026-05-31, Add WSTG identity lifecycle applicability evidence
 
 The Version 3 WSTG identity-management workstream now records deterministic

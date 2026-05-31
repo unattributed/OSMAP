@@ -4,11 +4,11 @@
   "wstg_source": "OWASP WSTG v4.2 stable table of contents retrieved 2026-05-19",
   "note": "This is an applicability and evidence matrix starter. It is not a pass/fail report until each item has an executed evidence reference or a documented not-applicable proof.",
   "current_osmap_pack": {
-    "mapped_tests": 45,
-    "unique_mapped_wstg_ids": 92,
+    "mapped_tests": 46,
+    "unique_mapped_wstg_ids": 98,
     "official_toc_scenarios_listed_here": 97,
-    "official_toc_scenarios_mapped_by_current_pack": 91,
-    "official_toc_scenarios_not_mapped_by_current_pack": 6,
+    "official_toc_scenarios_mapped_by_current_pack": 97,
+    "official_toc_scenarios_not_mapped_by_current_pack": 0,
     "supplemental_wstg_ids_in_current_mapping_not_seen_in_retrieved_official_toc": [
       "WSTG-v42-CONF-12"
     ]
@@ -482,13 +482,17 @@
       "category": "ATHN",
       "section": "4.4 Authentication Testing",
       "title": "Testing for Default Credentials",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-ATHN-005"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "not applicable: OSMAP has no browser-local account database, seeded accounts, or default credentials",
+      "evidence_reference": [
+        "OSMAP-WSTG-ATHN-005"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-ATHN-03",
@@ -514,26 +518,34 @@
       "category": "ATHN",
       "section": "4.4 Authentication Testing",
       "title": "Testing for Bypassing Authentication Schema",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-ATHN-005"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to OSMAP-WSTG-ATHN-005 protected-route and static auth-boundary evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-ATHN-005"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-ATHN-05",
       "category": "ATHN",
       "section": "4.4 Authentication Testing",
       "title": "Testing for Vulnerable Remember Password",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "not_applicable_candidate_but_requires_repo_or_live_proof",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-ATHN-005"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "not applicable: OSMAP has no remember-password feature or password persistence surface",
+      "evidence_reference": [
+        "OSMAP-WSTG-ATHN-005"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-ATHN-06",
@@ -557,39 +569,51 @@
       "category": "ATHN",
       "section": "4.4 Authentication Testing",
       "title": "Testing for Weak Password Policy",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-ATHN-005"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "not applicable: browser password creation and password policy enforcement remain external to OSMAP",
+      "evidence_reference": [
+        "OSMAP-WSTG-ATHN-005"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-ATHN-08",
       "category": "ATHN",
       "section": "4.4 Authentication Testing",
       "title": "Testing for Weak Security Question Answer",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "not_applicable_candidate_but_requires_repo_or_live_proof",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-ATHN-005"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "not applicable: OSMAP has no security-question flow",
+      "evidence_reference": [
+        "OSMAP-WSTG-ATHN-005"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-ATHN-09",
       "category": "ATHN",
       "section": "4.4 Authentication Testing",
       "title": "Testing for Weak Password Change or Reset Functionalities",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "not_applicable_candidate_but_requires_repo_or_live_proof",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-ATHN-005"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "not applicable: OSMAP has no browser password change or reset functionality",
+      "evidence_reference": [
+        "OSMAP-WSTG-ATHN-005"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-ATHN-10",
