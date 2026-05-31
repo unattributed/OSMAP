@@ -1,4 +1,16 @@
 {
+  "active_wstg_matrix": {
+    "disposition_counts": {
+      "automated": 64,
+      "not_applicable": 33
+    },
+    "exists": true,
+    "invalid_disposition_count": 0,
+    "matrix_file": "wstg-scenario-matrix.v42.json",
+    "missing_disposition_count": 0,
+    "scenario_count": 97,
+    "wstg_source": "OWASP WSTG v4.2 stable table of contents retrieved 2026-05-19"
+  },
   "authenticated_proof": {
     "login": true,
     "logout": true,
@@ -8,18 +20,16 @@
     "totp": true
   },
   "commands": [
-    "./run-wstg-pack.py --release --prompt-auth --auth-email pilot-primary@example.invalid"
+    "./run-wstg-pack.py --release --prompt-auth --auth-email osmap-helper-validation@blackbagsecurity.com --output-dir /home/foo/Workspace/OSMAP/maint/wstg-testing-pack/output/release-20260531T172708Z"
   ],
   "counts": {
     "fail": 0,
     "not_applicable": 0,
-    "pass": 26,
+    "pass": 46,
     "skip": 0,
     "warning": 0
   },
-  "generated_at": "2026-05-15T08:32:23.423292+00:00",
-  "mapping_file": "wstg-asvs-mapping.json",
-  "owasp_top_10_2025_coverage": {
+  "declared_owasp_top_10_2025_coverage": {
     "A01:2025": {
       "gaps": [
         "OSMAP-WSTG-GAP-001"
@@ -28,10 +38,16 @@
         "OSMAP-WSTG-SESS-003",
         "OSMAP-WSTG-SESS-004",
         "OSMAP-WSTG-INPV-001",
+        "OSMAP-WSTG-INPV-005",
+        "OSMAP-WSTG-INPV-006",
         "OSMAP-WSTG-CLNT-001",
+        "OSMAP-WSTG-CLNT-003",
+        "OSMAP-WSTG-ATHZ-001",
         "OSMAP-WSTG-CONF-005",
         "OSMAP-WSTG-BUSL-002",
-        "OSMAP-WSTG-BUSL-003"
+        "OSMAP-WSTG-BUSL-003",
+        "OSMAP-WSTG-BUSL-004",
+        "OSMAP-WSTG-BUSL-005"
       ]
     },
     "A02:2025": {
@@ -40,13 +56,22 @@
         "OSMAP-WSTG-CONF-001",
         "OSMAP-WSTG-CONF-002",
         "OSMAP-WSTG-CONF-003",
+        "OSMAP-WSTG-CONF-008",
+        "OSMAP-WSTG-CONF-009",
+        "OSMAP-WSTG-CONF-010",
         "OSMAP-WSTG-SESS-005",
+        "OSMAP-WSTG-SESS-006",
         "OSMAP-WSTG-CONF-004",
         "OSMAP-WSTG-INFO-001",
         "OSMAP-WSTG-INFO-002",
+        "OSMAP-WSTG-INFO-003",
+        "OSMAP-WSTG-INFO-004",
+        "OSMAP-WSTG-INPV-006",
         "OSMAP-WSTG-CLNT-001",
+        "OSMAP-WSTG-CLNT-003",
         "OSMAP-WSTG-CONF-005",
-        "OSMAP-WSTG-CONF-006"
+        "OSMAP-WSTG-CONF-006",
+        "OSMAP-WSTG-CRYP-001"
       ]
     },
     "A03:2025": {
@@ -61,7 +86,9 @@
         "OSMAP-WSTG-CONF-001",
         "OSMAP-WSTG-CONF-002",
         "OSMAP-WSTG-ATHN-001",
-        "OSMAP-WSTG-SESS-001"
+        "OSMAP-WSTG-SESS-001",
+        "OSMAP-WSTG-CRYP-001",
+        "OSMAP-WSTG-CRYP-002"
       ]
     },
     "A05:2025": {
@@ -70,7 +97,14 @@
         "OSMAP-WSTG-CONF-003",
         "OSMAP-WSTG-INPV-001",
         "OSMAP-WSTG-INPV-002",
-        "OSMAP-WSTG-CLNT-002"
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-INPV-004",
+        "OSMAP-WSTG-INPV-005",
+        "OSMAP-WSTG-INPV-006",
+        "OSMAP-WSTG-INPV-007",
+        "OSMAP-WSTG-CLNT-002",
+        "OSMAP-WSTG-CLNT-003",
+        "OSMAP-WSTG-APIT-001"
       ]
     },
     "A06:2025": {
@@ -79,25 +113,41 @@
         "OSMAP-WSTG-GAP-002"
       ],
       "tests": [
+        "OSMAP-WSTG-IDNT-001",
+        "OSMAP-WSTG-INPV-004",
+        "OSMAP-WSTG-INPV-005",
+        "OSMAP-WSTG-INPV-006",
+        "OSMAP-WSTG-INPV-007",
         "OSMAP-WSTG-CLNT-002",
+        "OSMAP-WSTG-CLNT-003",
         "OSMAP-WSTG-BUSL-001",
+        "OSMAP-WSTG-ATHZ-001",
         "OSMAP-WSTG-BUSL-002",
-        "OSMAP-WSTG-BUSL-003"
+        "OSMAP-WSTG-BUSL-003",
+        "OSMAP-WSTG-BUSL-004",
+        "OSMAP-WSTG-CRYP-002",
+        "OSMAP-WSTG-BUSL-005",
+        "OSMAP-WSTG-APIT-001"
       ]
     },
     "A07:2025": {
       "gaps": [],
       "tests": [
+        "OSMAP-WSTG-IDNT-001",
         "OSMAP-WSTG-ATHN-001",
         "OSMAP-WSTG-ATHN-002",
         "OSMAP-WSTG-ATHN-003",
         "OSMAP-WSTG-ATHN-004",
+        "OSMAP-WSTG-ATHN-005",
         "OSMAP-WSTG-SESS-001",
         "OSMAP-WSTG-SESS-002",
         "OSMAP-WSTG-SESS-003",
         "OSMAP-WSTG-SESS-005",
+        "OSMAP-WSTG-SESS-006",
+        "OSMAP-WSTG-ATHZ-001",
         "OSMAP-WSTG-BUSL-002",
-        "OSMAP-WSTG-BUSL-003"
+        "OSMAP-WSTG-BUSL-003",
+        "OSMAP-WSTG-CRYP-001"
       ]
     },
     "A08:2025": {
@@ -110,12 +160,18 @@
         "OSMAP-WSTG-BUSL-001",
         "OSMAP-WSTG-CONF-007",
         "OSMAP-WSTG-BUSL-002",
-        "OSMAP-WSTG-BUSL-003"
+        "OSMAP-WSTG-BUSL-003",
+        "OSMAP-WSTG-BUSL-004",
+        "OSMAP-WSTG-BUSL-005"
       ]
     },
     "A09:2025": {
       "gaps": [],
       "tests": [
+        "OSMAP-WSTG-SESS-006",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-INPV-004",
+        "OSMAP-WSTG-ATHZ-001",
         "OSMAP-WSTG-BUSL-002",
         "OSMAP-WSTG-BUSL-003",
         "OSMAP-WSTG-LOGG-001"
@@ -124,12 +180,222 @@
     "A10:2025": {
       "gaps": [],
       "tests": [
+        "OSMAP-WSTG-CONF-008",
         "OSMAP-WSTG-ATHN-003",
+        "OSMAP-WSTG-SESS-006",
         "OSMAP-WSTG-CONF-004",
         "OSMAP-WSTG-INFO-002",
+        "OSMAP-WSTG-INFO-003",
+        "OSMAP-WSTG-INFO-004",
         "OSMAP-WSTG-INPV-001",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-INPV-004",
+        "OSMAP-WSTG-INPV-005",
+        "OSMAP-WSTG-INPV-006",
+        "OSMAP-WSTG-INPV-007",
+        "OSMAP-WSTG-ATHZ-001",
         "OSMAP-WSTG-BUSL-002",
-        "OSMAP-WSTG-BUSL-003"
+        "OSMAP-WSTG-BUSL-003",
+        "OSMAP-WSTG-BUSL-004",
+        "OSMAP-WSTG-CRYP-002",
+        "OSMAP-WSTG-BUSL-005",
+        "OSMAP-WSTG-APIT-001"
+      ]
+    }
+  },
+  "generated_at": "2026-05-31T17:31:25.134945+00:00",
+  "mapping_file": "wstg-asvs-mapping.json",
+  "owasp_top_10_2025_coverage": {
+    "A01:2025": {
+      "gaps": [
+        "OSMAP-WSTG-GAP-001"
+      ],
+      "incomplete_tests": [],
+      "static_only_tests": [],
+      "tests": [
+        "OSMAP-WSTG-SESS-003",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-INPV-001",
+        "OSMAP-WSTG-INPV-005",
+        "OSMAP-WSTG-INPV-006",
+        "OSMAP-WSTG-CLNT-001",
+        "OSMAP-WSTG-CLNT-003",
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-CONF-005",
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-BUSL-003",
+        "OSMAP-WSTG-BUSL-004",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    "A02:2025": {
+      "gaps": [],
+      "incomplete_tests": [],
+      "static_only_tests": [],
+      "tests": [
+        "OSMAP-WSTG-CONF-001",
+        "OSMAP-WSTG-CONF-002",
+        "OSMAP-WSTG-CONF-003",
+        "OSMAP-WSTG-CONF-008",
+        "OSMAP-WSTG-CONF-009",
+        "OSMAP-WSTG-CONF-010",
+        "OSMAP-WSTG-SESS-005",
+        "OSMAP-WSTG-SESS-006",
+        "OSMAP-WSTG-CONF-004",
+        "OSMAP-WSTG-INFO-001",
+        "OSMAP-WSTG-INFO-002",
+        "OSMAP-WSTG-INFO-003",
+        "OSMAP-WSTG-INFO-004",
+        "OSMAP-WSTG-INPV-006",
+        "OSMAP-WSTG-CLNT-001",
+        "OSMAP-WSTG-CLNT-003",
+        "OSMAP-WSTG-CONF-005",
+        "OSMAP-WSTG-CONF-006",
+        "OSMAP-WSTG-CRYP-001"
+      ]
+    },
+    "A03:2025": {
+      "gaps": [],
+      "incomplete_tests": [],
+      "static_only_tests": [],
+      "tests": [
+        "OSMAP-WSTG-CONF-007"
+      ]
+    },
+    "A04:2025": {
+      "gaps": [],
+      "incomplete_tests": [],
+      "static_only_tests": [],
+      "tests": [
+        "OSMAP-WSTG-CONF-001",
+        "OSMAP-WSTG-CONF-002",
+        "OSMAP-WSTG-ATHN-001",
+        "OSMAP-WSTG-SESS-001",
+        "OSMAP-WSTG-CRYP-001",
+        "OSMAP-WSTG-CRYP-002"
+      ]
+    },
+    "A05:2025": {
+      "gaps": [],
+      "incomplete_tests": [],
+      "static_only_tests": [],
+      "tests": [
+        "OSMAP-WSTG-CONF-003",
+        "OSMAP-WSTG-INPV-001",
+        "OSMAP-WSTG-INPV-002",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-INPV-004",
+        "OSMAP-WSTG-INPV-005",
+        "OSMAP-WSTG-INPV-006",
+        "OSMAP-WSTG-INPV-007",
+        "OSMAP-WSTG-CLNT-002",
+        "OSMAP-WSTG-CLNT-003",
+        "OSMAP-WSTG-APIT-001"
+      ]
+    },
+    "A06:2025": {
+      "gaps": [
+        "OSMAP-WSTG-GAP-001",
+        "OSMAP-WSTG-GAP-002"
+      ],
+      "incomplete_tests": [],
+      "static_only_tests": [],
+      "tests": [
+        "OSMAP-WSTG-IDNT-001",
+        "OSMAP-WSTG-INPV-004",
+        "OSMAP-WSTG-INPV-005",
+        "OSMAP-WSTG-INPV-006",
+        "OSMAP-WSTG-INPV-007",
+        "OSMAP-WSTG-CLNT-002",
+        "OSMAP-WSTG-CLNT-003",
+        "OSMAP-WSTG-BUSL-001",
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-BUSL-003",
+        "OSMAP-WSTG-BUSL-004",
+        "OSMAP-WSTG-CRYP-002",
+        "OSMAP-WSTG-BUSL-005",
+        "OSMAP-WSTG-APIT-001"
+      ]
+    },
+    "A07:2025": {
+      "gaps": [],
+      "incomplete_tests": [],
+      "static_only_tests": [],
+      "tests": [
+        "OSMAP-WSTG-IDNT-001",
+        "OSMAP-WSTG-ATHN-001",
+        "OSMAP-WSTG-ATHN-002",
+        "OSMAP-WSTG-ATHN-003",
+        "OSMAP-WSTG-ATHN-004",
+        "OSMAP-WSTG-ATHN-005",
+        "OSMAP-WSTG-SESS-001",
+        "OSMAP-WSTG-SESS-002",
+        "OSMAP-WSTG-SESS-003",
+        "OSMAP-WSTG-SESS-005",
+        "OSMAP-WSTG-SESS-006",
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-BUSL-003",
+        "OSMAP-WSTG-CRYP-001"
+      ]
+    },
+    "A08:2025": {
+      "gaps": [
+        "OSMAP-WSTG-GAP-001",
+        "OSMAP-WSTG-GAP-002"
+      ],
+      "incomplete_tests": [],
+      "static_only_tests": [],
+      "tests": [
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-001",
+        "OSMAP-WSTG-CONF-007",
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-BUSL-003",
+        "OSMAP-WSTG-BUSL-004",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    "A09:2025": {
+      "gaps": [],
+      "incomplete_tests": [],
+      "static_only_tests": [],
+      "tests": [
+        "OSMAP-WSTG-SESS-006",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-INPV-004",
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-BUSL-003",
+        "OSMAP-WSTG-LOGG-001"
+      ]
+    },
+    "A10:2025": {
+      "gaps": [],
+      "incomplete_tests": [],
+      "static_only_tests": [],
+      "tests": [
+        "OSMAP-WSTG-CONF-008",
+        "OSMAP-WSTG-ATHN-003",
+        "OSMAP-WSTG-SESS-006",
+        "OSMAP-WSTG-CONF-004",
+        "OSMAP-WSTG-INFO-002",
+        "OSMAP-WSTG-INFO-003",
+        "OSMAP-WSTG-INFO-004",
+        "OSMAP-WSTG-INPV-001",
+        "OSMAP-WSTG-INPV-003",
+        "OSMAP-WSTG-INPV-004",
+        "OSMAP-WSTG-INPV-005",
+        "OSMAP-WSTG-INPV-006",
+        "OSMAP-WSTG-INPV-007",
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-BUSL-003",
+        "OSMAP-WSTG-BUSL-004",
+        "OSMAP-WSTG-CRYP-002",
+        "OSMAP-WSTG-BUSL-005",
+        "OSMAP-WSTG-APIT-001"
       ]
     }
   },
@@ -138,7 +404,7 @@
   "results": [
     {
       "details": {
-        "http_error": "[Errno 110] Connection timed out"
+        "http_error": "timed out"
       },
       "evidence": [
         "evidence/tls_https_login.headers",
@@ -170,6 +436,135 @@
       "test_name": "WSTG-v42-CONF-12 Testing for Content Security Policy - OSMAP CSP regression"
     },
     {
+      "details": {
+        "statuses": {
+          "conf03_cargo_lock": 404,
+          "conf03_cargo_toml": 404,
+          "conf03_certificate_key": 404,
+          "conf03_config_php": 404,
+          "conf03_env": 404,
+          "conf03_env_example": 404,
+          "conf03_nginx_conf": 404,
+          "conf03_private_key": 404,
+          "conf03_readme": 404,
+          "conf04_archive_tar": 404,
+          "conf04_archive_zip": 404,
+          "conf04_config_backup": 404,
+          "conf04_index_backup": 404,
+          "conf04_old_env": 404,
+          "conf04_sql_backup": 404,
+          "conf04_swap_file": 404
+        }
+      },
+      "evidence": [
+        "evidence/conf03_env.headers",
+        "evidence/conf03_env.body",
+        "evidence/conf03_env_example.headers",
+        "evidence/conf03_env_example.body",
+        "evidence/conf03_cargo_toml.headers",
+        "evidence/conf03_cargo_toml.body",
+        "evidence/conf03_cargo_lock.headers",
+        "evidence/conf03_cargo_lock.body",
+        "evidence/conf03_readme.headers",
+        "evidence/conf03_readme.body",
+        "evidence/conf03_private_key.headers",
+        "evidence/conf03_private_key.body",
+        "evidence/conf03_certificate_key.headers",
+        "evidence/conf03_certificate_key.body",
+        "evidence/conf03_config_php.headers",
+        "evidence/conf03_config_php.body",
+        "evidence/conf03_nginx_conf.headers",
+        "evidence/conf03_nginx_conf.body",
+        "evidence/conf04_config_backup.headers",
+        "evidence/conf04_config_backup.body",
+        "evidence/conf04_index_backup.headers",
+        "evidence/conf04_index_backup.body",
+        "evidence/conf04_swap_file.headers",
+        "evidence/conf04_swap_file.body",
+        "evidence/conf04_sql_backup.headers",
+        "evidence/conf04_sql_backup.body",
+        "evidence/conf04_archive_zip.headers",
+        "evidence/conf04_archive_zip.body",
+        "evidence/conf04_archive_tar.headers",
+        "evidence/conf04_archive_tar.body",
+        "evidence/conf04_old_env.headers",
+        "evidence/conf04_old_env.body",
+        "evidence/sensitive_extension_backup_static.txt"
+      ],
+      "message": "sensitive extension, source, and backup probes were not served as public files",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-CONF-008",
+      "test_name": "WSTG-v42-CONF-03/04 Sensitive Extension and Backup File Exposure"
+    },
+    {
+      "details": {
+        "statuses": {
+          "conf08_clientaccesspolicy_xml": 404,
+          "conf08_crossdomain_xml": 404
+        }
+      },
+      "evidence": [
+        "evidence/conf08_crossdomain_xml.headers",
+        "evidence/conf08_crossdomain_xml.body",
+        "evidence/conf08_clientaccesspolicy_xml.headers",
+        "evidence/conf08_clientaccesspolicy_xml.body",
+        "evidence/ria_cloud_storage_static.txt"
+      ],
+      "message": "RIA cross-domain policy and cloud storage are not applicable to the OSMAP browser surface",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-CONF-009",
+      "test_name": "WSTG-v42-CONF-08/11 RIA Cross-Domain and Cloud Storage Applicability"
+    },
+    {
+      "details": {},
+      "evidence": [
+        "evidence/host_file_permissions.txt",
+        "evidence/subdomain_takeover_dns.txt",
+        "evidence/file_permission_subdomain_static.txt"
+      ],
+      "message": "host permissions are restrictive and OSMAP public names have no dangling takeover CNAMEs",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-CONF-010",
+      "test_name": "WSTG-v42-CONF-09/10 File Permissions and Subdomain Takeover"
+    },
+    {
+      "details": {
+        "statuses": {
+          "idnt01_admin_users": 404,
+          "idnt01_roles": 404,
+          "idnt02_account_register": 404,
+          "idnt02_register": 404,
+          "idnt02_signup": 404,
+          "idnt03_invite": 404,
+          "idnt03_provision": 404,
+          "idnt03_users_new": 404
+        }
+      },
+      "evidence": [
+        "evidence/idnt02_register.headers",
+        "evidence/idnt02_register.body",
+        "evidence/idnt02_signup.headers",
+        "evidence/idnt02_signup.body",
+        "evidence/idnt02_account_register.headers",
+        "evidence/idnt02_account_register.body",
+        "evidence/idnt03_invite.headers",
+        "evidence/idnt03_invite.body",
+        "evidence/idnt03_provision.headers",
+        "evidence/idnt03_provision.body",
+        "evidence/idnt03_users_new.headers",
+        "evidence/idnt03_users_new.body",
+        "evidence/idnt01_admin_users.headers",
+        "evidence/idnt01_admin_users.body",
+        "evidence/idnt01_roles.headers",
+        "evidence/idnt01_roles.body",
+        "evidence/identity_lifecycle_static.txt"
+      ],
+      "message": "OSMAP exposes no self-service identity lifecycle surface and bounds mailbox username input",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-IDNT-001",
+      "test_name": "WSTG-v42-IDNT-01/02/03/05 Identity Lifecycle Applicability"
+    },
+    {
       "details": {},
       "evidence": [
         "evidence/login_form.headers",
@@ -199,13 +594,6 @@
           401,
           401,
           401,
-          401,
-          401,
-          401,
-          401,
-          401,
-          401,
-          401,
           401
         ]
       },
@@ -215,14 +603,7 @@
         "evidence/throttle_probe_attempt_3.headers",
         "evidence/throttle_probe_attempt_4.headers",
         "evidence/throttle_probe_attempt_5.headers",
-        "evidence/throttle_probe_attempt_6.headers",
-        "evidence/throttle_probe_attempt_7.headers",
-        "evidence/throttle_probe_attempt_8.headers",
-        "evidence/throttle_probe_attempt_9.headers",
-        "evidence/throttle_probe_attempt_10.headers",
-        "evidence/throttle_probe_attempt_11.headers",
-        "evidence/throttle_probe_attempt_12.headers",
-        "evidence/throttle_probe_attempt_13.headers"
+        "evidence/throttle_probe_attempt_6.headers"
       ],
       "message": "bounded probe observed login throttling",
       "status": "pass",
@@ -239,6 +620,55 @@
       "status": "pass",
       "test_id": "OSMAP-WSTG-ATHN-004",
       "test_name": "WSTG-v42-ATHN-10 Testing for Weaker Authentication in Alternative Channel - TOTP login flow"
+    },
+    {
+      "details": {
+        "statuses": {
+          "athn02_default_admin": 401,
+          "athn02_default_osmap": 401,
+          "athn04_auth_bypass": 404,
+          "athn04_mailboxes_unauth": 303,
+          "athn04_sessions_unauth": 303,
+          "athn04_settings_unauth": 303,
+          "athn05_login_form_feature_scan": 200,
+          "athn05_remember_password": 404,
+          "athn08_security_question": 404,
+          "athn09_forgot_password": 404,
+          "athn09_password_change": 404,
+          "athn09_reset_password": 404
+        }
+      },
+      "evidence": [
+        "evidence/athn04_mailboxes_unauth.headers",
+        "evidence/athn04_mailboxes_unauth.body",
+        "evidence/athn04_sessions_unauth.headers",
+        "evidence/athn04_sessions_unauth.body",
+        "evidence/athn04_settings_unauth.headers",
+        "evidence/athn04_settings_unauth.body",
+        "evidence/athn02_default_admin.headers",
+        "evidence/athn02_default_admin.body",
+        "evidence/athn02_default_osmap.headers",
+        "evidence/athn02_default_osmap.body",
+        "evidence/athn05_remember_password.headers",
+        "evidence/athn05_remember_password.body",
+        "evidence/athn08_security_question.headers",
+        "evidence/athn08_security_question.body",
+        "evidence/athn09_forgot_password.headers",
+        "evidence/athn09_forgot_password.body",
+        "evidence/athn09_reset_password.headers",
+        "evidence/athn09_reset_password.body",
+        "evidence/athn09_password_change.headers",
+        "evidence/athn09_password_change.body",
+        "evidence/athn04_auth_bypass.headers",
+        "evidence/athn04_auth_bypass.body",
+        "evidence/athn05_login_form_feature_scan.headers",
+        "evidence/athn05_login_form_feature_scan.body",
+        "evidence/authentication_feature_static.txt"
+      ],
+      "message": "OSMAP exposes no browser default-account, bypass, remember-password, security-question, or password reset surface",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-ATHN-005",
+      "test_name": "WSTG-v42-ATHN-02/04/05/07/08/09 Authentication Feature Applicability"
     },
     {
       "details": {},
@@ -294,6 +724,31 @@
       "test_name": "WSTG-v42-ATHN-06 Testing for Browser Cache Weaknesses - authenticated pages"
     },
     {
+      "details": {
+        "statuses": {
+          "login": 303,
+          "logout": 303,
+          "mailboxes": 200,
+          "old_cookie_after_logout": 303,
+          "stale_cookie": 303
+        }
+      },
+      "evidence": [
+        "evidence/session_lifecycle_login.headers",
+        "evidence/session_lifecycle_mailboxes.headers",
+        "evidence/session_lifecycle_mailboxes.body",
+        "evidence/session_lifecycle_logout.headers",
+        "evidence/session_lifecycle_old_cookie_after_logout.headers",
+        "evidence/session_lifecycle_stale_cookie.headers",
+        "evidence/session_lifecycle_static.txt",
+        "evidence/session_lifecycle_redaction.txt"
+      ],
+      "message": "session lifecycle evidence covers logout invalidation, stale-cookie rejection, timeout policy, exposed-token controls, concurrent-session policy, and race handling",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-SESS-006",
+      "test_name": "WSTG-v42-SESS lifecycle, timeout, and stale-cookie controls"
+    },
+    {
       "details": {},
       "evidence": [
         "evidence/method_options.headers",
@@ -331,14 +786,98 @@
       "test_name": "WSTG-v42-INFO-02 Fingerprint Web Server - unauthenticated disclosure and error handling"
     },
     {
+      "details": {
+        "statuses": {
+          "errh02_bad_attachment": 400,
+          "errh02_bad_mailbox": 400,
+          "errh02_bad_search": 400,
+          "errh02_bad_uid": 400,
+          "errh02_missing_route": 404
+        }
+      },
+      "evidence": [
+        "evidence/errh02_missing_route.headers",
+        "evidence/errh02_missing_route.body",
+        "evidence/errh02_bad_uid.headers",
+        "evidence/errh02_bad_uid.body",
+        "evidence/errh02_bad_mailbox.headers",
+        "evidence/errh02_bad_mailbox.body",
+        "evidence/errh02_bad_attachment.headers",
+        "evidence/errh02_bad_attachment.body",
+        "evidence/errh02_bad_search.headers",
+        "evidence/errh02_bad_search.body",
+        "evidence/error_route_inventory_static.txt"
+      ],
+      "message": "stack-trace probes stayed generic and the browser route/architecture inventory is documented",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-INFO-003",
+      "test_name": "WSTG-v42-ERRH-02 and INFO-06/07/10 Error Leakage and Route Architecture Inventory"
+    },
+    {
+      "details": {
+        "statuses": {
+          "info_recon_admin": 404,
+          "info_recon_api": 404,
+          "info_recon_git_config": 404,
+          "info_recon_graphql": 404,
+          "info_recon_healthz": 200,
+          "info_recon_login": 200,
+          "info_recon_phpmyadmin": 404,
+          "info_recon_robots": 404,
+          "info_recon_root": 303,
+          "info_recon_roundcube": 404,
+          "info_recon_security": 404,
+          "info_recon_server_status": 404,
+          "info_recon_webmail": 301
+        }
+      },
+      "evidence": [
+        "evidence/info_recon_root.headers",
+        "evidence/info_recon_root.body",
+        "evidence/info_recon_login.headers",
+        "evidence/info_recon_login.body",
+        "evidence/info_recon_healthz.headers",
+        "evidence/info_recon_healthz.body",
+        "evidence/info_recon_robots.headers",
+        "evidence/info_recon_robots.body",
+        "evidence/info_recon_security.headers",
+        "evidence/info_recon_security.body",
+        "evidence/info_recon_admin.headers",
+        "evidence/info_recon_admin.body",
+        "evidence/info_recon_api.headers",
+        "evidence/info_recon_api.body",
+        "evidence/info_recon_graphql.headers",
+        "evidence/info_recon_graphql.body",
+        "evidence/info_recon_phpmyadmin.headers",
+        "evidence/info_recon_phpmyadmin.body",
+        "evidence/info_recon_roundcube.headers",
+        "evidence/info_recon_roundcube.body",
+        "evidence/info_recon_webmail.headers",
+        "evidence/info_recon_webmail.body",
+        "evidence/info_recon_git_config.headers",
+        "evidence/info_recon_git_config.body",
+        "evidence/info_recon_server_status.headers",
+        "evidence/info_recon_server_status.body",
+        "evidence/public_recon_fingerprinting_static.txt"
+      ],
+      "message": "bounded public reconnaissance found only expected OSMAP entry points and no framework/version fingerprints",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-INFO-004",
+      "test_name": "WSTG-v42-INFO-01/04/08/09 Public Reconnaissance and Fingerprinting"
+    },
+    {
       "details": {},
       "evidence": [
         "evidence/path_traversal_dotdot.headers",
         "evidence/path_traversal_dotdot.body",
         "evidence/path_traversal_encoded.headers",
         "evidence/path_traversal_encoded.body",
+        "evidence/path_traversal_double_encoded.headers",
+        "evidence/path_traversal_double_encoded.body",
         "evidence/path_traversal_attachment.headers",
-        "evidence/path_traversal_attachment.body"
+        "evidence/path_traversal_attachment.body",
+        "evidence/path_traversal_absolute.headers",
+        "evidence/path_traversal_absolute.body"
       ],
       "message": "path traversal probes were rejected or safely gated",
       "status": "pass",
@@ -348,9 +887,18 @@
     {
       "details": {},
       "evidence": [
-        "evidence/reflected_input_login.body",
-        "evidence/reflected_input_search.body",
-        "evidence/reflected_input_mailbox.body"
+        "evidence/reflected_input_login_1.body",
+        "evidence/reflected_input_search_1.body",
+        "evidence/reflected_input_mailbox_1.body",
+        "evidence/reflected_input_login_2.body",
+        "evidence/reflected_input_search_2.body",
+        "evidence/reflected_input_mailbox_2.body",
+        "evidence/reflected_input_login_3.body",
+        "evidence/reflected_input_search_3.body",
+        "evidence/reflected_input_mailbox_3.body",
+        "evidence/reflected_input_login_4.body",
+        "evidence/reflected_input_search_4.body",
+        "evidence/reflected_input_mailbox_4.body"
       ],
       "message": "probe payloads were not reflected as executable markup",
       "status": "pass",
@@ -358,12 +906,482 @@
       "test_name": "WSTG-v42-INPV-01 Testing for Reflected Cross Site Scripting - safe parameters"
     },
     {
+      "details": {
+        "nonce": "b1112d18b036",
+        "probed_surfaces": [
+          "unauth_login",
+          "unauth_mailbox",
+          "unauth_message",
+          "unauth_attachment",
+          "unauth_search",
+          "unauth_drafts_save",
+          "unauth_send",
+          "unauth_messages_move",
+          "auth_login",
+          "auth_mailbox",
+          "auth_message",
+          "auth_attachment",
+          "auth_search",
+          "auth_drafts_save",
+          "auth_send",
+          "auth_messages_move"
+        ]
+      },
+      "evidence": [
+        "evidence/command_injection_baseline_unauth_login.headers",
+        "evidence/command_injection_baseline_unauth_login.body",
+        "evidence/command_injection_baseline_unauth_mailbox.headers",
+        "evidence/command_injection_baseline_unauth_mailbox.body",
+        "evidence/command_injection_baseline_unauth_message.headers",
+        "evidence/command_injection_baseline_unauth_message.body",
+        "evidence/command_injection_baseline_unauth_attachment.headers",
+        "evidence/command_injection_baseline_unauth_attachment.body",
+        "evidence/command_injection_baseline_unauth_search.headers",
+        "evidence/command_injection_baseline_unauth_search.body",
+        "evidence/command_injection_baseline_unauth_drafts_save.headers",
+        "evidence/command_injection_baseline_unauth_drafts_save.body",
+        "evidence/command_injection_baseline_unauth_send.headers",
+        "evidence/command_injection_baseline_unauth_send.body",
+        "evidence/command_injection_baseline_unauth_messages_move.headers",
+        "evidence/command_injection_baseline_unauth_messages_move.body",
+        "evidence/command_injection_baseline_auth_login.headers",
+        "evidence/command_injection_baseline_auth_login.body",
+        "evidence/command_injection_baseline_auth_mailbox.headers",
+        "evidence/command_injection_baseline_auth_mailbox.body",
+        "evidence/command_injection_baseline_auth_message.headers",
+        "evidence/command_injection_baseline_auth_message.body",
+        "evidence/command_injection_baseline_auth_attachment.headers",
+        "evidence/command_injection_baseline_auth_attachment.body",
+        "evidence/command_injection_baseline_auth_search.headers",
+        "evidence/command_injection_baseline_auth_search.body",
+        "evidence/command_injection_baseline_auth_drafts_save.headers",
+        "evidence/command_injection_baseline_auth_drafts_save.body",
+        "evidence/command_injection_baseline_auth_send.headers",
+        "evidence/command_injection_baseline_auth_send.body",
+        "evidence/command_injection_baseline_auth_messages_move.headers",
+        "evidence/command_injection_baseline_auth_messages_move.body",
+        "evidence/command_injection_unauth_login_separator_canary.headers",
+        "evidence/command_injection_unauth_login_separator_canary.body",
+        "evidence/command_injection_unauth_login_separator_uid.headers",
+        "evidence/command_injection_unauth_login_separator_uid.body",
+        "evidence/command_injection_unauth_login_command_substitution_canary.headers",
+        "evidence/command_injection_unauth_login_command_substitution_canary.body",
+        "evidence/command_injection_unauth_login_command_substitution_uid.headers",
+        "evidence/command_injection_unauth_login_command_substitution_uid.body",
+        "evidence/command_injection_unauth_login_redirect.headers",
+        "evidence/command_injection_unauth_login_redirect.body",
+        "evidence/command_injection_unauth_login_newline_canary.headers",
+        "evidence/command_injection_unauth_login_newline_canary.body",
+        "evidence/command_injection_unauth_login_double_encoded_separator.headers",
+        "evidence/command_injection_unauth_login_double_encoded_separator.body",
+        "evidence/command_injection_unauth_login_bounded_timing.headers",
+        "evidence/command_injection_unauth_login_bounded_timing.body",
+        "evidence/command_injection_unauth_mailbox_separator_canary.headers",
+        "evidence/command_injection_unauth_mailbox_separator_canary.body",
+        "evidence/command_injection_unauth_mailbox_separator_uid.headers",
+        "evidence/command_injection_unauth_mailbox_separator_uid.body",
+        "evidence/command_injection_unauth_mailbox_command_substitution_canary.headers",
+        "evidence/command_injection_unauth_mailbox_command_substitution_canary.body",
+        "evidence/command_injection_unauth_mailbox_command_substitution_uid.headers",
+        "evidence/command_injection_unauth_mailbox_command_substitution_uid.body",
+        "evidence/command_injection_unauth_mailbox_redirect.headers",
+        "evidence/command_injection_unauth_mailbox_redirect.body",
+        "evidence/command_injection_unauth_mailbox_newline_canary.headers",
+        "evidence/command_injection_unauth_mailbox_newline_canary.body",
+        "evidence/command_injection_unauth_mailbox_double_encoded_separator.headers",
+        "evidence/command_injection_unauth_mailbox_double_encoded_separator.body",
+        "evidence/command_injection_unauth_mailbox_bounded_timing.headers",
+        "evidence/command_injection_unauth_mailbox_bounded_timing.body",
+        "evidence/command_injection_unauth_message_separator_canary.headers",
+        "evidence/command_injection_unauth_message_separator_canary.body",
+        "evidence/command_injection_unauth_message_separator_uid.headers",
+        "evidence/command_injection_unauth_message_separator_uid.body",
+        "evidence/command_injection_unauth_message_command_substitution_canary.headers",
+        "evidence/command_injection_unauth_message_command_substitution_canary.body",
+        "evidence/command_injection_unauth_message_command_substitution_uid.headers",
+        "evidence/command_injection_unauth_message_command_substitution_uid.body",
+        "evidence/command_injection_unauth_message_redirect.headers",
+        "evidence/command_injection_unauth_message_redirect.body",
+        "evidence/command_injection_unauth_message_newline_canary.headers",
+        "evidence/command_injection_unauth_message_newline_canary.body",
+        "evidence/command_injection_unauth_message_double_encoded_separator.headers",
+        "evidence/command_injection_unauth_message_double_encoded_separator.body",
+        "evidence/command_injection_unauth_message_bounded_timing.headers",
+        "evidence/command_injection_unauth_message_bounded_timing.body",
+        "evidence/command_injection_unauth_attachment_separator_canary.headers",
+        "evidence/command_injection_unauth_attachment_separator_canary.body",
+        "evidence/command_injection_unauth_attachment_separator_uid.headers",
+        "evidence/command_injection_unauth_attachment_separator_uid.body",
+        "evidence/command_injection_unauth_attachment_command_substitution_canary.headers",
+        "evidence/command_injection_unauth_attachment_command_substitution_canary.body",
+        "evidence/command_injection_unauth_attachment_command_substitution_uid.headers",
+        "evidence/command_injection_unauth_attachment_command_substitution_uid.body",
+        "evidence/command_injection_unauth_attachment_redirect.headers",
+        "evidence/command_injection_unauth_attachment_redirect.body",
+        "evidence/command_injection_unauth_attachment_newline_canary.headers",
+        "evidence/command_injection_unauth_attachment_newline_canary.body",
+        "evidence/command_injection_unauth_attachment_double_encoded_separator.headers",
+        "evidence/command_injection_unauth_attachment_double_encoded_separator.body",
+        "evidence/command_injection_unauth_attachment_bounded_timing.headers",
+        "evidence/command_injection_unauth_attachment_bounded_timing.body",
+        "evidence/command_injection_unauth_search_separator_canary.headers",
+        "evidence/command_injection_unauth_search_separator_canary.body",
+        "evidence/command_injection_unauth_search_separator_uid.headers",
+        "evidence/command_injection_unauth_search_separator_uid.body",
+        "evidence/command_injection_unauth_search_command_substitution_canary.headers",
+        "evidence/command_injection_unauth_search_command_substitution_canary.body",
+        "evidence/command_injection_unauth_search_command_substitution_uid.headers",
+        "evidence/command_injection_unauth_search_command_substitution_uid.body",
+        "evidence/command_injection_unauth_search_redirect.headers",
+        "evidence/command_injection_unauth_search_redirect.body",
+        "evidence/command_injection_unauth_search_newline_canary.headers",
+        "evidence/command_injection_unauth_search_newline_canary.body",
+        "evidence/command_injection_unauth_search_double_encoded_separator.headers",
+        "evidence/command_injection_unauth_search_double_encoded_separator.body",
+        "evidence/command_injection_unauth_search_bounded_timing.headers",
+        "evidence/command_injection_unauth_search_bounded_timing.body",
+        "evidence/command_injection_unauth_drafts_save_separator_canary.headers",
+        "evidence/command_injection_unauth_drafts_save_separator_canary.body",
+        "evidence/command_injection_unauth_drafts_save_separator_uid.headers",
+        "evidence/command_injection_unauth_drafts_save_separator_uid.body",
+        "evidence/command_injection_unauth_drafts_save_command_substitution_canary.headers",
+        "evidence/command_injection_unauth_drafts_save_command_substitution_canary.body",
+        "evidence/command_injection_unauth_drafts_save_command_substitution_uid.headers",
+        "evidence/command_injection_unauth_drafts_save_command_substitution_uid.body",
+        "evidence/command_injection_unauth_drafts_save_redirect.headers",
+        "evidence/command_injection_unauth_drafts_save_redirect.body",
+        "evidence/command_injection_unauth_drafts_save_newline_canary.headers",
+        "evidence/command_injection_unauth_drafts_save_newline_canary.body",
+        "evidence/command_injection_unauth_drafts_save_double_encoded_separator.headers",
+        "evidence/command_injection_unauth_drafts_save_double_encoded_separator.body",
+        "evidence/command_injection_unauth_drafts_save_bounded_timing.headers",
+        "evidence/command_injection_unauth_drafts_save_bounded_timing.body",
+        "evidence/command_injection_unauth_send_separator_canary.headers",
+        "evidence/command_injection_unauth_send_separator_canary.body",
+        "evidence/command_injection_unauth_send_separator_uid.headers",
+        "evidence/command_injection_unauth_send_separator_uid.body",
+        "evidence/command_injection_unauth_send_command_substitution_canary.headers",
+        "evidence/command_injection_unauth_send_command_substitution_canary.body",
+        "evidence/command_injection_unauth_send_command_substitution_uid.headers",
+        "evidence/command_injection_unauth_send_command_substitution_uid.body",
+        "evidence/command_injection_unauth_send_redirect.headers",
+        "evidence/command_injection_unauth_send_redirect.body",
+        "evidence/command_injection_unauth_send_newline_canary.headers",
+        "evidence/command_injection_unauth_send_newline_canary.body",
+        "evidence/command_injection_unauth_send_double_encoded_separator.headers",
+        "evidence/command_injection_unauth_send_double_encoded_separator.body",
+        "evidence/command_injection_unauth_send_bounded_timing.headers",
+        "evidence/command_injection_unauth_send_bounded_timing.body",
+        "evidence/command_injection_unauth_messages_move_separator_canary.headers",
+        "evidence/command_injection_unauth_messages_move_separator_canary.body",
+        "evidence/command_injection_unauth_messages_move_separator_uid.headers",
+        "evidence/command_injection_unauth_messages_move_separator_uid.body",
+        "evidence/command_injection_unauth_messages_move_command_substitution_canary.headers",
+        "evidence/command_injection_unauth_messages_move_command_substitution_canary.body",
+        "evidence/command_injection_unauth_messages_move_command_substitution_uid.headers",
+        "evidence/command_injection_unauth_messages_move_command_substitution_uid.body",
+        "evidence/command_injection_unauth_messages_move_redirect.headers",
+        "evidence/command_injection_unauth_messages_move_redirect.body",
+        "evidence/command_injection_unauth_messages_move_newline_canary.headers",
+        "evidence/command_injection_unauth_messages_move_newline_canary.body",
+        "evidence/command_injection_unauth_messages_move_double_encoded_separator.headers",
+        "evidence/command_injection_unauth_messages_move_double_encoded_separator.body",
+        "evidence/command_injection_unauth_messages_move_bounded_timing.headers",
+        "evidence/command_injection_unauth_messages_move_bounded_timing.body",
+        "evidence/command_injection_auth_login_separator_canary.headers",
+        "evidence/command_injection_auth_login_separator_canary.body",
+        "evidence/command_injection_auth_login_separator_uid.headers",
+        "evidence/command_injection_auth_login_separator_uid.body",
+        "evidence/command_injection_auth_login_command_substitution_canary.headers",
+        "evidence/command_injection_auth_login_command_substitution_canary.body",
+        "evidence/command_injection_auth_login_command_substitution_uid.headers",
+        "evidence/command_injection_auth_login_command_substitution_uid.body",
+        "evidence/command_injection_auth_login_redirect.headers",
+        "evidence/command_injection_auth_login_redirect.body",
+        "evidence/command_injection_auth_login_newline_canary.headers",
+        "evidence/command_injection_auth_login_newline_canary.body",
+        "evidence/command_injection_auth_login_double_encoded_separator.headers",
+        "evidence/command_injection_auth_login_double_encoded_separator.body",
+        "evidence/command_injection_auth_login_bounded_timing.headers",
+        "evidence/command_injection_auth_login_bounded_timing.body",
+        "evidence/command_injection_auth_mailbox_separator_canary.headers",
+        "evidence/command_injection_auth_mailbox_separator_canary.body",
+        "evidence/command_injection_auth_mailbox_separator_uid.headers",
+        "evidence/command_injection_auth_mailbox_separator_uid.body",
+        "evidence/command_injection_auth_mailbox_command_substitution_canary.headers",
+        "evidence/command_injection_auth_mailbox_command_substitution_canary.body",
+        "evidence/command_injection_auth_mailbox_command_substitution_uid.headers",
+        "evidence/command_injection_auth_mailbox_command_substitution_uid.body",
+        "evidence/command_injection_auth_mailbox_redirect.headers",
+        "evidence/command_injection_auth_mailbox_redirect.body",
+        "evidence/command_injection_auth_mailbox_newline_canary.headers",
+        "evidence/command_injection_auth_mailbox_newline_canary.body",
+        "evidence/command_injection_auth_mailbox_double_encoded_separator.headers",
+        "evidence/command_injection_auth_mailbox_double_encoded_separator.body",
+        "evidence/command_injection_auth_mailbox_bounded_timing.headers",
+        "evidence/command_injection_auth_mailbox_bounded_timing.body",
+        "evidence/command_injection_auth_message_separator_canary.headers",
+        "evidence/command_injection_auth_message_separator_canary.body",
+        "evidence/command_injection_auth_message_separator_uid.headers",
+        "evidence/command_injection_auth_message_separator_uid.body",
+        "evidence/command_injection_auth_message_command_substitution_canary.headers",
+        "evidence/command_injection_auth_message_command_substitution_canary.body",
+        "evidence/command_injection_auth_message_command_substitution_uid.headers",
+        "evidence/command_injection_auth_message_command_substitution_uid.body",
+        "evidence/command_injection_auth_message_redirect.headers",
+        "evidence/command_injection_auth_message_redirect.body",
+        "evidence/command_injection_auth_message_newline_canary.headers",
+        "evidence/command_injection_auth_message_newline_canary.body",
+        "evidence/command_injection_auth_message_double_encoded_separator.headers",
+        "evidence/command_injection_auth_message_double_encoded_separator.body",
+        "evidence/command_injection_auth_message_bounded_timing.headers",
+        "evidence/command_injection_auth_message_bounded_timing.body",
+        "evidence/command_injection_auth_attachment_separator_canary.headers",
+        "evidence/command_injection_auth_attachment_separator_canary.body",
+        "evidence/command_injection_auth_attachment_separator_uid.headers",
+        "evidence/command_injection_auth_attachment_separator_uid.body",
+        "evidence/command_injection_auth_attachment_command_substitution_canary.headers",
+        "evidence/command_injection_auth_attachment_command_substitution_canary.body",
+        "evidence/command_injection_auth_attachment_command_substitution_uid.headers",
+        "evidence/command_injection_auth_attachment_command_substitution_uid.body",
+        "evidence/command_injection_auth_attachment_redirect.headers",
+        "evidence/command_injection_auth_attachment_redirect.body",
+        "evidence/command_injection_auth_attachment_newline_canary.headers",
+        "evidence/command_injection_auth_attachment_newline_canary.body",
+        "evidence/command_injection_auth_attachment_double_encoded_separator.headers",
+        "evidence/command_injection_auth_attachment_double_encoded_separator.body",
+        "evidence/command_injection_auth_attachment_bounded_timing.headers",
+        "evidence/command_injection_auth_attachment_bounded_timing.body",
+        "evidence/command_injection_auth_search_separator_canary.headers",
+        "evidence/command_injection_auth_search_separator_canary.body",
+        "evidence/command_injection_auth_search_separator_uid.headers",
+        "evidence/command_injection_auth_search_separator_uid.body",
+        "evidence/command_injection_auth_search_command_substitution_canary.headers",
+        "evidence/command_injection_auth_search_command_substitution_canary.body",
+        "evidence/command_injection_auth_search_command_substitution_uid.headers",
+        "evidence/command_injection_auth_search_command_substitution_uid.body",
+        "evidence/command_injection_auth_search_redirect.headers",
+        "evidence/command_injection_auth_search_redirect.body",
+        "evidence/command_injection_auth_search_newline_canary.headers",
+        "evidence/command_injection_auth_search_newline_canary.body",
+        "evidence/command_injection_auth_search_double_encoded_separator.headers",
+        "evidence/command_injection_auth_search_double_encoded_separator.body",
+        "evidence/command_injection_auth_search_bounded_timing.headers",
+        "evidence/command_injection_auth_search_bounded_timing.body",
+        "evidence/command_injection_auth_drafts_save_separator_canary.headers",
+        "evidence/command_injection_auth_drafts_save_separator_canary.body",
+        "evidence/command_injection_auth_drafts_save_separator_uid.headers",
+        "evidence/command_injection_auth_drafts_save_separator_uid.body",
+        "evidence/command_injection_auth_drafts_save_command_substitution_canary.headers",
+        "evidence/command_injection_auth_drafts_save_command_substitution_canary.body",
+        "evidence/command_injection_auth_drafts_save_command_substitution_uid.headers",
+        "evidence/command_injection_auth_drafts_save_command_substitution_uid.body",
+        "evidence/command_injection_auth_drafts_save_redirect.headers",
+        "evidence/command_injection_auth_drafts_save_redirect.body",
+        "evidence/command_injection_auth_drafts_save_newline_canary.headers",
+        "evidence/command_injection_auth_drafts_save_newline_canary.body",
+        "evidence/command_injection_auth_drafts_save_double_encoded_separator.headers",
+        "evidence/command_injection_auth_drafts_save_double_encoded_separator.body",
+        "evidence/command_injection_auth_drafts_save_bounded_timing.headers",
+        "evidence/command_injection_auth_drafts_save_bounded_timing.body",
+        "evidence/command_injection_auth_send_separator_canary.headers",
+        "evidence/command_injection_auth_send_separator_canary.body",
+        "evidence/command_injection_auth_send_separator_uid.headers",
+        "evidence/command_injection_auth_send_separator_uid.body",
+        "evidence/command_injection_auth_send_command_substitution_canary.headers",
+        "evidence/command_injection_auth_send_command_substitution_canary.body",
+        "evidence/command_injection_auth_send_command_substitution_uid.headers",
+        "evidence/command_injection_auth_send_command_substitution_uid.body",
+        "evidence/command_injection_auth_send_redirect.headers",
+        "evidence/command_injection_auth_send_redirect.body",
+        "evidence/command_injection_auth_send_newline_canary.headers",
+        "evidence/command_injection_auth_send_newline_canary.body",
+        "evidence/command_injection_auth_send_double_encoded_separator.headers",
+        "evidence/command_injection_auth_send_double_encoded_separator.body",
+        "evidence/command_injection_auth_send_bounded_timing.headers",
+        "evidence/command_injection_auth_send_bounded_timing.body",
+        "evidence/command_injection_auth_messages_move_separator_canary.headers",
+        "evidence/command_injection_auth_messages_move_separator_canary.body",
+        "evidence/command_injection_auth_messages_move_separator_uid.headers",
+        "evidence/command_injection_auth_messages_move_separator_uid.body",
+        "evidence/command_injection_auth_messages_move_command_substitution_canary.headers",
+        "evidence/command_injection_auth_messages_move_command_substitution_canary.body",
+        "evidence/command_injection_auth_messages_move_command_substitution_uid.headers",
+        "evidence/command_injection_auth_messages_move_command_substitution_uid.body",
+        "evidence/command_injection_auth_messages_move_redirect.headers",
+        "evidence/command_injection_auth_messages_move_redirect.body",
+        "evidence/command_injection_auth_messages_move_newline_canary.headers",
+        "evidence/command_injection_auth_messages_move_newline_canary.body",
+        "evidence/command_injection_auth_messages_move_double_encoded_separator.headers",
+        "evidence/command_injection_auth_messages_move_double_encoded_separator.body",
+        "evidence/command_injection_auth_messages_move_bounded_timing.headers",
+        "evidence/command_injection_auth_messages_move_bounded_timing.body",
+        "evidence/command_injection_host_evidence.txt",
+        "evidence/command_injection_probe_matrix.txt",
+        "evidence/command_injection_redaction.txt"
+      ],
+      "message": "safe command-injection due-diligence probes across unauthenticated and authenticated OSMAP surfaces found no shell execution, diagnostic leakage, truncation, HTTP 500, or abnormal timing",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-INPV-003",
+      "test_name": "WSTG-v42-INPV-12 Testing for Command Injection - safe OSMAP command-boundary due diligence"
+    },
+    {
+      "details": {
+        "statuses": {
+          "attachment_filename": 400,
+          "dangerous_content_type": 400,
+          "display_name": 400,
+          "mailbox_tamper": 503,
+          "recipient_newline": 400,
+          "search_tamper": 400,
+          "subject_newline": 400,
+          "uid_tamper": 400
+        }
+      },
+      "evidence": [
+        "evidence/webmail_inpv10_subject_newline.headers",
+        "evidence/webmail_inpv10_recipient_newline.headers",
+        "evidence/webmail_inpv10_display_name.headers",
+        "evidence/webmail_inpv10_mailbox_tamper.headers",
+        "evidence/webmail_inpv10_uid_tamper.headers",
+        "evidence/webmail_inpv10_search_tamper.headers",
+        "evidence/webmail_inpv10_attachment_filename.headers",
+        "evidence/webmail_inpv10_dangerous_content_type.headers",
+        "evidence/webmail_input_validation_static.txt",
+        "evidence/webmail_input_validation_redaction.txt"
+      ],
+      "message": "IMAP/SMTP and compose probes rejected header/newline, mailbox, UID, attachment filename, and dangerous content-type inputs",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-INPV-004",
+      "test_name": "WSTG-v42-INPV-10 Testing for IMAP SMTP Injection - webmail input validation"
+    },
+    {
+      "details": {
+        "statuses": {
+          "http_inpv03_get_body_mailboxes": 400,
+          "http_inpv03_options_send": 403,
+          "http_inpv03_post_mailboxes": 404,
+          "http_inpv03_put_login": 403,
+          "http_inpv04_duplicate_login_field": 400,
+          "http_inpv04_duplicate_query": 400,
+          "http_inpv04_duplicate_send_field": 400,
+          "http_inpv04_login_json_content_type": 400,
+          "http_inpv04_send_json_content_type": 400
+        }
+      },
+      "evidence": [
+        "evidence/http_inpv03_options_send.headers",
+        "evidence/http_inpv03_put_login.headers",
+        "evidence/http_inpv03_get_body_mailboxes.headers",
+        "evidence/http_inpv03_post_mailboxes.headers",
+        "evidence/http_inpv04_login_json_content_type.headers",
+        "evidence/http_inpv04_send_json_content_type.headers",
+        "evidence/http_inpv04_duplicate_query.headers",
+        "evidence/http_inpv04_duplicate_login_field.headers",
+        "evidence/http_inpv04_duplicate_send_field.headers",
+        "evidence/http_input_tampering_static.txt"
+      ],
+      "message": "HTTP method, content-type, and duplicate-parameter tampering probes were rejected",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-INPV-005",
+      "test_name": "WSTG-v42-INPV-03/04 Testing HTTP Verb Tampering and HTTP Parameter Pollution"
+    },
+    {
+      "details": {
+        "statuses": {
+          "http_inpv15_cl_te_smuggling": 400,
+          "http_inpv15_duplicate_content_length": 400,
+          "http_inpv15_encoded_crlf_target": 404,
+          "http_inpv16_folded_header": 400,
+          "http_inpv16_missing_host": 400,
+          "http_inpv16_non_normalized_target": 400,
+          "http_inpv17_duplicate_host": 400,
+          "http_inpv17_malformed_host": 400,
+          "http_inpv17_untrusted_host": 200
+        }
+      },
+      "evidence": [
+        "evidence/http_inpv15_cl_te_smuggling.headers",
+        "evidence/http_inpv15_duplicate_content_length.headers",
+        "evidence/http_inpv15_encoded_crlf_target.headers",
+        "evidence/http_inpv16_missing_host.headers",
+        "evidence/http_inpv16_folded_header.headers",
+        "evidence/http_inpv16_non_normalized_target.headers",
+        "evidence/http_inpv17_duplicate_host.headers",
+        "evidence/http_inpv17_malformed_host.headers",
+        "evidence/http_inpv17_untrusted_host.headers",
+        "evidence/http_host_smuggling_static.txt"
+      ],
+      "message": "HTTP host-header, incoming-request, and splitting/smuggling probes failed closed or avoided host reflection",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-INPV-006",
+      "test_name": "WSTG-v42-INPV-15/16/17 Testing HTTP Host Header and Smuggling Inputs"
+    },
+    {
+      "details": {
+        "dependency_markers_checked": [
+          "diesel",
+          "rusqlite",
+          "sqlx",
+          "postgres",
+          "mysql",
+          "ldap3",
+          "quick-xml",
+          "roxmltree",
+          "sxd-xpath",
+          "xpath",
+          "tera",
+          "handlebars",
+          "minijinja",
+          "askama",
+          "reqwest",
+          "ureq",
+          "hyper"
+        ],
+        "failures": {},
+        "source_markers_checked": [
+          "eval(",
+          "reqwest::",
+          "ureq::",
+          "hyper::client",
+          "std::process::command"
+        ],
+        "wstg_not_applicable": [
+          "WSTG-v42-INPV-05",
+          "WSTG-v42-INPV-06",
+          "WSTG-v42-INPV-07",
+          "WSTG-v42-INPV-08",
+          "WSTG-v42-INPV-09",
+          "WSTG-v42-INPV-11",
+          "WSTG-v42-INPV-13",
+          "WSTG-v42-INPV-14",
+          "WSTG-v42-INPV-18",
+          "WSTG-v42-INPV-19"
+        ]
+      },
+      "evidence": [
+        "evidence/injection_applicability_static.txt"
+      ],
+      "message": "remaining Slice 4 injection classes are not applicable to the current OSMAP browser surface",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-INPV-007",
+      "test_name": "WSTG-v42-INPV-05/06/07/08/09/11/13/14/18/19 Injection Applicability Review"
+    },
+    {
       "details": {},
       "evidence": [
-        "evidence/cors_https___attacker.invalid.headers",
-        "evidence/cors_null.headers"
+        "evidence/cors_get_login_https___attacker.invalid.headers",
+        "evidence/cors_get_mailboxes_https___attacker.invalid.headers",
+        "evidence/cors_options_login_https___attacker.invalid.headers",
+        "evidence/cors_options_messages_move_https___attacker.invalid.headers",
+        "evidence/cors_options_send_https___attacker.invalid.headers",
+        "evidence/cors_get_login_null.headers",
+        "evidence/cors_get_mailboxes_null.headers",
+        "evidence/cors_options_login_null.headers",
+        "evidence/cors_options_messages_move_null.headers",
+        "evidence/cors_options_send_null.headers"
       ],
-      "message": "cross-origin probes did not receive permissive credentialed CORS",
+      "message": "cross-origin simple and preflight probes did not receive permissive credentialed CORS",
       "status": "pass",
       "test_id": "OSMAP-WSTG-CLNT-001",
       "test_name": "WSTG-v42-CLNT-07 Testing Cross Origin Resource Sharing"
@@ -371,22 +1389,74 @@
     {
       "details": {},
       "evidence": [
+        "evidence/mime_html_live_report.txt",
         "evidence/static_html_rendering.txt"
       ],
-      "message": "source and docs align with conservative HTML rendering policy",
+      "message": "host-backed HTML sanitization and unsafe-content rejection evidence passed",
       "status": "pass",
       "test_id": "OSMAP-WSTG-CLNT-002",
       "test_name": "WSTG-v42-INPV-02 Testing for Stored Cross Site Scripting - HTML email rendering policy"
     },
     {
+      "details": {
+        "absent_markers_checked": [
+          "localstorage",
+          "sessionstorage",
+          "websocket",
+          "postmessage",
+          "serviceworker",
+          "indexeddb",
+          "swf"
+        ]
+      },
+      "evidence": [
+        "evidence/client_side_applicability_static.txt"
+      ],
+      "message": "remaining client-side and browser-storage rows are covered or not applicable to the current server-rendered surface",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-CLNT-003",
+      "test_name": "WSTG-v42-CLNT Client-Side Browser Applicability Review"
+    },
+    {
       "details": {},
       "evidence": [
+        "evidence/mime_html_live_report.txt",
         "evidence/static_attachment_handling.txt"
       ],
-      "message": "source and docs show bounded upload parsing and forced-download controls",
+      "message": "host-backed attachment download, forced-download, and redaction evidence passed",
       "status": "pass",
       "test_id": "OSMAP-WSTG-BUSL-001",
       "test_name": "WSTG-v42-BUSL-08 Test Upload of Unexpected File Types - attachment handling policy"
+    },
+    {
+      "details": {
+        "statuses": {
+          "attachment_probe": 404,
+          "mailbox_tamper": 200,
+          "message_probe": 503,
+          "no_cookie": 303,
+          "search_probe": 200,
+          "sent_probe": 503,
+          "stale_cookie": 303
+        }
+      },
+      "evidence": [
+        "evidence/authorization_account_isolation_fixture.txt",
+        "evidence/authz_cross_user_mailbox_tamper.headers",
+        "evidence/authz_cross_user_message.headers",
+        "evidence/authz_cross_user_attachment.headers",
+        "evidence/authz_cross_user_sent.headers",
+        "evidence/authz_cross_user_search.headers",
+        "evidence/authz_route_bypass_no_cookie.headers",
+        "evidence/authz_route_bypass_stale_cookie.headers",
+        "evidence/authorization_account_isolation_cleanup.txt",
+        "evidence/authorization_account_isolation_static.txt",
+        "evidence/authorization_account_isolation_redaction.txt"
+      ],
+      "message": "primary session could not expose secondary mailbox, message, attachment, sent, search, stale-session, or route-bypass evidence",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-ATHZ-001",
+      "test_name": "WSTG-v42-ATHZ authorization account-isolation negative evidence"
     },
     {
       "details": {},
@@ -413,9 +1483,10 @@
     {
       "details": {},
       "evidence": [
-        "evidence/static_dependency_alignment.txt"
+        "evidence/static_dependency_alignment.txt",
+        "evidence/dependency_metadata_locked.txt"
       ],
-      "message": "lockfile and supply-chain security documentation/tooling are present",
+      "message": "lockfile, supply-chain policy, and locked dependency metadata validated",
       "status": "pass",
       "test_id": "OSMAP-WSTG-CONF-007",
       "test_name": "WSTG-v42-CONF-02 Test Application Platform Configuration - SBOM and dependency alignment"
@@ -475,9 +1546,96 @@
     {
       "details": {},
       "evidence": [
-        "evidence/static_security_logging.txt"
+        "evidence/bulk_folder_actions_live_report.txt",
+        "evidence/static_bulk_folder_actions.txt"
       ],
-      "message": "source and docs show structured security logging and sensitive-data redaction posture",
+      "message": "host-backed selected archive and bulk folder-action controls passed live request/response validation",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-BUSL-004",
+      "test_name": "WSTG-v42-BUSL-04 Test Process Timing - bounded bulk folder actions"
+    },
+    {
+      "details": {
+        "tls_standard": {
+          "certificate_validation": true,
+          "failures": [],
+          "guard_returncode": 0,
+          "hostname_validation": true,
+          "minimum_tls_version": "TLSv1.2",
+          "preferred_tls_version": "TLSv1.3",
+          "result": "tls_standard_passed",
+          "validator_returncode": 0
+        }
+      },
+      "evidence": [
+        "evidence/crypto_https_login.headers",
+        "evidence/crypto_cleartext_login.headers",
+        "evidence/crypto_transport_static.txt",
+        "evidence/crypto_tls_policy_guard.txt",
+        "evidence/crypto_tls_standard_report.json",
+        "evidence/crypto_tls_standard_validate.txt"
+      ],
+      "message": "TLS standard, HSTS, HTTPS login, and cleartext HTTP controls passed",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-CRYP-001",
+      "test_name": "WSTG-v42-CRYP-01/03 TLS and cleartext transport evidence"
+    },
+    {
+      "details": {
+        "source_markers_checked": [
+          "decrypt(",
+          "encrypt(",
+          "openssl::",
+          "ring::aead",
+          "aes::",
+          "cbc::",
+          "block_modes",
+          "pkcs7",
+          "rsa::"
+        ]
+      },
+      "evidence": [
+        "evidence/crypto_primitive_applicability_static.txt"
+      ],
+      "message": "padding-oracle and weak-encryption rows are not applicable to the current OSMAP browser surface",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-CRYP-002",
+      "test_name": "WSTG-v42-CRYP-02/04 Crypto Primitive Applicability Review"
+    },
+    {
+      "details": {},
+      "evidence": [
+        "evidence/form_route_state_transitions_static.txt"
+      ],
+      "message": "form-backed route inventory and state-transition guard evidence is present",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-BUSL-005",
+      "test_name": "WSTG-v42-BUSL-01/02/03/05/06/07 Form Route State-Transition Review"
+    },
+    {
+      "details": {
+        "markers_checked": [
+          "graphql",
+          "juniper",
+          "async-graphql",
+          "/graphql"
+        ]
+      },
+      "evidence": [
+        "evidence/graphql_applicability_static.txt"
+      ],
+      "message": "GraphQL is not applicable; OSMAP exposes browser form routes rather than API routes",
+      "status": "pass",
+      "test_id": "OSMAP-WSTG-APIT-001",
+      "test_name": "WSTG-v42-APIT-01 GraphQL Applicability Review"
+    },
+    {
+      "details": {},
+      "evidence": [
+        "evidence/static_security_logging.txt",
+        "evidence/security_logging_evidence_redaction.txt"
+      ],
+      "message": "structured logging markers and dynamic evidence redaction scan passed",
       "status": "pass",
       "test_id": "OSMAP-WSTG-LOGG-001",
       "test_name": "OWASP Top 10 2025 A09 Security Logging and Alerting Failures - audit event and redaction posture"
@@ -488,5 +1646,18 @@
     "owasp_top_10_2025": "OWASP Top 10 2025",
     "wstg": "OWASP Web Security Testing Guide v4.2"
   },
-  "target": "https://mail.blackbagsecurity.com"
+  "target": "https://mail.blackbagsecurity.com",
+  "wstg_source_metadata": {
+    "auth_mode": "prompt-auth",
+    "base_url": "https://mail.blackbagsecurity.com",
+    "capture_date": "2026-05-31",
+    "evidence_path": "/home/foo/Workspace/OSMAP/maint/wstg-testing-pack/output/release-20260531T172708Z/osmap-wstg-20260601-002709",
+    "matrix_file": "wstg-scenario-matrix.v42.json",
+    "osmap_commit": "c22125293891a79d083603facce4c713f1cbcd93",
+    "source_commit": "",
+    "source_name": "OWASP Web Security Testing Guide",
+    "source_url": "https://owasp.org/www-project-web-security-testing-guide/v42/",
+    "source_version": "v4.2",
+    "target_host": "mail.blackbagsecurity.com"
+  }
 }
