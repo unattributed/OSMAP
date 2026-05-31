@@ -1,5 +1,24 @@
 # Decision Log
 
+## 2026-05-31, Add WSTG identity lifecycle applicability evidence
+
+The Version 3 WSTG identity-management workstream now records deterministic
+evidence for role definitions, registration, account provisioning, and weak
+username policy applicability:
+
+- `OSMAP-WSTG-IDNT-001` maps IDNT-01, IDNT-02, IDNT-03, and IDNT-05
+- dynamic probes cover common registration, signup, invitation, provisioning,
+  user-administration, and role-management paths
+- static evidence records that OSMAP has a single browser end-user role, no
+  self-service registration, no browser account provisioning, and bounded
+  mailbox-username input before backend auth
+- the WSTG v4.2 matrix moves four IDNT rows out of blocked, leaving 6 blocked
+  rows
+
+Future browser role management, self-service registration, account
+provisioning, invitation, recovery, or username-policy changes must update this
+lane before V3 closeout.
+
 ## 2026-05-30, Finish WSTG Slice 10 file-permission and subdomain evidence
 
 The Version 3 WSTG Slice 10 configuration and deployment workstream now

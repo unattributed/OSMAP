@@ -213,6 +213,49 @@
       ]
     },
     {
+      "test_id": "OSMAP-WSTG-IDNT-001",
+      "test_name": "WSTG-v42-IDNT-01/02/03/05 Identity Lifecycle Applicability",
+      "script_path": "run-wstg-pack.py",
+      "wstg": [
+        "WSTG-v42-IDNT-01",
+        "WSTG-v42-IDNT-02",
+        "WSTG-v42-IDNT-03",
+        "WSTG-v42-IDNT-05"
+      ],
+      "wstg_section": "Role Definitions; User Registration Process; Account Provisioning Process; Weak or Unenforced Username Policy",
+      "asvs": [
+        "v5.0.0-1.2.1",
+        "v5.0.0-6.2.1",
+        "v5.0.0-6.3.1",
+        "v5.0.0-8.2.1"
+      ],
+      "asvs_section": "Authentication, Input Validation, and Information Disclosure",
+      "test_type": [
+        "unauthenticated",
+        "dynamic test",
+        "static applicability review"
+      ],
+      "expected_result": "OSMAP exposes no browser-facing registration, role-management, invitation, provisioning, or user-administration surface; username input is bounded before backend authentication.",
+      "evidence_produced": [
+        "idnt01_*.headers",
+        "idnt01_*.body",
+        "idnt02_*.headers",
+        "idnt02_*.body",
+        "idnt03_*.headers",
+        "idnt03_*.body",
+        "identity_lifecycle_static.txt"
+      ],
+      "release_required": true,
+      "requires_authenticated_coverage": false,
+      "requires_totp": false,
+      "safe_for_release": true,
+      "severity_if_failed": "high",
+      "owasp_top_10_2025": [
+        "A06:2025",
+        "A07:2025"
+      ]
+    },
+    {
       "test_id": "OSMAP-WSTG-ATHN-001",
       "test_name": "WSTG-v42-ATHN-01 Testing for Credentials Transported over an Encrypted Channel - login form",
       "script_path": "run-wstg-pack.py",

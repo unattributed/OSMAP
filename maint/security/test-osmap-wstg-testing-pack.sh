@@ -175,6 +175,62 @@ for marker in [
 print(f"validated {len(mapping['tests'])} mapped WSTG tests across all OWASP Top 10 2025 categories")
 PY
 
+echo "validating identity lifecycle WSTG mapping"
+python3 - "$pack_dir" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+pack = Path(sys.argv[1])
+repo = pack.parents[1]
+mapping = json.loads((pack / "wstg-asvs-mapping.json").read_text())
+tests = {item["test_id"]: item for item in mapping["tests"]}
+idnt = tests.get("OSMAP-WSTG-IDNT-001")
+if not idnt:
+    raise SystemExit("OSMAP-WSTG-IDNT-001 missing")
+expected = ["WSTG-v42-IDNT-01", "WSTG-v42-IDNT-02", "WSTG-v42-IDNT-03", "WSTG-v42-IDNT-05"]
+if idnt["wstg"] != expected:
+    raise SystemExit("OSMAP-WSTG-IDNT-001 must map IDNT-01, IDNT-02, IDNT-03, and IDNT-05")
+if idnt["requires_authenticated_coverage"] or idnt["requires_totp"]:
+    raise SystemExit("OSMAP-WSTG-IDNT-001 must remain unauthenticated")
+coverage = (pack / "COVERAGE.md").read_text()
+for marker in ["OSMAP-WSTG-IDNT-001", *expected]:
+    if marker not in coverage:
+        raise SystemExit(f"COVERAGE.md missing identity lifecycle marker {marker}")
+runner = (pack / "run-wstg-pack.py").read_text()
+for marker in [
+    "test_identity_lifecycle_applicability",
+    "identity_lifecycle_static.txt",
+    "single browser end-user role",
+    "no self-service registration",
+    "no browser account provisioning",
+    "DEFAULT_USERNAME_MAX_LEN",
+]:
+    if marker not in runner:
+        raise SystemExit(f"runner missing identity lifecycle marker {marker}")
+doc = (repo / "docs" / "V3_IDENTITY_LIFECYCLE_EVIDENCE.md").read_text()
+for marker in [
+    "OSMAP-WSTG-IDNT-001",
+    "single browser end-user role",
+    "no self-service registration",
+    "Account provisioning is not a browser-facing OSMAP feature",
+    "DEFAULT_USERNAME_MAX_LEN",
+]:
+    if marker not in doc:
+        raise SystemExit(f"identity lifecycle doc missing marker {marker}")
+rows = {item["wstg_id"]: item for item in json.loads((pack / "wstg-scenario-matrix.v42.json").read_text())["scenarios"]}
+for wstg_id in expected:
+    row = rows[wstg_id]
+    if "OSMAP-WSTG-IDNT-001" not in row["evidence_reference"]:
+        raise SystemExit(f"{wstg_id} must reference OSMAP-WSTG-IDNT-001")
+if rows["WSTG-v42-IDNT-05"]["disposition"] != "automated":
+    raise SystemExit("IDNT-05 must be automated by OSMAP-WSTG-IDNT-001")
+for wstg_id in ["WSTG-v42-IDNT-01", "WSTG-v42-IDNT-02", "WSTG-v42-IDNT-03"]:
+    if rows[wstg_id]["disposition"] != "not_applicable":
+        raise SystemExit(f"{wstg_id} must be not-applicable with evidence")
+print("identity lifecycle WSTG mapping validated")
+PY
+
 echo "validating session lifecycle WSTG mapping"
 python3 - "$pack_dir" <<'PY'
 import json

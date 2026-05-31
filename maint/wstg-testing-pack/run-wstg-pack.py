@@ -240,6 +240,7 @@ class Runner:
             "OSMAP-WSTG-CONF-008": self.test_sensitive_extension_and_backup_exposure,
             "OSMAP-WSTG-CONF-009": self.test_ria_cloud_storage_applicability,
             "OSMAP-WSTG-CONF-010": self.test_file_permissions_and_subdomain_takeover,
+            "OSMAP-WSTG-IDNT-001": self.test_identity_lifecycle_applicability,
             "OSMAP-WSTG-ATHN-001": self.test_login_form,
             "OSMAP-WSTG-ATHN-002": self.test_invalid_login,
             "OSMAP-WSTG-ATHN-003": self.test_throttle_probe,
@@ -1043,6 +1044,108 @@ class Runner:
         ]
         self.write_text_evidence("file_permission_subdomain_static.txt", "\n".join(lines) + "\n")
         return not missing, {"missing_markers": missing}
+
+    def test_identity_lifecycle_applicability(self) -> TestResult:
+        probes = {
+            "idnt02_register": "/register",
+            "idnt02_signup": "/signup",
+            "idnt02_account_register": "/account/register",
+            "idnt03_invite": "/invite",
+            "idnt03_provision": "/provision",
+            "idnt03_users_new": "/users/new",
+            "idnt01_admin_users": "/admin/users",
+            "idnt01_roles": "/roles",
+        }
+        disclosure_patterns = [
+            r"(?i)<form[^>]+(?:register|signup|provision|invite)",
+            r"(?i)(?:create|register|provision)\s+(?:an\s+)?account",
+            r"(?i)role\s+(?:assignment|management|definition)",
+            r"(?i)user\s+(?:administration|management|provisioning)",
+        ]
+        evidence_paths: list[str] = []
+        statuses: dict[str, int | None] = {}
+        failures: dict[str, object] = {}
+        for label, path in probes.items():
+            evidence = self.request(label, "GET", path)
+            evidence_paths.extend([f"evidence/{label}.headers", f"evidence/{label}.body"])
+            statuses[label] = evidence.status
+            if evidence.status is not None and 200 <= evidence.status < 300:
+                failures[f"{label}_served"] = evidence.status
+            body = evidence.body_text()
+            matches = [pattern for pattern in disclosure_patterns if re.search(pattern, body)]
+            if matches:
+                failures[f"{label}_identity_surface"] = matches
+
+        static_ok, static_findings = self.write_identity_lifecycle_static_evidence()
+        evidence_paths.append("evidence/identity_lifecycle_static.txt")
+        if not static_ok:
+            failures["static_boundary"] = static_findings
+        if failures:
+            return self.result(
+                "OSMAP-WSTG-IDNT-001",
+                STATUS_FAIL,
+                "identity lifecycle evidence found an unexpected account-management surface",
+                evidence_paths,
+                {"statuses": statuses, "failures": failures},
+            )
+        return self.result(
+            "OSMAP-WSTG-IDNT-001",
+            STATUS_PASS,
+            "OSMAP exposes no self-service identity lifecycle surface and bounds mailbox username input",
+            evidence_paths,
+            {"statuses": statuses},
+        )
+
+    def write_identity_lifecycle_static_evidence(self) -> tuple[bool, dict[str, object]]:
+        files = [
+            REPO_ROOT / "src" / "auth.rs",
+            REPO_ROOT / "src" / "http.rs",
+            REPO_ROOT / "src" / "http" / "routes_auth.rs",
+            REPO_ROOT / "src" / "http" / "routes_settings.rs",
+            REPO_ROOT / "docs" / "IDENTITY_AND_AUTHENTICATION.md",
+            REPO_ROOT / "docs" / "PRODUCT_REQUIREMENTS_V1.md",
+            REPO_ROOT / "docs" / "V3_IDENTITY_LIFECYCLE_EVIDENCE.md",
+        ]
+        text = "\n".join(path.read_text(encoding="utf-8", errors="replace") for path in files if path.exists())
+        required_markers = [
+            "OSMAP-WSTG-IDNT-001",
+            "WSTG-v42-IDNT-01",
+            "WSTG-v42-IDNT-02",
+            "WSTG-v42-IDNT-03",
+            "WSTG-v42-IDNT-05",
+            "single browser end-user role",
+            "no self-service registration",
+            "no browser account provisioning",
+            "mailbox credentials as the primary identity input",
+            "DEFAULT_USERNAME_MAX_LEN",
+            "ControlCharacter",
+        ]
+        missing = [marker for marker in required_markers if marker.lower() not in text.lower()]
+        forbidden_source_patterns = {
+            "registration_route": r'(?i)"/(?:register|signup|account/register)"',
+            "provision_route": r'(?i)"/(?:provision|invite|users/new|admin/users|roles)"',
+            "account_create_handler": r"(?i)handle_(?:register|signup|provision|invite|user_create|role)",
+        }
+        source_files = [path for path in files[:4] if path.exists()]
+        findings: dict[str, list[str]] = {}
+        for path in source_files:
+            source = path.read_text(encoding="utf-8", errors="replace")
+            hits = [name for name, pattern in forbidden_source_patterns.items() if re.search(pattern, source)]
+            if hits:
+                findings[str(path.relative_to(REPO_ROOT))] = hits
+        lines = [
+            summarize_static_files(files, missing),
+            "",
+            "Identity lifecycle decisions:",
+            "- OSMAP has a single browser end-user role; operator and mail-stack administration remain outside the browser application.",
+            "- User registration is not applicable because OSMAP has no self-service registration route or account-creation form.",
+            "- Account provisioning is not applicable inside OSMAP; mailbox account provisioning remains an operator-controlled mail-stack process.",
+            "- Username policy is applicable to login input and is bounded: usernames are non-empty, capped by DEFAULT_USERNAME_MAX_LEN, and reject control characters before backend auth.",
+        ]
+        if findings:
+            lines.extend(["", "Unexpected identity lifecycle source markers:", json.dumps(findings, indent=2)])
+        self.write_text_evidence("identity_lifecycle_static.txt", "\n".join(lines) + "\n")
+        return not missing and not findings, {"missing_markers": missing, "unexpected_markers": findings}
 
     def test_login_form(self) -> TestResult:
         evidence = self.request("login_form", "GET", "/login")

@@ -4,11 +4,11 @@
   "wstg_source": "OWASP WSTG v4.2 stable table of contents retrieved 2026-05-19",
   "note": "This is an applicability and evidence matrix starter. It is not a pass/fail report until each item has an executed evidence reference or a documented not-applicable proof.",
   "current_osmap_pack": {
-    "mapped_tests": 44,
-    "unique_mapped_wstg_ids": 88,
+    "mapped_tests": 45,
+    "unique_mapped_wstg_ids": 92,
     "official_toc_scenarios_listed_here": 97,
-    "official_toc_scenarios_mapped_by_current_pack": 87,
-    "official_toc_scenarios_not_mapped_by_current_pack": 10,
+    "official_toc_scenarios_mapped_by_current_pack": 91,
+    "official_toc_scenarios_not_mapped_by_current_pack": 6,
     "supplemental_wstg_ids_in_current_mapping_not_seen_in_retrieved_official_toc": [
       "WSTG-v42-CONF-12"
     ]
@@ -380,39 +380,51 @@
       "category": "IDNT",
       "section": "4.3 Identity Management Testing",
       "title": "Test Role Definitions",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-IDNT-001"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface has one mailbox end-user role and no browser role-management surface",
+      "evidence_reference": [
+        "OSMAP-WSTG-IDNT-001"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-IDNT-02",
       "category": "IDNT",
       "section": "4.3 Identity Management Testing",
       "title": "Test User Registration Process",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "not_applicable_candidate_but_requires_repo_or_live_proof",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-IDNT-001"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface has no self-service registration, signup, invitation, or account-creation route",
+      "evidence_reference": [
+        "OSMAP-WSTG-IDNT-001"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-IDNT-03",
       "category": "IDNT",
       "section": "4.3 Identity Management Testing",
       "title": "Test Account Provisioning Process",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-IDNT-001"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "account provisioning remains an operator-controlled mail-stack process outside the OSMAP browser application",
+      "evidence_reference": [
+        "OSMAP-WSTG-IDNT-001"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-IDNT-04",
@@ -436,13 +448,17 @@
       "category": "IDNT",
       "section": "4.3 Identity Management Testing",
       "title": "Testing for Weak or Unenforced Username Policy",
-      "current_osmap_mapping_status": "not_mapped_in_current_pack",
-      "current_osmap_tests": [],
-      "due_diligence_status": "requires_applicability_decision_and_evidence",
-      "recommended_triage": "candidate_gap_for_v3_wstg_due_diligence_backlog",
-      "disposition": "blocked",
-      "disposition_reason": "requires V3 applicability decision and evidence before closeout",
-      "evidence_reference": []
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-IDNT-001"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "covered by OSMAP username input bounds and identity lifecycle route evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-IDNT-001"
+      ]
     },
     {
       "wstg_id": "WSTG-v42-ATHN-01",
