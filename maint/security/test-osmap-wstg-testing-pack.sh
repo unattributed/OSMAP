@@ -127,6 +127,9 @@ for key in [
     "OSMAP_WSTG_SOURCE_VERSION=v4.2",
     "OSMAP_WSTG_SOURCE_COMMIT=",
     "OSMAP_WSTG_MATRIX_FILE=wstg-scenario-matrix.v42.json",
+    "OSMAP_WSTG_SOURCE_VERSION=latest",
+    "OSMAP_WSTG_SOURCE_COMMIT=7dea71b751ea76f792b89186655739720b614d9a",
+    "OSMAP_WSTG_MATRIX_FILE=wstg-scenario-matrix.latest.json",
     "OSMAP_RATE_LIMIT_DELAY_SECONDS=",
     "OSMAP_ALLOW_AUTHENTICATED_TESTS=false",
 ]:
@@ -167,6 +170,60 @@ unmapped = [
 ]
 if unmapped:
     raise SystemExit(f"WSTG matrix must map every listed row after ATHN applicability closeout: {unmapped[:10]}")
+
+latest = json.loads((pack / "wstg-scenario-matrix.latest.json").read_text())
+expected_latest_commit = "7dea71b751ea76f792b89186655739720b614d9a"
+if latest.get("source_repo") != "https://github.com/OWASP/wstg":
+    raise SystemExit("latest WSTG matrix must identify the OWASP/wstg repository")
+if latest.get("source_branch") != "master":
+    raise SystemExit("latest WSTG matrix must identify the source branch")
+if latest.get("source_commit") != expected_latest_commit:
+    raise SystemExit("latest WSTG matrix source commit is not pinned to the reviewed upstream commit")
+latest_scenarios = latest.get("scenarios", [])
+if len(latest_scenarios) != 114:
+    raise SystemExit(f"unexpected latest WSTG scenario row count: {len(latest_scenarios)}")
+latest_pack = latest.get("current_osmap_pack", {})
+if latest_pack.get("unique_latest_source_wstg_ids") != 112:
+    raise SystemExit("latest WSTG matrix must record 112 unique source WSTG IDs")
+if latest_pack.get("latest_source_scenario_rows_mapped_by_current_pack") != 114:
+    raise SystemExit("latest WSTG matrix must map all 114 latest source rows")
+if latest_pack.get("latest_source_scenario_rows_not_mapped_by_current_pack") != 0:
+    raise SystemExit("latest WSTG matrix must have zero unmapped latest source rows")
+if sorted(latest_pack.get("source_wstg_ids_with_duplicate_rows", [])) != ["WSTG-APIT-03", "WSTG-INPV-13"]:
+    raise SystemExit("latest WSTG matrix must identify reviewed duplicate upstream WSTG IDs")
+if latest_pack.get("latest_source_rows_added_or_disambiguated_since_v42") != 17:
+    raise SystemExit("latest WSTG matrix must account for added or disambiguated latest rows")
+latest_dispositions = latest_pack.get("latest_source_disposition_counts", {})
+if latest_dispositions.get("automated") != 70 or latest_dispositions.get("not_applicable") != 44:
+    raise SystemExit("latest WSTG matrix disposition counts changed unexpectedly")
+latest_unmapped = [
+    row.get("scenario_id", "<unknown>")
+    for row in latest_scenarios
+    if row.get("current_osmap_mapping_status") != "mapped_in_current_pack"
+]
+if latest_unmapped:
+    raise SystemExit(f"latest WSTG matrix has unmapped rows: {latest_unmapped[:10]}")
+latest_missing_disposition = [row.get("scenario_id", "<unknown>") for row in latest_scenarios if not row.get("disposition")]
+if latest_missing_disposition:
+    raise SystemExit(f"latest WSTG matrix rows missing disposition: {latest_missing_disposition[:10]}")
+latest_blocked = [row.get("scenario_id", "<unknown>") for row in latest_scenarios if row.get("disposition") == "blocked"]
+if latest_blocked:
+    raise SystemExit(f"latest WSTG matrix must not have blocked rows: {latest_blocked[:10]}")
+for scenario_id, expected_test in {
+    "WSTG-latest-CONF-13": "OSMAP-WSTG-INPV-005",
+    "WSTG-latest-CONF-14": "OSMAP-WSTG-CONF-002",
+    "WSTG-latest-ATHN-11": "OSMAP-WSTG-ATHN-004",
+    "WSTG-latest-SESS-10": "OSMAP-WSTG-SESS-006",
+    "WSTG-latest-SESS-11": "OSMAP-WSTG-SESS-006",
+    "WSTG-latest-INPV-20": "OSMAP-WSTG-INPV-005",
+    "WSTG-latest-INPV-21": "OSMAP-WSTG-INPV-007",
+    "WSTG-latest-APIT-99": "OSMAP-WSTG-APIT-001",
+}.items():
+    row = next((item for item in latest_scenarios if item.get("scenario_id") == scenario_id), None)
+    if row is None:
+        raise SystemExit(f"latest WSTG matrix missing {scenario_id}")
+    if expected_test not in row.get("evidence_reference", []):
+        raise SystemExit(f"{scenario_id} must reference {expected_test}")
 
 runner_text = (pack / "run-wstg-pack.py").read_text()
 for marker in [

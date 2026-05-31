@@ -5009,6 +5009,7 @@ def render_markdown_report(runner: Runner, data: dict[str, object]) -> str:
 
 def write_coverage_markdown(mapping: dict[str, object], path: Path, matrix_metadata: dict[str, object]) -> None:
     disposition_counts = matrix_metadata.get("disposition_counts", {})
+    latest_matrix = load_latest_matrix_metadata(path.parent / "wstg-scenario-matrix.latest.json")
     lines = [
         "# OSMAP WSTG, ASVS, And OWASP Top 10 Coverage",
         "",
@@ -5037,11 +5038,32 @@ def write_coverage_markdown(mapping: dict[str, object], path: Path, matrix_metad
         f"| Missing dispositions | {matrix_metadata.get('missing_disposition_count', 0)} |",
         f"| Invalid dispositions | {matrix_metadata.get('invalid_disposition_count', 0)} |",
         "",
+    ]
+    if latest_matrix:
+        latest_counts = latest_matrix.get("disposition_counts", {})
+        lines.extend([
+            "## Latest-Track Matrix",
+            "",
+            "| Item | Value |",
+            "| --- | --- |",
+            f"| Source repo | `{latest_matrix.get('source_repo', '')}` |",
+            f"| Source branch | `{latest_matrix.get('source_branch', '')}` |",
+            f"| Source commit | `{latest_matrix.get('source_commit', '')}` |",
+            f"| Scenario rows | {latest_matrix.get('scenario_count', 0)} |",
+            f"| Unique source WSTG IDs | {latest_matrix.get('unique_source_wstg_ids', 0)} |",
+            f"| Mapped rows | {latest_matrix.get('mapped_rows', 0)} |",
+            f"| Unmapped rows | {latest_matrix.get('unmapped_rows', 0)} |",
+            f"| Automated dispositions | {latest_counts.get('automated', 0) if isinstance(latest_counts, dict) else 0} |",
+            f"| Not-applicable dispositions | {latest_counts.get('not_applicable', 0) if isinstance(latest_counts, dict) else 0} |",
+            f"| Added/disambiguated since v4.2 | {latest_matrix.get('latest_delta_rows', 0)} |",
+            "",
+        ])
+    lines.extend([
         "## OWASP Top 10 2025 Crosswalk",
         "",
         "| Category | Name | Release-required tests | Explicit gaps |",
         "| --- | --- | --- | --- |",
-    ]
+    ])
     coverage = top10_coverage(mapping)
     for category, name in OWASP_TOP_10_2025.items():
         item = coverage[category]
@@ -5084,6 +5106,42 @@ def write_coverage_markdown(mapping: dict[str, object], path: Path, matrix_metad
             )
         )
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def load_latest_matrix_metadata(path: Path) -> dict[str, object]:
+    if not path.is_file():
+        return {}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    scenarios = payload.get("scenarios", [])
+    if not isinstance(scenarios, list):
+        scenarios = []
+    counts: dict[str, int] = {}
+    mapped = 0
+    for scenario in scenarios:
+        if not isinstance(scenario, dict):
+            continue
+        disposition = str(scenario.get("disposition", "")).strip()
+        if disposition:
+            counts[disposition] = counts.get(disposition, 0) + 1
+        if scenario.get("current_osmap_mapping_status") == "mapped_in_current_pack":
+            mapped += 1
+    pack = payload.get("current_osmap_pack", {})
+    if not isinstance(pack, dict):
+        pack = {}
+    return {
+        "source_repo": payload.get("source_repo", ""),
+        "source_branch": payload.get("source_branch", ""),
+        "source_commit": payload.get("source_commit", ""),
+        "scenario_count": len(scenarios),
+        "unique_source_wstg_ids": pack.get("unique_latest_source_wstg_ids", 0),
+        "mapped_rows": mapped,
+        "unmapped_rows": len(scenarios) - mapped,
+        "disposition_counts": counts,
+        "latest_delta_rows": pack.get("latest_source_rows_added_or_disambiguated_since_v42", 0),
+    }
 
 
 def top10_coverage(mapping: dict[str, object]) -> dict[str, dict[str, list[str]]]:

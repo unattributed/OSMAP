@@ -25,6 +25,21 @@ Generated from `wstg-asvs-mapping.json` and the active WSTG due-diligence matrix
 | Missing dispositions | 0 |
 | Invalid dispositions | 0 |
 
+## Latest-Track Matrix
+
+| Item | Value |
+| --- | --- |
+| Source repo | `https://github.com/OWASP/wstg` |
+| Source branch | `master` |
+| Source commit | `7dea71b751ea76f792b89186655739720b614d9a` |
+| Scenario rows | 114 |
+| Unique source WSTG IDs | 112 |
+| Mapped rows | 114 |
+| Unmapped rows | 0 |
+| Automated dispositions | 70 |
+| Not-applicable dispositions | 44 |
+| Added/disambiguated since v4.2 | 17 |
+
 ## OWASP Top 10 2025 Crosswalk
 
 | Category | Name | Release-required tests | Explicit gaps |

@@ -67,7 +67,13 @@ The current WSTG pack is useful targeted regression coverage, but it is not full
 | WSTG v4.2 automated dispositions | 64 |
 | WSTG v4.2 not-applicable dispositions | 33 |
 | WSTG v4.2 blocked dispositions pending due diligence | 0 |
-| Current OWASP latest coverage | Must be pinned and tracked before V3 closeout |
+| Current OWASP latest coverage | Pinned to OWASP/wstg `master` commit `7dea71b751ea76f792b89186655739720b614d9a` |
+| Current OWASP latest scenario rows | 114 |
+| Current OWASP latest unique WSTG IDs | 112 |
+| Current OWASP latest rows mapped by current pack | 114 |
+| Current OWASP latest rows not mapped by current pack | 0 |
+| Current OWASP latest automated dispositions | 70 |
+| Current OWASP latest not-applicable dispositions | 44 |
 
 The Version 3 workstream therefore treats the current pack as a starting point. It must be extended into a slice-based due-diligence program.
 

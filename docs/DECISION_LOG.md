@@ -1,5 +1,24 @@
 # Decision Log
 
+## 2026-05-31, Pin WSTG latest-track due diligence matrix
+
+The Version 3 WSTG due-diligence workstream now carries a pinned latest-track
+matrix in addition to the stable v4.2 matrix:
+
+- source: OWASP/wstg `master`
+- commit: `7dea71b751ea76f792b89186655739720b614d9a`
+- matrix: `maint/wstg-testing-pack/wstg-scenario-matrix.latest.json`
+- latest source rows: 114 markdown scenario rows
+- unique latest WSTG IDs: 112
+- current-pack mapped rows: 114
+- unmapped latest rows: 0
+- dispositions: 70 automated, 44 not applicable
+
+The latest matrix preserves source paths and commit-pinned GitHub URLs for each
+row, including duplicate upstream identifiers for `WSTG-INPV-13` and
+`WSTG-APIT-03`. Future WSTG latest refreshes must update the commit hash,
+matrix row counts, and any changed applicability decisions together.
+
 ## 2026-05-31, Add WSTG authentication feature applicability evidence
 
 The Version 3 WSTG authentication workstream now records deterministic evidence

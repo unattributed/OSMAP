@@ -6,4 +6,5 @@ MANIFEST.csv,csv,Pack file inventory
 run.sh,bash,Thin shell entrypoint for the Python runner
 run-wstg-pack.py,python,Single evidence-producing WSTG runner
 wstg-asvs-mapping.json,json,Canonical WSTG v4.2 and ASVS 5.0.0 mapping
+wstg-scenario-matrix.latest.json,json,Pinned latest-track WSTG source matrix
 scripts/README.md,markdown,Documents retirement of old ad hoc numbered scripts

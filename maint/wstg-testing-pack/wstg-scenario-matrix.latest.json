@@ -1,0 +1,2579 @@
+{
+  "generated_for": "OSMAP V3 latest-track WSTG due diligence, 2026-05-31",
+  "source_repo": "https://github.com/OWASP/wstg",
+  "source_branch": "master",
+  "source_commit": "7dea71b751ea76f792b89186655739720b614d9a",
+  "source_commit_url": "https://github.com/OWASP/wstg/tree/7dea71b751ea76f792b89186655739720b614d9a",
+  "wstg_source": "OWASP WSTG master branch current development tree captured 2026-05-31",
+  "note": "Latest-track matrix generated from upstream markdown scenario identifiers. It complements the stable v4.2 matrix and pins the moving OWASP master branch by commit.",
+  "current_osmap_pack": {
+    "mapped_tests": 46,
+    "latest_source_scenario_rows_listed_here": 114,
+    "unique_latest_source_wstg_ids": 112,
+    "source_wstg_ids_with_duplicate_rows": [
+      "WSTG-APIT-03",
+      "WSTG-INPV-13"
+    ],
+    "latest_source_scenario_rows_mapped_by_current_pack": 114,
+    "latest_source_scenario_rows_not_mapped_by_current_pack": 0,
+    "latest_source_disposition_counts": {
+      "automated": 70,
+      "not_applicable": 44
+    },
+    "latest_source_rows_added_or_disambiguated_since_v42": 17
+  },
+  "scenarios": [
+    {
+      "scenario_id": "WSTG-latest-INFO-01",
+      "wstg_id": "WSTG-latest-INFO-01",
+      "source_wstg_id": "WSTG-INFO-01",
+      "category": "INFO",
+      "section": "4.1 Information Gathering",
+      "title": "Conduct Search Engine Discovery Reconnaissance for Information Leakage",
+      "source_path": "document/4-Web_Application_Security_Testing/01-Information_Gathering/01-Conduct_Search_Engine_Discovery_Reconnaissance_for_Information_Leakage.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/01-Information_Gathering/01-Conduct_Search_Engine_Discovery_Reconnaissance_for_Information_Leakage.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INFO-004"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to Slice 9 public reconnaissance and fingerprinting evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INFO-004"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-INFO-02",
+      "wstg_id": "WSTG-latest-INFO-02",
+      "source_wstg_id": "WSTG-INFO-02",
+      "category": "INFO",
+      "section": "4.1 Information Gathering",
+      "title": "Fingerprint Web Server",
+      "source_path": "document/4-Web_Application_Security_Testing/01-Information_Gathering/02-Fingerprint_Web_Server.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/01-Information_Gathering/02-Fingerprint_Web_Server.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INFO-002"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INFO-002"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-INFO-03",
+      "wstg_id": "WSTG-latest-INFO-03",
+      "source_wstg_id": "WSTG-INFO-03",
+      "category": "INFO",
+      "section": "4.1 Information Gathering",
+      "title": "Review Webserver Metafiles for Information Leakage",
+      "source_path": "document/4-Web_Application_Security_Testing/01-Information_Gathering/03-Review_Webserver_Metafiles_for_Information_Leakage.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/01-Information_Gathering/03-Review_Webserver_Metafiles_for_Information_Leakage.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INFO-001"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INFO-001"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-INFO-04",
+      "wstg_id": "WSTG-latest-INFO-04",
+      "source_wstg_id": "WSTG-INFO-04",
+      "category": "INFO",
+      "section": "4.1 Information Gathering",
+      "title": "Attack Surface Identification",
+      "source_path": "document/4-Web_Application_Security_Testing/01-Information_Gathering/04-Attack_Surface_Identification.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/01-Information_Gathering/04-Attack_Surface_Identification.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INFO-004"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to Slice 9 public reconnaissance and fingerprinting evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INFO-004"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-INFO-05",
+      "wstg_id": "WSTG-latest-INFO-05",
+      "source_wstg_id": "WSTG-INFO-05",
+      "category": "INFO",
+      "section": "4.1 Information Gathering",
+      "title": "Review Web Page Content for Information Leakage",
+      "source_path": "document/4-Web_Application_Security_Testing/01-Information_Gathering/05-Review_Web_Page_Content_for_Information_Leakage.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/01-Information_Gathering/05-Review_Web_Page_Content_for_Information_Leakage.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INFO-001"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INFO-001"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-INFO-06",
+      "wstg_id": "WSTG-latest-INFO-06",
+      "source_wstg_id": "WSTG-INFO-06",
+      "category": "INFO",
+      "section": "4.1 Information Gathering",
+      "title": "Identify Application Entry Points",
+      "source_path": "document/4-Web_Application_Security_Testing/01-Information_Gathering/06-Identify_Application_Entry_Points.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/01-Information_Gathering/06-Identify_Application_Entry_Points.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INFO-003"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to Slice 9 error handling and information-disclosure evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INFO-003"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-INFO-07",
+      "wstg_id": "WSTG-latest-INFO-07",
+      "source_wstg_id": "WSTG-INFO-07",
+      "category": "INFO",
+      "section": "4.1 Information Gathering",
+      "title": "Map Execution Paths Through Application",
+      "source_path": "document/4-Web_Application_Security_Testing/01-Information_Gathering/07-Map_Execution_Paths_Through_Application.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/01-Information_Gathering/07-Map_Execution_Paths_Through_Application.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INFO-003"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to Slice 9 error handling and information-disclosure evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INFO-003"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-INFO-08",
+      "wstg_id": "WSTG-latest-INFO-08",
+      "source_wstg_id": "WSTG-INFO-08",
+      "category": "INFO",
+      "section": "4.1 Information Gathering",
+      "title": "Fingerprint Web Application Framework",
+      "source_path": "document/4-Web_Application_Security_Testing/01-Information_Gathering/08-Fingerprint_Web_Application_Framework.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/01-Information_Gathering/08-Fingerprint_Web_Application_Framework.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INFO-004"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to Slice 9 public reconnaissance and fingerprinting evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INFO-004"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-INFO-09",
+      "wstg_id": "WSTG-latest-INFO-09",
+      "source_wstg_id": "WSTG-INFO-09",
+      "category": "INFO",
+      "section": "4.1 Information Gathering",
+      "title": "Fingerprint Web Application",
+      "source_path": "document/4-Web_Application_Security_Testing/01-Information_Gathering/09-Fingerprint_Web_Application.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/01-Information_Gathering/09-Fingerprint_Web_Application.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INFO-004"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to Slice 9 public reconnaissance and fingerprinting evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INFO-004"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-INFO-10",
+      "wstg_id": "WSTG-latest-INFO-10",
+      "source_wstg_id": "WSTG-INFO-10",
+      "category": "INFO",
+      "section": "4.1 Information Gathering",
+      "title": "Map Application Architecture",
+      "source_path": "document/4-Web_Application_Security_Testing/01-Information_Gathering/10-Map_Application_Architecture.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/01-Information_Gathering/10-Map_Application_Architecture.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INFO-003"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to Slice 9 error handling and information-disclosure evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INFO-003"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-CONF-01",
+      "wstg_id": "WSTG-latest-CONF-01",
+      "source_wstg_id": "WSTG-CONF-01",
+      "category": "CONF",
+      "section": "4.2 Configuration and Deployment Management Testing",
+      "title": "Test Network Infrastructure Configuration",
+      "source_path": "document/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/01-Test_Network_Infrastructure_Configuration.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/01-Test_Network_Infrastructure_Configuration.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CONF-001",
+        "OSMAP-WSTG-CONF-005",
+        "OSMAP-WSTG-CONF-006"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CONF-001",
+        "OSMAP-WSTG-CONF-005",
+        "OSMAP-WSTG-CONF-006"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-CONF-02",
+      "wstg_id": "WSTG-latest-CONF-02",
+      "source_wstg_id": "WSTG-CONF-02",
+      "category": "CONF",
+      "section": "4.2 Configuration and Deployment Management Testing",
+      "title": "Test Application Platform Configuration",
+      "source_path": "document/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/02-Test_Application_Platform_Configuration.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/02-Test_Application_Platform_Configuration.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CONF-007"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CONF-007"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-CONF-03",
+      "wstg_id": "WSTG-latest-CONF-03",
+      "source_wstg_id": "WSTG-CONF-03",
+      "category": "CONF",
+      "section": "4.2 Configuration and Deployment Management Testing",
+      "title": "Test File Extensions Handling for Sensitive Information",
+      "source_path": "document/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/03-Test_File_Extensions_Handling_for_Sensitive_Information.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/03-Test_File_Extensions_Handling_for_Sensitive_Information.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CONF-008"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to Slice 10 sensitive extension and backup file exposure evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CONF-008"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-CONF-04",
+      "wstg_id": "WSTG-latest-CONF-04",
+      "source_wstg_id": "WSTG-CONF-04",
+      "category": "CONF",
+      "section": "4.2 Configuration and Deployment Management Testing",
+      "title": "Review Old Backup and Unreferenced Files for Sensitive Information",
+      "source_path": "document/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/04-Review_Old_Backup_and_Unreferenced_Files_for_Sensitive_Information.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/04-Review_Old_Backup_and_Unreferenced_Files_for_Sensitive_Information.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CONF-008"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to Slice 10 sensitive extension and backup file exposure evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CONF-008"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-CONF-05",
+      "wstg_id": "WSTG-latest-CONF-05",
+      "source_wstg_id": "WSTG-CONF-05",
+      "category": "CONF",
+      "section": "4.2 Configuration and Deployment Management Testing",
+      "title": "Enumerate Infrastructure and Application Admin Interfaces",
+      "source_path": "document/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/05-Enumerate_Infrastructure_and_Application_Admin_Interfaces.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/05-Enumerate_Infrastructure_and_Application_Admin_Interfaces.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CONF-005"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CONF-005"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-CONF-06",
+      "wstg_id": "WSTG-latest-CONF-06",
+      "source_wstg_id": "WSTG-CONF-06",
+      "category": "CONF",
+      "section": "4.2 Configuration and Deployment Management Testing",
+      "title": "Test HTTP Methods",
+      "source_path": "document/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/06-Test_HTTP_Methods.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/06-Test_HTTP_Methods.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CONF-004"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CONF-004"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-CONF-07",
+      "wstg_id": "WSTG-latest-CONF-07",
+      "source_wstg_id": "WSTG-CONF-07",
+      "category": "CONF",
+      "section": "4.2 Configuration and Deployment Management Testing",
+      "title": "Test HTTP Strict Transport Security",
+      "source_path": "document/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/07-Test_HTTP_Strict_Transport_Security.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/07-Test_HTTP_Strict_Transport_Security.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CONF-002"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CONF-002"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-CONF-08",
+      "wstg_id": "WSTG-latest-CONF-08",
+      "source_wstg_id": "WSTG-CONF-08",
+      "category": "CONF",
+      "section": "4.2 Configuration and Deployment Management Testing",
+      "title": "Test RIA Cross Domain Policy",
+      "source_path": "document/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/08-Test_RIA_Cross_Domain_Policy.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/08-Test_RIA_Cross_Domain_Policy.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CONF-009"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface has no Flash, Silverlight, or RIA client boundary and does not serve legacy policy files",
+      "evidence_reference": [
+        "OSMAP-WSTG-CONF-009"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-CONF-09",
+      "wstg_id": "WSTG-latest-CONF-09",
+      "source_wstg_id": "WSTG-CONF-09",
+      "category": "CONF",
+      "section": "4.2 Configuration and Deployment Management Testing",
+      "title": "Test File Permission",
+      "source_path": "document/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/09-Test_File_Permission.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/09-Test_File_Permission.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CONF-010"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "covered by host-assisted OSMAP file-permission evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CONF-010"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-CONF-10",
+      "wstg_id": "WSTG-latest-CONF-10",
+      "source_wstg_id": "WSTG-CONF-10",
+      "category": "CONF",
+      "section": "4.2 Configuration and Deployment Management Testing",
+      "title": "Test for Subdomain Takeover",
+      "source_path": "document/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/10-Test_for_Subdomain_Takeover.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/10-Test_for_Subdomain_Takeover.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CONF-010"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "covered by host-assisted OSMAP DNS evidence for the browser host and candidate OSMAP webmail names",
+      "evidence_reference": [
+        "OSMAP-WSTG-CONF-010"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-CONF-11",
+      "wstg_id": "WSTG-latest-CONF-11",
+      "source_wstg_id": "WSTG-CONF-11",
+      "category": "CONF",
+      "section": "4.2 Configuration and Deployment Management Testing",
+      "title": "Test Cloud Storage",
+      "source_path": "document/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/11-Test_Cloud_Storage.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/11-Test_Cloud_Storage.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CONF-009"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface has no public cloud object storage bucket, dependency, or static object-storage root",
+      "evidence_reference": [
+        "OSMAP-WSTG-CONF-009"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-CONF-12",
+      "wstg_id": "WSTG-latest-CONF-12",
+      "source_wstg_id": "WSTG-CONF-12",
+      "category": "CONF",
+      "section": "4.2 Configuration and Deployment Management Testing",
+      "title": "Testing for Content Security Policy",
+      "source_path": "document/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/12-Test_for_Content_Security_Policy.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/12-Test_for_Content_Security_Policy.md",
+      "source_relationship": "latest_added_or_disambiguated_since_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CONF-003"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to existing OSMAP CSP regression evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CONF-003"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-CONF-13",
+      "wstg_id": "WSTG-latest-CONF-13",
+      "source_wstg_id": "WSTG-CONF-13",
+      "category": "CONF",
+      "section": "4.2 Configuration and Deployment Management Testing",
+      "title": "Test Path Confusion",
+      "source_path": "document/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/13-Test_for_Path_Confusion.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/13-Test_for_Path_Confusion.md",
+      "source_relationship": "latest_added_or_disambiguated_since_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-005"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to OSMAP request-target normalization and path-confusion rejection evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-005"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-CONF-14",
+      "wstg_id": "WSTG-latest-CONF-14",
+      "source_wstg_id": "WSTG-CONF-14",
+      "category": "CONF",
+      "section": "4.2 Configuration and Deployment Management Testing",
+      "title": "Test Other HTTP Security Header Misconfigurations",
+      "source_path": "document/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/14-Test_Other_HTTP_Security_Header_Misconfigurations.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/02-Configuration_and_Deployment_Management_Testing/14-Test_Other_HTTP_Security_Header_Misconfigurations.md",
+      "source_relationship": "latest_added_or_disambiguated_since_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CONF-002"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to OSMAP security-header baseline evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CONF-002"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-IDNT-01",
+      "wstg_id": "WSTG-latest-IDNT-01",
+      "source_wstg_id": "WSTG-IDNT-01",
+      "category": "IDNT",
+      "section": "4.3 Identity Management Testing",
+      "title": "Test Role Definitions",
+      "source_path": "document/4-Web_Application_Security_Testing/03-Identity_Management_Testing/01-Test_Role_Definitions.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/03-Identity_Management_Testing/01-Test_Role_Definitions.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-IDNT-001"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface has one mailbox end-user role and no browser role-management surface",
+      "evidence_reference": [
+        "OSMAP-WSTG-IDNT-001"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-IDNT-02",
+      "wstg_id": "WSTG-latest-IDNT-02",
+      "source_wstg_id": "WSTG-IDNT-02",
+      "category": "IDNT",
+      "section": "4.3 Identity Management Testing",
+      "title": "Test User Registration Process",
+      "source_path": "document/4-Web_Application_Security_Testing/03-Identity_Management_Testing/02-Test_User_Registration_Process.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/03-Identity_Management_Testing/02-Test_User_Registration_Process.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-IDNT-001"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface has no self-service registration, signup, invitation, or account-creation route",
+      "evidence_reference": [
+        "OSMAP-WSTG-IDNT-001"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-IDNT-03",
+      "wstg_id": "WSTG-latest-IDNT-03",
+      "source_wstg_id": "WSTG-IDNT-03",
+      "category": "IDNT",
+      "section": "4.3 Identity Management Testing",
+      "title": "Test Account Provisioning Process",
+      "source_path": "document/4-Web_Application_Security_Testing/03-Identity_Management_Testing/03-Test_Account_Provisioning_Process.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/03-Identity_Management_Testing/03-Test_Account_Provisioning_Process.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-IDNT-001"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "account provisioning remains an operator-controlled mail-stack process outside the OSMAP browser application",
+      "evidence_reference": [
+        "OSMAP-WSTG-IDNT-001"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-IDNT-04",
+      "wstg_id": "WSTG-latest-IDNT-04",
+      "source_wstg_id": "WSTG-IDNT-04",
+      "category": "IDNT",
+      "section": "4.3 Identity Management Testing",
+      "title": "Testing for Account Enumeration and Guessable User Account",
+      "source_path": "document/4-Web_Application_Security_Testing/03-Identity_Management_Testing/04-Testing_for_Account_Enumeration_and_Guessable_User_Account.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/03-Identity_Management_Testing/04-Testing_for_Account_Enumeration_and_Guessable_User_Account.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-ATHN-002"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-ATHN-002"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-IDNT-05",
+      "wstg_id": "WSTG-latest-IDNT-05",
+      "source_wstg_id": "WSTG-IDNT-05",
+      "category": "IDNT",
+      "section": "4.3 Identity Management Testing",
+      "title": "Testing for Weak or Unenforced Username Policy",
+      "source_path": "document/4-Web_Application_Security_Testing/03-Identity_Management_Testing/05-Testing_for_Weak_or_Unenforced_Username_Policy.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/03-Identity_Management_Testing/05-Testing_for_Weak_or_Unenforced_Username_Policy.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-IDNT-001"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "covered by OSMAP username input bounds and identity lifecycle route evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-IDNT-001"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-ATHN-01",
+      "wstg_id": "WSTG-latest-ATHN-01",
+      "source_wstg_id": "WSTG-ATHN-01",
+      "category": "ATHN",
+      "section": "4.4 Authentication Testing",
+      "title": "Testing for Credentials Transported over an Encrypted Channel",
+      "source_path": "document/4-Web_Application_Security_Testing/04-Authentication_Testing/01-Testing_for_Credentials_Transported_over_an_Encrypted_Channel.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/04-Authentication_Testing/01-Testing_for_Credentials_Transported_over_an_Encrypted_Channel.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-ATHN-001"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-ATHN-001"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-ATHN-02",
+      "wstg_id": "WSTG-latest-ATHN-02",
+      "source_wstg_id": "WSTG-ATHN-02",
+      "category": "ATHN",
+      "section": "4.4 Authentication Testing",
+      "title": "Testing for Default Credentials",
+      "source_path": "document/4-Web_Application_Security_Testing/04-Authentication_Testing/02-Testing_for_Default_Credentials.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/04-Authentication_Testing/02-Testing_for_Default_Credentials.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-ATHN-005"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "not applicable: OSMAP has no browser-local account database, seeded accounts, or default credentials",
+      "evidence_reference": [
+        "OSMAP-WSTG-ATHN-005"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-ATHN-03",
+      "wstg_id": "WSTG-latest-ATHN-03",
+      "source_wstg_id": "WSTG-ATHN-03",
+      "category": "ATHN",
+      "section": "4.4 Authentication Testing",
+      "title": "Testing for Weak Lock Out Mechanism",
+      "source_path": "document/4-Web_Application_Security_Testing/04-Authentication_Testing/03-Testing_for_Weak_Lock_Out_Mechanism.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/04-Authentication_Testing/03-Testing_for_Weak_Lock_Out_Mechanism.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-ATHN-002",
+        "OSMAP-WSTG-ATHN-003"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-ATHN-002",
+        "OSMAP-WSTG-ATHN-003"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-ATHN-04",
+      "wstg_id": "WSTG-latest-ATHN-04",
+      "source_wstg_id": "WSTG-ATHN-04",
+      "category": "ATHN",
+      "section": "4.4 Authentication Testing",
+      "title": "Testing for Bypassing Authentication Schema",
+      "source_path": "document/4-Web_Application_Security_Testing/04-Authentication_Testing/04-Testing_for_Bypassing_Authentication_Schema.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/04-Authentication_Testing/04-Testing_for_Bypassing_Authentication_Schema.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-ATHN-005"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to OSMAP-WSTG-ATHN-005 protected-route and static auth-boundary evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-ATHN-005"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-ATHN-05",
+      "wstg_id": "WSTG-latest-ATHN-05",
+      "source_wstg_id": "WSTG-ATHN-05",
+      "category": "ATHN",
+      "section": "4.4 Authentication Testing",
+      "title": "Testing for Vulnerable Remember Password",
+      "source_path": "document/4-Web_Application_Security_Testing/04-Authentication_Testing/05-Testing_for_Vulnerable_Remember_Password.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/04-Authentication_Testing/05-Testing_for_Vulnerable_Remember_Password.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-ATHN-005"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "not applicable: OSMAP has no remember-password feature or password persistence surface",
+      "evidence_reference": [
+        "OSMAP-WSTG-ATHN-005"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-ATHN-06",
+      "wstg_id": "WSTG-latest-ATHN-06",
+      "source_wstg_id": "WSTG-ATHN-06",
+      "category": "ATHN",
+      "section": "4.4 Authentication Testing",
+      "title": "Testing for Browser Cache Weaknesses",
+      "source_path": "document/4-Web_Application_Security_Testing/04-Authentication_Testing/06-Testing_for_Browser_Cache_Weaknesses.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/04-Authentication_Testing/06-Testing_for_Browser_Cache_Weaknesses.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-SESS-005"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-SESS-005"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-ATHN-07",
+      "wstg_id": "WSTG-latest-ATHN-07",
+      "source_wstg_id": "WSTG-ATHN-07",
+      "category": "ATHN",
+      "section": "4.4 Authentication Testing",
+      "title": "Testing for Weak Authentication Methods",
+      "source_path": "document/4-Web_Application_Security_Testing/04-Authentication_Testing/07-Testing_for_Weak_Authentication_Methods.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/04-Authentication_Testing/07-Testing_for_Weak_Authentication_Methods.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-ATHN-005"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "not applicable: browser password creation and password policy enforcement remain external to OSMAP",
+      "evidence_reference": [
+        "OSMAP-WSTG-ATHN-005"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-ATHN-08",
+      "wstg_id": "WSTG-latest-ATHN-08",
+      "source_wstg_id": "WSTG-ATHN-08",
+      "category": "ATHN",
+      "section": "4.4 Authentication Testing",
+      "title": "Testing for Weak Security Question Answer",
+      "source_path": "document/4-Web_Application_Security_Testing/04-Authentication_Testing/08-Testing_for_Weak_Security_Question_Answer.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/04-Authentication_Testing/08-Testing_for_Weak_Security_Question_Answer.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-ATHN-005"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "not applicable: OSMAP has no security-question flow",
+      "evidence_reference": [
+        "OSMAP-WSTG-ATHN-005"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-ATHN-09",
+      "wstg_id": "WSTG-latest-ATHN-09",
+      "source_wstg_id": "WSTG-ATHN-09",
+      "category": "ATHN",
+      "section": "4.4 Authentication Testing",
+      "title": "Testing for Weak Password Change or Reset Functionalities",
+      "source_path": "document/4-Web_Application_Security_Testing/04-Authentication_Testing/09-Testing_for_Weak_Password_Change_or_Reset_Functionalities.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/04-Authentication_Testing/09-Testing_for_Weak_Password_Change_or_Reset_Functionalities.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-ATHN-005"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "not applicable: OSMAP has no browser password change or reset functionality",
+      "evidence_reference": [
+        "OSMAP-WSTG-ATHN-005"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-ATHN-10",
+      "wstg_id": "WSTG-latest-ATHN-10",
+      "source_wstg_id": "WSTG-ATHN-10",
+      "category": "ATHN",
+      "section": "4.4 Authentication Testing",
+      "title": "Testing for Weaker Authentication in Alternative Channel",
+      "source_path": "document/4-Web_Application_Security_Testing/04-Authentication_Testing/10-Testing_for_Weaker_Authentication_in_Alternative_Channel.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/04-Authentication_Testing/10-Testing_for_Weaker_Authentication_in_Alternative_Channel.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-ATHN-001",
+        "OSMAP-WSTG-ATHN-004"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-ATHN-001",
+        "OSMAP-WSTG-ATHN-004"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-ATHN-11",
+      "wstg_id": "WSTG-latest-ATHN-11",
+      "source_wstg_id": "WSTG-ATHN-11",
+      "category": "ATHN",
+      "section": "4.4 Authentication Testing",
+      "title": "Testing Multi-Factor Authentication (MFA)",
+      "source_path": "document/4-Web_Application_Security_Testing/04-Authentication_Testing/11-Testing_Multi-Factor_Authentication.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/04-Authentication_Testing/11-Testing_Multi-Factor_Authentication.md",
+      "source_relationship": "latest_added_or_disambiguated_since_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-ATHN-004"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to password-plus-TOTP authenticated login evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-ATHN-004"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-ATHZ-01",
+      "wstg_id": "WSTG-latest-ATHZ-01",
+      "source_wstg_id": "WSTG-ATHZ-01",
+      "category": "ATHZ",
+      "section": "4.5 Authorization Testing",
+      "title": "Testing Directory Traversal File Include",
+      "source_path": "document/4-Web_Application_Security_Testing/05-Authorization_Testing/01-Testing_Directory_Traversal_File_Include.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/05-Authorization_Testing/01-Testing_Directory_Traversal_File_Include.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-001"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-001"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-ATHZ-02",
+      "wstg_id": "WSTG-latest-ATHZ-02",
+      "source_wstg_id": "WSTG-ATHZ-02",
+      "category": "ATHZ",
+      "section": "4.5 Authorization Testing",
+      "title": "Testing for Bypassing Authorization Schema",
+      "source_path": "document/4-Web_Application_Security_Testing/05-Authorization_Testing/02-Testing_for_Bypassing_Authorization_Schema.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/05-Authorization_Testing/02-Testing_for_Bypassing_Authorization_Schema.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-ATHZ-001"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-ATHZ-001"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-ATHZ-03",
+      "wstg_id": "WSTG-latest-ATHZ-03",
+      "source_wstg_id": "WSTG-ATHZ-03",
+      "category": "ATHZ",
+      "section": "4.5 Authorization Testing",
+      "title": "Testing for Privilege Escalation",
+      "source_path": "document/4-Web_Application_Security_Testing/05-Authorization_Testing/03-Testing_for_Privilege_Escalation.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/05-Authorization_Testing/03-Testing_for_Privilege_Escalation.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-ATHZ-001"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-ATHZ-001"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-ATHZ-04",
+      "wstg_id": "WSTG-latest-ATHZ-04",
+      "source_wstg_id": "WSTG-ATHZ-04",
+      "category": "ATHZ",
+      "section": "4.5 Authorization Testing",
+      "title": "Testing for Insecure Direct Object References",
+      "source_path": "document/4-Web_Application_Security_Testing/05-Authorization_Testing/04-Testing_for_Insecure_Direct_Object_References.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/05-Authorization_Testing/04-Testing_for_Insecure_Direct_Object_References.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-BUSL-003",
+        "OSMAP-WSTG-BUSL-004"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-ATHZ-001",
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-BUSL-003",
+        "OSMAP-WSTG-BUSL-004"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-ATHZ-05",
+      "wstg_id": "WSTG-latest-ATHZ-05",
+      "source_wstg_id": "WSTG-ATHZ-05",
+      "category": "ATHZ",
+      "section": "4.5 Authorization Testing",
+      "title": "Testing for OAuth Weaknesses",
+      "source_path": "document/4-Web_Application_Security_Testing/05-Authorization_Testing/05-Testing_for_OAuth_Weaknesses.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/05-Authorization_Testing/05-Testing_for_OAuth_Weaknesses.md",
+      "source_relationship": "latest_added_or_disambiguated_since_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-APIT-001",
+        "OSMAP-WSTG-CLNT-003"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "not applicable: OSMAP exposes no OAuth authorization grant, callback, token, or identity-provider surface",
+      "evidence_reference": [
+        "OSMAP-WSTG-APIT-001",
+        "OSMAP-WSTG-CLNT-003"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-SESS-01",
+      "wstg_id": "WSTG-latest-SESS-01",
+      "source_wstg_id": "WSTG-SESS-01",
+      "category": "SESS",
+      "section": "4.6 Session Management Testing",
+      "title": "Testing for Session Management Schema",
+      "source_path": "document/4-Web_Application_Security_Testing/06-Session_Management_Testing/01-Testing_for_Session_Management_Schema.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/06-Session_Management_Testing/01-Testing_for_Session_Management_Schema.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-SESS-006"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-SESS-006"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-SESS-02",
+      "wstg_id": "WSTG-latest-SESS-02",
+      "source_wstg_id": "WSTG-SESS-02",
+      "category": "SESS",
+      "section": "4.6 Session Management Testing",
+      "title": "Testing for Cookies Attributes",
+      "source_path": "document/4-Web_Application_Security_Testing/06-Session_Management_Testing/02-Testing_for_Cookies_Attributes.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/06-Session_Management_Testing/02-Testing_for_Cookies_Attributes.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-SESS-001"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-SESS-001"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-SESS-03",
+      "wstg_id": "WSTG-latest-SESS-03",
+      "source_wstg_id": "WSTG-SESS-03",
+      "category": "SESS",
+      "section": "4.6 Session Management Testing",
+      "title": "Testing for Session Fixation",
+      "source_path": "document/4-Web_Application_Security_Testing/06-Session_Management_Testing/03-Testing_for_Session_Fixation.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/06-Session_Management_Testing/03-Testing_for_Session_Fixation.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-SESS-002"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-SESS-002"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-SESS-04",
+      "wstg_id": "WSTG-latest-SESS-04",
+      "source_wstg_id": "WSTG-SESS-04",
+      "category": "SESS",
+      "section": "4.6 Session Management Testing",
+      "title": "Testing for Exposed Session Variables",
+      "source_path": "document/4-Web_Application_Security_Testing/06-Session_Management_Testing/04-Testing_for_Exposed_Session_Variables.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/06-Session_Management_Testing/04-Testing_for_Exposed_Session_Variables.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-SESS-006"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-SESS-006"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-SESS-05",
+      "wstg_id": "WSTG-latest-SESS-05",
+      "source_wstg_id": "WSTG-SESS-05",
+      "category": "SESS",
+      "section": "4.6 Session Management Testing",
+      "title": "Testing for Cross Site Request Forgery",
+      "source_path": "document/4-Web_Application_Security_Testing/06-Session_Management_Testing/05-Testing_for_Cross_Site_Request_Forgery.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/06-Session_Management_Testing/05-Testing_for_Cross_Site_Request_Forgery.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-SESS-003",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-BUSL-003",
+        "OSMAP-WSTG-BUSL-004"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-SESS-003",
+        "OSMAP-WSTG-SESS-004",
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-BUSL-003",
+        "OSMAP-WSTG-BUSL-004"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-SESS-06",
+      "wstg_id": "WSTG-latest-SESS-06",
+      "source_wstg_id": "WSTG-SESS-06",
+      "category": "SESS",
+      "section": "4.6 Session Management Testing",
+      "title": "Testing for Logout Functionality",
+      "source_path": "document/4-Web_Application_Security_Testing/06-Session_Management_Testing/06-Testing_for_Logout_Functionality.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/06-Session_Management_Testing/06-Testing_for_Logout_Functionality.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-SESS-005",
+        "OSMAP-WSTG-SESS-006"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-SESS-005",
+        "OSMAP-WSTG-SESS-006"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-SESS-07",
+      "wstg_id": "WSTG-latest-SESS-07",
+      "source_wstg_id": "WSTG-SESS-07",
+      "category": "SESS",
+      "section": "4.6 Session Management Testing",
+      "title": "Testing Session Timeout",
+      "source_path": "document/4-Web_Application_Security_Testing/06-Session_Management_Testing/07-Testing_Session_Timeout.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/06-Session_Management_Testing/07-Testing_Session_Timeout.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-SESS-006"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-SESS-006"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-SESS-08",
+      "wstg_id": "WSTG-latest-SESS-08",
+      "source_wstg_id": "WSTG-SESS-08",
+      "category": "SESS",
+      "section": "4.6 Session Management Testing",
+      "title": "Testing for Session Puzzling",
+      "source_path": "document/4-Web_Application_Security_Testing/06-Session_Management_Testing/08-Testing_for_Session_Puzzling.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/06-Session_Management_Testing/08-Testing_for_Session_Puzzling.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-SESS-006"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-SESS-006"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-SESS-09",
+      "wstg_id": "WSTG-latest-SESS-09",
+      "source_wstg_id": "WSTG-SESS-09",
+      "category": "SESS",
+      "section": "4.6 Session Management Testing",
+      "title": "Testing for Session Hijacking",
+      "source_path": "document/4-Web_Application_Security_Testing/06-Session_Management_Testing/09-Testing_for_Session_Hijacking.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/06-Session_Management_Testing/09-Testing_for_Session_Hijacking.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-SESS-006"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-SESS-006"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-SESS-10",
+      "wstg_id": "WSTG-latest-SESS-10",
+      "source_wstg_id": "WSTG-SESS-10",
+      "category": "SESS",
+      "section": "4.6 Session Management Testing",
+      "title": "Testing JSON Web Tokens",
+      "source_path": "document/4-Web_Application_Security_Testing/06-Session_Management_Testing/10-Testing_JSON_Web_Tokens.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/06-Session_Management_Testing/10-Testing_JSON_Web_Tokens.md",
+      "source_relationship": "latest_added_or_disambiguated_since_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-SESS-006"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "not applicable: OSMAP browser sessions use server-side opaque session records, not JWTs",
+      "evidence_reference": [
+        "OSMAP-WSTG-SESS-006"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-SESS-11",
+      "wstg_id": "WSTG-latest-SESS-11",
+      "source_wstg_id": "WSTG-SESS-11",
+      "category": "SESS",
+      "section": "4.6 Session Management Testing",
+      "title": "Testing for Concurrent Sessions",
+      "source_path": "document/4-Web_Application_Security_Testing/06-Session_Management_Testing/11-Testing_for_Concurrent_Sessions.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/06-Session_Management_Testing/11-Testing_for_Concurrent_Sessions.md",
+      "source_relationship": "latest_added_or_disambiguated_since_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-SESS-006"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to OSMAP session lifecycle and concurrent-session evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-SESS-006"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-INPV-01",
+      "wstg_id": "WSTG-latest-INPV-01",
+      "source_wstg_id": "WSTG-INPV-01",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for Reflected Cross Site Scripting",
+      "source_path": "document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/01-Testing_for_Reflected_Cross_Site_Scripting.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/01-Testing_for_Reflected_Cross_Site_Scripting.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-002"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-002"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-INPV-02",
+      "wstg_id": "WSTG-latest-INPV-02",
+      "source_wstg_id": "WSTG-INPV-02",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for Stored Cross Site Scripting",
+      "source_path": "document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/02-Testing_for_Stored_Cross_Site_Scripting.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/02-Testing_for_Stored_Cross_Site_Scripting.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CLNT-002"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CLNT-002"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-INPV-03",
+      "wstg_id": "WSTG-latest-INPV-03",
+      "source_wstg_id": "WSTG-INPV-03",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for HTTP Verb Tampering",
+      "source_path": "document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/03-Testing_for_HTTP_Verb_Tampering.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/03-Testing_for_HTTP_Verb_Tampering.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-005"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-005"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-INPV-04",
+      "wstg_id": "WSTG-latest-INPV-04",
+      "source_wstg_id": "WSTG-INPV-04",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for HTTP Parameter Pollution",
+      "source_path": "document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/04-Testing_for_HTTP_Parameter_Pollution.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/04-Testing_for_HTTP_Parameter_Pollution.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-005"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-005"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-INPV-05",
+      "wstg_id": "WSTG-latest-INPV-05",
+      "source_wstg_id": "WSTG-INPV-05",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for SQL Injection",
+      "source_path": "document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/05-Testing_for_SQL_Injection.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/05-Testing_for_SQL_Injection.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-007"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface lacks this interpreter, parser, backend, or outbound fetch class",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-007"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-INPV-06",
+      "wstg_id": "WSTG-latest-INPV-06",
+      "source_wstg_id": "WSTG-INPV-06",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for LDAP Injection",
+      "source_path": "document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/06-Testing_for_LDAP_Injection.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/06-Testing_for_LDAP_Injection.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-007"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface lacks this interpreter, parser, backend, or outbound fetch class",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-007"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-INPV-07",
+      "wstg_id": "WSTG-latest-INPV-07",
+      "source_wstg_id": "WSTG-INPV-07",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for XML Injection",
+      "source_path": "document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/07-Testing_for_XML_Injection.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/07-Testing_for_XML_Injection.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-007"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface lacks this interpreter, parser, backend, or outbound fetch class",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-007"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-INPV-08",
+      "wstg_id": "WSTG-latest-INPV-08",
+      "source_wstg_id": "WSTG-INPV-08",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for SSI Injection",
+      "source_path": "document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/08-Testing_for_SSI_Injection.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/08-Testing_for_SSI_Injection.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-007"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface lacks this interpreter, parser, backend, or outbound fetch class",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-007"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-INPV-09",
+      "wstg_id": "WSTG-latest-INPV-09",
+      "source_wstg_id": "WSTG-INPV-09",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for XPath Injection",
+      "source_path": "document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/09-Testing_for_XPath_Injection.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/09-Testing_for_XPath_Injection.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-007"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface lacks this interpreter, parser, backend, or outbound fetch class",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-007"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-INPV-10",
+      "wstg_id": "WSTG-latest-INPV-10",
+      "source_wstg_id": "WSTG-INPV-10",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for IMAP SMTP Injection",
+      "source_path": "document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/10-Testing_for_IMAP_SMTP_Injection.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/10-Testing_for_IMAP_SMTP_Injection.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-004"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-004"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-INPV-11",
+      "wstg_id": "WSTG-latest-INPV-11",
+      "source_wstg_id": "WSTG-INPV-11",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for Code Injection",
+      "source_path": "document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/11-Testing_for_Code_Injection.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/11-Testing_for_Code_Injection.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-007"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface lacks this interpreter, parser, backend, or outbound fetch class",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-007"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-INPV-12",
+      "wstg_id": "WSTG-latest-INPV-12",
+      "source_wstg_id": "WSTG-INPV-12",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for Command Injection",
+      "source_path": "document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/12-Testing_for_Command_Injection.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/12-Testing_for_Command_Injection.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-003"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "covered by authenticated OSMAP command-boundary WSTG evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-003"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-INPV-13-testing-for-buffer-overflow",
+      "wstg_id": "WSTG-latest-INPV-13-testing-for-buffer-overflow",
+      "source_wstg_id": "WSTG-INPV-13",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for Buffer Overflow",
+      "source_path": "document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/13-Testing_for_Buffer_Overflow.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/13-Testing_for_Buffer_Overflow.md",
+      "source_relationship": "latest_added_or_disambiguated_since_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-007"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "not applicable: OSMAP has no native buffer-management request path beyond bounded Rust parsing and reviewed OpenBSD launcher boundaries",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-007"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-INPV-13-testing-for-format-string-injection",
+      "wstg_id": "WSTG-latest-INPV-13-testing-for-format-string-injection",
+      "source_wstg_id": "WSTG-INPV-13",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for Format String Injection",
+      "source_path": "document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/13-Testing_for_Format_String_Injection.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/13-Testing_for_Format_String_Injection.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-007"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface lacks this interpreter, parser, backend, or outbound fetch class",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-007"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-INPV-14",
+      "wstg_id": "WSTG-latest-INPV-14",
+      "source_wstg_id": "WSTG-INPV-14",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for Incubated Vulnerability",
+      "source_path": "document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/14-Testing_for_Incubated_Vulnerability.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/14-Testing_for_Incubated_Vulnerability.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-007"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface lacks this interpreter, parser, backend, or outbound fetch class",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-007"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-INPV-15",
+      "wstg_id": "WSTG-latest-INPV-15",
+      "source_wstg_id": "WSTG-INPV-15",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for HTTP Response Splitting",
+      "source_path": "document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/15-Testing_for_HTTP_Response_Splitting.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/15-Testing_for_HTTP_Response_Splitting.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-006"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-006"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-INPV-16",
+      "wstg_id": "WSTG-latest-INPV-16",
+      "source_wstg_id": "WSTG-INPV-16",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for HTTP Request Smuggling",
+      "source_path": "document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/16-Testing_for_HTTP_Request_Smuggling.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/16-Testing_for_HTTP_Request_Smuggling.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-006"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-006"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-INPV-17",
+      "wstg_id": "WSTG-latest-INPV-17",
+      "source_wstg_id": "WSTG-INPV-17",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for Host Header Injection",
+      "source_path": "document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/17-Testing_for_Host_Header_Injection.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/17-Testing_for_Host_Header_Injection.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-006"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-006"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-INPV-18",
+      "wstg_id": "WSTG-latest-INPV-18",
+      "source_wstg_id": "WSTG-INPV-18",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for Server-side Template Injection",
+      "source_path": "document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/18-Testing_for_Server-side_Template_Injection.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/18-Testing_for_Server-side_Template_Injection.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-007"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface lacks this interpreter, parser, backend, or outbound fetch class",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-007"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-INPV-19",
+      "wstg_id": "WSTG-latest-INPV-19",
+      "source_wstg_id": "WSTG-INPV-19",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for Server-Side Request Forgery",
+      "source_path": "document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/19-Testing_for_Server-Side_Request_Forgery.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/19-Testing_for_Server-Side_Request_Forgery.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-007"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface lacks this interpreter, parser, backend, or outbound fetch class",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-007"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-INPV-20",
+      "wstg_id": "WSTG-latest-INPV-20",
+      "source_wstg_id": "WSTG-INPV-20",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for Mass Assignment",
+      "source_path": "document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/20-Testing_for_Mass_Assignment.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/20-Testing_for_Mass_Assignment.md",
+      "source_relationship": "latest_added_or_disambiguated_since_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-005",
+        "OSMAP-WSTG-BUSL-005"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to OSMAP duplicate-parameter, route state-transition, and bounded form-field evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-005",
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-INPV-21",
+      "wstg_id": "WSTG-latest-INPV-21",
+      "source_wstg_id": "WSTG-INPV-21",
+      "category": "INPV",
+      "section": "4.7 Input Validation Testing",
+      "title": "Testing for CSV Injection",
+      "source_path": "document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/21-Testing_for_CSV_Injection.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/07-Input_Validation_Testing/21-Testing_for_CSV_Injection.md",
+      "source_relationship": "latest_added_or_disambiguated_since_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INPV-007"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "not applicable: OSMAP exposes no CSV import, CSV export, spreadsheet, or formula-evaluation workflow",
+      "evidence_reference": [
+        "OSMAP-WSTG-INPV-007"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-ERRH-01",
+      "wstg_id": "WSTG-latest-ERRH-01",
+      "source_wstg_id": "WSTG-ERRH-01",
+      "category": "ERRH",
+      "section": "4.8 Testing for Error Handling",
+      "title": "Testing for Improper Error Handling",
+      "source_path": "document/4-Web_Application_Security_Testing/08-Testing_for_Error_Handling/01-Testing_For_Improper_Error_Handling.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/08-Testing_for_Error_Handling/01-Testing_For_Improper_Error_Handling.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INFO-002",
+        "OSMAP-WSTG-LOGG-001"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INFO-002",
+        "OSMAP-WSTG-LOGG-001"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-ERRH-02",
+      "wstg_id": "WSTG-latest-ERRH-02",
+      "source_wstg_id": "WSTG-ERRH-02",
+      "category": "ERRH",
+      "section": "4.8 Testing for Error Handling",
+      "title": "Testing for Stack Traces",
+      "source_path": "document/4-Web_Application_Security_Testing/08-Testing_for_Error_Handling/02-Testing_for_Stack_Traces.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/08-Testing_for_Error_Handling/02-Testing_for_Stack_Traces.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-INFO-003"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to Slice 9 error handling and information-disclosure evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-INFO-003"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-CRYP-01",
+      "wstg_id": "WSTG-latest-CRYP-01",
+      "source_wstg_id": "WSTG-CRYP-01",
+      "category": "CRYP",
+      "section": "4.9 Testing for Weak Cryptography",
+      "title": "Testing for Weak Transport Layer Security",
+      "source_path": "document/4-Web_Application_Security_Testing/09-Testing_for_Weak_Cryptography/01-Testing_for_Weak_Transport_Layer_Security.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/09-Testing_for_Weak_Cryptography/01-Testing_for_Weak_Transport_Layer_Security.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CRYP-001"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "covered by unauthenticated OSMAP TLS standard and cleartext transport evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CRYP-001"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-CRYP-02",
+      "wstg_id": "WSTG-latest-CRYP-02",
+      "source_wstg_id": "WSTG-CRYP-02",
+      "category": "CRYP",
+      "section": "4.9 Testing for Weak Cryptography",
+      "title": "Testing for Padding Oracle",
+      "source_path": "document/4-Web_Application_Security_Testing/09-Testing_for_Weak_Cryptography/02-Testing_for_Padding_Oracle.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/09-Testing_for_Weak_Cryptography/02-Testing_for_Padding_Oracle.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CRYP-002"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface has no application encryption/decryption primitive or CBC decrypt route",
+      "evidence_reference": [
+        "OSMAP-WSTG-CRYP-002"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-CRYP-03",
+      "wstg_id": "WSTG-latest-CRYP-03",
+      "source_wstg_id": "WSTG-CRYP-03",
+      "category": "CRYP",
+      "section": "4.9 Testing for Weak Cryptography",
+      "title": "Testing for Sensitive Information Sent via Unencrypted Channels",
+      "source_path": "document/4-Web_Application_Security_Testing/09-Testing_for_Weak_Cryptography/03-Testing_for_Sensitive_Information_Sent_via_Unencrypted_Channels.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/09-Testing_for_Weak_Cryptography/03-Testing_for_Sensitive_Information_Sent_via_Unencrypted_Channels.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CRYP-001"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "covered by unauthenticated OSMAP TLS standard and cleartext transport evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CRYP-001"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-CRYP-04",
+      "wstg_id": "WSTG-latest-CRYP-04",
+      "source_wstg_id": "WSTG-CRYP-04",
+      "category": "CRYP",
+      "section": "4.9 Testing for Weak Cryptography",
+      "title": "Testing for Weak Cryptographic Primitives",
+      "source_path": "document/4-Web_Application_Security_Testing/09-Testing_for_Weak_Cryptography/04-Testing_for_Weak_Cryptographic_Primitives.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/09-Testing_for_Weak_Cryptography/04-Testing_for_Weak_Cryptographic_Primitives.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CRYP-002"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface has no application encryption/decryption primitive or CBC decrypt route",
+      "evidence_reference": [
+        "OSMAP-WSTG-CRYP-002"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-BUSL-01",
+      "wstg_id": "WSTG-latest-BUSL-01",
+      "source_wstg_id": "WSTG-BUSL-01",
+      "category": "BUSL",
+      "section": "4.10 Business Logic Testing",
+      "title": "Test Business Logic Data Validation",
+      "source_path": "document/4-Web_Application_Security_Testing/10-Business_Logic_Testing/01-Test_Business_Logic_Data_Validation.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/10-Business_Logic_Testing/01-Test_Business_Logic_Data_Validation.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-BUSL-005"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "covered by static OSMAP browser form route and state-transition evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-BUSL-02",
+      "wstg_id": "WSTG-latest-BUSL-02",
+      "source_wstg_id": "WSTG-BUSL-02",
+      "category": "BUSL",
+      "section": "4.10 Business Logic Testing",
+      "title": "Test Ability to Forge Requests",
+      "source_path": "document/4-Web_Application_Security_Testing/10-Business_Logic_Testing/02-Test_Ability_to_Forge_Requests.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/10-Business_Logic_Testing/02-Test_Ability_to_Forge_Requests.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-BUSL-005"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "covered by static OSMAP browser form route and state-transition evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-BUSL-03",
+      "wstg_id": "WSTG-latest-BUSL-03",
+      "source_wstg_id": "WSTG-BUSL-03",
+      "category": "BUSL",
+      "section": "4.10 Business Logic Testing",
+      "title": "Test Integrity Checks",
+      "source_path": "document/4-Web_Application_Security_Testing/10-Business_Logic_Testing/03-Test_Integrity_Checks.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/10-Business_Logic_Testing/03-Test_Integrity_Checks.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-BUSL-005"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "covered by static OSMAP browser form route and state-transition evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-BUSL-04",
+      "wstg_id": "WSTG-latest-BUSL-04",
+      "source_wstg_id": "WSTG-BUSL-04",
+      "category": "BUSL",
+      "section": "4.10 Business Logic Testing",
+      "title": "Test for Process Timing",
+      "source_path": "document/4-Web_Application_Security_Testing/10-Business_Logic_Testing/04-Test_for_Process_Timing.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/10-Business_Logic_Testing/04-Test_for_Process_Timing.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-BUSL-004"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-BUSL-004"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-BUSL-05",
+      "wstg_id": "WSTG-latest-BUSL-05",
+      "source_wstg_id": "WSTG-BUSL-05",
+      "category": "BUSL",
+      "section": "4.10 Business Logic Testing",
+      "title": "Test Number of Times a Function Can Be Used Limits",
+      "source_path": "document/4-Web_Application_Security_Testing/10-Business_Logic_Testing/05-Test_Number_of_Times_a_Function_Can_Be_Used_Limits.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/10-Business_Logic_Testing/05-Test_Number_of_Times_a_Function_Can_Be_Used_Limits.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-BUSL-005"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "covered by static OSMAP browser form route and state-transition evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-BUSL-06",
+      "wstg_id": "WSTG-latest-BUSL-06",
+      "source_wstg_id": "WSTG-BUSL-06",
+      "category": "BUSL",
+      "section": "4.10 Business Logic Testing",
+      "title": "Testing for the Circumvention of Work Flows",
+      "source_path": "document/4-Web_Application_Security_Testing/10-Business_Logic_Testing/06-Testing_for_the_Circumvention_of_Work_Flows.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/10-Business_Logic_Testing/06-Testing_for_the_Circumvention_of_Work_Flows.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-BUSL-005"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "covered by static OSMAP browser form route and state-transition evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-BUSL-07",
+      "wstg_id": "WSTG-latest-BUSL-07",
+      "source_wstg_id": "WSTG-BUSL-07",
+      "category": "BUSL",
+      "section": "4.10 Business Logic Testing",
+      "title": "Test Defenses Against Application Misuse",
+      "source_path": "document/4-Web_Application_Security_Testing/10-Business_Logic_Testing/07-Test_Defenses_Against_Application_Misuse.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/10-Business_Logic_Testing/07-Test_Defenses_Against_Application_Misuse.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-BUSL-005"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "covered by static OSMAP browser form route and state-transition evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-BUSL-08",
+      "wstg_id": "WSTG-latest-BUSL-08",
+      "source_wstg_id": "WSTG-BUSL-08",
+      "category": "BUSL",
+      "section": "4.10 Business Logic Testing",
+      "title": "Test Upload of Unexpected File Types",
+      "source_path": "document/4-Web_Application_Security_Testing/10-Business_Logic_Testing/08-Test_Upload_of_Unexpected_File_Types.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/10-Business_Logic_Testing/08-Test_Upload_of_Unexpected_File_Types.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-BUSL-001",
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-BUSL-003"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-BUSL-001",
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-BUSL-003"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-BUSL-09",
+      "wstg_id": "WSTG-latest-BUSL-09",
+      "source_wstg_id": "WSTG-BUSL-09",
+      "category": "BUSL",
+      "section": "4.10 Business Logic Testing",
+      "title": "Test Upload of Malicious Files",
+      "source_path": "document/4-Web_Application_Security_Testing/10-Business_Logic_Testing/09-Test_Upload_of_Malicious_Files.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/10-Business_Logic_Testing/09-Test_Upload_of_Malicious_Files.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-BUSL-001",
+        "OSMAP-WSTG-BUSL-003"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-BUSL-001",
+        "OSMAP-WSTG-BUSL-003"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-BUSL-10",
+      "wstg_id": "WSTG-latest-BUSL-10",
+      "source_wstg_id": "WSTG-BUSL-10",
+      "category": "BUSL",
+      "section": "4.10 Business Logic Testing",
+      "title": "Test Payment Functionality",
+      "source_path": "document/4-Web_Application_Security_Testing/10-Business_Logic_Testing/10-Test-Payment-Functionality.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/10-Business_Logic_Testing/10-Test-Payment-Functionality.md",
+      "source_relationship": "latest_added_or_disambiguated_since_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-BUSL-005"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "not applicable: OSMAP has no payment, checkout, invoice, credit, or currency workflow",
+      "evidence_reference": [
+        "OSMAP-WSTG-BUSL-005"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-CLNT-01",
+      "wstg_id": "WSTG-latest-CLNT-01",
+      "source_wstg_id": "WSTG-CLNT-01",
+      "category": "CLNT",
+      "section": "4.11 Client-side Testing",
+      "title": "Testing for DOM-Based Cross Site Scripting",
+      "source_path": "document/4-Web_Application_Security_Testing/11-Client-side_Testing/01-Testing_for_DOM-based_Cross_Site_Scripting.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/11-Client-side_Testing/01-Testing_for_DOM-based_Cross_Site_Scripting.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CLNT-002"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CLNT-002"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-CLNT-02",
+      "wstg_id": "WSTG-latest-CLNT-02",
+      "source_wstg_id": "WSTG-CLNT-02",
+      "category": "CLNT",
+      "section": "4.11 Client-side Testing",
+      "title": "Testing for JavaScript Execution",
+      "source_path": "document/4-Web_Application_Security_Testing/11-Client-side_Testing/02-Testing_for_JavaScript_Execution.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/11-Client-side_Testing/02-Testing_for_JavaScript_Execution.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CLNT-003"
+      ],
+      "due_diligence_status": "not_applicable_or_covered_by_static_client_boundary_evidence",
+      "recommended_triage": "keep_static_client_boundary_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface is server-rendered and lacks client-side scripting, browser storage, websocket, web messaging, flash, or script-inclusion surfaces; HTML/CSS risks are covered by sanitizer/CSP evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CLNT-003"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-CLNT-03",
+      "wstg_id": "WSTG-latest-CLNT-03",
+      "source_wstg_id": "WSTG-CLNT-03",
+      "category": "CLNT",
+      "section": "4.11 Client-side Testing",
+      "title": "Testing for HTML Injection",
+      "source_path": "document/4-Web_Application_Security_Testing/11-Client-side_Testing/03-Testing_for_HTML_Injection.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/11-Client-side_Testing/03-Testing_for_HTML_Injection.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CLNT-003"
+      ],
+      "due_diligence_status": "not_applicable_or_covered_by_static_client_boundary_evidence",
+      "recommended_triage": "keep_static_client_boundary_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface is server-rendered and lacks client-side scripting, browser storage, websocket, web messaging, flash, or script-inclusion surfaces; HTML/CSS risks are covered by sanitizer/CSP evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CLNT-003"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-CLNT-04",
+      "wstg_id": "WSTG-latest-CLNT-04",
+      "source_wstg_id": "WSTG-CLNT-04",
+      "category": "CLNT",
+      "section": "4.11 Client-side Testing",
+      "title": "Testing for Client-side URL Redirect",
+      "source_path": "document/4-Web_Application_Security_Testing/11-Client-side_Testing/04-Testing_for_Client-side_URL_Redirect.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/11-Client-side_Testing/04-Testing_for_Client-side_URL_Redirect.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CLNT-003"
+      ],
+      "due_diligence_status": "not_applicable_or_covered_by_static_client_boundary_evidence",
+      "recommended_triage": "keep_static_client_boundary_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface is server-rendered and lacks client-side scripting, browser storage, websocket, web messaging, flash, or script-inclusion surfaces; HTML/CSS risks are covered by sanitizer/CSP evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CLNT-003"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-CLNT-05",
+      "wstg_id": "WSTG-latest-CLNT-05",
+      "source_wstg_id": "WSTG-CLNT-05",
+      "category": "CLNT",
+      "section": "4.11 Client-side Testing",
+      "title": "Testing for CSS Injection",
+      "source_path": "document/4-Web_Application_Security_Testing/11-Client-side_Testing/05-Testing_for_CSS_Injection.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/11-Client-side_Testing/05-Testing_for_CSS_Injection.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CLNT-003"
+      ],
+      "due_diligence_status": "not_applicable_or_covered_by_static_client_boundary_evidence",
+      "recommended_triage": "keep_static_client_boundary_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface is server-rendered and lacks client-side scripting, browser storage, websocket, web messaging, flash, or script-inclusion surfaces; HTML/CSS risks are covered by sanitizer/CSP evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CLNT-003"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-CLNT-06",
+      "wstg_id": "WSTG-latest-CLNT-06",
+      "source_wstg_id": "WSTG-CLNT-06",
+      "category": "CLNT",
+      "section": "4.11 Client-side Testing",
+      "title": "Testing for Client-side Resource Manipulation",
+      "source_path": "document/4-Web_Application_Security_Testing/11-Client-side_Testing/06-Testing_for_Client-side_Resource_Manipulation.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/11-Client-side_Testing/06-Testing_for_Client-side_Resource_Manipulation.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CLNT-003"
+      ],
+      "due_diligence_status": "not_applicable_or_covered_by_static_client_boundary_evidence",
+      "recommended_triage": "keep_static_client_boundary_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface is server-rendered and lacks client-side scripting, browser storage, websocket, web messaging, flash, or script-inclusion surfaces; HTML/CSS risks are covered by sanitizer/CSP evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CLNT-003"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-CLNT-07",
+      "wstg_id": "WSTG-latest-CLNT-07",
+      "source_wstg_id": "WSTG-CLNT-07",
+      "category": "CLNT",
+      "section": "4.11 Client-side Testing",
+      "title": "Testing Cross Origin Resource Sharing",
+      "source_path": "document/4-Web_Application_Security_Testing/11-Client-side_Testing/07-Testing_Cross_Origin_Resource_Sharing.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/11-Client-side_Testing/07-Testing_Cross_Origin_Resource_Sharing.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CLNT-001"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CLNT-001"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-CLNT-08",
+      "wstg_id": "WSTG-latest-CLNT-08",
+      "source_wstg_id": "WSTG-CLNT-08",
+      "category": "CLNT",
+      "section": "4.11 Client-side Testing",
+      "title": "Testing for Cross Site Flashing",
+      "source_path": "document/4-Web_Application_Security_Testing/11-Client-side_Testing/08-Testing_for_Cross_Site_Flashing.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/11-Client-side_Testing/08-Testing_for_Cross_Site_Flashing.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CLNT-003"
+      ],
+      "due_diligence_status": "not_applicable_or_covered_by_static_client_boundary_evidence",
+      "recommended_triage": "keep_static_client_boundary_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface is server-rendered and lacks client-side scripting, browser storage, websocket, web messaging, flash, or script-inclusion surfaces; HTML/CSS risks are covered by sanitizer/CSP evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CLNT-003"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-CLNT-09",
+      "wstg_id": "WSTG-latest-CLNT-09",
+      "source_wstg_id": "WSTG-CLNT-09",
+      "category": "CLNT",
+      "section": "4.11 Client-side Testing",
+      "title": "Testing for Clickjacking",
+      "source_path": "document/4-Web_Application_Security_Testing/11-Client-side_Testing/09-Testing_for_Clickjacking.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/11-Client-side_Testing/09-Testing_for_Clickjacking.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CONF-002"
+      ],
+      "due_diligence_status": "partially_covered_or_covered_by_osmap_specific_evidence",
+      "recommended_triage": "validate_evidence_strength_and_keep_or_expand",
+      "disposition": "automated",
+      "disposition_reason": "mapped to current OSMAP WSTG runner evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CONF-002"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-CLNT-10",
+      "wstg_id": "WSTG-latest-CLNT-10",
+      "source_wstg_id": "WSTG-CLNT-10",
+      "category": "CLNT",
+      "section": "4.11 Client-side Testing",
+      "title": "Testing WebSockets",
+      "source_path": "document/4-Web_Application_Security_Testing/11-Client-side_Testing/10-Testing_WebSockets.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/11-Client-side_Testing/10-Testing_WebSockets.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CLNT-003"
+      ],
+      "due_diligence_status": "not_applicable_or_covered_by_static_client_boundary_evidence",
+      "recommended_triage": "keep_static_client_boundary_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface is server-rendered and lacks client-side scripting, browser storage, websocket, web messaging, flash, or script-inclusion surfaces; HTML/CSS risks are covered by sanitizer/CSP evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CLNT-003"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-CLNT-11",
+      "wstg_id": "WSTG-latest-CLNT-11",
+      "source_wstg_id": "WSTG-CLNT-11",
+      "category": "CLNT",
+      "section": "4.11 Client-side Testing",
+      "title": "Testing Web Messaging",
+      "source_path": "document/4-Web_Application_Security_Testing/11-Client-side_Testing/11-Testing_Web_Messaging.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/11-Client-side_Testing/11-Testing_Web_Messaging.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CLNT-003"
+      ],
+      "due_diligence_status": "not_applicable_or_covered_by_static_client_boundary_evidence",
+      "recommended_triage": "keep_static_client_boundary_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface is server-rendered and lacks client-side scripting, browser storage, websocket, web messaging, flash, or script-inclusion surfaces; HTML/CSS risks are covered by sanitizer/CSP evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CLNT-003"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-CLNT-12",
+      "wstg_id": "WSTG-latest-CLNT-12",
+      "source_wstg_id": "WSTG-CLNT-12",
+      "category": "CLNT",
+      "section": "4.11 Client-side Testing",
+      "title": "Testing Browser Storage",
+      "source_path": "document/4-Web_Application_Security_Testing/11-Client-side_Testing/12-Testing_Browser_Storage.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/11-Client-side_Testing/12-Testing_Browser_Storage.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CLNT-003"
+      ],
+      "due_diligence_status": "not_applicable_or_covered_by_static_client_boundary_evidence",
+      "recommended_triage": "keep_static_client_boundary_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface is server-rendered and lacks client-side scripting, browser storage, websocket, web messaging, flash, or script-inclusion surfaces; HTML/CSS risks are covered by sanitizer/CSP evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CLNT-003"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-CLNT-13",
+      "wstg_id": "WSTG-latest-CLNT-13",
+      "source_wstg_id": "WSTG-CLNT-13",
+      "category": "CLNT",
+      "section": "4.11 Client-side Testing",
+      "title": "Testing for Cross Site Script Inclusion",
+      "source_path": "document/4-Web_Application_Security_Testing/11-Client-side_Testing/13-Testing_for_Cross_Site_Script_Inclusion.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/11-Client-side_Testing/13-Testing_for_Cross_Site_Script_Inclusion.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CLNT-003"
+      ],
+      "due_diligence_status": "not_applicable_or_covered_by_static_client_boundary_evidence",
+      "recommended_triage": "keep_static_client_boundary_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "current OSMAP browser surface is server-rendered and lacks client-side scripting, browser storage, websocket, web messaging, flash, or script-inclusion surfaces; HTML/CSS risks are covered by sanitizer/CSP evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-CLNT-003"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-CLNT-14",
+      "wstg_id": "WSTG-latest-CLNT-14",
+      "source_wstg_id": "WSTG-CLNT-14",
+      "category": "CLNT",
+      "section": "4.11 Client-side Testing",
+      "title": "Testing for Reverse Tabnabbing",
+      "source_path": "document/4-Web_Application_Security_Testing/11-Client-side_Testing/14-Testing_for_Reverse_Tabnabbing.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/11-Client-side_Testing/14-Testing_for_Reverse_Tabnabbing.md",
+      "source_relationship": "latest_added_or_disambiguated_since_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CLNT-003"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "not applicable: OSMAP has no browser workflow that opens attacker-controlled external links in new tabs",
+      "evidence_reference": [
+        "OSMAP-WSTG-CLNT-003"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-CLNT-15",
+      "wstg_id": "WSTG-latest-CLNT-15",
+      "source_wstg_id": "WSTG-CLNT-15",
+      "category": "CLNT",
+      "section": "4.11 Client-side Testing",
+      "title": "Testing for Client-side Template Injection",
+      "source_path": "document/4-Web_Application_Security_Testing/11-Client-side_Testing/15-Testing_for_Client-Side_Template_Injection.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/11-Client-side_Testing/15-Testing_for_Client-Side_Template_Injection.md",
+      "source_relationship": "latest_added_or_disambiguated_since_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-CLNT-003"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "not applicable: OSMAP uses server-rendered HTML and no client-side template engine surface",
+      "evidence_reference": [
+        "OSMAP-WSTG-CLNT-003"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-APIT-01",
+      "wstg_id": "WSTG-latest-APIT-01",
+      "source_wstg_id": "WSTG-APIT-01",
+      "category": "APIT",
+      "section": "4.12 API Testing",
+      "title": "API Reconnaissance",
+      "source_path": "document/4-Web_Application_Security_Testing/12-API_Testing/01-API_Reconnaissance.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/12-API_Testing/01-API_Reconnaissance.md",
+      "source_relationship": "same_source_id_as_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-APIT-001"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "OSMAP has browser form routes and no GraphQL endpoint, schema, resolver, or dependency",
+      "evidence_reference": [
+        "OSMAP-WSTG-APIT-001"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-APIT-02",
+      "wstg_id": "WSTG-latest-APIT-02",
+      "source_wstg_id": "WSTG-APIT-02",
+      "category": "APIT",
+      "section": "4.12 API Testing",
+      "title": "API Broken Object Level Authorization",
+      "source_path": "document/4-Web_Application_Security_Testing/12-API_Testing/02-API_Broken_Object_Level_Authorization.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/12-API_Testing/02-API_Broken_Object_Level_Authorization.md",
+      "source_relationship": "latest_added_or_disambiguated_since_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-APIT-001",
+        "OSMAP-WSTG-ATHZ-001"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "not applicable: OSMAP exposes no JSON/REST API object surface; browser object access is covered by route authorization evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-APIT-001",
+        "OSMAP-WSTG-ATHZ-001"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-APIT-03-testing-for-excessive-data-exposure",
+      "wstg_id": "WSTG-latest-APIT-03-testing-for-excessive-data-exposure",
+      "source_wstg_id": "WSTG-APIT-03",
+      "category": "APIT",
+      "section": "4.12 API Testing",
+      "title": "Testing for Excessive Data Exposure",
+      "source_path": "document/4-Web_Application_Security_Testing/12-API_Testing/03-Testing_for_Excessive_Data_Exposure.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/12-API_Testing/03-Testing_for_Excessive_Data_Exposure.md",
+      "source_relationship": "latest_added_or_disambiguated_since_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-APIT-001",
+        "OSMAP-WSTG-INFO-003"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "not applicable: OSMAP exposes no JSON/REST API serialization surface; browser disclosures are covered by route and information-disclosure evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-APIT-001",
+        "OSMAP-WSTG-INFO-003"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-APIT-03-api-broken-function-level-authorization",
+      "wstg_id": "WSTG-latest-APIT-03-api-broken-function-level-authorization",
+      "source_wstg_id": "WSTG-APIT-03",
+      "category": "APIT",
+      "section": "4.12 API Testing",
+      "title": "API Broken Function Level Authorization",
+      "source_path": "document/4-Web_Application_Security_Testing/12-API_Testing/04-API_Broken_Function_Level_Authorization.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/12-API_Testing/04-API_Broken_Function_Level_Authorization.md",
+      "source_relationship": "latest_added_or_disambiguated_since_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-APIT-001",
+        "OSMAP-WSTG-ATHZ-001"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "not applicable: OSMAP exposes no JSON/REST API function surface; browser authorization is covered by route authorization evidence",
+      "evidence_reference": [
+        "OSMAP-WSTG-APIT-001",
+        "OSMAP-WSTG-ATHZ-001"
+      ]
+    },
+    {
+      "scenario_id": "WSTG-latest-APIT-99",
+      "wstg_id": "WSTG-latest-APIT-99",
+      "source_wstg_id": "WSTG-APIT-99",
+      "category": "APIT",
+      "section": "4.12 API Testing",
+      "title": "Testing GraphQL",
+      "source_path": "document/4-Web_Application_Security_Testing/12-API_Testing/99-Testing_GraphQL.md",
+      "source_url": "https://github.com/OWASP/wstg/blob/7dea71b751ea76f792b89186655739720b614d9a/document/4-Web_Application_Security_Testing/12-API_Testing/99-Testing_GraphQL.md",
+      "source_relationship": "latest_added_or_disambiguated_since_v42",
+      "current_osmap_mapping_status": "mapped_in_current_pack",
+      "current_osmap_tests": [
+        "OSMAP-WSTG-APIT-001"
+      ],
+      "due_diligence_status": "not_applicable_to_current_osmap_surface_with_evidence",
+      "recommended_triage": "keep_not_applicable_evidence_current",
+      "disposition": "not_applicable",
+      "disposition_reason": "not applicable: OSMAP exposes no GraphQL endpoint or schema",
+      "evidence_reference": [
+        "OSMAP-WSTG-APIT-001"
+      ]
+    }
+  ]
+}
