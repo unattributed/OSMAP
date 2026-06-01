@@ -1,6 +1,6 @@
 {
-  "assessed_ref": "097374cac1f6236870a100612063817a12f59966",
-  "generated_at_utc": "2026-06-01T14:01:54Z",
+  "assessed_ref": "78cad661717ae1f17f3a8df5a5125a2322ae99d2",
+  "generated_at_utc": "2026-06-01T14:23:35Z",
   "host_target": "mail.blackbagsecurity.com",
   "command_line": "make release-check",
   "security_profile": "release",
