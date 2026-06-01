@@ -40,7 +40,7 @@ case "$cmd" in
 			exit 1
 		fi
 		if [ "${2:-}" = "--version" ]; then
-			printf '%s\n' 'rustfmt 1.8.0-stable (05f9846f89 2025-03-31)'
+			printf '%s\n' 'rustfmt 1.8.0'
 			exit 0
 		fi
 		exit 0
