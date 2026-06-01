@@ -20,7 +20,7 @@
     "totp": true
   },
   "commands": [
-    "./run-wstg-pack.py --release --prompt-auth --auth-email osmap-helper-validation@blackbagsecurity.com --output-dir /home/foo/Workspace/OSMAP/maint/wstg-testing-pack/output/release-20260531T172708Z"
+    "./run-wstg-pack.py --release --prompt-auth --auth-email pilot-primary@example.invalid --output-dir /home/foo/Workspace/OSMAP/maint/wstg-testing-pack/output/release-ca02bd4-20260601T113223Z"
   ],
   "counts": {
     "fail": 0,
@@ -203,7 +203,7 @@
       ]
     }
   },
-  "generated_at": "2026-05-31T17:31:25.134945+00:00",
+  "generated_at": "2026-06-01T11:36:49.857685+00:00",
   "mapping_file": "wstg-asvs-mapping.json",
   "owasp_top_10_2025_coverage": {
     "A01:2025": {
@@ -907,7 +907,7 @@
     },
     {
       "details": {
-        "nonce": "b1112d18b036",
+        "nonce": "09f88a6c5f49",
         "probed_surfaces": [
           "unauth_login",
           "unauth_mailbox",
@@ -1650,10 +1650,10 @@
   "wstg_source_metadata": {
     "auth_mode": "prompt-auth",
     "base_url": "https://mail.blackbagsecurity.com",
-    "capture_date": "2026-05-31",
-    "evidence_path": "/home/foo/Workspace/OSMAP/maint/wstg-testing-pack/output/release-20260531T172708Z/osmap-wstg-20260601-002709",
+    "capture_date": "2026-06-01",
+    "evidence_path": "/home/foo/Workspace/OSMAP/maint/wstg-testing-pack/output/release-ca02bd4-20260601T113223Z/osmap-wstg-20260601-183223",
     "matrix_file": "wstg-scenario-matrix.v42.json",
-    "osmap_commit": "c22125293891a79d083603facce4c713f1cbcd93",
+    "osmap_commit": "ca02bd4eaca5660afb108f2997f3d7c104e96be5",
     "source_commit": "",
     "source_name": "OWASP Web Security Testing Guide",
     "source_url": "https://owasp.org/www-project-web-security-testing-guide/v42/",
