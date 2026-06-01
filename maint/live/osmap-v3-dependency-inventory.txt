@@ -1,4 +1,4 @@
-osmap v0.1.0 (/home/foo/Workspace/OSMAP)
+osmap v0.1.0 (/home/foo/OSMAP)
 ├── ammonia v4.1.2
 │   ├── cssparser v0.35.0
 │   │   ├── cssparser-macros v0.6.1 (proc-macro)

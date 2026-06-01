@@ -1,7 +1,7 @@
 # OSMAP V3 Release Evidence Summary
 
-- Assessed ref: `8e2cb5aa70d086a26435b2e2ebee52e41b45eac5`
-- Generated UTC: `2026-06-01T04:44:51Z`
+- Assessed ref: `1dd6df7ec8e1f6ca8196442a38e4dd7dbb2b93ae`
+- Generated UTC: `2026-06-01T08:32:49Z`
 - Host target: `mail.blackbagsecurity.com`
 - Command: `make release-check`
 - Cargo build: `passed`
