@@ -20,7 +20,7 @@
     "totp": true
   },
   "commands": [
-    "./run-wstg-pack.py --release --prompt-auth --auth-email pilot-primary@example.invalid --output-dir /home/foo/Workspace/OSMAP/maint/wstg-testing-pack/output/release-ca02bd4-20260601T113223Z"
+    "./run-wstg-pack.py --release --prompt-auth --auth-email pilot-primary@example.invalid --output-dir /home/foo/Workspace/OSMAP/maint/wstg-testing-pack/output/release-097374c-20260601T135504Z"
   ],
   "counts": {
     "fail": 0,
@@ -203,7 +203,7 @@
       ]
     }
   },
-  "generated_at": "2026-06-01T11:36:49.857685+00:00",
+  "generated_at": "2026-06-01T13:59:43.611047+00:00",
   "mapping_file": "wstg-asvs-mapping.json",
   "owasp_top_10_2025_coverage": {
     "A01:2025": {
@@ -595,6 +595,10 @@
           401,
           401,
           401
+        ],
+        "throttle_signals": [
+          "attempt_5:body_marker",
+          "attempt_6:body_marker"
         ]
       },
       "evidence": [
@@ -907,7 +911,7 @@
     },
     {
       "details": {
-        "nonce": "09f88a6c5f49",
+        "nonce": "cd97949b97c8",
         "probed_surfaces": [
           "unauth_login",
           "unauth_mailbox",
@@ -925,7 +929,25 @@
           "auth_drafts_save",
           "auth_send",
           "auth_messages_move"
-        ]
+        ],
+        "surface_roles": {
+          "auth_attachment": "command_reachable",
+          "auth_drafts_save": "csrf_gate",
+          "auth_login": "command_reachable",
+          "auth_mailbox": "command_reachable",
+          "auth_message": "command_reachable",
+          "auth_messages_move": "csrf_gate",
+          "auth_search": "command_reachable",
+          "auth_send": "csrf_gate",
+          "unauth_attachment": "auth_gate",
+          "unauth_drafts_save": "auth_csrf_gate",
+          "unauth_login": "command_reachable",
+          "unauth_mailbox": "auth_gate",
+          "unauth_message": "auth_gate",
+          "unauth_messages_move": "auth_csrf_gate",
+          "unauth_search": "auth_gate",
+          "unauth_send": "auth_csrf_gate"
+        }
       },
       "evidence": [
         "evidence/command_injection_baseline_unauth_login.headers",
@@ -1220,7 +1242,7 @@
         "evidence/command_injection_probe_matrix.txt",
         "evidence/command_injection_redaction.txt"
       ],
-      "message": "safe command-injection due-diligence probes across unauthenticated and authenticated OSMAP surfaces found no shell execution, diagnostic leakage, truncation, HTTP 500, or abnormal timing",
+      "message": "safe command-injection due-diligence probes across command-reachable read/search surfaces and CSRF-gated mutation preconditions found no shell execution, diagnostic leakage, truncation, HTTP 500, or abnormal timing",
       "status": "pass",
       "test_id": "OSMAP-WSTG-INPV-003",
       "test_name": "WSTG-v42-INPV-12 Testing for Command Injection - safe OSMAP command-boundary due diligence"
@@ -1229,7 +1251,7 @@
       "details": {
         "statuses": {
           "attachment_filename": 400,
-          "dangerous_content_type": 400,
+          "dangerous_content_type": 303,
           "display_name": 400,
           "mailbox_tamper": 503,
           "recipient_newline": 400,
@@ -1250,7 +1272,7 @@
         "evidence/webmail_input_validation_static.txt",
         "evidence/webmail_input_validation_redaction.txt"
       ],
-      "message": "IMAP/SMTP and compose probes rejected header/newline, mailbox, UID, attachment filename, and dangerous content-type inputs",
+      "message": "IMAP/SMTP and compose probes rejected header/newline, mailbox, UID, and attachment filename inputs, while malformed attachment content-type input reached the normalization path",
       "status": "pass",
       "test_id": "OSMAP-WSTG-INPV-004",
       "test_name": "WSTG-v42-INPV-10 Testing for IMAP SMTP Injection - webmail input validation"
@@ -1297,7 +1319,7 @@
           "http_inpv16_non_normalized_target": 400,
           "http_inpv17_duplicate_host": 400,
           "http_inpv17_malformed_host": 400,
-          "http_inpv17_untrusted_host": 200
+          "http_inpv17_untrusted_host": 421
         }
       },
       "evidence": [
@@ -1312,7 +1334,7 @@
         "evidence/http_inpv17_untrusted_host.headers",
         "evidence/http_host_smuggling_static.txt"
       ],
-      "message": "HTTP host-header, incoming-request, and splitting/smuggling probes failed closed or avoided host reflection",
+      "message": "HTTP host-header, incoming-request, and splitting/smuggling probes failed closed, canonicalized, or avoided host reflection",
       "status": "pass",
       "test_id": "OSMAP-WSTG-INPV-006",
       "test_name": "WSTG-v42-INPV-15/16/17 Testing HTTP Host Header and Smuggling Inputs"
@@ -1436,15 +1458,21 @@
           "message_probe": 503,
           "no_cookie": 303,
           "search_probe": 200,
-          "sent_probe": 503,
+          "secondary_only_attachment": 404,
+          "secondary_only_mailbox": 200,
+          "secondary_only_message": 503,
+          "sent_probe": 200,
           "stale_cookie": 303
         }
       },
       "evidence": [
         "evidence/authorization_account_isolation_fixture.txt",
         "evidence/authz_cross_user_mailbox_tamper.headers",
+        "evidence/authz_secondary_only_mailbox.headers",
         "evidence/authz_cross_user_message.headers",
         "evidence/authz_cross_user_attachment.headers",
+        "evidence/authz_secondary_only_message.headers",
+        "evidence/authz_secondary_only_attachment.headers",
         "evidence/authz_cross_user_sent.headers",
         "evidence/authz_cross_user_search.headers",
         "evidence/authz_route_bypass_no_cookie.headers",
@@ -1651,9 +1679,9 @@
     "auth_mode": "prompt-auth",
     "base_url": "https://mail.blackbagsecurity.com",
     "capture_date": "2026-06-01",
-    "evidence_path": "/home/foo/Workspace/OSMAP/maint/wstg-testing-pack/output/release-ca02bd4-20260601T113223Z/osmap-wstg-20260601-183223",
+    "evidence_path": "/home/foo/Workspace/OSMAP/maint/wstg-testing-pack/output/release-097374c-20260601T135504Z/osmap-wstg-20260601-205504",
     "matrix_file": "wstg-scenario-matrix.v42.json",
-    "osmap_commit": "ca02bd4eaca5660afb108f2997f3d7c104e96be5",
+    "osmap_commit": "097374cac1f6236870a100612063817a12f59966",
     "source_commit": "",
     "source_name": "OWASP Web Security Testing Guide",
     "source_url": "https://owasp.org/www-project-web-security-testing-guide/v42/",
