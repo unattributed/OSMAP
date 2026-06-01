@@ -903,7 +903,7 @@
         "dynamic test",
         "host assisted"
       ],
-      "expected_result": "Safe shell-shaped, encoded, canary, and bounded timing probes across login, mailbox, message, attachment, search, draft, send, and bulk-move routes remain inert, produce no command output or shell diagnostics, avoid HTTP 500s, and leave services healthy.",
+      "expected_result": "Safe shell-shaped, encoded, canary, and bounded timing probes across command-reachable login, mailbox, message, attachment, and search routes remain inert; form mutation routes are recorded as auth/CSRF precondition probes unless another WSTG lane exercises a valid state-changing workflow; probes produce no command output or shell diagnostics, avoid HTTP 500s, and leave services healthy.",
       "evidence_produced": [
         "command_injection_baseline_*.headers",
         "command_injection_*.headers",

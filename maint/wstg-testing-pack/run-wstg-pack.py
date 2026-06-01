@@ -1218,6 +1218,7 @@ class Runner:
 
     def test_throttle_probe(self) -> TestResult:
         statuses: list[int | None] = []
+        throttle_signals: list[str] = []
         throttled = False
         throttle_domain = (
             self.config.test_email.rsplit("@", 1)[1]
@@ -1236,8 +1237,12 @@ class Runner:
                 },
             )
             statuses.append(evidence.status)
-            if evidence.status == 429 or "Too many login attempts" in evidence.body_text():
+            if evidence.status == 429:
                 throttled = True
+                throttle_signals.append(f"attempt_{attempt}:status_429")
+            if "Too many login attempts" in evidence.body_text():
+                throttled = True
+                throttle_signals.append(f"attempt_{attempt}:body_marker")
             time.sleep(self.config.rate_delay)
         evidence_names = [f"evidence/throttle_probe_attempt_{i}.headers" for i in range(1, self.config.throttle_attempts + 1)]
         if any(status not in {401, 429, None} for status in statuses):
@@ -1254,16 +1259,22 @@ class Runner:
                 STATUS_WARNING,
                 "bounded probe included a timeout; no unsafe retry amplification was performed",
                 evidence_names,
-                {"statuses": statuses, "attempts": self.config.throttle_attempts},
+                {"statuses": statuses, "attempts": self.config.throttle_attempts, "throttle_signals": throttle_signals},
             )
         if throttled:
-            return self.result("OSMAP-WSTG-ATHN-003", STATUS_PASS, "bounded probe observed login throttling", evidence_names, {"statuses": statuses})
+            return self.result(
+                "OSMAP-WSTG-ATHN-003",
+                STATUS_PASS,
+                "bounded probe observed login throttling",
+                evidence_names,
+                {"statuses": statuses, "throttle_signals": throttle_signals},
+            )
         return self.result(
             "OSMAP-WSTG-ATHN-003",
             STATUS_WARNING,
             "bounded probe did not reach the throttle threshold; no unsafe extra attempts were made",
             evidence_names,
-            {"statuses": statuses, "attempts": self.config.throttle_attempts},
+            {"statuses": statuses, "attempts": self.config.throttle_attempts, "throttle_signals": throttle_signals},
         )
 
     def test_authenticated_login(self) -> TestResult:
@@ -2142,9 +2153,16 @@ class Runner:
         return self.result(
             "OSMAP-WSTG-INPV-003",
             STATUS_PASS,
-            "safe command-injection due-diligence probes across unauthenticated and authenticated OSMAP surfaces found no shell execution, diagnostic leakage, truncation, HTTP 500, or abnormal timing",
+            "safe command-injection due-diligence probes across command-reachable read/search surfaces and CSRF-gated mutation preconditions found no shell execution, diagnostic leakage, truncation, HTTP 500, or abnormal timing",
             evidence_paths,
-            {"nonce": nonce, "probed_surfaces": [surface["name"] for surface in surfaces]},
+            {
+                "nonce": nonce,
+                "probed_surfaces": [surface["name"] for surface in surfaces],
+                "surface_roles": {
+                    surface["name"]: surface.get("coverage_role", "command_reachable")
+                    for surface in surfaces
+                },
+            },
         )
 
     def command_injection_surface_request(
@@ -2207,12 +2225,14 @@ class Runner:
             "safe_payload_classes=shell separators, command substitution syntax, redirects, newlines, percent-encoded variants, double-encoded variants, bounded timing probes, output canaries",
             "destructive_payloads=none",
             f"bounded_timing_sleep_seconds={COMMAND_INJECTION_SLEEP_SECONDS}",
+            "coverage_roles=command_reachable surfaces exercise routed input handling; csrf_gate surfaces prove mutation preconditions reject shell-shaped values before command-capable handlers",
             "",
             "Surfaces:",
         ]
         for surface in surfaces:
             auth = "authenticated" if surface["authenticated"] else "unauthenticated"
-            lines.append(f"- {surface['name']}: {auth} {surface['method']} {surface['path']}")
+            role = surface.get("coverage_role", "command_reachable")
+            lines.append(f"- {surface['name']}: {auth} {surface['method']} {surface['path']} coverage_role={role}")
         lines.extend(["", "Payload classes:"])
         for payload in payloads:
             lines.append(f"- {payload['name']}: {payload['class']}")
@@ -4637,30 +4657,35 @@ def command_injection_surfaces(config: Config, csrf_token: str) -> list[dict[str
             "authenticated": False,
             "method": "GET",
             "path": "/login?inpv12={payload}",
+            "coverage_role": "command_reachable",
         },
         {
             "name": "unauth_mailbox",
             "authenticated": False,
             "method": "GET",
             "path": "/mailbox?name={payload}",
+            "coverage_role": "auth_gate",
         },
         {
             "name": "unauth_message",
             "authenticated": False,
             "method": "GET",
             "path": "/message?mailbox={payload}&uid=1",
+            "coverage_role": "auth_gate",
         },
         {
             "name": "unauth_attachment",
             "authenticated": False,
             "method": "GET",
             "path": "/attachment?mailbox={payload}&uid=1&part=1",
+            "coverage_role": "auth_gate",
         },
         {
             "name": "unauth_search",
             "authenticated": False,
             "method": "GET",
             "path": "/search?q={payload}",
+            "coverage_role": "auth_gate",
         },
         {
             "name": "unauth_drafts_save",
@@ -4668,6 +4693,7 @@ def command_injection_surfaces(config: Config, csrf_token: str) -> list[dict[str
             "method": "POST",
             "path": "/drafts/save",
             "headers": mutation_headers,
+            "coverage_role": "auth_csrf_gate",
             "fields": {
                 "csrf_token": invalid_csrf,
                 "to": config.test_email or "wstg@example.invalid",
@@ -4681,6 +4707,7 @@ def command_injection_surfaces(config: Config, csrf_token: str) -> list[dict[str
             "method": "POST",
             "path": "/send",
             "headers": mutation_headers,
+            "coverage_role": "auth_csrf_gate",
             "fields": {
                 "csrf_token": invalid_csrf,
                 "to": config.test_email or "wstg@example.invalid",
@@ -4694,6 +4721,7 @@ def command_injection_surfaces(config: Config, csrf_token: str) -> list[dict[str
             "method": "POST",
             "path": "/messages/move",
             "headers": mutation_headers,
+            "coverage_role": "auth_csrf_gate",
             "fields": {
                 "csrf_token": invalid_csrf,
                 "mailbox": "{payload}",
@@ -4706,30 +4734,35 @@ def command_injection_surfaces(config: Config, csrf_token: str) -> list[dict[str
             "authenticated": True,
             "method": "GET",
             "path": "/login?inpv12={payload}",
+            "coverage_role": "command_reachable",
         },
         {
             "name": "auth_mailbox",
             "authenticated": True,
             "method": "GET",
             "path": "/mailbox?name={payload}",
+            "coverage_role": "command_reachable",
         },
         {
             "name": "auth_message",
             "authenticated": True,
             "method": "GET",
             "path": "/message?mailbox={payload}&uid=1",
+            "coverage_role": "command_reachable",
         },
         {
             "name": "auth_attachment",
             "authenticated": True,
             "method": "GET",
             "path": "/attachment?mailbox={payload}&uid=1&part=1",
+            "coverage_role": "command_reachable",
         },
         {
             "name": "auth_search",
             "authenticated": True,
             "method": "GET",
             "path": "/search?q={payload}",
+            "coverage_role": "command_reachable",
         },
         {
             "name": "auth_drafts_save",
@@ -4737,6 +4770,7 @@ def command_injection_surfaces(config: Config, csrf_token: str) -> list[dict[str
             "method": "POST",
             "path": "/drafts/save",
             "headers": mutation_headers,
+            "coverage_role": "csrf_gate",
             "fields": {
                 "csrf_token": invalid_csrf,
                 "to": config.test_email or "wstg@example.invalid",
@@ -4750,6 +4784,7 @@ def command_injection_surfaces(config: Config, csrf_token: str) -> list[dict[str
             "method": "POST",
             "path": "/send",
             "headers": mutation_headers,
+            "coverage_role": "csrf_gate",
             "fields": {
                 "csrf_token": invalid_csrf,
                 "to": config.test_email or "wstg@example.invalid",
@@ -4763,6 +4798,7 @@ def command_injection_surfaces(config: Config, csrf_token: str) -> list[dict[str
             "method": "POST",
             "path": "/messages/move",
             "headers": mutation_headers,
+            "coverage_role": "csrf_gate",
             "fields": {
                 "csrf_token": invalid_csrf,
                 "mailbox": "{payload}",

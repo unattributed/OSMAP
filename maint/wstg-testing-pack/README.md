@@ -81,6 +81,9 @@ Any test that sends mail, moves mail, deletes mail, mutates drafts, changes sett
 `OSMAP-WSTG-INPV-003` is the command-injection due-diligence lane. It uses safe
 shell-shaped strings, output canaries, bounded timing probes, and host log
 review; it does not execute destructive payloads or uncontrolled fuzzing.
+Authenticated read/search routes are treated as command-reachable probes. Form
+mutation routes are explicitly recorded as auth/CSRF precondition probes unless
+another WSTG lane exercises a valid state-changing workflow for that route.
 
 ## Running
 
