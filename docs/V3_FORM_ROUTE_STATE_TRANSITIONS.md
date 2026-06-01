@@ -40,6 +40,9 @@ and state-transition controls:
   `send_success_deletes_draft_after_accepted_handoff` and
   `send_failure_preserves_draft`
 - session revocation state changes are covered by
+  `session_revoke_requires_valid_csrf_token`,
+  `session_revoke_rejects_unsupported_form_content_type`,
+  `session_revoke_rejects_unknown_session_for_user`, and
   `session_revoke_all_sessions_clears_current_cookie`
 
 ## GraphQL Applicability

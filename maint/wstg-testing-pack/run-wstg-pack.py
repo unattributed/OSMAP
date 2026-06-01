@@ -3944,6 +3944,9 @@ printf 'secret_review=No password, password hash, TOTP material, session cookie,
             "draft_delete_removes_saved_draft",
             "send_success_deletes_draft_after_accepted_handoff",
             "send_failure_preserves_draft",
+            "session_revoke_requires_valid_csrf_token",
+            "session_revoke_rejects_unsupported_form_content_type",
+            "session_revoke_rejects_unknown_session_for_user",
             "session_revoke_all_sessions_clears_current_cookie",
         ]
         missing = [marker for marker in markers if marker.lower() not in text.lower()]

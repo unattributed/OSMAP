@@ -4427,6 +4427,78 @@ mod tests {
     }
 
     #[test]
+    fn session_revoke_requires_valid_csrf_token() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/sessions/revoke",
+                &authenticated_same_origin_headers(),
+                "session_id=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 403);
+        assert!(body_text(&response).contains("CSRF Validation Failed"));
+        assert!(!response
+            .audit_events
+            .iter()
+            .any(|event| event.action == "stub_session_revoke_other"));
+    }
+
+    #[test]
+    fn session_revoke_rejects_unsupported_form_content_type() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/sessions/revoke",
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                    ("Origin", "https://localhost"),
+                    ("Content-Type", "application/json"),
+                ],
+                concat!(
+                    "{\"session_id\":\"",
+                    "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                    "\"}",
+                ),
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 400);
+        assert!(body_text(&response).contains("Invalid Session Request"));
+        assert!(response
+            .audit_events
+            .iter()
+            .any(|event| event.action == "http_session_revoke_content_type_rejected"));
+    }
+
+    #[test]
+    fn session_revoke_rejects_unknown_session_for_user() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/sessions/revoke",
+                &authenticated_same_origin_headers(),
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&session_id=cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 404);
+        assert!(body_text(&response).contains("Session Revocation Failed"));
+        assert!(response
+            .audit_events
+            .iter()
+            .any(|event| event.action == "stub_session_revoke_denied"));
+    }
+
+    #[test]
     fn session_revoke_clears_cookie_when_current_session_is_revoked() {
         let response = app().handle_request(
             &request(
