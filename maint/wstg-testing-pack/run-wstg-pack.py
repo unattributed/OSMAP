@@ -1923,8 +1923,16 @@ class Runner:
             matches = [pattern for pattern in framework_patterns if re.search(pattern, text)]
             if matches:
                 failures[f"{label}_fingerprint"] = matches
-            if label in common_unexpected and evidence.status is not None and 200 <= evidence.status < 300:
-                failures[f"{label}_unexpected_public_app"] = evidence.status
+            if label in common_unexpected:
+                if evidence.status is not None and 200 <= evidence.status < 300:
+                    failures[f"{label}_unexpected_public_app"] = evidence.status
+                if evidence.status in {301, 302, 303, 307, 308}:
+                    location = evidence.first_header("Location")
+                    if location not in {"/", self.config.base_url, f"{self.config.base_url}/"}:
+                        failures[f"{label}_unexpected_redirect"] = {
+                            "status": evidence.status,
+                            "location": location,
+                        }
 
         static_ok = self.write_public_reconnaissance_fingerprinting_static_evidence()
         evidence_paths.append("evidence/public_recon_fingerprinting_static.txt")
@@ -1984,7 +1992,7 @@ class Runner:
             "",
             "Bounded public reconnaissance:",
             "- Expected public entry points are /, /login, /healthz, /robots.txt, and /.well-known/security.txt.",
-            "- Common secondary application paths such as /admin, /api, /graphql, /phpmyadmin, /roundcube, /webmail, /.git/config, and /server-status must not expose another public app.",
+            "- Common secondary application paths such as /admin, /api, /graphql, /phpmyadmin, /roundcube, /webmail, /.git/config, and /server-status must not expose another public app or redirect outside the canonical OSMAP root.",
             "- Search engine discovery reconnaissance is represented by the same public-footprint evidence plus robots/security metadata review; committed evidence must not depend on a mutable third-party search result page.",
             "",
             "Fingerprinting decision:",
@@ -2332,11 +2340,11 @@ class Runner:
             "/send",
             {
                 "csrf_token": self.csrf_token,
-                "to": f"{self.config.test_email}\r\nBcc: injected@example.invalid",
+                "to": self.config.test_email,
                 "subject": f"{canary} dangerous content type",
                 "body": "<script>alert(1)</script>",
             },
-            [("attachment", "safe.txt", "text/html; charset=utf-8", b"<script>alert(1)</script>")],
+            [("attachment", "safe.txt", "not/a/media/type/with-extra-slash", b"<script>alert(1)</script>")],
         )
         static_ok = self.write_webmail_input_validation_static_evidence()
         redaction_ok = self.write_webmail_input_validation_redaction_evidence([canary])
@@ -2357,10 +2365,11 @@ class Runner:
             "display_name",
             "uid_tamper",
             "attachment_filename",
-            "dangerous_content_type",
         ]:
             if statuses[label] != 400:
                 failures[label] = statuses[label]
+        if statuses["dangerous_content_type"] != 303:
+            failures["dangerous_content_type"] = statuses["dangerous_content_type"]
         for label in ["mailbox_tamper", "search_tamper"]:
             if statuses[label] not in {400, 404, 503}:
                 failures[label] = statuses[label]
@@ -2391,7 +2400,7 @@ class Runner:
         return self.result(
             "OSMAP-WSTG-INPV-004",
             STATUS_PASS,
-            "IMAP/SMTP and compose probes rejected header/newline, mailbox, UID, attachment filename, and dangerous content-type inputs",
+            "IMAP/SMTP and compose probes rejected header/newline, mailbox, UID, and attachment filename inputs, while malformed attachment content-type input reached the normalization path",
             evidence_paths,
             {"statuses": statuses},
         )
@@ -2574,9 +2583,21 @@ class Runner:
         untrusted_text = "\n".join(
             [untrusted_host.body_text(), "\n".join(f"{k}: {v}" for k, v in untrusted_host.headers)]
         ).lower()
-        if "evil.example" in untrusted_text or untrusted_host.status is None or untrusted_host.status >= 500:
+        untrusted_location = untrusted_host.first_header("Location")
+        canonical_redirect = (
+            untrusted_host.status in {301, 302, 303, 307, 308}
+            and untrusted_location in {"/", self.config.base_url, f"{self.config.base_url}/"}
+        )
+        explicit_reject = untrusted_host.status in {400, 421}
+        if (
+            "evil.example" in untrusted_text
+            or untrusted_host.status is None
+            or untrusted_host.status >= 500
+            or not (explicit_reject or canonical_redirect)
+        ):
             failures["http_inpv17_untrusted_host"] = {
                 "status": untrusted_host.status,
+                "location": untrusted_location,
                 "reflected_untrusted_host": "evil.example" in untrusted_text,
             }
         if not static_ok:
@@ -2598,7 +2619,7 @@ class Runner:
         return self.result(
             "OSMAP-WSTG-INPV-006",
             STATUS_PASS,
-            "HTTP host-header, incoming-request, and splitting/smuggling probes failed closed or avoided host reflection",
+            "HTTP host-header, incoming-request, and splitting/smuggling probes failed closed, canonicalized, or avoided host reflection",
             evidence_paths,
             {"statuses": statuses},
         )
@@ -3184,8 +3205,11 @@ class Runner:
         evidence_paths = [
             "evidence/authorization_account_isolation_fixture.txt",
             "evidence/authz_cross_user_mailbox_tamper.headers",
+            "evidence/authz_secondary_only_mailbox.headers",
             "evidence/authz_cross_user_message.headers",
             "evidence/authz_cross_user_attachment.headers",
+            "evidence/authz_secondary_only_message.headers",
+            "evidence/authz_secondary_only_attachment.headers",
             "evidence/authz_cross_user_sent.headers",
             "evidence/authz_cross_user_search.headers",
             "evidence/authz_route_bypass_no_cookie.headers",
@@ -3194,12 +3218,21 @@ class Runner:
             "evidence/authorization_account_isolation_static.txt",
             "evidence/authorization_account_isolation_redaction.txt",
         ]
+        secondary_mailbox = fields.get("secondary_unique_mailbox", "")
+        secondary_mailbox_uid = fields.get("secondary_unique_uid", "1")
         inbox_uid = fields.get("secondary_inbox_uid", "1")
         sent_uid = fields.get("secondary_sent_uid", "1")
         mailbox_tamper = self.request(
             "authz_cross_user_mailbox_tamper",
             "GET",
             "/mailbox?name=NotARealMailbox",
+            cookies=self.cookie_jar,
+            store_body_evidence=False,
+        )
+        secondary_only_mailbox_probe = self.request(
+            "authz_secondary_only_mailbox",
+            "GET",
+            f"/mailbox?name={urllib.parse.quote(secondary_mailbox)}",
             cookies=self.cookie_jar,
             store_body_evidence=False,
         )
@@ -3214,6 +3247,20 @@ class Runner:
             "authz_cross_user_attachment",
             "GET",
             f"/attachment?mailbox=INBOX&uid={urllib.parse.quote(inbox_uid)}&part=1.2",
+            cookies=self.cookie_jar,
+            store_body_evidence=False,
+        )
+        secondary_only_message_probe = self.request(
+            "authz_secondary_only_message",
+            "GET",
+            f"/message?mailbox={urllib.parse.quote(secondary_mailbox)}&uid={urllib.parse.quote(secondary_mailbox_uid)}",
+            cookies=self.cookie_jar,
+            store_body_evidence=False,
+        )
+        secondary_only_attachment_probe = self.request(
+            "authz_secondary_only_attachment",
+            "GET",
+            f"/attachment?mailbox={urllib.parse.quote(secondary_mailbox)}&uid={urllib.parse.quote(secondary_mailbox_uid)}&part=1.2",
             cookies=self.cookie_jar,
             store_body_evidence=False,
         )
@@ -3248,26 +3295,44 @@ class Runner:
         forbidden_exposure = {
             "message_subject": inbox_subject in message_probe.body_text(),
             "attachment_marker": attachment_marker in attachment_probe.body_text(),
+            "secondary_mailbox_subject": inbox_subject in secondary_only_mailbox_probe.body_text(),
+            "secondary_only_message_subject": inbox_subject in secondary_only_message_probe.body_text(),
+            "secondary_only_attachment_marker": attachment_marker in secondary_only_attachment_probe.body_text(),
             "sent_subject": sent_subject in sent_probe.body_text(),
             "search_subject": inbox_subject in search_probe.body_text() or sent_subject in search_probe.body_text(),
         }
         statuses = {
             "mailbox_tamper": mailbox_tamper.status,
+            "secondary_only_mailbox": secondary_only_mailbox_probe.status,
             "message_probe": message_probe.status,
             "attachment_probe": attachment_probe.status,
+            "secondary_only_message": secondary_only_message_probe.status,
+            "secondary_only_attachment": secondary_only_attachment_probe.status,
             "sent_probe": sent_probe.status,
             "search_probe": search_probe.status,
             "no_cookie": no_cookie.status,
             "stale_cookie": stale_cookie.status,
         }
         failures: dict[str, object] = {}
-        missing_fields = [field for field in ["secondary_inbox_uid", "secondary_sent_uid", "fixture_result"] if not fields.get(field)]
+        missing_fields = [
+            field
+            for field in [
+                "secondary_inbox_uid",
+                "secondary_sent_uid",
+                "secondary_unique_mailbox",
+                "secondary_unique_uid",
+                "fixture_result",
+            ]
+            if not fields.get(field)
+        ]
         if "ERROR:" in remote_report or fields.get("fixture_result") != "prepared":
             failures["fixture"] = "secondary fixture was not prepared"
         if missing_fields:
             failures["missing_fixture_fields"] = missing_fields
         if mailbox_tamper.status not in {200, 400, 404, 503}:
             failures["mailbox_tamper_status"] = mailbox_tamper.status
+        if secondary_only_mailbox_probe.status not in {200, 400, 404, 503}:
+            failures["secondary_only_mailbox_status"] = secondary_only_mailbox_probe.status
         if no_cookie.status == 200 or stale_cookie.status == 200:
             failures["route_authorization_bypass"] = statuses
         exposed = [name for name, exposed in forbidden_exposure.items() if exposed]
@@ -3299,15 +3364,22 @@ class Runner:
         sent_subject: str,
         attachment_marker: str,
     ) -> str:
+        unique_mailbox = "OSMAP-WSTG-ATHZ-" + hashlib.sha256(
+            inbox_subject.encode("utf-8")
+        ).hexdigest()[:12]
         command = f"""
 set -eu
 secondary={shlex.quote(self.config.secondary_email)}
 inbox_subject={shlex.quote(inbox_subject)}
 sent_subject={shlex.quote(sent_subject)}
 attachment_marker={shlex.quote(attachment_marker)}
+unique_mailbox={shlex.quote(unique_mailbox)}
+unique_subject="$inbox_subject unique mailbox"
 doveadm='/usr/local/bin/doveadm -o stats_writer_socket_path='
 doas -u vmail $doveadm mailbox list -u "$secondary" | grep -Fxq INBOX
 doas -u vmail $doveadm mailbox list -u "$secondary" | grep -Fxq Sent
+doas -u vmail $doveadm mailbox create -u "$secondary" "$unique_mailbox" >/dev/null 2>&1 || true
+doas -u vmail $doveadm mailbox list -u "$secondary" | grep -Fxq "$unique_mailbox"
 {{
   printf 'From: OSMAP ATHZ Proof <%s>\\n' "$secondary"
   printf 'To: %s\\n' "$secondary"
@@ -3330,6 +3402,21 @@ doas -u vmail $doveadm mailbox list -u "$secondary" | grep -Fxq Sent
   printf 'Content-Type: text/plain; charset=utf-8\\n\\n'
   printf 'secondary sent isolation proof body\\n'
 }} | /usr/sbin/sendmail -t
+{{
+  printf 'From: OSMAP ATHZ Proof <%s>\\n' "$secondary"
+  printf 'To: %s\\n' "$secondary"
+  printf 'Subject: %s\\n' "$unique_subject"
+  printf 'MIME-Version: 1.0\\n'
+  printf 'Content-Type: multipart/mixed; boundary="osmap-athz-boundary-unique"\\n'
+  printf '\\n--osmap-athz-boundary-unique\\n'
+  printf 'Content-Type: text/plain; charset=utf-8\\n\\n'
+  printf 'secondary unique mailbox isolation proof body\\n'
+  printf '\\n--osmap-athz-boundary-unique\\n'
+  printf 'Content-Type: text/plain; name="athz-proof.txt"\\n'
+  printf 'Content-Disposition: attachment; filename="athz-proof.txt"\\n\\n'
+  printf '%s\\n' "$attachment_marker"
+  printf '\\n--osmap-athz-boundary-unique--\\n'
+}} | /usr/sbin/sendmail -t
 lookup_uid() {{
   mailbox=$1
   subject=$2
@@ -3337,44 +3424,59 @@ lookup_uid() {{
 }}
 inbox_uid=''
 sent_uid=''
+unique_uid=''
 tries=0
-while {{ [ -z "$inbox_uid" ] || [ -z "$sent_uid" ]; }} && [ "$tries" -lt 30 ]; do
+while {{ [ -z "$inbox_uid" ] || [ -z "$sent_uid" ] || [ -z "$unique_uid" ]; }} && [ "$tries" -lt 30 ]; do
   [ -n "$inbox_uid" ] || inbox_uid=$(lookup_uid INBOX "$inbox_subject" || true)
   [ -n "$sent_uid" ] || sent_uid=$(lookup_uid INBOX "$sent_subject" || true)
-  [ -n "$inbox_uid" ] && [ -n "$sent_uid" ] && break
+  [ -n "$unique_uid" ] || unique_uid=$(lookup_uid INBOX "$unique_subject" || true)
+  [ -n "$inbox_uid" ] && [ -n "$sent_uid" ] && [ -n "$unique_uid" ] && break
   sleep 1
   tries=$((tries + 1))
 done
 [ -n "$inbox_uid" ]
 [ -n "$sent_uid" ]
+[ -n "$unique_uid" ]
 doas -u vmail $doveadm move -u "$secondary" Sent mailbox INBOX uid "$sent_uid" >/dev/null
+doas -u vmail $doveadm move -u "$secondary" "$unique_mailbox" mailbox INBOX uid "$unique_uid" >/dev/null
 sent_uid_after=''
+unique_uid_after=''
 tries=0
-while [ -z "$sent_uid_after" ] && [ "$tries" -lt 20 ]; do
+while {{ [ -z "$sent_uid_after" ] || [ -z "$unique_uid_after" ]; }} && [ "$tries" -lt 20 ]; do
   sent_uid_after=$(lookup_uid Sent "$sent_subject" || true)
-  [ -n "$sent_uid_after" ] && break
+  unique_uid_after=$(lookup_uid "$unique_mailbox" "$unique_subject" || true)
+  [ -n "$sent_uid_after" ] && [ -n "$unique_uid_after" ] && break
   sleep 1
   tries=$((tries + 1))
 done
 [ -n "$sent_uid_after" ]
+[ -n "$unique_uid_after" ]
 printf 'fixture_result=prepared\\n'
-printf 'secondary_mailboxes=INBOX,Sent\\n'
+printf 'secondary_mailboxes=INBOX,Sent,%s\\n' "$unique_mailbox"
 printf 'secondary_inbox_uid=%s\\n' "$inbox_uid"
 printf 'secondary_sent_uid=%s\\n' "$sent_uid_after"
+printf 'secondary_unique_mailbox=%s\\n' "$unique_mailbox"
+printf 'secondary_unique_uid=%s\\n' "$unique_uid_after"
 printf 'secret_review=No password, password hash, TOTP material, session cookie, CSRF token, private message body, attachment body, provider secret, or host secret is included.\\n'
 """
         return self.run_ssh("authorization_account_isolation_fixture.txt", command)
 
     def cleanup_secondary_authorization_fixture(self, inbox_subject: str, sent_subject: str) -> None:
+        unique_mailbox = "OSMAP-WSTG-ATHZ-" + hashlib.sha256(
+            inbox_subject.encode("utf-8")
+        ).hexdigest()[:12]
         command = (
             "set -u; "
             f"secondary={shlex.quote(self.config.secondary_email)}; "
             f"inbox_subject={shlex.quote(inbox_subject)}; "
             f"sent_subject={shlex.quote(sent_subject)}; "
+            f"unique_mailbox={shlex.quote(unique_mailbox)}; "
             "doveadm='/usr/local/bin/doveadm -o stats_writer_socket_path='; "
             'doas -u vmail $doveadm expunge -u "$secondary" mailbox INBOX header Subject "$inbox_subject" >/dev/null 2>&1 || true; '
             'doas -u vmail $doveadm expunge -u "$secondary" mailbox INBOX header Subject "$sent_subject" >/dev/null 2>&1 || true; '
             'doas -u vmail $doveadm expunge -u "$secondary" mailbox Sent header Subject "$sent_subject" >/dev/null 2>&1 || true; '
+            'doas -u vmail $doveadm expunge -u "$secondary" mailbox "$unique_mailbox" all >/dev/null 2>&1 || true; '
+            'doas -u vmail $doveadm mailbox delete -u "$secondary" "$unique_mailbox" >/dev/null 2>&1 || true; '
             "printf 'cleanup_result=attempted\\n'"
         )
         self.run_ssh("authorization_account_isolation_cleanup.txt", command)

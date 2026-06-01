@@ -19,9 +19,11 @@ prepared through host-assisted mail delivery:
 
 - the primary account logs in with password plus TOTP
 - the host-assisted fixture injects one secondary `INBOX` message with an
-  attachment and one secondary `Sent` message
-- the primary session probes the secondary UID values through message,
-  attachment, sent-mail, all-mailbox search, and mailbox-name tampering routes
+  attachment, one secondary `Sent` message, and one generated secondary-only
+  mailbox containing a unique message and attachment
+- the primary session probes the secondary UID values and the secondary-only
+  mailbox/UID tuple through message, attachment, sent-mail, all-mailbox search,
+  and mailbox-name tampering routes
 - evidence passes only when the secondary subjects and attachment marker are
   absent from primary-session responses
 - route authorization bypass probes with no cookie and a stale cookie must not

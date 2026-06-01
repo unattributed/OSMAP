@@ -11,8 +11,10 @@ stored browser rendering.
 
 ## Dynamic Evidence
 
-The WSTG runner uses a real authenticated password-plus-TOTP session and sends
-only rejected probes:
+The WSTG runner uses a real authenticated password-plus-TOTP session. Rejected
+probes must fail before local submission; the attachment content-type probe is
+the one accepted positive control and must reach delivery with a malformed
+media type normalized by the compose boundary:
 
 - subject newline injection is rejected before local submission
 - recipient newline injection is rejected before local submission
@@ -22,10 +24,11 @@ only rejected probes:
 - UID tampering with an invalid UID is rejected
 - search-term command-shaped tampering is rejected or safely denied
 - path-like attachment filename input is rejected before submission
-- dangerous attachment content-type input is exercised on a request that still
-  fails before delivery
+- malformed attachment content-type input is exercised with an otherwise valid
+  recipient so the accepted request proves the content-type path independently
+  of recipient/header validation
 
-No accepted probe should send mail. Evidence bodies are omitted or redacted.
+Evidence bodies are omitted or redacted.
 
 ## Static Evidence
 

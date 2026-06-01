@@ -25,8 +25,9 @@ The WSTG runner uses unauthenticated rejected or non-state-changing probes only:
 - non-normalized request targets are rejected
 - duplicate `Host` headers are rejected
 - malformed `Host` values with path characters are rejected
-- an arbitrary untrusted `Host` value is not reflected into the response body,
-  `Location`, or cookie metadata
+- an arbitrary untrusted `Host` value is rejected with HTTP `400`/`421` or
+  canonicalized to the OSMAP root, and must not be reflected into the response
+  body, `Location`, or cookie metadata
 
 No probe includes credentials, a real session cookie, or a valid CSRF token.
 
