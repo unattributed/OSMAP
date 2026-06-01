@@ -1141,7 +1141,7 @@ class Runner:
             "provision_route": r'(?i)"/(?:provision|invite|users/new|admin/users|roles)"',
             "account_create_handler": r"(?i)handle_(?:register|signup|provision|invite|user_create|role)",
         }
-        source_files = [path for path in files[:4] if path.exists()]
+        source_files = rust_source_files()
         findings: dict[str, list[str]] = {}
         for path in source_files:
             source = path.read_text(encoding="utf-8", errors="replace")
@@ -1414,7 +1414,7 @@ class Runner:
             "security_question_route": r'(?i)"/(?:security-question|security_question)"',
             "auth_bypass_route": r'(?i)"/(?:auth/bypass|bypass-auth|impersonate)"',
         }
-        source_files = [path for path in files[:5] if path.exists()]
+        source_files = rust_source_files()
         findings: dict[str, list[str]] = {}
         for path in source_files:
             source = path.read_text(encoding="utf-8", errors="replace")
@@ -2671,14 +2671,13 @@ class Runner:
         ).lower()
         source_text = "\n".join(
             path.read_text(encoding="utf-8", errors="replace")
-            for path in sorted((REPO_ROOT / "src").glob("*.rs"))
+            for path in rust_source_files()
         ).lower()
         source_block_markers = [
             "eval(",
             "reqwest::",
             "ureq::",
             "hyper::client",
-            "std::process::command",
         ]
         failures: dict[str, object] = {}
         matched_deps = [marker for marker in banned_dependency_markers if re.search(rf'(?m)^name = "{re.escape(marker)}"$|{re.escape(marker)}\s*=', cargo_text)]
@@ -2765,9 +2764,10 @@ class Runner:
             "- LDAP injection: not applicable; OSMAP has no LDAP client or LDAP filter construction surface.",
             "- XML and XPath injection: not applicable; OSMAP has no XML parser, XPath engine, XSLT, SOAP, or XML upload route.",
             "- SSI injection: not applicable; OSMAP has no server-side include interpreter.",
-            "- code injection and SSTI: not applicable; OSMAP has no eval, plugin loader, or server-side template engine.",
+            "- code injection and SSTI: not applicable; OSMAP has no eval, plugin loader, or server-side template engine exposed to browser input.",
             "- format-string injection: not applicable to Rust format macros because user input is data arguments, not runtime format strings.",
             "- SSRF: not applicable; OSMAP has no outbound HTTP client or user-controlled URL fetch surface.",
+            "- command execution boundaries are applicable and covered by OSMAP-WSTG-INPV-003; they are intentionally not treated as not-applicable here.",
             "- incubated vulnerability: covered for the current surface by the named Slice 4 lanes plus this applicability review.",
         ]
         if failures:
@@ -2971,7 +2971,7 @@ class Runner:
         return not missing
 
     def test_client_side_applicability_static(self) -> TestResult:
-        source_files = list(sorted((REPO_ROOT / "src").glob("*.rs"))) + [REPO_ROOT / "Cargo.toml", REPO_ROOT / "Cargo.lock"]
+        source_files = rust_source_files() + [REPO_ROOT / "Cargo.toml", REPO_ROOT / "Cargo.lock"]
         source_text = "\n".join(path.read_text(encoding="utf-8", errors="replace") for path in source_files if path.exists()).lower()
         absent_markers = ["localstorage", "sessionstorage", "websocket", "postmessage", "serviceworker", "indexeddb", "swf"]
         matched = [marker for marker in absent_markers if marker in source_text]
@@ -4084,7 +4084,7 @@ printf 'secret_review=No password, password hash, TOTP material, session cookie,
         return not missing
 
     def test_graphql_applicability_static(self) -> TestResult:
-        source_files = list(sorted((REPO_ROOT / "src").glob("*.rs"))) + [REPO_ROOT / "Cargo.toml", REPO_ROOT / "Cargo.lock"]
+        source_files = rust_source_files() + [REPO_ROOT / "Cargo.toml", REPO_ROOT / "Cargo.lock"]
         source_text = "\n".join(path.read_text(encoding="utf-8", errors="replace") for path in source_files if path.exists()).lower()
         markers = ["graphql", "juniper", "async-graphql", "/graphql"]
         matched = [marker for marker in markers if marker in source_text]
@@ -4364,7 +4364,7 @@ printf 'secret_review=No password, password hash, TOTP material, session cookie,
     def test_crypto_primitive_applicability_static(self) -> TestResult:
         source_text = "\n".join(
             path.read_text(encoding="utf-8", errors="replace")
-            for path in sorted((REPO_ROOT / "src").glob("*.rs"))
+            for path in rust_source_files()
         ).lower()
         banned_source_markers = [
             "decrypt(",
@@ -4889,6 +4889,10 @@ def summarize_static_files(files: list[Path], missing: list[str]) -> str:
         lines.append("Missing markers:")
         lines.extend(f"- {marker}" for marker in missing)
     return "\n".join(lines) + "\n"
+
+
+def rust_source_files() -> list[Path]:
+    return sorted((REPO_ROOT / "src").rglob("*.rs"))
 
 
 def parse_bool(value: str | None, default: bool = False) -> bool:

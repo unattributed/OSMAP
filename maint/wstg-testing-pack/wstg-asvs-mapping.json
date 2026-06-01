@@ -1090,7 +1090,7 @@
       "test_type": [
         "static applicability review"
       ],
-      "expected_result": "The current OSMAP browser surface has no SQL, LDAP, XML, XPath, SSI, runtime code, format-string, server-side template, or SSRF-capable backend surface; incubated injection coverage is represented by the named Slice 4 lanes.",
+      "expected_result": "The current OSMAP browser surface has no SQL, LDAP, XML, XPath, SSI, eval/plugin/code-loading, runtime-format-string, server-side template, or SSRF-capable backend surface; command execution boundaries are applicable and covered by OSMAP-WSTG-INPV-003; incubated injection coverage is represented by the named Slice 4 lanes.",
       "evidence_produced": [
         "injection_applicability_static.txt"
       ],

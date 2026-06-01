@@ -35,6 +35,9 @@ or web-server-side dynamic include feature in the browser runtime.
 Code injection and server-side template injection are not applicable. OSMAP is
 compiled Rust, has no eval surface, no plugin loader, no script interpreter, and
 no server-side template engine such as Tera, Handlebars, Minijinja, or Askama.
+OSMAP does have reviewed command-execution boundaries for local auth, mailbox,
+and send handoff; those are applicable command-injection surfaces and are tested
+separately by `OSMAP-WSTG-INPV-003` rather than treated as not applicable here.
 
 Format string injection is not applicable in the WSTG sense. Rust format macros
 use compile-time format strings in OSMAP; user-controlled values are supplied as
@@ -57,7 +60,8 @@ The runner checks:
 
 - `Cargo.toml` and `Cargo.lock` for SQL, LDAP, XML, XPath, template-engine, and
   outbound HTTP client dependencies
-- `src/` for eval-like, include-like, and outbound HTTP client markers
+- recursive `src/**/*.rs` coverage for eval-like, include-like, and outbound
+  HTTP client markers
 - parser and rendering modules for the positive controls used by adjacent
   Slice 4 evidence
 
