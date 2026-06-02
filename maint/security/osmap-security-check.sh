@@ -231,6 +231,9 @@ sh maint/security/test-osmap-v3-reply-forward-attachment-design.sh
 echo "==> validating V4 hostile-content safety gate"
 sh maint/security/test-osmap-v4-hostile-content-safety.sh
 
+echo "==> validating live V4 hostile-content wrapper behavior"
+sh maint/security/test-osmap-live-validate-v4-hostile-content.sh
+
 echo "==> validating nginx OCSP stapling wrapper behavior"
 sh maint/security/test-osmap-live-validate-nginx-ocsp-stapling.sh
 

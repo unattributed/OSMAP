@@ -75,3 +75,7 @@ V4 is complete only when:
   attachment download hardening, and evidence redaction
 - residual risks are documented plainly, especially external links and files
   opened outside OSMAP
+
+The current host-assisted live evidence lane is
+`maint/live/osmap-live-validate-v4-hostile-content.ksh`, which writes the
+sanitized report `maint/live/latest-host-v4-hostile-content-report.txt`.
