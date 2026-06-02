@@ -176,6 +176,7 @@ fn browser_css() -> &'static str {
         ".message-html p,.message-html ul,.message-html ol,.message-html blockquote,.message-html pre,.message-html table{margin:.75rem 0}",
         ".message-html pre,pre{white-space:pre-wrap;overflow-wrap:anywhere}",
         ".message-html a{word-break:break-word}",
+        ".message-html a[href]::after{content:\" (\" attr(href) \")\";font-size:.86em;color:var(--muted);overflow-wrap:anywhere}",
         "@media (max-width:56rem){.page-shell{padding:.75rem}.topbar,.section-header{align-items:stretch;flex-direction:column}.mail-shell,.mail-shell-three{grid-template-columns:1fr}.search-row{grid-template-columns:1fr}.login-card{padding:1.25rem}.login-title{font-size:2.35rem}.login-shield{width:3.8rem;height:3.8rem}.security-grid{grid-template-columns:1fr}.login-decor{display:none}}"
     )
 }
@@ -322,4 +323,15 @@ fn escape_header_quoted_string(value: &str) -> String {
         }
     }
     escaped
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn message_html_links_visually_disclose_destinations() {
+        assert!(browser_css().contains(".message-html a[href]::after"));
+        assert!(browser_css().contains("attr(href)"));
+    }
 }

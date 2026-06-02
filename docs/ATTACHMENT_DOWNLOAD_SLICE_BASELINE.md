@@ -54,6 +54,8 @@ The browser-facing download behavior is intentionally narrow:
 - surfaced attachments are offered as explicit links, not auto-previewed
 - the HTTP response forces `Content-Disposition: attachment`
 - `X-Content-Type-Options: nosniff` remains enabled
+- browser-executable response media types such as HTML, SVG, XML, and script
+  are downgraded to `application/octet-stream`
 - the route does not attempt image preview, HTML preview, or MIME convenience
   behavior
 

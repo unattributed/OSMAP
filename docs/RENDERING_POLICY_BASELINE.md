@@ -114,6 +114,7 @@ The rendering slice follows these rules:
 - sanitize HTML through a dedicated allowlist policy instead of preserving
   arbitrary markup
 - deny relative URLs and limit link schemes to `http`, `https`, and `mailto`
+- expose allowed message-body link destinations visually in the rendered body
 - strip comments and remove scriptable or external-fetch oriented tags such as
   `script`, `style`, `iframe`, `object`, `embed`, and `svg`
 - keep rendering output bounded

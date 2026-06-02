@@ -606,11 +606,29 @@ fn normalize_download_content_type(policy: AttachmentDownloadPolicy, content_typ
     if trimmed.is_empty()
         || trimmed.len() > policy.content_type_max_len
         || !is_safe_media_type(&trimmed)
+        || is_browser_executable_download_type(&trimmed)
     {
         return "application/octet-stream".to_string();
     }
 
     trimmed
+}
+
+/// Returns true for attachment media types that browsers or helper apps commonly
+/// treat as active content even when OSMAP forces download.
+fn is_browser_executable_download_type(value: &str) -> bool {
+    matches!(
+        value,
+        "text/html"
+            | "text/xml"
+            | "image/svg+xml"
+            | "application/xhtml+xml"
+            | "application/xml"
+            | "application/javascript"
+            | "application/ecmascript"
+            | "text/javascript"
+            | "text/ecmascript"
+    )
 }
 
 /// Builds a conservative download file name for `Content-Disposition`.
@@ -853,7 +871,7 @@ mod tests {
         match outcome.decision {
             AttachmentDownloadDecision::Downloaded { attachment, .. } => {
                 assert_eq!(attachment.filename, "invoice_.html");
-                assert_eq!(attachment.content_type, "text/html");
+                assert_eq!(attachment.content_type, "application/octet-stream");
                 assert!(String::from_utf8_lossy(&attachment.body).contains("download me"));
             }
             other => panic!("expected downloaded attachment, got {other:?}"),
@@ -970,6 +988,39 @@ mod tests {
                 assert_eq!(attachment.filename, "report.bin");
                 assert_eq!(attachment.content_type, "application/octet-stream");
                 assert_eq!(attachment.body, b"payload");
+            }
+            other => panic!("expected downloaded attachment, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn browser_executable_download_content_type_falls_back_to_octet_stream() {
+        let message = multipart_message_view(concat!(
+            "--mix-1\n",
+            "Content-Type: text/plain\n",
+            "\n",
+            "Body text\n",
+            "--mix-1\n",
+            "Content-Type: image/svg+xml\n",
+            "Content-Disposition: attachment; filename=\"chart.svg\"\n",
+            "\n",
+            "<svg><script>alert(1)</script></svg>\n",
+            "--mix-1--\n",
+        ));
+
+        let outcome = AttachmentDownloadService::new(AttachmentDownloadPolicy::default())
+            .download_for_validated_session(
+                &test_context(),
+                &validated_session_fixture(),
+                &message,
+                "1.2",
+            );
+
+        match outcome.decision {
+            AttachmentDownloadDecision::Downloaded { attachment, .. } => {
+                assert_eq!(attachment.filename, "chart.svg");
+                assert_eq!(attachment.content_type, "application/octet-stream");
+                assert!(String::from_utf8_lossy(&attachment.body).contains("<script>"));
             }
             other => panic!("expected downloaded attachment, got {other:?}"),
         }
