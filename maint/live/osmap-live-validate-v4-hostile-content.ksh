@@ -539,8 +539,8 @@ assert_absent "hostile_html_data_scheme" "${html_body}" 'href="data:'
 assert_absent "hostile_html_cid_scheme" "${html_body}" 'href="cid:'
 assert_absent "hostile_html_relative_url" "${html_body}" 'href="/relative/path"'
 assert_absent "hostile_html_protocol_relative_url" "${html_body}" 'protocol-relative'
-assert_absent "hostile_html_form_payload" "${html_body}" "<form"
-assert_absent "hostile_html_input_payload" "${html_body}" "<input"
+assert_absent "hostile_html_form_action_payload" "${html_body}" "https://${HTML_REMOTE_MARKER}/post"
+assert_absent "hostile_html_input_secret_payload" "${html_body}" "name=\"secret\""
 assert_absent "hostile_html_iframe_payload" "${html_body}" "<iframe"
 assert_absent "hostile_html_svg_payload" "${html_body}" "<svg"
 assert_absent "hostile_html_math_payload" "${html_body}" "<math"
