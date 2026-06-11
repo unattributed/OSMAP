@@ -32,6 +32,7 @@ v3_security_gates="${repo_root}/docs/V3_SECURITY_GATES.md"
 v4_definition="${repo_root}/docs/V4_DEFINITION.md"
 v4_security_gates="${repo_root}/docs/V4_SECURITY_GATES.md"
 v4_closeout_evidence="${repo_root}/docs/V4_CLOSEOUT_EVIDENCE.md"
+v4_release_handoff="${repo_root}/docs/V4_RELEASE_OPERATOR_HANDOFF.md"
 v4_mime_ambiguity_evidence="${repo_root}/docs/V4_MIME_AMBIGUITY_EVIDENCE.md"
 v4_closeout_guard="${repo_root}/maint/security/test-osmap-v4-closeout-evidence.sh"
 
@@ -44,6 +45,7 @@ require_file "$v3_security_gates"
 require_file "$v4_definition"
 require_file "$v4_security_gates"
 require_file "$v4_closeout_evidence"
+require_file "$v4_release_handoff"
 require_file "$v4_mime_ambiguity_evidence"
 require_file "$v4_closeout_guard"
 
@@ -95,6 +97,14 @@ require_text "$v4_closeout_evidence" "The V4 hostile-content closeout evidence b
 require_text "$v4_closeout_evidence" "V3 Carry-Forward Evidence"
 require_text "$v4_closeout_evidence" "Residual-Risk Statement"
 require_text "$v4_closeout_evidence" "09a95b7"
+
+require_text "$v4_release_handoff" 'GitHub release tag | `v4.0.0`'
+require_text "$v4_release_handoff" 'Evidence bundle commit | `59da020`'
+require_text "$v4_release_handoff" 'Assessed V4 code commit | `09a95b7`'
+require_text "$v4_release_handoff" "OSMAP v4.0.0 is a hostile-content safety release"
+require_text "$v4_release_handoff" "does not claim rich-mail safety, malware prevention, attachment preview safety, URL reputation"
+require_text "$v4_release_handoff" "files may still be malicious after a user"
+require_text "$v4_release_handoff" 'Any code change after `09a95b7` requires refreshed V4 evidence'
 
 require_text "$v4_mime_ambiguity_evidence" "malformed, nested, suspicious, unsupported, and oversized MIME inputs"
 require_text "$v4_mime_ambiguity_evidence" "product-code regression tests"

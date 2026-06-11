@@ -6,6 +6,7 @@ repo_root="$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)"
 closeout="${repo_root}/docs/V4_CLOSEOUT_EVIDENCE.md"
 roadmap="${repo_root}/docs/V4_ROADMAP.md"
 mime_evidence="${repo_root}/docs/V4_MIME_AMBIGUITY_EVIDENCE.md"
+release_handoff="${repo_root}/docs/V4_RELEASE_OPERATOR_HANDOFF.md"
 v4_report="${repo_root}/maint/live/latest-host-v4-hostile-content-report.txt"
 v3_summary_md="${repo_root}/maint/live/osmap-v3-release-evidence-summary.md"
 v3_summary_json="${repo_root}/maint/live/osmap-v3-release-evidence-summary.json"
@@ -22,12 +23,13 @@ require_file() {
 require_file "$closeout"
 require_file "$roadmap"
 require_file "$mime_evidence"
+require_file "$release_handoff"
 require_file "$v4_report"
 require_file "$v3_summary_md"
 require_file "$v3_summary_json"
 require_file "$v3_archive"
 
-python3 - "$repo_root" "$closeout" "$roadmap" "$mime_evidence" "$v4_report" "$v3_summary_md" "$v3_summary_json" <<'PY'
+python3 - "$repo_root" "$closeout" "$roadmap" "$mime_evidence" "$release_handoff" "$v4_report" "$v3_summary_md" "$v3_summary_json" <<'PY'
 import json
 import re
 import sys
@@ -37,13 +39,15 @@ repo_root = Path(sys.argv[1])
 closeout_path = Path(sys.argv[2])
 roadmap_path = Path(sys.argv[3])
 mime_evidence_path = Path(sys.argv[4])
-v4_report_path = Path(sys.argv[5])
-v3_summary_md_path = Path(sys.argv[6])
-v3_summary_json_path = Path(sys.argv[7])
+release_handoff_path = Path(sys.argv[5])
+v4_report_path = Path(sys.argv[6])
+v3_summary_md_path = Path(sys.argv[7])
+v3_summary_json_path = Path(sys.argv[8])
 
 closeout = closeout_path.read_text(encoding="utf-8")
 roadmap = roadmap_path.read_text(encoding="utf-8")
 mime_evidence = mime_evidence_path.read_text(encoding="utf-8")
+release_handoff = release_handoff_path.read_text(encoding="utf-8")
 v4_report = v4_report_path.read_text(encoding="utf-8")
 v3_summary_md = v3_summary_md_path.read_text(encoding="utf-8")
 v3_summary = json.loads(v3_summary_json_path.read_text(encoding="utf-8"))
@@ -149,6 +153,13 @@ for pattern, source_name, source in [
     (r"V4 hostile-content closeout evidence bundle is assembled", "roadmap", roadmap),
     (r"MIME ambiguity and metadata breadth", "MIME evidence", mime_evidence),
     (r"product-code regression tests", "MIME evidence", mime_evidence),
+    (r"GitHub release tag \| `v4\.0\.0`", "release handoff", release_handoff),
+    (r"Evidence bundle commit \| `59da020`", "release handoff", release_handoff),
+    (r"Assessed V4 code commit \| `09a95b7`", "release handoff", release_handoff),
+    (r"OSMAP v4\.0\.0 is a hostile-content safety release", "release handoff", release_handoff),
+    (r"does\s+not claim rich-mail safety, malware prevention, attachment preview safety, URL reputation", "release handoff", release_handoff),
+    (r"files may still be malicious after a user\s+opens them", "release handoff", release_handoff),
+    (r"Any code change after `09a95b7` requires refreshed V4 evidence", "release handoff", release_handoff),
 ]:
     if not re.search(pattern, source):
         errors.append(f"{source_name} missing required pattern: {pattern}")
