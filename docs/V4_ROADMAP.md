@@ -49,16 +49,19 @@ Current completed local pieces include:
 - host-assisted live evidence lane in
   `maint/live/osmap-live-validate-v4-hostile-content.ksh`
 
-The remaining release-closeout work is to run the live V4 hostile-content proof
-on the reviewed OpenBSD host, archive the sanitized report for the assessed
-commit or tag, and tie that report to the V4 acceptance criteria and residual
-risk statement.
+The live V4 hostile-content proof has now passed on the reviewed OpenBSD host
+for assessed commit `a3f6e98`. The sanitized report is archived at
+`maint/live/latest-host-v4-hostile-content-report.txt`, and the evidence
+summary is recorded in `docs/V4_CLOSEOUT_EVIDENCE.md`.
+
+The remaining release-closeout work is to carry this proof forward to the final
+V4 assessed release commit or tag, archive the full local and carry-forward
+gate bundle, and finalize the residual-risk statement.
 
 ## First Next Step
 
-Run the live V4 hostile-content validator on the standard host checkout and
-capture `maint/live/latest-host-v4-hostile-content-report.txt` for the assessed
-commit or tag.
+Carry the passed live V4 hostile-content proof into the final V4 closeout
+bundle for the assessed release commit or tag.
 
 The proof must show:
 
@@ -71,4 +74,3 @@ The proof must show:
 - the report excludes private body markers, attachment body markers, session
   cookies, CSRF tokens, credentials, TOTP material, provider secrets, and host
   secrets
-

@@ -28,9 +28,22 @@ tracked_files_z() {
 
 assert_no_tracked_path() {
 	pattern=$1
-	if tracked_files | grep -Eq "$pattern"; then
+	matches=$(
+		tracked_files |
+			grep -E "$pattern" |
+			grep -Ev '^maint/live/latest-host-v4-hostile-content-report\.txt$' || true
+	)
+	if [ -n "$matches" ]; then
 		append_failure "tracked generated or private path matched: ${pattern}"
-		tracked_files | grep -E "$pattern" || true
+		printf '%s\n' "$matches"
+	fi
+}
+
+assert_required_text() {
+	path=$1
+	text=$2
+	if [ -f "$path" ] && ! grep -Fq "$text" "$path"; then
+		append_failure "tracked sanitized evidence missing required text: ${path}: ${text}"
 	fi
 }
 
@@ -62,6 +75,11 @@ legacy_validation_totp="JBSWY3DPEHPK3PXP"
 
 assert_no_tracked_path '^maint/live/latest-.*\.txt$'
 assert_no_tracked_path '^maint/.*/output/'
+
+if git ls-files --error-unmatch maint/live/latest-host-v4-hostile-content-report.txt >/dev/null 2>&1; then
+	assert_required_text maint/live/latest-host-v4-hostile-content-report.txt "result=v4_hostile_content_live_proof_passed"
+	assert_required_text maint/live/latest-host-v4-hostile-content-report.txt "No password, TOTP material, session cookie, CSRF token, private message body, attachment body, provider secret, or host secret is included."
+fi
 
 assert_no_literal "real primary mailbox" "$real_primary"
 assert_no_literal "real ops mailbox" "$real_ops"

@@ -31,6 +31,7 @@ v3_definition="${repo_root}/docs/V3_DEFINITION.md"
 v3_security_gates="${repo_root}/docs/V3_SECURITY_GATES.md"
 v4_definition="${repo_root}/docs/V4_DEFINITION.md"
 v4_security_gates="${repo_root}/docs/V4_SECURITY_GATES.md"
+v4_closeout_evidence="${repo_root}/docs/V4_CLOSEOUT_EVIDENCE.md"
 
 require_file "$charter"
 require_file "$program_baseline"
@@ -40,6 +41,7 @@ require_file "$v3_definition"
 require_file "$v3_security_gates"
 require_file "$v4_definition"
 require_file "$v4_security_gates"
+require_file "$v4_closeout_evidence"
 
 require_text "$charter" "The project is not a mail-server replacement"
 require_text "$charter" "not a general"
@@ -83,5 +85,9 @@ require_text "$v4_security_gates" "Version 4 cannot pass by replacing, weakening
 require_text "$v4_security_gates" "attacker-controlled mail cannot gain active browser execution"
 require_text "$v4_security_gates" "It is not a substitute for the live-host proof at release closeout"
 require_text "$v4_security_gates" "If a V4 change passes ordinary functional tests but fails one of the security gates above, the change remains incomplete"
+
+require_text "$v4_closeout_evidence" "result=v4_hostile_content_live_proof_passed"
+require_text "$v4_closeout_evidence" "Full V4 closeout still requires"
+require_text "$v4_closeout_evidence" "a3f6e98"
 
 echo "documentation governance guard passed"
