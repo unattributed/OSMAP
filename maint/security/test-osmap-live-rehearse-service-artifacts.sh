@@ -99,10 +99,12 @@ exit 1
 EOF
 
 cat > "${fake_repo}/maint/openbsd/mail.blackbagsecurity.com/etc/osmap/osmap-serve.env" <<'EOF'
+OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH=/var/lib/osmap/secrets/mailbox-helper-grant.key
 OSMAP_STDERR_LOG_PATH=/var/log/osmap/serve.log
 EOF
 
 cat > "${fake_repo}/maint/openbsd/mail.blackbagsecurity.com/etc/osmap/osmap-mailbox-helper.env" <<'EOF'
+OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH=/var/lib/osmap-helper/secrets/mailbox-helper-grant.key
 OSMAP_STDERR_LOG_PATH=/var/log/osmap/mailbox-helper.log
 EOF
 
@@ -263,8 +265,10 @@ assert_contains "${rehearsal_output}" "restore script: ${session_dir}/scripts/re
 assert_file_equals "${session_dir}/backup/etc/osmap/osmap-serve.env" "live-serve-env"
 assert_file_equals "${session_dir}/backup/usr/local/libexec/osmap/osmap-serve-run.ksh" "live-serve-run"
 assert_file_equals "${session_dir}/backup/etc/rc.d/osmap_serve" "live-serve-rc"
-assert_file_equals "${session_dir}/staged/etc/osmap/osmap-serve.env" "OSMAP_STDERR_LOG_PATH=/var/log/osmap/serve.log"
-assert_file_equals "${session_dir}/staged/etc/osmap/osmap-mailbox-helper.env" "OSMAP_STDERR_LOG_PATH=/var/log/osmap/mailbox-helper.log"
+assert_file_equals "${session_dir}/staged/etc/osmap/osmap-serve.env" "OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH=/var/lib/osmap/secrets/mailbox-helper-grant.key
+OSMAP_STDERR_LOG_PATH=/var/log/osmap/serve.log"
+assert_file_equals "${session_dir}/staged/etc/osmap/osmap-mailbox-helper.env" "OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH=/var/lib/osmap-helper/secrets/mailbox-helper-grant.key
+OSMAP_STDERR_LOG_PATH=/var/log/osmap/mailbox-helper.log"
 assert_file_equals "${session_dir}/staged/usr/local/libexec/osmap/osmap-serve-run.ksh" "reviewed-serve-run"
 assert_file_equals "${session_dir}/staged/usr/local/libexec/osmap/osmap-mailbox-helper-run.ksh" "reviewed-helper-run"
 assert_file_equals "${session_dir}/staged/etc/rc.d/osmap_serve" "reviewed-serve-rc"
@@ -287,8 +291,10 @@ env \
   OSMAP_SERVICE_ENABLEMENT_LIVE_LOG_DIR="${fake_live_log_dir}" \
   sh "${session_dir}/scripts/apply-service-artifacts.sh"
 
-assert_file_equals "${fake_live_etc_dir}/osmap/osmap-serve.env" "OSMAP_STDERR_LOG_PATH=/var/log/osmap/serve.log"
-assert_file_equals "${fake_live_etc_dir}/osmap/osmap-mailbox-helper.env" "OSMAP_STDERR_LOG_PATH=/var/log/osmap/mailbox-helper.log"
+assert_file_equals "${fake_live_etc_dir}/osmap/osmap-serve.env" "OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH=/var/lib/osmap/secrets/mailbox-helper-grant.key
+OSMAP_STDERR_LOG_PATH=/var/log/osmap/serve.log"
+assert_file_equals "${fake_live_etc_dir}/osmap/osmap-mailbox-helper.env" "OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH=/var/lib/osmap-helper/secrets/mailbox-helper-grant.key
+OSMAP_STDERR_LOG_PATH=/var/log/osmap/mailbox-helper.log"
 assert_file_equals "${fake_live_usr_local_dir}/libexec/osmap/osmap-serve-run.ksh" "reviewed-serve-run"
 assert_file_equals "${fake_live_usr_local_dir}/libexec/osmap/osmap-mailbox-helper-run.ksh" "reviewed-helper-run"
 assert_file_equals "${fake_live_etc_dir}/rc.d/osmap_serve" "reviewed-serve-rc"
@@ -301,6 +307,8 @@ assert_contains "${validator_report}" "mailbox_helper_service_not_healthy"
 assert_not_contains "${validator_report}" "missing_serve_env_file"
 assert_not_contains "${validator_report}" "missing_serve_log_file"
 assert_not_contains "${validator_report}" "missing_helper_log_file"
+assert_not_contains "${validator_report}" "serve_grant_key_path_missing"
+assert_not_contains "${validator_report}" "helper_grant_key_path_missing"
 
 env \
   PATH="${fake_bin_dir}:${PATH}" \

@@ -181,7 +181,9 @@ for failed_check in \
   missing_serve_log_file \
   missing_helper_log_file \
   serve_log_path_not_var_log \
-  helper_log_path_not_var_log
+  helper_log_path_not_var_log \
+  serve_grant_key_path_missing \
+  helper_grant_key_path_missing
 do
   if grep -Fq "\${failed_check}" "\$validator_report"; then
     printf '%s\n' "service validator still reports \${failed_check} after service-artifact apply" >&2

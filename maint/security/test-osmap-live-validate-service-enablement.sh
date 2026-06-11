@@ -38,10 +38,12 @@ mkdir -p \
 cp "${source_wrapper}" "${fake_repo}/maint/live/osmap-live-validate-service-enablement.ksh"
 
 cat > "${fake_osmap_dir}/osmap-serve.env" <<EOF
+OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH=/fake/serve/grant.key
 OSMAP_STDERR_LOG_PATH=/var/log/osmap/serve.log
 EOF
 
 cat > "${fake_osmap_dir}/osmap-mailbox-helper.env" <<EOF
+OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH=/fake/helper/grant.key
 OSMAP_STDERR_LOG_PATH=/var/log/osmap/mailbox-helper.log
 EOF
 
@@ -263,6 +265,7 @@ assert_contains "${fail_report_contents}" "serve_service_not_healthy"
 assert_contains "${fail_report_contents}" "missing_helper_socket"
 assert_contains "${fail_report_contents}" "missing_helper_log_file"
 assert_contains "${fail_report_contents}" "helper_log_path_not_var_log"
+assert_contains "${fail_report_contents}" "helper_grant_key_path_missing"
 assert_contains "${fail_report_contents}" "loopback_http_listener_not_ready"
 
 printf '%s\n' "service enablement validation regression checks passed"

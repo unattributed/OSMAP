@@ -100,6 +100,8 @@ That mode runs the generated `apply-service-artifacts.sh`, which:
   - `missing_helper_log_file`
   - `serve_log_path_not_var_log`
   - `helper_log_path_not_var_log`
+  - `serve_grant_key_path_missing`
+  - `helper_grant_key_path_missing`
 
 This is intentionally narrower than the full service gate. The artifact apply
 can be accepted as successful even if the validator still fails on service

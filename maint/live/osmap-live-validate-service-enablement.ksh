@@ -257,6 +257,14 @@ if ! printf '%s\n' "${HELPER_ENV_CONTENT}" | grep -Fxq "OSMAP_STDERR_LOG_PATH=/v
   append_failed_check "helper_log_path_not_var_log"
 fi
 
+if ! printf '%s\n' "${SERVE_ENV_CONTENT}" | grep -Eq "^OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH=/"; then
+  append_failed_check "serve_grant_key_path_missing"
+fi
+
+if ! printf '%s\n' "${HELPER_ENV_CONTENT}" | grep -Eq "^OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH=/"; then
+  append_failed_check "helper_grant_key_path_missing"
+fi
+
 if ! doas test -x "${SERVE_RUN_PATH}"; then
   append_failed_check "missing_serve_launcher"
 fi
