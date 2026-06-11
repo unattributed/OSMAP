@@ -89,8 +89,10 @@ require_text "$v4_security_gates" "It is not a substitute for the live-host proo
 require_text "$v4_security_gates" "If a V4 change passes ordinary functional tests but fails one of the security gates above, the change remains incomplete"
 
 require_text "$v4_closeout_evidence" "result=v4_hostile_content_live_proof_passed"
-require_text "$v4_closeout_evidence" "Full V4 closeout still requires"
-require_text "$v4_closeout_evidence" "a3f6e98"
+require_text "$v4_closeout_evidence" "The V4 hostile-content closeout evidence bundle is assembled"
+require_text "$v4_closeout_evidence" "V3 Carry-Forward Evidence"
+require_text "$v4_closeout_evidence" "Residual-Risk Statement"
+require_text "$v4_closeout_evidence" "09a95b7"
 
 require_text "$v4_mime_ambiguity_evidence" "malformed, nested, suspicious, unsupported, and oversized MIME inputs"
 require_text "$v4_mime_ambiguity_evidence" "product-code regression tests"

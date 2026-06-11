@@ -52,7 +52,7 @@ Current completed local pieces include:
   `maint/live/osmap-live-validate-v4-hostile-content.ksh`
 
 The live V4 hostile-content proof has now passed on the reviewed OpenBSD host
-for assessed commit `a3f6e98`. The sanitized report is archived at
+for assessed commit `09a95b7`. The sanitized report is archived at
 `maint/live/latest-host-v4-hostile-content-report.txt`, and the evidence
 summary is recorded in `docs/V4_CLOSEOUT_EVIDENCE.md`.
 
@@ -62,16 +62,17 @@ malformed multipart input, nested-depth withholding, unsupported transfer
 encodings, suspicious filename metadata, malformed RFC 2231 metadata, and
 oversized boundary failure behavior.
 
-The remaining release-closeout work is to carry this proof forward to the final
-V4 assessed release commit or tag, archive the full local and carry-forward
-gate bundle, and finalize the residual-risk statement.
+The V4 hostile-content closeout evidence bundle is assembled for assessed code
+commit `09a95b7`, including refreshed V3 carry-forward evidence and the
+residual-risk statement in `docs/V4_CLOSEOUT_EVIDENCE.md`.
 
 ## First Next Step
 
-Carry the passed live V4 hostile-content proof into the final V4 closeout
-bundle for the assessed release commit or tag.
+Cut or declare the V4 assessed release point from `09a95b7` if no further code
+changes are needed.
 
-The proof must show:
+Before any later code change can inherit the V4 claim, rerun the evidence pass
+so the proof again shows:
 
 - hostile HTML is sanitized before browser presentation
 - unsafe URL schemes and relative navigation targets are removed

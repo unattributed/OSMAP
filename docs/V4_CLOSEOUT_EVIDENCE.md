@@ -7,20 +7,21 @@ it to the V4 closeout evidence set.
 
 It does not claim broad rich-mail safety, malware prevention, attachment
 preview safety, or Roundcube parity. It records that the V4 hostile-content
-browser-boundary proof passed for the assessed code commit named below.
+browser-boundary proof and carry-forward evidence passed for the assessed code
+commit named below.
 
 ## Assessed Snapshot
 
 | Field | Value |
 | --- | --- |
-| Assessed code commit | `a3f6e98` |
+| Assessed code commit | `09a95b7` |
 | Assessed host | `mail.blackbagsecurity.com` |
 | Host checkout | `~/OSMAP` |
 | Validator | `maint/live/osmap-live-validate-v4-hostile-content.ksh` |
 | Sanitized report | `maint/live/latest-host-v4-hostile-content-report.txt` |
 | Result marker | `result=v4_hostile_content_live_proof_passed` |
 
-The host checkout was fast-forwarded to `a3f6e98` before the validator ran.
+The host checkout was fast-forwarded to `09a95b7` before the validator ran.
 
 ## Command
 
@@ -72,20 +73,79 @@ The report does not contain plaintext passwords, reusable TOTP seeds, active
 session cookies, CSRF tokens, private message bodies, private attachment
 contents, provider tokens, or host secrets.
 
+## V3 Carry-Forward Evidence
+
+The V3 carry-forward bundle was refreshed on `mail.blackbagsecurity.com` for
+assessed ref `09a95b7f4e9744a20bcd85430e4f0428cafeebe7`.
+
+Tracked evidence:
+
+- `maint/live/osmap-v3-release-evidence-summary.md`
+- `maint/live/osmap-v3-release-evidence-summary.json`
+- `maint/live/osmap-v3-release-evidence.tar.gz`
+
+The refreshed V3 release evidence summary records:
+
+- generated UTC: `2026-06-11T12:09:28Z`
+- host target: `mail.blackbagsecurity.com`
+- command: `make release-check`
+- Cargo build, test, clippy, and fmt-check: `passed`
+- supply-chain gate: `passed`
+- dependency inventory: `passed`
+- WSTG summary and authenticated WSTG: `passed`
+- TLS CBC cleanup and TLS standard validation: `passed`
+- resource and timeout hardening: `passed`
+- helper-boundary evidence: `passed`
+- V3 live MIME and HTML proof: `passed`
+- V3 pilot rehearsal: `passed`
+- sanitized evidence archive: `passed`
+- skipped checks: none
+
+The host release-check was invoked with explicit toolchain pins matching the
+reviewed host toolchain (`rustc` and `cargo` 1.94.1, clippy 0.1.94, rustfmt
+1.8.0) and with `~/.cargo/bin` in `PATH` so the installed `cargo-audit` and
+`cargo-deny` subcommands were visible.
+
+## Residual-Risk Statement
+
+OSMAP V4 contains hostile message content inside the browser boundary; it does
+not make attacker-controlled email globally safe.
+
+Residual risks remain:
+
+- preserved external links can still lead to phishing, malware, credential
+  capture, or misleading destinations outside OSMAP
+- OSMAP visibly discloses preserved link destinations, but it does not provide
+  URL reputation, detonation, or destination safety scoring
+- downloaded attachments are forced downloads, receive reviewed browser-safety
+  headers, and browser-executable media types are downgraded to
+  `application/octet-stream`, but files may still be malicious after a user
+  opens them in external applications
+- OSMAP does not claim malware scanning, document sanitization, archive
+  inspection, attachment preview safety, or safety for files after they leave
+  the OSMAP browser boundary
+- unsupported rich-mail behavior may be withheld or reduced to bounded
+  metadata instead of rendered with Roundcube-like fidelity
+
 ## Closeout Status
 
-The V4 live hostile-content proof slice is complete for assessed commit
-`a3f6e98`.
+The V4 hostile-content closeout evidence bundle is assembled for assessed code
+commit `09a95b7`.
 
 The V4 MIME ambiguity and metadata breadth slice is locally covered by
 `docs/V4_MIME_AMBIGUITY_EVIDENCE.md` and the named product-code regression
 tests in `src/mime.rs`.
 
-Full V4 closeout still requires the final closeout bundle to include:
+The bundle includes:
 
-- the local security gate for the final assessed release commit or tag
-- the V3 carry-forward evidence required by `V4_SECURITY_GATES.md`
-- this V4 hostile-content live proof or a newer proof for the final assessed
-  commit or tag
-- a final residual-risk statement for external links and files opened outside
+- local `make security-check` evidence for the code tree committed as
+  `09a95b7`
+- refreshed V3 release carry-forward evidence for
+  `09a95b7f4e9744a20bcd85430e4f0428cafeebe7`
+- refreshed live V4 hostile-content proof for `09a95b7`
+- V4 MIME ambiguity and metadata breadth evidence
+- this residual-risk statement for external links and files opened outside
   OSMAP
+
+Any code change after `09a95b7` requires a new assessed commit or tag and a new
+closeout evidence pass before it can inherit this V4 closeout claim.
