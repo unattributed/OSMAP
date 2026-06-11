@@ -453,9 +453,9 @@ class Runner:
             + quoted
             + "; printf '\\n--- nginx access ---\\n'; doas grep -F "
             + quoted
-            + " /var/log/nginx/mail.access.log 2>/dev/null | tail -5 || true; printf '\\n--- nginx error ---\\n'; doas grep -F "
+            + " /var/log/nginx/osmap.public.access.log 2>/dev/null | tail -5 || true; printf '\\n--- nginx error ---\\n'; doas grep -F "
             + quoted
-            + " /var/log/nginx/mail.error.log 2>/dev/null | tail -5 || true; printf '\\n--- suricata eve ---\\n'; doas grep -F "
+            + " /var/log/nginx/osmap.public.error.log 2>/dev/null | tail -5 || true; printf '\\n--- suricata eve ---\\n'; doas grep -F "
             + quoted
             + " /var/log/suricata/eve.json 2>/dev/null | tail -5 || true",
         )

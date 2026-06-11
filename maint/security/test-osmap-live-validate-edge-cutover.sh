@@ -35,6 +35,8 @@ server {
     listen 192.168.1.44:443 ssl;
     include /etc/nginx/templates/ssl.tmpl;
     include /etc/nginx/templates/osmap-root.tmpl;
+    access_log /var/log/nginx/osmap.public.access.log;
+    error_log  /var/log/nginx/osmap.public.error.log;
 }
 
 server {
@@ -45,13 +47,14 @@ server {
     include /etc/nginx/templates/osmap-root.tmpl;
     include /etc/nginx/templates/sogo.tmpl;
     include /etc/nginx/templates/postfixadmin.tmpl;
-    include /etc/nginx/templates/php-catchall.tmpl;
     include /etc/nginx/templates/stub_status.tmpl;
     include /etc/nginx/templates/pf_dashboard.locations.tmpl;
     include /etc/nginx/templates/ops_monitor.locations.tmpl;
     include /etc/nginx/templates/obsd1_dr_portal.locations.tmpl;
     include /etc/nginx/templates/rspamd.tmpl;
     include /etc/nginx/templates/brevo_webhook.locations.tmpl;
+    access_log /var/log/nginx/mail.private.access.log;
+    error_log  /var/log/nginx/mail.private.error.log;
 }
 EOF
 
@@ -208,7 +211,7 @@ assert_contains "${pass_report_contents}" "assessed_host=mail.blackbagsecurity.c
 assert_contains "${pass_report_contents}" "assessed_snapshot=feedface"
 assert_contains "${pass_report_contents}" "https_listener_bindings=10.44.0.1.443,127.0.0.1.443,192.168.1.44.443"
 assert_contains "${pass_report_contents}" "public_https_includes=/etc/nginx/templates/ssl.tmpl,/etc/nginx/templates/osmap-root.tmpl"
-assert_contains "${pass_report_contents}" "private_https_includes=/etc/nginx/templates/ssl.tmpl,/etc/nginx/templates/misc.tmpl,/etc/nginx/templates/osmap-root.tmpl,/etc/nginx/templates/sogo.tmpl,/etc/nginx/templates/postfixadmin.tmpl,/etc/nginx/templates/php-catchall.tmpl,/etc/nginx/templates/stub_status.tmpl,/etc/nginx/templates/pf_dashboard.locations.tmpl,/etc/nginx/templates/ops_monitor.locations.tmpl,/etc/nginx/templates/obsd1_dr_portal.locations.tmpl,/etc/nginx/templates/rspamd.tmpl,/etc/nginx/templates/brevo_webhook.locations.tmpl"
+assert_contains "${pass_report_contents}" "private_https_includes=/etc/nginx/templates/ssl.tmpl,/etc/nginx/templates/misc.tmpl,/etc/nginx/templates/osmap-root.tmpl,/etc/nginx/templates/sogo.tmpl,/etc/nginx/templates/postfixadmin.tmpl,/etc/nginx/templates/stub_status.tmpl,/etc/nginx/templates/pf_dashboard.locations.tmpl,/etc/nginx/templates/ops_monitor.locations.tmpl,/etc/nginx/templates/obsd1_dr_portal.locations.tmpl,/etc/nginx/templates/rspamd.tmpl,/etc/nginx/templates/brevo_webhook.locations.tmpl"
 
 fail_report="${tmp_root}/edge-cutover-fail-report.txt"
 set +e

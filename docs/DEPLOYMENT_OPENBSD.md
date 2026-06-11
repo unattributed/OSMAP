@@ -91,6 +91,8 @@ The edge layer should:
 - support staged deployment behind the existing VPN-first model
 - proxy to the application service over loopback rather than exposing the app
   service directly
+- keep public OSMAP access/error logs separate from private WireGuard-only
+  mail, admin, and control-plane logs
 
 The web edge should not become a dumping ground for unrelated convenience
 features.
@@ -103,6 +105,11 @@ Useful first reverse-proxy expectations now include:
 - pass `X-Forwarded-Proto`
 - restrict methods to `GET` and `POST` for the current slice
 - keep buffering and auxiliary edge behavior conservative until needed
+- write public OSMAP edge evidence to `/var/log/nginx/osmap.public.access.log`
+  and `/var/log/nginx/osmap.public.error.log`
+- write private control-plane edge evidence to
+  `/var/log/nginx/mail.private.access.log` and
+  `/var/log/nginx/mail.private.error.log`
 
 ## Logging Integration
 

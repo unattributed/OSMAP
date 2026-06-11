@@ -279,7 +279,6 @@ fi
 for private_template in \
   /etc/nginx/templates/sogo.tmpl \
   /etc/nginx/templates/postfixadmin.tmpl \
-  /etc/nginx/templates/php-catchall.tmpl \
   /etc/nginx/templates/stub_status.tmpl \
   /etc/nginx/templates/pf_dashboard.locations.tmpl \
   /etc/nginx/templates/ops_monitor.locations.tmpl \

@@ -47,6 +47,10 @@ OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH=/fake/helper/grant.key
 OSMAP_STDERR_LOG_PATH=/var/log/osmap/mailbox-helper.log
 EOF
 
+chmod 0640 \
+  "${fake_osmap_dir}/osmap-serve.env" \
+  "${fake_osmap_dir}/osmap-mailbox-helper.env"
+
 cat > "${fake_usr_local_libexec}/osmap-serve-run.ksh" <<'EOF'
 #!/bin/sh
 exit 0
@@ -230,6 +234,7 @@ rm -f "${fake_usr_local_bin}/osmap"
 rm -f "${fake_osmap_dir}/osmap-mailbox-helper.env"
 rm -f "${fake_helper_run_dir}/mailbox-helper.sock"
 rm -f "${fake_log_dir}/mailbox-helper.log"
+chmod 0644 "${fake_osmap_dir}/osmap-serve.env"
 
 set +e
 fail_output=$(
@@ -264,6 +269,7 @@ assert_contains "${fail_report_contents}" "missing_osmap_binary"
 assert_contains "${fail_report_contents}" "osmap_user_missing_shared_runtime_group_membership"
 assert_contains "${fail_report_contents}" "missing_helper_env_file"
 assert_contains "${fail_report_contents}" "helper_env_not_readable_by_runtime_user"
+assert_contains "${fail_report_contents}" "serve_env_world_readable"
 assert_contains "${fail_report_contents}" "mailbox_helper_service_not_healthy"
 assert_contains "${fail_report_contents}" "serve_service_not_healthy"
 assert_contains "${fail_report_contents}" "missing_helper_socket"

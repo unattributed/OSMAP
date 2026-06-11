@@ -46,6 +46,18 @@ trees remain application state boundaries for sessions, settings, audit/cache
 state, helper sockets, and similar runtime data. They are not the primary
 operator log destination.
 
+The public Nginx edge that fronts `OSMAP_RUN_MODE=serve` has a separate log
+boundary from private/WireGuard mail and operator applications:
+
+- public OSMAP edge: `/var/log/nginx/osmap.public.access.log`
+- public OSMAP edge errors: `/var/log/nginx/osmap.public.error.log`
+- private/control-plane edge: `/var/log/nginx/mail.private.access.log`
+- private/control-plane errors: `/var/log/nginx/mail.private.error.log`
+
+Do not collapse these into a single `mail.access.log`/`mail.error.log` pair.
+Incident review needs to answer whether an event came from the Internet-facing
+OSMAP route or from a private operator/admin path.
+
 ## Current Categories
 
 The early logger currently distinguishes:

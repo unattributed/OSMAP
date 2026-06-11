@@ -640,7 +640,7 @@ for marker in [
     "reflected_command_output_canary",
     "uid_gid_output",
     "passwd_style_output",
-    "/var/log/nginx/mail.access.log",
+    "/var/log/nginx/osmap.public.access.log",
     "/var/log/osmap/serve.log",
     "/var/log/osmap/mailbox-helper.log",
 ]:

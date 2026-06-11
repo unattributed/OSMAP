@@ -35,6 +35,26 @@ replace OSMAP's own structured runtime events.
 The service-artifact apply flow provisions `/var/log/osmap` and pre-creates the
 two service log files before running the service enablement validator.
 
+## Edge Log Separation
+
+The public browser edge for OSMAP must not share access or error logs with
+WireGuard-only mail, admin, and control-plane locations. The reviewed
+`mail.blackbagsecurity.com` Nginx artifact uses:
+
+- `/var/log/nginx/osmap.public.access.log`
+- `/var/log/nginx/osmap.public.error.log`
+
+Private SOGo, PostfixAdmin, Rspamd, monitoring, DR, and webhook locations use:
+
+- `/var/log/nginx/mail.private.access.log`
+- `/var/log/nginx/mail.private.error.log`
+
+This separation keeps public OSMAP reconnaissance, authentication, and
+application failures reviewable without mixing them into private operator
+traffic. Host-level Nginx configuration should include Host, server name,
+request method, URI, status, upstream status, and timing fields in the selected
+access-log format.
+
 ## Metrics
 
 The project should eventually expose basic operational metrics for:

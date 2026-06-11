@@ -249,6 +249,14 @@ if ! doas -u vmail test -r "${HELPER_ENV_PATH}"; then
   append_failed_check "helper_env_not_readable_by_runtime_user"
 fi
 
+if doas test -f "${SERVE_ENV_PATH}" && doas ls -ld "${SERVE_ENV_PATH}" | awk '{ exit (substr($1, 8, 1) == "r" ? 0 : 1) }'; then
+  append_failed_check "serve_env_world_readable"
+fi
+
+if doas test -f "${HELPER_ENV_PATH}" && doas ls -ld "${HELPER_ENV_PATH}" | awk '{ exit (substr($1, 8, 1) == "r" ? 0 : 1) }'; then
+  append_failed_check "helper_env_world_readable"
+fi
+
 if ! doas test -f "${SERVE_LOG_PATH}"; then
   append_failed_check "missing_serve_log_file"
 fi

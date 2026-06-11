@@ -242,10 +242,25 @@ if [ "${PUBLIC_INCLUDE_TARGETS:-}" != "/etc/nginx/templates/ssl.tmpl,/etc/nginx/
   append_failed_check "public_https_server_block_not_osmap_only"
 fi
 
+if ! printf '%s\n' "${PUBLIC_SERVER_CONTENT}" | grep -Fq 'access_log /var/log/nginx/osmap.public.access.log;'; then
+  append_failed_check "public_osmap_access_log_not_segregated"
+fi
+
+if ! printf '%s\n' "${PUBLIC_SERVER_CONTENT}" | grep -Fq 'error_log  /var/log/nginx/osmap.public.error.log;'; then
+  append_failed_check "public_osmap_error_log_not_segregated"
+fi
+
+if ! printf '%s\n' "${PRIVATE_SERVER_CONTENT}" | grep -Fq 'access_log /var/log/nginx/mail.private.access.log;'; then
+  append_failed_check "private_access_log_not_segregated"
+fi
+
+if ! printf '%s\n' "${PRIVATE_SERVER_CONTENT}" | grep -Fq 'error_log  /var/log/nginx/mail.private.error.log;'; then
+  append_failed_check "private_error_log_not_segregated"
+fi
+
 for private_template in \
   /etc/nginx/templates/sogo.tmpl \
   /etc/nginx/templates/postfixadmin.tmpl \
-  /etc/nginx/templates/php-catchall.tmpl \
   /etc/nginx/templates/stub_status.tmpl \
   /etc/nginx/templates/pf_dashboard.locations.tmpl \
   /etc/nginx/templates/ops_monitor.locations.tmpl \
@@ -264,6 +279,10 @@ done
 
 if printf '%s\n' "${MAIN_SSL_CONTENT}" | grep -Fq 'include /etc/nginx/templates/roundcube.tmpl;'; then
   append_failed_check "canonical_https_vhost_still_includes_roundcube_template"
+fi
+
+if printf '%s\n' "${MAIN_SSL_CONTENT}" | grep -Fq 'include /etc/nginx/templates/php-catchall.tmpl;'; then
+  append_failed_check "canonical_https_vhost_still_includes_php_catchall_template"
 fi
 
 if ! printf '%s\n' "${OSMAP_ROOT_TEMPLATE_CONTENT}" | grep -Fq 'location = /mail { return 301 /; }'; then

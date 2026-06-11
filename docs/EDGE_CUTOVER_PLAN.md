@@ -82,6 +82,9 @@ server {
 
     include /etc/nginx/templates/ssl.tmpl;
     include /etc/nginx/templates/osmap-root.tmpl;
+
+    access_log /var/log/nginx/osmap.public.access.log;
+    error_log  /var/log/nginx/osmap.public.error.log;
 }
 ```
 
@@ -105,13 +108,15 @@ server {
     include /etc/nginx/templates/osmap-root.tmpl;
     include /etc/nginx/templates/sogo.tmpl;
     include /etc/nginx/templates/postfixadmin.tmpl;
-    include /etc/nginx/templates/php-catchall.tmpl;
     include /etc/nginx/templates/stub_status.tmpl;
     include /etc/nginx/templates/pf_dashboard.locations.tmpl;
     include /etc/nginx/templates/ops_monitor.locations.tmpl;
     include /etc/nginx/templates/obsd1_dr_portal.locations.tmpl;
     include /etc/nginx/templates/rspamd.tmpl;
     include /etc/nginx/templates/brevo_webhook.locations.tmpl;
+
+    access_log /var/log/nginx/mail.private.access.log;
+    error_log  /var/log/nginx/mail.private.error.log;
 }
 ```
 
