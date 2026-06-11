@@ -186,9 +186,9 @@ do
 done
 
 doas chgrp _osmap "\$serve_env"
-doas chmod 0640 "\$serve_env"
+doas chmod 0644 "\$serve_env"
 doas chgrp vmail "\$helper_env"
-doas chmod 0640 "\$helper_env"
+doas chmod 0644 "\$helper_env"
 doas install -d -o _osmap -g _osmap -m 0750 "\$serve_state_dir" "\$serve_runtime_dir" "\$serve_session_dir" "\$serve_settings_dir" "\$serve_audit_dir" "\$serve_cache_dir"
 doas install -d -o _osmap -g _osmap -m 0700 "\$serve_totp_parent" "\$serve_totp_dir"
 doas install -d -o vmail -g "\$shared_group" -m 0710 "\$helper_state_dir"

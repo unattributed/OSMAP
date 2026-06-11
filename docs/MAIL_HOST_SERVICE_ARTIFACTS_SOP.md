@@ -102,6 +102,13 @@ That mode runs the generated `apply-service-artifacts.sh`, which:
   - `helper_log_path_not_var_log`
   - `serve_grant_key_path_missing`
   - `helper_grant_key_path_missing`
+  - `serve_env_not_readable_by_runtime_user`
+  - `helper_env_not_readable_by_runtime_user`
+
+The env files are non-secret daemon configuration and are installed mode `0644`
+so `_osmap` and `vmail` can read their own runtime settings after `rc.d` drops
+privileges. Secret material remains in the permission-restricted grant-key and
+TOTP-secret files under `/var/lib/.../secrets`.
 
 This is intentionally narrower than the full service gate. The artifact apply
 can be accepted as successful even if the validator still fails on service

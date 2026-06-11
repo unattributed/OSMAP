@@ -241,6 +241,14 @@ if ! doas test -f "${HELPER_ENV_PATH}"; then
   append_failed_check "missing_helper_env_file"
 fi
 
+if ! doas -u _osmap test -r "${SERVE_ENV_PATH}"; then
+  append_failed_check "serve_env_not_readable_by_runtime_user"
+fi
+
+if ! doas -u vmail test -r "${HELPER_ENV_PATH}"; then
+  append_failed_check "helper_env_not_readable_by_runtime_user"
+fi
+
 if ! doas test -f "${SERVE_LOG_PATH}"; then
   append_failed_check "missing_serve_log_file"
 fi

@@ -141,8 +141,8 @@ validator_report=$(quote_sh "${VALIDATOR_REPORT_PATH}")
 
 doas install -d "\$osmap_env_dir" "\$osmap_libexec_dir" "\$osmap_rc_dir"
 doas install -d -m 0755 "\$osmap_log_dir"
-doas install -m 0640 $(quote_sh "${STAGED_ROOT}/${SERVE_ENV_RELATIVE_PATH}") $(quote_sh "${LIVE_SERVE_ENV_PATH}")
-doas install -m 0640 $(quote_sh "${STAGED_ROOT}/${HELPER_ENV_RELATIVE_PATH}") $(quote_sh "${LIVE_HELPER_ENV_PATH}")
+doas install -m 0644 $(quote_sh "${STAGED_ROOT}/${SERVE_ENV_RELATIVE_PATH}") $(quote_sh "${LIVE_SERVE_ENV_PATH}")
+doas install -m 0644 $(quote_sh "${STAGED_ROOT}/${HELPER_ENV_RELATIVE_PATH}") $(quote_sh "${LIVE_HELPER_ENV_PATH}")
 doas install -m 0555 $(quote_sh "${STAGED_ROOT}/${SERVE_RUN_RELATIVE_PATH}") $(quote_sh "${LIVE_SERVE_RUN_PATH}")
 doas install -m 0555 $(quote_sh "${STAGED_ROOT}/${HELPER_RUN_RELATIVE_PATH}") $(quote_sh "${LIVE_HELPER_RUN_PATH}")
 doas install -m 0555 $(quote_sh "${STAGED_ROOT}/${SERVE_RC_RELATIVE_PATH}") $(quote_sh "${LIVE_SERVE_RC_PATH}")
@@ -183,7 +183,9 @@ for failed_check in \
   serve_log_path_not_var_log \
   helper_log_path_not_var_log \
   serve_grant_key_path_missing \
-  helper_grant_key_path_missing
+  helper_grant_key_path_missing \
+  serve_env_not_readable_by_runtime_user \
+  helper_env_not_readable_by_runtime_user
 do
   if grep -Fq "\${failed_check}" "\$validator_report"; then
     printf '%s\n' "service validator still reports \${failed_check} after service-artifact apply" >&2
@@ -218,8 +220,8 @@ write_restore_script() {
 set -eu
 EOF
 
-  write_restore_install_or_remove "${BACKUP_ROOT}/${SERVE_ENV_RELATIVE_PATH}" "${LIVE_SERVE_ENV_PATH}" "${RESTORE_SCRIPT_PATH}" "0640"
-  write_restore_install_or_remove "${BACKUP_ROOT}/${HELPER_ENV_RELATIVE_PATH}" "${LIVE_HELPER_ENV_PATH}" "${RESTORE_SCRIPT_PATH}" "0640"
+  write_restore_install_or_remove "${BACKUP_ROOT}/${SERVE_ENV_RELATIVE_PATH}" "${LIVE_SERVE_ENV_PATH}" "${RESTORE_SCRIPT_PATH}" "0644"
+  write_restore_install_or_remove "${BACKUP_ROOT}/${HELPER_ENV_RELATIVE_PATH}" "${LIVE_HELPER_ENV_PATH}" "${RESTORE_SCRIPT_PATH}" "0644"
   write_restore_install_or_remove "${BACKUP_ROOT}/${SERVE_RUN_RELATIVE_PATH}" "${LIVE_SERVE_RUN_PATH}" "${RESTORE_SCRIPT_PATH}" "0555"
   write_restore_install_or_remove "${BACKUP_ROOT}/${HELPER_RUN_RELATIVE_PATH}" "${LIVE_HELPER_RUN_PATH}" "${RESTORE_SCRIPT_PATH}" "0555"
   write_restore_install_or_remove "${BACKUP_ROOT}/${SERVE_RC_RELATIVE_PATH}" "${LIVE_SERVE_RC_PATH}" "${RESTORE_SCRIPT_PATH}" "0555"

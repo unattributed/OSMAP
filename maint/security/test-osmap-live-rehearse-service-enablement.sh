@@ -81,6 +81,9 @@ chmod 0755 "${fake_live_usr_local_dir}/bin/osmap"
 
 cat > "${fake_bin_dir}/doas" <<'EOF'
 #!/bin/sh
+if [ "$1" = "-u" ]; then
+  shift 2
+fi
 if [ "$1" = "test" ]; then
   shift
   exec test "$@"

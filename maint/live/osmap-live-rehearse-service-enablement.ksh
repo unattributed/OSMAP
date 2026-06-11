@@ -199,8 +199,8 @@ doas install -d -o vmail -g "\$shared_group" -m 2770 "\$helper_runtime_dir"
 doas install -d -o vmail -g vmail -m 0750 "\$helper_session_dir" "\$helper_settings_dir" "\$helper_audit_dir" "\$helper_cache_dir"
 doas install -d -o vmail -g vmail -m 0700 "\$(dirname "\$helper_totp_dir")" "\$helper_totp_dir"
 
-doas install -m 0640 $(quote_sh "${STAGED_ROOT}/${SERVE_ENV_RELATIVE_PATH}") $(quote_sh "${LIVE_SERVE_ENV_PATH}")
-doas install -m 0640 $(quote_sh "${STAGED_ROOT}/${HELPER_ENV_RELATIVE_PATH}") $(quote_sh "${LIVE_HELPER_ENV_PATH}")
+doas install -m 0644 $(quote_sh "${STAGED_ROOT}/${SERVE_ENV_RELATIVE_PATH}") $(quote_sh "${LIVE_SERVE_ENV_PATH}")
+doas install -m 0644 $(quote_sh "${STAGED_ROOT}/${HELPER_ENV_RELATIVE_PATH}") $(quote_sh "${LIVE_HELPER_ENV_PATH}")
 doas install -m 0555 $(quote_sh "${STAGED_ROOT}/${SERVE_RUN_RELATIVE_PATH}") $(quote_sh "${LIVE_SERVE_RUN_PATH}")
 doas install -m 0555 $(quote_sh "${STAGED_ROOT}/${HELPER_RUN_RELATIVE_PATH}") $(quote_sh "${LIVE_HELPER_RUN_PATH}")
 doas install -m 0555 $(quote_sh "${STAGED_ROOT}/${SERVE_RC_RELATIVE_PATH}") $(quote_sh "${LIVE_SERVE_RC_PATH}")
@@ -245,8 +245,8 @@ doas rcctl stop osmap_mailbox_helper >/dev/null 2>&1 || true
 doas rm -f $(quote_sh "${LIVE_HELPER_RUNTIME_DIR}/mailbox-helper.sock")
 EOF
 
-  write_restore_install_or_remove "${BACKUP_ROOT}/${SERVE_ENV_RELATIVE_PATH}" "${LIVE_SERVE_ENV_PATH}" "${RESTORE_SCRIPT_PATH}" "0640"
-  write_restore_install_or_remove "${BACKUP_ROOT}/${HELPER_ENV_RELATIVE_PATH}" "${LIVE_HELPER_ENV_PATH}" "${RESTORE_SCRIPT_PATH}" "0640"
+  write_restore_install_or_remove "${BACKUP_ROOT}/${SERVE_ENV_RELATIVE_PATH}" "${LIVE_SERVE_ENV_PATH}" "${RESTORE_SCRIPT_PATH}" "0644"
+  write_restore_install_or_remove "${BACKUP_ROOT}/${HELPER_ENV_RELATIVE_PATH}" "${LIVE_HELPER_ENV_PATH}" "${RESTORE_SCRIPT_PATH}" "0644"
   write_restore_install_or_remove "${BACKUP_ROOT}/${SERVE_RUN_RELATIVE_PATH}" "${LIVE_SERVE_RUN_PATH}" "${RESTORE_SCRIPT_PATH}" "0555"
   write_restore_install_or_remove "${BACKUP_ROOT}/${HELPER_RUN_RELATIVE_PATH}" "${LIVE_HELPER_RUN_PATH}" "${RESTORE_SCRIPT_PATH}" "0555"
   write_restore_install_or_remove "${BACKUP_ROOT}/${SERVE_RC_RELATIVE_PATH}" "${LIVE_SERVE_RC_PATH}" "${RESTORE_SCRIPT_PATH}" "0555"

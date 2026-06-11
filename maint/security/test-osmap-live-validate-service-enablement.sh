@@ -104,8 +104,11 @@ EOF
 printf '%s\n' 'cafebabe'
 EOF
 
-  cat > "${bin_dir}/doas" <<'EOF'
+	  cat > "${bin_dir}/doas" <<'EOF'
 #!/bin/sh
+if [ "$1" = "-u" ]; then
+  shift 2
+fi
 if [ "$1" = "test" ]; then
   shift
   if [ "$1" = "-S" ]; then
@@ -260,6 +263,7 @@ assert_contains "${fail_report_contents}" "osmap_service_enablement_result=faile
 assert_contains "${fail_report_contents}" "missing_osmap_binary"
 assert_contains "${fail_report_contents}" "osmap_user_missing_shared_runtime_group_membership"
 assert_contains "${fail_report_contents}" "missing_helper_env_file"
+assert_contains "${fail_report_contents}" "helper_env_not_readable_by_runtime_user"
 assert_contains "${fail_report_contents}" "mailbox_helper_service_not_healthy"
 assert_contains "${fail_report_contents}" "serve_service_not_healthy"
 assert_contains "${fail_report_contents}" "missing_helper_socket"

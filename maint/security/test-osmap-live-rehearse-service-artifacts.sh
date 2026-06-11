@@ -149,6 +149,9 @@ if [ "$1" = "cat" ]; then
   shift
   exec cat "$@"
 fi
+if [ "$1" = "-u" ]; then
+  shift 2
+fi
 exec "$@"
 EOF
 
@@ -309,6 +312,8 @@ assert_not_contains "${validator_report}" "missing_serve_log_file"
 assert_not_contains "${validator_report}" "missing_helper_log_file"
 assert_not_contains "${validator_report}" "serve_grant_key_path_missing"
 assert_not_contains "${validator_report}" "helper_grant_key_path_missing"
+assert_not_contains "${validator_report}" "serve_env_not_readable_by_runtime_user"
+assert_not_contains "${validator_report}" "helper_env_not_readable_by_runtime_user"
 
 env \
   PATH="${fake_bin_dir}:${PATH}" \

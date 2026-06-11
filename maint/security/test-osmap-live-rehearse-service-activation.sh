@@ -129,6 +129,9 @@ EOF
 
 cat > "${fake_bin_dir}/doas" <<'EOF'
 #!/bin/sh
+if [ "$1" = "-u" ]; then
+  shift 2
+fi
 if [ "$1" = "test" ]; then
   shift
   exec test "$@"
