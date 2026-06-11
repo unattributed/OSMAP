@@ -12,8 +12,9 @@ The repository deliberately separates:
 - Private operator notes and working material under ignored paths such as
   `PKCB/` and `AGENTS.md`
 
-As of April 24, 2026, the project has substantive public-safe documentation
-through Version 2 pilot closeout. The current baseline was built from:
+As of June 11, 2026, the project has substantive public-safe documentation
+through Version 4 hostile-content release closeout. The current baseline was
+built from:
 
 - private PKCB planning notes
 - repository phase control blocks
@@ -21,6 +22,9 @@ through Version 2 pilot closeout. The current baseline was built from:
 - current in-repo Rust implementation and validation evidence
 - repo-owned Version 2 readiness, public-exposure, rollback, and pilot
   closeout records
+- repo-owned Version 3 release carry-forward evidence
+- repo-owned Version 4 hostile-content live proof, closeout evidence, and
+  release handoff records
 
 The documents in this folder are written for two audiences:
 
@@ -110,12 +114,13 @@ Current primary documents:
 - `DECISION_LOG.md`
 
 The intent of these documents is operational usefulness, not ceremony. Phase 0
-through Version 2 documents should stay populated, current, and reviewable as
+through Version 4 documents should stay populated, current, and reviewable as
 the project moves through maintenance, migration planning, broader hardening,
-and future Version 3 workflow work. The current Version 2 documentation set
-records a bounded pilot-complete state, not broad production readiness or
-feature expansion. Requested additional functionality and Thunderbird-like UX
-polish remain Version 3 or later work.
+and future scoped work. The Version 4 documentation set records a bounded
+hostile-content safety release, not broad production readiness, rich-mail
+rendering, malware prevention, or Roundcube parity. Requested additional
+functionality and Thunderbird-like UX polish remain future-version work unless
+a later definition explicitly brings them into scope.
 
 Some later-phase or deferred documents remain placeholders so the intended
 documentation map is visible without publishing private notes prematurely.

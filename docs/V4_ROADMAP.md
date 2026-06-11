@@ -34,13 +34,15 @@ Roundcube parity.
 
 ## Current Status
 
-The first V4 implementation slice has started and is present on `main`.
+All planned V4 roadmap slices have completed for the assessed release claim.
 
 Current completed local pieces include:
 
 - `docs/V4_HOSTILE_CONTENT_SAFETY_GOALS.md`
 - `docs/V4_HOSTILE_CONTENT_TEST_MATRIX.md`
 - `docs/V4_MIME_AMBIGUITY_EVIDENCE.md`
+- `docs/V4_CLOSEOUT_EVIDENCE.md`
+- `docs/V4_RELEASE_OPERATOR_HANDOFF.md`
 - sanitizer fixture expansion in `src/rendering_html.rs`
 - link destination disclosure CSS in `src/http_support.rs`
 - executable attachment download hardening in `src/attachment.rs`
@@ -66,10 +68,11 @@ The V4 hostile-content closeout evidence bundle is assembled for assessed code
 commit `09a95b7`, including refreshed V3 carry-forward evidence and the
 residual-risk statement in `docs/V4_CLOSEOUT_EVIDENCE.md`.
 
-## First Next Step
+The annotated release tag `v4.0.0` resolves to evidence bundle commit
+`59da020`. The tag and release handoff identify `09a95b7` as the assessed V4
+code commit.
 
-Cut or declare the V4 assessed release point from `09a95b7` if no further code
-changes are needed.
+## Post-Release Rule
 
 Before any later code change can inherit the V4 claim, rerun the evidence pass
 so the proof again shows:

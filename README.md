@@ -143,6 +143,10 @@ Each phase produces documentation, implementation changes, validation scripts, o
 
 OSMAP is now a working Rust prototype with live-host validation evidence. It is no longer only a planning repository.
 
+The current release evidence is anchored by `v4.0.0`, a hostile-content safety
+release tag. That tag resolves to evidence bundle commit `59da020`; the V4 code
+behavior assessed by the release evidence is commit `09a95b7`.
+
 The current implementation includes:
 
 - Typed runtime configuration
@@ -158,9 +162,15 @@ The current implementation includes:
 - Bounded one-mailbox and all-mailbox search
 - MIME-aware message inspection
 - Safe HTML rendering through a narrow sanitizer
+- Hostile HTML containment for active content, unsafe schemes, remote fetch
+  surfaces, forms, SVG, MathML, frames, embeds, templates, media, comments, and
+  metadata refresh
+- Visible destination disclosure for preserved message-body links
 - Plain-text fallback preference
 - Attachment upload limits
 - Forced-download attachment behavior
+- Browser-executable attachment media-type downgrade to
+  `application/octet-stream`
 - Compose and send
 - Reply and forward draft generation
 - One-message move support between existing mailboxes
@@ -202,6 +212,9 @@ Important validation entry points include:
 - [`maint/live/osmap-host-validate.ksh`](maint/live/osmap-host-validate.ksh)
 - [`maint/live/osmap-live-validate-v1-closeout.ksh`](maint/live/osmap-live-validate-v1-closeout.ksh)
 - [`maint/live/osmap-run-v1-closeout-over-ssh.sh`](maint/live/osmap-run-v1-closeout-over-ssh.sh)
+- [`maint/live/osmap-live-validate-v3-mime-html-proof.ksh`](maint/live/osmap-live-validate-v3-mime-html-proof.ksh)
+- [`maint/live/osmap-live-record-v3-pilot-rehearsal.ksh`](maint/live/osmap-live-record-v3-pilot-rehearsal.ksh)
+- [`maint/live/osmap-live-validate-v4-hostile-content.ksh`](maint/live/osmap-live-validate-v4-hostile-content.ksh)
 
 Validation performed so far includes:
 
@@ -213,6 +226,9 @@ Validation performed so far includes:
 - Helper-backed message view
 - Helper-backed attachment download
 - Sanitized HTML rendering
+- V4 hostile-content rendering containment
+- V4 executable attachment download containment
+- V4 MIME ambiguity and metadata breadth regression coverage
 - Plain-text fallback preference persistence
 - Settings-backed archive shortcut behavior
 - One-message move from `INBOX` to `Junk`
@@ -222,6 +238,8 @@ Validation performed so far includes:
 - Message-move throttle proof
 - Capacity-reached and over-capacity listener behavior
 - Response-write failure and recovery observability
+- V3 release carry-forward evidence for the assessed V4 code commit
+- V4 closeout evidence and operator handoff for tag `v4.0.0`
 
 The repository-owned security validation currently has two lanes:
 
@@ -233,7 +251,11 @@ The TLS validation gate is:
 - [`maint/security/osmap-tls-policy-guard.sh`](maint/security/osmap-tls-policy-guard.sh) for static repository policy drift
 - [`maint/security/osmap-live-tls-standard-validate.py`](maint/security/osmap-live-tls-standard-validate.py) for live edge evidence, defaulting to `https://mail.blackbagsecurity.com`
 
-Further supply-chain assurance work is planned for Version 3.
+Supply-chain assurance is now part of the repo-owned security and release
+checks. V4 release evidence carries forward the refreshed V3 release evidence
+bundle, including the strict `make release-check` output captured under
+`maint/live/osmap-v3-release-evidence-summary.md` and
+`maint/live/osmap-v3-release-evidence-summary.json`.
 
 ---
 
@@ -370,7 +392,11 @@ The implemented validation entry points are:
 
 `make release-check` requires the pinned Rust toolchain and supply-chain tools, dependency inventory generation, V2 carry-forward evidence, host-readiness evidence, a release-mode WSTG summary with authenticated credential and TOTP coverage where required, current V3 pilot rehearsal evidence, and a sanitized release evidence archive. It is expected to fail on a normal workstation until those operator-provided evidence files and credentials are available.
 
-V3 cannot close until every critical WSTG due-diligence slice is coded, tested, and evidenced, or explicitly recorded as not applicable with a reviewed reason. High-priority WSTG gaps may not be silently deferred. A deferral requires a dated decision-log entry, owner, reason, expiry or follow-up trigger, and evidence explaining why the item does not block the selected V3 daily-driver release.
+For the V4 release claim, V3 release evidence has been refreshed and carried
+forward for assessed commit `09a95b7`. Future changes that touch V3-governed
+surfaces still must preserve the strict release-check rule: required WSTG,
+authenticated, supply-chain, TLS, helper-boundary, resource-control, pilot, and
+sanitized-evidence gates may not be silently skipped.
 
 Unless a narrower daily-driver need is proven and covered by tests, the following remain beyond Version 3:
 
@@ -380,6 +406,39 @@ Unless a narrower daily-driver need is proven and covered by tests, the followin
 - Multi-tenant hosting
 - Enterprise identity federation
 - ProtonMail-style zero-access encryption
+
+---
+
+## V4 Direction
+
+Version 4 is the hostile-content safety release for the OSMAP browser-mail
+boundary. It preserves the Version 3 daily-driver security gates while adding
+evidence for hostile HTML rendering, visible preserved-link destinations,
+browser-executable attachment containment, MIME ambiguity handling, and
+release-evidence redaction.
+
+The authoritative Version 4 definition, release gates, evidence, and operator
+handoff live in:
+
+- [`docs/V4_DEFINITION.md`](docs/V4_DEFINITION.md)
+- [`docs/V4_ACCEPTANCE_CRITERIA.md`](docs/V4_ACCEPTANCE_CRITERIA.md)
+- [`docs/V4_ROADMAP.md`](docs/V4_ROADMAP.md)
+- [`docs/V4_SECURITY_GATES.md`](docs/V4_SECURITY_GATES.md)
+- [`docs/V4_CLOSEOUT_EVIDENCE.md`](docs/V4_CLOSEOUT_EVIDENCE.md)
+- [`docs/V4_MIME_AMBIGUITY_EVIDENCE.md`](docs/V4_MIME_AMBIGUITY_EVIDENCE.md)
+- [`docs/V4_RELEASE_OPERATOR_HANDOFF.md`](docs/V4_RELEASE_OPERATOR_HANDOFF.md)
+
+The short form is:
+
+- `v4.0.0` is the release tag for the current V4 evidence bundle
+- evidence bundle commit `59da020` records the V4 closeout state
+- assessed V4 code commit `09a95b7` is the code behavior covered by the V4
+  release claim
+- OSMAP V4 contains hostile message content inside the browser boundary
+- V4 does not claim rich-mail safety, malware prevention, attachment preview
+  safety, URL reputation, document sanitization, archive inspection, or safety
+  for files opened outside OSMAP
+- any later code change must refresh V4 evidence before inheriting the V4 claim
 
 ## Target Users
 

@@ -46,6 +46,7 @@ The V4 local safety guard requires this document and the named product-code
 tests. The full `make security-check` path runs the Rust test suite before the
 shell guards.
 
-Full V4 release closeout still requires the final assessed release commit or
-tag to carry this evidence alongside the local security gate, V3 carry-forward
-evidence, live hostile-content proof, and residual-risk statement.
+This evidence is carried by the V4 assessed code commit `09a95b7` and by the
+`v4.0.0` evidence bundle at `59da020`. Any later code change that alters MIME
+analysis, rendering, attachment metadata, or closeout evidence must refresh
+this proof before inheriting the V4 hostile-content safety claim.

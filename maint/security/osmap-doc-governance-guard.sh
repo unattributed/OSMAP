@@ -23,6 +23,7 @@ require_text() {
 	fi
 }
 
+readme="${repo_root}/README.md"
 charter="${repo_root}/docs/PROJECT_CHARTER.md"
 program_baseline="${repo_root}/docs/PROGRAM_BASELINE.md"
 v1_requirements="${repo_root}/docs/PRODUCT_REQUIREMENTS_V1.md"
@@ -36,6 +37,7 @@ v4_release_handoff="${repo_root}/docs/V4_RELEASE_OPERATOR_HANDOFF.md"
 v4_mime_ambiguity_evidence="${repo_root}/docs/V4_MIME_AMBIGUITY_EVIDENCE.md"
 v4_closeout_guard="${repo_root}/maint/security/test-osmap-v4-closeout-evidence.sh"
 
+require_file "$readme"
 require_file "$charter"
 require_file "$program_baseline"
 require_file "$v1_requirements"
@@ -48,6 +50,12 @@ require_file "$v4_closeout_evidence"
 require_file "$v4_release_handoff"
 require_file "$v4_mime_ambiguity_evidence"
 require_file "$v4_closeout_guard"
+
+require_text "$readme" "The current release evidence is anchored by \`v4.0.0\`"
+require_text "$readme" "evidence bundle commit \`59da020\`"
+require_text "$readme" "assessed V4 code commit \`09a95b7\`"
+require_text "$readme" "V4 does not claim rich-mail safety, malware prevention, attachment preview"
+require_text "$readme" "any later code change must refresh V4 evidence"
 
 require_text "$charter" "The project is not a mail-server replacement"
 require_text "$charter" "not a general"
@@ -108,7 +116,8 @@ require_text "$v4_release_handoff" 'Any code change after `09a95b7` requires ref
 
 require_text "$v4_mime_ambiguity_evidence" "malformed, nested, suspicious, unsupported, and oversized MIME inputs"
 require_text "$v4_mime_ambiguity_evidence" "product-code regression tests"
-require_text "$v4_mime_ambiguity_evidence" "Full V4 release closeout still requires"
+require_text "$v4_mime_ambiguity_evidence" 'This evidence is carried by the V4 assessed code commit `09a95b7`'
+require_text "$v4_mime_ambiguity_evidence" '`v4.0.0` evidence bundle at `59da020`'
 
 require_text "$v4_closeout_guard" "V4 closeout evidence checks passed"
 require_text "$v4_closeout_guard" "v4_hostile_content_live_proof_passed"

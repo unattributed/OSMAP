@@ -41,8 +41,7 @@ sanitized selected-cohort rehearsal evidence exists for the assessed commit.
 
 ## Current Status
 
-As of commit `1b02a44c55a83cdfa2b412a51c43f7125430f7de`, the active V3
-implementation order is still the table above. The release gate, supply-chain
+As of the V4 assessed code commit `09a95b7`, the release gate, supply-chain
 gate, resource and timeout evidence path, WSTG release-mode coverage,
 MIME/HTML live proof path, draft save/resume slice, reply/forward attachment
 selection slice, bounded search refinements, TLS standard evidence, and pilot
@@ -55,42 +54,30 @@ The richer bounded search slice has two implemented sub-slices:
 - whitelisted search field refinement with `field=all|subject|from`
 
 Those sub-slices passed local Rust validation and the developer
-`make security-check` gate. The checked-in release evidence summary is older
-than the current repository tip and predates the pilot-rehearsal status fields
-now emitted by `make release-check`.
+`make security-check` gate. The V3 release evidence was refreshed during V4
+closeout for assessed ref `09a95b7f4e9744a20bcd85430e4f0428cafeebe7`; the
+tracked evidence is:
 
-The current operating decision is to stop treating the checked-in release
-summary as current V3 closeout evidence. The next best effort is one deliberate
-standard-host update, selected-cohort pilot rehearsal capture with
-`maint/live/osmap-live-record-v3-pilot-rehearsal.ksh`, fresh interactive
-credential-backed WSTG release capture for the assessed commit, and a strict
-`make release-check` rerun that regenerates the sanitized evidence summary and
-archive for that same commit.
+- `maint/live/osmap-v3-release-evidence-summary.md`
+- `maint/live/osmap-v3-release-evidence-summary.json`
+- `maint/live/osmap-v3-release-evidence.tar.gz`
 
-## First Next Step
+That refreshed release evidence is carried forward by
+`docs/V4_CLOSEOUT_EVIDENCE.md` and the `v4.0.0` release handoff.
 
-Start by making the V3 release gate honest before adding more daily-driver surface.
+## Post-V3 Rule
 
-The first release-gate foundation implementation is now `make release-check`.
-It keeps `make security-check` as developer partial validation and adds a
-strict release profile that fails on skipped required phases, missing pinned
-tools, missing dependency inventory, missing V2 or host evidence, missing
-release-mode WSTG evidence, or missing sanitized evidence summary/archive
-generation.
+The release-gate foundation implementation is `make release-check`. It keeps
+`make security-check` as developer partial validation and adds a strict release
+profile that fails on skipped required phases, missing pinned tools, missing
+dependency inventory, missing V2 or host evidence, missing release-mode WSTG
+evidence, missing V3 MIME/HTML live proof, missing pilot rehearsal evidence, or
+missing sanitized evidence summary/archive generation.
 
-The first implementation plan should inspect and extend:
-
-- `Makefile`
-- `maint/security/osmap-security-check.sh`
-- `maint/security/osmap-supply-chain-check.sh`
-- `maint/security/test-osmap-wstg-testing-pack.sh`
-- `maint/wstg-testing-pack/README.md`
-- `maint/wstg-testing-pack/run.sh`
-- `maint/wstg-testing-pack/run-wstg-pack.py`
-- `maint/wstg-testing-pack/wstg-asvs-mapping.json`
-- the current evidence references in `docs/V2_PILOT_STATUS.md`, `docs/V2_PILOT_CLOSEOUT.md`, `docs/INTERNET_EXPOSURE_STATUS.md`, and the V3 docs
-
-The expected outcome is not a large feature. The expected outcome is a clean release-mode path that proves when full security validation actually happened and fails when required evidence is missing.
+Future changes that touch V3-governed browser, authentication, session, helper,
+mailbox, send, search, MIME, attachment, TLS, WSTG, or release-evidence
+surfaces must preserve this fail-closed release behavior before the change can
+inherit a later release claim.
 
 ## Functional Implementation Track
 

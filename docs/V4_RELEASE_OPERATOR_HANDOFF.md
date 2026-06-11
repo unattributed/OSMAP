@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document is the operator-facing handoff for the GitHub release created
+This document is the operator-facing handoff for the GitHub release to publish
 from tag `v4.0.0`.
 
 It packages the already-reviewed V4 closeout evidence into a short release-note
@@ -153,7 +153,7 @@ and assessed V4 code commit `09a95b7`.
 Any code change after `09a95b7` requires refreshed V4 evidence before it can
 inherit the V4 hostile-content safety claim.
 
-Any evidence-bundle change after `59da020` should be treated as post-release
+Any evidence-bundle change after `59da020` should be treated as post-tag
 documentation unless a new tag or release note explicitly supersedes
 `v4.0.0`.
 
