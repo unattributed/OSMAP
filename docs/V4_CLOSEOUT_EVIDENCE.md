@@ -77,6 +77,10 @@ contents, provider tokens, or host secrets.
 The V4 live hostile-content proof slice is complete for assessed commit
 `a3f6e98`.
 
+The V4 MIME ambiguity and metadata breadth slice is locally covered by
+`docs/V4_MIME_AMBIGUITY_EVIDENCE.md` and the named product-code regression
+tests in `src/mime.rs`.
+
 Full V4 closeout still requires the final closeout bundle to include:
 
 - the local security gate for the final assessed release commit or tag
@@ -85,4 +89,3 @@ Full V4 closeout still requires the final closeout bundle to include:
   commit or tag
 - a final residual-risk statement for external links and files opened outside
   OSMAP
-

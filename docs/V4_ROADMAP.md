@@ -40,9 +40,11 @@ Current completed local pieces include:
 
 - `docs/V4_HOSTILE_CONTENT_SAFETY_GOALS.md`
 - `docs/V4_HOSTILE_CONTENT_TEST_MATRIX.md`
+- `docs/V4_MIME_AMBIGUITY_EVIDENCE.md`
 - sanitizer fixture expansion in `src/rendering_html.rs`
 - link destination disclosure CSS in `src/http_support.rs`
 - executable attachment download hardening in `src/attachment.rs`
+- MIME ambiguity and metadata breadth regression tests in `src/mime.rs`
 - local V4 safety guard in `maint/security/test-osmap-v4-hostile-content-safety.sh`
 - live validator wrapper regression in
   `maint/security/test-osmap-live-validate-v4-hostile-content.sh`
@@ -53,6 +55,12 @@ The live V4 hostile-content proof has now passed on the reviewed OpenBSD host
 for assessed commit `a3f6e98`. The sanitized report is archived at
 `maint/live/latest-host-v4-hostile-content-report.txt`, and the evidence
 summary is recorded in `docs/V4_CLOSEOUT_EVIDENCE.md`.
+
+The V4 MIME ambiguity and metadata breadth slice is covered by product-code
+tests named in `docs/V4_MIME_AMBIGUITY_EVIDENCE.md`. That evidence covers
+malformed multipart input, nested-depth withholding, unsupported transfer
+encodings, suspicious filename metadata, malformed RFC 2231 metadata, and
+oversized boundary failure behavior.
 
 The remaining release-closeout work is to carry this proof forward to the final
 V4 assessed release commit or tag, archive the full local and carry-forward

@@ -1733,6 +1733,178 @@ mod tests {
     }
 
     #[test]
+    fn v4_mime_missing_multipart_boundary_withholds_structure() {
+        let analyzer = MimeAnalyzer::new(MimeAnalysisPolicy::default());
+        let analysis = analyzer
+            .analyze_message(&message_view(
+                "Subject: Missing boundary\nContent-Type: multipart/mixed\n",
+                concat!(
+                    "--untrusted\n",
+                    "Content-Type: text/html; charset=utf-8\n",
+                    "\n",
+                    "<script>alert(1)</script>\n",
+                    "--untrusted--\n",
+                ),
+            ))
+            .expect("missing boundary should classify without panic");
+
+        assert_eq!(
+            analysis.body_source,
+            MimeBodySource::MultipartStructureWithheld
+        );
+        assert!(analysis.selected_plain_text_body.is_none());
+        assert!(analysis.selected_html_body.is_none());
+        assert!(analysis.attachments.is_empty());
+    }
+
+    #[test]
+    fn v4_mime_nested_depth_limit_withholds_deeper_structure() {
+        let analyzer = MimeAnalyzer::new(MimeAnalysisPolicy {
+            max_depth: 1,
+            ..MimeAnalysisPolicy::default()
+        });
+        let analysis = analyzer
+            .analyze_message(&message_view(
+                "Subject: Too nested\nContent-Type: multipart/mixed; boundary=\"outer\"\n",
+                concat!(
+                    "--outer\n",
+                    "Content-Type: multipart/alternative; boundary=\"inner\"\n",
+                    "\n",
+                    "--inner\n",
+                    "Content-Type: text/plain; charset=utf-8\n",
+                    "\n",
+                    "Hidden nested text\n",
+                    "--inner--\n",
+                    "--outer--\n",
+                ),
+            ))
+            .expect("depth-limited multipart should classify without panic");
+
+        assert_eq!(
+            analysis.body_source,
+            MimeBodySource::MultipartStructureWithheld
+        );
+        assert!(analysis.selected_plain_text_body.is_none());
+        assert!(analysis.selected_html_body.is_none());
+        assert!(analysis.attachments.is_empty());
+    }
+
+    #[test]
+    fn v4_mime_unsupported_transfer_encoding_withholds_text_body() {
+        let analyzer = MimeAnalyzer::new(MimeAnalysisPolicy::default());
+        let analysis = analyzer
+            .analyze_message(&message_view(
+                concat!(
+                    "Subject: Unsupported transfer\n",
+                    "Content-Type: text/plain; charset=utf-8\n",
+                    "Content-Transfer-Encoding: x-token\n",
+                ),
+                "This body must not render through an unknown decoder.\n",
+            ))
+            .expect("unsupported transfer encoding should not error");
+
+        assert_eq!(analysis.body_source, MimeBodySource::BinaryWithheld);
+        assert!(analysis.selected_plain_text_body.is_none());
+        assert!(analysis.selected_html_body.is_none());
+        assert!(analysis.attachments.is_empty());
+    }
+
+    #[test]
+    fn v4_mime_suspicious_filename_is_bounded_metadata_only() {
+        let analyzer = MimeAnalyzer::new(MimeAnalysisPolicy::default());
+        let analysis = analyzer
+            .analyze_message(&message_view(
+                "Subject: Suspicious name\nContent-Type: multipart/mixed; boundary=\"mix\"\n",
+                concat!(
+                    "--mix\n",
+                    "Content-Type: text/plain; charset=utf-8\n",
+                    "\n",
+                    "Safe preview\n",
+                    "--mix\n",
+                    "Content-Type: text/plain; name=\"../../.ssh/authorized_keys.html\"\n",
+                    "Content-Disposition: inline; filename=\"../../.ssh/authorized_keys.html\"\n",
+                    "\n",
+                    "<script>alert(1)</script>\n",
+                    "--mix--\n",
+                ),
+            ))
+            .expect("suspicious named part should analyze safely");
+
+        assert_eq!(
+            analysis.selected_plain_text_body.as_deref(),
+            Some("Safe preview")
+        );
+        assert_eq!(analysis.attachments.len(), 1);
+        assert_eq!(analysis.attachments[0].part_path, "1.2");
+        assert_eq!(
+            analysis.attachments[0].filename.as_deref(),
+            Some("../../.ssh/authorized_keys.html")
+        );
+        assert_eq!(analysis.attachments[0].content_type, "text/plain");
+        assert_eq!(analysis.attachments[0].size_hint_bytes, 25);
+        assert!(analysis
+            .selected_plain_text_body
+            .as_deref()
+            .is_some_and(|body| !body.contains("authorized_keys")));
+    }
+
+    #[test]
+    fn v4_mime_malformed_rfc2231_filename_still_surfaces_attachment() {
+        let analyzer = MimeAnalyzer::new(MimeAnalysisPolicy::default());
+        let analysis = analyzer
+            .analyze_message(&message_view(
+                "Subject: Malformed filename\nContent-Type: multipart/mixed; boundary=\"mix\"\n",
+                concat!(
+                    "--mix\n",
+                    "Content-Type: text/plain\n",
+                    "\n",
+                    "Safe preview\n",
+                    "--mix\n",
+                    "Content-Type: application/pdf\n",
+                    "Content-Disposition: attachment; filename*=utf-8''report%ZZ.pdf\n",
+                    "\n",
+                    "%PDF\n",
+                    "--mix--\n",
+                ),
+            ))
+            .expect("malformed RFC2231 filename should not panic");
+
+        assert_eq!(
+            analysis.selected_plain_text_body.as_deref(),
+            Some("Safe preview")
+        );
+        assert_eq!(analysis.attachments.len(), 1);
+        assert_eq!(analysis.attachments[0].part_path, "1.2");
+        assert_eq!(analysis.attachments[0].filename, None);
+        assert_eq!(analysis.attachments[0].content_type, "application/pdf");
+        assert_eq!(
+            analysis.attachments[0].disposition,
+            AttachmentDisposition::Attachment
+        );
+    }
+
+    #[test]
+    fn v4_mime_oversized_boundary_fails_closed() {
+        let oversized_boundary = "b".repeat(DEFAULT_MIME_BOUNDARY_MAX_LEN + 1);
+        let raw_message = format!(
+            "Subject: Oversized boundary\nContent-Type: multipart/mixed; boundary=\"{}\"\n\nBody\n",
+            oversized_boundary
+        );
+        let analyzer = MimeAnalyzer::new(MimeAnalysisPolicy::default());
+        let error = analyzer
+            .analyze_message(&message_view_from_fixture(&raw_message))
+            .expect_err("oversized boundary should fail closed");
+
+        assert_eq!(
+            error.reason,
+            format!(
+                "mime boundary exceeded maximum length of {} bytes",
+                DEFAULT_MIME_BOUNDARY_MAX_LEN
+            )
+        );
+    }
+
+    #[test]
     fn fixture_nested_multipart_attachment_remains_findable_by_path() {
         let analyzer = MimeAnalyzer::new(MimeAnalysisPolicy::default());
         let message = message_view_from_fixture(include_str!(

@@ -32,6 +32,7 @@ v3_security_gates="${repo_root}/docs/V3_SECURITY_GATES.md"
 v4_definition="${repo_root}/docs/V4_DEFINITION.md"
 v4_security_gates="${repo_root}/docs/V4_SECURITY_GATES.md"
 v4_closeout_evidence="${repo_root}/docs/V4_CLOSEOUT_EVIDENCE.md"
+v4_mime_ambiguity_evidence="${repo_root}/docs/V4_MIME_AMBIGUITY_EVIDENCE.md"
 
 require_file "$charter"
 require_file "$program_baseline"
@@ -42,6 +43,7 @@ require_file "$v3_security_gates"
 require_file "$v4_definition"
 require_file "$v4_security_gates"
 require_file "$v4_closeout_evidence"
+require_file "$v4_mime_ambiguity_evidence"
 
 require_text "$charter" "The project is not a mail-server replacement"
 require_text "$charter" "not a general"
@@ -89,5 +91,9 @@ require_text "$v4_security_gates" "If a V4 change passes ordinary functional tes
 require_text "$v4_closeout_evidence" "result=v4_hostile_content_live_proof_passed"
 require_text "$v4_closeout_evidence" "Full V4 closeout still requires"
 require_text "$v4_closeout_evidence" "a3f6e98"
+
+require_text "$v4_mime_ambiguity_evidence" "malformed, nested, suspicious, unsupported, and oversized MIME inputs"
+require_text "$v4_mime_ambiguity_evidence" "product-code regression tests"
+require_text "$v4_mime_ambiguity_evidence" "Full V4 release closeout still requires"
 
 echo "documentation governance guard passed"

@@ -59,6 +59,11 @@ classes, attachment hardening, and report-redaction markers.
 
 It is not a substitute for the live-host proof at release closeout.
 
+The local MIME ambiguity evidence is `docs/V4_MIME_AMBIGUITY_EVIDENCE.md`.
+It names product-code tests in `src/mime.rs` that prove malformed, nested,
+suspicious, unsupported, and oversized MIME inputs fail closed or surface only
+bounded metadata before browser rendering.
+
 ## Evidence Hygiene Rule
 
 Version 4 evidence must be timestamped, tied to the assessed commit or tag, and
