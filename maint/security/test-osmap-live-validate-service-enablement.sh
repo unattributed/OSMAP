@@ -14,6 +14,7 @@ fake_group_file="${fake_etc_dir}/group"
 fake_usr_local_bin="${fake_live_dir}/usr/local/bin"
 fake_usr_local_libexec="${fake_live_dir}/usr/local/libexec/osmap"
 fake_helper_run_dir="${fake_live_dir}/var/lib/osmap-helper/run"
+fake_log_dir="${fake_live_dir}/var/log/osmap"
 pass_bin_dir="${tmp_root}/pass-bin"
 fail_bin_dir="${tmp_root}/fail-bin"
 
@@ -30,17 +31,18 @@ mkdir -p \
   "${fake_usr_local_bin}" \
   "${fake_usr_local_libexec}" \
   "${fake_helper_run_dir}" \
+  "${fake_log_dir}" \
   "${pass_bin_dir}" \
   "${fail_bin_dir}"
 
 cp "${source_wrapper}" "${fake_repo}/maint/live/osmap-live-validate-service-enablement.ksh"
 
-cat > "${fake_osmap_dir}/osmap-serve.env" <<'EOF'
-serve-env
+cat > "${fake_osmap_dir}/osmap-serve.env" <<EOF
+OSMAP_STDERR_LOG_PATH=/var/log/osmap/serve.log
 EOF
 
-cat > "${fake_osmap_dir}/osmap-mailbox-helper.env" <<'EOF'
-helper-env
+cat > "${fake_osmap_dir}/osmap-mailbox-helper.env" <<EOF
+OSMAP_STDERR_LOG_PATH=/var/log/osmap/mailbox-helper.log
 EOF
 
 cat > "${fake_usr_local_libexec}/osmap-serve-run.ksh" <<'EOF'
@@ -69,6 +71,8 @@ exit 0
 EOF
 
 printf 'socket\n' > "${fake_helper_run_dir}/mailbox-helper.sock"
+printf 'serve log\n' > "${fake_log_dir}/serve.log"
+printf 'helper log\n' > "${fake_log_dir}/mailbox-helper.log"
 
 chmod 0555 \
   "${fake_usr_local_bin}/osmap" \
@@ -199,6 +203,8 @@ pass_output=$(
     OSMAP_SERVICE_ENABLEMENT_LIVE_SERVE_RC_PATH="${fake_rcd_dir}/osmap_serve" \
     OSMAP_SERVICE_ENABLEMENT_LIVE_HELPER_RC_PATH="${fake_rcd_dir}/osmap_mailbox_helper" \
     OSMAP_SERVICE_ENABLEMENT_LIVE_HELPER_SOCKET_PATH="${fake_helper_run_dir}/mailbox-helper.sock" \
+    OSMAP_SERVICE_ENABLEMENT_LIVE_SERVE_LOG_PATH="${fake_log_dir}/serve.log" \
+    OSMAP_SERVICE_ENABLEMENT_LIVE_HELPER_LOG_PATH="${fake_log_dir}/mailbox-helper.log" \
     sh "${fake_repo}/maint/live/osmap-live-validate-service-enablement.ksh" --report "${pass_report}"
 )
 
@@ -211,11 +217,14 @@ assert_contains "${pass_report_contents}" "shared_group_line=osmaprt:*:3000:_osm
 assert_contains "${pass_report_contents}" "serve_service_check_rc=0"
 assert_contains "${pass_report_contents}" "helper_service_check_rc=0"
 assert_contains "${pass_report_contents}" "http_listener_bindings=127.0.0.1.8080"
+assert_contains "${pass_report_contents}" "serve_log_path=${fake_log_dir}/serve.log"
+assert_contains "${pass_report_contents}" "helper_log_path=${fake_log_dir}/mailbox-helper.log"
 
 fail_report="${tmp_root}/service-enable-fail-report.txt"
 rm -f "${fake_usr_local_bin}/osmap"
 rm -f "${fake_osmap_dir}/osmap-mailbox-helper.env"
 rm -f "${fake_helper_run_dir}/mailbox-helper.sock"
+rm -f "${fake_log_dir}/mailbox-helper.log"
 
 set +e
 fail_output=$(
@@ -230,6 +239,8 @@ fail_output=$(
     OSMAP_SERVICE_ENABLEMENT_LIVE_SERVE_RC_PATH="${fake_rcd_dir}/osmap_serve" \
     OSMAP_SERVICE_ENABLEMENT_LIVE_HELPER_RC_PATH="${fake_rcd_dir}/osmap_mailbox_helper" \
     OSMAP_SERVICE_ENABLEMENT_LIVE_HELPER_SOCKET_PATH="${fake_helper_run_dir}/mailbox-helper.sock" \
+    OSMAP_SERVICE_ENABLEMENT_LIVE_SERVE_LOG_PATH="${fake_log_dir}/serve.log" \
+    OSMAP_SERVICE_ENABLEMENT_LIVE_HELPER_LOG_PATH="${fake_log_dir}/mailbox-helper.log" \
     sh "${fake_repo}/maint/live/osmap-live-validate-service-enablement.ksh" --report "${fail_report}" 2>&1
 )
 fail_status=$?
@@ -250,6 +261,8 @@ assert_contains "${fail_report_contents}" "missing_helper_env_file"
 assert_contains "${fail_report_contents}" "mailbox_helper_service_not_healthy"
 assert_contains "${fail_report_contents}" "serve_service_not_healthy"
 assert_contains "${fail_report_contents}" "missing_helper_socket"
+assert_contains "${fail_report_contents}" "missing_helper_log_file"
+assert_contains "${fail_report_contents}" "helper_log_path_not_var_log"
 assert_contains "${fail_report_contents}" "loopback_http_listener_not_ready"
 
 printf '%s\n' "service enablement validation regression checks passed"

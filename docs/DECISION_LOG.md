@@ -1,5 +1,30 @@
 # Decision Log
 
+## 2026-06-11, Move OSMAP daemon logs under `/var/log/osmap`
+
+The previous service-artifact posture restored stdout/stderr capture, but it
+placed the captured service logs under application state/audit roots. That left
+an avoidable operator ambiguity: a sysadmin or security admin looking under
+`/var/log` would find nginx edge logs, but not OSMAP daemon startup, connection,
+authentication, mailbox-helper, or submission events.
+
+OSMAP now treats nginx logs as edge evidence only and publishes application
+service logs at:
+
+- `/var/log/osmap/serve.log`
+- `/var/log/osmap/mailbox-helper.log`
+
+The reviewed OpenBSD env files and launchers use those paths by default. The
+service-artifact apply flow creates `/var/log/osmap`, pre-creates both log
+files with service-owned permissions, and reruns the service enablement
+validator. The validator now reports the selected log paths, verifies both log
+files exist, and fails if either reviewed env file still points service stderr
+outside `/var/log/osmap`.
+
+The live WSTG command-injection evidence and focused live observability
+validators now inspect the OSMAP service logs instead of assuming nginx alone is
+enough application evidence.
+
 ## 2026-05-31, Pin WSTG latest-track due diligence matrix
 
 The Version 3 WSTG due-diligence workstream now carries a pinned latest-track
@@ -1199,11 +1224,14 @@ could not actually observe them on the validated host. A bogus login reproduced
 the browser-visible `401`, yet no corresponding `category=auth` event appeared
 in `daemon`, `messages`, `secure`, or `authlog`.
 
-OSMAP now restores reviewed stderr capture through the service launchers by
-directing each runtime into its configured audit directory:
+OSMAP initially restored reviewed stderr capture through the service launchers
+by directing each runtime into its configured audit directory:
 
 - `/var/lib/osmap/audit/serve.log`
 - `/var/lib/osmap-helper/audit/mailbox-helper.log`
+
+That placement was later superseded by the 2026-06-11 decision to publish
+operator-facing daemon logs under `/var/log/osmap`.
 
 The repository now also carries
 `maint/live/osmap-live-validate-auth-observability.ksh` plus two shell
@@ -5654,11 +5682,15 @@ normalized browser error, but the live `_osmap` and `vmail` services were
 discarding stdout and stderr to `/dev/null`, so there was no host-side record
 of which structured auth event had actually fired.
 
-That was corrected in the reviewed OpenBSD launcher artifacts by routing
-service stderr into bounded audit files beneath the existing state roots:
+That was initially corrected in the reviewed OpenBSD launcher artifacts by
+routing service stderr into bounded audit files beneath the existing state
+roots:
 
 - `/var/lib/osmap/audit/serve.log`
 - `/var/lib/osmap-helper/audit/mailbox-helper.log`
+
+That placement was later superseded by the 2026-06-11 decision to publish
+operator-facing daemon logs under `/var/log/osmap`.
 
 The host-side auth observability proof now passes on the real
 `mail.blackbagsecurity.com` deployment:

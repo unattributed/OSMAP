@@ -12,9 +12,9 @@ It is paired with:
 - `maint/live/osmap-live-validate-service-enablement.ksh`
 - `MAIL_HOST_SERVICE_ENABLEMENT_SOP.md`
 
-The goal is to make the reviewed `/etc/osmap`, `/usr/local/libexec/osmap`, and
-`/etc/rc.d` files reviewable and repeatable before the later service-start and
-state-directory work is applied.
+The goal is to make the reviewed `/etc/osmap`, `/usr/local/libexec/osmap`,
+`/etc/rc.d`, and `/var/log/osmap` service-log artifacts reviewable and
+repeatable before the later service-start and state-directory work is applied.
 
 ## Standard Host And Access Path
 
@@ -80,8 +80,13 @@ That mode runs the generated `apply-service-artifacts.sh`, which:
 - installs the reviewed env files into `/etc/osmap`
 - installs the reviewed launchers into `/usr/local/libexec/osmap`
 - installs the reviewed `rc.d` files into `/etc/rc.d`
-- restores reviewed stderr capture into the configured audit-log files instead
-  of leaving both services pointed at `/dev/null`
+- provisions `/var/log/osmap`
+- pre-creates `/var/log/osmap/serve.log` as `_osmap:wheel` mode `0640` when
+  missing
+- pre-creates `/var/log/osmap/mailbox-helper.log` as `vmail:wheel` mode `0640`
+  when missing
+- restores reviewed stdout/stderr capture into the configured service-log files
+  instead of leaving both services pointed at `/dev/null`
 - immediately reruns
   `ksh ./maint/live/osmap-live-validate-service-enablement.ksh`
 - requires the validator report to stop reporting:
@@ -91,6 +96,10 @@ That mode runs the generated `apply-service-artifacts.sh`, which:
   - `missing_helper_launcher`
   - `missing_serve_rc_script`
   - `missing_helper_rc_script`
+  - `missing_serve_log_file`
+  - `missing_helper_log_file`
+  - `serve_log_path_not_var_log`
+  - `helper_log_path_not_var_log`
 
 This is intentionally narrower than the full service gate. The artifact apply
 can be accepted as successful even if the validator still fails on service
@@ -118,8 +127,8 @@ cd ~/OSMAP
 sed -n '1,120p' "$HOME/osmap-service-artifacts/<session>/reports/service-enablement-after-service-artifacts.txt"
 ```
 
-The minimum expected result for this gate is the absence of all six
-artifact-missing checks listed above.
+The minimum expected result for this gate is the absence of all artifact-missing
+and service-log path checks listed above.
 
 The full service-enablement gate still has to be cleared separately through
 `MAIL_HOST_SERVICE_ENABLEMENT_SOP.md`.

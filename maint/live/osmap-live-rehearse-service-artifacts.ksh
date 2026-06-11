@@ -17,6 +17,7 @@ LIVE_SERVE_RUN_PATH="${OSMAP_SERVICE_ENABLEMENT_LIVE_SERVE_RUN_PATH:-/usr/local/
 LIVE_HELPER_RUN_PATH="${OSMAP_SERVICE_ENABLEMENT_LIVE_HELPER_RUN_PATH:-/usr/local/libexec/osmap/osmap-mailbox-helper-run.ksh}"
 LIVE_SERVE_RC_PATH="${OSMAP_SERVICE_ENABLEMENT_LIVE_SERVE_RC_PATH:-/etc/rc.d/osmap_serve}"
 LIVE_HELPER_RC_PATH="${OSMAP_SERVICE_ENABLEMENT_LIVE_HELPER_RC_PATH:-/etc/rc.d/osmap_mailbox_helper}"
+LIVE_LOG_DIR="${OSMAP_SERVICE_ENABLEMENT_LIVE_LOG_DIR:-/var/log/osmap}"
 
 SERVE_ENV_RELATIVE_PATH="etc/osmap/osmap-serve.env"
 HELPER_ENV_RELATIVE_PATH="etc/osmap/osmap-mailbox-helper.env"
@@ -132,10 +133,14 @@ set -eu
 osmap_env_dir=$(quote_sh "$(dirname "${LIVE_SERVE_ENV_PATH}")")
 osmap_libexec_dir=$(quote_sh "$(dirname "${LIVE_SERVE_RUN_PATH}")")
 osmap_rc_dir=$(quote_sh "$(dirname "${LIVE_SERVE_RC_PATH}")")
+osmap_log_dir=$(quote_sh "${LIVE_LOG_DIR}")
+serve_log_path=$(quote_sh "${LIVE_LOG_DIR%/}/serve.log")
+helper_log_path=$(quote_sh "${LIVE_LOG_DIR%/}/mailbox-helper.log")
 validator_script=$(quote_sh "${SERVICE_VALIDATOR_PATH}")
 validator_report=$(quote_sh "${VALIDATOR_REPORT_PATH}")
 
 doas install -d "\$osmap_env_dir" "\$osmap_libexec_dir" "\$osmap_rc_dir"
+doas install -d -m 0755 "\$osmap_log_dir"
 doas install -m 0640 $(quote_sh "${STAGED_ROOT}/${SERVE_ENV_RELATIVE_PATH}") $(quote_sh "${LIVE_SERVE_ENV_PATH}")
 doas install -m 0640 $(quote_sh "${STAGED_ROOT}/${HELPER_ENV_RELATIVE_PATH}") $(quote_sh "${LIVE_HELPER_ENV_PATH}")
 doas install -m 0555 $(quote_sh "${STAGED_ROOT}/${SERVE_RUN_RELATIVE_PATH}") $(quote_sh "${LIVE_SERVE_RUN_PATH}")
@@ -143,8 +148,18 @@ doas install -m 0555 $(quote_sh "${STAGED_ROOT}/${HELPER_RUN_RELATIVE_PATH}") $(
 doas install -m 0555 $(quote_sh "${STAGED_ROOT}/${SERVE_RC_RELATIVE_PATH}") $(quote_sh "${LIVE_SERVE_RC_PATH}")
 doas install -m 0555 $(quote_sh "${STAGED_ROOT}/${HELPER_RC_RELATIVE_PATH}") $(quote_sh "${LIVE_HELPER_RC_PATH}")
 
+if ! doas test -f "\$serve_log_path"; then
+  doas install -o _osmap -g wheel -m 0640 /dev/null "\$serve_log_path"
+fi
+if ! doas test -f "\$helper_log_path"; then
+  doas install -o vmail -g wheel -m 0640 /dev/null "\$helper_log_path"
+fi
+
 validator_rc=0
-if ! ksh "\$validator_script" --report "\$validator_report"; then
+if ! env \
+  OSMAP_SERVICE_ENABLEMENT_LIVE_SERVE_LOG_PATH="\$serve_log_path" \
+  OSMAP_SERVICE_ENABLEMENT_LIVE_HELPER_LOG_PATH="\$helper_log_path" \
+  ksh "\$validator_script" --report "\$validator_report"; then
   validator_rc=\$?
 fi
 
@@ -162,7 +177,11 @@ for failed_check in \
   missing_serve_launcher \
   missing_helper_launcher \
   missing_serve_rc_script \
-  missing_helper_rc_script
+  missing_helper_rc_script \
+  missing_serve_log_file \
+  missing_helper_log_file \
+  serve_log_path_not_var_log \
+  helper_log_path_not_var_log
 do
   if grep -Fq "\${failed_check}" "\$validator_report"; then
     printf '%s\n' "service validator still reports \${failed_check} after service-artifact apply" >&2

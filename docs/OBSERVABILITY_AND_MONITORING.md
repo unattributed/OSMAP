@@ -20,6 +20,21 @@ The system should emit logs that allow operators to investigate:
 Logs should be structured and consistent enough to support incident review
 without requiring deep guesswork.
 
+## Operator Log Paths
+
+The reviewed OpenBSD service artifacts write OSMAP application logs to:
+
+- `/var/log/osmap/serve.log`
+- `/var/log/osmap/mailbox-helper.log`
+
+These logs are the first place an administrator should check for OSMAP daemon
+startup, connection, authentication, session, mailbox, submission, and security
+events. Nginx access/error logs remain useful edge evidence, but they cannot
+replace OSMAP's own structured runtime events.
+
+The service-artifact apply flow provisions `/var/log/osmap` and pre-creates the
+two service log files before running the service enablement validator.
+
 ## Metrics
 
 The project should eventually expose basic operational metrics for:

@@ -32,6 +32,20 @@ The bootstrap logger emits structured text lines containing:
 This is intentionally simple. It is readable in a terminal and still structured
 enough for later processing.
 
+## Operator Log Files
+
+The OpenBSD service artifacts route daemon stdout and stderr into
+operator-visible application logs under `/var/log/osmap`:
+
+- `/var/log/osmap/serve.log`
+- `/var/log/osmap/mailbox-helper.log`
+
+Those files carry the structured runtime events emitted by the web runtime and
+the mailbox helper. The `/var/lib/osmap/...` and `/var/lib/osmap-helper/...`
+trees remain application state boundaries for sessions, settings, audit/cache
+state, helper sockets, and similar runtime data. They are not the primary
+operator log destination.
+
 ## Current Categories
 
 The early logger currently distinguishes:
@@ -134,7 +148,7 @@ tooling complexity outrun the implementation.
 This model should evolve later to include:
 
 - richer request-to-action correlation across mailbox and submission operations
-- deployment-specific output routing on OpenBSD
 - audit-log persistence and retention policy integration
+- log rotation and retention policy for `/var/log/osmap`
 
 Those should be added when real behavior exists, not preemptively.

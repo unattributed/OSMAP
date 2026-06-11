@@ -9,7 +9,7 @@ set -eu
 PROJECT_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 REPORT_PATH="${OSMAP_PUBLIC_SEND_AUDIT_REPORT_PATH:-}"
 PUBLIC_BASE_URL="${OSMAP_PUBLIC_SEND_AUDIT_BASE_URL:-https://mail.blackbagsecurity.com}"
-SERVE_LOG_PATH="${OSMAP_PUBLIC_SEND_AUDIT_SERVE_LOG_PATH:-/var/lib/osmap/audit/serve.log}"
+SERVE_LOG_PATH="${OSMAP_PUBLIC_SEND_AUDIT_SERVE_LOG_PATH:-/var/log/osmap/serve.log}"
 LIVE_TOTP_DIR="${OSMAP_PUBLIC_SEND_AUDIT_TOTP_DIR:-/var/lib/osmap/secrets/totp}"
 VALIDATION_USER="${OSMAP_VALIDATION_USER:-osmap-helper-validation@blackbagsecurity.com}"
 VALIDATION_RECIPIENT="${OSMAP_PUBLIC_SEND_AUDIT_RECIPIENT:-${VALIDATION_USER}}"

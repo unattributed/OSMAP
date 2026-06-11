@@ -33,8 +33,8 @@ set -a
 . "$OSMAP_ENV_FILE"
 set +a
 
-: "${OSMAP_AUDIT_DIR:=/var/lib/osmap-helper/audit}"
-: "${OSMAP_STDERR_LOG_PATH:=${OSMAP_AUDIT_DIR%/}/mailbox-helper.log}"
+: "${OSMAP_LOG_DIR:=/var/log/osmap}"
+: "${OSMAP_STDERR_LOG_PATH:=${OSMAP_LOG_DIR%/}/mailbox-helper.log}"
 
 umask 027
 : >> "$OSMAP_STDERR_LOG_PATH" || {

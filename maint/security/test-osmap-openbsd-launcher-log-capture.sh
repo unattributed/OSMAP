@@ -16,30 +16,28 @@ chmod 0755 "$fake_bin"
 
 serve_env="${tmpdir}/serve.env"
 cat > "$serve_env" <<EOF
-OSMAP_AUDIT_DIR=${tmpdir}/serve-audit
-OSMAP_STDERR_LOG_PATH=${tmpdir}/serve-audit/serve.log
+OSMAP_LOG_DIR=${tmpdir}/var-log-osmap
 EOF
 
 helper_env="${tmpdir}/helper.env"
 cat > "$helper_env" <<EOF
-OSMAP_AUDIT_DIR=${tmpdir}/helper-audit
-OSMAP_STDERR_LOG_PATH=${tmpdir}/helper-audit/mailbox-helper.log
+OSMAP_LOG_DIR=${tmpdir}/var-log-osmap
 EOF
 
-mkdir -p "${tmpdir}/serve-audit" "${tmpdir}/helper-audit"
+mkdir -p "${tmpdir}/var-log-osmap"
 
 OSMAP_BIN="$fake_bin" \
 OSMAP_ENV_FILE="$serve_env" \
 	sh "${repo_root}/maint/openbsd/libexec/osmap-serve-run.ksh" serve
 
-grep -Fq 'action=login_denied' "${tmpdir}/serve-audit/serve.log"
-grep -Fq 'mode="serve"' "${tmpdir}/serve-audit/serve.log"
+grep -Fq 'action=login_denied' "${tmpdir}/var-log-osmap/serve.log"
+grep -Fq 'mode="serve"' "${tmpdir}/var-log-osmap/serve.log"
 
 OSMAP_BIN="$fake_bin" \
 OSMAP_ENV_FILE="$helper_env" \
 	sh "${repo_root}/maint/openbsd/libexec/osmap-mailbox-helper-run.ksh" mailbox-helper
 
-grep -Fq 'action=login_denied' "${tmpdir}/helper-audit/mailbox-helper.log"
-grep -Fq 'mode="mailbox-helper"' "${tmpdir}/helper-audit/mailbox-helper.log"
+grep -Fq 'action=login_denied' "${tmpdir}/var-log-osmap/mailbox-helper.log"
+grep -Fq 'mode="mailbox-helper"' "${tmpdir}/var-log-osmap/mailbox-helper.log"
 
 echo "openbsd launcher log-capture regression checks passed"

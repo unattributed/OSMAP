@@ -2204,9 +2204,9 @@ class Runner:
             "printf '%s\\n' '--- nginx error log nonce matches ---'; "
             "doas grep -F \"$nonce\" /var/log/nginx/mail.error.log 2>/dev/null | tail -40 || true; "
             "printf '%s\\n' '--- osmap serve log nonce matches ---'; "
-            "doas grep -F \"$nonce\" /var/lib/osmap/audit/serve.log 2>/dev/null | tail -80 || true; "
+            "doas grep -F \"$nonce\" /var/log/osmap/serve.log 2>/dev/null | tail -80 || true; "
             "printf '%s\\n' '--- osmap helper log nonce matches ---'; "
-            "doas grep -F \"$nonce\" /var/lib/osmap/audit/helper.log 2>/dev/null | tail -80 || true"
+            "doas grep -F \"$nonce\" /var/log/osmap/mailbox-helper.log 2>/dev/null | tail -80 || true"
         )
         return self.run_ssh("command_injection_host_evidence.txt", command)
 

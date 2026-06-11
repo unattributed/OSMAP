@@ -54,9 +54,13 @@ The example env files in this directory use:
 - `/var/lib/osmap` as the web runtime state root
 - `/var/lib/osmap-helper` as the helper state root
 - `/var/lib/osmap-helper/run/mailbox-helper.sock` as the shared helper socket
+- `/var/log/osmap/serve.log` as the web runtime service log
+- `/var/log/osmap/mailbox-helper.log` as the mailbox-helper service log
 
 That keeps the mailbox helper's writable tree separate from the browser
-runtime's state while still making the helper boundary explicit.
+runtime's state while still making the helper boundary explicit. Nginx logs are
+edge evidence only; OSMAP daemon diagnostics and structured security events must
+be available in the OSMAP-owned service logs.
 
 ## Socket Ownership Expectations
 
@@ -82,11 +86,13 @@ A conservative operator sequence is:
 1. install the example env files into `/etc/osmap/` and adjust paths as needed
 2. create the state directories with ownership that matches the selected
    runtime users and shared socket group
-3. install the launcher and `rc.d` examples into their operator-managed paths
-4. start `osmap_mailbox_helper`
-5. confirm the helper socket exists at the configured path
-6. start `osmap_serve`
-7. keep nginx pointed at the loopback HTTP listener
+3. create `/var/log/osmap` and the two service log files with ownership that
+   matches the selected runtime users
+4. install the launcher and `rc.d` examples into their operator-managed paths
+5. start `osmap_mailbox_helper`
+6. confirm the helper socket exists at the configured path
+7. start `osmap_serve`
+8. keep nginx pointed at the loopback HTTP listener
 
 The `rc.d` examples assume:
 
@@ -116,6 +122,8 @@ The quickest local checks after wiring the env files are:
   validity before daemon startup
 - or use the example `rc.d` scripts' `configtest` action after installation
 - check that the helper socket appears at the configured path
+- check that `/var/log/osmap/serve.log` and
+  `/var/log/osmap/mailbox-helper.log` exist and receive OSMAP events
 - check that `_osmap` can connect to that socket without needing broader mail
   storage authority
 - keep `OSMAP_OPENBSD_CONFINEMENT_MODE=log-only` for first host dry runs, then

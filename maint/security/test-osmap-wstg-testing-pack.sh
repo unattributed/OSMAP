@@ -641,7 +641,8 @@ for marker in [
     "uid_gid_output",
     "passwd_style_output",
     "/var/log/nginx/mail.access.log",
-    "/var/lib/osmap/audit/serve.log",
+    "/var/log/osmap/serve.log",
+    "/var/log/osmap/mailbox-helper.log",
 ]:
     if marker not in runner:
         raise SystemExit(f"runner missing command-injection marker {marker}")

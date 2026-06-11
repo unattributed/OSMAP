@@ -9,6 +9,7 @@ fake_repo="${tmp_root}/repo"
 fake_live_dir="${tmp_root}/live"
 fake_live_etc_dir="${fake_live_dir}/etc"
 fake_live_usr_local_dir="${fake_live_dir}/usr/local"
+fake_live_log_dir="${fake_live_dir}/var/log/osmap"
 fake_bin_dir="${tmp_root}/bin"
 session_dir="${tmp_root}/session"
 
@@ -26,6 +27,7 @@ mkdir -p \
   "${fake_live_etc_dir}/osmap" \
   "${fake_live_etc_dir}/rc.d" \
   "${fake_live_usr_local_dir}/libexec/osmap" \
+  "${fake_live_log_dir}" \
   "${fake_bin_dir}"
 
 cp "${source_wrapper}" "${fake_repo}/maint/live/osmap-live-rehearse-service-artifacts.ksh"
@@ -62,6 +64,8 @@ serve_run="${OSMAP_SERVICE_ENABLEMENT_LIVE_SERVE_RUN_PATH:?}"
 helper_run="${OSMAP_SERVICE_ENABLEMENT_LIVE_HELPER_RUN_PATH:?}"
 serve_rc="${OSMAP_SERVICE_ENABLEMENT_LIVE_SERVE_RC_PATH:?}"
 helper_rc="${OSMAP_SERVICE_ENABLEMENT_LIVE_HELPER_RC_PATH:?}"
+serve_log="${OSMAP_SERVICE_ENABLEMENT_LIVE_SERVE_LOG_PATH:?}"
+helper_log="${OSMAP_SERVICE_ENABLEMENT_LIVE_HELPER_LOG_PATH:?}"
 
 mkdir -p "$(dirname "${report_path}")"
 failed_checks=
@@ -82,6 +86,8 @@ ${item}"
 [ -x "${helper_run}" ] || append_failed missing_helper_launcher
 [ -x "${serve_rc}" ] || append_failed missing_serve_rc_script
 [ -x "${helper_rc}" ] || append_failed missing_helper_rc_script
+[ -f "${serve_log}" ] || append_failed missing_serve_log_file
+[ -f "${helper_log}" ] || append_failed missing_helper_log_file
 append_failed mailbox_helper_service_not_healthy
 
 cat > "${report_path}" <<OUT
@@ -93,11 +99,11 @@ exit 1
 EOF
 
 cat > "${fake_repo}/maint/openbsd/mail.blackbagsecurity.com/etc/osmap/osmap-serve.env" <<'EOF'
-reviewed-serve-env
+OSMAP_STDERR_LOG_PATH=/var/log/osmap/serve.log
 EOF
 
 cat > "${fake_repo}/maint/openbsd/mail.blackbagsecurity.com/etc/osmap/osmap-mailbox-helper.env" <<'EOF'
-reviewed-helper-env
+OSMAP_STDERR_LOG_PATH=/var/log/osmap/mailbox-helper.log
 EOF
 
 cat > "${fake_repo}/maint/openbsd/libexec/osmap-serve-run.ksh" <<'EOF'
@@ -210,6 +216,23 @@ assert_contains() {
   }
 }
 
+assert_not_contains() {
+  haystack=$1
+  needle=$2
+  if printf '%s' "${haystack}" | grep -Fq "${needle}"; then
+    printf 'unexpected "%s" in output:\n%s\n' "${needle}" "${haystack}" >&2
+    exit 1
+  fi
+}
+
+assert_file_exists() {
+  file_path=$1
+  [ -f "${file_path}" ] || {
+    printf 'expected file to exist: %s\n' "${file_path}" >&2
+    exit 1
+  }
+}
+
 assert_file_equals() {
   file_path=$1
   expected=$2
@@ -228,6 +251,7 @@ rehearsal_output=$(
     OSMAP_SERVICE_ENABLEMENT_LIVE_HELPER_RUN_PATH="${fake_live_usr_local_dir}/libexec/osmap/osmap-mailbox-helper-run.ksh" \
     OSMAP_SERVICE_ENABLEMENT_LIVE_SERVE_RC_PATH="${fake_live_etc_dir}/rc.d/osmap_serve" \
     OSMAP_SERVICE_ENABLEMENT_LIVE_HELPER_RC_PATH="${fake_live_etc_dir}/rc.d/osmap_mailbox_helper" \
+    OSMAP_SERVICE_ENABLEMENT_LIVE_LOG_DIR="${fake_live_log_dir}" \
     HOME="${tmp_root}" \
     sh "${fake_repo}/maint/live/osmap-live-rehearse-service-artifacts.ksh" --session-dir "${session_dir}"
 )
@@ -239,8 +263,8 @@ assert_contains "${rehearsal_output}" "restore script: ${session_dir}/scripts/re
 assert_file_equals "${session_dir}/backup/etc/osmap/osmap-serve.env" "live-serve-env"
 assert_file_equals "${session_dir}/backup/usr/local/libexec/osmap/osmap-serve-run.ksh" "live-serve-run"
 assert_file_equals "${session_dir}/backup/etc/rc.d/osmap_serve" "live-serve-rc"
-assert_file_equals "${session_dir}/staged/etc/osmap/osmap-serve.env" "reviewed-serve-env"
-assert_file_equals "${session_dir}/staged/etc/osmap/osmap-mailbox-helper.env" "reviewed-helper-env"
+assert_file_equals "${session_dir}/staged/etc/osmap/osmap-serve.env" "OSMAP_STDERR_LOG_PATH=/var/log/osmap/serve.log"
+assert_file_equals "${session_dir}/staged/etc/osmap/osmap-mailbox-helper.env" "OSMAP_STDERR_LOG_PATH=/var/log/osmap/mailbox-helper.log"
 assert_file_equals "${session_dir}/staged/usr/local/libexec/osmap/osmap-serve-run.ksh" "reviewed-serve-run"
 assert_file_equals "${session_dir}/staged/usr/local/libexec/osmap/osmap-mailbox-helper-run.ksh" "reviewed-helper-run"
 assert_file_equals "${session_dir}/staged/etc/rc.d/osmap_serve" "reviewed-serve-rc"
@@ -260,21 +284,23 @@ env \
   OSMAP_SERVICE_ENABLEMENT_LIVE_HELPER_RUN_PATH="${fake_live_usr_local_dir}/libexec/osmap/osmap-mailbox-helper-run.ksh" \
   OSMAP_SERVICE_ENABLEMENT_LIVE_SERVE_RC_PATH="${fake_live_etc_dir}/rc.d/osmap_serve" \
   OSMAP_SERVICE_ENABLEMENT_LIVE_HELPER_RC_PATH="${fake_live_etc_dir}/rc.d/osmap_mailbox_helper" \
+  OSMAP_SERVICE_ENABLEMENT_LIVE_LOG_DIR="${fake_live_log_dir}" \
   sh "${session_dir}/scripts/apply-service-artifacts.sh"
 
-assert_file_equals "${fake_live_etc_dir}/osmap/osmap-serve.env" "reviewed-serve-env"
-assert_file_equals "${fake_live_etc_dir}/osmap/osmap-mailbox-helper.env" "reviewed-helper-env"
+assert_file_equals "${fake_live_etc_dir}/osmap/osmap-serve.env" "OSMAP_STDERR_LOG_PATH=/var/log/osmap/serve.log"
+assert_file_equals "${fake_live_etc_dir}/osmap/osmap-mailbox-helper.env" "OSMAP_STDERR_LOG_PATH=/var/log/osmap/mailbox-helper.log"
 assert_file_equals "${fake_live_usr_local_dir}/libexec/osmap/osmap-serve-run.ksh" "reviewed-serve-run"
 assert_file_equals "${fake_live_usr_local_dir}/libexec/osmap/osmap-mailbox-helper-run.ksh" "reviewed-helper-run"
 assert_file_equals "${fake_live_etc_dir}/rc.d/osmap_serve" "reviewed-serve-rc"
 assert_file_equals "${fake_live_etc_dir}/rc.d/osmap_mailbox_helper" "reviewed-helper-rc"
+assert_file_exists "${fake_live_log_dir}/serve.log"
+assert_file_exists "${fake_live_log_dir}/mailbox-helper.log"
 
 validator_report=$(cat "${session_dir}/reports/service-enablement-after-service-artifacts.txt")
 assert_contains "${validator_report}" "mailbox_helper_service_not_healthy"
-if printf '%s' "${validator_report}" | grep -Fq "missing_serve_env_file"; then
-  printf 'unexpected missing_serve_env_file after service-artifact apply\n' >&2
-  exit 1
-fi
+assert_not_contains "${validator_report}" "missing_serve_env_file"
+assert_not_contains "${validator_report}" "missing_serve_log_file"
+assert_not_contains "${validator_report}" "missing_helper_log_file"
 
 env \
   PATH="${fake_bin_dir}:${PATH}" \
@@ -284,6 +310,7 @@ env \
   OSMAP_SERVICE_ENABLEMENT_LIVE_HELPER_RUN_PATH="${fake_live_usr_local_dir}/libexec/osmap/osmap-mailbox-helper-run.ksh" \
   OSMAP_SERVICE_ENABLEMENT_LIVE_SERVE_RC_PATH="${fake_live_etc_dir}/rc.d/osmap_serve" \
   OSMAP_SERVICE_ENABLEMENT_LIVE_HELPER_RC_PATH="${fake_live_etc_dir}/rc.d/osmap_mailbox_helper" \
+  OSMAP_SERVICE_ENABLEMENT_LIVE_LOG_DIR="${fake_live_log_dir}" \
   sh "${session_dir}/scripts/restore-service-artifacts.sh"
 
 assert_file_equals "${fake_live_etc_dir}/osmap/osmap-serve.env" "live-serve-env"
@@ -342,6 +369,7 @@ env \
   OSMAP_SERVICE_ENABLEMENT_LIVE_HELPER_RUN_PATH="${fake_live_usr_local_dir}/libexec/osmap/osmap-mailbox-helper-run.ksh" \
   OSMAP_SERVICE_ENABLEMENT_LIVE_SERVE_RC_PATH="${fake_live_etc_dir}/rc.d/osmap_serve" \
   OSMAP_SERVICE_ENABLEMENT_LIVE_HELPER_RC_PATH="${fake_live_etc_dir}/rc.d/osmap_mailbox_helper" \
+  OSMAP_SERVICE_ENABLEMENT_LIVE_LOG_DIR="${fake_live_log_dir}" \
   HOME="${tmp_root}" \
   sh "${fake_repo}/maint/live/osmap-live-rehearse-service-artifacts.ksh" --session-dir "${bad_session_dir}" >/dev/null
 
@@ -355,6 +383,7 @@ bad_output=$(
     OSMAP_SERVICE_ENABLEMENT_LIVE_HELPER_RUN_PATH="${fake_live_usr_local_dir}/libexec/osmap/osmap-mailbox-helper-run.ksh" \
     OSMAP_SERVICE_ENABLEMENT_LIVE_SERVE_RC_PATH="${fake_live_etc_dir}/rc.d/osmap_serve" \
     OSMAP_SERVICE_ENABLEMENT_LIVE_HELPER_RC_PATH="${fake_live_etc_dir}/rc.d/osmap_mailbox_helper" \
+    OSMAP_SERVICE_ENABLEMENT_LIVE_LOG_DIR="${fake_live_log_dir}" \
     sh "${bad_session_dir}/scripts/apply-service-artifacts.sh" 2>&1
 )
 bad_status=$?

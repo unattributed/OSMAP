@@ -18,6 +18,8 @@ HELPER_RUN_PATH="${OSMAP_SERVICE_ENABLEMENT_LIVE_HELPER_RUN_PATH:-/usr/local/lib
 SERVE_RC_PATH="${OSMAP_SERVICE_ENABLEMENT_LIVE_SERVE_RC_PATH:-/etc/rc.d/osmap_serve}"
 HELPER_RC_PATH="${OSMAP_SERVICE_ENABLEMENT_LIVE_HELPER_RC_PATH:-/etc/rc.d/osmap_mailbox_helper}"
 HELPER_SOCKET_PATH="${OSMAP_SERVICE_ENABLEMENT_LIVE_HELPER_SOCKET_PATH:-/var/lib/osmap-helper/run/mailbox-helper.sock}"
+SERVE_LOG_PATH="${OSMAP_SERVICE_ENABLEMENT_LIVE_SERVE_LOG_PATH:-/var/log/osmap/serve.log}"
+HELPER_LOG_PATH="${OSMAP_SERVICE_ENABLEMENT_LIVE_HELPER_LOG_PATH:-/var/log/osmap/mailbox-helper.log}"
 FAILED_CHECKS=""
 
 log() {
@@ -152,6 +154,8 @@ write_report() {
     printf 'helper_service_check_rc=%s\n' "${HELPER_SERVICE_CHECK_RC}"
     printf 'http_listener_bindings=%s\n' "${HTTP_BINDINGS:-none}"
     printf 'https_listener_bindings=%s\n' "${HTTPS_BINDINGS:-none}"
+    printf 'serve_log_path=%s\n' "${SERVE_LOG_PATH}"
+    printf 'helper_log_path=%s\n' "${HELPER_LOG_PATH}"
     printf 'failed_checks=\n'
     if [ -n "${FAILED_CHECKS}" ]; then
       printf '%s\n' "${FAILED_CHECKS}"
@@ -172,6 +176,10 @@ write_report() {
     printf '%s\n' "${HELPER_RC_LISTING}"
     printf 'helper_socket=\n'
     printf '%s\n' "${HELPER_SOCKET_LISTING}"
+    printf 'serve_log=\n'
+    printf '%s\n' "${SERVE_LOG_LISTING}"
+    printf 'helper_log=\n'
+    printf '%s\n' "${HELPER_LOG_LISTING}"
     printf 'listener_lines=\n'
     printf '%s\n' "${LISTENER_LINES}"
   } > "${REPORT_PATH}"
@@ -202,6 +210,8 @@ HELPER_RUN_LISTING="$(capture_file_mode "${HELPER_RUN_PATH}")"
 SERVE_RC_LISTING="$(capture_file_mode "${SERVE_RC_PATH}")"
 HELPER_RC_LISTING="$(capture_file_mode "${HELPER_RC_PATH}")"
 HELPER_SOCKET_LISTING="$(capture_file_mode "${HELPER_SOCKET_PATH}")"
+SERVE_LOG_LISTING="$(capture_file_mode "${SERVE_LOG_PATH}")"
+HELPER_LOG_LISTING="$(capture_file_mode "${HELPER_LOG_PATH}")"
 SHARED_GROUP_LINE="$(capture_group_line)"
 OSMAP_GROUP_MEMBERSHIP="$(capture_user_membership _osmap)"
 SERVE_SERVICE_CHECK_RC="$(capture_service_check_status osmap_serve)"
@@ -229,6 +239,22 @@ fi
 
 if ! doas test -f "${HELPER_ENV_PATH}"; then
   append_failed_check "missing_helper_env_file"
+fi
+
+if ! doas test -f "${SERVE_LOG_PATH}"; then
+  append_failed_check "missing_serve_log_file"
+fi
+
+if ! doas test -f "${HELPER_LOG_PATH}"; then
+  append_failed_check "missing_helper_log_file"
+fi
+
+if ! printf '%s\n' "${SERVE_ENV_CONTENT}" | grep -Fxq "OSMAP_STDERR_LOG_PATH=/var/log/osmap/serve.log"; then
+  append_failed_check "serve_log_path_not_var_log"
+fi
+
+if ! printf '%s\n' "${HELPER_ENV_CONTENT}" | grep -Fxq "OSMAP_STDERR_LOG_PATH=/var/log/osmap/mailbox-helper.log"; then
+  append_failed_check "helper_log_path_not_var_log"
 fi
 
 if ! doas test -x "${SERVE_RUN_PATH}"; then
