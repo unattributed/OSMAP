@@ -15,6 +15,9 @@ security-sensitive mail application with a live validation target at
   boundary, user workflow, deployment posture, or release claim.
 - Preserve unrelated local or remote worktree changes unless the operator
   explicitly asks to remove them.
+- For completed development changes, finish with a clear git commit and sync
+  `main` to `origin/main` unless the operator explicitly asks to hold the work
+  locally.
 
 ## Validation
 
