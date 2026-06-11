@@ -1,1769 +1,5 @@
 # Decision Log
 
-## 2026-06-11, Move OSMAP daemon logs under `/var/log/osmap`
-
-The previous service-artifact posture restored stdout/stderr capture, but it
-placed the captured service logs under application state/audit roots. That left
-an avoidable operator ambiguity: a sysadmin or security admin looking under
-`/var/log` would find nginx edge logs, but not OSMAP daemon startup, connection,
-authentication, mailbox-helper, or submission events.
-
-OSMAP now treats nginx logs as edge evidence only and publishes application
-service logs at:
-
-- `/var/log/osmap/serve.log`
-- `/var/log/osmap/mailbox-helper.log`
-
-The reviewed OpenBSD env files and launchers use those paths by default. The
-service-artifact apply flow creates `/var/log/osmap`, pre-creates both log
-files with service-owned permissions, and reruns the service enablement
-validator. The validator now reports the selected log paths, verifies both log
-files exist, and fails if either reviewed env file still points service stderr
-outside `/var/log/osmap`.
-
-The live WSTG command-injection evidence and focused live observability
-validators now inspect the OSMAP service logs instead of assuming nginx alone is
-enough application evidence.
-
-## 2026-05-31, Pin WSTG latest-track due diligence matrix
-
-The Version 3 WSTG due-diligence workstream now carries a pinned latest-track
-matrix in addition to the stable v4.2 matrix:
-
-- source: OWASP/wstg `master`
-- commit: `7dea71b751ea76f792b89186655739720b614d9a`
-- matrix: `maint/wstg-testing-pack/wstg-scenario-matrix.latest.json`
-- latest source rows: 114 markdown scenario rows
-- unique latest WSTG IDs: 112
-- current-pack mapped rows: 114
-- unmapped latest rows: 0
-- dispositions: 70 automated, 44 not applicable
-
-The latest matrix preserves source paths and commit-pinned GitHub URLs for each
-row, including duplicate upstream identifiers for `WSTG-INPV-13` and
-`WSTG-APIT-03`. Future WSTG latest refreshes must update the commit hash,
-matrix row counts, and any changed applicability decisions together.
-
-## 2026-05-31, Add WSTG authentication feature applicability evidence
-
-The Version 3 WSTG authentication workstream now records deterministic evidence
-for default credentials, authentication-schema bypass, remember-password
-behavior, password-policy applicability, security questions, and password
-change/reset applicability:
-
-- `OSMAP-WSTG-ATHN-005` maps ATHN-02, ATHN-04, ATHN-05, ATHN-07, ATHN-08,
-  and ATHN-09
-- dynamic probes cover protected-route unauthenticated access, common
-  remember/recovery/security-question paths, and bounded default-credential
-  login attempts
-- static evidence records that OSMAP has no browser-local account database, no
-  default credentials, no browser authentication bypass route, no
-  remember-password feature, no security questions, and no browser password
-  change or reset functionality
-- the WSTG v4.2 matrix now maps all 97 listed rows, leaving 0 blocked rows
-
-Future browser-local account storage, password lifecycle features,
-remember-password behavior, recovery features, or authentication bypass
-mechanisms must update this lane before V3 closeout.
-
-## 2026-05-31, Add WSTG identity lifecycle applicability evidence
-
-The Version 3 WSTG identity-management workstream now records deterministic
-evidence for role definitions, registration, account provisioning, and weak
-username policy applicability:
-
-- `OSMAP-WSTG-IDNT-001` maps IDNT-01, IDNT-02, IDNT-03, and IDNT-05
-- dynamic probes cover common registration, signup, invitation, provisioning,
-  user-administration, and role-management paths
-- static evidence records that OSMAP has a single browser end-user role, no
-  self-service registration, no browser account provisioning, and bounded
-  mailbox-username input before backend auth
-- the WSTG v4.2 matrix moves four IDNT rows out of blocked, leaving 6 blocked
-  rows
-
-Future browser role management, self-service registration, account
-provisioning, invitation, recovery, or username-policy changes must update this
-lane before V3 closeout.
-
-## 2026-05-30, Finish WSTG Slice 10 file-permission and subdomain evidence
-
-The Version 3 WSTG Slice 10 configuration and deployment workstream now
-records host-assisted evidence for the remaining CONF rows:
-
-- `OSMAP-WSTG-CONF-010` maps CONF-09 and CONF-10
-- file-permission evidence covers live env files, launchers, `rc.d` files,
-  state roots, secret directories, audit/cache directories, and the
-  mailbox-helper socket
-- DNS evidence covers `mail.blackbagsecurity.com` plus unused OSMAP/webmail
-  candidate names and fails on dangling takeover CNAMEs
-- the WSTG v4.2 matrix moves two CONF rows from blocked to automated, leaving
-  10 blocked rows
-
-Future public OSMAP names, CDN/static hosting, service artifact paths, runtime
-directory layouts, or helper-socket permissions must update this lane before V3
-closeout.
-
-## 2026-05-30, Add WSTG Slice 10 RIA and cloud storage applicability evidence
-
-The Version 3 WSTG Slice 10 configuration and deployment workstream now
-records deterministic applicability evidence for legacy RIA cross-domain policy
-files and cloud storage exposure:
-
-- `OSMAP-WSTG-CONF-009` maps CONF-08 and CONF-11
-- unauthenticated probes cover `/crossdomain.xml` and
-  `/clientaccesspolicy.xml`
-- static evidence records that OSMAP has no Flash, Silverlight, RIA client,
-  public object-storage bucket, cloud storage dependency, or static cloud
-  storage root in the browser mail boundary
-- the WSTG v4.2 matrix moves two CONF rows from blocked to not-applicable
-  with evidence, leaving 12 blocked rows
-
-Future browser asset hosting, RIA clients, CDN-backed public roots, object
-storage buckets, or cloud storage dependencies must update this lane before V3
-closeout.
-
-## 2026-05-27, Add WSTG Slice 10 sensitive-file exposure evidence
-
-The Version 3 WSTG Slice 10 configuration and deployment workstream now
-records deterministic evidence for sensitive extension handling and backup
-file exposure:
-
-- `OSMAP-WSTG-CONF-008` maps CONF-03 and CONF-04
-- dynamic probes cover `.env`, Cargo files, README, key/config/source-like
-  names, editor backups, SQL dumps, archives, and old env names
-- static evidence records that the public WAN OSMAP vhost proxies to the Rust
-  router rather than exposing a repository root, backup directory, or source
-  archive directory
-- the WSTG v4.2 matrix moves two CONF rows from blocked to automated, leaving
-  14 blocked rows
-
-Future static-file serving, public asset roots, deployment artifact locations,
-or backup publication paths must update this lane before V3 closeout.
-
-## 2026-05-27, Finish WSTG Slice 9 public reconnaissance coverage
-
-The Version 3 WSTG Slice 9 workstream now records bounded public
-reconnaissance and fingerprinting evidence for the remaining INFO rows:
-
-- `OSMAP-WSTG-INFO-004` maps INFO-01, INFO-04, INFO-08, and INFO-09
-- dynamic probes cover expected public OSMAP paths plus common secondary app
-  paths such as `/admin`, `/api`, `/graphql`, `/phpmyadmin`, `/roundcube`,
-  `/webmail`, `/.git/config`, and `/server-status`
-- static evidence records that search engine discovery reconnaissance is
-  represented by deterministic public-footprint and robots/security metadata
-  review rather than mutable third-party search-result pages
-- framework and web-app fingerprinting fail closed on `X-Powered-By`,
-  framework banners, backend version strings, or exposed secondary webmail apps
-- the WSTG v4.2 matrix moves four INFO rows from blocked to automated, leaving
-  16 blocked rows
-
-Future public apps, route aliases, or framework-visible response changes must
-update this bounded reconnaissance lane.
-
-## 2026-05-27, Add WSTG Slice 9 error and information-disclosure evidence
-
-The Version 3 WSTG Slice 9 workstream now records deterministic evidence for
-stack-trace leakage and browser route/architecture inventory:
-
-- `OSMAP-WSTG-INFO-003` maps ERRH-02, INFO-06, INFO-07, and INFO-10
-- unauthenticated probes cover missing routes and malformed mailbox, message,
-  attachment, and search inputs
-- static evidence records the explicit browser route inventory, generic
-  browser-visible error text, public reason mapping, and the nginx, OSMAP,
-  mailbox-helper, doveadm, sendmail, Postfix, Dovecot, and Rspamd boundaries
-- the WSTG v4.2 matrix moves four rows from blocked to automated, leaving 20
-  blocked rows
-
-Future routes or backend boundaries must update the route inventory and stack
-leakage probes before V3 closeout.
-
-## 2026-05-27, Add WSTG Slice 8 client-side browser evidence
-
-The Version 3 WSTG Slice 8 client-side and browser-storage workstream now
-records static applicability evidence for the remaining CLNT rows:
-
-- `OSMAP-WSTG-CLNT-003` maps CLNT-02, CLNT-03, CLNT-04, CLNT-05, CLNT-06,
-  CLNT-08, CLNT-10, CLNT-11, CLNT-12, and CLNT-13
-- evidence confirms OSMAP is server-rendered, has no client-side scripting
-  dependency, no WebSocket route, no web messaging surface, no browser storage
-  use, and no Flash/SWF surface
-- HTML/CSS risks are tied to existing sanitizer, escaping, CSP,
-  `UrlRelative::Deny`, stripped scriptable/remote-fetch surfaces, and
-  `noopener noreferrer nofollow` link evidence
-- the WSTG v4.2 matrix moves ten CLNT rows from blocked to not applicable,
-  leaving 24 blocked rows
-
-Future JavaScript, browser storage, WebSocket, web messaging, service-worker,
-client-side redirect, or browser-executed resource-loading features must move
-the affected CLNT rows from static proof to dynamic browser tests.
-
-## 2026-05-23, Add WSTG Slice 6 form route state-transition evidence
-
-The Version 3 WSTG Slice 6 wording is narrowed from API-style testing to
-form-backed route and state-transition testing, matching OSMAP's browser
-surface:
-
-- `OSMAP-WSTG-BUSL-005` maps BUSL-01, BUSL-02, BUSL-03, BUSL-05, BUSL-06,
-  and BUSL-07 with static evidence for CSRF, same-origin metadata,
-  duplicate-field rejection, tampered mailbox/UID rejection, bulk misuse
-  limits, draft lifecycle transitions, send/draft transition integrity, and
-  session revocation state changes
-- `OSMAP-WSTG-APIT-001` maps APIT-01 as not applicable because OSMAP has no
-  GraphQL endpoint, schema, resolver layer, or dependency
-- the WSTG v4.2 matrix moves six BUSL rows from blocked to automated and
-  APIT-01 from blocked to not applicable, leaving 34 blocked rows
-
-Future JSON/REST, GraphQL, or other non-browser-form state-transition
-protocols must get their own dynamic negative tests.
-
-## 2026-05-23, Add WSTG Slice 5 crypto and transport evidence
-
-The Version 3 WSTG Slice 5 weak-cryptography workstream now records the
-browser-facing transport and primitive applicability decisions:
-
-- `OSMAP-WSTG-CRYP-001` maps WSTG CRYP-01 and CRYP-03 with unauthenticated
-  HTTPS login, HSTS, cleartext HTTP, static TLS policy, and live TLS standard
-  validation evidence
-- `OSMAP-WSTG-CRYP-002` maps WSTG CRYP-02 and CRYP-04 with static
-  not-applicable evidence for padding-oracle and weak-encryption classes
-- static evidence confirms OSMAP does not terminate public TLS in Rust, keeps
-  public TLS at the nginx edge, builds production cookies with `Secure`, and
-  has no application encryption/decryption primitive, CBC decryptor,
-  attacker-controlled ciphertext decrypt route, or custom reversible encryption
-- the WSTG v4.2 matrix moves CRYP-01 and CRYP-03 from blocked to automated,
-  CRYP-02 and CRYP-04 from blocked to not applicable, leaving 41 blocked rows
-  for remaining due-diligence slices
-
-If OSMAP adds a Rust TLS endpoint, application encryption/decryption primitive,
-encrypted object format, or browser-exposed decrypt route, the affected CRYP
-row must move from not-applicable proof to dynamic negative testing.
-
-## 2026-05-23, Finish WSTG Slice 4 remaining injection applicability evidence
-
-The Version 3 WSTG Slice 4 input-validation workstream now records the
-remaining injection-class applicability decisions:
-
-- `OSMAP-WSTG-INPV-007` maps WSTG INPV-05, INPV-06, INPV-07, INPV-08,
-  INPV-09, INPV-11, INPV-13, INPV-14, INPV-18, and INPV-19
-- static evidence confirms the current OSMAP browser surface has no SQL, LDAP,
-  XML, XPath, SSI, runtime-code, format-string, server-side template, or SSRF
-  backend surface
-- incubated vulnerability coverage is represented by the named Slice 4 lanes:
-  reflected and stored HTML, command-boundary checks, IMAP/SMTP and MIME input
-  validation, HTTP method and parameter tampering, raw HTTP host/smuggling
-  checks, and this applicability review
-- the WSTG v4.2 matrix moves those ten rows from blocked to not applicable,
-  and reconciles the already-mapped command-injection row to
-  `OSMAP-WSTG-INPV-003`, leaving 45 blocked rows for remaining due-diligence
-  slices
-
-If a future OSMAP slice adds one of these interpreters, parsers, backend query
-surfaces, template engines, or outbound fetch surfaces, the affected row must
-move from not-applicable proof to dynamic negative testing.
-
-## 2026-05-23, Extend WSTG Slice 4 with raw HTTP host and smuggling evidence
-
-The Version 3 WSTG Slice 4 input-validation workstream now includes a raw HTTP
-request-shape lane:
-
-- `OSMAP-WSTG-INPV-006` maps WSTG INPV-15, INPV-16, and INPV-17 for HTTP
-  splitting/smuggling, incoming request validation, and host-header injection
-- unauthenticated dynamic evidence uses raw TLS requests for CL.TE, duplicate
-  `Content-Length`, encoded CRLF target, missing `Host`, obsolete folded
-  header, non-normalized target, duplicate `Host`, malformed `Host`, and
-  untrusted `Host` probes
-- static evidence ties the probes to parser controls for duplicate headers,
-  host syntax, transfer-encoding rejection, content-length consistency, and
-  normalized request targets
-- the WSTG v4.2 matrix moves INPV-15, INPV-16, and INPV-17 from blocked to
-  automated, leaving 56 blocked rows for remaining due-diligence slices
-
-The arbitrary-host probe is not required to be rejected by the edge, but it
-must not reflect the untrusted host into the response body, redirects, or cookie
-metadata.
-
-## 2026-05-23, Extend WSTG Slice 4 with HTTP input tampering evidence
-
-The Version 3 WSTG Slice 4 input-validation workstream now includes a
-request-shape tampering lane:
-
-- `OSMAP-WSTG-INPV-005` maps WSTG INPV-03 and INPV-04 for HTTP verb
-  tampering and HTTP parameter pollution
-- unauthenticated dynamic evidence uses rejected probes only, covering
-  unsupported methods, GET requests with bodies, POST method mismatches,
-  unsupported JSON content-types on form routes, duplicate query parameters,
-  and duplicate URL-encoded form fields
-- static evidence ties the probes to the HTTP parser, route table, form
-  content-type gates, and duplicate-field rejection in URL query, URL-encoded,
-  and multipart form parsing
-- the WSTG v4.2 matrix moves INPV-03 and INPV-04 from blocked to automated,
-  leaving 59 blocked rows for remaining due-diligence slices
-
-This lane complements `OSMAP-WSTG-CONF-004`, which remains the narrower
-configuration check that `OPTIONS` and `TRACE` are not accepted as application
-methods.
-
-## 2026-05-22, Start WSTG Slice 4 webmail input-validation evidence
-
-The Version 3 WSTG workstream now has a webmail-specific input-validation lane:
-
-- `OSMAP-WSTG-INPV-004` maps WSTG INPV-10 for IMAP/SMTP injection
-- dynamic evidence uses an authenticated password-plus-TOTP session but only
-  sends rejected probes, so no synthetic probe mail should be delivered
-- the probes cover subject newline injection, recipient newline injection,
-  display-name-shaped recipient input, mailbox-name tampering, UID tampering,
-  search tampering, path-like attachment filenames, and dangerous attachment
-  content-type input
-- static evidence ties those probes to compose/send validation, Dovecot
-  argument boundaries, attachment filename/content-type handling, stored HTML
-  sanitization, and CSV export non-applicability
-- the WSTG v4.2 matrix moves INPV-10 from blocked to automated, leaving 61
-  blocked rows for remaining due-diligence slices
-
-Developer-mode runs may still skip this check without credentials. V3 release
-mode must provide the authenticated TOTP-backed evidence.
-
-## 2026-05-22, Start WSTG Slice 3 session lifecycle evidence
-
-The Version 3 WSTG workstream now has a dedicated session lifecycle lane:
-
-- `OSMAP-WSTG-SESS-006` maps WSTG SESS-01, SESS-04, SESS-06, SESS-07,
-  SESS-08, and SESS-09
-- dynamic evidence logs in through the real password-plus-TOTP browser path,
-  loads protected mailbox state, logs out with a valid CSRF token, and proves
-  the old cookie and a synthetic stale cookie cannot reach protected content
-- static evidence records idle timeout, absolute timeout, concurrent-session
-  policy, exposed-token controls, session-puzzling resistance, and revocation
-  race coverage
-- the WSTG v4.2 matrix moves SESS-01, SESS-04, SESS-07, SESS-08, and SESS-09
-  from blocked to automated, leaving 62 blocked rows for remaining due
-  diligence slices
-
-Developer-mode runs may still skip this check without credentials. V3 release
-mode must provide the authenticated TOTP-backed evidence.
-
-## 2026-05-22, Start WSTG Slice 2 authorization account-isolation evidence
-
-The Version 3 WSTG workstream now has an explicit authorization and
-account-isolation lane:
-
-- `OSMAP-WSTG-ATHZ-001` maps WSTG ATHZ-02, ATHZ-03, and ATHZ-04
-- release evidence requires a primary authenticated password-plus-TOTP session
-  and a host-assisted secondary mailbox fixture
-- the dynamic probes assert that primary-session requests cannot expose the
-  secondary mailbox/message/attachment/sent/search markers, and that missing or
-  stale session cookies cannot reach protected mailbox content
-- static evidence ties draft, send, search, bulk action, and mailbox-helper
-  boundaries to the validated session canonical username
-- the WSTG v4.2 matrix moves ATHZ-02 and ATHZ-03 from blocked to automated,
-  leaving 67 blocked rows for remaining due diligence slices
-
-This still keeps developer-mode runs skippable without credentials or host
-access. V3 release mode must provide the authenticated host-assisted evidence.
-
-## 2026-05-22, Start WSTG Slice 1 source metadata and dispositions
-
-The Version 3 WSTG due-diligence workstream now has the first mechanical
-inventory controls needed before deeper coverage closure:
-
-- the WSTG runner summary and report record source name, source URL, source
-  version, source commit when applicable, active matrix file, OSMAP commit,
-  target host, authentication mode, and evidence path
-- release mode fails if a latest-track WSTG source is claimed without a pinned
-  source commit
-- the active v4.2 scenario matrix assigns one explicit Slice 1 disposition to
-  every row: 28 `automated` rows mapped to current runner evidence and 69
-  `blocked` rows requiring applicability decision and evidence before closeout
-- the WSTG pack regression now validates the matrix dispositions and source
-  metadata hooks
-
-This does not close the 69 blocked WSTG rows. It makes them visible,
-machine-checkable release work instead of implicit spreadsheet debt.
-
-## 2026-05-19, Make V3 WSTG due diligence a release-blocking workstream
-
-The existing WSTG testing pack provides useful browser, edge, authentication, session, CSP, CSRF, MIME, attachment, and selected business-logic regression evidence, but the current matrix is anchored to WSTG v4.2 and does not yet represent complete WSTG due diligence for Version 3.
-
-Version 3 now treats WSTG coverage closure as a managed release workstream. The project records two required documents:
-
-- `docs/V3_WSTG_DUE_DILIGENCE_PLAN.md`
-- `docs/V3_WSTG_COVERAGE_GATE.md`
-
-The due-diligence work is sliced into coverage inventory and source pinning, authorization and account isolation, session lifecycle and cookie security, IMAP/SMTP and webmail-specific input validation, weak cryptography, API-style route testing, business-logic abuse, client-side and browser-storage testing, error handling, and release-gate integration.
-
-V3 cannot close while critical WSTG slices are incomplete, while required authenticated WSTG tests are skipped, while TOTP evidence is missing for applicable checks, or while not-applicable and deferred items lack written evidence. Developer partial mode may still skip credential-gated checks, but release mode must fail closed.
-
-## 2026-05-18, Add a sanitized V3 pilot rehearsal capture helper
-
-The final V3 selected-cohort rehearsal cannot be manufactured from fixture
-data. It needs real user workflow completion, but the resulting release report
-must still be narrow, repeatable, and secret-free.
-
-`maint/live/osmap-live-record-v3-pilot-rehearsal.ksh` now writes
-`maint/live/latest-host-v3-pilot-rehearsal-report.txt` only after every required
-daily-driver workflow is explicitly confirmed as `passed`, Roundcube fallback
-is confirmed as `none`, and evidence sanitization is confirmed as `true`. This
-keeps the actual human rehearsal separate from the repo-owned sanitized release
-artifact shape.
-
-## 2026-05-18, Require V3 pilot rehearsal evidence in release mode
-
-The final V3 roadmap slice is pilot rehearsal evidence, not another feature.
-Release validation already failed closed on missing WSTG, credential/TOTP,
-resource, TLS, helper-boundary, and MIME/HTML evidence, but it did not yet
-require the selected-cohort daily-driver rehearsal record named by the V3
-acceptance criteria.
-
-`make release-check` now requires a sanitized
-`maint/live/latest-host-v3-pilot-rehearsal-report.txt` plus
-`docs/PILOT_WORKFLOW_INVENTORY.md`. The report must match the assessed commit
-and prove password-plus-TOTP login, core mailbox workflows, draft continuity,
-reply/forward source attachments, bounded bulk folder actions, and session
-logout/revoke without Roundcube fallback for those workflows.
-
-## 2026-05-17, Require explicit weak TLS cipher rejection evidence
-
-The V3 TLS standard already required TLS 1.0 and TLS 1.1 rejection, TLS 1.2
-and TLS 1.3 success, certificate validation, hostname validation, and strong
-negotiated ciphers. The remaining evidence gap was proving that deliberately
-forced weak TLS 1.2 cipher offers are rejected, rather than only proving the
-default negotiated TLS 1.2 cipher is acceptable.
-
-`maint/security/osmap-live-tls-standard-validate.py` now records rejected weak
-TLS 1.2 cipher probes for legacy SHA and non-AEAD suites, and
-`make release-check` fails when that probe set is missing, incomplete, accepted,
-or records any negotiated protocol/cipher. This keeps the CBC cleanup and TLS
-standard gate evidence-driven instead of relying on static configuration review
-alone.
-
-## 2026-05-17, Add bounded selected-message folder cleanup
-
-The bounded bulk folder-action slice extends mailbox-list cleanup without
-adding broad mailbox management. The browser now exposes a selected-message
-move form that reuses the existing one-message move path once per UID, caps the
-selection count, holds the mailbox worker budget for the whole bulk request,
-limits destinations to visible mailboxes plus the configured archive target,
-and reports partial success if a later UID becomes stale or otherwise fails.
-
-The older selected archive route remains as a compatibility path and now uses
-the same mailbox worker budget class. WSTG disposition is recorded as
-`OSMAP-WSTG-BUSL-004`, a release-required static guardrail check for the source,
-route tests, and V3 bulk-action acceptance markers; destructive live mailbox
-mutation evidence remains reserved for controlled validation accounts.
-
-## 2026-05-16, Treat richer bounded search as a whitelist-only V3 slice
-
-The next incomplete V3 workflow gap after draft and reply/forward attachment
-work was richer bounded search. OSMAP intentionally did not add a broad search
-language, saved searches, facets, client-side JavaScript search behavior, or
-arbitrary backend query syntax.
-
-The implemented V3 search refinements are deliberately small and
-server-rendered:
-
-- mailbox and search result tables can sort UID, subject, from, received,
-  flags, and size
-- search can be refined with `field=all|subject|from`
-- invalid search field values return a deterministic 400-class response before
-  reaching the backend
-- helper requests sign the selected search field into the grant payload
-- the Dovecot backend receives only fixed server-side search keys: `TEXT`,
-  `SUBJECT`, or `FROM`
-- sort and search links preserve mailbox and query context without adding
-  client-side script
-
-This keeps the richer-search slice inside the existing mailbox-helper and
-server-rendered browser trust model while making ordinary mail lookup more
-usable for daily-driver testing.
-
-Validation for commit `0dac311648fbaffd210afc13d416021b0b8419bf` passed:
-
-- `cargo fmt --check`
-- `cargo clippy --all-targets --all-features -- -D warnings`
-- `cargo test --all-features`
-- `make security-check`
-
-## 2026-05-16, Defer the next interactive WSTG run until the V3 release candidate unless a security boundary changes
-
-After the search field refinement landed, the local repository and
-`origin/main` were at `0dac311648fbaffd210afc13d416021b0b8419bf`, but the
-standard host checkout on `mail.blackbagsecurity.com` was still at
-`722f48461d80736d39be1e85a145d8c736a8ddff`.
-
-The latest credential-backed WSTG release capture found locally was:
-
-- `maint/wstg-testing-pack/output/release-20260516T015431Z/osmap-wstg-20260515-215432/summary.json`
-- generated at `2026-05-16T02:00:06Z`
-- 26 mapped WSTG tests passed
-
-That WSTG run remains useful evidence for the host state it assessed, but it
-does not prove the later `0dac311` search-field commit because the host was not
-updated to that commit.
-
-The operating decision is therefore:
-
-- continue the remaining V3 slices in the authoritative roadmap order
-- do not repeatedly deploy and prompt for interactive WSTG after every narrow
-  feature slice that does not materially change auth, session, CSRF,
-  helper-boundary, or public-edge behavior
-- update the standard host checkout, deploy the reviewed runtime, and run the
-  interactive credential-backed WSTG release capture against the final V3
-  release candidate
-- run an earlier live/WSTG proof if a future slice changes an authentication,
-  session, CSRF, helper-boundary, or public-edge security boundary
-
-This avoids treating old live evidence as current while also avoiding noisy
-credential-backed release captures for each small internal V3 slice.
-
-## 2026-05-16, Keep the next V3 implementation target as bounded bulk folder actions
-
-With bounded search sorting and `all`/`subject`/`from` field refinement in
-place, the next roadmap item remains bounded bulk folder actions. Advanced
-search refinements beyond the current whitelist remain open product-scope work
-rather than an implicit requirement for the next slice.
-
-The bounded bulk folder-action slice must keep the current archive and move
-security posture:
-
-- selected messages are bounded by count
-- every source mailbox, destination mailbox, and UID tuple is revalidated at
-  action time
-- CSRF and same-origin enforcement remain mandatory
-- existing move throttles or equivalent abuse controls apply
-- partial success must be reported explicitly rather than hidden behind a
-  success-style redirect
-- arbitrary mailbox-wide operations and broad Roundcube-style mailbox
-  management remain out of scope
-
-## 2026-05-13, Enforce project-wide TLS standard and evidence gate
-
-OSMAP now treats TLS policy as a project-wide security invariant rather than a
-host-edge note. `docs/TLS_STANDARD.md` defines the standard: TLS 1.2 minimum,
-TLS 1.3 preferred, weak protocol versions prohibited, TLS 1.2 limited to
-strong forward-secret AEAD suites, and certificate plus hostname verification
-kept enabled in validation clients.
-
-The repository gate now includes `maint/security/osmap-tls-policy-guard.sh`,
-which scans tracked code including Rust sources for prohibited TLS drift and
-checks Python validation contexts for the TLS 1.2 floor. Live public-edge
-evidence is produced by `maint/security/osmap-live-tls-standard-validate.py`
-and strict release validation requires that report through
-`OSMAP_RELEASE_TLS_STANDARD_EVIDENCE`.
-
-## 2026-05-11, Add credential-backed source-attachment WSTG evidence lane
-
-The reply/forward selected source-attachment gate now has a credential-backed
-live evidence lane: `maint/live/osmap-live-validate-v3-source-attachments.ksh`
-starts an isolated helper-backed runtime on `mail.blackbagsecurity.com`, applies
-a temporary validation mailbox password hash, performs a real
-password-plus-TOTP browser login, injects controlled source messages, and proves
-positive selected-source attachment inclusion plus duplicate, tampered mailbox,
-tampered UID, tampered part, missing-CSRF, cross-origin, stale-source, and
-report-redaction outcomes.
-
-The WSTG testing pack maps that lane as `OSMAP-WSTG-BUSL-003`, with ASVS and
-OWASP Top 10 2025 coverage for access control, CSRF/request integrity, session
-proof, file/resource handling, logging, and exceptional-condition behavior. The
-remaining design question is whether draft save/resume should persist bounded
-source-attachment references; the send-time selected attachment path itself now
-has route, live, and WSTG closeout coverage.
-
-## 2026-05-11, Cover source-attachment send failure edges
-
-The reply/forward source-attachment slice now has route regressions for the
-send-time failure edges called out in
-`docs/V3_REPLY_FORWARD_ATTACHMENT_HANDLING_DESIGN.md`: duplicate selected part
-paths, missing source mailbox metadata, stale or missing selected source parts,
-and aggregate count overflow when new uploads and selected source attachments
-are combined.
-
-These tests prove that selected originals are re-fetched before submission,
-that stale selections fail visibly instead of silently dropping files, and that
-confirmed source attachments count against the same compose attachment limits
-as new uploads. The remaining closeout gap for the full V3 gate is
-credential-backed WSTG/live evidence and, if admitted, draft save/resume of
-source attachment references.
-
-## 2026-05-11, Start explicit reply and forward attachment selection
-
-The first implementation slice for `docs/V3_REPLY_FORWARD_ATTACHMENT_HANDLING_DESIGN.md`
-now makes source-message attachments visible and selectable on reply and
-forward compose pages. Selected source attachments are not trusted from browser
-metadata; `/send` re-fetches each selected part through the existing bounded
-attachment-download path before turning it into a normal compose attachment.
-
-The slice keeps the conservative defaults: no automatic original-message
-reattach, no inline preview, no inline image rendering, and no remote content
-loading. The current tests cover default reply and forward compose rendering,
-explicit source-attachment selection, send-time re-fetch, and the existing
-aggregate compose attachment validation path. Remaining closeout work includes
-WSTG coverage, stale-source failure coverage, and draft save/resume of source
-attachment references if that behavior is admitted.
-
-## 2026-05-11, Define V3 reply and forward attachment boundary
-
-Version 3 now has a design gate for explicit original-message attachment
-handling at `docs/V3_REPLY_FORWARD_ATTACHMENT_HANDLING_DESIGN.md`.
-
-The design keeps the next implementation slice narrow: reply and forward
-compose may show surfaced source attachments and allow explicit selection, but
-send must revalidate every selected original attachment through the existing
-bounded message and attachment path. Selected originals and newly uploaded
-attachments share the existing compose aggregate limits, and failures must be
-visible rather than silently dropping a confirmed selection.
-
-The boundary remains conservative: no inline preview, no inline image
-rendering, no remote content loading, no automatic reattach, no browser-local
-message cache, and no broad MIME-client behavior.
-
-## 2026-05-11, Keep V3 worker-budget env examples aligned
-
-The generic `config/osmap.env.example` now carries the same Version 3
-route-class worker-budget and expensive-request-timeout controls already
-present in the OpenBSD service examples:
-
-- `OSMAP_MAILBOX_WORKER_BUDGET`
-- `OSMAP_SEARCH_WORKER_BUDGET`
-- `OSMAP_SEND_WORKER_BUDGET`
-- `OSMAP_AUTH_WORKER_BUDGET`
-- `OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS`
-
-The shared developer security gate now includes a small regression that checks
-the generic example, the OpenBSD examples, and the reviewed
-`mail.blackbagsecurity.com` env artifacts together. This keeps future V3
-resource-control tuning from leaving the operator-facing examples stale.
-
-## 2026-05-11, Surface the V3 draft state path in env examples
-
-The Version 3 draft store already defaults to `<OSMAP_STATE_DIR>/drafts` and
-supports an explicit `OSMAP_DRAFT_DIR` override, but the committed environment
-examples did not show that state path next to sessions and settings. The
-generic, OpenBSD, and reviewed `mail.blackbagsecurity.com` env artifacts now
-name the draft directory explicitly.
-
-The draft design gate regression now checks those env examples so the
-operator-facing state model stays aligned with the implemented V3 draft
-storage boundary.
-
-## 2026-05-07, Admit limited V3 draft save and resume pilot workflow
-
-`OSMAP-WSTG-BUSL-002` now has host-safe authenticated evidence from
-`mail.blackbagsecurity.com` proving the V3 draft route lifecycle with
-password-plus-TOTP authentication. The passing report is
-`maint/wstg-testing-pack/output/osmap-wstg-20260507-173210/report.md`, with
-summary counts `pass=1`, `fail=0`. The evidence covers save, list, resume,
-delete, send-success cleanup, CSRF rejection, same-origin rejection,
-stale-session rejection, attachment-limit rejection, and redacted evidence
-output.
-
-The operator redaction scan found no stored session cookie, raw session id,
-CSRF token, TOTP, password, raw draft id, or validation draft body markers in
-the generated report or evidence directory. Draft save and resume can therefore
-move from `roundcube_fallback` to `supported_with_limits` for Version 3 pilot
-planning. The limits remain explicit: no browser-local drafts, no attachment
-preview, no inline image rendering, no remote content loading, no weakening of
-HTML sanitization, send-only use of newly uploaded persisted draft attachments,
-and no automatic original-message attachment reattach.
-
-## 2026-05-07, Add V3 draft WSTG route evidence
-
-The WSTG testing pack now includes `OSMAP-WSTG-BUSL-002`, a release-required
-authenticated dynamic test for the V3 draft route lifecycle. It maps to ASVS
-5.0.0 as the primary control standard and reports through the OWASP Top 10 2025
-crosswalk. The test exercises draft save, list, resume, delete, send-success
-cleanup, CSRF rejection, same-origin rejection, stale-session rejection,
-attachment-limit rejection, and redacted evidence output.
-
-The pilot workflow disposition remains `roundcube_fallback` until host-safe
-authenticated evidence is collected and reviewed.
-
-## 2026-05-06, Wire V3 draft browser routes
-
-The draft slice now exposes authenticated browser routes for draft list,
-resume, save, delete, and send-success cleanup. Draft POST routes use the
-existing CSRF and same-origin guardrails. Resumed drafts preserve stored
-new-upload attachments as send-only data, and `/send` deletes the draft only
-after accepted submission handoff. Submission denial leaves the draft available
-for retry.
-
-The workflow remains `roundcube_fallback` in the pilot inventory until WSTG/ASVS
-coverage and host-safe evidence are updated for the new browser route surface.
-
-## 2026-05-06, Add V3 draft persistence primitives
-
-The first draft implementation slice adds `src/draft.rs`, a file-backed draft
-store below the HTTP route layer. It generates lower-case hex draft ids, scopes
-draft directories by a hash of the canonical username, validates compose fields
-and newly uploaded attachments with the existing compose policy before writing,
-uses generated attachment body file names, writes metadata and attachment files
-with restrictive permissions, enforces per-user quota, returns redacted list
-summaries, and removes expired drafts opportunistically.
-
-This does not yet make browser draft save/resume user-visible. The next slice
-must wire authenticated routes with CSRF and same-origin checks, preserve drafts
-on send backend failure, delete them only after accepted send handoff, and add
-route plus WSTG/ASVS evidence before the pilot workflow disposition changes.
-
-## 2026-05-06, Define V3 draft save and resume boundary
-
-Version 3 now has a draft save and resume design gate at
-`docs/V3_DRAFT_SAVE_RESUME_DESIGN.md`.
-
-The design keeps the next slice server-side and explicit: draft state belongs
-under the reviewed OSMAP state root, is scoped by validated canonical username,
-reuses the existing compose limits, keeps POST routes CSRF-bound and
-same-origin-bound, and preserves the `_osmap` plus `vmail` runtime split.
-
-This is not a runtime persistence claim. The pilot workflow inventory still
-keeps draft save and resume in `roundcube_fallback` until implementation,
-route tests, WSTG/ASVS coverage, cleanup behavior, and redacted evidence land.
-
-## 2026-05-06, Choose explicit V3 concurrent-session policy
-
-Version 3 now treats concurrent browser sessions as the intentional policy
-rather than an implicit default. The session surface keeps bounded absolute and
-idle lifetimes, visible session metadata, and user-driven revocation for the
-current session, other sessions, or all sessions.
-
-The browser-visible session list now includes a normalized device label derived
-from the existing user-agent metadata. OSMAP does not add remembered-device
-cookies, persistent device identifiers, geolocation, or anomaly scoring in this
-slice.
-
-## 2026-05-06, Integrate V3 live MIME and HTML proof into release gate
-
-The strict V3 release path now treats the live MIME and HTML proof as required
-release evidence. `make release-check` validates the repo-owned live validator,
-requires a current redacted `maint/live/latest-host-v3-mime-html-proof-report.txt`
-for the assessed commit, records the proof status in the release evidence
-summary, and includes the safe report in the sanitized evidence archive.
-
-Release mode fails closed when the proof report is missing, stale, incomplete,
-or contains forbidden session, CSRF, password, TOTP, full message body, or full
-attachment body markers.
-
-## 2026-05-06, Implement V3 live MIME and HTML proof validator
-
-The Version 3 live MIME and HTML proof plan now has a repository-owned live
-validator:
-
-- `maint/live/osmap-live-validate-v3-mime-html-proof.ksh`
-
-The validator was run on `mail.blackbagsecurity.com` from the feature branch and
-passed at commit `af7c8ab`.
-
-The live proof validated:
-
-- current tree build on the OpenBSD host
-- enforced mailbox helper startup under `vmail`
-- enforced browser runtime startup under `_osmap`
-- `/healthz` returning `HTTP/1.1 200 OK`
-- encoded `Subject` and `From` rendering
-- sanitized HTML rendering with hostile markers removed
-- `Junk` mailbox lookup for hostile HTML delivery
-- inline image metadata surfacing without inline image rendering
-- forced-download inline image attachment handling
-- delivery-status attachment metadata and forced-download handling
-- original `message/rfc822` attachment metadata and forced-download handling
-- absence of synthetic body and attachment markers from the runtime audit log
-
-The generated live report remains ignored locally and is not committed as a
-tracked artifact. The validator itself is the reproducible evidence path.
-
-
-## 2026-05-03, Define V3 live MIME and HTML proof plan
-
-The next Version 3 MIME and HTML correctness slice starts with a live-host proof
-plan before adding a combined live validation script.
-
-The proof plan defines how `mail.blackbagsecurity.com` should validate the
-current MIME parsing, header decoding, sanitized HTML, inline image metadata,
-attachment metadata, forced-download behavior, and audit redaction posture
-without turning the validator or its evidence files into a source of sensitive
-material.
-
-The plan requires the future live validator to avoid printing or storing:
-
-- mailbox passwords
-- TOTP codes
-- TOTP secret material
-- browser session cookies
-- CSRF tokens
-- raw persisted session identifiers
-- full message bodies
-- full attachment bodies
-- authorization headers
-
-The current decision is to implement the proof as a synthetic-session live
-validation first. Real password-plus-TOTP login remains covered by the existing
-login-send validator, and any combined real-login MIME proof should wait until
-the synthetic live proof is stable.
-
-
-## 2026-05-03, Harden V3 attachment metadata regressions
-
-The next MIME and HTML correctness slice strengthens attachment metadata
-regression coverage before draft persistence, reply/forward attachment re-use,
-or attachment preview behavior is considered.
-
-This slice proves that:
-
-- path-like or unsafe surfaced filenames are not trusted as download paths
-- unsafe download content types fall back to `application/octet-stream`
-- delivery-status report parts remain forced-download metadata
-- original `message/rfc822` parts remain forced-download metadata
-- oversized `Content-ID` metadata is rejected before rendering or browser
-  presentation
-- named parts without explicit disposition are surfaced as metadata only
-
-The implementation keeps the existing trust boundary:
-
-- no attachment preview
-- no inline image rendering
-- no remote content loading
-- no draft persistence
-- no attachment body audit logging
-- forced-download remains the only attachment retrieval behavior
-
-Validation completed locally:
-
-- `cargo fmt --check`
-- `git diff --check`
-- `cargo test mime:: -- --nocapture`
-- `cargo test attachment:: -- --nocapture`
-- `cargo test rendering:: -- --nocapture`
-- full `cargo test` passed with 364 tests passed, 0 failed, and 4 ignored
-
-
-## 2026-05-03, Harden V3 sanitized HTML regression coverage
-
-The next MIME and HTML correctness slice adds focused sanitizer regression
-coverage without changing the sanitizer allowlist or widening browser trust.
-
-This slice proves that sanitized HTML continues to reject or neutralize:
-
-- relative and protocol-relative links
-- `cid:`, `data:`, and `javascript:` links
-- inline styles and event handlers
-- forms and inputs
-- metadata refresh
-- embedded style blocks and remote CSS references
-- image tags
-- SVG, iframe, object, embed, and template surfaces
-- HTML comments
-
-The implementation remains test-only. It does not add remote content loading,
-inline image rendering, attachment preview behavior, draft persistence, broader
-HTML layout support, or new trusted URL schemes.
-
-Validation completed locally:
-
-- `cargo fmt --check`
-- `git diff --check`
-- `cargo test rendering_html:: -- --nocapture`
-- `cargo test rendering:: -- --nocapture`
-- full `cargo test` passed with 359 tests passed, 0 failed, and 4 ignored
-
-
-## 2026-05-03, Expand V3 header decoding coverage
-
-The next MIME and HTML correctness slice adds bounded header-summary regression
-coverage before draft persistence or broader workflow state is introduced.
-
-This slice adds fixtures and tests for:
-
-- multi-encoded `Subject` headers
-- mixed encoded `From` headers
-- encoded `Date` headers
-- unsupported encoded header charsets
-- oversized encoded `Date` header rejection
-
-The implementation keeps the existing trust boundary:
-
-- Dovecot-provided `date_received` remains the authoritative mailbox timeline
-  field
-- decoded `Date` remains a bounded header-summary value only
-- unsupported header charsets are preserved as bounded literals instead of
-  widening charset support implicitly
-- oversized encoded headers fail deterministically
-- no draft persistence, attachment preview, inline image rendering, or remote
-  content loading is introduced
-
-Validation completed locally:
-
-- `cargo fmt --check`
-- `git diff --check`
-- `cargo test rendering:: -- --nocapture`
-- full `cargo test` passed with 357 tests passed, 0 failed, and 4 ignored
-
-
-## 2026-05-03, Expand V3 MIME and HTML regression corpus
-
-The next Version 3 development slice continues MIME and HTML correctness before
-draft persistence. This keeps draft, reply, forward, search, and attachment
-workflow work behind a stronger parsing and rendering baseline.
-
-This slice adds synthetic regression fixtures for:
-
-- quoted-printable soft line breaks in selected plain-text bodies
-- wrapped base64 selected plain-text bodies
-- `multipart/alternative` mail where HTML appears before the plain-text part
-- hostile HTML links, styles, forms, metadata refresh, images, and unsafe URL
-  schemes
-- suspicious RFC 2231 continuation filenames surfaced as attachment metadata
-
-The change is intentionally regression-first. It adds fixture coverage and tests
-without widening runtime trust:
-
-- no remote content loading
-- no inline image rendering
-- no attachment preview behavior
-- no draft persistence
-- no message body or attachment body audit logging
-- no change to the conservative forced-download attachment posture
-
-Validation completed locally:
-
-- `cargo fmt --check`
-- `git diff --check`
-- `cargo test mime:: -- --nocapture`
-- `cargo test rendering:: -- --nocapture`
-- `cargo test rendering_html:: -- --nocapture`
-- `cargo test attachment:: -- --nocapture`
-- full `cargo test` passed with 354 tests passed, 0 failed, and 4 ignored
-
-
-## 2026-05-02, Redact persisted session identifiers from audit logs
-
-Live logging due diligence on `mail.blackbagsecurity.com` found that
-`/var/lib/osmap/audit/serve.log` contained raw `session_id` audit fields.
-The value was not the browser cookie token, but it was the persisted session
-lookup identifier and at least one logged value overlapped a current session
-file. That made the audit log a secondary source of live session material.
-
-Immediate containment revoked current sessions, moved the pre-fix audit log and
-session files into a root-only backup directory, truncated the live serve audit
-log, and restarted `osmap_serve`. Post-containment unauthenticated requests did
-not recreate session files or write new raw `session_id` fields.
-
-The code policy is now:
-
-- runtime audit events use `session_ref`, not `session_id`
-- `session_ref` is a deterministic, audit-only, domain-separated, truncated
-  SHA-256 reference derived from the internal persisted session identifier
-- `session_ref` is not accepted as a cookie, session filename, revocation target,
-  or session lookup key
-- `LogEvent::with_field()` defensively converts attempted `session_id` audit
-  fields into `session_ref`
-- runtime call sites use `session_ref` explicitly so code review does not depend
-  only on the central safety net
-
-Internal session storage, validation, cookie handling, revocation forms, and
-session-file behavior remain unchanged. The change narrows audit exposure while
-preserving incident correlation.
-
-Validation completed locally:
-
-- `cargo fmt --check`
-- `git diff --check`
-- no runtime `with_field("session_id", ...)` call sites outside the logging
-  safety-net test
-- no stale audit fixture strings expecting the known raw session identifier
-- full `cargo test` passed with 348 tests passed, 0 failed, and 4 ignored
-
-
-## 2026-05-02
-
-### Make the Version 3 release gate fail closed before expanding features
-
-The first Version 3 roadmap item needed to make release validation honest
-before OSMAP resumed adoption-feature work. The previous developer security
-check was useful for local iteration, but it could still report skipped work
-without providing a separate strict release answer.
-
-OSMAP now has an explicit `make release-check` path backed by
-`OSMAP_SECURITY_PROFILE=release`. Release mode requires pinned Rust tooling,
-Cargo build/test/clippy/fmt, supply-chain tooling, dependency inventory
-evidence, host-readiness evidence, Version 2 carry-forward evidence,
-credentialed WSTG evidence where mapped, and a sanitized evidence archive and
-summary for the assessed commit. Developer mode remains available through
-`make security-check` and can still warn about permitted local skips.
-
-This was chosen as the first V3 implementation slice because Version 3 should
-not grow user-facing scope until the project can distinguish a real release
-gate from a partial developer check.
-
-### Treat TLS CBC cleanup as release evidence, not only config hygiene
-
-The next security finding was the public edge allowing older or weaker TLS
-shapes than the V3 baseline should tolerate. The code and host work narrowed
-the browser-facing TLS floor to TLS 1.2 and TLS 1.3, removed CBC cipher suites
-from the reviewed nginx edge configuration, and archived host evidence from
-the actual `mail.blackbagsecurity.com` edge.
-
-OSMAP now requires that archived TLS edge evidence in the strict release gate.
-The release evidence summary records the TLS artifact so a future release
-cannot silently pass while the edge proof is absent or stale.
-
-This keeps TLS handling in the operational edge slice. It does not treat
-CodeQL or static hints as the final answer when the production behavior is
-owned by nginx and must be proven at the host boundary.
-
-### Bound expensive browser routes with explicit budgets and route deadlines
-
-The next Version 3 hardening stream moved from evidence into implementation:
-helper-backed mailbox/search/message-view routes now acquire route-class
-worker budgets and propagate a hard expensive-route deadline into helper and
-external-command work. That means the browser runtime no longer relies only on
-per-socket or per-command defaults when a route can consume scarce helper or
-mailbox resources.
-
-The first covered classes were mailbox list/view/search work. The second
-covered classes were sendmail-backed compose submission and external-auth/TOTP
-login. OSMAP now has separate route budgets for mailbox, search, send, and
-auth work, one bounded expensive-route timeout knob, startup reporting for
-those values, and test/evidence coverage showing budget exhaustion and
-timeout propagation are observable.
-
-This was chosen before additional V3 feature work because daily-driver
-adoption will increase route concurrency. The release gate needs evidence
-that expensive routes fail boundedly under pressure rather than stretching
-unboundedly behind authenticated browser actions.
-
-### Finish the current expensive-route resource-control slice
-
-The next bounded-resource gap was not a new user feature. It was the remaining
-expensive browser routes that still reached helper or `doveadm` work without
-their own route-class admission proof: message move, attachment download,
-reply/forward source loading, and all-mailbox search fanout.
-
-OSMAP now wraps those routes with the same explicit route budgets used by the
-earlier V3 resource-control work. Message move, attachment download, and
-compose source loading consume mailbox-worker slots. All-mailbox search
-continues to consume one search-worker slot for the aggregate request and now
-has an explicit fanout deadline while it walks visible mailboxes.
-
-The runtime also propagates the expensive-route timeout into helper-backed
-move and attachment work plus direct `doveadm` search, view, and move command
-timeouts. The evidence file records focused tests for budget exhaustion,
-fanout-deadline logging, and command-timeout propagation without logging
-private queries, message bodies, attachment bytes, session cookies, CSRF
-tokens, passwords, or TOTP material.
-
-## 2026-04-29
-
-### Polish the V3 browser UI without widening the browser trust boundary
-
-OSMAP now has a more deliberate server-rendered V3 browser surface for the
-existing login, mailbox, message, compose, session, search, and settings pages.
-The login page presents OSMAP Secure Webmail as a centered authentication card
-with explicit username, password, and TOTP labels, generic failure messaging,
-and calm security indicators for the reviewed HTTPS edge, required TOTP, and
-HttpOnly/SameSite session cookies.
-
-The authenticated mailbox surface now uses a shared application header, visible
-2FA/session state, folder navigation where the current route already has
-mailbox-list data, a cleaner message-list toolbar, and a three-pane message
-view with folder navigation, supported reply, forward, move, archive, and
-delete-to-Trash actions, attachment metadata, rendering-state details, and
-explicit remote-content blocked notices.
-
-This was intentionally kept as a UI-only polish slice:
-
-- no frontend framework
-- no external assets, remote fonts, remote images, or CDN dependencies
-- no new JavaScript
-- no CSP, HSTS, cookie, CSRF, same-origin, auth, session, mailbox-helper, MIME,
-  attachment, or rendering-policy weakening
-- no remember-device, password-reset, Snooze, OAuth, contacts, calendar, or
-  unsupported action controls
-
-The change updates route-level HTML assertions so the polished UI remains
-covered while preserving the existing authentication, session, mailbox, send,
-attachment, logout, and rendering behavior.
-
-## 2026-04-24
-
-### Decode selected transfer-encoded text bodies before rendering
-
-The next small Version 3 MIME correctness gap was body transfer encoding.
-OSMAP already decoded attachment bodies for forced download, but selected
-`text/plain` and `text/html` body parts could still reach the renderer as raw
-`base64` or `quoted-printable` text.
-
-OSMAP now decodes selected textual bodies for the narrow rendering path when
-the message uses common `base64` or `quoted-printable` transfer encoding and
-the current supported charset set. Malformed or unsupported encoded text is
-withheld as non-renderable content instead of being displayed raw.
-
-This keeps the change in the MIME/rendering slice only:
-
-- no route changes
-- no rich-text compose
-- no remote external content loading
-- no attachment preview behavior
-- no change to the `_osmap` plus `vmail` runtime split
-
-### Start Version 3 MIME correctness with RFC 2231 attachment filenames
-
-The first Version 3 implementation slice needed to improve MIME correctness
-without changing the runtime boundary, adding remote content loading, or
-turning the MIME layer into a broad mail-client engine.
-
-The smallest useful gap was attachment filename metadata. The MIME baseline
-already identified RFC 2231 parameter decoding as missing, and real attachment
-correctness depends on common `filename*`, continued `filename*0*` /
-`filename*1*`, and content-type `name*` forms. OSMAP now decodes those bounded
-filename parameters for the narrow attachment metadata surface.
-
-The change deliberately stays inside `src/mime.rs`:
-
-- no route changes
-- no attachment preview behavior
-- no inline image rendering
-- no remote external content loading
-- no change to the `_osmap` plus `vmail` runtime split
-
-### Define Version 3 as the daily-driver adoption boundary
-
-After Version 2 pilot closeout, the project needed a Version 3 boundary that
-absorbs real pilot feedback without reopening the completed Version 2 scope.
-The final V2 cohort proved retrieve, send, and send-with-attachments for the
-bounded browser slice, but the remaining daily-driver gaps were specific:
-draft continuity, reply and forward attachment handling, richer search,
-bounded bulk organization, MIME and HTML correctness, session/device policy,
-TLS CBC disposition, and WSTG regression evidence.
-
-OSMAP now treats Version 3 as a focused adoption release, not a Roundcube
-parity project. The new Version 3 docs define:
-
-- `docs/V3_DEFINITION.md` as the authoritative scope boundary
-- `docs/V3_ACCEPTANCE_CRITERIA.md` as the feature-by-feature gate
-- `docs/V3_ROADMAP.md` as the implementation sequence
-- `docs/V3_SECURITY_GATES.md` as the carry-forward and new security evidence
-  requirements
-
-The decision preserves the Version 2 `_osmap` plus `vmail` split, production
-mailbox-helper requirement, public-edge hardening, and all existing Version 2
-gates. Contacts, calendar, groupware, plugins, mobile app, broad admin
-console, remote external content loading, OpenPGP implementation, and broad
-runtime rewrite remain outside Version 3.
-
-The first Version 3 implementation slice should be MIME and HTML correctness
-because reliable summaries, body selection, attachment metadata, and safe
-rendering are prerequisite to draft, reply, forward, and search work.
-
-## 2026-04-18
-
-### Preserve real client IPs behind the loopback nginx edge
-
-Once OSMAP was live on the public browser edge, the next operational truth was
-uncomfortable: auth, session, send, and mailbox audit events still recorded
-`remote_addr="127.0.0.1"` because the `_osmap` runtime only trusted the local
-TCP peer and ignored the client IP headers that nginx already set.
-
-That weakened two important Version 2 properties:
-
-- operator-visible audit logs no longer showed the actual browser client
-- remote-address-based throttle buckets collapsed behind the local reverse
-  proxy instead of reflecting the real remote browser
-
-OSMAP now derives the effective browser client IP from loopback-trusted proxy
-headers:
-
-- trust `X-Real-IP` only when the immediate peer is loopback
-- otherwise ignore proxy headers and keep using the socket peer address
-
-This keeps the trust boundary narrow. OSMAP does not accept arbitrary
-forwarding headers from non-loopback clients, but it now preserves the real
-browser client IP when nginx proxies locally on the validated host shape.
-
-### Stop short of nginx OCSP stapling on the current mail host certificate
-
-The next TLS task on `mail.blackbagsecurity.com` was to enable OCSP stapling
-for the nginx HTTPS endpoint with the smallest safe change. The repo and host
-inspection showed:
-
-- the authoritative TLS include is `/etc/nginx/templates/ssl.tmpl`
-- the live certificate is `/etc/ssl/mail.blackbagsecurity.com.fullchain.pem`
-- the host has OpenBSD `ocspcheck(8)` available
-- the current leaf certificate is a Let's Encrypt E7 leaf with no OCSP
-  responder URL in its Authority Information Access extension
-
-The decisive host checks were:
-
-- `openssl x509 -in /etc/ssl/mail.blackbagsecurity.com.fullchain.pem -ocsp_uri -noout`
-  returned nothing
-- `ocspcheck /etc/ssl/mail.blackbagsecurity.com.fullchain.pem` failed with
-  `contains no OCSP url`
-
-Because the deployed certificate does not expose an OCSP responder URL, OSMAP
-did not add nginx stapling directives, an `ocspcheck` staple-file workflow, or
-any certificate-renewal hook changes. That would have created config churn
-without producing a real stapled response.
-
-Instead, the repo now carries
-`maint/live/osmap-live-validate-nginx-ocsp-stapling.ksh` plus one shell
-regression so this prerequisite is explicit and reproducible. For the current
-certificate chain, the expected result is
-`nginx_ocsp_stapling_result=unsupported_by_certificate`.
-
-The current archived host evidence is:
-
-- `maint/live/latest-host-ocsp-stapling-report.txt`
-
-### Restore live auth observability before further browser-auth debugging
-
-The public browser surface was already working, but the first real failed login
-attempt after direct-public approval exposed a bad operational truth: the
-running `osmap_serve` and `osmap_mailbox_helper` processes had both stdout and
-stderr redirected to `/dev/null`.
-
-That meant OSMAP's structured auth events still existed in code, but operators
-could not actually observe them on the validated host. A bogus login reproduced
-the browser-visible `401`, yet no corresponding `category=auth` event appeared
-in `daemon`, `messages`, `secure`, or `authlog`.
-
-OSMAP initially restored reviewed stderr capture through the service launchers
-by directing each runtime into its configured audit directory:
-
-- `/var/lib/osmap/audit/serve.log`
-- `/var/lib/osmap-helper/audit/mailbox-helper.log`
-
-That placement was later superseded by the 2026-06-11 decision to publish
-operator-facing daemon logs under `/var/log/osmap`.
-
-The repository now also carries
-`maint/live/osmap-live-validate-auth-observability.ksh` plus two shell
-regressions that prove:
-
-- the reviewed OpenBSD launchers append structured stderr output into the
-  configured log files
-- a live bogus login yields a `401` and a matching `category=auth
-  action=login_denied` event in the captured serve log
-
-This was chosen before deeper browser-auth debugging because the project needed
-real operator visibility into login failures again before trying to classify a
-specific mailbox-password or TOTP problem on the live host.
-
-### Archive one real outside-in browser-path verification after limited public approval
-
-Once the repo had a passing edge-cutover report, a passing host-side exposure
-assessment, and a passing guarded Version 2 readiness report, the next useful
-step was to collect one real outside-in verification from a system that was not
-using the WireGuard-only management path.
-
-The repository now carries
-`maint/live/latest-external-browser-path-verification.txt`, which records:
-
-- public DNS resolution for `mail.blackbagsecurity.com`
-- the local non-WireGuard route used to reach that public address
-- a browser-style HTTPS fetch to `https://mail.blackbagsecurity.com/`
-- the one-hop redirect from `/` to `/login`
-- the final `200` response at the OSMAP login page
-- the presence of the expected username, password, and `totp_code` form fields
-- the observed certificate identity and browser-facing security headers
-
-This was chosen instead of adding more host-side validation because the repo
-already had host-internal proof. What remained was one honest outside-in
-confirmation that the approved public browser surface was reachable and still
-looked like OSMAP from a non-management path.
-
-### Add a repo-owned service-activation path for the final host runtime step
-
-Once the reviewed binary, runtime-group, and service-artifact paths had
-cleared the install-side blockers, the next explicit validator failures were
-all runtime-health checks:
-
-- `mailbox_helper_service_not_healthy`
-- `serve_service_not_healthy`
-- `missing_helper_socket`
-- `loopback_http_listener_not_ready`
-
-OSMAP now carries `maint/live/osmap-live-rehearse-service-activation.ksh` plus
-`docs/MAIL_HOST_SERVICE_ACTIVATION_SOP.md`. The wrapper prepares exact apply
-and restore scripts for the final host-side runtime step: create the reviewed
-`_osmap` and `vmail` state/runtime directories, normalize the env-file group
-ownership needed by the dedicated runtime users, start both services via
-`rcctl`, and immediately rerun the repo-owned service validator.
-
-The apply path does not accept partial success. It requires the validator to
-stop reporting the four remaining runtime-health failures listed above. That
-keeps this gate narrow: clear the final host runtime blockers without mixing in
-browser-edge cutover or broader deployment changes.
-
-This was chosen instead of jumping straight to edge cutover because Version 2
-still benefits more from proving the persistent loopback runtime is healthy
-before the public browser path moves away from Roundcube.
-
-### Fix the reviewed rc.d health check definitions before treating activation as complete
-
-The first real host-side service-activation apply revealed that the runtime
-itself could come up while `rcctl check` still failed. The helper socket
-existed, `127.0.0.1:8080` was listening, and both OSMAP processes were present,
-but the reviewed `rc.d` scripts were still unhealthy in the eyes of OpenBSD
-service management.
-
-The cause was the placement of `pexp` in the reviewed `rc.d` scripts. OSMAP
-had set `pexp` before sourcing `/etc/rc.d/rc.subr`, but OpenBSD recomputes
-that variable during initialization. The resulting runtime state used the
-launcher path instead of the final `/usr/local/bin/osmap ...` process shape,
-so `rcctl check` looked for the wrong command line.
-
-OSMAP now sets `pexp` after sourcing `rc.subr` in both reviewed `rc.d`
-artifacts and carries a dedicated regression in
-`maint/security/test-osmap-openbsd-rcd-health.sh` so this exact mismatch does
-not regress.
-
-### Clear the final persistent-service blockers on the validated host
-
-After the reviewed activation wrapper, the `rc.d` health fix, and the stale
-runfile cleanup had all landed, the next useful step was to rerun the reviewed
-service-artifact and service-activation paths on `mail.blackbagsecurity.com`
-and archive the resulting validator evidence.
-
-The final reviewed activation apply on the validated host now shows:
-
-- `serve_service_check_rc=0`
-- `helper_service_check_rc=0`
-- `http_listener_bindings=127.0.0.1.8080`
-- `helper_socket=srw-rw---- ... /var/lib/osmap-helper/run/mailbox-helper.sock`
-- no remaining `failed_checks`
-
-The current archived artifacts are:
-
-- `maint/live/latest-host-service-activation-session.txt`
-- `maint/live/latest-host-service-enablement-report.txt`
-
-That means the persistent `_osmap` plus `vmail` loopback runtime is now in
-place and validator-proven on `mail.blackbagsecurity.com`. The remaining
-Version 2 exposure work is no longer service installation. It is public-edge
-cutover, exposure reassessment, and rollback-safe public-browser validation.
-
-### Clear the next mail-host service blockers with the reviewed service-artifact path
-
-After the reviewed service-artifact wrapper existed, the next useful step was
-to apply that narrow path on `mail.blackbagsecurity.com` and archive the
-immediate validator evidence.
-
-The reviewed wrapper was run from `~/OSMAP` on the validated host in both
-rehearsal and apply mode. The apply run installed the reviewed env files into
-`/etc/osmap/`, the reviewed launchers into `/usr/local/libexec/osmap/`, and
-the reviewed `rc.d` files into `/etc/rc.d/`, then immediately reran the
-repo-owned service validator. The current archived artifacts are:
-
-- `maint/live/latest-host-service-artifact-session.txt`
-- `maint/live/latest-host-service-enablement-report.txt`
-
-That validator report now shows the reviewed service artifacts are installed
-and no longer reports:
-
-- `missing_serve_env_file`
-- `missing_helper_env_file`
-- `missing_serve_launcher`
-- `missing_helper_launcher`
-- `missing_serve_rc_script`
-- `missing_helper_rc_script`
-
-It still fails, correctly, on the remaining activation and runtime-health
-prerequisites:
-
-- `mailbox_helper_service_not_healthy`
-- `serve_service_not_healthy`
-- `missing_helper_socket`
-- `loopback_http_listener_not_ready`
-
-This was chosen instead of jumping straight to service startup because Version
-2 still benefits from clearing and proving the reviewed file-install blockers
-before folding in state-directory creation, service start, and runtime-health
-debugging.
-
-### Add a repo-owned service-artifact path before the final service activation step
-
-Once the reviewed binary and runtime-group paths had cleared the first two host
-blockers, the next explicit validator failures were no longer about identity or
-privilege setup. They were about the absence of the reviewed service artifacts:
-the env files, launchers, and `rc.d` scripts.
-
-OSMAP now carries `maint/live/osmap-live-rehearse-service-artifacts.ksh` plus
-`docs/MAIL_HOST_SERVICE_ARTIFACTS_SOP.md`. The wrapper prepares exact apply and
-restore scripts for installing the reviewed files into `/etc/osmap/`,
-`/usr/local/libexec/osmap/`, and `/etc/rc.d/`, then immediately reruns the
-repo-owned service validator.
-
-The apply path does not require the full service validator to pass yet. It
-requires only that the validator stop reporting the six artifact-missing
-checks. That keeps this gate narrow: clear the reviewed file-install
-preconditions without pretending service startup, socket creation, or loopback
-listener readiness are already complete.
-
-This was chosen instead of widening directly into service activation because
-Version 2 still benefits more from removing the next explicit host blockers in
-one coherent file-install step than from merging artifact installation and
-service startup into one riskier change.
-
-### Add a repo-owned runtime-group provisioning path before the reviewed service install
-
-Once the reviewed binary deployment path had cleared `/usr/local/bin/osmap`,
-the next explicit host-side blocker in the service validator was the missing
-shared runtime group and the missing `_osmap` membership in that group.
-
-OSMAP now carries `maint/live/osmap-live-rehearse-runtime-group-provisioning.ksh`
-plus `docs/MAIL_HOST_RUNTIME_GROUP_PROVISIONING_SOP.md`. The wrapper prepares
-exact apply and restore scripts for creating `osmaprt`, appending `_osmap` to
-that group, and immediately rerunning the repo-owned service validator.
-
-The apply path does not require the full service validator to pass yet. It
-requires only that the validator stop reporting
-`missing_shared_runtime_group` and
-`osmap_user_missing_shared_runtime_group_membership`. That keeps this gate
-narrow: clear the next hard precondition without pretending the later service
-install steps are already complete.
-
-This was chosen instead of widening directly into env, launcher, `rc.d`, or
-socket setup because Version 2 still benefits more from removing the next
-explicit host blocker in a reviewable way than from splicing multiple service
-changes together.
-
-### Clear the next mail-host service blocker with the reviewed runtime-group path
-
-After the runtime-group provisioning wrapper existed, the next useful step was
-to apply that narrow path on `mail.blackbagsecurity.com` and archive the
-immediate validator evidence.
-
-The reviewed wrapper was run from `~/OSMAP` on the validated host in both
-rehearsal and apply mode. The apply run created `osmaprt`, appended `_osmap`
-to that group, and immediately reran the repo-owned service validator. The
-current archived artifacts are:
-
-- `maint/live/latest-host-runtime-group-session.txt`
-- `maint/live/latest-host-service-enablement-report.txt`
-
-That validator report now shows:
-
-- `service_binary_state=installed`
-- `shared_group_line=osmaprt:*:1002:_osmap`
-- `osmap_group_membership=_osmap osmaprt`
-
-It no longer reports:
-
-- `missing_shared_runtime_group`
-- `osmap_user_missing_shared_runtime_group_membership`
-
-It still fails, correctly, on the remaining service prerequisites:
-
-- missing reviewed env, launcher, and `rc.d` files
-- missing helper socket
-- missing loopback `127.0.0.1:8080` listener
-- unhealthy `osmap_mailbox_helper` and `osmap_serve`
-
-This was chosen instead of jumping straight to the full service apply path
-because Version 2 still benefits from clearing and proving one host-side
-precondition at a time.
-
-### Add a repo-owned binary deployment path before the reviewed service install
-
-Once the repo carried both a reviewed service-enablement wrapper and a
-persistent-service validator, the next blocker was no longer procedural
-ambiguity. The first hard host-side blocker was explicit: the validator failed
-immediately because `/usr/local/bin/osmap` did not exist on
-`mail.blackbagsecurity.com`.
-
-OSMAP now carries `maint/live/osmap-live-rehearse-binary-deployment.ksh` plus
-`docs/MAIL_HOST_BINARY_DEPLOYMENT_SOP.md`. The wrapper builds one staged
-binary from the reviewed host checkout, prepares exact apply and restore
-scripts, installs the staged binary into `/usr/local/bin/osmap` when asked,
-and immediately reruns the repo-owned service validator.
-
-The apply path does not require the full service validator to pass yet. It
-requires only that the validator confirm `service_binary_state=installed` and
-stop reporting `missing_osmap_binary`. That keeps this gate narrow: clear the
-first hard precondition without pretending the rest of the service install is
-already complete.
-
-This was chosen instead of expanding directly into service install or edge
-cutover because Version 2 still benefited more from removing the first explicit
-host blocker in a reviewable way than from widening the scope of one host-side
-change stream.
-
-### Clear the first hard mail-host service blocker with the reviewed binary path
-
-After the binary deployment wrapper existed, the next useful step was not more
-planning. It was to apply that narrow path on `mail.blackbagsecurity.com` and
-archive the immediate validator evidence.
-
-The reviewed wrapper was run from `~/OSMAP` on the validated host in both
-rehearsal and apply mode. The apply run installed `/usr/local/bin/osmap` and
-immediately reran the repo-owned service validator. The current archived
-artifacts are:
-
-- `maint/live/latest-host-binary-deployment-session.txt`
-- `maint/live/latest-host-service-enablement-report.txt`
-
-That validator report now shows `service_binary_state=installed` and no longer
-reports `missing_osmap_binary`. It still fails, correctly, on the remaining
-service prerequisites:
-
-- missing shared runtime group and `_osmap` membership
-- missing reviewed env, launcher, and `rc.d` files
-- missing helper socket
-- missing loopback `127.0.0.1:8080` listener
-
-This was chosen instead of jumping straight to the full service apply path
-because Version 2 still benefits from clearing and proving one host-side
-precondition at a time.
-
-## 2026-04-17
-
-### Add a host-side rehearsal and apply path for the reviewed edge cutover
-
-Once the repo carried reviewed host-specific edge artifacts, the remaining
-operator-risk gap was procedural. Operators still had to assemble the exact
-backup, install, validate, reload, and restore commands themselves.
-
-OSMAP now carries `maint/live/osmap-live-rehearse-edge-cutover.ksh` plus
-`docs/EDGE_CUTOVER_REHEARSAL_SOP.md`. The wrapper prepares a timestamped
-session on the host that contains:
-
-- backups of the current live edge files
-- staged reviewed replacements from the repo
-- an executable apply script
-- an executable restore script
-
-The shared security gate now also includes a regression that proves the wrapper
-can generate those scripts, apply the reviewed files, validate nginx and PF,
-and restore the prior state in a controlled fake host layout.
-
-This was chosen instead of jumping straight to a live edge mutation because
-Version 2 still benefited more from removing operator improvisation than from
-touching the validated host faster.
-
-### Add reviewed nginx and PF cutover artifacts for the validated host
-
-Once the repo carried both an exact edge-cutover plan and a repo-owned wrapper
-to verify the resulting live edge state, the remaining operator-risk gap was
-manual editing. The actual host move still depended on hand-editing
-`main-ssl.conf`, `osmap-root.tmpl`, `macros.pf`, and `selfhost.pf` under
-pressure.
-
-OSMAP now carries reviewed host-specific cutover artifacts under
-`maint/openbsd/mail.blackbagsecurity.com/` for:
-
-- the canonical HTTPS vhost replacement
-- the OSMAP root nginx template
-- the PF macros file with WAN `443` removed from the blocked set
-- the PF selfhost anchor with the explicit public `443` pass rule
-
-The shared security gate now also includes a regression that checks those
-artifacts for the specific lines the current cutover plan depends on.
-
-This was chosen instead of moving straight to host cutover because Version 2
-still benefited more from removing operator improvisation than from making one
-unreviewed edge change faster.
-
-### Add a repo-owned verifier for the actual OSMAP edge cutover state
-
-Once `docs/EDGE_CUTOVER_PLAN.md` existed, the next exposure-readiness gap was
-no longer the absence of a plan. It was the absence of one repo-owned command
-that could tell operators whether the real host had actually applied that
-plan.
-
-OSMAP now carries `maint/live/osmap-live-validate-edge-cutover.ksh` plus a
-shared regression test in
-`maint/security/test-osmap-live-validate-edge-cutover.sh`. The wrapper checks:
-
-- the canonical nginx include swap from `roundcube.tmpl` to `osmap-root.tmpl`
-- the expected OSMAP root-template proxy shape
-- the planned HTTPS listener bindings
-- the PF change that allows WAN `443` while keeping the older broad mail-port
-  expansion out of scope
-
-This was chosen instead of performing the host cutover immediately because
-Version 2 still needed one repeatable, reviewable proof path for the edge
-state itself before the real public-browser move would be safe to claim.
-
-### Define the exact OSMAP edge cutover and rollback plan for the validated host
-
-Once the repo had a Version 2 readiness gate and a repo-owned exposure
-assessment wrapper, the remaining exposure-side gap was not another abstract
-security statement. It was the absence of one exact operator artifact for
-moving `mail.blackbagsecurity.com` from Roundcube-at-root to OSMAP-at-root
-without widening OSMAP authority.
-
-OSMAP now carries `docs/EDGE_CUTOVER_PLAN.md`. It freezes the current host
-baseline and defines:
-
-- the exact nginx include replacement from `roundcube.tmpl` to an OSMAP root
-  template
-- the exact public-HTTPS listener and PF changes needed for direct browser
-  access on the validated host
-- the rollback path to re-restrict or restore Roundcube without changing the
-  `_osmap` plus `vmail` runtime split
-
-This was chosen instead of jumping straight to host cutover because Version 2
-still needed one reviewable, repo-owned change plan before the real edge move
-could be executed safely and audited later.
-
-## 2026-04-13
-
-### Add a standalone live-host proof for encoded header summary rendering
-
-The bounded RFC 2047 decoding slice for `Subject` and `From` already had local
-Rust coverage, but it still lacked explicit host evidence on the real helper-
-backed browser path. The next closeout-supporting step was one narrow host
-proof that exercised `/message` against a controlled message carrying encoded
-header summaries.
-
-OSMAP now carries `maint/live/osmap-live-validate-encoded-header-summary.ksh`.
-That script:
-
-- builds the current tree on the validated host
-- starts an isolated enforced mailbox helper plus browser runtime with a
-  synthetic validated session
-- injects one controlled plain-text message carrying encoded `Subject` and
-  `From` headers
-- renders `/message?...` through the real browser route
-- verifies the page surfaces the decoded summary values on the server-rendered
-  message view
-
-This was chosen instead of widening the frozen V1 closeout gate because the
-need was supplemental host evidence for an already shipped bounded rendering
-behavior, not a new release requirement.
-
-### Add a standalone live-host proof for inline-image metadata in message view
-
-The message-view path could now surface bounded `Content-ID` metadata and a
-more precise inline-image notice, but that behavior still only had local Rust
-test coverage and the shared security gate. The next useful closeout-supporting
-step was one narrow host proof that exercised the real helper-backed browser
-path on `mail.blackbagsecurity.com`.
-
-OSMAP now carries `maint/live/osmap-live-validate-inline-image-metadata.ksh`.
-That script:
-
-- builds the current tree on the validated host
-- starts an isolated enforced mailbox helper plus browser runtime with a
-  synthetic validated session
-- injects one controlled multipart/related HTML message carrying a
-  `cid:`-referenced inline image part
-- renders `/message?...` through the real browser route
-- verifies the page surfaces both the `cid:`-aware inline-image notice and the
-  attachment `Content-ID` metadata
-
-This was chosen instead of widening the frozen V1 closeout gate because the
-need was supplemental host evidence for an already shipped bounded behavior,
-not a new release requirement.
-
-### Add a short V1 closeout work-rules allowlist
-
-Once the Version 1 release gate was frozen, the remaining process risk was no
-longer only technical drift. It was scope drift: taking on useful-sounding work
-that did not actually support closeout.
-
-OSMAP now carries `docs/V1_CLOSEOUT_WORK_RULES.md` as a short allowlist for
-active work while the project remains in Version 1 closeout. It keeps the
-day-to-day rule simple:
-
-- if the task keeps the frozen gate, proofs, docs, or shipped V1 surface
-  healthy, it can be in scope
-- if it does not clearly fit that allowlist, treat it as Version 2 by default
-
-This was chosen instead of relying on scattered README prose because the
-project now needs one compact scoping reference that can be checked before
-implementation work starts.
-
-### Surface bounded Content-ID metadata for attachment parts in the message view
-
-The inline-image policy notice already told the truth about what OSMAP would
-not do: it would not render inline images inside the browser message body. But
-it still treated all inline-disposition image parts the same even though some
-are real `cid:`-addressable HTML assets and some are not.
-
-The surfaced attachment metadata and message-view UI now carry bounded
-`Content-ID` values when they are present and valid. That allows the browser
-message view to:
-
-- show `cid:` metadata in the surfaced attachment list
-- distinguish likely `cid:`-backed inline assets from generic inline image
-  parts
-- make the inline-image notice more precise without introducing inline-image
-  rendering, external-resource loading, or broader rich-mail behavior
-
-This was chosen instead of inline-image rendering because the Version 1 need is
-clarity about the current trust boundary, not a richer browser mail client.
-
-### Add a hook-installation regression check to the shared security gate
-
-Once `pre-commit` and `pre-push` both existed as repo-owned backstops, the next
-failure mode was silent drift in the installation path itself: a future edit to
-`Makefile`, `.githooks/`, or the shared hook scripts could leave maintainers
-believing the hooks still enforced `make security-check` when they no longer
-did.
-
-The shared `make security-check` gate now includes a temp-repo shell
-regression that:
-
-- runs `make install-hooks`
-- verifies `core.hooksPath=.githooks`
-- verifies both hook scripts are executable
-- invokes both hooks from a nested working directory against a stubbed
-  `make security-check` target so the repo-root handoff stays proven
-
-That keeps the local enforcement story honest by testing not just the security
-gate itself, but also the maintained path that is supposed to run it before
-commit and before push.
-
-### Add a pre-push security-check backstop to the repo-owned hook path
-
-The repository already had a repo-owned `pre-commit` hook that routed through
-`make security-check`, but the recent rustfmt-only CI failure on `main` showed
-that the practical maintainer workflow still benefited from one more local
-backstop before network publication.
-
-The shared hook path now includes `pre-push` too, and `make install-hooks` now
-marks both hook scripts executable before setting `core.hooksPath=.githooks`.
-
-That keeps the security gate aligned across:
-
-- explicit local `make security-check`
-- repo-owned `pre-commit`
-- repo-owned `pre-push`
-- GitHub Actions `security-check`
-
-The intent is not to add process for its own sake. It is to make the central
-Rust/backend security gate harder to skip accidentally when code-security
-changes are moving quickly.
-
-### Surface inline-image policy as explicit browser notice instead of rendering
-
-The message-view path now treats inline images the same way the broader browser
-slice treats other rich mail behavior: as something to acknowledge explicitly
-without widening the trust boundary.
-
-When an HTML-capable message surfaces attachment metadata for image parts marked
-`inline`, the browser page should now show a small notice explaining that the
-current policy does not render inline images inside the sanitized message body
-and that any needed image parts must be downloaded explicitly from the
-attachment list.
-
-That keeps the browser contract honest and more usable without introducing
-inline-image rendering, external-resource loading, or a broader HTML client
-surface.
-
-### Keep development closeout disciplined around docs, signed commits, sync, and next steps
-
-The repository's active workflow guidance now makes four expectations explicit
-for normal development closeout:
-
-- update all associated and applicable documentation in the same change stream
-  when shipped behavior, status, or operator guidance changes
-- sign commits so the mainline history remains attributable and reviewable
-- when working directly on `main`, validate, commit, and sync the completed
-  snapshot to `origin/main` instead of leaving finished work only in a local
-  checkout
-- close out each completed change with one explicit next-best development step
-  so the project keeps momentum and handoff clarity
-
 ## 2026-03-27
 
 ### Keep planning artifacts public and non-sensitive
@@ -5307,6 +3543,257 @@ Validation for this closeout step was:
 - local `make security-check`
 - host `./maint/live/osmap-run-v1-closeout-over-ssh.sh --host mail --local-report ./maint/live/latest-host-v1-closeout-report.txt`
 
+## 2026-04-13
+
+### Add a standalone live-host proof for encoded header summary rendering
+
+The bounded RFC 2047 decoding slice for `Subject` and `From` already had local
+Rust coverage, but it still lacked explicit host evidence on the real helper-
+backed browser path. The next closeout-supporting step was one narrow host
+proof that exercised `/message` against a controlled message carrying encoded
+header summaries.
+
+OSMAP now carries `maint/live/osmap-live-validate-encoded-header-summary.ksh`.
+That script:
+
+- builds the current tree on the validated host
+- starts an isolated enforced mailbox helper plus browser runtime with a
+  synthetic validated session
+- injects one controlled plain-text message carrying encoded `Subject` and
+  `From` headers
+- renders `/message?...` through the real browser route
+- verifies the page surfaces the decoded summary values on the server-rendered
+  message view
+
+This was chosen instead of widening the frozen V1 closeout gate because the
+need was supplemental host evidence for an already shipped bounded rendering
+behavior, not a new release requirement.
+
+### Add a standalone live-host proof for inline-image metadata in message view
+
+The message-view path could now surface bounded `Content-ID` metadata and a
+more precise inline-image notice, but that behavior still only had local Rust
+test coverage and the shared security gate. The next useful closeout-supporting
+step was one narrow host proof that exercised the real helper-backed browser
+path on `mail.blackbagsecurity.com`.
+
+OSMAP now carries `maint/live/osmap-live-validate-inline-image-metadata.ksh`.
+That script:
+
+- builds the current tree on the validated host
+- starts an isolated enforced mailbox helper plus browser runtime with a
+  synthetic validated session
+- injects one controlled multipart/related HTML message carrying a
+  `cid:`-referenced inline image part
+- renders `/message?...` through the real browser route
+- verifies the page surfaces both the `cid:`-aware inline-image notice and the
+  attachment `Content-ID` metadata
+
+This was chosen instead of widening the frozen V1 closeout gate because the
+need was supplemental host evidence for an already shipped bounded behavior,
+not a new release requirement.
+
+### Add a short V1 closeout work-rules allowlist
+
+Once the Version 1 release gate was frozen, the remaining process risk was no
+longer only technical drift. It was scope drift: taking on useful-sounding work
+that did not actually support closeout.
+
+OSMAP now carries `docs/V1_CLOSEOUT_WORK_RULES.md` as a short allowlist for
+active work while the project remains in Version 1 closeout. It keeps the
+day-to-day rule simple:
+
+- if the task keeps the frozen gate, proofs, docs, or shipped V1 surface
+  healthy, it can be in scope
+- if it does not clearly fit that allowlist, treat it as Version 2 by default
+
+This was chosen instead of relying on scattered README prose because the
+project now needs one compact scoping reference that can be checked before
+implementation work starts.
+
+### Surface bounded Content-ID metadata for attachment parts in the message view
+
+The inline-image policy notice already told the truth about what OSMAP would
+not do: it would not render inline images inside the browser message body. But
+it still treated all inline-disposition image parts the same even though some
+are real `cid:`-addressable HTML assets and some are not.
+
+The surfaced attachment metadata and message-view UI now carry bounded
+`Content-ID` values when they are present and valid. That allows the browser
+message view to:
+
+- show `cid:` metadata in the surfaced attachment list
+- distinguish likely `cid:`-backed inline assets from generic inline image
+  parts
+- make the inline-image notice more precise without introducing inline-image
+  rendering, external-resource loading, or broader rich-mail behavior
+
+This was chosen instead of inline-image rendering because the Version 1 need is
+clarity about the current trust boundary, not a richer browser mail client.
+
+### Add a hook-installation regression check to the shared security gate
+
+Once `pre-commit` and `pre-push` both existed as repo-owned backstops, the next
+failure mode was silent drift in the installation path itself: a future edit to
+`Makefile`, `.githooks/`, or the shared hook scripts could leave maintainers
+believing the hooks still enforced `make security-check` when they no longer
+did.
+
+The shared `make security-check` gate now includes a temp-repo shell
+regression that:
+
+- runs `make install-hooks`
+- verifies `core.hooksPath=.githooks`
+- verifies both hook scripts are executable
+- invokes both hooks from a nested working directory against a stubbed
+  `make security-check` target so the repo-root handoff stays proven
+
+That keeps the local enforcement story honest by testing not just the security
+gate itself, but also the maintained path that is supposed to run it before
+commit and before push.
+
+### Add a pre-push security-check backstop to the repo-owned hook path
+
+The repository already had a repo-owned `pre-commit` hook that routed through
+`make security-check`, but the recent rustfmt-only CI failure on `main` showed
+that the practical maintainer workflow still benefited from one more local
+backstop before network publication.
+
+The shared hook path now includes `pre-push` too, and `make install-hooks` now
+marks both hook scripts executable before setting `core.hooksPath=.githooks`.
+
+That keeps the security gate aligned across:
+
+- explicit local `make security-check`
+- repo-owned `pre-commit`
+- repo-owned `pre-push`
+- GitHub Actions `security-check`
+
+The intent is not to add process for its own sake. It is to make the central
+Rust/backend security gate harder to skip accidentally when code-security
+changes are moving quickly.
+
+### Surface inline-image policy as explicit browser notice instead of rendering
+
+The message-view path now treats inline images the same way the broader browser
+slice treats other rich mail behavior: as something to acknowledge explicitly
+without widening the trust boundary.
+
+When an HTML-capable message surfaces attachment metadata for image parts marked
+`inline`, the browser page should now show a small notice explaining that the
+current policy does not render inline images inside the sanitized message body
+and that any needed image parts must be downloaded explicitly from the
+attachment list.
+
+That keeps the browser contract honest and more usable without introducing
+inline-image rendering, external-resource loading, or a broader HTML client
+surface.
+
+### Keep development closeout disciplined around docs, signed commits, sync, and next steps
+
+The repository's active workflow guidance now makes four expectations explicit
+for normal development closeout:
+
+- update all associated and applicable documentation in the same change stream
+  when shipped behavior, status, or operator guidance changes
+- sign commits so the mainline history remains attributable and reviewable
+- when working directly on `main`, validate, commit, and sync the completed
+  snapshot to `origin/main` instead of leaving finished work only in a local
+  checkout
+- close out each completed change with one explicit next-best development step
+  so the project keeps momentum and handoff clarity
+
+## 2026-04-17
+
+### Add a host-side rehearsal and apply path for the reviewed edge cutover
+
+Once the repo carried reviewed host-specific edge artifacts, the remaining
+operator-risk gap was procedural. Operators still had to assemble the exact
+backup, install, validate, reload, and restore commands themselves.
+
+OSMAP now carries `maint/live/osmap-live-rehearse-edge-cutover.ksh` plus
+`docs/EDGE_CUTOVER_REHEARSAL_SOP.md`. The wrapper prepares a timestamped
+session on the host that contains:
+
+- backups of the current live edge files
+- staged reviewed replacements from the repo
+- an executable apply script
+- an executable restore script
+
+The shared security gate now also includes a regression that proves the wrapper
+can generate those scripts, apply the reviewed files, validate nginx and PF,
+and restore the prior state in a controlled fake host layout.
+
+This was chosen instead of jumping straight to a live edge mutation because
+Version 2 still benefited more from removing operator improvisation than from
+touching the validated host faster.
+
+### Add reviewed nginx and PF cutover artifacts for the validated host
+
+Once the repo carried both an exact edge-cutover plan and a repo-owned wrapper
+to verify the resulting live edge state, the remaining operator-risk gap was
+manual editing. The actual host move still depended on hand-editing
+`main-ssl.conf`, `osmap-root.tmpl`, `macros.pf`, and `selfhost.pf` under
+pressure.
+
+OSMAP now carries reviewed host-specific cutover artifacts under
+`maint/openbsd/mail.blackbagsecurity.com/` for:
+
+- the canonical HTTPS vhost replacement
+- the OSMAP root nginx template
+- the PF macros file with WAN `443` removed from the blocked set
+- the PF selfhost anchor with the explicit public `443` pass rule
+
+The shared security gate now also includes a regression that checks those
+artifacts for the specific lines the current cutover plan depends on.
+
+This was chosen instead of moving straight to host cutover because Version 2
+still benefited more from removing operator improvisation than from making one
+unreviewed edge change faster.
+
+### Add a repo-owned verifier for the actual OSMAP edge cutover state
+
+Once `docs/EDGE_CUTOVER_PLAN.md` existed, the next exposure-readiness gap was
+no longer the absence of a plan. It was the absence of one repo-owned command
+that could tell operators whether the real host had actually applied that
+plan.
+
+OSMAP now carries `maint/live/osmap-live-validate-edge-cutover.ksh` plus a
+shared regression test in
+`maint/security/test-osmap-live-validate-edge-cutover.sh`. The wrapper checks:
+
+- the canonical nginx include swap from `roundcube.tmpl` to `osmap-root.tmpl`
+- the expected OSMAP root-template proxy shape
+- the planned HTTPS listener bindings
+- the PF change that allows WAN `443` while keeping the older broad mail-port
+  expansion out of scope
+
+This was chosen instead of performing the host cutover immediately because
+Version 2 still needed one repeatable, reviewable proof path for the edge
+state itself before the real public-browser move would be safe to claim.
+
+### Define the exact OSMAP edge cutover and rollback plan for the validated host
+
+Once the repo had a Version 2 readiness gate and a repo-owned exposure
+assessment wrapper, the remaining exposure-side gap was not another abstract
+security statement. It was the absence of one exact operator artifact for
+moving `mail.blackbagsecurity.com` from Roundcube-at-root to OSMAP-at-root
+without widening OSMAP authority.
+
+OSMAP now carries `docs/EDGE_CUTOVER_PLAN.md`. It freezes the current host
+baseline and defines:
+
+- the exact nginx include replacement from `roundcube.tmpl` to an OSMAP root
+  template
+- the exact public-HTTPS listener and PF changes needed for direct browser
+  access on the validated host
+- the rollback path to re-restrict or restore Roundcube without changing the
+  `_osmap` plus `vmail` runtime split
+
+This was chosen instead of jumping straight to host cutover because Version 2
+still needed one reviewable, repo-owned change plan before the real edge move
+could be executed safely and audited later.
+
 ## 2026-04-17
 
 ### Define Version 2 around migration-capable public browser access, not permanent VPN-only posture
@@ -6022,6 +4509,366 @@ session revoke race observation. Those are documented as Version 3 backlog
 items because they do not block the current bounded Version 2 workflow slice
 and need separate compatibility or policy decisions.
 
+## 2026-04-18
+
+### Preserve real client IPs behind the loopback nginx edge
+
+Once OSMAP was live on the public browser edge, the next operational truth was
+uncomfortable: auth, session, send, and mailbox audit events still recorded
+`remote_addr="127.0.0.1"` because the `_osmap` runtime only trusted the local
+TCP peer and ignored the client IP headers that nginx already set.
+
+That weakened two important Version 2 properties:
+
+- operator-visible audit logs no longer showed the actual browser client
+- remote-address-based throttle buckets collapsed behind the local reverse
+  proxy instead of reflecting the real remote browser
+
+OSMAP now derives the effective browser client IP from loopback-trusted proxy
+headers:
+
+- trust `X-Real-IP` only when the immediate peer is loopback
+- otherwise ignore proxy headers and keep using the socket peer address
+
+This keeps the trust boundary narrow. OSMAP does not accept arbitrary
+forwarding headers from non-loopback clients, but it now preserves the real
+browser client IP when nginx proxies locally on the validated host shape.
+
+### Stop short of nginx OCSP stapling on the current mail host certificate
+
+The next TLS task on `mail.blackbagsecurity.com` was to enable OCSP stapling
+for the nginx HTTPS endpoint with the smallest safe change. The repo and host
+inspection showed:
+
+- the authoritative TLS include is `/etc/nginx/templates/ssl.tmpl`
+- the live certificate is `/etc/ssl/mail.blackbagsecurity.com.fullchain.pem`
+- the host has OpenBSD `ocspcheck(8)` available
+- the current leaf certificate is a Let's Encrypt E7 leaf with no OCSP
+  responder URL in its Authority Information Access extension
+
+The decisive host checks were:
+
+- `openssl x509 -in /etc/ssl/mail.blackbagsecurity.com.fullchain.pem -ocsp_uri -noout`
+  returned nothing
+- `ocspcheck /etc/ssl/mail.blackbagsecurity.com.fullchain.pem` failed with
+  `contains no OCSP url`
+
+Because the deployed certificate does not expose an OCSP responder URL, OSMAP
+did not add nginx stapling directives, an `ocspcheck` staple-file workflow, or
+any certificate-renewal hook changes. That would have created config churn
+without producing a real stapled response.
+
+Instead, the repo now carries
+`maint/live/osmap-live-validate-nginx-ocsp-stapling.ksh` plus one shell
+regression so this prerequisite is explicit and reproducible. For the current
+certificate chain, the expected result is
+`nginx_ocsp_stapling_result=unsupported_by_certificate`.
+
+The current archived host evidence is:
+
+- `maint/live/latest-host-ocsp-stapling-report.txt`
+
+### Restore live auth observability before further browser-auth debugging
+
+The public browser surface was already working, but the first real failed login
+attempt after direct-public approval exposed a bad operational truth: the
+running `osmap_serve` and `osmap_mailbox_helper` processes had both stdout and
+stderr redirected to `/dev/null`.
+
+That meant OSMAP's structured auth events still existed in code, but operators
+could not actually observe them on the validated host. A bogus login reproduced
+the browser-visible `401`, yet no corresponding `category=auth` event appeared
+in `daemon`, `messages`, `secure`, or `authlog`.
+
+OSMAP initially restored reviewed stderr capture through the service launchers
+by directing each runtime into its configured audit directory:
+
+- `/var/lib/osmap/audit/serve.log`
+- `/var/lib/osmap-helper/audit/mailbox-helper.log`
+
+That placement was later superseded by the 2026-06-11 decision to publish
+operator-facing daemon logs under `/var/log/osmap`.
+
+The repository now also carries
+`maint/live/osmap-live-validate-auth-observability.ksh` plus two shell
+regressions that prove:
+
+- the reviewed OpenBSD launchers append structured stderr output into the
+  configured log files
+- a live bogus login yields a `401` and a matching `category=auth
+  action=login_denied` event in the captured serve log
+
+This was chosen before deeper browser-auth debugging because the project needed
+real operator visibility into login failures again before trying to classify a
+specific mailbox-password or TOTP problem on the live host.
+
+### Archive one real outside-in browser-path verification after limited public approval
+
+Once the repo had a passing edge-cutover report, a passing host-side exposure
+assessment, and a passing guarded Version 2 readiness report, the next useful
+step was to collect one real outside-in verification from a system that was not
+using the WireGuard-only management path.
+
+The repository now carries
+`maint/live/latest-external-browser-path-verification.txt`, which records:
+
+- public DNS resolution for `mail.blackbagsecurity.com`
+- the local non-WireGuard route used to reach that public address
+- a browser-style HTTPS fetch to `https://mail.blackbagsecurity.com/`
+- the one-hop redirect from `/` to `/login`
+- the final `200` response at the OSMAP login page
+- the presence of the expected username, password, and `totp_code` form fields
+- the observed certificate identity and browser-facing security headers
+
+This was chosen instead of adding more host-side validation because the repo
+already had host-internal proof. What remained was one honest outside-in
+confirmation that the approved public browser surface was reachable and still
+looked like OSMAP from a non-management path.
+
+### Add a repo-owned service-activation path for the final host runtime step
+
+Once the reviewed binary, runtime-group, and service-artifact paths had
+cleared the install-side blockers, the next explicit validator failures were
+all runtime-health checks:
+
+- `mailbox_helper_service_not_healthy`
+- `serve_service_not_healthy`
+- `missing_helper_socket`
+- `loopback_http_listener_not_ready`
+
+OSMAP now carries `maint/live/osmap-live-rehearse-service-activation.ksh` plus
+`docs/MAIL_HOST_SERVICE_ACTIVATION_SOP.md`. The wrapper prepares exact apply
+and restore scripts for the final host-side runtime step: create the reviewed
+`_osmap` and `vmail` state/runtime directories, normalize the env-file group
+ownership needed by the dedicated runtime users, start both services via
+`rcctl`, and immediately rerun the repo-owned service validator.
+
+The apply path does not accept partial success. It requires the validator to
+stop reporting the four remaining runtime-health failures listed above. That
+keeps this gate narrow: clear the final host runtime blockers without mixing in
+browser-edge cutover or broader deployment changes.
+
+This was chosen instead of jumping straight to edge cutover because Version 2
+still benefits more from proving the persistent loopback runtime is healthy
+before the public browser path moves away from Roundcube.
+
+### Fix the reviewed rc.d health check definitions before treating activation as complete
+
+The first real host-side service-activation apply revealed that the runtime
+itself could come up while `rcctl check` still failed. The helper socket
+existed, `127.0.0.1:8080` was listening, and both OSMAP processes were present,
+but the reviewed `rc.d` scripts were still unhealthy in the eyes of OpenBSD
+service management.
+
+The cause was the placement of `pexp` in the reviewed `rc.d` scripts. OSMAP
+had set `pexp` before sourcing `/etc/rc.d/rc.subr`, but OpenBSD recomputes
+that variable during initialization. The resulting runtime state used the
+launcher path instead of the final `/usr/local/bin/osmap ...` process shape,
+so `rcctl check` looked for the wrong command line.
+
+OSMAP now sets `pexp` after sourcing `rc.subr` in both reviewed `rc.d`
+artifacts and carries a dedicated regression in
+`maint/security/test-osmap-openbsd-rcd-health.sh` so this exact mismatch does
+not regress.
+
+### Clear the final persistent-service blockers on the validated host
+
+After the reviewed activation wrapper, the `rc.d` health fix, and the stale
+runfile cleanup had all landed, the next useful step was to rerun the reviewed
+service-artifact and service-activation paths on `mail.blackbagsecurity.com`
+and archive the resulting validator evidence.
+
+The final reviewed activation apply on the validated host now shows:
+
+- `serve_service_check_rc=0`
+- `helper_service_check_rc=0`
+- `http_listener_bindings=127.0.0.1.8080`
+- `helper_socket=srw-rw---- ... /var/lib/osmap-helper/run/mailbox-helper.sock`
+- no remaining `failed_checks`
+
+The current archived artifacts are:
+
+- `maint/live/latest-host-service-activation-session.txt`
+- `maint/live/latest-host-service-enablement-report.txt`
+
+That means the persistent `_osmap` plus `vmail` loopback runtime is now in
+place and validator-proven on `mail.blackbagsecurity.com`. The remaining
+Version 2 exposure work is no longer service installation. It is public-edge
+cutover, exposure reassessment, and rollback-safe public-browser validation.
+
+### Clear the next mail-host service blockers with the reviewed service-artifact path
+
+After the reviewed service-artifact wrapper existed, the next useful step was
+to apply that narrow path on `mail.blackbagsecurity.com` and archive the
+immediate validator evidence.
+
+The reviewed wrapper was run from `~/OSMAP` on the validated host in both
+rehearsal and apply mode. The apply run installed the reviewed env files into
+`/etc/osmap/`, the reviewed launchers into `/usr/local/libexec/osmap/`, and
+the reviewed `rc.d` files into `/etc/rc.d/`, then immediately reran the
+repo-owned service validator. The current archived artifacts are:
+
+- `maint/live/latest-host-service-artifact-session.txt`
+- `maint/live/latest-host-service-enablement-report.txt`
+
+That validator report now shows the reviewed service artifacts are installed
+and no longer reports:
+
+- `missing_serve_env_file`
+- `missing_helper_env_file`
+- `missing_serve_launcher`
+- `missing_helper_launcher`
+- `missing_serve_rc_script`
+- `missing_helper_rc_script`
+
+It still fails, correctly, on the remaining activation and runtime-health
+prerequisites:
+
+- `mailbox_helper_service_not_healthy`
+- `serve_service_not_healthy`
+- `missing_helper_socket`
+- `loopback_http_listener_not_ready`
+
+This was chosen instead of jumping straight to service startup because Version
+2 still benefits from clearing and proving the reviewed file-install blockers
+before folding in state-directory creation, service start, and runtime-health
+debugging.
+
+### Add a repo-owned service-artifact path before the final service activation step
+
+Once the reviewed binary and runtime-group paths had cleared the first two host
+blockers, the next explicit validator failures were no longer about identity or
+privilege setup. They were about the absence of the reviewed service artifacts:
+the env files, launchers, and `rc.d` scripts.
+
+OSMAP now carries `maint/live/osmap-live-rehearse-service-artifacts.ksh` plus
+`docs/MAIL_HOST_SERVICE_ARTIFACTS_SOP.md`. The wrapper prepares exact apply and
+restore scripts for installing the reviewed files into `/etc/osmap/`,
+`/usr/local/libexec/osmap/`, and `/etc/rc.d/`, then immediately reruns the
+repo-owned service validator.
+
+The apply path does not require the full service validator to pass yet. It
+requires only that the validator stop reporting the six artifact-missing
+checks. That keeps this gate narrow: clear the reviewed file-install
+preconditions without pretending service startup, socket creation, or loopback
+listener readiness are already complete.
+
+This was chosen instead of widening directly into service activation because
+Version 2 still benefits more from removing the next explicit host blockers in
+one coherent file-install step than from merging artifact installation and
+service startup into one riskier change.
+
+### Add a repo-owned runtime-group provisioning path before the reviewed service install
+
+Once the reviewed binary deployment path had cleared `/usr/local/bin/osmap`,
+the next explicit host-side blocker in the service validator was the missing
+shared runtime group and the missing `_osmap` membership in that group.
+
+OSMAP now carries `maint/live/osmap-live-rehearse-runtime-group-provisioning.ksh`
+plus `docs/MAIL_HOST_RUNTIME_GROUP_PROVISIONING_SOP.md`. The wrapper prepares
+exact apply and restore scripts for creating `osmaprt`, appending `_osmap` to
+that group, and immediately rerunning the repo-owned service validator.
+
+The apply path does not require the full service validator to pass yet. It
+requires only that the validator stop reporting
+`missing_shared_runtime_group` and
+`osmap_user_missing_shared_runtime_group_membership`. That keeps this gate
+narrow: clear the next hard precondition without pretending the later service
+install steps are already complete.
+
+This was chosen instead of widening directly into env, launcher, `rc.d`, or
+socket setup because Version 2 still benefits more from removing the next
+explicit host blocker in a reviewable way than from splicing multiple service
+changes together.
+
+### Clear the next mail-host service blocker with the reviewed runtime-group path
+
+After the runtime-group provisioning wrapper existed, the next useful step was
+to apply that narrow path on `mail.blackbagsecurity.com` and archive the
+immediate validator evidence.
+
+The reviewed wrapper was run from `~/OSMAP` on the validated host in both
+rehearsal and apply mode. The apply run created `osmaprt`, appended `_osmap`
+to that group, and immediately reran the repo-owned service validator. The
+current archived artifacts are:
+
+- `maint/live/latest-host-runtime-group-session.txt`
+- `maint/live/latest-host-service-enablement-report.txt`
+
+That validator report now shows:
+
+- `service_binary_state=installed`
+- `shared_group_line=osmaprt:*:1002:_osmap`
+- `osmap_group_membership=_osmap osmaprt`
+
+It no longer reports:
+
+- `missing_shared_runtime_group`
+- `osmap_user_missing_shared_runtime_group_membership`
+
+It still fails, correctly, on the remaining service prerequisites:
+
+- missing reviewed env, launcher, and `rc.d` files
+- missing helper socket
+- missing loopback `127.0.0.1:8080` listener
+- unhealthy `osmap_mailbox_helper` and `osmap_serve`
+
+This was chosen instead of jumping straight to the full service apply path
+because Version 2 still benefits from clearing and proving one host-side
+precondition at a time.
+
+### Add a repo-owned binary deployment path before the reviewed service install
+
+Once the repo carried both a reviewed service-enablement wrapper and a
+persistent-service validator, the next blocker was no longer procedural
+ambiguity. The first hard host-side blocker was explicit: the validator failed
+immediately because `/usr/local/bin/osmap` did not exist on
+`mail.blackbagsecurity.com`.
+
+OSMAP now carries `maint/live/osmap-live-rehearse-binary-deployment.ksh` plus
+`docs/MAIL_HOST_BINARY_DEPLOYMENT_SOP.md`. The wrapper builds one staged
+binary from the reviewed host checkout, prepares exact apply and restore
+scripts, installs the staged binary into `/usr/local/bin/osmap` when asked,
+and immediately reruns the repo-owned service validator.
+
+The apply path does not require the full service validator to pass yet. It
+requires only that the validator confirm `service_binary_state=installed` and
+stop reporting `missing_osmap_binary`. That keeps this gate narrow: clear the
+first hard precondition without pretending the rest of the service install is
+already complete.
+
+This was chosen instead of expanding directly into service install or edge
+cutover because Version 2 still benefited more from removing the first explicit
+host blocker in a reviewable way than from widening the scope of one host-side
+change stream.
+
+### Clear the first hard mail-host service blocker with the reviewed binary path
+
+After the binary deployment wrapper existed, the next useful step was not more
+planning. It was to apply that narrow path on `mail.blackbagsecurity.com` and
+archive the immediate validator evidence.
+
+The reviewed wrapper was run from `~/OSMAP` on the validated host in both
+rehearsal and apply mode. The apply run installed `/usr/local/bin/osmap` and
+immediately reran the repo-owned service validator. The current archived
+artifacts are:
+
+- `maint/live/latest-host-binary-deployment-session.txt`
+- `maint/live/latest-host-service-enablement-report.txt`
+
+That validator report now shows `service_binary_state=installed` and no longer
+reports `missing_osmap_binary`. It still fails, correctly, on the remaining
+service prerequisites:
+
+- missing shared runtime group and `_osmap` membership
+- missing reviewed env, launcher, and `rc.d` files
+- missing helper socket
+- missing loopback `127.0.0.1:8080` listener
+
+This was chosen instead of jumping straight to the full service apply path
+because Version 2 still benefits from clearing and proving one host-side
+precondition at a time.
+
 ## 2026-04-23
 
 ### Keep service rehearsal membership checks hermetic
@@ -6133,6 +4980,77 @@ V2 readiness changes must update the operator path and docs together.
 
 ## 2026-04-24
 
+### Decode selected transfer-encoded text bodies before rendering
+
+The next small Version 3 MIME correctness gap was body transfer encoding.
+OSMAP already decoded attachment bodies for forced download, but selected
+`text/plain` and `text/html` body parts could still reach the renderer as raw
+`base64` or `quoted-printable` text.
+
+OSMAP now decodes selected textual bodies for the narrow rendering path when
+the message uses common `base64` or `quoted-printable` transfer encoding and
+the current supported charset set. Malformed or unsupported encoded text is
+withheld as non-renderable content instead of being displayed raw.
+
+This keeps the change in the MIME/rendering slice only:
+
+- no route changes
+- no rich-text compose
+- no remote external content loading
+- no attachment preview behavior
+- no change to the `_osmap` plus `vmail` runtime split
+
+### Start Version 3 MIME correctness with RFC 2231 attachment filenames
+
+The first Version 3 implementation slice needed to improve MIME correctness
+without changing the runtime boundary, adding remote content loading, or
+turning the MIME layer into a broad mail-client engine.
+
+The smallest useful gap was attachment filename metadata. The MIME baseline
+already identified RFC 2231 parameter decoding as missing, and real attachment
+correctness depends on common `filename*`, continued `filename*0*` /
+`filename*1*`, and content-type `name*` forms. OSMAP now decodes those bounded
+filename parameters for the narrow attachment metadata surface.
+
+The change deliberately stays inside `src/mime.rs`:
+
+- no route changes
+- no attachment preview behavior
+- no inline image rendering
+- no remote external content loading
+- no change to the `_osmap` plus `vmail` runtime split
+
+### Define Version 3 as the daily-driver adoption boundary
+
+After Version 2 pilot closeout, the project needed a Version 3 boundary that
+absorbs real pilot feedback without reopening the completed Version 2 scope.
+The final V2 cohort proved retrieve, send, and send-with-attachments for the
+bounded browser slice, but the remaining daily-driver gaps were specific:
+draft continuity, reply and forward attachment handling, richer search,
+bounded bulk organization, MIME and HTML correctness, session/device policy,
+TLS CBC disposition, and WSTG regression evidence.
+
+OSMAP now treats Version 3 as a focused adoption release, not a Roundcube
+parity project. The new Version 3 docs define:
+
+- `docs/V3_DEFINITION.md` as the authoritative scope boundary
+- `docs/V3_ACCEPTANCE_CRITERIA.md` as the feature-by-feature gate
+- `docs/V3_ROADMAP.md` as the implementation sequence
+- `docs/V3_SECURITY_GATES.md` as the carry-forward and new security evidence
+  requirements
+
+The decision preserves the Version 2 `_osmap` plus `vmail` split, production
+mailbox-helper requirement, public-edge hardening, and all existing Version 2
+gates. Contacts, calendar, groupware, plugins, mobile app, broad admin
+console, remote external content loading, OpenPGP implementation, and broad
+runtime rewrite remain outside Version 3.
+
+The first Version 3 implementation slice should be MIME and HTML correctness
+because reliable summaries, body selection, attachment metadata, and safe
+rendering are prerequisite to draft, reply, forward, and search work.
+
+## 2026-04-24
+
 ### Close the Version 2 pilot without widening scope
 
 The remaining Version 2 blocker was pilot-execution evidence, not more feature
@@ -6169,6 +5087,38 @@ After that harness fix, both authoritative host gates passed on
 
 - `maint/live/latest-host-v1-closeout-report.txt`
 - `maint/live/latest-host-v2-readiness-report.txt`
+
+## 2026-04-29
+
+### Polish the V3 browser UI without widening the browser trust boundary
+
+OSMAP now has a more deliberate server-rendered V3 browser surface for the
+existing login, mailbox, message, compose, session, search, and settings pages.
+The login page presents OSMAP Secure Webmail as a centered authentication card
+with explicit username, password, and TOTP labels, generic failure messaging,
+and calm security indicators for the reviewed HTTPS edge, required TOTP, and
+HttpOnly/SameSite session cookies.
+
+The authenticated mailbox surface now uses a shared application header, visible
+2FA/session state, folder navigation where the current route already has
+mailbox-list data, a cleaner message-list toolbar, and a three-pane message
+view with folder navigation, supported reply, forward, move, archive, and
+delete-to-Trash actions, attachment metadata, rendering-state details, and
+explicit remote-content blocked notices.
+
+This was intentionally kept as a UI-only polish slice:
+
+- no frontend framework
+- no external assets, remote fonts, remote images, or CDN dependencies
+- no new JavaScript
+- no CSP, HSTS, cookie, CSRF, same-origin, auth, session, mailbox-helper, MIME,
+  attachment, or rendering-policy weakening
+- no remember-device, password-reset, Snooze, OAuth, contacts, calendar, or
+  unsupported action controls
+
+The change updates route-level HTML assertions so the polished UI remains
+covered while preserving the existing authentication, session, mailbox, send,
+attachment, logout, and rendering behavior.
 
 ## 2026-04-29
 
@@ -6296,3 +5246,1046 @@ configuration rejection, and budget log redaction.
 The remaining worker-budget work is to extend the model to send and auth paths
 and add true route-deadline propagation instead of relying only on lower-level
 command/helper timeouts.
+
+## 2026-05-02, Redact persisted session identifiers from audit logs
+
+Live logging due diligence on `mail.blackbagsecurity.com` found that
+`/var/lib/osmap/audit/serve.log` contained raw `session_id` audit fields.
+The value was not the browser cookie token, but it was the persisted session
+lookup identifier and at least one logged value overlapped a current session
+file. That made the audit log a secondary source of live session material.
+
+Immediate containment revoked current sessions, moved the pre-fix audit log and
+session files into a root-only backup directory, truncated the live serve audit
+log, and restarted `osmap_serve`. Post-containment unauthenticated requests did
+not recreate session files or write new raw `session_id` fields.
+
+The code policy is now:
+
+- runtime audit events use `session_ref`, not `session_id`
+- `session_ref` is a deterministic, audit-only, domain-separated, truncated
+  SHA-256 reference derived from the internal persisted session identifier
+- `session_ref` is not accepted as a cookie, session filename, revocation target,
+  or session lookup key
+- `LogEvent::with_field()` defensively converts attempted `session_id` audit
+  fields into `session_ref`
+- runtime call sites use `session_ref` explicitly so code review does not depend
+  only on the central safety net
+
+Internal session storage, validation, cookie handling, revocation forms, and
+session-file behavior remain unchanged. The change narrows audit exposure while
+preserving incident correlation.
+
+Validation completed locally:
+
+- `cargo fmt --check`
+- `git diff --check`
+- no runtime `with_field("session_id", ...)` call sites outside the logging
+  safety-net test
+- no stale audit fixture strings expecting the known raw session identifier
+- full `cargo test` passed with 348 tests passed, 0 failed, and 4 ignored
+
+## 2026-05-02
+
+### Make the Version 3 release gate fail closed before expanding features
+
+The first Version 3 roadmap item needed to make release validation honest
+before OSMAP resumed adoption-feature work. The previous developer security
+check was useful for local iteration, but it could still report skipped work
+without providing a separate strict release answer.
+
+OSMAP now has an explicit `make release-check` path backed by
+`OSMAP_SECURITY_PROFILE=release`. Release mode requires pinned Rust tooling,
+Cargo build/test/clippy/fmt, supply-chain tooling, dependency inventory
+evidence, host-readiness evidence, Version 2 carry-forward evidence,
+credentialed WSTG evidence where mapped, and a sanitized evidence archive and
+summary for the assessed commit. Developer mode remains available through
+`make security-check` and can still warn about permitted local skips.
+
+This was chosen as the first V3 implementation slice because Version 3 should
+not grow user-facing scope until the project can distinguish a real release
+gate from a partial developer check.
+
+### Treat TLS CBC cleanup as release evidence, not only config hygiene
+
+The next security finding was the public edge allowing older or weaker TLS
+shapes than the V3 baseline should tolerate. The code and host work narrowed
+the browser-facing TLS floor to TLS 1.2 and TLS 1.3, removed CBC cipher suites
+from the reviewed nginx edge configuration, and archived host evidence from
+the actual `mail.blackbagsecurity.com` edge.
+
+OSMAP now requires that archived TLS edge evidence in the strict release gate.
+The release evidence summary records the TLS artifact so a future release
+cannot silently pass while the edge proof is absent or stale.
+
+This keeps TLS handling in the operational edge slice. It does not treat
+CodeQL or static hints as the final answer when the production behavior is
+owned by nginx and must be proven at the host boundary.
+
+### Bound expensive browser routes with explicit budgets and route deadlines
+
+The next Version 3 hardening stream moved from evidence into implementation:
+helper-backed mailbox/search/message-view routes now acquire route-class
+worker budgets and propagate a hard expensive-route deadline into helper and
+external-command work. That means the browser runtime no longer relies only on
+per-socket or per-command defaults when a route can consume scarce helper or
+mailbox resources.
+
+The first covered classes were mailbox list/view/search work. The second
+covered classes were sendmail-backed compose submission and external-auth/TOTP
+login. OSMAP now has separate route budgets for mailbox, search, send, and
+auth work, one bounded expensive-route timeout knob, startup reporting for
+those values, and test/evidence coverage showing budget exhaustion and
+timeout propagation are observable.
+
+This was chosen before additional V3 feature work because daily-driver
+adoption will increase route concurrency. The release gate needs evidence
+that expensive routes fail boundedly under pressure rather than stretching
+unboundedly behind authenticated browser actions.
+
+### Finish the current expensive-route resource-control slice
+
+The next bounded-resource gap was not a new user feature. It was the remaining
+expensive browser routes that still reached helper or `doveadm` work without
+their own route-class admission proof: message move, attachment download,
+reply/forward source loading, and all-mailbox search fanout.
+
+OSMAP now wraps those routes with the same explicit route budgets used by the
+earlier V3 resource-control work. Message move, attachment download, and
+compose source loading consume mailbox-worker slots. All-mailbox search
+continues to consume one search-worker slot for the aggregate request and now
+has an explicit fanout deadline while it walks visible mailboxes.
+
+The runtime also propagates the expensive-route timeout into helper-backed
+move and attachment work plus direct `doveadm` search, view, and move command
+timeouts. The evidence file records focused tests for budget exhaustion,
+fanout-deadline logging, and command-timeout propagation without logging
+private queries, message bodies, attachment bytes, session cookies, CSRF
+tokens, passwords, or TOTP material.
+
+## 2026-05-03, Define V3 live MIME and HTML proof plan
+
+The next Version 3 MIME and HTML correctness slice starts with a live-host proof
+plan before adding a combined live validation script.
+
+The proof plan defines how `mail.blackbagsecurity.com` should validate the
+current MIME parsing, header decoding, sanitized HTML, inline image metadata,
+attachment metadata, forced-download behavior, and audit redaction posture
+without turning the validator or its evidence files into a source of sensitive
+material.
+
+The plan requires the future live validator to avoid printing or storing:
+
+- mailbox passwords
+- TOTP codes
+- TOTP secret material
+- browser session cookies
+- CSRF tokens
+- raw persisted session identifiers
+- full message bodies
+- full attachment bodies
+- authorization headers
+
+The current decision is to implement the proof as a synthetic-session live
+validation first. Real password-plus-TOTP login remains covered by the existing
+login-send validator, and any combined real-login MIME proof should wait until
+the synthetic live proof is stable.
+
+## 2026-05-03, Harden V3 attachment metadata regressions
+
+The next MIME and HTML correctness slice strengthens attachment metadata
+regression coverage before draft persistence, reply/forward attachment re-use,
+or attachment preview behavior is considered.
+
+This slice proves that:
+
+- path-like or unsafe surfaced filenames are not trusted as download paths
+- unsafe download content types fall back to `application/octet-stream`
+- delivery-status report parts remain forced-download metadata
+- original `message/rfc822` parts remain forced-download metadata
+- oversized `Content-ID` metadata is rejected before rendering or browser
+  presentation
+- named parts without explicit disposition are surfaced as metadata only
+
+The implementation keeps the existing trust boundary:
+
+- no attachment preview
+- no inline image rendering
+- no remote content loading
+- no draft persistence
+- no attachment body audit logging
+- forced-download remains the only attachment retrieval behavior
+
+Validation completed locally:
+
+- `cargo fmt --check`
+- `git diff --check`
+- `cargo test mime:: -- --nocapture`
+- `cargo test attachment:: -- --nocapture`
+- `cargo test rendering:: -- --nocapture`
+- full `cargo test` passed with 364 tests passed, 0 failed, and 4 ignored
+
+## 2026-05-03, Harden V3 sanitized HTML regression coverage
+
+The next MIME and HTML correctness slice adds focused sanitizer regression
+coverage without changing the sanitizer allowlist or widening browser trust.
+
+This slice proves that sanitized HTML continues to reject or neutralize:
+
+- relative and protocol-relative links
+- `cid:`, `data:`, and `javascript:` links
+- inline styles and event handlers
+- forms and inputs
+- metadata refresh
+- embedded style blocks and remote CSS references
+- image tags
+- SVG, iframe, object, embed, and template surfaces
+- HTML comments
+
+The implementation remains test-only. It does not add remote content loading,
+inline image rendering, attachment preview behavior, draft persistence, broader
+HTML layout support, or new trusted URL schemes.
+
+Validation completed locally:
+
+- `cargo fmt --check`
+- `git diff --check`
+- `cargo test rendering_html:: -- --nocapture`
+- `cargo test rendering:: -- --nocapture`
+- full `cargo test` passed with 359 tests passed, 0 failed, and 4 ignored
+
+## 2026-05-03, Expand V3 header decoding coverage
+
+The next MIME and HTML correctness slice adds bounded header-summary regression
+coverage before draft persistence or broader workflow state is introduced.
+
+This slice adds fixtures and tests for:
+
+- multi-encoded `Subject` headers
+- mixed encoded `From` headers
+- encoded `Date` headers
+- unsupported encoded header charsets
+- oversized encoded `Date` header rejection
+
+The implementation keeps the existing trust boundary:
+
+- Dovecot-provided `date_received` remains the authoritative mailbox timeline
+  field
+- decoded `Date` remains a bounded header-summary value only
+- unsupported header charsets are preserved as bounded literals instead of
+  widening charset support implicitly
+- oversized encoded headers fail deterministically
+- no draft persistence, attachment preview, inline image rendering, or remote
+  content loading is introduced
+
+Validation completed locally:
+
+- `cargo fmt --check`
+- `git diff --check`
+- `cargo test rendering:: -- --nocapture`
+- full `cargo test` passed with 357 tests passed, 0 failed, and 4 ignored
+
+## 2026-05-03, Expand V3 MIME and HTML regression corpus
+
+The next Version 3 development slice continues MIME and HTML correctness before
+draft persistence. This keeps draft, reply, forward, search, and attachment
+workflow work behind a stronger parsing and rendering baseline.
+
+This slice adds synthetic regression fixtures for:
+
+- quoted-printable soft line breaks in selected plain-text bodies
+- wrapped base64 selected plain-text bodies
+- `multipart/alternative` mail where HTML appears before the plain-text part
+- hostile HTML links, styles, forms, metadata refresh, images, and unsafe URL
+  schemes
+- suspicious RFC 2231 continuation filenames surfaced as attachment metadata
+
+The change is intentionally regression-first. It adds fixture coverage and tests
+without widening runtime trust:
+
+- no remote content loading
+- no inline image rendering
+- no attachment preview behavior
+- no draft persistence
+- no message body or attachment body audit logging
+- no change to the conservative forced-download attachment posture
+
+Validation completed locally:
+
+- `cargo fmt --check`
+- `git diff --check`
+- `cargo test mime:: -- --nocapture`
+- `cargo test rendering:: -- --nocapture`
+- `cargo test rendering_html:: -- --nocapture`
+- `cargo test attachment:: -- --nocapture`
+- full `cargo test` passed with 354 tests passed, 0 failed, and 4 ignored
+
+## 2026-05-06, Wire V3 draft browser routes
+
+The draft slice now exposes authenticated browser routes for draft list,
+resume, save, delete, and send-success cleanup. Draft POST routes use the
+existing CSRF and same-origin guardrails. Resumed drafts preserve stored
+new-upload attachments as send-only data, and `/send` deletes the draft only
+after accepted submission handoff. Submission denial leaves the draft available
+for retry.
+
+The workflow remains `roundcube_fallback` in the pilot inventory until WSTG/ASVS
+coverage and host-safe evidence are updated for the new browser route surface.
+
+## 2026-05-06, Add V3 draft persistence primitives
+
+The first draft implementation slice adds `src/draft.rs`, a file-backed draft
+store below the HTTP route layer. It generates lower-case hex draft ids, scopes
+draft directories by a hash of the canonical username, validates compose fields
+and newly uploaded attachments with the existing compose policy before writing,
+uses generated attachment body file names, writes metadata and attachment files
+with restrictive permissions, enforces per-user quota, returns redacted list
+summaries, and removes expired drafts opportunistically.
+
+This does not yet make browser draft save/resume user-visible. The next slice
+must wire authenticated routes with CSRF and same-origin checks, preserve drafts
+on send backend failure, delete them only after accepted send handoff, and add
+route plus WSTG/ASVS evidence before the pilot workflow disposition changes.
+
+## 2026-05-06, Define V3 draft save and resume boundary
+
+Version 3 now has a draft save and resume design gate at
+`docs/V3_DRAFT_SAVE_RESUME_DESIGN.md`.
+
+The design keeps the next slice server-side and explicit: draft state belongs
+under the reviewed OSMAP state root, is scoped by validated canonical username,
+reuses the existing compose limits, keeps POST routes CSRF-bound and
+same-origin-bound, and preserves the `_osmap` plus `vmail` runtime split.
+
+This is not a runtime persistence claim. The pilot workflow inventory still
+keeps draft save and resume in `roundcube_fallback` until implementation,
+route tests, WSTG/ASVS coverage, cleanup behavior, and redacted evidence land.
+
+## 2026-05-06, Choose explicit V3 concurrent-session policy
+
+Version 3 now treats concurrent browser sessions as the intentional policy
+rather than an implicit default. The session surface keeps bounded absolute and
+idle lifetimes, visible session metadata, and user-driven revocation for the
+current session, other sessions, or all sessions.
+
+The browser-visible session list now includes a normalized device label derived
+from the existing user-agent metadata. OSMAP does not add remembered-device
+cookies, persistent device identifiers, geolocation, or anomaly scoring in this
+slice.
+
+## 2026-05-06, Integrate V3 live MIME and HTML proof into release gate
+
+The strict V3 release path now treats the live MIME and HTML proof as required
+release evidence. `make release-check` validates the repo-owned live validator,
+requires a current redacted `maint/live/latest-host-v3-mime-html-proof-report.txt`
+for the assessed commit, records the proof status in the release evidence
+summary, and includes the safe report in the sanitized evidence archive.
+
+Release mode fails closed when the proof report is missing, stale, incomplete,
+or contains forbidden session, CSRF, password, TOTP, full message body, or full
+attachment body markers.
+
+## 2026-05-06, Implement V3 live MIME and HTML proof validator
+
+The Version 3 live MIME and HTML proof plan now has a repository-owned live
+validator:
+
+- `maint/live/osmap-live-validate-v3-mime-html-proof.ksh`
+
+The validator was run on `mail.blackbagsecurity.com` from the feature branch and
+passed at commit `af7c8ab`.
+
+The live proof validated:
+
+- current tree build on the OpenBSD host
+- enforced mailbox helper startup under `vmail`
+- enforced browser runtime startup under `_osmap`
+- `/healthz` returning `HTTP/1.1 200 OK`
+- encoded `Subject` and `From` rendering
+- sanitized HTML rendering with hostile markers removed
+- `Junk` mailbox lookup for hostile HTML delivery
+- inline image metadata surfacing without inline image rendering
+- forced-download inline image attachment handling
+- delivery-status attachment metadata and forced-download handling
+- original `message/rfc822` attachment metadata and forced-download handling
+- absence of synthetic body and attachment markers from the runtime audit log
+
+The generated live report remains ignored locally and is not committed as a
+tracked artifact. The validator itself is the reproducible evidence path.
+
+## 2026-05-07, Admit limited V3 draft save and resume pilot workflow
+
+`OSMAP-WSTG-BUSL-002` now has host-safe authenticated evidence from
+`mail.blackbagsecurity.com` proving the V3 draft route lifecycle with
+password-plus-TOTP authentication. The passing report is
+`maint/wstg-testing-pack/output/osmap-wstg-20260507-173210/report.md`, with
+summary counts `pass=1`, `fail=0`. The evidence covers save, list, resume,
+delete, send-success cleanup, CSRF rejection, same-origin rejection,
+stale-session rejection, attachment-limit rejection, and redacted evidence
+output.
+
+The operator redaction scan found no stored session cookie, raw session id,
+CSRF token, TOTP, password, raw draft id, or validation draft body markers in
+the generated report or evidence directory. Draft save and resume can therefore
+move from `roundcube_fallback` to `supported_with_limits` for Version 3 pilot
+planning. The limits remain explicit: no browser-local drafts, no attachment
+preview, no inline image rendering, no remote content loading, no weakening of
+HTML sanitization, send-only use of newly uploaded persisted draft attachments,
+and no automatic original-message attachment reattach.
+
+## 2026-05-07, Add V3 draft WSTG route evidence
+
+The WSTG testing pack now includes `OSMAP-WSTG-BUSL-002`, a release-required
+authenticated dynamic test for the V3 draft route lifecycle. It maps to ASVS
+5.0.0 as the primary control standard and reports through the OWASP Top 10 2025
+crosswalk. The test exercises draft save, list, resume, delete, send-success
+cleanup, CSRF rejection, same-origin rejection, stale-session rejection,
+attachment-limit rejection, and redacted evidence output.
+
+The pilot workflow disposition remains `roundcube_fallback` until host-safe
+authenticated evidence is collected and reviewed.
+
+## 2026-05-11, Add credential-backed source-attachment WSTG evidence lane
+
+The reply/forward selected source-attachment gate now has a credential-backed
+live evidence lane: `maint/live/osmap-live-validate-v3-source-attachments.ksh`
+starts an isolated helper-backed runtime on `mail.blackbagsecurity.com`, applies
+a temporary validation mailbox password hash, performs a real
+password-plus-TOTP browser login, injects controlled source messages, and proves
+positive selected-source attachment inclusion plus duplicate, tampered mailbox,
+tampered UID, tampered part, missing-CSRF, cross-origin, stale-source, and
+report-redaction outcomes.
+
+The WSTG testing pack maps that lane as `OSMAP-WSTG-BUSL-003`, with ASVS and
+OWASP Top 10 2025 coverage for access control, CSRF/request integrity, session
+proof, file/resource handling, logging, and exceptional-condition behavior. The
+remaining design question is whether draft save/resume should persist bounded
+source-attachment references; the send-time selected attachment path itself now
+has route, live, and WSTG closeout coverage.
+
+## 2026-05-11, Cover source-attachment send failure edges
+
+The reply/forward source-attachment slice now has route regressions for the
+send-time failure edges called out in
+`docs/V3_REPLY_FORWARD_ATTACHMENT_HANDLING_DESIGN.md`: duplicate selected part
+paths, missing source mailbox metadata, stale or missing selected source parts,
+and aggregate count overflow when new uploads and selected source attachments
+are combined.
+
+These tests prove that selected originals are re-fetched before submission,
+that stale selections fail visibly instead of silently dropping files, and that
+confirmed source attachments count against the same compose attachment limits
+as new uploads. The remaining closeout gap for the full V3 gate is
+credential-backed WSTG/live evidence and, if admitted, draft save/resume of
+source attachment references.
+
+## 2026-05-11, Start explicit reply and forward attachment selection
+
+The first implementation slice for `docs/V3_REPLY_FORWARD_ATTACHMENT_HANDLING_DESIGN.md`
+now makes source-message attachments visible and selectable on reply and
+forward compose pages. Selected source attachments are not trusted from browser
+metadata; `/send` re-fetches each selected part through the existing bounded
+attachment-download path before turning it into a normal compose attachment.
+
+The slice keeps the conservative defaults: no automatic original-message
+reattach, no inline preview, no inline image rendering, and no remote content
+loading. The current tests cover default reply and forward compose rendering,
+explicit source-attachment selection, send-time re-fetch, and the existing
+aggregate compose attachment validation path. Remaining closeout work includes
+WSTG coverage, stale-source failure coverage, and draft save/resume of source
+attachment references if that behavior is admitted.
+
+## 2026-05-11, Define V3 reply and forward attachment boundary
+
+Version 3 now has a design gate for explicit original-message attachment
+handling at `docs/V3_REPLY_FORWARD_ATTACHMENT_HANDLING_DESIGN.md`.
+
+The design keeps the next implementation slice narrow: reply and forward
+compose may show surfaced source attachments and allow explicit selection, but
+send must revalidate every selected original attachment through the existing
+bounded message and attachment path. Selected originals and newly uploaded
+attachments share the existing compose aggregate limits, and failures must be
+visible rather than silently dropping a confirmed selection.
+
+The boundary remains conservative: no inline preview, no inline image
+rendering, no remote content loading, no automatic reattach, no browser-local
+message cache, and no broad MIME-client behavior.
+
+## 2026-05-11, Keep V3 worker-budget env examples aligned
+
+The generic `config/osmap.env.example` now carries the same Version 3
+route-class worker-budget and expensive-request-timeout controls already
+present in the OpenBSD service examples:
+
+- `OSMAP_MAILBOX_WORKER_BUDGET`
+- `OSMAP_SEARCH_WORKER_BUDGET`
+- `OSMAP_SEND_WORKER_BUDGET`
+- `OSMAP_AUTH_WORKER_BUDGET`
+- `OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS`
+
+The shared developer security gate now includes a small regression that checks
+the generic example, the OpenBSD examples, and the reviewed
+`mail.blackbagsecurity.com` env artifacts together. This keeps future V3
+resource-control tuning from leaving the operator-facing examples stale.
+
+## 2026-05-11, Surface the V3 draft state path in env examples
+
+The Version 3 draft store already defaults to `<OSMAP_STATE_DIR>/drafts` and
+supports an explicit `OSMAP_DRAFT_DIR` override, but the committed environment
+examples did not show that state path next to sessions and settings. The
+generic, OpenBSD, and reviewed `mail.blackbagsecurity.com` env artifacts now
+name the draft directory explicitly.
+
+The draft design gate regression now checks those env examples so the
+operator-facing state model stays aligned with the implemented V3 draft
+storage boundary.
+
+## 2026-05-13, Enforce project-wide TLS standard and evidence gate
+
+OSMAP now treats TLS policy as a project-wide security invariant rather than a
+host-edge note. `docs/TLS_STANDARD.md` defines the standard: TLS 1.2 minimum,
+TLS 1.3 preferred, weak protocol versions prohibited, TLS 1.2 limited to
+strong forward-secret AEAD suites, and certificate plus hostname verification
+kept enabled in validation clients.
+
+The repository gate now includes `maint/security/osmap-tls-policy-guard.sh`,
+which scans tracked code including Rust sources for prohibited TLS drift and
+checks Python validation contexts for the TLS 1.2 floor. Live public-edge
+evidence is produced by `maint/security/osmap-live-tls-standard-validate.py`
+and strict release validation requires that report through
+`OSMAP_RELEASE_TLS_STANDARD_EVIDENCE`.
+
+## 2026-05-16, Treat richer bounded search as a whitelist-only V3 slice
+
+The next incomplete V3 workflow gap after draft and reply/forward attachment
+work was richer bounded search. OSMAP intentionally did not add a broad search
+language, saved searches, facets, client-side JavaScript search behavior, or
+arbitrary backend query syntax.
+
+The implemented V3 search refinements are deliberately small and
+server-rendered:
+
+- mailbox and search result tables can sort UID, subject, from, received,
+  flags, and size
+- search can be refined with `field=all|subject|from`
+- invalid search field values return a deterministic 400-class response before
+  reaching the backend
+- helper requests sign the selected search field into the grant payload
+- the Dovecot backend receives only fixed server-side search keys: `TEXT`,
+  `SUBJECT`, or `FROM`
+- sort and search links preserve mailbox and query context without adding
+  client-side script
+
+This keeps the richer-search slice inside the existing mailbox-helper and
+server-rendered browser trust model while making ordinary mail lookup more
+usable for daily-driver testing.
+
+Validation for commit `0dac311648fbaffd210afc13d416021b0b8419bf` passed:
+
+- `cargo fmt --check`
+- `cargo clippy --all-targets --all-features -- -D warnings`
+- `cargo test --all-features`
+- `make security-check`
+
+## 2026-05-16, Defer the next interactive WSTG run until the V3 release candidate unless a security boundary changes
+
+After the search field refinement landed, the local repository and
+`origin/main` were at `0dac311648fbaffd210afc13d416021b0b8419bf`, but the
+standard host checkout on `mail.blackbagsecurity.com` was still at
+`722f48461d80736d39be1e85a145d8c736a8ddff`.
+
+The latest credential-backed WSTG release capture found locally was:
+
+- `maint/wstg-testing-pack/output/release-20260516T015431Z/osmap-wstg-20260515-215432/summary.json`
+- generated at `2026-05-16T02:00:06Z`
+- 26 mapped WSTG tests passed
+
+That WSTG run remains useful evidence for the host state it assessed, but it
+does not prove the later `0dac311` search-field commit because the host was not
+updated to that commit.
+
+The operating decision is therefore:
+
+- continue the remaining V3 slices in the authoritative roadmap order
+- do not repeatedly deploy and prompt for interactive WSTG after every narrow
+  feature slice that does not materially change auth, session, CSRF,
+  helper-boundary, or public-edge behavior
+- update the standard host checkout, deploy the reviewed runtime, and run the
+  interactive credential-backed WSTG release capture against the final V3
+  release candidate
+- run an earlier live/WSTG proof if a future slice changes an authentication,
+  session, CSRF, helper-boundary, or public-edge security boundary
+
+This avoids treating old live evidence as current while also avoiding noisy
+credential-backed release captures for each small internal V3 slice.
+
+## 2026-05-16, Keep the next V3 implementation target as bounded bulk folder actions
+
+With bounded search sorting and `all`/`subject`/`from` field refinement in
+place, the next roadmap item remains bounded bulk folder actions. Advanced
+search refinements beyond the current whitelist remain open product-scope work
+rather than an implicit requirement for the next slice.
+
+The bounded bulk folder-action slice must keep the current archive and move
+security posture:
+
+- selected messages are bounded by count
+- every source mailbox, destination mailbox, and UID tuple is revalidated at
+  action time
+- CSRF and same-origin enforcement remain mandatory
+- existing move throttles or equivalent abuse controls apply
+- partial success must be reported explicitly rather than hidden behind a
+  success-style redirect
+- arbitrary mailbox-wide operations and broad Roundcube-style mailbox
+  management remain out of scope
+
+## 2026-05-17, Require explicit weak TLS cipher rejection evidence
+
+The V3 TLS standard already required TLS 1.0 and TLS 1.1 rejection, TLS 1.2
+and TLS 1.3 success, certificate validation, hostname validation, and strong
+negotiated ciphers. The remaining evidence gap was proving that deliberately
+forced weak TLS 1.2 cipher offers are rejected, rather than only proving the
+default negotiated TLS 1.2 cipher is acceptable.
+
+`maint/security/osmap-live-tls-standard-validate.py` now records rejected weak
+TLS 1.2 cipher probes for legacy SHA and non-AEAD suites, and
+`make release-check` fails when that probe set is missing, incomplete, accepted,
+or records any negotiated protocol/cipher. This keeps the CBC cleanup and TLS
+standard gate evidence-driven instead of relying on static configuration review
+alone.
+
+## 2026-05-17, Add bounded selected-message folder cleanup
+
+The bounded bulk folder-action slice extends mailbox-list cleanup without
+adding broad mailbox management. The browser now exposes a selected-message
+move form that reuses the existing one-message move path once per UID, caps the
+selection count, holds the mailbox worker budget for the whole bulk request,
+limits destinations to visible mailboxes plus the configured archive target,
+and reports partial success if a later UID becomes stale or otherwise fails.
+
+The older selected archive route remains as a compatibility path and now uses
+the same mailbox worker budget class. WSTG disposition is recorded as
+`OSMAP-WSTG-BUSL-004`, a release-required static guardrail check for the source,
+route tests, and V3 bulk-action acceptance markers; destructive live mailbox
+mutation evidence remains reserved for controlled validation accounts.
+
+## 2026-05-18, Add a sanitized V3 pilot rehearsal capture helper
+
+The final V3 selected-cohort rehearsal cannot be manufactured from fixture
+data. It needs real user workflow completion, but the resulting release report
+must still be narrow, repeatable, and secret-free.
+
+`maint/live/osmap-live-record-v3-pilot-rehearsal.ksh` now writes
+`maint/live/latest-host-v3-pilot-rehearsal-report.txt` only after every required
+daily-driver workflow is explicitly confirmed as `passed`, Roundcube fallback
+is confirmed as `none`, and evidence sanitization is confirmed as `true`. This
+keeps the actual human rehearsal separate from the repo-owned sanitized release
+artifact shape.
+
+## 2026-05-18, Require V3 pilot rehearsal evidence in release mode
+
+The final V3 roadmap slice is pilot rehearsal evidence, not another feature.
+Release validation already failed closed on missing WSTG, credential/TOTP,
+resource, TLS, helper-boundary, and MIME/HTML evidence, but it did not yet
+require the selected-cohort daily-driver rehearsal record named by the V3
+acceptance criteria.
+
+`make release-check` now requires a sanitized
+`maint/live/latest-host-v3-pilot-rehearsal-report.txt` plus
+`docs/PILOT_WORKFLOW_INVENTORY.md`. The report must match the assessed commit
+and prove password-plus-TOTP login, core mailbox workflows, draft continuity,
+reply/forward source attachments, bounded bulk folder actions, and session
+logout/revoke without Roundcube fallback for those workflows.
+
+## 2026-05-19, Make V3 WSTG due diligence a release-blocking workstream
+
+The existing WSTG testing pack provides useful browser, edge, authentication, session, CSP, CSRF, MIME, attachment, and selected business-logic regression evidence, but the current matrix is anchored to WSTG v4.2 and does not yet represent complete WSTG due diligence for Version 3.
+
+Version 3 now treats WSTG coverage closure as a managed release workstream. The project records two required documents:
+
+- `docs/V3_WSTG_DUE_DILIGENCE_PLAN.md`
+- `docs/V3_WSTG_COVERAGE_GATE.md`
+
+The due-diligence work is sliced into coverage inventory and source pinning, authorization and account isolation, session lifecycle and cookie security, IMAP/SMTP and webmail-specific input validation, weak cryptography, API-style route testing, business-logic abuse, client-side and browser-storage testing, error handling, and release-gate integration.
+
+V3 cannot close while critical WSTG slices are incomplete, while required authenticated WSTG tests are skipped, while TOTP evidence is missing for applicable checks, or while not-applicable and deferred items lack written evidence. Developer partial mode may still skip credential-gated checks, but release mode must fail closed.
+
+## 2026-05-22, Start WSTG Slice 4 webmail input-validation evidence
+
+The Version 3 WSTG workstream now has a webmail-specific input-validation lane:
+
+- `OSMAP-WSTG-INPV-004` maps WSTG INPV-10 for IMAP/SMTP injection
+- dynamic evidence uses an authenticated password-plus-TOTP session but only
+  sends rejected probes, so no synthetic probe mail should be delivered
+- the probes cover subject newline injection, recipient newline injection,
+  display-name-shaped recipient input, mailbox-name tampering, UID tampering,
+  search tampering, path-like attachment filenames, and dangerous attachment
+  content-type input
+- static evidence ties those probes to compose/send validation, Dovecot
+  argument boundaries, attachment filename/content-type handling, stored HTML
+  sanitization, and CSV export non-applicability
+- the WSTG v4.2 matrix moves INPV-10 from blocked to automated, leaving 61
+  blocked rows for remaining due-diligence slices
+
+Developer-mode runs may still skip this check without credentials. V3 release
+mode must provide the authenticated TOTP-backed evidence.
+
+## 2026-05-22, Start WSTG Slice 3 session lifecycle evidence
+
+The Version 3 WSTG workstream now has a dedicated session lifecycle lane:
+
+- `OSMAP-WSTG-SESS-006` maps WSTG SESS-01, SESS-04, SESS-06, SESS-07,
+  SESS-08, and SESS-09
+- dynamic evidence logs in through the real password-plus-TOTP browser path,
+  loads protected mailbox state, logs out with a valid CSRF token, and proves
+  the old cookie and a synthetic stale cookie cannot reach protected content
+- static evidence records idle timeout, absolute timeout, concurrent-session
+  policy, exposed-token controls, session-puzzling resistance, and revocation
+  race coverage
+- the WSTG v4.2 matrix moves SESS-01, SESS-04, SESS-07, SESS-08, and SESS-09
+  from blocked to automated, leaving 62 blocked rows for remaining due
+  diligence slices
+
+Developer-mode runs may still skip this check without credentials. V3 release
+mode must provide the authenticated TOTP-backed evidence.
+
+## 2026-05-22, Start WSTG Slice 2 authorization account-isolation evidence
+
+The Version 3 WSTG workstream now has an explicit authorization and
+account-isolation lane:
+
+- `OSMAP-WSTG-ATHZ-001` maps WSTG ATHZ-02, ATHZ-03, and ATHZ-04
+- release evidence requires a primary authenticated password-plus-TOTP session
+  and a host-assisted secondary mailbox fixture
+- the dynamic probes assert that primary-session requests cannot expose the
+  secondary mailbox/message/attachment/sent/search markers, and that missing or
+  stale session cookies cannot reach protected mailbox content
+- static evidence ties draft, send, search, bulk action, and mailbox-helper
+  boundaries to the validated session canonical username
+- the WSTG v4.2 matrix moves ATHZ-02 and ATHZ-03 from blocked to automated,
+  leaving 67 blocked rows for remaining due diligence slices
+
+This still keeps developer-mode runs skippable without credentials or host
+access. V3 release mode must provide the authenticated host-assisted evidence.
+
+## 2026-05-22, Start WSTG Slice 1 source metadata and dispositions
+
+The Version 3 WSTG due-diligence workstream now has the first mechanical
+inventory controls needed before deeper coverage closure:
+
+- the WSTG runner summary and report record source name, source URL, source
+  version, source commit when applicable, active matrix file, OSMAP commit,
+  target host, authentication mode, and evidence path
+- release mode fails if a latest-track WSTG source is claimed without a pinned
+  source commit
+- the active v4.2 scenario matrix assigns one explicit Slice 1 disposition to
+  every row: 28 `automated` rows mapped to current runner evidence and 69
+  `blocked` rows requiring applicability decision and evidence before closeout
+- the WSTG pack regression now validates the matrix dispositions and source
+  metadata hooks
+
+This does not close the 69 blocked WSTG rows. It makes them visible,
+machine-checkable release work instead of implicit spreadsheet debt.
+
+## 2026-05-23, Add WSTG Slice 6 form route state-transition evidence
+
+The Version 3 WSTG Slice 6 wording is narrowed from API-style testing to
+form-backed route and state-transition testing, matching OSMAP's browser
+surface:
+
+- `OSMAP-WSTG-BUSL-005` maps BUSL-01, BUSL-02, BUSL-03, BUSL-05, BUSL-06,
+  and BUSL-07 with static evidence for CSRF, same-origin metadata,
+  duplicate-field rejection, tampered mailbox/UID rejection, bulk misuse
+  limits, draft lifecycle transitions, send/draft transition integrity, and
+  session revocation state changes
+- `OSMAP-WSTG-APIT-001` maps APIT-01 as not applicable because OSMAP has no
+  GraphQL endpoint, schema, resolver layer, or dependency
+- the WSTG v4.2 matrix moves six BUSL rows from blocked to automated and
+  APIT-01 from blocked to not applicable, leaving 34 blocked rows
+
+Future JSON/REST, GraphQL, or other non-browser-form state-transition
+protocols must get their own dynamic negative tests.
+
+## 2026-05-23, Add WSTG Slice 5 crypto and transport evidence
+
+The Version 3 WSTG Slice 5 weak-cryptography workstream now records the
+browser-facing transport and primitive applicability decisions:
+
+- `OSMAP-WSTG-CRYP-001` maps WSTG CRYP-01 and CRYP-03 with unauthenticated
+  HTTPS login, HSTS, cleartext HTTP, static TLS policy, and live TLS standard
+  validation evidence
+- `OSMAP-WSTG-CRYP-002` maps WSTG CRYP-02 and CRYP-04 with static
+  not-applicable evidence for padding-oracle and weak-encryption classes
+- static evidence confirms OSMAP does not terminate public TLS in Rust, keeps
+  public TLS at the nginx edge, builds production cookies with `Secure`, and
+  has no application encryption/decryption primitive, CBC decryptor,
+  attacker-controlled ciphertext decrypt route, or custom reversible encryption
+- the WSTG v4.2 matrix moves CRYP-01 and CRYP-03 from blocked to automated,
+  CRYP-02 and CRYP-04 from blocked to not applicable, leaving 41 blocked rows
+  for remaining due-diligence slices
+
+If OSMAP adds a Rust TLS endpoint, application encryption/decryption primitive,
+encrypted object format, or browser-exposed decrypt route, the affected CRYP
+row must move from not-applicable proof to dynamic negative testing.
+
+## 2026-05-23, Finish WSTG Slice 4 remaining injection applicability evidence
+
+The Version 3 WSTG Slice 4 input-validation workstream now records the
+remaining injection-class applicability decisions:
+
+- `OSMAP-WSTG-INPV-007` maps WSTG INPV-05, INPV-06, INPV-07, INPV-08,
+  INPV-09, INPV-11, INPV-13, INPV-14, INPV-18, and INPV-19
+- static evidence confirms the current OSMAP browser surface has no SQL, LDAP,
+  XML, XPath, SSI, runtime-code, format-string, server-side template, or SSRF
+  backend surface
+- incubated vulnerability coverage is represented by the named Slice 4 lanes:
+  reflected and stored HTML, command-boundary checks, IMAP/SMTP and MIME input
+  validation, HTTP method and parameter tampering, raw HTTP host/smuggling
+  checks, and this applicability review
+- the WSTG v4.2 matrix moves those ten rows from blocked to not applicable,
+  and reconciles the already-mapped command-injection row to
+  `OSMAP-WSTG-INPV-003`, leaving 45 blocked rows for remaining due-diligence
+  slices
+
+If a future OSMAP slice adds one of these interpreters, parsers, backend query
+surfaces, template engines, or outbound fetch surfaces, the affected row must
+move from not-applicable proof to dynamic negative testing.
+
+## 2026-05-23, Extend WSTG Slice 4 with raw HTTP host and smuggling evidence
+
+The Version 3 WSTG Slice 4 input-validation workstream now includes a raw HTTP
+request-shape lane:
+
+- `OSMAP-WSTG-INPV-006` maps WSTG INPV-15, INPV-16, and INPV-17 for HTTP
+  splitting/smuggling, incoming request validation, and host-header injection
+- unauthenticated dynamic evidence uses raw TLS requests for CL.TE, duplicate
+  `Content-Length`, encoded CRLF target, missing `Host`, obsolete folded
+  header, non-normalized target, duplicate `Host`, malformed `Host`, and
+  untrusted `Host` probes
+- static evidence ties the probes to parser controls for duplicate headers,
+  host syntax, transfer-encoding rejection, content-length consistency, and
+  normalized request targets
+- the WSTG v4.2 matrix moves INPV-15, INPV-16, and INPV-17 from blocked to
+  automated, leaving 56 blocked rows for remaining due-diligence slices
+
+The arbitrary-host probe is not required to be rejected by the edge, but it
+must not reflect the untrusted host into the response body, redirects, or cookie
+metadata.
+
+## 2026-05-23, Extend WSTG Slice 4 with HTTP input tampering evidence
+
+The Version 3 WSTG Slice 4 input-validation workstream now includes a
+request-shape tampering lane:
+
+- `OSMAP-WSTG-INPV-005` maps WSTG INPV-03 and INPV-04 for HTTP verb
+  tampering and HTTP parameter pollution
+- unauthenticated dynamic evidence uses rejected probes only, covering
+  unsupported methods, GET requests with bodies, POST method mismatches,
+  unsupported JSON content-types on form routes, duplicate query parameters,
+  and duplicate URL-encoded form fields
+- static evidence ties the probes to the HTTP parser, route table, form
+  content-type gates, and duplicate-field rejection in URL query, URL-encoded,
+  and multipart form parsing
+- the WSTG v4.2 matrix moves INPV-03 and INPV-04 from blocked to automated,
+  leaving 59 blocked rows for remaining due-diligence slices
+
+This lane complements `OSMAP-WSTG-CONF-004`, which remains the narrower
+configuration check that `OPTIONS` and `TRACE` are not accepted as application
+methods.
+
+## 2026-05-27, Add WSTG Slice 10 sensitive-file exposure evidence
+
+The Version 3 WSTG Slice 10 configuration and deployment workstream now
+records deterministic evidence for sensitive extension handling and backup
+file exposure:
+
+- `OSMAP-WSTG-CONF-008` maps CONF-03 and CONF-04
+- dynamic probes cover `.env`, Cargo files, README, key/config/source-like
+  names, editor backups, SQL dumps, archives, and old env names
+- static evidence records that the public WAN OSMAP vhost proxies to the Rust
+  router rather than exposing a repository root, backup directory, or source
+  archive directory
+- the WSTG v4.2 matrix moves two CONF rows from blocked to automated, leaving
+  14 blocked rows
+
+Future static-file serving, public asset roots, deployment artifact locations,
+or backup publication paths must update this lane before V3 closeout.
+
+## 2026-05-27, Finish WSTG Slice 9 public reconnaissance coverage
+
+The Version 3 WSTG Slice 9 workstream now records bounded public
+reconnaissance and fingerprinting evidence for the remaining INFO rows:
+
+- `OSMAP-WSTG-INFO-004` maps INFO-01, INFO-04, INFO-08, and INFO-09
+- dynamic probes cover expected public OSMAP paths plus common secondary app
+  paths such as `/admin`, `/api`, `/graphql`, `/phpmyadmin`, `/roundcube`,
+  `/webmail`, `/.git/config`, and `/server-status`
+- static evidence records that search engine discovery reconnaissance is
+  represented by deterministic public-footprint and robots/security metadata
+  review rather than mutable third-party search-result pages
+- framework and web-app fingerprinting fail closed on `X-Powered-By`,
+  framework banners, backend version strings, or exposed secondary webmail apps
+- the WSTG v4.2 matrix moves four INFO rows from blocked to automated, leaving
+  16 blocked rows
+
+Future public apps, route aliases, or framework-visible response changes must
+update this bounded reconnaissance lane.
+
+## 2026-05-27, Add WSTG Slice 9 error and information-disclosure evidence
+
+The Version 3 WSTG Slice 9 workstream now records deterministic evidence for
+stack-trace leakage and browser route/architecture inventory:
+
+- `OSMAP-WSTG-INFO-003` maps ERRH-02, INFO-06, INFO-07, and INFO-10
+- unauthenticated probes cover missing routes and malformed mailbox, message,
+  attachment, and search inputs
+- static evidence records the explicit browser route inventory, generic
+  browser-visible error text, public reason mapping, and the nginx, OSMAP,
+  mailbox-helper, doveadm, sendmail, Postfix, Dovecot, and Rspamd boundaries
+- the WSTG v4.2 matrix moves four rows from blocked to automated, leaving 20
+  blocked rows
+
+Future routes or backend boundaries must update the route inventory and stack
+leakage probes before V3 closeout.
+
+## 2026-05-27, Add WSTG Slice 8 client-side browser evidence
+
+The Version 3 WSTG Slice 8 client-side and browser-storage workstream now
+records static applicability evidence for the remaining CLNT rows:
+
+- `OSMAP-WSTG-CLNT-003` maps CLNT-02, CLNT-03, CLNT-04, CLNT-05, CLNT-06,
+  CLNT-08, CLNT-10, CLNT-11, CLNT-12, and CLNT-13
+- evidence confirms OSMAP is server-rendered, has no client-side scripting
+  dependency, no WebSocket route, no web messaging surface, no browser storage
+  use, and no Flash/SWF surface
+- HTML/CSS risks are tied to existing sanitizer, escaping, CSP,
+  `UrlRelative::Deny`, stripped scriptable/remote-fetch surfaces, and
+  `noopener noreferrer nofollow` link evidence
+- the WSTG v4.2 matrix moves ten CLNT rows from blocked to not applicable,
+  leaving 24 blocked rows
+
+Future JavaScript, browser storage, WebSocket, web messaging, service-worker,
+client-side redirect, or browser-executed resource-loading features must move
+the affected CLNT rows from static proof to dynamic browser tests.
+
+## 2026-05-30, Finish WSTG Slice 10 file-permission and subdomain evidence
+
+The Version 3 WSTG Slice 10 configuration and deployment workstream now
+records host-assisted evidence for the remaining CONF rows:
+
+- `OSMAP-WSTG-CONF-010` maps CONF-09 and CONF-10
+- file-permission evidence covers live env files, launchers, `rc.d` files,
+  state roots, secret directories, audit/cache directories, and the
+  mailbox-helper socket
+- DNS evidence covers `mail.blackbagsecurity.com` plus unused OSMAP/webmail
+  candidate names and fails on dangling takeover CNAMEs
+- the WSTG v4.2 matrix moves two CONF rows from blocked to automated, leaving
+  10 blocked rows
+
+Future public OSMAP names, CDN/static hosting, service artifact paths, runtime
+directory layouts, or helper-socket permissions must update this lane before V3
+closeout.
+
+## 2026-05-30, Add WSTG Slice 10 RIA and cloud storage applicability evidence
+
+The Version 3 WSTG Slice 10 configuration and deployment workstream now
+records deterministic applicability evidence for legacy RIA cross-domain policy
+files and cloud storage exposure:
+
+- `OSMAP-WSTG-CONF-009` maps CONF-08 and CONF-11
+- unauthenticated probes cover `/crossdomain.xml` and
+  `/clientaccesspolicy.xml`
+- static evidence records that OSMAP has no Flash, Silverlight, RIA client,
+  public object-storage bucket, cloud storage dependency, or static cloud
+  storage root in the browser mail boundary
+- the WSTG v4.2 matrix moves two CONF rows from blocked to not-applicable
+  with evidence, leaving 12 blocked rows
+
+Future browser asset hosting, RIA clients, CDN-backed public roots, object
+storage buckets, or cloud storage dependencies must update this lane before V3
+closeout.
+
+## 2026-05-31, Pin WSTG latest-track due diligence matrix
+
+The Version 3 WSTG due-diligence workstream now carries a pinned latest-track
+matrix in addition to the stable v4.2 matrix:
+
+- source: OWASP/wstg `master`
+- commit: `7dea71b751ea76f792b89186655739720b614d9a`
+- matrix: `maint/wstg-testing-pack/wstg-scenario-matrix.latest.json`
+- latest source rows: 114 markdown scenario rows
+- unique latest WSTG IDs: 112
+- current-pack mapped rows: 114
+- unmapped latest rows: 0
+- dispositions: 70 automated, 44 not applicable
+
+The latest matrix preserves source paths and commit-pinned GitHub URLs for each
+row, including duplicate upstream identifiers for `WSTG-INPV-13` and
+`WSTG-APIT-03`. Future WSTG latest refreshes must update the commit hash,
+matrix row counts, and any changed applicability decisions together.
+
+## 2026-05-31, Add WSTG authentication feature applicability evidence
+
+The Version 3 WSTG authentication workstream now records deterministic evidence
+for default credentials, authentication-schema bypass, remember-password
+behavior, password-policy applicability, security questions, and password
+change/reset applicability:
+
+- `OSMAP-WSTG-ATHN-005` maps ATHN-02, ATHN-04, ATHN-05, ATHN-07, ATHN-08,
+  and ATHN-09
+- dynamic probes cover protected-route unauthenticated access, common
+  remember/recovery/security-question paths, and bounded default-credential
+  login attempts
+- static evidence records that OSMAP has no browser-local account database, no
+  default credentials, no browser authentication bypass route, no
+  remember-password feature, no security questions, and no browser password
+  change or reset functionality
+- the WSTG v4.2 matrix now maps all 97 listed rows, leaving 0 blocked rows
+
+Future browser-local account storage, password lifecycle features,
+remember-password behavior, recovery features, or authentication bypass
+mechanisms must update this lane before V3 closeout.
+
+## 2026-05-31, Add WSTG identity lifecycle applicability evidence
+
+The Version 3 WSTG identity-management workstream now records deterministic
+evidence for role definitions, registration, account provisioning, and weak
+username policy applicability:
+
+- `OSMAP-WSTG-IDNT-001` maps IDNT-01, IDNT-02, IDNT-03, and IDNT-05
+- dynamic probes cover common registration, signup, invitation, provisioning,
+  user-administration, and role-management paths
+- static evidence records that OSMAP has a single browser end-user role, no
+  self-service registration, no browser account provisioning, and bounded
+  mailbox-username input before backend auth
+- the WSTG v4.2 matrix moves four IDNT rows out of blocked, leaving 6 blocked
+  rows
+
+Future browser role management, self-service registration, account
+provisioning, invitation, recovery, or username-policy changes must update this
+lane before V3 closeout.
+
+## 2026-06-11, Move OSMAP daemon logs under `/var/log/osmap`
+
+The previous service-artifact posture restored stdout/stderr capture, but it
+placed the captured service logs under application state/audit roots. That left
+an avoidable operator ambiguity: a sysadmin or security admin looking under
+`/var/log` would find nginx edge logs, but not OSMAP daemon startup, connection,
+authentication, mailbox-helper, or submission events.
+
+OSMAP now treats nginx logs as edge evidence only and publishes application
+service logs at:
+
+- `/var/log/osmap/serve.log`
+- `/var/log/osmap/mailbox-helper.log`
+
+The reviewed OpenBSD env files and launchers use those paths by default. The
+service-artifact apply flow creates `/var/log/osmap`, pre-creates both log
+files with service-owned permissions, and reruns the service enablement
+validator. The validator now reports the selected log paths, verifies both log
+files exist, and fails if either reviewed env file still points service stderr
+outside `/var/log/osmap`.
+
+The live WSTG command-injection evidence and focused live observability
+validators now inspect the OSMAP service logs instead of assuming nginx alone is
+enough application evidence.

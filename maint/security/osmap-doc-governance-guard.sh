@@ -35,6 +35,7 @@ v4_security_gates="${repo_root}/docs/V4_SECURITY_GATES.md"
 v4_closeout_evidence="${repo_root}/docs/V4_CLOSEOUT_EVIDENCE.md"
 v4_release_handoff="${repo_root}/docs/V4_RELEASE_OPERATOR_HANDOFF.md"
 v4_mime_ambiguity_evidence="${repo_root}/docs/V4_MIME_AMBIGUITY_EVIDENCE.md"
+decision_log="${repo_root}/docs/DECISION_LOG.md"
 v4_closeout_guard="${repo_root}/maint/security/test-osmap-v4-closeout-evidence.sh"
 
 require_file "$readme"
@@ -49,6 +50,7 @@ require_file "$v4_security_gates"
 require_file "$v4_closeout_evidence"
 require_file "$v4_release_handoff"
 require_file "$v4_mime_ambiguity_evidence"
+require_file "$decision_log"
 require_file "$v4_closeout_guard"
 
 require_text "$readme" "The current release evidence is anchored by \`v4.0.0\`"
@@ -122,5 +124,16 @@ require_text "$v4_mime_ambiguity_evidence" '`v4.0.0` evidence bundle at `59da020
 require_text "$v4_closeout_guard" "V4 closeout evidence checks passed"
 require_text "$v4_closeout_guard" "v4_hostile_content_live_proof_passed"
 require_text "$v4_closeout_guard" "V3 carry-forward"
+
+awk '
+  /^## [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]($|,)/ {
+    current = substr($2, 1, 10)
+    if (last != "" && current < last) {
+      printf "decision log dates must be oldest-to-newest: %s appears after %s at line %d\n", current, last, NR > "/dev/stderr"
+      exit 1
+    }
+    last = current
+  }
+' "$decision_log"
 
 echo "documentation governance guard passed"
