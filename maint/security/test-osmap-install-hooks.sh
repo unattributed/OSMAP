@@ -9,6 +9,7 @@ source_pre_push="${repo_root}/.githooks/pre-push"
 source_security_check="${repo_root}/maint/security/osmap-security-check.sh"
 source_supply_chain_check="${repo_root}/maint/security/osmap-supply-chain-check.sh"
 source_release_check="${repo_root}/maint/security/osmap-release-check.sh"
+source_v4_assurance_gate="${repo_root}/maint/security/osmap-v4-hostile-assurance-gate.sh"
 tmp_root=$(mktemp -d "${TMPDIR:-/tmp}/osmap-hook-install-test.XXXXXX")
 fake_repo="${tmp_root}/repo"
 fake_hooks_dir="${fake_repo}/.githooks"
@@ -30,6 +31,7 @@ cp "${source_pre_push}" "${fake_hooks_dir}/pre-push"
 cp "${source_security_check}" "${fake_security_dir}/osmap-security-check.sh"
 cp "${source_supply_chain_check}" "${fake_security_dir}/osmap-supply-chain-check.sh"
 cp "${source_release_check}" "${fake_security_dir}/osmap-release-check.sh"
+cp "${source_v4_assurance_gate}" "${fake_security_dir}/osmap-v4-hostile-assurance-gate.sh"
 
 git init -q "${fake_repo}"
 
@@ -74,6 +76,10 @@ assert_equals "$(git -C "${fake_repo}" config --local core.hooksPath)" ".githook
 }
 [ -x "${fake_security_dir}/osmap-release-check.sh" ] || {
 	printf '%s\n' "expected release-check script to be executable" >&2
+	exit 1
+}
+[ -x "${fake_security_dir}/osmap-v4-hostile-assurance-gate.sh" ] || {
+	printf '%s\n' "expected V4 hostile assurance gate script to be executable" >&2
 	exit 1
 }
 
