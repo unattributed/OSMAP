@@ -628,7 +628,7 @@ pub(crate) fn render_message_search_page(
 }
 
 /// Renders the message-view page using the existing safe renderer output.
-pub(crate) fn render_message_view_page(
+pub fn render_message_view_page(
     canonical_username: &str,
     csrf_token: &str,
     rendered: &RenderedMessageView,

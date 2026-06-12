@@ -80,6 +80,13 @@ case "$cmd" in
     "websocket_requests": 0,
     "service_worker_registrations": 0
   },
+  "route_backed_observations": {
+    "rendered_message_routes": 3,
+    "attachment_download_routes": 5,
+    "dom_assertions": 3,
+    "auto_fetch_surfaces": 0,
+    "unsafe_browser_api_references": 0
+  },
   "components": [
     {"component": "hostile_corpus_metadata", "status": "passed", "observation": "fixture pass"},
     {"component": "browser_rendered_negative_assertions", "status": "passed", "observation": "fixture pass"},

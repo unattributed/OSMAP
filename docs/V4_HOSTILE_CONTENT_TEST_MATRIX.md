@@ -41,5 +41,7 @@ The repository-owned corpus gate is
 `maint/security/osmap-v4-hostile-assurance-gate.sh`. It executes
 `tests/v4_hostile_assurance.rs` against
 `tests/testdata/hostile-mail-corpus/`, validates fixture metadata coverage,
-writes `maint/live/osmap-v4-hostile-assurance-report.json`, and archives
+scans route-backed message-view responses for inert body DOM and zero
+auto-fetch/API surfaces, verifies forced-download attachment responses, writes
+`maint/live/osmap-v4-hostile-assurance-report.json`, and archives
 `maint/live/osmap-v4-hostile-assurance-evidence.tar.gz`.

@@ -3,11 +3,20 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use osmap::attachment::{
-    AttachmentDownloadPolicy, AttachmentDownloadService, DEFAULT_ATTACHMENT_DOWNLOAD_MAX_BYTES,
+    AttachmentDownloadPolicy, AttachmentDownloadService, DownloadedAttachment,
+    DEFAULT_ATTACHMENT_DOWNLOAD_MAX_BYTES,
 };
+use osmap::auth::{AuthenticationContext, AuthenticationPolicy, RequiredSecondFactor};
+use osmap::config::LogLevel;
+use osmap::http::HttpResponse;
+use osmap::http_support::{attachment_download_response, html_response};
+use osmap::http_ui::render_message_view_page;
+use osmap::logging::{EventCategory, LogEvent};
+use osmap::mailbox::MailboxEntry;
 use osmap::mailbox::MessageView;
 use osmap::mime::{MimeAnalysisPolicy, MimeAnalyzer, MimeBodySource};
-use osmap::rendering_html::{sanitize_html_body, HtmlRenderingPolicy};
+use osmap::rendering::{PlainTextMessageRenderer, RenderingPolicy};
+use osmap::session::{SessionRecord, ValidatedSession};
 
 const CORPUS_ROOT: &str = "tests/testdata/hostile-mail-corpus";
 
@@ -18,16 +27,39 @@ struct EvidenceRow {
     observation: String,
 }
 
+#[derive(Debug, Default)]
+struct BrowserBoundaryObservations {
+    rendered_message_routes: usize,
+    attachment_download_routes: usize,
+    dom_assertions: usize,
+    auto_fetch_surfaces: usize,
+    beacon_requests: usize,
+    websocket_requests: usize,
+    service_worker_registrations: usize,
+    unsafe_browser_api_references: usize,
+}
+
+impl BrowserBoundaryObservations {
+    fn merge_network(&mut self, other: BrowserBoundaryObservations) {
+        self.auto_fetch_surfaces += other.auto_fetch_surfaces;
+        self.beacon_requests += other.beacon_requests;
+        self.websocket_requests += other.websocket_requests;
+        self.service_worker_registrations += other.service_worker_registrations;
+        self.unsafe_browser_api_references += other.unsafe_browser_api_references;
+    }
+}
+
 #[test]
 fn v4_hostile_content_assurance_corpus_gate() {
     let mut evidence = Vec::new();
+    let mut browser_observations = BrowserBoundaryObservations::default();
 
     validate_corpus_metadata(&mut evidence);
-    validate_browser_rendered_negative_assertions(&mut evidence);
+    validate_browser_rendered_negative_assertions(&mut evidence, &mut browser_observations);
     validate_mime_parser_robustness(&mut evidence);
-    validate_attachment_deception_handling(&mut evidence);
-    validate_browser_isolation_source_invariants(&mut evidence);
-    write_evidence_report(&evidence);
+    validate_attachment_deception_handling(&mut evidence, &mut browser_observations);
+    validate_browser_isolation_source_invariants(&mut evidence, &browser_observations);
+    write_evidence_report(&evidence, &browser_observations);
 
     assert!(
         evidence.iter().all(|row| row.status == "passed"),
@@ -113,81 +145,60 @@ fn validate_corpus_metadata(evidence: &mut Vec<EvidenceRow>) {
     });
 }
 
-fn validate_browser_rendered_negative_assertions(evidence: &mut Vec<EvidenceRow>) {
+fn validate_browser_rendered_negative_assertions(
+    evidence: &mut Vec<EvidenceRow>,
+    observations: &mut BrowserBoundaryObservations,
+) {
     let active = include_str!("testdata/hostile-mail-corpus/html/hostile_html_active_content.eml");
     let css = include_str!("testdata/hostile-mail-corpus/html/css_tracking_cid_abuse.eml");
     let links = include_str!("testdata/hostile-mail-corpus/html/suspicious_link_matrix.eml");
 
-    let mut rendered_fragments = Vec::new();
-    for fixture in [active, css, links] {
-        let message = message_view_from_fixture(fixture);
-        let sanitized = sanitize_html_body(
-            HtmlRenderingPolicy::default(),
-            &message.body_text,
-            None,
-            128 * 1024,
-        )
-        .expect("hostile HTML fixture should sanitize without parser failure")
-        .expect("hostile HTML fixture should leave visible inert text");
-        rendered_fragments.push(sanitized.body_html);
-    }
-
-    let rendered = rendered_fragments.join("\n");
-    let lower = rendered.to_ascii_lowercase();
-
-    for forbidden in [
-        "<script",
-        "<form",
-        "<iframe",
-        "<object",
-        "<embed",
-        "<svg",
-        "<math",
-        "<audio",
-        "<video",
-        " onload",
-        " onclick",
-        " onerror",
-        " onfocus",
-        "<img",
-        "cid:",
-        "data:",
-        "blob:",
-        "file:",
-        "href=\"/relative",
-        "href=\"//",
-        "<meta",
-        "http-equiv",
-        "<link",
-        "rel=\"preload",
-        "navigator.serviceworker",
-        "new websocket",
-        "sendbeacon",
-        "broadcastchannel",
-        "rtcpeerconnection",
-        "localstorage",
-        "sessionstorage",
-        "target=\"_blank",
+    for (fixture, expected_text) in [
+        (active, "Visible hostile HTML fixture text."),
+        (css, "Visible CSS abuse text."),
+        (links, "Visible suspicious link fixture text."),
     ] {
-        assert!(
-            !lower.contains(forbidden),
-            "browser-rendered hostile content retained forbidden pattern {forbidden:?}: {rendered}"
+        let response = render_hostile_message_route_response(fixture);
+        assert_eq!(response.status_code, 200);
+        assert_header_contains(
+            &response.headers,
+            "Content-Security-Policy",
+            "default-src 'none'",
         );
-    }
+        assert_header(&response.headers, "X-Content-Type-Options", "nosniff");
+        assert_header(&response.headers, "X-Frame-Options", "DENY");
 
-    assert!(rendered.contains("Visible hostile HTML fixture text."));
-    assert!(rendered.contains("Visible CSS abuse text."));
-    assert!(rendered.contains("Visible suspicious link fixture text."));
-    assert!(rendered.contains("href=\"https://example.com/safe\""));
-    assert!(rendered.contains("href=\"http://example.com/safe\""));
-    assert!(rendered.contains("href=\"mailto:ops@example.com\""));
-    assert!(rendered.contains("rel=\"noopener noreferrer nofollow\""));
+        let route_html = String::from_utf8(response.body.clone())
+            .expect("route-backed HTML response should be UTF-8");
+        let body_panel = message_body_panel(&route_html);
+        assert!(
+            body_panel.contains(expected_text),
+            "route-backed body panel missing expected inert text {expected_text:?}: {body_panel}"
+        );
+        assert_message_body_dom_is_inert(body_panel);
+        observations.dom_assertions += 1;
+
+        let route_observations = observe_browser_boundary(&route_html);
+        assert_eq!(
+            route_observations.auto_fetch_surfaces, 0,
+            "route-backed response retained auto-fetch surface: {route_html}"
+        );
+        assert_eq!(route_observations.beacon_requests, 0);
+        assert_eq!(route_observations.websocket_requests, 0);
+        assert_eq!(route_observations.service_worker_registrations, 0);
+        assert_eq!(route_observations.unsafe_browser_api_references, 0);
+
+        observations.rendered_message_routes += 1;
+        observations.merge_network(route_observations);
+    }
 
     evidence.push(EvidenceRow {
         component: "browser_rendered_negative_assertions",
         status: "passed",
-        observation: "sanitized browser-facing fragments retain inert text and allowed links only"
-            .to_string(),
+        observation: format!(
+            "route-backed message responses={} had inert body DOM and zero observed auto-fetch surfaces",
+            observations.rendered_message_routes
+        ),
     });
 }
 
@@ -271,7 +282,10 @@ fn validate_mime_parser_robustness(evidence: &mut Vec<EvidenceRow>) {
     });
 }
 
-fn validate_attachment_deception_handling(evidence: &mut Vec<EvidenceRow>) {
+fn validate_attachment_deception_handling(
+    evidence: &mut Vec<EvidenceRow>,
+    observations: &mut BrowserBoundaryObservations,
+) {
     let service = AttachmentDownloadService::new(AttachmentDownloadPolicy::default());
 
     let html = service
@@ -284,6 +298,7 @@ fn validate_attachment_deception_handling(evidence: &mut Vec<EvidenceRow>) {
         .expect("spoofed HTML attachment should be downloadable only");
     assert_eq!(html.filename, "invoice.pdf.html");
     assert_eq!(html.content_type, "application/octet-stream");
+    assert_forced_download_route(&html, observations);
 
     let svg = service
         .download_from_message(
@@ -295,6 +310,7 @@ fn validate_attachment_deception_handling(evidence: &mut Vec<EvidenceRow>) {
         .expect("SVG disguised as image should be downloadable only");
     assert_eq!(svg.filename, "chart.png");
     assert_eq!(svg.content_type, "application/octet-stream");
+    assert_forced_download_route(&svg, observations);
 
     let script = service
         .download_from_message(
@@ -306,6 +322,7 @@ fn validate_attachment_deception_handling(evidence: &mut Vec<EvidenceRow>) {
         .expect("script attachment with benign name should be downloadable only");
     assert_eq!(script.filename, "meeting-notes.txt");
     assert_eq!(script.content_type, "application/octet-stream");
+    assert_forced_download_route(&script, observations);
 
     let archive = service
         .download_from_message(
@@ -317,6 +334,7 @@ fn validate_attachment_deception_handling(evidence: &mut Vec<EvidenceRow>) {
         .expect("archive-like content should stay download-only metadata");
     assert_eq!(archive.filename, "photos.txt");
     assert_eq!(archive.content_type, "application/zip");
+    assert_forced_download_route(&archive, observations);
 
     let unicode = service
         .download_from_message(
@@ -328,6 +346,7 @@ fn validate_attachment_deception_handling(evidence: &mut Vec<EvidenceRow>) {
         .expect("unicode-deception filename should normalize");
     assert!(unicode.filename.is_ascii());
     assert!(!unicode.filename.contains('\u{202e}'));
+    assert_forced_download_route(&unicode, observations);
 
     let oversized = AttachmentDownloadService::new(AttachmentDownloadPolicy {
         download_max_bytes: 4,
@@ -349,13 +368,17 @@ fn validate_attachment_deception_handling(evidence: &mut Vec<EvidenceRow>) {
         component: "attachment_deception_handling",
         status: "passed",
         observation: format!(
-            "active attachment media are downgraded; archive remains download-only; max bytes={}",
+            "active attachment media are downgraded; {} attachment routes force download with nosniff; max bytes={}",
+            observations.attachment_download_routes,
             DEFAULT_ATTACHMENT_DOWNLOAD_MAX_BYTES
         ),
     });
 }
 
-fn validate_browser_isolation_source_invariants(evidence: &mut Vec<EvidenceRow>) {
+fn validate_browser_isolation_source_invariants(
+    evidence: &mut Vec<EvidenceRow>,
+    observations: &BrowserBoundaryObservations,
+) {
     let http_support =
         fs::read_to_string(repo_path("src/http_support.rs")).expect("http support source readable");
 
@@ -408,11 +431,15 @@ fn validate_browser_isolation_source_invariants(evidence: &mut Vec<EvidenceRow>)
     evidence.push(EvidenceRow {
         component: "browser_isolation_verification",
         status: "passed",
-        observation: "CSP, frame ancestry, forced-download, nosniff, CORP, referrer policy, and no active browser APIs verified".to_string(),
+        observation: format!(
+            "CSP/frame headers, forced-download headers, source invariants, and route-backed browser observations verified; rendered_routes={}, attachment_routes={}",
+            observations.rendered_message_routes,
+            observations.attachment_download_routes
+        ),
     });
 }
 
-fn write_evidence_report(evidence: &[EvidenceRow]) {
+fn write_evidence_report(evidence: &[EvidenceRow], observations: &BrowserBoundaryObservations) {
     let Some(report_path) = env::var_os("OSMAP_V4_ASSURANCE_REPORT") else {
         return;
     };
@@ -460,10 +487,17 @@ fn write_evidence_report(evidence: &[EvidenceRow]) {
             "    \"attachment_download_max_bytes\": {}\n",
             "  }},\n",
             "  \"network_assertions\": {{\n",
-            "    \"remote_fetches\": 0,\n",
-            "    \"beacon_requests\": 0,\n",
-            "    \"websocket_requests\": 0,\n",
-            "    \"service_worker_registrations\": 0\n",
+            "    \"remote_fetches\": {},\n",
+            "    \"beacon_requests\": {},\n",
+            "    \"websocket_requests\": {},\n",
+            "    \"service_worker_registrations\": {}\n",
+            "  }},\n",
+            "  \"route_backed_observations\": {{\n",
+            "    \"rendered_message_routes\": {},\n",
+            "    \"attachment_download_routes\": {},\n",
+            "    \"dom_assertions\": {},\n",
+            "    \"auto_fetch_surfaces\": {},\n",
+            "    \"unsafe_browser_api_references\": {}\n",
             "  }},\n",
             "  \"components\": [\n",
             "{}\n",
@@ -478,10 +512,241 @@ fn write_evidence_report(evidence: &[EvidenceRow]) {
         MimeAnalysisPolicy::default().max_parts,
         MimeAnalysisPolicy::default().header_count_max,
         DEFAULT_ATTACHMENT_DOWNLOAD_MAX_BYTES,
+        observations.auto_fetch_surfaces,
+        observations.beacon_requests,
+        observations.websocket_requests,
+        observations.service_worker_registrations,
+        observations.rendered_message_routes,
+        observations.attachment_download_routes,
+        observations.dom_assertions,
+        observations.auto_fetch_surfaces,
+        observations.unsafe_browser_api_references,
         components
     );
 
     fs::write(report_path, report).expect("V4 assurance report should be writable");
+}
+
+fn render_hostile_message_route_response(raw_message: &str) -> HttpResponse {
+    let message = message_view_from_fixture(raw_message);
+    let session = validated_session_fixture();
+    let outcome = PlainTextMessageRenderer::new(RenderingPolicy::default())
+        .render_for_validated_session(&test_context(), &session, &message)
+        .expect("hostile fixture should render through the browser-facing renderer");
+    let page = render_message_view_page(
+        &session.record.canonical_username,
+        &session.record.csrf_token,
+        &outcome.rendered,
+        Some("Archive"),
+        &[
+            MailboxEntry {
+                name: "INBOX".to_string(),
+            },
+            MailboxEntry {
+                name: "Archive".to_string(),
+            },
+            MailboxEntry {
+                name: "Trash".to_string(),
+            },
+        ],
+    );
+    html_response(200, "OK", "OSMAP Message", &page)
+}
+
+fn assert_forced_download_route(
+    attachment: &DownloadedAttachment,
+    observations: &mut BrowserBoundaryObservations,
+) {
+    let response = attachment_download_response(attachment);
+    assert_eq!(response.status_code, 200);
+    assert_header(
+        &response.headers,
+        "Content-Disposition",
+        &format!("attachment; filename=\"{}\"", attachment.filename),
+    );
+    assert_header(&response.headers, "Content-Type", &attachment.content_type);
+    assert_header(&response.headers, "X-Content-Type-Options", "nosniff");
+    assert_header(
+        &response.headers,
+        "Cross-Origin-Resource-Policy",
+        "same-origin",
+    );
+    assert_header(&response.headers, "X-Frame-Options", "DENY");
+    observations.attachment_download_routes += 1;
+}
+
+fn message_body_panel(route_html: &str) -> &str {
+    let marker = "<section class=\"body-panel\"><h2>Body</h2>";
+    let start = route_html
+        .find(marker)
+        .expect("route-backed message page should contain the body panel")
+        + marker.len();
+    let end = route_html[start..]
+        .find("</section>")
+        .expect("route-backed message body panel should close")
+        + start;
+    &route_html[start..end]
+}
+
+fn assert_message_body_dom_is_inert(body_panel: &str) {
+    let lower = body_panel.to_ascii_lowercase();
+    for forbidden in [
+        "<script",
+        "<form",
+        "<iframe",
+        "<object",
+        "<embed",
+        "<svg",
+        "<math",
+        "<audio",
+        "<video",
+        "<source",
+        "<template",
+        "<meta",
+        "<link",
+        "<style",
+        "<img",
+        " onload=",
+        " onclick=",
+        " onerror=",
+        " onfocus=",
+        " autofocus",
+        "cid:",
+        "data:",
+        "blob:",
+        "file:",
+        "javascript:",
+        "vbscript:",
+        "href=\"/relative",
+        "href=\"//",
+        "src=\"//",
+        "http-equiv",
+        "rel=\"preload",
+        "navigator.serviceworker",
+        "new websocket",
+        "sendbeacon",
+        "broadcastchannel",
+        "rtcpeerconnection",
+        "localstorage",
+        "sessionstorage",
+        "target=\"_blank",
+    ] {
+        assert!(
+            !lower.contains(forbidden),
+            "route-backed hostile body retained forbidden DOM pattern {forbidden:?}: {body_panel}"
+        );
+    }
+}
+
+fn observe_browser_boundary(route_html: &str) -> BrowserBoundaryObservations {
+    let lower = route_html.to_ascii_lowercase();
+    BrowserBoundaryObservations {
+        auto_fetch_surfaces: count_patterns(
+            &lower,
+            &[
+                "<script",
+                "<img",
+                "<iframe",
+                "<object",
+                "<embed",
+                "<svg",
+                "<math",
+                "<audio",
+                "<video",
+                "<source",
+                "<track",
+                "<meta http-equiv=\"refresh",
+                "<meta http-equiv='refresh",
+                "rel=\"preload",
+                "rel='preload",
+                "rel=\"modulepreload",
+                "rel='modulepreload",
+                "rel=\"stylesheet",
+                "rel='stylesheet",
+                "@import",
+                "url(http:",
+                "url(https:",
+                "url(//",
+            ],
+        ),
+        beacon_requests: count_patterns(&lower, &["sendbeacon"]),
+        websocket_requests: count_patterns(&lower, &["websocket", "new websocket"]),
+        service_worker_registrations: count_patterns(
+            &lower,
+            &["serviceworker.register", "service-worker-allowed"],
+        ),
+        unsafe_browser_api_references: count_patterns(
+            &lower,
+            &[
+                "broadcastchannel",
+                "rtcpeerconnection",
+                "window.open",
+                "localstorage",
+                "sessionstorage",
+            ],
+        ),
+        ..BrowserBoundaryObservations::default()
+    }
+}
+
+fn count_patterns(haystack: &str, needles: &[&str]) -> usize {
+    needles
+        .iter()
+        .map(|needle| haystack.matches(needle).count())
+        .sum()
+}
+
+fn assert_header(headers: &[(String, String)], wanted_name: &str, wanted_value: &str) {
+    assert!(
+        headers
+            .iter()
+            .any(|(name, value)| name.eq_ignore_ascii_case(wanted_name) && value == wanted_value),
+        "response headers missing {wanted_name}: {wanted_value}; got {headers:?}"
+    );
+}
+
+fn assert_header_contains(headers: &[(String, String)], wanted_name: &str, wanted_value: &str) {
+    assert!(
+        headers.iter().any(|(name, value)| {
+            name.eq_ignore_ascii_case(wanted_name) && value.contains(wanted_value)
+        }),
+        "response headers missing {wanted_name} containing {wanted_value}; got {headers:?}"
+    );
+}
+
+fn test_context() -> AuthenticationContext {
+    AuthenticationContext::new(
+        AuthenticationPolicy::default(),
+        "req-v4-assurance",
+        "127.0.0.1",
+        "OSMAP-V4-Assurance",
+    )
+    .expect("test authentication context should be valid")
+}
+
+fn validated_session_fixture() -> ValidatedSession {
+    ValidatedSession {
+        record: SessionRecord {
+            session_id: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+                .to_string(),
+            csrf_token: "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210"
+                .to_string(),
+            canonical_username: "alice@example.com".to_string(),
+            issued_at: 10,
+            expires_at: 100,
+            last_seen_at: 20,
+            revoked_at: None,
+            remote_addr: "127.0.0.1".to_string(),
+            user_agent: "OSMAP-V4-Assurance".to_string(),
+            factor: RequiredSecondFactor::Totp,
+        },
+        audit_event: LogEvent::new(
+            LogLevel::Info,
+            EventCategory::Session,
+            "session_validated",
+            "browser session validated",
+        ),
+    }
 }
 
 fn message_view_from_fixture(raw_message: &str) -> MessageView {

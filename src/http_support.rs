@@ -37,7 +37,7 @@ pub(crate) fn redirect_response(
 }
 
 /// Builds an HTML response with the current browser-safety headers.
-pub(crate) fn html_response(
+pub fn html_response(
     status_code: u16,
     reason_phrase: &'static str,
     title: &str,
@@ -62,7 +62,7 @@ pub(crate) fn html_response(
 }
 
 /// Builds a forced-download response for one resolved attachment payload.
-pub(crate) fn attachment_download_response(attachment: &DownloadedAttachment) -> HttpResponse {
+pub fn attachment_download_response(attachment: &DownloadedAttachment) -> HttpResponse {
     HttpResponse::binary(200, "OK", attachment.body.clone())
         .with_header("Content-Type", attachment.content_type.clone())
         .with_header(
@@ -77,7 +77,7 @@ pub(crate) fn attachment_download_response(attachment: &DownloadedAttachment) ->
 }
 
 /// Returns the current narrow content-security-policy for HTML responses.
-pub(crate) fn browser_csp() -> &'static str {
+pub fn browser_csp() -> &'static str {
     "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'"
 }
 

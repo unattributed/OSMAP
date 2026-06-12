@@ -64,9 +64,10 @@ It is not a substitute for the live-host proof at release closeout.
 The local and release corpus evidence lane is
 `maint/security/osmap-v4-hostile-assurance-gate.sh`. It validates
 `tests/testdata/hostile-mail-corpus/MANIFEST.json`, verifies required fixture
-metadata, executes `tests/v4_hostile_assurance.rs`, writes the machine-readable
-report `maint/live/osmap-v4-hostile-assurance-report.json`, and archives the
-corpus/report bundle as
+metadata, executes `tests/v4_hostile_assurance.rs`, verifies route-backed
+message DOM, auto-fetch surface, browser-isolation, and forced-download
+observations, writes the machine-readable report
+`maint/live/osmap-v4-hostile-assurance-report.json`, and archives the corpus/report bundle as
 `maint/live/osmap-v4-hostile-assurance-evidence.tar.gz`.
 
 The local MIME ambiguity evidence is `docs/V4_MIME_AMBIGUITY_EVIDENCE.md`.

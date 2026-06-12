@@ -171,6 +171,21 @@ for key in [
     if network_assertions.get(key) != 0:
         errors.append(f"network assertion {key} expected zero")
 
+route_observations = report.get("route_backed_observations", {})
+for key in [
+    "rendered_message_routes",
+    "attachment_download_routes",
+    "dom_assertions",
+]:
+    if not isinstance(route_observations.get(key), int) or route_observations.get(key) <= 0:
+        errors.append(f"route-backed observation {key} is missing or invalid")
+for key in [
+    "auto_fetch_surfaces",
+    "unsafe_browser_api_references",
+]:
+    if route_observations.get(key) != 0:
+        errors.append(f"route-backed observation {key} expected zero")
+
 resources = report.get("resource_usage_observations", {})
 for key in [
     "mime_max_depth",
