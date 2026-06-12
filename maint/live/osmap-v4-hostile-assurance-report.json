@@ -1,8 +1,8 @@
 {
   "schema": "osmap-v4-hostile-assurance-report-v1",
   "status": "passed",
-  "assessed_ref": "e3ed7b8627f9c74726444e9ce6d082ec0c6e0863",
-  "generated_at_utc": "2026-06-12T05:40:36Z",
+  "assessed_ref": "492347e246999fe8bb93f40ea452dd8c123740bf",
+  "generated_at_utc": "2026-06-12T06:09:51Z",
   "corpus_root": "tests/testdata/hostile-mail-corpus",
   "release_gate": "maint/security/osmap-v4-hostile-assurance-gate.sh",
   "resource_usage_observations": {
@@ -17,11 +17,18 @@
     "websocket_requests": 0,
     "service_worker_registrations": 0
   },
+  "route_backed_observations": {
+    "rendered_message_routes": 3,
+    "attachment_download_routes": 5,
+    "dom_assertions": 3,
+    "auto_fetch_surfaces": 0,
+    "unsafe_browser_api_references": 0
+  },
   "components": [
     {"component":"hostile_corpus_metadata","status":"passed","observation":"12 fixtures cover 11 required categories"},
-    {"component":"browser_rendered_negative_assertions","status":"passed","observation":"sanitized browser-facing fragments retain inert text and allowed links only"},
+    {"component":"browser_rendered_negative_assertions","status":"passed","observation":"route-backed message responses=3 had inert body DOM and zero observed auto-fetch surfaces"},
     {"component":"mime_parser_robustness","status":"passed","observation":"malformed boundary, invalid transfer, deep nesting, header count, part count, and boundary length checks are bounded"},
-    {"component":"attachment_deception_handling","status":"passed","observation":"active attachment media are downgraded; archive remains download-only; max bytes=262144"},
-    {"component":"browser_isolation_verification","status":"passed","observation":"CSP, frame ancestry, forced-download, nosniff, CORP, referrer policy, and no active browser APIs verified"}
+    {"component":"attachment_deception_handling","status":"passed","observation":"active attachment media are downgraded; 5 attachment routes force download with nosniff; max bytes=262144"},
+    {"component":"browser_isolation_verification","status":"passed","observation":"CSP/frame headers, forced-download headers, source invariants, and route-backed browser observations verified; rendered_routes=3, attachment_routes=5"}
   ]
 }
