@@ -26,7 +26,7 @@ while [ "\$#" -gt 0 ]; do
   esac
 done
 printf '%s\n' '<html>login failed</html>' > "\${output}"
-printf '%s\n' 'ts=2 level=warn category=auth action=login_denied msg="primary authentication denied" stage="primary" result="denied" public_reason="invalid_credentials" audit_reason="invalid_credentials" submitted_username="osmap-log-probe@example.invalid"' >> "${serve_log}"
+printf '%s\n' 'ts="1970-01-01T00:00:02Z" ts_unix=2 level=warn category=auth action=login_denied msg="primary authentication denied" stage="primary" result="denied" public_reason="invalid_credentials" audit_reason="invalid_credentials" submitted_username="osmap-log-probe@example.invalid"' >> "${serve_log}"
 printf '401'
 EOF
 chmod 0755 "${fake_curl}"
@@ -41,6 +41,6 @@ OSMAP_AUTH_OBSERVABILITY_SERVE_LOG_PATH="${serve_log}" \
 
 grep -Fq 'osmap_auth_observability_result=passed' "${report_path}"
 grep -Fq "serve_log_path=${serve_log}" "${report_path}"
-grep -Fq 'matched_auth_event=ts=2 level=warn category=auth action=login_denied' "${report_path}"
+grep -Fq 'matched_auth_event=ts="1970-01-01T00:00:02Z" ts_unix=2 level=warn category=auth action=login_denied' "${report_path}"
 
 echo "auth observability validation regression checks passed"

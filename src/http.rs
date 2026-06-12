@@ -5088,7 +5088,7 @@ mod tests {
 
         assert_eq!(
             rendered,
-            "ts=4242 level=info category=http action=http_login_form_served msg=\"login form served\" request_id=\"http-1\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\""
+            "ts=\"1970-01-01T01:10:42Z\" ts_unix=4242 level=info category=http action=http_login_form_served msg=\"login form served\" request_id=\"http-1\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\""
         );
     }
 

@@ -1530,7 +1530,7 @@ mod tests {
         let rendered = logger.render_with_timestamp(&outcome.audit_event, 8080);
         assert_eq!(
             rendered,
-            "ts=8080 level=info category=submission action=message_submitted msg=\"outbound message submission completed\" canonical_username=\"alice@example.com\" session_ref=\"asr-cc77477e59365048c995e4c7b47f5654\" recipient_count=\"1\" attachment_count=\"0\" attachment_bytes_total=\"0\" has_subject=\"true\" request_id=\"req-send\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\""
+            "ts=\"1970-01-01T02:14:40Z\" ts_unix=8080 level=info category=submission action=message_submitted msg=\"outbound message submission completed\" canonical_username=\"alice@example.com\" session_ref=\"asr-cc77477e59365048c995e4c7b47f5654\" recipient_count=\"1\" attachment_count=\"0\" attachment_bytes_total=\"0\" has_subject=\"true\" request_id=\"req-send\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\""
         );
     }
 

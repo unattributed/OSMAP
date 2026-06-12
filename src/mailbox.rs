@@ -946,7 +946,7 @@ mod tests {
         assert_eq!(
             rendered,
             format!(
-                "ts=6262 level=info category=mailbox action=message_viewed msg=\"message retrieval completed\" canonical_username=\"alice@example.com\" session_ref=\"asr-cc77477e59365048c995e4c7b47f5654\" mailbox_name=\"INBOX\" uid=\"9\" request_id=\"req-mailbox\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\""
+                "ts=\"1970-01-01T01:44:22Z\" ts_unix=6262 level=info category=mailbox action=message_viewed msg=\"message retrieval completed\" canonical_username=\"alice@example.com\" session_ref=\"asr-cc77477e59365048c995e4c7b47f5654\" mailbox_name=\"INBOX\" uid=\"9\" request_id=\"req-mailbox\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\""
             )
         );
     }
@@ -1010,7 +1010,7 @@ mod tests {
         assert_eq!(
             rendered,
             format!(
-                "ts=4242 level=info category=mailbox action=mailbox_listed msg=\"mailbox listing completed\" canonical_username=\"alice@example.com\" session_ref=\"asr-cc77477e59365048c995e4c7b47f5654\" mailbox_count=\"2\" request_id=\"req-mailbox\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\""
+                "ts=\"1970-01-01T01:10:42Z\" ts_unix=4242 level=info category=mailbox action=mailbox_listed msg=\"mailbox listing completed\" canonical_username=\"alice@example.com\" session_ref=\"asr-cc77477e59365048c995e4c7b47f5654\" mailbox_count=\"2\" request_id=\"req-mailbox\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\""
             )
         );
     }
@@ -1071,7 +1071,7 @@ mod tests {
         assert_eq!(
             rendered,
             format!(
-                "ts=5252 level=info category=mailbox action=message_listed msg=\"message list retrieval completed\" canonical_username=\"alice@example.com\" session_ref=\"asr-cc77477e59365048c995e4c7b47f5654\" mailbox_name=\"INBOX\" message_count=\"2\" request_id=\"req-mailbox\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\""
+                "ts=\"1970-01-01T01:27:32Z\" ts_unix=5252 level=info category=mailbox action=message_listed msg=\"message list retrieval completed\" canonical_username=\"alice@example.com\" session_ref=\"asr-cc77477e59365048c995e4c7b47f5654\" mailbox_name=\"INBOX\" message_count=\"2\" request_id=\"req-mailbox\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\""
             )
         );
     }
@@ -1136,7 +1136,7 @@ mod tests {
         assert_eq!(
             rendered,
             format!(
-                "ts=5353 level=info category=mailbox action=message_searched msg=\"message search completed\" canonical_username=\"alice@example.com\" session_ref=\"asr-cc77477e59365048c995e4c7b47f5654\" mailbox_name=\"INBOX\" query=\"quarterly report\" result_count=\"2\" request_id=\"req-mailbox\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\""
+                "ts=\"1970-01-01T01:29:13Z\" ts_unix=5353 level=info category=mailbox action=message_searched msg=\"message search completed\" canonical_username=\"alice@example.com\" session_ref=\"asr-cc77477e59365048c995e4c7b47f5654\" mailbox_name=\"INBOX\" query=\"quarterly report\" result_count=\"2\" request_id=\"req-mailbox\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\""
             )
         );
     }
@@ -1181,7 +1181,7 @@ mod tests {
         assert_eq!(
             rendered,
             format!(
-                "ts=5454 level=info category=mailbox action=message_moved msg=\"message move completed\" canonical_username=\"alice@example.com\" session_ref=\"asr-cc77477e59365048c995e4c7b47f5654\" source_mailbox_name=\"INBOX\" destination_mailbox_name=\"Archive/2026\" uid=\"9\" request_id=\"req-mailbox\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\""
+                "ts=\"1970-01-01T01:30:54Z\" ts_unix=5454 level=info category=mailbox action=message_moved msg=\"message move completed\" canonical_username=\"alice@example.com\" session_ref=\"asr-cc77477e59365048c995e4c7b47f5654\" source_mailbox_name=\"INBOX\" destination_mailbox_name=\"Archive/2026\" uid=\"9\" request_id=\"req-mailbox\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\""
             )
         );
     }

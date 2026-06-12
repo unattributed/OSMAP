@@ -1600,7 +1600,7 @@ mod tests {
 
         assert_eq!(
             rendered,
-            "ts=888 level=info category=auth action=second_factor_accepted msg=\"second factor accepted, session issuance pending\" stage=\"second_factor\" result=\"accepted\" canonical_username=\"alice@example.com\" second_factor=\"totp\" request_id=\"req-123\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\""
+            "ts=\"1970-01-01T00:14:48Z\" ts_unix=888 level=info category=auth action=second_factor_accepted msg=\"second factor accepted, session issuance pending\" stage=\"second_factor\" result=\"accepted\" canonical_username=\"alice@example.com\" second_factor=\"totp\" request_id=\"req-123\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\""
         );
     }
 
@@ -1684,7 +1684,7 @@ mod tests {
 
         assert_eq!(
             rendered,
-            "ts=777 level=info category=auth action=login_mfa_required msg=\"primary authentication accepted, second factor required\" stage=\"primary\" result=\"mfa_required\" canonical_username=\"alice@example.com\" second_factor=\"totp\" request_id=\"req-123\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\""
+            "ts=\"1970-01-01T00:12:57Z\" ts_unix=777 level=info category=auth action=login_mfa_required msg=\"primary authentication accepted, second factor required\" stage=\"primary\" result=\"mfa_required\" canonical_username=\"alice@example.com\" second_factor=\"totp\" request_id=\"req-123\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\""
         );
     }
 }

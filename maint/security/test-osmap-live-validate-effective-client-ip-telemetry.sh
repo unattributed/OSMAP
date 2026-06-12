@@ -26,8 +26,8 @@ while [ "\$#" -gt 0 ]; do
   esac
 done
 printf '%s\n' '<h1>OSMAP Login</h1>' > "\${output}"
-printf '%s\n' 'ts=3 level=info category=http action=http_login_form_served msg="login form served" request_id="http-7" remote_addr="198.51.100.24" user_agent="OSMAP-Effective-Client-IP-Probe/20260418"' >> "${serve_log}"
-printf '%s\n' 'ts=3 level=info category=http action=http_request_completed msg="http request completed" remote_addr="198.51.100.24" method="GET" path="/login" status_code="200" response_bytes="1807" duration_ms="1"' >> "${serve_log}"
+printf '%s\n' 'ts="1970-01-01T00:00:03Z" ts_unix=3 level=info category=http action=http_login_form_served msg="login form served" request_id="http-7" remote_addr="198.51.100.24" user_agent="OSMAP-Effective-Client-IP-Probe/20260418"' >> "${serve_log}"
+printf '%s\n' 'ts="1970-01-01T00:00:03Z" ts_unix=3 level=info category=http action=http_request_completed msg="http request completed" remote_addr="198.51.100.24" method="GET" path="/login" status_code="200" response_bytes="1807" duration_ms="1"' >> "${serve_log}"
 printf '200'
 EOF
 chmod 0755 "${fake_curl}"
@@ -43,7 +43,7 @@ OSMAP_EFFECTIVE_CLIENT_IP_SERVE_LOG_PATH="${serve_log}" \
 grep -Fq 'osmap_effective_client_ip_result=passed' "${report_path}"
 grep -Fq "serve_log_path=${serve_log}" "${report_path}"
 grep -Fq 'expected_remote_addr=198.51.100.24' "${report_path}"
-grep -Fq 'matched_route_event=ts=3 level=info category=http action=http_login_form_served' "${report_path}"
-grep -Fq 'matched_completion_event=ts=3 level=info category=http action=http_request_completed' "${report_path}"
+grep -Fq 'matched_route_event=ts="1970-01-01T00:00:03Z" ts_unix=3 level=info category=http action=http_login_form_served' "${report_path}"
+grep -Fq 'matched_completion_event=ts="1970-01-01T00:00:03Z" ts_unix=3 level=info category=http action=http_request_completed' "${report_path}"
 
 echo "effective client ip telemetry regression checks passed"
