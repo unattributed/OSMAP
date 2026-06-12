@@ -58,6 +58,38 @@ case "$cmd" in
 		printf '%s\n' 'cargo-deny 0.18.3'
 		;;
 	build|test)
+		if [ "$cmd" = "test" ] && [ -n "${OSMAP_V4_ASSURANCE_REPORT:-}" ]; then
+			mkdir -p "$(dirname "$OSMAP_V4_ASSURANCE_REPORT")"
+			cat > "$OSMAP_V4_ASSURANCE_REPORT" <<JSON
+{
+  "schema": "osmap-v4-hostile-assurance-report-v1",
+  "status": "passed",
+  "assessed_ref": "${OSMAP_V4_ASSURANCE_ASSESSED_REF:-unknown}",
+  "generated_at_utc": "${OSMAP_V4_ASSURANCE_GENERATED_AT:-2026-06-12T00:00:00Z}",
+  "corpus_root": "tests/testdata/hostile-mail-corpus",
+  "release_gate": "maint/security/osmap-v4-hostile-assurance-gate.sh",
+  "resource_usage_observations": {
+    "mime_max_depth": 4,
+    "mime_max_parts": 64,
+    "mime_header_count_max": 256,
+    "attachment_download_max_bytes": 262144
+  },
+  "network_assertions": {
+    "remote_fetches": 0,
+    "beacon_requests": 0,
+    "websocket_requests": 0,
+    "service_worker_registrations": 0
+  },
+  "components": [
+    {"component": "hostile_corpus_metadata", "status": "passed", "observation": "fixture pass"},
+    {"component": "browser_rendered_negative_assertions", "status": "passed", "observation": "fixture pass"},
+    {"component": "mime_parser_robustness", "status": "passed", "observation": "fixture pass"},
+    {"component": "attachment_deception_handling", "status": "passed", "observation": "fixture pass"},
+    {"component": "browser_isolation_verification", "status": "passed", "observation": "fixture pass"}
+  ]
+}
+JSON
+		fi
 		exit 0
 		;;
 	tree)
@@ -693,16 +725,21 @@ grep -Fq '"v3_mime_html_proof_status": "passed"' "$success_case/summary.json"
 grep -Fq '"v3_mime_html_proof_evidence_files_checked": [' "$success_case/summary.json"
 grep -Fq '"v3_pilot_rehearsal_status": "passed"' "$success_case/summary.json"
 grep -Fq '"v3_pilot_rehearsal_evidence_files_checked": [' "$success_case/summary.json"
+grep -Fq '"v4_hostile_assurance_status": "passed"' "$success_case/summary.json"
+grep -Fq '"v4_hostile_assurance_evidence_files_checked": [' "$success_case/summary.json"
 grep -Fq 'TLS CBC cleanup: `passed`' "$success_case/summary.md"
 grep -Fq 'TLS standard validation: `passed`' "$success_case/summary.md"
 grep -Fq 'Resource and timeout hardening: `passed`' "$success_case/summary.md"
 grep -Fq 'V3 live MIME and HTML proof: `passed`' "$success_case/summary.md"
 grep -Fq 'V3 pilot rehearsal: `passed`' "$success_case/summary.md"
+grep -Fq 'V4 hostile-content assurance: `passed`' "$success_case/summary.md"
 tar -tzf "$success_case/evidence.tar.gz" | grep -Fq "tls-cbc-cleanup.txt"
 tar -tzf "$success_case/evidence.tar.gz" | grep -Fq "tls-standard.json"
 tar -tzf "$success_case/evidence.tar.gz" | grep -Fq "resource-timeout.txt"
 tar -tzf "$success_case/evidence.tar.gz" | grep -Fq "latest-host-v3-mime-html-proof-report.txt"
 tar -tzf "$success_case/evidence.tar.gz" | grep -Fq "latest-host-v3-pilot-rehearsal-report.txt"
+tar -tzf "$success_case/evidence.tar.gz" | grep -Fq "osmap-v4-hostile-assurance-report.json"
+tar -tzf "$success_case/evidence.tar.gz" | grep -Fq "osmap-v4-hostile-assurance-evidence.tar.gz"
 
 developer_case="$tmp_root/developer"
 developer_bin="$tmp_root/developer-bin"
