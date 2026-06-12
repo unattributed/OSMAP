@@ -1,0 +1,27 @@
+{
+  "schema": "osmap-v4-hostile-assurance-report-v1",
+  "status": "passed",
+  "assessed_ref": "b9d48abda43c1bf09b27ec9e320cab13f2b31f87",
+  "generated_at_utc": "2026-06-12T05:36:32Z",
+  "corpus_root": "tests/testdata/hostile-mail-corpus",
+  "release_gate": "maint/security/osmap-v4-hostile-assurance-gate.sh",
+  "resource_usage_observations": {
+    "mime_max_depth": 4,
+    "mime_max_parts": 64,
+    "mime_header_count_max": 256,
+    "attachment_download_max_bytes": 262144
+  },
+  "network_assertions": {
+    "remote_fetches": 0,
+    "beacon_requests": 0,
+    "websocket_requests": 0,
+    "service_worker_registrations": 0
+  },
+  "components": [
+    {"component":"hostile_corpus_metadata","status":"passed","observation":"12 fixtures cover 11 required categories"},
+    {"component":"browser_rendered_negative_assertions","status":"passed","observation":"sanitized browser-facing fragments retain inert text and allowed links only"},
+    {"component":"mime_parser_robustness","status":"passed","observation":"malformed boundary, invalid transfer, deep nesting, header count, part count, and boundary length checks are bounded"},
+    {"component":"attachment_deception_handling","status":"passed","observation":"active attachment media are downgraded; archive remains download-only; max bytes=262144"},
+    {"component":"browser_isolation_verification","status":"passed","observation":"CSP, frame ancestry, forced-download, nosniff, CORP, referrer policy, and no active browser APIs verified"}
+  ]
+}
