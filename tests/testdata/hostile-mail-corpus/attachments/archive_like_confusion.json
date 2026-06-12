@@ -1,0 +1,7 @@
+{
+  "fixture_identifier": "v4.1-attachment-archive-like-confusion",
+  "category": ["attachment deception"],
+  "expected_outcome": "archive-like content remains forced-download attachment metadata without preview or archive inspection claims",
+  "security_objective": "prove archive-like content is contained as download-only and remains outside OSMAP malware-safety claims",
+  "release_coverage_mapping": ["V4.1 hostile corpus", "V4.4 attachment deception handling", "V4.6 security claim matrix"]
+}

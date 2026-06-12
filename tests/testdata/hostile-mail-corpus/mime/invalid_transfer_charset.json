@@ -1,0 +1,7 @@
+{
+  "fixture_identifier": "v4.1-mime-invalid-transfer-charset",
+  "category": ["suspicious charsets", "hostile HTML"],
+  "expected_outcome": "unsupported transfer encoding or charset withholds renderable text/html body without panic or unsafe fallback",
+  "security_objective": "prove unsupported encodings and charsets fail closed instead of guessing into browser-rendered content",
+  "release_coverage_mapping": ["V4.1 hostile corpus", "V4.2 MIME parser robustness testing", "V4.6 security claim matrix"]
+}

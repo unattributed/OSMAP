@@ -13,6 +13,9 @@ use crate::mailbox::MessageView;
 /// Conservative upper bound for a parsed MIME header value.
 pub const DEFAULT_MIME_HEADER_VALUE_MAX_LEN: usize = 4096;
 
+/// Conservative upper bound for the number of MIME headers inspected per part.
+pub const DEFAULT_MIME_HEADER_COUNT_MAX: usize = 256;
+
 /// Conservative upper bound for stored MIME media-type values.
 pub const DEFAULT_MIME_TYPE_MAX_LEN: usize = 255;
 
@@ -32,6 +35,7 @@ pub const DEFAULT_MIME_NESTING_MAX_DEPTH: usize = 4;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MimeAnalysisPolicy {
     pub header_value_max_len: usize,
+    pub header_count_max: usize,
     pub mime_type_max_len: usize,
     pub filename_max_len: usize,
     pub boundary_max_len: usize,
@@ -43,6 +47,7 @@ impl Default for MimeAnalysisPolicy {
     fn default() -> Self {
         Self {
             header_value_max_len: DEFAULT_MIME_HEADER_VALUE_MAX_LEN,
+            header_count_max: DEFAULT_MIME_HEADER_COUNT_MAX,
             mime_type_max_len: DEFAULT_MIME_TYPE_MAX_LEN,
             filename_max_len: DEFAULT_MIME_FILENAME_MAX_LEN,
             boundary_max_len: DEFAULT_MIME_BOUNDARY_MAX_LEN,
@@ -156,6 +161,11 @@ impl MimeAnalyzer {
         &self,
         message: &MessageView,
     ) -> Result<MimeAnalysis, MimeAnalysisError> {
+        validate_header_count(
+            &message.header_block,
+            self.policy.header_count_max,
+            "message",
+        )?;
         let unfolded_headers = unfold_headers(&message.header_block);
         let content_type = parse_header_value(
             extract_header_value(
@@ -208,6 +218,11 @@ impl MimeAnalyzer {
         message: &MessageView,
         wanted_part_path: &str,
     ) -> Result<Option<AttachmentPart>, MimeAnalysisError> {
+        validate_header_count(
+            &message.header_block,
+            self.policy.header_count_max,
+            "message",
+        )?;
         let unfolded_headers = unfold_headers(&message.header_block);
         let content_type = parse_header_value(
             extract_header_value(
@@ -335,6 +350,7 @@ fn analyze_entity(
         let mut attachments = Vec::new();
 
         for part in parts {
+            validate_header_count(&part.header_block, policy.header_count_max, &part.part_path)?;
             let unfolded_headers = unfold_headers(&part.header_block);
             let part_content_type = parse_header_value(
                 extract_header_value(
@@ -516,6 +532,7 @@ fn find_attachment_part_in_entity(
         };
 
         for part in parse_multipart_parts(policy, boundary, entity.body_text, entity.part_path)? {
+            validate_header_count(&part.header_block, policy.header_count_max, &part.part_path)?;
             let unfolded_headers = unfold_headers(&part.header_block);
             let part_content_type = parse_header_value(
                 extract_header_value(
@@ -874,6 +891,28 @@ pub fn unfold_headers(header_block: &str) -> String {
     }
 
     unfolded
+}
+
+/// Enforces a bounded number of MIME header fields per message or part.
+fn validate_header_count(
+    header_block: &str,
+    max_count: usize,
+    location: &str,
+) -> Result<(), MimeAnalysisError> {
+    let mut count = 0usize;
+    for line in header_block.lines() {
+        if line.starts_with(' ') || line.starts_with('\t') || !line.contains(':') {
+            continue;
+        }
+        count += 1;
+        if count > max_count {
+            return Err(MimeAnalysisError {
+                reason: format!("mime header count exceeded maximum of {max_count} at {location}"),
+            });
+        }
+    }
+
+    Ok(())
 }
 
 /// Removes one layer of simple quoted-string syntax from a parameter value.

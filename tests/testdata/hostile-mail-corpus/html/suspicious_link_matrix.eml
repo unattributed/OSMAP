@@ -1,0 +1,15 @@
+Subject: OSMAP V4 suspicious link fixture
+From: synthetic-attacker@example.invalid
+Content-Type: text/html; charset=utf-8
+
+<p>Visible suspicious link fixture text.</p>
+<a href="https://example.com/safe">safe external link</a>
+<a href="http://example.com/safe">safe http link</a>
+<a href="mailto:ops@example.com">safe mailto link</a>
+<a href="/relative/path">unsafe relative link</a>
+<a href="//evil.example/protocol-relative">unsafe protocol-relative link</a>
+<a href="javascript:alert(1)">javascript link</a>
+<a href="data:text/html;base64,PHNjcmlwdA==">data link</a>
+<a href="blob:https://example.com/id">blob link</a>
+<a href="file:///etc/passwd">file link</a>
+<a target="_blank" href="https://evil.example/opener">target blank link</a>

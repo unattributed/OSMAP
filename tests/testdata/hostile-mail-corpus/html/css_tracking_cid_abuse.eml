@@ -1,0 +1,20 @@
+Subject: OSMAP V4 CSS tracking and CID abuse fixture
+From: synthetic-attacker@example.invalid
+Content-Type: multipart/related; boundary="css-cid-fixture"
+
+--css-cid-fixture
+Content-Type: text/html; charset=utf-8
+
+<p style="background-image:url('https://evil.example/bg.png')">Visible CSS abuse text.</p>
+<style>@import url("https://evil.example/style.css"); body { background: url("cid:logo@example.invalid"); }</style>
+<img src="https://evil.example/tracker.png">
+<img src="cid:logo@example.invalid">
+<link rel="preload" href="https://evil.example/preload.js" as="script">
+<meta http-equiv="refresh" content="0; url=https://evil.example/refresh">
+--css-cid-fixture
+Content-Type: image/png
+Content-ID: <logo@example.invalid>
+Content-Disposition: inline; filename="logo.png"
+
+not-a-real-png
+--css-cid-fixture--

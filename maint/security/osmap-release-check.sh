@@ -36,6 +36,9 @@ fi
 : "${OSMAP_RELEASE_V3_MIME_HTML_PROOF_VALIDATOR:=maint/live/osmap-live-validate-v3-mime-html-proof.ksh}"
 : "${OSMAP_RELEASE_V3_MIME_HTML_PROOF_REPORT:=$OSMAP_RELEASE_EVIDENCE_DIR/latest-host-v3-mime-html-proof-report.txt}"
 : "${OSMAP_RELEASE_V3_PILOT_REHEARSAL_EVIDENCE:=$OSMAP_RELEASE_EVIDENCE_DIR/latest-host-v3-pilot-rehearsal-report.txt docs/PILOT_WORKFLOW_INVENTORY.md}"
+: "${OSMAP_RELEASE_V4_HOSTILE_ASSURANCE_GATE:=maint/security/osmap-v4-hostile-assurance-gate.sh}"
+: "${OSMAP_RELEASE_V4_HOSTILE_ASSURANCE_REPORT:=$OSMAP_RELEASE_EVIDENCE_DIR/osmap-v4-hostile-assurance-report.json}"
+: "${OSMAP_RELEASE_V4_HOSTILE_ASSURANCE_ARCHIVE:=$OSMAP_RELEASE_EVIDENCE_DIR/osmap-v4-hostile-assurance-evidence.tar.gz}"
 : "${OSMAP_RELEASE_SUPPLY_CHAIN_COMMAND:=sh maint/security/osmap-supply-chain-check.sh}"
 
 mkdir -p "$TMPDIR" "$CARGO_HOME" "$CARGO_TARGET_DIR" "$OSMAP_RELEASE_EVIDENCE_DIR"
@@ -73,6 +76,8 @@ v3_mime_html_proof_status="missing"
 v3_mime_html_proof_checked=""
 v3_pilot_rehearsal_status="missing"
 v3_pilot_rehearsal_checked=""
+v4_hostile_assurance_status="missing"
+v4_hostile_assurance_checked=""
 
 add_skip() {
 	if [ -z "$skipped_checks" ]; then
@@ -165,6 +170,7 @@ write_summary() {
 	helper_boundary_json=$(json_array "$helper_boundary_checked")
 	v3_mime_html_proof_json=$(json_array "$v3_mime_html_proof_checked")
 	v3_pilot_rehearsal_json=$(json_array "$v3_pilot_rehearsal_checked")
+	v4_hostile_assurance_json=$(json_array "$v4_hostile_assurance_checked")
 	cat > "$OSMAP_RELEASE_SUMMARY_JSON" <<EOF
 {
   "assessed_ref": $(json_string "$assessed_ref"),
@@ -198,6 +204,8 @@ write_summary() {
   "v3_mime_html_proof_evidence_files_checked": $v3_mime_html_proof_json,
   "v3_pilot_rehearsal_status": $(json_string "$v3_pilot_rehearsal_status"),
   "v3_pilot_rehearsal_evidence_files_checked": $v3_pilot_rehearsal_json,
+  "v4_hostile_assurance_status": $(json_string "$v4_hostile_assurance_status"),
+  "v4_hostile_assurance_evidence_files_checked": $v4_hostile_assurance_json,
   "skipped_checks": $skips_json,
   "sanitized_evidence_archive_path": $(json_string "$OSMAP_RELEASE_SANITIZED_ARCHIVE_PATH"),
   "sanitized_evidence_archive_status": $(json_string "$sanitized_archive_status")
@@ -225,6 +233,7 @@ EOF
 - Helper boundary evidence: \`$helper_boundary_status\`
 - V3 live MIME and HTML proof: \`$v3_mime_html_proof_status\`
 - V3 pilot rehearsal: \`$v3_pilot_rehearsal_status\`
+- V4 hostile-content assurance: \`$v4_hostile_assurance_status\`
 - Sanitized evidence archive: \`$sanitized_archive_status\` at \`$OSMAP_RELEASE_SANITIZED_ARCHIVE_PATH\`
 - Skipped checks: \`$(printf '%s' "$skipped_checks" | tr '\n' '; ')\`
 
@@ -259,7 +268,48 @@ $(printf '%s\n' "$v3_mime_html_proof_checked" | sed '/^$/d; s/^/- `/' | sed 's/$
 ## V3 Pilot Rehearsal Evidence
 
 $(printf '%s\n' "$v3_pilot_rehearsal_checked" | sed '/^$/d; s/^/- `/' | sed 's/$/`/')
+
+## V4 Hostile-Content Assurance Evidence
+
+$(printf '%s\n' "$v4_hostile_assurance_checked" | sed '/^$/d; s/^/- `/' | sed 's/$/`/')
 EOF
+}
+
+validate_v4_hostile_assurance() {
+	gate=$OSMAP_RELEASE_V4_HOSTILE_ASSURANCE_GATE
+	report=$OSMAP_RELEASE_V4_HOSTILE_ASSURANCE_REPORT
+	archive=$OSMAP_RELEASE_V4_HOSTILE_ASSURANCE_ARCHIVE
+
+	if [ ! -f "$gate" ]; then
+		add_skip "missing V4 hostile-content assurance gate: $gate"
+		fail "missing V4 hostile-content assurance gate: $gate"
+		v4_hostile_assurance_status="missing"
+		return 1
+	fi
+	if ! sh -n "$gate"; then
+		fail "V4 hostile-content assurance gate shell syntax failed: $gate"
+		v4_hostile_assurance_status="failed"
+		return 1
+	fi
+
+	if OSMAP_V4_ASSURANCE_REPORT="$report" \
+		OSMAP_V4_ASSURANCE_ARCHIVE="$archive" \
+		OSMAP_V4_ASSURANCE_ASSESSED_REF="$assessed_ref" \
+		sh "$gate"; then
+		if [ -s "$report" ] && [ -s "$archive" ]; then
+			v4_hostile_assurance_status="passed"
+			v4_hostile_assurance_checked=$(printf '%s\n%s\n%s\n' "$gate" "$report" "$archive")
+			return 0
+		fi
+		add_skip "V4 hostile-content assurance report or archive missing after gate"
+		fail "V4 hostile-content assurance report or archive missing after gate"
+		v4_hostile_assurance_status="missing"
+		return 1
+	fi
+
+	v4_hostile_assurance_status="failed"
+	fail "V4 hostile-content assurance gate failed"
+	return 1
 }
 
 validate_v3_pilot_rehearsal() {
@@ -725,6 +775,9 @@ if [ "$failures" -eq 0 ]; then
 	run_phase cargo_clippy cargo clippy --locked --all-targets --all-features -- -D warnings || true
 	run_phase cargo_fmt cargo fmt --check || true
 
+	echo "==> V4 hostile-content assurance gate"
+	validate_v4_hostile_assurance || true
+
 	echo "==> supply-chain gate"
 	if sh -c "$OSMAP_RELEASE_SUPPLY_CHAIN_COMMAND"; then
 		supply_chain_result="passed"
@@ -751,6 +804,7 @@ if [ "$failures" -eq 0 ]; then
 	fi
 else
 	add_skip "cargo validation skipped because release toolchain preflight failed"
+	add_skip "V4 hostile-content assurance skipped because release toolchain preflight failed"
 	add_skip "supply-chain validation skipped because release toolchain preflight failed"
 	add_skip "dependency inventory skipped because release toolchain preflight failed"
 fi
@@ -809,6 +863,8 @@ if [ "$failures" -eq 0 ]; then
 		$OSMAP_RELEASE_HELPER_BOUNDARY_EVIDENCE \
 		"$OSMAP_RELEASE_V3_MIME_HTML_PROOF_REPORT" \
 		$OSMAP_RELEASE_V3_PILOT_REHEARSAL_EVIDENCE \
+		"$OSMAP_RELEASE_V4_HOSTILE_ASSURANCE_REPORT" \
+		"$OSMAP_RELEASE_V4_HOSTILE_ASSURANCE_ARCHIVE" \
 		"$OSMAP_RELEASE_WSTG_SUMMARY_PATH"; then
 		sanitized_archive_status="passed"
 		write_summary
@@ -824,6 +880,8 @@ if [ "$failures" -eq 0 ]; then
 			$OSMAP_RELEASE_HELPER_BOUNDARY_EVIDENCE \
 			"$OSMAP_RELEASE_V3_MIME_HTML_PROOF_REPORT" \
 			$OSMAP_RELEASE_V3_PILOT_REHEARSAL_EVIDENCE \
+			"$OSMAP_RELEASE_V4_HOSTILE_ASSURANCE_REPORT" \
+			"$OSMAP_RELEASE_V4_HOSTILE_ASSURANCE_ARCHIVE" \
 			"$OSMAP_RELEASE_WSTG_SUMMARY_PATH"; then
 			sanitized_archive_status="failed"
 			fail "sanitized evidence archive generation failed after final summary"

@@ -1,0 +1,7 @@
+{
+  "fixture_identifier": "v4.1-suspicious-link-matrix",
+  "category": ["suspicious links"],
+  "expected_outcome": "only http, https, and mailto links remain; preserved links carry noopener noreferrer nofollow and browser-only or relative schemes are removed",
+  "security_objective": "prove suspicious link schemes and opener-related attributes do not widen the browser boundary",
+  "release_coverage_mapping": ["V4.1 hostile corpus", "V4.3 browser rendered negative assertions", "V4.5 browser isolation verification", "V4.6 security claim matrix"]
+}

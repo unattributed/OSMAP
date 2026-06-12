@@ -1,0 +1,7 @@
+{
+  "fixture_identifier": "v4.1-attachment-executable-benign-name",
+  "category": ["attachment deception", "spoofed filenames"],
+  "expected_outcome": "script attachment with benign filename is forced to download and served as application/octet-stream",
+  "security_objective": "prove content type confusion does not cause automatic active preview",
+  "release_coverage_mapping": ["V4.1 hostile corpus", "V4.4 attachment deception handling", "V4.6 security claim matrix"]
+}

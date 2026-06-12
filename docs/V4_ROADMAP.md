@@ -31,6 +31,7 @@ Roundcube parity.
 | 4 | MIME ambiguity and metadata breadth | verify malformed, unsupported, nested, suspicious, or oversized MIME inputs fail closed or surface only bounded metadata | MIME and rendering fixtures prove withheld placeholders or safe metadata behavior |
 | 5 | Live hostile-content proof | run the host-assisted V4 validator against the reviewed runtime | sanitized live report proves `/message`, `/attachment`, and evidence-redaction behavior |
 | 6 | V4 closeout evidence | archive the local gate, live proof, residual-risk statement, and carry-forward evidence for the assessed commit or tag | V4 closeout record can honestly claim hostile-content safety inside the OSMAP browser boundary |
+| 7 | V4.1-V4.6 assurance hardening | commit hostile corpus fixtures, MIME robustness validation, browser-rendered negative assertions, attachment deception checks, browser isolation checks, and a security claim matrix | release validation fails if the corpus gate, report, archive, or claim matrix is missing |
 
 ## Current Status
 
@@ -40,6 +41,7 @@ Current completed local pieces include:
 
 - `docs/V4_HOSTILE_CONTENT_SAFETY_GOALS.md`
 - `docs/V4_HOSTILE_CONTENT_TEST_MATRIX.md`
+- `docs/V4_SECURITY_CLAIM_MATRIX.md`
 - `docs/V4_MIME_AMBIGUITY_EVIDENCE.md`
 - `docs/V4_CLOSEOUT_EVIDENCE.md`
 - `docs/V4_RELEASE_OPERATOR_HANDOFF.md`
@@ -52,6 +54,14 @@ Current completed local pieces include:
   `maint/security/test-osmap-live-validate-v4-hostile-content.sh`
 - host-assisted live evidence lane in
   `maint/live/osmap-live-validate-v4-hostile-content.ksh`
+- version-controlled hostile corpus under
+  `tests/testdata/hostile-mail-corpus/`
+- release-enforced corpus and assurance gate in
+  `maint/security/osmap-v4-hostile-assurance-gate.sh`
+- machine-readable V4 assurance report
+  `maint/live/osmap-v4-hostile-assurance-report.json`
+- archived V4 assurance evidence
+  `maint/live/osmap-v4-hostile-assurance-evidence.tar.gz`
 
 The live V4 hostile-content proof has now passed on the reviewed OpenBSD host
 for assessed commit `09a95b7`. The sanitized report is archived at
@@ -86,3 +96,7 @@ so the proof again shows:
 - the report excludes private body markers, attachment body markers, session
   cookies, CSRF tokens, credentials, TOTP material, provider secrets, and host
   secrets
+- the hostile corpus, MIME robustness, browser-rendered negative assertions,
+  attachment deception checks, browser isolation checks, security claim matrix,
+  machine-readable report, and archived evidence all remain present and
+  release-gated

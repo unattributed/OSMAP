@@ -1,0 +1,14 @@
+Subject: OSMAP V4 spoofed double extension fixture
+From: synthetic-attacker@example.invalid
+Content-Type: multipart/mixed; boundary="spoofed-double-extension"
+
+--spoofed-double-extension
+Content-Type: text/plain; charset=utf-8
+
+Attachment deception fixture body.
+--spoofed-double-extension
+Content-Type: text/html
+Content-Disposition: attachment; filename="invoice.pdf.html"
+
+<html><script>alert(1)</script><body>download me</body></html>
+--spoofed-double-extension--

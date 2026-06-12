@@ -1,0 +1,14 @@
+Subject: OSMAP V4 SVG disguised image fixture
+From: synthetic-attacker@example.invalid
+Content-Type: multipart/mixed; boundary="svg-disguised-image"
+
+--svg-disguised-image
+Content-Type: text/plain; charset=utf-8
+
+SVG deception fixture body.
+--svg-disguised-image
+Content-Type: image/svg+xml
+Content-Disposition: attachment; filename="chart.png"
+
+<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>
+--svg-disguised-image--

@@ -1,0 +1,7 @@
+{
+  "fixture_identifier": "v4.1-attachment-svg-disguised-image",
+  "category": ["attachment deception"],
+  "expected_outcome": "SVG content is surfaced only as forced-download metadata and downgraded to application/octet-stream",
+  "security_objective": "prove image-like active content is not automatically previewed or served as browser-executable media",
+  "release_coverage_mapping": ["V4.1 hostile corpus", "V4.4 attachment deception handling", "V4.6 security claim matrix"]
+}

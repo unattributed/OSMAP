@@ -1,0 +1,14 @@
+Subject: OSMAP V4 executable benign name fixture
+From: synthetic-attacker@example.invalid
+Content-Type: multipart/mixed; boundary="executable-benign-name"
+
+--executable-benign-name
+Content-Type: text/plain; charset=utf-8
+
+Executable deception fixture body.
+--executable-benign-name
+Content-Type: application/javascript
+Content-Disposition: attachment; filename="meeting-notes.txt"
+
+alert('synthetic');
+--executable-benign-name--

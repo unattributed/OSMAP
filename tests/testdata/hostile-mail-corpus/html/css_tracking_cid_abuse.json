@@ -1,0 +1,7 @@
+{
+  "fixture_identifier": "v4.1-css-tracking-cid-abuse",
+  "category": ["CSS abuse", "tracking attempts", "CID abuse"],
+  "expected_outcome": "CSS, preload, meta refresh, remote images, and cid URLs are absent from rendered browser content; inline CID image is metadata/download only",
+  "security_objective": "prove remote-loading and CID dereference attempts do not survive browser rendering",
+  "release_coverage_mapping": ["V4.1 hostile corpus", "V4.3 browser rendered negative assertions", "V4.5 browser isolation verification", "V4.6 security claim matrix"]
+}

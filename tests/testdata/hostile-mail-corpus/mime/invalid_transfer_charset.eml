@@ -1,0 +1,6 @@
+Subject: OSMAP V4 invalid transfer and charset fixture
+From: synthetic-attacker@example.invalid
+Content-Type: text/html; charset=x-unknown-hostile
+Content-Transfer-Encoding: x-shellcode
+
+PGh0bWw+PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0PjwvaHRtbD4=

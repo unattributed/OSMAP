@@ -34,6 +34,8 @@ Version 4 cannot pass by replacing, weakening, or silently skipping any of these
 | MIME ambiguity handling | Evidence proves malformed, unsupported, ambiguous, or oversized MIME bodies fail closed or render a clear withheld placeholder. |
 | Evidence redaction | The V4 evidence path proves that message bodies, attachment bodies, active session material, CSRF tokens, passwords, TOTP material, provider secrets, and host secrets are not written to committed or archived reports. |
 | Residual-risk disclosure | Documentation states that OSMAP contains browser-rendering and serving risk but does not claim to make externally opened files safe. |
+| Hostile corpus release gate | The version-controlled corpus under `tests/testdata/hostile-mail-corpus/` executes through `maint/security/osmap-v4-hostile-assurance-gate.sh`; release validation fails if execution is skipped, fixture metadata is incomplete, report generation is absent, or evidence archiving is absent. |
+| Security claim matrix | `docs/V4_SECURITY_CLAIM_MATRIX.md` maps hostile-content claims to implementation, automated tests, validation evidence, residual risk, documented limitations, and non-goals. |
 
 ## Current Evidence Lane
 
@@ -58,6 +60,14 @@ validator remains syntactically valid and still checks the expected payload
 classes, attachment hardening, and report-redaction markers.
 
 It is not a substitute for the live-host proof at release closeout.
+
+The local and release corpus evidence lane is
+`maint/security/osmap-v4-hostile-assurance-gate.sh`. It validates
+`tests/testdata/hostile-mail-corpus/MANIFEST.json`, verifies required fixture
+metadata, executes `tests/v4_hostile_assurance.rs`, writes the machine-readable
+report `maint/live/osmap-v4-hostile-assurance-report.json`, and archives the
+corpus/report bundle as
+`maint/live/osmap-v4-hostile-assurance-evidence.tar.gz`.
 
 The local MIME ambiguity evidence is `docs/V4_MIME_AMBIGUITY_EVIDENCE.md`.
 It names product-code tests in `src/mime.rs` that prove malformed, nested,

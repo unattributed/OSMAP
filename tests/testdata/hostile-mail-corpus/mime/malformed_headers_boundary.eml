@@ -1,0 +1,11 @@
+Subject: OSMAP V4 malformed headers and boundary fixture
+From: synthetic-attacker@example.invalid
+Content-Type: multipart/mixed; boundary="declared-boundary"
+X-Malformed-Header without colon
+Content-Disposition: inline; filename="../../trick.html"
+
+--wrong-boundary
+Content-Type: text/html; charset=utf-8
+
+<script>alert(1)</script>
+--wrong-boundary--

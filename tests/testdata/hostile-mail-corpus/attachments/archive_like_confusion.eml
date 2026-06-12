@@ -1,0 +1,14 @@
+Subject: OSMAP V4 archive-like confusion fixture
+From: synthetic-attacker@example.invalid
+Content-Type: multipart/mixed; boundary="archive-like-confusion"
+
+--archive-like-confusion
+Content-Type: text/plain; charset=utf-8
+
+Archive-like deception fixture body.
+--archive-like-confusion
+Content-Type: application/zip
+Content-Disposition: attachment; filename="photos.txt"
+
+PK synthetic archive marker
+--archive-like-confusion--

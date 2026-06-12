@@ -1,0 +1,7 @@
+{
+  "fixture_identifier": "v4.1-mime-header-count-abuse",
+  "category": ["malformed headers"],
+  "expected_outcome": "excessive header counts fail closed under the MIME analysis policy",
+  "security_objective": "prove header-count abuse is bounded and reported as parser failure instead of unbounded work",
+  "release_coverage_mapping": ["V4.1 hostile corpus", "V4.2 MIME parser robustness testing", "V4.6 security claim matrix"]
+}

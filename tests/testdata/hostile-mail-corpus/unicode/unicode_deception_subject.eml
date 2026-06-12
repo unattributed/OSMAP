@@ -1,0 +1,14 @@
+Subject: =?UTF-8?Q?Invoice_=E2=80=AEcod=2Eexe?=
+From: synthetic-attacker@example.invalid
+Content-Type: multipart/mixed; boundary="unicode-deception"
+
+--unicode-deception
+Content-Type: text/plain; charset=utf-8
+
+Unicode deception fixture body.
+--unicode-deception
+Content-Type: application/octet-stream
+Content-Disposition: attachment; filename="invoice-‮cod.exe.txt"
+
+synthetic executable-looking content
+--unicode-deception--

@@ -1,0 +1,16 @@
+Subject: OSMAP V4 header count abuse fixture
+From: synthetic-attacker@example.invalid
+Content-Type: text/plain; charset=utf-8
+X-Abuse-001: synthetic
+X-Abuse-002: synthetic
+X-Abuse-003: synthetic
+X-Abuse-004: synthetic
+X-Abuse-005: synthetic
+X-Abuse-006: synthetic
+X-Abuse-007: synthetic
+X-Abuse-008: synthetic
+X-Abuse-009: synthetic
+X-Abuse-010: synthetic
+
+Header-count abuse seed fixture. The integration test expands this header set
+in memory so the committed fixture stays readable.

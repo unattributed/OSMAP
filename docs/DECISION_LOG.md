@@ -6289,3 +6289,23 @@ outside `/var/log/osmap`.
 The live WSTG command-injection evidence and focused live observability
 validators now inspect the OSMAP service logs instead of assuming nginx alone is
 enough application evidence.
+
+## 2026-06-12, Add V4 hostile-content assurance corpus gate
+
+V4.1 through V4.6 are now treated as assurance hardening, not new end-user
+functionality. The repository has a version-controlled hostile mail corpus at
+`tests/testdata/hostile-mail-corpus/` with metadata sidecars for hostile HTML,
+CSS abuse, tracking attempts, CID abuse, unicode deception, suspicious links,
+malformed headers, nested MIME structures, suspicious charsets, spoofed
+filenames, and attachment deception.
+
+The new release-enforced lane is
+`maint/security/osmap-v4-hostile-assurance-gate.sh`. It validates fixture
+metadata and category coverage, runs `tests/v4_hostile_assurance.rs`, writes
+`maint/live/osmap-v4-hostile-assurance-report.json`, and archives
+`maint/live/osmap-v4-hostile-assurance-evidence.tar.gz`.
+
+The strict release check records the V4 assurance status and fails closed if
+the corpus execution, report, archive, or claim matrix is absent. The
+corresponding security claim mapping lives in
+`docs/V4_SECURITY_CLAIM_MATRIX.md`.

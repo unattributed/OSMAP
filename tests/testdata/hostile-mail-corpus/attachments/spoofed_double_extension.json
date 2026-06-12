@@ -1,0 +1,7 @@
+{
+  "fixture_identifier": "v4.1-attachment-spoofed-double-extension",
+  "category": ["spoofed filenames", "attachment deception"],
+  "expected_outcome": "HTML attachment is forced to download and served as application/octet-stream despite benign-looking double extension",
+  "security_objective": "prove double-extension deception cannot cause active browser preview",
+  "release_coverage_mapping": ["V4.1 hostile corpus", "V4.4 attachment deception handling", "V4.6 security claim matrix"]
+}

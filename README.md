@@ -424,6 +424,7 @@ handoff live in:
 - [`docs/V4_ACCEPTANCE_CRITERIA.md`](docs/V4_ACCEPTANCE_CRITERIA.md)
 - [`docs/V4_ROADMAP.md`](docs/V4_ROADMAP.md)
 - [`docs/V4_SECURITY_GATES.md`](docs/V4_SECURITY_GATES.md)
+- [`docs/V4_SECURITY_CLAIM_MATRIX.md`](docs/V4_SECURITY_CLAIM_MATRIX.md)
 - [`docs/V4_CLOSEOUT_EVIDENCE.md`](docs/V4_CLOSEOUT_EVIDENCE.md)
 - [`docs/V4_MIME_AMBIGUITY_EVIDENCE.md`](docs/V4_MIME_AMBIGUITY_EVIDENCE.md)
 - [`docs/V4_RELEASE_OPERATOR_HANDOFF.md`](docs/V4_RELEASE_OPERATOR_HANDOFF.md)
@@ -439,6 +440,11 @@ The short form is:
   safety, URL reputation, document sanitization, archive inspection, or safety
   for files opened outside OSMAP
 - any later code change must refresh V4 evidence before inheriting the V4 claim
+- V4 assurance hardening now includes the release-gated hostile corpus under
+  `tests/testdata/hostile-mail-corpus/`, the executable gate
+  `maint/security/osmap-v4-hostile-assurance-gate.sh`, the machine-readable
+  report `maint/live/osmap-v4-hostile-assurance-report.json`, and the archive
+  `maint/live/osmap-v4-hostile-assurance-evidence.tar.gz`
 
 ## Target Users
 

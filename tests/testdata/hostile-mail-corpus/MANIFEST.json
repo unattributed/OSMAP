@@ -1,0 +1,31 @@
+{
+  "corpus": "osmap-v4-hostile-mail-corpus",
+  "version": "2026-06-12",
+  "required_categories": [
+    "hostile HTML",
+    "CSS abuse",
+    "tracking attempts",
+    "CID abuse",
+    "unicode deception",
+    "suspicious links",
+    "malformed headers",
+    "nested MIME structures",
+    "suspicious charsets",
+    "spoofed filenames",
+    "attachment deception"
+  ],
+  "fixtures": [
+    "html/hostile_html_active_content.eml",
+    "html/css_tracking_cid_abuse.eml",
+    "html/suspicious_link_matrix.eml",
+    "mime/malformed_headers_boundary.eml",
+    "mime/invalid_transfer_charset.eml",
+    "mime/deep_nested_mime.eml",
+    "mime/header_count_abuse.eml",
+    "unicode/unicode_deception_subject.eml",
+    "attachments/spoofed_double_extension.eml",
+    "attachments/svg_disguised_image.eml",
+    "attachments/executable_benign_name.eml",
+    "attachments/archive_like_confusion.eml"
+  ]
+}

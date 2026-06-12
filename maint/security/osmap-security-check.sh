@@ -74,6 +74,9 @@ if [ "$run_cargo_phases" -eq 1 ]; then
 	echo "==> cargo test"
 	cargo test
 
+	echo "==> V4 hostile-content assurance corpus gate"
+	sh maint/security/osmap-v4-hostile-assurance-gate.sh
+
 	if cargo clippy --version >/dev/null 2>&1; then
 		echo "==> cargo clippy --all-targets -- -D warnings"
 		cargo clippy --all-targets -- -D warnings

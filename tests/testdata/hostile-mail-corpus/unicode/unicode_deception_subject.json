@@ -1,0 +1,7 @@
+{
+  "fixture_identifier": "v4.1-unicode-deception",
+  "category": ["unicode deception", "spoofed filenames"],
+  "expected_outcome": "unicode deception remains metadata only and downloaded filename is normalized to conservative ASCII",
+  "security_objective": "prove RTL and encoded-header deception do not create trusted browser or filesystem names",
+  "release_coverage_mapping": ["V4.1 hostile corpus", "V4.4 attachment deception handling", "V4.6 security claim matrix"]
+}

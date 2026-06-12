@@ -1,0 +1,25 @@
+Subject: OSMAP V4 deep nested MIME fixture
+From: synthetic-attacker@example.invalid
+Content-Type: multipart/mixed; boundary="d1"
+
+--d1
+Content-Type: multipart/mixed; boundary="d2"
+
+--d2
+Content-Type: multipart/mixed; boundary="d3"
+
+--d3
+Content-Type: multipart/mixed; boundary="d4"
+
+--d4
+Content-Type: multipart/mixed; boundary="d5"
+
+--d5
+Content-Type: text/html; charset=utf-8
+
+<script>alert(1)</script><p>Too deep</p>
+--d5--
+--d4--
+--d3--
+--d2--
+--d1--

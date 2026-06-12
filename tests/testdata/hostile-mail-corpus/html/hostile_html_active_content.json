@@ -1,0 +1,7 @@
+{
+  "fixture_identifier": "v4.1-html-active-content",
+  "category": ["hostile HTML"],
+  "expected_outcome": "browser-rendered content excludes active tags, event handlers, browser APIs, and remote execution surfaces while preserving inert visible text",
+  "security_objective": "prove hostile HTML cannot gain active browser execution through the message-rendering boundary",
+  "release_coverage_mapping": ["V4.1 hostile corpus", "V4.3 browser rendered negative assertions", "V4.5 browser isolation verification", "V4.6 security claim matrix"]
+}

@@ -1,0 +1,7 @@
+{
+  "fixture_identifier": "v4.1-mime-deep-nesting",
+  "category": ["nested MIME structures"],
+  "expected_outcome": "MIME nesting beyond the configured depth is withheld without recursion overflow",
+  "security_objective": "prove hostile deep nesting cannot cause unbounded recursion or unsafe rendering",
+  "release_coverage_mapping": ["V4.1 hostile corpus", "V4.2 MIME parser robustness testing", "V4.6 security claim matrix"]
+}
