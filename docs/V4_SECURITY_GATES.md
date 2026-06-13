@@ -75,13 +75,18 @@ The release tuple reconciliation gate is
 `maint/security/osmap-v4-release-tuple-gate.sh`. It compares
 `docs/V4_CLOSEOUT_EVIDENCE.md`, `docs/V4_RELEASE_OPERATOR_HANDOFF.md`,
 `maint/live/latest-host-v4-hostile-content-report.txt`,
-`maint/live/osmap-v3-release-evidence-summary.json`,
+`maint/live/osmap-v4-frozen-v3-release-evidence-summary.json`,
 `maint/live/osmap-v4-hostile-assurance-report.json`, and
 `maint/live/osmap-v4-hostile-assurance-evidence.tar.gz`. The gate treats
 `v4.0.0` as frozen release evidence and treats later hostile-assurance JSON as
 current-code assurance evidence, then fails on missing files, tuple drift,
 failed status, missing tool metadata, archive/report mismatch, or missing
 documentation of that distinction.
+
+The generated `maint/live/osmap-v3-release-evidence-summary.json` remains the
+current release-check summary. It is deliberately separate from the frozen
+V4.0.0 carry-forward summary so a normal release-check run cannot overwrite the
+historical tuple input it is validating.
 
 The local MIME ambiguity evidence is `docs/V4_MIME_AMBIGUITY_EVIDENCE.md`.
 It names product-code tests in `src/mime.rs` that prove malformed, nested,

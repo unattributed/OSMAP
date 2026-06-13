@@ -410,8 +410,51 @@ except Exception:
     assessed_short = assessed_ref[:7]
 
 report_commit = values.get("commit")
-if assessed_short and report_commit != assessed_short:
-    errors.append(f"commit expected {assessed_short!r}, found {report_commit!r}")
+
+def live_evidence_commit_is_allowed(report_commit, assessed_ref):
+    if assessed_short and report_commit == assessed_short:
+        return True, ""
+    if not report_commit:
+        return False, "report commit is missing"
+    try:
+        report_full = subprocess.check_output(
+            ["git", "rev-parse", f"{report_commit}^{{commit}}"],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+        assessed_full = subprocess.check_output(
+            ["git", "rev-parse", f"{assessed_ref}^{{commit}}"],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+        subprocess.check_call(
+            ["git", "merge-base", "--is-ancestor", report_full, assessed_full],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        changed = subprocess.check_output(
+            ["git", "diff", "--name-only", f"{report_full}..{assessed_full}"],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        ).splitlines()
+    except Exception:
+        return False, f"commit expected {assessed_short!r}, found {report_commit!r}"
+    product_paths = [
+        path for path in changed
+        if path in {"Cargo.toml", "Cargo.lock"}
+        or path.startswith("src/")
+        or path.startswith("tests/")
+    ]
+    if product_paths:
+        return False, (
+            f"live evidence commit {report_commit!r} is older than assessed ref "
+            f"{assessed_short!r} and product/test files changed: {', '.join(product_paths[:5])}"
+        )
+    return True, ""
+
+allowed, reason = live_evidence_commit_is_allowed(report_commit, assessed_ref)
+if not allowed:
+    errors.append(reason)
 
 for forbidden in [
     'session_id="',
@@ -528,8 +571,51 @@ except Exception:
     assessed_short = assessed_ref[:7]
 
 report_commit = values.get("commit")
-if assessed_short and report_commit != assessed_short:
-    errors.append(f"commit expected {assessed_short!r}, found {report_commit!r}")
+
+def live_evidence_commit_is_allowed(report_commit, assessed_ref):
+    if assessed_short and report_commit == assessed_short:
+        return True, ""
+    if not report_commit:
+        return False, "report commit is missing"
+    try:
+        report_full = subprocess.check_output(
+            ["git", "rev-parse", f"{report_commit}^{{commit}}"],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+        assessed_full = subprocess.check_output(
+            ["git", "rev-parse", f"{assessed_ref}^{{commit}}"],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+        subprocess.check_call(
+            ["git", "merge-base", "--is-ancestor", report_full, assessed_full],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        changed = subprocess.check_output(
+            ["git", "diff", "--name-only", f"{report_full}..{assessed_full}"],
+            text=True,
+            stderr=subprocess.DEVNULL,
+        ).splitlines()
+    except Exception:
+        return False, f"commit expected {assessed_short!r}, found {report_commit!r}"
+    product_paths = [
+        path for path in changed
+        if path in {"Cargo.toml", "Cargo.lock"}
+        or path.startswith("src/")
+        or path.startswith("tests/")
+    ]
+    if product_paths:
+        return False, (
+            f"live evidence commit {report_commit!r} is older than assessed ref "
+            f"{assessed_short!r} and product/test files changed: {', '.join(product_paths[:5])}"
+        )
+    return True, ""
+
+allowed, reason = live_evidence_commit_is_allowed(report_commit, assessed_ref)
+if not allowed:
+    errors.append(reason)
 
 for forbidden in [
     'session_id="',

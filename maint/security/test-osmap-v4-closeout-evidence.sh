@@ -9,7 +9,7 @@ mime_evidence="${repo_root}/docs/V4_MIME_AMBIGUITY_EVIDENCE.md"
 release_handoff="${repo_root}/docs/V4_RELEASE_OPERATOR_HANDOFF.md"
 v4_report="${repo_root}/maint/live/latest-host-v4-hostile-content-report.txt"
 v3_summary_md="${repo_root}/maint/live/osmap-v3-release-evidence-summary.md"
-v3_summary_json="${repo_root}/maint/live/osmap-v3-release-evidence-summary.json"
+v3_summary_json="${repo_root}/maint/live/osmap-v4-frozen-v3-release-evidence-summary.json"
 v3_archive="${repo_root}/maint/live/osmap-v3-release-evidence.tar.gz"
 
 require_file() {

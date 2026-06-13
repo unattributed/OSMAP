@@ -80,9 +80,15 @@ assessed ref `09a95b7f4e9744a20bcd85430e4f0428cafeebe7`.
 
 Tracked evidence:
 
+- `maint/live/osmap-v4-frozen-v3-release-evidence-summary.json`
 - `maint/live/osmap-v3-release-evidence-summary.md`
-- `maint/live/osmap-v3-release-evidence-summary.json`
 - `maint/live/osmap-v3-release-evidence.tar.gz`
+
+`maint/live/osmap-v4-frozen-v3-release-evidence-summary.json` is the immutable
+V3 carry-forward summary used by V4 closeout and tuple validation. The current
+`maint/live/osmap-v3-release-evidence-summary.json` path remains a generated
+release-check output for later assurance runs and is not used as the frozen
+V4.0.0 carry-forward input.
 
 The refreshed V3 release evidence summary records:
 

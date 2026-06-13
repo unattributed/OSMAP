@@ -7,7 +7,7 @@ cd "$repo_root"
 : "${OSMAP_V4_RELEASE_TUPLE_CLOSEOUT:=docs/V4_CLOSEOUT_EVIDENCE.md}"
 : "${OSMAP_V4_RELEASE_TUPLE_HANDOFF:=docs/V4_RELEASE_OPERATOR_HANDOFF.md}"
 : "${OSMAP_V4_RELEASE_TUPLE_LIVE_V4_REPORT:=maint/live/latest-host-v4-hostile-content-report.txt}"
-: "${OSMAP_V4_RELEASE_TUPLE_V3_SUMMARY:=maint/live/osmap-v3-release-evidence-summary.json}"
+: "${OSMAP_V4_RELEASE_TUPLE_V3_SUMMARY:=maint/live/osmap-v4-frozen-v3-release-evidence-summary.json}"
 : "${OSMAP_V4_RELEASE_TUPLE_V4_ASSURANCE_REPORT:=maint/live/osmap-v4-hostile-assurance-report.json}"
 : "${OSMAP_V4_RELEASE_TUPLE_V4_ASSURANCE_ARCHIVE:=maint/live/osmap-v4-hostile-assurance-evidence.tar.gz}"
 : "${OSMAP_V4_RELEASE_TUPLE_CLAIM_MATRIX:=docs/V4_SECURITY_CLAIM_MATRIX.md}"
@@ -72,6 +72,51 @@ def require_match(pattern, text, label):
 
 def prefix_equal(left, right):
     return bool(left and right and (left.startswith(right) or right.startswith(left)))
+
+
+def product_or_assurance_path(path):
+    return (
+        path in {"Cargo.toml", "Cargo.lock"}
+        or path.startswith("src/")
+        or path.startswith("tests/")
+        or path.startswith("maint/security/")
+    )
+
+
+def evidence_ref_allowed(report_ref, assessed_ref, label):
+    if prefix_equal(report_ref, assessed_ref):
+        return True
+    if not report_ref:
+        errors.append(f"{label} is missing an assessed ref")
+        return False
+    code, report_full, _ = git("rev-parse", f"{report_ref}^{{commit}}")
+    if code != 0:
+        errors.append(f"{label} is not a local git commit: {report_ref!r}")
+        return False
+    code, assessed_full, _ = git("rev-parse", f"{assessed_ref}^{{commit}}")
+    if code != 0:
+        errors.append(f"current assurance ref is not a local git commit: {assessed_ref!r}")
+        return False
+    code, _, _ = git("merge-base", "--is-ancestor", report_full, assessed_full)
+    if code != 0:
+        errors.append(
+            f"{label} {report_ref!r} is not an ancestor of current assurance ref {assessed_ref!r}"
+        )
+        return False
+    code, changed_text, _ = git("diff", "--name-only", f"{report_full}..{assessed_full}")
+    if code != 0:
+        errors.append(
+            f"could not compare {label} {report_ref!r} to current assurance ref {assessed_ref!r}"
+        )
+        return False
+    changed = [path for path in changed_text.splitlines() if product_or_assurance_path(path)]
+    if changed:
+        errors.append(
+            f"{label} {report_ref!r} is older than current assurance ref "
+            f"{assessed_ref!r} and product/test/security files changed: {', '.join(changed[:8])}"
+        )
+        return False
+    return True
 
 
 def git(*args):
@@ -182,9 +227,11 @@ if v4_assurance.get("status") != "passed":
 v4_assessed = v4_assurance.get("assessed_ref", "")
 if not v4_assessed:
     errors.append("V4 hostile assurance report missing assessed_ref")
-if current_assurance_ref and not prefix_equal(v4_assessed, current_assurance_ref):
-    errors.append(
-        f"V4 hostile assurance report assessed_ref {v4_assessed!r} does not match current assurance ref {current_assurance_ref!r}"
+if current_assurance_ref:
+    evidence_ref_allowed(
+        v4_assessed,
+        current_assurance_ref,
+        "V4 hostile assurance report assessed_ref",
     )
 
 metadata = v4_assurance.get("evidence_metadata")
@@ -257,5 +304,5 @@ print("V4 release tuple gate passed")
 print(f"release_tag={handoff_tag}")
 print(f"evidence_bundle_commit={handoff_bundle}")
 print(f"frozen_assessed_commit={closeout_assessed}")
-print(f"current_assurance_ref={v4_assessed}")
+print(f"current_assurance_ref={current_assurance_ref or v4_assessed}")
 PY

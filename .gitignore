@@ -1,6 +1,16 @@
 PKCB/
 target/
+__pycache__/
 maint/live/latest-*.txt
+!maint/live/latest-host-v2-readiness-report.txt
+!maint/live/latest-host-v2-readiness-service-guard-report.txt
+!maint/live/latest-host-edge-cutover-report.txt
+!maint/live/latest-host-internet-exposure-report.txt
+!maint/live/latest-host-service-enablement-report.txt
+!maint/live/latest-host-v3-resource-controls-report.txt
+!maint/live/latest-host-helper-boundary-report.txt
+!maint/live/latest-host-v3-mime-html-proof-report.txt
+!maint/live/latest-host-v3-pilot-rehearsal-report.txt
 maint/live/osmap-v3-dependency-inventory.txt
 maint/live/osmap-v3-release-evidence-summary.json
 maint/live/osmap-v3-release-evidence-summary.md

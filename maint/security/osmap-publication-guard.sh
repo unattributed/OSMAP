@@ -31,7 +31,7 @@ assert_no_tracked_path() {
 	matches=$(
 		tracked_files |
 			grep -E "$pattern" |
-			grep -Ev '^maint/live/latest-host-v4-hostile-content-report\.txt$' || true
+			grep -Ev '^maint/live/latest-host-(v2-readiness-report|v2-readiness-service-guard-report|edge-cutover-report|internet-exposure-report|service-enablement-report|v3-resource-controls-report|helper-boundary-report|v3-mime-html-proof-report|v3-pilot-rehearsal-report|v4-hostile-content-report)\.txt$' || true
 	)
 	if [ -n "$matches" ]; then
 		append_failure "tracked generated or private path matched: ${pattern}"
@@ -79,6 +79,17 @@ assert_no_tracked_path '^maint/.*/output/'
 if git ls-files --error-unmatch maint/live/latest-host-v4-hostile-content-report.txt >/dev/null 2>&1; then
 	assert_required_text maint/live/latest-host-v4-hostile-content-report.txt "result=v4_hostile_content_live_proof_passed"
 	assert_required_text maint/live/latest-host-v4-hostile-content-report.txt "No password, TOTP material, session cookie, CSRF token, private message body, attachment body, provider secret, or host secret is included."
+fi
+if git ls-files --error-unmatch maint/live/latest-host-v3-mime-html-proof-report.txt >/dev/null 2>&1; then
+	assert_required_text maint/live/latest-host-v3-mime-html-proof-report.txt "result=v3_mime_html_live_proof_passed"
+fi
+if git ls-files --error-unmatch maint/live/latest-host-v3-pilot-rehearsal-report.txt >/dev/null 2>&1; then
+	assert_required_text maint/live/latest-host-v3-pilot-rehearsal-report.txt "result=v3_pilot_rehearsal_passed"
+	assert_required_text maint/live/latest-host-v3-pilot-rehearsal-report.txt "sanitized_evidence=true"
+fi
+if git ls-files --error-unmatch maint/live/latest-host-v3-resource-controls-report.txt >/dev/null 2>&1; then
+	assert_required_text maint/live/latest-host-v3-resource-controls-report.txt "osmap_v3_resource_controls_result=passed"
+	assert_required_text maint/live/latest-host-v3-resource-controls-report.txt "No passwords, TOTP material, session cookie, CSRF token, private message body, attachment body, provider secret, or host secret is included."
 fi
 
 assert_no_literal "real primary mailbox" "$real_primary"

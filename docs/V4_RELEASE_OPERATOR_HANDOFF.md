@@ -68,8 +68,8 @@ Primary evidence:
 - `docs/V4_MIME_AMBIGUITY_EVIDENCE.md`
 - `docs/V4_CLOSEOUT_EVIDENCE.md`
 - `maint/live/latest-host-v4-hostile-content-report.txt`
+- `maint/live/osmap-v4-frozen-v3-release-evidence-summary.json`
 - `maint/live/osmap-v3-release-evidence-summary.md`
-- `maint/live/osmap-v3-release-evidence-summary.json`
 - `maint/live/osmap-v3-release-evidence.tar.gz`
 - `maint/security/test-osmap-v4-closeout-evidence.sh`
 
