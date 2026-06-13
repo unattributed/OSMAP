@@ -26,6 +26,7 @@
 | Evidence chain may not be reproducible from a clean checkout | Confirmed and remediated | Developer reproducibility is strong: `make security-check`, cargo tests, clippy, fmt, and V4 assurance tests passed. The workstation and `mail.blackbagsecurity.com` both carry the reviewed Rust/Cargo `1.94.1` toolchain. The release gate had stale `1.86.0`/`0.1.86` pins and now requires the confirmed `1.94.1`/`0.1.94` toolchain. The required historical live evidence files and frozen V3 carry-forward summary are now committed or explicitly tracked so strict release reproduction no longer depends on unstated local files. |
 | Hostile-content containment proof may lack browser-mail boundary coverage | Refuted for the inspected scope | `tests/v4_hostile_assurance.rs` already includes route-backed DOM negative assertions, zero auto-fetch surface observations, MIME fail-closed cases, forced-download attachment assertions, and browser-isolation source/header checks. No new hostile-content product test was justified by this audit. |
 | Toolchain and evidence metadata may be incomplete | Confirmed | The V4 hostile-assurance report lacked structured toolchain and host metadata. The gate now injects `evidence_metadata` with git commit, tags, host OS, hostname, and tool availability/version records. |
+| V4.6 security claim matrix may be documentation-only | Confirmed and remediated | `docs/V4_SECURITY_CLAIM_MATRIX.md` now has a dedicated release gate, `maint/security/osmap-v4-security-claim-matrix-gate.sh`, wired into both `make security-check` and `make release-check`. The gate parses required claim rows, rejects placeholder cells, verifies referenced repo paths, validates cited hostile-assurance report components, verifies zero-network assertions, and checks the archived evidence bundle. |
 
 ## Remediation Performed
 
@@ -37,9 +38,13 @@
 - Updated release-check Rust toolchain pins to the confirmed development and mail-host toolchain: `rustc`/`cargo` `1.94.1`, clippy `0.1.94`, rustfmt `1.8.0`, cargo-audit `0.22.1`, and cargo-deny `0.18.3`.
 - Wired the tuple gate into `maint/security/osmap-release-check.sh`.
 - Added `maint/security/test-osmap-v4-release-tuple-gate.sh` and wired it into `maint/security/osmap-security-check.sh`.
+- Added `maint/security/osmap-v4-security-claim-matrix-gate.sh` to enforce the V4.6 security claim matrix as a parsed release artifact rather than relying on manual document review.
+- Added `maint/security/test-osmap-v4-security-claim-matrix-gate.sh` to prove the matrix gate passes the real artifact and fails on missing claim detail or regressed network assertions.
+- Wired the claim-matrix gate into `maint/security/osmap-security-check.sh` and `maint/security/osmap-release-check.sh`.
 - Updated hook-install regression coverage for the new security scripts.
 - Refreshed `maint/live/osmap-v4-hostile-assurance-report.json` and `maint/live/osmap-v4-hostile-assurance-evidence.tar.gz` with metadata-bearing current assurance evidence.
 - Updated V4 security documentation to describe frozen release tuple evidence separately from current-code hostile-assurance evidence.
+- Updated V4 security documentation to describe V4.6 claim-matrix enforcement and the report/archive checks that back each hostile-content claim.
 
 ## Toolchain Validation Status
 
@@ -83,8 +88,10 @@ the current release-check summary to be regenerated for the assessed checkout.
 - `maint/security/osmap-security-check.sh`
 - `maint/security/osmap-v4-hostile-assurance-gate.sh`
 - `maint/security/osmap-v4-release-tuple-gate.sh`
+- `maint/security/osmap-v4-security-claim-matrix-gate.sh`
 - `maint/security/test-osmap-install-hooks.sh`
 - `maint/security/test-osmap-v4-release-tuple-gate.sh`
+- `maint/security/test-osmap-v4-security-claim-matrix-gate.sh`
 
 ## Tests Run
 
@@ -92,6 +99,8 @@ the current release-check summary to be regenerated for the assessed checkout.
 | --- | --- | --- |
 | `sh maint/security/osmap-v4-hostile-assurance-gate.sh` | Passed | Refreshed report/archive and injected evidence metadata. |
 | `sh maint/security/test-osmap-v4-release-tuple-gate.sh` | Passed | Positive tuple validation and negative mismatch cases passed. |
+| `sh maint/security/osmap-v4-security-claim-matrix-gate.sh` | Passed | Validated all six V4 hostile-content claim rows, cited repo paths, hostile-assurance report components, zero-network assertions, resource observations, and archived evidence contents. |
+| `sh maint/security/test-osmap-v4-security-claim-matrix-gate.sh` | Passed | Positive matrix validation and negative blank-non-goal/network-regression cases passed. |
 | `sh maint/security/test-osmap-v3-release-check.sh` | Passed | Release-check fail-closed harness passed after hook-test update. |
 | `OSMAP_RELEASE_EVIDENCE_DIR=/tmp/osmap-release-check.lF2pmP make release-check` | Failed before remediation | The initial failure proved the stale pin: release-check required Rust/Cargo `1.86.0` while both validated systems had `1.94.1`; the isolated evidence directory also lacked historical live evidence files. |
 | `sh maint/security/osmap-release-check.sh` | Passed after remediation | Strict release validation passed with pinned toolchain validation, cargo build/test/clippy/fmt, V4 hostile assurance, V4 tuple validation, supply-chain validation, dependency inventory, docs, TLS, and archived evidence generation. |
@@ -117,6 +126,7 @@ Read-only validation was performed against `mail.blackbagsecurity.com`.
 | Remote release-check reproduction | `make release-check` passed at `4074d3599641f25143ed75699ca92f0dfc02003a` |
 | Remote Rust toolchain | `rustc`/`cargo` `1.94.1`, clippy `0.1.94`, rustfmt `1.8.0`, cargo-audit `0.22.1`, cargo-deny `0.18.3` |
 | Local Rust toolchain | `rustc`/`cargo` `1.94.1`, clippy `0.1.94`, rustfmt `1.8.0`, cargo-audit `0.22.1`, cargo-deny `0.18.3` |
+| Remote V4 claim-matrix gate | `maint/security/osmap-v4-security-claim-matrix-gate.sh` passed at `090e9a2403992747882e49c3d9756b30baecc247` |
 | Remote V4 live proof | `result=v4_hostile_content_live_proof_passed` |
 | `curl -k -I https://mail.blackbagsecurity.com/` | HTTP 400 with expected hardening headers; OSMAP rejects `HEAD` on `/` |
 | `GET https://mail.blackbagsecurity.com/` | HTTP 303 redirect to `/login` |
@@ -124,8 +134,9 @@ Read-only validation was performed against `mail.blackbagsecurity.com`.
 The live host repository was fast-forwarded after the local remediation was
 committed and pushed. Services were not restarted, runtime configuration was not
 changed, and no private mail content or credentials were captured. The host
-checkout now carries the corrected release-check toolchain pins and the
-metadata-bearing V4 hostile-assurance report/archive from this remediation.
+checkout now carries the corrected release-check toolchain pins, the
+metadata-bearing V4 hostile-assurance report/archive, and the enforced V4.6
+security claim-matrix gate from this remediation.
 
 ## Residual Risks
 

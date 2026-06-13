@@ -112,6 +112,68 @@ reviewed host toolchain (`rustc` and `cargo` 1.94.1, clippy 0.1.94, rustfmt
 1.8.0) and with `~/.cargo/bin` in `PATH` so the installed `cargo-audit` and
 `cargo-deny` subcommands were visible.
 
+## Current V4.6 Assurance Addendum
+
+The historical `v4.0.0` closeout tuple remains frozen at assessed code commit
+`09a95b7`, release tag `v4.0.0`, and evidence bundle commit `59da020`.
+
+Current V4 assurance has since been strengthened without adding end-user
+functionality or expanding the hostile-content claim. The current assurance
+lane records:
+
+- current repository commit after V4.6 gate and evidence refresh:
+  `090e9a2403992747882e49c3d9756b30baecc247`
+- V4 security claim-matrix gate commit:
+  `d1fd3ebd31034aeb315c71d1a2f65fdb751ce122`
+- current hostile-assurance report assessed ref:
+  `d1fd3ebd31034aeb315c71d1a2f65fdb751ce122`
+- current hostile-assurance report:
+  `maint/live/osmap-v4-hostile-assurance-report.json`
+- current hostile-assurance archive:
+  `maint/live/osmap-v4-hostile-assurance-evidence.tar.gz`
+- enforced claim matrix:
+  `docs/V4_SECURITY_CLAIM_MATRIX.md`
+- claim-matrix release gate:
+  `maint/security/osmap-v4-security-claim-matrix-gate.sh`
+
+The claim-matrix gate is now part of both developer and release validation. It
+fails when:
+
+- any required hostile-content claim row is missing
+- implementation, automated-test, validation-evidence, residual-risk,
+  limitation, or non-goal cells are empty or placeholder text
+- a repo path cited by the matrix does not exist
+- the V4 hostile-assurance report is missing, failed, or lacks cited component
+  observations
+- zero-network assertions regress
+- route-backed observations or bounded resource observations are absent
+- the hostile-assurance archive omits the report, corpus manifest, or
+  representative hostile fixtures
+
+The current hostile-assurance report records:
+
+- generated UTC: `2026-06-13T10:35:28Z`
+- status: `passed`
+- release gate: `maint/security/osmap-v4-hostile-assurance-gate.sh`
+- hostile corpus metadata: `12 fixtures cover 11 required categories`
+- browser-rendered negative assertions: route-backed message responses had
+  inert body DOM and zero observed auto-fetch surfaces
+- MIME parser robustness: malformed boundary, invalid transfer, deep nesting,
+  header count, part count, and boundary length checks are bounded
+- attachment deception handling: active attachment media are downgraded, forced
+  download headers are present, and body size is bounded
+- browser isolation verification: CSP/frame headers, forced-download headers,
+  source invariants, and route-backed browser observations are verified
+- network assertions: zero remote fetches, beacons, WebSockets, and service
+  worker registrations
+- evidence metadata: git commit, host OS, hostname, make, Rust, Cargo,
+  rustfmt, clippy, cargo-audit, and cargo-deny versions
+
+The closeout distinction is intentional: the frozen `v4.0.0` tuple remains the
+historical release evidence, while the current V4 assurance report/archive and
+claim-matrix gate prove that the same hostile-content containment claim remains
+continuously validated for the current assessed tree.
+
 ## Residual-Risk Statement
 
 OSMAP V4 contains hostile message content inside the browser boundary; it does
@@ -136,13 +198,13 @@ Residual risks remain:
 ## Closeout Status
 
 The V4 hostile-content closeout evidence bundle is assembled for assessed code
-commit `09a95b7`.
+commit `09a95b7` as the historical `v4.0.0` release tuple.
 
 The V4 MIME ambiguity and metadata breadth slice is locally covered by
 `docs/V4_MIME_AMBIGUITY_EVIDENCE.md` and the named product-code regression
 tests in `src/mime.rs`.
 
-The bundle includes:
+The historical `v4.0.0` bundle includes:
 
 - local `make security-check` evidence for the code tree committed as
   `09a95b7`
@@ -153,5 +215,16 @@ The bundle includes:
 - this residual-risk statement for external links and files opened outside
   OSMAP
 
-Any code change after `09a95b7` requires a new assessed commit or tag and a new
-closeout evidence pass before it can inherit this V4 closeout claim.
+The current V4 assurance lane additionally includes:
+
+- release tuple validation by `maint/security/osmap-v4-release-tuple-gate.sh`
+- security claim matrix validation by
+  `maint/security/osmap-v4-security-claim-matrix-gate.sh`
+- refreshed metadata-bearing hostile-assurance report/archive for
+  `d1fd3ebd31034aeb315c71d1a2f65fdb751ce122`
+- local and mail-host claim-matrix gate passes at
+  `090e9a2403992747882e49c3d9756b30baecc247`
+
+Any product, test, security-gate, or release-evidence change after the current
+assessed assurance commits requires a new evidence pass before it can inherit
+the current V4 hostile-content containment claim.
