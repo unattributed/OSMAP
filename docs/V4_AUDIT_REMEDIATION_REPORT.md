@@ -97,17 +97,18 @@ Read-only validation was performed against `mail.blackbagsecurity.com`.
 | Remote host | `mail.blackbagsecurity.com` |
 | Remote `date -u` | `Sat Jun 13 04:31:27 UTC 2026` |
 | Remote `uname -a` | `OpenBSD mail.blackbagsecurity.com 7.9 GENERIC.MP#449 amd64` |
-| Remote checkout | `/home/foo/OSMAP`, clean `main` at `24a44f26299f1df17da4999268a561adca4dd4b7` |
+| Remote checkout | `/home/foo/OSMAP`, clean `main`, fast-forwarded to this remediation commit |
 | Remote Rust toolchain | `rustc`/`cargo` `1.94.1`, clippy `0.1.94`, rustfmt `1.8.0`, cargo-audit `0.22.1`, cargo-deny `0.18.3` |
 | Local Rust toolchain | `rustc`/`cargo` `1.94.1`, clippy `0.1.94`, rustfmt `1.8.0`, cargo-audit `0.22.1`, cargo-deny `0.18.3` |
 | Remote V4 live proof | `result=v4_hostile_content_live_proof_passed` |
 | `curl -k -I https://mail.blackbagsecurity.com/` | HTTP 400 with expected hardening headers; OSMAP rejects `HEAD` on `/` |
 | `GET https://mail.blackbagsecurity.com/` | HTTP 303 redirect to `/login` |
 
-The live host was not modified, services were not restarted, and no private
-mail content or credentials were captured. The live host still carries the
-pre-remediation V4 hostile-assurance report/archive hashes; the refreshed local
-metadata-bearing report/archive are not deployed to the host in this audit pass.
+The live host repository was fast-forwarded after the local remediation was
+committed and pushed. Services were not restarted, runtime configuration was not
+changed, and no private mail content or credentials were captured. The host
+checkout now carries the corrected release-check toolchain pins and the
+metadata-bearing V4 hostile-assurance report/archive from this remediation.
 
 ## Residual Risks
 
