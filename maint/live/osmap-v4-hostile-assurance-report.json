@@ -1,8 +1,8 @@
 {
   "schema": "osmap-v4-hostile-assurance-report-v1",
   "status": "passed",
-  "assessed_ref": "492347e246999fe8bb93f40ea452dd8c123740bf",
-  "generated_at_utc": "2026-06-12T06:09:51Z",
+  "assessed_ref": "f6d2b1e04d8d7555668f6f417f792597a01bddf1",
+  "generated_at_utc": "2026-06-13T04:02:11Z",
   "corpus_root": "tests/testdata/hostile-mail-corpus",
   "release_gate": "maint/security/osmap-v4-hostile-assurance-gate.sh",
   "resource_usage_observations": {
