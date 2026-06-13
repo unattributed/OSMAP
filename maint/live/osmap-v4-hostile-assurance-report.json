@@ -1,34 +1,96 @@
 {
-  "schema": "osmap-v4-hostile-assurance-report-v1",
-  "status": "passed",
-  "assessed_ref": "f6d2b1e04d8d7555668f6f417f792597a01bddf1",
-  "generated_at_utc": "2026-06-13T04:02:11Z",
+  "assessed_ref": "24a44f26299f1df17da4999268a561adca4dd4b7",
+  "components": [
+    {
+      "component": "hostile_corpus_metadata",
+      "observation": "12 fixtures cover 11 required categories",
+      "status": "passed"
+    },
+    {
+      "component": "browser_rendered_negative_assertions",
+      "observation": "route-backed message responses=3 had inert body DOM and zero observed auto-fetch surfaces",
+      "status": "passed"
+    },
+    {
+      "component": "mime_parser_robustness",
+      "observation": "malformed boundary, invalid transfer, deep nesting, header count, part count, and boundary length checks are bounded",
+      "status": "passed"
+    },
+    {
+      "component": "attachment_deception_handling",
+      "observation": "active attachment media are downgraded; 5 attachment routes force download with nosniff; max bytes=262144",
+      "status": "passed"
+    },
+    {
+      "component": "browser_isolation_verification",
+      "observation": "CSP/frame headers, forced-download headers, source invariants, and route-backed browser observations verified; rendered_routes=3, attachment_routes=5",
+      "status": "passed"
+    }
+  ],
   "corpus_root": "tests/testdata/hostile-mail-corpus",
+  "evidence_metadata": {
+    "generated_at_utc": "2026-06-13T04:40:32Z",
+    "git": {
+      "commit": "24a44f26299f1df17da4999268a561adca4dd4b7",
+      "tags": []
+    },
+    "host": {
+      "hostname": "parrot",
+      "os": "Linux parrot 7.0.9+parrot7-amd64 #1 SMP PREEMPT_DYNAMIC Parrot 7.0.9-1parrot1 (2026-05-28) x86_64 GNU/Linux"
+    },
+    "schema": "osmap-evidence-metadata-v1",
+    "tools": {
+      "cargo": {
+        "status": "available",
+        "version": "cargo 1.94.1 (29ea6fb6a 2026-03-24) (built from a source tarball)"
+      },
+      "cargo_audit": {
+        "status": "available",
+        "version": "cargo-audit-audit 0.22.1"
+      },
+      "cargo_clippy": {
+        "status": "available",
+        "version": "clippy 0.1.94"
+      },
+      "cargo_deny": {
+        "status": "available",
+        "version": "cargo-deny 0.18.3"
+      },
+      "cargo_fmt": {
+        "status": "available",
+        "version": "rustfmt 1.8.0"
+      },
+      "make": {
+        "status": "available",
+        "version": "GNU Make 4.4.1"
+      },
+      "rustc": {
+        "status": "available",
+        "version": "rustc 1.94.1 (e408947bf 2026-03-25) (built from a source tarball)"
+      }
+    }
+  },
+  "generated_at_utc": "2026-06-13T04:40:32Z",
+  "network_assertions": {
+    "beacon_requests": 0,
+    "remote_fetches": 0,
+    "service_worker_registrations": 0,
+    "websocket_requests": 0
+  },
   "release_gate": "maint/security/osmap-v4-hostile-assurance-gate.sh",
   "resource_usage_observations": {
-    "mime_max_depth": 4,
-    "mime_max_parts": 64,
+    "attachment_download_max_bytes": 262144,
     "mime_header_count_max": 256,
-    "attachment_download_max_bytes": 262144
-  },
-  "network_assertions": {
-    "remote_fetches": 0,
-    "beacon_requests": 0,
-    "websocket_requests": 0,
-    "service_worker_registrations": 0
+    "mime_max_depth": 4,
+    "mime_max_parts": 64
   },
   "route_backed_observations": {
-    "rendered_message_routes": 3,
     "attachment_download_routes": 5,
-    "dom_assertions": 3,
     "auto_fetch_surfaces": 0,
+    "dom_assertions": 3,
+    "rendered_message_routes": 3,
     "unsafe_browser_api_references": 0
   },
-  "components": [
-    {"component":"hostile_corpus_metadata","status":"passed","observation":"12 fixtures cover 11 required categories"},
-    {"component":"browser_rendered_negative_assertions","status":"passed","observation":"route-backed message responses=3 had inert body DOM and zero observed auto-fetch surfaces"},
-    {"component":"mime_parser_robustness","status":"passed","observation":"malformed boundary, invalid transfer, deep nesting, header count, part count, and boundary length checks are bounded"},
-    {"component":"attachment_deception_handling","status":"passed","observation":"active attachment media are downgraded; 5 attachment routes force download with nosniff; max bytes=262144"},
-    {"component":"browser_isolation_verification","status":"passed","observation":"CSP/frame headers, forced-download headers, source invariants, and route-backed browser observations verified; rendered_routes=3, attachment_routes=5"}
-  ]
+  "schema": "osmap-v4-hostile-assurance-report-v1",
+  "status": "passed"
 }

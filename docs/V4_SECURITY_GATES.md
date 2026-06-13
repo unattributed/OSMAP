@@ -35,6 +35,7 @@ Version 4 cannot pass by replacing, weakening, or silently skipping any of these
 | Evidence redaction | The V4 evidence path proves that message bodies, attachment bodies, active session material, CSRF tokens, passwords, TOTP material, provider secrets, and host secrets are not written to committed or archived reports. |
 | Residual-risk disclosure | Documentation states that OSMAP contains browser-rendering and serving risk but does not claim to make externally opened files safe. |
 | Hostile corpus release gate | The version-controlled corpus under `tests/testdata/hostile-mail-corpus/` executes through `maint/security/osmap-v4-hostile-assurance-gate.sh`; release validation fails if execution is skipped, fixture metadata is incomplete, report generation is absent, or evidence archiving is absent. |
+| Release tuple reconciliation | `maint/security/osmap-v4-release-tuple-gate.sh` validates that the frozen `v4.0.0` release tuple is internally consistent and that any current V4 hostile-assurance report is passed, metadata-bearing, archived, and not silently confused with the frozen release tuple. |
 | Security claim matrix | `docs/V4_SECURITY_CLAIM_MATRIX.md` maps hostile-content claims to implementation, automated tests, validation evidence, residual risk, documented limitations, and non-goals. |
 
 ## Current Evidence Lane
@@ -69,6 +70,18 @@ message DOM, auto-fetch surface, browser-isolation, and forced-download
 observations, writes the machine-readable report
 `maint/live/osmap-v4-hostile-assurance-report.json`, and archives the corpus/report bundle as
 `maint/live/osmap-v4-hostile-assurance-evidence.tar.gz`.
+
+The release tuple reconciliation gate is
+`maint/security/osmap-v4-release-tuple-gate.sh`. It compares
+`docs/V4_CLOSEOUT_EVIDENCE.md`, `docs/V4_RELEASE_OPERATOR_HANDOFF.md`,
+`maint/live/latest-host-v4-hostile-content-report.txt`,
+`maint/live/osmap-v3-release-evidence-summary.json`,
+`maint/live/osmap-v4-hostile-assurance-report.json`, and
+`maint/live/osmap-v4-hostile-assurance-evidence.tar.gz`. The gate treats
+`v4.0.0` as frozen release evidence and treats later hostile-assurance JSON as
+current-code assurance evidence, then fails on missing files, tuple drift,
+failed status, missing tool metadata, archive/report mismatch, or missing
+documentation of that distinction.
 
 The local MIME ambiguity evidence is `docs/V4_MIME_AMBIGUITY_EVIDENCE.md`.
 It names product-code tests in `src/mime.rs` that prove malformed, nested,

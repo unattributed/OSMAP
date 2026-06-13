@@ -16,21 +16,21 @@ make_stubs() {
 	mkdir -p "$stub_dir"
 	cat > "$stub_dir/rustc" <<'EOF'
 #!/bin/sh
-printf '%s\n' 'rustc 1.86.0 (05f9846f8 2025-03-31)'
+printf '%s\n' 'rustc 1.94.1 (e408947bf 2026-03-25) (built from a source tarball)'
 EOF
 	cat > "$stub_dir/cargo" <<'EOF'
 #!/bin/sh
 cmd=${1:-}
 case "$cmd" in
 	--version)
-		printf '%s\n' 'cargo 1.86.0 (adf9b6ad1 2025-02-28)'
+		printf '%s\n' 'cargo 1.94.1 (29ea6fb6a 2026-03-24) (built from a source tarball)'
 		;;
 	clippy)
 		if [ "${OSMAP_TEST_MISSING_CLIPPY:-0}" = "1" ]; then
 			exit 1
 		fi
 		if [ "${2:-}" = "--version" ]; then
-			printf '%s\n' 'clippy 0.1.86 (05f9846f89 2025-03-31)'
+			printf '%s\n' 'clippy 0.1.94'
 			exit 0
 		fi
 		exit 0

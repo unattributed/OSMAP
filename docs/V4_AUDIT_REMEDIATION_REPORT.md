@@ -1,0 +1,128 @@
+# V4 Audit Remediation Report
+
+## Audit Date
+
+2026-06-13 UTC
+
+## Repository State
+
+| Item | Value |
+| --- | --- |
+| Repository | `/home/foo/Workspace/OSMAP` |
+| Branch | `main` |
+| Commit before remediation | `24a44f26299f1df17da4999268a561adca4dd4b7` |
+| Commit after remediation | this commit (`git rev-parse HEAD` after checkout) |
+| Release tag under review | `v4.0.0` |
+| Frozen evidence bundle commit | `59da020` |
+| Frozen V4 assessed code commit | `09a95b7` |
+| Refreshed hostile-assurance report commit | `24a44f26299f1df17da4999268a561adca4dd4b7` |
+
+## Findings Investigated
+
+| Finding | Result | Evidence |
+| --- | --- | --- |
+| V4 evidence references may be inconsistent | Confirmed, with explanation | The closeout and handoff documents identify the frozen `v4.0.0` tuple as tag `v4.0.0`, evidence bundle `59da020`, and assessed code `09a95b7`. The hostile-assurance JSON had referenced a later assessed commit. This is valid only when treated as current-code assurance evidence, not as the frozen release tuple. |
+| Release guards may not validate the full tuple | Confirmed | Existing closeout and hostile-content gates did not reconcile closeout docs, handoff docs, live V4 proof, V3 carry-forward JSON, V4 hostile-assurance JSON, and the assurance archive as one audited chain. |
+| Evidence chain may not be reproducible from a clean checkout | Partially confirmed, remediated for toolchain pins | Developer reproducibility is strong: `make security-check`, cargo tests, clippy, fmt, and V4 assurance tests passed. The workstation and `mail.blackbagsecurity.com` both carry the reviewed Rust/Cargo `1.94.1` toolchain. The release gate had stale `1.86.0`/`0.1.86` pins and now requires the confirmed `1.94.1`/`0.1.94` toolchain. Full strict release reproduction still requires the complete historical live evidence set. |
+| Hostile-content containment proof may lack browser-mail boundary coverage | Refuted for the inspected scope | `tests/v4_hostile_assurance.rs` already includes route-backed DOM negative assertions, zero auto-fetch surface observations, MIME fail-closed cases, forced-download attachment assertions, and browser-isolation source/header checks. No new hostile-content product test was justified by this audit. |
+| Toolchain and evidence metadata may be incomplete | Confirmed | The V4 hostile-assurance report lacked structured toolchain and host metadata. The gate now injects `evidence_metadata` with git commit, tags, host OS, hostname, and tool availability/version records. |
+
+## Remediation Performed
+
+- Added `maint/security/osmap-evidence-metadata.sh` to capture evidence metadata without requiring optional tools to exist.
+- Updated `maint/security/osmap-v4-hostile-assurance-gate.sh` to inject and validate `evidence_metadata` before archiving the V4 report.
+- Added `maint/security/osmap-v4-release-tuple-gate.sh` to validate the frozen `v4.0.0` release tuple and the current hostile-assurance report/archive chain.
+- Updated release-check Rust toolchain pins to the confirmed development and mail-host toolchain: `rustc`/`cargo` `1.94.1`, clippy `0.1.94`, rustfmt `1.8.0`, cargo-audit `0.22.1`, and cargo-deny `0.18.3`.
+- Wired the tuple gate into `maint/security/osmap-release-check.sh`.
+- Added `maint/security/test-osmap-v4-release-tuple-gate.sh` and wired it into `maint/security/osmap-security-check.sh`.
+- Updated hook-install regression coverage for the new security scripts.
+- Refreshed `maint/live/osmap-v4-hostile-assurance-report.json` and `maint/live/osmap-v4-hostile-assurance-evidence.tar.gz` with metadata-bearing current assurance evidence.
+- Updated V4 security documentation to describe frozen release tuple evidence separately from current-code hostile-assurance evidence.
+
+## Toolchain Validation Status
+
+Toolchain validation is complete for V4 remediation scope.
+
+| Environment | rustc | cargo | clippy | rustfmt | cargo-audit | cargo-deny | Result |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Development workstation | `1.94.1` | `1.94.1` | `0.1.94` | `1.8.0` | `0.22.1` | `0.18.3` | Matches release-check pins |
+| `mail.blackbagsecurity.com` | `1.94.1` | `1.94.1` | `0.1.94` | `1.8.0` | `0.22.1` | `0.18.3` | Matches release-check pins |
+
+After the pin update, `sh maint/security/osmap-release-check.sh` no longer
+fails during pinned toolchain validation. It proceeds through cargo
+build/test/clippy/fmt, V4 hostile assurance, V4 release tuple validation, and
+supply-chain validation. The remaining local release-check failure is evidence
+freshness and historical live evidence availability, not Rust toolchain
+validation.
+
+## Files Changed
+
+- `Makefile`
+- `docs/V4_AUDIT_REMEDIATION_REPORT.md`
+- `docs/V4_SECURITY_CLAIM_MATRIX.md`
+- `docs/V4_SECURITY_GATES.md`
+- `maint/live/osmap-v4-hostile-assurance-evidence.tar.gz`
+- `maint/live/osmap-v4-hostile-assurance-report.json`
+- `maint/security/osmap-evidence-metadata.sh`
+- `maint/security/osmap-release-check.sh`
+- `maint/security/osmap-security-check.sh`
+- `maint/security/osmap-v4-hostile-assurance-gate.sh`
+- `maint/security/osmap-v4-release-tuple-gate.sh`
+- `maint/security/test-osmap-install-hooks.sh`
+- `maint/security/test-osmap-v4-release-tuple-gate.sh`
+
+## Tests Run
+
+| Command | Result | Notes |
+| --- | --- | --- |
+| `sh maint/security/osmap-v4-hostile-assurance-gate.sh` | Passed | Refreshed report/archive and injected evidence metadata. |
+| `sh maint/security/test-osmap-v4-release-tuple-gate.sh` | Passed | Positive tuple validation and negative mismatch cases passed. |
+| `sh maint/security/test-osmap-v3-release-check.sh` | Passed | Release-check fail-closed harness passed after hook-test update. |
+| `OSMAP_RELEASE_EVIDENCE_DIR=/tmp/osmap-release-check.lF2pmP make release-check` | Failed before remediation | The initial failure proved the stale pin: release-check required Rust/Cargo `1.86.0` while both validated systems had `1.94.1`; the isolated evidence directory also lacked historical live evidence files. |
+| `sh maint/security/osmap-release-check.sh` | Failed after toolchain remediation, but passed toolchain and code phases | The stale pin is resolved: toolchain preflight, cargo build/test/clippy/fmt, V4 hostile assurance, V4 tuple gate, supply-chain gate, dependency inventory, doc governance, and TLS policy reached pass. The remaining failure is historical live evidence availability/assessed-commit mismatch in this local checkout. |
+| `make security-check` | Passed | Full developer gate passed, including V4 tuple regression and nested release-check fail-closed tests. |
+| `cargo fmt --check` | Passed | No formatting changes required. |
+| `cargo clippy --all-targets --all-features -- -D warnings` | Passed | No warnings. |
+| `cargo test --all-targets --all-features` | Passed | 443 library tests passed, 4 live-host-dependent tests ignored, 1 binary test passed, 1 V4 integration test passed. |
+| `cargo test --test v4_hostile_assurance -- --nocapture` | Passed | V4 assurance integration test passed. |
+
+## Live Host Validation
+
+Read-only validation was performed against `mail.blackbagsecurity.com`.
+
+| Check | Result |
+| --- | --- |
+| Local `date -u` | `Sat Jun 13 04:31:27 UTC 2026` |
+| Local `uname -a` | `Linux parrot 7.0.9+parrot7-amd64 #1 SMP PREEMPT_DYNAMIC Parrot 7.0.9-1parrot1 (2026-05-28) x86_64 GNU/Linux` |
+| Remote host | `mail.blackbagsecurity.com` |
+| Remote `date -u` | `Sat Jun 13 04:31:27 UTC 2026` |
+| Remote `uname -a` | `OpenBSD mail.blackbagsecurity.com 7.9 GENERIC.MP#449 amd64` |
+| Remote checkout | `/home/foo/OSMAP`, clean `main` at `24a44f26299f1df17da4999268a561adca4dd4b7` |
+| Remote Rust toolchain | `rustc`/`cargo` `1.94.1`, clippy `0.1.94`, rustfmt `1.8.0`, cargo-audit `0.22.1`, cargo-deny `0.18.3` |
+| Local Rust toolchain | `rustc`/`cargo` `1.94.1`, clippy `0.1.94`, rustfmt `1.8.0`, cargo-audit `0.22.1`, cargo-deny `0.18.3` |
+| Remote V4 live proof | `result=v4_hostile_content_live_proof_passed` |
+| `curl -k -I https://mail.blackbagsecurity.com/` | HTTP 400 with expected hardening headers; OSMAP rejects `HEAD` on `/` |
+| `GET https://mail.blackbagsecurity.com/` | HTTP 303 redirect to `/login` |
+
+The live host was not modified, services were not restarted, and no private
+mail content or credentials were captured. The live host still carries the
+pre-remediation V4 hostile-assurance report/archive hashes; the refreshed local
+metadata-bearing report/archive are not deployed to the host in this audit pass.
+
+## Residual Risks
+
+- A clean strict release reproduction still requires the complete historical
+  live evidence set. The Rust toolchain pin has been reconciled to the
+  confirmed development and mail-host toolchain.
+- The live host has not been updated with the uncommitted tuple-gate
+  remediation or refreshed local metadata-bearing V4 assurance archive.
+- V4 contains hostile email content within the browser-mail boundary; it does
+  not make malicious links safe, scan downloads for malware, provide URL
+  reputation, safely preview arbitrary active documents, or claim Roundcube
+  feature parity.
+
+## Final V4 Status Recommendation
+
+V4 conditionally release-ready: technical controls pass and the release-check
+toolchain validation is complete on both validated systems, but local strict
+release reproduction still requires the complete historical live evidence set.

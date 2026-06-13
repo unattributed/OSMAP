@@ -18,7 +18,7 @@ reputation, or Roundcube feature parity.
 | MIME parser behavior is bounded under malformed input | `src/mime.rs` bounded header values, header counts, part counts, boundary length, and nesting depth | `tests/v4_hostile_assurance.rs` MIME robustness assertions plus product-code MIME tests | parser observations in the V4 assurance report | MIME is intentionally partial and conservative | unsupported or ambiguous content may be withheld | full MIME client compatibility |
 | Attachment deception is contained as download-only behavior | `src/attachment.rs` filename normalization, content-type normalization, bounded decode, browser-executable media downgrade, and `src/http_support.rs` forced-download response headers | `tests/v4_hostile_assurance.rs` attachment deception assertions plus route-backed forced-download header assertions | attachment route observations in the V4 assurance report | downloaded files may still be malicious after the user opens them | OSMAP does not inspect archives or documents for malware | attachment preview safety |
 | Browser isolation headers preserve the mail/browser boundary | `src/http_support.rs` CSP, `X-Frame-Options`, `nosniff`, CORP, no-referrer, and forced download headers | `tests/v4_hostile_assurance.rs` source invariant assertions, response header assertions, and route-backed browser-boundary observations | browser isolation observations in the V4 assurance report | browser or proxy misconfiguration can weaken protection outside the Rust response path | route-backed scanning complements live-host route proof but is not a complete browser-engine conformance suite | service workers, WebSockets, client-side app runtime |
-| V4 assurance evidence is release-gated and archived | `maint/security/osmap-v4-hostile-assurance-gate.sh` and `maint/security/osmap-release-check.sh` | release gate invokes the V4 assurance gate and validates report/archive presence | `maint/live/osmap-v4-hostile-assurance-report.json` and `maint/live/osmap-v4-hostile-assurance-evidence.tar.gz` | release evidence must be refreshed after code changes | developer mode may run only local reproducible checks | unreviewed skipped release evidence |
+| V4 assurance evidence is release-gated, tuple-checked, and archived | `maint/security/osmap-v4-hostile-assurance-gate.sh`, `maint/security/osmap-v4-release-tuple-gate.sh`, and `maint/security/osmap-release-check.sh` | release gate invokes the V4 assurance gate, validates report/archive presence, and reconciles the frozen V4.0.0 release tuple against current hostile-assurance evidence | `maint/live/osmap-v4-hostile-assurance-report.json`, `maint/live/osmap-v4-hostile-assurance-evidence.tar.gz`, `maint/live/latest-host-v4-hostile-content-report.txt`, and `maint/live/osmap-v3-release-evidence-summary.json` | release evidence must be refreshed after code changes; historical release evidence remains tied to its assessed commit | developer mode may run only local reproducible checks; post-release assurance reports can assess a later commit than the frozen `v4.0.0` tuple | unreviewed skipped release evidence or silent tuple drift |
 
 ## Release Rule
 
@@ -31,3 +31,18 @@ commit and produces both:
 
 The strict `make release-check` path records these artifacts in the machine
 readable release summary and includes them in the sanitized release archive.
+
+`maint/security/osmap-v4-release-tuple-gate.sh` reconciles two distinct
+evidence lanes:
+
+- the frozen V4.0.0 release tuple: tag `v4.0.0`, evidence bundle commit
+  `59da020`, assessed code commit `09a95b7`, the live-host V4 report, and the
+  V3 release carry-forward summary
+- current hostile-content assurance evidence: the latest
+  `maint/live/osmap-v4-hostile-assurance-report.json` and archive for the
+  assessed commit under test
+
+The current assurance report may name a later commit than the frozen release
+tuple, but it must be a passed report, must include evidence metadata, must
+archive the matching machine-readable report, and must not be silently confused
+with the historical `v4.0.0` release tuple.

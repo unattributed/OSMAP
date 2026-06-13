@@ -12,6 +12,7 @@ cd "$repo_root"
 : "${OSMAP_V4_ASSURANCE_CORPUS_DIR:=tests/testdata/hostile-mail-corpus}"
 : "${OSMAP_V4_ASSURANCE_REPORT:=$OSMAP_RELEASE_EVIDENCE_DIR/osmap-v4-hostile-assurance-report.json}"
 : "${OSMAP_V4_ASSURANCE_ARCHIVE:=$OSMAP_RELEASE_EVIDENCE_DIR/osmap-v4-hostile-assurance-evidence.tar.gz}"
+: "${OSMAP_V4_ASSURANCE_METADATA:=$TMPDIR/osmap-v4-evidence-metadata.json}"
 
 mkdir -p "$TMPDIR" "$CARGO_HOME" "$CARGO_TARGET_DIR" "$OSMAP_RELEASE_EVIDENCE_DIR"
 export TMPDIR CARGO_HOME CARGO_TARGET_DIR
@@ -124,6 +125,23 @@ if [ ! -s "$OSMAP_V4_ASSURANCE_REPORT" ]; then
 	exit 1
 fi
 
+OSMAP_EVIDENCE_METADATA_GENERATED_AT="$generated_at" \
+	OSMAP_EVIDENCE_METADATA_GIT_COMMIT="$assessed_ref" \
+	sh maint/security/osmap-evidence-metadata.sh > "$OSMAP_V4_ASSURANCE_METADATA"
+
+python3 - "$OSMAP_V4_ASSURANCE_REPORT" "$OSMAP_V4_ASSURANCE_METADATA" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+report_path = Path(sys.argv[1])
+metadata_path = Path(sys.argv[2])
+report = json.loads(report_path.read_text(encoding="utf-8"))
+metadata = json.loads(metadata_path.read_text(encoding="utf-8"))
+report["evidence_metadata"] = metadata
+report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+PY
+
 python3 - "$OSMAP_V4_ASSURANCE_REPORT" "$assessed_ref" <<'PY'
 import json
 import re
@@ -144,6 +162,35 @@ if report.get("assessed_ref") != assessed_ref:
     errors.append("assurance report assessed_ref does not match the gate input")
 if report.get("corpus_root") != "tests/testdata/hostile-mail-corpus":
     errors.append("assurance report corpus_root is unexpected")
+
+metadata = report.get("evidence_metadata")
+if not isinstance(metadata, dict):
+    errors.append("assurance report missing evidence_metadata")
+else:
+    if metadata.get("schema") != "osmap-evidence-metadata-v1":
+        errors.append("evidence_metadata schema is unexpected")
+    if metadata.get("generated_at_utc") != report.get("generated_at_utc"):
+        errors.append("evidence_metadata generated_at_utc does not match report")
+    if metadata.get("git", {}).get("commit") != assessed_ref:
+        errors.append("evidence_metadata git commit does not match the gate input")
+    tools = metadata.get("tools", {})
+    for tool in [
+        "rustc",
+        "cargo",
+        "cargo_fmt",
+        "cargo_clippy",
+        "cargo_audit",
+        "cargo_deny",
+        "make",
+    ]:
+        state = tools.get(tool)
+        if not isinstance(state, dict):
+            errors.append(f"evidence_metadata missing tool record: {tool}")
+            continue
+        if state.get("status") not in {"available", "unavailable"}:
+            errors.append(f"evidence_metadata tool {tool} has invalid status")
+        if "version" not in state:
+            errors.append(f"evidence_metadata tool {tool} missing version field")
 
 required_components = {
     "hostile_corpus_metadata",

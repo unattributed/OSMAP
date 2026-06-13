@@ -15,9 +15,9 @@ fi
 : "${CARGO_HOME:=/tmp/osmap-cargo-home}"
 : "${CARGO_TARGET_DIR:=/tmp/osmap-target}"
 : "${OSMAP_RELEASE_EVIDENCE_DIR:=$repo_root/maint/live}"
-: "${OSMAP_RELEASE_RUSTC_VERSION:=1.86.0}"
-: "${OSMAP_RELEASE_CARGO_VERSION:=1.86.0}"
-: "${OSMAP_RELEASE_CLIPPY_VERSION:=0.1.86}"
+: "${OSMAP_RELEASE_RUSTC_VERSION:=1.94.1}"
+: "${OSMAP_RELEASE_CARGO_VERSION:=1.94.1}"
+: "${OSMAP_RELEASE_CLIPPY_VERSION:=0.1.94}"
 : "${OSMAP_RELEASE_RUSTFMT_VERSION:=1.8.0}"
 : "${OSMAP_CARGO_DENY_VERSION:=0.18.3}"
 : "${OSMAP_CARGO_AUDIT_VERSION:=0.22.1}"
@@ -39,6 +39,7 @@ fi
 : "${OSMAP_RELEASE_V4_HOSTILE_ASSURANCE_GATE:=maint/security/osmap-v4-hostile-assurance-gate.sh}"
 : "${OSMAP_RELEASE_V4_HOSTILE_ASSURANCE_REPORT:=$OSMAP_RELEASE_EVIDENCE_DIR/osmap-v4-hostile-assurance-report.json}"
 : "${OSMAP_RELEASE_V4_HOSTILE_ASSURANCE_ARCHIVE:=$OSMAP_RELEASE_EVIDENCE_DIR/osmap-v4-hostile-assurance-evidence.tar.gz}"
+: "${OSMAP_RELEASE_V4_RELEASE_TUPLE_GATE:=maint/security/osmap-v4-release-tuple-gate.sh}"
 : "${OSMAP_RELEASE_SUPPLY_CHAIN_COMMAND:=sh maint/security/osmap-supply-chain-check.sh}"
 
 mkdir -p "$TMPDIR" "$CARGO_HOME" "$CARGO_TARGET_DIR" "$OSMAP_RELEASE_EVIDENCE_DIR"
@@ -777,6 +778,13 @@ if [ "$failures" -eq 0 ]; then
 
 	echo "==> V4 hostile-content assurance gate"
 	validate_v4_hostile_assurance || true
+	echo "==> V4 release tuple gate"
+	if ! OSMAP_V4_RELEASE_TUPLE_CURRENT_ASSURANCE_REF="$assessed_ref" \
+		OSMAP_V4_RELEASE_TUPLE_V4_ASSURANCE_REPORT="$OSMAP_RELEASE_V4_HOSTILE_ASSURANCE_REPORT" \
+		OSMAP_V4_RELEASE_TUPLE_V4_ASSURANCE_ARCHIVE="$OSMAP_RELEASE_V4_HOSTILE_ASSURANCE_ARCHIVE" \
+		sh "$OSMAP_RELEASE_V4_RELEASE_TUPLE_GATE"; then
+		fail "V4 release tuple gate failed"
+	fi
 
 	echo "==> supply-chain gate"
 	if sh -c "$OSMAP_RELEASE_SUPPLY_CHAIN_COMMAND"; then
