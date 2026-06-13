@@ -37,7 +37,7 @@ release-check:
 	OSMAP_SECURITY_PROFILE=release sh maint/security/osmap-release-check.sh
 
 install-hooks:
-	chmod +x .githooks/pre-commit .githooks/pre-push maint/security/osmap-security-check.sh maint/security/osmap-supply-chain-check.sh maint/security/osmap-release-check.sh maint/security/osmap-v4-hostile-assurance-gate.sh maint/security/osmap-v4-release-tuple-gate.sh maint/security/osmap-v4-security-claim-matrix-gate.sh maint/security/osmap-evidence-metadata.sh
+	chmod +x .githooks/pre-commit .githooks/pre-push maint/security/osmap-security-check.sh maint/security/osmap-supply-chain-check.sh maint/security/osmap-release-check.sh maint/security/osmap-v4-hostile-assurance-gate.sh maint/security/osmap-v4-release-tuple-gate.sh maint/security/osmap-v4-security-claim-matrix-gate.sh maint/security/osmap-evidence-metadata.sh maint/security/osmap-cwe-top25-guard.sh maint/security/osmap-cwe-top25-guard.py
 	git config core.hooksPath .githooks
 
 run:

@@ -108,9 +108,14 @@ sh maint/security/osmap-tls-policy-guard.sh
 
 echo "==> validating Python security tooling syntax"
 python3 -m py_compile \
+	maint/security/osmap-cwe-top25-guard.py \
 	maint/border-testing-pack/run-border-pack.py \
 	maint/wstg-testing-pack/run-wstg-pack.py \
 	maint/security/osmap-live-tls-standard-validate.py
+
+echo "==> validating CWE Top 25 weak-pattern guard"
+sh maint/security/test-osmap-cwe-top25-guard.sh
+sh maint/security/osmap-cwe-top25-guard.sh
 
 echo "==> scanning for disallowed unsafe outside src/openbsd.rs"
 unsafe_hits=$(grep -RInE 'unsafe[[:space:]]*(fn|impl|trait|\{)' src 2>/dev/null || true)

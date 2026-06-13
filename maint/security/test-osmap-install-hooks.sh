@@ -13,6 +13,8 @@ source_v4_assurance_gate="${repo_root}/maint/security/osmap-v4-hostile-assurance
 source_v4_tuple_gate="${repo_root}/maint/security/osmap-v4-release-tuple-gate.sh"
 source_v4_claim_matrix_gate="${repo_root}/maint/security/osmap-v4-security-claim-matrix-gate.sh"
 source_evidence_metadata="${repo_root}/maint/security/osmap-evidence-metadata.sh"
+source_cwe_guard="${repo_root}/maint/security/osmap-cwe-top25-guard.sh"
+source_cwe_guard_py="${repo_root}/maint/security/osmap-cwe-top25-guard.py"
 tmp_root=$(mktemp -d "${TMPDIR:-/tmp}/osmap-hook-install-test.XXXXXX")
 fake_repo="${tmp_root}/repo"
 fake_hooks_dir="${fake_repo}/.githooks"
@@ -38,6 +40,8 @@ cp "${source_v4_assurance_gate}" "${fake_security_dir}/osmap-v4-hostile-assuranc
 cp "${source_v4_tuple_gate}" "${fake_security_dir}/osmap-v4-release-tuple-gate.sh"
 cp "${source_v4_claim_matrix_gate}" "${fake_security_dir}/osmap-v4-security-claim-matrix-gate.sh"
 cp "${source_evidence_metadata}" "${fake_security_dir}/osmap-evidence-metadata.sh"
+cp "${source_cwe_guard}" "${fake_security_dir}/osmap-cwe-top25-guard.sh"
+cp "${source_cwe_guard_py}" "${fake_security_dir}/osmap-cwe-top25-guard.py"
 
 git init -q "${fake_repo}"
 
@@ -98,6 +102,14 @@ assert_equals "$(git -C "${fake_repo}" config --local core.hooksPath)" ".githook
 }
 [ -x "${fake_security_dir}/osmap-evidence-metadata.sh" ] || {
 	printf '%s\n' "expected evidence metadata script to be executable" >&2
+	exit 1
+}
+[ -x "${fake_security_dir}/osmap-cwe-top25-guard.sh" ] || {
+	printf '%s\n' "expected CWE Top 25 guard script to be executable" >&2
+	exit 1
+}
+[ -x "${fake_security_dir}/osmap-cwe-top25-guard.py" ] || {
+	printf '%s\n' "expected CWE Top 25 guard Python entrypoint to be executable" >&2
 	exit 1
 }
 

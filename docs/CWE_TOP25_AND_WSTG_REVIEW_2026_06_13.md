@@ -41,6 +41,18 @@ Updated `maint/wstg-testing-pack/run-wstg-pack.py` so
 `OSMAP-WSTG-CONF-010` expects the documented `osmaprt` group id for the serve
 environment file.
 
+Added a reusable CWE Top 25 weak-pattern guard:
+
+- `maint/security/osmap-cwe-top25-guard.py`
+- `maint/security/osmap-cwe-top25-guard.sh`
+- `maint/security/test-osmap-cwe-top25-guard.sh`
+
+The guard is wired into `make security-check`, so local runs, repo hooks, and
+GitHub Actions reject newly introduced high-risk patterns such as unreviewed
+`unsafe`, shell command execution, unreviewed `Command::new`, SQL database
+drivers, outbound HTTP client dependencies, browser code-execution sinks, and
+generic binary/object deserialization surfaces.
+
 ## CWE Top 25 Review Summary
 
 No confirmed CWE Top 25 embedded weakness was found in the reviewed code paths.
