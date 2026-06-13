@@ -205,8 +205,7 @@ fn civil_from_unix_days(days_since_unix_epoch: i128) -> (i128, u32, u32) {
     let year_of_era =
         (day_of_era - day_of_era / 1_460 + day_of_era / 36_524 - day_of_era / 146_096) / 365;
     let year = year_of_era + era * 400;
-    let day_of_year =
-        day_of_era - (365 * year_of_era + year_of_era / 4 - year_of_era / 100);
+    let day_of_year = day_of_era - (365 * year_of_era + year_of_era / 4 - year_of_era / 100);
     let month_prime = (5 * day_of_year + 2) / 153;
     let day = day_of_year - (153 * month_prime + 2) / 5 + 1;
     let month = month_prime + if month_prime < 10 { 3 } else { -9 };
@@ -258,10 +257,7 @@ mod tests {
     #[test]
     fn renders_unix_epoch_as_utc_rfc3339_timestamp() {
         assert_eq!(format_unix_timestamp_utc(0), "1970-01-01T00:00:00Z");
-        assert_eq!(
-            format_unix_timestamp_utc(12_345),
-            "1970-01-01T03:25:45Z"
-        );
+        assert_eq!(format_unix_timestamp_utc(12_345), "1970-01-01T03:25:45Z");
         assert_eq!(
             format_unix_timestamp_utc(1_735_689_600),
             "2025-01-01T00:00:00Z"

@@ -22,7 +22,9 @@ The current logging model is designed to:
 
 The bootstrap logger emits structured text lines containing:
 
-- timestamp
+- `ts`, a quoted UTC RFC3339 timestamp such as
+  `2026-06-13T04:18:22Z`
+- `ts_unix`, the same event time as Unix epoch seconds for machine parsing
 - level
 - category
 - action
