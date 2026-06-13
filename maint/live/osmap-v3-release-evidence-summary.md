@@ -1,7 +1,7 @@
 # OSMAP V3 Release Evidence Summary
 
-- Assessed ref: `4074d3599641f25143ed75699ca92f0dfc02003a`
-- Generated UTC: `2026-06-13T05:16:43Z`
+- Assessed ref: `d1fd3ebd31034aeb315c71d1a2f65fdb751ce122`
+- Generated UTC: `2026-06-13T10:35:24Z`
 - Host target: `mail.blackbagsecurity.com`
 - Command: `make release-check`
 - Cargo build: `passed`
@@ -9,8 +9,8 @@
 - Cargo clippy: `passed`
 - Cargo fmt-check: `passed`
 - Supply-chain: `passed`
-- Dependency inventory: `passed` at `/home/foo/OSMAP/maint/live/osmap-v3-dependency-inventory.txt`
-- WSTG summary: `passed` at `/home/foo/OSMAP/maint/live/osmap-wstg-release-summary.json`
+- Dependency inventory: `passed` at `/home/foo/Workspace/OSMAP/maint/live/osmap-v3-dependency-inventory.txt`
+- WSTG summary: `passed` at `/home/foo/Workspace/OSMAP/maint/live/osmap-wstg-release-summary.json`
 - Authenticated WSTG: `passed`
 - TLS CBC cleanup: `passed`
 - TLS standard validation: `passed`
@@ -19,7 +19,7 @@
 - V3 live MIME and HTML proof: `passed`
 - V3 pilot rehearsal: `passed`
 - V4 hostile-content assurance: `passed`
-- Sanitized evidence archive: `passed` at `/home/foo/OSMAP/maint/live/osmap-v3-release-evidence.tar.gz`
+- Sanitized evidence archive: `passed` at `/home/foo/Workspace/OSMAP/maint/live/osmap-v3-release-evidence.tar.gz`
 - Skipped checks: ``
 
 ## V2 Carry-Forward Evidence
@@ -51,21 +51,21 @@
 
 ## Helper Boundary Evidence
 
-- `/home/foo/OSMAP/maint/live/latest-host-helper-boundary-report.txt`
+- `/home/foo/Workspace/OSMAP/maint/live/latest-host-helper-boundary-report.txt`
 - `maint/live/osmap-live-validate-helper-peer-auth.ksh`
 
 ## V3 Live MIME And HTML Proof Evidence
 
 - `maint/live/osmap-live-validate-v3-mime-html-proof.ksh`
-- `/home/foo/OSMAP/maint/live/latest-host-v3-mime-html-proof-report.txt`
+- `/home/foo/Workspace/OSMAP/maint/live/latest-host-v3-mime-html-proof-report.txt`
 
 ## V3 Pilot Rehearsal Evidence
 
-- `/home/foo/OSMAP/maint/live/latest-host-v3-pilot-rehearsal-report.txt`
+- `/home/foo/Workspace/OSMAP/maint/live/latest-host-v3-pilot-rehearsal-report.txt`
 - `docs/PILOT_WORKFLOW_INVENTORY.md`
 
 ## V4 Hostile-Content Assurance Evidence
 
 - `maint/security/osmap-v4-hostile-assurance-gate.sh`
-- `/home/foo/OSMAP/maint/live/osmap-v4-hostile-assurance-report.json`
-- `/home/foo/OSMAP/maint/live/osmap-v4-hostile-assurance-evidence.tar.gz`
+- `/home/foo/Workspace/OSMAP/maint/live/osmap-v4-hostile-assurance-report.json`
+- `/home/foo/Workspace/OSMAP/maint/live/osmap-v4-hostile-assurance-evidence.tar.gz`
