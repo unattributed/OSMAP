@@ -242,6 +242,9 @@ sh maint/security/test-osmap-v4-closeout-evidence.sh
 echo "==> validating V4 release tuple consistency"
 sh maint/security/test-osmap-v4-release-tuple-gate.sh
 
+echo "==> validating V4 security claim matrix gate"
+sh maint/security/test-osmap-v4-security-claim-matrix-gate.sh
+
 echo "==> validating live V4 hostile-content wrapper behavior"
 sh maint/security/test-osmap-live-validate-v4-hostile-content.sh
 

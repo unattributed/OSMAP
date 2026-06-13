@@ -36,7 +36,7 @@ Version 4 cannot pass by replacing, weakening, or silently skipping any of these
 | Residual-risk disclosure | Documentation states that OSMAP contains browser-rendering and serving risk but does not claim to make externally opened files safe. |
 | Hostile corpus release gate | The version-controlled corpus under `tests/testdata/hostile-mail-corpus/` executes through `maint/security/osmap-v4-hostile-assurance-gate.sh`; release validation fails if execution is skipped, fixture metadata is incomplete, report generation is absent, or evidence archiving is absent. |
 | Release tuple reconciliation | `maint/security/osmap-v4-release-tuple-gate.sh` validates that the frozen `v4.0.0` release tuple is internally consistent and that any current V4 hostile-assurance report is passed, metadata-bearing, archived, and not silently confused with the frozen release tuple. |
-| Security claim matrix | `docs/V4_SECURITY_CLAIM_MATRIX.md` maps hostile-content claims to implementation, automated tests, validation evidence, residual risk, documented limitations, and non-goals. |
+| Security claim matrix | `docs/V4_SECURITY_CLAIM_MATRIX.md` maps hostile-content claims to implementation, automated tests, validation evidence, residual risk, documented limitations, and non-goals. `maint/security/osmap-v4-security-claim-matrix-gate.sh` parses and validates the matrix, report, and archive during developer and release checks. |
 
 ## Current Evidence Lane
 
@@ -87,6 +87,14 @@ The generated `maint/live/osmap-v3-release-evidence-summary.json` remains the
 current release-check summary. It is deliberately separate from the frozen
 V4.0.0 carry-forward summary so a normal release-check run cannot overwrite the
 historical tuple input it is validating.
+
+The security claim matrix gate is
+`maint/security/osmap-v4-security-claim-matrix-gate.sh`. It requires the matrix
+to contain each V4 hostile-content claim with non-empty implementation,
+automated-test, validation-evidence, residual-risk, limitation, and non-goal
+cells. It also checks that repo paths named by the matrix exist and that the V4
+assurance report/archive contain the cited passed components, zero-network
+assertions, route-backed observations, and bounded resource observations.
 
 The local MIME ambiguity evidence is `docs/V4_MIME_AMBIGUITY_EVIDENCE.md`.
 It names product-code tests in `src/mime.rs` that prove malformed, nested,

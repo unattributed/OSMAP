@@ -40,6 +40,7 @@ fi
 : "${OSMAP_RELEASE_V4_HOSTILE_ASSURANCE_REPORT:=$OSMAP_RELEASE_EVIDENCE_DIR/osmap-v4-hostile-assurance-report.json}"
 : "${OSMAP_RELEASE_V4_HOSTILE_ASSURANCE_ARCHIVE:=$OSMAP_RELEASE_EVIDENCE_DIR/osmap-v4-hostile-assurance-evidence.tar.gz}"
 : "${OSMAP_RELEASE_V4_RELEASE_TUPLE_GATE:=maint/security/osmap-v4-release-tuple-gate.sh}"
+: "${OSMAP_RELEASE_V4_CLAIM_MATRIX_GATE:=maint/security/osmap-v4-security-claim-matrix-gate.sh}"
 : "${OSMAP_RELEASE_SUPPLY_CHAIN_COMMAND:=sh maint/security/osmap-supply-chain-check.sh}"
 
 mkdir -p "$TMPDIR" "$CARGO_HOME" "$CARGO_TARGET_DIR" "$OSMAP_RELEASE_EVIDENCE_DIR"
@@ -890,6 +891,12 @@ if [ "$failures" -eq 0 ]; then
 		OSMAP_V4_RELEASE_TUPLE_V4_ASSURANCE_ARCHIVE="$OSMAP_RELEASE_V4_HOSTILE_ASSURANCE_ARCHIVE" \
 		sh "$OSMAP_RELEASE_V4_RELEASE_TUPLE_GATE"; then
 		fail "V4 release tuple gate failed"
+	fi
+	echo "==> V4 security claim matrix gate"
+	if ! OSMAP_V4_CLAIM_MATRIX_REPORT="$OSMAP_RELEASE_V4_HOSTILE_ASSURANCE_REPORT" \
+		OSMAP_V4_CLAIM_MATRIX_ARCHIVE="$OSMAP_RELEASE_V4_HOSTILE_ASSURANCE_ARCHIVE" \
+		sh "$OSMAP_RELEASE_V4_CLAIM_MATRIX_GATE"; then
+		fail "V4 security claim matrix gate failed"
 	fi
 
 	echo "==> supply-chain gate"

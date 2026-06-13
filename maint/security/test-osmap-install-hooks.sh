@@ -11,6 +11,7 @@ source_supply_chain_check="${repo_root}/maint/security/osmap-supply-chain-check.
 source_release_check="${repo_root}/maint/security/osmap-release-check.sh"
 source_v4_assurance_gate="${repo_root}/maint/security/osmap-v4-hostile-assurance-gate.sh"
 source_v4_tuple_gate="${repo_root}/maint/security/osmap-v4-release-tuple-gate.sh"
+source_v4_claim_matrix_gate="${repo_root}/maint/security/osmap-v4-security-claim-matrix-gate.sh"
 source_evidence_metadata="${repo_root}/maint/security/osmap-evidence-metadata.sh"
 tmp_root=$(mktemp -d "${TMPDIR:-/tmp}/osmap-hook-install-test.XXXXXX")
 fake_repo="${tmp_root}/repo"
@@ -35,6 +36,7 @@ cp "${source_supply_chain_check}" "${fake_security_dir}/osmap-supply-chain-check
 cp "${source_release_check}" "${fake_security_dir}/osmap-release-check.sh"
 cp "${source_v4_assurance_gate}" "${fake_security_dir}/osmap-v4-hostile-assurance-gate.sh"
 cp "${source_v4_tuple_gate}" "${fake_security_dir}/osmap-v4-release-tuple-gate.sh"
+cp "${source_v4_claim_matrix_gate}" "${fake_security_dir}/osmap-v4-security-claim-matrix-gate.sh"
 cp "${source_evidence_metadata}" "${fake_security_dir}/osmap-evidence-metadata.sh"
 
 git init -q "${fake_repo}"
@@ -88,6 +90,10 @@ assert_equals "$(git -C "${fake_repo}" config --local core.hooksPath)" ".githook
 }
 [ -x "${fake_security_dir}/osmap-v4-release-tuple-gate.sh" ] || {
 	printf '%s\n' "expected V4 release tuple gate script to be executable" >&2
+	exit 1
+}
+[ -x "${fake_security_dir}/osmap-v4-security-claim-matrix-gate.sh" ] || {
+	printf '%s\n' "expected V4 security claim matrix gate script to be executable" >&2
 	exit 1
 }
 [ -x "${fake_security_dir}/osmap-evidence-metadata.sh" ] || {
