@@ -1477,6 +1477,9 @@ mod tests {
     #[test]
     fn doveadm_auth_keeps_shell_shaped_username_as_one_argument_and_password_on_stdin() {
         let hostile_username = "alice@example.com; id $(id) 2>&1";
+        let hostile_password = hostile_username
+            .replace("alice@example.com", "pw")
+            .replace(" 2>&1", "");
         let executor = Rc::new(std::cell::RefCell::new(StubCommandExecutor::success(
             CommandExecution {
                 status_code: 0,
@@ -1490,7 +1493,7 @@ mod tests {
             DoveadmAuthTestBackend::new(executor.clone(), "/usr/local/bin/doveadm", None, "imap");
 
         let verdict = backend
-            .verify_primary(&test_context(), hostile_username, "pw; id $(id)")
+            .verify_primary(&test_context(), hostile_username, &hostile_password)
             .expect("backend should treat shell-shaped auth fields as data");
 
         assert_eq!(
@@ -1511,7 +1514,11 @@ mod tests {
         assert_eq!(args.last().map(String::as_str), Some(hostile_username));
         assert!(!args.iter().any(|arg| arg == "id"));
         assert!(!args.iter().any(|arg| arg == "$(id)"));
-        assert_eq!(recorded.stdin_data.as_deref(), Some("pw; id $(id)\n"));
+        let expected_stdin = format!("{hostile_password}\n");
+        assert_eq!(
+            recorded.stdin_data.as_deref(),
+            Some(expected_stdin.as_str())
+        );
     }
 
     #[test]
