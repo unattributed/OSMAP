@@ -17,10 +17,54 @@ if ! command -v cargo >/dev/null 2>&1; then
 	exit 1
 fi
 
-if ! cargo deny --version >/dev/null 2>&1; then
+cargo_audit_bin() {
+	if command -v cargo-audit >/dev/null 2>&1; then
+		command -v cargo-audit
+	elif [ -x "${HOME}/.cargo/bin/cargo-audit" ]; then
+		printf '%s\n' "${HOME}/.cargo/bin/cargo-audit"
+	fi
+}
+
+cargo_deny_bin() {
+	if command -v cargo-deny >/dev/null 2>&1; then
+		command -v cargo-deny
+	elif [ -x "${HOME}/.cargo/bin/cargo-deny" ]; then
+		printf '%s\n' "${HOME}/.cargo/bin/cargo-deny"
+	fi
+}
+
+cargo_audit_version() {
+	bin=$(cargo_audit_bin || true)
+	if [ -n "$bin" ]; then
+		"$bin" --version
+	else
+		cargo audit --version
+	fi
+}
+
+cargo_audit_check() {
+	bin=$(cargo_audit_bin || true)
+	if [ -n "$bin" ]; then
+		"$bin" audit "$@"
+	else
+		cargo audit "$@"
+	fi
+}
+
+cargo_deny() {
+	bin=$(cargo_deny_bin || true)
+	if [ -n "$bin" ]; then
+		"$bin" "$@"
+	else
+		cargo deny "$@"
+	fi
+}
+
+if ! cargo_deny --version >/dev/null 2>&1; then
 	if [ "$OSMAP_BOOTSTRAP_CARGO_DENY" = "1" ]; then
 		echo "==> installing cargo-deny ${OSMAP_CARGO_DENY_VERSION}"
 		cargo install cargo-deny --version "$OSMAP_CARGO_DENY_VERSION" --locked
+		PATH="${CARGO_HOME:-${HOME}/.cargo}/bin:$PATH"
 	else
 		echo "error: cargo-deny is required for the supply-chain gate" >&2
 		echo "hint: install cargo-deny ${OSMAP_CARGO_DENY_VERSION}, or set OSMAP_BOOTSTRAP_CARGO_DENY=1 for a controlled bootstrap" >&2
@@ -28,10 +72,11 @@ if ! cargo deny --version >/dev/null 2>&1; then
 	fi
 fi
 
-if ! cargo audit --version >/dev/null 2>&1; then
+if ! cargo_audit_version >/dev/null 2>&1; then
 	if [ "$OSMAP_BOOTSTRAP_CARGO_AUDIT" = "1" ]; then
 		echo "==> installing cargo-audit ${OSMAP_CARGO_AUDIT_VERSION}"
 		cargo install cargo-audit --version "$OSMAP_CARGO_AUDIT_VERSION" --locked
+		PATH="${CARGO_HOME:-${HOME}/.cargo}/bin:$PATH"
 	else
 		echo "error: cargo-audit is required for the supply-chain advisory gate" >&2
 		echo "hint: install cargo-audit ${OSMAP_CARGO_AUDIT_VERSION}, or set OSMAP_BOOTSTRAP_CARGO_AUDIT=1 for a controlled bootstrap" >&2
@@ -39,13 +84,13 @@ if ! cargo audit --version >/dev/null 2>&1; then
 	fi
 fi
 
-audit_version=$(cargo audit --version | awk '{ print $2 }')
+audit_version=$(cargo_audit_version | awk '{ print $2 }')
 if [ "$audit_version" != "$OSMAP_CARGO_AUDIT_VERSION" ]; then
 	echo "error: cargo-audit ${OSMAP_CARGO_AUDIT_VERSION} is required, found ${audit_version}" >&2
 	exit 1
 fi
 
-deny_version=$(cargo deny --version | awk '{ print $2 }')
+deny_version=$(cargo_deny --version | awk '{ print $2 }')
 if [ "$deny_version" != "$OSMAP_CARGO_DENY_VERSION" ]; then
 	echo "error: cargo-deny ${OSMAP_CARGO_DENY_VERSION} is required, found ${deny_version}" >&2
 	exit 1
@@ -63,13 +108,13 @@ if command -v git >/dev/null 2>&1; then
 		mkdir -p "$(dirname -- "$OSMAP_RUSTSEC_ADVISORY_DB_PATH")"
 		git clone --depth 1 "$OSMAP_RUSTSEC_ADVISORY_DB_URL" "$OSMAP_RUSTSEC_ADVISORY_DB_PATH"
 	fi
-	cargo audit --deny warnings --db "$OSMAP_RUSTSEC_ADVISORY_DB_PATH" --no-fetch
+	cargo_audit_check --deny warnings --db "$OSMAP_RUSTSEC_ADVISORY_DB_PATH" --no-fetch
 else
-	cargo audit --deny warnings
+	cargo_audit_check --deny warnings
 fi
 
 echo "==> cargo deny bans, licenses, and sources"
-cargo deny --locked check bans licenses sources
+cargo_deny --locked check bans licenses sources
 
 echo "==> cargo tree duplicate-version backstop"
 duplicates=$(cargo tree -d --locked --color never 2>&1 || true)

@@ -46,16 +46,10 @@ case "$cmd" in
 		exit 0
 		;;
 	audit)
-		if [ "${OSMAP_TEST_MISSING_AUDIT:-0}" = "1" ]; then
-			exit 1
-		fi
-		printf '%s\n' 'cargo-audit 0.22.1'
+		exit 1
 		;;
 	deny)
-		if [ "${OSMAP_TEST_MISSING_DENY:-0}" = "1" ]; then
-			exit 1
-		fi
-		printf '%s\n' 'cargo-deny 0.18.3'
+		exit 1
 		;;
 	build|test)
 		if [ "$cmd" = "test" ] && [ -n "${OSMAP_V4_ASSURANCE_REPORT:-}" ]; then
@@ -108,7 +102,29 @@ JSON
 		;;
 esac
 EOF
-	chmod +x "$stub_dir/rustc" "$stub_dir/cargo"
+	cat > "$stub_dir/cargo-audit" <<'EOF'
+#!/bin/sh
+if [ "${OSMAP_TEST_MISSING_AUDIT:-0}" = "1" ]; then
+	exit 1
+fi
+if [ "${1:-}" = "--version" ]; then
+	printf '%s\n' 'cargo-audit 0.22.1'
+	exit 0
+fi
+exit 0
+EOF
+	cat > "$stub_dir/cargo-deny" <<'EOF'
+#!/bin/sh
+if [ "${OSMAP_TEST_MISSING_DENY:-0}" = "1" ]; then
+	exit 1
+fi
+if [ "${1:-}" = "--version" ]; then
+	printf '%s\n' 'cargo-deny 0.18.3'
+	exit 0
+fi
+exit 0
+EOF
+	chmod +x "$stub_dir/rustc" "$stub_dir/cargo" "$stub_dir/cargo-audit" "$stub_dir/cargo-deny"
 }
 
 make_wstg_summary() {
@@ -362,7 +378,18 @@ assert_fails() {
 	fi
 }
 
-assert_fails cargo-skipped PATH="/bin:/usr/bin"
+missing_cargo_bin="$tmp_root/missing-cargo-bin"
+mkdir -p "$missing_cargo_bin"
+cat > "$missing_cargo_bin/cargo" <<'EOF'
+#!/bin/sh
+exit 127
+EOF
+cat > "$missing_cargo_bin/rustc" <<'EOF'
+#!/bin/sh
+exit 127
+EOF
+chmod +x "$missing_cargo_bin/cargo" "$missing_cargo_bin/rustc"
+assert_fails cargo-skipped PATH="$missing_cargo_bin:/bin:/usr/bin"
 assert_fails missing-clippy OSMAP_TEST_MISSING_CLIPPY=1
 assert_fails missing-rustfmt OSMAP_TEST_MISSING_RUSTFMT=1
 assert_fails missing-supply-chain-tool OSMAP_TEST_MISSING_AUDIT=1

@@ -129,6 +129,26 @@ run_phase() {
 	return 1
 }
 
+cargo_audit_version() {
+	if command -v cargo-audit >/dev/null 2>&1; then
+		cargo-audit --version
+	elif [ -x "${HOME}/.cargo/bin/cargo-audit" ]; then
+		"${HOME}/.cargo/bin/cargo-audit" --version
+	else
+		cargo audit --version
+	fi
+}
+
+cargo_deny_version() {
+	if command -v cargo-deny >/dev/null 2>&1; then
+		cargo-deny --version
+	elif [ -x "${HOME}/.cargo/bin/cargo-deny" ]; then
+		"${HOME}/.cargo/bin/cargo-deny" --version
+	else
+		cargo deny --version
+	fi
+}
+
 check_path_list() {
 	label=$1
 	paths=$2
@@ -756,14 +776,14 @@ if command -v cargo >/dev/null 2>&1; then
 		add_skip "missing required cargo subcommand: fmt"
 		fail "missing required cargo subcommand: fmt"
 	fi
-	if cargo audit --version >/dev/null 2>&1; then
-		check_exact_version cargo-audit "$(cargo audit --version | awk '{ print $2 }')" "$OSMAP_CARGO_AUDIT_VERSION" || true
+	if cargo_audit_version >/dev/null 2>&1; then
+		check_exact_version cargo-audit "$(cargo_audit_version | awk '{ print $2 }')" "$OSMAP_CARGO_AUDIT_VERSION" || true
 	else
 		add_skip "missing required cargo subcommand: audit"
 		fail "missing required cargo subcommand: audit"
 	fi
-	if cargo deny --version >/dev/null 2>&1; then
-		check_exact_version cargo-deny "$(cargo deny --version | awk '{ print $2 }')" "$OSMAP_CARGO_DENY_VERSION" || true
+	if cargo_deny_version >/dev/null 2>&1; then
+		check_exact_version cargo-deny "$(cargo_deny_version | awk '{ print $2 }')" "$OSMAP_CARGO_DENY_VERSION" || true
 	else
 		add_skip "missing required cargo subcommand: deny"
 		fail "missing required cargo subcommand: deny"
