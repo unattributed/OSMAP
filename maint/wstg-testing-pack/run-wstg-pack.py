@@ -966,7 +966,7 @@ class Runner:
             )
 
         required_permission_markers = [
-            "-rw-r----- 0 1001 /etc/osmap/osmap-serve.env",
+            "-rw-r----- 0 1002 /etc/osmap/osmap-serve.env",
             "-rw-r----- 0 2000 /etc/osmap/osmap-mailbox-helper.env",
             "-r-xr-xr-x 0 0 /usr/local/libexec/osmap/osmap-serve-run.ksh",
             "-r-xr-xr-x 0 0 /usr/local/libexec/osmap/osmap-mailbox-helper-run.ksh",
