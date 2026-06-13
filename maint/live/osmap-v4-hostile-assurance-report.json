@@ -1,5 +1,5 @@
 {
-  "assessed_ref": "2540d996f84e03c4c348c304583d86183a4faba0",
+  "assessed_ref": "4074d3599641f25143ed75699ca92f0dfc02003a",
   "components": [
     {
       "component": "hostile_corpus_metadata",
@@ -29,14 +29,14 @@
   ],
   "corpus_root": "tests/testdata/hostile-mail-corpus",
   "evidence_metadata": {
-    "generated_at_utc": "2026-06-13T05:15:04Z",
+    "generated_at_utc": "2026-06-13T05:17:07Z",
     "git": {
-      "commit": "2540d996f84e03c4c348c304583d86183a4faba0",
+      "commit": "4074d3599641f25143ed75699ca92f0dfc02003a",
       "tags": []
     },
     "host": {
-      "hostname": "parrot",
-      "os": "Linux parrot 7.0.9+parrot7-amd64 #1 SMP PREEMPT_DYNAMIC Parrot 7.0.9-1parrot1 (2026-05-28) x86_64 GNU/Linux"
+      "hostname": "mail.blackbagsecurity.com",
+      "os": "OpenBSD mail.blackbagsecurity.com 7.9 GENERIC.MP#449 amd64"
     },
     "schema": "osmap-evidence-metadata-v1",
     "tools": {
@@ -61,8 +61,9 @@
         "version": "rustfmt 1.8.0"
       },
       "make": {
-        "status": "available",
-        "version": "GNU Make 4.4.1"
+        "detail": "exit_status=2",
+        "status": "unavailable",
+        "version": "make: unknown option -- -"
       },
       "rustc": {
         "status": "available",
@@ -70,7 +71,7 @@
       }
     }
   },
-  "generated_at_utc": "2026-06-13T05:15:04Z",
+  "generated_at_utc": "2026-06-13T05:17:07Z",
   "network_assertions": {
     "beacon_requests": 0,
     "remote_fetches": 0,

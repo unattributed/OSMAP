@@ -15,7 +15,7 @@
 | Release tag under review | `v4.0.0` |
 | Frozen evidence bundle commit | `59da020` |
 | Frozen V4 assessed code commit | `09a95b7` |
-| Refreshed hostile-assurance report commit | `24a44f26299f1df17da4999268a561adca4dd4b7` |
+| Refreshed hostile-assurance report commit | `4074d3599641f25143ed75699ca92f0dfc02003a` |
 
 ## Findings Investigated
 
@@ -114,6 +114,7 @@ Read-only validation was performed against `mail.blackbagsecurity.com`.
 | Remote `date -u` | `Sat Jun 13 04:31:27 UTC 2026` |
 | Remote `uname -a` | `OpenBSD mail.blackbagsecurity.com 7.9 GENERIC.MP#449 amd64` |
 | Remote checkout | `/home/foo/OSMAP`, clean `main`, fast-forwarded to this remediation commit |
+| Remote release-check reproduction | `make release-check` passed at `4074d3599641f25143ed75699ca92f0dfc02003a` |
 | Remote Rust toolchain | `rustc`/`cargo` `1.94.1`, clippy `0.1.94`, rustfmt `1.8.0`, cargo-audit `0.22.1`, cargo-deny `0.18.3` |
 | Local Rust toolchain | `rustc`/`cargo` `1.94.1`, clippy `0.1.94`, rustfmt `1.8.0`, cargo-audit `0.22.1`, cargo-deny `0.18.3` |
 | Remote V4 live proof | `result=v4_hostile_content_live_proof_passed` |
