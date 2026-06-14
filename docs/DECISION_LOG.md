@@ -6469,3 +6469,21 @@ publication-hygiene rule for future evidence files.
 ### V5 follow-up: tighten host and response-boundary closure
 
 Post-remediation evidence review found the V5 branch had passed the source gates, but two defensibility improvements were still worthwhile before closure: response serialization should validate headers even if future code bypasses `with_header`, and the Host/Origin model should distinguish production HTTPS expectations from loopback HTTP development. The follow-up slice validates headers at serialization time, expands default loopback allowed hosts to include the default port-bearing Host values, and rejects non-loopback `http://` Origin and Referer values.
+
+## 2026-06-14 - V5 Production Deployment Complete
+
+OSMAP V5 boundary hardening was deployed to production on `mail.blackbagsecurity.com`.
+
+Evidence recorded:
+
+- deployed commit: `927516f77dd7a92e199ced8f5f90fe894e584a48`
+- live binary SHA256: `3b72992bb468ee08f5db120a4c1c64e6a681cbbae4b7c3dfee10a96edf032f61`
+- production host policy: `OSMAP_ALLOWED_HOSTS=mail.blackbagsecurity.com`
+- service state: `osmap_serve(ok)` and `osmap_mailbox_helper(ok)`
+- public valid-host health check passed with `HTTP/2 200`
+- public invalid-host check returned `HTTP/2 421`
+- local application-level invalid-host check returned `421`
+
+Operational lesson: deployment automation must preserve `/etc/osmap/osmap-serve.env` as `root:osmaprt` with mode `0640`, and rollback must restore both `/usr/local/bin/osmap` and `/etc/osmap/osmap-serve.env`.
+
+Decision: V5 production deployment is complete.
