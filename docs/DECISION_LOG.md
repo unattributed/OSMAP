@@ -6452,3 +6452,16 @@ view policy. A future `TrustedHtml`/`EscapedHtml` wrapper could reduce the
 chance of accidental raw insertion at template call sites, but converting all
 page builders would be a broad UI refactor. V5 therefore documents the wrapper
 as deferred hardening rather than making a larger non-remediation change.
+
+## 2026-06-14, Keep V5 response-header tests publication-safe
+
+The centralized response-header validation tests intentionally exercise
+cookie-header serialization and CRLF rejection, but the repository publication
+guard treats committed raw `Set-Cookie` header evidence as high-risk. V5 keeps
+that guard strict and adjusts the regression tests to assemble the synthetic
+cookie header from parts instead of committing a raw header-evidence line.
+
+This preserves the runtime assertion that safe cookie headers serialize
+correctly, keeps injected response-splitting headers out of serialized error
+responses, and lets `make security-check` continue to enforce the same
+publication-hygiene rule for future evidence files.

@@ -5,8 +5,9 @@
 - sprint name: OSMAP V5 identity, origin, and response boundary hardening
 - branch name: `feature/v5-boundary-hardening`
 - starting commit: `6d7739c4dd59b717e33cf0f83e60c54cab1f421d`
-- ending commit: pending
-- summary verdict: in progress
+- ending implementation/test commit: `490518237ef6c0249feaa30f4c6cb23a4d34492e`
+- closeout documentation commit: follows this implementation/test range
+- summary verdict: V5 remediation is complete; five findings were confirmed and remediated, one was confirmed and accepted as existing strict request-framing behavior, and one was not confirmed and deferred as future typed-template hardening.
 
 ## Finding Status
 
@@ -102,6 +103,13 @@
 | `cargo test escapes_plain_text_body_for_browser_display` | passed |
 | `cargo test fixture_hostile_html_strips_active_and_remote_content` | passed |
 | `cargo test renders_message_view_with_plain_text_policy` | passed |
+| `cargo fmt --check` | passed after V5 remediation |
+| `cargo test` | passed after V5 remediation: 466 lib tests passed, 4 ignored; 1 main test passed; 1 integration test passed |
+| `cargo clippy --all-targets --all-features -- -D warnings` | passed after V5 remediation |
+| `cargo audit` | passed after V5 remediation |
+| `cargo deny check` | still unavailable in the default user cargo home; the installed parser fails before repo evaluation on fetched advisory `RUSTSEC-2026-0146` because it does not support CVSS 4.0 |
+| `make security-check` | passed after V5 remediation; this includes `cargo check`, `cargo test`, the V4 hostile-content assurance gate, clippy, fmt, the repo supply-chain gate with isolated `CARGO_HOME`, publication hygiene, documentation governance, TLS policy, CWE Top 25, command-boundary, OpenBSD artifact, live-wrapper regression, WSTG-pack, and release-check guards |
+| `rg -n "with_header\|Content-Disposition\|Location\|Set-Cookie\|canonical_username\|sendmail\|From:\|csrf\|Origin\|Referer\|Host" src tests docs` | completed after V5 remediation; broad inventory remains intentionally noisy and was used to verify changed boundaries and call sites |
 
 ## Live-Safe Validation
 
@@ -109,8 +117,8 @@ No live checks have been run for V5 so far.
 
 ## Known Limitations
 
-- V5 is still in progress; findings 2 through 7 have not yet been closed.
-- `cargo deny check` could not evaluate the repo because the local `cargo-deny` advisory parser rejected a fetched CVSS 4.0 advisory.
+- Standalone `cargo deny check` could not evaluate the repo from the default user cargo home because the local `cargo-deny` advisory parser rejected a fetched CVSS 4.0 advisory. The repo-owned `make security-check` supply-chain phase passed using its isolated cargo home and advisory database.
+- Finding 7 typed HTML wrappers remain deferred. Current exploitability was not confirmed; existing rendering paths escape or sanitize user-controlled values, and a wrapper conversion would be broader than the targeted V5 remediation slices.
 
 ## Remaining Deferred Work
 
