@@ -61,6 +61,24 @@ pub fn html_response(
     .with_header("X-Frame-Options", "DENY")
 }
 
+/// Builds a plain-text response with baseline non-cacheable browser headers.
+///
+/// CSP is intentionally omitted here because the response is served as
+/// `text/plain` with `X-Content-Type-Options: nosniff`; HTML responses carry
+/// the browser CSP.
+pub fn plain_text_response(
+    status_code: u16,
+    reason_phrase: &'static str,
+    body: impl Into<String>,
+) -> HttpResponse {
+    HttpResponse::text(status_code, reason_phrase, body)
+        .with_header("Content-Type", "text/plain; charset=utf-8")
+        .with_header("Cache-Control", "no-store")
+        .with_header("Cross-Origin-Resource-Policy", "same-origin")
+        .with_header("Referrer-Policy", "no-referrer")
+        .with_header("X-Content-Type-Options", "nosniff")
+}
+
 /// Builds a forced-download response for one resolved attachment payload.
 pub fn attachment_download_response(attachment: &DownloadedAttachment) -> HttpResponse {
     HttpResponse::binary(200, "OK", attachment.body.clone())

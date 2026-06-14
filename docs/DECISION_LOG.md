@@ -6393,3 +6393,23 @@ bounds used at session issuance time. Tampered records containing unsafe
 canonical usernames, CR-bearing lines, or oversized user-agent metadata fail
 closed instead of being returned as a valid session. This may invalidate unsafe
 legacy session files, which is intentional and requires re-login.
+
+## 2026-06-14, Normalize security headers on plain-text responses
+
+V5 normalizes the current plain-text response boundary so health and similar
+text responses do not drift away from baseline browser-safe headers. Source
+review confirmed that `/healthz` built a direct `HttpResponse::text` and set
+only `Content-Type` plus `Cache-Control`.
+
+OSMAP now has a shared `plain_text_response` helper that emits:
+
+- `Content-Type: text/plain; charset=utf-8`
+- `Cache-Control: no-store`
+- `X-Content-Type-Options: nosniff`
+- `Cross-Origin-Resource-Policy: same-origin`
+- `Referrer-Policy: no-referrer`
+
+The helper intentionally omits CSP for text responses because they are served
+as `text/plain` with `nosniff`; HTML responses continue to carry the browser
+CSP. A regression test proves `/healthz` includes the plain-text baseline
+headers.

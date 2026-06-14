@@ -2127,6 +2127,33 @@ mod tests {
     }
 
     #[test]
+    fn healthz_response_includes_plain_text_security_headers() {
+        let response = app().handle_request(
+            &request_with_host("GET", "/healthz", Some("localhost"), &[], ""),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 200);
+        assert_eq!(response.response.body, b"ok\n".to_vec());
+        for (name, value) in [
+            ("Content-Type", "text/plain; charset=utf-8"),
+            ("Cache-Control", "no-store"),
+            ("X-Content-Type-Options", "nosniff"),
+            ("Cross-Origin-Resource-Policy", "same-origin"),
+            ("Referrer-Policy", "no-referrer"),
+        ] {
+            assert!(
+                response
+                    .response
+                    .headers
+                    .iter()
+                    .any(|(header_name, header_value)| header_name == name && header_value == value),
+                "missing {name}: {value}"
+            );
+        }
+    }
+
+    #[test]
     fn parses_basic_http_requests() {
         let request = parse_http_request(
             "GET /mailbox?name=INBOX HTTP/1.1\r\nHost: localhost\r\nUser-Agent: Firefox/Test\r\nCookie: osmap_session=abc\r\n\r\n",

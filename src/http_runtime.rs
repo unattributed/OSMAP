@@ -9,13 +9,15 @@ use std::time::{Duration, Instant};
 use crate::auth::AuthenticationContext;
 use crate::config::{AppConfig, AppRunMode, LogLevel};
 use crate::http_parse::{effective_remote_addr, normalize_peer_addr, read_http_request};
-use crate::http_support::{build_http_info_event, build_http_warning_event, html_response};
+use crate::http_support::{
+    build_http_info_event, build_http_warning_event, html_response, plain_text_response,
+};
 use crate::logging::{EventCategory, LogEvent, Logger};
 use crate::openbsd::apply_runtime_confinement;
 
 use super::{
     BrowserApp, BrowserGateway, HandledHttpResponse, HttpMethod, HttpPolicy, HttpRequest,
-    HttpRequestErrorKind, HttpResponse, RuntimeBrowserGateway,
+    HttpRequestErrorKind, RuntimeBrowserGateway,
 };
 
 static REQUEST_COUNTER: AtomicU64 = AtomicU64::new(1);
@@ -107,9 +109,7 @@ where
 
         match (request.method, request.path.as_str()) {
             (HttpMethod::Get, "/healthz") => HandledHttpResponse {
-                response: HttpResponse::text(200, "OK", "ok\n")
-                    .with_header("Content-Type", "text/plain; charset=utf-8")
-                    .with_header("Cache-Control", "no-store"),
+                response: plain_text_response(200, "OK", "ok\n"),
                 audit_events: vec![build_http_info_event(
                     "http_healthz",
                     "health check served",

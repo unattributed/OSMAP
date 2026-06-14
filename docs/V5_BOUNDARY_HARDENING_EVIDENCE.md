@@ -16,7 +16,7 @@
 | centralized HTTP response header validation | confirmed and remediated | Source review confirmed `HttpResponse::with_header` accepted raw header names and values and `to_http_bytes` serialized them directly. Future call sites could therefore introduce response splitting if attacker-controlled CRLF reached the helper. | Added central response-header validation for non-empty RFC-token-like names, name length, value length, and value control characters. Invalid names or values now fail closed to a static `500 Internal Server Error` response without serializing the unsafe header. | `cargo test response_header_helper` |
 | configured host and origin enforcement | confirmed and remediated | Source review confirmed same-origin validation used the incoming request `Host` as the expected origin. A reverse proxy that routed arbitrary Host values to OSMAP could therefore make attacker-controlled `Origin`/`Referer` values appear same-origin. | Added `OSMAP_ALLOWED_HOSTS`, carried it into `HttpPolicy`, reject missing or unexpected `Host` values with `421`, and compare `Origin`/`Referer` authorities against the configured allow-list. Updated OpenBSD deployment examples so nginx Host rejection and app-level Host/Origin/Referer enforcement stay aligned. | `cargo test config::tests::`; `cargo test configured_host`; `cargo test unconfigured_host`; `cargo test without_host`; `cargo test attacker_host` |
 | session record identity field validation | confirmed and remediated | Source review confirmed session load validated `session_id` and `csrf_token`, and V5 slice 1 revalidated `canonical_username`, but line parsing still used `str::lines()` plus trimming and did not enforce explicit loaded `remote_addr` or `user_agent` bounds. | Session record parsing now rejects control characters before splitting fields, reuses V5 canonical username validation, and enforces required/length/control-character checks for `remote_addr` and `user_agent`. Corrupted or legacy unsafe records fail closed and require re-login. | `cargo test session::tests::rejects_tampered_session_record`; `cargo test session::tests::parses_serialized_session_records` |
-| consistent security headers for health and text responses | pending | pending | pending | pending |
+| consistent security headers for health and text responses | confirmed and remediated | Source review confirmed `/healthz` built a direct `HttpResponse::text` with only `Content-Type` and `Cache-Control`, bypassing the common security header helpers. | Added `plain_text_response` for non-cacheable text/plain responses with `Cache-Control: no-store`, `X-Content-Type-Options: nosniff`, `Cross-Origin-Resource-Policy: same-origin`, and `Referrer-Policy: no-referrer`; `/healthz` now uses it. CSP is intentionally omitted for text/plain because `nosniff` prevents HTML interpretation and HTML responses carry CSP. | `cargo test healthz_response_includes_plain_text_security_headers` |
 | strict HTTP framing rejection | pending | pending | pending | pending |
 | template and trusted HTML boundary review | pending | pending | pending | pending |
 
@@ -31,6 +31,7 @@
 - `src/http.rs`
 - `src/http_runtime.rs`
 - `src/http/routes_auth.rs`
+- `src/http_support.rs`
 - `src/config.rs`
 - `src/bootstrap.rs`
 - `src/mailbox_helper.rs`
@@ -63,6 +64,7 @@
 - `session::tests::rejects_tampered_session_record_canonical_username`
 - `session::tests::rejects_tampered_session_record_control_characters`
 - `session::tests::rejects_tampered_session_record_user_agent_length`
+- `http::tests::healthz_response_includes_plain_text_security_headers`
 
 ## Commands Run
 
@@ -88,6 +90,7 @@
 | `cargo test attacker_host` | passed |
 | `cargo test session::tests::rejects_tampered_session_record` | passed |
 | `cargo test session::tests::parses_serialized_session_records` | passed |
+| `cargo test healthz_response_includes_plain_text_security_headers` | passed |
 
 ## Live-Safe Validation
 
