@@ -6432,3 +6432,23 @@ No behavioral change was needed for this slice. Regression tests now cover
 extra bytes after the declared body, pipelined second request bytes,
 duplicate `Content-Length`, and unsupported `Transfer-Encoding`. Responses
 continue to use `Connection: close` as the expected connection model.
+
+## 2026-06-14, Defer typed HTML wrappers after V5 rendering review
+
+V5 reviewed the trusted-template and escaped/sanitized HTML boundary after the
+V4 hostile-content containment work. Source review did not confirm a current
+exploit path:
+
+- ordinary page templates pass user-controlled values through `escape_html`
+- message plain-text bodies render through escaped `<pre>` output
+- message HTML bodies render through the allow-list sanitizer in
+  `rendering_html`
+- the message-view template inserts `rendered.body_html`, which is produced by
+  those escaped or sanitized rendering paths
+
+Focused tests confirmed safe message rendering for a browser message page,
+plain-text escaping, sanitized hostile HTML stripping, and plain-text message
+view policy. A future `TrustedHtml`/`EscapedHtml` wrapper could reduce the
+chance of accidental raw insertion at template call sites, but converting all
+page builders would be a broad UI refactor. V5 therefore documents the wrapper
+as deferred hardening rather than making a larger non-remediation change.
