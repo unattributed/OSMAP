@@ -15,7 +15,10 @@ use std::sync::{Mutex, MutexGuard};
 use getrandom::getrandom;
 use sha2::{Digest, Sha256};
 
-use crate::auth::{AuthenticationContext, RequiredSecondFactor};
+use crate::auth::{
+    AuthenticationContext, RequiredSecondFactor, DEFAULT_REMOTE_ADDR_MAX_LEN,
+    DEFAULT_USER_AGENT_MAX_LEN,
+};
 use crate::identity::CanonicalUsername;
 use crate::logging::{EventCategory, LogEvent};
 use crate::totp::TimeProvider;
@@ -643,10 +646,14 @@ fn parse_session_record(content: &str) -> Result<Option<SessionRecord>, SessionE
     let mut user_agent = None;
     let mut factor = None;
 
-    for raw_line in content.lines() {
-        let line = raw_line.trim();
+    for line in content.split('\n') {
         if line.is_empty() {
             continue;
+        }
+        if line.chars().any(char::is_control) {
+            return Err(SessionError::StoreFailure {
+                reason: "session record line contained control characters".to_string(),
+            });
         }
 
         let Some((key, value)) = line.split_once('=') else {
@@ -697,8 +704,24 @@ fn parse_session_record(content: &str) -> Result<Option<SessionRecord>, SessionE
                     Some(Some(parse_u64_field("revoked_at", value)?))
                 };
             }
-            "remote_addr" => remote_addr = Some(value.to_string()),
-            "user_agent" => user_agent = Some(value.to_string()),
+            "remote_addr" => {
+                validate_session_record_text_field(
+                    "remote_addr",
+                    value,
+                    DEFAULT_REMOTE_ADDR_MAX_LEN,
+                    true,
+                )?;
+                remote_addr = Some(value.to_string());
+            }
+            "user_agent" => {
+                validate_session_record_text_field(
+                    "user_agent",
+                    value,
+                    DEFAULT_USER_AGENT_MAX_LEN,
+                    false,
+                )?;
+                user_agent = Some(value.to_string());
+            }
             "factor" => factor = Some(parse_factor(value)?),
             _ => {
                 return Err(SessionError::StoreFailure {
@@ -724,6 +747,33 @@ fn parse_session_record(content: &str) -> Result<Option<SessionRecord>, SessionE
         user_agent: required_field("user_agent", user_agent)?,
         factor: required_field("factor", factor)?,
     }))
+}
+
+fn validate_session_record_text_field(
+    field: &'static str,
+    value: &str,
+    max_len: usize,
+    required: bool,
+) -> Result<(), SessionError> {
+    if required && value.is_empty() {
+        return Err(SessionError::StoreFailure {
+            reason: format!("session record field {field} must not be empty"),
+        });
+    }
+
+    if value.len() > max_len {
+        return Err(SessionError::StoreFailure {
+            reason: format!("session record field {field} exceeded maximum length"),
+        });
+    }
+
+    if value.chars().any(char::is_control) {
+        return Err(SessionError::StoreFailure {
+            reason: format!("session record field {field} contained control characters"),
+        });
+    }
+
+    Ok(())
 }
 
 /// Parses a required unsigned integer field from session metadata.
@@ -1430,6 +1480,67 @@ mod tests {
             .expect("record should exist");
 
         assert_eq!(parsed, record);
+    }
+
+    #[test]
+    fn rejects_tampered_session_record_canonical_username() {
+        let mut record = session_record_fixture('a', "alice@example.com", 1);
+        record.csrf_token =
+            "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210".to_string();
+        let content = serialize_session_record(&record).replace(
+            "canonical_username=alice@example.com\n",
+            "canonical_username=alice@example.com, attacker@example.com\n",
+        );
+
+        let error =
+            parse_session_record(&content).expect_err("unsafe canonical username must fail");
+
+        assert_eq!(
+            error,
+            SessionError::StoreFailure {
+                reason: "invalid canonical_username field in session record: identity contains unsafe syntax"
+                    .to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn rejects_tampered_session_record_control_characters() {
+        let mut record = session_record_fixture('a', "alice@example.com", 1);
+        record.csrf_token =
+            "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210".to_string();
+        let content = serialize_session_record(&record)
+            .replace("remote_addr=127.0.0.1\n", "remote_addr=127.0.0.1\r\n");
+
+        let error = parse_session_record(&content).expect_err("control character must fail");
+
+        assert_eq!(
+            error,
+            SessionError::StoreFailure {
+                reason: "session record line contained control characters".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn rejects_tampered_session_record_user_agent_length() {
+        let mut record = session_record_fixture('a', "alice@example.com", 1);
+        record.csrf_token =
+            "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210".to_string();
+        let oversized_user_agent = "A".repeat(DEFAULT_USER_AGENT_MAX_LEN + 1);
+        let content = serialize_session_record(&record).replace(
+            "user_agent=Firefox/Test\n",
+            &format!("user_agent={oversized_user_agent}\n"),
+        );
+
+        let error = parse_session_record(&content).expect_err("oversized user-agent must fail");
+
+        assert_eq!(
+            error,
+            SessionError::StoreFailure {
+                reason: "session record field user_agent exceeded maximum length".to_string(),
+            }
+        );
     }
 
     #[test]

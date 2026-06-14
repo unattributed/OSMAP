@@ -6377,3 +6377,19 @@ rejection and `OSMAP_ALLOWED_HOSTS` to be kept aligned. Regression tests cover
 valid Host, invalid Host, missing Host, configured `Origin`, configured
 `Referer`, and attacker Host/Origin or Referer values that match each other but
 not the configured allowed host.
+
+## 2026-06-14, Validate loaded session identity fields
+
+V5 extends the canonical identity boundary to persisted browser session records
+and closes the remaining line-oriented metadata gap. Source review confirmed
+that session load validated the fixed-shape `session_id` and `csrf_token`
+fields, and the V5 canonical username boundary revalidated
+`canonical_username`, but loaded `remote_addr` and `user_agent` did not have
+their own explicit length and control-character checks.
+
+Session record parsing now rejects control characters before field splitting
+and validates loaded text fields with the same conservative auth-context
+bounds used at session issuance time. Tampered records containing unsafe
+canonical usernames, CR-bearing lines, or oversized user-agent metadata fail
+closed instead of being returned as a valid session. This may invalidate unsafe
+legacy session files, which is intentional and requires re-login.
