@@ -6413,3 +6413,22 @@ The helper intentionally omits CSP for text responses because they are served
 as `text/plain` with `nosniff`; HTML responses continue to carry the browser
 CSP. A regression test proves `/healthz` includes the plain-text baseline
 headers.
+
+## 2026-06-14, Document strict HTTP framing rejection
+
+V5 records the current HTTP parser's strict request-framing behavior as
+intentional request-smuggling hardening. Source review confirmed that OSMAP
+does not attempt request pipelining or alternate body framing:
+
+- unsupported `Transfer-Encoding` is rejected
+- duplicate headers, including duplicate `Content-Length`, are rejected
+- POST requests must carry an explicit `Content-Length`
+- GET requests cannot carry bodies
+- bytes after the declared body length are rejected as a body-length mismatch
+- pipelined second request bytes are therefore rejected instead of parsed as a
+  second request on the same connection
+
+No behavioral change was needed for this slice. Regression tests now cover
+extra bytes after the declared body, pipelined second request bytes,
+duplicate `Content-Length`, and unsupported `Transfer-Encoding`. Responses
+continue to use `Connection: close` as the expected connection model.

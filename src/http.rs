@@ -5533,6 +5533,45 @@ mod tests {
     }
 
     #[test]
+    fn rejects_extra_bytes_after_declared_body_length() {
+        let error = parse_http_request(
+            "POST /login HTTP/1.1\r\nHost: localhost\r\nContent-Length: 4\r\n\r\nuser=alice",
+            &HttpPolicy::default(),
+        )
+        .expect_err("extra bytes after content-length must be rejected");
+
+        assert_eq!(
+            error.reason,
+            "http body length did not match content-length"
+        );
+    }
+
+    #[test]
+    fn rejects_pipelined_second_request_bytes() {
+        let error = parse_http_request(
+            "POST /login HTTP/1.1\r\nHost: localhost\r\nContent-Length: 0\r\n\r\nGET /mailboxes HTTP/1.1\r\nHost: localhost\r\n\r\n",
+            &HttpPolicy::default(),
+        )
+        .expect_err("pipelined second request bytes must be rejected");
+
+        assert_eq!(
+            error.reason,
+            "http body length did not match content-length"
+        );
+    }
+
+    #[test]
+    fn rejects_duplicate_content_length_body_framing() {
+        let error = parse_http_request(
+            "POST /login HTTP/1.1\r\nHost: localhost\r\nContent-Length: 0\r\nContent-Length: 4\r\n\r\nbody",
+            &HttpPolicy::default(),
+        )
+        .expect_err("duplicate content-length must be rejected");
+
+        assert_eq!(error.reason, "duplicate http header: content-length");
+    }
+
+    #[test]
     fn rejects_get_requests_with_bodies() {
         let error = parse_http_request(
             "GET /mailboxes HTTP/1.1\r\nHost: localhost\r\nContent-Length: 5\r\n\r\nhello",
