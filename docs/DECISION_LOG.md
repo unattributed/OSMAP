@@ -6355,3 +6355,25 @@ Invalid response headers fail closed to a static `500 Internal Server Error`
 text response with no unsafe caller-supplied header serialized. Regression
 tests cover `Location`, `Content-Type`, and `Content-Disposition` CRLF
 injection attempts, plus invalid header names and expected safe headers.
+
+## 2026-06-14, Enforce configured Host and origin policy
+
+V5 now gives OSMAP an application-owned Host and origin boundary instead of
+trusting the inbound request `Host` as the expected same-origin authority.
+Source review confirmed that the previous same-origin guard compared
+`Origin` and `Referer` against the request `Host` header. That was safe only
+while the reverse proxy rejected all unexpected hosts before routing, but it
+left the application policy dependent on edge behavior alone.
+
+OSMAP now parses `OSMAP_ALLOWED_HOSTS` as a comma-separated allow-list. The
+browser runtime rejects missing or unconfigured `Host` values with
+`421 Misdirected Request` before routing, and state-changing same-origin
+validation compares `Origin` and `Referer` authorities against the configured
+allow-list rather than the request header.
+
+The OpenBSD examples set the production browser host to
+`mail.blackbagsecurity.com`, and the deployment guide now requires nginx Host
+rejection and `OSMAP_ALLOWED_HOSTS` to be kept aligned. Regression tests cover
+valid Host, invalid Host, missing Host, configured `Origin`, configured
+`Referer`, and attacker Host/Origin or Referer values that match each other but
+not the configured allowed host.

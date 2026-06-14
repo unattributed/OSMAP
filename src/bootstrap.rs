@@ -291,6 +291,7 @@ mod tests {
             run_mode: AppRunMode::Bootstrap,
             environment: RuntimeEnvironment::Development,
             listen_addr: "127.0.0.1:8080".to_string(),
+            allowed_hosts: vec!["localhost".to_string()],
             doveadm_auth_socket_path: Some(PathBuf::from("/var/run/osmap/dovecot-auth")),
             trusted_web_runtime_uid: Some(1001),
             doveadm_userdb_socket_path: Some(PathBuf::from("/var/run/osmap/dovecot-userdb")),

@@ -596,6 +596,7 @@ mod tests {
             run_mode: AppRunMode::Serve,
             environment: RuntimeEnvironment::Production,
             listen_addr: "127.0.0.1:8080".to_string(),
+            allowed_hosts: vec!["localhost".to_string()],
             doveadm_auth_socket_path: None,
             trusted_web_runtime_uid: None,
             doveadm_userdb_socket_path: None,

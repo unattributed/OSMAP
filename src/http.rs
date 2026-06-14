@@ -169,6 +169,7 @@ pub struct HttpPolicy {
     pub max_body_bytes: usize,
     pub max_upload_body_bytes: usize,
     pub max_form_fields: usize,
+    pub allowed_hosts: Vec<String>,
     pub session_cookie_name: &'static str,
     pub secure_session_cookie: bool,
     pub read_timeout_secs: u64,
@@ -194,6 +195,7 @@ impl HttpPolicy {
             max_body_bytes: DEFAULT_HTTP_MAX_BODY_BYTES,
             max_upload_body_bytes: DEFAULT_HTTP_MAX_UPLOAD_BODY_BYTES,
             max_form_fields: DEFAULT_HTTP_MAX_FORM_FIELDS,
+            allowed_hosts: config.allowed_hosts.clone(),
             session_cookie_name: DEFAULT_SESSION_COOKIE_NAME,
             secure_session_cookie: config.environment != RuntimeEnvironment::Development,
             read_timeout_secs: DEFAULT_HTTP_READ_TIMEOUT_SECS,
@@ -223,6 +225,7 @@ impl Default for HttpPolicy {
             max_body_bytes: DEFAULT_HTTP_MAX_BODY_BYTES,
             max_upload_body_bytes: DEFAULT_HTTP_MAX_UPLOAD_BODY_BYTES,
             max_form_fields: DEFAULT_HTTP_MAX_FORM_FIELDS,
+            allowed_hosts: vec!["localhost".to_string()],
             session_cookie_name: DEFAULT_SESSION_COOKIE_NAME,
             secure_session_cookie: false,
             read_timeout_secs: DEFAULT_HTTP_READ_TIMEOUT_SECS,
@@ -1843,6 +1846,31 @@ mod tests {
         parse_http_request_bytes(&raw_bytes, &HttpPolicy::default()).expect("request should parse")
     }
 
+    fn request_with_host(
+        method: &str,
+        path: &str,
+        host: Option<&str>,
+        headers: &[(&str, &str)],
+        body: &str,
+    ) -> HttpRequest {
+        let version = if host.is_some() {
+            "HTTP/1.1"
+        } else {
+            "HTTP/1.0"
+        };
+        let mut raw = format!("{method} {path} {version}\r\n");
+        if let Some(host) = host {
+            raw.push_str(&format!("Host: {host}\r\n"));
+        }
+        for (name, value) in headers {
+            raw.push_str(&format!("{name}: {value}\r\n"));
+        }
+        raw.push_str(&format!("Content-Length: {}\r\n\r\n{body}", body.len()));
+
+        parse_http_request_bytes(raw.as_bytes(), &HttpPolicy::default())
+            .expect("request should parse")
+    }
+
     fn body_text(response: &HandledHttpResponse) -> String {
         String::from_utf8_lossy(&response.response.body).into_owned()
     }
@@ -1909,6 +1937,16 @@ mod tests {
         ]
     }
 
+    fn app_for_allowed_host(host: &str) -> BrowserApp<StubGateway> {
+        BrowserApp::new(
+            HttpPolicy {
+                allowed_hosts: vec![host.to_string()],
+                ..HttpPolicy::default()
+            },
+            StubGateway::default(),
+        )
+    }
+
     #[test]
     fn response_header_helper_rejects_invalid_header_names() {
         for name in ["", "Bad:Name", "Bad Name", "Bad\tName", "Bad\r\nName"] {
@@ -1959,6 +1997,133 @@ mod tests {
         assert!(
             bytes.contains("Set-Cookie: osmap_session=abc; HttpOnly; Secure; SameSite=Strict\r\n")
         );
+    }
+
+    #[test]
+    fn rejects_requests_with_unconfigured_host() {
+        let response = app_for_allowed_host("mail.example.test").handle_request(
+            &request_with_host("GET", "/login", Some("attacker.example.test"), &[], ""),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 421);
+        assert!(body_text(&response).contains("Host Rejected"));
+    }
+
+    #[test]
+    fn rejects_routed_requests_without_host() {
+        let response = app_for_allowed_host("mail.example.test").handle_request(
+            &request_with_host("GET", "/login", None, &[], ""),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 421);
+        assert!(body_text(&response).contains("Host Rejected"));
+    }
+
+    #[test]
+    fn accepts_requests_with_configured_host() {
+        let response = app_for_allowed_host("mail.example.test").handle_request(
+            &request_with_host("GET", "/login", Some("mail.example.test"), &[], ""),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 200);
+        assert!(body_text(&response).contains("OSMAP Login"));
+    }
+
+    #[test]
+    fn state_changing_routes_require_origin_matching_configured_host() {
+        let response = app_for_allowed_host("mail.example.test").handle_request(
+            &request_with_host(
+                "POST",
+                "/settings",
+                Some("mail.example.test"),
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                    ("Origin", "https://mail.example.test"),
+                ],
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&archive_mailbox=Archive",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_ne!(response.response.status_code, 403);
+    }
+
+    #[test]
+    fn rejects_origin_matching_attacker_host_but_not_configured_host() {
+        let response = app_for_allowed_host("mail.example.test").handle_request(
+            &request_with_host(
+                "POST",
+                "/settings",
+                Some("attacker.example.test"),
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                    ("Origin", "https://attacker.example.test"),
+                ],
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&archive_mailbox=Archive",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 421);
+        assert!(body_text(&response).contains("Host Rejected"));
+    }
+
+    #[test]
+    fn rejects_referer_matching_attacker_host_but_not_configured_host() {
+        let response = app_for_allowed_host("mail.example.test").handle_request(
+            &request_with_host(
+                "POST",
+                "/settings",
+                Some("mail.example.test"),
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                    ("Referer", "https://attacker.example.test/settings"),
+                ],
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&archive_mailbox=Archive",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 403);
+        assert!(body_text(&response).contains("Request Origin Rejected"));
+    }
+
+    #[test]
+    fn accepts_referer_matching_configured_host() {
+        let response = app_for_allowed_host("mail.example.test").handle_request(
+            &request_with_host(
+                "POST",
+                "/settings",
+                Some("mail.example.test"),
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                    ("Referer", "https://mail.example.test/settings"),
+                ],
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&archive_mailbox=Archive",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_ne!(response.response.status_code, 403);
     }
 
     #[test]

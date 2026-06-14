@@ -14,7 +14,7 @@
 |---|---|---|---|---|
 | canonical username validation | confirmed and remediated | Source review confirmed that backend `canonical_username` values and submitted-username fallback values were plain `String`s reused by auth, session issuance/load, TOTP secret path derivation, audit fields, and sendmail envelope/`From` construction. | Added `CanonicalUsername` and `MailboxIdentity` validation boundaries. Auth backend canonical output, second-factor identity input, session issue/load, TOTP secret loading, and sendmail submission now fail closed on control characters, whitespace boundary issues, display-name syntax, comma-separated addresses, header-like syntax, and malformed outbound addr-spec values. | `cargo test identity`; `cargo test auth::tests::`; `cargo test send::tests::sendmail_backend`; `cargo test session::tests::parses_serialized_session_records`; `cargo test totp::tests::file_secret_store_uses_hex_encoded_usernames` |
 | centralized HTTP response header validation | confirmed and remediated | Source review confirmed `HttpResponse::with_header` accepted raw header names and values and `to_http_bytes` serialized them directly. Future call sites could therefore introduce response splitting if attacker-controlled CRLF reached the helper. | Added central response-header validation for non-empty RFC-token-like names, name length, value length, and value control characters. Invalid names or values now fail closed to a static `500 Internal Server Error` response without serializing the unsafe header. | `cargo test response_header_helper` |
-| configured host and origin enforcement | pending | pending | pending | pending |
+| configured host and origin enforcement | confirmed and remediated | Source review confirmed same-origin validation used the incoming request `Host` as the expected origin. A reverse proxy that routed arbitrary Host values to OSMAP could therefore make attacker-controlled `Origin`/`Referer` values appear same-origin. | Added `OSMAP_ALLOWED_HOSTS`, carried it into `HttpPolicy`, reject missing or unexpected `Host` values with `421`, and compare `Origin`/`Referer` authorities against the configured allow-list. Updated OpenBSD deployment examples so nginx Host rejection and app-level Host/Origin/Referer enforcement stay aligned. | `cargo test config::tests::`; `cargo test configured_host`; `cargo test unconfigured_host`; `cargo test without_host`; `cargo test attacker_host` |
 | session record identity field validation | pending | pending | pending | pending |
 | consistent security headers for health and text responses | pending | pending | pending | pending |
 | strict HTTP framing rejection | pending | pending | pending | pending |
@@ -29,6 +29,16 @@
 - `src/session.rs`
 - `src/totp.rs`
 - `src/http.rs`
+- `src/http_runtime.rs`
+- `src/http/routes_auth.rs`
+- `src/config.rs`
+- `src/bootstrap.rs`
+- `src/mailbox_helper.rs`
+- `src/openbsd.rs`
+- `config/osmap.env.example`
+- `maint/openbsd/osmap-serve.env.example`
+- `maint/openbsd/mail.blackbagsecurity.com/etc/osmap/osmap-serve.env`
+- `docs/DEPLOYMENT_OPENBSD.md`
 - `docs/V5_BOUNDARY_HARDENING_EVIDENCE.md`
 - `docs/DECISION_LOG.md`
 
@@ -42,6 +52,14 @@
 - `http::tests::response_header_helper_rejects_invalid_header_names`
 - `http::tests::response_header_helper_rejects_crlf_header_value_splitting`
 - `http::tests::response_header_helper_accepts_expected_safe_headers`
+- `config::tests::rejects_unsafe_allowed_hosts`
+- `http::tests::rejects_requests_with_unconfigured_host`
+- `http::tests::rejects_routed_requests_without_host`
+- `http::tests::accepts_requests_with_configured_host`
+- `http::tests::state_changing_routes_require_origin_matching_configured_host`
+- `http::tests::rejects_origin_matching_attacker_host_but_not_configured_host`
+- `http::tests::rejects_referer_matching_attacker_host_but_not_configured_host`
+- `http::tests::accepts_referer_matching_configured_host`
 
 ## Commands Run
 
@@ -60,6 +78,11 @@
 | `cargo test session::tests::parses_serialized_session_records` | passed |
 | `cargo test totp::tests::file_secret_store_uses_hex_encoded_usernames` | passed |
 | `cargo test response_header_helper` | passed |
+| `cargo test config::tests::` | passed |
+| `cargo test configured_host` | passed |
+| `cargo test unconfigured_host` | passed |
+| `cargo test without_host` | passed |
+| `cargo test attacker_host` | passed |
 
 ## Live-Safe Validation
 

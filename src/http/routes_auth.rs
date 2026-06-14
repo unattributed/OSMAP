@@ -549,15 +549,13 @@ where
         validated_session: &ValidatedSession,
         context: &AuthenticationContext,
     ) -> Option<HandledHttpResponse> {
-        let expected_host = request.headers.get("host")?.to_ascii_lowercase();
-
         if let Some(origin) = request.headers.get("origin") {
             if is_opaque_origin(origin) {
                 if let Some(referer) = request.headers.get("referer") {
                     return validate_same_origin_header(
                         SameOriginHeaderKind::Referer,
                         referer,
-                        &expected_host,
+                        &self.policy.allowed_hosts,
                         validated_session,
                         context,
                     );
@@ -578,7 +576,7 @@ where
             return validate_same_origin_header(
                 SameOriginHeaderKind::Origin,
                 origin,
-                &expected_host,
+                &self.policy.allowed_hosts,
                 validated_session,
                 context,
             );
@@ -592,7 +590,7 @@ where
             return validate_same_origin_header(
                 SameOriginHeaderKind::Referer,
                 referer,
-                &expected_host,
+                &self.policy.allowed_hosts,
                 validated_session,
                 context,
             );
@@ -616,7 +614,7 @@ enum SameOriginHeaderKind {
 fn validate_same_origin_header(
     header_kind: SameOriginHeaderKind,
     value: &str,
-    expected_host: &str,
+    allowed_hosts: &[String],
     validated_session: &ValidatedSession,
     context: &AuthenticationContext,
 ) -> Option<HandledHttpResponse> {
@@ -639,15 +637,18 @@ fn validate_same_origin_header(
         ));
     };
 
-    if header_host != expected_host {
+    if !allowed_hosts
+        .iter()
+        .any(|allowed_host| allowed_host == &header_host)
+    {
         let (action, message) = match header_kind {
             SameOriginHeaderKind::Origin => (
                 "http_origin_mismatch",
-                "origin header did not match request host",
+                "origin header did not match configured allowed hosts",
             ),
             SameOriginHeaderKind::Referer => (
                 "http_referer_mismatch",
-                "referer header did not match request host",
+                "referer header did not match configured allowed hosts",
             ),
         };
         return Some(rejected_same_origin_response(

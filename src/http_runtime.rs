@@ -101,6 +101,10 @@ where
             }
         };
 
+        if let Some(response) = self.require_allowed_host(request, &context) {
+            return response;
+        }
+
         match (request.method, request.path.as_str()) {
             (HttpMethod::Get, "/healthz") => HandledHttpResponse {
                 response: HttpResponse::text(200, "OK", "ok\n")
@@ -149,6 +153,51 @@ where
                 .with_field("path", request.path.clone())],
             },
         }
+    }
+
+    fn require_allowed_host(
+        &self,
+        request: &HttpRequest,
+        context: &AuthenticationContext,
+    ) -> Option<HandledHttpResponse> {
+        let Some(host) = request.headers.get("host") else {
+            return Some(rejected_host_response(
+                "http_host_missing",
+                "host header missing from routed request",
+                context,
+            ));
+        };
+
+        if !self
+            .policy
+            .allowed_hosts
+            .iter()
+            .any(|allowed_host| allowed_host == &host.to_ascii_lowercase())
+        {
+            return Some(rejected_host_response(
+                "http_host_rejected",
+                "host header did not match configured allowed hosts",
+                context,
+            ));
+        }
+
+        None
+    }
+}
+
+fn rejected_host_response(
+    action: &'static str,
+    message: &'static str,
+    context: &AuthenticationContext,
+) -> HandledHttpResponse {
+    HandledHttpResponse {
+        response: html_response(
+            421,
+            "Misdirected Request",
+            "Host Rejected",
+            "<p>The request Host is not accepted by this OSMAP service.</p>",
+        ),
+        audit_events: vec![build_http_warning_event(action, message, context)],
     }
 }
 

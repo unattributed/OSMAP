@@ -31,6 +31,7 @@ pub struct AppConfig {
     pub run_mode: AppRunMode,
     pub environment: RuntimeEnvironment,
     pub listen_addr: String,
+    pub allowed_hosts: Vec<String>,
     pub doveadm_auth_socket_path: Option<PathBuf>,
     pub trusted_web_runtime_uid: Option<u32>,
     pub doveadm_userdb_socket_path: Option<PathBuf>,
@@ -242,6 +243,7 @@ impl AppConfig {
         let run_mode_value = read_value(env_map, "OSMAP_RUN_MODE", "bootstrap");
         let environment_value = read_value(env_map, "OSMAP_ENV", "development");
         let listen_addr = read_value(env_map, "OSMAP_LISTEN_ADDR", "127.0.0.1:8080");
+        let allowed_hosts_value = read_value(env_map, "OSMAP_ALLOWED_HOSTS", "localhost");
         let state_root_value = read_value(env_map, "OSMAP_STATE_DIR", "/var/lib/osmap");
         let log_level_value = read_value(env_map, "OSMAP_LOG_LEVEL", "info");
         let log_format_value = read_value(env_map, "OSMAP_LOG_FORMAT", "text");
@@ -375,6 +377,7 @@ impl AppConfig {
         validate_non_empty("OSMAP_LOG_LEVEL", &log_level_value)?;
         validate_non_empty("OSMAP_LOG_FORMAT", &log_format_value)?;
         validate_non_empty("OSMAP_LISTEN_ADDR", &listen_addr)?;
+        validate_non_empty("OSMAP_ALLOWED_HOSTS", &allowed_hosts_value)?;
         validate_non_empty(
             "OSMAP_HTTP_MAX_CONCURRENT_CONNECTIONS",
             &http_max_concurrent_connections_value,
@@ -451,6 +454,7 @@ impl AppConfig {
         let state_root = parse_absolute_path("OSMAP_STATE_DIR", &state_root_value)?;
         let log_level = LogLevel::parse(&log_level_value)?;
         let log_format = LogFormat::parse(&log_format_value)?;
+        let allowed_hosts = parse_allowed_hosts(&allowed_hosts_value)?;
         let http_max_concurrent_connections = parse_u64(
             "OSMAP_HTTP_MAX_CONCURRENT_CONNECTIONS",
             &http_max_concurrent_connections_value,
@@ -636,6 +640,7 @@ impl AppConfig {
             run_mode,
             environment,
             listen_addr,
+            allowed_hosts,
             doveadm_auth_socket_path,
             trusted_web_runtime_uid,
             doveadm_userdb_socket_path,
@@ -725,6 +730,50 @@ fn read_value(env_map: &BTreeMap<String, String>, key: &str, default: &str) -> S
         .get(key)
         .cloned()
         .unwrap_or_else(|| default.to_string())
+}
+
+fn parse_allowed_hosts(value: &str) -> Result<Vec<String>, BootstrapError> {
+    let mut hosts = Vec::new();
+    for raw_host in value.split(',') {
+        let host = raw_host.trim().to_ascii_lowercase();
+        if host.is_empty() {
+            continue;
+        }
+
+        validate_allowed_host(&host)?;
+        if !hosts.contains(&host) {
+            hosts.push(host);
+        }
+    }
+
+    if hosts.is_empty() {
+        return Err(BootstrapError::InvalidConfig {
+            field: "OSMAP_ALLOWED_HOSTS",
+            reason: "at least one allowed host is required".to_string(),
+        });
+    }
+
+    Ok(hosts)
+}
+
+fn validate_allowed_host(host: &str) -> Result<(), BootstrapError> {
+    if host.len() > 512 {
+        return Err(BootstrapError::InvalidConfig {
+            field: "OSMAP_ALLOWED_HOSTS",
+            reason: "allowed host exceeded maximum length".to_string(),
+        });
+    }
+
+    if host.chars().any(|ch| {
+        ch.is_control() || ch.is_whitespace() || matches!(ch, '/' | '\\' | '?' | '#' | '@')
+    }) {
+        return Err(BootstrapError::InvalidConfig {
+            field: "OSMAP_ALLOWED_HOSTS",
+            reason: "allowed host contained unsupported characters".to_string(),
+        });
+    }
+
+    Ok(())
 }
 
 /// Parses a required absolute filesystem path from configuration.
@@ -926,6 +975,7 @@ mod tests {
         assert_eq!(config.run_mode, AppRunMode::Bootstrap);
         assert_eq!(config.environment, RuntimeEnvironment::Development);
         assert_eq!(config.listen_addr, "127.0.0.1:8080");
+        assert_eq!(config.allowed_hosts, vec!["localhost".to_string()]);
         assert_eq!(config.doveadm_auth_socket_path, None);
         assert_eq!(config.trusted_web_runtime_uid, None);
         assert_eq!(config.doveadm_userdb_socket_path, None);
@@ -999,6 +1049,10 @@ mod tests {
             (
                 "OSMAP_LISTEN_ADDR".to_string(),
                 "127.0.0.1:8443".to_string(),
+            ),
+            (
+                "OSMAP_ALLOWED_HOSTS".to_string(),
+                "mail.example.test, LOCALHOST, mail.example.test".to_string(),
             ),
             (
                 "OSMAP_STATE_DIR".to_string(),
@@ -1123,6 +1177,10 @@ mod tests {
         assert_eq!(config.environment, RuntimeEnvironment::Staging);
         assert_eq!(config.listen_addr, "127.0.0.1:8443");
         assert_eq!(
+            config.allowed_hosts,
+            vec!["mail.example.test".to_string(), "localhost".to_string()]
+        );
+        assert_eq!(
             config.doveadm_auth_socket_path,
             Some(std::path::Path::new("/var/run/osmap/dovecot-auth").to_path_buf())
         );
@@ -1220,6 +1278,24 @@ mod tests {
             BootstrapError::InvalidConfig {
                 field: "OSMAP_RUN_MODE",
                 reason: "value must not be empty".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn rejects_unsafe_allowed_hosts() {
+        let env_map = BTreeMap::from([(
+            "OSMAP_ALLOWED_HOSTS".to_string(),
+            "mail.example.test/path".to_string(),
+        )]);
+
+        let error = AppConfig::from_env_map(&env_map).expect_err("unsafe host must fail");
+
+        assert_eq!(
+            error,
+            BootstrapError::InvalidConfig {
+                field: "OSMAP_ALLOWED_HOSTS",
+                reason: "allowed host contained unsupported characters".to_string(),
             }
         );
     }

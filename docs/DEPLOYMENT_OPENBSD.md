@@ -100,6 +100,8 @@ features.
 Useful first reverse-proxy expectations now include:
 
 - pass `Host`
+- set `OSMAP_ALLOWED_HOSTS` to the browser-facing hostname that nginx serves
+  for OSMAP, for example `mail.blackbagsecurity.com`
 - pass `X-Real-IP`
 - pass `X-Forwarded-For`
 - pass `X-Forwarded-Proto`
@@ -160,6 +162,9 @@ Preferred Phase 4 baseline:
 Current prototype-specific deployment guidance:
 
 - keep OSMAP on `127.0.0.1:<port>` behind nginx
+- keep nginx rejecting unexpected `Host` values and configure
+  `OSMAP_ALLOWED_HOSTS` with the same external host so OSMAP validates Host,
+  `Origin`, and `Referer` independently of proxy routing
 - keep OSMAP under dedicated service users that match the current runtime split
 - keep the state tree owned narrowly enough that later `unveil(2)` policy can
   be practical
