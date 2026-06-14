@@ -13,7 +13,7 @@
 | Finding | Status | Evidence | Remediation | Tests |
 |---|---|---|---|---|
 | canonical username validation | confirmed and remediated | Source review confirmed that backend `canonical_username` values and submitted-username fallback values were plain `String`s reused by auth, session issuance/load, TOTP secret path derivation, audit fields, and sendmail envelope/`From` construction. | Added `CanonicalUsername` and `MailboxIdentity` validation boundaries. Auth backend canonical output, second-factor identity input, session issue/load, TOTP secret loading, and sendmail submission now fail closed on control characters, whitespace boundary issues, display-name syntax, comma-separated addresses, header-like syntax, and malformed outbound addr-spec values. | `cargo test identity`; `cargo test auth::tests::`; `cargo test send::tests::sendmail_backend`; `cargo test session::tests::parses_serialized_session_records`; `cargo test totp::tests::file_secret_store_uses_hex_encoded_usernames` |
-| centralized HTTP response header validation | pending | pending | pending | pending |
+| centralized HTTP response header validation | confirmed and remediated | Source review confirmed `HttpResponse::with_header` accepted raw header names and values and `to_http_bytes` serialized them directly. Future call sites could therefore introduce response splitting if attacker-controlled CRLF reached the helper. | Added central response-header validation for non-empty RFC-token-like names, name length, value length, and value control characters. Invalid names or values now fail closed to a static `500 Internal Server Error` response without serializing the unsafe header. | `cargo test response_header_helper` |
 | configured host and origin enforcement | pending | pending | pending | pending |
 | session record identity field validation | pending | pending | pending | pending |
 | consistent security headers for health and text responses | pending | pending | pending | pending |
@@ -28,6 +28,7 @@
 - `src/send.rs`
 - `src/session.rs`
 - `src/totp.rs`
+- `src/http.rs`
 - `docs/V5_BOUNDARY_HARDENING_EVIDENCE.md`
 - `docs/DECISION_LOG.md`
 
@@ -38,6 +39,9 @@
 - `identity::tests::mailbox_identity_requires_conservative_addr_spec`
 - `auth::tests::authentication_rejects_hostile_backend_canonical_username`
 - Updated auth and sendmail regression tests so unsafe canonical/sender identity values are rejected while command/body data remains non-shell-expanded.
+- `http::tests::response_header_helper_rejects_invalid_header_names`
+- `http::tests::response_header_helper_rejects_crlf_header_value_splitting`
+- `http::tests::response_header_helper_accepts_expected_safe_headers`
 
 ## Commands Run
 
@@ -55,6 +59,7 @@
 | `cargo test send::tests::sendmail_backend` | passed: 4 passed |
 | `cargo test session::tests::parses_serialized_session_records` | passed |
 | `cargo test totp::tests::file_secret_store_uses_hex_encoded_usernames` | passed |
+| `cargo test response_header_helper` | passed |
 
 ## Live-Safe Validation
 

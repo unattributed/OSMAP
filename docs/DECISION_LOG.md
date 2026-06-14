@@ -6336,3 +6336,22 @@ The regression tests cover hostile canonical values such as CRLF header
 injection, display names, comma-separated addresses, and whitespace-padded
 identities while preserving the existing command-boundary guarantee that
 external auth and sendmail inputs are passed as data rather than shell script.
+
+## 2026-06-14, Validate HTTP response headers centrally
+
+V5 also closes the response-splitting boundary in the central HTTP response
+builder. Source review confirmed that `HttpResponse::with_header` previously
+stored caller-supplied header names and values verbatim and
+`HttpResponse::to_http_bytes` wrote them directly to the socket.
+
+The helper now validates every added response header before serialization:
+
+- names must be non-empty conservative HTTP token bytes
+- names cannot contain colon, whitespace, CR, LF, or other control bytes
+- names and values have explicit length caps
+- values cannot contain CR, LF, NUL, or other control characters
+
+Invalid response headers fail closed to a static `500 Internal Server Error`
+text response with no unsafe caller-supplied header serialized. Regression
+tests cover `Location`, `Content-Type`, and `Content-Disposition` CRLF
+injection attempts, plus invalid header names and expected safe headers.

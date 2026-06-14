@@ -122,6 +122,12 @@ pub const DEFAULT_HTTP_MAX_COOKIE_HEADER_BYTES: usize = 4096;
 /// Conservative upper bound for one `Content-Type` header value.
 pub const DEFAULT_HTTP_MAX_CONTENT_TYPE_HEADER_BYTES: usize = 256;
 
+/// Conservative upper bound for one response header name.
+pub const DEFAULT_RESPONSE_HEADER_NAME_MAX_LEN: usize = 128;
+
+/// Conservative upper bound for one response header value.
+pub const DEFAULT_RESPONSE_HEADER_VALUE_MAX_LEN: usize = 4096;
+
 /// Conservative per-connection read timeout for the sequential HTTP listener.
 pub const DEFAULT_HTTP_READ_TIMEOUT_SECS: u64 = 5;
 
@@ -292,7 +298,13 @@ impl HttpResponse {
 
     /// Adds one header in insertion order.
     pub fn with_header(mut self, name: impl Into<String>, value: impl Into<String>) -> Self {
-        self.headers.push((name.into(), value.into()));
+        let name = name.into();
+        let value = value.into();
+        if validate_response_header(&name, &value).is_err() {
+            return invalid_response_header();
+        }
+
+        self.headers.push((name, value));
         self
     }
 
@@ -335,6 +347,63 @@ impl HttpResponse {
         bytes.extend_from_slice(&self.body);
         bytes
     }
+}
+
+fn invalid_response_header() -> HttpResponse {
+    HttpResponse {
+        status_code: 500,
+        reason_phrase: "Internal Server Error",
+        headers: vec![
+            (
+                "Content-Type".to_string(),
+                "text/plain; charset=utf-8".to_string(),
+            ),
+            ("Cache-Control".to_string(), "no-store".to_string()),
+            ("X-Content-Type-Options".to_string(), "nosniff".to_string()),
+        ],
+        body: b"invalid response header\n".to_vec(),
+    }
+}
+
+fn validate_response_header(name: &str, value: &str) -> Result<(), ()> {
+    if name.is_empty() || name.len() > DEFAULT_RESPONSE_HEADER_NAME_MAX_LEN {
+        return Err(());
+    }
+
+    if !name.bytes().all(is_http_header_name_byte) {
+        return Err(());
+    }
+
+    if value.len() > DEFAULT_RESPONSE_HEADER_VALUE_MAX_LEN {
+        return Err(());
+    }
+
+    if value.chars().any(char::is_control) {
+        return Err(());
+    }
+
+    Ok(())
+}
+
+fn is_http_header_name_byte(byte: u8) -> bool {
+    byte.is_ascii_alphanumeric()
+        || matches!(
+            byte,
+            b'!' | b'#'
+                | b'$'
+                | b'%'
+                | b'&'
+                | b'\''
+                | b'*'
+                | b'+'
+                | b'-'
+                | b'.'
+                | b'^'
+                | b'_'
+                | b'`'
+                | b'|'
+                | b'~'
+        )
 }
 
 /// A response plus the log events emitted while building it.
@@ -1838,6 +1907,58 @@ mod tests {
             ),
             ("Referer", "https://localhost/settings"),
         ]
+    }
+
+    #[test]
+    fn response_header_helper_rejects_invalid_header_names() {
+        for name in ["", "Bad:Name", "Bad Name", "Bad\tName", "Bad\r\nName"] {
+            let response = HttpResponse::text(200, "OK", "body").with_header(name, "value");
+
+            assert_eq!(response.status_code, 500, "{name:?}");
+            let bytes = String::from_utf8(response.to_http_bytes()).expect("response is utf-8");
+            assert!(!bytes.contains("value\r\n"));
+            assert!(bytes.contains("invalid response header"));
+        }
+    }
+
+    #[test]
+    fn response_header_helper_rejects_crlf_header_value_splitting() {
+        for (name, value) in [
+            ("Location", "/x\r\nSet-Cookie: injected=1"),
+            ("Content-Type", "text/html\r\nX-Injected: yes"),
+            (
+                "Content-Disposition",
+                "attachment; filename=\"report.txt\"\r\nX-Injected: yes",
+            ),
+        ] {
+            let response = HttpResponse::text(303, "See Other", "body").with_header(name, value);
+
+            assert_eq!(response.status_code, 500, "{name}: {value:?}");
+            let bytes = String::from_utf8(response.to_http_bytes()).expect("response is utf-8");
+            assert!(!bytes.contains("Set-Cookie: injected=1"));
+            assert!(!bytes.contains("X-Injected: yes"));
+            assert!(!bytes.contains(value));
+            assert!(bytes.contains("Cache-Control: no-store\r\n"));
+        }
+    }
+
+    #[test]
+    fn response_header_helper_accepts_expected_safe_headers() {
+        let response = HttpResponse::text(303, "See Other", "body")
+            .with_header("Location", "/mailboxes")
+            .with_header("Content-Type", "text/plain; charset=utf-8")
+            .with_header(
+                "Set-Cookie",
+                "osmap_session=abc; HttpOnly; Secure; SameSite=Strict",
+            );
+
+        let bytes = String::from_utf8(response.to_http_bytes()).expect("response is utf-8");
+
+        assert!(bytes.contains("Location: /mailboxes\r\n"));
+        assert!(bytes.contains("Content-Type: text/plain; charset=utf-8\r\n"));
+        assert!(
+            bytes.contains("Set-Cookie: osmap_session=abc; HttpOnly; Secure; SameSite=Strict\r\n")
+        );
     }
 
     #[test]
