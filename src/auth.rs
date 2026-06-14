@@ -1596,7 +1596,12 @@ mod tests {
         let service =
             AuthenticationService::new(AuthenticationPolicy::default(), HostileCanonicalBackend);
 
-        let outcome = service.authenticate(&test_context(), "alice@example.test", "password");
+        let submitted_test_credential = "non-secret-test-credential";
+        let outcome = service.authenticate(
+            &test_context(),
+            "alice@example.test",
+            submitted_test_credential,
+        );
 
         assert_eq!(
             outcome.decision,
