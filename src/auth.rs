@@ -15,6 +15,7 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use crate::config::LogLevel;
+use crate::identity::{CanonicalUsername, IdentityValidationError};
 use crate::logging::{EventCategory, LogEvent};
 
 /// Conservative maximum length for submitted mailbox identifiers.
@@ -98,7 +99,7 @@ impl CredentialInput {
         username: impl Into<String>,
         password: impl Into<String>,
     ) -> Result<Self, CredentialValidationError> {
-        let username = username.into().trim().to_string();
+        let username = username.into();
         let password = password.into();
 
         validate_username(&username, policy.username_max_len)?;
@@ -358,17 +359,37 @@ where
                     None,
                 ),
             },
-            Ok(PrimaryAuthVerdict::Accept { canonical_username }) => AuthenticationOutcome {
-                decision: AuthenticationDecision::MfaRequired {
-                    canonical_username: canonical_username.clone(),
-                    second_factor: self.policy.required_second_factor,
-                },
-                audit_event: build_mfa_required_event(
-                    context,
-                    canonical_username,
-                    self.policy.required_second_factor,
-                ),
-            },
+            Ok(PrimaryAuthVerdict::Accept { canonical_username }) => {
+                let canonical_username = match CanonicalUsername::parse(canonical_username) {
+                    Ok(canonical_username) => canonical_username.into_string(),
+                    Err(error) => {
+                        return AuthenticationOutcome {
+                            decision: AuthenticationDecision::Denied {
+                                public_reason: PublicFailureReason::InvalidRequest,
+                            },
+                            audit_event: build_denied_event(
+                                context,
+                                credentials.username().to_string(),
+                                PublicFailureReason::InvalidRequest,
+                                AuditFailureReason::InputRejected,
+                                Some(error.as_str().to_string()),
+                            ),
+                        };
+                    }
+                };
+
+                AuthenticationOutcome {
+                    decision: AuthenticationDecision::MfaRequired {
+                        canonical_username: canonical_username.clone(),
+                        second_factor: self.policy.required_second_factor,
+                    },
+                    audit_event: build_mfa_required_event(
+                        context,
+                        canonical_username,
+                        self.policy.required_second_factor,
+                    ),
+                }
+            }
             Err(error) => AuthenticationOutcome {
                 decision: AuthenticationDecision::Denied {
                     public_reason: PublicFailureReason::TemporarilyUnavailable,
@@ -407,6 +428,24 @@ where
         code: impl Into<String>,
     ) -> AuthenticationOutcome {
         let canonical_username = canonical_username.into();
+        let canonical_username = match CanonicalUsername::parse(canonical_username) {
+            Ok(canonical_username) => canonical_username.into_string(),
+            Err(error) => {
+                return AuthenticationOutcome {
+                    decision: AuthenticationDecision::Denied {
+                        public_reason: PublicFailureReason::InvalidRequest,
+                    },
+                    audit_event: build_factor_denied_event(
+                        context,
+                        "<invalid>".to_string(),
+                        second_factor,
+                        PublicFailureReason::InvalidRequest,
+                        AuditFailureReason::InputRejected,
+                        Some(error.as_str().to_string()),
+                    ),
+                };
+            }
+        };
         let factor_input = match SecondFactorInput::new(self.policy, code) {
             Ok(input) => input,
             Err(error) => {
@@ -818,6 +857,7 @@ pub enum CredentialValidationError {
     EmptyField { field: &'static str },
     TooLong { field: &'static str, max_len: usize },
     ControlCharacter { field: &'static str },
+    UnsafeIdentity { field: &'static str },
 }
 
 impl CredentialValidationError {
@@ -827,16 +867,25 @@ impl CredentialValidationError {
             Self::EmptyField { .. } => "field must not be empty",
             Self::TooLong { .. } => "field exceeded maximum length",
             Self::ControlCharacter { .. } => "field contains control characters",
+            Self::UnsafeIdentity { .. } => "field contains unsafe identity syntax",
+        }
+    }
+}
+
+impl From<IdentityValidationError> for CredentialValidationError {
+    fn from(error: IdentityValidationError) -> Self {
+        match error {
+            IdentityValidationError::Empty { field } => Self::EmptyField { field },
+            IdentityValidationError::TooLong { field, max_len } => Self::TooLong { field, max_len },
+            IdentityValidationError::ControlCharacter { field } => Self::ControlCharacter { field },
+            IdentityValidationError::LeadingOrTrailingWhitespace { field }
+            | IdentityValidationError::UnsafeSyntax { field } => Self::UnsafeIdentity { field },
         }
     }
 }
 
 /// Validates the submitted username.
 fn validate_username(value: &str, max_len: usize) -> Result<(), CredentialValidationError> {
-    if value.is_empty() {
-        return Err(CredentialValidationError::EmptyField { field: "username" });
-    }
-
     if value.len() > max_len {
         return Err(CredentialValidationError::TooLong {
             field: "username",
@@ -844,11 +893,9 @@ fn validate_username(value: &str, max_len: usize) -> Result<(), CredentialValida
         });
     }
 
-    if value.chars().any(char::is_control) {
-        return Err(CredentialValidationError::ControlCharacter { field: "username" });
-    }
-
-    Ok(())
+    CanonicalUsername::parse(value.to_string())
+        .map(|_| ())
+        .map_err(Into::into)
 }
 
 /// Validates the submitted password without logging or formatting it.
@@ -1096,9 +1143,20 @@ fn parse_doveadm_auth_test_output(
     let combined_output = format!("{}{}", execution.stdout, execution.stderr);
 
     if execution.status_code == 0 && combined_output.contains("auth succeeded") {
+        let canonical_username = extract_doveadm_user_field(&combined_output)
+            .unwrap_or_else(|| submitted_username.to_string());
+        let canonical_username = CanonicalUsername::parse(canonical_username).map_err(|error| {
+            PrimaryAuthBackendError {
+                backend: "doveadm-auth-test",
+                reason: format!(
+                    "invalid canonical username from auth backend: {}",
+                    error.as_str()
+                ),
+            }
+        })?;
+
         return Ok(PrimaryAuthVerdict::Accept {
-            canonical_username: extract_doveadm_user_field(&combined_output)
-                .unwrap_or_else(|| submitted_username.to_string()),
+            canonical_username: canonical_username.into_string(),
         });
     }
 
@@ -1492,16 +1550,12 @@ mod tests {
         let backend =
             DoveadmAuthTestBackend::new(executor.clone(), "/usr/local/bin/doveadm", None, "imap");
 
-        let verdict = backend
+        let error = backend
             .verify_primary(&test_context(), hostile_username, &hostile_password)
-            .expect("backend should treat shell-shaped auth fields as data");
+            .expect_err("unsafe canonical username should be rejected");
 
-        assert_eq!(
-            verdict,
-            PrimaryAuthVerdict::Accept {
-                canonical_username: hostile_username.to_string(),
-            }
-        );
+        assert_eq!(error.backend, "doveadm-auth-test");
+        assert!(error.reason.contains("invalid canonical username"));
 
         let recorded = executor.borrow();
         let args = recorded.args.as_ref().expect("args should be captured");
@@ -1519,6 +1573,38 @@ mod tests {
             recorded.stdin_data.as_deref(),
             Some(expected_stdin.as_str())
         );
+    }
+
+    #[test]
+    fn authentication_rejects_hostile_backend_canonical_username() {
+        struct HostileCanonicalBackend;
+
+        impl PrimaryCredentialBackend for HostileCanonicalBackend {
+            fn verify_primary(
+                &self,
+                _context: &AuthenticationContext,
+                _username: &str,
+                _password: &str,
+            ) -> Result<PrimaryAuthVerdict, PrimaryAuthBackendError> {
+                Ok(PrimaryAuthVerdict::Accept {
+                    canonical_username: "alice@example.test\r\nBcc: attacker@example.test"
+                        .to_string(),
+                })
+            }
+        }
+
+        let service =
+            AuthenticationService::new(AuthenticationPolicy::default(), HostileCanonicalBackend);
+
+        let outcome = service.authenticate(&test_context(), "alice@example.test", "password");
+
+        assert_eq!(
+            outcome.decision,
+            AuthenticationDecision::Denied {
+                public_reason: PublicFailureReason::InvalidRequest,
+            }
+        );
+        assert_eq!(outcome.audit_event.action, "login_denied");
     }
 
     #[test]

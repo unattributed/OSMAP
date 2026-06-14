@@ -17,6 +17,7 @@ use crate::auth::{
     DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS,
 };
 use crate::config::LogLevel;
+use crate::identity::MailboxIdentity;
 use crate::logging::{EventCategory, LogEvent};
 use crate::mime::AttachmentMetadata;
 use crate::rendering::RenderedMessageView;
@@ -334,7 +335,14 @@ where
         canonical_username: &str,
         request: &ComposeRequest,
     ) -> Result<(), SubmissionBackendError> {
-        let submission_message = build_submission_message(canonical_username, request);
+        let mailbox_identity =
+            MailboxIdentity::parse(canonical_username.to_string()).map_err(|error| {
+                SubmissionBackendError {
+                    backend: "sendmail-submission",
+                    reason: format!("invalid outbound mailbox identity: {}", error.as_str()),
+                }
+            })?;
+        let submission_message = build_submission_message(mailbox_identity.as_str(), request);
         let execution = self
             .command_executor
             .run_with_stdin_bytes_timeout(
@@ -343,7 +351,7 @@ where
                     "-t".to_string(),
                     "-oi".to_string(),
                     "-f".to_string(),
-                    canonical_username.to_string(),
+                    mailbox_identity.as_str().to_string(),
                 ],
                 &submission_message,
                 Duration::from_secs(self.command_timeout_secs),
@@ -1426,9 +1434,40 @@ mod tests {
         .expect("shell-shaped body text should remain valid compose content");
         let hostile_sender = "alice@example.com; id $(id) 2>&1";
 
-        backend
+        let error = backend
             .submit_message(hostile_sender, &request)
-            .expect("submission should reach captured executor");
+            .expect_err("unsafe sender identity should be rejected before sendmail");
+
+        assert_eq!(error.backend, "sendmail-submission");
+        assert!(error.reason.contains("invalid outbound mailbox identity"));
+
+        let recorded = executor.borrow();
+        assert!(recorded.args.is_none());
+        assert!(recorded.stdin_data.is_none());
+    }
+
+    #[test]
+    fn sendmail_backend_keeps_shell_shaped_body_on_stdin_after_sender_validation() {
+        let executor = Rc::new(RefCell::new(StubCommandExecutor::success(
+            CommandExecution {
+                status_code: 0,
+                stdout: String::new(),
+                stderr: String::new(),
+            },
+        )));
+        let backend = SendmailSubmissionBackend::new(executor.clone(), "/usr/sbin/sendmail");
+        let request = ComposeRequest::new(
+            ComposePolicy::default(),
+            "bob@example.com",
+            "OSMAP INPV12 subject ; id $(id)",
+            "OSMAP_INPV12_BODY; id\n$(id)\n2>&1 >/dev/null\n",
+        )
+        .expect("shell-shaped body text should remain valid compose content");
+        let sender = "alice@example.com";
+
+        backend
+            .submit_message(sender, &request)
+            .expect("valid sender should reach captured executor");
 
         let recorded = executor.borrow();
         let args = recorded.args.as_ref().expect("args should be captured");
@@ -1438,7 +1477,7 @@ mod tests {
                 "-t".to_string(),
                 "-oi".to_string(),
                 "-f".to_string(),
-                hostile_sender.to_string(),
+                sender.to_string(),
             ]
         );
         assert!(!args.iter().any(|arg| arg == "id"));

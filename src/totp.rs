@@ -17,6 +17,7 @@ use sha1::Sha1;
 use crate::auth::{
     RequiredSecondFactor, SecondFactorBackendError, SecondFactorVerdict, SecondFactorVerifier,
 };
+use crate::identity::CanonicalUsername;
 
 type HmacSha1 = Hmac<Sha1>;
 
@@ -177,7 +178,13 @@ impl TotpSecretStore for FileTotpSecretStore {
         &self,
         canonical_username: &str,
     ) -> Result<Option<TotpSecret>, TotpSecretStoreError> {
-        let path = self.secret_path_for_username(canonical_username);
+        let canonical_username =
+            CanonicalUsername::parse(canonical_username.to_string()).map_err(|error| {
+                TotpSecretStoreError {
+                    reason: format!("invalid TOTP canonical username: {}", error.as_str()),
+                }
+            })?;
+        let path = self.secret_path_for_username(canonical_username.as_str());
         let Some(content) = read_secret_file(&path)? else {
             return Ok(None);
         };

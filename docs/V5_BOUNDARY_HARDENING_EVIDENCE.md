@@ -1,0 +1,70 @@
+# V5 Boundary Hardening Evidence
+
+## Sprint Metadata
+
+- sprint name: OSMAP V5 identity, origin, and response boundary hardening
+- branch name: `feature/v5-boundary-hardening`
+- starting commit: `6d7739c4dd59b717e33cf0f83e60c54cab1f421d`
+- ending commit: pending
+- summary verdict: in progress
+
+## Finding Status
+
+| Finding | Status | Evidence | Remediation | Tests |
+|---|---|---|---|---|
+| canonical username validation | confirmed and remediated | Source review confirmed that backend `canonical_username` values and submitted-username fallback values were plain `String`s reused by auth, session issuance/load, TOTP secret path derivation, audit fields, and sendmail envelope/`From` construction. | Added `CanonicalUsername` and `MailboxIdentity` validation boundaries. Auth backend canonical output, second-factor identity input, session issue/load, TOTP secret loading, and sendmail submission now fail closed on control characters, whitespace boundary issues, display-name syntax, comma-separated addresses, header-like syntax, and malformed outbound addr-spec values. | `cargo test identity`; `cargo test auth::tests::`; `cargo test send::tests::sendmail_backend`; `cargo test session::tests::parses_serialized_session_records`; `cargo test totp::tests::file_secret_store_uses_hex_encoded_usernames` |
+| centralized HTTP response header validation | pending | pending | pending | pending |
+| configured host and origin enforcement | pending | pending | pending | pending |
+| session record identity field validation | pending | pending | pending | pending |
+| consistent security headers for health and text responses | pending | pending | pending | pending |
+| strict HTTP framing rejection | pending | pending | pending | pending |
+| template and trusted HTML boundary review | pending | pending | pending | pending |
+
+## Files Changed
+
+- `src/identity.rs`
+- `src/lib.rs`
+- `src/auth.rs`
+- `src/send.rs`
+- `src/session.rs`
+- `src/totp.rs`
+- `docs/V5_BOUNDARY_HARDENING_EVIDENCE.md`
+- `docs/DECISION_LOG.md`
+
+## Tests Added
+
+- `identity::tests::canonical_username_rejects_hostile_identity_values`
+- `identity::tests::canonical_username_accepts_simple_mailbox_identity`
+- `identity::tests::mailbox_identity_requires_conservative_addr_spec`
+- `auth::tests::authentication_rejects_hostile_backend_canonical_username`
+- Updated auth and sendmail regression tests so unsafe canonical/sender identity values are rejected while command/body data remains non-shell-expanded.
+
+## Commands Run
+
+| Command | Result |
+|---|---|
+| `git switch main && git pull --ff-only origin main && git switch -c feature/v5-boundary-hardening` | passed; branch created from current `origin/main` |
+| `cargo fmt --check` | passed at baseline |
+| `cargo test` | passed at baseline: 443 lib tests passed, 4 ignored; 1 main test passed; 1 integration test passed |
+| `cargo clippy --all-targets --all-features -- -D warnings` | passed at baseline |
+| `cargo audit` | passed at baseline |
+| `cargo deny check` | unavailable/evaluation blocked; installed tool failed loading the fetched advisory database because it does not support a CVSS 4.0 advisory |
+| `rg -n "with_header\|Content-Disposition\|Location\|Set-Cookie\|canonical_username\|sendmail\|From:\|csrf\|Origin\|Referer\|Host" src tests docs` | completed; broad review inventory was noisy and is being followed up per finding |
+| `cargo test identity` | passed |
+| `cargo test auth::tests::` | passed: 22 passed, 1 ignored |
+| `cargo test send::tests::sendmail_backend` | passed: 4 passed |
+| `cargo test session::tests::parses_serialized_session_records` | passed |
+| `cargo test totp::tests::file_secret_store_uses_hex_encoded_usernames` | passed |
+
+## Live-Safe Validation
+
+No live checks have been run for V5 so far.
+
+## Known Limitations
+
+- V5 is still in progress; findings 2 through 7 have not yet been closed.
+- `cargo deny check` could not evaluate the repo because the local `cargo-deny` advisory parser rejected a fetched CVSS 4.0 advisory.
+
+## Remaining Deferred Work
+
+- None yet. Finding 7 may be deferred if source review confirms the current rendering boundary is not exploitable and a typed HTML wrapper would be broader than the V5 remediation slice.

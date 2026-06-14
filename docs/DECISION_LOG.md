@@ -6309,3 +6309,30 @@ The strict release check records the V4 assurance status and fails closed if
 the corpus execution, report, archive, or claim matrix is absent. The
 corresponding security claim mapping lives in
 `docs/V4_SECURITY_CLAIM_MATRIX.md`.
+
+## 2026-06-14, Add V5 canonical identity boundaries
+
+V5 starts by closing the plain-string identity reuse boundary between
+authentication, sessions, TOTP lookup, audit metadata, and outbound
+submission. Source review confirmed that the `canonical_username` returned by
+the authentication backend, or the submitted-username fallback in the Dovecot
+auth path, could flow as an ordinary `String` into session records, TOTP secret
+path derivation, sendmail envelope sender selection, and `From` header
+construction.
+
+OSMAP now has a centralized identity module with:
+
+- `CanonicalUsername` for internal account/session/TOTP identity
+- `MailboxIdentity` for conservative outbound addr-spec identity
+
+The V5 boundary rejects control characters, NUL, line breaks, leading or
+trailing whitespace, display-name syntax, comma-separated addresses, and
+header-like syntax before those values can become session state, TOTP lookup
+keys, audit identity, sendmail `-f` arguments, or `From` headers. Unsafe
+backend canonical values now fail closed and require re-authentication or
+operator correction rather than being persisted into browser state.
+
+The regression tests cover hostile canonical values such as CRLF header
+injection, display names, comma-separated addresses, and whitespace-padded
+identities while preserving the existing command-boundary guarantee that
+external auth and sendmail inputs are passed as data rather than shell script.

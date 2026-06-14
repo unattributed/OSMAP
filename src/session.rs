@@ -16,6 +16,7 @@ use getrandom::getrandom;
 use sha2::{Digest, Sha256};
 
 use crate::auth::{AuthenticationContext, RequiredSecondFactor};
+use crate::identity::CanonicalUsername;
 use crate::logging::{EventCategory, LogEvent};
 use crate::totp::TimeProvider;
 
@@ -324,6 +325,12 @@ where
         canonical_username: &str,
         factor: RequiredSecondFactor,
     ) -> Result<IssuedSession, SessionError> {
+        let canonical_username =
+            CanonicalUsername::parse(canonical_username.to_string()).map_err(|error| {
+                SessionError::StoreFailure {
+                    reason: format!("invalid canonical username for session: {}", error.as_str()),
+                }
+            })?;
         let _guard = session_operation_lock()?;
         let issued_at = self.time_provider.unix_timestamp();
         let expires_at = issued_at.saturating_add(self.lifetime_seconds);
@@ -334,7 +341,7 @@ where
         let record = SessionRecord {
             session_id: session_id.clone(),
             csrf_token,
-            canonical_username: canonical_username.to_string(),
+            canonical_username: canonical_username.into_string(),
             issued_at,
             expires_at,
             last_seen_at: issued_at,
@@ -669,7 +676,17 @@ fn parse_session_record(content: &str) -> Result<Option<SessionRecord>, SessionE
                 }
                 csrf_token = Some(value.to_string());
             }
-            "canonical_username" => canonical_username = Some(value.to_string()),
+            "canonical_username" => {
+                let parsed = CanonicalUsername::parse(value.to_string()).map_err(|error| {
+                    SessionError::StoreFailure {
+                        reason: format!(
+                            "invalid canonical_username field in session record: {}",
+                            error.as_str()
+                        ),
+                    }
+                })?;
+                canonical_username = Some(parsed.into_string());
+            }
             "issued_at" => issued_at = Some(parse_u64_field("issued_at", value)?),
             "expires_at" => expires_at = Some(parse_u64_field("expires_at", value)?),
             "last_seen_at" => last_seen_at = Some(parse_u64_field("last_seen_at", value)?),

@@ -15,6 +15,7 @@ pub mod http_form;
 pub mod http_parse;
 pub mod http_support;
 pub mod http_ui;
+pub mod identity;
 pub mod logging;
 pub mod mailbox;
 pub mod mailbox_helper;
