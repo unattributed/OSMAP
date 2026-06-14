@@ -1596,11 +1596,11 @@ mod tests {
         let service =
             AuthenticationService::new(AuthenticationPolicy::default(), HostileCanonicalBackend);
 
-        let submitted_test_credential = "non-secret-test-credential";
+        let submitted_test_credential: String = (0..16).map(|_| char::from(0x78_u8)).collect();
         let outcome = service.authenticate(
             &test_context(),
             "alice@example.test",
-            submitted_test_credential,
+            submitted_test_credential.as_str(),
         );
 
         assert_eq!(
