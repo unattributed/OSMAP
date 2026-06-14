@@ -225,7 +225,12 @@ impl Default for HttpPolicy {
             max_body_bytes: DEFAULT_HTTP_MAX_BODY_BYTES,
             max_upload_body_bytes: DEFAULT_HTTP_MAX_UPLOAD_BODY_BYTES,
             max_form_fields: DEFAULT_HTTP_MAX_FORM_FIELDS,
-            allowed_hosts: vec!["localhost".to_string()],
+            allowed_hosts: vec![
+                "localhost".to_string(),
+                "localhost:8080".to_string(),
+                "127.0.0.1".to_string(),
+                "127.0.0.1:8080".to_string(),
+            ],
             session_cookie_name: DEFAULT_SESSION_COOKIE_NAME,
             secure_session_cookie: false,
             read_timeout_secs: DEFAULT_HTTP_READ_TIMEOUT_SECS,
@@ -313,6 +318,14 @@ impl HttpResponse {
 
     /// Encodes the response into a connection-close HTTP/1.1 payload.
     pub fn to_http_bytes(&self) -> Vec<u8> {
+        if self
+            .headers
+            .iter()
+            .any(|(name, value)| validate_response_header(name, value).is_err())
+        {
+            return invalid_response_header().to_http_bytes();
+        }
+
         let mut output = String::new();
         output.push_str(&format!(
             "HTTP/1.1 {} {}\r\n",
@@ -2004,6 +2017,23 @@ mod tests {
     }
 
     #[test]
+    fn response_serialization_rejects_directly_constructed_invalid_headers() {
+        let response = HttpResponse {
+            status_code: 200,
+            reason_phrase: "OK",
+            headers: vec![("X-Test".to_string(), "ok\r\nX-Injected: yes".to_string())],
+            body: b"body".to_vec(),
+        };
+
+        let bytes = String::from_utf8(response.to_http_bytes()).expect("response is utf-8");
+
+        assert!(bytes.starts_with("HTTP/1.1 500 Internal Server Error\r\n"));
+        assert!(!bytes.contains("X-Injected: yes"));
+        assert!(!bytes.contains("X-Test: ok"));
+        assert!(bytes.contains("invalid response header"));
+    }
+
+    #[test]
     fn rejects_requests_with_unconfigured_host() {
         let response = app_for_allowed_host("mail.example.test").handle_request(
             &request_with_host("GET", "/login", Some("attacker.example.test"), &[], ""),
@@ -2029,6 +2059,17 @@ mod tests {
     fn accepts_requests_with_configured_host() {
         let response = app_for_allowed_host("mail.example.test").handle_request(
             &request_with_host("GET", "/login", Some("mail.example.test"), &[], ""),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 200);
+        assert!(body_text(&response).contains("OSMAP Login"));
+    }
+
+    #[test]
+    fn accepts_default_loopback_host_with_default_port() {
+        let response = app().handle_request(
+            &request_with_host("GET", "/login", Some("localhost:8080"), &[], ""),
             "127.0.0.1",
         );
 
@@ -2121,6 +2162,53 @@ mod tests {
                         "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                     ),
                     ("Referer", "https://mail.example.test/settings"),
+                ],
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&archive_mailbox=Archive",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_ne!(response.response.status_code, 403);
+    }
+
+    #[test]
+    fn rejects_http_origin_for_non_loopback_configured_host() {
+        let response = app_for_allowed_host("mail.example.test").handle_request(
+            &request_with_host(
+                "POST",
+                "/settings",
+                Some("mail.example.test"),
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                    ("Origin", "http://mail.example.test"),
+                ],
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&archive_mailbox=Archive",
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 403);
+        assert!(body_text(&response).contains("Request Origin Rejected"));
+    }
+
+    #[test]
+    fn accepts_http_origin_for_loopback_development_host() {
+        let response = app_for_allowed_host("localhost:8080").handle_request(
+            &request_with_host(
+                "POST",
+                "/settings",
+                Some("localhost:8080"),
+                &[
+                    ("User-Agent", "Firefox/Test"),
+                    (
+                        "Cookie",
+                        "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    ),
+                    ("Origin", "http://localhost:8080"),
                 ],
                 "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&archive_mailbox=Archive",
             ),

@@ -243,7 +243,11 @@ impl AppConfig {
         let run_mode_value = read_value(env_map, "OSMAP_RUN_MODE", "bootstrap");
         let environment_value = read_value(env_map, "OSMAP_ENV", "development");
         let listen_addr = read_value(env_map, "OSMAP_LISTEN_ADDR", "127.0.0.1:8080");
-        let allowed_hosts_value = read_value(env_map, "OSMAP_ALLOWED_HOSTS", "localhost");
+        let allowed_hosts_value = read_value(
+            env_map,
+            "OSMAP_ALLOWED_HOSTS",
+            "localhost,localhost:8080,127.0.0.1,127.0.0.1:8080",
+        );
         let state_root_value = read_value(env_map, "OSMAP_STATE_DIR", "/var/lib/osmap");
         let log_level_value = read_value(env_map, "OSMAP_LOG_LEVEL", "info");
         let log_format_value = read_value(env_map, "OSMAP_LOG_FORMAT", "text");
@@ -975,7 +979,15 @@ mod tests {
         assert_eq!(config.run_mode, AppRunMode::Bootstrap);
         assert_eq!(config.environment, RuntimeEnvironment::Development);
         assert_eq!(config.listen_addr, "127.0.0.1:8080");
-        assert_eq!(config.allowed_hosts, vec!["localhost".to_string()]);
+        assert_eq!(
+            config.allowed_hosts,
+            vec![
+                "localhost".to_string(),
+                "localhost:8080".to_string(),
+                "127.0.0.1".to_string(),
+                "127.0.0.1:8080".to_string(),
+            ]
+        );
         assert_eq!(config.doveadm_auth_socket_path, None);
         assert_eq!(config.trusted_web_runtime_uid, None);
         assert_eq!(config.doveadm_userdb_socket_path, None);

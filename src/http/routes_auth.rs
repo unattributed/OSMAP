@@ -618,7 +618,7 @@ fn validate_same_origin_header(
     validated_session: &ValidatedSession,
     context: &AuthenticationContext,
 ) -> Option<HandledHttpResponse> {
-    let Some(header_host) = extract_absolute_uri_authority(value) else {
+    let Some((scheme, header_host)) = extract_absolute_uri_scheme_authority(value) else {
         let (action, message) = match header_kind {
             SameOriginHeaderKind::Origin => (
                 "http_origin_invalid",
@@ -636,6 +636,25 @@ fn validate_same_origin_header(
             validated_session,
         ));
     };
+
+    if scheme == "http" && !is_loopback_authority(&header_host) {
+        let (action, message) = match header_kind {
+            SameOriginHeaderKind::Origin => (
+                "http_origin_insecure_scheme",
+                "origin header used http for a non-loopback authority",
+            ),
+            SameOriginHeaderKind::Referer => (
+                "http_referer_insecure_scheme",
+                "referer header used http for a non-loopback authority",
+            ),
+        };
+        return Some(rejected_same_origin_response(
+            action,
+            message,
+            context,
+            validated_session,
+        ));
+    }
 
     if !allowed_hosts
         .iter()
@@ -670,16 +689,30 @@ fn is_same_origin_fetch_site(value: Option<&String>) -> bool {
     matches!(value.map(|value| value.trim()), Some("same-origin"))
 }
 
-fn extract_absolute_uri_authority(value: &str) -> Option<String> {
-    let remainder = value
+fn extract_absolute_uri_scheme_authority(value: &str) -> Option<(&'static str, String)> {
+    let (scheme, remainder) = value
         .strip_prefix("https://")
-        .or_else(|| value.strip_prefix("http://"))?;
+        .map(|remainder| ("https", remainder))
+        .or_else(|| {
+            value
+                .strip_prefix("http://")
+                .map(|remainder| ("http", remainder))
+        })?;
     let authority = remainder.split(['/', '?', '#']).next()?.trim();
     if authority.is_empty() || authority.contains('@') || authority.contains('\\') {
         return None;
     }
 
-    Some(authority.to_ascii_lowercase())
+    Some((scheme, authority.to_ascii_lowercase()))
+}
+
+fn is_loopback_authority(authority: &str) -> bool {
+    let host = authority
+        .rsplit_once(':')
+        .and_then(|(host, port)| port.chars().all(|ch| ch.is_ascii_digit()).then_some(host))
+        .unwrap_or(authority);
+
+    matches!(host, "localhost" | "127.0.0.1" | "[::1]" | "::1")
 }
 
 fn rejected_same_origin_response(

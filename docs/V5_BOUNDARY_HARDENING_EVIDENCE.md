@@ -123,3 +123,13 @@ No live checks have been run for V5 so far.
 ## Remaining Deferred Work
 
 - Finding 7 typed HTML wrappers are deferred. Current exploitability was not confirmed; existing rendering paths escape or sanitize user-controlled values, and a wrapper conversion would be broader than the targeted V5 remediation slices.
+
+## Follow-up review slice
+
+A post-evidence review identified three small boundary hardening refinements before V5 closure:
+
+- response serialization now validates headers even when future code constructs `HttpResponse` directly instead of using `with_header`
+- the default local allowed-host configuration includes the actual browser Host values for the default loopback listener, including `localhost:8080` and `127.0.0.1:8080`
+- same-origin validation now rejects non-loopback `http://` Origin and Referer authorities while preserving loopback HTTP development support
+
+These changes keep the V5 theme focused on identity, origin, and response-boundary hardening.

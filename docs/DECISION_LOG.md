@@ -6465,3 +6465,7 @@ This preserves the runtime assertion that safe cookie headers serialize
 correctly, keeps injected response-splitting headers out of serialized error
 responses, and lets `make security-check` continue to enforce the same
 publication-hygiene rule for future evidence files.
+
+### V5 follow-up: tighten host and response-boundary closure
+
+Post-remediation evidence review found the V5 branch had passed the source gates, but two defensibility improvements were still worthwhile before closure: response serialization should validate headers even if future code bypasses `with_header`, and the Host/Origin model should distinguish production HTTPS expectations from loopback HTTP development. The follow-up slice validates headers at serialization time, expands default loopback allowed hosts to include the default port-bearing Host values, and rejects non-loopback `http://` Origin and Referer values.
