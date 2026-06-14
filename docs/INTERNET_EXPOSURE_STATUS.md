@@ -6,15 +6,11 @@
 - assessed host: `mail.blackbagsecurity.com`
 - assessed host checkout: `~/OSMAP`
 - assessed host snapshot for the current repo-owned exposure report: `03d9e75`
-- current repo-owned host artifacts:
-  - `maint/live/latest-host-edge-cutover-session.txt`
+- current committed host artifacts:
   - `maint/live/latest-host-edge-cutover-report.txt`
   - `maint/live/latest-host-internet-exposure-report.txt`
   - `maint/live/latest-host-v2-readiness-report.txt`
-  - `maint/live/latest-external-browser-path-verification.txt`
-  - `maint/live/latest-external-public-https-isolation-report.txt`
-  - `maint/live/latest-host-auth-observability-report.txt`
-  - `maint/live/latest-host-public-send-audit-correlation-report.txt`
+  - `maint/live/latest-host-service-enablement-report.txt`
 - current result: `approved for limited direct public browser exposure`
 
 ## Why The Result Is Approved
@@ -62,16 +58,17 @@ The current state is not a blank slate:
   produce a current host report without depending on operator memory alone
 - the current repo-owned exposure report now records the actual post-cutover
   `mail` host posture for snapshot `d1c1a2f`
-- the repo now also has an outside-in browser-path verification artifact from a
-  system outside the WireGuard-only management plane, archived at
-  `maint/live/latest-external-browser-path-verification.txt`
+- the project has also used outside-in browser-path verification from a system
+  outside the WireGuard-only management plane, recorded by the operator under
+  the conventional filename `latest-external-browser-path-verification.txt`
 - that outside-in proof confirms the public HTTPS root redirects to the OSMAP
   login page with a valid certificate and the expected username, password, and
   `totp_code` form fields
-- the repo now also has an outside-in public HTTPS isolation proof, archived at
-  `maint/live/latest-external-public-https-isolation-report.txt`, confirming
-  that public OSMAP paths remain reachable while former control-plane prefixes
-  do not expose their private applications
+- the project has also used outside-in public HTTPS isolation proof, recorded by
+  the operator under the conventional filename
+  `latest-external-public-https-isolation-report.txt`, confirming that public
+  OSMAP paths remain reachable while former control-plane prefixes do not expose
+  their private applications
 - the repo now also has a host-side auth-observability validator that confirms
   login failures are captured into the reviewed serve audit log instead of
   disappearing into `/dev/null`
@@ -115,10 +112,10 @@ The current state is not a blank slate:
 - the repo now also has a host-side validator for that persistent service
   install, with the current host report archived at
   `maint/live/latest-host-service-enablement-report.txt`
-- the current archived service-artifact apply session is
-  `maint/live/latest-host-service-artifact-session.txt`
-- the current archived service-activation apply session is
-  `maint/live/latest-host-service-activation-session.txt`
+- service-artifact and service-activation session captures are operator-local
+  run outputs unless a future remediation explicitly commits a sanitized session
+  transcript; the committed current service evidence is
+  `maint/live/latest-host-service-enablement-report.txt`
 
 ## Approval Conditions
 

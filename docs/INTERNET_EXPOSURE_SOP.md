@@ -45,9 +45,9 @@ The standard host checkout is:
 
 - `~/OSMAP`
 
-The standard off-host outside-in evidence artifact is:
+The standard off-host outside-in evidence filename is:
 
-- `maint/live/latest-external-browser-path-verification.txt`
+- `latest-external-browser-path-verification.txt`
 
 ## Standard Review Flow
 
@@ -69,7 +69,8 @@ The standard off-host outside-in evidence artifact is:
 6. From a system outside the WireGuard-only management plane, perform one real
    HTTPS browser-path verification against `https://mail.blackbagsecurity.com/`
    and archive the resulting redirect, login-page, TLS, and routing evidence
-   under `maint/live/latest-external-browser-path-verification.txt`.
+   under an operator-selected local path, conventionally
+   `latest-external-browser-path-verification.txt`.
 7. Compare those observed host facts against every section in
    `INTERNET_EXPOSURE_CHECKLIST.md`.
 8. Update `INTERNET_EXPOSURE_STATUS.md` so it records:
@@ -114,7 +115,8 @@ curl -sS -A 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gec
 ```
 
 Archive the resulting route, redirect chain, login-page markers, and TLS
-identity under `maint/live/latest-external-browser-path-verification.txt`.
+identity under an operator-selected local path, conventionally
+`latest-external-browser-path-verification.txt`.
 
 ## Standard Outcomes
 

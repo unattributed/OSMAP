@@ -84,7 +84,8 @@ ksh ./maint/live/osmap-live-validate-v1-closeout.ksh --list
 
 ## Off-Host Rerun
 
-When the operator is on a workstation that can reach the validated host, use:
+When the operator is on a workstation that can reach the validated host, use a
+local report path selected for the run:
 
 ```sh
 ./maint/live/osmap-run-v1-closeout-over-ssh.sh --host mail --local-report ./maint/live/latest-host-v1-closeout-report.txt
@@ -93,6 +94,10 @@ When the operator is on a workstation that can reach the validated host, use:
 That wrapper SSHes into the standard `~/OSMAP` checkout, runs the same
 host-side closeout wrapper there, and fetches the resulting report back to the
 local machine.
+
+The `latest-host-v1-closeout-report.txt` name is the conventional operator
+output path for a fresh closeout rerun. It should not be treated as committed
+current evidence unless the sanitized report is intentionally added to the repo.
 
 When the selected step set includes `login-send`, the SSH wrapper now invokes
 the same host-side helper there automatically, so the temporary password

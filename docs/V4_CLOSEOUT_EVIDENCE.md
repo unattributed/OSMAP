@@ -112,24 +112,24 @@ reviewed host toolchain (`rustc` and `cargo` 1.94.1, clippy 0.1.94, rustfmt
 1.8.0) and with `~/.cargo/bin` in `PATH` so the installed `cargo-audit` and
 `cargo-deny` subcommands were visible.
 
-## Current V4.6 Assurance Addendum
+## V4.6 Assurance Addendum
 
 The historical `v4.0.0` closeout tuple remains frozen at assessed code commit
 `09a95b7`, release tag `v4.0.0`, and evidence bundle commit `59da020`.
 
-Current V4 assurance has since been strengthened without adding end-user
-functionality or expanding the hostile-content claim. The current assurance
-lane records:
+V4 assurance has since been strengthened without adding end-user functionality
+or expanding the hostile-content claim. The latest committed hostile-assurance
+report in this checkout records:
 
-- current repository commit after V4.6 gate and evidence refresh:
+- repository commit after the V4.6 gate and evidence refresh:
   `090e9a2403992747882e49c3d9756b30baecc247`
 - V4 security claim-matrix gate commit:
   `d1fd3ebd31034aeb315c71d1a2f65fdb751ce122`
-- current hostile-assurance report assessed ref:
+- hostile-assurance report assessed ref:
   `d1fd3ebd31034aeb315c71d1a2f65fdb751ce122`
-- current hostile-assurance report:
+- hostile-assurance report:
   `maint/live/osmap-v4-hostile-assurance-report.json`
-- current hostile-assurance archive:
+- hostile-assurance archive:
   `maint/live/osmap-v4-hostile-assurance-evidence.tar.gz`
 - enforced claim matrix:
   `docs/V4_SECURITY_CLAIM_MATRIX.md`
@@ -150,7 +150,7 @@ fails when:
 - the hostile-assurance archive omits the report, corpus manifest, or
   representative hostile fixtures
 
-The current hostile-assurance report records:
+That hostile-assurance report records:
 
 - generated UTC: `2026-06-13T10:35:28Z`
 - status: `passed`
@@ -170,9 +170,11 @@ The current hostile-assurance report records:
   rustfmt, clippy, cargo-audit, and cargo-deny versions
 
 The closeout distinction is intentional: the frozen `v4.0.0` tuple remains the
-historical release evidence, while the current V4 assurance report/archive and
-claim-matrix gate prove that the same hostile-content containment claim remains
-continuously validated for the current assessed tree.
+historical release evidence, while the latest committed V4 assurance
+report/archive and claim-matrix gate prove that the same hostile-content
+containment claim remained validated for that report's assessed tree. A later
+repository tip must refresh the hostile-assurance report before claiming that the
+report itself assesses the newer commit.
 
 ## Residual-Risk Statement
 

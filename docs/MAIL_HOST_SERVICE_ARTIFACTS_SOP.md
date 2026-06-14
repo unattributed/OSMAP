@@ -144,7 +144,9 @@ and service-log path checks listed above.
 The full service-enablement gate still has to be cleared separately through
 `MAIL_HOST_SERVICE_ENABLEMENT_SOP.md`.
 
-The current repo-owned host artifacts for this gate should be archived at:
+The fresh run artifacts for this gate should be kept with the operator's
+service-artifact session. The committed repo-owned evidence currently reduces to
+the service-enablement report unless a future run explicitly adds a sanitized
+session transcript:
 
-- `maint/live/latest-host-service-artifact-session.txt`
 - `maint/live/latest-host-service-enablement-report.txt`

@@ -55,7 +55,7 @@ later.
 | --- | --- | --- | --- |
 | V2 readiness gate | `passed` | `maint/live/latest-host-v2-readiness-report.txt` | Full 12-step authoritative V2 wrapper passed on April 24, 2026. |
 | Persistent service guard | `passed` | `maint/live/latest-host-v2-readiness-service-guard-report.txt` | `osmap_serve` and `osmap_mailbox_helper` still passed the post-proof health restore check. |
-| Rollback rehearsal | `passed` | `maint/live/latest-host-edge-cutover-session.txt` | Fresh `rehearse` session created at `~/osmap-edge-cutover/proof-20260424-v2-pilot-closeout` with current apply and restore scripts. |
+| Rollback rehearsal | `passed` | operator-local proof directory `~/osmap-edge-cutover/proof-20260424-v2-pilot-closeout` | Fresh `rehearse` session created with current apply and restore scripts; no sanitized session transcript is committed in the current repo. |
 | Edge cutover posture | `passed` | `maint/live/latest-host-edge-cutover-report.txt` | Public HTTPS still serves the reviewed OSMAP-only root while private control-plane templates remain off the WAN listener. |
 | Internet exposure gate posture | `approved_for_limited_direct_public_browser_exposure` | `maint/live/latest-host-internet-exposure-report.txt` | Current assessment still matches the approved limited direct-public browser posture. |
 | Pilot scope and workflow truthfulness | `complete` | `docs/V2_DEFINITION.md`, `docs/PILOT_DEPLOYMENT_PLAN.md`, `docs/PILOT_WORKFLOW_INVENTORY.md`, `docs/V2_PILOT_CLOSEOUT.md` | Three real trial users completed the expected bounded V2 workflows and reported that the presented functions worked as expected. |

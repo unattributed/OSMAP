@@ -9,14 +9,16 @@ elsewhere for repository-platform reasons.
 The repository deliberately separates:
 
 - Public, reviewable planning and architecture documents under `docs/`
-- Private operator notes and working material under ignored paths such as
-  `PKCB/` and `AGENTS.md`
+- Private operator notes and early project notebooks outside the tracked public
+  documentation set
+- Agent-facing collaboration guidance in the tracked repository root file
+  `AGENTS.md`
 
 As of June 11, 2026, the project has substantive public-safe documentation
 through Version 4 hostile-content release closeout. The current baseline was
 built from:
 
-- private PKCB planning notes
+- private early project planning notes, distilled into public-safe docs
 - repository phase control blocks
 - read-only inspection of `mail.blackbagsecurity.com`
 - current in-repo Rust implementation and validation evidence
@@ -32,20 +34,24 @@ The documents in this folder are written for two audiences:
 - collaborating developers who need phase boundaries, constraints, and
   integration facts for maintenance, validation, and future scoped work
 
-Current primary documents:
+Current public documentation map:
 
 - `PROJECT_CHARTER.md`
 - `PROGRAM_BASELINE.md`
 - `ACCEPTANCE_CRITERIA.md`
 - `PHASE_ROADMAP.md`
+- `GLOSSARY.md`
 - `CURRENT_SYSTEM_ARCHITECTURE.md`
 - `MAIL_STACK_ANALYSIS.md`
 - `NETWORK_AND_EXPOSURE_ANALYSIS.md`
 - `ROUNDCUBE_DEPENDENCY_ANALYSIS.md`
 - `RISK_REGISTER.md`
+- `KNOWN_LIMITATIONS.md`
+- `FAQ_OPERATORS.md`
 - `PRODUCT_REQUIREMENTS_V1.md`
 - `ARCHITECTURE.md`
 - `SECURITY_MODEL.md`
+- `IDENTITY_AND_AUTHENTICATION.md`
 - `SECURE_SDLC.md`
 - `SUPPLY_CHAIN_POLICY.md`
 - `TLS_STANDARD.md`
@@ -55,6 +61,10 @@ Current primary documents:
 - `PROOF_OF_CONCEPT_PLAN.md`
 - `TOOLCHAIN_AND_REPOSITORY_BASELINE.md`
 - `CONFIGURATION_AND_STATE_MODEL.md`
+- `DEPLOYMENT_OPENBSD.md`
+- `HARDENING_GUIDE.md`
+- `INCIDENT_RESPONSE_PLAN.md`
+- `OBSERVABILITY_AND_MONITORING.md`
 - `LOGGING_AND_ERROR_MODEL.md`
 - `AUTHENTICATION_SLICE_BASELINE.md`
 - `SESSION_MANAGEMENT_MODEL.md`
@@ -74,12 +84,16 @@ Current primary documents:
 - `LEAST_PRIVILEGE_AUTH_SOCKET_MODEL.md`
 - `TOTP_SECRET_MANAGEMENT_MODEL.md`
 - `CWE_TOP25_REVIEW_BASELINE.md`
+- `CWE_TOP25_AND_WSTG_REVIEW_2026_06_13.md`
 - `OWASP_ASVS_BASELINE.md`
+- `OSMAP_HELPER_SECURITY_REVIEW_2026_05_13.md`
+- `PRIVACY_ROADMAP.md`
 - `V1_CLOSEOUT_SOP.md`
 - `V1_CLOSEOUT_WORK_RULES.md`
 - `V2_DEFINITION.md`
 - `V2_ACCEPTANCE_CRITERIA.md`
 - `V2_PILOT_CLOSEOUT.md`
+- `V2_PILOT_EXECUTION.md` (superseded; retained for provenance only)
 - `V2_PILOT_STATUS.md`
 - `V2_WSTG_REMEDIATION_2026_04_23.md`
 - `V2_PILOT_REHEARSAL_SOP.md`
@@ -87,10 +101,29 @@ Current primary documents:
 - `V3_ACCEPTANCE_CRITERIA.md`
 - `V3_ROADMAP.md`
 - `V3_SECURITY_GATES.md`
+- `V3_AUTHENTICATION_APPLICABILITY_EVIDENCE.md`
+- `V3_AUTHORIZATION_ACCOUNT_ISOLATION.md`
+- `V3_CLIENT_SIDE_BROWSER_SECURITY.md`
+- `V3_CONFIG_DEPLOYMENT_EVIDENCE.md`
+- `V3_CRYPTO_TRANSPORT_EVIDENCE.md`
+- `V3_DRAFT_SAVE_RESUME_DESIGN.md`
+- `V3_ERROR_INFO_DISCLOSURE_EVIDENCE.md`
+- `V3_FORM_ROUTE_STATE_TRANSITIONS.md`
+- `V3_HTTP_HOST_SMUGGLING_EVIDENCE.md`
+- `V3_HTTP_INPUT_TAMPERING_EVIDENCE.md`
+- `V3_IDENTITY_LIFECYCLE_EVIDENCE.md`
+- `V3_INJECTION_APPLICABILITY_EVIDENCE.md`
+- `V3_LIVE_MIME_HTML_PROOF_PLAN.md`
+- `V3_REPLY_FORWARD_ATTACHMENT_HANDLING_DESIGN.md`
+- `V3_SESSION_LIFECYCLE_EVIDENCE.md`
+- `V3_WEBMAIL_INPUT_VALIDATION_EVIDENCE.md`
+- `V3_WSTG_COVERAGE_GATE.md`
+- `V3_WSTG_DUE_DILIGENCE_PLAN.md`
 - `V4_DEFINITION.md`
 - `V4_ACCEPTANCE_CRITERIA.md`
 - `V4_ROADMAP.md`
 - `V4_SECURITY_GATES.md`
+- `V4_AUDIT_REMEDIATION_REPORT.md`
 - `V4_CLOSEOUT_EVIDENCE.md`
 - `V4_RELEASE_OPERATOR_HANDOFF.md`
 - `V4_MIME_AMBIGUITY_EVIDENCE.md`

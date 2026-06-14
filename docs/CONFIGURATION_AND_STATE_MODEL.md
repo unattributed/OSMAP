@@ -31,6 +31,7 @@ The early runtime recognizes:
 - `OSMAP_TRUSTED_WEB_RUNTIME_UID`
 - `OSMAP_DOVEADM_USERDB_SOCKET_PATH`
 - `OSMAP_MAILBOX_HELPER_SOCKET_PATH`
+- `OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH`
 - `OSMAP_STATE_DIR`
 - `OSMAP_RUNTIME_DIR`
 - `OSMAP_SESSION_DIR`
@@ -44,6 +45,9 @@ The early runtime recognizes:
 - `OSMAP_HTTP_MAX_CONCURRENT_CONNECTIONS`
 - `OSMAP_MAILBOX_WORKER_BUDGET`
 - `OSMAP_SEARCH_WORKER_BUDGET`
+- `OSMAP_SEND_WORKER_BUDGET`
+- `OSMAP_AUTH_WORKER_BUDGET`
+- `OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS`
 - `OSMAP_SESSION_LIFETIME_SECS`
 - `OSMAP_SESSION_IDLE_TIMEOUT_SECS`
 - `OSMAP_TOTP_ALLOWED_SKEW_STEPS`
@@ -96,12 +100,19 @@ use an explicitly chosen Dovecot userdb socket for mailbox and message helper
 lookups instead of relying on a broader default surface.
 
 The runtime now also recognizes an optional
-`OSMAP_MAILBOX_HELPER_SOCKET_PATH` setting for the first local mailbox-helper
-boundary. When the web runtime is configured with this socket, mailbox listing
-is proxied through the helper instead of being executed directly from the
-browser-facing process. When `OSMAP_RUN_MODE=mailbox-helper` is selected and the
-variable is absent, the helper defaults to
+`OSMAP_MAILBOX_HELPER_SOCKET_PATH` setting for the local mailbox-helper
+boundary. When the web runtime is configured with this socket, helper-supported
+mailbox operations are proxied through the helper instead of being executed
+directly from the browser-facing process. When `OSMAP_RUN_MODE=mailbox-helper`
+is selected and the variable is absent, the helper defaults to
 `<runtime_dir>/mailbox-helper.sock`.
+
+Helper-backed mailbox operations also require
+`OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH`. This path names a permission-restricted
+shared HMAC key used to issue short-lived request grants from the browser-facing
+runtime to the helper. It is required when `OSMAP_RUN_MODE=mailbox-helper` is
+selected or when `OSMAP_MAILBOX_HELPER_SOCKET_PATH` is configured for the web
+runtime.
 
 As of the current Version 1 closeout baseline, production `serve` mode now
 requires `OSMAP_MAILBOX_HELPER_SOCKET_PATH` so the browser-facing runtime does
@@ -112,6 +123,12 @@ The repo now also ships split OpenBSD env examples under `maint/openbsd/` so
 operators can keep the browser-facing runtime and the mailbox-helper runtime on
 separate service definitions while still sharing one explicit helper socket
 boundary.
+
+Those OpenBSD service examples also include launcher-level variables
+`OSMAP_LOG_DIR` and `OSMAP_STDERR_LOG_PATH`. They are consumed by the
+`maint/openbsd/libexec/` launcher scripts before the Rust binary starts, rather
+than by `src/config.rs`, and are documented here so operators can distinguish
+service log routing from application audit/state paths.
 
 The runtime now also recognizes one explicit HTTP concurrency setting:
 
@@ -255,9 +272,18 @@ The bootstrap currently enforces:
   absolute path
 - the optional `OSMAP_MAILBOX_HELPER_SOCKET_PATH`, when present, must be an
   absolute path
+- the optional `OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH`, when present, must be an
+  absolute path
+- helper-backed mailbox operations require `OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH`
+  when `OSMAP_RUN_MODE=mailbox-helper` is selected or when
+  `OSMAP_MAILBOX_HELPER_SOCKET_PATH` is configured
 - configured state paths must be absolute
 - derived mutable-state paths must stay under the state root
 - development listeners must remain on loopback
+- route-class worker budgets and expensive-request timeout must parse as
+  positive unsigned integers
+- route-class worker budgets must not exceed
+  `OSMAP_HTTP_MAX_CONCURRENT_CONNECTIONS`
 - session lifetime must parse as a positive unsigned integer
 - TOTP skew-step configuration must parse as a signed integer
 - login-throttle threshold, window, and lockout settings must parse as positive
@@ -325,16 +351,19 @@ dedicated `vmail` userdb listener.
 The runtime now also has a first mailbox-helper boundary:
 
 - the web-facing runtime can use `OSMAP_MAILBOX_HELPER_SOCKET_PATH` to proxy
-  mailbox listing through a local helper
+  helper-supported mailbox operations through a local helper
 - `OSMAP_RUN_MODE=mailbox-helper` starts that helper instead of the HTTP
   listener
 - the helper binds the configured Unix-domain socket, or defaults to
   `<runtime_dir>/mailbox-helper.sock` when the run mode is `mailbox-helper`
+- `OSMAP_MAILBOX_HELPER_GRANT_KEY_PATH` supplies the request-grant key required
+  by both sides of the helper boundary
 
-This slice currently applies to mailbox listing, message-list retrieval, and
-message-view retrieval. Attachment download now reuses the helper-backed
-message-view path when configured, while MIME-part decoding remains in the
-browser-facing runtime for now.
+This slice currently applies to mailbox listing, mailbox-scoped and
+all-visible-mailbox search, message-list retrieval, message-view retrieval,
+attachment download, and one-message move. The helper executes the mailbox-side
+Dovecot work, while browser session policy, rendering, MIME display policy,
+CSRF checks, and sendmail submission remain in the browser-facing runtime.
 
 ## User Settings State
 

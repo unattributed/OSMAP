@@ -6,7 +6,7 @@ This document defines the target Version 1 product boundary for OSMAP based on:
 
 - Phase 0 project charter and program baseline
 - Phase 1 current-system analysis
-- private PKCB planning notes distilled into public-safe requirements
+- private early project planning notes distilled into public-safe requirements
 
 It is a planning document only. It does not imply architecture lock or
 implementation completion.

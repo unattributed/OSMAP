@@ -8,7 +8,7 @@ This document captures the Phase 0 planning baseline for OSMAP.
 
 This baseline was validated from:
 
-- the private PKCB notes for the project
+- private early project planning notes distilled into this public-safe baseline
 - the repository Phase 0 and Phase 1 control blocks
 - the public repository README and current docs
 - read-only inspection of `mail.blackbagsecurity.com` on March 27, 2026

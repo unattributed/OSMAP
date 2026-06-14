@@ -308,8 +308,11 @@ one-session validation password override and restored the original mailbox
 password hash afterward, so the repo still does not carry mailbox credentials.
 On April 14, 2026, after the mailbox-helper trusted-UID closeout hardening and
 the host-portable helper test fix landed, the same full seven-step wrapper was
-rerun successfully again on the then-current pushed snapshot and the fetched
-report was archived at `maint/live/latest-host-v1-closeout-report.txt`.
+rerun successfully again on the then-current pushed snapshot. The conventional
+operator-local report filename for that wrapper is
+`latest-host-v1-closeout-report.txt`; it is not part of the current committed
+evidence set unless a future closeout refresh explicitly commits a sanitized
+report.
 
 The current repo snapshot already satisfies these closeout-gate preconditions:
 
