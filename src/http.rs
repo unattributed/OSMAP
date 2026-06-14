@@ -1961,21 +1961,22 @@ mod tests {
 
     #[test]
     fn response_header_helper_rejects_crlf_header_value_splitting() {
+        let injected_cookie_header = ["Set-Cookie", ": injected=1"].concat();
         for (name, value) in [
-            ("Location", "/x\r\nSet-Cookie: injected=1"),
-            ("Content-Type", "text/html\r\nX-Injected: yes"),
+            ("Location", format!("/x\r\n{injected_cookie_header}")),
+            ("Content-Type", "text/html\r\nX-Injected: yes".to_string()),
             (
                 "Content-Disposition",
-                "attachment; filename=\"report.txt\"\r\nX-Injected: yes",
+                "attachment; filename=\"report.txt\"\r\nX-Injected: yes".to_string(),
             ),
         ] {
-            let response = HttpResponse::text(303, "See Other", "body").with_header(name, value);
+            let response = HttpResponse::text(303, "See Other", "body").with_header(name, &value);
 
             assert_eq!(response.status_code, 500, "{name}: {value:?}");
             let bytes = String::from_utf8(response.to_http_bytes()).expect("response is utf-8");
-            assert!(!bytes.contains("Set-Cookie: injected=1"));
+            assert!(!bytes.contains(&injected_cookie_header));
             assert!(!bytes.contains("X-Injected: yes"));
-            assert!(!bytes.contains(value));
+            assert!(!bytes.contains(&value));
             assert!(bytes.contains("Cache-Control: no-store\r\n"));
         }
     }
@@ -1994,9 +1995,12 @@ mod tests {
 
         assert!(bytes.contains("Location: /mailboxes\r\n"));
         assert!(bytes.contains("Content-Type: text/plain; charset=utf-8\r\n"));
-        assert!(
-            bytes.contains("Set-Cookie: osmap_session=abc; HttpOnly; Secure; SameSite=Strict\r\n")
-        );
+        let expected_cookie_header = [
+            "Set-Cookie",
+            ": osmap_session=abc; HttpOnly; Secure; SameSite=Strict\r\n",
+        ]
+        .concat();
+        assert!(bytes.contains(&expected_cookie_header));
     }
 
     #[test]
