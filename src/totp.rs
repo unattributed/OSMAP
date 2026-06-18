@@ -24,6 +24,9 @@ type HmacSha1 = Hmac<Sha1>;
 /// The current fixed TOTP secret file extension.
 pub const TOTP_SECRET_FILE_EXTENSION: &str = "totp";
 
+/// Minimum decoded TOTP secret strength accepted from operator-managed files.
+pub const MIN_TOTP_SECRET_BYTES: usize = 20;
+
 /// Policy controlling TOTP code shape and clock skew tolerance.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TotpPolicy {
@@ -344,6 +347,13 @@ fn parse_secret_file(content: &str) -> Result<Option<TotpSecret>, TotpSecretStor
 
     let secret_bytes =
         decode_base32(&secret_value).map_err(|error| TotpSecretStoreError { reason: error })?;
+    if secret_bytes.len() < MIN_TOTP_SECRET_BYTES {
+        return Err(TotpSecretStoreError {
+            reason: format!(
+                "decoded TOTP secret must contain at least {MIN_TOTP_SECRET_BYTES} bytes"
+            ),
+        });
+    }
 
     Ok(Some(TotpSecret { secret_bytes }))
 }
@@ -490,6 +500,40 @@ mod tests {
             .expect("secret should exist");
 
         assert_eq!(secret.secret_bytes, b"12345678901234567890");
+    }
+
+    #[test]
+    fn rejects_empty_secret_values() {
+        let error =
+            parse_secret_file("secret=\n").expect_err("empty secret material must be rejected");
+
+        assert!(error.reason.contains("at least 20 bytes"));
+    }
+
+    #[test]
+    fn rejects_separator_only_secret_values() {
+        for value in ["   ", " - \t- "] {
+            let error = parse_secret_file(&format!("secret={value}\n"))
+                .expect_err("separator-only secret material must be rejected");
+
+            assert!(error.reason.contains("at least 20 bytes"));
+        }
+    }
+
+    #[test]
+    fn rejects_too_short_decoded_secret_values() {
+        let error = parse_secret_file("secret=MZXW6===\n")
+            .expect_err("short decoded secret material must be rejected");
+
+        assert!(error.reason.contains("at least 20 bytes"));
+    }
+
+    #[test]
+    fn rejects_malformed_base32_secret_values() {
+        let error = parse_secret_file("secret=INVALID1\n")
+            .expect_err("malformed base32 secret material must be rejected");
+
+        assert!(error.reason.contains("invalid base32 character"));
     }
 
     #[cfg(unix)]
