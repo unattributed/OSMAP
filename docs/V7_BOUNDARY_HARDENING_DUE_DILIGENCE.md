@@ -302,6 +302,8 @@ The final sanitized archive and checksum are produced outside the repository:
 ```text
 /home/foo/osmap-v7-boundary-hardening-evidence/osmap-v7-boundary-hardening-evidence-20260618-114455Z.tar.gz
 /home/foo/osmap-v7-boundary-hardening-evidence/osmap-v7-boundary-hardening-evidence-20260618-114455Z.tar.gz.sha256
+/home/foo/osmap-v7-boundary-hardening-evidence/osmap-v7-production-deployment-evidence-20260618-120051Z.tar.gz
+/home/foo/osmap-v7-boundary-hardening-evidence/osmap-v7-production-deployment-evidence-20260618-120051Z.tar.gz.sha256
 ```
 
 ## Residual Risks
