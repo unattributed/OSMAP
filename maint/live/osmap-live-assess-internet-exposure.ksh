@@ -264,7 +264,7 @@ if [ -z "${PUBLIC_SERVER_CONTENT}" ]; then
   append_blocker "public_https_server_block_missing"
 fi
 
-if [ "${PUBLIC_INCLUDE_TARGETS:-}" != "/etc/nginx/templates/ssl.tmpl,/etc/nginx/templates/osmap-root.tmpl" ]; then
+if [ "${PUBLIC_INCLUDE_TARGETS:-}" != "/etc/nginx/templates/ssl.tmpl,/etc/nginx/templates/osmap-public-root.tmpl" ]; then
   append_blocker "public_https_server_block_not_osmap_only"
 fi
 

@@ -13,7 +13,10 @@ The current artifact set is:
 - `etc/osmap/osmap-serve.env`
 - `etc/osmap/osmap-mailbox-helper.env`
 - `nginx/sites-enabled/main-ssl.conf`
+- `nginx/conf-enabled/10-osmap-public-edge.conf`
 - `nginx/templates/osmap-root.tmpl`
+- `nginx/templates/osmap-public-root.tmpl`
+- `newsyslog/osmap-public.conf`
 - `pf.anchors/macros.pf`
 - `pf.anchors/selfhost.pf`
 
@@ -21,12 +24,17 @@ The nginx HTTPS artifact intentionally separates the public WAN listener from
 the private/control listeners:
 
 - `192.168.1.44:443` is OSMAP-only and includes only shared TLS policy plus
-  `osmap-root.tmpl`
+  `osmap-public-root.tmpl`
 - `127.0.0.1:443` and `10.44.0.1:443` retain adjacent private/control
   templates such as SOGo, PostfixAdmin, PF dashboards, Rspamd, and operator
   portals
 - both HTTPS server blocks reject unexpected `Host` headers with HTTP `421` so
   the listener default cannot serve OSMAP or private routes for arbitrary names
+- the public access log records normalized paths without query strings,
+  referrers, cookies, or client-supplied forwarding chains
+- public OSMAP logs are retained as `root:wheel` mode `0640`
+- public requests have conservative per-source request and connection limits;
+  application throttling remains authoritative for authentication decisions
 
 Do not merge those listeners back into one server block. PF can only open TCP
 `443`; nginx is the path-level boundary that keeps public HTTPS limited to

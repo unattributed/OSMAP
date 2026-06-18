@@ -13,7 +13,7 @@ PROJECT_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 DEFAULT_REPORT_PATH="${PROJECT_ROOT}/maint/live/osmap-live-validate-edge-cutover-report.txt"
 REPORT_PATH="${OSMAP_EDGE_CUTOVER_REPORT_PATH:-}"
 NGINX_MAIN_SSL_PATH="${OSMAP_EDGE_CUTOVER_NGINX_MAIN_SSL_PATH:-/etc/nginx/sites-enabled/main-ssl.conf}"
-NGINX_OSMAP_ROOT_TEMPLATE_PATH="${OSMAP_EDGE_CUTOVER_NGINX_OSMAP_ROOT_TEMPLATE_PATH:-/etc/nginx/templates/osmap-root.tmpl}"
+NGINX_OSMAP_ROOT_TEMPLATE_PATH="${OSMAP_EDGE_CUTOVER_NGINX_OSMAP_ROOT_TEMPLATE_PATH:-/etc/nginx/templates/osmap-public-root.tmpl}"
 PF_MACROS_PATH="${OSMAP_EDGE_CUTOVER_PF_MACROS_PATH:-/etc/pf.anchors/macros.pf}"
 PF_SELFHOST_FILE_PATH="${OSMAP_EDGE_CUTOVER_PF_SELFHOST_FILE_PATH:-/etc/pf.anchors/selfhost.pf}"
 PF_SELFHOST_ANCHOR="${OSMAP_EDGE_CUTOVER_PF_SELFHOST_ANCHOR:-selfhost}"
@@ -218,8 +218,8 @@ PUBLIC_INCLUDE_TARGETS="$(extract_include_targets "${PUBLIC_SERVER_CONTENT}" | p
 PRIVATE_INCLUDE_TARGETS="$(extract_include_targets "${PRIVATE_SERVER_CONTENT}" | paste -sd ',' -)"
 VALIDATION_RESULT="passed"
 
-if ! printf '%s\n' "${MAIN_SSL_CONTENT}" | grep -Fq 'include /etc/nginx/templates/osmap-root.tmpl;'; then
-  append_failed_check "canonical_https_vhost_missing_osmap_root_template_include"
+if ! printf '%s\n' "${MAIN_SSL_CONTENT}" | grep -Fq 'include /etc/nginx/templates/osmap-public-root.tmpl;'; then
+  append_failed_check "public_https_vhost_missing_osmap_public_root_template_include"
 fi
 
 if [ -z "${PUBLIC_SERVER_CONTENT}" ]; then
@@ -238,11 +238,11 @@ if printf '%s\n' "${PUBLIC_SERVER_CONTENT}" | grep -Fq 'listen 127.0.0.1:443 ssl
   append_failed_check "public_https_server_block_includes_loopback_listener"
 fi
 
-if [ "${PUBLIC_INCLUDE_TARGETS:-}" != "/etc/nginx/templates/ssl.tmpl,/etc/nginx/templates/osmap-root.tmpl" ]; then
+if [ "${PUBLIC_INCLUDE_TARGETS:-}" != "/etc/nginx/templates/ssl.tmpl,/etc/nginx/templates/osmap-public-root.tmpl" ]; then
   append_failed_check "public_https_server_block_not_osmap_only"
 fi
 
-if ! printf '%s\n' "${PUBLIC_SERVER_CONTENT}" | grep -Fq 'access_log /var/log/nginx/osmap.public.access.log;'; then
+if ! printf '%s\n' "${PUBLIC_SERVER_CONTENT}" | grep -Fq 'access_log /var/log/nginx/osmap.public.access.log osmap_public_security;'; then
   append_failed_check "public_osmap_access_log_not_segregated"
 fi
 

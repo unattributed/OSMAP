@@ -1,0 +1,36 @@
+# OSMAP public edge on mail.blackbagsecurity.com.
+
+location = /mail { return 301 /; }
+location = /webmail { return 301 /; }
+location = /osmap { return 301 /; }
+location ^~ /mail/ { return 301 /; }
+location ^~ /webmail/ { return 301 /; }
+location ^~ /osmap/ { return 301 /; }
+
+location = /login {
+    limit_except GET POST { deny all; }
+    limit_req zone=osmap_public_login burst=6 nodelay;
+    limit_conn osmap_public_connections 10;
+
+    proxy_pass http://127.0.0.1:8080;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_buffering off;
+}
+
+location / {
+    limit_except GET POST { deny all; }
+    limit_req zone=osmap_public_general burst=30 nodelay;
+    limit_conn osmap_public_connections 10;
+
+    proxy_pass http://127.0.0.1:8080;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_buffering off;
+}
