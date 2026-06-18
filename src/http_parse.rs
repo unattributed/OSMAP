@@ -45,14 +45,6 @@ pub(crate) fn effective_remote_addr(request: &HttpRequest, peer_remote_addr: &st
         return forwarded;
     }
 
-    if let Some(forwarded_for) = request
-        .headers
-        .get("x-forwarded-for")
-        .and_then(|value| normalize_forwarded_for(value))
-    {
-        return forwarded_for;
-    }
-
     peer_remote_addr.to_string()
 }
 
@@ -69,10 +61,6 @@ fn normalize_forwarded_ip(value: &str) -> Option<String> {
         .parse::<IpAddr>()
         .ok()
         .map(|addr| addr.to_string())
-}
-
-fn normalize_forwarded_for(value: &str) -> Option<String> {
-    value.split(',').rev().find_map(normalize_forwarded_ip)
 }
 
 /// Reads one bounded HTTP request from the supplied stream.
@@ -661,7 +649,10 @@ mod tests {
 
     #[test]
     fn trusts_x_real_ip_only_from_loopback_peers() {
-        let request = request_with_headers(&[("X-Real-IP", "198.51.100.24")]);
+        let request = request_with_headers(&[
+            ("X-Real-IP", "198.51.100.24"),
+            ("X-Forwarded-For", "198.51.100.13"),
+        ]);
 
         assert_eq!(
             effective_remote_addr(&request, "127.0.0.1"),
@@ -674,12 +665,9 @@ mod tests {
     }
 
     #[test]
-    fn falls_back_to_last_forwarded_for_hop_for_loopback_proxy_requests() {
+    fn ignores_x_forwarded_for_from_loopback_proxy_requests() {
         let request = request_with_headers(&[("X-Forwarded-For", "198.51.100.13, 198.51.100.24")]);
 
-        assert_eq!(
-            effective_remote_addr(&request, "127.0.0.1"),
-            "198.51.100.24"
-        );
+        assert_eq!(effective_remote_addr(&request, "127.0.0.1"), "127.0.0.1");
     }
 }

@@ -48,7 +48,7 @@ The detailed source search is recorded in
 | 1. Headerless request bound | Complete | Unterminated reads are bounded by the header limit; parsed multipart requests retain their upload allowance. |
 | 2. TOTP secret minimum | Complete | Empty, separator-only, malformed, and decoded secrets shorter than 20 bytes fail closed. |
 | 3. File-backed state writes | Complete | Session and throttle temporary files use restrictive atomic creation; throttle temp names include pid plus a process-local counter. |
-| 4. Forwarded client IP trust | Pending | Not started. |
+| 4. Forwarded client IP trust | Complete | Only a valid `X-Real-IP` from a loopback peer can replace the socket peer address; `X-Forwarded-For` is ignored. |
 | 5. Compose content type | Pending | Not started. |
 | 6. Final gate and live due diligence | Pending | Not started. |
 
@@ -85,6 +85,20 @@ buckets. Locking only `save` would not close lost-update races. Correct
 cross-process serialization requires a separate, reviewable transaction
 change rather than a misleading narrow lock.
 
+### Slice 4: Forwarded client IP trust
+
+The effective remote address now trusts only a syntactically valid
+`X-Real-IP` when the immediate peer is loopback. `X-Forwarded-For` is ignored,
+including when supplied by a loopback peer. Requests from non-loopback peers
+cannot replace the socket peer address with either header.
+
+The reviewed production template overwrites `X-Real-IP` with nginx
+`$remote_addr`; it may continue to append `X-Forwarded-For` for edge logging
+because OSMAP no longer consumes that chain. Production `serve` remains
+configured on `127.0.0.1:8080`. This trust rule is safe only while listener
+isolation keeps untrusted local users and processes from connecting directly
+to the OSMAP HTTP socket.
+
 ## Tests And Evidence
 
 Baseline results:
@@ -115,6 +129,9 @@ Evidence files:
 - `slice3-throttle-tests.txt`
 - `slice3-cargo-fmt-check.txt`
 - `slice3-diff.txt`
+- `slice4-http-parse-tests.txt`
+- `slice4-cargo-fmt-check.txt`
+- `slice4-diff.txt`
 
 ## Live Test Results
 
