@@ -23,6 +23,9 @@ printf 'log\n' > "$live_dir/log/helper.log"
 printf 'socket\n' > "$live_dir/run/mailbox-helper.sock"
 printf 'backup\n' > "$live_dir/bin/osmap.pre-fixture"
 printf 'backup\n' > "$live_dir/etc/osmap-serve.env.pre-fixture"
+printf 'backup\n' > "$live_dir/bin/osmap.pre-v6-20260618T110916Z"
+printf 'backup\n' > "$live_dir/etc/osmap-serve.env.pre-v6-20260618T110916Z"
+printf 'backup\n' > "$live_dir/bin/osmap.pre-v7-unpaired"
 
 cat > "$bin_dir/doas" <<'EOF'
 #!/bin/sh
@@ -85,6 +88,7 @@ run_validator() {
 		OSMAP_V6_HELPER_SOCKET_PATH="$live_dir/run/mailbox-helper.sock" \
 		OSMAP_V6_BINARY_BACKUP_DIR="$live_dir/bin" \
 		OSMAP_V6_ENV_BACKUP_DIR="$live_dir/etc" \
+		OSMAP_V6_DEPLOYED_COMMIT=18d853643e2eca054cb7d2ad1d4d5b275f8af4f3 \
 		sh "$validator" --report "$report" "$@"
 }
 
@@ -94,6 +98,9 @@ grep -Fxq 'result=v6_production_readiness_passed' "$tmp_dir/good.txt"
 grep -Fxq 'service_state=passed' "$tmp_dir/good.txt"
 grep -Fxq 'invalid_host_421=passed' "$tmp_dir/good.txt"
 grep -Fxq 'rollback_unit=passed' "$tmp_dir/good.txt"
+grep -Fxq 'repo_commit=18d853643e2eca054cb7d2ad1d4d5b275f8af4f3' "$tmp_dir/good.txt"
+grep -Fxq "binary_rollback_artifact=$live_dir/bin/osmap.pre-v6-20260618T110916Z" "$tmp_dir/good.txt"
+grep -Fxq "env_rollback_artifact=$live_dir/etc/osmap-serve.env.pre-v6-20260618T110916Z" "$tmp_dir/good.txt"
 
 if OSMAP_TEST_SERVICE_RC=1 run_validator "$tmp_dir/service-fail.txt" > "$tmp_dir/service-fail.out" 2>&1; then
 	echo "expected missing service state to fail" >&2
@@ -107,7 +114,8 @@ if OSMAP_TEST_INVALID_CODE=200 run_validator "$tmp_dir/host-fail.txt" > "$tmp_di
 fi
 grep -Fxq 'invalid_host_421=failed' "$tmp_dir/host-fail.txt"
 
-rm "$live_dir/etc/osmap-serve.env.pre-fixture"
+rm "$live_dir/etc/osmap-serve.env.pre-fixture" \
+	"$live_dir/etc/osmap-serve.env.pre-v6-20260618T110916Z"
 if run_validator "$tmp_dir/rollback-fail.txt" > "$tmp_dir/rollback-fail.out" 2>&1; then
 	echo "expected missing rollback artifact to fail" >&2
 	exit 1

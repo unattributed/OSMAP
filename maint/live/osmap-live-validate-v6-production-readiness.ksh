@@ -63,7 +63,7 @@ while [ "$#" -gt 0 ]; do
 	esac
 done
 
-for tool in awk curl date doas find git grep hostname netstat rcctl sed sha256 stat; do
+for tool in awk curl date doas find git grep hostname netstat rcctl sed sha256 sort stat; do
 	if ! command -v "$tool" >/dev/null 2>&1; then
 		append_failure "missing_tool_$tool"
 	fi
@@ -95,7 +95,7 @@ service_status() {
 
 TIMESTAMP=$(date -u '+%Y-%m-%dT%H:%M:%SZ')
 HOST=$(hostname)
-REPO_COMMIT=$(git -C "$PROJECT_ROOT" rev-parse HEAD 2>/dev/null || printf '%s' "unavailable")
+REPO_COMMIT=${OSMAP_V6_DEPLOYED_COMMIT:-$(git -C "$PROJECT_ROOT" rev-parse HEAD 2>/dev/null || printf '%s' "unavailable")}
 BINARY_SHA256="unavailable"
 if doas test -f "$OSMAP_BIN_PATH"; then
 	BINARY_SHA256=$(doas sha256 -q "$OSMAP_BIN_PATH" 2>/dev/null ||
@@ -156,8 +156,21 @@ if printf '%s\n' "$LISTENER_LINES" |
 	append_failure "backend_port_publicly_bound"
 fi
 
-BINARY_ROLLBACK=$(doas find "$BINARY_BACKUP_DIR" -type f -name 'osmap.pre-*' -print 2>/dev/null | head -1 || true)
-ENV_ROLLBACK=$(doas find "$ENV_BACKUP_DIR" -type f -name 'osmap-serve.env.pre-*' -print 2>/dev/null | head -1 || true)
+select_rollback_unit() {
+	for binary_path in $(doas find "$BINARY_BACKUP_DIR" -type f -name 'osmap.pre-*' -print 2>/dev/null | sort -r); do
+		binary_name=${binary_path##*/}
+		artifact_suffix=${binary_name#osmap.pre-}
+		env_path="$ENV_BACKUP_DIR/osmap-serve.env.pre-$artifact_suffix"
+		if doas test -f "$env_path"; then
+			printf '%s\n%s\n' "$binary_path" "$env_path"
+			return
+		fi
+	done
+}
+
+ROLLBACK_UNIT=$(select_rollback_unit || true)
+BINARY_ROLLBACK=$(printf '%s\n' "$ROLLBACK_UNIT" | sed -n '1p')
+ENV_ROLLBACK=$(printf '%s\n' "$ROLLBACK_UNIT" | sed -n '2p')
 ROLLBACK_STATUS="passed"
 if [ -z "$BINARY_ROLLBACK" ] || [ -z "$ENV_ROLLBACK" ]; then
 	ROLLBACK_STATUS="failed"
