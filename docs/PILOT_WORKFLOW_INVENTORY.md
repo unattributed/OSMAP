@@ -190,3 +190,8 @@ Any selected required workflow marked `failed`, any unclassified workflow, or
 normal Roundcube fallback keeps the cohort outside V6 retirement readiness.
 Use sanitized cohort labels rather than real email addresses in committed
 evidence.
+
+The explicit source-attachment workflow may be classified `passed` only when
+the user selects the source parts, saves the draft, resumes it with only those
+parts preselected, and sends after server-side source revalidation. Automatic
+reattachment or stale-reference submission is not an accepted workflow.

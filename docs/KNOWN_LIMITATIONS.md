@@ -211,8 +211,9 @@ The primary V6 gaps at the definition baseline are:
 - file-backed session mutations now have a restrictive store-local advisory
   lock for processes sharing one host directory; distributed locking remains
   out of scope
-- explicit source-attachment selections are revalidated during immediate send
-  but are not preserved across draft resume
+- explicit source-attachment selections now persist across draft resume as
+  bounded source references only; source-message deletion or mutation remains
+  a visible fail-closed condition and no source bytes are persisted
 - observability and incident-response expectations are documented but not yet
   assembled into a V6 live evidence report
 - the bounded resource model has local tests and earlier evidence but not the

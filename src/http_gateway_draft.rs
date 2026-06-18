@@ -159,6 +159,7 @@ impl RuntimeBrowserGateway {
                 subject: request.subject.to_string(),
                 body: request.body.to_string(),
                 attachments: persisted_attachments,
+                source_attachments: request.source_attachments.cloned(),
             },
         ) {
             Ok(record) => record,

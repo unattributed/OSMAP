@@ -36,6 +36,7 @@ pub(crate) struct ComposePageModel<'a> {
     pub source_mailbox_name: Option<&'a str>,
     pub source_uid: Option<u64>,
     pub source_attachments: &'a [AttachmentMetadata],
+    pub selected_source_part_paths: &'a [String],
 }
 
 /// Small view model for the draft list page.
@@ -966,6 +967,7 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
         model.source_mailbox_name,
         model.source_uid,
         model.source_attachments,
+        model.selected_source_part_paths,
     );
 
     TrustedHtml::from_template(format!(
@@ -1028,6 +1030,7 @@ fn render_source_attachment_controls(
     source_mailbox_name: Option<&str>,
     source_uid: Option<u64>,
     attachments: &[AttachmentMetadata],
+    selected_part_paths: &[String],
 ) -> String {
     if source_mailbox_name.is_none() || source_uid.is_none() || attachments.is_empty() {
         return String::new();
@@ -1051,7 +1054,7 @@ fn render_source_attachment_controls(
         rows.push_str(&format!(
             concat!(
                 "<label class=\"checkbox-row\" for=\"{}\">",
-                "<input id=\"{}\" type=\"checkbox\" name=\"{}\" value=\"{}\">",
+                "<input id=\"{}\" type=\"checkbox\" name=\"{}\" value=\"{}\"{}>",
                 "{}",
                 "</label>"
             ),
@@ -1059,6 +1062,14 @@ fn render_source_attachment_controls(
             escape_html(&field_name),
             escape_html(&field_name),
             escape_html(&attachment.part_path),
+            if selected_part_paths
+                .iter()
+                .any(|selected| selected == &attachment.part_path)
+            {
+                " checked"
+            } else {
+                ""
+            },
             escape_html(&label),
         ));
     }

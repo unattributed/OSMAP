@@ -150,6 +150,7 @@ pub struct BrowserDraftSaveRequest<'a> {
     pub subject: &'a str,
     pub body: &'a str,
     pub attachments: &'a [UploadedAttachment],
+    pub source_attachments: Option<&'a DraftSourceAttachments>,
 }
 
 /// The result of a browser login attempt.

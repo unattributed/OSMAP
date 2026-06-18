@@ -161,6 +161,7 @@ where
                     source_mailbox_name: source_mailbox_name.as_deref(),
                     source_uid,
                     source_attachments: &source_attachments,
+                    selected_source_part_paths: &[],
                 }),
             ),
             audit_events,
@@ -493,6 +494,7 @@ where
                         source_mailbox_name: None,
                         source_uid: None,
                         source_attachments: &[],
+                        selected_source_part_paths: &[],
                     }),
                 );
                 if let Some(retry_after_seconds) = retry_after_seconds {
@@ -538,7 +540,7 @@ fn bytes_to_mib(bytes: usize) -> usize {
     bytes / (1024 * 1024)
 }
 
-fn selected_original_attachment_parts(
+pub(super) fn selected_original_attachment_parts(
     form: &BTreeMap<String, String>,
 ) -> Result<Vec<String>, String> {
     let mut parts = Vec::new();

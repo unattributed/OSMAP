@@ -32,7 +32,8 @@ use crate::auth::{
 };
 use crate::config::{AppConfig, LogLevel, RuntimeEnvironment};
 use crate::draft::{
-    DraftPolicy, DraftRecord, DraftRecordInput, DraftStore, DraftSummary, FileDraftStore,
+    DraftPolicy, DraftRecord, DraftRecordInput, DraftSourceAttachments, DraftStore, DraftSummary,
+    FileDraftStore,
 };
 use crate::html::TrustedHtml;
 use crate::http_form::{parse_compose_form, parse_urlencoded_form};
@@ -1767,6 +1768,7 @@ mod tests {
                     subject: request.subject.to_string(),
                     body: request.body.to_string(),
                     attachments,
+                    source_attachments: request.source_attachments.cloned(),
                 },
             ) {
                 Ok(record) => record,
@@ -4083,6 +4085,86 @@ mod tests {
         assert!(list_body.contains("Body Bytes"));
         assert!(!list_body.contains("Private draft body"));
         assert!(!list_body.contains("Draft Subject"));
+    }
+
+    #[test]
+    fn draft_save_resume_and_send_revalidate_explicit_source_attachment_references() {
+        let app = app();
+        let save_response = app.handle_request(
+            &request(
+                "POST",
+                "/drafts/save",
+                &authenticated_same_origin_headers(),
+                concat!(
+                    "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210",
+                    "&to=bob%40example.com&subject=Source%20Draft&body=Body",
+                    "&source_mailbox=INBOX&source_uid=9",
+                    "&include_original_attachment_1=1.2"
+                ),
+            ),
+            "127.0.0.1",
+        );
+        assert_eq!(save_response.response.status_code, 303);
+        assert!(save_response
+            .audit_events
+            .iter()
+            .any(|event| event.action == "stub_message_view"));
+
+        let location = location_header(&save_response);
+        let draft_id = location.trim_start_matches("/draft?id=");
+        let resume_response = app.handle_request(
+            &request("GET", &location, &authenticated_headers(), ""),
+            "127.0.0.1",
+        );
+        assert_eq!(resume_response.response.status_code, 200);
+        let resume_body = body_text(&resume_response);
+        assert!(resume_body.contains("name=\"source_mailbox\" value=\"INBOX\""));
+        assert!(resume_body.contains("name=\"source_uid\" value=\"9\""));
+        assert!(resume_body.contains("value=\"1.2\" checked"));
+        assert!(resume_body.contains("value=\"1.3\""));
+        assert!(!resume_body.contains("value=\"1.3\" checked"));
+
+        let send_response = app.handle_request(
+            &request(
+                "POST",
+                "/send",
+                &authenticated_same_origin_headers(),
+                &format!(
+                    "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&draft_id={draft_id}&to=bob%40example.com&subject=Source%20Draft&body=Body&source_mailbox=INBOX&source_uid=9&include_original_attachment_1=1.2"
+                ),
+            ),
+            "127.0.0.1",
+        );
+        assert_eq!(send_response.response.status_code, 303);
+        assert!(send_response
+            .audit_events
+            .iter()
+            .any(|event| event.action == "stub_attachment_download"));
+    }
+
+    #[test]
+    fn draft_save_rejects_unsurfaced_source_attachment_reference() {
+        let response = app().handle_request(
+            &request(
+                "POST",
+                "/drafts/save",
+                &authenticated_same_origin_headers(),
+                concat!(
+                    "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210",
+                    "&to=bob%40example.com&subject=Stale&body=Body",
+                    "&source_mailbox=INBOX&source_uid=9",
+                    "&include_original_attachment_1=1.99"
+                ),
+            ),
+            "127.0.0.1",
+        );
+
+        assert_eq!(response.response.status_code, 409);
+        assert!(body_text(&response).contains("could not be revalidated"));
+        assert!(!response
+            .audit_events
+            .iter()
+            .any(|event| event.action == "stub_draft_save"));
     }
 
     #[test]

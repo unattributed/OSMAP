@@ -14,6 +14,12 @@ use sha2::{Digest, Sha256};
 
 use crate::send::{ComposePolicy, ComposeRequest, UploadedAttachment};
 
+/// Maximum persisted source mailbox length.
+pub const DEFAULT_DRAFT_SOURCE_MAILBOX_MAX_LEN: usize = 255;
+
+/// Maximum persisted source attachment part-path length.
+pub const DEFAULT_DRAFT_SOURCE_PART_PATH_MAX_LEN: usize = 64;
+
 /// Draft ids are 128-bit random values encoded as lower-case hex.
 pub const DRAFT_ID_BYTES: usize = 16;
 pub const DRAFT_ID_HEX_LEN: usize = DRAFT_ID_BYTES * 2;
@@ -69,6 +75,16 @@ pub struct DraftRecord {
     pub updated_at: u64,
     pub expires_at: u64,
     pub request: ComposeRequest,
+    pub source_attachments: Option<DraftSourceAttachments>,
+}
+
+/// Bounded references to source-message attachments explicitly selected by the
+/// user. Source bytes and raw MIME content are never persisted here.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DraftSourceAttachments {
+    pub mailbox_name: String,
+    pub uid: u64,
+    pub part_paths: Vec<String>,
 }
 
 /// Validated draft creation input supplied by the future browser route layer.
@@ -81,6 +97,7 @@ pub struct DraftRecordInput {
     pub subject: String,
     pub body: String,
     pub attachments: Vec<UploadedAttachment>,
+    pub source_attachments: Option<DraftSourceAttachments>,
 }
 
 impl std::fmt::Debug for DraftRecord {
@@ -96,6 +113,14 @@ impl std::fmt::Debug for DraftRecord {
             .field("subject_len", &self.request.subject.len())
             .field("body_len", &self.request.body.len())
             .field("attachment_count", &self.request.attachments.len())
+            .field(
+                "source_attachment_count",
+                &self
+                    .source_attachments
+                    .as_ref()
+                    .map(|source| source.part_paths.len())
+                    .unwrap_or_default(),
+            )
             .finish()
     }
 }
@@ -116,6 +141,10 @@ impl DraftRecord {
         .map_err(|error| DraftError {
             reason: error.reason,
         })?;
+        let source_attachments = input
+            .source_attachments
+            .map(|source| validate_source_attachments(policy, source))
+            .transpose()?;
 
         Ok(Self {
             draft_id: input.draft_id,
@@ -124,6 +153,7 @@ impl DraftRecord {
             updated_at: input.now,
             expires_at: input.now.saturating_add(policy.max_age_seconds),
             request,
+            source_attachments,
         })
     }
 
@@ -324,6 +354,9 @@ impl DraftStore for FileDraftStore {
         validate_draft_id(&record.draft_id)?;
         validate_canonical_username(&record.canonical_username)?;
         validate_compose_request(self.policy.compose_policy, &record.request)?;
+        if let Some(source) = record.source_attachments.clone() {
+            validate_source_attachments(self.policy, source)?;
+        }
 
         self.cleanup_expired(&record.canonical_username, now)?;
 
@@ -516,9 +549,72 @@ fn validate_compose_request(
     })
 }
 
+fn validate_source_attachments(
+    policy: DraftPolicy,
+    source: DraftSourceAttachments,
+) -> Result<DraftSourceAttachments, DraftError> {
+    if source.mailbox_name.is_empty() {
+        return Err(DraftError {
+            reason: "draft source mailbox must not be empty".to_string(),
+        });
+    }
+    if source.mailbox_name.len() > DEFAULT_DRAFT_SOURCE_MAILBOX_MAX_LEN {
+        return Err(DraftError {
+            reason: "draft source mailbox exceeded maximum length".to_string(),
+        });
+    }
+    if source.mailbox_name.chars().any(char::is_control) {
+        return Err(DraftError {
+            reason: "draft source mailbox contained control characters".to_string(),
+        });
+    }
+    if source.uid == 0 {
+        return Err(DraftError {
+            reason: "draft source UID must be positive".to_string(),
+        });
+    }
+    if source.part_paths.is_empty() {
+        return Err(DraftError {
+            reason: "draft source attachment selection must not be empty".to_string(),
+        });
+    }
+    if source.part_paths.len() > policy.compose_policy.max_attachments {
+        return Err(DraftError {
+            reason: "draft source attachment count exceeded maximum".to_string(),
+        });
+    }
+
+    let mut validated = Vec::with_capacity(source.part_paths.len());
+    for part_path in source.part_paths {
+        if part_path.is_empty()
+            || part_path.len() > DEFAULT_DRAFT_SOURCE_PART_PATH_MAX_LEN
+            || part_path.chars().any(char::is_control)
+            || !part_path.split('.').all(|component| {
+                !component.is_empty() && component.chars().all(|c| c.is_ascii_digit())
+            })
+        {
+            return Err(DraftError {
+                reason: "draft source attachment part path was invalid".to_string(),
+            });
+        }
+        if validated.iter().any(|existing| existing == &part_path) {
+            return Err(DraftError {
+                reason: "duplicate draft source attachment part path".to_string(),
+            });
+        }
+        validated.push(part_path);
+    }
+
+    Ok(DraftSourceAttachments {
+        mailbox_name: source.mailbox_name,
+        uid: source.uid,
+        part_paths: validated,
+    })
+}
+
 fn serialize_draft_metadata(record: &DraftRecord) -> String {
     let mut content = format!(
-        "version=1\n\
+        "version=2\n\
 draft_id={}\n\
 canonical_username_hex={}\n\
 created_at={}\n\
@@ -552,6 +648,23 @@ attachment_{index}_body_file={}\n",
         ));
     }
 
+    if let Some(source) = &record.source_attachments {
+        content.push_str(&format!(
+            "source_mailbox_hex={}\nsource_uid={}\nsource_attachment_count={}\n",
+            hex_lower(source.mailbox_name.as_bytes()),
+            source.uid,
+            source.part_paths.len(),
+        ));
+        for (index, part_path) in source.part_paths.iter().enumerate() {
+            content.push_str(&format!(
+                "source_attachment_{index}_part_path_hex={}\n",
+                hex_lower(part_path.as_bytes())
+            ));
+        }
+    } else {
+        content.push_str("source_attachment_count=0\n");
+    }
+
     content
 }
 
@@ -572,6 +685,10 @@ fn parse_draft_metadata(
     let mut body = None;
     let mut attachment_count = None;
     let mut attachment_fields = Vec::<AttachmentMetadataFields>::new();
+    let mut source_mailbox = None;
+    let mut source_uid = None;
+    let mut source_attachment_count = None;
+    let mut source_part_paths = Vec::<Option<String>>::new();
 
     for raw_line in content.lines() {
         let line = raw_line.trim();
@@ -597,6 +714,14 @@ fn parse_draft_metadata(
             "attachment_count" => {
                 attachment_count = Some(parse_usize_field("attachment_count", value)?)
             }
+            "source_mailbox_hex" => source_mailbox = Some(decode_hex_string(value)?),
+            "source_uid" => source_uid = Some(parse_u64_field("source_uid", value)?),
+            "source_attachment_count" => {
+                source_attachment_count = Some(parse_usize_field("source_attachment_count", value)?)
+            }
+            _ if key.starts_with("source_attachment_") => {
+                parse_source_attachment_metadata_field(key, value, &mut source_part_paths)?
+            }
             _ if key.starts_with("attachment_") => {
                 parse_attachment_metadata_field(key, value, &mut attachment_fields)?
             }
@@ -611,7 +736,7 @@ fn parse_draft_metadata(
     if draft_id.is_none() {
         return Ok(None);
     }
-    if version.as_deref() != Some("1") {
+    if !matches!(version.as_deref(), Some("1") | Some("2")) {
         return Err(DraftError {
             reason: "unsupported draft metadata version".to_string(),
         });
@@ -680,6 +805,37 @@ fn parse_draft_metadata(
     .map_err(|error| DraftError {
         reason: error.reason,
     })?;
+    let source_attachments = if version.as_deref() == Some("1") {
+        None
+    } else {
+        let count = required_field("source_attachment_count", source_attachment_count)?;
+        if count == 0 {
+            if source_mailbox.is_some() || source_uid.is_some() || !source_part_paths.is_empty() {
+                return Err(DraftError {
+                    reason: "draft source metadata was inconsistent".to_string(),
+                });
+            }
+            None
+        } else {
+            if source_part_paths.len() != count {
+                return Err(DraftError {
+                    reason: "draft source attachment metadata count did not match".to_string(),
+                });
+            }
+            let part_paths = source_part_paths
+                .into_iter()
+                .map(|part| required_field("source attachment part path", part))
+                .collect::<Result<Vec<_>, _>>()?;
+            Some(validate_source_attachments(
+                policy,
+                DraftSourceAttachments {
+                    mailbox_name: required_field("source mailbox", source_mailbox)?,
+                    uid: required_field("source UID", source_uid)?,
+                    part_paths,
+                },
+            )?)
+        }
+    };
 
     Ok(Some(DraftRecord {
         draft_id,
@@ -688,6 +844,7 @@ fn parse_draft_metadata(
         updated_at: required_field("updated_at", updated_at)?,
         expires_at: required_field("expires_at", expires_at)?,
         request,
+        source_attachments,
     }))
 }
 
@@ -728,6 +885,39 @@ fn parse_attachment_metadata_field(
             })
         }
     }
+    Ok(())
+}
+
+fn parse_source_attachment_metadata_field(
+    key: &str,
+    value: &str,
+    part_paths: &mut Vec<Option<String>>,
+) -> Result<(), DraftError> {
+    let key = key
+        .strip_prefix("source_attachment_")
+        .ok_or_else(|| DraftError {
+            reason: "invalid source attachment metadata key".to_string(),
+        })?;
+    let Some((index_text, field)) = key.split_once('_') else {
+        return Err(DraftError {
+            reason: "invalid source attachment metadata key".to_string(),
+        });
+    };
+    if field != "part_path_hex" {
+        return Err(DraftError {
+            reason: format!("unsupported source attachment metadata field {field}"),
+        });
+    }
+    let index = parse_usize_field("source attachment index", index_text)?;
+    if part_paths.len() <= index {
+        part_paths.resize(index + 1, None);
+    }
+    if part_paths[index].is_some() {
+        return Err(DraftError {
+            reason: "duplicate source attachment metadata field".to_string(),
+        });
+    }
+    part_paths[index] = Some(decode_hex_string(value)?);
     Ok(())
 }
 
@@ -931,6 +1121,7 @@ mod tests {
             subject: subject.to_string(),
             body: body.to_string(),
             attachments,
+            source_attachments: None,
         }
     }
 
@@ -1001,6 +1192,77 @@ mod tests {
 
         assert_eq!(loaded, draft);
         assert_eq!(loaded.request.attachments[0].body, b"attachment bytes");
+    }
+
+    #[test]
+    fn file_draft_store_round_trips_only_explicit_source_attachment_references() {
+        let dir = temp_dir("osmap-draft-source-reference");
+        let store = FileDraftStore::new(&dir, DraftPolicy::default());
+        let mut draft = record(&draft_id(12), "alice@example.com", 100);
+        draft.source_attachments = Some(DraftSourceAttachments {
+            mailbox_name: "INBOX".to_string(),
+            uid: 9,
+            part_paths: vec!["1.2".to_string()],
+        });
+
+        store.save(&draft, 100).expect("save should succeed");
+        let loaded = store
+            .load("alice@example.com", &draft.draft_id, 100)
+            .expect("load should succeed")
+            .expect("draft should exist");
+        let metadata =
+            fs::read_to_string(store.metadata_path("alice@example.com", &draft.draft_id))
+                .expect("metadata should be readable");
+
+        assert_eq!(loaded.source_attachments, draft.source_attachments);
+        assert!(metadata.contains("source_attachment_count=1"));
+        assert!(!metadata.contains("attachment bytes"));
+        assert!(!metadata.contains("%PDF"));
+        assert!(!metadata.contains("Content-Type:"));
+    }
+
+    #[test]
+    fn source_attachment_metadata_rejects_duplicates_controls_and_oversized_fields() {
+        let base = input(
+            &draft_id(13),
+            "alice@example.com",
+            100,
+            "Subject",
+            "Body",
+            Vec::new(),
+        );
+        let mut duplicate = base.clone();
+        duplicate.source_attachments = Some(DraftSourceAttachments {
+            mailbox_name: "INBOX".to_string(),
+            uid: 9,
+            part_paths: vec!["1.2".to_string(), "1.2".to_string()],
+        });
+        assert!(DraftRecord::new(DraftPolicy::default(), duplicate)
+            .expect_err("duplicate source parts must fail")
+            .reason
+            .contains("duplicate"));
+
+        let mut control = base.clone();
+        control.source_attachments = Some(DraftSourceAttachments {
+            mailbox_name: "INBOX\nJunk".to_string(),
+            uid: 9,
+            part_paths: vec!["1.2".to_string()],
+        });
+        assert!(DraftRecord::new(DraftPolicy::default(), control)
+            .expect_err("control characters must fail")
+            .reason
+            .contains("control"));
+
+        let mut oversized = base;
+        oversized.source_attachments = Some(DraftSourceAttachments {
+            mailbox_name: "M".repeat(DEFAULT_DRAFT_SOURCE_MAILBOX_MAX_LEN + 1),
+            uid: 9,
+            part_paths: vec!["1.2".to_string()],
+        });
+        assert!(DraftRecord::new(DraftPolicy::default(), oversized)
+            .expect_err("oversized source mailbox must fail")
+            .reason
+            .contains("maximum"));
     }
 
     #[test]

@@ -25,10 +25,15 @@ OSMAP currently supports:
 - explicit source-attachment checkboxes on reply and forward compose pages
 - send-time re-fetch of selected source attachments through the existing
   bounded attachment-download path
+- draft metadata persistence of only the source mailbox, source UID, and
+  explicitly selected source part paths
+- draft-resume revalidation of the source message before selected controls are
+  rendered
 
 OSMAP still does not automatically reattach original-message attachments during
-reply or forward. The current first implementation slice keeps selection
-explicit and does not attempt draft save/resume of source references yet.
+reply, forward, or draft resume. Source attachment bodies and raw MIME content
+are never copied into draft metadata. Resume preselects only the explicit
+part paths that remain surfaced by the current source message.
 
 Current route regression coverage includes duplicate selections, missing source
 mailbox metadata, stale or missing selected source parts, and aggregate
@@ -127,8 +132,10 @@ Draft save/resume should not copy original-message attachment bodies into draft
 state in the first implementation.
 
 If the user saves a draft with pending original-attachment selections, the draft
-may store only bounded source references and display metadata. On send, those
-references must be revalidated through the source message and attachment path.
+stores only bounded source mailbox, UID, and part-path references. It does not
+store source display metadata, attachment bytes, or raw MIME content. Resume
+revalidates the source message and send re-fetches every selected part through
+the attachment path.
 
 If the source message changes or disappears before send, the send fails
 visibly and the draft remains available for user correction.

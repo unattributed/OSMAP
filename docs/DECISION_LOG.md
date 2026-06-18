@@ -6623,3 +6623,15 @@ failure, existing validation/revocation races, and revoke-all racing with
 validation through separate store instances. This closes overlapping-process
 races on one host and session directory; it does not claim distributed
 cross-host locking.
+
+## 2026-06-18, Preserve explicit source-attachment draft references
+
+V6 draft metadata now persists only the source mailbox, source UID, and bounded
+part paths that the authenticated user explicitly selected. It does not persist
+source attachment bytes, raw MIME content, or source display metadata.
+
+Draft save and resume revalidate the source message through the existing
+authenticated mailbox boundary. Resume preselects only the saved paths that are
+still surfaced, and send continues to re-fetch every selected part through the
+helper-backed attachment path. Missing, changed, unauthorized, duplicate, or
+malformed source references fail visibly without sending.
