@@ -15,7 +15,7 @@ The repository deliberately separates:
   `AGENTS.md`
 
 As of June 18, 2026, the project has substantive public-safe documentation
-through the Version 5 production boundary-hardening deployment. The current
+through the Version 7 boundary-hardening deployment. The current
 baseline was built from:
 
 - private early project planning notes, distilled into public-safe docs
@@ -29,6 +29,10 @@ baseline was built from:
   release handoff records
 - repo-owned Version 5 boundary-hardening evidence and production deployment
   record
+- repo-owned Version 6 implementation, production-readiness, trace, and
+  incomplete-retirement-closeout records
+- repo-owned Version 7 finding reevaluation, implementation, test, deployment,
+  rollback, and production-validation record
 
 The documents in this folder are written for two audiences:
 
@@ -58,6 +62,8 @@ Current public documentation map:
 - `SUPPLY_CHAIN_POLICY.md`
 - `TLS_STANDARD.md`
 - `TEST_STRATEGY.md`
+- `V6_CLOSEOUT_EVIDENCE.md`
+- `V7_BOUNDARY_HARDENING_DUE_DILIGENCE.md`
 - `BUILD_AND_RELEASE_PROCESS.md`
 - `IMPLEMENTATION_PLAN.md`
 - `PROOF_OF_CONCEPT_PLAN.md`

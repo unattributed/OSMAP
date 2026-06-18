@@ -6663,3 +6663,30 @@ until the same deployed candidate produces passed production-readiness,
 no-Roundcube-fallback rehearsal, observability, and resource-resilience
 reports. Missing live evidence is recorded as a blocker rather than replaced
 with fixtures or inferred status.
+
+## 2026-06-18, Deploy and reevaluate V7 boundary hardening
+
+V7 revalidated five post-V6 findings against the current code before making
+targeted changes. It closes headerless HTTP request buffering, weak TOTP secret
+material, default `X-Forwarded-For` trust, and compose content-type
+inconsistency. Session and throttle temporary files now use restrictive,
+exclusive creation and atomic replacement while preserving V6 session
+locking. Cross-process throttle read-modify-write serialization remains a
+separate follow-up because locking only individual saves would not close the
+transaction race.
+
+The first production installation exposed a pre-existing OpenBSD rc.d defect:
+the foreground OSMAP services lacked `rc_bg=YES`, allowing rcctl startup to
+appear successful before the backend exited and nginx returned `502`. The
+paired rollback unit was restored, both rc.d scripts and their regression test
+were corrected, and the original binary was proven stable before retrying V7.
+
+Commit `50540143fe0ec9b976a1290e7614fc97504ab16b` was then built natively,
+installed, and production-validated. The installed binary digest is
+`6ddb7c7a5564ce9196d279b6a9bee6994561d284cc09be1df6184bf28ffdb848`.
+Both services remained healthy, the backend remained loopback-only, `GET /`
+returned `303` to `/login`, and `GET /login` returned `200`.
+
+Decision: V7 is implemented and production-validated with one explicit
+transaction-level throttle-locking follow-up. The deployment incident and
+recovery are part of the V7 evidence rather than omitted from the closeout.

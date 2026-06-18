@@ -2,7 +2,7 @@
 
 Date: 2026-06-18
 Sprint: V7 boundary hardening due diligence
-Status: Implementation complete; one follow-up remains
+Status: Implemented, deployed, and production-validated; one follow-up remains
 
 ## Objective
 
@@ -21,10 +21,16 @@ a6186406e35b1143580b533ff7817b4ed371efe9 record v6 production readiness
 The checkout was clean before branch creation. Baseline `cargo fmt --check`,
 `cargo test`, strict all-target clippy, and `cargo audit` all passed.
 
-The final assessed code and gate commit before this documentation closeout is:
+The production-deployed code commit is:
 
 ```text
-9a9b942 cover v7 gate hook installation
+50540143fe0ec9b976a1290e7614fc97504ab16b supervise openbsd foreground services
+```
+
+The installed production binary SHA-256 is:
+
+```text
+6ddb7c7a5564ce9196d279b6a9bee6994561d284cc09be1df6184bf28ffdb848
 ```
 
 External evidence for this run is rooted at:
@@ -55,6 +61,14 @@ The detailed source search is recorded in
 | File-backed state creation and locking | Partially closed; follow-up required | Session and throttle temporary creation is restrictive, exclusive, collision-safe, and atomically renamed. V6 session locking remains intact. Throttle read-modify-write transactions remain unlocked across processes. |
 | Forwarded client IP trust | Closed with deployment requirement | Only loopback-supplied `X-Real-IP` is trusted. `X-Forwarded-For` is ignored. The backend must remain isolated behind the reviewed loopback nginx listener. |
 | Compose form content type inconsistency | Closed | Compose uses the shared URL-encoded media-type helper and accepts charset parameters and case variation while rejecting unsupported types. |
+
+These dispositions were reevaluated against production-deployed commit
+`50540143fe0ec9b976a1290e7614fc97504ab16b` after the deployment incident.
+The final source search, V7 invariant gate, installed binary identity, native
+service state, loopback listener, and public browser path were recaptured in
+the production evidence root. The rc.d supervision correction does not alter
+the disposition of the five original findings; it closes the operational
+defect exposed while deploying them.
 
 ## Slice Status
 
@@ -151,6 +165,14 @@ Final results:
 - `make security-check`: passed
 - V5 boundary gate: passed
 - V7 boundary hardening gate: passed
+- OpenBSD-native `cargo fmt --check`: passed
+- OpenBSD-native `cargo test`: passed, including 494 library tests with 4
+  documented live-host tests ignored
+- OpenBSD-native strict all-target clippy: passed
+- OpenBSD-native V7 boundary hardening gate: passed
+- OpenBSD-native `cargo audit`: inconclusive because the installed audit
+  process segfaulted after updating its advisory database; the same dependency
+  graph passed `cargo audit` on the development host
 - V6 retirement-readiness gate: not passed because the pre-existing
   `latest-host-v6-retirement-rehearsal-report.txt` input and other required V6
   live closeout reports are absent; this is not a V7 code regression
@@ -198,6 +220,12 @@ Evidence files:
 - `local-live-http-checks.txt`
 - `deployed-live-public-http-checks.txt`
 
+Production deployment evidence is rooted at:
+
+```text
+/home/foo/osmap-v7-boundary-hardening-evidence/production-20260618-120051Z
+```
+
 ## Live Test Results
 
 An isolated development instance was started with:
@@ -218,18 +246,54 @@ Local bounded results:
 - the compose charset and forwarded-header policy harnesses passed
 - the isolated listener was stopped and removed after testing
 
-Bounded deployed public checks against `mail.blackbagsecurity.com`:
+Bounded deployed public checks against `mail.blackbagsecurity.com` after
+installing V7:
 
 - browser-path `GET /` returned `303` with `Location: /login`
 - `GET /login` returned `200` and the sanitized `OSMAP Login` title
 - the login response body contained no cookie, CSRF, or password assignment
   marker
 - `HEAD /` returned the known non-browser `400` response
+- a headerless over-limit request returned `400 Bad Request`
+- an oversized terminated header returned `400 Bad Request`
+- a loopback request carrying only `X-Forwarded-For` retained
+  `remote_addr=127.0.0.1` in the sanitized audit record
+- `osmap_serve` and `osmap_mailbox_helper` remained supervised and healthy
+- the production backend remained bound only to `127.0.0.1:8080`
+
+### Production Deployment Incident and Remediation
+
+The first V7 installation attempt exposed a pre-existing OpenBSD service
+supervision defect. Both rc.d scripts launched foreground processes without
+declaring `rc_bg=YES`. `rcctl` initially reported the services as started, but
+the backend later exited and nginx returned `502 Bad Gateway`. The paired
+pre-V7 binary and environment were restored immediately.
+
+The rc.d scripts for `osmap_serve` and `osmap_mailbox_helper` now declare
+`rc_bg=YES`, matching OpenBSD rc.d supervision requirements for foreground
+daemons. The repository regression test asserts this property. The corrected
+scripts were installed, the original binary was first proven stable under the
+corrected supervision, and V7 commit `50540143` was then rebuilt natively,
+installed, restarted, and revalidated.
+
+The successful deployment session is:
+
+```text
+/home/foo/osmap-binary-deployment/v7-retry-20260618-121041Z
+```
+
+Its production-readiness report passed repository identity, installed binary
+identity, service health, listener isolation, browser-path responses, invalid
+host rejection, rollback pairing, sanitized log checks, and secret-redaction
+checks. Fresh rollback artifacts remain available at:
+
+```text
+/usr/local/bin/osmap.pre-v7-retry-20260618-121041Z
+/etc/osmap/osmap-serve.env.pre-v7-retry-20260618-121041Z
+```
 
 No credentials, cookies, TOTP codes, CSRF tokens, mailbox contents, or
-attachment contents were captured. The deployed checks prove current public
-service health only. V7 was not deployed to the production host during this
-sprint, so V7 behavior is proven by the isolated local live run and tests.
+attachment contents were captured.
 
 ## Evidence Archive
 
@@ -252,14 +316,15 @@ The final sanitized archive and checksum are produced outside the repository:
   loopback nginx proxy for `X-Real-IP` to be authoritative.
 - Deliberate load, fuzzing, and hostile high-volume tests remain outside this
   sprint and are inappropriate for the known multi-purpose production host.
-- Production still runs its pre-V7 deployed binary until an operator performs
-  a separate reviewed deployment and post-deployment validation.
+- The OpenBSD host's `cargo audit` process segfaulted, so its native audit run
+  is not positive evidence. The development-host audit passed, and all other
+  native host checks passed.
 
 ## Final Status
 
-V7 implementation, local live due diligence, public service health checks, and
-repository gates are complete. Four findings are closed. File-backed state
-creation is closed, but the broader throttle cross-process read-modify-write
-race is only partially closed and requires a focused transaction-level locking
-follow-up. No new dependency was added and the browser trust boundary was not
-widened.
+V7 implementation, local live due diligence, native OpenBSD verification,
+production deployment, post-deployment browser-path checks, and repository
+gates are complete. Four findings are closed. File-backed state creation is
+closed, but the broader throttle cross-process read-modify-write race is only
+partially closed and requires a focused transaction-level locking follow-up.
+No new dependency was added and the browser trust boundary was not widened.
