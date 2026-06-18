@@ -175,3 +175,18 @@ sanitized workflow dispositions accepted by release mode.
 | Contacts, calendar, groupware, plugins, mobile app, broad admin console | out of scope | `docs/V3_DEFINITION.md` |
 | Remote external content loading | out of scope | `docs/V3_DEFINITION.md` |
 | OpenPGP implementation | out of scope except design-only investigation | `docs/V3_ROADMAP.md` |
+
+## V6 Selected-Cohort Retirement Classification
+
+V6 does not reinterpret unsupported workflows as feature requirements. It
+uses this inventory to select a cohort whose ordinary work fits OSMAP's narrow
+security model, then records every V6 rehearsal workflow as:
+
+- `passed`
+- `not_required_for_selected_cohort`
+- `failed`
+
+Any selected required workflow marked `failed`, any unclassified workflow, or
+normal Roundcube fallback keeps the cohort outside V6 retirement readiness.
+Use sanitized cohort labels rather than real email addresses in committed
+evidence.

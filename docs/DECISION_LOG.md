@@ -6586,3 +6586,14 @@ The report is sanitized by construction and does not copy environment values,
 logs, cookies, credentials, TOTP material, CSRF values, or mailbox content.
 An explicit allow-missing developer mode can record diagnostics but cannot
 produce a passing V6 report.
+
+## 2026-06-18, Add the V6 no-fallback retirement rehearsal recorder
+
+V6 now has an explicit human-confirmed selected-cohort rehearsal. Every
+required browser-mail workflow is classified as passed, not required for the
+selected cohort, or failed. Failed or missing classifications and any normal
+Roundcube fallback prevent report creation.
+
+The recorder writes sanitized cohort aliases and status fields only. It
+confirms that native clients and the underlying mail stack remain unchanged,
+and refuses email-shaped cohort identifiers by default.

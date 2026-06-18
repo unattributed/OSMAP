@@ -59,7 +59,9 @@ If V6 adds source-attachment draft-resume behavior:
 The rehearsal must explicitly classify each workflow as `passed`,
 `not_required_for_selected_cohort`, or `failed`. Every selected required
 workflow must pass. Any use of Roundcube for normal fallback makes the
-rehearsal fail.
+rehearsal fail. The authoritative procedure and recorder are
+`V6_ROUNDCUBE_RETIREMENT_REHEARSAL.md` and
+`maint/live/osmap-live-record-v6-retirement-rehearsal.ksh`.
 
 ## Fail-Closed Rule
 

@@ -189,6 +189,12 @@ Users with an unclosed required workflow remain outside the retirement-ready
 cohort. V6 readiness for one cohort is not a claim of general Roundcube parity
 or safe retirement for every user.
 
+The operator procedure is `V6_ROUNDCUBE_RETIREMENT_REHEARSAL.md`. After the
+actual walkthrough, use
+`maint/live/osmap-live-record-v6-retirement-rehearsal.ksh` to create the
+sanitized closeout input. The recorder accepts only explicit workflow
+dispositions and refuses email-shaped cohort identifiers by default.
+
 ## Deferred Questions
 
 These questions remain later-phase work rather than prerequisites for this

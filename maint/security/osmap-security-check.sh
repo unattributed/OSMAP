@@ -259,6 +259,9 @@ sh maint/security/test-osmap-v6-retirement-readiness-gate.sh
 echo "==> validating V6 production readiness wrapper behavior"
 sh maint/security/test-osmap-live-validate-v6-production-readiness.sh
 
+echo "==> validating V6 retirement rehearsal recorder"
+sh maint/security/test-osmap-live-record-v6-retirement-rehearsal.sh
+
 echo "==> validating live V4 hostile-content wrapper behavior"
 sh maint/security/test-osmap-live-validate-v4-hostile-content.sh
 
