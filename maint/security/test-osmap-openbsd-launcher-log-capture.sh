@@ -11,6 +11,7 @@ cat > "$fake_bin" <<'EOF'
 #!/bin/sh
 mode="${1:-unknown}"
 printf 'ts=1 level=warn category=auth action=login_denied msg="probe" submitted_username="probe@example.invalid" mode="%s"\n' "$mode" >&2
+exit "${FAKE_OSMAP_EXIT_STATUS:-0}"
 EOF
 chmod 0755 "$fake_bin"
 
@@ -32,6 +33,23 @@ OSMAP_ENV_FILE="$serve_env" \
 
 grep -Fq 'action=login_denied' "${tmpdir}/var-log-osmap/serve.log"
 grep -Fq 'mode="serve"' "${tmpdir}/var-log-osmap/serve.log"
+grep -Fq 'action=process_exited' "${tmpdir}/var-log-osmap/serve.log"
+grep -Fq 'exit_status="0"' "${tmpdir}/var-log-osmap/serve.log"
+
+set +e
+FAKE_OSMAP_EXIT_STATUS=23 \
+OSMAP_BIN="$fake_bin" \
+OSMAP_ENV_FILE="$serve_env" \
+	sh "${repo_root}/maint/openbsd/libexec/osmap-serve-run.ksh" serve
+serve_status=$?
+set -e
+
+[ "$serve_status" -eq 23 ] || {
+	printf 'expected serve launcher to preserve exit status 23, got %s\n' "$serve_status" >&2
+	exit 1
+}
+grep -Fq 'action=process_exited' "${tmpdir}/var-log-osmap/serve.log"
+grep -Fq 'exit_status="23"' "${tmpdir}/var-log-osmap/serve.log"
 
 OSMAP_BIN="$fake_bin" \
 OSMAP_ENV_FILE="$helper_env" \
