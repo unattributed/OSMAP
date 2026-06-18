@@ -2,7 +2,7 @@
 
 Date: 2026-06-18
 Sprint: V7 boundary hardening due diligence
-Status: Reopened after production availability failure
+Status: Implemented and production verified
 
 ## Objective
 
@@ -21,24 +21,20 @@ a6186406e35b1143580b533ff7817b4ed371efe9 record v6 production readiness
 The checkout was clean before branch creation. Baseline `cargo fmt --check`,
 `cargo test`, strict all-target clippy, and `cargo audit` all passed.
 
-The production-deployed code commit is:
+The production-deployed binary was rebuilt natively from:
 
 ```text
-50540143fe0ec9b976a1290e7614fc97504ab16b supervise openbsd foreground services
+c937c5c790f2d5e80e90e3f0adb4a8e872b1a4d5 allow advisory state locks under openbsd pledge
 ```
 
 The installed production binary SHA-256 is:
 
 ```text
-6ddb7c7a5564ce9196d279b6a9bee6994561d284cc09be1df6184bf28ffdb848
+88075f6a57382b3ff75c5f81967c441378e79dc9472596653831747657b467e2
 ```
 
-That V7 binary was removed from production on June 19, 2026 after repeated
-browser-entry outages. Production was restored to the paired pre-V7 binary:
-
-```text
-deb5c6473be137bd7bb2a363ecf94d3bc0238d405915d0f585f01f424ef79e1e
-```
+The installed nginx edge artifacts are from V7 branch commit `e1c8d08`. The
+serve launcher with sanitized child-exit reporting is from commit `b0116b0`.
 
 External evidence for this run is rooted at:
 
@@ -69,8 +65,8 @@ The detailed source search is recorded in
 | Forwarded client IP trust | Closed with deployment requirement | Only loopback-supplied `X-Real-IP` is trusted. `X-Forwarded-For` is ignored. The backend must remain isolated behind the reviewed loopback nginx listener. |
 | Compose form content type inconsistency | Closed | Compose uses the shared URL-encoded media-type helper and accepts charset parameters and case variation while rejecting unsupported types. |
 
-These dispositions were reevaluated against production-deployed commit
-`50540143fe0ec9b976a1290e7614fc97504ab16b` after the deployment incident.
+These dispositions were reevaluated against production-deployed binary source
+commit `c937c5c790f2d5e80e90e3f0adb4a8e872b1a4d5` after the deployment incident.
 The final source search, V7 invariant gate, installed binary identity, native
 service state, loopback listener, and public browser path were recaptured in
 the production evidence root. The rc.d supervision correction does not alter
@@ -226,11 +222,17 @@ Evidence files:
 - `local-live-listeners-stopped.txt`
 - `local-live-http-checks.txt`
 - `deployed-live-public-http-checks.txt`
+- `production-auth-fix-verification.txt`
+- `production-edge-cutover-report.txt`
+- `production-internet-exposure-report.txt`
+- `production-post-hold-state.txt`
+- `production-post-hold-http.txt`
 
 Production deployment evidence is rooted at:
 
 ```text
 /home/foo/osmap-v7-boundary-hardening-evidence/production-20260618-120051Z
+/home/foo/osmap-v7-boundary-hardening-evidence/production-fix-20260618-185057Z
 ```
 
 ## Live Test Results
@@ -267,37 +269,84 @@ installing V7:
   `remote_addr=127.0.0.1` in the sanitized audit record
 - `osmap_serve` and `osmap_mailbox_helper` remained supervised and healthy
 - the production backend remained bound only to `127.0.0.1:8080`
+- the native OpenBSD V7 gate passed at branch commit `b0116b0`
+- the edge cutover validator passed
+- the internet exposure assessment approved the limited direct public browser
+  exposure
+- a post-remediation hold check at `2026-06-18T18:56:16Z` found nginx,
+  `osmap_serve`, and `osmap_mailbox_helper` healthy with no upstream error
+  newer than the pre-fix `2026-06-19 01:36:19` login failure
 
-### Production Deployment Incident and Remediation
+### Production Login Failure, Root Cause, and Remediation
 
-The first V7 installation attempt exposed a pre-existing OpenBSD service
-supervision defect. Both rc.d scripts launched foreground processes without
-declaring `rc_bg=YES`. `rcctl` initially reported the services as started, but
-the backend later exited and nginx returned `502 Bad Gateway`. The paired
-pre-V7 binary and environment were restored immediately.
+Successful password-plus-TOTP login repeatedly caused nginx `502 Bad Gateway`
+responses because the OSMAP process terminated before returning the login
+response. The behavior reproduced with both the initial V7 candidate and the
+paired pre-V7 rollback binary, proving that it was not introduced by the five
+V7 finding remediations.
 
-The rc.d scripts for `osmap_serve` and `osmap_mailbox_helper` now declare
-`rc_bg=YES`, matching OpenBSD rc.d supervision requirements for foreground
-daemons. The repository regression test asserts this property. The corrected
-scripts were installed, the original binary was first proven stable under the
-corrected supervision, and V7 commit `50540143` was then rebuilt natively,
-installed, restarted, and revalidated.
+A sanitized supervisor was installed to preserve the child exit reason.
+The controlled operator login at `2026-06-18T18:36:19Z` proved that OSMAP was
+terminated by signal 6 with exit status 134. The last successful application
+step before termination was accepted second-factor verification.
 
-The successful deployment session is:
+The confirmed cause was an incomplete OpenBSD `pledge(2)` profile. V6 added
+store-local `flock(2)` session locking, but the serve promise set omitted the
+required `flock` promise. A valid TOTP advanced into session issuance,
+`flock(2)` violated the enforced promise set, and OpenBSD terminated the
+process. Invalid authentication did not reach that code path and therefore
+returned normally.
+
+Commit `c937c5c` adds only the required `flock` promise to the serve profiles
+and adds regression assertions for serve mode with and without the mailbox
+helper. Native OpenBSD `cargo test openbsd` and `cargo test session` passed
+before deployment.
+
+The corrected release binary was installed with SHA-256:
 
 ```text
-/home/foo/osmap-binary-deployment/v7-retry-20260618-121041Z
+88075f6a57382b3ff75c5f81967c441378e79dc9472596653831747657b467e2
 ```
 
-Its production-readiness report passed repository identity, installed binary
-identity, service health, listener isolation, browser-path responses, invalid
-host rejection, rollback pairing, sanitized log checks, and secret-redaction
-checks. Fresh rollback artifacts remain available at:
+The paired rollback unit is:
 
 ```text
-/usr/local/bin/osmap.pre-v7-retry-20260618-121041Z
-/etc/osmap/osmap-serve.env.pre-v7-retry-20260618-121041Z
+/usr/local/bin/osmap.pre-v7-pledge-fix-20260618T184118Z
+/etc/osmap/osmap-serve.env.pre-v7-pledge-fix-20260618T184118Z
 ```
+
+At `2026-06-18T18:43:20Z`, a fresh Firefox login using the operator's valid
+password and TOTP completed successfully. Sanitized server evidence recorded
+`second_factor_accepted`, `session_issued`, `GET /mailboxes` status 200, and
+`GET /mailbox` status 200. OSMAP remained healthy and nginx recorded no new
+upstream errors. No credentials, cookies, TOTP values, CSRF tokens, session
+tokens, mailbox contents, or attachment contents were captured.
+
+An attempted rc.d process-match refinement was rejected during live
+validation because it did not match OpenBSD rc.subr behavior. The host was
+immediately restored to the known-good child process match, service control
+was normalized with a clean stop and start, and the branch contains an
+explicit revert. Managed child exit status 143 is classified as an expected
+service stop by the launcher.
+
+### Public Edge Log and Resource Hardening
+
+The reviewed public nginx edge now:
+
+- logs method, normalized `$uri`, status, byte count, host, upstream status,
+  and bounded timing data;
+- omits query strings, referrers, cookies, user agents, and client-supplied
+  forwarding chains from new public access records;
+- maintains public access and error logs as `root:wheel` mode `0640`;
+- applies a conservative per-source login request limit, general request
+  limit, and connection limit with HTTP 429 on limit rejection;
+- retains application-level authentication throttling as the authoritative
+  login decision control.
+
+The deployment passed `nginx -t`, reload, effective-configuration inspection,
+newsyslog dry-run, public `GET /` redirect, and public `GET /login` page checks.
+A request containing a unique query marker produced a new access record with
+only `uri="/"`, confirming that the query string was not retained.
 
 No credentials, cookies, TOTP codes, CSRF tokens, mailbox contents, or
 attachment contents were captured.
@@ -331,17 +380,17 @@ The final sanitized archive and checksum are produced outside the repository:
 
 ## Final Status
 
-V7 code implementation and its original five finding dispositions remain as
-recorded, but V7 closeout is reopened. On June 19, 2026, a real browser
-`POST /login` was followed by termination of `osmap_serve` and nginx `502 Bad
-Gateway` responses for `/` and `/login`. A manual service start restored
-`GET /login` to `200`, but a short GET-only hold is no longer accepted as
-production-availability proof.
+V7 is implemented and production verified. The five original findings have
+the dispositions recorded above. The browser-availability invariant passed
+with a real password-plus-TOTP login, successful session issuance, mailbox
+rendering, post-login process survival, no new nginx upstream error, and the
+installed one-minute recovery guard.
 
-V7 cannot close until the requirements in
-`V7_BROWSER_AVAILABILITY_INVARIANT.md` pass, including a real operator
-password-plus-TOTP login, post-login service survival, hold-period validation,
-and installed automatic recovery. A one-minute browser-entry guard is now
-installed on the production host, but it is containment rather than evidence
-that the V7 binary is safe to redeploy. The broader throttle
-transaction-locking follow-up also remains.
+The production login outage was fully reevaluated and closed by adding the
+`flock` pledge promise required by V6 session locking. Public edge logging and
+resource controls were also deployed and verified. V7 does not require another
+code follow-up for production login availability.
+
+The remaining throttle transaction-locking risk is intentionally tracked as a
+separate follow-up because it requires a transaction-level store API rather
+than a narrow file-creation change.

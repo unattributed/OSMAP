@@ -1,6 +1,6 @@
 # V7 Browser Availability Invariant
 
-Status: Required for V7 closure
+Status: Satisfied in production on 2026-06-19
 
 OSMAP is unusable when nginx cannot reach the browser backend. V7 therefore
 cannot be called complete solely because the binary starts, `/healthz` passes,
@@ -32,3 +32,12 @@ through the host's bounded cron wrapper.
 V7 closure requires a real operator login test because only the operator can
 safely exercise the successful password-plus-TOTP path without disclosing
 credentials. A successful GET-only deployment check is insufficient evidence.
+
+The production closure test completed at `2026-06-18T18:43:20Z`. A fresh
+Firefox password-plus-TOTP login issued a session and rendered the mailbox.
+The backend remained healthy and nginx recorded no new upstream errors.
+
+This test also closed the earlier login-path failure. The failure was caused
+by V6 session locking calling `flock(2)` while the enforced serve pledge
+profile omitted the required `flock` promise. Commit `c937c5c` adds that
+promise and preserves the existing session lock.
