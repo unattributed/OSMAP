@@ -2,21 +2,21 @@
 
 Date: 2026-06-18
 Target host: `mail.blackbagsecurity.com`
-Status: Incomplete; live evidence and deployment are pending
+Status: V6 deployed; production readiness passed; final closeout incomplete
 
 ## Assessed Commit
 
-The current pre-closeout source tip is:
+The deployed V6 candidate is:
 
 ```text
-81f41c9 add v6 resource resilience proof
+18d853643e2eca054cb7d2ad1d4d5b275f8af4f3 close v6 retirement readiness evidence
 ```
 
-The final assessed commit must be the deployed V6 candidate and must be
-recorded consistently by all four live reports. The Slice 09 commit is
-identified by `close v6 retirement readiness evidence`; its immutable hash must
-be added to the archived gate summary after the operator selects and deploys
-the candidate.
+The production-readiness report records this full deployed commit and the
+deployed binary SHA256
+`deb5c6473be137bd7bb2a363ecf94d3bc0238d405915d0f585f01f424ef79e1e`.
+The remaining live reports must record the same deployed candidate before final
+closeout.
 
 ## V6 Claim
 
@@ -25,8 +25,9 @@ essential browser-mail workflows without Roundcube fallback, while preserving
 the V4 hostile-content claim and the V5 identity, Host, Origin,
 response-header, framing, and trusted HTML boundaries.
 
-This claim is not yet satisfied because no V6 code has been deployed and the
-required V6 live reports are absent.
+V6 is now deployed. The full selected-cohort claim is not yet closed because
+the no-fallback rehearsal, observability, and resource-resilience live reports
+remain outstanding.
 
 ## Exact Non-Goals
 
@@ -38,17 +39,27 @@ rewrite, Roundcube database import, or hidden fallback behavior.
 
 ## Slice Commits
 
-1. `1c0a0f1` — record v6 baseline review
-2. `a1db775` — define v6 controlled retirement readiness scope
-3. `bb941d9` — add v6 closeout gates
-4. `c7a4099` — add v6 production readiness validator
-5. `d818584` — add v6 retirement rehearsal recorder
-6. `d064c1b` — prove v6 operational observability
-7. `f6776af` — add cross process session store locking
-8. `657e12c` — preserve explicit source attachment draft references
-9. `81f41c9` — add v6 resource resilience proof
-10. Slice 09 — identified by commit message
-   `close v6 retirement readiness evidence`
+1. `1c0a0f1` - record v6 baseline review
+2. `a1db775` - define v6 controlled retirement readiness scope
+3. `bb941d9` - add v6 closeout gates
+4. `c7a4099` - add v6 production readiness validator
+5. `d818584` - add v6 retirement rehearsal recorder
+6. `d064c1b` - prove v6 operational observability
+7. `f6776af` - add cross process session store locking
+8. `657e12c` - preserve explicit source attachment draft references
+9. `81f41c9` - add v6 resource resilience proof
+10. `18d8536` - close v6 retirement readiness evidence
+
+## Production Deployment And Readiness
+
+- Public `GET /` returned `303` with `Location: /login`.
+- Public `GET /login` returned `200` and rendered `OSMAP Login`.
+- Public TLS certificate verification passed.
+- `osmap_serve` and `osmap_mailbox_helper` were healthy.
+- The deployed binary SHA256 matched the assessed candidate.
+- The paired binary and environment rollback artifacts are timestamped
+  `20260618T110916Z`.
+- The sanitized report passed at `2026-06-18T11:20:56Z`.
 
 ## Local Test Results
 
@@ -64,7 +75,7 @@ rewrite, Roundcube database import, or hidden fallback behavior.
 
 | Gate | Path | Current status |
 | --- | --- | --- |
-| production readiness | `maint/live/latest-host-v6-production-readiness-report.txt` | missing |
+| production readiness | `maint/live/latest-host-v6-production-readiness-report.txt` | passed |
 | no-fallback rehearsal | `maint/live/latest-host-v6-retirement-rehearsal-report.txt` | missing |
 | observability | `maint/live/latest-host-v6-observability-report.txt` | missing |
 | resource resilience | `maint/live/latest-host-v6-resource-resilience-report.txt` | missing |
@@ -73,7 +84,7 @@ rewrite, Roundcube database import, or hidden fallback behavior.
 
 - V4 carry-forward: local gate available; final assessed-commit run pending.
 - V5 carry-forward: local gate available; final assessed-commit run pending.
-- V6 production readiness: blocked on V6 deployment and host report.
+- V6 production readiness: passed against deployed commit `18d8536`.
 - V6 no-Roundcube-fallback rehearsal: blocked on selected-cohort walkthrough.
 - V6 observability: blocked on post-deployment log and operator review.
 - V6 resource resilience: validator implemented; blocked on host report.

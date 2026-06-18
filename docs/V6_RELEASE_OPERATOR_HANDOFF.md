@@ -3,8 +3,11 @@
 ## Current State
 
 V6 source Slices 00 through 09 are assembled on
-`feature/v6-controlled-retirement-readiness`, but V6 is not deployed or closed.
-Production remains on V5-era source and the four V6 live reports are missing.
+`feature/v6-controlled-retirement-readiness`. V6 commit
+`18d853643e2eca054cb7d2ad1d4d5b275f8af4f3` is now deployed on
+`mail.blackbagsecurity.com`, and the production-readiness report has passed.
+V6 closeout remains incomplete until the no-fallback rehearsal, observability,
+and resource-resilience reports also pass.
 
 ## Before Deployment
 
