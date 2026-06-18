@@ -32,6 +32,16 @@ assert_pexp_follows_rc_subr() {
 assert_pexp_follows_rc_subr "${serve_rc}" 'pexp="/usr/local/bin/osmap serve"'
 assert_pexp_follows_rc_subr "${helper_rc}" 'pexp="/usr/local/bin/osmap mailbox-helper"'
 
+grep -Fq 'rc_bg=YES' "${serve_rc}" || {
+  printf 'missing foreground-daemon background supervision in %s\n' "${serve_rc}" >&2
+  exit 1
+}
+
+grep -Fq 'rc_bg=YES' "${helper_rc}" || {
+  printf 'missing foreground-daemon background supervision in %s\n' "${helper_rc}" >&2
+  exit 1
+}
+
 grep -Fq 'daemon_flags="serve"' "${serve_rc}" || {
   printf 'missing serve daemon_flags in %s\n' "${serve_rc}" >&2
   exit 1

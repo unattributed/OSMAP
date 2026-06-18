@@ -11,6 +11,7 @@ rc_reload=NO
 . /etc/rc.d/rc.subr
 
 pexp="/usr/local/bin/osmap mailbox-helper"
+rc_bg=YES
 
 rc_configtest() {
 	OSMAP_ENV_FILE="/etc/osmap/osmap-mailbox-helper.env" \
