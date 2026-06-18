@@ -76,6 +76,21 @@ The current strict command is:
 make release-check
 ```
 
+The historical `release-check` remains responsible for the frozen V4 release
+tuple and its V3 carry-forward inputs. V6 adds a separate, stricter closeout
+command:
+
+```bash
+make v6-check
+```
+
+`v6-check` first validates the V5 boundary-hardening carry-forward and then
+requires the complete V6 definition, traces, sanitized production-readiness,
+no-Roundcube-fallback rehearsal, observability, resource-resilience, and
+closeout evidence. It is expected to fail until live evidence and closeout are
+complete. Developer `security-check` runs regression tests for the V5 and V6
+gate logic without treating fixture reports as release evidence.
+
 It writes:
 
 - `maint/live/osmap-v3-dependency-inventory.txt`

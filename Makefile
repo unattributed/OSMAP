@@ -1,7 +1,7 @@
 # Keep developer entrypoints obvious and conservative so operators and
 # collaborating developers do not have to memorize cargo subcommands.
 
-.PHONY: build check test lint fmt-check supply-chain-check security-check release-check install-hooks run
+.PHONY: build check test lint fmt-check supply-chain-check security-check release-check v6-check install-hooks run
 
 build:
 	cargo build
@@ -36,8 +36,12 @@ security-check:
 release-check:
 	OSMAP_SECURITY_PROFILE=release sh maint/security/osmap-release-check.sh
 
+v6-check:
+	sh maint/security/osmap-v5-boundary-gate.sh
+	sh maint/security/osmap-v6-retirement-readiness-gate.sh
+
 install-hooks:
-	chmod +x .githooks/pre-commit .githooks/pre-push maint/security/osmap-security-check.sh maint/security/osmap-supply-chain-check.sh maint/security/osmap-release-check.sh maint/security/osmap-v4-hostile-assurance-gate.sh maint/security/osmap-v4-release-tuple-gate.sh maint/security/osmap-v4-security-claim-matrix-gate.sh maint/security/osmap-evidence-metadata.sh maint/security/osmap-cwe-top25-guard.sh maint/security/osmap-cwe-top25-guard.py
+	chmod +x .githooks/pre-commit .githooks/pre-push maint/security/osmap-security-check.sh maint/security/osmap-supply-chain-check.sh maint/security/osmap-release-check.sh maint/security/osmap-v4-hostile-assurance-gate.sh maint/security/osmap-v4-release-tuple-gate.sh maint/security/osmap-v4-security-claim-matrix-gate.sh maint/security/osmap-v5-boundary-gate.sh maint/security/osmap-v6-retirement-readiness-gate.sh maint/security/osmap-evidence-metadata.sh maint/security/osmap-cwe-top25-guard.sh maint/security/osmap-cwe-top25-guard.py
 	git config core.hooksPath .githooks
 
 run:

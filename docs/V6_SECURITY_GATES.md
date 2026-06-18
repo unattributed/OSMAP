@@ -71,3 +71,13 @@ of rollback capability before evidence exists.
 
 If a V6 change passes ordinary functional tests but fails one of these gates,
 the change and V6 milestone remain incomplete.
+
+## Executable Entry Points
+
+- `maint/security/osmap-v5-boundary-gate.sh` validates the V5 evidence and
+  current source carry-forward.
+- `maint/security/osmap-v6-retirement-readiness-gate.sh` validates all V6
+  closeout inputs and rejects secret-bearing evidence.
+- `make v6-check` runs both gates.
+- `make security-check` runs regression harnesses for both gates; it does not
+  substitute fixture reports for live V6 evidence.

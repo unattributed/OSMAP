@@ -6558,3 +6558,18 @@ Roundcube may remain as an operator-controlled rollback unit during cutover,
 but hidden or normal-use fallback fails the V6 rehearsal. Missing live context,
 missing tools, skipped authenticated paths, unsafe evidence, or failed gates
 keep V6 incomplete.
+
+## 2026-06-18, Add V5 carry-forward and V6 closeout gates
+
+V6 release governance now has a dedicated `make v6-check` entry point. It
+first validates V5 evidence and current source boundaries, then requires the
+complete V6 documentation, trace set, sanitized live reports, and closeout
+evidence.
+
+The V6 gate rejects missing markers, normal Roundcube fallback, and evidence
+containing likely raw passwords, TOTP codes, CSRF values, OSMAP cookies,
+cookie headers, private keys, mailbox bodies, or attachment bodies.
+
+The historical release check remains anchored to the frozen V4 tuple.
+Developer `make security-check` exercises V5 and V6 gate regression harnesses
+without allowing fixture reports to satisfy V6 closeout.
