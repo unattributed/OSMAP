@@ -2,7 +2,7 @@
 
 Date: 2026-06-18
 Sprint: V7 boundary hardening due diligence
-Status: In progress
+Status: Implementation complete; one follow-up remains
 
 ## Objective
 
@@ -20,6 +20,12 @@ a6186406e35b1143580b533ff7817b4ed371efe9 record v6 production readiness
 
 The checkout was clean before branch creation. Baseline `cargo fmt --check`,
 `cargo test`, strict all-target clippy, and `cargo audit` all passed.
+
+The final assessed code and gate commit before this documentation closeout is:
+
+```text
+9a9b942 cover v7 gate hook installation
+```
 
 External evidence for this run is rooted at:
 
@@ -40,6 +46,16 @@ External evidence for this run is rooted at:
 The detailed source search is recorded in
 `slice0-current-code-audit.txt` under the external evidence root.
 
+## Final Finding Status
+
+| Finding | Final status | V7 result |
+| --- | --- | --- |
+| Headerless HTTP request buffering | Closed | Unterminated streaming reads fail once buffered bytes exceed `max_header_bytes`; valid parsed multipart requests retain their upload allowance. |
+| Weak or empty TOTP secret | Closed | Decoded secret material shorter than 20 bytes fails closed; empty, separator-only, short, malformed, and valid RFC 6238 cases have regression coverage. |
+| File-backed state creation and locking | Partially closed; follow-up required | Session and throttle temporary creation is restrictive, exclusive, collision-safe, and atomically renamed. V6 session locking remains intact. Throttle read-modify-write transactions remain unlocked across processes. |
+| Forwarded client IP trust | Closed with deployment requirement | Only loopback-supplied `X-Real-IP` is trusted. `X-Forwarded-For` is ignored. The backend must remain isolated behind the reviewed loopback nginx listener. |
+| Compose form content type inconsistency | Closed | Compose uses the shared URL-encoded media-type helper and accepts charset parameters and case variation while rejecting unsupported types. |
+
 ## Slice Status
 
 | Slice | Status | Result |
@@ -49,8 +65,8 @@ The detailed source search is recorded in
 | 2. TOTP secret minimum | Complete | Empty, separator-only, malformed, and decoded secrets shorter than 20 bytes fail closed. |
 | 3. File-backed state writes | Complete | Session and throttle temporary files use restrictive atomic creation; throttle temp names include pid plus a process-local counter. |
 | 4. Forwarded client IP trust | Complete | Only a valid `X-Real-IP` from a loopback peer can replace the socket peer address; `X-Forwarded-For` is ignored. |
-| 5. Compose content type | Pending | Not started. |
-| 6. Final gate and live due diligence | Pending | Not started. |
+| 5. Compose content type | Complete | Compose accepts parameterized and mixed-case URL-encoded media types through the shared helper; unsupported types still fail closed. |
+| 6. Final gate and live due diligence | Complete | Final Rust checks, project gate, isolated local live checks, and bounded public health checks completed. |
 
 ## Slice Changes
 
@@ -99,6 +115,21 @@ configured on `127.0.0.1:8080`. This trust rule is safe only while listener
 isolation keeps untrusted local users and processes from connecting directly
 to the OSMAP HTTP socket.
 
+### Slice 5: Compose form content type
+
+`parse_compose_form` now uses `is_urlencoded_form_content_type` instead of an
+exact lower-case string match. URL-encoded compose submissions therefore
+accept media-type parameters and ASCII case variation consistently with other
+form routes. Unsupported media types and existing multipart validation remain
+unchanged.
+
+### Slice 6: Gate and due diligence
+
+A lightweight `maint/security/osmap-v7-boundary-hardening-gate.sh` now checks
+the durable source and regression-test invariants for all five findings. It is
+available through `make v7-check`, runs from `make security-check`, and is
+covered by the hook-install regression fixture.
+
 ## Tests And Evidence
 
 Baseline results:
@@ -108,6 +139,21 @@ Baseline results:
   tests ignored
 - `cargo clippy --all-targets --all-features -- -D warnings`: passed
 - `cargo audit`: passed
+
+Final results:
+
+- `cargo fmt --check`: passed
+- `cargo test`: passed, including 494 library tests with 4 documented live-host
+  tests ignored, the binary test, hostile-assurance integration test, and doc
+  test
+- `cargo clippy --all-targets --all-features -- -D warnings`: passed
+- `cargo audit`: passed
+- `make security-check`: passed
+- V5 boundary gate: passed
+- V7 boundary hardening gate: passed
+- V6 retirement-readiness gate: not passed because the pre-existing
+  `latest-host-v6-retirement-rehearsal-report.txt` input and other required V6
+  live closeout reports are absent; this is not a V7 code regression
 
 Evidence files:
 
@@ -132,10 +178,67 @@ Evidence files:
 - `slice4-http-parse-tests.txt`
 - `slice4-cargo-fmt-check.txt`
 - `slice4-diff.txt`
+- `slice5-http-form-tests.txt`
+- `slice5-cargo-fmt-check.txt`
+- `slice5-diff.txt`
+- `slice6-v7-gate.txt`
+- `slice6-v7-gate-diff.txt`
+- `final-check-status.txt`
+- `final-cargo-fmt-check.txt`
+- `final-cargo-test.txt`
+- `final-cargo-clippy.txt`
+- `final-cargo-audit.txt`
+- `final-make-security-check.txt`
+- `final-v5-boundary-gate.txt`
+- `final-v6-retirement-readiness-gate.txt`
+- `final-v7-boundary-hardening-gate.txt`
+- `local-live-listeners-before.txt`
+- `local-live-listeners-after.txt`
+- `local-live-listeners-stopped.txt`
+- `local-live-http-checks.txt`
+- `deployed-live-public-http-checks.txt`
 
 ## Live Test Results
 
-Pending Slice 6.
+An isolated development instance was started with:
+
+```text
+env OSMAP_ENV=development OSMAP_LISTEN_ADDR=127.0.0.1:18080 OSMAP_STATE_DIR=/tmp/osmap-v7-live-20260618-114455Z cargo run -- serve
+```
+
+Local bounded results:
+
+- the listener appeared only on `127.0.0.1:18080`
+- `GET /` returned `303` with `Location: /login`
+- `GET /login` returned `200` and the sanitized `OSMAP Login` title
+- the login response body contained no cookie, CSRF, or password assignment
+  marker
+- a 16,385-byte headerless request returned `400 Bad Request`
+- a terminated oversized header request returned `400 Bad Request`
+- the compose charset and forwarded-header policy harnesses passed
+- the isolated listener was stopped and removed after testing
+
+Bounded deployed public checks against `mail.blackbagsecurity.com`:
+
+- browser-path `GET /` returned `303` with `Location: /login`
+- `GET /login` returned `200` and the sanitized `OSMAP Login` title
+- the login response body contained no cookie, CSRF, or password assignment
+  marker
+- `HEAD /` returned the known non-browser `400` response
+
+No credentials, cookies, TOTP codes, CSRF tokens, mailbox contents, or
+attachment contents were captured. The deployed checks prove current public
+service health only. V7 was not deployed to the production host during this
+sprint, so V7 behavior is proven by the isolated local live run and tests.
+
+## Evidence Archive
+
+The final sanitized archive and checksum are produced outside the repository:
+
+```text
+/home/foo/osmap-v7-boundary-hardening-evidence/osmap-v7-boundary-hardening-evidence-20260618-114455Z.tar.gz
+/home/foo/osmap-v7-boundary-hardening-evidence/osmap-v7-boundary-hardening-evidence-20260618-114455Z.tar.gz.sha256
+```
 
 ## Residual Risks
 
@@ -149,8 +252,14 @@ Pending Slice 6.
   loopback nginx proxy for `X-Real-IP` to be authoritative.
 - Deliberate load, fuzzing, and hostile high-volume tests remain outside this
   sprint and are inappropriate for the known multi-purpose production host.
+- Production still runs its pre-V7 deployed binary until an operator performs
+  a separate reviewed deployment and post-deployment validation.
 
 ## Final Status
 
-V7 remains open while implementation, final gates, live due diligence, and
-evidence archival are incomplete.
+V7 implementation, local live due diligence, public service health checks, and
+repository gates are complete. Four findings are closed. File-backed state
+creation is closed, but the broader throttle cross-process read-modify-write
+race is only partially closed and requires a focused transaction-level locking
+follow-up. No new dependency was added and the browser trust boundary was not
+widened.
