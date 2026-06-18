@@ -113,3 +113,18 @@ Monitoring should fit a conservative OpenBSD deployment:
 - keep runtime monitoring additions small and supportable
 - ensure observability design does not undermine the project's minimal-dependency
   goals
+
+## V6 Evidence Gate
+
+V6 turns these expectations into release evidence with
+`maint/live/osmap-live-validate-v6-observability.ksh`. The validator requires
+normalized login, session, send, helper, capacity, and browser-boundary
+evidence; safe log metadata; an explicit operator review; and a redaction scan.
+It writes category dispositions rather than copying raw log lines into the
+report.
+
+If a capacity event cannot be triggered safely on the live multi-purpose host,
+the operator may record `negative_live_safe_not_triggered` and rely on the
+current local regression evidence. That exception applies only to the live
+pressure trigger, not to auth, session, send, helper, boundary, redaction, or
+operator-review evidence.

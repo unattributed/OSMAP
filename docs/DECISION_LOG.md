@@ -6597,3 +6597,15 @@ Roundcube fallback prevent report creation.
 The recorder writes sanitized cohort aliases and status fields only. It
 confirms that native clients and the underlying mail stack remain unchanged,
 and refuses email-shaped cohort identifiers by default.
+
+## 2026-06-18, Turn V6 observability into release evidence
+
+V6 now validates that operators can review normalized authentication, session,
+submission, helper, capacity, and browser-boundary behavior without copying
+raw log excerpts into release artifacts.
+
+The validator checks safe log metadata and rejects raw credential, TOTP, CSRF,
+cookie, session identifier, message-body, attachment-body, and private-key
+markers. A live-safe negative capacity result is permitted only when pressure
+is unsafe to trigger on the multi-purpose host; all other event categories and
+explicit operator review remain mandatory.

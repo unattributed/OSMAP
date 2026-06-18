@@ -148,3 +148,9 @@ Every meaningful incident should end with a short review that records:
 
 If the event exposes a gap in the release-facing proof set, update the related
 docs and validation wrappers rather than relying on informal memory.
+
+For V6 closeout, run the observability validator after the controlled evidence
+walkthrough. A passing report proves the minimum incident-review signals are
+present without copying raw log excerpts or private content into release
+artifacts. Failure to observe auth, session, send, helper, or boundary events
+is an operational blocker, not a documentation-only exception.

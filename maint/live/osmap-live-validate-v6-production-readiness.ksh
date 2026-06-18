@@ -131,7 +131,7 @@ fi
 LOG_PATHS_STATUS="passed"
 for metadata in "$SERVE_LOG_METADATA" "$HELPER_LOG_METADATA"; do
 	case "$metadata" in
-		missing|unavailable|*:[0-9][0-9][0-9][2367]|*:[0-9][0-9][2367][0-9])
+		missing|unavailable|*:[0-7][0-7][1-7])
 			LOG_PATHS_STATUS="failed"
 			;;
 	esac

@@ -166,3 +166,10 @@ This model should evolve later to include:
 - log rotation and retention policy for `/var/log/osmap`
 
 Those should be added when real behavior exists, not preemptively.
+
+## V6 Release Evidence
+
+`V6_OBSERVABILITY_EVIDENCE_MODEL.md` defines the release-facing event and
+redaction requirements. The V6 validator consumes the existing structured text
+logs and records only status, path, ownership, mode, and evidence-source
+metadata. It never archives raw application logs as a V6 closeout artifact.
