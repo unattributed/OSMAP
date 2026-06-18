@@ -268,6 +268,9 @@ sh maint/security/test-osmap-live-validate-v6-observability.sh
 echo "==> validating V6 resource resilience wrapper behavior"
 sh maint/security/test-osmap-live-validate-v6-resource-resilience.sh
 
+echo "==> validating V6 evidence archive behavior"
+sh maint/security/test-osmap-v6-evidence-archive.sh
+
 echo "==> validating live V4 hostile-content wrapper behavior"
 sh maint/security/test-osmap-live-validate-v4-hostile-content.sh
 

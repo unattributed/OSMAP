@@ -91,6 +91,18 @@ closeout evidence. It is expected to fail until live evidence and closeout are
 complete. Developer `security-check` runs regression tests for the V5 and V6
 gate logic without treating fixture reports as release evidence.
 
+After `osmap-v6-retirement-readiness-gate.sh` passes, create the sanitized V6
+archive and checksum with:
+
+```bash
+sh maint/security/osmap-v6-evidence-archive.sh
+```
+
+The archiver reruns the V6 gate, includes only the documented public-safe
+closeout inputs and sanitized reports, rejects likely secret or content
+markers, and writes `maint/live/osmap-v6-closeout-evidence.tar.gz` plus its
+`.sha256` file.
+
 It writes:
 
 - `maint/live/osmap-v3-dependency-inventory.txt`

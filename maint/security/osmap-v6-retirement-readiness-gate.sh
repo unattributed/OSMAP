@@ -36,8 +36,11 @@ for path in \
 	docs/V6_ACCEPTANCE_CRITERIA.md \
 	docs/V6_ROADMAP.md \
 	docs/V6_SECURITY_GATES.md \
+	docs/V6_RELEASE_OPERATOR_HANDOFF.md \
 	src/session.rs \
+	src/draft.rs \
 	src/openbsd.rs \
+	maint/security/osmap-v6-evidence-archive.sh \
 	"$OSMAP_V6_PRODUCTION_REPORT" \
 	"$OSMAP_V6_REHEARSAL_REPORT" \
 	"$OSMAP_V6_OBSERVABILITY_REPORT" \
@@ -45,6 +48,19 @@ for path in \
 	"$OSMAP_V6_CLOSEOUT_EVIDENCE"
 do
 	require_file "$path"
+done
+
+for source_requirement in \
+	"src/draft.rs:DraftSourceAttachments" \
+	"src/draft.rs:source_attachment_count" \
+	"src/draft.rs:source_mailbox_hex"
+do
+	path=${source_requirement%%:*}
+	text=${source_requirement#*:}
+	if ! grep -Fq "$text" "$path"; then
+		echo "error: missing V6 draft-source source requirement in $path: $text" >&2
+		exit 1
+	fi
 done
 
 for source_requirement in \

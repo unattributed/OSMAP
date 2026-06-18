@@ -6649,3 +6649,17 @@ the multi-purpose mail host. It records that pressure is unsafe and combines
 current health and recovery with current regressions and prior live evidence.
 An isolated target may record isolated live pressure. Diagnostic dry runs
 cannot emit passing closeout markers.
+
+## 2026-06-18, Assemble V6 closeout and operator handoff
+
+V6 now has an explicit incomplete closeout record, a host-side operator
+handoff, and a sanitized evidence archiver. The archiver reruns the V6 gate,
+copies only enumerated public-safe documents, traces, carry-forward evidence,
+and sanitized V6 reports, rejects likely secret or content markers, and writes
+a checksum.
+
+This repository work does not close or deploy V6. Closeout remains blocked
+until the same deployed candidate produces passed production-readiness,
+no-Roundcube-fallback rehearsal, observability, and resource-resilience
+reports. Missing live evidence is recorded as a blocker rather than replaced
+with fixtures or inferred status.

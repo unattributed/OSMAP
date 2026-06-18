@@ -152,6 +152,11 @@ Version 5 boundary hardening was subsequently deployed to
 milestone rather than a separately tagged release; it does not replace or
 rewrite the frozen V4 release-evidence tuple.
 
+V6 Slices 00 through 09 are now implemented on the dedicated V6 branch, but V6
+is not deployed or closed. Production remains on the V5-era deployment, and
+the V6 production-readiness, no-fallback rehearsal, observability, and
+resource-resilience reports are still required before closeout.
+
 The current implementation includes:
 
 - Typed runtime configuration
@@ -190,6 +195,11 @@ The current implementation includes:
 - Login, send, and message-move throttling
 - Bounded concurrent connection handling
 - Runtime observability for capacity, timeouts, accept failures, and response-write failures
+- Cross-process advisory locking for the local file-backed session store
+- Explicit source-attachment draft references with resume and send-time
+  revalidation, without persisting source bytes
+- V6 production, rehearsal, observability, resource-resilience, and evidence
+  archive tooling
 
 OpenBSD-specific work is already present:
 
@@ -227,6 +237,10 @@ Important validation entry points include:
 - [`maint/live/osmap-live-validate-v3-mime-html-proof.ksh`](maint/live/osmap-live-validate-v3-mime-html-proof.ksh)
 - [`maint/live/osmap-live-record-v3-pilot-rehearsal.ksh`](maint/live/osmap-live-record-v3-pilot-rehearsal.ksh)
 - [`maint/live/osmap-live-validate-v4-hostile-content.ksh`](maint/live/osmap-live-validate-v4-hostile-content.ksh)
+- [`maint/live/osmap-live-validate-v6-production-readiness.ksh`](maint/live/osmap-live-validate-v6-production-readiness.ksh)
+- [`maint/live/osmap-live-record-v6-retirement-rehearsal.ksh`](maint/live/osmap-live-record-v6-retirement-rehearsal.ksh)
+- [`maint/live/osmap-live-validate-v6-observability.ksh`](maint/live/osmap-live-validate-v6-observability.ksh)
+- [`maint/live/osmap-live-validate-v6-resource-resilience.ksh`](maint/live/osmap-live-validate-v6-resource-resilience.ksh)
 
 Validation performed so far includes:
 

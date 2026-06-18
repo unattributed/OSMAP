@@ -221,6 +221,8 @@ The primary V6 gaps at the definition baseline are:
   evidence; the selected host report is still missing
 - Roundcube retirement has migration guidance but not a passing
   no-fallback rehearsal for the selected V6 cohort
+- the V6 closeout documents and archive tooling exist, but the archive cannot
+  be created until all four live reports and the V6 gate pass
 
 V6 does not close or relax the broader limitations around general webmail
 parity, remote content, attachment preview, groupware, broad administration,
