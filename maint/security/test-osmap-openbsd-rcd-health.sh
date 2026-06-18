@@ -29,7 +29,7 @@ assert_pexp_follows_rc_subr() {
   }
 }
 
-assert_pexp_follows_rc_subr "${serve_rc}" 'pexp="/usr/local/libexec/osmap/osmap-serve-run.ksh serve"'
+assert_pexp_follows_rc_subr "${serve_rc}" 'pexp="/usr/local/bin/osmap serve"'
 assert_pexp_follows_rc_subr "${helper_rc}" 'pexp="/usr/local/bin/osmap mailbox-helper"'
 
 grep -Fq 'rc_bg=YES' "${serve_rc}" || {

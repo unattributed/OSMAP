@@ -10,7 +10,7 @@ rc_reload=NO
 
 . /etc/rc.d/rc.subr
 
-pexp="/usr/local/libexec/osmap/osmap-serve-run.ksh serve"
+pexp="/usr/local/bin/osmap serve"
 rc_bg=YES
 
 rc_configtest() {
