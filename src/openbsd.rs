@@ -8,6 +8,7 @@
 
 use std::collections::BTreeMap;
 use std::fs;
+use std::io;
 #[cfg(unix)]
 use std::os::unix::io::AsRawFd as _;
 #[cfg(unix)]
@@ -16,6 +17,29 @@ use std::path::{Path, PathBuf};
 
 use crate::config::{AppConfig, LogLevel, OpenbsdConfinementMode};
 use crate::logging::{EventCategory, LogEvent, Logger};
+
+/// Acquires a blocking advisory exclusive lock on an already-open file.
+///
+/// The unsafe system-call boundary stays in this reviewed platform module so
+/// session state code can use a small safe RAII wrapper.
+#[cfg(unix)]
+pub(crate) fn advisory_file_lock_exclusive(file: &fs::File) -> io::Result<()> {
+    let result = unsafe { libc::flock(file.as_raw_fd(), libc::LOCK_EX) };
+    if result == -1 {
+        return Err(io::Error::last_os_error());
+    }
+    Ok(())
+}
+
+/// Releases an advisory lock previously acquired on an open file.
+#[cfg(unix)]
+pub(crate) fn advisory_file_unlock(file: &fs::File) -> io::Result<()> {
+    let result = unsafe { libc::flock(file.as_raw_fd(), libc::LOCK_UN) };
+    if result == -1 {
+        return Err(io::Error::last_os_error());
+    }
+    Ok(())
+}
 
 /// The promise set used while `unveil(2)` calls are still permitted.
 const OPENBSD_SERVE_PROMISES_BEFORE_LOCK: &str =

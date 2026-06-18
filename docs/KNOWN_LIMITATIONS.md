@@ -67,7 +67,8 @@
   self-service revocation for one session, other sessions, or all sessions, and
   automatic revocation for expired or inactive sessions. Version 3 now makes
   concurrent sessions the explicit policy and surfaces normalized device labels,
-  but it does not yet provide cross-process session-store locking or
+  and V6 adds a store-local advisory lock for cross-process operations sharing
+  one session directory, but it does not provide cross-host locking or
   anomaly-oriented session analysis
 - The implementation now provides a first bounded end-user settings surface,
   but it currently exposes only one user-facing preference rather than a broad
@@ -207,8 +208,9 @@ Roundcube fallback, observability, resource resilience, and final closeout.
 
 The primary V6 gaps at the definition baseline are:
 
-- file-backed session mutations have same-process locking but not
-  cross-process locking
+- file-backed session mutations now have a restrictive store-local advisory
+  lock for processes sharing one host directory; distributed locking remains
+  out of scope
 - explicit source-attachment selections are revalidated during immediate send
   but are not preserved across draft resume
 - observability and incident-response expectations are documented but not yet

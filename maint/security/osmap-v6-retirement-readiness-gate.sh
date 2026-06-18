@@ -36,6 +36,8 @@ for path in \
 	docs/V6_ACCEPTANCE_CRITERIA.md \
 	docs/V6_ROADMAP.md \
 	docs/V6_SECURITY_GATES.md \
+	src/session.rs \
+	src/openbsd.rs \
 	"$OSMAP_V6_PRODUCTION_REPORT" \
 	"$OSMAP_V6_REHEARSAL_REPORT" \
 	"$OSMAP_V6_OBSERVABILITY_REPORT" \
@@ -43,6 +45,19 @@ for path in \
 	"$OSMAP_V6_CLOSEOUT_EVIDENCE"
 do
 	require_file "$path"
+done
+
+for source_requirement in \
+	"src/session.rs:SESSION_LOCK_FILE" \
+	"src/session.rs:with_exclusive_lock" \
+	"src/openbsd.rs:advisory_file_lock_exclusive"
+do
+	path=${source_requirement%%:*}
+	text=${source_requirement#*:}
+	if ! grep -Fq "$text" "$path"; then
+		echo "error: missing V6 session-locking source requirement in $path: $text" >&2
+		exit 1
+	fi
 done
 
 slice=0

@@ -7,10 +7,10 @@
 use crate::logging::audit_session_ref;
 use std::cmp::Reverse;
 use std::fs;
+use std::fs::OpenOptions;
 use std::io::Write as _;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Mutex, MutexGuard};
 
 use getrandom::getrandom;
 use sha2::{Digest, Sha256};
@@ -41,8 +41,8 @@ pub const CSRF_TOKEN_HEX_LEN: usize = 64;
 /// Conservative default idle timeout for browser sessions: 30 minutes.
 pub const DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS: u64 = 30 * 60;
 
-static SESSION_OPERATION_LOCK: Mutex<()> = Mutex::new(());
 static SESSION_TMP_COUNTER: AtomicU64 = AtomicU64::new(0);
+const SESSION_LOCK_FILE: &str = ".session-store.lock";
 
 /// Describes the persisted session metadata visible to operators.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -163,9 +163,41 @@ impl RandomSource for SystemRandomSource {
 
 /// Persists and retrieves session records.
 pub trait SessionStore {
-    fn save(&self, record: &SessionRecord) -> Result<(), SessionError>;
-    fn load(&self, session_id: &str) -> Result<Option<SessionRecord>, SessionError>;
-    fn list_for_user(&self, canonical_username: &str) -> Result<Vec<SessionRecord>, SessionError>;
+    fn with_exclusive_lock<T, F>(&self, operation: F) -> Result<T, SessionError>
+    where
+        Self: Sized,
+        F: FnOnce() -> Result<T, SessionError>,
+    {
+        operation()
+    }
+
+    fn save_unlocked(&self, record: &SessionRecord) -> Result<(), SessionError>;
+    fn load_unlocked(&self, session_id: &str) -> Result<Option<SessionRecord>, SessionError>;
+    fn list_for_user_unlocked(
+        &self,
+        canonical_username: &str,
+    ) -> Result<Vec<SessionRecord>, SessionError>;
+
+    fn save(&self, record: &SessionRecord) -> Result<(), SessionError>
+    where
+        Self: Sized,
+    {
+        self.with_exclusive_lock(|| self.save_unlocked(record))
+    }
+
+    fn load(&self, session_id: &str) -> Result<Option<SessionRecord>, SessionError>
+    where
+        Self: Sized,
+    {
+        self.with_exclusive_lock(|| self.load_unlocked(session_id))
+    }
+
+    fn list_for_user(&self, canonical_username: &str) -> Result<Vec<SessionRecord>, SessionError>
+    where
+        Self: Sized,
+    {
+        self.with_exclusive_lock(|| self.list_for_user_unlocked(canonical_username))
+    }
 }
 
 /// File-backed session store rooted at the configured session directory.
@@ -185,10 +217,76 @@ impl FileSessionStore {
     pub fn session_path(&self, session_id: &str) -> PathBuf {
         self.session_dir.join(format!("{session_id}.session"))
     }
+
+    /// Returns the store-local advisory lock path.
+    pub fn lock_path(&self) -> PathBuf {
+        self.session_dir.join(SESSION_LOCK_FILE)
+    }
+
+    fn acquire_exclusive_lock(&self) -> Result<SessionFileLock, SessionError> {
+        fs::create_dir_all(&self.session_dir).map_err(|error| SessionError::StoreFailure {
+            reason: format!(
+                "failed to create session directory {:?}: {error}",
+                self.session_dir
+            ),
+        })?;
+
+        let lock_path = self.lock_path();
+        let mut options = OpenOptions::new();
+        options.read(true).write(true).create(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt as _;
+            options.mode(0o600);
+        }
+        let file = options
+            .open(&lock_path)
+            .map_err(|error| SessionError::StoreFailure {
+                reason: format!("failed to open session lock file {:?}: {error}", lock_path),
+            })?;
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt as _;
+            fs::set_permissions(&lock_path, fs::Permissions::from_mode(0o600)).map_err(
+                |error| SessionError::StoreFailure {
+                    reason: format!(
+                        "failed to set session lock permissions {:?}: {error}",
+                        lock_path
+                    ),
+                },
+            )?;
+            crate::openbsd::advisory_file_lock_exclusive(&file).map_err(|error| {
+                SessionError::StoreFailure {
+                    reason: format!(
+                        "failed to acquire session store lock {:?}: {error}",
+                        lock_path
+                    ),
+                }
+            })?;
+        }
+
+        #[cfg(not(unix))]
+        {
+            return Err(SessionError::StoreFailure {
+                reason: "file-backed session locking requires a Unix-like target".to_string(),
+            });
+        }
+
+        Ok(SessionFileLock { file })
+    }
 }
 
 impl SessionStore for FileSessionStore {
-    fn save(&self, record: &SessionRecord) -> Result<(), SessionError> {
+    fn with_exclusive_lock<T, F>(&self, operation: F) -> Result<T, SessionError>
+    where
+        F: FnOnce() -> Result<T, SessionError>,
+    {
+        let _guard = self.acquire_exclusive_lock()?;
+        operation()
+    }
+
+    fn save_unlocked(&self, record: &SessionRecord) -> Result<(), SessionError> {
         fs::create_dir_all(&self.session_dir).map_err(|error| SessionError::StoreFailure {
             reason: format!(
                 "failed to create session directory {:?}: {error}",
@@ -233,7 +331,7 @@ impl SessionStore for FileSessionStore {
         Ok(())
     }
 
-    fn load(&self, session_id: &str) -> Result<Option<SessionRecord>, SessionError> {
+    fn load_unlocked(&self, session_id: &str) -> Result<Option<SessionRecord>, SessionError> {
         let path = self.session_path(session_id);
 
         if !path.exists() {
@@ -247,7 +345,10 @@ impl SessionStore for FileSessionStore {
         parse_session_record(&content)
     }
 
-    fn list_for_user(&self, canonical_username: &str) -> Result<Vec<SessionRecord>, SessionError> {
+    fn list_for_user_unlocked(
+        &self,
+        canonical_username: &str,
+    ) -> Result<Vec<SessionRecord>, SessionError> {
         let mut records = Vec::new();
 
         if !self.session_dir.exists() {
@@ -284,6 +385,19 @@ impl SessionStore for FileSessionStore {
 
         records.sort_by_key(|record| Reverse(record.issued_at));
         Ok(records)
+    }
+}
+
+struct SessionFileLock {
+    file: fs::File,
+}
+
+impl Drop for SessionFileLock {
+    fn drop(&mut self) {
+        #[cfg(unix)]
+        {
+            let _ = crate::openbsd::advisory_file_unlock(&self.file);
+        }
     }
 }
 
@@ -334,45 +448,46 @@ where
                     reason: format!("invalid canonical username for session: {}", error.as_str()),
                 }
             })?;
-        let _guard = session_operation_lock()?;
-        let issued_at = self.time_provider.unix_timestamp();
-        let expires_at = issued_at.saturating_add(self.lifetime_seconds);
-        let token = generate_session_token(&self.random_source)?;
-        let session_id = session_id_from_token(token.as_str());
-        let csrf_token = csrf_token_from_session_token(token.as_str());
+        self.session_store.with_exclusive_lock(|| {
+            let issued_at = self.time_provider.unix_timestamp();
+            let expires_at = issued_at.saturating_add(self.lifetime_seconds);
+            let token = generate_session_token(&self.random_source)?;
+            let session_id = session_id_from_token(token.as_str());
+            let csrf_token = csrf_token_from_session_token(token.as_str());
 
-        let record = SessionRecord {
-            session_id: session_id.clone(),
-            csrf_token,
-            canonical_username: canonical_username.into_string(),
-            issued_at,
-            expires_at,
-            last_seen_at: issued_at,
-            revoked_at: None,
-            remote_addr: context.remote_addr.clone(),
-            user_agent: context.user_agent.clone(),
-            factor,
-        };
+            let record = SessionRecord {
+                session_id: session_id.clone(),
+                csrf_token,
+                canonical_username: canonical_username.into_string(),
+                issued_at,
+                expires_at,
+                last_seen_at: issued_at,
+                revoked_at: None,
+                remote_addr: context.remote_addr.clone(),
+                user_agent: context.user_agent.clone(),
+                factor,
+            };
 
-        self.session_store.save(&record)?;
+            self.session_store.save_unlocked(&record)?;
 
-        Ok(IssuedSession {
-            token,
-            record: record.clone(),
-            audit_event: LogEvent::new(
-                crate::config::LogLevel::Info,
-                EventCategory::Session,
-                "session_issued",
-                "browser session issued",
-            )
-            .with_field("session_ref", audit_session_ref(&record.session_id))
-            .with_field("canonical_username", record.canonical_username.clone())
-            .with_field("issued_at", record.issued_at.to_string())
-            .with_field("expires_at", record.expires_at.to_string())
-            .with_field("factor", factor.as_str())
-            .with_field("request_id", context.request_id.clone())
-            .with_field("remote_addr", context.remote_addr.clone())
-            .with_field("user_agent", context.user_agent.clone()),
+            Ok(IssuedSession {
+                token,
+                record: record.clone(),
+                audit_event: LogEvent::new(
+                    crate::config::LogLevel::Info,
+                    EventCategory::Session,
+                    "session_issued",
+                    "browser session issued",
+                )
+                .with_field("session_ref", audit_session_ref(&record.session_id))
+                .with_field("canonical_username", record.canonical_username.clone())
+                .with_field("issued_at", record.issued_at.to_string())
+                .with_field("expires_at", record.expires_at.to_string())
+                .with_field("factor", factor.as_str())
+                .with_field("request_id", context.request_id.clone())
+                .with_field("remote_addr", context.remote_addr.clone())
+                .with_field("user_agent", context.user_agent.clone()),
+            })
         })
     }
 
@@ -382,9 +497,9 @@ where
         context: &AuthenticationContext,
         token: &SessionToken,
     ) -> Result<ValidatedSession, SessionError> {
-        let _guard = session_operation_lock()?;
         let session_id = session_id_from_token(token.as_str());
-        self.validate_unlocked(context, &session_id)
+        self.session_store
+            .with_exclusive_lock(|| self.validate_unlocked(context, &session_id))
     }
 
     fn validate_unlocked(
@@ -393,7 +508,7 @@ where
         session_id: &str,
     ) -> Result<ValidatedSession, SessionError> {
         let now = self.time_provider.unix_timestamp();
-        let Some(mut record) = self.session_store.load(session_id)? else {
+        let Some(mut record) = self.session_store.load_unlocked(session_id)? else {
             return Err(SessionError::SessionNotFound {
                 session_id: session_id.to_string(),
             });
@@ -407,14 +522,14 @@ where
 
         if let Some(reason) = self.timeout_reason(&record, now) {
             record.revoked_at = Some(now);
-            self.session_store.save(&record)?;
+            self.session_store.save_unlocked(&record)?;
             return Err(SessionError::StoreFailure {
                 reason: format!("session is {reason}"),
             });
         }
 
         record.last_seen_at = now;
-        self.session_store.save(&record)?;
+        self.session_store.save_unlocked(&record)?;
 
         Ok(ValidatedSession {
             audit_event: LogEvent::new(
@@ -448,8 +563,8 @@ where
         context: &AuthenticationContext,
         session_id: &str,
     ) -> Result<RevokedSession, SessionError> {
-        let _guard = session_operation_lock()?;
-        self.revoke_by_session_id_unlocked(context, session_id)
+        self.session_store
+            .with_exclusive_lock(|| self.revoke_by_session_id_unlocked(context, session_id))
     }
 
     fn revoke_by_session_id_unlocked(
@@ -457,7 +572,7 @@ where
         context: &AuthenticationContext,
         session_id: &str,
     ) -> Result<RevokedSession, SessionError> {
-        let Some(mut record) = self.session_store.load(session_id)? else {
+        let Some(mut record) = self.session_store.load_unlocked(session_id)? else {
             return Err(SessionError::SessionNotFound {
                 session_id: session_id.to_string(),
             });
@@ -465,7 +580,7 @@ where
 
         let now = self.time_provider.unix_timestamp();
         record.revoked_at = Some(now);
-        self.session_store.save(&record)?;
+        self.session_store.save_unlocked(&record)?;
 
         Ok(RevokedSession {
             audit_event: LogEvent::new(
@@ -503,14 +618,15 @@ where
         canonical_username: &str,
         current_session_id: &str,
     ) -> Result<Vec<RevokedSession>, SessionError> {
-        let _guard = session_operation_lock()?;
-        let records = self.list_for_user_unlocked(canonical_username)?;
-        records
-            .into_iter()
-            .filter(|record| record.revoked_at.is_none())
-            .filter(|record| record.session_id != current_session_id)
-            .map(|record| self.revoke_by_session_id_unlocked(context, &record.session_id))
-            .collect()
+        self.session_store.with_exclusive_lock(|| {
+            let records = self.list_for_user_unlocked(canonical_username)?;
+            records
+                .into_iter()
+                .filter(|record| record.revoked_at.is_none())
+                .filter(|record| record.session_id != current_session_id)
+                .map(|record| self.revoke_by_session_id_unlocked(context, &record.session_id))
+                .collect()
+        })
     }
 
     /// Revokes all active sessions for a user, including the current session.
@@ -519,13 +635,14 @@ where
         context: &AuthenticationContext,
         canonical_username: &str,
     ) -> Result<Vec<RevokedSession>, SessionError> {
-        let _guard = session_operation_lock()?;
-        let records = self.list_for_user_unlocked(canonical_username)?;
-        records
-            .into_iter()
-            .filter(|record| record.revoked_at.is_none())
-            .map(|record| self.revoke_by_session_id_unlocked(context, &record.session_id))
-            .collect()
+        self.session_store.with_exclusive_lock(|| {
+            let records = self.list_for_user_unlocked(canonical_username)?;
+            records
+                .into_iter()
+                .filter(|record| record.revoked_at.is_none())
+                .map(|record| self.revoke_by_session_id_unlocked(context, &record.session_id))
+                .collect()
+        })
     }
 
     /// Returns the operator-visible session list for a canonical user.
@@ -533,8 +650,8 @@ where
         &self,
         canonical_username: &str,
     ) -> Result<Vec<SessionRecord>, SessionError> {
-        let _guard = session_operation_lock()?;
-        self.list_for_user_unlocked(canonical_username)
+        self.session_store
+            .with_exclusive_lock(|| self.list_for_user_unlocked(canonical_username))
     }
 
     fn list_for_user_unlocked(
@@ -542,11 +659,13 @@ where
         canonical_username: &str,
     ) -> Result<Vec<SessionRecord>, SessionError> {
         let now = self.time_provider.unix_timestamp();
-        let mut records = self.session_store.list_for_user(canonical_username)?;
+        let mut records = self
+            .session_store
+            .list_for_user_unlocked(canonical_username)?;
         for record in &mut records {
             if self.timeout_reason(record, now).is_some() {
                 record.revoked_at = Some(now);
-                self.session_store.save(record)?;
+                self.session_store.save_unlocked(record)?;
             }
         }
         Ok(records)
@@ -567,14 +686,6 @@ where
 
         None
     }
-}
-
-fn session_operation_lock() -> Result<MutexGuard<'static, ()>, SessionError> {
-    SESSION_OPERATION_LOCK
-        .lock()
-        .map_err(|_| SessionError::StoreFailure {
-            reason: "session operation lock is poisoned".to_string(),
-        })
 }
 
 /// Generates a new high-entropy session token.
@@ -985,6 +1096,43 @@ mod tests {
             .exists());
     }
 
+    #[cfg(unix)]
+    #[test]
+    fn file_session_store_lock_file_uses_restrictive_permissions() {
+        use std::os::unix::fs::PermissionsExt as _;
+
+        let session_dir = temp_dir("osmap-session-lock-permissions");
+        let store = FileSessionStore::new(&session_dir);
+        store
+            .save(&session_record_fixture('a', "alice@example.com", 100))
+            .expect("session save should acquire the lock");
+
+        let mode = fs::metadata(store.lock_path())
+            .expect("lock metadata should exist")
+            .permissions()
+            .mode()
+            & 0o777;
+        assert_eq!(mode, 0o600);
+    }
+
+    #[test]
+    fn file_session_store_lock_acquisition_failure_fails_closed() {
+        let session_dir = temp_dir("osmap-session-lock-failure");
+        let store = FileSessionStore::new(&session_dir);
+        fs::create_dir_all(store.lock_path()).expect("blocking lock directory should exist");
+
+        let error = store
+            .save(&session_record_fixture('a', "alice@example.com", 100))
+            .expect_err("lock open failure must fail the store operation");
+
+        match error {
+            SessionError::StoreFailure { reason } => {
+                assert!(reason.contains("failed to open session lock file"));
+            }
+            other => panic!("expected store failure, got {other:?}"),
+        }
+    }
+
     #[test]
     fn validate_session_updates_last_seen() {
         let session_dir = temp_dir("osmap-session-validate");
@@ -1252,6 +1400,86 @@ mod tests {
         assert!(final_records
             .iter()
             .all(|record| record.revoked_at == Some(400)));
+    }
+
+    #[test]
+    fn revoke_all_racing_with_validation_cannot_resurrect_a_session() {
+        let session_dir = temp_dir("osmap-session-cross-store-revoke-all");
+        let time = SharedTimeProvider::new(500);
+        let setup_service = SessionService::new(
+            FileSessionStore::new(&session_dir),
+            time.clone(),
+            StaticRandomSource {
+                bytes: vec![0x15; SESSION_TOKEN_BYTES],
+            },
+            3600,
+            DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS,
+        );
+        let issued = setup_service
+            .issue(
+                &test_context(),
+                "alice@example.com",
+                RequiredSecondFactor::Totp,
+            )
+            .expect("session issuance should succeed");
+
+        let validate_service = Arc::new(SessionService::new(
+            FileSessionStore::new(&session_dir),
+            time.clone(),
+            StaticRandomSource {
+                bytes: vec![0x16; SESSION_TOKEN_BYTES],
+            },
+            3600,
+            DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS,
+        ));
+        let revoke_service = Arc::new(SessionService::new(
+            FileSessionStore::new(&session_dir),
+            time,
+            StaticRandomSource {
+                bytes: vec![0x17; SESSION_TOKEN_BYTES],
+            },
+            3600,
+            DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS,
+        ));
+
+        let barrier = Arc::new(Barrier::new(3));
+        let validate_barrier = Arc::clone(&barrier);
+        let validate_token = issued.token.clone();
+        let validate_handle = {
+            let service = Arc::clone(&validate_service);
+            thread::spawn(move || {
+                validate_barrier.wait();
+                let _ = service.validate(&test_context(), &validate_token);
+            })
+        };
+
+        let revoke_barrier = Arc::clone(&barrier);
+        let revoke_handle = {
+            let service = Arc::clone(&revoke_service);
+            thread::spawn(move || {
+                revoke_barrier.wait();
+                service
+                    .revoke_all_for_user(&test_context(), "alice@example.com")
+                    .expect("revoke-all should succeed");
+            })
+        };
+
+        barrier.wait();
+        validate_handle
+            .join()
+            .expect("validation thread should not panic");
+        revoke_handle
+            .join()
+            .expect("revoke-all thread should not panic");
+
+        let stored = FileSessionStore::new(&session_dir)
+            .load(&issued.record.session_id)
+            .expect("final load should succeed")
+            .expect("session should exist");
+        assert_eq!(stored.revoked_at, Some(500));
+        assert!(validate_service
+            .validate(&test_context(), &issued.token)
+            .is_err());
     }
 
     #[test]

@@ -6609,3 +6609,17 @@ cookie, session identifier, message-body, attachment-body, and private-key
 markers. A live-safe negative capacity result is permitted only when pressure
 is unsafe to trigger on the multi-purpose host; all other event categories and
 explicit operator review remain mandatory.
+
+## 2026-06-18, Add cross-process session-store locking
+
+The file-backed session service now coordinates complete read-modify-write
+operations through a store-local advisory lock file. The lock file is created
+with mode `0600`, acquisition failures fail closed, and an RAII guard releases
+the kernel lock on every normal return and unwind.
+
+Issue, validate, revoke, revoke-all, list, and timeout-driven updates use the
+same transaction boundary. Tests cover restrictive lock permissions, lock-open
+failure, existing validation/revocation races, and revoke-all racing with
+validation through separate store instances. This closes overlapping-process
+races on one host and session directory; it does not claim distributed
+cross-host locking.
