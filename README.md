@@ -490,6 +490,29 @@ The short form is:
   HTML-response boundaries on the repository tip; this source follow-up is
   newer than the assessed June 14 production deployment commit
 
+## V6 Controlled Roundcube Retirement Readiness
+
+Version 6 is an evidence, operations, migration, and narrow
+blocker-remediation milestone for a selected OpenBSD-hosted user cohort. It
+must prove essential browser-mail operation without normal Roundcube fallback
+while preserving the V4 hostile-content claim and the V5 identity, Host,
+Origin, response-header, framing, and trusted HTML boundaries.
+
+V6 does not claim broad feature parity or general-purpose webmail readiness.
+It does not widen remote-content, attachment-preview, JavaScript, groupware,
+plugin, administration, or mailbox-wide operation behavior.
+
+The authoritative V6 scope is:
+
+- [`docs/V6_DEFINITION.md`](docs/V6_DEFINITION.md)
+- [`docs/V6_ACCEPTANCE_CRITERIA.md`](docs/V6_ACCEPTANCE_CRITERIA.md)
+- [`docs/V6_ROADMAP.md`](docs/V6_ROADMAP.md)
+- [`docs/V6_SECURITY_GATES.md`](docs/V6_SECURITY_GATES.md)
+
+V6 requires sanitized live evidence from `mail.blackbagsecurity.com` or an
+explicitly equivalent OpenBSD target. Until every V6 closeout gate passes, the
+project remains prototype-grade and V6 remains incomplete.
+
 ## Target Users
 
 OSMAP is intended for:

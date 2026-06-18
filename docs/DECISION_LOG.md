@@ -6539,3 +6539,22 @@ without changing the sanitizer policy or browser-visible rendering behavior.
 The source follow-up is newer than the V5 production deployment commit
 `927516f`; production requires a normal assessed deployment before this
 additional boundary can be claimed live.
+
+## 2026-06-18, Define V6 as controlled Roundcube retirement readiness
+
+V6 is defined as an evidence, operations, migration, and narrow
+blocker-remediation milestone for a selected OpenBSD-hosted cohort. It is not a
+feature-parity release.
+
+The V6 claim requires the selected cohort to complete its required
+browser-mail workflows without normal Roundcube fallback while preserving the
+V4 hostile-content assurance and V5 canonical identity, configured Host,
+same-origin, response-header, strict framing, plain-text response, and typed
+HTML boundaries.
+
+V6 closeout requires sanitized live evidence from
+`mail.blackbagsecurity.com` or an explicitly equivalent OpenBSD target.
+Roundcube may remain as an operator-controlled rollback unit during cutover,
+but hidden or normal-use fallback fails the V6 rehearsal. Missing live context,
+missing tools, skipped authenticated paths, unsafe evidence, or failed gates
+keep V6 incomplete.

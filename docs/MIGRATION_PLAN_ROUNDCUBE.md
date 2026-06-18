@@ -168,6 +168,27 @@ The migration can be considered successful for a given user group when:
 - incident handling and closeout reruns remain operationally credible
 - operators judge the remaining limitations acceptable for that user group
 
+## V6 Controlled Retirement Readiness
+
+V6 turns the migration exit criteria into a release-gated selected-cohort
+rehearsal. The selected cohort must classify and exercise every required
+browser-mail workflow, produce a sanitized report, and record:
+
+- `result=v6_retirement_rehearsal_passed`
+- `roundcube_fallback_used=no`
+- `native_clients_unchanged=yes`
+- `underlying_mail_stack_unchanged=yes`
+- `secrets_redacted=passed`
+
+Roundcube may remain installed and available as an explicit operator rollback
+unit during the controlled cutover window. It must not be used as normal
+fallback during the passing rehearsal, and OSMAP must not add hidden fallback
+behavior.
+
+Users with an unclosed required workflow remain outside the retirement-ready
+cohort. V6 readiness for one cohort is not a claim of general Roundcube parity
+or safe retirement for every user.
+
 ## Deferred Questions
 
 These questions remain later-phase work rather than prerequisites for this

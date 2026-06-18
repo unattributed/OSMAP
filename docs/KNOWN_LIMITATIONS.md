@@ -197,3 +197,27 @@ The April 2026 WSTG backlog maps into Version 3 as follows:
   bounded bulk folder actions, and folder ergonomics remain Version 3 workflow
   refinements only to the extent required by the daily-driver adoption
   boundary.
+
+## Version 6 Controlled Retirement Readiness Boundary
+
+Version 6 is now defined, but definition is not completion. V6 remains
+incomplete until the current source and selected OpenBSD-hosted cohort produce
+passing, sanitized evidence for production readiness, operation without normal
+Roundcube fallback, observability, resource resilience, and final closeout.
+
+The primary V6 gaps at the definition baseline are:
+
+- file-backed session mutations have same-process locking but not
+  cross-process locking
+- explicit source-attachment selections are revalidated during immediate send
+  but are not preserved across draft resume
+- observability and incident-response expectations are documented but not yet
+  assembled into a V6 live evidence report
+- the bounded resource model has local tests and earlier evidence but not the
+  V6 selected-cohort resilience report
+- Roundcube retirement has migration guidance but not a passing
+  no-fallback rehearsal for the selected V6 cohort
+
+V6 does not close or relax the broader limitations around general webmail
+parity, remote content, attachment preview, groupware, broad administration,
+OpenPGP, ManageSieve UI, or a complete denial-of-service strategy.

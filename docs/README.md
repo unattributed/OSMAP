@@ -134,6 +134,11 @@ Current public documentation map:
 - `V4_SECURITY_CLAIM_MATRIX.md`
 - `V5_BOUNDARY_HARDENING_EVIDENCE.md`
 - `V5_PRODUCTION_DEPLOYMENT_COMPLETE.md`
+- `V6_DEFINITION.md`
+- `V6_ACCEPTANCE_CRITERIA.md`
+- `V6_ROADMAP.md`
+- `V6_SECURITY_GATES.md`
+- `V6_TRACES/`
 - `REQUEST_WORKER_BUDGET_MODEL.md`
 - `MAIL_HOST_BINARY_DEPLOYMENT_SOP.md`
 - `MAIL_HOST_RUNTIME_GROUP_PROVISIONING_SOP.md`
@@ -158,9 +163,11 @@ and future scoped work. The Version 4 documentation set records a bounded
 hostile-content safety release, not broad production readiness, rich-mail
 rendering, malware prevention, or Roundcube parity. Version 5 records deployed
 identity, Host/origin, and response-boundary hardening without changing those
-product-scope limits. Requested additional functionality and Thunderbird-like
-UX polish remain future-version work unless a later definition explicitly
-brings them into scope.
+product-scope limits. Version 6 defines controlled Roundcube retirement
+readiness for a selected cohort and remains incomplete until its sanitized
+live-evidence and closeout gates pass. Requested additional functionality and
+Thunderbird-like UX polish remain future-version work unless a later
+definition explicitly brings them into scope.
 
 Some later-phase or deferred documents remain placeholders so the intended
 documentation map is visible without publishing private notes prematurely.
