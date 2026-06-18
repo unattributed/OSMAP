@@ -121,6 +121,12 @@ The minimum expected result for this gate is:
 The full service-enablement gate still has to be cleared separately through
 `MAIL_HOST_SERVICE_ENABLEMENT_SOP.md`.
 
+For a V6 candidate deployment, the rollback check is stricter: retain both a
+timestamped `/usr/local/bin/osmap.pre-*` binary and a matching
+`/etc/osmap/osmap-serve.env.pre-*` environment backup. The V6 production
+readiness validator treats these as one rollback unit and fails if either side
+is missing.
+
 The fresh run artifacts for this gate should be kept with the operator's
 deployment session. The committed repo-owned evidence currently reduces to the
 service-enablement report unless a future run explicitly adds a sanitized

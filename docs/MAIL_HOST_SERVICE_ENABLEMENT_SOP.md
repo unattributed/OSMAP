@@ -139,6 +139,18 @@ The repo-owned validator confirms:
 - the helper socket exists
 - `127.0.0.1:8080` is actually listening
 
+For V6, follow this with:
+
+```sh
+ksh ./maint/live/osmap-live-validate-v6-production-readiness.ksh
+```
+
+The resulting sanitized report defaults to
+`maint/live/latest-host-v6-production-readiness-report.txt`. A passing report
+requires healthy serve and helper services, safe env/log/socket metadata,
+configured Host policy, valid-host health, invalid-host `421`, no directly
+public backend port, and a complete binary-plus-env rollback unit.
+
 Before the public browser edge is cut over, also run the edge and readiness
 checks that depend on this persistent service install:
 

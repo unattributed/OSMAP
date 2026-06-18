@@ -134,6 +134,15 @@ The deployment model should clearly identify:
 - how secrets and configuration are protected
 - how rollback would be performed if deployment fails
 
+For V6 selected-cohort retirement readiness, run
+`maint/live/osmap-live-validate-v6-production-readiness.ksh` after deployment.
+It records service state, the `root:osmaprt` `0640` serve environment,
+configured Host presence, public valid-host health, invalid-Host `421`
+behavior, helper-socket and log metadata, loopback-only backend exposure, and
+the binary-plus-environment rollback unit. Missing live context fails closed;
+`--allow-missing-live-context` is developer-only and cannot produce a passing
+closeout report.
+
 ## Upgrade Strategy
 
 A credible OpenBSD deployment strategy should support:

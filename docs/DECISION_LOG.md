@@ -6573,3 +6573,16 @@ cookie headers, private keys, mailbox bodies, or attachment bodies.
 The historical release check remains anchored to the frozen V4 tuple.
 Developer `make security-check` exercises V5 and V6 gate regression harnesses
 without allowing fixture reports to satisfy V6 closeout.
+
+## 2026-06-18, Add the V6 production readiness validator
+
+V6 production readiness now has a fail-closed OpenBSD host validator. It
+records the deployed commit and binary digest when available, both OSMAP
+service states, safe environment/log/socket metadata, configured Host policy,
+valid-host health, invalid-host `421`, backend listener confinement, and the
+binary-plus-environment rollback unit.
+
+The report is sanitized by construction and does not copy environment values,
+logs, cookies, credentials, TOTP material, CSRF values, or mailbox content.
+An explicit allow-missing developer mode can record diagnostics but cannot
+produce a passing V6 report.
