@@ -103,6 +103,9 @@ sh maint/security/osmap-publication-guard.sh
 echo "==> validating documentation governance invariants"
 sh maint/security/osmap-doc-governance-guard.sh
 
+echo "==> validating V7 boundary hardening invariants"
+sh maint/security/osmap-v7-boundary-hardening-gate.sh
+
 echo "==> validating TLS policy invariants"
 sh maint/security/osmap-tls-policy-guard.sh
 
