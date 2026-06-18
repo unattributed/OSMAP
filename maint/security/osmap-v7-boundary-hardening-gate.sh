@@ -24,6 +24,8 @@ require_text() {
 
 for path in \
 	docs/V7_BOUNDARY_HARDENING_DUE_DILIGENCE.md \
+	docs/V7_BROWSER_AVAILABILITY_INVARIANT.md \
+	maint/openbsd/libexec/osmap-login-availability.ksh \
 	src/http_parse.rs \
 	src/totp.rs \
 	src/session.rs \
@@ -59,5 +61,9 @@ require_text src/throttle.rs "throttle_temp_file_collision_fails_without_truncat
 require_text src/http_form.rs "Some(value) if is_urlencoded_form_content_type(value)"
 require_text src/http_form.rs "parses_urlencoded_compose_forms_with_charset_parameter"
 require_text src/http_form.rs "parses_mixed_case_urlencoded_compose_content_type"
+
+require_text docs/V7_BROWSER_AVAILABILITY_INVARIANT.md 'GET /login'
+require_text docs/V7_BROWSER_AVAILABILITY_INVARIANT.md 'successful `POST /login` requests do not terminate the server'
+require_text maint/openbsd/libexec/osmap-login-availability.ksh "OSMAP browser entry invariant"
 
 echo "V7 boundary hardening gate passed"

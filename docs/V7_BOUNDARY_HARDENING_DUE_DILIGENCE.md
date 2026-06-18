@@ -2,7 +2,7 @@
 
 Date: 2026-06-18
 Sprint: V7 boundary hardening due diligence
-Status: Implemented, deployed, and production-validated; one follow-up remains
+Status: Reopened after production availability failure
 
 ## Objective
 
@@ -324,9 +324,15 @@ The final sanitized archive and checksum are produced outside the repository:
 
 ## Final Status
 
-V7 implementation, local live due diligence, native OpenBSD verification,
-production deployment, post-deployment browser-path checks, and repository
-gates are complete. Four findings are closed. File-backed state creation is
-closed, but the broader throttle cross-process read-modify-write race is only
-partially closed and requires a focused transaction-level locking follow-up.
-No new dependency was added and the browser trust boundary was not widened.
+V7 code implementation and its original five finding dispositions remain as
+recorded, but V7 closeout is reopened. On June 19, 2026, a real browser
+`POST /login` was followed by termination of `osmap_serve` and nginx `502 Bad
+Gateway` responses for `/` and `/login`. A manual service start restored
+`GET /login` to `200`, but a short GET-only hold is no longer accepted as
+production-availability proof.
+
+V7 cannot close until the requirements in
+`V7_BROWSER_AVAILABILITY_INVARIANT.md` pass, including a real operator
+password-plus-TOTP login, post-login service survival, hold-period validation,
+and installed automatic recovery. The broader throttle transaction-locking
+follow-up also remains.

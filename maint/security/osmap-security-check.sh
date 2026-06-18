@@ -283,6 +283,9 @@ sh maint/security/test-osmap-live-validate-nginx-ocsp-stapling.sh
 echo "==> validating openbsd rc.d process-expression placement"
 sh maint/security/test-osmap-openbsd-rcd-health.sh
 
+echo "==> validating OSMAP login availability invariant"
+sh maint/security/test-osmap-login-availability.sh
+
 echo "==> validating reusable WSTG testing pack"
 sh maint/security/test-osmap-wstg-testing-pack.sh
 

@@ -6690,3 +6690,18 @@ returned `303` to `/login`, and `GET /login` returned `200`.
 Decision: V7 is implemented and production-validated with one explicit
 transaction-level throttle-locking follow-up. The deployment incident and
 recovery are part of the V7 evidence rather than omitted from the closeout.
+
+## 2026-06-19, Reopen V7 and make login availability a release invariant
+
+A real browser login was followed by termination of `osmap_serve`. Nginx then
+returned `502 Bad Gateway` for both `/` and `/login` while
+`osmap_mailbox_helper` remained healthy. Starting `osmap_serve` restored the
+login page, but this incident invalidated the earlier GET-only stability
+conclusion.
+
+Decision: V7 is reopened. `GET /` returning `303` to `/login` and
+`GET /login` returning the OSMAP login page with `200` are release invariants,
+not informal smoke checks. V7 closure additionally requires invalid and real
+operator-controlled successful login submissions to leave the service alive,
+post-login hold validation, and an installed bounded availability guard that
+restarts `osmap_serve` and fails visibly if browser entry is not restored.
