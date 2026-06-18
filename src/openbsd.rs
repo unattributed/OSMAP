@@ -43,20 +43,21 @@ pub(crate) fn advisory_file_unlock(file: &fs::File) -> io::Result<()> {
 
 /// The promise set used while `unveil(2)` calls are still permitted.
 const OPENBSD_SERVE_PROMISES_BEFORE_LOCK: &str =
-    "stdio rpath wpath cpath fattr inet proc exec unveil";
+    "stdio rpath wpath cpath fattr flock inet proc exec unveil";
 
 /// The narrower promise set kept after the filesystem view is locked.
-const OPENBSD_SERVE_PROMISES_AFTER_LOCK: &str = "stdio rpath wpath cpath fattr inet proc exec";
+const OPENBSD_SERVE_PROMISES_AFTER_LOCK: &str =
+    "stdio rpath wpath cpath fattr flock inet proc exec";
 
 /// The promise set used while `unveil(2)` calls are still permitted in the
 /// browser-facing runtime when it also connects to the local mailbox helper.
 const OPENBSD_SERVE_WITH_HELPER_PROMISES_BEFORE_LOCK: &str =
-    "stdio rpath wpath cpath fattr inet unix proc exec unveil";
+    "stdio rpath wpath cpath fattr flock inet unix proc exec unveil";
 
 /// The narrower promise set kept after the filesystem view is locked in the
 /// browser-facing runtime when it also connects to the local mailbox helper.
 const OPENBSD_SERVE_WITH_HELPER_PROMISES_AFTER_LOCK: &str =
-    "stdio rpath wpath cpath fattr inet unix proc exec";
+    "stdio rpath wpath cpath fattr flock inet unix proc exec";
 
 /// The promise set used while `unveil(2)` calls are still permitted in the
 /// local mailbox-helper runtime.
@@ -676,6 +677,14 @@ mod tests {
         );
         assert_eq!(plan.promises_after_lock, OPENBSD_SERVE_PROMISES_AFTER_LOCK);
         assert!(plan
+            .promises_before_lock
+            .split_whitespace()
+            .any(|promise| promise == "flock"));
+        assert!(plan
+            .promises_after_lock
+            .split_whitespace()
+            .any(|promise| promise == "flock"));
+        assert!(plan
             .unveil_rules
             .iter()
             .any(|rule| rule.path == Path::new("/usr/local/bin/doveadm")
@@ -883,6 +892,14 @@ mod tests {
             plan.promises_after_lock,
             OPENBSD_SERVE_WITH_HELPER_PROMISES_AFTER_LOCK
         );
+        assert!(plan
+            .promises_before_lock
+            .split_whitespace()
+            .any(|promise| promise == "flock"));
+        assert!(plan
+            .promises_after_lock
+            .split_whitespace()
+            .any(|promise| promise == "flock"));
         assert!(plan.unveil_rules.iter().any(|rule| {
             rule.path == Path::new("/var/lib/osmap/run/mailbox-helper.sock")
                 && rule.permissions.contains('r')

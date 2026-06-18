@@ -103,6 +103,9 @@ sh maint/security/osmap-publication-guard.sh
 echo "==> validating documentation governance invariants"
 sh maint/security/osmap-doc-governance-guard.sh
 
+echo "==> validating V7 boundary hardening invariants"
+sh maint/security/osmap-v7-boundary-hardening-gate.sh
+
 echo "==> validating TLS policy invariants"
 sh maint/security/osmap-tls-policy-guard.sh
 
@@ -279,6 +282,9 @@ sh maint/security/test-osmap-live-validate-nginx-ocsp-stapling.sh
 
 echo "==> validating openbsd rc.d process-expression placement"
 sh maint/security/test-osmap-openbsd-rcd-health.sh
+
+echo "==> validating OSMAP login availability invariant"
+sh maint/security/test-osmap-login-availability.sh
 
 echo "==> validating reusable WSTG testing pack"
 sh maint/security/test-osmap-wstg-testing-pack.sh

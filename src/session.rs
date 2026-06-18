@@ -9,7 +9,7 @@ use std::cmp::Reverse;
 use std::fs;
 use std::fs::OpenOptions;
 use std::io::Write as _;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use getrandom::getrandom;
@@ -303,26 +303,11 @@ impl SessionStore for FileSessionStore {
         ));
         let content = serialize_session_record(record);
 
-        let mut file = fs::File::create(&tmp_path).map_err(|error| SessionError::StoreFailure {
-            reason: format!("failed to create session temp file {:?}: {error}", tmp_path),
-        })?;
+        let mut file = create_session_temp_file(&tmp_path)?;
         file.write_all(content.as_bytes())
             .map_err(|error| SessionError::StoreFailure {
                 reason: format!("failed to write session temp file {:?}: {error}", tmp_path),
             })?;
-
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
-            fs::set_permissions(&tmp_path, fs::Permissions::from_mode(0o600)).map_err(|error| {
-                SessionError::StoreFailure {
-                    reason: format!(
-                        "failed to set session temp permissions {:?}: {error}",
-                        tmp_path
-                    ),
-                }
-            })?;
-        }
 
         fs::rename(&tmp_path, &path).map_err(|error| SessionError::StoreFailure {
             reason: format!("failed to finalize session file {:?}: {error}", path),
@@ -386,6 +371,22 @@ impl SessionStore for FileSessionStore {
         records.sort_by_key(|record| Reverse(record.issued_at));
         Ok(records)
     }
+}
+
+fn create_session_temp_file(path: &Path) -> Result<fs::File, SessionError> {
+    let mut options = OpenOptions::new();
+    options.write(true).create_new(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt as _;
+        options.mode(0o600);
+    }
+
+    options
+        .open(path)
+        .map_err(|error| SessionError::StoreFailure {
+            reason: format!("failed to create session temp file {:?}: {error}", path),
+        })
 }
 
 struct SessionFileLock {
@@ -1113,6 +1114,45 @@ mod tests {
             .mode()
             & 0o777;
         assert_eq!(mode, 0o600);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn file_session_store_records_use_restrictive_permissions() {
+        use std::os::unix::fs::PermissionsExt as _;
+
+        let session_dir = temp_dir("osmap-session-record-permissions");
+        let store = FileSessionStore::new(&session_dir);
+        let record = session_record_fixture('a', "alice@example.com", 100);
+        store.save(&record).expect("session record should save");
+
+        let mode = fs::metadata(store.session_path(&record.session_id))
+            .expect("session metadata should exist")
+            .permissions()
+            .mode()
+            & 0o777;
+        assert_eq!(mode, 0o600);
+    }
+
+    #[test]
+    fn session_temp_file_collision_fails_without_truncating_existing_file() {
+        let session_dir = temp_dir("osmap-session-temp-collision");
+        let tmp_path = session_dir.join("existing.tmp");
+        fs::write(&tmp_path, "sentinel").expect("collision fixture should be written");
+
+        let error = create_session_temp_file(&tmp_path)
+            .expect_err("an existing session temp file must not be truncated");
+
+        match error {
+            SessionError::StoreFailure { reason } => {
+                assert!(reason.contains("failed to create session temp file"));
+            }
+            other => panic!("expected store failure, got {other:?}"),
+        }
+        assert_eq!(
+            fs::read_to_string(&tmp_path).expect("collision fixture should remain readable"),
+            "sentinel"
+        );
     }
 
     #[test]

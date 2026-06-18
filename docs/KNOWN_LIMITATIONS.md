@@ -11,9 +11,9 @@
 
 ## Current Program Limitations
 
-- The implementation now has runtime, auth, TOTP, and session foundations, but
-  it is still a prototype-grade browser mail product rather than a production
-  service
+- The implementation is deployed for the bounded known-host use case, but it
+  remains prototype-grade for broader adoption and is not a general-purpose
+  production webmail claim
 - Direct public browser exposure remains limited and evidence-gated. The
   current Version 2 evidence supports the approved limited direct-public
   browser posture, not a broad production launch.

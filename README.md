@@ -152,10 +152,17 @@ Version 5 boundary hardening was subsequently deployed to
 milestone rather than a separately tagged release; it does not replace or
 rewrite the frozen V4 release-evidence tuple.
 
-V6 Slices 00 through 09 are now implemented on the dedicated V6 branch, but V6
-is not deployed or closed. Production remains on the V5-era deployment, and
-the V6 production-readiness, no-fallback rehearsal, observability, and
-resource-resilience reports are still required before closeout.
+V6 was subsequently deployed and its production-readiness validation passed.
+Its final no-fallback retirement closeout remains incomplete because the full
+selected-cohort rehearsal, observability, and resource-resilience evidence set
+has not been completed.
+
+V7 boundary hardening was deployed to `mail.blackbagsecurity.com` on June 18,
+2026, then reopened and rolled back after repeated browser-entry outages. The
+code closes headerless-request buffering, weak TOTP secret, forwarded client
+IP, and compose content-type findings, but it is not the current production
+binary. V7 must pass the browser availability invariant and a real
+operator-controlled login hold before redeployment or closure.
 
 The current implementation includes:
 
@@ -200,6 +207,12 @@ The current implementation includes:
   revalidation, without persisting source bytes
 - V6 production, rehearsal, observability, resource-resilience, and evidence
   archive tooling
+- Header-only buffering limits before HTTP header termination
+- A 20-byte minimum for decoded TOTP secret material
+- Restrictive, exclusive session and throttle temporary-file creation
+- Loopback-only `X-Real-IP` trust with `X-Forwarded-For` ignored by OSMAP
+- Parameter-aware, case-insensitive URL-encoded compose content types
+- OpenBSD rc.d supervision for both foreground OSMAP services
 
 OpenBSD-specific work is already present:
 
@@ -523,9 +536,24 @@ The authoritative V6 scope is:
 - [`docs/V6_ROADMAP.md`](docs/V6_ROADMAP.md)
 - [`docs/V6_SECURITY_GATES.md`](docs/V6_SECURITY_GATES.md)
 
-V6 requires sanitized live evidence from `mail.blackbagsecurity.com` or an
-explicitly equivalent OpenBSD target. Until every V6 closeout gate passes, the
-project remains prototype-grade and V6 remains incomplete.
+V6 production readiness passed on `mail.blackbagsecurity.com`, but its full
+retirement closeout remains incomplete until every required sanitized live
+report passes.
+
+## V7 Boundary Hardening Due Diligence
+
+Version 7 is a focused post-V6 security hardening sprint. It does not add
+product features or widen the browser trust boundary.
+
+The authoritative V7 assessment, implementation, test, deployment, residual
+risk, and production evidence summary is:
+
+- [`docs/V7_BOUNDARY_HARDENING_DUE_DILIGENCE.md`](docs/V7_BOUNDARY_HARDENING_DUE_DILIGENCE.md)
+
+V7 is implemented but reopened and not production-approved. Four original
+findings are closed in code. The file-state finding remains partially closed,
+and production availability after a real login must be proven before V7 can be
+redeployed or merged.
 
 ## Target Users
 

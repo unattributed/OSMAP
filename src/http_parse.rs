@@ -45,14 +45,6 @@ pub(crate) fn effective_remote_addr(request: &HttpRequest, peer_remote_addr: &st
         return forwarded;
     }
 
-    if let Some(forwarded_for) = request
-        .headers
-        .get("x-forwarded-for")
-        .and_then(|value| normalize_forwarded_for(value))
-    {
-        return forwarded_for;
-    }
-
     peer_remote_addr.to_string()
 }
 
@@ -69,10 +61,6 @@ fn normalize_forwarded_ip(value: &str) -> Option<String> {
         .parse::<IpAddr>()
         .ok()
         .map(|addr| addr.to_string())
-}
-
-fn normalize_forwarded_for(value: &str) -> Option<String> {
-    value.split(',').rev().find_map(normalize_forwarded_ip)
 }
 
 /// Reads one bounded HTTP request from the supplied stream.
@@ -116,9 +104,6 @@ pub(crate) fn read_http_request(
         buffer.extend_from_slice(&chunk[..read]);
 
         if header_end.is_none() {
-            if buffer.len() > policy.max_header_bytes + policy.max_upload_body_bytes {
-                return Err(parse_error("request exceeded maximum allowed size"));
-            }
             header_end = find_header_end(&buffer);
             if let Some(end) = header_end {
                 if end > policy.max_header_bytes {
@@ -128,6 +113,8 @@ pub(crate) fn read_http_request(
                     .map_err(|_| parse_error("http headers were not valid utf-8"))?;
                 let headers = parse_headers(header_text, policy)?;
                 content_length = Some(parse_content_length_from_headers(&headers)?);
+            } else if buffer.len() > policy.max_header_bytes {
+                return Err(parse_error("http headers exceeded maximum length"));
             }
         }
 
@@ -537,9 +524,33 @@ fn empty_request_error(reason: impl Into<String>) -> HttpRequestError {
 
 #[cfg(test)]
 mod tests {
-    use super::{effective_remote_addr, normalize_peer_addr};
-    use crate::http::{HttpPolicy, HttpRequest};
-    use std::net::SocketAddr;
+    use super::{effective_remote_addr, normalize_peer_addr, read_http_request};
+    use crate::http::{HttpMethod, HttpPolicy, HttpRequest, HttpRequestError};
+    use std::io::Write as _;
+    use std::net::{Shutdown, SocketAddr, TcpListener};
+    use std::thread;
+
+    fn read_request_from_bytes(
+        request: &[u8],
+        policy: HttpPolicy,
+    ) -> Result<HttpRequest, HttpRequestError> {
+        let listener = TcpListener::bind("127.0.0.1:0").expect("listener should bind");
+        let addr = listener.local_addr().expect("listener addr should exist");
+        let server = thread::spawn(move || {
+            let (mut stream, _) = listener.accept().expect("server should accept client");
+            read_http_request(&mut stream, &policy)
+        });
+
+        let mut client = std::net::TcpStream::connect(addr).expect("client should connect");
+        client
+            .write_all(request)
+            .expect("client should write request bytes");
+        client
+            .shutdown(Shutdown::Write)
+            .expect("client should close write side");
+
+        server.join().expect("server thread should finish")
+    }
 
     fn request_with_headers(headers: &[(&str, &str)]) -> HttpRequest {
         let mut raw = String::from("GET /login HTTP/1.1\r\nHost: localhost\r\n");
@@ -566,8 +577,82 @@ mod tests {
     }
 
     #[test]
+    fn rejects_headerless_streams_over_the_header_limit() {
+        let policy = HttpPolicy {
+            max_header_bytes: 32,
+            max_upload_body_bytes: 1024,
+            ..HttpPolicy::default()
+        };
+        let error = read_request_from_bytes(&[b'A'; 33], policy)
+            .expect_err("headerless bytes over the header limit must be rejected");
+
+        assert_eq!(error.reason, "http headers exceeded maximum length");
+    }
+
+    #[test]
+    fn accepts_multipart_body_allowance_after_headers_are_parsed() {
+        let body = b"0123456789abcdef";
+        let headers = format!(
+            "POST /send HTTP/1.1\r\nHost: localhost\r\nContent-Type: multipart/form-data; boundary=test\r\nContent-Length: {}\r\n\r\n",
+            body.len()
+        );
+        let mut request = headers.into_bytes();
+        request.extend_from_slice(body);
+        let policy = HttpPolicy {
+            max_header_bytes: 128,
+            max_body_bytes: 4,
+            max_upload_body_bytes: body.len(),
+            ..HttpPolicy::default()
+        };
+
+        let parsed = read_request_from_bytes(&request, policy)
+            .expect("parsed multipart headers should enable the upload body allowance");
+
+        assert_eq!(parsed.method, HttpMethod::Post);
+        assert_eq!(parsed.body, body);
+    }
+
+    #[test]
+    fn rejects_streamed_header_blocks_over_the_header_limit() {
+        let oversized_value = "a".repeat(80);
+        let request =
+            format!("GET / HTTP/1.1\r\nHost: localhost\r\nX-Test: {oversized_value}\r\n\r\n");
+        let policy = HttpPolicy {
+            max_header_bytes: 64,
+            ..HttpPolicy::default()
+        };
+
+        let error = read_request_from_bytes(request.as_bytes(), policy)
+            .expect_err("oversized header blocks must be rejected");
+
+        assert_eq!(error.reason, "http headers exceeded maximum length");
+    }
+
+    #[test]
+    fn streamed_normal_get_and_post_requests_still_parse() {
+        let get = read_request_from_bytes(
+            b"GET /login HTTP/1.1\r\nHost: localhost\r\n\r\n",
+            HttpPolicy::default(),
+        )
+        .expect("normal GET should parse");
+        assert_eq!(get.method, HttpMethod::Get);
+        assert_eq!(get.path, "/login");
+
+        let post = read_request_from_bytes(
+            b"POST /login HTTP/1.1\r\nHost: localhost\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 3\r\n\r\na=b",
+            HttpPolicy::default(),
+        )
+        .expect("normal POST should parse");
+        assert_eq!(post.method, HttpMethod::Post);
+        assert_eq!(post.body, b"a=b");
+    }
+
+    #[test]
     fn trusts_x_real_ip_only_from_loopback_peers() {
-        let request = request_with_headers(&[("X-Real-IP", "198.51.100.24")]);
+        let request = request_with_headers(&[
+            ("X-Real-IP", "198.51.100.24"),
+            ("X-Forwarded-For", "198.51.100.13"),
+        ]);
 
         assert_eq!(
             effective_remote_addr(&request, "127.0.0.1"),
@@ -580,12 +665,9 @@ mod tests {
     }
 
     #[test]
-    fn falls_back_to_last_forwarded_for_hop_for_loopback_proxy_requests() {
+    fn ignores_x_forwarded_for_from_loopback_proxy_requests() {
         let request = request_with_headers(&[("X-Forwarded-For", "198.51.100.13, 198.51.100.24")]);
 
-        assert_eq!(
-            effective_remote_addr(&request, "127.0.0.1"),
-            "198.51.100.24"
-        );
+        assert_eq!(effective_remote_addr(&request, "127.0.0.1"), "127.0.0.1");
     }
 }

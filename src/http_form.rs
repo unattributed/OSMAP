@@ -66,7 +66,11 @@ pub fn parse_compose_form(
     compose_policy: ComposePolicy,
 ) -> Result<ParsedComposeForm, FormParseError> {
     match content_type.map(str::trim) {
-        None | Some("") | Some("application/x-www-form-urlencoded") => Ok(ParsedComposeForm {
+        None | Some("") => Ok(ParsedComposeForm {
+            fields: parse_urlencoded_form(body, max_fields, max_bytes)?,
+            attachments: Vec::new(),
+        }),
+        Some(value) if is_urlencoded_form_content_type(value) => Ok(ParsedComposeForm {
             fields: parse_urlencoded_form(body, max_fields, max_bytes)?,
             attachments: Vec::new(),
         }),
@@ -485,22 +489,54 @@ mod tests {
     }
 
     #[test]
-    fn rejects_unsupported_compose_content_type() {
-        let error = parse_compose_form(
-            b"{}",
-            Some("application/json"),
+    fn parses_urlencoded_compose_forms_with_charset_parameter() {
+        let parsed = parse_compose_form(
+            b"to=bob%40example.com&subject=Test",
+            Some("application/x-www-form-urlencoded; charset=utf-8"),
             4,
             128,
             ComposePolicy::default(),
         )
-        .expect_err("unsupported content type must fail");
+        .expect("URL-encoded compose form with charset should parse");
 
         assert_eq!(
-            error,
-            FormParseError {
-                reason: "unsupported compose content-type".to_string(),
-            }
+            parsed.fields.get("to").map(String::as_str),
+            Some("bob@example.com")
         );
+        assert!(parsed.attachments.is_empty());
+    }
+
+    #[test]
+    fn parses_mixed_case_urlencoded_compose_content_type() {
+        let parsed = parse_compose_form(
+            b"subject=Test",
+            Some("Application/X-WWW-Form-Urlencoded; Charset=UTF-8"),
+            4,
+            128,
+            ComposePolicy::default(),
+        )
+        .expect("mixed-case URL-encoded compose content type should parse");
+
+        assert_eq!(
+            parsed.fields.get("subject").map(String::as_str),
+            Some("Test")
+        );
+    }
+
+    #[test]
+    fn rejects_unsupported_compose_content_type() {
+        for content_type in ["application/json", "text/plain"] {
+            let error =
+                parse_compose_form(b"{}", Some(content_type), 4, 128, ComposePolicy::default())
+                    .expect_err("unsupported content type must fail");
+
+            assert_eq!(
+                error,
+                FormParseError {
+                    reason: "unsupported compose content-type".to_string(),
+                }
+            );
+        }
     }
 
     #[test]

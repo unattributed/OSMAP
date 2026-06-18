@@ -6,6 +6,9 @@ repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
 artifact_root="${repo_root}/maint/openbsd/mail.blackbagsecurity.com"
 main_ssl="${artifact_root}/nginx/sites-enabled/main-ssl.conf"
 osmap_root="${artifact_root}/nginx/templates/osmap-root.tmpl"
+osmap_public_root="${artifact_root}/nginx/templates/osmap-public-root.tmpl"
+osmap_edge_http="${artifact_root}/nginx/conf-enabled/10-osmap-public-edge.conf"
+osmap_newsyslog="${artifact_root}/newsyslog/osmap-public.conf"
 pf_macros="${artifact_root}/pf.anchors/macros.pf"
 pf_selfhost="${artifact_root}/pf.anchors/selfhost.pf"
 
@@ -33,6 +36,9 @@ for required_path in \
   "${artifact_root}/README.md" \
   "${main_ssl}" \
   "${osmap_root}" \
+  "${osmap_public_root}" \
+  "${osmap_edge_http}" \
+  "${osmap_newsyslog}" \
   "${pf_macros}" \
   "${pf_selfhost}"
 do
@@ -45,13 +51,13 @@ done
 assert_contains_file "${main_ssl}" "listen 127.0.0.1:443 ssl;"
 assert_contains_file "${main_ssl}" "listen 10.44.0.1:443 ssl;"
 assert_contains_file "${main_ssl}" "listen 192.168.1.44:443 ssl;"
-assert_contains_file "${main_ssl}" "include /etc/nginx/templates/osmap-root.tmpl;"
+assert_contains_file "${main_ssl}" "include /etc/nginx/templates/osmap-public-root.tmpl;"
 assert_contains_file "${main_ssl}" 'if ($host != "mail.blackbagsecurity.com") {'
 assert_contains_file "${main_ssl}" 'if ($host !~ ^(mail\.blackbagsecurity\.com|10\.44\.0\.1|127\.0\.0\.1)$) {'
 assert_not_contains_file "${main_ssl}" "include /etc/nginx/templates/roundcube.tmpl;"
 assert_contains_file "${main_ssl}" "Public WAN exposure is intentionally limited to OSMAP"
 assert_contains_file "${main_ssl}" "Existing private/control applications remain available only"
-assert_contains_file "${main_ssl}" "access_log /var/log/nginx/osmap.public.access.log;"
+assert_contains_file "${main_ssl}" "access_log /var/log/nginx/osmap.public.access.log osmap_public_security;"
 assert_contains_file "${main_ssl}" "error_log  /var/log/nginx/osmap.public.error.log;"
 assert_contains_file "${main_ssl}" "access_log /var/log/nginx/mail.private.access.log;"
 assert_contains_file "${main_ssl}" "error_log  /var/log/nginx/mail.private.error.log;"
@@ -70,9 +76,24 @@ assert_contains_file "${osmap_root}" "proxy_pass http://127.0.0.1:8080;"
 assert_contains_file "${osmap_root}" 'proxy_set_header Host $host;'
 assert_contains_file "${osmap_root}" 'proxy_set_header X-Real-IP $remote_addr;'
 assert_contains_file "${osmap_root}" 'proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;'
-assert_contains_file "${osmap_root}" "proxy_set_header X-Forwarded-Proto https;"
-assert_contains_file "${osmap_root}" "proxy_buffering off;"
 assert_not_contains_file "${osmap_root}" "control-plane-allow.tmpl"
+
+assert_contains_file "${osmap_public_root}" "limit_req zone=osmap_public_login burst=6 nodelay;"
+assert_contains_file "${osmap_public_root}" "limit_req zone=osmap_public_general burst=30 nodelay;"
+assert_contains_file "${osmap_public_root}" "limit_conn osmap_public_connections 10;"
+assert_contains_file "${osmap_public_root}" "proxy_pass http://127.0.0.1:8080;"
+assert_contains_file "${osmap_public_root}" 'proxy_set_header Host $host;'
+assert_contains_file "${osmap_public_root}" 'proxy_set_header X-Real-IP $remote_addr;'
+
+assert_contains_file "${osmap_edge_http}" "log_format osmap_public_security"
+assert_contains_file "${osmap_edge_http}" 'uri="$uri"'
+assert_not_contains_file "${osmap_edge_http}" '$request_uri'
+assert_not_contains_file "${osmap_edge_http}" '$http_referer'
+assert_not_contains_file "${osmap_edge_http}" '$http_x_forwarded_for'
+assert_contains_file "${osmap_edge_http}" "zone=osmap_public_login:1m rate=12r/m;"
+
+assert_contains_file "${osmap_newsyslog}" "osmap.public.access.log root:wheel 640"
+assert_contains_file "${osmap_newsyslog}" "osmap.public.error.log  root:wheel 640"
 
 assert_contains_file "${pf_macros}" 'wan_blocked_tcp_svcs   = "{ 110, 143, 465, 587, 993, 995, 2000, 4190, 8080, 9999 }"'
 assert_not_contains_file "${pf_macros}" 'wan_blocked_tcp_svcs   = "{ 110, 143, 443, 465, 587, 993, 995, 2000, 4190, 8080, 9999 }"'

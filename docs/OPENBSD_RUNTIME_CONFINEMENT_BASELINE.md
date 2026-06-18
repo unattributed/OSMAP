@@ -38,17 +38,19 @@ This is the first enforced runtime boundary, not the final confinement story.
 The current enforced serve-mode process uses:
 
 - without a mailbox helper socket:
-  `stdio rpath wpath cpath fattr inet proc exec unveil` before the unveil table
-  is locked, then `stdio rpath wpath cpath fattr inet proc exec`
+  `stdio rpath wpath cpath fattr flock inet proc exec unveil` before the unveil
+  table is locked, then `stdio rpath wpath cpath fattr flock inet proc exec`
 - with a mailbox helper socket:
-  `stdio rpath wpath cpath fattr inet unix proc exec unveil` before the unveil
-  table is locked, then `stdio rpath wpath cpath fattr inet unix proc exec`
+  `stdio rpath wpath cpath fattr flock inet unix proc exec unveil` before the
+  unveil table is locked, then
+  `stdio rpath wpath cpath fattr flock inet unix proc exec`
 
 This reflects the current application truth:
 
 - serve HTTP on loopback TCP
 - read and write bounded local state
 - preserve restrictive permissions on session-state temp files during writes
+- coordinate file-backed session and throttle state with advisory locks
 - fork and execute helper programs
 - keep the process small enough that the promise set remains reviewable
 

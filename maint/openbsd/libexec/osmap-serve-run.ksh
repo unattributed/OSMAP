@@ -43,4 +43,38 @@ umask 027
 }
 
 exec >>"$OSMAP_STDERR_LOG_PATH" 2>&1
-exec "$OSMAP_BIN" "$mode"
+
+child_pid=
+stop_requested=0
+
+forward_shutdown() {
+	stop_requested=1
+	[ -n "$child_pid" ] && kill -TERM "$child_pid" 2>/dev/null || true
+}
+
+trap forward_shutdown HUP INT TERM
+
+"$OSMAP_BIN" "$mode" &
+child_pid=$!
+
+set +e
+wait "$child_pid"
+status=$?
+set -e
+
+if [ "$stop_requested" -eq 1 ] || [ "$status" -eq 143 ]; then
+	printf 'ts="%s" level=info category=bootstrap action=process_stopped msg="OSMAP serve process stopped by supervisor" exit_status="%s"\n' \
+		"$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$status"
+elif [ "$status" -gt 128 ]; then
+	signal=$((status - 128))
+	printf 'ts="%s" level=error category=bootstrap action=process_exited msg="OSMAP serve process terminated by signal" exit_status="%s" signal="%s"\n' \
+		"$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$status" "$signal"
+elif [ "$status" -ne 0 ]; then
+	printf 'ts="%s" level=error category=bootstrap action=process_exited msg="OSMAP serve process exited unsuccessfully" exit_status="%s"\n' \
+		"$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$status"
+else
+	printf 'ts="%s" level=info category=bootstrap action=process_exited msg="OSMAP serve process exited normally" exit_status="0"\n' \
+		"$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+fi
+
+exit "$status"

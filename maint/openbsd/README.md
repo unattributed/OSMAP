@@ -94,6 +94,24 @@ A conservative operator sequence is:
 7. start `osmap_serve`
 8. keep nginx pointed at the loopback HTTP listener
 
+## Browser Entry Availability
+
+Production is not healthy unless the browser entry path works end to end:
+
+- `GET /` returns `303` with `Location: /login`
+- `GET /login` returns `200` and the OSMAP login page
+
+Install `libexec/osmap-login-availability.ksh` as
+`/usr/local/libexec/osmap/osmap-login-availability.ksh`. Run
+`--check-only` during deployment validation and run `--recover` once per minute
+through the host's bounded cron wrapper. Recovery restarts only `osmap_serve`
+and then rechecks both browser paths. Persistent failure remains non-zero and
+operator-visible.
+
+GET-only checks do not prove the authentication path. Every production release
+also requires an operator-controlled password-plus-TOTP login followed by
+service, listener, root redirect, and login-page revalidation.
+
 The `rc.d` examples assume:
 
 - `/usr/local/bin/osmap` is the installed OSMAP binary
