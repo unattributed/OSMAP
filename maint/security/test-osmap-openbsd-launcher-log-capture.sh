@@ -51,6 +51,21 @@ set -e
 grep -Fq 'action=process_exited' "${tmpdir}/var-log-osmap/serve.log"
 grep -Fq 'exit_status="23"' "${tmpdir}/var-log-osmap/serve.log"
 
+set +e
+FAKE_OSMAP_EXIT_STATUS=143 \
+OSMAP_BIN="$fake_bin" \
+OSMAP_ENV_FILE="$serve_env" \
+	sh "${repo_root}/maint/openbsd/libexec/osmap-serve-run.ksh" serve
+serve_status=$?
+set -e
+
+[ "$serve_status" -eq 143 ] || {
+	printf 'expected serve launcher to preserve exit status 143, got %s\n' "$serve_status" >&2
+	exit 1
+}
+grep -Fq 'action=process_stopped' "${tmpdir}/var-log-osmap/serve.log"
+grep -Fq 'exit_status="143"' "${tmpdir}/var-log-osmap/serve.log"
+
 OSMAP_BIN="$fake_bin" \
 OSMAP_ENV_FILE="$helper_env" \
 	sh "${repo_root}/maint/openbsd/libexec/osmap-mailbox-helper-run.ksh" mailbox-helper

@@ -62,7 +62,7 @@ wait "$child_pid"
 status=$?
 set -e
 
-if [ "$stop_requested" -eq 1 ]; then
+if [ "$stop_requested" -eq 1 ] || [ "$status" -eq 143 ]; then
 	printf 'ts="%s" level=info category=bootstrap action=process_stopped msg="OSMAP serve process stopped by supervisor" exit_status="%s"\n' \
 		"$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$status"
 elif [ "$status" -gt 128 ]; then
