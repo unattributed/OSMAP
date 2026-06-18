@@ -6487,3 +6487,27 @@ Evidence recorded:
 Operational lesson: deployment automation must preserve `/etc/osmap/osmap-serve.env` as `root:osmaprt` with mode `0640`, and rollback must restore both `/usr/local/bin/osmap` and `/etc/osmap/osmap-serve.env`.
 
 Decision: V5 production deployment is complete.
+
+## 2026-06-18, Align V5 documentation and main project status
+
+The V5 boundary-hardening evidence originally closed the source remediation
+before production deployment and therefore still said that no live V5 checks
+had run. The later production deployment record proved the opposite, but the
+main README and documentation index still stopped at Version 4.
+
+The documentation now presents one consistent V5 status:
+
+- assessed commit `927516f` was deployed to `mail.blackbagsecurity.com` on
+  June 14, 2026
+- live validation proved the configured Host boundary, `421` rejection for an
+  invalid Host, plain-text response hardening headers, and healthy OSMAP
+  services
+- `OSMAP_ALLOWED_HOSTS` is documented in the canonical configuration model
+- the main README lists the V5 identity, Host/origin, response-header, and strict
+  request-framing boundaries
+- the docs index includes both V5 evidence records
+- V5 remains a deployed hardening milestone rather than a separately tagged
+  release, so the formal release-evidence tuple remains anchored to `v4.0.0`
+
+This keeps developer, operator, and stakeholder-facing status aligned without
+overstating V5 as a release artifact that does not exist.

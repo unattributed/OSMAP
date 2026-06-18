@@ -147,6 +147,11 @@ The current release evidence is anchored by `v4.0.0`, a hostile-content safety
 release tag. That tag resolves to evidence bundle commit `59da020`; the V4 code
 behavior assessed by the release evidence is commit `09a95b7`.
 
+Version 5 boundary hardening was subsequently deployed to
+`mail.blackbagsecurity.com` on June 14, 2026. V5 is a deployed hardening
+milestone rather than a separately tagged release; it does not replace or
+rewrite the frozen V4 release-evidence tuple.
+
 The current implementation includes:
 
 - Typed runtime configuration
@@ -156,6 +161,13 @@ The current implementation includes:
 - Password plus TOTP authentication
 - Session issuance, listing, revocation, idle expiry, and absolute lifetime expiry
 - CSRF protection for state-changing browser routes
+- Canonical mailbox identity validation across authentication, sessions, TOTP
+  lookup, auditing, and outbound sender construction
+- Configured Host allow-list enforcement and Origin/Referer comparison against
+  application-owned policy
+- Central response-header validation that fails closed on unsafe names or values
+- Security headers on health and other plain-text responses
+- Strict rejection of ambiguous, pipelined, or extra-byte HTTP request framing
 - Mailbox listing
 - Message listing and viewing
 - Server-rendered mailbox sorting by UID, subject, sender, received time, flags, and size
@@ -445,6 +457,37 @@ The short form is:
   `maint/security/osmap-v4-hostile-assurance-gate.sh`, the machine-readable
   report `maint/live/osmap-v4-hostile-assurance-report.json`, and the archive
   `maint/live/osmap-v4-hostile-assurance-evidence.tar.gz`
+
+## V5 Boundary Hardening
+
+Version 5 strengthens the boundaries where authenticated identity and browser
+request metadata cross into sessions, TOTP lookup, mail submission, HTTP
+responses, and same-origin decisions. It does not add broad product features or
+change the V4 hostile-content claim.
+
+The authoritative V5 evidence and production deployment record are:
+
+- [`docs/V5_BOUNDARY_HARDENING_EVIDENCE.md`](docs/V5_BOUNDARY_HARDENING_EVIDENCE.md)
+- [`docs/V5_PRODUCTION_DEPLOYMENT_COMPLETE.md`](docs/V5_PRODUCTION_DEPLOYMENT_COMPLETE.md)
+
+The short form is:
+
+- canonical usernames and outbound mailbox identities are validated before
+  reuse across security-sensitive boundaries
+- `OSMAP_ALLOWED_HOSTS` defines the application-owned Host and same-origin
+  policy
+- missing or unconfigured Host values fail with `421 Misdirected Request`
+- Origin and Referer validation no longer derives trust from an arbitrary
+  incoming Host value
+- HTTP response headers are validated centrally, including at serialization
+- health and other plain-text responses carry the applicable browser-isolation
+  headers
+- strict request framing rejects unsupported transfer encoding, duplicate
+  framing headers, pipelined bytes, and bytes beyond declared content length
+- assessed commit `927516f` was deployed and validated on
+  `mail.blackbagsecurity.com` on June 14, 2026
+- typed trusted/escaped HTML wrappers remain deferred because the review found
+  no current exploit path and conversion would require a broad UI refactor
 
 ## Target Users
 

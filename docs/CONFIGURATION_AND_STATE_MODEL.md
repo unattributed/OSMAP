@@ -27,6 +27,7 @@ The early runtime recognizes:
 - `OSMAP_RUN_MODE`
 - `OSMAP_ENV`
 - `OSMAP_LISTEN_ADDR`
+- `OSMAP_ALLOWED_HOSTS`
 - `OSMAP_DOVEADM_AUTH_SOCKET_PATH`
 - `OSMAP_TRUSTED_WEB_RUNTIME_UID`
 - `OSMAP_DOVEADM_USERDB_SOCKET_PATH`
@@ -76,6 +77,19 @@ The runtime now uses `OSMAP_RUN_MODE` to separate:
 
 That lets operators and tests exercise startup checks without always launching
 the listener.
+
+`OSMAP_ALLOWED_HOSTS` defines the application-owned HTTP Host and same-origin
+boundary. It is a comma-separated allow-list of browser-facing host authorities.
+OSMAP rejects missing or unconfigured Host values with `421 Misdirected
+Request`, and authenticated state-changing routes compare `Origin` and
+`Referer` authorities against this configured list rather than trusting the
+incoming Host value as policy.
+
+Production should list the external DNS hostname served by the reviewed edge,
+for example `mail.blackbagsecurity.com`. Loopback development defaults include
+the supported `localhost` and `127.0.0.1` forms with and without port `8080`.
+Non-loopback HTTP origins are rejected; production browser traffic is expected
+to use HTTPS.
 
 The runtime now also uses `OSMAP_OPENBSD_CONFINEMENT_MODE` to separate:
 
@@ -264,6 +278,8 @@ The bootstrap currently enforces:
 - run mode values must be recognized explicitly
 - required fields must not be empty
 - environment values must be recognized explicitly
+- `OSMAP_ALLOWED_HOSTS` must contain one or more bounded, syntactically safe
+  host authorities without schemes, paths, whitespace, or control characters
 - the optional `OSMAP_DOVEADM_AUTH_SOCKET_PATH`, when present, must be an
   absolute path
 - the optional `OSMAP_TRUSTED_WEB_RUNTIME_UID`, when present, must be a

@@ -14,9 +14,9 @@ The repository deliberately separates:
 - Agent-facing collaboration guidance in the tracked repository root file
   `AGENTS.md`
 
-As of June 11, 2026, the project has substantive public-safe documentation
-through Version 4 hostile-content release closeout. The current baseline was
-built from:
+As of June 18, 2026, the project has substantive public-safe documentation
+through the Version 5 production boundary-hardening deployment. The current
+baseline was built from:
 
 - private early project planning notes, distilled into public-safe docs
 - repository phase control blocks
@@ -27,6 +27,8 @@ built from:
 - repo-owned Version 3 release carry-forward evidence
 - repo-owned Version 4 hostile-content live proof, closeout evidence, and
   release handoff records
+- repo-owned Version 5 boundary-hardening evidence and production deployment
+  record
 
 The documents in this folder are written for two audiences:
 
@@ -130,6 +132,8 @@ Current public documentation map:
 - `V4_HOSTILE_CONTENT_SAFETY_GOALS.md`
 - `V4_HOSTILE_CONTENT_TEST_MATRIX.md`
 - `V4_SECURITY_CLAIM_MATRIX.md`
+- `V5_BOUNDARY_HARDENING_EVIDENCE.md`
+- `V5_PRODUCTION_DEPLOYMENT_COMPLETE.md`
 - `REQUEST_WORKER_BUDGET_MODEL.md`
 - `MAIL_HOST_BINARY_DEPLOYMENT_SOP.md`
 - `MAIL_HOST_RUNTIME_GROUP_PROVISIONING_SOP.md`
@@ -148,13 +152,15 @@ Current public documentation map:
 - `DECISION_LOG.md`
 
 The intent of these documents is operational usefulness, not ceremony. Phase 0
-through Version 4 documents should stay populated, current, and reviewable as
+through Version 5 documents should stay populated, current, and reviewable as
 the project moves through maintenance, migration planning, broader hardening,
 and future scoped work. The Version 4 documentation set records a bounded
 hostile-content safety release, not broad production readiness, rich-mail
-rendering, malware prevention, or Roundcube parity. Requested additional
-functionality and Thunderbird-like UX polish remain future-version work unless
-a later definition explicitly brings them into scope.
+rendering, malware prevention, or Roundcube parity. Version 5 records deployed
+identity, Host/origin, and response-boundary hardening without changing those
+product-scope limits. Requested additional functionality and Thunderbird-like
+UX polish remain future-version work unless a later definition explicitly
+brings them into scope.
 
 Some later-phase or deferred documents remain placeholders so the intended
 documentation map is visible without publishing private notes prematurely.

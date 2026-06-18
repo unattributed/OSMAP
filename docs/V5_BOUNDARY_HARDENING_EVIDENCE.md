@@ -5,9 +5,16 @@
 - sprint name: OSMAP V5 identity, origin, and response boundary hardening
 - branch name: `feature/v5-boundary-hardening`
 - starting commit: `6d7739c4dd59b717e33cf0f83e60c54cab1f421d`
-- ending implementation/test commit: `490518237ef6c0249feaa30f4c6cb23a4d34492e`
-- closeout documentation commit: follows this implementation/test range
-- summary verdict: V5 remediation is complete; five findings were confirmed and remediated, one was confirmed and accepted as existing strict request-framing behavior, and one was not confirmed and deferred as future typed-template hardening.
+- initial implementation/test range ending commit:
+  `490518237ef6c0249feaa30f4c6cb23a4d34492e`
+- final pre-deployment boundary-hardening commit:
+  `927516f77dd7a92e199ced8f5f90fe894e584a48`
+- evidence closeout commit: `d03acd1`
+- production deployment record commit: `4961d09`
+- summary verdict: V5 remediation and production deployment are complete; five
+  findings were confirmed and remediated, one was confirmed and accepted as
+  existing strict request-framing behavior, and one was not confirmed and
+  deferred as future typed-template hardening.
 
 ## Finding Status
 
@@ -105,6 +112,7 @@
 | `cargo test renders_message_view_with_plain_text_policy` | passed |
 | `cargo fmt --check` | passed after V5 remediation |
 | `cargo test` | passed after V5 remediation: 466 lib tests passed, 4 ignored; 1 main test passed; 1 integration test passed |
+| `cargo test --quiet` on the June 18, 2026 repository tip | passed: 470 lib tests passed, 4 ignored; 1 main test passed; 1 integration test passed |
 | `cargo clippy --all-targets --all-features -- -D warnings` | passed after V5 remediation |
 | `cargo audit` | passed after V5 remediation |
 | `cargo deny check` | still unavailable in the default user cargo home; the installed parser fails before repo evaluation on fetched advisory `RUSTSEC-2026-0146` because it does not support CVSS 4.0 |
@@ -113,7 +121,22 @@
 
 ## Live-Safe Validation
 
-No live checks have been run for V5 so far.
+V5 was deployed and validated on `mail.blackbagsecurity.com` on June 14, 2026.
+The assessed production deployment used commit
+`927516f77dd7a92e199ced8f5f90fe894e584a48`.
+
+The live checks recorded in `V5_PRODUCTION_DEPLOYMENT_COMPLETE.md` proved:
+
+- both `osmap_serve` and `osmap_mailbox_helper` were healthy after deployment
+- `GET https://mail.blackbagsecurity.com/healthz` returned `200`
+- the health response included `Cross-Origin-Resource-Policy: same-origin`,
+  `Referrer-Policy: no-referrer`, and `X-Content-Type-Options: nosniff`
+- a request routed to the same public address with `Host: attacker.invalid` was
+  rejected with `421`
+- local application-level checks accepted
+  `Host: mail.blackbagsecurity.com` and rejected `Host: attacker.invalid`
+- the production `OSMAP_ALLOWED_HOSTS` value was
+  `mail.blackbagsecurity.com`
 
 ## Known Limitations
 
@@ -124,7 +147,7 @@ No live checks have been run for V5 so far.
 
 - Finding 7 typed HTML wrappers are deferred. Current exploitability was not confirmed; existing rendering paths escape or sanitize user-controlled values, and a wrapper conversion would be broader than the targeted V5 remediation slices.
 
-## Follow-up review slice
+## Follow-Up Review Slice
 
 A post-evidence review identified three small boundary hardening refinements before V5 closure:
 
@@ -133,3 +156,11 @@ A post-evidence review identified three small boundary hardening refinements bef
 - same-origin validation now rejects non-loopback `http://` Origin and Referer authorities while preserving loopback HTTP development support
 
 These changes keep the V5 theme focused on identity, origin, and response-boundary hardening.
+
+## Closeout Status
+
+V5 is a deployed boundary-hardening milestone, not a separately tagged release.
+The formal release evidence described in the main README remains anchored to
+`v4.0.0`. V5 adds production-proven identity, Host/origin, response-header,
+plain-text response, and strict request-framing defenses without broadening the
+product scope or hostile-content claims.
