@@ -198,3 +198,19 @@ The implementation gate should include tests for:
    route classes listed above.
 7. Only then consider a deeper worker-pool or async design if evidence shows
    the small budget model is not enough.
+
+## V6 Resource Resilience Proof
+
+`maint/live/osmap-live-validate-v6-resource-resilience.ksh` combines current
+health and recovery probes with current-checkout regressions for HTTP runtime
+capacity, route-budget `503` behavior, throttling, malformed and oversized
+requests, and helper timeouts. It also requires the passed V6 production report
+and the earlier sanitized V3 live resource and timeout evidence.
+
+The default production posture records that synthetic pressure against the
+multi-purpose mail host is not safe. That mode still requires health before and
+after the bounded local regressions and identifies the prior live evidence used
+for the pressure claim. An isolated target may use
+`OSMAP_V6_RESILIENCE_PRESSURE_MODE=isolated_live_observed`.
+
+`--dry-run` is diagnostic only and cannot emit any passed closeout marker.

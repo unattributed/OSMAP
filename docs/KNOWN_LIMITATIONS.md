@@ -216,8 +216,9 @@ The primary V6 gaps at the definition baseline are:
   a visible fail-closed condition and no source bytes are persisted
 - observability and incident-response expectations are documented but not yet
   assembled into a V6 live evidence report
-- the bounded resource model has local tests and earlier evidence but not the
-  V6 selected-cohort resilience report
+- the bounded resource model now has a fail-closed V6 validator that combines
+  current health and recovery with current-checkout regressions and prior live
+  evidence; the selected host report is still missing
 - Roundcube retirement has migration guidance but not a passing
   no-fallback rehearsal for the selected V6 cohort
 

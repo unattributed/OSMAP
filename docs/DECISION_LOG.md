@@ -6635,3 +6635,17 @@ authenticated mailbox boundary. Resume preselects only the saved paths that are
 still surfaced, and send continues to re-fetch every selected part through the
 helper-backed attachment path. Missing, changed, unauthorized, duplicate, or
 malformed source references fail visibly without sending.
+
+## 2026-06-18, Add V6 resource resilience proof
+
+V6 resource closeout now has a fail-closed validator that requires passed
+production readiness, earlier sanitized live resource evidence, health before
+and after the run, and current-checkout regressions for HTTP runtime capacity,
+route-budget exhaustion, throttling, malformed and oversized requests, and
+helper timeouts.
+
+The production default does not generate synthetic expensive-route pressure on
+the multi-purpose mail host. It records that pressure is unsafe and combines
+current health and recovery with current regressions and prior live evidence.
+An isolated target may record isolated live pressure. Diagnostic dry runs
+cannot emit passing closeout markers.
