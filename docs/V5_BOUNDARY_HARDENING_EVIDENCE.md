@@ -13,8 +13,9 @@
 - production deployment record commit: `4961d09`
 - summary verdict: V5 remediation and production deployment are complete; five
   findings were confirmed and remediated, one was confirmed and accepted as
-  existing strict request-framing behavior, and one was not confirmed and
-  deferred as future typed-template hardening.
+  existing strict request-framing behavior, and the remaining unconfirmed
+  exploitability finding is now completed as typed-template defense-in-depth
+  on the June 18, 2026 repository tip.
 
 ## Finding Status
 
@@ -26,7 +27,7 @@
 | session record identity field validation | confirmed and remediated | Source review confirmed session load validated `session_id` and `csrf_token`, and V5 slice 1 revalidated `canonical_username`, but line parsing still used `str::lines()` plus trimming and did not enforce explicit loaded `remote_addr` or `user_agent` bounds. | Session record parsing now rejects control characters before splitting fields, reuses V5 canonical username validation, and enforces required/length/control-character checks for `remote_addr` and `user_agent`. Corrupted or legacy unsafe records fail closed and require re-login. | `cargo test session::tests::rejects_tampered_session_record`; `cargo test session::tests::parses_serialized_session_records` |
 | consistent security headers for health and text responses | confirmed and remediated | Source review confirmed `/healthz` built a direct `HttpResponse::text` with only `Content-Type` and `Cache-Control`, bypassing the common security header helpers. | Added `plain_text_response` for non-cacheable text/plain responses with `Cache-Control: no-store`, `X-Content-Type-Options: nosniff`, `Cross-Origin-Resource-Policy: same-origin`, and `Referrer-Policy: no-referrer`; `/healthz` now uses it. CSP is intentionally omitted for text/plain because `nosniff` prevents HTML interpretation and HTML responses carry CSP. | `cargo test healthz_response_includes_plain_text_security_headers` |
 | strict HTTP framing rejection | confirmed and accepted with rationale | Source review confirmed the parser already rejects unsupported `Transfer-Encoding`, requires explicit `Content-Length` on POST, rejects GET bodies, rejects duplicate headers, and rejects body bytes whose length differs from the declared `Content-Length`. This safely rejects pipelining and extra bytes rather than attempting to multiplex requests on one connection. | No behavioral code change was needed. Added regression tests and documented this as intentional request-smuggling hardening. Responses continue to emit `Connection: close`. | `cargo test rejects_extra_bytes_after_declared_body_length`; `cargo test rejects_pipelined_second_request_bytes`; `cargo test rejects_duplicate_content_length_body_framing`; `cargo test rejects_unsupported_transfer_encoding_headers` |
-| template and trusted HTML boundary review | not confirmed; deferred with rationale | Source review found `html_response` still accepts trusted body HTML, but current page call sites escape user-controlled values through `escape_html`; message body HTML inserted by `render_message_page` comes from escaped plain text or `rendering_html::sanitize_html_body`. Focused tests confirm hostile HTML and plain text are contained. | No code change in V5. A future `TrustedHtml`/`EscapedHtml` wrapper could make this harder to misuse, but implementing it across all page templates would be a broad UI refactor and no current exploit path was confirmed. | `cargo test message_view_renders_safe_body_and_attachments`; `cargo test escapes_plain_text_body_for_browser_display`; `cargo test fixture_hostile_html_strips_active_and_remote_content`; `cargo test renders_message_view_with_plain_text_policy` |
+| template and trusted HTML boundary review | exploitability not confirmed; defense-in-depth completed | The original review found no current exploit path because page values were escaped and message HTML was sanitized, but `html_response`, page renderers, and `RenderedMessageView::body_html` still used untyped strings. | Added `EscapedHtml` and `TrustedHtml`; page renderers now return `TrustedHtml`, escaped and sanitized message bodies remain typed through the rendering layer, and `html_response` rejects arbitrary dynamic strings at compile time. Static server-owned literals remain supported. | `cargo test html_response_accepts_typed_template_output_and_escapes_title`; `cargo test escaped_html_encodes_all_html_significant_characters`; `cargo test --doc`; `cargo test message_view_renders_safe_body_and_attachments`; `cargo test escapes_plain_text_body_for_browser_display`; `cargo test fixture_hostile_html_strips_active_and_remote_content`; `cargo test renders_message_view_with_plain_text_policy` |
 
 ## Files Changed
 
@@ -36,10 +37,18 @@
 - `src/send.rs`
 - `src/session.rs`
 - `src/totp.rs`
+- `src/html.rs`
 - `src/http.rs`
-- `src/http_runtime.rs`
-- `src/http/routes_auth.rs`
 - `src/http_support.rs`
+- `src/http_ui.rs`
+- `src/http/routes_auth.rs`
+- `src/http/routes_compose.rs`
+- `src/http/routes_draft.rs`
+- `src/http/routes_mail.rs`
+- `src/http/routes_settings.rs`
+- `src/http_runtime.rs`
+- `src/rendering.rs`
+- `src/rendering_html.rs`
 - `src/config.rs`
 - `src/bootstrap.rs`
 - `src/mailbox_helper.rs`
@@ -76,6 +85,10 @@
 - `http::tests::rejects_extra_bytes_after_declared_body_length`
 - `http::tests::rejects_pipelined_second_request_bytes`
 - `http::tests::rejects_duplicate_content_length_body_framing`
+- `html::tests::escaped_html_encodes_all_html_significant_characters`
+- `http_support::tests::html_response_accepts_typed_template_output_and_escapes_title`
+- Compile-fail doctest proving untyped dynamic strings cannot cross
+  `html_response`.
 
 ## Commands Run
 
@@ -110,13 +123,16 @@
 | `cargo test escapes_plain_text_body_for_browser_display` | passed |
 | `cargo test fixture_hostile_html_strips_active_and_remote_content` | passed |
 | `cargo test renders_message_view_with_plain_text_policy` | passed |
+| `cargo test html_response_accepts_typed_template_output_and_escapes_title` | passed |
+| `cargo test escaped_html_encodes_all_html_significant_characters` | passed |
+| `cargo test --doc` | passed; the untyped dynamic HTML example failed compilation as required |
 | `cargo fmt --check` | passed after V5 remediation |
 | `cargo test` | passed after V5 remediation: 466 lib tests passed, 4 ignored; 1 main test passed; 1 integration test passed |
-| `cargo test --quiet` on the June 18, 2026 repository tip | passed: 470 lib tests passed, 4 ignored; 1 main test passed; 1 integration test passed |
+| `cargo test` after the June 18, 2026 typed HTML follow-up | passed: 472 lib tests passed, 4 ignored; 1 main test passed; 1 integration test passed; 1 compile-fail doctest passed |
 | `cargo clippy --all-targets --all-features -- -D warnings` | passed after V5 remediation |
 | `cargo audit` | passed after V5 remediation |
 | `cargo deny check` | still unavailable in the default user cargo home; the installed parser fails before repo evaluation on fetched advisory `RUSTSEC-2026-0146` because it does not support CVSS 4.0 |
-| `make security-check` | passed after V5 remediation; this includes `cargo check`, `cargo test`, the V4 hostile-content assurance gate, clippy, fmt, the repo supply-chain gate with isolated `CARGO_HOME`, publication hygiene, documentation governance, TLS policy, CWE Top 25, command-boundary, OpenBSD artifact, live-wrapper regression, WSTG-pack, and release-check guards |
+| `make security-check` | passed after the typed HTML follow-up; this includes `cargo check`, `cargo test`, the V4 hostile-content assurance gate, clippy, fmt, the repo supply-chain gate with isolated `CARGO_HOME`, publication hygiene, documentation governance, TLS policy, CWE Top 25, command-boundary, OpenBSD artifact, live-wrapper regression, WSTG-pack, and release-check guards |
 | `rg -n "with_header\|Content-Disposition\|Location\|Set-Cookie\|canonical_username\|sendmail\|From:\|csrf\|Origin\|Referer\|Host" src tests docs` | completed after V5 remediation; broad inventory remains intentionally noisy and was used to verify changed boundaries and call sites |
 
 ## Live-Safe Validation
@@ -141,11 +157,14 @@ The live checks recorded in `V5_PRODUCTION_DEPLOYMENT_COMPLETE.md` proved:
 ## Known Limitations
 
 - Standalone `cargo deny check` could not evaluate the repo from the default user cargo home because the local `cargo-deny` advisory parser rejected a fetched CVSS 4.0 advisory. The repo-owned `make security-check` supply-chain phase passed using its isolated cargo home and advisory database.
-- Finding 7 typed HTML wrappers remain deferred. Current exploitability was not confirmed; existing rendering paths escape or sanitize user-controlled values, and a wrapper conversion would be broader than the targeted V5 remediation slices.
+- The typed HTML source follow-up was completed after assessed production commit
+  `927516f`. It must go through the normal deployment and live-validation path
+  before operators treat this additional compile-time boundary as deployed.
 
 ## Remaining Deferred Work
 
-- Finding 7 typed HTML wrappers are deferred. Current exploitability was not confirmed; existing rendering paths escape or sanitize user-controlled values, and a wrapper conversion would be broader than the targeted V5 remediation slices.
+- None for Finding 7. Typed trusted/escaped HTML wrappers are complete in the
+  repository source.
 
 ## Follow-Up Review Slice
 

@@ -6511,3 +6511,31 @@ The documentation now presents one consistent V5 status:
 
 This keeps developer, operator, and stakeholder-facing status aligned without
 overstating V5 as a release artifact that does not exist.
+
+## 2026-06-18, Complete the deferred V5 typed HTML boundary
+
+The previously deferred V5 template-hardening item is now complete in the
+repository source. OSMAP introduces two explicit browser-rendering types:
+
+- `EscapedHtml` can only be created by escaping untrusted text
+- `TrustedHtml` represents complete server-owned template output or dedicated
+  allow-list sanitizer output
+
+All top-level UI page renderers now return `TrustedHtml`, sanitized and escaped
+message bodies retain that type through `RenderedMessageView`, and
+`html_response` no longer accepts an arbitrary dynamic `String` or `&str`.
+Static HTML literals remain accepted as inherently server-owned templates;
+dynamically assembled response bodies must cross an explicit trusted-template
+boundary.
+
+Regression coverage proves the escaping behavior, verifies typed template
+output at response serialization, reruns the existing hostile-message and
+plain-text rendering checks, and includes a compile-fail doctest showing that
+untyped dynamic HTML cannot cross `html_response`.
+
+This is defense-in-depth rather than remediation of a confirmed exploit. It
+closes the accidental raw-insertion gap identified by the June 14 review
+without changing the sanitizer policy or browser-visible rendering behavior.
+The source follow-up is newer than the V5 production deployment commit
+`927516f`; production requires a normal assessed deployment before this
+additional boundary can be claimed live.

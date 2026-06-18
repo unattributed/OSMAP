@@ -486,8 +486,9 @@ The short form is:
   framing headers, pipelined bytes, and bytes beyond declared content length
 - assessed commit `927516f` was deployed and validated on
   `mail.blackbagsecurity.com` on June 14, 2026
-- typed trusted/escaped HTML wrappers remain deferred because the review found
-  no current exploit path and conversion would require a broad UI refactor
+- typed trusted/escaped HTML wrappers now protect page, message-rendering, and
+  HTML-response boundaries on the repository tip; this source follow-up is
+  newer than the assessed June 14 production deployment commit
 
 ## Target Users
 

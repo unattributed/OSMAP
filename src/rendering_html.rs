@@ -8,6 +8,7 @@ use std::collections::{HashMap, HashSet};
 
 use ammonia::{clean_text, Builder, UrlRelative};
 
+use crate::html::TrustedHtml;
 use crate::rendering::RenderError;
 
 /// Conservative upper bound for one raw HTML body passed into the sanitizer.
@@ -31,7 +32,7 @@ impl Default for HtmlRenderingPolicy {
 /// source content.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SanitizedHtmlBody {
-    pub body_html: String,
+    pub body_html: TrustedHtml,
     pub compose_text: String,
 }
 
@@ -72,7 +73,7 @@ pub fn sanitize_html_body(
     }
 
     Ok(Some(SanitizedHtmlBody {
-        body_html,
+        body_html: TrustedHtml::from_sanitized(body_html),
         compose_text,
     }))
 }

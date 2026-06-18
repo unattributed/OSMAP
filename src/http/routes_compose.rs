@@ -112,10 +112,10 @@ where
                                 503,
                                 "Service Unavailable",
                                 "Compose Unavailable",
-                                &format!(
+                                TrustedHtml::from_template(format!(
                                     "<p>{}</p>",
                                     escape_html(public_reason_message(&public_reason))
-                                ),
+                                )),
                             ),
                             audit_events,
                         };
@@ -146,7 +146,7 @@ where
                 200,
                 "OK",
                 compose_heading,
-                &render_compose_page(&ComposePageModel {
+                render_compose_page(&ComposePageModel {
                     heading: compose_heading,
                     canonical_username: &validated_session.record.canonical_username,
                     csrf_token: &validated_session.record.csrf_token,
@@ -182,13 +182,14 @@ where
         ) {
             Ok(form) => form,
             Err(error) => {
-                let public_body = compose_form_parse_failure_body(&error.reason);
+                let public_body =
+                    TrustedHtml::from_template(compose_form_parse_failure_body(&error.reason));
                 return HandledHttpResponse {
                     response: html_response(
                         400,
                         "Bad Request",
                         "Invalid Compose Request",
-                        &public_body,
+                        public_body,
                     ),
                     audit_events: vec![build_http_warning_event(
                         "http_send_parse_failed",
@@ -418,10 +419,10 @@ where
                             503,
                             "Service Unavailable",
                             "Draft Unavailable",
-                            &format!(
+                            TrustedHtml::from_template(format!(
                                 "<p>{}</p>",
                                 escape_html(public_reason_message(&public_reason))
-                            ),
+                            )),
                         ),
                         audit_events,
                     };
@@ -477,7 +478,7 @@ where
                     status_code,
                     reason_phrase,
                     "Compose",
-                    &render_compose_page(&ComposePageModel {
+                    render_compose_page(&ComposePageModel {
                         heading: "Compose",
                         canonical_username: &validated_session.record.canonical_username,
                         csrf_token: &validated_session.record.csrf_token,

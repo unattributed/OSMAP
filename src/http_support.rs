@@ -7,6 +7,7 @@
 use crate::attachment::DownloadedAttachment;
 use crate::auth::AuthenticationContext;
 use crate::config::LogLevel;
+use crate::html::{EscapedHtml, TrustedHtml};
 use crate::http::HttpResponse;
 use crate::logging::{EventCategory, LogEvent};
 use crate::session::SessionError;
@@ -37,12 +38,23 @@ pub(crate) fn redirect_response(
 }
 
 /// Builds an HTML response with the current browser-safety headers.
+///
+/// Dynamically assembled strings cannot cross this boundary without first
+/// becoming typed template or sanitizer output:
+///
+/// ```compile_fail
+/// use osmap::http_support::html_response;
+///
+/// let untyped_html = format!("<p>{}</p>", "dynamic");
+/// let _ = html_response(200, "OK", "Example", untyped_html);
+/// ```
 pub fn html_response(
     status_code: u16,
     reason_phrase: &'static str,
     title: &str,
-    body_html: &str,
+    body_html: impl Into<TrustedHtml>,
 ) -> HttpResponse {
+    let body_html = body_html.into();
     HttpResponse::text(
         status_code,
         reason_phrase,
@@ -278,19 +290,8 @@ pub(crate) fn public_reason_message(reason: &str) -> &'static str {
 }
 
 /// Escapes HTML-significant characters for simple template insertion.
-pub(crate) fn escape_html(value: &str) -> String {
-    let mut escaped = String::with_capacity(value.len());
-    for ch in value.chars() {
-        match ch {
-            '&' => escaped.push_str("&amp;"),
-            '<' => escaped.push_str("&lt;"),
-            '>' => escaped.push_str("&gt;"),
-            '"' => escaped.push_str("&quot;"),
-            '\'' => escaped.push_str("&#39;"),
-            _ => escaped.push(ch),
-        }
-    }
-    escaped
+pub(crate) fn escape_html(value: &str) -> EscapedHtml {
+    EscapedHtml::new(value)
 }
 
 /// URL-encodes a query component without bringing in an HTTP utility crate.
@@ -351,5 +352,20 @@ mod tests {
     fn message_html_links_visually_disclose_destinations() {
         assert!(browser_css().contains(".message-html a[href]::after"));
         assert!(browser_css().contains("attr(href)"));
+    }
+
+    #[test]
+    fn html_response_accepts_typed_template_output_and_escapes_title() {
+        let body = TrustedHtml::from_template(format!(
+            "<p>{}</p>",
+            escape_html("<script>alert('body')</script>")
+        ));
+
+        let response = html_response(200, "OK", "<title>", body);
+        let serialized = String::from_utf8(response.to_http_bytes()).expect("utf-8 response");
+
+        assert!(serialized.contains("<title>&lt;title&gt;</title>"));
+        assert!(serialized.contains("<p>&lt;script&gt;alert(&#39;body&#39;)&lt;/script&gt;</p>"));
+        assert!(!serialized.contains("<script>alert"));
     }
 }

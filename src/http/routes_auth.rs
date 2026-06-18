@@ -14,7 +14,7 @@ where
     /// Serves the current login form.
     pub(super) fn handle_login_form(&self, context: &AuthenticationContext) -> HandledHttpResponse {
         HandledHttpResponse {
-            response: html_response(200, "OK", "OSMAP Login", &render_login_page(None)),
+            response: html_response(200, "OK", "OSMAP Login", render_login_page(None)),
             audit_events: vec![build_http_info_event(
                 "http_login_form_served",
                 "login form served",
@@ -102,7 +102,7 @@ where
                     401,
                     "Unauthorized",
                     "Login Failed",
-                    &render_login_page(Some(public_reason_message(&public_reason))),
+                    render_login_page(Some(public_reason_message(&public_reason))),
                 ),
                 audit_events,
             },
@@ -169,7 +169,7 @@ where
                     200,
                     "OK",
                     "Sessions",
-                    &render_sessions_page(
+                    render_sessions_page(
                         &canonical_username,
                         &validated_session.record.session_id,
                         &validated_session.record.csrf_token,
@@ -186,10 +186,10 @@ where
                     503,
                     "Service Unavailable",
                     "Sessions Unavailable",
-                    &format!(
+                    TrustedHtml::from_template(format!(
                         "<p>{}</p>",
                         escape_html(public_reason_message(&public_reason))
-                    ),
+                    )),
                 ),
                 audit_events,
             },
@@ -357,10 +357,10 @@ where
                         status_code,
                         reason_phrase,
                         "Session Revocation Failed",
-                        &format!(
+                        TrustedHtml::from_template(format!(
                             "<p>{}</p>",
                             escape_html(public_reason_message(&public_reason))
-                        ),
+                        )),
                     ),
                     audit_events,
                 }

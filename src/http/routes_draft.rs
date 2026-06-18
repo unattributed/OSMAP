@@ -37,7 +37,7 @@ where
                     200,
                     "OK",
                     "Drafts",
-                    &render_draft_list_page(&DraftListPageModel {
+                    render_draft_list_page(&DraftListPageModel {
                         canonical_username: &canonical_username,
                         csrf_token: &validated_session.record.csrf_token,
                         success_message,
@@ -52,10 +52,10 @@ where
                     503,
                     "Service Unavailable",
                     "Drafts Unavailable",
-                    &format!(
+                    TrustedHtml::from_template(format!(
                         "<p>{}</p>",
                         escape_html(public_reason_message(&public_reason))
-                    ),
+                    )),
                 ),
                 audit_events,
             },
@@ -100,7 +100,7 @@ where
                     200,
                     "OK",
                     "Resume Draft",
-                    &render_compose_page(&ComposePageModel {
+                    render_compose_page(&ComposePageModel {
                         heading: "Resume Draft",
                         canonical_username: &validated_session.record.canonical_username,
                         csrf_token: &validated_session.record.csrf_token,
@@ -133,10 +133,10 @@ where
                     503,
                     "Service Unavailable",
                     "Draft Unavailable",
-                    &format!(
+                    TrustedHtml::from_template(format!(
                         "<p>{}</p>",
                         escape_html(public_reason_message(&public_reason))
-                    ),
+                    )),
                 ),
                 audit_events,
             },
@@ -227,7 +227,7 @@ where
                         status_code,
                         reason_phrase,
                         "Compose",
-                        &render_compose_page(&ComposePageModel {
+                        render_compose_page(&ComposePageModel {
                             heading: "Compose",
                             canonical_username: &validated_session.record.canonical_username,
                             csrf_token: &validated_session.record.csrf_token,
@@ -342,10 +342,10 @@ where
                     503,
                     "Service Unavailable",
                     "Draft Delete Failed",
-                    &format!(
+                    TrustedHtml::from_template(format!(
                         "<p>{}</p>",
                         escape_html(public_reason_message(&public_reason))
-                    ),
+                    )),
                 ),
                 audit_events,
             },

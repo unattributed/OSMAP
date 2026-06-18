@@ -8,6 +8,7 @@
 
 use crate::auth::AuthenticationContext;
 use crate::config::LogLevel;
+use crate::html::{EscapedHtml, TrustedHtml};
 use crate::logging::audit_session_ref;
 use crate::logging::{EventCategory, LogEvent};
 use crate::mailbox::MessageView;
@@ -107,7 +108,7 @@ pub struct RenderedMessageView {
     pub mime_top_level_content_type: String,
     pub body_source: MimeBodySource,
     pub contains_html_body: bool,
-    pub body_html: String,
+    pub body_html: TrustedHtml,
     pub body_text_for_compose: String,
     pub attachments: Vec<AttachmentMetadata>,
     pub rendering_mode: RenderingMode,
@@ -123,7 +124,7 @@ pub struct RenderError {
 /// The paired browser-safe HTML and compose-friendly plain-text body output.
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct RenderedBody {
-    body_html: String,
+    body_html: TrustedHtml,
     compose_text: String,
     body_source: MimeBodySource,
     rendering_mode: RenderingMode,
@@ -566,7 +567,7 @@ fn render_plain_text_body(body_text: &str, max_len: usize) -> Result<RenderedBod
     }
 
     Ok(RenderedBody {
-        body_html: rendered,
+        body_html: TrustedHtml::from_template(rendered),
         compose_text: body_text.to_string(),
         body_source: MimeBodySource::SinglePartPlainText,
         rendering_mode: RenderingMode::PlainTextPreformatted,
@@ -585,21 +586,8 @@ fn render_placeholder_body(
 }
 
 /// Escapes HTML-significant characters without adding a dependency.
-fn escape_html(value: &str) -> String {
-    let mut escaped = String::with_capacity(value.len());
-
-    for ch in value.chars() {
-        match ch {
-            '&' => escaped.push_str("&amp;"),
-            '<' => escaped.push_str("&lt;"),
-            '>' => escaped.push_str("&gt;"),
-            '"' => escaped.push_str("&quot;"),
-            '\'' => escaped.push_str("&#39;"),
-            _ => escaped.push(ch),
-        }
-    }
-
-    escaped
+fn escape_html(value: &str) -> EscapedHtml {
+    EscapedHtml::new(value)
 }
 
 #[cfg(test)]

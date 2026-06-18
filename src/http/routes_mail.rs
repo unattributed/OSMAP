@@ -111,7 +111,7 @@ where
                         200,
                         "OK",
                         "Mailboxes",
-                        &render_mailboxes_page(
+                        render_mailboxes_page(
                             &canonical_username,
                             &validated_session.record.csrf_token,
                             &visible_mailboxes,
@@ -125,10 +125,10 @@ where
                     503,
                     "Service Unavailable",
                     "Mailbox Access Unavailable",
-                    &format!(
+                    TrustedHtml::from_template(format!(
                         "<p>{}</p>",
                         escape_html(public_reason_message(&public_reason))
-                    ),
+                    )),
                 ),
                 audit_events,
             },
@@ -224,7 +224,7 @@ where
                         200,
                         "OK",
                         "Mailbox Messages",
-                        &render_message_list_page(
+                        render_message_list_page(
                             &canonical_username,
                             &validated_session.record.csrf_token,
                             &mailbox_name,
@@ -249,10 +249,10 @@ where
                     503,
                     "Service Unavailable",
                     "Message List Unavailable",
-                    &format!(
+                    TrustedHtml::from_template(format!(
                         "<p>{}</p>",
                         escape_html(public_reason_message(&public_reason))
-                    ),
+                    )),
                 ),
                 audit_events,
             },
@@ -442,10 +442,10 @@ where
                     status_code,
                     reason_phrase,
                     title,
-                    &format!(
+                    TrustedHtml::from_template(format!(
                         "<p>{}</p>",
                         escape_html(public_reason_message(&public_reason))
-                    ),
+                    )),
                 );
                 if let Some(retry_after_seconds) = retry_after_seconds {
                     response = response.with_header("Retry-After", retry_after_seconds.to_string());
@@ -615,11 +615,11 @@ where
                         status_code,
                         reason_phrase,
                         title,
-                        &format!(
+                        TrustedHtml::from_template(format!(
                             "<p>{}</p><p>{} message(s) were archived before this request stopped.</p>",
                             escape_html(public_reason_message(&public_reason)),
                             moved_count
-                        ),
+                        )),
                     );
                     if let Some(retry_after_seconds) = retry_after_seconds {
                         response =
@@ -834,11 +834,11 @@ where
                         status_code,
                         reason_phrase,
                         title,
-                        &format!(
+                        TrustedHtml::from_template(format!(
                             "<p>{}</p><p>{} message(s) were moved before this request stopped.</p>",
                             escape_html(public_reason_message(&public_reason)),
                             moved_count
-                        ),
+                        )),
                     );
                     if let Some(retry_after_seconds) = retry_after_seconds {
                         response =
@@ -1012,7 +1012,7 @@ where
                         200,
                         "OK",
                         "Message Search",
-                        &render_message_search_page(
+                        render_message_search_page(
                             &canonical_username,
                             &validated_session.record.csrf_token,
                             mailbox_name.as_deref(),
@@ -1038,10 +1038,10 @@ where
                         status_code,
                         reason_phrase,
                         title,
-                        &format!(
+                        TrustedHtml::from_template(format!(
                             "<p>{}</p>",
                             escape_html(public_reason_message(&public_reason))
-                        ),
+                        )),
                     ),
                     audit_events,
                 }
@@ -1165,7 +1165,7 @@ where
                         200,
                         "OK",
                         "Message View",
-                        &render_message_view_page(
+                        render_message_view_page(
                             &canonical_username,
                             &validated_session.record.csrf_token,
                             &rendered,
@@ -1187,10 +1187,10 @@ where
                         status_code,
                         reason_phrase,
                         title,
-                        &format!(
+                        TrustedHtml::from_template(format!(
                             "<p>{}</p>",
                             escape_html(public_reason_message(&public_reason))
-                        ),
+                        )),
                     )
                 },
                 audit_events,
@@ -1319,10 +1319,10 @@ where
                         status_code,
                         reason_phrase,
                         title,
-                        &format!(
+                        TrustedHtml::from_template(format!(
                             "<p>{}</p>",
                             escape_html(public_reason_message(&public_reason))
-                        ),
+                        )),
                     ),
                     audit_events,
                 }

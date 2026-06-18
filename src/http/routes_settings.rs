@@ -44,7 +44,7 @@ where
                     200,
                     "OK",
                     "Settings",
-                    &render_settings_page(&SettingsPageModel {
+                    render_settings_page(&SettingsPageModel {
                         canonical_username: &canonical_username,
                         csrf_token: &validated_session.record.csrf_token,
                         success_message,
@@ -60,10 +60,10 @@ where
                     503,
                     "Service Unavailable",
                     "Settings Unavailable",
-                    &format!(
+                    TrustedHtml::from_template(format!(
                         "<p>{}</p>",
                         escape_html(public_reason_message(&public_reason))
-                    ),
+                    )),
                 ),
                 audit_events,
             },
@@ -225,10 +225,10 @@ where
                             503,
                             "Service Unavailable",
                             "Settings Update Failed",
-                            &format!(
+                            TrustedHtml::from_template(format!(
                                 "<p>{}</p>",
                                 escape_html(public_reason_message(&public_reason))
-                            ),
+                            )),
                         ),
                         audit_events,
                     };
@@ -260,10 +260,10 @@ where
                         status_code,
                         reason_phrase,
                         title,
-                        &format!(
+                        TrustedHtml::from_template(format!(
                             "<p>{}</p>",
                             escape_html(public_reason_message(&public_reason))
-                        ),
+                        )),
                     ),
                     audit_events,
                 }

@@ -550,7 +550,7 @@ fn render_hostile_message_route_response(raw_message: &str) -> HttpResponse {
             },
         ],
     );
-    html_response(200, "OK", "OSMAP Message", &page)
+    html_response(200, "OK", "OSMAP Message", page)
 }
 
 fn assert_forced_download_route(

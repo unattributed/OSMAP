@@ -34,6 +34,7 @@ use crate::config::{AppConfig, LogLevel, RuntimeEnvironment};
 use crate::draft::{
     DraftPolicy, DraftRecord, DraftRecordInput, DraftStore, DraftSummary, FileDraftStore,
 };
+use crate::html::TrustedHtml;
 use crate::http_form::{parse_compose_form, parse_urlencoded_form};
 use crate::http_parse::{
     allows_urlencoded_request_body, build_session_cookie, clear_session_cookie,
@@ -1485,7 +1486,7 @@ mod tests {
                         mime_top_level_content_type: "multipart/mixed".to_string(),
                         body_source: MimeBodySource::MultipartPlainTextPart,
                         contains_html_body: true,
-                        body_html: "<pre>Hello world</pre>".to_string(),
+                        body_html: TrustedHtml::from_template("<pre>Hello world</pre>".to_string()),
                         body_text_for_compose: "Hello world".to_string(),
                         attachments,
                         rendering_mode: RenderingMode::PlainTextPreformatted,

@@ -4,6 +4,7 @@
 //! browser-facing template code inside the request parser and route logic.
 
 use crate::draft::DraftSummary;
+use crate::html::TrustedHtml;
 use crate::http::BrowserVisibleSession;
 use crate::http_support::{escape_html, url_encode};
 use crate::mailbox::{
@@ -156,7 +157,7 @@ fn folder_pane(mailboxes: &[MailboxEntry], current_mailbox_name: Option<&str>) -
 }
 
 /// Renders the current login page with an optional operator-safe error banner.
-pub(crate) fn render_login_page(error_message: Option<&str>) -> String {
+pub(crate) fn render_login_page(error_message: Option<&str>) -> TrustedHtml {
     let banner = match error_message {
         Some(error_message) => format!(
             "<div class=\"notice notice-error\" role=\"alert\"><strong>Sign-in failed.</strong> {}</div>",
@@ -165,7 +166,7 @@ pub(crate) fn render_login_page(error_message: Option<&str>) -> String {
         None => String::new(),
     };
 
-    format!(
+    TrustedHtml::from_template(format!(
         concat!(
             "<main class=\"login-page\" aria-labelledby=\"login-title\">",
             "<div class=\"login-decor login-decor-left\" aria-hidden=\"true\"><svg viewBox=\"0 0 420 420\"><g fill=\"none\" stroke=\"currentColor\"><ellipse cx=\"190\" cy=\"315\" rx=\"190\" ry=\"42\" transform=\"rotate(-24 190 315)\" opacity=\".08\"/><circle cx=\"210\" cy=\"210\" r=\"130\" opacity=\".22\"/><circle cx=\"210\" cy=\"210\" r=\"165\" stroke-dasharray=\"2 7\" opacity=\".28\"/><path d=\"M210 98 296 132v74c0 62-31 104-86 132-55-28-86-70-86-132v-74l86-34Z\" opacity=\".14\"/><path d=\"M210 122 273 148v58c0 47-22 78-63 101-41-23-63-54-63-101v-58l63-26Z\" opacity=\".17\"/></g><rect x=\"172\" y=\"197\" width=\"76\" height=\"64\" rx=\"12\" fill=\"currentColor\" opacity=\".16\"/><path d=\"M184 198v-26a26 26 0 0 1 52 0v26\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"9\" opacity=\".18\"/><circle cx=\"210\" cy=\"225\" r=\"7\" fill=\"#fff\" opacity=\".85\"/><path d=\"M207 230h6l4 20h-14l4-20Z\" fill=\"#fff\" opacity=\".85\"/><circle cx=\"99\" cy=\"111\" r=\"5\" fill=\"currentColor\" opacity=\".38\"/><circle cx=\"314\" cy=\"102\" r=\"4\" fill=\"currentColor\" opacity=\".3\"/><circle cx=\"121\" cy=\"314\" r=\"4\" fill=\"currentColor\" opacity=\".38\"/><circle cx=\"331\" cy=\"290\" r=\"4\" fill=\"currentColor\" opacity=\".32\"/></svg></div>",
@@ -196,7 +197,7 @@ pub(crate) fn render_login_page(error_message: Option<&str>) -> String {
             "</main>"
         ),
         banner,
-    )
+    ))
 }
 
 /// Renders the mailbox home page for the validated user.
@@ -204,8 +205,8 @@ pub(crate) fn render_mailboxes_page(
     canonical_username: &str,
     csrf_token: &str,
     mailboxes: &[MailboxEntry],
-) -> String {
-    format!(
+) -> TrustedHtml {
+    TrustedHtml::from_template(format!(
         concat!(
             "<main class=\"page-shell\">",
             "{}",
@@ -227,7 +228,7 @@ pub(crate) fn render_mailboxes_page(
         app_header(canonical_username, csrf_token, "mailboxes"),
         folder_pane(mailboxes, None),
         render_search_field_select(MessageSearchField::All),
-    )
+    ))
 }
 
 const MESSAGE_SORT_COLUMNS: [MessageSortColumn; 6] = [
@@ -371,7 +372,7 @@ pub(crate) fn render_message_list_page(
     success_message: Option<&str>,
     bulk_actions: MessageListBulkActions<'_>,
     sort_links: MessageListSortLinks<'_>,
-) -> String {
+) -> TrustedHtml {
     let success_banner = match success_message {
         Some(success_message) => format!(
             "<div class=\"notice notice-success\" role=\"status\"><strong>Update complete:</strong> {}</div>",
@@ -485,7 +486,7 @@ pub(crate) fn render_message_list_page(
         sort_links.search_scope,
     );
 
-    format!(
+    TrustedHtml::from_template(format!(
         concat!(
             "<main class=\"page-shell\">",
             "{}",
@@ -525,7 +526,7 @@ pub(crate) fn render_message_list_page(
             ""
         },
         rows,
-    )
+    ))
 }
 
 /// Renders a bounded search-results page for one mailbox or all mailboxes.
@@ -537,7 +538,7 @@ pub(crate) fn render_message_search_page(
     results: &[MessageSearchResult],
     active_sort: Option<MessageSort>,
     search_field: MessageSearchField,
-) -> String {
+) -> TrustedHtml {
     let displayed_results = results
         .iter()
         .take(DEFAULT_MAX_SEARCH_RESULTS)
@@ -596,7 +597,7 @@ pub(crate) fn render_message_search_page(
         }
     }
 
-    format!(
+    TrustedHtml::from_template(format!(
         concat!(
             "<main class=\"page-shell\">",
             "{}",
@@ -624,7 +625,7 @@ pub(crate) fn render_message_search_page(
         displayed_results.len(),
         sort_headers,
         rows,
-    )
+    ))
 }
 
 /// Renders the message-view page using the existing safe renderer output.
@@ -634,7 +635,7 @@ pub fn render_message_view_page(
     rendered: &RenderedMessageView,
     archive_mailbox_name: Option<&str>,
     user_visible_mailboxes: &[MailboxEntry],
-) -> String {
+) -> TrustedHtml {
     let displayed_attachments = rendered
         .attachments
         .iter()
@@ -777,7 +778,7 @@ pub fn render_message_view_page(
         "<span class=\"badge badge-ok\">Plain text message</span>"
     };
 
-    format!(
+    TrustedHtml::from_template(format!(
         concat!(
             "<main class=\"page-shell\">",
             "{}",
@@ -830,7 +831,7 @@ pub fn render_message_view_page(
         inline_image_notice,
         attachments,
         rendered.body_html,
-    )
+    ))
 }
 
 /// Renders the browser-visible session-management page.
@@ -842,7 +843,7 @@ pub(crate) fn render_sessions_page(
     session_idle_timeout_seconds: u64,
     sessions: &[BrowserVisibleSession],
     success_message: Option<&str>,
-) -> String {
+) -> TrustedHtml {
     let success_banner = match success_message {
         Some(success_message) => format!(
             "<p><strong>Update complete:</strong> {}</p>",
@@ -902,7 +903,7 @@ pub(crate) fn render_sessions_page(
         escape_html(csrf_token),
     );
 
-    format!(
+    TrustedHtml::from_template(format!(
         concat!(
             "<main class=\"page-shell\">",
             "{}",
@@ -918,11 +919,11 @@ pub(crate) fn render_sessions_page(
         success_banner,
         controls,
         rows,
-    )
+    ))
 }
 
 /// Renders the compose page for the current user and CSRF-bound session.
-pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> String {
+pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
     let success_banner = match model.success_message {
         Some(success_message) => format!(
             "<div class=\"notice notice-success\" role=\"status\"><strong>Submission complete:</strong> {}</div>",
@@ -967,7 +968,7 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> String {
         model.source_attachments,
     );
 
-    format!(
+    TrustedHtml::from_template(format!(
         concat!(
             "<main class=\"page-shell\">",
             "{}",
@@ -1003,7 +1004,7 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> String {
         escape_html(model.to_value),
         escape_html(model.subject_value),
         escape_html(model.body_value),
-    )
+    ))
 }
 
 fn render_source_attachment_hidden_fields(
@@ -1083,7 +1084,7 @@ fn render_source_attachment_controls(
 }
 
 /// Renders the bounded draft list page.
-pub(crate) fn render_draft_list_page(model: &DraftListPageModel<'_>) -> String {
+pub(crate) fn render_draft_list_page(model: &DraftListPageModel<'_>) -> TrustedHtml {
     let success_banner = match model.success_message {
         Some(success_message) => format!(
             "<div class=\"notice notice-success\" role=\"status\"><strong>Draft update:</strong> {}</div>",
@@ -1131,7 +1132,7 @@ pub(crate) fn render_draft_list_page(model: &DraftListPageModel<'_>) -> String {
         rows.push_str("<tr><td colspan=\"6\" class=\"muted\">No saved drafts.</td></tr>");
     }
 
-    format!(
+    TrustedHtml::from_template(format!(
         concat!(
             "<main class=\"page-shell\">",
             "{}",
@@ -1150,11 +1151,11 @@ pub(crate) fn render_draft_list_page(model: &DraftListPageModel<'_>) -> String {
         success_banner,
         error_banner,
         rows,
-    )
+    ))
 }
 
 /// Renders the first bounded end-user settings page.
-pub(crate) fn render_settings_page(model: &SettingsPageModel<'_>) -> String {
+pub(crate) fn render_settings_page(model: &SettingsPageModel<'_>) -> TrustedHtml {
     let success_banner = match model.success_message {
         Some(success_message) => format!(
             "<div class=\"notice notice-success\" role=\"status\"><strong>Update complete:</strong> {}</div>",
@@ -1183,7 +1184,7 @@ pub(crate) fn render_settings_page(model: &SettingsPageModel<'_>) -> String {
         };
     let archive_mailbox_name = model.archive_mailbox_name.unwrap_or("");
 
-    format!(
+    TrustedHtml::from_template(format!(
         concat!(
             "<main class=\"page-shell\">",
             "{}",
@@ -1215,5 +1216,5 @@ pub(crate) fn render_settings_page(model: &SettingsPageModel<'_>) -> String {
         prefer_sanitized_html_checked,
         prefer_plain_text_checked,
         escape_html(archive_mailbox_name),
-    )
+    ))
 }

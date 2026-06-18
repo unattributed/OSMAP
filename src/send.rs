@@ -1215,7 +1215,7 @@ mod tests {
             mime_top_level_content_type: "multipart/mixed".to_string(),
             body_source: MimeBodySource::MultipartPlainTextPart,
             contains_html_body: true,
-            body_html: "<pre>Hello team</pre>".to_string(),
+            body_html: crate::html::TrustedHtml::from_template("<pre>Hello team</pre>".to_string()),
             body_text_for_compose: "Hello team\nPlease review the report.".to_string(),
             attachments: vec![AttachmentMetadata {
                 part_path: "1.2".to_string(),

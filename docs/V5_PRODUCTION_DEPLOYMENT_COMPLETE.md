@@ -102,8 +102,10 @@ as one rollback unit.
 ## Evidence Relationship
 
 This document records the production deployment of assessed commit `927516f`.
-The detailed source findings, remediations, regression tests, and deferred typed
-HTML wrapper work are recorded in `V5_BOUNDARY_HARDENING_EVIDENCE.md`.
+The detailed source findings and remediations are recorded in
+`V5_BOUNDARY_HARDENING_EVIDENCE.md`. The typed HTML wrapper item that was
+deferred at deployment time was completed in repository source on June 18,
+2026; it is newer than the deployed commit recorded here.
 
 V5 does not have a separate release tag. The repository's formal tagged release
 evidence remains the historical `v4.0.0` tuple; V5 is a later deployed
