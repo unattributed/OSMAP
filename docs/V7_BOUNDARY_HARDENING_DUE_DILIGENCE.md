@@ -33,6 +33,13 @@ The installed production binary SHA-256 is:
 6ddb7c7a5564ce9196d279b6a9bee6994561d284cc09be1df6184bf28ffdb848
 ```
 
+That V7 binary was removed from production on June 19, 2026 after repeated
+browser-entry outages. Production was restored to the paired pre-V7 binary:
+
+```text
+deb5c6473be137bd7bb2a363ecf94d3bc0238d405915d0f585f01f424ef79e1e
+```
+
 External evidence for this run is rooted at:
 
 ```text
@@ -334,5 +341,7 @@ production-availability proof.
 V7 cannot close until the requirements in
 `V7_BROWSER_AVAILABILITY_INVARIANT.md` pass, including a real operator
 password-plus-TOTP login, post-login service survival, hold-period validation,
-and installed automatic recovery. The broader throttle transaction-locking
-follow-up also remains.
+and installed automatic recovery. A one-minute browser-entry guard is now
+installed on the production host, but it is containment rather than evidence
+that the V7 binary is safe to redeploy. The broader throttle
+transaction-locking follow-up also remains.

@@ -158,11 +158,11 @@ selected-cohort rehearsal, observability, and resource-resilience evidence set
 has not been completed.
 
 V7 boundary hardening was deployed to `mail.blackbagsecurity.com` on June 18,
-2026. The deployed code closes headerless-request buffering, weak TOTP secret,
-forwarded client IP, and compose content-type findings. File-backed temporary
-state creation is hardened; transaction-level cross-process throttle locking
-remains a focused follow-up. The production deployment also corrected OpenBSD
-rc.d supervision for the foreground OSMAP services.
+2026, then reopened and rolled back after repeated browser-entry outages. The
+code closes headerless-request buffering, weak TOTP secret, forwarded client
+IP, and compose content-type findings, but it is not the current production
+binary. V7 must pass the browser availability invariant and a real
+operator-controlled login hold before redeployment or closure.
 
 The current implementation includes:
 
@@ -550,10 +550,10 @@ risk, and production evidence summary is:
 
 - [`docs/V7_BOUNDARY_HARDENING_DUE_DILIGENCE.md`](docs/V7_BOUNDARY_HARDENING_DUE_DILIGENCE.md)
 
-V7 is implemented and production-validated. Four findings are closed. The
-file-state finding is partially closed because temporary-file creation is now
-safe while cross-process throttle read-modify-write transactions still require
-a dedicated locking change.
+V7 is implemented but reopened and not production-approved. Four original
+findings are closed in code. The file-state finding remains partially closed,
+and production availability after a real login must be proven before V7 can be
+redeployed or merged.
 
 ## Target Users
 
