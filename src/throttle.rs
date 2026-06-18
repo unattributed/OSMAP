@@ -75,6 +75,7 @@ pub const TOO_MANY_SUBMISSIONS_PUBLIC_REASON: &str = "too_many_submissions";
 pub const TOO_MANY_MESSAGE_MOVES_PUBLIC_REASON: &str = "too_many_message_moves";
 
 static THROTTLE_TMP_COUNTER: AtomicU64 = AtomicU64::new(0);
+const THROTTLE_LOCK_FILE: &str = ".throttle-store.lock";
 
 /// Policy controlling how the current login-throttle slice behaves.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -419,6 +420,14 @@ impl MessageMoveThrottleKey {
 
 /// Persists and retrieves throttle buckets.
 pub trait LoginThrottleStore {
+    fn with_exclusive_lock<T, F>(&self, operation: F) -> Result<T, LoginThrottleError>
+    where
+        Self: Sized,
+        F: FnOnce() -> Result<T, LoginThrottleError>,
+    {
+        operation()
+    }
+
     fn load(&self, key_id: &str) -> Result<Option<LoginThrottleRecord>, LoginThrottleError>;
     fn save(&self, key_id: &str, record: &LoginThrottleRecord) -> Result<(), LoginThrottleError>;
     fn remove(&self, key_id: &str) -> Result<(), LoginThrottleError>;
@@ -449,9 +458,79 @@ impl FileLoginThrottleStore {
             THROTTLE_TMP_COUNTER.fetch_add(1, Ordering::Relaxed)
         ))
     }
+
+    fn lock_path(&self) -> PathBuf {
+        self.throttle_dir.join(THROTTLE_LOCK_FILE)
+    }
+
+    fn acquire_exclusive_lock(&self) -> Result<ThrottleFileLock, LoginThrottleError> {
+        fs::create_dir_all(&self.throttle_dir).map_err(|error| {
+            LoginThrottleError::StoreFailure {
+                reason: format!(
+                    "failed to create login throttle directory {:?}: {error}",
+                    self.throttle_dir
+                ),
+            }
+        })?;
+
+        let lock_path = self.lock_path();
+        let mut options = OpenOptions::new();
+        options.read(true).write(true).create(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt as _;
+            options.mode(0o600);
+        }
+        let file = options
+            .open(&lock_path)
+            .map_err(|error| LoginThrottleError::StoreFailure {
+                reason: format!(
+                    "failed to open login throttle lock file {:?}: {error}",
+                    lock_path
+                ),
+            })?;
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt as _;
+            fs::set_permissions(&lock_path, fs::Permissions::from_mode(0o600)).map_err(
+                |error| LoginThrottleError::StoreFailure {
+                    reason: format!(
+                        "failed to set login throttle lock permissions {:?}: {error}",
+                        lock_path
+                    ),
+                },
+            )?;
+            crate::openbsd::advisory_file_lock_exclusive(&file).map_err(|error| {
+                LoginThrottleError::StoreFailure {
+                    reason: format!(
+                        "failed to acquire login throttle store lock {:?}: {error}",
+                        lock_path
+                    ),
+                }
+            })?;
+        }
+
+        #[cfg(not(unix))]
+        {
+            return Err(LoginThrottleError::StoreFailure {
+                reason: "file-backed throttle locking requires a Unix-like target".to_string(),
+            });
+        }
+
+        Ok(ThrottleFileLock { file })
+    }
 }
 
 impl LoginThrottleStore for FileLoginThrottleStore {
+    fn with_exclusive_lock<T, F>(&self, operation: F) -> Result<T, LoginThrottleError>
+    where
+        F: FnOnce() -> Result<T, LoginThrottleError>,
+    {
+        let _guard = self.acquire_exclusive_lock()?;
+        operation()
+    }
+
     fn load(&self, key_id: &str) -> Result<Option<LoginThrottleRecord>, LoginThrottleError> {
         let path = self.record_path(key_id);
 
@@ -510,6 +589,19 @@ impl LoginThrottleStore for FileLoginThrottleStore {
         fs::remove_file(&path).map_err(|error| LoginThrottleError::StoreFailure {
             reason: format!("failed to remove login throttle record {:?}: {error}", path),
         })
+    }
+}
+
+struct ThrottleFileLock {
+    file: fs::File,
+}
+
+impl Drop for ThrottleFileLock {
+    fn drop(&mut self) {
+        #[cfg(unix)]
+        {
+            let _ = crate::openbsd::advisory_file_unlock(&self.file);
+        }
     }
 }
 
@@ -664,6 +756,15 @@ where
         context: &AuthenticationContext,
         submitted_username: &str,
     ) -> Result<LoginThrottleCheck, LoginThrottleError> {
+        self.store
+            .with_exclusive_lock(|| self.check_unlocked(context, submitted_username))
+    }
+
+    fn check_unlocked(
+        &self,
+        context: &AuthenticationContext,
+        submitted_username: &str,
+    ) -> Result<LoginThrottleCheck, LoginThrottleError> {
         let keys = [
             LoginThrottleKey::for_credential_and_remote_addr(
                 submitted_username,
@@ -713,6 +814,15 @@ where
 
     /// Records one failed login attempt for the presented identity bucket.
     pub fn record_failure(
+        &self,
+        context: &AuthenticationContext,
+        submitted_username: &str,
+    ) -> Result<LoginThrottleFailureRecord, LoginThrottleError> {
+        self.store
+            .with_exclusive_lock(|| self.record_failure_unlocked(context, submitted_username))
+    }
+
+    fn record_failure_unlocked(
         &self,
         context: &AuthenticationContext,
         submitted_username: &str,
@@ -776,6 +886,15 @@ where
         context: &AuthenticationContext,
         submitted_username: &str,
     ) -> Result<Vec<LogEvent>, LoginThrottleError> {
+        self.store
+            .with_exclusive_lock(|| self.clear_success_unlocked(context, submitted_username))
+    }
+
+    fn clear_success_unlocked(
+        &self,
+        context: &AuthenticationContext,
+        submitted_username: &str,
+    ) -> Result<Vec<LogEvent>, LoginThrottleError> {
         let keys = [
             LoginThrottleKey::for_credential_and_remote_addr(
                 submitted_username,
@@ -801,6 +920,15 @@ where
 {
     /// Checks whether the current outbound submission may proceed.
     pub fn check(
+        &self,
+        context: &AuthenticationContext,
+        canonical_username: &str,
+    ) -> Result<SubmissionThrottleCheck, LoginThrottleError> {
+        self.store
+            .with_exclusive_lock(|| self.check_unlocked(context, canonical_username))
+    }
+
+    fn check_unlocked(
         &self,
         context: &AuthenticationContext,
         canonical_username: &str,
@@ -854,6 +982,15 @@ where
 
     /// Records one accepted outbound submission for the current session owner.
     pub fn record_submission(
+        &self,
+        context: &AuthenticationContext,
+        canonical_username: &str,
+    ) -> Result<SubmissionThrottleRecord, LoginThrottleError> {
+        self.store
+            .with_exclusive_lock(|| self.record_submission_unlocked(context, canonical_username))
+    }
+
+    fn record_submission_unlocked(
         &self,
         context: &AuthenticationContext,
         canonical_username: &str,
@@ -922,6 +1059,15 @@ where
         context: &AuthenticationContext,
         canonical_username: &str,
     ) -> Result<MessageMoveThrottleCheck, LoginThrottleError> {
+        self.store
+            .with_exclusive_lock(|| self.check_unlocked(context, canonical_username))
+    }
+
+    fn check_unlocked(
+        &self,
+        context: &AuthenticationContext,
+        canonical_username: &str,
+    ) -> Result<MessageMoveThrottleCheck, LoginThrottleError> {
         let keys = [
             MessageMoveThrottleKey::for_canonical_user_and_remote_addr(
                 canonical_username,
@@ -971,6 +1117,15 @@ where
 
     /// Records one accepted authenticated message move.
     pub fn record_move(
+        &self,
+        context: &AuthenticationContext,
+        canonical_username: &str,
+    ) -> Result<MessageMoveThrottleRecord, LoginThrottleError> {
+        self.store
+            .with_exclusive_lock(|| self.record_move_unlocked(context, canonical_username))
+    }
+
+    fn record_move_unlocked(
         &self,
         context: &AuthenticationContext,
         canonical_username: &str,
@@ -1286,7 +1441,12 @@ fn parse_u64_field(field: &'static str, value: &str) -> Result<u64, LoginThrottl
 mod tests {
     use super::*;
     use crate::auth::AuthenticationPolicy;
+    use std::collections::BTreeMap;
     use std::path::PathBuf;
+    use std::sync::atomic::{AtomicBool, Ordering as AtomicOrdering};
+    use std::sync::{mpsc, Arc, Mutex};
+    use std::thread;
+    use std::time::Duration;
 
     #[derive(Debug, Clone, Copy)]
     struct FixedTimeProvider {
@@ -1302,6 +1462,68 @@ mod tests {
     impl TimeProvider for FixedTimeProvider {
         fn unix_timestamp(&self) -> u64 {
             self.now
+        }
+    }
+
+    #[derive(Clone, Default)]
+    struct LockAssertingStore {
+        lock_held: Arc<AtomicBool>,
+        records: Arc<Mutex<BTreeMap<String, LoginThrottleRecord>>>,
+    }
+
+    impl LockAssertingStore {
+        fn require_lock(&self) -> Result<(), LoginThrottleError> {
+            if self.lock_held.load(AtomicOrdering::SeqCst) {
+                Ok(())
+            } else {
+                Err(LoginThrottleError::StoreFailure {
+                    reason: "throttle operation ran outside transaction lock".to_string(),
+                })
+            }
+        }
+    }
+
+    impl LoginThrottleStore for LockAssertingStore {
+        fn with_exclusive_lock<T, F>(&self, operation: F) -> Result<T, LoginThrottleError>
+        where
+            F: FnOnce() -> Result<T, LoginThrottleError>,
+        {
+            assert!(!self.lock_held.swap(true, AtomicOrdering::SeqCst));
+            let result = operation();
+            self.lock_held.store(false, AtomicOrdering::SeqCst);
+            result
+        }
+
+        fn load(&self, key_id: &str) -> Result<Option<LoginThrottleRecord>, LoginThrottleError> {
+            self.require_lock()?;
+            Ok(self
+                .records
+                .lock()
+                .expect("test records should lock")
+                .get(key_id)
+                .cloned())
+        }
+
+        fn save(
+            &self,
+            key_id: &str,
+            record: &LoginThrottleRecord,
+        ) -> Result<(), LoginThrottleError> {
+            self.require_lock()?;
+            self.records
+                .lock()
+                .expect("test records should lock")
+                .insert(key_id.to_string(), record.clone());
+            Ok(())
+        }
+
+        fn remove(&self, key_id: &str) -> Result<(), LoginThrottleError> {
+            self.require_lock()?;
+            self.records
+                .lock()
+                .expect("test records should lock")
+                .remove(key_id);
+            Ok(())
         }
     }
 
@@ -1396,6 +1618,110 @@ mod tests {
             .mode()
             & 0o777;
         assert_eq!(mode, 0o600);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn file_store_lock_uses_restrictive_permissions_and_serializes_handles() {
+        use std::os::unix::fs::PermissionsExt as _;
+
+        let dir = temp_dir("osmap-throttle-lock");
+        let first_store = FileLoginThrottleStore::new(&dir);
+        let first_guard = first_store
+            .acquire_exclusive_lock()
+            .expect("first throttle lock should be acquired");
+
+        let mode = fs::metadata(first_store.lock_path())
+            .expect("throttle lock metadata should exist")
+            .permissions()
+            .mode()
+            & 0o777;
+        assert_eq!(mode, 0o600);
+
+        let (acquired_tx, acquired_rx) = mpsc::channel();
+        let second_store = FileLoginThrottleStore::new(&dir);
+        let waiter = thread::spawn(move || {
+            let _guard = second_store
+                .acquire_exclusive_lock()
+                .expect("second throttle lock should eventually be acquired");
+            acquired_tx.send(()).expect("lock result should send");
+        });
+
+        assert!(acquired_rx
+            .recv_timeout(Duration::from_millis(100))
+            .is_err());
+        drop(first_guard);
+        acquired_rx
+            .recv_timeout(Duration::from_secs(2))
+            .expect("second throttle handle should acquire after release");
+        waiter.join().expect("lock waiter should join");
+    }
+
+    #[test]
+    fn file_store_lock_acquisition_failure_fails_closed() {
+        let dir = temp_dir("osmap-throttle-lock-failure");
+        let store = FileLoginThrottleStore::new(&dir);
+        fs::create_dir(store.lock_path()).expect("lock-path directory fixture should be created");
+        let service = LoginThrottleService::new(
+            store,
+            FixedTimeProvider::new(200),
+            LoginThrottlePolicy::default(),
+        );
+
+        let error = service
+            .record_failure(&test_context(), "alice@example.com")
+            .expect_err("lock acquisition failure must fail closed");
+
+        match error {
+            LoginThrottleError::StoreFailure { reason } => {
+                assert!(reason.contains("failed to open login throttle lock file"));
+            }
+        }
+    }
+
+    #[test]
+    fn throttle_services_hold_transaction_lock_across_store_operations() {
+        let store = LockAssertingStore::default();
+        let context = test_context();
+
+        let login = LoginThrottleService::new(
+            store.clone(),
+            FixedTimeProvider::new(200),
+            LoginThrottlePolicy::default(),
+        );
+        login
+            .check(&context, "alice@example.com")
+            .expect("login check should hold lock");
+        login
+            .record_failure(&context, "alice@example.com")
+            .expect("login record should hold lock");
+        login
+            .clear_success(&context, "alice@example.com")
+            .expect("login clear should hold lock");
+
+        let submission = SubmissionThrottleService::new(
+            store.clone(),
+            FixedTimeProvider::new(200),
+            SubmissionThrottlePolicy::default(),
+        );
+        submission
+            .check(&context, "alice@example.com")
+            .expect("submission check should hold lock");
+        submission
+            .record_submission(&context, "alice@example.com")
+            .expect("submission record should hold lock");
+
+        let message_move = MessageMoveThrottleService::new(
+            store,
+            FixedTimeProvider::new(200),
+            MessageMoveThrottlePolicy::default(),
+        );
+        message_move
+            .check(&context, "alice@example.com")
+            .expect("message-move check should hold lock");
+        message_move
+            .record_move(&context, "alice@example.com")
+            .expect("message-move record should hold lock");
     }
 
     #[test]

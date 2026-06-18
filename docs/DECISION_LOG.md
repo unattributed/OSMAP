@@ -6705,3 +6705,18 @@ not informal smoke checks. V7 closure additionally requires invalid and real
 operator-controlled successful login submissions to leave the service alive,
 post-login hold validation, and an installed bounded availability guard that
 restarts `osmap_serve` and fails visibly if browser entry is not restored.
+
+## 2026-06-19, Close the post-V7 throttle transaction race
+
+The V7 file-state review left one explicit follow-up: throttle records used
+restrictive atomic replacement, but overlapping processes could still lose an
+increment between separate load and save operations.
+
+The file-backed throttle store now uses one mode `0600` advisory lock per
+throttle directory. Login, submission, and message-move services hold that lock
+across each complete two-bucket check, update, or clear transaction. Lock
+acquisition failure fails closed, and an RAII guard releases the lock.
+
+Decision: the final explicit V7 state-store race is closed for cooperating
+processes on one host. This does not claim distributed cross-host locking, and
+the lock is not held across external authentication, mailbox, or send work.

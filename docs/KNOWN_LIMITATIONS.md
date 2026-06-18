@@ -76,9 +76,11 @@
 - The Rust backend now implements a bounded dual-bucket file-backed login
   throttle for browser authentication plus a bounded dual-bucket submission
   throttle for the browser send path plus a bounded dual-bucket message-move
-  throttle for the first folder-organization path, but broader request-abuse
-  controls and richer anomaly handling still depend on adjacent defenses such
-  as nginx, PF, and operator monitoring
+  throttle for the first folder-organization path. Store-local advisory locks
+  now serialize each complete two-bucket state transaction across cooperating
+  processes on one host. Broader request-abuse controls, distributed
+  coordination, and richer anomaly handling still depend on adjacent defenses
+  such as nginx, PF, and operator monitoring
 - Operator-facing migration, rollback, pilot, workflow-inventory, and
   acceptance-gate guidance now exists, and the final Version 2 trial cohort
   has completed the bounded pilot workflows

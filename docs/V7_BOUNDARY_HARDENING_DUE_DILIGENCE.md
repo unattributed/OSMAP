@@ -61,7 +61,7 @@ The detailed source search is recorded in
 | --- | --- | --- |
 | Headerless HTTP request buffering | Closed | Unterminated streaming reads fail once buffered bytes exceed `max_header_bytes`; valid parsed multipart requests retain their upload allowance. |
 | Weak or empty TOTP secret | Closed | Decoded secret material shorter than 20 bytes fails closed; empty, separator-only, short, malformed, and valid RFC 6238 cases have regression coverage. |
-| File-backed state creation and locking | Partially closed; follow-up required | Session and throttle temporary creation is restrictive, exclusive, collision-safe, and atomically renamed. V6 session locking remains intact. Throttle read-modify-write transactions remain unlocked across processes. |
+| File-backed state creation and locking | Closed by post-V7 follow-up | Session and throttle temporary creation is restrictive, exclusive, collision-safe, and atomically renamed. Session and throttle read-modify-write transactions use store-local advisory locks across cooperating processes. |
 | Forwarded client IP trust | Closed with deployment requirement | Only loopback-supplied `X-Real-IP` is trusted. `X-Forwarded-For` is ignored. The backend must remain isolated behind the reviewed loopback nginx listener. |
 | Compose form content type inconsistency | Closed | Compose uses the shared URL-encoded media-type helper and accepts charset parameters and case variation while rejecting unsupported types. |
 
@@ -366,10 +366,8 @@ The final sanitized archive and checksum are produced outside the repository:
 
 - Advisory file locking remains local-host coordination between cooperating
   processes, not distributed locking.
-- Throttle records now have safe temporary-file creation and replacement, but
-  concurrent processes can still lose increments across an unlocked
-  read-modify-write transaction. Closing that race requires a follow-up
-  transaction-level store API and lock.
+- Throttle transaction locking coordinates cooperating processes on one host
+  and one state directory. It is not distributed locking across hosts.
 - The production browser runtime must remain reachable only through the trusted
   loopback nginx proxy for `X-Real-IP` to be authoritative.
 - Deliberate load, fuzzing, and hostile high-volume tests remain outside this
@@ -391,6 +389,6 @@ The production login outage was fully reevaluated and closed by adding the
 resource controls were also deployed and verified. V7 does not require another
 code follow-up for production login availability.
 
-The remaining throttle transaction-locking risk is intentionally tracked as a
-separate follow-up because it requires a transaction-level store API rather
-than a narrow file-creation change.
+The post-V7 throttle transaction-locking follow-up closes the final explicit V7
+state-store race. Its implementation and evidence are recorded in
+`POST_V7_THROTTLE_TRANSACTION_LOCKING.md`.
