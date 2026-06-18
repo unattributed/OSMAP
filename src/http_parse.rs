@@ -583,7 +583,7 @@ mod tests {
             max_upload_body_bytes: 1024,
             ..HttpPolicy::default()
         };
-        let error = read_request_from_bytes(&vec![b'A'; 33], policy)
+        let error = read_request_from_bytes(&[b'A'; 33], policy)
             .expect_err("headerless bytes over the header limit must be rejected");
 
         assert_eq!(error.reason, "http headers exceeded maximum length");
