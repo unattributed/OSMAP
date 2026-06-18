@@ -45,12 +45,45 @@ The detailed source search is recorded in
 | Slice | Status | Result |
 | --- | --- | --- |
 | 0. Current-code audit confirmation | Complete | All five findings revalidated; session locking narrowed to a partially remediated finding. |
-| 1. Headerless request bound | Pending | Not started. |
-| 2. TOTP secret minimum | Pending | Not started. |
-| 3. File-backed state writes | Pending | Not started. |
+| 1. Headerless request bound | Complete | Unterminated reads are bounded by the header limit; parsed multipart requests retain their upload allowance. |
+| 2. TOTP secret minimum | Complete | Empty, separator-only, malformed, and decoded secrets shorter than 20 bytes fail closed. |
+| 3. File-backed state writes | Complete | Session and throttle temporary files use restrictive atomic creation; throttle temp names include pid plus a process-local counter. |
 | 4. Forwarded client IP trust | Pending | Not started. |
 | 5. Compose content type | Pending | Not started. |
 | 6. Final gate and live due diligence | Pending | Not started. |
+
+## Slice Changes
+
+### Slice 1: Headerless request bound
+
+`read_http_request` now searches each received chunk for a header terminator
+before applying the header-only limit. If no terminator exists and the buffered
+bytes exceed `max_header_bytes`, the request fails with the existing
+`http headers exceeded maximum length` reason. Once valid headers are parsed,
+the existing content-type-specific body allowance remains in effect.
+
+### Slice 2: TOTP secret minimum
+
+`MIN_TOTP_SECRET_BYTES` is 20 bytes. Secret-file parsing rejects decoded
+material below that floor without including secret material in the operator
+error. The existing 20-byte RFC 6238 reference secret remains valid.
+
+### Slice 3: File-backed state writes
+
+Session and throttle temporary files now use `OpenOptions` with
+`create_new(true)` and Unix mode `0600`, eliminating the create-then-chmod
+window and preventing an existing temp path from being truncated. Session
+temporary names retain the existing session id, pid, and atomic counter.
+Throttle temporary names now include the key id, pid, and an atomic counter.
+Both stores preserve same-directory atomic rename.
+
+The V6 store-local session advisory lock and fail-closed lock behavior are
+unchanged. A throttle advisory lock was not added because the current store
+trait exposes separate `load`, `save`, and `remove` operations while service
+updates span complete read-modify-write transactions and, often, two related
+buckets. Locking only `save` would not close lost-update races. Correct
+cross-process serialization requires a separate, reviewable transaction
+change rather than a misleading narrow lock.
 
 ## Tests And Evidence
 
@@ -72,6 +105,16 @@ Evidence files:
 - `baseline-cargo-clippy.txt`
 - `baseline-cargo-audit.txt`
 - `slice0-current-code-audit.txt`
+- `slice1-http-parse-tests.txt`
+- `slice1-cargo-fmt-check.txt`
+- `slice1-diff.txt`
+- `slice2-totp-tests.txt`
+- `slice2-cargo-fmt-check.txt`
+- `slice2-diff.txt`
+- `slice3-session-tests.txt`
+- `slice3-throttle-tests.txt`
+- `slice3-cargo-fmt-check.txt`
+- `slice3-diff.txt`
 
 ## Live Test Results
 
@@ -81,6 +124,10 @@ Pending Slice 6.
 
 - Advisory file locking remains local-host coordination between cooperating
   processes, not distributed locking.
+- Throttle records now have safe temporary-file creation and replacement, but
+  concurrent processes can still lose increments across an unlocked
+  read-modify-write transaction. Closing that race requires a follow-up
+  transaction-level store API and lock.
 - The production browser runtime must remain reachable only through the trusted
   loopback nginx proxy for `X-Real-IP` to be authoritative.
 - Deliberate load, fuzzing, and hostile high-volume tests remain outside this

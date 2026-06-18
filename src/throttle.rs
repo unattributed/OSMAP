@@ -6,8 +6,10 @@
 //! reviewable, and compatible with the existing state boundary.
 
 use std::fs;
+use std::fs::OpenOptions;
 use std::io::Write as _;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use sha2::{Digest, Sha256};
 
@@ -71,6 +73,8 @@ pub const TOO_MANY_SUBMISSIONS_PUBLIC_REASON: &str = "too_many_submissions";
 /// Public reason exposed by the browser layer when message-move throttling is
 /// active.
 pub const TOO_MANY_MESSAGE_MOVES_PUBLIC_REASON: &str = "too_many_message_moves";
+
+static THROTTLE_TMP_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 /// Policy controlling how the current login-throttle slice behaves.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -437,6 +441,14 @@ impl FileLoginThrottleStore {
     fn record_path(&self, key_id: &str) -> PathBuf {
         self.throttle_dir.join(format!("{key_id}.throttle"))
     }
+
+    fn temp_path(&self, key_id: &str) -> PathBuf {
+        self.throttle_dir.join(format!(
+            "{key_id}.{}.{}.tmp",
+            std::process::id(),
+            THROTTLE_TMP_COUNTER.fetch_add(1, Ordering::Relaxed)
+        ))
+    }
 }
 
 impl LoginThrottleStore for FileLoginThrottleStore {
@@ -466,16 +478,10 @@ impl LoginThrottleStore for FileLoginThrottleStore {
         })?;
 
         let path = self.record_path(key_id);
-        let tmp_path = self.throttle_dir.join(format!("{key_id}.tmp"));
+        let tmp_path = self.temp_path(key_id);
         let content = serialize_throttle_record(record);
 
-        let mut file =
-            fs::File::create(&tmp_path).map_err(|error| LoginThrottleError::StoreFailure {
-                reason: format!(
-                    "failed to create login throttle temp file {:?}: {error}",
-                    tmp_path
-                ),
-            })?;
+        let mut file = create_throttle_temp_file(&tmp_path)?;
         file.write_all(content.as_bytes())
             .map_err(|error| LoginThrottleError::StoreFailure {
                 reason: format!(
@@ -483,19 +489,6 @@ impl LoginThrottleStore for FileLoginThrottleStore {
                     tmp_path
                 ),
             })?;
-
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
-            fs::set_permissions(&tmp_path, fs::Permissions::from_mode(0o600)).map_err(|error| {
-                LoginThrottleError::StoreFailure {
-                    reason: format!(
-                        "failed to set login throttle temp permissions {:?}: {error}",
-                        tmp_path
-                    ),
-                }
-            })?;
-        }
 
         fs::rename(&tmp_path, &path).map_err(|error| LoginThrottleError::StoreFailure {
             reason: format!(
@@ -518,6 +511,25 @@ impl LoginThrottleStore for FileLoginThrottleStore {
             reason: format!("failed to remove login throttle record {:?}: {error}", path),
         })
     }
+}
+
+fn create_throttle_temp_file(path: &Path) -> Result<fs::File, LoginThrottleError> {
+    let mut options = OpenOptions::new();
+    options.write(true).create_new(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt as _;
+        options.mode(0o600);
+    }
+
+    options
+        .open(path)
+        .map_err(|error| LoginThrottleError::StoreFailure {
+            reason: format!(
+                "failed to create login throttle temp file {:?}: {error}",
+                path
+            ),
+        })
 }
 
 /// The result of checking whether a login attempt may proceed.
@@ -1359,6 +1371,64 @@ mod tests {
             .expect("record should exist");
 
         assert_eq!(loaded, record);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn file_store_records_use_restrictive_permissions() {
+        use std::os::unix::fs::PermissionsExt as _;
+
+        let dir = temp_dir("osmap-throttle-record-permissions");
+        let store = FileLoginThrottleStore::new(&dir);
+        let record = LoginThrottleRecord {
+            failure_count: 1,
+            window_started_at: 100,
+            last_failure_at: 100,
+            locked_until: None,
+        };
+        store
+            .save("permissions", &record)
+            .expect("record should save");
+
+        let mode = fs::metadata(store.record_path("permissions"))
+            .expect("throttle metadata should exist")
+            .permissions()
+            .mode()
+            & 0o777;
+        assert_eq!(mode, 0o600);
+    }
+
+    #[test]
+    fn throttle_temp_names_are_collision_resistant_within_a_process() {
+        let dir = temp_dir("osmap-throttle-temp-names");
+        let store = FileLoginThrottleStore::new(&dir);
+
+        let first = store.temp_path("same-key");
+        let second = store.temp_path("same-key");
+
+        assert_ne!(first, second);
+        assert_eq!(first.parent(), Some(dir.as_path()));
+        assert_eq!(second.parent(), Some(dir.as_path()));
+    }
+
+    #[test]
+    fn throttle_temp_file_collision_fails_without_truncating_existing_file() {
+        let dir = temp_dir("osmap-throttle-temp-collision");
+        let tmp_path = dir.join("existing.tmp");
+        fs::write(&tmp_path, "sentinel").expect("collision fixture should be written");
+
+        let error = create_throttle_temp_file(&tmp_path)
+            .expect_err("an existing throttle temp file must not be truncated");
+
+        match error {
+            LoginThrottleError::StoreFailure { reason } => {
+                assert!(reason.contains("failed to create login throttle temp file"));
+            }
+        }
+        assert_eq!(
+            fs::read_to_string(&tmp_path).expect("collision fixture should remain readable"),
+            "sentinel"
+        );
     }
 
     #[test]
