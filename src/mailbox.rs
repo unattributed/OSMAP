@@ -827,6 +827,49 @@ mod tests {
     }
 
     #[test]
+    fn message_view_accepts_body_at_default_bound_and_rejects_one_byte_over() {
+        let bounded_body = "x".repeat(DEFAULT_MESSAGE_BODY_MAX_LEN);
+        let bounded = parse_doveadm_message_view_output(
+            MessageViewPolicy::default(),
+            &CommandExecution {
+                status_code: 0,
+                stdout: format!(
+                    "uid=9 flags=\"\" date.received=\"2026-06-20 00:00:00 +0000\" size.virtual={} mailbox=INBOX hdr=\"Subject: bounded\\n\" body=\"{}\"\n",
+                    bounded_body.len(),
+                    bounded_body
+                ),
+                stderr: String::new(),
+            },
+        )
+        .expect("body at the configured limit should parse");
+        assert_eq!(bounded.body_text.len(), DEFAULT_MESSAGE_BODY_MAX_LEN);
+
+        let oversized_body = "x".repeat(DEFAULT_MESSAGE_BODY_MAX_LEN + 1);
+        let error = parse_doveadm_message_view_output(
+            MessageViewPolicy::default(),
+            &CommandExecution {
+                status_code: 0,
+                stdout: format!(
+                    "uid=10 flags=\"\" date.received=\"2026-06-20 00:00:00 +0000\" size.virtual={} mailbox=INBOX hdr=\"Subject: oversized\\n\" body=\"{}\"\n",
+                    oversized_body.len(),
+                    oversized_body
+                ),
+                stderr: String::new(),
+            },
+        )
+        .expect_err("body above the configured limit must fail closed");
+
+        assert_eq!(error.backend, "message-view-parser");
+        assert_eq!(
+            error.reason,
+            format!(
+                "body exceeded maximum length of {} bytes",
+                DEFAULT_MESSAGE_BODY_MAX_LEN
+            )
+        );
+    }
+
+    #[test]
     fn rejects_message_list_output_missing_required_fields() {
         let error = parse_doveadm_message_list_output(
             MessageListPolicy::default(),

@@ -58,7 +58,9 @@ use crate::openbsd::{apply_runtime_confinement, unix_stream_peer_uid};
 pub const DEFAULT_MAILBOX_HELPER_MAX_REQUEST_BYTES: usize = 4096;
 
 /// Conservative upper bound for one helper response payload.
-pub const DEFAULT_MAILBOX_HELPER_MAX_RESPONSE_BYTES: usize = 512 * 1024;
+///
+/// This includes base64 expansion of a maximum-size message-view body.
+pub const DEFAULT_MAILBOX_HELPER_MAX_RESPONSE_BYTES: usize = 1024 * 1024;
 
 /// Conservative per-connection read timeout for the helper socket.
 pub const DEFAULT_MAILBOX_HELPER_READ_TIMEOUT_SECS: u64 = 5;
@@ -1623,6 +1625,56 @@ mod tests {
         assert_eq!(message.uid, 12);
         assert_eq!(message.header_block, "Subject: Test message\n");
         assert_eq!(message.body_text, "Hello world\n");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn client_fetches_maximum_bounded_message_view_over_helper_socket() {
+        let socket_path = temp_socket_path("message-view-helper-max-body");
+        let body_text = "x".repeat(crate::mailbox::DEFAULT_MESSAGE_BODY_MAX_LEN);
+        let backend = StaticHelperBackend {
+            mailbox_result: Arc::new(Ok(Vec::new())),
+            message_list_result: Arc::new(Ok(Vec::new())),
+            message_search_result: Arc::new(Ok(Vec::new())),
+            message_view_result: Arc::new(Ok(MessageView {
+                mailbox_name: "INBOX".to_string(),
+                uid: 12,
+                flags: Vec::new(),
+                date_received: "2026-06-20 00:00:00 +0000".to_string(),
+                size_virtual: body_text.len() as u64,
+                header_block: "Subject: Bounded message\n".to_string(),
+                body_text: body_text.clone(),
+            })),
+            message_move_result: Arc::new(Ok(())),
+        };
+        let server = spawn_test_helper(socket_path.clone(), backend);
+        wait_for_socket(&socket_path);
+        let grant_key_path = temp_grant_key_path("message-view-helper-max-body");
+        let client = MailboxHelperMessageViewBackend::new(
+            &socket_path,
+            &grant_key_path,
+            MailboxHelperPolicy::default(),
+            MessageViewPolicy::default(),
+        );
+        let request = MessageViewRequest::new(MessageViewPolicy::default(), "INBOX", 12)
+            .expect("request should parse");
+
+        let message = client
+            .fetch_message("alice@example.com", &request)
+            .expect("maximum bounded message view should cross helper protocol");
+
+        server.join().expect("helper thread should finish");
+        let _ = fs::remove_file(&socket_path);
+        let _ = fs::remove_file(&grant_key_path);
+
+        assert_eq!(
+            message.body_text.len(),
+            crate::mailbox::DEFAULT_MESSAGE_BODY_MAX_LEN
+        );
+        assert_eq!(
+            MailboxHelperPolicy::default().max_response_bytes,
+            DEFAULT_MAILBOX_HELPER_MAX_RESPONSE_BYTES
+        );
     }
 
     #[cfg(unix)]
