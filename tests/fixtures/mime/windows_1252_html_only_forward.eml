@@ -1,0 +1,10 @@
+Subject: =?Windows-1252?Q?Forwarded_caf=E9_=96_update?=
+From: Example Sender <sender@example.invalid>
+Content-Type: multipart/alternative; boundary="windows-alt"
+
+--windows-alt
+Content-Type: text/html; charset=Windows-1252
+Content-Transfer-Encoding: quoted-printable
+
+<html><body><p>Forwarded caf=E9 =97 expected content.</p><script>alert(1)</script></body></html>
+--windows-alt--

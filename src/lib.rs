@@ -7,6 +7,7 @@
 pub mod attachment;
 pub mod auth;
 pub mod bootstrap;
+mod charset;
 pub mod config;
 pub mod draft;
 pub mod error;
