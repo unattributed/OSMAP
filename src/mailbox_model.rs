@@ -28,8 +28,8 @@ pub const DEFAULT_SEARCH_HEADER_VALUE_MAX_LEN: usize = 512;
 /// Conservative maximum length for fetched message headers.
 pub const DEFAULT_MESSAGE_HEADER_MAX_LEN: usize = 65_536;
 
-/// Conservative maximum length for fetched message bodies in the first view slice.
-pub const DEFAULT_MESSAGE_BODY_MAX_LEN: usize = 262_144;
+/// Conservative maximum length for fetched message bodies.
+pub const DEFAULT_MESSAGE_BODY_MAX_LEN: usize = 512 * 1024;
 
 /// Policy controlling mailbox-output bounds for the first read-path slice.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

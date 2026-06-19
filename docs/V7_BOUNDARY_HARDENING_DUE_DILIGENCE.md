@@ -392,3 +392,24 @@ code follow-up for production login availability.
 The post-V7 throttle transaction-locking follow-up closes the final explicit V7
 state-store race. Its implementation and evidence are recorded in
 `POST_V7_THROTTLE_TRANSACTION_LOCKING.md`.
+
+### Production Reevaluation: Bounded Message View Availability
+
+On 2026-06-19 UTC, authenticated production testing found that ordinary inbox
+messages with virtual sizes of 461,874 and 443,640 bytes returned a safe 503
+message-view response. A smaller 26,095-byte message rendered normally.
+Sanitized application evidence identified the cause as the 262,144-byte
+message-view body bound, not an nginx, session, authentication, or
+mailbox-helper outage.
+
+The message-view body bound is now 512 KiB. The mailbox-helper response bound is
+1 MiB so the maximum bounded body and protocol metadata remain transportable
+after base64 expansion. Both limits remain explicit and fail closed. Regression
+tests prove that a body at the message-view limit crosses the helper boundary
+successfully and a body one byte over the limit is rejected.
+
+This reevaluation preserves the V7 trust boundary while restoring expected
+availability for the observed production messages. Messages larger than
+512 KiB remain intentionally unavailable through message view and require a
+separate product decision if normal operations demonstrate a need for a larger
+bounded envelope.
