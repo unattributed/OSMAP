@@ -1,683 +1,210 @@
 # OSMAP: OpenBSD Secure Mail Access Platform
 
-OSMAP is a security-focused webmail access platform for hardened OpenBSD mail systems.
-
-It is intended to replace broad, plugin-heavy webmail interfaces such as Roundcube with a smaller, more restricted, and more maintainable browser access layer. The project prioritizes security, operational simplicity, auditability, and long-term maintainability over feature breadth.
-
-OSMAP does not replace the mail stack. Postfix, Dovecot, Rspamd, nginx, TLS, PF, and the surrounding OpenBSD host controls remain authoritative.
-
-The project-wide TLS floor is defined in [`docs/TLS_STANDARD.md`](docs/TLS_STANDARD.md):
-TLS 1.2 minimum, TLS 1.3 preferred, certificate and hostname verification on,
-and no legacy weak protocol or cipher fallback.
-
----
-
-## Project Goals
-
-OSMAP aims to provide safe browser-based access to an existing mail system without weakening the underlying mail transport or delivery architecture.
-
-Primary goals:
-
-- Replace Roundcube in hardened self-hosted environments
-- Operate safely behind a hardened public HTTPS edge
-- Minimize exposed browser functionality
-- Preserve compatibility with existing IMAP and SMTP infrastructure
-- Enforce strong authentication
-- Maintain clear trust boundaries between the browser runtime and mailbox access
-- Run with least privilege on OpenBSD
-- Keep deployments reversible and auditable
-- Maintain a clearly defined software supply chain
-- Support reproducible builds, validation, and deployment checks
-- Remain maintainable by a small operator team
-
----
-
-## Non-Goals
-
-OSMAP intentionally avoids broad webmail feature creep.
-
-Out of scope unless a later version explicitly redefines the project boundary:
-
-- Calendar and groupware features
-- Mobile applications
-- Plugin ecosystems
-- SaaS deployment model
-- Multi-tenant hosting
-- Replacement of Postfix, Dovecot, Rspamd, nginx, PF, or other core host services
-- ProtonMail-style zero-access encryption
-- Enterprise identity federation
-- Broad JavaScript-heavy application behavior
-- Attachment preview behavior that widens browser trust
-- Unbounded mailbox-wide operations
-
----
-
-## Intended Environment
-
-OSMAP is designed for a self-hosted OpenBSD mail stack.
-
-A typical deployment includes:
-
-- OpenBSD
-- Postfix for SMTP and submission
-- Dovecot for mailbox access
-- Rspamd for spam filtering
-- nginx as the public HTTPS edge
-- TLS-only browser access
-- PF and host-level network controls
-- A dedicated `_osmap` web runtime user
-- A mailbox helper boundary running with only the mailbox authority it needs
-
-Native mail clients such as Thunderbird remain supported and unchanged.
-
----
-
-## Security Philosophy
-
-Security is the primary design driver.
-
-Core principles:
-
-- Minimal exposed functionality
-- Least privilege operation
-- Explicit trust boundaries
-- Defense in depth
-- Strong authentication
-- Session revocation and expiry
-- Bounded parsing and request handling
-- Safe rendering by default
-- Supply-chain awareness
-- Observable and auditable runtime behavior
-- Reversible deployments
-- Maintainability over novelty
-
-The project aligns its planning and validation with recognized security guidance, including:
-
-- OWASP Top 10
-- OWASP ASVS
-- OWASP WSTG
-- CWE Top 25
-- MITRE ATT&CK from a defensive perspective
-- Applicable NIST cybersecurity guidance
-
----
-
-## Why Replace Roundcube?
-
-Traditional webmail platforms often prioritize features, extensibility, and compatibility over security minimalism.
-
-OSMAP exists for environments where public webmail access is necessary, but the exposed browser surface must remain narrow and reviewable.
-
-OSMAP focuses on:
-
-- Reduced complexity
-- Fewer exposed features
-- Server-rendered browser flows
-- Clear operational assumptions
-- Stronger alignment with OpenBSD host controls
-- Explicit validation before direct internet exposure
-- Long-term sustainability for small operator teams
-
----
-
-## Development Approach
-
-The project follows a phased methodology:
-
-1. Charter and planning baseline
-2. Current system analysis
-3. Product definition
-4. Security and trust model
-5. Architecture design
-6. Secure SDLC and release governance
-7. Implementation planning and proof-of-concept definition
-8. Controlled implementation, validation, and hardening
-9. Pilot deployment, migration planning, and legacy retirement criteria
-10. Daily-driver hardening and broader adoption readiness
-
-Each phase produces documentation, implementation changes, validation scripts, or acceptance evidence that can be reviewed later.
-
----
-
-## Current Status
-
-OSMAP is now a working Rust prototype with live-host validation evidence. It is no longer only a planning repository.
-
-The current release evidence is anchored by `v4.0.0`, a hostile-content safety
-release tag. That tag resolves to evidence bundle commit `59da020`; the V4 code
-behavior assessed by the release evidence is commit `09a95b7`.
-
-Version 5 boundary hardening was subsequently deployed to
-`mail.blackbagsecurity.com` on June 14, 2026. V5 is a deployed hardening
-milestone rather than a separately tagged release; it does not replace or
-rewrite the frozen V4 release-evidence tuple.
-
-V6 was subsequently deployed and its production-readiness validation passed.
-Its final no-fallback retirement closeout remains incomplete because the full
-selected-cohort rehearsal, observability, and resource-resilience evidence set
-has not been completed.
-
-V7 boundary hardening was deployed to `mail.blackbagsecurity.com` on June 18,
-2026, then reopened and rolled back after repeated browser-entry outages. The
-code closes headerless-request buffering, weak TOTP secret, forwarded client
-IP, compose content-type, and file-backed state findings, but it is not the
-current production binary. V7 must pass the browser availability invariant and
-a real operator-controlled login hold before redeployment or closure.
-
-V8 stabilization was completed in source on June 20, 2026. It adds five
-focused regression matrices for mail workflows, attachment safety, mailbox
-operations, session integrity, and resource robustness. The aggregate
-`make v8-check` gate is mandatory through `make security-check` and CI. V8 is
-not a production deployment or a new feature release, and it does not change
-the reopened V7 production status.
-
-The current implementation includes:
-
-- Typed runtime configuration
-- Structured logging
-- Bounded HTTP parsing
-- Server-rendered browser flows
-- Password plus TOTP authentication
-- Session issuance, listing, revocation, idle expiry, and absolute lifetime expiry
-- CSRF protection for state-changing browser routes
-- Canonical mailbox identity validation across authentication, sessions, TOTP
-  lookup, auditing, and outbound sender construction
-- Configured Host allow-list enforcement and Origin/Referer comparison against
-  application-owned policy
-- Central response-header validation that fails closed on unsafe names or values
-- Security headers on health and other plain-text responses
-- Strict rejection of ambiguous, pipelined, or extra-byte HTTP request framing
-- Mailbox listing
-- Message listing and viewing
-- Server-rendered mailbox sorting by UID, subject, sender, received time, flags, and size
-- Bounded one-mailbox and all-mailbox search
-- MIME-aware message inspection
-- Safe HTML rendering through a narrow sanitizer
-- Hostile HTML containment for active content, unsafe schemes, remote fetch
-  surfaces, forms, SVG, MathML, frames, embeds, templates, media, comments, and
-  metadata refresh
-- Visible destination disclosure for preserved message-body links
-- Plain-text fallback preference
-- Attachment upload limits
-- Forced-download attachment behavior
-- Browser-executable attachment media-type downgrade to
-  `application/octet-stream`
-- Compose and send
-- Reply and forward draft generation
-- One-message move support between existing mailboxes
-- Selected-message move and archive controls with capped selections
-- Login, send, and message-move throttling
-- Bounded concurrent connection handling
-- Runtime observability for capacity, timeouts, accept failures, and response-write failures
-- Cross-process advisory locking for the local file-backed session store
-- Explicit source-attachment draft references with resume and send-time
-  revalidation, without persisting source bytes
-- V6 production, rehearsal, observability, resource-resilience, and evidence
-  archive tooling
-- Header-only buffering limits before HTTP header termination
-- A 20-byte minimum for decoded TOTP secret material
-- Restrictive, exclusive session and throttle temporary-file creation
-- Loopback-only `X-Real-IP` trust with `X-Forwarded-For` ignored by OSMAP
-- Parameter-aware, case-insensitive URL-encoded compose content types
-- OpenBSD rc.d supervision for both foreground OSMAP services
-
-OpenBSD-specific work is already present:
-
-- Dedicated `_osmap` runtime assumptions
-- Dedicated mailbox helper boundary
-- Helper-backed mailbox listing
-- Helper-backed message listing
-- Helper-backed message view
-- Helper-backed attachment download
-- Explicit Dovecot socket configuration
-- Operator-controlled `pledge(2)` and `unveil(2)` enforcement modes
-- Production `serve` mode refusal when the required local mailbox helper boundary is not configured
-
-The project has also reduced some large implementation hotspots through internal module splits across the HTTP, mailbox, and mailbox-helper layers. This improves reviewability as the browser and helper boundaries become more security-sensitive.
-
-OSMAP remains prototype-grade. The current code has passed meaningful controlled validation on the known OpenBSD target environment, but it is not yet ready for broad public adoption.
-
----
-
-## Validation Status
-
-The known live validation target is:
-
-- `mail.blackbagsecurity.com`
-
-The standard host-side validation checkout is:
-
-- `~/OSMAP`
-
-Important validation entry points include:
-
-- [`maint/live/osmap-host-validate.ksh`](maint/live/osmap-host-validate.ksh)
-- [`maint/live/osmap-live-validate-v1-closeout.ksh`](maint/live/osmap-live-validate-v1-closeout.ksh)
-- [`maint/live/osmap-run-v1-closeout-over-ssh.sh`](maint/live/osmap-run-v1-closeout-over-ssh.sh)
-- [`maint/live/osmap-live-validate-v3-mime-html-proof.ksh`](maint/live/osmap-live-validate-v3-mime-html-proof.ksh)
-- [`maint/live/osmap-live-record-v3-pilot-rehearsal.ksh`](maint/live/osmap-live-record-v3-pilot-rehearsal.ksh)
-- [`maint/live/osmap-live-validate-v4-hostile-content.ksh`](maint/live/osmap-live-validate-v4-hostile-content.ksh)
-- [`maint/live/osmap-live-validate-v6-production-readiness.ksh`](maint/live/osmap-live-validate-v6-production-readiness.ksh)
-- [`maint/live/osmap-live-record-v6-retirement-rehearsal.ksh`](maint/live/osmap-live-record-v6-retirement-rehearsal.ksh)
-- [`maint/live/osmap-live-validate-v6-observability.ksh`](maint/live/osmap-live-validate-v6-observability.ksh)
-- [`maint/live/osmap-live-validate-v6-resource-resilience.ksh`](maint/live/osmap-live-validate-v6-resource-resilience.ksh)
-
-Validation performed so far includes:
-
-- Positive browser login with password plus TOTP
-- Session issuance and stale-session rejection after logout
-- Session listing and revocation flows
-- Helper-backed mailbox listing
-- Helper-backed message listing
-- Helper-backed message view
-- Helper-backed attachment download
-- Sanitized HTML rendering
-- V4 hostile-content rendering containment
-- V4 executable attachment download containment
-- V4 MIME ambiguity and metadata breadth regression coverage
-- Plain-text fallback preference persistence
-- Settings-backed archive shortcut behavior
-- One-message move from `INBOX` to `Junk`
-- Bounded all-mailboxes search
-- Bounded send flow
-- Send-throttle proof
-- Message-move throttle proof
-- Capacity-reached and over-capacity listener behavior
-- Response-write failure and recovery observability
-- V3 release carry-forward evidence for the assessed V4 code commit
-- V4 closeout evidence and operator handoff for tag `v4.0.0`
-
-The repository-owned security validation currently has two lanes:
-
-- GitHub default CodeQL setup for CodeQL scanning
-- Repo-owned `security-check` workflow for Rust checks, tests, clippy, formatting, and current shell-based security guards
-
-The TLS validation gate is:
-
-- [`maint/security/osmap-tls-policy-guard.sh`](maint/security/osmap-tls-policy-guard.sh) for static repository policy drift
-- [`maint/security/osmap-live-tls-standard-validate.py`](maint/security/osmap-live-tls-standard-validate.py) for live edge evidence, defaulting to `https://mail.blackbagsecurity.com`
-
-Supply-chain assurance is now part of the repo-owned security and release
-checks. V4 release evidence carries forward the refreshed V3 release evidence
-bundle, including the strict `make release-check` output captured under
-`maint/live/osmap-v3-release-evidence-summary.md` and
-`maint/live/osmap-v3-release-evidence-summary.json`.
-
----
-
-## Version 1 Closeout Priorities
-
-The Version 1 closeout contract is frozen in:
-
-- [`docs/ACCEPTANCE_CRITERIA.md`](docs/ACCEPTANCE_CRITERIA.md)
-
-The remaining Version 1 closeout rule is intentionally narrow:
-
-1. Keep `README.md`, closeout-facing docs, and validation references aligned with the accepted gate.
-2. Use `ksh ./maint/live/osmap-live-validate-v1-closeout.ksh` on `mail.blackbagsecurity.com`, or `./maint/live/osmap-run-v1-closeout-over-ssh.sh` from a reachable workstation, whenever closeout-facing behavior changes.
-3. Only take additional Version 1 implementation or hardening work when a failing proof or repo inconsistency reveals a specific blocker.
-
-Day-to-day scoping guidance lives in:
-
-- [`docs/V1_CLOSEOUT_WORK_RULES.md`](docs/V1_CLOSEOUT_WORK_RULES.md)
-
----
-
-## V2 Direction
-
-Version 2 is the first pilot-complete, migration-capable production candidate for the known OpenBSD mail environment.
-
-It preserves OSMAP's narrow security shape while making the project credible for controlled real-world use and limited direct browser access through a hardened public HTTPS edge after the explicit internet-exposure gate is satisfied.
-
-The authoritative Version 2 definition and release gate live in:
-
-- [`docs/V2_DEFINITION.md`](docs/V2_DEFINITION.md)
-- [`docs/V2_ACCEPTANCE_CRITERIA.md`](docs/V2_ACCEPTANCE_CRITERIA.md)
-- [`docs/V2_PILOT_CLOSEOUT.md`](docs/V2_PILOT_CLOSEOUT.md)
-- [`docs/V2_PILOT_STATUS.md`](docs/V2_PILOT_STATUS.md)
-- [`docs/PILOT_WORKFLOW_INVENTORY.md`](docs/PILOT_WORKFLOW_INVENTORY.md)
-
-The short form is:
-
-- Keep the `_osmap` plus `vmail` least-privilege split
-- Preserve Dovecot and Postfix as the authoritative backends
-- Support direct public browser access only after the repo-defined exposure gate is passed
-- Focus Version 2 on migration readiness, operator readiness, pilot closeout, and hostile-path proof
-- Avoid broad feature expansion until the daily-driver security foundation is stronger
-
-Unless a narrower migration-capable need is proven, the following remain beyond Version 2:
-
-- Broader folder ergonomics beyond the first practical move and archive baseline
-- Richer search behavior beyond ordinary daily-use needs
-- Richer session or device intelligence beyond first useful security visibility
-- More attachment convenience behavior that would widen browser trust
-- Broader settings behavior beyond the first bounded user preference
-- Mailbox-helper identity derivation beyond the current trusted-service boundary
-- Deeper runtime redesign such as worker-pool or async server architecture
-
----
-
-## V3 Direction
-
-Version 3 is the focused daily-driver hardening cycle for the known OpenBSD mail environment.
-
-It preserves all Version 2 security gates while moving OSMAP from controlled pilot usefulness toward safer routine use by selected real users. Version 3 is not a broad feature-expansion release. Its purpose is to close the most important assurance, correctness, resource-control, workflow, and WSTG due-diligence gaps exposed by Version 2 before OSMAP grows a larger browser surface.
-
-The authoritative Version 3 definition, acceptance criteria, release gates, and WSTG due-diligence gates live in:
-
-- [`docs/V3_DEFINITION.md`](docs/V3_DEFINITION.md)
-- [`docs/V3_ACCEPTANCE_CRITERIA.md`](docs/V3_ACCEPTANCE_CRITERIA.md)
-- [`docs/V3_ROADMAP.md`](docs/V3_ROADMAP.md)
-- [`docs/V3_SECURITY_GATES.md`](docs/V3_SECURITY_GATES.md)
-- [`docs/V3_WSTG_DUE_DILIGENCE_PLAN.md`](docs/V3_WSTG_DUE_DILIGENCE_PLAN.md)
-- [`docs/V3_WSTG_COVERAGE_GATE.md`](docs/V3_WSTG_COVERAGE_GATE.md)
-
-The short form is:
-
-- Preserve the `_osmap` plus `vmail` least-privilege split
-- Preserve Dovecot and Postfix as the authoritative backends
-- Keep direct public browser access gated by repo-owned security checks and live-host validation
-- Split developer partial checks from release-mode validation
-- Make release-mode validation fail on skipped required checks or missing evidence
-- Make Rust supply-chain assurance a first-class release gate
-- Require credential and TOTP-backed evidence for WSTG and other security tests that need authenticated coverage
-- Pin the WSTG source used for coverage analysis, including version, upstream URL, capture date, and commit hash when testing against the OWASP `master` branch
-- Treat the current WSTG pack as a living regression suite, not a one-time checklist
-- Require every WSTG item to have one of these dispositions: automated, manual, not applicable, deferred, blocked, or covered by another named evidence artifact
-- Add strict timeout and resource-control evidence around expensive browser, helper, mailbox, MIME, attachment, send, search, and move paths
-- Strengthen MIME and HTML correctness through fixture-driven tests before adding richer mail behavior
-- Prove session revocation, expiry, and concurrent-session behavior with regression tests
-- Improve daily-driver usability only where the security model remains narrow, bounded, and testable
-
-Version 3 priority work is:
-
-1. Release-mode validation that cannot pass on skipped required security checks
-2. Supply-chain assurance for Rust dependencies, CI, local checks, and release evidence
-3. Explicit resource limits and timeout behavior for expensive browser, helper, mailbox, MIME, attachment, send, search, and move operations
-4. WSTG due-diligence automation that closes the current coverage gaps in managed slices
-5. Credential and TOTP-backed authenticated WSTG evidence for all applicable authenticated browser surfaces
-6. Fixture-driven MIME, attachment, charset, transfer-encoding, encoded-header, and sanitized-HTML validation
-7. Session-store concurrency, revocation, expiry, and device-policy correctness
-8. Daily-driver improvements such as draft continuity, reply and forward correctness, safer attachment handling, richer bounded search, and bounded bulk folder actions
-
-The V3 WSTG due-diligence work is sliced so it can be completed without losing control of scope:
-
-| Slice | Area | V3 close status |
-| --- | --- | --- |
-| 1 | Coverage inventory and WSTG source pinning | Required |
-| 2 | Authorization and account isolation | Critical, required |
-| 3 | Session lifecycle and cookie security | Critical, required |
-| 4 | IMAP, SMTP, and webmail-specific input validation | Critical, required |
-| 5 | Weak cryptography and transport security | Critical, required |
-| 6 | API-style route and state-transition testing | High, required unless not applicable with evidence |
-| 7 | Business logic and workflow abuse | High, required |
-| 8 | Client-side, browser storage, and UI security | High, required unless not applicable with evidence |
-| 9 | Error handling and information disclosure | High, required |
-| 10 | Release gate integration | Critical, required |
-
-The highest-risk Version 3 technical concerns are:
-
-- Developer checks can appear useful even when required release evidence is missing or skipped
-- Credential-gated WSTG tests can skip in ordinary runner mode, which is acceptable for developer partial testing but not for release evidence when authenticated coverage is required
-- The existing WSTG matrix is anchored to WSTG v4.2 and must also track current OWASP WSTG latest or a pinned upstream commit when used as a V3 due-diligence target
-- Authorization and account-isolation testing must prove that one mailbox user cannot access, mutate, move, delete, draft, send from, or attach another user's mail data
-- IMAP, SMTP, and webmail-specific injection risks must be tested with safe synthetic payloads against controlled validation accounts and fixtures
-- Dependency and supply-chain assurance must be strong enough to block release candidates, not just advise developers
-- External command and helper paths need hard timeout behavior and consistent error mapping
-- Resource-exhaustion controls need to cover expensive mailbox and rendering paths
-- MIME and HTML behavior needs a larger hostile fixture corpus
-- Session-store race and revocation behavior needs stronger concurrency coverage
-- TLS weak-protocol and weak-cipher rejection needs explicit evidence tied to the assessed host and commit
-- Live-host evidence must be sanitized and reviewable without committing secrets
-
-The implemented validation entry points are:
-
-- `make security-check` for developer and CI-oriented partial validation
-- `make release-check` for strict V3 release validation with `OSMAP_SECURITY_PROFILE=release`
-- `maint/wstg-testing-pack/run.sh` for WSTG pack execution
-
-`make release-check` requires the pinned Rust toolchain and supply-chain tools, dependency inventory generation, V2 carry-forward evidence, host-readiness evidence, a release-mode WSTG summary with authenticated credential and TOTP coverage where required, current V3 pilot rehearsal evidence, and a sanitized release evidence archive. It is expected to fail on a normal workstation until those operator-provided evidence files and credentials are available.
-
-For the V4 release claim, V3 release evidence has been refreshed and carried
-forward for assessed commit `09a95b7`. Future changes that touch V3-governed
-surfaces still must preserve the strict release-check rule: required WSTG,
-authenticated, supply-chain, TLS, helper-boundary, resource-control, pilot, and
-sanitized-evidence gates may not be silently skipped.
-
-Unless a narrower daily-driver need is proven and covered by tests, the following remain beyond Version 3:
-
-- Plugin support
-- Calendar or groupware features
-- Mobile applications
-- Multi-tenant hosting
-- Enterprise identity federation
-- ProtonMail-style zero-access encryption
-
----
-
-## V4 Direction
-
-Version 4 is the hostile-content safety release for the OSMAP browser-mail
-boundary. It preserves the Version 3 daily-driver security gates while adding
-evidence for hostile HTML rendering, visible preserved-link destinations,
-browser-executable attachment containment, MIME ambiguity handling, and
-release-evidence redaction.
-
-The authoritative Version 4 definition, release gates, evidence, and operator
-handoff live in:
-
-- [`docs/V4_DEFINITION.md`](docs/V4_DEFINITION.md)
-- [`docs/V4_ACCEPTANCE_CRITERIA.md`](docs/V4_ACCEPTANCE_CRITERIA.md)
-- [`docs/V4_ROADMAP.md`](docs/V4_ROADMAP.md)
-- [`docs/V4_SECURITY_GATES.md`](docs/V4_SECURITY_GATES.md)
-- [`docs/V4_SECURITY_CLAIM_MATRIX.md`](docs/V4_SECURITY_CLAIM_MATRIX.md)
-- [`docs/V4_CLOSEOUT_EVIDENCE.md`](docs/V4_CLOSEOUT_EVIDENCE.md)
-- [`docs/V4_MIME_AMBIGUITY_EVIDENCE.md`](docs/V4_MIME_AMBIGUITY_EVIDENCE.md)
-- [`docs/V4_RELEASE_OPERATOR_HANDOFF.md`](docs/V4_RELEASE_OPERATOR_HANDOFF.md)
-
-The short form is:
-
-- `v4.0.0` is the release tag for the current V4 evidence bundle
-- evidence bundle commit `59da020` records the V4 closeout state
-- assessed V4 code commit `09a95b7` is the code behavior covered by the V4
-  release claim
-- OSMAP V4 contains hostile message content inside the browser boundary
-- V4 does not claim rich-mail safety, malware prevention, attachment preview
-  safety, URL reputation, document sanitization, archive inspection, or safety
-  for files opened outside OSMAP
-- any later code change must refresh V4 evidence before inheriting the V4 claim
-- V4 assurance hardening now includes the release-gated hostile corpus under
-  `tests/testdata/hostile-mail-corpus/`, the executable gate
-  `maint/security/osmap-v4-hostile-assurance-gate.sh`, the machine-readable
-  report `maint/live/osmap-v4-hostile-assurance-report.json`, and the archive
-  `maint/live/osmap-v4-hostile-assurance-evidence.tar.gz`
-
-## V5 Boundary Hardening
-
-Version 5 strengthens the boundaries where authenticated identity and browser
-request metadata cross into sessions, TOTP lookup, mail submission, HTTP
-responses, and same-origin decisions. It does not add broad product features or
-change the V4 hostile-content claim.
-
-The authoritative V5 evidence and production deployment record are:
-
-- [`docs/V5_BOUNDARY_HARDENING_EVIDENCE.md`](docs/V5_BOUNDARY_HARDENING_EVIDENCE.md)
-- [`docs/V5_PRODUCTION_DEPLOYMENT_COMPLETE.md`](docs/V5_PRODUCTION_DEPLOYMENT_COMPLETE.md)
-
-The short form is:
-
-- canonical usernames and outbound mailbox identities are validated before
-  reuse across security-sensitive boundaries
-- `OSMAP_ALLOWED_HOSTS` defines the application-owned Host and same-origin
-  policy
-- missing or unconfigured Host values fail with `421 Misdirected Request`
-- Origin and Referer validation no longer derives trust from an arbitrary
-  incoming Host value
-- HTTP response headers are validated centrally, including at serialization
-- health and other plain-text responses carry the applicable browser-isolation
-  headers
-- strict request framing rejects unsupported transfer encoding, duplicate
-  framing headers, pipelined bytes, and bytes beyond declared content length
-- assessed commit `927516f` was deployed and validated on
-  `mail.blackbagsecurity.com` on June 14, 2026
-- typed trusted/escaped HTML wrappers now protect page, message-rendering, and
-  HTML-response boundaries on the repository tip; this source follow-up is
-  newer than the assessed June 14 production deployment commit
-
-## V6 Controlled Roundcube Retirement Readiness
-
-Version 6 is an evidence, operations, migration, and narrow
-blocker-remediation milestone for a selected OpenBSD-hosted user cohort. It
-must prove essential browser-mail operation without normal Roundcube fallback
-while preserving the V4 hostile-content claim and the V5 identity, Host,
-Origin, response-header, framing, and trusted HTML boundaries.
-
-V6 does not claim broad feature parity or general-purpose webmail readiness.
-It does not widen remote-content, attachment-preview, JavaScript, groupware,
-plugin, administration, or mailbox-wide operation behavior.
-
-The authoritative V6 scope is:
-
-- [`docs/V6_DEFINITION.md`](docs/V6_DEFINITION.md)
-- [`docs/V6_ACCEPTANCE_CRITERIA.md`](docs/V6_ACCEPTANCE_CRITERIA.md)
-- [`docs/V6_ROADMAP.md`](docs/V6_ROADMAP.md)
-- [`docs/V6_SECURITY_GATES.md`](docs/V6_SECURITY_GATES.md)
-
-V6 production readiness passed on `mail.blackbagsecurity.com`, but its full
-retirement closeout remains incomplete until every required sanitized live
-report passes.
-
-## V7 Boundary Hardening Due Diligence
-
-Version 7 is a focused post-V6 security hardening sprint. It does not add
-product features or widen the browser trust boundary.
-
-The authoritative V7 assessment, implementation, test, deployment, residual
-risk, and production evidence summary is:
-
-- [`docs/V7_BOUNDARY_HARDENING_DUE_DILIGENCE.md`](docs/V7_BOUNDARY_HARDENING_DUE_DILIGENCE.md)
-
-V7 is implemented but reopened and not production-approved. All five original
-findings are closed in source, including the post-V7 throttle transaction
-locking follow-up. Production availability after a real login must still be
-proven before V7 can be redeployed or closed.
-
-## V8 Stabilization and Regression Coverage
-
-Version 8 is a source-level stabilization milestone. It converts the V7
-rendering-regression lesson into mandatory regression coverage without adding
-user-facing features or widening the trust boundary.
-
-The authoritative V8 program, matrices, and close-out record are:
-
-- [`docs/V8_STABILIZATION_PROGRAM.md`](docs/V8_STABILIZATION_PROGRAM.md)
-- [`docs/V8_MAIL_WORKFLOW_MATRIX.md`](docs/V8_MAIL_WORKFLOW_MATRIX.md)
-- [`docs/V8_ATTACHMENT_SAFETY_MATRIX.md`](docs/V8_ATTACHMENT_SAFETY_MATRIX.md)
-- [`docs/V8_MAILBOX_OPERATION_MATRIX.md`](docs/V8_MAILBOX_OPERATION_MATRIX.md)
-- [`docs/V8_SESSION_INTEGRITY_MATRIX.md`](docs/V8_SESSION_INTEGRITY_MATRIX.md)
-- [`docs/V8_RESOURCE_ROBUSTNESS_MATRIX.md`](docs/V8_RESOURCE_ROBUSTNESS_MATRIX.md)
-- [`docs/V8_FINAL_REGRESSION_GATE_CLOSEOUT.md`](docs/V8_FINAL_REGRESSION_GATE_CLOSEOUT.md)
-
-The short form is:
-
-- five focused Rust integration-test matrices protect existing behavior
-- each matrix has a dedicated executable gate under `maint/security/`
-- `make v8-check` runs the full V8 suite
-- `make security-check` and the GitHub Actions security workflow enforce V8
-- external slice evidence archives and SHA256 sidecars exist under the
-  operator evidence root
-- V8 makes no production deployment, Roundcube parity, or V7 closure claim
-
-## Target Users
-
-OSMAP is intended for:
-
-- Security-conscious self-hosters
-- Organizations operating their own mail infrastructure
-- Operators of hardened OpenBSD systems
-- Environments where public webmail exposure is necessary but risk must be tightly controlled
-- Small teams that value a narrow, auditable webmail surface over broad feature convenience
-
----
-
-## Contributing
-
-Contribution guidance lives in:
-
-- [`CONTRIBUTING.md`](CONTRIBUTING.md)
-
-The main documentation set lives under:
-
-- [`docs/`](docs/README.md)
-
-The repository root is intentionally kept for the main project README, build files, license, and GitHub-detected community files.
-
-The short version:
-
-- Keep changes small and reviewable
-- Preserve OSMAP's bounded scope and OpenBSD-first posture
-- Update tests and docs with meaningful implementation changes
-- Run `make security-check` before committing Rust backend changes
-- Install the repo-owned hook path with `make install-hooks` if automatic local checks are desired
-- Expect GitHub Actions to enforce the repo-owned `make security-check` gate on pushes and pull requests to `main`
-- Expect extra scrutiny for auth, session, HTTP, MIME, attachment, helper, command execution, and confinement work
-- Do not weaken security controls to make tests pass
-- Do not add secrets, host-private credentials, or sensitive runtime material to the repository
-
-Security-sensitive reports should follow:
-
-- [`SECURITY.md`](SECURITY.md)
-
-Do not report sensitive issues through public GitHub issues.
-
----
-
-## Security Notice
-
-OSMAP is intended for security-sensitive environments.
-
-Improper deployment, configuration, or modification may expose sensitive mail, credentials, sessions, or host services.
-
-Operators should always:
-
-- Review configuration before deployment
-- Validate changes in a controlled environment first
-- Keep host-level controls such as PF, nginx, TLS, Dovecot, Postfix, and monitoring aligned with the documented deployment model
-- Treat browser-exposed functionality as security-sensitive
-- Run the repo-owned validation checks before production use
-- Preserve rollback paths
-
-Private vulnerability reporting guidance is in:
-
-- [`SECURITY.md`](SECURITY.md)
-
----
-
-## License
-
-OSMAP is licensed under the ISC license.
-
-See:
-
-- [`LICENSE`](LICENSE)
-
----
-
-## Disclaimer
-
-OSMAP is provided without warranty.
-
-Operators are responsible for secure configuration, deployment, monitoring, validation, and ongoing maintenance.
-
----
-
-## Community Files
-
-The repository includes the expected public collaboration files for a healthy GitHub project:
-
-- [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md)
-- [`CONTRIBUTING.md`](CONTRIBUTING.md)
-- [`SECURITY.md`](SECURITY.md)
-- [`SUPPORT.md`](SUPPORT.md)
-- [`.github/ISSUE_TEMPLATE/`](.github/ISSUE_TEMPLATE)
-- [`.github/pull_request_template.md`](.github/pull_request_template.md)
+OSMAP is a security-focused, server-rendered webmail platform for hardened
+OpenBSD mail systems. It provides browser access to an existing mail stack
+without replacing Postfix, Dovecot, Rspamd, nginx, PF, TLS, or native mail
+clients.
+
+The project favors a small trust boundary, least privilege, bounded behavior,
+safe mail rendering, auditable operations, and reversible deployment over
+feature breadth or Roundcube parity.
+
+## Current posture
+
+| Area | Status |
+|---|---|
+| Source | V8 source stabilization is complete on `main` |
+| Formal tagged release evidence | `v4.0.0`, the hostile-content safety release |
+| V5 | Boundary hardening deployed; later typed HTML source hardening is documented separately |
+| V6 | Production readiness passed; selected-cohort retirement closeout remains incomplete |
+| V7 | Findings are closed in source, but production approval remains reopened pending real-login availability proof |
+| V8 | Regression matrices and CI enforcement are complete; V8 does not claim a new production deployment |
+
+The current release evidence is anchored by `v4.0.0`, with evidence bundle commit `59da020`
+and assessed V4 code commit `09a95b7`. V4 does not claim rich-mail safety, malware prevention, attachment preview
+safety, or URL reputation. The release rule is that any later code change must refresh V4 evidence
+before inheriting the V4 claim.
+
+Start with:
+
+- [Documentation index](docs/README.md)
+- [Project charter](docs/PROJECT_CHARTER.md)
+- [Program baseline](docs/PROGRAM_BASELINE.md)
+- [Known limitations](docs/KNOWN_LIMITATIONS.md)
+- [Decision log](docs/DECISION_LOG.md)
+- [Internet exposure status](docs/INTERNET_EXPOSURE_STATUS.md)
+
+## Project boundary
+
+OSMAP is intended for self-hosted OpenBSD environments that need public
+webmail access with a narrow and reviewable browser surface.
+
+Core goals:
+
+- strong password plus TOTP authentication
+- bounded sessions with expiry and revocation
+- CSRF and same-origin enforcement
+- least-privilege mailbox access through a helper boundary
+- safe MIME analysis, HTML sanitization, and forced attachment downloads
+- bounded parsing, worker budgets, and throttling
+- public HTTPS through nginx while application services remain private
+- reproducible validation, evidence, rollback, and release governance
+
+The project does not currently target calendars, groupware, plugins, SaaS,
+multi-tenant hosting, broad JavaScript application behavior, attachment
+preview, or replacement of the underlying mail stack.
+
+Detailed scope:
+
+- [Product requirements](docs/PRODUCT_REQUIREMENTS_V1.md)
+- [Security model](docs/SECURITY_MODEL.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Risk register](docs/RISK_REGISTER.md)
+- [Roundcube dependency analysis](docs/ROUNDCUBE_DEPENDENCY_ANALYSIS.md)
+
+## Developer entry points
+
+```sh
+cargo build
+cargo test
+make security-check
+```
+
+Important gates:
+
+```sh
+make v6-check
+make v7-check
+make v8-check
+OSMAP_SECURITY_PROFILE=release make release-check
+```
+
+`make security-check` is the developer and CI gate. The strict release gate
+requires current live, authenticated, supply-chain, WSTG, TLS, resource, and
+sanitized evidence. See:
+
+- [Contributing](CONTRIBUTING.md)
+- [Test strategy](docs/TEST_STRATEGY.md)
+- [Secure SDLC](docs/SECURE_SDLC.md)
+- [Build and release process](docs/BUILD_AND_RELEASE_PROCESS.md)
+- [Supply-chain policy](docs/SUPPLY_CHAIN_POLICY.md)
+- [Toolchain baseline](docs/TOOLCHAIN_AND_REPOSITORY_BASELINE.md)
+
+## Project element map
+
+| Element | Primary documents |
+|---|---|
+| Existing host and mail stack | [Current architecture](docs/CURRENT_SYSTEM_ARCHITECTURE.md), [mail stack analysis](docs/MAIL_STACK_ANALYSIS.md), [network analysis](docs/NETWORK_AND_EXPOSURE_ANALYSIS.md) |
+| Application architecture | [Architecture](docs/ARCHITECTURE.md), [configuration and state](docs/CONFIGURATION_AND_STATE_MODEL.md), [mailbox helper model](docs/MAILBOX_READ_HELPER_MODEL.md) |
+| Identity and authentication | [Identity and authentication](docs/IDENTITY_AND_AUTHENTICATION.md), [TOTP secret model](docs/TOTP_SECRET_MANAGEMENT_MODEL.md), [auth socket model](docs/LEAST_PRIVILEGE_AUTH_SOCKET_MODEL.md) |
+| Browser and HTTP security | [HTTP hardening](docs/HTTP_HARDENING_BASELINE.md), [browser slice](docs/HTTP_BROWSER_SLICE_BASELINE.md), [TLS standard](docs/TLS_STANDARD.md) |
+| MIME, rendering, and attachments | [Rendering policy](docs/RENDERING_POLICY_BASELINE.md), [MIME policy](docs/MIME_AND_ATTACHMENT_POLICY_BASELINE.md), [attachment download](docs/ATTACHMENT_DOWNLOAD_SLICE_BASELINE.md) |
+| Runtime and capacity | [OpenBSD confinement](docs/OPENBSD_RUNTIME_CONFINEMENT_BASELINE.md), [worker budgets](docs/REQUEST_WORKER_BUDGET_MODEL.md), [logging model](docs/LOGGING_AND_ERROR_MODEL.md) |
+| Deployment and operations | [OpenBSD deployment](docs/DEPLOYMENT_OPENBSD.md), [hardening guide](docs/HARDENING_GUIDE.md), [observability](docs/OBSERVABILITY_AND_MONITORING.md), [incident response](docs/INCIDENT_RESPONSE_PLAN.md) |
+| Public exposure | [Exposure checklist](docs/INTERNET_EXPOSURE_CHECKLIST.md), [exposure SOP](docs/INTERNET_EXPOSURE_SOP.md), [current exposure status](docs/INTERNET_EXPOSURE_STATUS.md) |
+| Migration and retirement | [Roundcube migration](docs/MIGRATION_PLAN_ROUNDCUBE.md), [pilot deployment](docs/PILOT_DEPLOYMENT_PLAN.md), [pilot workflows](docs/PILOT_WORKFLOW_INVENTORY.md) |
+| Security assurance | [ASVS baseline](docs/OWASP_ASVS_BASELINE.md), [CWE and WSTG review](docs/CWE_TOP25_AND_WSTG_REVIEW_2026_06_13.md), [WSTG due diligence](docs/V3_WSTG_DUE_DILIGENCE_PLAN.md) |
+
+## Functional slices
+
+The implementation is documented as small security and workflow slices:
+
+| Slice | Document |
+|---|---|
+| Authentication | [Authentication slice baseline](docs/AUTHENTICATION_SLICE_BASELINE.md) |
+| Session lifecycle | [Session management model](docs/SESSION_MANAGEMENT_MODEL.md) |
+| Browser routing | [HTTP browser slice](docs/HTTP_BROWSER_SLICE_BASELINE.md) |
+| Mailbox listing | [Mailbox listing slice](docs/MAILBOX_LISTING_SLICE_BASELINE.md) |
+| Message listing | [Message list slice](docs/MESSAGE_LIST_SLICE_BASELINE.md) |
+| Message viewing | [Message view slice](docs/MESSAGE_VIEW_SLICE_BASELINE.md) |
+| Rendering | [Rendering policy](docs/RENDERING_POLICY_BASELINE.md) |
+| Attachments | [Attachment download slice](docs/ATTACHMENT_DOWNLOAD_SLICE_BASELINE.md) |
+| Compose and send | [Compose and send slice](docs/COMPOSE_AND_SEND_SLICE_BASELINE.md) |
+| Folder organization | [Folder organization slice](docs/FOLDER_ORGANIZATION_SLICE_BASELINE.md) |
+| User settings | [Settings surface slice](docs/SETTINGS_SURFACE_BASELINE.md) |
+
+## Development versions
+
+| Version | Purpose and status | Authoritative documents |
+|---|---|---|
+| V1 | Narrow browser-mail baseline and closeout | [Acceptance criteria](docs/ACCEPTANCE_CRITERIA.md), [closeout SOP](docs/V1_CLOSEOUT_SOP.md), [work rules](docs/V1_CLOSEOUT_WORK_RULES.md) |
+| V2 | Migration-capable pilot and operator readiness | [Definition](docs/V2_DEFINITION.md), [acceptance criteria](docs/V2_ACCEPTANCE_CRITERIA.md), [pilot closeout](docs/V2_PILOT_CLOSEOUT.md), [pilot status](docs/V2_PILOT_STATUS.md) |
+| V3 | Daily-driver hardening and WSTG due diligence | [Definition](docs/V3_DEFINITION.md), [roadmap](docs/V3_ROADMAP.md), [security gates](docs/V3_SECURITY_GATES.md), [WSTG plan](docs/V3_WSTG_DUE_DILIGENCE_PLAN.md) |
+| V4 | Hostile-content safety release | [Definition](docs/V4_DEFINITION.md), [acceptance criteria](docs/V4_ACCEPTANCE_CRITERIA.md), [security gates](docs/V4_SECURITY_GATES.md), [closeout evidence](docs/V4_CLOSEOUT_EVIDENCE.md), [operator handoff](docs/V4_RELEASE_OPERATOR_HANDOFF.md) |
+| V5 | Identity, Host, origin, response, and trusted HTML boundaries | [Boundary evidence](docs/V5_BOUNDARY_HARDENING_EVIDENCE.md), [production deployment](docs/V5_PRODUCTION_DEPLOYMENT_COMPLETE.md) |
+| V6 | Controlled Roundcube retirement readiness | [Definition](docs/V6_DEFINITION.md), [acceptance criteria](docs/V6_ACCEPTANCE_CRITERIA.md), [roadmap](docs/V6_ROADMAP.md), [security gates](docs/V6_SECURITY_GATES.md), [closeout evidence](docs/V6_CLOSEOUT_EVIDENCE.md) |
+| V7 | Boundary hardening, rendering recovery, and availability invariants | [Due diligence](docs/V7_BOUNDARY_HARDENING_DUE_DILIGENCE.md), [rendering closeout](docs/V7_RENDERING_REGRESSION_CLOSEOUT.md), [browser availability invariant](docs/V7_BROWSER_AVAILABILITY_INVARIANT.md), [throttle locking](docs/POST_V7_THROTTLE_TRANSACTION_LOCKING.md) |
+| V8 | Source stabilization through mandatory regression matrices | [Program](docs/V8_STABILIZATION_PROGRAM.md), [final closeout](docs/V8_FINAL_REGRESSION_GATE_CLOSEOUT.md) |
+
+### V3 assurance workstreams
+
+V3 divides WSTG and daily-driver assurance into focused records covering:
+
+- [authentication applicability](docs/V3_AUTHENTICATION_APPLICABILITY_EVIDENCE.md)
+- [identity lifecycle](docs/V3_IDENTITY_LIFECYCLE_EVIDENCE.md)
+- [authorization and account isolation](docs/V3_AUTHORIZATION_ACCOUNT_ISOLATION.md)
+- [session lifecycle](docs/V3_SESSION_LIFECYCLE_EVIDENCE.md)
+- [webmail input validation](docs/V3_WEBMAIL_INPUT_VALIDATION_EVIDENCE.md)
+- [HTTP input tampering](docs/V3_HTTP_INPUT_TAMPERING_EVIDENCE.md)
+- [Host and request smuggling](docs/V3_HTTP_HOST_SMUGGLING_EVIDENCE.md)
+- [cryptography and transport](docs/V3_CRYPTO_TRANSPORT_EVIDENCE.md)
+- [form routes and state transitions](docs/V3_FORM_ROUTE_STATE_TRANSITIONS.md)
+- [client-side browser security](docs/V3_CLIENT_SIDE_BROWSER_SECURITY.md)
+- [error and information disclosure](docs/V3_ERROR_INFO_DISCLOSURE_EVIDENCE.md)
+- [configuration and deployment](docs/V3_CONFIG_DEPLOYMENT_EVIDENCE.md)
+
+### V6 implementation traces
+
+V6 records each controlled-retirement slice separately:
+
+| Slice | Trace |
+|---|---|
+| 00 | [Baseline](docs/V6_TRACES/SLICE_00_BASELINE.md) |
+| 01 | [Scope](docs/V6_TRACES/SLICE_01_SCOPE.md) |
+| 02 | [Gates](docs/V6_TRACES/SLICE_02_GATES.md) |
+| 03 | [Production readiness](docs/V6_TRACES/SLICE_03_PRODUCTION_READINESS.md) |
+| 04 | [Retirement rehearsal](docs/V6_TRACES/SLICE_04_RETIREMENT_REHEARSAL.md) |
+| 05 | [Observability](docs/V6_TRACES/SLICE_05_OBSERVABILITY.md) |
+| 06 | [Session locking](docs/V6_TRACES/SLICE_06_SESSION_LOCKING.md) |
+| 07 | [Source attachment drafts](docs/V6_TRACES/SLICE_07_SOURCE_ATTACHMENT_DRAFTS.md) |
+| 08 | [Resource resilience](docs/V6_TRACES/SLICE_08_RESOURCE_RESILIENCE.md) |
+| 09 | [Closeout](docs/V6_TRACES/SLICE_09_CLOSEOUT.md) |
+
+### V8 regression matrices
+
+V8 protects existing behavior without adding product features:
+
+- [Mail workflow matrix](docs/V8_MAIL_WORKFLOW_MATRIX.md)
+- [Attachment safety matrix](docs/V8_ATTACHMENT_SAFETY_MATRIX.md)
+- [Mailbox operation matrix](docs/V8_MAILBOX_OPERATION_MATRIX.md)
+- [Session integrity matrix](docs/V8_SESSION_INTEGRITY_MATRIX.md)
+- [Resource robustness matrix](docs/V8_RESOURCE_ROBUSTNESS_MATRIX.md)
+
+All V8 gates run through `make v8-check`, which is enforced by
+`make security-check` and the repository CI workflow.
+
+## Operations
+
+Production changes should follow the reviewed, reversible OpenBSD procedures:
+
+- [Binary deployment SOP](docs/MAIL_HOST_BINARY_DEPLOYMENT_SOP.md)
+- [Runtime group provisioning](docs/MAIL_HOST_RUNTIME_GROUP_PROVISIONING_SOP.md)
+- [Service artifacts](docs/MAIL_HOST_SERVICE_ARTIFACTS_SOP.md)
+- [Service activation](docs/MAIL_HOST_SERVICE_ACTIVATION_SOP.md)
+- [Service enablement](docs/MAIL_HOST_SERVICE_ENABLEMENT_SOP.md)
+- [Edge cutover plan](docs/EDGE_CUTOVER_PLAN.md)
+- [Edge cutover rehearsal](docs/EDGE_CUTOVER_REHEARSAL_SOP.md)
+
+## Security, support, and community
+
+Report security issues through [SECURITY.md](SECURITY.md). General support
+guidance is in [SUPPORT.md](SUPPORT.md).
+
+Contributions must preserve the narrow trust boundary and include appropriate
+tests, documentation, and evidence. See [CONTRIBUTING.md](CONTRIBUTING.md) and
+[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+
+OSMAP is licensed under the [GNU Affero General Public License v3.0](LICENSE).
+It is provided without warranty. Operators remain responsible for deployment,
+configuration, monitoring, backup, recovery, legal compliance, and risk
+acceptance.
