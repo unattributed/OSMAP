@@ -1,0 +1,16 @@
+Subject: V8 unsupported attachment encoding
+From: Attachment Sender <attachments@example.com>
+Date: Sat, 20 Jun 2026 04:35:00 +0000
+Content-Type: multipart/mixed; boundary="v8-attach-unsupported"
+
+--v8-attach-unsupported
+Content-Type: text/plain; charset=utf-8
+
+Unsupported encoding workflow.
+--v8-attach-unsupported
+Content-Type: application/octet-stream
+Content-Disposition: attachment; filename="encoded.bin"
+Content-Transfer-Encoding: x-rot13
+
+uryyb
+--v8-attach-unsupported--

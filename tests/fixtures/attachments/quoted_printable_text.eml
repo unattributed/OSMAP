@@ -1,0 +1,16 @@
+Subject: V8 quoted printable attachment
+From: Attachment Sender <attachments@example.com>
+Date: Sat, 20 Jun 2026 04:31:00 +0000
+Content-Type: multipart/mixed; boundary="v8-attach-qp"
+
+--v8-attach-qp
+Content-Type: text/plain; charset=utf-8
+
+Quoted printable attachment workflow.
+--v8-attach-qp
+Content-Type: text/plain
+Content-Disposition: attachment; filename="notes.txt"
+Content-Transfer-Encoding: quoted-printable
+
+hello=20quoted=2Dprintable=0A
+--v8-attach-qp--

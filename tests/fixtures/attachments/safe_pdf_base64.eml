@@ -1,0 +1,16 @@
+Subject: V8 safe PDF attachment
+From: Attachment Sender <attachments@example.com>
+Date: Sat, 20 Jun 2026 04:30:00 +0000
+Content-Type: multipart/mixed; boundary="v8-attach-safe-pdf"
+
+--v8-attach-safe-pdf
+Content-Type: text/plain; charset=utf-8
+
+Safe PDF attachment workflow.
+--v8-attach-safe-pdf
+Content-Type: application/pdf
+Content-Disposition: attachment; filename="report.pdf"
+Content-Transfer-Encoding: base64
+
+JVBERi12OAo=
+--v8-attach-safe-pdf--

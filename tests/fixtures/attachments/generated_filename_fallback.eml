@@ -1,0 +1,15 @@
+Subject: V8 generated filename fallback
+From: Attachment Sender <attachments@example.com>
+Date: Sat, 20 Jun 2026 04:34:00 +0000
+Content-Type: multipart/mixed; boundary="v8-attach-fallback"
+
+--v8-attach-fallback
+Content-Type: text/plain; charset=utf-8
+
+Generated filename fallback workflow.
+--v8-attach-fallback
+Content-Type: application/octet-stream
+Content-Disposition: attachment; filename="../../...___"
+
+payload
+--v8-attach-fallback--
