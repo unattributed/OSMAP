@@ -1,0 +1,14 @@
+Subject: V8 HTML workflow
+From: Html Sender <html@example.com>
+Date: Sat, 20 Jun 2026 03:31:00 +0000
+Content-Type: text/html; charset=utf-8
+
+<!doctype html>
+<html>
+  <body>
+    <p>HTML workflow body <strong>visible</strong>.</p>
+    <img src="https://tracker.example/osmap-v8-pixel.png" alt="tracking pixel">
+    <script>alert('osmap-v8-regression')</script>
+    <a href="javascript:alert(1)">unsafe link</a>
+  </body>
+</html>

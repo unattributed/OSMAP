@@ -1,0 +1,29 @@
+Subject: V8 nested multipart workflow
+From: Nested Sender <nested@example.com>
+Date: Sat, 20 Jun 2026 03:34:00 +0000
+Content-Type: multipart/mixed; boundary="v8-outer"
+
+--v8-outer
+Content-Type: multipart/related; boundary="v8-related"
+
+--v8-related
+Content-Type: multipart/alternative; boundary="v8-nested-alt"
+
+--v8-nested-alt
+Content-Type: text/plain; charset=utf-8
+
+Nested plain body fallback.
+--v8-nested-alt
+Content-Type: text/html; charset=utf-8
+
+<html><body><p>Nested HTML workflow body visible.</p><img src="cid:v8-logo"></body></html>
+--v8-nested-alt--
+--v8-related
+Content-Type: image/png; name="logo.png"
+Content-Disposition: inline; filename="logo.png"
+Content-ID: <v8-logo>
+Content-Transfer-Encoding: base64
+
+iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADElEQVR42mP8z8AARQAFAgH/qx9oAAAAAElFTkSuQmCC
+--v8-related--
+--v8-outer--

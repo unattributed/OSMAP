@@ -1,0 +1,16 @@
+Subject: V8 multipart mixed workflow
+From: Mixed Sender <mixed@example.com>
+Date: Sat, 20 Jun 2026 03:33:00 +0000
+Content-Type: multipart/mixed; boundary="v8-mixed"
+
+--v8-mixed
+Content-Type: text/plain; charset=utf-8
+
+Mixed workflow plain body with one attachment.
+--v8-mixed
+Content-Type: application/pdf; name="report.pdf"
+Content-Disposition: attachment; filename="report.pdf"
+Content-Transfer-Encoding: base64
+
+JVBERi0xLjQKJXZ4LW1peGVkLXJlcG9ydAo=
+--v8-mixed--

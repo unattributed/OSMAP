@@ -1,0 +1,7 @@
+Subject: V8 plain text workflow
+From: Plain Sender <plain@example.com>
+Date: Sat, 20 Jun 2026 03:30:00 +0000
+Content-Type: text/plain; charset=utf-8
+
+Plain workflow body <must stay escaped> & visible.
+Second plain workflow line.
