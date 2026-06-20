@@ -15,6 +15,8 @@ source_v4_claim_matrix_gate="${repo_root}/maint/security/osmap-v4-security-claim
 source_v5_boundary_gate="${repo_root}/maint/security/osmap-v5-boundary-gate.sh"
 source_v6_readiness_gate="${repo_root}/maint/security/osmap-v6-retirement-readiness-gate.sh"
 source_v7_boundary_gate="${repo_root}/maint/security/osmap-v7-boundary-hardening-gate.sh"
+source_v7_rendering_gate="${repo_root}/maint/security/osmap-v7-rendering-regression-gate.sh"
+source_v7_rendering_gate_test="${repo_root}/maint/security/test-osmap-v7-rendering-regression-gate.sh"
 source_v6_evidence_archive="${repo_root}/maint/security/osmap-v6-evidence-archive.sh"
 source_evidence_metadata="${repo_root}/maint/security/osmap-evidence-metadata.sh"
 source_cwe_guard="${repo_root}/maint/security/osmap-cwe-top25-guard.sh"
@@ -46,6 +48,8 @@ cp "${source_v4_claim_matrix_gate}" "${fake_security_dir}/osmap-v4-security-clai
 cp "${source_v5_boundary_gate}" "${fake_security_dir}/osmap-v5-boundary-gate.sh"
 cp "${source_v6_readiness_gate}" "${fake_security_dir}/osmap-v6-retirement-readiness-gate.sh"
 cp "${source_v7_boundary_gate}" "${fake_security_dir}/osmap-v7-boundary-hardening-gate.sh"
+cp "${source_v7_rendering_gate}" "${fake_security_dir}/osmap-v7-rendering-regression-gate.sh"
+cp "${source_v7_rendering_gate_test}" "${fake_security_dir}/test-osmap-v7-rendering-regression-gate.sh"
 cp "${source_v6_evidence_archive}" "${fake_security_dir}/osmap-v6-evidence-archive.sh"
 cp "${source_evidence_metadata}" "${fake_security_dir}/osmap-evidence-metadata.sh"
 cp "${source_cwe_guard}" "${fake_security_dir}/osmap-cwe-top25-guard.sh"
@@ -118,6 +122,14 @@ assert_equals "$(git -C "${fake_repo}" config --local core.hooksPath)" ".githook
 }
 [ -x "${fake_security_dir}/osmap-v7-boundary-hardening-gate.sh" ] || {
 	printf '%s\n' "expected V7 boundary hardening gate script to be executable" >&2
+	exit 1
+}
+[ -x "${fake_security_dir}/osmap-v7-rendering-regression-gate.sh" ] || {
+	printf '%s\n' "expected V7 rendering regression gate script to be executable" >&2
+	exit 1
+}
+[ -x "${fake_security_dir}/test-osmap-v7-rendering-regression-gate.sh" ] || {
+	printf '%s\n' "expected V7 rendering regression gate wrapper test to be executable" >&2
 	exit 1
 }
 [ -x "${fake_security_dir}/osmap-v6-evidence-archive.sh" ] || {

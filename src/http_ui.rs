@@ -1229,3 +1229,62 @@ pub(crate) fn render_settings_page(model: &SettingsPageModel<'_>) -> TrustedHtml
         escape_html(archive_mailbox_name),
     ))
 }
+
+#[cfg(test)]
+mod v7_rendering_regression_tests {
+    use super::*;
+    use crate::html::TrustedHtml;
+    use crate::mailbox::{MailboxEntry, MailboxListingPolicy};
+    use crate::mime::{AttachmentDisposition, AttachmentMetadata, MimeBodySource};
+    use crate::rendering::RenderingMode;
+
+    #[test]
+    fn ui_message_view_surfaces_truthful_rendering_labels() {
+        let rendered = RenderedMessageView {
+            mailbox_name: "INBOX".to_string(),
+            uid: 42,
+            subject: Some("Decoded café".to_string()),
+            from: Some("Example Sender <sender@example.invalid>".to_string()),
+            date_received: "2026-06-20 00:00:00 +0000".to_string(),
+            mime_top_level_content_type: "multipart/alternative".to_string(),
+            body_source: MimeBodySource::MultipartHtmlSanitized,
+            contains_html_body: true,
+            body_html: TrustedHtml::from_sanitized(
+                "<div class=\"message-html\"><p>Safe rendered body</p></div>".to_string(),
+            ),
+            body_text_for_compose: "Safe rendered body".to_string(),
+            attachments: vec![AttachmentMetadata {
+                part_path: "1.2".to_string(),
+                filename: Some("logo.png".to_string()),
+                content_type: "image/png".to_string(),
+                disposition: AttachmentDisposition::Inline,
+                content_id: Some("logo@example.invalid".to_string()),
+                size_hint_bytes: 128,
+            }],
+            rendering_mode: RenderingMode::SanitizedHtml,
+        };
+        let mailboxes = vec![
+            MailboxEntry::new(MailboxListingPolicy::default(), "INBOX")
+                .expect("mailbox should validate"),
+            MailboxEntry::new(MailboxListingPolicy::default(), "Trash")
+                .expect("mailbox should validate"),
+        ];
+
+        let page = render_message_view_page(
+            "alice@example.com",
+            "csrf-token-placeholder",
+            &rendered,
+            Some("Archive"),
+            &mailboxes,
+        );
+
+        assert!(page.contains("Body Source</dt><dd>multipart_html_sanitized</dd>"));
+        assert!(page.contains("Rendering Mode</dt><dd>sanitized_html</dd>"));
+        assert!(page.contains("HTML Present</dt><dd>yes</dd>"));
+        assert!(page.contains("HTML present"));
+        assert!(page.contains("remote content blocked"));
+        assert!(page.contains("<strong>Sanitized HTML:</strong>"));
+        assert!(page.contains("Remote content blocked by policy"));
+        assert!(page.contains("Safe rendered body"));
+    }
+}

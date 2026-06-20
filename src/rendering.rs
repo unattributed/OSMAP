@@ -456,6 +456,18 @@ fn render_body_from_analysis(
         }
     }
 
+    // PreferPlainText means render a safe plain-text part when one exists.
+    // It must not mean withhold all HTML forever. If no safe plain-text body
+    // exists but the MIME layer selected an HTML body, fall back to sanitized
+    // HTML rather than showing the historical regression placeholder.
+    if analysis.selected_plain_text_body.is_none() {
+        if let Some(rendered_html) =
+            render_sanitized_html_body(analysis, html_rendering_policy, max_len)?
+        {
+            return Ok(rendered_html);
+        }
+    }
+
     match analysis.body_source {
         MimeBodySource::SinglePartPlainText | MimeBodySource::MultipartPlainTextPart => {
             let mut rendered = render_plain_text_body(
@@ -1255,6 +1267,232 @@ mod tests {
             outcome.rendered.rendering_mode,
             RenderingMode::SanitizedHtml
         );
+    }
+
+    #[test]
+    fn html_only_singlepart_renders_sanitized_html() {
+        let renderer = PlainTextMessageRenderer::new(RenderingPolicy::default());
+        let outcome = renderer
+            .render_for_validated_session(
+                &test_context(),
+                &validated_session_fixture(),
+                &html_only_message_view_fixture(),
+            )
+            .expect("HTML-only singlepart should render through sanitizer");
+
+        assert_eq!(outcome.rendered.body_source, MimeBodySource::HtmlSanitized);
+        assert_eq!(
+            outcome.rendered.rendering_mode,
+            RenderingMode::SanitizedHtml
+        );
+        assert!(outcome.rendered.contains_html_body);
+        assert!(outcome.rendered.body_html.contains("message-html"));
+        assert!(outcome.rendered.body_html.contains("<b>world</b>"));
+        assert!(!outcome.rendered.body_html.contains("<script"));
+    }
+
+    #[test]
+    fn html_only_multipart_without_plain_text_renders_sanitized_html() {
+        let renderer = PlainTextMessageRenderer::new(RenderingPolicy::default());
+        let message = message_view_from_fixture(include_str!(
+            "../tests/fixtures/mime/windows_1252_html_only_forward.eml"
+        ));
+
+        let outcome = renderer
+            .render_for_validated_session(&test_context(), &validated_session_fixture(), &message)
+            .expect("multipart HTML-only fixture should render through sanitizer");
+
+        assert_eq!(
+            outcome.rendered.body_source,
+            MimeBodySource::MultipartHtmlSanitized
+        );
+        assert_eq!(
+            outcome.rendered.rendering_mode,
+            RenderingMode::SanitizedHtml
+        );
+        assert!(outcome.rendered.body_html.contains("Forwarded café"));
+        assert!(!outcome.rendered.body_html.contains("alert(1)"));
+    }
+
+    #[test]
+    fn prefer_plain_text_renders_plain_when_plain_exists() {
+        let renderer = PlainTextMessageRenderer::new(RenderingPolicy {
+            html_display_preference: HtmlDisplayPreference::PreferPlainText,
+            ..RenderingPolicy::default()
+        });
+        let outcome = renderer
+            .render_for_validated_session(
+                &test_context(),
+                &validated_session_fixture(),
+                &multipart_message_view_fixture(),
+            )
+            .expect("plain preference should render selected safe plain text");
+
+        assert_eq!(
+            outcome.rendered.body_source,
+            MimeBodySource::MultipartPlainTextPart
+        );
+        assert_eq!(
+            outcome.rendered.rendering_mode,
+            RenderingMode::PlainTextPreformatted
+        );
+        assert!(outcome
+            .rendered
+            .body_html
+            .contains("<pre>Plain text preview</pre>"));
+        assert!(!outcome.rendered.body_html.contains("HTML body"));
+    }
+
+    #[test]
+    fn prefer_sanitized_html_renders_html_when_html_exists() {
+        let renderer = PlainTextMessageRenderer::new(RenderingPolicy {
+            html_display_preference: HtmlDisplayPreference::PreferSanitizedHtml,
+            ..RenderingPolicy::default()
+        });
+        let outcome = renderer
+            .render_for_validated_session(
+                &test_context(),
+                &validated_session_fixture(),
+                &multipart_message_view_fixture(),
+            )
+            .expect("sanitized HTML preference should render selected HTML");
+
+        assert_eq!(
+            outcome.rendered.body_source,
+            MimeBodySource::MultipartHtmlSanitized
+        );
+        assert_eq!(
+            outcome.rendered.rendering_mode,
+            RenderingMode::SanitizedHtml
+        );
+        assert!(outcome.rendered.body_html.contains("HTML body"));
+        assert_eq!(outcome.rendered.body_text_for_compose, "Plain text preview");
+    }
+
+    #[test]
+    fn prefer_plain_text_falls_back_to_sanitized_html_without_plain() {
+        let renderer = PlainTextMessageRenderer::new(RenderingPolicy {
+            html_display_preference: HtmlDisplayPreference::PreferPlainText,
+            ..RenderingPolicy::default()
+        });
+        let message = message_view_from_fixture(include_str!(
+            "../tests/fixtures/mime/windows_1252_html_only_forward.eml"
+        ));
+
+        let outcome = renderer
+            .render_for_validated_session(&test_context(), &validated_session_fixture(), &message)
+            .expect("plain preference should fall back to sanitized HTML without safe plain text");
+
+        assert_eq!(
+            outcome.rendered.body_source,
+            MimeBodySource::MultipartHtmlSanitized
+        );
+        assert_eq!(
+            outcome.rendered.rendering_mode,
+            RenderingMode::SanitizedHtml
+        );
+        assert!(outcome.rendered.body_html.contains("Forwarded café"));
+        assert!(!outcome.rendered.body_html.contains(
+            "Multipart message contains HTML content, but no safe plain-text part was selected."
+        ));
+        assert!(!outcome.rendered.body_html.contains("<script"));
+    }
+
+    #[test]
+    fn windows_1252_html_only_forward_renders_decoded_subject_and_body() {
+        let renderer = PlainTextMessageRenderer::new(RenderingPolicy::default());
+        let message = message_view_from_fixture(include_str!(
+            "../tests/fixtures/mime/windows_1252_html_only_forward.eml"
+        ));
+
+        let outcome = renderer
+            .render_for_validated_session(&test_context(), &validated_session_fixture(), &message)
+            .expect("windows-1252 HTML-only forward should render safely");
+
+        assert_eq!(
+            outcome.rendered.subject.as_deref(),
+            Some("Forwarded café – update")
+        );
+        assert!(outcome.rendered.body_html.contains("Forwarded café"));
+        assert!(outcome.rendered.body_html.contains("expected content."));
+        assert_eq!(
+            outcome.rendered.rendering_mode,
+            RenderingMode::SanitizedHtml
+        );
+    }
+
+    #[test]
+    fn hostile_html_sanitization_strips_active_and_remote_content() {
+        let renderer = PlainTextMessageRenderer::new(RenderingPolicy::default());
+        let nested_message = message_view_from_fixture(include_str!(
+            "../tests/fixtures/mime/nested_mixed_hostile_html.eml"
+        ));
+        let link_probe_message = message_view_from_fixture(include_str!(
+            "../tests/fixtures/mime/html_link_scheme_probe.eml"
+        ));
+
+        let nested = renderer
+            .render_for_validated_session(
+                &test_context(),
+                &validated_session_fixture(),
+                &nested_message,
+            )
+            .expect("hostile nested fixture should render safely");
+        let link_probe = renderer
+            .render_for_validated_session(
+                &test_context(),
+                &validated_session_fixture(),
+                &link_probe_message,
+            )
+            .expect("link scheme probe fixture should render safely");
+
+        for body in [&nested.rendered.body_html, &link_probe.rendered.body_html] {
+            assert!(!body.contains("<script"));
+            assert!(!body.contains("onclick"));
+            assert!(!body.contains("<form"));
+            assert!(!body.contains("<iframe"));
+            assert!(!body.contains("<object"));
+            assert!(!body.contains("<embed"));
+            assert!(!body.contains("<img"));
+            assert!(!body.contains("javascript:"));
+            assert!(!body.contains("data:"));
+            assert!(!body.contains("cid:"));
+            assert!(!body.contains("file:"));
+            assert!(!body.contains("blob:"));
+            assert!(!body.contains("href=\"/"));
+            assert!(!body.contains("href=\"//"));
+            assert!(!body.contains("evil.example"));
+        }
+        assert!(link_probe
+            .rendered
+            .body_html
+            .contains("href=\"https://example.com/safe\""));
+    }
+
+    #[test]
+    fn malformed_mime_renders_safe_placeholder_or_errors_without_raw_html() {
+        let renderer = PlainTextMessageRenderer::new(RenderingPolicy::default());
+        let message = message_view_from_fixture(include_str!(
+            "../tests/fixtures/mime/malformed_boundary.eml"
+        ));
+
+        let outcome = renderer
+            .render_for_validated_session(&test_context(), &validated_session_fixture(), &message)
+            .expect("malformed fixture should fail closed into a safe placeholder");
+
+        assert_eq!(
+            outcome.rendered.body_source,
+            MimeBodySource::MultipartStructureWithheld
+        );
+        assert_eq!(
+            outcome.rendered.rendering_mode,
+            RenderingMode::PlainTextPreformatted
+        );
+        assert!(outcome.rendered.body_html.contains(
+            "Multipart structure detected, but no safe plain-text preview is available."
+        ));
+        assert!(!outcome.rendered.body_html.contains("<script"));
+        assert!(!outcome.rendered.body_html.contains("<html"));
     }
 
     #[test]
