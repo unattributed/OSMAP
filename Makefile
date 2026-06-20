@@ -1,7 +1,7 @@
 # Keep developer entrypoints obvious and conservative so operators and
 # collaborating developers do not have to memorize cargo subcommands.
 
-.PHONY: build check test lint fmt-check supply-chain-check security-check release-check v6-check v7-check v7-rendering-regression-check install-hooks run
+.PHONY: build check test lint fmt-check supply-chain-check security-check release-check v6-check v7-check v7-rendering-regression-check v8-check install-hooks run
 
 build:
 	cargo build
@@ -46,6 +46,9 @@ v7-check:
 
 v7-rendering-regression-check:
 	sh maint/security/osmap-v7-rendering-regression-gate.sh
+
+v8-check:
+	sh maint/security/osmap-v8-stabilization-gate.sh
 
 install-hooks:
 	chmod +x .githooks/pre-commit .githooks/pre-push maint/security/osmap-security-check.sh maint/security/osmap-supply-chain-check.sh maint/security/osmap-release-check.sh maint/security/osmap-v4-hostile-assurance-gate.sh maint/security/osmap-v4-release-tuple-gate.sh maint/security/osmap-v4-security-claim-matrix-gate.sh maint/security/osmap-v5-boundary-gate.sh maint/security/osmap-v6-retirement-readiness-gate.sh maint/security/osmap-v7-boundary-hardening-gate.sh maint/security/osmap-v7-rendering-regression-gate.sh maint/security/test-osmap-v7-rendering-regression-gate.sh maint/security/osmap-v6-evidence-archive.sh maint/security/osmap-evidence-metadata.sh maint/security/osmap-cwe-top25-guard.sh maint/security/osmap-cwe-top25-guard.py
