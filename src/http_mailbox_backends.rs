@@ -149,6 +149,24 @@ impl RuntimeBrowserGateway {
         }
     }
 
+    /// Selects the backend used to file a delivered message into Sent.
+    pub(super) fn build_message_append_backend(&self) -> MessageAppendRuntimeBackend {
+        match &self.mailbox_helper_socket_path {
+            Some(socket_path) => {
+                MessageAppendRuntimeBackend::Helper(MailboxHelperMessageAppendBackend::new(
+                    socket_path,
+                    self.helper_grant_key_path(),
+                    self.expensive_route_helper_policy(),
+                ))
+            }
+            None => MessageAppendRuntimeBackend::Direct(
+                DoveadmMessageAppendBackend::new(SystemCommandExecutor, self.doveadm_path.clone())
+                    .with_userdb_socket_path(self.doveadm_userdb_socket_path.clone())
+                    .with_command_timeout_secs(self.expensive_route_command_timeout_secs()),
+            ),
+        }
+    }
+
     fn helper_grant_key_path(&self) -> &Path {
         self.mailbox_helper_grant_key_path
             .as_deref()
@@ -231,6 +249,26 @@ impl crate::mailbox::MessageMoveBackend for MessageMoveRuntimeBackend {
         match self {
             Self::Direct(backend) => backend.move_message(canonical_username, request),
             Self::Helper(backend) => backend.move_message(canonical_username, request),
+        }
+    }
+}
+
+/// Selects the current message-append backend without giving the browser
+/// runtime direct mailbox authority when a local helper is configured.
+pub(super) enum MessageAppendRuntimeBackend {
+    Direct(DoveadmMessageAppendBackend<SystemCommandExecutor>),
+    Helper(MailboxHelperMessageAppendBackend),
+}
+
+impl crate::mailbox::MessageAppendBackend for MessageAppendRuntimeBackend {
+    fn append_message(
+        &self,
+        canonical_username: &str,
+        request: &MessageAppendRequest,
+    ) -> Result<(), crate::mailbox::MailboxBackendError> {
+        match self {
+            Self::Direct(backend) => backend.append_message(canonical_username, request),
+            Self::Helper(backend) => backend.append_message(canonical_username, request),
         }
     }
 }

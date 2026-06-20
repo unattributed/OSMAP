@@ -128,6 +128,11 @@ impl MailboxBackend for MailboxHelperMailboxListBackend {
                     reason: "helper returned message-move response for mailbox-list request"
                         .to_string(),
                 }),
+                MailboxHelperResponse::MessageAppendOk { .. } => Err(MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: "helper returned message-append response for mailbox-list request"
+                        .to_string(),
+                }),
             }
         }
     }
@@ -276,6 +281,11 @@ impl MessageListBackend for MailboxHelperMessageListBackend {
                 MailboxHelperResponse::MessageMoveOk { .. } => Err(MailboxBackendError {
                     backend: "mailbox-helper-client",
                     reason: "helper returned message-move response for message-list request"
+                        .to_string(),
+                }),
+                MailboxHelperResponse::MessageAppendOk { .. } => Err(MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: "helper returned message-append response for message-list request"
                         .to_string(),
                 }),
             }
@@ -451,6 +461,11 @@ impl MessageSearchBackend for MailboxHelperMessageSearchBackend {
                     reason: "helper returned message-move response for message-search request"
                         .to_string(),
                 }),
+                MailboxHelperResponse::MessageAppendOk { .. } => Err(MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: "helper returned message-append response for message-search request"
+                        .to_string(),
+                }),
             }
         }
     }
@@ -608,6 +623,11 @@ impl MessageViewBackend for MailboxHelperMessageViewBackend {
                     reason: "helper returned message-move response for message-view request"
                         .to_string(),
                 }),
+                MailboxHelperResponse::MessageAppendOk { .. } => Err(MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: "helper returned message-append response for message-view request"
+                        .to_string(),
+                }),
             }
         }
     }
@@ -737,6 +757,10 @@ impl MailboxHelperAttachmentDownloadBackend {
                 )),
                 MailboxHelperResponse::MessageMoveOk { .. } => Err(transport_error(
                     "helper returned message-move response for attachment-download request"
+                        .to_string(),
+                )),
+                MailboxHelperResponse::MessageAppendOk { .. } => Err(transport_error(
+                    "helper returned message-append response for attachment-download request"
                         .to_string(),
                 )),
             }
@@ -904,6 +928,141 @@ impl MessageMoveBackend for MailboxHelperMessageMoveBackend {
                 MailboxHelperResponse::AttachmentDownloadOk { .. } => Err(MailboxBackendError {
                     backend: "mailbox-helper-client",
                     reason: "helper returned attachment-download response for message-move request"
+                        .to_string(),
+                }),
+                MailboxHelperResponse::MessageAppendOk { .. } => Err(MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: "helper returned message-append response for message-move request"
+                        .to_string(),
+                }),
+            }
+        }
+    }
+}
+
+/// Client backend that proxies one-message append through the local helper socket.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MailboxHelperMessageAppendBackend {
+    socket_path: PathBuf,
+    grant_key_path: PathBuf,
+    policy: MailboxHelperPolicy,
+}
+
+impl MailboxHelperMessageAppendBackend {
+    /// Creates a message-append client backend for the supplied helper socket.
+    pub fn new(
+        socket_path: impl Into<PathBuf>,
+        grant_key_path: impl Into<PathBuf>,
+        policy: MailboxHelperPolicy,
+    ) -> Self {
+        Self {
+            socket_path: socket_path.into(),
+            grant_key_path: grant_key_path.into(),
+            policy,
+        }
+    }
+}
+
+impl MessageAppendBackend for MailboxHelperMessageAppendBackend {
+    fn append_message(
+        &self,
+        canonical_username: &str,
+        request: &MessageAppendRequest,
+    ) -> Result<(), MailboxBackendError> {
+        let mut helper_request = MailboxHelperRequest::MessageAppend {
+            canonical_username: canonical_username.to_string(),
+            mailbox_name: request.mailbox_name.clone(),
+            message: request.message.clone(),
+            grant: MailboxHelperGrant::unsigned(),
+        };
+        let request_bytes = encode_authorized_request(&self.grant_key_path, &mut helper_request);
+
+        #[cfg(not(unix))]
+        {
+            let _ = request_bytes;
+            return Err(MailboxBackendError {
+                backend: "mailbox-helper-client",
+                reason: "mailbox helper requires a Unix-domain socket platform".to_string(),
+            });
+        }
+
+        #[cfg(unix)]
+        {
+            let request_bytes = request_bytes.map_err(|reason| MailboxBackendError {
+                backend: "mailbox-helper-client",
+                reason,
+            })?;
+            let mut stream =
+                UnixStream::connect(&self.socket_path).map_err(|error| MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: format!(
+                        "failed to connect to mailbox helper {}: {error}",
+                        self.socket_path.display()
+                    ),
+                })?;
+
+            configure_stream_timeouts(&stream, self.policy);
+            stream
+                .write_all(&request_bytes)
+                .map_err(|error| MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: format!("failed to write helper request: {error}"),
+                })?;
+            stream
+                .shutdown(Shutdown::Write)
+                .map_err(|error| MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: format!("failed to finish helper request: {error}"),
+                })?;
+
+            let response_bytes =
+                read_bounded_from_stream(&mut stream, self.policy.max_response_bytes).map_err(
+                    |reason| MailboxBackendError {
+                        backend: "mailbox-helper-client",
+                        reason,
+                    },
+                )?;
+            let response = parse_response(
+                MailboxListingPolicy::default(),
+                MessageListPolicy::default(),
+                MessageSearchPolicy::default(),
+                MessageViewPolicy::default(),
+                std::str::from_utf8(&response_bytes).map_err(|error| MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: format!("helper response was not valid UTF-8: {error}"),
+                })?,
+            )
+            .map_err(|reason| MailboxBackendError {
+                backend: "mailbox-helper-client",
+                reason,
+            })?;
+
+            match response {
+                MailboxHelperResponse::MessageAppendOk {
+                    mailbox_name,
+                    message_bytes,
+                } if mailbox_name == request.mailbox_name
+                    && message_bytes == request.message.len() =>
+                {
+                    Ok(())
+                }
+                MailboxHelperResponse::MessageAppendOk {
+                    mailbox_name,
+                    message_bytes,
+                } => Err(MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: format!(
+                        "helper append response mismatch: mailbox {:?}, bytes {}",
+                        mailbox_name, message_bytes
+                    ),
+                }),
+                MailboxHelperResponse::Error { backend, reason } => Err(MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: format!("{backend}: {reason}"),
+                }),
+                _ => Err(MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: "helper returned the wrong response for message-append request"
                         .to_string(),
                 }),
             }

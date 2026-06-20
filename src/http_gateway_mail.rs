@@ -762,6 +762,68 @@ impl RuntimeBrowserGateway {
 
         match decision {
             SubmissionDecision::Submitted { .. } => {
+                let raw_message = build_submission_message(
+                    &validated_session.record.canonical_username,
+                    &request,
+                );
+                match MessageAppendRequest::new("Sent", raw_message) {
+                    Ok(append_request) => {
+                        let message_bytes = append_request.message.len();
+                        match self.build_message_append_backend().append_message(
+                            &validated_session.record.canonical_username,
+                            &append_request,
+                        ) {
+                            Ok(()) => audit_events.push(
+                                LogEvent::new(
+                                    LogLevel::Info,
+                                    EventCategory::Submission,
+                                    "sent_copy_stored",
+                                    "outbound message copy stored in Sent",
+                                )
+                                .with_field(
+                                    "canonical_username",
+                                    validated_session.record.canonical_username.clone(),
+                                )
+                                .with_field("mailbox_name", "Sent")
+                                .with_field("message_bytes", message_bytes.to_string())
+                                .with_field("request_id", context.request_id.clone()),
+                            ),
+                            Err(error) => audit_events.push(
+                                LogEvent::new(
+                                    LogLevel::Warn,
+                                    EventCategory::Submission,
+                                    "sent_copy_store_failed",
+                                    "outbound delivery succeeded but Sent copy storage failed",
+                                )
+                                .with_field(
+                                    "canonical_username",
+                                    validated_session.record.canonical_username.clone(),
+                                )
+                                .with_field("mailbox_name", "Sent")
+                                .with_field("backend", error.backend)
+                                .with_field("reason", error.reason)
+                                .with_field("request_id", context.request_id.clone()),
+                            ),
+                        }
+                    }
+                    Err(error) => audit_events.push(
+                        LogEvent::new(
+                            LogLevel::Warn,
+                            EventCategory::Submission,
+                            "sent_copy_store_failed",
+                            "outbound delivery succeeded but Sent copy validation failed",
+                        )
+                        .with_field(
+                            "canonical_username",
+                            validated_session.record.canonical_username.clone(),
+                        )
+                        .with_field("mailbox_name", "Sent")
+                        .with_field("backend", error.backend)
+                        .with_field("reason", error.reason)
+                        .with_field("request_id", context.request_id.clone()),
+                    ),
+                }
+
                 match throttle_service
                     .record_submission(context, &validated_session.record.canonical_username)
                 {

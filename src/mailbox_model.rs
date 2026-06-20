@@ -682,6 +682,50 @@ pub struct MessageMoveRequest {
     pub uid: u64,
 }
 
+/// Conservative maximum raw RFC 5322 message size accepted for one append.
+///
+/// This covers the current compose attachment budget after MIME base64
+/// expansion while keeping the helper mutation bounded.
+pub const DEFAULT_MESSAGE_APPEND_MAX_BYTES: usize = 48 * 1024 * 1024;
+
+/// A bounded request to append one complete message to an existing mailbox.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MessageAppendRequest {
+    pub mailbox_name: String,
+    pub message: Vec<u8>,
+}
+
+impl MessageAppendRequest {
+    /// Validates the destination mailbox and raw message size.
+    pub fn new(
+        mailbox_name: impl Into<String>,
+        message: Vec<u8>,
+    ) -> Result<Self, MailboxBackendError> {
+        let mailbox_name =
+            MailboxEntry::new(MailboxListingPolicy::default(), mailbox_name.into())?.name;
+        if message.is_empty() {
+            return Err(MailboxBackendError {
+                backend: "message-append-parser",
+                reason: "message body must not be empty".to_string(),
+            });
+        }
+        if message.len() > DEFAULT_MESSAGE_APPEND_MAX_BYTES {
+            return Err(MailboxBackendError {
+                backend: "message-append-parser",
+                reason: format!(
+                    "message body exceeded maximum length of {} bytes",
+                    DEFAULT_MESSAGE_APPEND_MAX_BYTES
+                ),
+            });
+        }
+
+        Ok(Self {
+            mailbox_name,
+            message,
+        })
+    }
+}
+
 impl MessageMoveRequest {
     /// Validates the source mailbox, destination mailbox, and UID for a
     /// one-message move operation.
@@ -923,5 +967,14 @@ pub trait MessageMoveBackend {
         &self,
         canonical_username: &str,
         request: &MessageMoveRequest,
+    ) -> Result<(), MailboxBackendError>;
+}
+
+/// A backend capable of appending one complete message to a mailbox.
+pub trait MessageAppendBackend {
+    fn append_message(
+        &self,
+        canonical_username: &str,
+        request: &MessageAppendRequest,
     ) -> Result<(), MailboxBackendError>;
 }

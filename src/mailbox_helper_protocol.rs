@@ -7,15 +7,16 @@
 use std::collections::BTreeMap;
 
 use hmac::{Hmac, Mac};
-use sha2::Sha256;
+use sha2::{Digest, Sha256};
 
 use crate::attachment::{
     AttachmentDownloadPolicy, AttachmentDownloadRequest, DownloadedAttachment,
 };
 use crate::mailbox::{
-    MailboxEntry, MailboxListingPolicy, MessageListPolicy, MessageListRequest, MessageMovePolicy,
-    MessageMoveRequest, MessageSearchField, MessageSearchPolicy, MessageSearchRequest,
-    MessageSearchResult, MessageSummary, MessageView, MessageViewPolicy, MessageViewRequest,
+    MailboxEntry, MailboxListingPolicy, MessageAppendRequest, MessageListPolicy,
+    MessageListRequest, MessageMovePolicy, MessageMoveRequest, MessageSearchField,
+    MessageSearchPolicy, MessageSearchRequest, MessageSearchResult, MessageSummary, MessageView,
+    MessageViewPolicy, MessageViewRequest, DEFAULT_MESSAGE_APPEND_MAX_BYTES,
 };
 
 /// Supported helper requests for the first mailbox-read slice.
@@ -55,6 +56,12 @@ pub(super) enum MailboxHelperRequest {
         source_mailbox_name: String,
         destination_mailbox_name: String,
         uid: u64,
+        grant: MailboxHelperGrant,
+    },
+    MessageAppend {
+        canonical_username: String,
+        mailbox_name: String,
+        message: Vec<u8>,
         grant: MailboxHelperGrant,
     },
 }
@@ -105,6 +112,10 @@ pub(super) enum MailboxHelperResponse {
         source_mailbox_name: String,
         destination_mailbox_name: String,
         uid: u64,
+    },
+    MessageAppendOk {
+        mailbox_name: String,
+        message_bytes: usize,
     },
     Error {
         backend: String,
@@ -181,6 +192,18 @@ pub(super) fn encode_request(request: &MailboxHelperRequest) -> String {
             encode_base64(canonical_username.as_bytes()),
             encode_base64(source_mailbox_name.as_bytes()),
             encode_base64(destination_mailbox_name.as_bytes()),
+            encode_grant_fields(grant),
+        ),
+        MailboxHelperRequest::MessageAppend {
+            canonical_username,
+            mailbox_name,
+            message,
+            grant,
+        } => format!(
+            "operation=message_append\ncanonical_username_b64={}\nmailbox_name_b64={}\nmessage_b64={}\n{}",
+            encode_base64(canonical_username.as_bytes()),
+            encode_base64(mailbox_name.as_bytes()),
+            encode_base64(message),
             encode_grant_fields(grant),
         ),
     }
@@ -325,6 +348,26 @@ pub(super) fn parse_request(input: &str) -> Result<MailboxHelperRequest, String>
                 grant,
             })
         }
+        "message_append" => {
+            let mailbox_name = decode_base64_text(
+                require_field(&fields, "mailbox_name_b64")?,
+                crate::mailbox::DEFAULT_MAILBOX_NAME_MAX_LEN,
+                "mailbox_name",
+            )?;
+            let message = decode_base64_bytes(
+                require_field(&fields, "message_b64")?,
+                DEFAULT_MESSAGE_APPEND_MAX_BYTES,
+                "message",
+            )?;
+            let request =
+                MessageAppendRequest::new(mailbox_name, message).map_err(|error| error.reason)?;
+            Ok(MailboxHelperRequest::MessageAppend {
+                canonical_username,
+                mailbox_name: request.mailbox_name,
+                message: request.message,
+                grant,
+            })
+        }
         _ => Err(format!("unsupported helper operation: {operation}")),
     }
 }
@@ -424,7 +467,8 @@ pub(super) fn request_grant(request: &MailboxHelperRequest) -> &MailboxHelperGra
         | MailboxHelperRequest::MessageSearch { grant, .. }
         | MailboxHelperRequest::MessageView { grant, .. }
         | MailboxHelperRequest::AttachmentDownload { grant, .. }
-        | MailboxHelperRequest::MessageMove { grant, .. } => grant,
+        | MailboxHelperRequest::MessageMove { grant, .. }
+        | MailboxHelperRequest::MessageAppend { grant, .. } => grant,
     }
 }
 
@@ -435,7 +479,8 @@ fn set_request_grant(request: &mut MailboxHelperRequest, new_grant: MailboxHelpe
         | MailboxHelperRequest::MessageSearch { grant, .. }
         | MailboxHelperRequest::MessageView { grant, .. }
         | MailboxHelperRequest::AttachmentDownload { grant, .. }
-        | MailboxHelperRequest::MessageMove { grant, .. } => *grant = new_grant,
+        | MailboxHelperRequest::MessageMove { grant, .. }
+        | MailboxHelperRequest::MessageAppend { grant, .. } => *grant = new_grant,
     }
 }
 
@@ -447,6 +492,7 @@ pub(super) fn helper_operation_label(request: &MailboxHelperRequest) -> &'static
         MailboxHelperRequest::MessageView { .. } => "message_view",
         MailboxHelperRequest::AttachmentDownload { .. } => "attachment_download",
         MailboxHelperRequest::MessageMove { .. } => "message_move",
+        MailboxHelperRequest::MessageAppend { .. } => "message_append",
     }
 }
 
@@ -527,6 +573,16 @@ fn canonical_grant_payload(request: &MailboxHelperRequest, grant: &MailboxHelper
             fields.push(source_mailbox_name.clone());
             fields.push(destination_mailbox_name.clone());
             fields.push(uid.to_string());
+        }
+        MailboxHelperRequest::MessageAppend {
+            canonical_username,
+            mailbox_name,
+            message,
+            ..
+        } => {
+            fields.push(canonical_username.clone());
+            fields.push(mailbox_name.clone());
+            fields.push(hex_lower(&Sha256::digest(message)));
         }
     }
     fields.join("\0")
@@ -692,6 +748,13 @@ pub(super) fn encode_response(response: &MailboxHelperResponse) -> String {
             encode_base64(source_mailbox_name.as_bytes()),
             encode_base64(destination_mailbox_name.as_bytes()),
         ),
+        MailboxHelperResponse::MessageAppendOk {
+            mailbox_name,
+            message_bytes,
+        } => format!(
+            "status=ok\noperation=message_append\nmailbox_name_b64={}\nmessage_bytes={message_bytes}\n",
+            encode_base64(mailbox_name.as_bytes()),
+        ),
         MailboxHelperResponse::Error { backend, reason } => {
             format!(
                 "status=error\nbackend_b64={}\nreason_b64={}\n",
@@ -724,6 +787,7 @@ pub(super) fn parse_response(
     let mut source_mailbox_name = None::<String>;
     let mut destination_mailbox_name = None::<String>;
     let mut moved_uid = None::<u64>;
+    let mut message_bytes = None::<usize>;
 
     for raw_line in input.lines() {
         if raw_line.is_empty() {
@@ -791,6 +855,13 @@ pub(super) fn parse_response(
                     value
                         .parse::<u64>()
                         .map_err(|error| format!("invalid helper move uid: {error}"))?,
+                )
+            }
+            "message_bytes" => {
+                message_bytes = Some(
+                    value
+                        .parse::<usize>()
+                        .map_err(|error| format!("invalid helper message byte count: {error}"))?,
                 )
             }
             "mailbox_b64" => {
@@ -888,6 +959,13 @@ pub(super) fn parse_response(
                 })?,
                 uid: moved_uid.ok_or_else(|| "helper response did not include uid".to_string())?,
             }),
+            Some("message_append") => Ok(MailboxHelperResponse::MessageAppendOk {
+                mailbox_name: mailbox_name.ok_or_else(|| {
+                    "helper response did not include append mailbox_name".to_string()
+                })?,
+                message_bytes: message_bytes
+                    .ok_or_else(|| "helper response did not include message_bytes".to_string())?,
+            }),
             Some(other) => Err(format!("unsupported helper response operation: {other}")),
             None => Err("helper response did not include an operation".to_string()),
         },
@@ -984,6 +1062,16 @@ fn reject_unknown_request_fields(
             "source_mailbox_name_b64",
             "destination_mailbox_name_b64",
             "uid",
+            "grant_issued_at",
+            "grant_expires_at",
+            "grant_nonce",
+            "grant_signature",
+        ],
+        "message_append" => &[
+            "operation",
+            "canonical_username_b64",
+            "mailbox_name_b64",
+            "message_b64",
             "grant_issued_at",
             "grant_expires_at",
             "grant_nonce",
