@@ -1,0 +1,14 @@
+Subject: V8 multipart alternative workflow
+From: Alternative Sender <alternative@example.com>
+Date: Sat, 20 Jun 2026 03:32:00 +0000
+Content-Type: multipart/alternative; boundary="v8-alt"
+
+--v8-alt
+Content-Type: text/plain; charset=utf-8
+
+Alternative plain body for compose and plain preference.
+--v8-alt
+Content-Type: text/html; charset=utf-8
+
+<html><body><p>Alternative HTML body visible.</p><script>evil()</script></body></html>
+--v8-alt--

@@ -1,0 +1,10 @@
+Subject: V8 malformed MIME workflow
+From: Malformed Sender <malformed@example.com>
+Date: Sat, 20 Jun 2026 03:36:00 +0000
+Content-Type: multipart/mixed; boundary="v8-missing"
+
+--wrong-boundary
+Content-Type: text/html; charset=utf-8
+
+<html><body><script>alert('must not render')</script><p>Malformed raw HTML body must not render.</p></body></html>
+--wrong-boundary--

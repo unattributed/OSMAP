@@ -1,0 +1,35 @@
+Subject: V8 attachment heavy workflow
+From: Attachment Sender <attachments@example.com>
+Date: Sat, 20 Jun 2026 03:35:00 +0000
+Content-Type: multipart/mixed; boundary="v8-heavy"
+
+--v8-heavy
+Content-Type: text/plain; charset=utf-8
+
+Attachment-heavy workflow body remains selected before metadata.
+--v8-heavy
+Content-Type: text/plain; name="file-1.txt"
+Content-Disposition: attachment; filename="file-1.txt"
+
+first attachment
+--v8-heavy
+Content-Type: text/plain; name="file-2.txt"
+Content-Disposition: attachment; filename="file-2.txt"
+
+second attachment
+--v8-heavy
+Content-Type: text/plain; name="file-3.txt"
+Content-Disposition: attachment; filename="file-3.txt"
+
+third attachment
+--v8-heavy
+Content-Type: text/plain; name="file-4.txt"
+Content-Disposition: attachment; filename="file-4.txt"
+
+fourth attachment
+--v8-heavy
+Content-Type: text/plain; name="file-5.txt"
+Content-Disposition: attachment; filename="file-5.txt"
+
+fifth attachment
+--v8-heavy--
