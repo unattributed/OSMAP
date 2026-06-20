@@ -1,0 +1,6 @@
+case	input	expected
+attachment_download_max_bytes	download_max_bytes=3	temporarily_unavailable
+mailbox_name_max_len	Projects/OSMAP	invalid_request
+message_view_uid_zero	uid=0	invalid_request
+message_move_same_mailbox	INBOX->INBOX	invalid_request
+session_token_overlength	2x token length	invalid_request
