@@ -95,6 +95,12 @@ if [ "$run_cargo_phases" -eq 1 ]; then
 
 	echo "==> supply-chain gate"
 	sh maint/security/osmap-supply-chain-check.sh
+
+	echo "==> validating V7 rendering regression close-out gate"
+	sh maint/security/osmap-v7-rendering-regression-gate.sh
+
+	echo "==> validating V7 rendering regression gate wrapper behavior"
+	sh maint/security/test-osmap-v7-rendering-regression-gate.sh
 fi
 
 echo "==> validating publication hygiene"
@@ -105,6 +111,7 @@ sh maint/security/osmap-doc-governance-guard.sh
 
 echo "==> validating V7 boundary hardening invariants"
 sh maint/security/osmap-v7-boundary-hardening-gate.sh
+
 
 echo "==> validating TLS policy invariants"
 sh maint/security/osmap-tls-policy-guard.sh

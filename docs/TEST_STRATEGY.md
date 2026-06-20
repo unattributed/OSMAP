@@ -93,3 +93,14 @@ partial validation path. `make release-check` is the strict release path and
 must fail on skipped Cargo, clippy, rustfmt, supply-chain, dependency
 inventory, host-readiness, V2 carry-forward, sanitized evidence archive, or
 credential and TOTP-backed WSTG coverage.
+
+## V7 rendering regression close-out
+
+V7 rendering regression close-out is a stabilization gate, not feature work. The gate exists because the message-view daily-driver path regressed for real-world multipart HTML mail after earlier testing discipline weakened.
+
+The required gate is `maint/security/osmap-v7-rendering-regression-gate.sh`. It is invoked by `make v7-rendering-regression-check`, `make v7-check`, and `make security-check`.
+
+This gate is intentionally not grep-only. It performs structural checks for durable coverage names and then executes targeted Rust tests for MIME selection, charset and RFC 2047 decoding, sanitized HTML rendering, hostile HTML containment, malformed MIME fail-closed behavior, and truthful message-view UI labels.
+
+Cargo and rustc are required for this close-out gate. A host that cannot run the Rust tests is not a valid close-out environment for this incident.
+
