@@ -1,0 +1,4 @@
+case	action	expected
+logout	revoke_by_token	current session revoked
+revoke_except	revoke_all_for_user_except	other active sessions revoked
+revoke_all	revoke_all_for_user	all active sessions revoked
