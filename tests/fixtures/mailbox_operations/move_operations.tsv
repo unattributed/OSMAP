@@ -1,0 +1,4 @@
+source	destination	uid	outcome
+INBOX	Archive	303	moved
+INBOX	INBOX	303	rejected_same_mailbox
+INBOX	Archive	0	rejected_zero_uid

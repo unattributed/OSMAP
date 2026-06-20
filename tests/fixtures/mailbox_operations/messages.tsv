@@ -1,0 +1,4 @@
+uid	mailbox	flags	received	size	subject	from
+303	INBOX	\Seen	2026-06-20 11:00:00 +0000	4096	Zeta Release	alice@example.com
+101	INBOX	\Answered	2026-06-18 09:10:00 +0000	2048	Alpha Plan	bob@example.com
+202	INBOX	\Flagged \Seen	2026-06-19 10:15:00 +0000	8192	Beta Review	carol@example.com

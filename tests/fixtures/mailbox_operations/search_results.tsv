@@ -1,0 +1,4 @@
+uid	mailbox	flags	received	size	subject	from
+77	Archive	\Seen	2026-06-17 08:00:00 +0000	1500	Archived Alpha	archive@example.com
+88	INBOX	\Flagged	2026-06-20 12:00:00 +0000	2500	Current Beta	current@example.com
+99	Projects/OSMAP	\Answered	2026-06-19 06:30:00 +0000	3500	Project Gamma	project@example.com
