@@ -90,10 +90,14 @@ make v8-attachment-safety-check
 
 ## Non-goals
 
-Slice 2 does not implement mailbox listing, search, sort, move, or archive coverage. That belongs to V8 Slice 3.
+Slice 2 does not implement mailbox listing, search, sort, move, or archive
+coverage. V8 Slice 3 provides that matrix.
 
-Slice 2 does not implement session integrity coverage. That belongs to V8 Slice 4.
+Slice 2 does not implement session integrity coverage. V8 Slice 4 provides
+that matrix.
 
-Slice 2 does not implement resource exhaustion and robustness coverage. That belongs to V8 Slice 5.
+Slice 2 does not implement resource exhaustion and robustness coverage. V8
+Slice 5 provides that matrix.
 
-Slice 2 does not make final CI enforcement changes. That belongs to V8 Slice 6.
+Slice 2 does not make final CI enforcement changes. V8 Slice 6 completed
+aggregate CI enforcement.

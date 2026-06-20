@@ -37,6 +37,11 @@ tests/fixtures/mailbox_operations/
 | `message_view.eml` | Single-message retrieval metadata and body fixture |
 | `move_operations.tsv` | Valid move, same-mailbox rejection, and zero-UID rejection cases |
 
+`message_view.eml` is executed directly by the Rust matrix. The text and TSV
+files are reviewable inventories whose corresponding test vectors and expected
+outcomes are encoded in `tests/v8_mailbox_operation_matrix.rs`. They are not
+runtime data inputs.
+
 ## Test implementation
 
 The Rust integration test is:
@@ -93,8 +98,11 @@ make v8-mailbox-operation-check
 
 Slice 3 does not implement attachment download safety coverage. That is already covered by V8 Slice 2.
 
-Slice 3 does not implement session integrity coverage. That belongs to V8 Slice 4.
+Slice 3 does not implement session integrity coverage. V8 Slice 4 provides
+that matrix.
 
-Slice 3 does not implement resource exhaustion and robustness coverage. That belongs to V8 Slice 5.
+Slice 3 does not implement resource exhaustion and robustness coverage. V8
+Slice 5 provides that matrix.
 
-Slice 3 does not make final CI enforcement changes. That belongs to V8 Slice 6.
+Slice 3 does not make final CI enforcement changes. V8 Slice 6 completed
+aggregate CI enforcement.

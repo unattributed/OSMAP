@@ -40,7 +40,7 @@ require_text docs/V8_STABILIZATION_PROGRAM.md "attachment safety"
 require_text docs/V8_STABILIZATION_PROGRAM.md "mailbox operations"
 require_text docs/V8_STABILIZATION_PROGRAM.md "session integrity"
 require_text docs/V8_STABILIZATION_PROGRAM.md "resource exhaustion and robustness"
-require_text docs/V8_STABILIZATION_PROGRAM.md "During Slice 6, CI should be updated so V8 gates are mandatory."
+require_text docs/V8_STABILIZATION_PROGRAM.md "Slice 6 made V8 mandatory by calling"
 
 require_text Makefile "v8-check:"
 require_text Makefile "osmap-v8-stabilization-gate.sh"

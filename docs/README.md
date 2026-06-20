@@ -14,8 +14,8 @@ The repository deliberately separates:
 - Agent-facing collaboration guidance in the tracked repository root file
   `AGENTS.md`
 
-As of June 18, 2026, the project has substantive public-safe documentation
-through the Version 7 boundary-hardening deployment. The current
+As of June 20, 2026, the project has substantive public-safe documentation
+through the Version 8 source-level stabilization close-out. The current
 baseline was built from:
 
 - private early project planning notes, distilled into public-safe docs
@@ -33,6 +33,8 @@ baseline was built from:
   incomplete-retirement-closeout records
 - repo-owned Version 7 finding reevaluation, implementation, test, deployment,
   rollback, and production-validation record
+- repo-owned Version 8 stabilization program, regression matrices, executable
+  gates, CI enforcement, and external evidence archives
 
 The documents in this folder are written for two audiences:
 
@@ -66,6 +68,14 @@ Current public documentation map:
 - `V7_BOUNDARY_HARDENING_DUE_DILIGENCE.md`
 - `V7_BROWSER_AVAILABILITY_INVARIANT.md`
 - `POST_V7_THROTTLE_TRANSACTION_LOCKING.md`
+- `V7_RENDERING_REGRESSION_CLOSEOUT.md`
+- `V8_STABILIZATION_PROGRAM.md`
+- `V8_MAIL_WORKFLOW_MATRIX.md`
+- `V8_ATTACHMENT_SAFETY_MATRIX.md`
+- `V8_MAILBOX_OPERATION_MATRIX.md`
+- `V8_SESSION_INTEGRITY_MATRIX.md`
+- `V8_RESOURCE_ROBUSTNESS_MATRIX.md`
+- `V8_FINAL_REGRESSION_GATE_CLOSEOUT.md`
 - `BUILD_AND_RELEASE_PROCESS.md`
 - `IMPLEMENTATION_PLAN.md`
 - `PROOF_OF_CONCEPT_PLAN.md`
@@ -176,9 +186,13 @@ rendering, malware prevention, or Roundcube parity. Version 5 records deployed
 identity, Host/origin, and response-boundary hardening without changing those
 product-scope limits. Version 6 defines controlled Roundcube retirement
 readiness for a selected cohort and remains incomplete until its sanitized
-live-evidence and closeout gates pass. Requested additional functionality and
-Thunderbird-like UX polish remain future-version work unless a later
-definition explicitly brings them into scope.
+live-evidence and closeout gates pass. Version 7 remains reopened for
+production because browser availability and real-login hold evidence are still
+required. Version 8 adds source-level regression coverage and mandatory CI
+enforcement, but does not deploy a new production binary or close V7.
+Requested additional functionality and Thunderbird-like UX polish remain
+future-version work unless a later definition explicitly brings them into
+scope.
 
 Some later-phase or deferred documents remain placeholders so the intended
 documentation map is visible without publishing private notes prematurely.

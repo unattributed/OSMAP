@@ -94,12 +94,17 @@ make v8-check
 
 ## Non-goals
 
-Slice 1 does not implement attachment filename safety coverage. That belongs to V8 Slice 2.
+Slice 1 does not implement attachment filename safety coverage. V8 Slice 2
+provides that matrix.
 
-Slice 1 does not implement mailbox state behavior coverage. That belongs to V8 Slice 3.
+Slice 1 does not implement mailbox state behavior coverage. V8 Slice 3
+provides that matrix.
 
-Slice 1 does not implement session integrity coverage. That belongs to V8 Slice 4.
+Slice 1 does not implement session integrity coverage. V8 Slice 4 provides
+that matrix.
 
-Slice 1 does not implement resource exhaustion coverage. That belongs to V8 Slice 5.
+Slice 1 does not implement resource exhaustion coverage. V8 Slice 5 provides
+that matrix.
 
-Slice 1 does not make CI enforcement final. That belongs to V8 Slice 6.
+Slice 1 does not make CI enforcement final. V8 Slice 6 completed aggregate CI
+enforcement.

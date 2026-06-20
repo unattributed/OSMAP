@@ -42,6 +42,32 @@ make security-check
         -> all V8 gates, including this final close-out gate
 ```
 
+## Review and evidence status
+
+The V8 implementation merged to `main` at
+`ac2dfdd856011ec99a5238079f9eda8073577d83` on June 20, 2026.
+
+A documentation and implementation review on June 20, 2026 confirmed:
+
+- `make v8-check` passes all five Rust matrices and both structural gates
+- the five matrices execute 25 focused integration tests
+- `make security-check` invokes the V8 aggregate gate
+- the GitHub Actions security workflow invokes `make security-check`
+- external slice archives and their SHA256 sidecars exist under
+  `$HOME/osmap-v8-evidence`
+- every discovered V8 archive passes its recorded SHA256 verification
+
+The mail workflow and attachment matrices execute their EML fixtures directly.
+The mailbox, session, and resource matrices also carry reviewable text, TSV, or
+ENV inventories. Except for the mailbox message-view EML and the attachment EML
+used by the resource matrix, those inventory files are not parsed at test
+runtime. Their corresponding vectors and assertions are encoded directly in
+the Rust matrices.
+
+This review does not claim that the V8 implementation commit is the currently
+deployed production binary. V7 remains reopened for production availability
+and real-login hold proof.
+
 ## Non-goals
 
 V8 does not claim feature parity with Roundcube.
