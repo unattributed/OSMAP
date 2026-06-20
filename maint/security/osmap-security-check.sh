@@ -101,6 +101,9 @@ if [ "$run_cargo_phases" -eq 1 ]; then
 
 	echo "==> validating V7 rendering regression gate wrapper behavior"
 	sh maint/security/test-osmap-v7-rendering-regression-gate.sh
+
+	echo "==> validating V8 final regression aggregate gate"
+	make v8-check
 fi
 
 echo "==> validating publication hygiene"
