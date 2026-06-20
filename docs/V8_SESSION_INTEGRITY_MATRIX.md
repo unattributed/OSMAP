@@ -39,6 +39,11 @@ tests/fixtures/session_integrity/
 | `timeout_cases.tsv` | Active, expired, and idle-timeout behavior |
 | `revocation_cases.tsv` | Logout, revoke-current, revoke-except-current, and revoke-all behavior |
 
+These ENV and TSV files are reviewable lifecycle inventories. The Rust matrix
+encodes and executes the corresponding values directly so session timing,
+randomness, storage, and revocation behavior remain deterministic. The files
+are not runtime data inputs.
+
 ## Test implementation
 
 The Rust integration test is:
@@ -93,6 +98,8 @@ make v8-session-integrity-check
 
 Slice 4 does not implement mailbox operation coverage. That is already covered by V8 Slice 3.
 
-Slice 4 does not implement resource exhaustion and robustness coverage. That belongs to V8 Slice 5.
+Slice 4 does not implement resource exhaustion and robustness coverage. V8
+Slice 5 provides that matrix.
 
-Slice 4 does not make final CI enforcement changes. That belongs to V8 Slice 6.
+Slice 4 does not make final CI enforcement changes. V8 Slice 6 completed
+aggregate CI enforcement.

@@ -160,9 +160,16 @@ has not been completed.
 V7 boundary hardening was deployed to `mail.blackbagsecurity.com` on June 18,
 2026, then reopened and rolled back after repeated browser-entry outages. The
 code closes headerless-request buffering, weak TOTP secret, forwarded client
-IP, and compose content-type findings, but it is not the current production
-binary. V7 must pass the browser availability invariant and a real
-operator-controlled login hold before redeployment or closure.
+IP, compose content-type, and file-backed state findings, but it is not the
+current production binary. V7 must pass the browser availability invariant and
+a real operator-controlled login hold before redeployment or closure.
+
+V8 stabilization was completed in source on June 20, 2026. It adds five
+focused regression matrices for mail workflows, attachment safety, mailbox
+operations, session integrity, and resource robustness. The aggregate
+`make v8-check` gate is mandatory through `make security-check` and CI. V8 is
+not a production deployment or a new feature release, and it does not change
+the reopened V7 production status.
 
 The current implementation includes:
 
@@ -550,10 +557,36 @@ risk, and production evidence summary is:
 
 - [`docs/V7_BOUNDARY_HARDENING_DUE_DILIGENCE.md`](docs/V7_BOUNDARY_HARDENING_DUE_DILIGENCE.md)
 
-V7 is implemented but reopened and not production-approved. Four original
-findings are closed in code. The file-state finding remains partially closed,
-and production availability after a real login must be proven before V7 can be
-redeployed or merged.
+V7 is implemented but reopened and not production-approved. All five original
+findings are closed in source, including the post-V7 throttle transaction
+locking follow-up. Production availability after a real login must still be
+proven before V7 can be redeployed or closed.
+
+## V8 Stabilization and Regression Coverage
+
+Version 8 is a source-level stabilization milestone. It converts the V7
+rendering-regression lesson into mandatory regression coverage without adding
+user-facing features or widening the trust boundary.
+
+The authoritative V8 program, matrices, and close-out record are:
+
+- [`docs/V8_STABILIZATION_PROGRAM.md`](docs/V8_STABILIZATION_PROGRAM.md)
+- [`docs/V8_MAIL_WORKFLOW_MATRIX.md`](docs/V8_MAIL_WORKFLOW_MATRIX.md)
+- [`docs/V8_ATTACHMENT_SAFETY_MATRIX.md`](docs/V8_ATTACHMENT_SAFETY_MATRIX.md)
+- [`docs/V8_MAILBOX_OPERATION_MATRIX.md`](docs/V8_MAILBOX_OPERATION_MATRIX.md)
+- [`docs/V8_SESSION_INTEGRITY_MATRIX.md`](docs/V8_SESSION_INTEGRITY_MATRIX.md)
+- [`docs/V8_RESOURCE_ROBUSTNESS_MATRIX.md`](docs/V8_RESOURCE_ROBUSTNESS_MATRIX.md)
+- [`docs/V8_FINAL_REGRESSION_GATE_CLOSEOUT.md`](docs/V8_FINAL_REGRESSION_GATE_CLOSEOUT.md)
+
+The short form is:
+
+- five focused Rust integration-test matrices protect existing behavior
+- each matrix has a dedicated executable gate under `maint/security/`
+- `make v8-check` runs the full V8 suite
+- `make security-check` and the GitHub Actions security workflow enforce V8
+- external slice evidence archives and SHA256 sidecars exist under the
+  operator evidence root
+- V8 makes no production deployment, Roundcube parity, or V7 closure claim
 
 ## Target Users
 

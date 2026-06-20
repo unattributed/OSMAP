@@ -77,6 +77,23 @@ The planned matrices are:
 
 The final release gate must aggregate these checks through `make v8-check`.
 
+## Current status
+
+V8 source implementation is complete as of June 20, 2026.
+
+The completed implementation provides:
+
+- five Rust integration-test matrices
+- dedicated executable gates for every matrix
+- an aggregate `make v8-check` entry point
+- enforcement from `make security-check`
+- enforcement from the GitHub Actions `security-check` workflow
+- external slice evidence archives with SHA256 sidecars
+
+This status is source-level only. V8 does not claim a production deployment,
+does not close the reopened V7 production milestone, and does not change the
+frozen V4 release-evidence tuple.
+
 ## Non-goals
 
 V8 does not aim to add general end-user features.
@@ -140,17 +157,14 @@ $HOME/osmap-v8-evidence/<slice-name>-<timestamp>.tar.gz.sha256
 
 The evidence archive must include the validation transcript and the final commit hash for the slice.
 
-## CI expectations
+## CI enforcement
 
 The current CI enforcement path is the `security-check` workflow. That workflow checks out the repository, installs the Rust toolchain, and runs `make security-check`.
 
-During Slice 0, `make v8-check` is introduced as a foundation target. It validates that the V8 stabilization framework exists and that the repository has an explicit V8 gate entrypoint.
+Slice 0 introduced `make v8-check` as the foundation target and established the explicit V8 gate entrypoint.
 
-During Slices 1 through 5, the V8 matrix gates should be added as executable shell gates under `maint/security/` and wired into `make v8-check`.
+Slices 1 through 5 added executable matrix gates under `maint/security/` and wired them into `make v8-check`.
 
-During Slice 6, CI should be updated so V8 gates are mandatory. The expected enforcement path is either:
-
-- call `make v8-check` from `make security-check`, or
-- add an explicit CI step in `.github/workflows/security-check.yml` that runs `make v8-check`
-
-The Slice 6 implementation must ensure that CI fails on V8 regressions and that V7 protections remain enforced.
+Slice 6 made V8 mandatory by calling `make v8-check` from
+`make security-check`. The GitHub Actions workflow runs that repository-owned
+security gate, so V8 regressions fail CI while V7 protections remain enforced.

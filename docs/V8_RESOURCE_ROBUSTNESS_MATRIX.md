@@ -34,6 +34,11 @@ tests/fixtures/resource_robustness/
 | `sort_matrix.tsv` | Deterministic sorting expectations for larger synthetic message sets |
 | `rejection_matrix.tsv` | Fail-closed request and output rejection expectations |
 
+These ENV and TSV files are reviewable inventories. The Rust matrix encodes
+the corresponding bounds and expected outcomes directly, generates the larger
+synthetic message sets in memory, and executes the attachment EML fixture used
+by the output-bound case. The tabular files are not runtime data inputs.
+
 ## Test implementation
 
 The Rust integration test is:
@@ -84,4 +89,5 @@ Slice 5 does not add new runtime limits.
 
 Slice 5 does not change production request handling.
 
-Slice 5 does not make final CI enforcement changes. That belongs to V8 Slice 6.
+Slice 5 does not make final CI enforcement changes. V8 Slice 6 completed
+aggregate CI enforcement.

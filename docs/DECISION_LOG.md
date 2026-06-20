@@ -6720,3 +6720,30 @@ acquisition failure fails closed, and an RAII guard releases the lock.
 Decision: the final explicit V7 state-store race is closed for cooperating
 processes on one host. This does not claim distributed cross-host locking, and
 the lock is not held across external authentication, mailbox, or send work.
+
+## 2026-06-20, Close V8 source stabilization and align project documentation
+
+V8 converts the V7 rendering-regression lesson into five focused regression
+matrices for mail workflows, attachment safety, mailbox operations, session
+integrity, and resource robustness. Each matrix has a dedicated executable
+gate, `make v8-check` aggregates the complete V8 suite, and
+`make security-check` makes that suite mandatory in the repository-owned CI
+workflow.
+
+The merged V8 implementation commit is
+`ac2dfdd856011ec99a5238079f9eda8073577d83`. The five Rust matrices execute 25
+focused integration tests. External evidence archives and SHA256 sidecars
+exist under the operator evidence root and passed checksum verification during
+the June 20 documentation review.
+
+The review also clarified fixture semantics. Mail workflow and attachment EML
+fixtures are executed directly. The mailbox, session, and resource text, TSV,
+and ENV files are reviewable inventories, while their corresponding vectors
+and expected outcomes are encoded in the Rust tests. Documentation now states
+that distinction instead of implying that every tabular file is parsed at
+runtime.
+
+Decision: V8 is complete as a source-level stabilization milestone. It is not
+a feature release, does not change the frozen V4 release-evidence tuple, does
+not claim a new production deployment, and does not close the reopened V7
+production availability milestone.
