@@ -1,0 +1,4 @@
+case	count	sort	expected
+message_uid_asc	256	uid asc	first=1,last=256
+message_subject_asc	256	subject asc	first=1,last=256
+search_size_desc	256	size desc	first=256,last=1
