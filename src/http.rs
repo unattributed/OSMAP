@@ -57,27 +57,29 @@ use crate::logging::LogEvent;
 use crate::logging::{EventCategory, Logger};
 use crate::mailbox::{
     sort_message_search_results, sort_message_summaries, DoveadmMailboxListBackend,
-    DoveadmMessageListBackend, DoveadmMessageMoveBackend, DoveadmMessageSearchBackend,
-    DoveadmMessageViewBackend, MailboxEntry, MailboxListingDecision, MailboxListingPolicy,
-    MailboxListingService, MessageListDecision, MessageListPolicy, MessageListRequest,
-    MessageListService, MessageMoveDecision, MessageMoveOutcome, MessageMovePolicy,
-    MessageMoveRequest, MessageMoveService, MessageSearchDecision, MessageSearchField,
-    MessageSearchPolicy, MessageSearchRequest, MessageSearchResult, MessageSearchService,
-    MessageSort, MessageSummary, MessageViewDecision, MessageViewPolicy, MessageViewRequest,
-    MessageViewService,
+    DoveadmMessageAppendBackend, DoveadmMessageListBackend, DoveadmMessageMoveBackend,
+    DoveadmMessageSearchBackend, DoveadmMessageViewBackend, MailboxEntry, MailboxListingDecision,
+    MailboxListingPolicy, MailboxListingService, MessageAppendBackend, MessageAppendRequest,
+    MessageListDecision, MessageListPolicy, MessageListRequest, MessageListService,
+    MessageMoveDecision, MessageMoveOutcome, MessageMovePolicy, MessageMoveRequest,
+    MessageMoveService, MessageSearchDecision, MessageSearchField, MessageSearchPolicy,
+    MessageSearchRequest, MessageSearchResult, MessageSearchService, MessageSort, MessageSummary,
+    MessageViewDecision, MessageViewPolicy, MessageViewRequest, MessageViewService,
 };
 use crate::mailbox_helper::{
     MailboxHelperAttachmentDownloadBackend, MailboxHelperMailboxListBackend,
-    MailboxHelperMessageListBackend, MailboxHelperMessageMoveBackend,
-    MailboxHelperMessageSearchBackend, MailboxHelperMessageViewBackend, MailboxHelperPolicy,
+    MailboxHelperMessageAppendBackend, MailboxHelperMessageListBackend,
+    MailboxHelperMessageMoveBackend, MailboxHelperMessageSearchBackend,
+    MailboxHelperMessageViewBackend, MailboxHelperPolicy,
 };
 use crate::rendering::{
     HtmlDisplayPreference, PlainTextMessageRenderer, RenderedMessageView, RenderingPolicy,
 };
 use crate::send::{
-    ComposeDraft, ComposeIntent, ComposePolicy, ComposeRequest, SendmailSubmissionBackend,
-    SubmissionDecision, SubmissionOutcome, SubmissionPublicFailureReason, SubmissionService,
-    UploadedAttachment, DEFAULT_ATTACHMENT_MAX_BYTES, DEFAULT_TOTAL_ATTACHMENT_MAX_BYTES,
+    build_submission_message, ComposeDraft, ComposeIntent, ComposePolicy, ComposeRequest,
+    SendmailSubmissionBackend, SubmissionDecision, SubmissionOutcome,
+    SubmissionPublicFailureReason, SubmissionService, UploadedAttachment,
+    DEFAULT_ATTACHMENT_MAX_BYTES, DEFAULT_TOTAL_ATTACHMENT_MAX_BYTES,
 };
 use crate::session::{
     FileSessionStore, SessionService, SessionToken, SystemRandomSource, ValidatedSession,

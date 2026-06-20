@@ -905,7 +905,10 @@ fn describe_attachment_for_forward(attachment: &AttachmentMetadata) -> String {
 }
 
 /// Builds the RFC 5322-ish message handed to the local sendmail surface.
-fn build_submission_message(canonical_username: &str, request: &ComposeRequest) -> Vec<u8> {
+pub(crate) fn build_submission_message(
+    canonical_username: &str,
+    request: &ComposeRequest,
+) -> Vec<u8> {
     if request.attachments.is_empty() {
         return build_plain_text_submission_message(canonical_username, request).into_bytes();
     }

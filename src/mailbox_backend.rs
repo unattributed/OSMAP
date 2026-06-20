@@ -7,10 +7,10 @@ use super::{
     concise_command_diagnostics, parse_doveadm_mailbox_list_output,
     parse_doveadm_message_list_output, parse_doveadm_message_search_output,
     parse_doveadm_message_view_output, MailboxBackend, MailboxBackendError, MailboxEntry,
-    MailboxListingPolicy, MessageListBackend, MessageListPolicy, MessageListRequest,
-    MessageMoveBackend, MessageMoveRequest, MessageSearchBackend, MessageSearchPolicy,
-    MessageSearchRequest, MessageSearchResult, MessageSummary, MessageView, MessageViewBackend,
-    MessageViewPolicy, MessageViewRequest,
+    MailboxListingPolicy, MessageAppendBackend, MessageAppendRequest, MessageListBackend,
+    MessageListPolicy, MessageListRequest, MessageMoveBackend, MessageMoveRequest,
+    MessageSearchBackend, MessageSearchPolicy, MessageSearchRequest, MessageSearchResult,
+    MessageSummary, MessageView, MessageViewBackend, MessageViewPolicy, MessageViewRequest,
 };
 
 /// Lists mailboxes through `doveadm mailbox list`.
@@ -428,6 +428,91 @@ where
         if execution.status_code != 0 {
             return Err(MailboxBackendError {
                 backend: "doveadm-message-move",
+                reason: format!(
+                    "command exited with status {}: {}",
+                    execution.status_code,
+                    concise_command_diagnostics(&execution.stdout, &execution.stderr),
+                ),
+            });
+        }
+
+        Ok(())
+    }
+}
+
+/// Appends one complete message through `doveadm save`.
+pub struct DoveadmMessageAppendBackend<E> {
+    command_executor: E,
+    doveadm_path: PathBuf,
+    userdb_socket_path: Option<PathBuf>,
+    command_timeout_secs: u64,
+}
+
+impl<E> DoveadmMessageAppendBackend<E> {
+    /// Builds a backend using the supplied command executor and doveadm path.
+    pub fn new(command_executor: E, doveadm_path: impl Into<PathBuf>) -> Self {
+        Self {
+            command_executor,
+            doveadm_path: doveadm_path.into(),
+            userdb_socket_path: None,
+            command_timeout_secs: DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS,
+        }
+    }
+
+    /// Points message append operations at an explicit userdb-capable socket.
+    pub fn with_userdb_socket_path(mut self, userdb_socket_path: Option<PathBuf>) -> Self {
+        self.userdb_socket_path = userdb_socket_path;
+        self
+    }
+
+    /// Caps the external doveadm save execution.
+    pub fn with_command_timeout_secs(mut self, timeout_secs: u64) -> Self {
+        self.command_timeout_secs = timeout_secs.max(1);
+        self
+    }
+}
+
+impl Default for DoveadmMessageAppendBackend<SystemCommandExecutor> {
+    fn default() -> Self {
+        Self::new(SystemCommandExecutor, "/usr/local/bin/doveadm")
+    }
+}
+
+impl<E> MessageAppendBackend for DoveadmMessageAppendBackend<E>
+where
+    E: CommandExecutor,
+{
+    fn append_message(
+        &self,
+        canonical_username: &str,
+        request: &MessageAppendRequest,
+    ) -> Result<(), MailboxBackendError> {
+        let mut args = vec!["-o".to_string(), "stats_writer_socket_path=".to_string()];
+        append_doveadm_auth_socket_override(&mut args, self.userdb_socket_path.as_ref());
+        args.extend([
+            "save".to_string(),
+            "-u".to_string(),
+            canonical_username.to_string(),
+            "-m".to_string(),
+            request.mailbox_name.clone(),
+        ]);
+
+        let execution = self
+            .command_executor
+            .run_with_stdin_bytes_timeout(
+                self.doveadm_path.to_string_lossy().as_ref(),
+                &args,
+                &request.message,
+                Duration::from_secs(self.command_timeout_secs),
+            )
+            .map_err(|error| MailboxBackendError {
+                backend: "doveadm-message-append",
+                reason: error.reason,
+            })?;
+
+        if execution.status_code != 0 {
+            return Err(MailboxBackendError {
+                backend: "doveadm-message-append",
                 reason: format!(
                     "command exited with status {}: {}",
                     execution.status_code,

@@ -6747,3 +6747,24 @@ Decision: V8 is complete as a source-level stabilization milestone. It is not
 a feature release, does not change the frozen V4 release-evidence tuple, does
 not claim a new production deployment, and does not close the reopened V7
 production availability milestone.
+
+## 2026-06-20, File accepted outbound messages into Sent
+
+Live delivery evidence showed that Postfix accepted an OSMAP compose submission
+while the sender's Dovecot `Sent` mailbox remained unchanged. The send path only
+called the local sendmail compatibility surface and treated that handoff as the
+end of the workflow.
+
+OSMAP now appends the same bounded RFC 5322 message bytes to `Sent` through a
+grant-authorized mailbox-helper operation backed by `doveadm save`. The helper
+grant binds the canonical user, mailbox, and message digest. Message size stays
+bounded by the compose policy after MIME expansion.
+
+Delivery remains authoritative. Sent-copy storage runs only after sendmail
+accepts the message. An append failure emits `sent_copy_store_failed` but does
+not report the already-delivered message as unsent, which avoids prompting a
+duplicate submission. Successful filing emits `sent_copy_stored`.
+
+Decision: accepted OSMAP submissions should appear in the authenticated
+sender's `Sent` mailbox without widening direct mailbox authority in the
+browser-facing runtime.

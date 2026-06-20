@@ -38,9 +38,11 @@
   yet provide preview-oriented attachment behavior
 - The implementation now has a first outbound send path with reply and forward
   draft generation, bounded new attachment upload/submission behavior, and
-  explicit source-attachment selection for reply/forward sends. It still does
-  not automatically reattach original-message attachments, and source
-  attachment references are not yet saved across draft resume.
+  explicit source-attachment selection for reply/forward sends. Accepted
+  submissions are filed into the sender's `Sent` mailbox through the local
+  mailbox helper. It still does not automatically reattach original-message
+  attachments, and source attachment references are not yet saved across draft
+  resume.
 - The implementation now has a conservative rendering layer with both
   plain-text and sanitized-HTML modes, but it still does not provide
   inline image rendering, full rich-header coverage, or any external-resource

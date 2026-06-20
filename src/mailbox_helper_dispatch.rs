@@ -6,26 +6,28 @@ use crate::config::LogLevel;
 use crate::logging::{EventCategory, LogEvent, Logger};
 #[cfg(unix)]
 use crate::mailbox::{
-    MailboxBackend, MessageListBackend, MessageListPolicy, MessageListRequest, MessageMoveBackend,
-    MessageMovePolicy, MessageMoveRequest, MessageSearchBackend, MessageSearchPolicy,
-    MessageSearchRequest, MessageViewBackend, MessageViewPolicy, MessageViewRequest,
+    MailboxBackend, MessageAppendBackend, MessageAppendRequest, MessageListBackend,
+    MessageListPolicy, MessageListRequest, MessageMoveBackend, MessageMovePolicy,
+    MessageMoveRequest, MessageSearchBackend, MessageSearchPolicy, MessageSearchRequest,
+    MessageViewBackend, MessageViewPolicy, MessageViewRequest,
 };
 
 #[cfg(unix)]
 use super::{MailboxHelperRequest, MailboxHelperResponse};
 
 #[cfg(unix)]
-pub(super) struct HelperBackends<'a, MB, MLB, MSB, MVB, MMB> {
+pub(super) struct HelperBackends<'a, MB, MLB, MSB, MVB, MMB, MAB> {
     pub(super) mailbox_backend: &'a MB,
     pub(super) message_list_backend: &'a MLB,
     pub(super) message_search_backend: &'a MSB,
     pub(super) message_view_backend: &'a MVB,
     pub(super) message_move_backend: &'a MMB,
+    pub(super) message_append_backend: &'a MAB,
 }
 
 #[cfg(unix)]
-pub(super) fn dispatch_helper_request<MB, MLB, MSB, MVB, MMB>(
-    backends: HelperBackends<'_, MB, MLB, MSB, MVB, MMB>,
+pub(super) fn dispatch_helper_request<MB, MLB, MSB, MVB, MMB, MAB>(
+    backends: HelperBackends<'_, MB, MLB, MSB, MVB, MMB, MAB>,
     request: &MailboxHelperRequest,
 ) -> MailboxHelperResponse
 where
@@ -34,6 +36,7 @@ where
     MSB: MessageSearchBackend,
     MVB: MessageViewBackend,
     MMB: MessageMoveBackend,
+    MAB: MessageAppendBackend,
 {
     match request {
         MailboxHelperRequest::MailboxList {
@@ -202,6 +205,33 @@ where
                 Err(error_response) => error_response,
             }
         }
+        MailboxHelperRequest::MessageAppend {
+            canonical_username,
+            mailbox_name,
+            message,
+            ..
+        } => {
+            match MessageAppendRequest::new(mailbox_name.clone(), message.clone())
+                .map_err(|error| MailboxHelperResponse::Error {
+                    backend: error.backend.to_string(),
+                    reason: error.reason,
+                })
+                .and_then(|request| {
+                    backends
+                        .message_append_backend
+                        .append_message(canonical_username, &request)
+                        .map_err(|error| MailboxHelperResponse::Error {
+                            backend: error.backend.to_string(),
+                            reason: error.reason,
+                        })
+                }) {
+                Ok(()) => MailboxHelperResponse::MessageAppendOk {
+                    mailbox_name: mailbox_name.clone(),
+                    message_bytes: message.len(),
+                },
+                Err(error_response) => error_response,
+            }
+        }
     }
 }
 
@@ -324,6 +354,25 @@ pub(super) fn log_helper_response(
             .with_field("part_path", attachment.part_path.clone())
             .with_field("download_bytes", attachment.body.len().to_string()),
         ),
+        (
+            MailboxHelperResponse::MessageAppendOk {
+                mailbox_name,
+                message_bytes,
+            },
+            Some(MailboxHelperRequest::MessageAppend {
+                canonical_username, ..
+            }),
+        ) => logger.emit(
+            &LogEvent::new(
+                LogLevel::Info,
+                EventCategory::Mailbox,
+                "mailbox_helper_message_appended",
+                "mailbox helper appended one message",
+            )
+            .with_field("canonical_username", canonical_username.clone())
+            .with_field("mailbox_name", mailbox_name.clone())
+            .with_field("message_bytes", message_bytes.to_string()),
+        ),
         (MailboxHelperResponse::Error { backend, reason }, Some(request)) => logger.emit(
             &LogEvent::new(
                 LogLevel::Warn,
@@ -358,5 +407,6 @@ fn helper_operation_label(request: &MailboxHelperRequest) -> &'static str {
         MailboxHelperRequest::MessageView { .. } => "message_view",
         MailboxHelperRequest::AttachmentDownload { .. } => "attachment_download",
         MailboxHelperRequest::MessageMove { .. } => "message_move",
+        MailboxHelperRequest::MessageAppend { .. } => "message_append",
     }
 }

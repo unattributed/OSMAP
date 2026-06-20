@@ -28,8 +28,9 @@ mod mailbox_helper_protocol;
 
 pub use self::mailbox_helper_client::{
     MailboxHelperAttachmentDownloadBackend, MailboxHelperMailboxListBackend,
-    MailboxHelperMessageListBackend, MailboxHelperMessageMoveBackend,
-    MailboxHelperMessageSearchBackend, MailboxHelperMessageViewBackend,
+    MailboxHelperMessageAppendBackend, MailboxHelperMessageListBackend,
+    MailboxHelperMessageMoveBackend, MailboxHelperMessageSearchBackend,
+    MailboxHelperMessageViewBackend,
 };
 use self::mailbox_helper_dispatch::{dispatch_helper_request, log_helper_response, HelperBackends};
 #[cfg(test)]
@@ -43,19 +44,21 @@ use crate::auth::SystemCommandExecutor;
 use crate::config::{AppConfig, AppRunMode, LogLevel};
 use crate::logging::{EventCategory, LogEvent, Logger};
 use crate::mailbox::{
-    DoveadmMailboxListBackend, DoveadmMessageListBackend, DoveadmMessageMoveBackend,
-    DoveadmMessageSearchBackend, DoveadmMessageViewBackend, MailboxBackend, MailboxBackendError,
-    MailboxEntry, MailboxListingPolicy, MessageListBackend, MessageListPolicy, MessageListRequest,
+    DoveadmMailboxListBackend, DoveadmMessageAppendBackend, DoveadmMessageListBackend,
+    DoveadmMessageMoveBackend, DoveadmMessageSearchBackend, DoveadmMessageViewBackend,
+    MailboxBackend, MailboxBackendError, MailboxEntry, MailboxListingPolicy, MessageAppendBackend,
+    MessageAppendRequest, MessageListBackend, MessageListPolicy, MessageListRequest,
     MessageMoveBackend, MessageMoveRequest, MessageSearchBackend, MessageSearchPolicy,
     MessageSearchRequest, MessageSearchResult, MessageSummary, MessageView, MessageViewBackend,
-    MessageViewPolicy, MessageViewRequest,
+    MessageViewPolicy, MessageViewRequest, DEFAULT_MESSAGE_APPEND_MAX_BYTES,
 };
 #[cfg(test)]
 use crate::mailbox::{MessageMovePolicy, MessageSearchField};
 use crate::openbsd::{apply_runtime_confinement, unix_stream_peer_uid};
 
 /// Conservative upper bound for one helper request payload.
-pub const DEFAULT_MAILBOX_HELPER_MAX_REQUEST_BYTES: usize = 4096;
+pub const DEFAULT_MAILBOX_HELPER_MAX_REQUEST_BYTES: usize =
+    (DEFAULT_MESSAGE_APPEND_MAX_BYTES / 3 * 4) + 8192;
 
 /// Conservative upper bound for one helper response payload.
 ///
@@ -158,6 +161,9 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
         let message_move_backend =
             DoveadmMessageMoveBackend::new(SystemCommandExecutor, "/usr/local/bin/doveadm")
                 .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone());
+        let message_append_backend =
+            DoveadmMessageAppendBackend::new(SystemCommandExecutor, "/usr/local/bin/doveadm")
+                .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone());
         let policy = MailboxHelperPolicy::default();
         let mut replay_cache = BTreeMap::<String, u64>::new();
 
@@ -181,6 +187,7 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
                         message_search_backend: &message_search_backend,
                         message_view_backend: &message_view_backend,
                         message_move_backend: &message_move_backend,
+                        message_append_backend: &message_append_backend,
                     },
                     logger,
                     &mut stream,
@@ -205,8 +212,8 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
 }
 
 #[cfg(unix)]
-fn handle_helper_client<MB, MLB, MSB, MVB, MMB>(
-    backends: HelperBackends<'_, MB, MLB, MSB, MVB, MMB>,
+fn handle_helper_client<MB, MLB, MSB, MVB, MMB, MAB>(
+    backends: HelperBackends<'_, MB, MLB, MSB, MVB, MMB, MAB>,
     logger: &Logger,
     stream: &mut UnixStream,
     policy: MailboxHelperPolicy,
@@ -218,6 +225,7 @@ fn handle_helper_client<MB, MLB, MSB, MVB, MMB>(
     MSB: MessageSearchBackend,
     MVB: MessageViewBackend,
     MMB: MessageMoveBackend,
+    MAB: MessageAppendBackend,
 {
     configure_stream_timeouts(stream, policy);
 
@@ -582,6 +590,16 @@ mod tests {
         }
     }
 
+    impl MessageAppendBackend for StaticHelperBackend {
+        fn append_message(
+            &self,
+            _canonical_username: &str,
+            _request: &MessageAppendRequest,
+        ) -> Result<(), MailboxBackendError> {
+            Ok(())
+        }
+    }
+
     fn sign_test_request(request: &mut MailboxHelperRequest) -> String {
         let key = test_helper_grant_key();
         let nonce = test_grant_nonce(0);
@@ -605,6 +623,28 @@ mod tests {
         )
         .expect("test request grant should sign");
         encode_request(&request)
+    }
+
+    #[test]
+    fn message_append_grant_binds_mailbox_and_message_digest() {
+        let mut request = MailboxHelperRequest::MessageAppend {
+            canonical_username: "alice@example.com".to_string(),
+            mailbox_name: "Sent".to_string(),
+            message: b"Subject: original\r\n\r\nBody\r\n".to_vec(),
+            grant: MailboxHelperGrant::unsigned(),
+        };
+        let key = test_helper_grant_key();
+        issue_request_grant_with_nonce(&mut request, &key, 100, &test_grant_nonce(32))
+            .expect("append request should sign");
+
+        verify_request_grant(&request, &key, 100).expect("original append request should verify");
+
+        if let MailboxHelperRequest::MessageAppend { message, .. } = &mut request {
+            message.extend_from_slice(b"tampered");
+        }
+        let error = verify_request_grant(&request, &key, 100)
+            .expect_err("message mutation must invalidate the grant");
+        assert_eq!(error, "helper request grant signature was invalid");
     }
 
     #[test]
@@ -1838,6 +1878,43 @@ mod tests {
     }
 
     #[cfg(unix)]
+    #[test]
+    fn client_appends_message_over_helper_socket() {
+        let socket_path = temp_socket_path("message-append-helper-ok");
+        let backend = StaticHelperBackend {
+            mailbox_result: Arc::new(Ok(Vec::new())),
+            message_list_result: Arc::new(Ok(Vec::new())),
+            message_search_result: Arc::new(Ok(Vec::new())),
+            message_view_result: Arc::new(Err(MailboxBackendError {
+                backend: "message-view-not-used",
+                reason: "unexpected message-view request".to_string(),
+            })),
+            message_move_result: Arc::new(Ok(())),
+        };
+        let server = spawn_test_helper(socket_path.clone(), backend);
+        wait_for_socket(&socket_path);
+        let grant_key_path = temp_grant_key_path("message-append-helper-ok");
+        let client = MailboxHelperMessageAppendBackend::new(
+            &socket_path,
+            &grant_key_path,
+            MailboxHelperPolicy::default(),
+        );
+        let request = MessageAppendRequest::new(
+            "Sent",
+            b"From: alice@example.com\r\nTo: bob@example.com\r\n\r\nHello\r\n".to_vec(),
+        )
+        .expect("request should parse");
+
+        client
+            .append_message("alice@example.com", &request)
+            .expect("helper-backed message append should succeed");
+
+        server.join().expect("helper thread should finish");
+        let _ = fs::remove_file(&socket_path);
+        let _ = fs::remove_file(&grant_key_path);
+    }
+
+    #[cfg(unix)]
     fn spawn_test_helper<B>(socket_path: PathBuf, backend: B) -> thread::JoinHandle<()>
     where
         B: MailboxBackend
@@ -1845,6 +1922,7 @@ mod tests {
             + MessageSearchBackend
             + MessageViewBackend
             + MessageMoveBackend
+            + MessageAppendBackend
             + Send
             + 'static,
     {
@@ -1863,6 +1941,7 @@ mod tests {
             + MessageSearchBackend
             + MessageViewBackend
             + MessageMoveBackend
+            + MessageAppendBackend
             + Send
             + 'static,
     {
@@ -1879,6 +1958,7 @@ mod tests {
                     message_search_backend: &backend,
                     message_view_backend: &backend,
                     message_move_backend: &backend,
+                    message_append_backend: &backend,
                 },
                 &logger,
                 &mut stream,

@@ -17,24 +17,25 @@ mod mailbox_parse;
 mod mailbox_service;
 
 pub use self::mailbox_backend::{
-    DoveadmMailboxListBackend, DoveadmMessageListBackend, DoveadmMessageMoveBackend,
-    DoveadmMessageSearchBackend, DoveadmMessageViewBackend,
+    DoveadmMailboxListBackend, DoveadmMessageAppendBackend, DoveadmMessageListBackend,
+    DoveadmMessageMoveBackend, DoveadmMessageSearchBackend, DoveadmMessageViewBackend,
 };
 pub(crate) use self::mailbox_model::validate_message_search_query;
 pub use self::mailbox_model::{
     sort_message_search_results, sort_message_summaries, MailboxAuditFailureReason, MailboxBackend,
     MailboxBackendError, MailboxEntry, MailboxListingDecision, MailboxListingOutcome,
-    MailboxListingPolicy, MailboxPublicFailureReason, MessageListBackend, MessageListDecision,
-    MessageListOutcome, MessageListPolicy, MessageListRequest, MessageMoveBackend,
-    MessageMoveDecision, MessageMoveOutcome, MessageMovePolicy, MessageMoveRequest,
-    MessageSearchBackend, MessageSearchDecision, MessageSearchField, MessageSearchOutcome,
-    MessageSearchPolicy, MessageSearchRequest, MessageSearchResult, MessageSort, MessageSortColumn,
-    MessageSortDirection, MessageSummary, MessageView, MessageViewBackend, MessageViewDecision,
-    MessageViewOutcome, MessageViewPolicy, MessageViewRequest, DEFAULT_MAILBOX_NAME_MAX_LEN,
-    DEFAULT_MAX_MAILBOXES, DEFAULT_MAX_MESSAGES, DEFAULT_MAX_SEARCH_RESULTS,
-    DEFAULT_MESSAGE_BODY_MAX_LEN, DEFAULT_MESSAGE_DATE_MAX_LEN,
-    DEFAULT_MESSAGE_FLAG_STRING_MAX_LEN, DEFAULT_MESSAGE_HEADER_MAX_LEN,
-    DEFAULT_SEARCH_HEADER_VALUE_MAX_LEN, DEFAULT_SEARCH_QUERY_MAX_LEN,
+    MailboxListingPolicy, MailboxPublicFailureReason, MessageAppendBackend, MessageAppendRequest,
+    MessageListBackend, MessageListDecision, MessageListOutcome, MessageListPolicy,
+    MessageListRequest, MessageMoveBackend, MessageMoveDecision, MessageMoveOutcome,
+    MessageMovePolicy, MessageMoveRequest, MessageSearchBackend, MessageSearchDecision,
+    MessageSearchField, MessageSearchOutcome, MessageSearchPolicy, MessageSearchRequest,
+    MessageSearchResult, MessageSort, MessageSortColumn, MessageSortDirection, MessageSummary,
+    MessageView, MessageViewBackend, MessageViewDecision, MessageViewOutcome, MessageViewPolicy,
+    MessageViewRequest, DEFAULT_MAILBOX_NAME_MAX_LEN, DEFAULT_MAX_MAILBOXES, DEFAULT_MAX_MESSAGES,
+    DEFAULT_MAX_SEARCH_RESULTS, DEFAULT_MESSAGE_APPEND_MAX_BYTES, DEFAULT_MESSAGE_BODY_MAX_LEN,
+    DEFAULT_MESSAGE_DATE_MAX_LEN, DEFAULT_MESSAGE_FLAG_STRING_MAX_LEN,
+    DEFAULT_MESSAGE_HEADER_MAX_LEN, DEFAULT_SEARCH_HEADER_VALUE_MAX_LEN,
+    DEFAULT_SEARCH_QUERY_MAX_LEN,
 };
 use self::mailbox_parse::{
     parse_doveadm_mailbox_list_output, parse_doveadm_message_list_output,
@@ -139,6 +140,7 @@ mod tests {
         execution: Result<CommandExecution, CommandExecutionError>,
         program: Option<String>,
         args: Option<Vec<String>>,
+        stdin_data: Option<Vec<u8>>,
         timeout_secs: Option<u64>,
     }
 
@@ -148,6 +150,7 @@ mod tests {
                 execution: Ok(execution),
                 program: None,
                 args: None,
+                stdin_data: None,
                 timeout_secs: None,
             }
         }
@@ -158,11 +161,12 @@ mod tests {
             &self,
             program: &str,
             args: &[String],
-            _stdin_data: &[u8],
+            stdin_data: &[u8],
         ) -> Result<CommandExecution, CommandExecutionError> {
             let mut state = self.borrow_mut();
             state.program = Some(program.to_string());
             state.args = Some(args.to_vec());
+            state.stdin_data = Some(stdin_data.to_vec());
             state.execution.clone()
         }
 
@@ -753,6 +757,45 @@ mod tests {
                 "9".to_string(),
             ]
         );
+        assert_eq!(recorded.timeout_secs, Some(3));
+    }
+
+    #[test]
+    fn message_append_uses_doveadm_save_with_message_on_stdin() {
+        let executor = Rc::new(std::cell::RefCell::new(StubCommandExecutor::success(
+            CommandExecution {
+                status_code: 0,
+                stdout: String::new(),
+                stderr: String::new(),
+            },
+        )));
+        let backend = DoveadmMessageAppendBackend::new(executor.clone(), "/usr/local/bin/doveadm")
+            .with_userdb_socket_path(Some(PathBuf::from("/var/run/osmap-userdb")))
+            .with_command_timeout_secs(3);
+        let message = b"From: alice@example.com\r\nTo: bob@example.com\r\n\r\nHello\r\n".to_vec();
+        let request =
+            MessageAppendRequest::new("Sent", message.clone()).expect("request should be valid");
+
+        backend
+            .append_message("alice@example.com", &request)
+            .expect("message append should succeed");
+
+        let recorded = executor.borrow();
+        assert_eq!(
+            recorded.args.as_ref().expect("args should be captured"),
+            &vec![
+                "-o".to_string(),
+                "stats_writer_socket_path=".to_string(),
+                "-o".to_string(),
+                "auth_socket_path=/var/run/osmap-userdb".to_string(),
+                "save".to_string(),
+                "-u".to_string(),
+                "alice@example.com".to_string(),
+                "-m".to_string(),
+                "Sent".to_string(),
+            ]
+        );
+        assert_eq!(recorded.stdin_data.as_deref(), Some(message.as_slice()));
         assert_eq!(recorded.timeout_secs, Some(3));
     }
 
