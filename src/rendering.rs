@@ -345,7 +345,7 @@ fn parse_encoded_word(input: &str) -> Option<(usize, String)> {
         b'Q' | b'q' => decode_header_q_encoding(encoded_text).ok()?,
         _ => return None,
     };
-    let decoded_text = decode_header_bytes_with_charset(charset, &decoded_bytes)?;
+    let decoded_text = crate::charset::decode_text_bytes(charset, &decoded_bytes)?;
 
     Some((encoded_end + 2, decoded_text))
 }
@@ -429,25 +429,6 @@ fn decode_header_base64(input: &str) -> Result<Vec<u8>, ()> {
     }
 
     Ok(output)
-}
-
-/// Decodes header bytes for a narrow set of common charsets.
-fn decode_header_bytes_with_charset(charset: &str, bytes: &[u8]) -> Option<String> {
-    let charset = charset.trim().to_ascii_lowercase();
-    match charset.as_str() {
-        "utf-8" | "utf8" => String::from_utf8(bytes.to_vec()).ok(),
-        "us-ascii" | "ascii" => {
-            if bytes.is_ascii() {
-                Some(String::from_utf8_lossy(bytes).into_owned())
-            } else {
-                None
-            }
-        }
-        "iso-8859-1" | "latin1" | "latin-1" => {
-            Some(bytes.iter().map(|byte| char::from(*byte)).collect())
-        }
-        _ => None,
-    }
 }
 
 /// Decodes one hexadecimal ASCII nibble used by RFC 2047 Q encoding.
@@ -1001,6 +982,38 @@ mod tests {
         assert!(outcome.rendered.body_html.contains("<b>world</b>"));
         assert!(outcome.rendered.body_text_for_compose.contains("Hello"));
         assert!(outcome.rendered.body_text_for_compose.contains("world"));
+        assert_eq!(
+            outcome.rendered.rendering_mode,
+            RenderingMode::SanitizedHtml
+        );
+    }
+
+    #[test]
+    fn fixture_windows_1252_html_only_forward_renders_sanitized_content() {
+        let renderer = PlainTextMessageRenderer::new(RenderingPolicy::default());
+        let message = message_view_from_fixture(include_str!(
+            "../tests/fixtures/mime/windows_1252_html_only_forward.eml"
+        ));
+
+        let outcome = renderer
+            .render_for_validated_session(&test_context(), &validated_session_fixture(), &message)
+            .expect("windows-1252 HTML-only forward should render safely");
+
+        assert_eq!(
+            outcome.rendered.subject.as_deref(),
+            Some("Forwarded café – update")
+        );
+        assert_eq!(
+            outcome.rendered.body_source,
+            MimeBodySource::MultipartHtmlSanitized
+        );
+        assert!(outcome.rendered.body_html.contains(concat!(
+            "Forwarded café ",
+            "\u{2014}",
+            " expected content."
+        )));
+        assert!(!outcome.rendered.body_html.contains("<script"));
+        assert!(!outcome.rendered.body_html.contains("alert(1)"));
         assert_eq!(
             outcome.rendered.rendering_mode,
             RenderingMode::SanitizedHtml

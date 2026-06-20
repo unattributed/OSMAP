@@ -413,3 +413,21 @@ availability for the observed production messages. Messages larger than
 512 KiB remain intentionally unavailable through message view and require a
 separate product decision if normal operations demonstrate a need for a larger
 bounded envelope.
+
+### Production Reevaluation: Windows-1252 Forwarded Message Rendering
+
+Authenticated production testing then found a forwarded Outlook message whose
+multipart HTML content and RFC 2047 subject used Windows-1252. OSMAP recognized
+that HTML was present but could not decode the charset, so the existing
+sanitized-HTML path received no body and returned a safe placeholder.
+
+OSMAP now decodes Windows-1252 and its `cp1252` alias through one internal,
+dependency-free charset boundary shared by MIME bodies, encoded headers, and
+RFC 2231 metadata. Undefined Windows-1252 byte positions become Unicode
+replacement characters rather than browser-visible controls. The decoded HTML
+still passes through the existing allowlist sanitizer, remote-content policy,
+rendered-size bound, and typed trusted-HTML boundary.
+
+A non-sensitive regression fixture proves that a quoted-printable,
+Windows-1252, HTML-only multipart forward renders its expected text, decodes
+its subject, and removes script content.

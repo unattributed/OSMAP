@@ -722,7 +722,7 @@ fn decode_text_body(
         _ => return Ok(None),
     };
 
-    Ok(decode_text_bytes_with_charset(
+    Ok(crate::charset::decode_text_bytes(
         content_type
             .params
             .get("charset")
@@ -828,25 +828,6 @@ fn decode_quoted_printable_text_bytes(input: &str) -> Option<Vec<u8>> {
     }
 
     Some(output)
-}
-
-/// Decodes text body bytes for a narrow set of common charsets.
-fn decode_text_bytes_with_charset(charset: &str, bytes: &[u8]) -> Option<String> {
-    let charset = charset.trim().to_ascii_lowercase();
-    match charset.as_str() {
-        "utf-8" | "utf8" => String::from_utf8(bytes.to_vec()).ok(),
-        "us-ascii" | "ascii" => {
-            if bytes.is_ascii() {
-                Some(String::from_utf8_lossy(bytes).into_owned())
-            } else {
-                None
-            }
-        }
-        "iso-8859-1" | "latin1" | "latin-1" => {
-            Some(bytes.iter().map(|byte| char::from(*byte)).collect())
-        }
-        _ => None,
-    }
 }
 
 /// Extracts one unfolded header value from a header block by case-insensitive name.
@@ -1062,7 +1043,7 @@ fn decode_rfc2231_continuation_parameter(
     }
 
     let decoded = match charset {
-        Some(charset) => decode_rfc2231_bytes_with_charset(&charset, &output),
+        Some(charset) => crate::charset::decode_text_bytes(&charset, &output),
         None => String::from_utf8(output).ok(),
     };
 
@@ -1088,7 +1069,7 @@ fn decode_rfc2231_encoded_bytes(
     let Some(decoded_bytes) = percent_decode_bytes(encoded_value) else {
         return Ok(None);
     };
-    let Some(decoded) = decode_rfc2231_bytes_with_charset(charset, &decoded_bytes) else {
+    let Some(decoded) = crate::charset::decode_text_bytes(charset, &decoded_bytes) else {
         return Ok(None);
     };
 
@@ -1123,26 +1104,6 @@ fn percent_decode_bytes(value: &str) -> Option<Vec<u8>> {
     }
 
     Some(output)
-}
-
-/// Decodes RFC 2231 parameter bytes for the same narrow charset set used by
-/// the header-summary renderer.
-fn decode_rfc2231_bytes_with_charset(charset: &str, bytes: &[u8]) -> Option<String> {
-    let charset = charset.trim().to_ascii_lowercase();
-    match charset.as_str() {
-        "utf-8" | "utf8" => String::from_utf8(bytes.to_vec()).ok(),
-        "us-ascii" | "ascii" => {
-            if bytes.is_ascii() {
-                Some(String::from_utf8_lossy(bytes).into_owned())
-            } else {
-                None
-            }
-        }
-        "iso-8859-1" | "latin1" | "latin-1" => {
-            Some(bytes.iter().map(|byte| char::from(*byte)).collect())
-        }
-        _ => None,
-    }
 }
 
 /// Decodes one hexadecimal ASCII nibble used by RFC 2231 percent encoding.

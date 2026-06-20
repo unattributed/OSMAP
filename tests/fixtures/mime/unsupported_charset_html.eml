@@ -1,6 +1,6 @@
-Subject: Legacy charset HTML
-From: Legacy Sender <legacy@example.org>
-Content-Type: text/html; charset=windows-1252
+Subject: Unsupported charset HTML
+From: Unsupported Sender <unsupported@example.org>
+Content-Type: text/html; charset=koi8-r
 Content-Transfer-Encoding: quoted-printable
 
-<p>Smart quote =93test=94</p>
+<p>=F0=D2=C9=D7=C5=D4</p>
