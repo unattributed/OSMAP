@@ -1,0 +1,15 @@
+Subject: V8 active SVG attachment
+From: Attachment Sender <attachments@example.com>
+Date: Sat, 20 Jun 2026 04:33:00 +0000
+Content-Type: multipart/mixed; boundary="v8-attach-svg"
+
+--v8-attach-svg
+Content-Type: text/plain; charset=utf-8
+
+SVG attachment workflow.
+--v8-attach-svg
+Content-Type: image/svg+xml
+Content-Disposition: attachment; filename="chart.svg"
+
+<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>
+--v8-attach-svg--

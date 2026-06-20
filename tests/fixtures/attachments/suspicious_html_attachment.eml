@@ -1,0 +1,15 @@
+Subject: V8 suspicious HTML attachment
+From: Attachment Sender <attachments@example.com>
+Date: Sat, 20 Jun 2026 04:32:00 +0000
+Content-Type: multipart/mixed; boundary="v8-attach-html"
+
+--v8-attach-html
+Content-Type: text/plain; charset=utf-8
+
+Suspicious HTML attachment workflow.
+--v8-attach-html
+Content-Type: text/html
+Content-Disposition: attachment; filename="../../invoice<script>.html"
+
+<html><body><script>alert('download-only')</script><p>download me</p></body></html>
+--v8-attach-html--
