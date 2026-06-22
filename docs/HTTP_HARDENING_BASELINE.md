@@ -41,6 +41,8 @@ The current browser runtime enforces:
   overwriting earlier values
 - per-connection read and write timeouts on the sequential listener
 - binary-safe multipart request parsing for the current upload path
+- independent multipart part-header limits of 8 KiB, 16 headers, 64 bytes per
+  normalized name, and 4 KiB per normalized value
 - cache suppression for sensitive pages and redirects
 - a restrictive content-security policy
 - `Cross-Origin-Resource-Policy: same-origin` on the current browser and

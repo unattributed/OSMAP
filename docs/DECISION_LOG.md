@@ -6812,3 +6812,17 @@ and a backup directory restores the previous draft when finalization fails.
 Decision: draft quota checks and state replacement are serialized across
 cooperating processes, and ordinary write failures do not leave a mixed old and
 new draft.
+
+## 2026-06-22, Bound multipart part headers independently
+
+The compose upload parser bounded the complete request body but did not bound
+the header block or header count of each multipart part independently. A single
+part could therefore spend most of the upload budget on header parsing.
+
+Multipart parts now have explicit limits for header bytes, count, normalized
+name length, and normalized value length. Invalid names, control-bearing values,
+duplicates, and over-limit inputs fail before attachment construction.
+
+Decision: the multipart body allowance remains available for bounded
+attachments, but part metadata cannot consume that allowance without its own
+smaller limits.
