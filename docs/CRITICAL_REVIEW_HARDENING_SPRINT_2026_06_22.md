@@ -2,7 +2,7 @@
 
 Date: 2026-06-22
 Baseline commit: `f8eed70`
-Status: Implementation complete; final aggregate validation pending
+Status: Complete
 
 ## Purpose
 
@@ -131,3 +131,20 @@ claims:
 - Cargo and README licensing now match the repository's ISC `LICENSE` file
 
 No release or production-deployment claim is widened by these corrections.
+
+## Aggregate Validation
+
+The completed six-slice sprint passed `make security-check` on 2026-06-22.
+That gate included:
+
+- 523 passing library tests, 4 host-dependent tests ignored, and no failures
+- the binary test, documentation compile-fail test, and V4 and V8 integration
+  matrices
+- strict Clippy and rustfmt checks
+- `cargo audit`, `cargo deny`, and duplicate-dependency checks
+- publication, documentation, TLS, V7 boundary, and CWE Top 25 guards
+- V4, V6, V7, and V8 security and regression gates
+- release-wrapper and WSTG testing-pack regression checks
+
+The security gate generated only ignored `maint/live/latest-*` working reports.
+No production deployment was performed as part of this source sprint.
