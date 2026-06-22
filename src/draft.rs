@@ -1065,13 +1065,16 @@ fn remove_draft_dir(path: impl AsRef<Path>) -> Result<(), DraftError> {
 }
 
 fn write_file_atomic(tmp_path: &Path, final_path: &Path, bytes: &[u8]) -> Result<(), DraftError> {
-    let mut file = fs::OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .open(tmp_path)
-        .map_err(|error| DraftError {
-            reason: format!("failed to create draft temp file {:?}: {error}", tmp_path),
-        })?;
+    let mut options = fs::OpenOptions::new();
+    options.write(true).create_new(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt as _;
+        options.mode(0o600);
+    }
+    let mut file = options.open(tmp_path).map_err(|error| DraftError {
+        reason: format!("failed to create draft temp file {:?}: {error}", tmp_path),
+    })?;
     file.write_all(bytes).map_err(|error| DraftError {
         reason: format!("failed to write draft temp file {:?}: {error}", tmp_path),
     })?;

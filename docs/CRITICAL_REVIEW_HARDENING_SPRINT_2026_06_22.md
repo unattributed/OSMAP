@@ -18,7 +18,7 @@ security property can be reviewed, tested, and committed independently.
 | 2 | Serial mailbox-helper availability | CWE-400 | Implemented |
 | 3 | Draft transaction races and partial replacement | CWE-362, CWE-664 | Implemented |
 | 4 | Multipart part-header resource bounds | CWE-400 | Implemented |
-| 5 | Restrictive mode at file creation | CWE-732 | Pending |
+| 5 | Restrictive mode at file creation | CWE-732 | Implemented |
 | 6 | Documentation and package metadata drift | Documentation integrity | Pending |
 
 ## Slice 1: TOTP Counter Replay
@@ -101,3 +101,17 @@ Focused validation:
 - oversized part-header blocks fail before UTF-8 parsing
 - excessive header counts fail
 - oversized names and values fail with stable reasons
+
+## Slice 5: Restrictive Modes At Creation
+
+Settings and draft temporary files now request mode `0600` in the same
+`open(2)` operation that creates them. Settings and draft directories are
+forced to mode `0700`. Existing post-create permission enforcement remains in
+place as a second check.
+
+Focused validation:
+
+- settings directory mode is `0700`
+- settings file mode is `0600`
+- draft root, owner, and staging directories remain `0700`
+- draft metadata and attachment files remain `0600`

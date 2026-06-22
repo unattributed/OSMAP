@@ -397,7 +397,8 @@ The current file-backed store:
 - derives the filename from a SHA-256 hash of the canonical username with a
   stable domain-separation prefix
 - writes line-oriented content with atomic replacement semantics
-- uses `0600` permissions on Unix-like systems
+- creates the settings directory as `0700` and temporary files as `0600` on
+  Unix-like systems before writing private content
 
 This keeps the first end-user settings slice inside the same explicit state
 boundary as sessions, audit files, TOTP secrets, and throttle state rather
@@ -419,9 +420,9 @@ The current file-backed draft store:
   directory
 - validates compose fields and attachments with the existing compose policy
   before persistence
-- uses `0700` permissions for draft directories on Unix-like systems
-- uses `0600` permissions for draft metadata and attachment files on Unix-like
-  systems
+- creates draft directories as `0700` on Unix-like systems
+- creates draft metadata and attachment files as `0600` on Unix-like systems
+  before writing private content
 - removes expired drafts opportunistically during draft operations
 
 Draft state remains server-side authenticated browser state. It does not add
