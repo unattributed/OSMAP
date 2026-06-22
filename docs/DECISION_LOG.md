@@ -6826,3 +6826,16 @@ duplicates, and over-limit inputs fail before attachment construction.
 Decision: the multipart body allowance remains available for bounded
 attachments, but part metadata cannot consume that allowance without its own
 smaller limits.
+
+## 2026-06-22, Set private state modes during file creation
+
+Settings and draft temporary files previously relied on the process umask until
+a later chmod operation set mode `0600`. A permissive or unexpected umask could
+therefore create a brief over-permission window.
+
+Both stores now request mode `0600` in the exclusive file-creation operation.
+Their state directories are enforced as `0700`, and the existing post-create
+permission calls remain as a second check.
+
+Decision: private browser state must be born private rather than repaired after
+creation.

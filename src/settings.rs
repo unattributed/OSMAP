@@ -117,21 +117,25 @@ impl UserSettingsStore for FileUserSettingsStore {
                 self.settings_dir
             ),
         })?;
+        set_settings_dir_permissions(&self.settings_dir)?;
 
         let path = self.settings_path_for_username(canonical_username);
         let tmp_path = self.temporary_settings_path(&path);
         let content = serialize_user_settings(settings);
 
-        let mut file = fs::OpenOptions::new()
-            .write(true)
-            .create_new(true)
-            .open(&tmp_path)
-            .map_err(|error| UserSettingsError {
-                reason: format!(
-                    "failed to create user settings temp file {:?}: {error}",
-                    tmp_path
-                ),
-            })?;
+        let mut options = fs::OpenOptions::new();
+        options.write(true).create_new(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt as _;
+            options.mode(0o600);
+        }
+        let mut file = options.open(&tmp_path).map_err(|error| UserSettingsError {
+            reason: format!(
+                "failed to create user settings temp file {:?}: {error}",
+                tmp_path
+            ),
+        })?;
         file.write_all(content.as_bytes())
             .map_err(|error| UserSettingsError {
                 reason: format!(
@@ -162,6 +166,21 @@ impl UserSettingsStore for FileUserSettingsStore {
 }
 
 static NEXT_SETTINGS_TEMP_FILE_ID: AtomicU64 = AtomicU64::new(0);
+
+fn set_settings_dir_permissions(path: &std::path::Path) -> Result<(), UserSettingsError> {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt as _;
+        fs::set_permissions(path, fs::Permissions::from_mode(0o700)).map_err(|error| {
+            UserSettingsError {
+                reason: format!(
+                    "failed to set user settings directory permissions {path:?}: {error}"
+                ),
+            }
+        })?;
+    }
+    Ok(())
+}
 
 /// Loaded settings plus the emitted audit event.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -428,6 +447,35 @@ mod tests {
             .expect("settings should exist");
 
         assert_eq!(loaded, settings);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn file_settings_store_uses_restrictive_permissions() {
+        use std::os::unix::fs::PermissionsExt as _;
+
+        let dir = temp_dir("osmap-user-settings-permissions");
+        let store = FileUserSettingsStore::new(&dir);
+        store
+            .save("alice@example.com", &UserSettings::default())
+            .expect("settings save should succeed");
+
+        assert_eq!(
+            fs::metadata(&dir)
+                .expect("settings directory metadata should exist")
+                .permissions()
+                .mode()
+                & 0o777,
+            0o700
+        );
+        assert_eq!(
+            fs::metadata(store.settings_path_for_username("alice@example.com"))
+                .expect("settings file metadata should exist")
+                .permissions()
+                .mode()
+                & 0o777,
+            0o600
+        );
     }
 
     #[test]
