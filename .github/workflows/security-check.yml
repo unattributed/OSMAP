@@ -46,6 +46,8 @@ jobs:
         env:
           OSMAP_BOOTSTRAP_CARGO_AUDIT: "1"
           OSMAP_BOOTSTRAP_CARGO_DENY: "1"
+          CARGO_HTTP_MULTIPLEXING: "false"
+          CARGO_NET_RETRY: "10"
         run: make security-check
 
   live-tls-probe:
