@@ -6797,3 +6797,18 @@ grant replay cache is shared safely across concurrent workers.
 
 Decision: helper concurrency stays small and bounded, but one slow backend
 operation no longer serializes the complete mailbox-helper service.
+
+## 2026-06-22, Make draft persistence transactional
+
+The critical review confirmed that concurrent draft saves could race the
+per-user quota and that updating an existing draft removed old attachment
+bodies before the complete replacement was ready.
+
+The file-backed draft store now holds one restrictive advisory lock across each
+complete operation. Saves build attachment bodies and metadata in a private
+staging directory. Existing state remains untouched until staging succeeds,
+and a backup directory restores the previous draft when finalization fails.
+
+Decision: draft quota checks and state replacement are serialized across
+cooperating processes, and ordinary write failures do not leave a mixed old and
+new draft.

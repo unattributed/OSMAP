@@ -79,8 +79,11 @@ The storage layout should be:
 
 Directory permissions must be restrictive, preferably `0700` on Unix-like
 systems. Draft metadata and attachment files must be `0600` on Unix-like
-systems. Atomic replacement should be used for draft metadata updates so a
-partial write cannot become the current draft record.
+systems. The implemented file store serializes complete operations with one
+store-local advisory lock. Saves write a complete private staging directory
+before replacing the visible draft directory, and restore the prior draft when
+replacement finalization fails. This keeps quota checks and attachment plus
+metadata replacement inside one cooperating-process transaction.
 
 Canonical usernames may be stored in the record for ownership verification, but
 path names must be derived from a stable hash with a draft-specific

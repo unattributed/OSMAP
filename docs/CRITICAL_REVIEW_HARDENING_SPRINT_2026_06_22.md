@@ -16,7 +16,7 @@ security property can be reviewed, tested, and committed independently.
 | --- | --- | --- | --- |
 | 1 | TOTP counter replay | CWE-294 | Implemented |
 | 2 | Serial mailbox-helper availability | CWE-400 | Implemented |
-| 3 | Draft transaction races and partial replacement | CWE-362, CWE-664 | Pending |
+| 3 | Draft transaction races and partial replacement | CWE-362, CWE-664 | Implemented |
 | 4 | Multipart part-header resource bounds | CWE-400 | Pending |
 | 5 | Restrictive mode at file creation | CWE-732 | Pending |
 | 6 | Documentation and package metadata drift | Documentation integrity | Pending |
@@ -61,3 +61,22 @@ Focused validation:
 - dropping a slot makes capacity available again
 - zero-capacity policy fails closed
 - helper protocol and replay tests continue to pass
+
+## Slice 3: Transactional Draft Persistence
+
+All file-backed draft operations now acquire one restrictive store-local
+advisory lock. Quota checks, cleanup, save, load-expiry removal, list cleanup,
+and deletion therefore observe one serialized draft tree across cooperating
+processes.
+
+Saves build the complete replacement in a private staging directory. Existing
+draft data is left untouched until all attachment bodies and metadata have been
+written and synced. Replacement uses a backup directory and restores the prior
+draft when finalization fails.
+
+Focused validation:
+
+- concurrent new-draft saves cannot exceed the per-user quota
+- an update still replaces a complete draft
+- failed replacement restores the previous readable draft
+- existing owner isolation, expiry, quota, attachment, and permission tests pass

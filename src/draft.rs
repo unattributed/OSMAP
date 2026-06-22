@@ -6,6 +6,7 @@
 
 use std::cmp::Reverse;
 use std::fs;
+use std::fs::OpenOptions;
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -37,6 +38,7 @@ pub const DEFAULT_MAX_DRAFT_SUMMARY_ROWS: usize = 100;
 pub const DEFAULT_DRAFT_METADATA_MAX_BYTES: u64 = 256 * 1024;
 
 const DRAFT_METADATA_FILE: &str = "metadata.draft";
+const DRAFT_STORE_LOCK_FILE: &str = ".draft-store.lock";
 
 /// Policy controlling bounded draft persistence.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -242,21 +244,40 @@ impl FileDraftStore {
             .join(DRAFT_METADATA_FILE)
     }
 
-    fn attachment_path(
-        &self,
-        canonical_username: &str,
-        draft_id: &str,
-        attachment_index: usize,
-    ) -> PathBuf {
-        self.draft_dir_for_username_and_id(canonical_username, draft_id)
-            .join(attachment_body_file_name(attachment_index))
+    fn lock_path(&self) -> PathBuf {
+        self.draft_root.join(DRAFT_STORE_LOCK_FILE)
     }
 
-    fn ensure_owner_and_draft_dirs(
-        &self,
-        canonical_username: &str,
-        draft_id: &str,
-    ) -> Result<(), DraftError> {
+    fn acquire_exclusive_lock(&self) -> Result<DraftFileLock, DraftError> {
+        fs::create_dir_all(&self.draft_root).map_err(|error| DraftError {
+            reason: format!("failed to create draft root {:?}: {error}", self.draft_root),
+        })?;
+        set_dir_permissions(&self.draft_root)?;
+
+        let lock_path = self.lock_path();
+        let mut options = OpenOptions::new();
+        options.read(true).write(true).create(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt as _;
+            options.mode(0o600);
+        }
+        let file = options.open(&lock_path).map_err(|error| DraftError {
+            reason: format!("failed to open draft store lock {lock_path:?}: {error}"),
+        })?;
+        #[cfg(unix)]
+        crate::openbsd::advisory_file_lock_exclusive(&file).map_err(|error| DraftError {
+            reason: format!("failed to acquire draft store lock {lock_path:?}: {error}"),
+        })?;
+        #[cfg(not(unix))]
+        return Err(DraftError {
+            reason: "file-backed draft locking requires a Unix-like target".to_string(),
+        });
+
+        Ok(DraftFileLock { file })
+    }
+
+    fn ensure_owner_dir(&self, canonical_username: &str) -> Result<PathBuf, DraftError> {
         let owner_dir = self.owner_dir_for_username(canonical_username);
         fs::create_dir_all(&owner_dir).map_err(|error| DraftError {
             reason: format!(
@@ -265,14 +286,119 @@ impl FileDraftStore {
             ),
         })?;
         set_dir_permissions(&owner_dir)?;
+        Ok(owner_dir)
+    }
 
-        let draft_dir = owner_dir.join(draft_id);
-        fs::create_dir_all(&draft_dir).map_err(|error| DraftError {
-            reason: format!("failed to create draft directory {:?}: {error}", draft_dir),
+    fn write_staged_record(
+        &self,
+        record: &DraftRecord,
+        staging_dir: &Path,
+    ) -> Result<(), DraftError> {
+        fs::create_dir(staging_dir).map_err(|error| DraftError {
+            reason: format!("failed to create draft staging directory {staging_dir:?}: {error}"),
         })?;
-        set_dir_permissions(&draft_dir)?;
+        set_dir_permissions(staging_dir)?;
 
-        Ok(())
+        for (index, attachment) in record.request.attachments.iter().enumerate() {
+            let final_path = staging_dir.join(attachment_body_file_name(index));
+            let tmp_path = staging_dir.join(format!(
+                ".{}.{}.{}.tmp",
+                attachment_body_file_name(index),
+                std::process::id(),
+                NEXT_DRAFT_TEMP_FILE_ID.fetch_add(1, Ordering::Relaxed)
+            ));
+            write_file_atomic(&tmp_path, &final_path, &attachment.body)?;
+        }
+
+        let metadata_path = staging_dir.join(DRAFT_METADATA_FILE);
+        let tmp_metadata_path = staging_dir.join(format!(
+            ".metadata.{}.{}.tmp",
+            std::process::id(),
+            NEXT_DRAFT_TEMP_FILE_ID.fetch_add(1, Ordering::Relaxed)
+        ));
+        write_file_atomic(
+            &tmp_metadata_path,
+            &metadata_path,
+            serialize_draft_metadata(record).as_bytes(),
+        )
+    }
+
+    fn replace_with_staged_record(
+        &self,
+        final_dir: &Path,
+        staging_dir: &Path,
+        backup_dir: &Path,
+    ) -> Result<(), DraftError> {
+        if !final_dir.exists() {
+            return fs::rename(staging_dir, final_dir).map_err(|error| DraftError {
+                reason: format!("failed to finalize new draft directory {final_dir:?}: {error}"),
+            });
+        }
+
+        fs::rename(final_dir, backup_dir).map_err(|error| DraftError {
+            reason: format!("failed to stage existing draft directory {final_dir:?}: {error}"),
+        })?;
+        if let Err(error) = fs::rename(staging_dir, final_dir) {
+            let restore_result = fs::rename(backup_dir, final_dir);
+            return Err(DraftError {
+                reason: match restore_result {
+                    Ok(()) => {
+                        format!("failed to finalize replacement draft {final_dir:?}: {error}")
+                    }
+                    Err(restore_error) => format!(
+                        "failed to finalize replacement draft {final_dir:?}: {error}; failed to restore prior draft: {restore_error}"
+                    ),
+                },
+            });
+        }
+        remove_draft_dir(backup_dir)
+    }
+
+    fn cleanup_expired_unlocked(
+        &self,
+        canonical_username: &str,
+        now: u64,
+    ) -> Result<usize, DraftError> {
+        let owner_dir = self.owner_dir_for_username(canonical_username);
+        if !owner_dir.exists() {
+            return Ok(0);
+        }
+
+        let mut removed = 0;
+        for entry in fs::read_dir(&owner_dir).map_err(|error| DraftError {
+            reason: format!(
+                "failed to read draft owner directory {:?}: {error}",
+                owner_dir
+            ),
+        })? {
+            let entry = entry.map_err(|error| DraftError {
+                reason: format!("failed to read draft directory entry: {error}"),
+            })?;
+            if !entry
+                .file_type()
+                .map_err(|error| DraftError {
+                    reason: format!("failed to inspect draft directory entry: {error}"),
+                })?
+                .is_dir()
+            {
+                continue;
+            }
+            let draft_id = entry.file_name().to_string_lossy().to_string();
+            if validate_draft_id(&draft_id).is_err() {
+                continue;
+            }
+            let metadata_path = entry.path().join(DRAFT_METADATA_FILE);
+            if let Some(record) =
+                self.read_record_from_metadata(canonical_username, &metadata_path)?
+            {
+                if record.expires_at <= now {
+                    remove_draft_dir(entry.path())?;
+                    removed += 1;
+                }
+            }
+        }
+
+        Ok(removed)
     }
 
     fn read_record_from_metadata(
@@ -357,8 +483,9 @@ impl DraftStore for FileDraftStore {
         if let Some(source) = record.source_attachments.clone() {
             validate_source_attachments(self.policy, source)?;
         }
+        let _lock = self.acquire_exclusive_lock()?;
 
-        self.cleanup_expired(&record.canonical_username, now)?;
+        self.cleanup_expired_unlocked(&record.canonical_username, now)?;
 
         let draft_dir =
             self.draft_dir_for_username_and_id(&record.canonical_username, &record.draft_id);
@@ -374,29 +501,28 @@ impl DraftStore for FileDraftStore {
             }
         }
 
-        self.ensure_owner_and_draft_dirs(&record.canonical_username, &record.draft_id)?;
-        remove_existing_attachment_body_files(&draft_dir)?;
-
-        for (index, attachment) in record.request.attachments.iter().enumerate() {
-            let final_path =
-                self.attachment_path(&record.canonical_username, &record.draft_id, index);
-            let tmp_path = draft_dir.join(format!(
-                ".{}.{}.{}.tmp",
-                attachment_body_file_name(index),
-                std::process::id(),
-                NEXT_DRAFT_TEMP_FILE_ID.fetch_add(1, Ordering::Relaxed)
-            ));
-            write_file_atomic(&tmp_path, &final_path, &attachment.body)?;
-        }
-
-        let metadata_path = self.metadata_path(&record.canonical_username, &record.draft_id);
-        let tmp_metadata_path = draft_dir.join(format!(
-            ".metadata.{}.{}.tmp",
+        let owner_dir = self.ensure_owner_dir(&record.canonical_username)?;
+        let transaction_id = NEXT_DRAFT_TEMP_FILE_ID.fetch_add(1, Ordering::Relaxed);
+        let staging_dir = owner_dir.join(format!(
+            ".{}.{}.{}.staging",
+            record.draft_id,
             std::process::id(),
-            NEXT_DRAFT_TEMP_FILE_ID.fetch_add(1, Ordering::Relaxed)
+            transaction_id
         ));
-        let metadata = serialize_draft_metadata(record);
-        write_file_atomic(&tmp_metadata_path, &metadata_path, metadata.as_bytes())?;
+        let backup_dir = owner_dir.join(format!(
+            ".{}.{}.{}.backup",
+            record.draft_id,
+            std::process::id(),
+            transaction_id
+        ));
+        if let Err(error) = self.write_staged_record(record, &staging_dir) {
+            let _ = remove_draft_dir(&staging_dir);
+            return Err(error);
+        }
+        if let Err(error) = self.replace_with_staged_record(&draft_dir, &staging_dir, &backup_dir) {
+            let _ = remove_draft_dir(&staging_dir);
+            return Err(error);
+        }
 
         Ok(())
     }
@@ -409,6 +535,7 @@ impl DraftStore for FileDraftStore {
     ) -> Result<Option<DraftRecord>, DraftError> {
         validate_canonical_username(canonical_username)?;
         validate_draft_id(draft_id)?;
+        let _lock = self.acquire_exclusive_lock()?;
 
         let metadata_path = self.metadata_path(canonical_username, draft_id);
         let Some(record) = self.read_record_from_metadata(canonical_username, &metadata_path)?
@@ -416,7 +543,7 @@ impl DraftStore for FileDraftStore {
             return Ok(None);
         };
         if record.expires_at <= now {
-            self.delete(canonical_username, draft_id)?;
+            remove_draft_dir(self.draft_dir_for_username_and_id(canonical_username, draft_id))?;
             return Ok(None);
         }
 
@@ -425,6 +552,7 @@ impl DraftStore for FileDraftStore {
 
     fn list(&self, canonical_username: &str, now: u64) -> Result<Vec<DraftSummary>, DraftError> {
         validate_canonical_username(canonical_username)?;
+        let _lock = self.acquire_exclusive_lock()?;
         let summaries = self
             .list_records_for_owner(canonical_username, now)?
             .into_iter()
@@ -437,6 +565,7 @@ impl DraftStore for FileDraftStore {
     fn delete(&self, canonical_username: &str, draft_id: &str) -> Result<bool, DraftError> {
         validate_canonical_username(canonical_username)?;
         validate_draft_id(draft_id)?;
+        let _lock = self.acquire_exclusive_lock()?;
 
         let draft_dir = self.draft_dir_for_username_and_id(canonical_username, draft_id);
         if !draft_dir.exists() {
@@ -448,47 +577,21 @@ impl DraftStore for FileDraftStore {
 
     fn cleanup_expired(&self, canonical_username: &str, now: u64) -> Result<usize, DraftError> {
         validate_canonical_username(canonical_username)?;
+        let _lock = self.acquire_exclusive_lock()?;
+        self.cleanup_expired_unlocked(canonical_username, now)
+    }
+}
 
-        let owner_dir = self.owner_dir_for_username(canonical_username);
-        if !owner_dir.exists() {
-            return Ok(0);
+struct DraftFileLock {
+    file: fs::File,
+}
+
+impl Drop for DraftFileLock {
+    fn drop(&mut self) {
+        #[cfg(unix)]
+        {
+            let _ = crate::openbsd::advisory_file_unlock(&self.file);
         }
-
-        let mut removed = 0;
-        for entry in fs::read_dir(&owner_dir).map_err(|error| DraftError {
-            reason: format!(
-                "failed to read draft owner directory {:?}: {error}",
-                owner_dir
-            ),
-        })? {
-            let entry = entry.map_err(|error| DraftError {
-                reason: format!("failed to read draft directory entry: {error}"),
-            })?;
-            if !entry
-                .file_type()
-                .map_err(|error| DraftError {
-                    reason: format!("failed to inspect draft directory entry: {error}"),
-                })?
-                .is_dir()
-            {
-                continue;
-            }
-            let draft_id = entry.file_name().to_string_lossy().to_string();
-            if validate_draft_id(&draft_id).is_err() {
-                continue;
-            }
-            let metadata_path = entry.path().join(DRAFT_METADATA_FILE);
-            if let Some(record) =
-                self.read_record_from_metadata(canonical_username, &metadata_path)?
-            {
-                if record.expires_at <= now {
-                    remove_draft_dir(entry.path())?;
-                    removed += 1;
-                }
-            }
-        }
-
-        Ok(removed)
     }
 }
 
@@ -951,29 +1054,6 @@ fn attachment_body_file_name(index: usize) -> String {
     format!("attachment-{index}.body")
 }
 
-fn remove_existing_attachment_body_files(draft_dir: &Path) -> Result<(), DraftError> {
-    if !draft_dir.exists() {
-        return Ok(());
-    }
-    for entry in fs::read_dir(draft_dir).map_err(|error| DraftError {
-        reason: format!("failed to read draft directory {:?}: {error}", draft_dir),
-    })? {
-        let entry = entry.map_err(|error| DraftError {
-            reason: format!("failed to read draft directory entry: {error}"),
-        })?;
-        let name = entry.file_name().to_string_lossy().to_string();
-        if name.starts_with("attachment-") && name.ends_with(".body") {
-            fs::remove_file(entry.path()).map_err(|error| DraftError {
-                reason: format!(
-                    "failed to remove stale draft attachment {:?}: {error}",
-                    entry.path()
-                ),
-            })?;
-        }
-    }
-    Ok(())
-}
-
 fn remove_draft_dir(path: impl AsRef<Path>) -> Result<(), DraftError> {
     let path = path.as_ref();
     if !path.exists() {
@@ -1385,6 +1465,78 @@ mod tests {
         store
             .save(&first, 101)
             .expect("updating existing draft should succeed");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn concurrent_saves_cannot_exceed_the_per_user_quota() {
+        use std::sync::{Arc, Barrier};
+        use std::thread;
+
+        let dir = temp_dir("osmap-draft-concurrent-quota");
+        let store = Arc::new(FileDraftStore::new(
+            &dir,
+            DraftPolicy {
+                max_drafts_per_user: 1,
+                ..DraftPolicy::default()
+            },
+        ));
+        let barrier = Arc::new(Barrier::new(3));
+        let records = [
+            record(&draft_id(20), "alice@example.com", 100),
+            record(&draft_id(21), "alice@example.com", 100),
+        ];
+        let mut workers = Vec::new();
+        for record in records {
+            let store = Arc::clone(&store);
+            let barrier = Arc::clone(&barrier);
+            workers.push(thread::spawn(move || {
+                barrier.wait();
+                store.save(&record, 100)
+            }));
+        }
+        barrier.wait();
+
+        let successful = workers
+            .into_iter()
+            .map(|worker| worker.join().expect("worker should join"))
+            .filter(Result::is_ok)
+            .count();
+        let listed = store
+            .list("alice@example.com", 100)
+            .expect("draft list should remain readable");
+
+        assert_eq!(successful, 1);
+        assert_eq!(listed.len(), 1);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn failed_directory_swap_restores_the_previous_draft() {
+        let dir = temp_dir("osmap-draft-swap-rollback");
+        let store = FileDraftStore::new(&dir, DraftPolicy::default());
+        let draft = record(&draft_id(22), "alice@example.com", 100);
+        store
+            .save(&draft, 100)
+            .expect("initial save should succeed");
+
+        let final_dir = store.draft_dir_for_username_and_id("alice@example.com", &draft.draft_id);
+        let owner_dir = store.owner_dir_for_username("alice@example.com");
+        let missing_staging_dir = owner_dir.join(".missing-staging");
+        let backup_dir = owner_dir.join(".rollback-backup");
+        let error = store
+            .replace_with_staged_record(&final_dir, &missing_staging_dir, &backup_dir)
+            .expect_err("missing staged replacement should fail");
+
+        assert!(error.reason.contains("failed to finalize replacement"));
+        assert!(final_dir.exists());
+        assert!(!backup_dir.exists());
+        assert_eq!(
+            store
+                .load("alice@example.com", &draft.draft_id, 100)
+                .expect("restored draft should load"),
+            Some(draft)
+        );
     }
 
     #[test]
