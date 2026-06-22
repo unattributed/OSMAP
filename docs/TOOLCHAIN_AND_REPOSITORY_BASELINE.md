@@ -11,14 +11,14 @@ security posture, OpenBSD goals, and small-team maintenance model.
 
 ## Selected Toolchain
 
-OSMAP's initial proof-of-concept implementation will use:
+OSMAP's implementation uses:
 
 - Rust as the backend implementation language
 - Cargo as the build and test entrypoint
 - a repository-local `Makefile` for obvious operator and developer commands
-- a dependency-minimal bootstrap with no third-party runtime crates yet
+- a dependency-minimal runtime with a reviewed Cargo dependency set
 
-This choice is provisional but intentional.
+This choice remains intentional and is re-evaluated through the triggers below.
 
 ## Why Rust
 
@@ -53,11 +53,17 @@ requirements force a concrete need.
 
 ## Current Dependency Posture
 
-The WP0 repository skeleton uses:
+The current direct runtime dependency set is:
 
-- the Rust standard library only
+- `ammonia` for allowlist HTML sanitization
+- `getrandom` for security-sensitive random values
+- `hmac`, `sha1`, and `sha2` for TOTP, request grants, identifiers, and
+  integrity-oriented derivations
+- `libc` for the reviewed OpenBSD and Unix syscall boundary
 
-This keeps the initial trust surface very small while Phase 6 begins.
+The repository remains framework-free and does not use an ORM, browser
+JavaScript framework, or async runtime. `Cargo.lock`, `cargo audit`, and
+`cargo deny` keep the transitive set reviewable.
 
 ## Repository Layout
 
@@ -87,20 +93,18 @@ for public exposure.
 
 ## Tooling Notes
 
-The current sandbox environment provides:
+The reviewed development and release toolchain is:
 
-- `cargo build`
-- `cargo check`
-- `cargo test`
+- Rust and Cargo `1.94.1`
+- rustfmt `1.8.0`
+- Clippy `0.1.94`
+- cargo-audit `0.22.1`
+- cargo-deny `0.18.3`
 
-The current sandbox environment does not provide:
-
-- `cargo fmt`
-- `cargo clippy`
-
-The `Makefile` reflects this honestly by running `cargo check` unconditionally
-and treating formatting and Clippy as conditional tooling until those
-components are installed in the developer environment or CI image.
+`Cargo.toml` declares Rust `1.86` as the minimum supported language floor. The
+developer gate runs build checks, tests, strict Clippy, formatting, supply-chain
+validation, security invariants, and the V8 regression matrices. Release mode
+adds pinned toolchain and live-evidence requirements.
 
 ## Re-Evaluation Triggers
 

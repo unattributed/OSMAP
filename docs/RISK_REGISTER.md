@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This is the initial public-safe risk register for the OSMAP program.
+This is the current public-safe risk register for the OSMAP program.
 
 ## Scale
 
@@ -11,21 +11,22 @@ This is the initial public-safe risk register for the OSMAP program.
 
 ## Current Risks
 
-| ID | Risk | Likelihood | Impact | Phase Relevance | Initial Response |
-| --- | --- | --- | --- | --- | --- |
-| R-001 | Replacement scope grows from secure webmail into a second full mail platform | Medium | High | 0-5 | Hold firm on version 1 scope and non-goals |
-| R-002 | Current Roundcube workflows are incompletely understood, causing migration regressions | High | High | 1-4 | Inventory actual user workflows before design lock |
-| R-003 | Identity and session hardening for the web UI conflicts with native-client compatibility | High | Critical | 1-4 | Treat auth as a stack-wide design problem, not a single-UI patch |
-| R-004 | The new system introduces more complexity than the platform it replaces | Medium | High | 2-6 | Favor narrow interfaces and small components |
-| R-005 | Public exposure occurs before logging, abuse controls, and recovery paths are mature | Medium | Critical | 3-8 | Keep initial deployment behind current exposure boundaries if needed |
-| R-006 | Secrets, private notes, or local-only operational details leak into the public repo | Medium | High | 0-8 | Maintain strict separation between `docs/` and ignored private paths |
-| R-007 | Coexistence with SOGo, PostfixAdmin, and existing control-plane tools creates hidden coupling | Medium | High | 1-5 | Document shared host, routing, and operational dependencies |
-| R-008 | Application database and preference migration is harder than expected | Medium | High | 1-7 | Treat data/state migration as a first-class workstream |
-| R-009 | Browser-facing threat exposure remains too high even after replacement | Medium | Critical | 3-8 | Validate whether VPN-only or staged exposure is the safer steady state |
-| R-010 | Small-team operational capacity is exceeded by the chosen design | High | High | 0-8 | Prefer maintainability and auditability over novelty |
+| ID | Risk | Likelihood | Impact | Current Response |
+| --- | --- | --- | --- | --- |
+| R-001 | Scope expands toward broad Roundcube parity and widens the trust boundary | Medium | High | Keep feature work inside explicit version definitions and non-goals |
+| R-002 | Selected-cohort Roundcube retirement occurs before V6 no-fallback closeout | Medium | Critical | Keep Roundcube as a rollback unit until all V6 live reports pass |
+| R-003 | Browser availability regresses during or after authentication | Medium | Critical | Keep V7 production approval reopened until real-login hold proof passes |
+| R-004 | The multi-purpose mail host limits safe pressure testing and isolation | High | High | Use bounded validation, confinement, rollback artifacts, and adjacent controls |
+| R-005 | Request or backend resource exhaustion exceeds current bounded worker controls | Medium | High | Preserve connection, route, helper, output, timeout, and throttle limits |
+| R-006 | Secrets, private messages, or host-private evidence enter the public repository | Medium | Critical | Enforce publication guards, redaction, ignored evidence, and review |
+| R-007 | TOTP enrollment, recovery, or factor lifecycle remains operator-dependent | Medium | High | Keep provisioning out of the browser and document rotation and recovery work |
+| R-008 | Documentation or release evidence drifts from the deployed source and binary | High | High | Require assessed commits, binary hashes, dated reports, and doc governance |
+| R-009 | Dependency, advisory, or Rust toolchain changes break reproducible validation | Medium | High | Pin release tools and run audit, deny, lockfile, and inventory gates |
+| R-010 | Small-team operational capacity is exceeded by evidence and maintenance burden | High | High | Prefer narrow components, automated gates, and reviewable slices |
 
 ## Current Assessment
 
-The dominant early risks are not coding risks. They are scope, dependency,
-auth, and migration risks. That is why Phase 0 and Phase 1 documentation work
-comes before implementation.
+The dominant current risks are production availability, controlled retirement,
+resource exhaustion, evidence drift, and small-team operational load. Security
+work should continue as narrow implementation slices with executable tests and
+explicit deployment evidence.

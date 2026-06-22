@@ -204,7 +204,7 @@ Contributions must preserve the narrow trust boundary and include appropriate
 tests, documentation, and evidence. See [CONTRIBUTING.md](CONTRIBUTING.md) and
 [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
-OSMAP is licensed under the [GNU Affero General Public License v3.0](LICENSE).
+OSMAP is licensed under the [ISC License](LICENSE).
 It is provided without warranty. Operators remain responsible for deployment,
 configuration, monitoring, backup, recovery, legal compliance, and risk
 acceptance.

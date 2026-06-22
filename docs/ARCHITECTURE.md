@@ -146,16 +146,14 @@ Responsibilities retained by the current stack:
 
 ### Mailbox Read Helper Boundary
 
-The current prototype still executes mailbox helpers directly from the web
-process. That is now treated as a prototype bridge, not the likely final
-least-privilege shape on the current host.
+Production `serve` mode now requires mailbox operations to cross a local Unix
+socket into the `vmail` helper. The web-facing `_osmap` runtime remains
+unprivileged and does not hold direct mailbox read or mutation authority.
 
-The preferred next implementation step is:
-
-- keep the web-facing OSMAP runtime unprivileged
-- move mailbox-read execution behind a local-only helper boundary
-- let that helper hold only the mailbox-read authority the current host still
-  requires
+The helper keeps a narrow operation set, verifies peer credentials and
+short-lived request grants, rejects replay, and admits only a bounded number of
+concurrent connections. Direct mailbox backends remain development and test
+seams rather than an accepted production deployment shape.
 
 This preserves the architecture's "small app over existing mail substrate"
 direction while avoiding a broader privilege model for the browser-facing

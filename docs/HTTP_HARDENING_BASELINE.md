@@ -39,7 +39,7 @@ The current browser runtime enforces:
 - bounded form field counts
 - rejection of duplicate or empty query/form field names instead of silently
   overwriting earlier values
-- per-connection read and write timeouts on the sequential listener
+- per-connection read and write timeouts on the bounded concurrent listener
 - binary-safe multipart request parsing for the current upload path
 - independent multipart part-header limits of 8 KiB, 16 headers, 64 bytes per
   normalized name, and 4 KiB per normalized value

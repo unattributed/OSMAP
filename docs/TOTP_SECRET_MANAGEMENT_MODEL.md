@@ -112,6 +112,6 @@ The current TOTP slice does not yet include:
 - secret rotation workflows
 - backup and recovery handling for enrolled factors
 - operator tooling for secret provisioning
-- persistent rate limiting around factor failures
+- phishing-resistant factor support
 
 Those belong to later WP3/WP4 work rather than this backend foundation slice.

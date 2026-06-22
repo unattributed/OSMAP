@@ -41,8 +41,8 @@
   explicit source-attachment selection for reply/forward sends. Accepted
   submissions are filed into the sender's `Sent` mailbox through the local
   mailbox helper. It still does not automatically reattach original-message
-  attachments, and source attachment references are not yet saved across draft
-  resume.
+  attachments. Explicit source attachment references persist across draft
+  resume, but source bytes do not, and source deletion or mutation fails closed.
 - The implementation now has a conservative rendering layer with both
   plain-text and sanitized-HTML modes, but it still does not provide
   inline image rendering, full rich-header coverage, or any external-resource
@@ -73,8 +73,8 @@
   one session directory, but it does not provide cross-host locking or
   anomaly-oriented session analysis
 - The implementation now provides a first bounded end-user settings surface,
-  but it currently exposes only one user-facing preference rather than a broad
-  settings platform
+  but it currently exposes only HTML display and archive-mailbox preferences
+  rather than a broad settings platform
 - The Rust backend now implements a bounded dual-bucket file-backed login
   throttle for browser authentication plus a bounded dual-bucket submission
   throttle for the browser send path plus a bounded dual-bucket message-move
@@ -144,20 +144,20 @@
   bounded move-throttle plus send-throttle behaviors are both now proven there,
   and the bounded `cid:` inline-image metadata path is now proven there too,
   but broader mutation coverage is still incomplete
-- The SDLC and release rules are now defined, but they have not yet been proven
-  against a full live implementation pipeline
+- The SDLC and release rules are implemented, but strict release validation
+  remains dependent on current host, credential, TLS, WSTG, and sanitized
+  evidence inputs
 - The project now has an implementation plan, work breakdown, Version 1
   closeout gate, Version 2 readiness gate, and Version 2 pilot closeout record.
   Future progress should continue through scoped gates rather than by widening
   the completed Version 2 surface.
-- Version 3 is now defined as a focused daily-driver adoption release. It is a
-  scoped plan and gate set, not an implementation claim; the current code base
-  still has the product limitations listed in this document until the
-  corresponding Version 3 acceptance gates pass.
+- Version 3 daily-driver functionality and assurance work are implemented and
+  carried forward by later gates. The broader product limitations in this
+  document remain unchanged.
 
 ## Version 3 Daily-Driver Adoption Boundary
 
-Version 3 is limited to the pilot-proven gaps that block ordinary daily use:
+Version 3 implemented the pilot-proven gaps that blocked ordinary daily use:
 
 - MIME and HTML correctness
 - draft save and resume
@@ -188,15 +188,10 @@ The April 2026 WSTG backlog maps into Version 3 as follows:
 - TLS 1.2 CBC suites have been removed from the reviewed nginx public-edge
   artifact and live edge evidence is archived at
   `maint/live/osmap-v3-tls-cbc-cleanup-evidence-2026-05-02.txt`.
-- Concurrent-session caps, device limits, richer session labels, and anomaly
-  handling are Version 3 policy work. Version 3 must choose and test an
-  explicit policy rather than leaving concurrent sessions as an implicit
-  behavior.
-- The same-process session revoke race is now covered by local concurrency
-  tests around validation, logout, revoke-all, listing, idle expiry, absolute
-  expiry, and token reuse. A browser-level isolated-cookie retest against the
-  live service is still required before the Version 3 session/device gate is
-  closed.
+- Concurrent sessions are explicit policy, device labels are normalized, and
+  session state changes are protected by local concurrency tests plus a
+  cross-process store lock. Cross-host coordination and anomaly scoring remain
+  out of scope.
 - Richer search ergonomics are partially supported through bounded result
   sorting and whitelisted all-text/subject/from refinement. Advanced search,
   bounded bulk folder actions, and folder ergonomics remain Version 3 workflow
@@ -205,10 +200,9 @@ The April 2026 WSTG backlog maps into Version 3 as follows:
 
 ## Version 6 Controlled Retirement Readiness Boundary
 
-Version 6 is now defined, but definition is not completion. V6 remains
-incomplete until the current source and selected OpenBSD-hosted cohort produce
-passing, sanitized evidence for production readiness, operation without normal
-Roundcube fallback, observability, resource resilience, and final closeout.
+V6 production readiness passed on June 18, 2026, but selected-cohort retirement
+closeout remains incomplete until no-fallback, observability, resource
+resilience, and final archive evidence pass against one assessed deployment.
 
 The primary V6 gaps at the definition baseline are:
 
@@ -218,11 +212,12 @@ The primary V6 gaps at the definition baseline are:
 - explicit source-attachment selections now persist across draft resume as
   bounded source references only; source-message deletion or mutation remains
   a visible fail-closed condition and no source bytes are persisted
-- observability and incident-response expectations are documented but not yet
-  assembled into a V6 live evidence report
-- the bounded resource model now has a fail-closed V6 validator that combines
-  current health and recovery with current-checkout regressions and prior live
-  evidence; the selected host report is still missing
+- production readiness passed with a sanitized host report, deployed commit,
+  binary SHA256, service state, rollback unit, and browser-facing GET proof
+- observability and incident-response expectations still need the final V6
+  selected-cohort live report
+- the bounded resource model has a fail-closed validator, but the final
+  selected-host V6 resource-resilience report remains outstanding
 - Roundcube retirement has migration guidance but not a passing
   no-fallback rehearsal for the selected V6 cohort
 - the V6 closeout documents and archive tooling exist, but the archive cannot

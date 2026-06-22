@@ -6839,3 +6839,19 @@ permission calls remain as a second check.
 
 Decision: private browser state must be born private rather than repaired after
 creation.
+
+## 2026-06-22, Reconcile current documentation and license metadata
+
+The critical documentation review found historical planning statements still
+presented as current facts. These included missing source-reference persistence,
+missing V6 production readiness, direct web-process mailbox execution,
+standard-library-only dependencies, and pre-implementation risk language.
+
+The current baselines now describe the implemented helper boundary, dependency
+set, toolchain, V3 carry-forward state, V6 production-readiness result, and
+post-V8 risks. `Cargo.toml` and the README now identify the ISC license already
+contained in the repository `LICENSE` file.
+
+Decision: current-status documents must describe the current tree and evidence.
+Historical design records may remain for provenance, but they must not override
+current operational truth.

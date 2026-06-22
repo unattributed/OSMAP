@@ -2,7 +2,7 @@
 
 Date: 2026-06-22
 Baseline commit: `f8eed70`
-Status: In progress
+Status: Implementation complete; final aggregate validation pending
 
 ## Purpose
 
@@ -19,7 +19,7 @@ security property can be reviewed, tested, and committed independently.
 | 3 | Draft transaction races and partial replacement | CWE-362, CWE-664 | Implemented |
 | 4 | Multipart part-header resource bounds | CWE-400 | Implemented |
 | 5 | Restrictive mode at file creation | CWE-732 | Implemented |
-| 6 | Documentation and package metadata drift | Documentation integrity | Pending |
+| 6 | Documentation and package metadata drift | Documentation integrity | Implemented |
 
 ## Slice 1: TOTP Counter Replay
 
@@ -115,3 +115,19 @@ Focused validation:
 - settings file mode is `0600`
 - draft root, owner, and staging directories remain `0700`
 - draft metadata and attachment files remain `0600`
+
+## Slice 6: Documentation And Package Metadata
+
+The documentation audit reconciled current implementation and operational
+claims:
+
+- source attachment references are documented as persisted across draft resume
+- V6 production readiness is documented as passed while retirement closeout
+  remains incomplete
+- the architecture records the required mailbox-helper production boundary
+- the toolchain baseline lists the current dependencies and validation tools
+- the risk register now tracks current post-V8 operational risks
+- HTTP documentation names the bounded concurrent listener
+- Cargo and README licensing now match the repository's ISC `LICENSE` file
+
+No release or production-deployment claim is widened by these corrections.
