@@ -6782,3 +6782,18 @@ from replay state.
 
 Decision: a valid TOTP counter may authenticate only once. Reuse and concurrent
 double consumption fail closed.
+
+## 2026-06-22, Bound mailbox-helper concurrency
+
+The mailbox helper previously processed each accepted Unix-socket connection to
+completion before accepting the next request. One slow Dovecot operation could
+therefore delay unrelated mailbox reads, searches, downloads, moves, and Sent
+filing.
+
+The helper now admits a fixed maximum of four active connections and executes
+each admitted request in a worker thread. Excess connections receive an
+explicit capacity error. Worker slots release through an RAII guard, and the
+grant replay cache is shared safely across concurrent workers.
+
+Decision: helper concurrency stays small and bounded, but one slow backend
+operation no longer serializes the complete mailbox-helper service.

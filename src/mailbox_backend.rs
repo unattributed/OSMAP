@@ -14,6 +14,7 @@ use super::{
 };
 
 /// Lists mailboxes through `doveadm mailbox list`.
+#[derive(Debug, Clone)]
 pub struct DoveadmMailboxListBackend<E> {
     policy: MailboxListingPolicy,
     command_executor: E,
@@ -89,6 +90,7 @@ where
 }
 
 /// Lists message summaries through `doveadm fetch`.
+#[derive(Debug, Clone)]
 pub struct DoveadmMessageListBackend<E> {
     policy: MessageListPolicy,
     command_executor: E,
@@ -170,6 +172,7 @@ where
 }
 
 /// Retrieves a bounded single-message payload through `doveadm fetch`.
+#[derive(Debug, Clone)]
 pub struct DoveadmMessageViewBackend<E> {
     policy: MessageViewPolicy,
     command_executor: E,
@@ -261,6 +264,7 @@ where
 
 /// Searches message summaries through `doveadm fetch` using a mailbox-scoped
 /// whitelisted Dovecot search term.
+#[derive(Debug, Clone)]
 pub struct DoveadmMessageSearchBackend<E> {
     policy: MessageSearchPolicy,
     command_executor: E,
@@ -351,6 +355,7 @@ where
 }
 
 /// Moves one message through `doveadm move`.
+#[derive(Debug, Clone)]
 pub struct DoveadmMessageMoveBackend<E> {
     command_executor: E,
     doveadm_path: PathBuf,
@@ -441,6 +446,7 @@ where
 }
 
 /// Appends one complete message through `doveadm save`.
+#[derive(Debug, Clone)]
 pub struct DoveadmMessageAppendBackend<E> {
     command_executor: E,
     doveadm_path: PathBuf,
