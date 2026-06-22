@@ -7,6 +7,18 @@ use std::collections::BTreeMap;
 
 use crate::send::{ComposePolicy, UploadedAttachment};
 
+/// Maximum bytes accepted in one multipart part header block.
+pub const DEFAULT_MULTIPART_PART_HEADER_MAX_BYTES: usize = 8 * 1024;
+
+/// Maximum number of headers accepted in one multipart part.
+pub const DEFAULT_MULTIPART_PART_HEADER_MAX_COUNT: usize = 16;
+
+/// Maximum normalized multipart header-name length.
+pub const DEFAULT_MULTIPART_PART_HEADER_NAME_MAX_LEN: usize = 64;
+
+/// Maximum normalized multipart header-value length.
+pub const DEFAULT_MULTIPART_PART_HEADER_VALUE_MAX_LEN: usize = 4 * 1024;
+
 /// Errors raised while parsing a browser form body.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FormParseError {
@@ -235,6 +247,11 @@ fn parse_multipart_compose_form(
             find_subslice(&body[cursor..], b"\r\n\r\n").ok_or_else(|| FormParseError {
                 reason: "multipart part headers were not terminated correctly".to_string(),
             })?;
+        if header_end > DEFAULT_MULTIPART_PART_HEADER_MAX_BYTES {
+            return Err(FormParseError {
+                reason: "multipart part headers exceeded maximum length".to_string(),
+            });
+        }
         let header_block =
             std::str::from_utf8(&body[cursor..cursor + header_end]).map_err(|_| {
                 FormParseError {
@@ -354,19 +371,45 @@ fn parse_boundary_parameter(content_type: &str) -> Result<String, FormParseError
 /// Parses a small header block into lowercase header names.
 fn parse_header_block(header_block: &str) -> Result<BTreeMap<String, String>, FormParseError> {
     let mut headers = BTreeMap::new();
-    for line in header_block.lines() {
+    for (index, line) in header_block.split("\r\n").enumerate() {
+        if index >= DEFAULT_MULTIPART_PART_HEADER_MAX_COUNT {
+            return Err(FormParseError {
+                reason: "multipart part contained too many headers".to_string(),
+            });
+        }
         let Some((name, value)) = line.split_once(':') else {
             return Err(FormParseError {
                 reason: "multipart part header line was malformed".to_string(),
             });
         };
         let normalized_name = name.trim().to_ascii_lowercase();
+        if normalized_name.is_empty()
+            || normalized_name.len() > DEFAULT_MULTIPART_PART_HEADER_NAME_MAX_LEN
+            || !normalized_name
+                .chars()
+                .all(|ch| ch.is_ascii_lowercase() || ch.is_ascii_digit() || ch == '-')
+        {
+            return Err(FormParseError {
+                reason: "multipart part header name was invalid".to_string(),
+            });
+        }
         if headers.contains_key(&normalized_name) {
             return Err(FormParseError {
                 reason: format!("duplicate multipart header: {normalized_name}"),
             });
         }
-        headers.insert(normalized_name, value.trim().to_string());
+        let normalized_value = value.trim();
+        if normalized_value.len() > DEFAULT_MULTIPART_PART_HEADER_VALUE_MAX_LEN {
+            return Err(FormParseError {
+                reason: "multipart part header value exceeded maximum length".to_string(),
+            });
+        }
+        if normalized_value.chars().any(char::is_control) {
+            return Err(FormParseError {
+                reason: "multipart part header value contained control characters".to_string(),
+            });
+        }
+        headers.insert(normalized_name, normalized_value.to_string());
     }
 
     Ok(headers)
@@ -561,5 +604,82 @@ mod tests {
         .expect_err("duplicate multipart fields must be rejected");
 
         assert_eq!(error.reason, "duplicate form field: to");
+    }
+
+    #[test]
+    fn rejects_oversized_multipart_part_header_blocks() {
+        let oversized = "a".repeat(DEFAULT_MULTIPART_PART_HEADER_MAX_BYTES);
+        let body = format!(
+            "--test-boundary\r\nX-Oversized: {oversized}\r\n\r\nvalue\r\n--test-boundary--\r\n"
+        );
+
+        let error = parse_compose_form(
+            body.as_bytes(),
+            Some("multipart/form-data; boundary=test-boundary"),
+            32,
+            body.len(),
+            ComposePolicy::default(),
+        )
+        .expect_err("oversized multipart headers must fail");
+
+        assert_eq!(
+            error.reason,
+            "multipart part headers exceeded maximum length"
+        );
+    }
+
+    #[test]
+    fn rejects_excessive_multipart_part_header_counts() {
+        let mut headers = String::new();
+        for index in 0..=DEFAULT_MULTIPART_PART_HEADER_MAX_COUNT {
+            headers.push_str(&format!("X-Test-{index}: value\r\n"));
+        }
+        let body = format!("--test-boundary\r\n{headers}\r\nvalue\r\n--test-boundary--\r\n");
+
+        let error = parse_compose_form(
+            body.as_bytes(),
+            Some("multipart/form-data; boundary=test-boundary"),
+            32,
+            body.len(),
+            ComposePolicy::default(),
+        )
+        .expect_err("excessive multipart headers must fail");
+
+        assert_eq!(error.reason, "multipart part contained too many headers");
+    }
+
+    #[test]
+    fn rejects_oversized_multipart_header_names_and_values() {
+        let oversized_name = "x".repeat(DEFAULT_MULTIPART_PART_HEADER_NAME_MAX_LEN + 1);
+        let name_body = format!(
+            "--test-boundary\r\n{oversized_name}: value\r\n\r\nvalue\r\n--test-boundary--\r\n"
+        );
+        let name_error = parse_compose_form(
+            name_body.as_bytes(),
+            Some("multipart/form-data; boundary=test-boundary"),
+            8,
+            name_body.len(),
+            ComposePolicy::default(),
+        )
+        .expect_err("oversized multipart header names must fail");
+
+        let oversized_value = "x".repeat(DEFAULT_MULTIPART_PART_HEADER_VALUE_MAX_LEN + 1);
+        let value_body = format!(
+            "--test-boundary\r\nX-Test: {oversized_value}\r\n\r\nvalue\r\n--test-boundary--\r\n"
+        );
+        let value_error = parse_compose_form(
+            value_body.as_bytes(),
+            Some("multipart/form-data; boundary=test-boundary"),
+            8,
+            value_body.len(),
+            ComposePolicy::default(),
+        )
+        .expect_err("oversized multipart header values must fail");
+
+        assert_eq!(name_error.reason, "multipart part header name was invalid");
+        assert_eq!(
+            value_error.reason,
+            "multipart part header value exceeded maximum length"
+        );
     }
 }

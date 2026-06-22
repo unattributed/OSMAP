@@ -17,7 +17,7 @@ security property can be reviewed, tested, and committed independently.
 | 1 | TOTP counter replay | CWE-294 | Implemented |
 | 2 | Serial mailbox-helper availability | CWE-400 | Implemented |
 | 3 | Draft transaction races and partial replacement | CWE-362, CWE-664 | Implemented |
-| 4 | Multipart part-header resource bounds | CWE-400 | Pending |
+| 4 | Multipart part-header resource bounds | CWE-400 | Implemented |
 | 5 | Restrictive mode at file creation | CWE-732 | Pending |
 | 6 | Documentation and package metadata drift | Documentation integrity | Pending |
 
@@ -80,3 +80,24 @@ Focused validation:
 - an update still replaces a complete draft
 - failed replacement restores the previous readable draft
 - existing owner isolation, expiry, quota, attachment, and permission tests pass
+
+## Slice 4: Multipart Part-Header Bounds
+
+Each multipart form part now has independent limits in addition to the existing
+whole-request upload budget:
+
+- 8 KiB header block
+- 16 headers
+- 64-byte normalized header name
+- 4 KiB normalized header value
+
+Header names must use the existing conservative lower-case token shape after
+normalization. Control-bearing values and duplicate headers continue to fail
+closed.
+
+Focused validation:
+
+- normal compose fields and attachments still parse
+- oversized part-header blocks fail before UTF-8 parsing
+- excessive header counts fail
+- oversized names and values fail with stable reasons
