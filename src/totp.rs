@@ -5,10 +5,11 @@
 //! is to add a real second-factor backend without introducing a large auth
 //! framework.
 
-#[cfg(not(unix))]
 use std::fs;
-use std::io::Read as _;
-use std::path::PathBuf;
+use std::fs::OpenOptions;
+use std::io::{Read as _, Write as _};
+use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use hmac::{Hmac, Mac};
@@ -26,6 +27,9 @@ pub const TOTP_SECRET_FILE_EXTENSION: &str = "totp";
 
 /// Minimum decoded TOTP secret strength accepted from operator-managed files.
 pub const MIN_TOTP_SECRET_BYTES: usize = 20;
+
+static TOTP_REPLAY_TMP_COUNTER: AtomicU64 = AtomicU64::new(0);
+const TOTP_REPLAY_LOCK_FILE: &str = ".totp-replay.lock";
 
 /// Policy controlling TOTP code shape and clock skew tolerance.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -75,6 +79,18 @@ pub trait TotpSecretStore {
         &self,
         canonical_username: &str,
     ) -> Result<Option<TotpSecret>, TotpSecretStoreError>;
+
+    /// Atomically records one accepted TOTP counter.
+    ///
+    /// Stores without replay persistence retain the historical stateless
+    /// behavior. Production uses the file-backed replay directory.
+    fn consume_counter(
+        &self,
+        _canonical_username: &str,
+        _counter: u64,
+    ) -> Result<bool, TotpSecretStoreError> {
+        Ok(true)
+    }
 }
 
 /// Errors raised while reading or parsing TOTP secrets.
@@ -145,7 +161,20 @@ where
             )?;
 
             if constant_time_eq(expected.as_bytes(), code.as_bytes()) {
-                return Ok(SecondFactorVerdict::Accept);
+                return self
+                    .secret_store
+                    .consume_counter(canonical_username, counter)
+                    .map(|consumed| {
+                        if consumed {
+                            SecondFactorVerdict::Accept
+                        } else {
+                            SecondFactorVerdict::Reject
+                        }
+                    })
+                    .map_err(|error| SecondFactorBackendError {
+                        backend: "totp-replay-store",
+                        reason: error.reason,
+                    });
             }
         }
 
@@ -154,8 +183,10 @@ where
 }
 
 /// Loads per-user TOTP secrets from files rooted under a configured directory.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FileTotpSecretStore {
     secret_dir: PathBuf,
+    replay_dir: Option<PathBuf>,
 }
 
 impl FileTotpSecretStore {
@@ -163,7 +194,15 @@ impl FileTotpSecretStore {
     pub fn new(secret_dir: impl Into<PathBuf>) -> Self {
         Self {
             secret_dir: secret_dir.into(),
+            replay_dir: None,
         }
+    }
+
+    /// Enables persistent one-time counter consumption under a writable cache
+    /// directory separate from operator-managed secret material.
+    pub fn with_replay_dir(mut self, replay_dir: impl Into<PathBuf>) -> Self {
+        self.replay_dir = Some(replay_dir.into());
+        self
     }
 
     /// Returns the on-disk path for a user's secret file.
@@ -173,6 +212,15 @@ impl FileTotpSecretStore {
             hex_encode(canonical_username.as_bytes()),
             TOTP_SECRET_FILE_EXTENSION
         ))
+    }
+
+    fn replay_path_for_username(&self, canonical_username: &str) -> Option<PathBuf> {
+        self.replay_dir.as_ref().map(|replay_dir| {
+            replay_dir.join(format!(
+                "{}.counter",
+                hex_encode(canonical_username.as_bytes())
+            ))
+        })
     }
 }
 
@@ -194,6 +242,159 @@ impl TotpSecretStore for FileTotpSecretStore {
 
         parse_secret_file(&content)
     }
+
+    fn consume_counter(
+        &self,
+        canonical_username: &str,
+        counter: u64,
+    ) -> Result<bool, TotpSecretStoreError> {
+        let canonical_username =
+            CanonicalUsername::parse(canonical_username.to_string()).map_err(|error| {
+                TotpSecretStoreError {
+                    reason: format!("invalid TOTP replay canonical username: {}", error.as_str()),
+                }
+            })?;
+        let Some(replay_dir) = self.replay_dir.as_ref() else {
+            return Ok(true);
+        };
+        let replay_path = self
+            .replay_path_for_username(canonical_username.as_str())
+            .ok_or_else(|| TotpSecretStoreError {
+                reason: "TOTP replay path was unavailable".to_string(),
+            })?;
+
+        fs::create_dir_all(replay_dir).map_err(|error| TotpSecretStoreError {
+            reason: format!("failed creating TOTP replay directory {replay_dir:?}: {error}"),
+        })?;
+        set_replay_dir_permissions(replay_dir)?;
+        let _lock = acquire_replay_lock(replay_dir)?;
+
+        if let Some(previous_counter) = read_replay_counter(&replay_path)? {
+            if counter <= previous_counter {
+                return Ok(false);
+            }
+        }
+
+        write_replay_counter(replay_dir, &replay_path, counter)?;
+        Ok(true)
+    }
+}
+
+fn acquire_replay_lock(replay_dir: &Path) -> Result<TotpReplayFileLock, TotpSecretStoreError> {
+    let lock_path = replay_dir.join(TOTP_REPLAY_LOCK_FILE);
+    let mut options = OpenOptions::new();
+    options.read(true).write(true).create(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt as _;
+        options.mode(0o600);
+    }
+    let file = options
+        .open(&lock_path)
+        .map_err(|error| TotpSecretStoreError {
+            reason: format!("failed opening TOTP replay lock {lock_path:?}: {error}"),
+        })?;
+
+    #[cfg(unix)]
+    crate::openbsd::advisory_file_lock_exclusive(&file).map_err(|error| TotpSecretStoreError {
+        reason: format!("failed acquiring TOTP replay lock {lock_path:?}: {error}"),
+    })?;
+
+    #[cfg(not(unix))]
+    return Err(TotpSecretStoreError {
+        reason: "persistent TOTP replay protection requires a Unix-like target".to_string(),
+    });
+
+    Ok(TotpReplayFileLock { file })
+}
+
+struct TotpReplayFileLock {
+    file: fs::File,
+}
+
+impl Drop for TotpReplayFileLock {
+    fn drop(&mut self) {
+        #[cfg(unix)]
+        {
+            let _ = crate::openbsd::advisory_file_unlock(&self.file);
+        }
+    }
+}
+
+fn read_replay_counter(path: &Path) -> Result<Option<u64>, TotpSecretStoreError> {
+    let mut options = OpenOptions::new();
+    options.read(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt as _;
+        options.custom_flags(libc::O_NOFOLLOW);
+    }
+    let mut file = match options.open(path) {
+        Ok(file) => file,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(error) => {
+            return Err(TotpSecretStoreError {
+                reason: format!("failed opening TOTP replay counter {path:?}: {error}"),
+            })
+        }
+    };
+    let mut value = String::new();
+    file.read_to_string(&mut value)
+        .map_err(|error| TotpSecretStoreError {
+            reason: format!("failed reading TOTP replay counter {path:?}: {error}"),
+        })?;
+    value
+        .trim()
+        .parse::<u64>()
+        .map(Some)
+        .map_err(|error| TotpSecretStoreError {
+            reason: format!("invalid TOTP replay counter {path:?}: {error}"),
+        })
+}
+
+fn write_replay_counter(
+    replay_dir: &Path,
+    final_path: &Path,
+    counter: u64,
+) -> Result<(), TotpSecretStoreError> {
+    let tmp_path = replay_dir.join(format!(
+        ".totp-replay.{}.{}.tmp",
+        std::process::id(),
+        TOTP_REPLAY_TMP_COUNTER.fetch_add(1, Ordering::Relaxed)
+    ));
+    let mut options = OpenOptions::new();
+    options.write(true).create_new(true);
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt as _;
+        options.mode(0o600);
+    }
+    let mut file = options
+        .open(&tmp_path)
+        .map_err(|error| TotpSecretStoreError {
+            reason: format!("failed creating TOTP replay temp file {tmp_path:?}: {error}"),
+        })?;
+    file.write_all(format!("{counter}\n").as_bytes())
+        .and_then(|()| file.sync_all())
+        .map_err(|error| TotpSecretStoreError {
+            reason: format!("failed writing TOTP replay temp file {tmp_path:?}: {error}"),
+        })?;
+    fs::rename(&tmp_path, final_path).map_err(|error| TotpSecretStoreError {
+        reason: format!("failed finalizing TOTP replay counter {final_path:?}: {error}"),
+    })
+}
+
+fn set_replay_dir_permissions(path: &Path) -> Result<(), TotpSecretStoreError> {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt as _;
+        fs::set_permissions(path, fs::Permissions::from_mode(0o700)).map_err(|error| {
+            TotpSecretStoreError {
+                reason: format!("failed setting TOTP replay directory mode {path:?}: {error}"),
+            }
+        })?;
+    }
+    Ok(())
 }
 
 #[cfg(unix)]
@@ -692,6 +893,88 @@ mod tests {
             .expect("verification should succeed");
 
         assert_eq!(verdict, SecondFactorVerdict::Accept);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn file_backed_verifier_rejects_reused_counter_and_accepts_newer_counter() {
+        use std::os::unix::fs::PermissionsExt as _;
+
+        let root = temp_dir("osmap-totp-replay");
+        let secret_dir = root.join("secrets");
+        let replay_dir = root.join("replay");
+        fs::create_dir_all(&secret_dir).expect("secret directory should be created");
+        let store = FileTotpSecretStore::new(&secret_dir).with_replay_dir(replay_dir.clone());
+        let secret_path = write_secret_file(&store, "alice@example.com");
+        fs::set_permissions(&secret_path, fs::Permissions::from_mode(0o600))
+            .expect("secret permissions should be updated");
+        let policy = TotpPolicy {
+            digits: 8,
+            period_seconds: 30,
+            allowed_skew_steps: 0,
+        };
+
+        let first = TotpVerifier::new(
+            store.clone(),
+            FixedTimeProvider { unix_timestamp: 59 },
+            policy,
+        )
+        .verify_second_factor("alice@example.com", RequiredSecondFactor::Totp, "94287082")
+        .expect("first verification should complete");
+        let replay = TotpVerifier::new(
+            store.clone(),
+            FixedTimeProvider { unix_timestamp: 59 },
+            policy,
+        )
+        .verify_second_factor("alice@example.com", RequiredSecondFactor::Totp, "94287082")
+        .expect("replay verification should complete");
+        let newer = TotpVerifier::new(
+            store,
+            FixedTimeProvider {
+                unix_timestamp: 1_111_111_109,
+            },
+            policy,
+        )
+        .verify_second_factor("alice@example.com", RequiredSecondFactor::Totp, "07081804")
+        .expect("newer verification should complete");
+
+        assert_eq!(first, SecondFactorVerdict::Accept);
+        assert_eq!(replay, SecondFactorVerdict::Reject);
+        assert_eq!(newer, SecondFactorVerdict::Accept);
+        assert!(replay_dir.join(".totp-replay.lock").exists());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn replay_store_allows_only_one_concurrent_counter_consumer() {
+        use std::sync::{Arc, Barrier};
+        use std::thread;
+
+        let root = temp_dir("osmap-totp-replay-concurrent");
+        let store = Arc::new(
+            FileTotpSecretStore::new(root.join("secrets")).with_replay_dir(root.join("replay")),
+        );
+        let barrier = Arc::new(Barrier::new(3));
+        let mut workers = Vec::new();
+        for _ in 0..2 {
+            let store = Arc::clone(&store);
+            let barrier = Arc::clone(&barrier);
+            workers.push(thread::spawn(move || {
+                barrier.wait();
+                store
+                    .consume_counter("alice@example.com", 42)
+                    .expect("counter consumption should complete")
+            }));
+        }
+        barrier.wait();
+
+        let accepted = workers
+            .into_iter()
+            .map(|worker| worker.join().expect("worker should join"))
+            .filter(|consumed| *consumed)
+            .count();
+
+        assert_eq!(accepted, 1);
     }
 
     #[test]
