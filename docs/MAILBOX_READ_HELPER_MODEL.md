@@ -218,6 +218,8 @@ in one broad rewrite.
 
 That migration is now underway:
 
+- the helper admits a bounded maximum of four concurrent connections and
+  rejects excess work before invoking Dovecot
 - mailbox listing uses the helper when configured
 - message search uses the helper when configured
 - message-list retrieval uses the helper when configured

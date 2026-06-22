@@ -17,6 +17,9 @@ use std::os::unix::fs::{FileTypeExt as _, PermissionsExt as _};
 #[cfg(unix)]
 use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{Arc, Mutex};
+use std::thread;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 #[path = "mailbox_helper_client.rs"]
@@ -71,6 +74,9 @@ pub const DEFAULT_MAILBOX_HELPER_READ_TIMEOUT_SECS: u64 = 5;
 /// Conservative per-connection write timeout for the helper socket.
 pub const DEFAULT_MAILBOX_HELPER_WRITE_TIMEOUT_SECS: u64 = 5;
 
+/// Conservative cap for concurrently active helper connections.
+pub const DEFAULT_MAILBOX_HELPER_MAX_CONCURRENT_CONNECTIONS: usize = 4;
+
 /// Policy controlling the first mailbox-helper boundary.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MailboxHelperPolicy {
@@ -78,6 +84,7 @@ pub struct MailboxHelperPolicy {
     pub max_response_bytes: usize,
     pub read_timeout_secs: u64,
     pub write_timeout_secs: u64,
+    pub max_concurrent_connections: usize,
 }
 
 #[cfg(unix)]
@@ -94,6 +101,7 @@ impl Default for MailboxHelperPolicy {
             max_response_bytes: DEFAULT_MAILBOX_HELPER_MAX_RESPONSE_BYTES,
             read_timeout_secs: DEFAULT_MAILBOX_HELPER_READ_TIMEOUT_SECS,
             write_timeout_secs: DEFAULT_MAILBOX_HELPER_WRITE_TIMEOUT_SECS,
+            max_concurrent_connections: DEFAULT_MAILBOX_HELPER_MAX_CONCURRENT_CONNECTIONS,
         }
     }
 }
@@ -134,38 +142,49 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
             )
         })?;
 
-        let mailbox_backend = DoveadmMailboxListBackend::new(
-            MailboxListingPolicy::default(),
-            SystemCommandExecutor,
-            "/usr/local/bin/doveadm",
-        )
-        .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone());
-        let message_list_backend = DoveadmMessageListBackend::new(
-            MessageListPolicy::default(),
-            SystemCommandExecutor,
-            "/usr/local/bin/doveadm",
-        )
-        .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone());
-        let message_search_backend = DoveadmMessageSearchBackend::new(
-            MessageSearchPolicy::default(),
-            SystemCommandExecutor,
-            "/usr/local/bin/doveadm",
-        )
-        .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone());
-        let message_view_backend = DoveadmMessageViewBackend::new(
-            MessageViewPolicy::default(),
-            SystemCommandExecutor,
-            "/usr/local/bin/doveadm",
-        )
-        .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone());
-        let message_move_backend =
+        let mailbox_backend = Arc::new(
+            DoveadmMailboxListBackend::new(
+                MailboxListingPolicy::default(),
+                SystemCommandExecutor,
+                "/usr/local/bin/doveadm",
+            )
+            .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone()),
+        );
+        let message_list_backend = Arc::new(
+            DoveadmMessageListBackend::new(
+                MessageListPolicy::default(),
+                SystemCommandExecutor,
+                "/usr/local/bin/doveadm",
+            )
+            .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone()),
+        );
+        let message_search_backend = Arc::new(
+            DoveadmMessageSearchBackend::new(
+                MessageSearchPolicy::default(),
+                SystemCommandExecutor,
+                "/usr/local/bin/doveadm",
+            )
+            .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone()),
+        );
+        let message_view_backend = Arc::new(
+            DoveadmMessageViewBackend::new(
+                MessageViewPolicy::default(),
+                SystemCommandExecutor,
+                "/usr/local/bin/doveadm",
+            )
+            .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone()),
+        );
+        let message_move_backend = Arc::new(
             DoveadmMessageMoveBackend::new(SystemCommandExecutor, "/usr/local/bin/doveadm")
-                .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone());
-        let message_append_backend =
+                .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone()),
+        );
+        let message_append_backend = Arc::new(
             DoveadmMessageAppendBackend::new(SystemCommandExecutor, "/usr/local/bin/doveadm")
-                .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone());
+                .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone()),
+        );
         let policy = MailboxHelperPolicy::default();
-        let mut replay_cache = BTreeMap::<String, u64>::new();
+        let replay_cache = Arc::new(Mutex::new(BTreeMap::<String, u64>::new()));
+        let active_connections = Arc::new(AtomicUsize::new(0));
 
         logger.emit(
             &LogEvent::new(
@@ -180,21 +199,74 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
 
         for stream in listener.incoming() {
             match stream {
-                Ok(mut stream) => handle_helper_client(
-                    HelperBackends {
-                        mailbox_backend: &mailbox_backend,
-                        message_list_backend: &message_list_backend,
-                        message_search_backend: &message_search_backend,
-                        message_view_backend: &message_view_backend,
-                        message_move_backend: &message_move_backend,
-                        message_append_backend: &message_append_backend,
-                    },
-                    logger,
-                    &mut stream,
-                    policy,
-                    trusted_caller_policy.clone(),
-                    &mut replay_cache,
-                ),
+                Ok(mut stream) => {
+                    let Some(slot) = try_acquire_helper_slot(
+                        Arc::clone(&active_connections),
+                        policy.max_concurrent_connections,
+                    ) else {
+                        logger.emit(
+                            &LogEvent::new(
+                                LogLevel::Warn,
+                                EventCategory::Mailbox,
+                                "mailbox_helper_capacity_reached",
+                                "mailbox helper connection capacity reached",
+                            )
+                            .with_field(
+                                "max_concurrent_connections",
+                                policy.max_concurrent_connections.to_string(),
+                            ),
+                        );
+                        let _ = write_response(
+                            &mut stream,
+                            &MailboxHelperResponse::Error {
+                                backend: "mailbox-helper-capacity".to_string(),
+                                reason: "mailbox helper is at connection capacity".to_string(),
+                            },
+                        );
+                        continue;
+                    };
+
+                    let mailbox_backend = Arc::clone(&mailbox_backend);
+                    let message_list_backend = Arc::clone(&message_list_backend);
+                    let message_search_backend = Arc::clone(&message_search_backend);
+                    let message_view_backend = Arc::clone(&message_view_backend);
+                    let message_move_backend = Arc::clone(&message_move_backend);
+                    let message_append_backend = Arc::clone(&message_append_backend);
+                    let replay_cache = Arc::clone(&replay_cache);
+                    let trusted_caller_policy = trusted_caller_policy.clone();
+                    let worker_logger = logger.clone();
+                    if let Err(error) = thread::Builder::new()
+                        .name("osmap-mailbox-helper".to_string())
+                        .spawn(move || {
+                            let _slot = slot;
+                            handle_helper_client(
+                                HelperBackends {
+                                    mailbox_backend: mailbox_backend.as_ref(),
+                                    message_list_backend: message_list_backend.as_ref(),
+                                    message_search_backend: message_search_backend.as_ref(),
+                                    message_view_backend: message_view_backend.as_ref(),
+                                    message_move_backend: message_move_backend.as_ref(),
+                                    message_append_backend: message_append_backend.as_ref(),
+                                },
+                                &worker_logger,
+                                &mut stream,
+                                policy,
+                                trusted_caller_policy,
+                                replay_cache.as_ref(),
+                            );
+                        })
+                    {
+                        logger.emit(
+                            &LogEvent::new(
+                                LogLevel::Error,
+                                EventCategory::Mailbox,
+                                "mailbox_helper_worker_spawn_failed",
+                                "mailbox helper worker could not start",
+                            )
+                            .with_field("reason", error.to_string()),
+                        );
+                    }
+                }
                 Err(error) => logger.emit(
                     &LogEvent::new(
                         LogLevel::Warn,
@@ -218,7 +290,7 @@ fn handle_helper_client<MB, MLB, MSB, MVB, MMB, MAB>(
     stream: &mut UnixStream,
     policy: MailboxHelperPolicy,
     trusted_caller_policy: MailboxHelperTrustedCallerPolicy,
-    replay_cache: &mut BTreeMap<String, u64>,
+    replay_cache: &Mutex<BTreeMap<String, u64>>,
 ) where
     MB: MailboxBackend,
     MLB: MessageListBackend,
@@ -386,10 +458,13 @@ pub(crate) fn load_helper_grant_key(path: &Path) -> Result<Vec<u8>, String> {
 fn verify_helper_request_authority(
     request: &MailboxHelperRequest,
     grant_key: &[u8],
-    replay_cache: &mut BTreeMap<String, u64>,
+    replay_cache: &Mutex<BTreeMap<String, u64>>,
 ) -> Result<(), String> {
     let now = current_unix_time_secs()?;
     verify_request_grant(request, grant_key, now)?;
+    let mut replay_cache = replay_cache
+        .lock()
+        .map_err(|_| "helper replay cache lock was poisoned".to_string())?;
     replay_cache.retain(|_, expires_at| *expires_at >= now);
     let grant = request_grant(request);
     let replay_key = grant.signature.clone();
@@ -398,6 +473,41 @@ fn verify_helper_request_authority(
     }
     replay_cache.insert(replay_key, grant.expires_at);
     Ok(())
+}
+
+struct HelperWorkerSlot {
+    active_connections: Arc<AtomicUsize>,
+}
+
+impl Drop for HelperWorkerSlot {
+    fn drop(&mut self) {
+        self.active_connections.fetch_sub(1, Ordering::AcqRel);
+    }
+}
+
+fn try_acquire_helper_slot(
+    active_connections: Arc<AtomicUsize>,
+    max_concurrent_connections: usize,
+) -> Option<HelperWorkerSlot> {
+    if max_concurrent_connections == 0 {
+        return None;
+    }
+
+    let mut active = active_connections.load(Ordering::Acquire);
+    loop {
+        if active >= max_concurrent_connections {
+            return None;
+        }
+        match active_connections.compare_exchange_weak(
+            active,
+            active + 1,
+            Ordering::AcqRel,
+            Ordering::Acquire,
+        ) {
+            Ok(_) => return Some(HelperWorkerSlot { active_connections }),
+            Err(observed) => active = observed,
+        }
+    }
 }
 
 fn current_unix_time_secs() -> Result<u64, String> {
@@ -882,6 +992,35 @@ mod tests {
     }
 
     #[test]
+    fn helper_worker_slots_enforce_and_release_the_connection_cap() {
+        let active = Arc::new(AtomicUsize::new(0));
+        let first = try_acquire_helper_slot(Arc::clone(&active), 2)
+            .expect("first helper slot should be available");
+        let second = try_acquire_helper_slot(Arc::clone(&active), 2)
+            .expect("second helper slot should be available");
+
+        assert!(try_acquire_helper_slot(Arc::clone(&active), 2).is_none());
+        assert_eq!(active.load(Ordering::Acquire), 2);
+
+        drop(first);
+        let replacement = try_acquire_helper_slot(Arc::clone(&active), 2)
+            .expect("released helper slot should become available");
+        assert_eq!(active.load(Ordering::Acquire), 2);
+
+        drop(second);
+        drop(replacement);
+        assert_eq!(active.load(Ordering::Acquire), 0);
+    }
+
+    #[test]
+    fn helper_worker_slots_reject_a_zero_capacity_policy() {
+        let active = Arc::new(AtomicUsize::new(0));
+
+        assert!(try_acquire_helper_slot(Arc::clone(&active), 0).is_none());
+        assert_eq!(active.load(Ordering::Acquire), 0);
+    }
+
+    #[test]
     fn helper_rejects_missing_request_grant() {
         let current_uid = test_runtime_uid();
         let response = run_helper_round_trip(
@@ -988,11 +1127,11 @@ mod tests {
             &nonce,
         )
         .expect("test grant should sign");
-        let mut replay_cache = BTreeMap::<String, u64>::new();
+        let replay_cache = Mutex::new(BTreeMap::<String, u64>::new());
 
-        verify_helper_request_authority(&request, &key, &mut replay_cache)
+        verify_helper_request_authority(&request, &key, &replay_cache)
             .expect("first grant use should pass");
-        let error = verify_helper_request_authority(&request, &key, &mut replay_cache)
+        let error = verify_helper_request_authority(&request, &key, &replay_cache)
             .expect_err("second grant use must fail");
 
         assert_eq!(error, "helper request grant replay was rejected");
@@ -1950,7 +2089,7 @@ mod tests {
             let listener = UnixListener::bind(&socket_path).expect("test helper should bind");
             let logger = Logger::new(crate::config::LogFormat::Text, LogLevel::Info);
             let (mut stream, _) = listener.accept().expect("test helper should accept");
-            let mut replay_cache = BTreeMap::<String, u64>::new();
+            let replay_cache = Mutex::new(BTreeMap::<String, u64>::new());
             handle_helper_client(
                 HelperBackends {
                     mailbox_backend: &backend,
@@ -1967,7 +2106,7 @@ mod tests {
                     trusted_peer_uid,
                     grant_key: test_helper_grant_key(),
                 },
-                &mut replay_cache,
+                &replay_cache,
             );
         })
     }
