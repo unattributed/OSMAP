@@ -33,7 +33,11 @@ pub const DEFAULT_MAX_RECIPIENTS: usize = 16;
 pub const DEFAULT_SUBJECT_MAX_LEN: usize = 998;
 
 /// Conservative upper bound for one composed message body.
-pub const DEFAULT_BODY_MAX_LEN: usize = 65_536;
+///
+/// This remains bounded but is large enough for forwarding one safely rendered
+/// HTML-heavy message as plain text without making the generated draft
+/// unsendable before the operator can edit it.
+pub const DEFAULT_BODY_MAX_LEN: usize = 262_144;
 
 /// Conservative upper bound for the number of uploaded attachments.
 pub const DEFAULT_MAX_ATTACHMENTS: usize = 3;
@@ -825,18 +829,51 @@ fn bounded_notice(policy: ComposePolicy, notice: &str) -> Result<String, Compose
     Ok(notice.to_string())
 }
 
+const GENERATED_BODY_TRUNCATION_NOTICE: &str = "\n[quoted content truncated]";
+
 /// Normalizes and bounds one generated body before it reaches the browser form.
 fn bounded_generated_body(policy: ComposePolicy, body: &str) -> Result<String, ComposeError> {
     let mut body = body.trim_end_matches('\n').to_string();
     if body.len() > policy.body_max_len {
         // The current draft builder trims oversized quoted content rather than
-        // rejecting reply/forward behavior for a long source message.
-        body.truncate(policy.body_max_len.saturating_sub(32));
-        body.push_str("\n[quoted content truncated]");
+        // rejecting reply/forward behavior for a long source message. The
+        // truncation is byte-budgeted, UTF-8 safe, and reserves room for the
+        // visible truncation notice so the generated draft remains sendable.
+        body = generated_body_with_truncation_notice(policy, &body);
     }
 
     validate_body(policy, &body)?;
     Ok(body)
+}
+
+fn generated_body_with_truncation_notice(policy: ComposePolicy, body: &str) -> String {
+    let notice = if policy.body_max_len >= GENERATED_BODY_TRUNCATION_NOTICE.len() {
+        GENERATED_BODY_TRUNCATION_NOTICE
+    } else {
+        ""
+    };
+    let prefix_budget = policy.body_max_len.saturating_sub(notice.len());
+    let prefix = truncate_to_utf8_byte_budget(body, prefix_budget).trim_end_matches('\n');
+    let mut bounded = String::with_capacity(prefix.len() + notice.len());
+    bounded.push_str(prefix);
+    bounded.push_str(notice);
+    bounded
+}
+
+fn truncate_to_utf8_byte_budget(value: &str, byte_budget: usize) -> &str {
+    if value.len() <= byte_budget {
+        return value;
+    }
+
+    let mut end = 0;
+    for (index, ch) in value.char_indices() {
+        let next = index + ch.len_utf8();
+        if next > byte_budget {
+            break;
+        }
+        end = next;
+    }
+    &value[..end]
 }
 
 /// Builds a reply or forward subject line without stacking duplicate prefixes.
@@ -1369,6 +1406,76 @@ mod tests {
             .as_deref()
             .unwrap_or_default()
             .contains("source attachments are not selected automatically"));
+    }
+
+    #[test]
+    fn forward_draft_accepts_html_heavy_body_over_legacy_64k_limit() {
+        let mut rendered = rendered_message_fixture();
+        rendered.attachments.clear();
+        rendered.body_text_for_compose =
+            "&lt;table&gt;namecheap invoice row&lt;/table&gt;\n".repeat(2_000);
+
+        let draft = ComposeDraft::from_rendered_message(
+            ComposePolicy::default(),
+            ComposeIntent::Forward,
+            &rendered,
+        )
+        .expect("large HTML-heavy forward draft should be built");
+
+        assert!(draft.body.len() > 65_536);
+        assert!(draft.body.len() <= DEFAULT_BODY_MAX_LEN);
+        assert!(!draft.body.contains("[quoted content truncated]"));
+
+        ComposeRequest::new(
+            ComposePolicy::default(),
+            "bob@example.com",
+            draft.subject,
+            draft.body,
+        )
+        .expect("generated forward draft should remain send-valid");
+    }
+
+    #[test]
+    fn forward_draft_truncates_above_compose_body_cap_before_send() {
+        let mut rendered = rendered_message_fixture();
+        rendered.attachments.clear();
+        rendered.body_text_for_compose = "oversized forwarded content line\n".repeat(20_000);
+
+        let draft = ComposeDraft::from_rendered_message(
+            ComposePolicy::default(),
+            ComposeIntent::Forward,
+            &rendered,
+        )
+        .expect("oversized forward draft should be trimmed rather than rejected");
+
+        assert!(draft.body.len() <= DEFAULT_BODY_MAX_LEN);
+        assert!(draft.body.ends_with("[quoted content truncated]"));
+
+        ComposeRequest::new(
+            ComposePolicy::default(),
+            "bob@example.com",
+            draft.subject,
+            draft.body,
+        )
+        .expect("truncated generated forward draft should remain send-valid");
+    }
+
+    #[test]
+    fn generated_body_truncation_preserves_utf8_boundaries() {
+        let mut rendered = rendered_message_fixture();
+        rendered.attachments.clear();
+        rendered.body_text_for_compose = "🙂".repeat(DEFAULT_BODY_MAX_LEN);
+
+        let draft = ComposeDraft::from_rendered_message(
+            ComposePolicy::default(),
+            ComposeIntent::Forward,
+            &rendered,
+        )
+        .expect("unicode-heavy forward draft should truncate without panic");
+
+        assert!(draft.body.len() <= DEFAULT_BODY_MAX_LEN);
+        assert!(draft.body.ends_with("[quoted content truncated]"));
+        assert!(std::str::from_utf8(draft.body.as_bytes()).is_ok());
     }
 
     #[test]
