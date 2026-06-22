@@ -28,7 +28,8 @@ impl RuntimeBrowserGateway {
         SecondFactorService::new(
             self.authentication_policy,
             TotpVerifier::new(
-                FileTotpSecretStore::new(self.totp_secret_dir.clone()),
+                FileTotpSecretStore::new(self.totp_secret_dir.clone())
+                    .with_replay_dir(self.totp_replay_dir.clone()),
                 SystemTimeProvider,
                 self.totp_policy,
             ),

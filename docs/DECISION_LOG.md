@@ -6768,3 +6768,17 @@ duplicate submission. Successful filing emits `sent_copy_stored`.
 Decision: accepted OSMAP submissions should appear in the authenticated
 sender's `Sent` mailbox without widening direct mailbox authority in the
 browser-facing runtime.
+
+## 2026-06-22, Consume accepted TOTP counters once
+
+The critical-review sprint confirmed that the TOTP verifier accepted the same
+valid counter repeatedly throughout the configured time and skew window.
+
+Production TOTP verification now stores the highest accepted counter per
+canonical user under the writable cache tree. A store-local advisory lock
+serializes the complete compare-and-record operation, and restrictive atomic
+replacement persists the result. Operator-managed TOTP secrets remain separate
+from replay state.
+
+Decision: a valid TOTP counter may authenticate only once. Reuse and concurrent
+double consumption fail closed.

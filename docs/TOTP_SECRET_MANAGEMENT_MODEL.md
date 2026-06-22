@@ -17,6 +17,8 @@ The current implementation uses:
 - 6-digit codes by default
 - 30-second time steps
 - a configurable skew window, defaulting to 1 step
+- persistent one-time counter consumption for the production file-backed
+  verifier
 
 The verifier supports a real shared-secret backend rather than a test-only
 stub.
@@ -37,6 +39,10 @@ That keeps secret material:
 - outside committed config examples
 - inside a bounded runtime directory that later deployment and confinement work
   can permission explicitly
+
+Accepted counter state is not stored with secret material. It is written under
+the configured cache tree at `cache/totp-replay`, where a store-local advisory
+lock serializes compare-and-record operations across cooperating processes.
 
 ## Secret File Model
 
@@ -82,6 +88,8 @@ The current model assumes:
 - secret files do not grant group or other access
 - secret files are not placed under repo-managed paths
 - the runtime only needs read access to the secret directory
+- replay state uses owner-only files and directories under the writable cache
+  tree
 
 ## Current Validation State
 
@@ -91,6 +99,7 @@ The TOTP implementation is currently validated through:
 - Unix-focused secret-store tests that reject symlinked or permissive secret
   files before parsing them
 - a real verifier implementation backed by a secret-store abstraction
+- replay regression tests covering repeated and concurrent use of one counter
 
 Broader OpenBSD QEMU validation should remain the next preferred step before
 more auth-path expansion.
