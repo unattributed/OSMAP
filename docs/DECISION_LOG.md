@@ -6855,3 +6855,27 @@ contained in the repository `LICENSE` file.
 Decision: current-status documents must describe the current tree and evidence.
 Historical design records may remain for provenance, but they must not override
 current operational truth.
+
+## 2026-06-22, Start V9 production convergence and record PR #19 deployment evidence
+
+V9 begins as a production convergence and operational closure milestone rather
+than a feature sprint. The immediate problem is drift between source,
+production, evidence, and documentation after V6, V7, V8, and the PR #19
+forward/send production fix.
+
+The first V9 intake evidence records local `main`, remote `origin/main`, the
+production checkout, and the live OpenBSD binary reconciled at
+`49c9f230d7865f01deadbc6a5a0f6e876c63e89b`. The live binary SHA256 is `411c976cccb0687f1a6e840470584fd8921eb5469e68905e457cf3edfe0cdea3`. The PR #19 production
+deployment evidence archive `osmap-forward-body-binary-deploy-20260622-133538Z.tar.gz` has SHA256
+`21a2d3b97808fe6bc971974ef46a42d27216f31f04cefe7cf4894c1f667a7800`.
+
+The post-deployment forward/send retest reached OSMAP `/send` with HTTP `303`,
+and Postfix/Brevo delivery queue `DDEA73CE8C4` completed with `status=sent` and
+was removed. The observed `breaking line > 998 bytes with <CR><LF>SPACE` line
+is recorded as transport line folding, not a delivery failure.
+
+Decision: source sync must not be treated as deployment. V9 may record the
+current production convergence state, but release-candidate status remains
+undecided until hold-period proof, V4 hostile-content carry-forward refresh,
+V7 production availability closeout, V6 selected-cohort closeout decision, and
+a final release-candidate gate are complete.

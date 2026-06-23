@@ -14,8 +14,8 @@ The repository deliberately separates:
 - Agent-facing collaboration guidance in the tracked repository root file
   `AGENTS.md`
 
-As of June 20, 2026, the project has substantive public-safe documentation
-through the Version 8 source-level stabilization close-out. The current
+As of June 22, 2026, the project has substantive public-safe documentation
+through the Version 9 production convergence intake. The current
 baseline was built from:
 
 - private early project planning notes, distilled into public-safe docs
@@ -35,6 +35,8 @@ baseline was built from:
   rollback, and production-validation record
 - repo-owned Version 8 stabilization program, regression matrices, executable
   gates, CI enforcement, and external evidence archives
+- repo-owned Version 9 production convergence intake, PR #19 deployment
+  evidence references, and explicit release-candidate gaps
 
 The documents in this folder are written for two audiences:
 
@@ -76,6 +78,7 @@ Current public documentation map:
 - `V8_SESSION_INTEGRITY_MATRIX.md`
 - `V8_RESOURCE_ROBUSTNESS_MATRIX.md`
 - `V8_FINAL_REGRESSION_GATE_CLOSEOUT.md`
+- `V9_PRODUCTION_CONVERGENCE.md`
 - `CRITICAL_REVIEW_HARDENING_SPRINT_2026_06_22.md`
 - `BUILD_AND_RELEASE_PROCESS.md`
 - `IMPLEMENTATION_PLAN.md`
@@ -187,13 +190,14 @@ rendering, malware prevention, or Roundcube parity. Version 5 records deployed
 identity, Host/origin, and response-boundary hardening without changing those
 product-scope limits. Version 6 defines controlled Roundcube retirement
 readiness for a selected cohort and remains incomplete until its sanitized
-live-evidence and closeout gates pass. Version 7 remains reopened for
-production because browser availability and real-login hold evidence are still
-required. Version 8 adds source-level regression coverage and mandatory CI
-enforcement, but does not deploy a new production binary or close V7.
-Requested additional functionality and Thunderbird-like UX polish remain
-future-version work unless a later definition explicitly brings them into
-scope.
+live-evidence and closeout gates pass. Version 7 browser availability has
+production evidence, but V9 still requires a bounded hold-period proof before
+release-candidate closure. Version 8 adds source-level regression coverage and
+mandatory CI enforcement. Version 9 reconciles source, production checkout,
+live binary identity, PR #19 deployment evidence, and remaining operational
+closure gaps. Requested additional functionality and Thunderbird-like UX polish
+remain future-version work unless a later definition explicitly brings them
+into scope.
 
 Some later-phase or deferred documents remain placeholders so the intended
 documentation map is visible without publishing private notes prematurely.
