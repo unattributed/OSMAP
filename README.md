@@ -146,7 +146,6 @@ The implementation is documented as small security and workflow slices:
 | V6 | Controlled Roundcube retirement readiness | [Definition](docs/V6_DEFINITION.md), [acceptance criteria](docs/V6_ACCEPTANCE_CRITERIA.md), [roadmap](docs/V6_ROADMAP.md), [security gates](docs/V6_SECURITY_GATES.md), [closeout evidence](docs/V6_CLOSEOUT_EVIDENCE.md) |
 | V7 | Boundary hardening, rendering recovery, and availability invariants | [Due diligence](docs/V7_BOUNDARY_HARDENING_DUE_DILIGENCE.md), [rendering closeout](docs/V7_RENDERING_REGRESSION_CLOSEOUT.md), [browser availability invariant](docs/V7_BROWSER_AVAILABILITY_INVARIANT.md), [throttle locking](docs/POST_V7_THROTTLE_TRANSACTION_LOCKING.md) |
 | V8 | Source stabilization through mandatory regression matrices | [Program](docs/V8_STABILIZATION_PROGRAM.md), [final closeout](docs/V8_FINAL_REGRESSION_GATE_CLOSEOUT.md) |
-| V9 | Production convergence and operational closure | [Production convergence](docs/V9_PRODUCTION_CONVERGENCE.md) |
 
 ### V3 assurance workstreams
 
