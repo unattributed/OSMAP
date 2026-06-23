@@ -153,6 +153,39 @@ It must not be described as full V3 release validation unless the run also has
 the required host, human-prompt credential, TOTP, WSTG, pilot rehearsal, and
 sanitized evidence inputs.
 
+## V9 Production Convergence
+
+V9 is a production convergence and operational closure milestone. It is not a
+new-feature sprint and is not a release tag by itself.
+
+The V9 Slice 1 intake run on 2026-06-22 captured the following convergence
+state:
+
+- local `main`: `49c9f230d7865f01deadbc6a5a0f6e876c63e89b`
+- remote `origin/main`: `49c9f230d7865f01deadbc6a5a0f6e876c63e89b`
+- production checkout `/home/foo/OSMAP`: `49c9f230d7865f01deadbc6a5a0f6e876c63e89b`
+- live binary `/usr/local/bin/osmap`: `411c976cccb0687f1a6e840470584fd8921eb5469e68905e457cf3edfe0cdea3`
+- PR #19 deployment evidence archive: `osmap-forward-body-binary-deploy-20260622-133538Z.tar.gz`
+- PR #19 deployment evidence SHA256: `21a2d3b97808fe6bc971974ef46a42d27216f31f04cefe7cf4894c1f667a7800`
+- V9 Slice 1 intake evidence archive: `osmap-v9-slice-1-intake-20260622-142413Z.tar.gz`
+- V9 Slice 1 intake evidence SHA256: `5de376e832ae79f8c29afd1e3b0243f8ac09a04d4bb0c71a7a771fd65403e331`
+
+This proves source and production identity convergence for the assessed
+snapshot. It does not prove release-candidate readiness.
+
+A V9 release-candidate decision still requires at least:
+
+- bounded production hold-period proof against the deployed binary;
+- V4 hostile-content carry-forward refresh on current `main`;
+- explicit V7 production availability closeout using real-login evidence;
+- explicit V6 selected-cohort/no-Roundcube closeout decision;
+- a final release gate that records unresolved limitations and rollback.
+
+Source sync must not be described as deployment. A production deployment claim
+requires source identity, rebuilt binary identity, installed live binary hash,
+service restart or continuity evidence, service health, functional operation,
+selected logs, rollback reference, archive, and checksum.
+
 ## Rollback Strategy
 
 Every release process should assume rollback may be necessary.

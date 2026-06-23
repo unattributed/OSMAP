@@ -226,3 +226,23 @@ The primary V6 gaps at the definition baseline are:
 V6 does not close or relax the broader limitations around general webmail
 parity, remote content, attachment preview, groupware, broad administration,
 OpenPGP, ManageSieve UI, or a complete denial-of-service strategy.
+
+## Version 9 Production Convergence Boundary
+
+V9 Slice 1 reconciled source and production identity after PR #19. The evidence
+shows the local checkout, `origin/main`, the production checkout, and the live
+OpenBSD binary are aligned to `49c9f230d7865f01deadbc6a5a0f6e876c63e89b`, with live binary SHA256
+`411c976cccb0687f1a6e840470584fd8921eb5469e68905e457cf3edfe0cdea3`.
+
+This reduces source, production, and evidence drift but does not remove the
+remaining release limitations:
+
+- the current V4 hostile-content containment claim still needs refresh on the
+  current post-V4 codebase before inheritance is claimed;
+- V6 selected-cohort/no-Roundcube closeout remains incomplete until the selected
+  live reports and no-fallback rehearsal support it;
+- V7 browser availability has production evidence, but V9 still requires a
+  bounded hold-period proof against the deployed binary before release-candidate
+  closure;
+- V9 has not yet produced a PASS, CONDITIONAL PASS, or FAIL release-candidate
+  decision.

@@ -13,17 +13,28 @@ feature breadth or Roundcube parity.
 
 | Area | Status |
 |---|---|
-| Source | V8 source stabilization is complete on `main` |
+| Source | V8 source stabilization and PR #19 are complete on `main` at `49c9f23` |
 | Formal tagged release evidence | `v4.0.0`, the hostile-content safety release |
 | V5 | Boundary hardening deployed; later typed HTML source hardening is documented separately |
 | V6 | Production readiness passed; selected-cohort retirement closeout remains incomplete |
-| V7 | Findings are closed in source, but production approval remains reopened pending real-login availability proof |
-| V8 | Regression matrices and CI enforcement are complete; V8 does not claim a new production deployment |
+| V7 | Source findings and the browser availability invariant have production evidence, but V9 hold-period proof remains required before release-candidate closure |
+| V8 | Regression matrices and CI enforcement are complete; V8 does not by itself claim a new production deployment |
+| V9 | Production convergence intake is open; source, production checkout, and live binary identity are reconciled for `49c9f23`, but release-candidate status is not decided |
 
 The current release evidence is anchored by `v4.0.0`, with evidence bundle commit `59da020`
 and assessed V4 code commit `09a95b7`. V4 does not claim rich-mail safety, malware prevention, attachment preview
 safety, or URL reputation. The release rule is that any later code change must refresh V4 evidence
 before inheriting the V4 claim.
+
+V9 production convergence intake on 2026-06-22 recorded `main`, the production
+checkout, and the live OpenBSD binary converged at `49c9f230d7865f01deadbc6a5a0f6e876c63e89b`. The deployed
+binary hash is `411c976cccb0687f1a6e840470584fd8921eb5469e68905e457cf3edfe0cdea3`. The PR #19 deployment evidence archive
+`osmap-forward-body-binary-deploy-20260622-133538Z.tar.gz` has SHA256 `21a2d3b97808fe6bc971974ef46a42d27216f31f04cefe7cf4894c1f667a7800` and replaced prior live
+binary hash `500cdd839be9c70297d33cbce6661815ebfb4740ba8b607f63a6cdf98ac7dca7`. The post-deployment forward/send retest reached
+OSMAP `/send` with HTTP `303` and Postfix/Brevo delivery queue `DDEA73CE8C4` was
+sent and removed. This records operational improvement, not release-candidate
+approval.
+
 
 Start with:
 
