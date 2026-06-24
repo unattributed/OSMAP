@@ -13,13 +13,13 @@ feature breadth or Roundcube parity.
 
 | Area | Status |
 |---|---|
-| Source | V8 source stabilization and PR #19 are complete on `main` at `49c9f23` |
+| Source | Current `main` is post-V9 documentation reconciliation; the V9 selected-cohort release-candidate decision is anchored at `a8915c0993b96a9d53de083dc84cb7520aef0097` |
 | Formal tagged release evidence | `v4.0.0`, the hostile-content safety release |
 | V5 | Boundary hardening deployed; later typed HTML source hardening is documented separately |
-| V6 | Production readiness passed; selected-cohort retirement closeout remains incomplete |
-| V7 | Source findings and the browser availability invariant have production evidence, but V9 hold-period proof remains required before release-candidate closure |
+| V6 | Production readiness passed, and V9 Slice 6 accepted the selected-cohort/no-Roundcube closeout criteria for the bounded V9 release-candidate scope |
+| V7 | Production availability reopening is closed for the tested selected-user path by V9 Slice 5 evidence |
 | V8 | Regression matrices and CI enforcement are complete; V8 does not by itself claim a new production deployment |
-| V9 | Production convergence intake is open; source, production checkout, and live binary identity are reconciled for `49c9f23`, but release-candidate status is not decided |
+| V9 | Release-candidate gate is PASS for selected-cohort operation under documented limitations; production runtime code remains `49c9f23` with documentation-only drift at the V9 gate |
 
 The current release evidence is anchored by `v4.0.0`, with evidence bundle commit `59da020`
 and assessed V4 code commit `09a95b7`. V4 does not claim rich-mail safety, malware prevention, attachment preview
@@ -32,9 +32,14 @@ binary hash is `411c976cccb0687f1a6e840470584fd8921eb5469e68905e457cf3edfe0cdea3
 `osmap-forward-body-binary-deploy-20260622-133538Z.tar.gz` has SHA256 `21a2d3b97808fe6bc971974ef46a42d27216f31f04cefe7cf4894c1f667a7800` and replaced prior live
 binary hash `500cdd839be9c70297d33cbce6661815ebfb4740ba8b607f63a6cdf98ac7dca7`. The post-deployment forward/send retest reached
 OSMAP `/send` with HTTP `303` and Postfix/Brevo delivery queue `DDEA73CE8C4` was
-sent and removed. This records operational improvement, not release-candidate
-approval.
+sent and removed.
 
+The final V9 gate on 2026-06-24 accepted `a8915c0993b96a9d53de083dc84cb7520aef0097`
+as a selected-cohort release candidate. That acceptance depends on the
+documented scope and limitations in
+`docs/V9_RELEASE_CANDIDATE_CLOSEOUT.md`; it is not a claim of complete
+Roundcube feature parity, general hostile email safety, unbounded mailbox
+parsing safety, or release readiness outside the selected-cohort scope.
 
 Start with:
 
@@ -146,6 +151,7 @@ The implementation is documented as small security and workflow slices:
 | V6 | Controlled Roundcube retirement readiness | [Definition](docs/V6_DEFINITION.md), [acceptance criteria](docs/V6_ACCEPTANCE_CRITERIA.md), [roadmap](docs/V6_ROADMAP.md), [security gates](docs/V6_SECURITY_GATES.md), [closeout evidence](docs/V6_CLOSEOUT_EVIDENCE.md) |
 | V7 | Boundary hardening, rendering recovery, and availability invariants | [Due diligence](docs/V7_BOUNDARY_HARDENING_DUE_DILIGENCE.md), [rendering closeout](docs/V7_RENDERING_REGRESSION_CLOSEOUT.md), [browser availability invariant](docs/V7_BROWSER_AVAILABILITY_INVARIANT.md), [throttle locking](docs/POST_V7_THROTTLE_TRANSACTION_LOCKING.md) |
 | V8 | Source stabilization through mandatory regression matrices | [Program](docs/V8_STABILIZATION_PROGRAM.md), [final closeout](docs/V8_FINAL_REGRESSION_GATE_CLOSEOUT.md) |
+| V9 | Production convergence and selected-cohort release-candidate decision | [Production convergence](docs/V9_PRODUCTION_CONVERGENCE.md), [release-candidate closeout](docs/V9_RELEASE_CANDIDATE_CLOSEOUT.md), [V7 production availability closeout](docs/V7_PRODUCTION_AVAILABILITY_CLOSEOUT.md) |
 
 ### V3 assurance workstreams
 
@@ -250,10 +256,10 @@ What is proven:
 Limits of the claim:
 
 - This closes the V7 production availability reopening only for the tested selected-user production path and the current rendering policy.
-- This is not a general release-candidate decision.
+- Slice 5 was not by itself a general release-candidate decision; Slice 7 later accepted the bounded V9 selected-cohort release candidate.
 - This does not claim complete Roundcube replacement.
 - Production was not rebuilt for Slice 2 documentation-only changes, and no rebuild is required for that documentation merge.
-- V6 selected-cohort/no-Roundcube retirement closeout and the final V9 release-candidate gate remain open.
+- V6 selected-cohort/no-Roundcube closure and the final V9 release-candidate gate are reconciled by `docs/V9_RELEASE_CANDIDATE_CLOSEOUT.md`.
 
 <!-- OSMAP:V9-SLICE5-V7-CLOSEOUT:END -->
 

@@ -200,9 +200,15 @@ The April 2026 WSTG backlog maps into Version 3 as follows:
 
 ## Version 6 Controlled Retirement Readiness Boundary
 
-V6 production readiness passed on June 18, 2026, but selected-cohort retirement
-closeout remains incomplete until no-fallback, observability, resource
-resilience, and final archive evidence pass against one assessed deployment.
+V6 production readiness passed on June 18, 2026. The original V6 closeout
+record kept selected-cohort retirement incomplete until no-fallback,
+observability, resource-resilience, and final archive evidence passed against
+one assessed deployment.
+
+V9 Slice 6 later accepted the V6 selected-cohort/no-Roundcube closeout criteria
+for the bounded V9 release-candidate decision. That reconciliation is scoped to
+the selected-cohort V9 evidence chain and does not turn V6 into a general
+Roundcube-replacement or broad webmail parity claim.
 
 The primary V6 gaps at the definition baseline are:
 
@@ -214,14 +220,15 @@ The primary V6 gaps at the definition baseline are:
   a visible fail-closed condition and no source bytes are persisted
 - production readiness passed with a sanitized host report, deployed commit,
   binary SHA256, service state, rollback unit, and browser-facing GET proof
-- observability and incident-response expectations still need the final V6
-  selected-cohort live report
-- the bounded resource model has a fail-closed validator, but the final
-  selected-host V6 resource-resilience report remains outstanding
-- Roundcube retirement has migration guidance but not a passing
-  no-fallback rehearsal for the selected V6 cohort
-- the V6 closeout documents and archive tooling exist, but the archive cannot
-  be created until all four live reports and the V6 gate pass
+- the V9 selected-cohort decision accepted the required no-fallback,
+  observability, and resource evidence for the bounded release-candidate scope
+- the bounded resource model has a fail-closed validator and is carried forward
+  by the V9 evidence chain for selected-cohort operation
+- Roundcube retirement remains bounded to the selected cohort and keeps
+  operator rollback expectations in force
+- the original V6 archive tooling remains useful for standalone V6 evidence
+  refreshes, but V9 now controls the current selected-cohort release-candidate
+  decision
 
 V6 does not close or relax the broader limitations around general webmail
 parity, remote content, attachment preview, groupware, broad administration,
@@ -229,23 +236,23 @@ OpenPGP, ManageSieve UI, or a complete denial-of-service strategy.
 
 ## Version 9 Production Convergence Boundary
 
-V9 Slice 1 reconciled source and production identity after PR #19. The evidence
-shows the local checkout, `origin/main`, the production checkout, and the live
-OpenBSD binary are aligned to `49c9f230d7865f01deadbc6a5a0f6e876c63e89b`, with live binary SHA256
+V9 Slice 1 reconciled source and production identity after PR #19. The final
+V9 gate then accepted `a8915c0993b96a9d53de083dc84cb7520aef0097` as a bounded
+selected-cohort release candidate while production runtime code remained
+`49c9f230d7865f01deadbc6a5a0f6e876c63e89b` and live binary SHA256 remained
 `411c976cccb0687f1a6e840470584fd8921eb5469e68905e457cf3edfe0cdea3`.
 
-This reduces source, production, and evidence drift but does not remove the
-remaining release limitations:
+The V9 release-candidate decision resolved the specific V4 carry-forward, V6
+selected-cohort, V7 production availability, hold-period, healthy-service, and
+rollback-reference blockers listed in `docs/V9_RELEASE_CANDIDATE_CLOSEOUT.md`.
+The remaining limitations are scope limits, not unresolved V9 gate blockers:
 
-- the current V4 hostile-content containment claim still needs refresh on the
-  current post-V4 codebase before inheritance is claimed;
-- V6 selected-cohort/no-Roundcube closeout remains incomplete until the selected
-  live reports and no-fallback rehearsal support it;
-- V7 browser availability has production evidence, but V9 still requires a
-  bounded hold-period proof against the deployed binary before release-candidate
-  closure;
-- V9 has not yet produced a PASS, CONDITIONAL PASS, or FAIL release-candidate
-  decision.
+- the release-candidate claim is selected-cohort only;
+- complete Roundcube feature parity is not claimed;
+- general hostile email safety is not claimed;
+- unbounded mailbox parsing safety is not claimed;
+- production runtime code still remains the PR #19 deployed binary, with
+  documentation-only source drift recorded by the V9 gate.
 
 <!-- OSMAP:V9-SLICE5-V7-CLOSEOUT:START -->
 
@@ -253,11 +260,13 @@ remaining release limitations:
 
 The previous V7 production-availability reopening is closed by V9 Slice 5 evidence. The closeout is bounded. It proves the tested selected-user production path, not complete Roundcube parity and not a final release-candidate state.
 
-Remaining limitations after this closeout:
+Remaining limitations after this closeout and the later V9 Slice 7 gate:
 
-- This is not a general release-candidate decision.
+- This is a selected-cohort release-candidate decision, not a general release
+  claim.
 - This does not claim complete Roundcube replacement.
 - Production was not rebuilt for Slice 2 documentation-only changes, and no rebuild is required for that documentation merge.
-- V6 selected-cohort/no-Roundcube retirement closeout and the final V9 release-candidate gate remain open.
+- V6 selected-cohort/no-Roundcube closure and the final V9 release-candidate
+  gate are reconciled by `docs/V9_RELEASE_CANDIDATE_CLOSEOUT.md`.
 
 <!-- OSMAP:V9-SLICE5-V7-CLOSEOUT:END -->

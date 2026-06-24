@@ -6893,10 +6893,10 @@ Reason: V9 Slice 5 evidence shows that the V7 rendering regression gate, renderi
 Decision boundaries:
 
 - This closes the V7 production availability reopening only for the tested selected-user production path and the current rendering policy.
-- This is not a general release-candidate decision.
+- At Slice 5 time, this was not by itself a general release-candidate decision.
 - This does not claim complete Roundcube replacement.
 - Production was not rebuilt for Slice 2 documentation-only changes, and no rebuild is required for that documentation merge.
-- V6 selected-cohort/no-Roundcube retirement closeout and the final V9 release-candidate gate remain open.
+- V6 selected-cohort/no-Roundcube closure and the final V9 release-candidate gate were reconciled later by the V9 release-candidate PASS decision.
 
 Evidence:
 

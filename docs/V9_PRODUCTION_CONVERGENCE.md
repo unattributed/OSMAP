@@ -74,11 +74,11 @@ The uploaded Slice 1 evidence proves:
   dump, fatal, crash, restart, killed, out-of-memory, or OOM entries in the
   captured window.
 
-## What V9 does not prove yet
+## Slice 1 limitations, later resolved by V9
 
-V9 Slice 1 does not prove release readiness.
+V9 Slice 1 did not prove release readiness by itself.
 
-The remaining V9 proof items are:
+The remaining proof items at the Slice 1 intake point were:
 
 1. repo documentation reconciliation;
 2. production hold-period proof against the deployed binary;
@@ -104,8 +104,8 @@ Unacceptable current claim:
 OSMAP is release ready.
 ```
 
-Release-candidate status remains undecided until the final V9 gate records a
-PASS, CONDITIONAL PASS, or FAIL decision.
+The final V9 gate later recorded a PASS decision in
+`docs/V9_RELEASE_CANDIDATE_CLOSEOUT.md`.
 
 <!-- OSMAP:V9-SLICE5-V7-CLOSEOUT:START -->
 
@@ -137,10 +137,10 @@ What is proven:
 Limits of the claim:
 
 - This closes the V7 production availability reopening only for the tested selected-user production path and the current rendering policy.
-- This is not a general release-candidate decision.
+- Slice 5 was not by itself a general release-candidate decision; Slice 7 later accepted the bounded V9 selected-cohort release candidate.
 - This does not claim complete Roundcube replacement.
 - Production was not rebuilt for Slice 2 documentation-only changes, and no rebuild is required for that documentation merge.
-- V6 selected-cohort/no-Roundcube retirement closeout and the final V9 release-candidate gate remain open.
+- V6 selected-cohort/no-Roundcube closure and the final V9 release-candidate gate are reconciled by `docs/V9_RELEASE_CANDIDATE_CLOSEOUT.md`.
 
 <!-- OSMAP:V9-SLICE5-V7-CLOSEOUT:END -->
 

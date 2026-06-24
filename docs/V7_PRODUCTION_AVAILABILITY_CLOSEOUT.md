@@ -30,13 +30,16 @@ This document records the V9 Slice 5 evidence-backed closeout of the V7 producti
 ## Claim boundaries
 
 - This closes the V7 production availability reopening only for the tested selected-user production path and the current rendering policy.
-- This is not a general release-candidate decision.
+- Slice 5 was not by itself a general release-candidate decision; Slice 7 later accepted the bounded V9 selected-cohort release candidate.
 - This does not claim complete Roundcube replacement.
 - Production was not rebuilt for Slice 2 documentation-only changes, and no rebuild is required for that documentation merge.
-- V6 selected-cohort/no-Roundcube retirement closeout and the final V9 release-candidate gate remain open.
+- V6 selected-cohort/no-Roundcube closure and the final V9 release-candidate gate are reconciled by `V9_RELEASE_CANDIDATE_CLOSEOUT.md`.
 
 ## Release impact
 
-This closeout improves the V9 release-readiness story, but it does not by itself make OSMAP a release candidate. V6 selected-cohort/no-Roundcube retirement closeout and the final V9 release-candidate gate remain open.
+This closeout improved the V9 release-readiness story and was later consumed
+by the Slice 7 V9 release-candidate PASS decision. It does not expand the V9
+claim beyond the tested selected-user production path and the current rendering
+policy.
 
 <!-- OSMAP:V9-SLICE5-V7-CLOSEOUT:END -->

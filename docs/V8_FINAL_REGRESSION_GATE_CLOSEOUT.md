@@ -64,9 +64,10 @@ used by the resource matrix, those inventory files are not parsed at test
 runtime. Their corresponding vectors and assertions are encoded directly in
 the Rust matrices.
 
-This review does not claim that the V8 implementation commit is the currently
-deployed production binary. V7 remains reopened for production availability
-and real-login hold proof.
+This review did not claim that the V8 implementation commit was the currently
+deployed production binary. At V8 closeout time, V7 remained reopened for
+production availability and real-login hold proof. V9 later closed that
+reopening for the tested selected-user production path.
 
 ## Non-goals
 

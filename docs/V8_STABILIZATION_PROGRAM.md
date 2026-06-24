@@ -90,9 +90,10 @@ The completed implementation provides:
 - enforcement from the GitHub Actions `security-check` workflow
 - external slice evidence archives with SHA256 sidecars
 
-This status is source-level only. V8 does not claim a production deployment,
-does not close the reopened V7 production milestone, and does not change the
-frozen V4 release-evidence tuple.
+This status is source-level only. V8 does not claim a production deployment
+and does not change the frozen V4 release-evidence tuple. At V8 closeout time,
+V8 also did not close the reopened V7 production milestone; V9 later closed
+that reopening for the tested selected-user production path.
 
 ## Non-goals
 

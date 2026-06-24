@@ -154,7 +154,7 @@ Bad checks:
 - present: `true`
 - sha verified: `true`
 - decision: `PASS`
-- verdict: `V5`
+- verdict: `V6_SELECTED_COHORT_CLOSEOUT_SATISFIED`
 - reason: `V6 selected-cohort / no-Roundcube closeout criteria are satisfied by documentation and evidence`
 - archive sha256: `844625e0d942b1366bcab3f1d5bcc9df4b1903754551af73cb8a1506d02ba959`
 
