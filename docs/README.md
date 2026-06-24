@@ -239,3 +239,5 @@ V7 production availability was previously reopened pending real-login, real-mail
 - V9 Slice 4 hostile-content carry-forward archive SHA256: `0a67c1e254a7277003253d26fc5b3d5700072fe53c453a6dc890374ae53c2ac1`
 
 <!-- OSMAP:V9-SLICE5-V7-CLOSEOUT:END -->
+
+- [V9 release candidate closeout](V9_RELEASE_CANDIDATE_CLOSEOUT.md)

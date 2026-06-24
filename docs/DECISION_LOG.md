@@ -6909,3 +6909,22 @@ Evidence:
 - Production runtime binary SHA256 remains: `411c976cccb0687f1a6e840470584fd8921eb5469e68905e457cf3edfe0cdea3`
 
 <!-- OSMAP:V9-SLICE5-V7-CLOSEOUT:END -->
+
+<!-- OSMAP:DECISION:V9_RELEASE_CANDIDATE_PASS -->
+
+## V9 release candidate accepted
+
+Date UTC: `2026-06-24T16:00:48Z`
+
+Decision: OSMAP V9 is accepted as a selected-cohort release candidate.
+
+Evidence:
+
+- Slice 7 release candidate gate: PASS
+- Current main: `a8915c0993b96a9d53de083dc84cb7520aef0097`
+- Production runtime source: `49c9f230d7865f01deadbc6a5a0f6e876c63e89b`
+- Production binary SHA256: `411c976cccb0687f1a6e840470584fd8921eb5469e68905e457cf3edfe0cdea3`
+- Drift from production runtime source to current main: documentation-only
+- Closeout document: `docs/V9_RELEASE_CANDIDATE_CLOSEOUT.md`
+
+Boundary: this decision does not claim complete Roundcube replacement, general hostile email safety, or unbounded release readiness.
