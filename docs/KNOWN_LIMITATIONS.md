@@ -246,3 +246,18 @@ remaining release limitations:
   closure;
 - V9 has not yet produced a PASS, CONDITIONAL PASS, or FAIL release-candidate
   decision.
+
+<!-- OSMAP:V9-SLICE5-V7-CLOSEOUT:START -->
+
+## V7 production availability limitation update
+
+The previous V7 production-availability reopening is closed by V9 Slice 5 evidence. The closeout is bounded. It proves the tested selected-user production path, not complete Roundcube parity and not a final release-candidate state.
+
+Remaining limitations after this closeout:
+
+- This is not a general release-candidate decision.
+- This does not claim complete Roundcube replacement.
+- Production was not rebuilt for Slice 2 documentation-only changes, and no rebuild is required for that documentation merge.
+- V6 selected-cohort/no-Roundcube retirement closeout and the final V9 release-candidate gate remain open.
+
+<!-- OSMAP:V9-SLICE5-V7-CLOSEOUT:END -->
