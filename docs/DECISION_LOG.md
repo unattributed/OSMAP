@@ -6879,3 +6879,33 @@ current production convergence state, but release-candidate status remains
 undecided until hold-period proof, V4 hostile-content carry-forward refresh,
 V7 production availability closeout, V6 selected-cohort closeout decision, and
 a final release-candidate gate are complete.
+
+<!-- OSMAP:V9-SLICE5-V7-CLOSEOUT:START -->
+
+## V9 Slice 5, V7 production availability closeout
+
+Date: 2026-06-24
+
+Decision: close the V7 production availability reopening.
+
+Reason: V9 Slice 5 evidence shows that the V7 rendering regression gate, rendering wrapper, boundary hardening gate, Slice 3 production hold proof, and production snapshot all passed.
+
+Decision boundaries:
+
+- This closes the V7 production availability reopening only for the tested selected-user production path and the current rendering policy.
+- This is not a general release-candidate decision.
+- This does not claim complete Roundcube replacement.
+- Production was not rebuilt for Slice 2 documentation-only changes, and no rebuild is required for that documentation merge.
+- V6 selected-cohort/no-Roundcube retirement closeout and the final V9 release-candidate gate remain open.
+
+Evidence:
+
+- V9 Slice 5 evidence archive: `osmap-v9-slice-5-v7-production-closeout-20260624-131645Z.tar.gz`
+- V9 Slice 5 archive SHA256: `2a2514ca62028bb1d444802b2f614014e7dae92e52864517caebdfadd39b7076`
+- V9 Slice 3 hold-period archive SHA256: `18c3710a109d8d5152e11d2cebafacae4c8047be9587a5d5ef691d462bba6b0d`
+- V9 Slice 4 hostile-content carry-forward archive SHA256: `0a67c1e254a7277003253d26fc5b3d5700072fe53c453a6dc890374ae53c2ac1`
+- Current documented main head: `fcf360587daeda57f2de515ef8f85fc69d016f4e`
+- Production runtime source head remains the PR #19 source point: `49c9f230d7865f01deadbc6a5a0f6e876c63e89b`
+- Production runtime binary SHA256 remains: `411c976cccb0687f1a6e840470584fd8921eb5469e68905e457cf3edfe0cdea3`
+
+<!-- OSMAP:V9-SLICE5-V7-CLOSEOUT:END -->

@@ -226,3 +226,16 @@ For the short operator procedure around the authoritative Version 1 host
 closeout rerun, including the repo-owned helper that now performs the
 temporary validation-password override used by the real `login-send` step and
 the expected report artifact, see `V1_CLOSEOUT_SOP.md`.
+
+<!-- OSMAP:V9-SLICE5-V7-CLOSEOUT:START -->
+
+## V7 production availability closeout
+
+V7 production availability was previously reopened pending real-login, real-mailbox, and real-send evidence. V9 Slice 5 reconciles that item and records that V7 production availability can be closed for the tested selected-user production path.
+
+- V9 Slice 5 evidence archive: `osmap-v9-slice-5-v7-production-closeout-20260624-131645Z.tar.gz`
+- V9 Slice 5 archive SHA256: `2a2514ca62028bb1d444802b2f614014e7dae92e52864517caebdfadd39b7076`
+- V9 Slice 3 hold-period archive SHA256: `18c3710a109d8d5152e11d2cebafacae4c8047be9587a5d5ef691d462bba6b0d`
+- V9 Slice 4 hostile-content carry-forward archive SHA256: `0a67c1e254a7277003253d26fc5b3d5700072fe53c453a6dc890374ae53c2ac1`
+
+<!-- OSMAP:V9-SLICE5-V7-CLOSEOUT:END -->
