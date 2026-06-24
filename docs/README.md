@@ -180,6 +180,7 @@ Current public documentation map:
 - `V6_TRACES/SLICE_08_RESOURCE_RESILIENCE.md`
 - `V6_TRACES/SLICE_09_CLOSEOUT.md`
 - `V7_PRODUCTION_AVAILABILITY_CLOSEOUT.md`
+- `V10_INTAKE_AUDIT.md`
 - `V9_RELEASE_CANDIDATE_CLOSEOUT.md`
 - `REQUEST_WORKER_BUDGET_MODEL.md`
 - `MAIL_HOST_BINARY_DEPLOYMENT_SOP.md`
@@ -260,5 +261,4 @@ V7 production availability was previously reopened pending real-login, real-mail
 
 <!-- OSMAP:V9-SLICE5-V7-CLOSEOUT:END -->
 
-- [V10 intake audit](V10_INTAKE_AUDIT.md) - Governance, acceptance, documentation, evidence, WSTG, gate, placeholder, and Rust assumption intake inventory for the V10 recovery sprint.
 - [V9 release candidate closeout](V9_RELEASE_CANDIDATE_CLOSEOUT.md)
