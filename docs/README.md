@@ -260,4 +260,5 @@ V7 production availability was previously reopened pending real-login, real-mail
 
 <!-- OSMAP:V9-SLICE5-V7-CLOSEOUT:END -->
 
+- [V10 intake audit](V10_INTAKE_AUDIT.md) - Governance, acceptance, documentation, evidence, WSTG, gate, placeholder, and Rust assumption intake inventory for the V10 recovery sprint.
 - [V9 release candidate closeout](V9_RELEASE_CANDIDATE_CLOSEOUT.md)
