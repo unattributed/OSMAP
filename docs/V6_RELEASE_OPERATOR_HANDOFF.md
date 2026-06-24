@@ -2,12 +2,18 @@
 
 ## Current State
 
+This document preserves the June 18, 2026 V6 operator handoff state. V9 later
+accepted the V6 selected-cohort/no-Roundcube closeout criteria for the bounded
+V9 release-candidate decision. Use `V9_RELEASE_CANDIDATE_CLOSEOUT.md` for the
+current selected-cohort release-candidate status.
+
 V6 source Slices 00 through 09 are assembled on
 `feature/v6-controlled-retirement-readiness`. V6 commit
 `18d853643e2eca054cb7d2ad1d4d5b275f8af4f3` is now deployed on
 `mail.blackbagsecurity.com`, and the production-readiness report has passed.
-V6 closeout remains incomplete until the no-fallback rehearsal, observability,
-and resource-resilience reports also pass.
+At this historical handoff point, V6 closeout remained incomplete until the
+no-fallback rehearsal, observability, and resource-resilience reports also
+passed.
 
 ## Before Deployment
 

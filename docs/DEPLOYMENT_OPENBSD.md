@@ -2,8 +2,10 @@
 
 ## Purpose
 
-This document records the OpenBSD deployment direction for OSMAP. It is still
-pre-implementation, but the hosting strategy is clear enough to define now.
+This document records the OpenBSD deployment direction and current validated
+host shape for OSMAP. Early sections preserve design intent, while the current
+deployment path is now concrete: nginx fronts `osmap_serve`, and mailbox
+authority is isolated behind `osmap_mailbox_helper`.
 
 ## Target Environment
 
@@ -17,21 +19,24 @@ The deployment model should assume:
 - an OpenBSD-friendly edge layer such as nginx remains part of the environment
 - the application may initially coexist with the current VPN-first access model
 
-## Current Prototype Deployment Shape
+## Current Implemented Deployment Shape
 
-The current implemented prototype is small enough to describe concretely:
+The current implemented deployment shape is small enough to describe
+concretely:
 
 - `nginx` remains the public-facing TLS edge
-- OSMAP serves HTTP on a local TCP listener
-- development mode requires a loopback listener
-- staging or production should also prefer loopback-only exposure behind nginx
+- `osmap_serve` serves HTTP on a loopback-only local TCP listener behind nginx
+- `osmap_mailbox_helper` serves mailbox operations over a narrowly permissioned
+  Unix socket
 - Dovecot remains authoritative for auth and mailbox reads
+- dedicated Dovecot auth and userdb listeners provide least-privilege
+  integration points for the split runtime
 - the local sendmail compatibility surface remains authoritative for outbound
   submission handoff
 
-At the current implementation stage, a local TCP listener is the truthful
-deployment target. Unix sockets remain a possible later refinement, but they
-are not yet part of the running code path.
+At the current implementation stage, the browser-facing HTTP listener remains
+loopback TCP behind nginx, while the mailbox helper boundary uses a Unix socket
+as part of the running production path.
 
 ## Filesystem Layout
 

@@ -14,8 +14,8 @@ The repository deliberately separates:
 - Agent-facing collaboration guidance in the tracked repository root file
   `AGENTS.md`
 
-As of June 22, 2026, the project has substantive public-safe documentation
-through the Version 9 production convergence intake. The current
+As of June 24, 2026, the project has substantive public-safe documentation
+through the Version 9 selected-cohort release-candidate closeout. The current
 baseline was built from:
 
 - private early project planning notes, distilled into public-safe docs
@@ -30,13 +30,15 @@ baseline was built from:
 - repo-owned Version 5 boundary-hardening evidence and production deployment
   record
 - repo-owned Version 6 implementation, production-readiness, trace, and
-  incomplete-retirement-closeout records
+  historical retirement-closeout records later reconciled by V9 for the
+  bounded selected-cohort release-candidate decision
 - repo-owned Version 7 finding reevaluation, implementation, test, deployment,
   rollback, and production-validation record
 - repo-owned Version 8 stabilization program, regression matrices, executable
   gates, CI enforcement, and external evidence archives
 - repo-owned Version 9 production convergence intake, PR #19 deployment
-  evidence references, and explicit release-candidate gaps
+  evidence references, V6 and V7 reconciliation, and selected-cohort
+  release-candidate closeout
 
 The documents in this folder are written for two audiences:
 
@@ -46,6 +48,7 @@ The documents in this folder are written for two audiences:
 
 Current public documentation map:
 
+- `README.md`
 - `PROJECT_CHARTER.md`
 - `PROGRAM_BASELINE.md`
 - `ACCEPTANCE_CRITERIA.md`
@@ -160,10 +163,24 @@ Current public documentation map:
 - `V6_ACCEPTANCE_CRITERIA.md`
 - `V6_ROADMAP.md`
 - `V6_SECURITY_GATES.md`
+- `V6_OBSERVABILITY_EVIDENCE_MODEL.md`
 - `V6_RESOURCE_RESILIENCE_EVIDENCE.md`
+- `V6_ROUNDCUBE_RETIREMENT_REHEARSAL.md`
 - `V6_CLOSEOUT_EVIDENCE.md`
 - `V6_RELEASE_OPERATOR_HANDOFF.md`
 - `V6_TRACES/`
+- `V6_TRACES/SLICE_00_BASELINE.md`
+- `V6_TRACES/SLICE_01_SCOPE.md`
+- `V6_TRACES/SLICE_02_GATES.md`
+- `V6_TRACES/SLICE_03_PRODUCTION_READINESS.md`
+- `V6_TRACES/SLICE_04_RETIREMENT_REHEARSAL.md`
+- `V6_TRACES/SLICE_05_OBSERVABILITY.md`
+- `V6_TRACES/SLICE_06_SESSION_LOCKING.md`
+- `V6_TRACES/SLICE_07_SOURCE_ATTACHMENT_DRAFTS.md`
+- `V6_TRACES/SLICE_08_RESOURCE_RESILIENCE.md`
+- `V6_TRACES/SLICE_09_CLOSEOUT.md`
+- `V7_PRODUCTION_AVAILABILITY_CLOSEOUT.md`
+- `V9_RELEASE_CANDIDATE_CLOSEOUT.md`
 - `REQUEST_WORKER_BUDGET_MODEL.md`
 - `MAIL_HOST_BINARY_DEPLOYMENT_SOP.md`
 - `MAIL_HOST_RUNTIME_GROUP_PROVISIONING_SOP.md`
@@ -180,6 +197,8 @@ Current public documentation map:
 - `PILOT_WORKFLOW_INVENTORY.md`
 - `WORK_DECOMPOSITION.md`
 - `DECISION_LOG.md`
+- `security/OSMAP_WSTG_DUE_DILIGENCE_REVIEW_2026_05_19.md`
+- `security/OSMAP_WSTG_SCENARIO_MATRIX_V42.md`
 
 The intent of these documents is operational usefulness, not ceremony. Phase 0
 through Version 5 documents should stay populated, current, and reviewable as
@@ -189,15 +208,16 @@ hostile-content safety release, not broad production readiness, rich-mail
 rendering, malware prevention, or Roundcube parity. Version 5 records deployed
 identity, Host/origin, and response-boundary hardening without changing those
 product-scope limits. Version 6 defines controlled Roundcube retirement
-readiness for a selected cohort and remains incomplete until its sanitized
-live-evidence and closeout gates pass. Version 7 browser availability has
-production evidence, but V9 still requires a bounded hold-period proof before
-release-candidate closure. Version 8 adds source-level regression coverage and
-mandatory CI enforcement. Version 9 reconciles source, production checkout,
-live binary identity, PR #19 deployment evidence, and remaining operational
-closure gaps. Requested additional functionality and Thunderbird-like UX polish
-remain future-version work unless a later definition explicitly brings them
-into scope.
+readiness for a selected cohort; its June 18 standalone handoff remained
+historically incomplete, and V9 later reconciled the selected-cohort criteria
+for the bounded release-candidate decision. Version 7 browser availability is
+closed for the tested selected-user production path by V9 Slice 5. Version 8
+adds source-level regression coverage and mandatory CI enforcement. Version 9
+reconciles source, production checkout, live binary identity, PR #19 deployment
+evidence, V6 selected-cohort closure, V7 production availability, and the
+bounded selected-cohort release-candidate PASS decision. Requested additional
+functionality and Thunderbird-like UX polish remain future-version work unless
+a later definition explicitly brings them into scope.
 
 Some later-phase or deferred documents remain placeholders so the intended
 documentation map is visible without publishing private notes prematurely.

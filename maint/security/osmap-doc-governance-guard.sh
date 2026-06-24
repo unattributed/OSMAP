@@ -23,9 +23,24 @@ require_text() {
 	fi
 }
 
+reject_text() {
+	path=$1
+	text=$2
+	if grep -Fq "$text" "$path"; then
+		echo "stale or forbidden governance text in ${path#$repo_root/}: $text" >&2
+		exit 1
+	fi
+}
+
 readme="${repo_root}/README.md"
+docs_index="${repo_root}/docs/README.md"
 charter="${repo_root}/docs/PROJECT_CHARTER.md"
 program_baseline="${repo_root}/docs/PROGRAM_BASELINE.md"
+known_limitations="${repo_root}/docs/KNOWN_LIMITATIONS.md"
+risk_register="${repo_root}/docs/RISK_REGISTER.md"
+current_architecture="${repo_root}/docs/CURRENT_SYSTEM_ARCHITECTURE.md"
+deployment_openbsd="${repo_root}/docs/DEPLOYMENT_OPENBSD.md"
+faq_operators="${repo_root}/docs/FAQ_OPERATORS.md"
 v1_requirements="${repo_root}/docs/PRODUCT_REQUIREMENTS_V1.md"
 v2_definition="${repo_root}/docs/V2_DEFINITION.md"
 v3_definition="${repo_root}/docs/V3_DEFINITION.md"
@@ -36,12 +51,22 @@ v4_closeout_evidence="${repo_root}/docs/V4_CLOSEOUT_EVIDENCE.md"
 v4_release_handoff="${repo_root}/docs/V4_RELEASE_OPERATOR_HANDOFF.md"
 v4_mime_ambiguity_evidence="${repo_root}/docs/V4_MIME_AMBIGUITY_EVIDENCE.md"
 v4_security_claim_matrix="${repo_root}/docs/V4_SECURITY_CLAIM_MATRIX.md"
+v6_closeout_evidence="${repo_root}/docs/V6_CLOSEOUT_EVIDENCE.md"
+v7_production_availability_closeout="${repo_root}/docs/V7_PRODUCTION_AVAILABILITY_CLOSEOUT.md"
+v9_production_convergence="${repo_root}/docs/V9_PRODUCTION_CONVERGENCE.md"
+v9_release_candidate_closeout="${repo_root}/docs/V9_RELEASE_CANDIDATE_CLOSEOUT.md"
 decision_log="${repo_root}/docs/DECISION_LOG.md"
 v4_closeout_guard="${repo_root}/maint/security/test-osmap-v4-closeout-evidence.sh"
 
 require_file "$readme"
+require_file "$docs_index"
 require_file "$charter"
 require_file "$program_baseline"
+require_file "$known_limitations"
+require_file "$risk_register"
+require_file "$current_architecture"
+require_file "$deployment_openbsd"
+require_file "$faq_operators"
 require_file "$v1_requirements"
 require_file "$v2_definition"
 require_file "$v3_definition"
@@ -52,6 +77,10 @@ require_file "$v4_closeout_evidence"
 require_file "$v4_release_handoff"
 require_file "$v4_mime_ambiguity_evidence"
 require_file "$v4_security_claim_matrix"
+require_file "$v6_closeout_evidence"
+require_file "$v7_production_availability_closeout"
+require_file "$v9_production_convergence"
+require_file "$v9_release_candidate_closeout"
 require_file "$decision_log"
 require_file "$v4_closeout_guard"
 
@@ -60,6 +89,48 @@ require_text "$readme" "evidence bundle commit \`59da020\`"
 require_text "$readme" "assessed V4 code commit \`09a95b7\`"
 require_text "$readme" "V4 does not claim rich-mail safety, malware prevention, attachment preview"
 require_text "$readme" "any later code change must refresh V4 evidence"
+require_text "$readme" "V9 | Release-candidate gate is PASS"
+require_text "$readme" "V6 | Production readiness passed, and V9 Slice 6 accepted"
+require_text "$readme" "V7 | Production availability reopening is closed"
+require_text "$readme" "V9 release-candidate gate: PASS"
+reject_text "$readme" "Production convergence intake is open"
+reject_text "$readme" "release-candidate status is not decided"
+reject_text "$readme" "V9 hold-period proof remains required"
+reject_text "$readme" "final V9 release-candidate gate remain open"
+
+require_text "$docs_index" "Version 9 selected-cohort release-candidate closeout"
+require_text "$docs_index" "\`V9_RELEASE_CANDIDATE_CLOSEOUT.md\`"
+require_text "$docs_index" "\`V7_PRODUCTION_AVAILABILITY_CLOSEOUT.md\`"
+require_text "$docs_index" "\`security/OSMAP_WSTG_DUE_DILIGENCE_REVIEW_2026_05_19.md\`"
+require_text "$docs_index" "\`security/OSMAP_WSTG_SCENARIO_MATRIX_V42.md\`"
+find "$repo_root/docs" -type f -name '*.md' | sed "s#^$repo_root/docs/##" | while IFS= read -r docs_path; do
+	require_text "$docs_index" "\`$docs_path\`"
+done
+
+require_text "$known_limitations" "V9 Slice 6 later accepted the V6 selected-cohort/no-Roundcube closeout criteria"
+require_text "$known_limitations" "The V9 release-candidate decision resolved"
+require_text "$known_limitations" "This is a selected-cohort release-candidate decision"
+reject_text "$known_limitations" "V9 still requires a"
+reject_text "$known_limitations" "V9 has not yet produced"
+reject_text "$known_limitations" "final V9 release-candidate gate remain open"
+
+require_text "$risk_register" "Selected-cohort Roundcube retirement expands beyond the bounded V9 evidence"
+require_text "$risk_register" "Browser availability regresses after the V9 selected-cohort release-candidate decision"
+reject_text "$risk_register" "Keep V7 production approval reopened"
+
+require_text "$current_architecture" "This document is a historical baseline of the pre-OSMAP public-edge posture"
+require_text "$current_architecture" "public HTTPS now serves OSMAP through nginx"
+require_text "$deployment_openbsd" "Current Implemented Deployment Shape"
+require_text "$deployment_openbsd" "mailbox helper boundary uses a Unix socket"
+require_text "$faq_operators" "approved limited direct public browser exposure"
+
+require_text "$v6_closeout_evidence" "Post-V9 Status Note"
+require_text "$v6_closeout_evidence" "V9 release-candidate gate accepted the V6"
+require_text "$v7_production_availability_closeout" "V9 release-candidate PASS decision"
+require_text "$v9_production_convergence" "The final V9 gate later recorded a PASS decision"
+require_text "$v9_production_convergence" "V6 selected-cohort/no-Roundcube closure and the final V9 release-candidate gate are reconciled"
+require_text "$v9_release_candidate_closeout" "verdict: \`V6_SELECTED_COHORT_CLOSEOUT_SATISFIED\`"
+reject_text "$v9_release_candidate_closeout" "verdict: \`V5\`"
 
 require_text "$charter" "The project is not a mail-server replacement"
 require_text "$charter" "not a general"

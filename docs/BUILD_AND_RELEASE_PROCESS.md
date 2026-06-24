@@ -170,16 +170,15 @@ state:
 - V9 Slice 1 intake evidence archive: `osmap-v9-slice-1-intake-20260622-142413Z.tar.gz`
 - V9 Slice 1 intake evidence SHA256: `5de376e832ae79f8c29afd1e3b0243f8ac09a04d4bb0c71a7a771fd65403e331`
 
-This proves source and production identity convergence for the assessed
-snapshot. It does not prove release-candidate readiness.
+This proved source and production identity convergence for the assessed
+snapshot. It did not prove release-candidate readiness by itself.
 
-A V9 release-candidate decision still requires at least:
-
-- bounded production hold-period proof against the deployed binary;
-- V4 hostile-content carry-forward refresh on current `main`;
-- explicit V7 production availability closeout using real-login evidence;
-- explicit V6 selected-cohort/no-Roundcube closeout decision;
-- a final release gate that records unresolved limitations and rollback.
+The later V9 Slice 7 release-candidate gate recorded PASS for the bounded
+selected-cohort scope. The controlling record is
+`docs/V9_RELEASE_CANDIDATE_CLOSEOUT.md`; it records hold-period proof, V4
+hostile-content carry-forward, V7 production availability closeout, V6
+selected-cohort/no-Roundcube closure, unresolved limitations, and rollback
+references.
 
 Source sync must not be described as deployment. A production deployment claim
 requires source identity, rebuilt binary identity, installed live binary hash,

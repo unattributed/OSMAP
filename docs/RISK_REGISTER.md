@@ -14,8 +14,8 @@ This is the current public-safe risk register for the OSMAP program.
 | ID | Risk | Likelihood | Impact | Current Response |
 | --- | --- | --- | --- | --- |
 | R-001 | Scope expands toward broad Roundcube parity and widens the trust boundary | Medium | High | Keep feature work inside explicit version definitions and non-goals |
-| R-002 | Selected-cohort Roundcube retirement occurs before V6 no-fallback closeout | Medium | Critical | Keep Roundcube as a rollback unit until all V6 live reports pass |
-| R-003 | Browser availability regresses during or after authentication | Medium | Critical | Keep V7 production approval reopened until real-login hold proof passes |
+| R-002 | Selected-cohort Roundcube retirement expands beyond the bounded V9 evidence | Medium | Critical | Treat V9 selected-cohort acceptance as scoped, keep Roundcube rollback instructions, and require new evidence before broadening retirement |
+| R-003 | Browser availability regresses after the V9 selected-cohort release-candidate decision | Medium | Critical | Keep the V7 reopening closed only for the tested path, preserve the login availability invariant, and rerun hold proof when deployment or edge behavior changes |
 | R-004 | The multi-purpose mail host limits safe pressure testing and isolation | High | High | Use bounded validation, confinement, rollback artifacts, and adjacent controls |
 | R-005 | Request or backend resource exhaustion exceeds current bounded worker controls | Medium | High | Preserve connection, route, helper, output, timeout, and throttle limits |
 | R-006 | Secrets, private messages, or host-private evidence enter the public repository | Medium | Critical | Enforce publication guards, redaction, ignored evidence, and review |
@@ -26,7 +26,7 @@ This is the current public-safe risk register for the OSMAP program.
 
 ## Current Assessment
 
-The dominant current risks are production availability, controlled retirement,
-resource exhaustion, evidence drift, and small-team operational load. Security
-work should continue as narrow implementation slices with executable tests and
-explicit deployment evidence.
+The dominant current risks are scope creep beyond the selected-cohort V9
+claim, production availability regression, resource exhaustion, evidence drift,
+and small-team operational load. Security work should continue as narrow
+implementation slices with executable tests and explicit deployment evidence.

@@ -2,7 +2,19 @@
 
 Date: 2026-06-18
 Target host: `mail.blackbagsecurity.com`
-Status: V6 deployed; production readiness passed; final closeout incomplete
+Status: historical V6 deployment and readiness record; superseded for current
+selected-cohort release-candidate status by V9 Slice 6 and Slice 7 evidence
+
+## Post-V9 Status Note
+
+This document preserves the June 18, 2026 V6 closeout state. At that time V6
+production readiness had passed and the standalone V6 final closeout still
+needed no-fallback, observability, resource-resilience, and archive evidence.
+
+The later V9 release-candidate gate accepted the V6
+selected-cohort/no-Roundcube closeout criteria as satisfied for the bounded V9
+selected-cohort release-candidate decision. The controlling current record for
+that later decision is `docs/V9_RELEASE_CANDIDATE_CLOSEOUT.md`.
 
 ## Assessed Commit
 
@@ -25,9 +37,11 @@ essential browser-mail workflows without Roundcube fallback, while preserving
 the V4 hostile-content claim and the V5 identity, Host, Origin,
 response-header, framing, and trusted HTML boundaries.
 
-V6 is now deployed. The full selected-cohort claim is not yet closed because
-the no-fallback rehearsal, observability, and resource-resilience live reports
-remain outstanding.
+V6 was deployed at this evidence point. The standalone V6 selected-cohort claim
+was not closed in this June 18 record because the no-fallback rehearsal,
+observability, and resource-resilience live reports remained outstanding. V9
+later reconciled those criteria for the bounded selected-cohort release
+candidate.
 
 ## Exact Non-Goals
 
@@ -73,6 +87,9 @@ rewrite, Roundcube database import, or hidden fallback behavior.
 
 ## Required Live Evidence
 
+This table records the June 18 standalone V6 state, not the later V9
+selected-cohort release-candidate decision.
+
 | Gate | Path | Current status |
 | --- | --- | --- |
 | production readiness | `maint/live/latest-host-v6-production-readiness-report.txt` | passed |
@@ -81,6 +98,10 @@ rewrite, Roundcube database import, or hidden fallback behavior.
 | resource resilience | `maint/live/latest-host-v6-resource-resilience-report.txt` | missing |
 
 ## Carry-Forward And Remediation Status
+
+This section records the June 18 standalone V6 handoff state. For the current
+selected-cohort release-candidate decision, use
+`docs/V9_RELEASE_CANDIDATE_CLOSEOUT.md`.
 
 - V4 carry-forward: local gate available; final assessed-commit run pending.
 - V5 carry-forward: local gate available; final assessed-commit run pending.

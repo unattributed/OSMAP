@@ -24,12 +24,14 @@ first release.
 
 ## Is this meant to be publicly exposed immediately
 
-No. The current validated host still uses a narrow staged exposure model for
-webmail and user mail access, and OSMAP should not be treated as direct-public
-ready until the repo-defined internet-exposure gate is passed.
+OSMAP now has approved limited direct public browser exposure on the validated
+host under the conditions recorded in `INTERNET_EXPOSURE_STATUS.md`.
 
-That said, the intended Version 2 target is direct public browser access
-through a hardened HTTPS edge, not a permanent VPN-only product posture.
+That approval is intentionally narrow. Public HTTPS serves the OSMAP browser
+surface through nginx, while control-plane and operator-only applications stay
+on the loopback and WireGuard HTTPS listener. If those exposure conditions or
+the reviewed edge shape change, the internet-exposure gate must be rerun before
+the approval is carried forward.
 
 ## Why keep the first release so small
 

@@ -11,6 +11,19 @@ the browser access layer.
 Read-only host inspection was performed on March 27, 2026 against
 `mail.blackbagsecurity.com`.
 
+## Current Status Note
+
+This document is a historical baseline of the pre-OSMAP public-edge posture.
+It remains useful for understanding the host OSMAP had to integrate with, but
+it is not the current exposure map.
+
+The current documented host posture is recorded in
+`INTERNET_EXPOSURE_STATUS.md`: public HTTPS now serves OSMAP through nginx for
+limited direct public browser exposure, while private control-plane
+applications remain on the loopback and WireGuard HTTPS listener. Use this
+document for the original host architecture and use the exposure, deployment,
+and helper-boundary documents for current OSMAP runtime claims.
+
 ## Host Baseline
 
 - Hostname: `mail.blackbagsecurity.com`
