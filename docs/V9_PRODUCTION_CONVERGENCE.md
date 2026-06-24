@@ -143,3 +143,17 @@ Limits of the claim:
 - V6 selected-cohort/no-Roundcube retirement closeout and the final V9 release-candidate gate remain open.
 
 <!-- OSMAP:V9-SLICE5-V7-CLOSEOUT:END -->
+
+<!-- OSMAP:V9_RELEASE_CANDIDATE_DECISION:START -->
+
+## V9 release candidate decision
+
+Status: PASS.
+
+Current main `a8915c0993b96a9d53de083dc84cb7520aef0097` is accepted as the V9 selected-cohort release candidate. Production runtime code remains `49c9f230d7865f01deadbc6a5a0f6e876c63e89b`, production binary SHA256 remains `411c976cccb0687f1a6e840470584fd8921eb5469e68905e457cf3edfe0cdea3`, and drift from production runtime source to current main is documentation-only.
+
+The controlling closeout record is `docs/V9_RELEASE_CANDIDATE_CLOSEOUT.md`.
+
+This is not a claim of complete Roundcube feature parity, general hostile email safety, or unbounded release readiness.
+
+<!-- OSMAP:V9_RELEASE_CANDIDATE_DECISION:END -->

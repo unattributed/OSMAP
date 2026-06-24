@@ -256,3 +256,13 @@ Limits of the claim:
 - V6 selected-cohort/no-Roundcube retirement closeout and the final V9 release-candidate gate remain open.
 
 <!-- OSMAP:V9-SLICE5-V7-CLOSEOUT:END -->
+
+<!-- OSMAP:V9_STATUS:START -->
+
+## Current V9 status
+
+V9 release-candidate gate: PASS. Current main `a8915c0993b96a9d53de083dc84cb7520aef0097` is accepted as a selected-cohort release candidate under the documented limitations. The live production binary remains `411c976cccb0687f1a6e840470584fd8921eb5469e68905e457cf3edfe0cdea3` from production runtime source `49c9f230d7865f01deadbc6a5a0f6e876c63e89b`, with current main differing by documentation-only files.
+
+See `docs/V9_RELEASE_CANDIDATE_CLOSEOUT.md`.
+
+<!-- OSMAP:V9_STATUS:END -->
