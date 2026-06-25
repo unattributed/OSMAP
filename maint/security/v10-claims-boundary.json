@@ -3,12 +3,13 @@
     "OSMAP remains a focused browser-mail access layer over the existing mail stack.",
     "V9 is accepted only as a selected-cohort release-candidate decision.",
     "V10 Slice 0 is an intake inventory baseline.",
-    "V10 Slice 1 records governance status and claims boundaries without product behavior changes."
+    "V10 Slice 1 records governance status and claims boundaries without product behavior changes.",
+    "V10 Slice 2 provides explicit v10-check and acceptance-check gate visibility for the current governance boundary."
   ],
   "assessed_source": {
-    "branch": "v10-governance-status",
-    "head": "ec72b6f55687b716c0d21bdd4f44480b99ae5163",
-    "origin_main": "ec72b6f55687b716c0d21bdd4f44480b99ae5163",
+    "branch": "v10-acceptance-gate",
+    "head": "9d34ea5a754dd475d4b54825aeadbf71e31c1d03",
+    "origin_main": "9d34ea5a754dd475d4b54825aeadbf71e31c1d03",
     "status_clean": true
   },
   "carried_forward_slice0_signals": {
@@ -16,6 +17,11 @@
     "placeholder_file_count": 22,
     "rust_assumption_count": 712,
     "scan_match_count": 1494
+  },
+  "ci_visibility": {
+    "security_check_workflow_v10_job_present": true,
+    "v10_job_name": "security-check / v10 governance",
+    "workflow_path": ".github/workflows/security-check.yml"
   },
   "explicit_non_claims": [
     "full Roundcube feature parity",
@@ -29,26 +35,31 @@
     "production deployment change"
   ],
   "gate_status": {
-    "acceptance_check_target_present": false,
+    "acceptance_check_definition": "Runs make security-check and make v10-check for local bounded acceptance.",
+    "acceptance_check_target_present": true,
     "release_check": "preserved",
     "security_check": "preserved",
-    "v10_check_target_present": false
+    "v10_check_target_present": true
   },
-  "generated_at_utc": "2026-06-25T04:57:50Z",
-  "purpose": "Governance status and claims baseline after V10 Slice 0 intake.",
+  "generated_at_utc": "2026-06-25T05:48:21Z",
+  "purpose": "Acceptance gate and CI visibility baseline for the V10 governance boundary.",
   "required_followups": [
-    "Define or explicitly defer acceptance-check and v10-check targets.",
+    "Preserve and use the Slice 2 acceptance-check and v10-check targets for future V10 governance changes.",
     "Triage documentation and placeholder inventory from Slice 0.",
     "Classify Rust fail-closed assumptions from Slice 0.",
     "Refresh live-host evidence only through gated read-only or apply procedures."
   ],
-  "schema_version": 2,
-  "slice": "V10 Slice 1",
+  "schema_version": 3,
+  "slice": "V10 Slice 2",
   "source_inputs": [
     "docs/V10_INTAKE_AUDIT.md",
     "maint/security/v10-intake-inventory.json",
     "docs/README.md",
     "docs/RISK_REGISTER.md",
-    "docs/KNOWN_LIMITATIONS.md"
+    "docs/KNOWN_LIMITATIONS.md",
+    "docs/V10_ACCEPTANCE_GATE.md",
+    ".github/workflows/security-check.yml",
+    "Makefile",
+    "maint/security/osmap-v10-governance-gate.sh"
   ]
 }

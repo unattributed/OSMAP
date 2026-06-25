@@ -36,8 +36,8 @@ This Slice 1 document records the authoritative V10 status baseline after the Sl
 | --- | --- | --- |
 | `security-check` | Existing gate | Preserved. Slice 1 must not weaken it. |
 | `release-check` | Existing gate | Preserved. Slice 1 does not claim release readiness. |
-| `acceptance-check` | `missing` | Define or explicitly defer in a later V10 gate slice. |
-| `v10-check` | `missing` | Define or explicitly defer in a later V10 gate slice. |
+| `acceptance-check` | `present` | Added by Slice 2 as a local acceptance entry point that runs `security-check` and `v10-check`. |
+| `v10-check` | `present` | Added by Slice 2 as the V10 governance and claims-boundary gate. |
 
 ## V10 Current Non-Claims
 
@@ -61,3 +61,10 @@ Future V10 slices should handle these as bounded, separately evidenced changes:
 3. Classify Rust `.expect`, `.unwrap`, `panic!`, `todo!`, and `unimplemented!` assumptions into test-only, startup invariant, helper runtime, production request path, or remediation-required categories.
 4. Refresh live-host evidence only through read-only or explicitly gated production procedures.
 5. Preserve the selected-cohort V9 scope unless new evidence deliberately expands it.
+
+
+## Slice 2 Acceptance Gate Update
+
+V10 Slice 2 adds `make v10-check` and `make acceptance-check` as explicit local gate surfaces and exposes `security-check / v10 governance` in GitHub Actions.
+
+This update narrows the meaning of acceptance to the current V10 governance and claims boundary. It does not claim broad public release readiness or production deployment change.
