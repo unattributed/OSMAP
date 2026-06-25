@@ -156,6 +156,8 @@ impl RuntimeBrowserGateway {
                 canonical_username: canonical_username.clone(),
                 now,
                 recipients_text: request.recipients.to_string(),
+                cc_text: request.cc_recipients.to_string(),
+                bcc_text: request.bcc_recipients.to_string(),
                 subject: request.subject.to_string(),
                 body: request.body.to_string(),
                 attachments: persisted_attachments,
@@ -196,7 +198,7 @@ impl RuntimeBrowserGateway {
                 .with_field("draft_ref", audit_session_ref(&record.draft_id))
                 .with_field(
                     "recipient_count",
-                    record.request.recipients.len().to_string(),
+                    record.request.total_recipient_count().to_string(),
                 )
                 .with_field(
                     "attachment_count",

@@ -155,9 +155,17 @@ impl UploadedAttachment {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ComposeRequest {
     pub recipients: Vec<String>,
+    pub cc_recipients: Vec<String>,
+    pub bcc_recipients: Vec<String>,
     pub subject: String,
     pub body: String,
     pub attachments: Vec<UploadedAttachment>,
+}
+
+struct RecipientFields {
+    to: Vec<String>,
+    cc: Vec<String>,
+    bcc: Vec<String>,
 }
 
 impl ComposeRequest {
@@ -179,21 +187,53 @@ impl ComposeRequest {
         body: impl Into<String>,
         attachments: Vec<UploadedAttachment>,
     ) -> Result<Self, ComposeError> {
+        Self::new_with_routing(policy, recipients_text, "", "", subject, body, attachments)
+    }
+
+    /// Validates the compose request plus explicit To, CC, and BCC routing.
+    pub fn new_with_routing(
+        policy: ComposePolicy,
+        recipients_text: impl Into<String>,
+        cc_text: impl Into<String>,
+        bcc_text: impl Into<String>,
+        subject: impl Into<String>,
+        body: impl Into<String>,
+        attachments: Vec<UploadedAttachment>,
+    ) -> Result<Self, ComposeError> {
         let recipients_text = recipients_text.into();
+        let cc_text = cc_text.into();
+        let bcc_text = bcc_text.into();
         let subject = subject.into();
         let body = body.into();
 
-        let recipients = parse_recipients(policy, &recipients_text)?;
+        let recipient_fields =
+            parse_recipient_fields(policy, &recipients_text, &cc_text, &bcc_text)?;
         validate_subject(policy, &subject)?;
         validate_body(policy, &body)?;
         validate_attachment_set(policy, &attachments)?;
 
         Ok(Self {
-            recipients,
+            recipients: recipient_fields.to,
+            cc_recipients: recipient_fields.cc,
+            bcc_recipients: recipient_fields.bcc,
             subject,
             body,
             attachments,
         })
+    }
+
+    /// Returns every envelope recipient, including BCC.
+    pub fn all_recipients(&self) -> Vec<String> {
+        let mut recipients = Vec::with_capacity(self.total_recipient_count());
+        recipients.extend(self.recipients.iter().cloned());
+        recipients.extend(self.cc_recipients.iter().cloned());
+        recipients.extend(self.bcc_recipients.iter().cloned());
+        recipients
+    }
+
+    /// Returns the total recipient count across To, CC, and BCC.
+    pub fn total_recipient_count(&self) -> usize {
+        self.recipients.len() + self.cc_recipients.len() + self.bcc_recipients.len()
     }
 }
 
@@ -351,12 +391,7 @@ where
             .command_executor
             .run_with_stdin_bytes_timeout(
                 self.sendmail_path.to_string_lossy().as_ref(),
-                &[
-                    "-t".to_string(),
-                    "-oi".to_string(),
-                    "-f".to_string(),
-                    mailbox_identity.as_str().to_string(),
-                ],
+                &sendmail_args(mailbox_identity.as_str(), request),
                 &submission_message,
                 Duration::from_secs(self.command_timeout_secs),
             )
@@ -408,7 +443,7 @@ where
             Ok(()) => SubmissionOutcome {
                 decision: SubmissionDecision::Submitted {
                     canonical_username: validated_session.record.canonical_username.clone(),
-                    recipients: request.recipients.clone(),
+                    recipients: request.all_recipients(),
                 },
                 audit_event: LogEvent::new(
                     LogLevel::Info,
@@ -424,7 +459,10 @@ where
                     "session_ref",
                     audit_session_ref(&validated_session.record.session_id),
                 )
-                .with_field("recipient_count", request.recipients.len().to_string())
+                .with_field(
+                    "recipient_count",
+                    request.total_recipient_count().to_string(),
+                )
                 .with_field("attachment_count", request.attachments.len().to_string())
                 .with_field(
                     "attachment_bytes_total",
@@ -478,10 +516,36 @@ where
     }
 }
 
-/// Parses the recipient list into a bounded list of plain mailbox addresses.
-fn parse_recipients(
+/// Parses To, CC, and BCC into bounded plain mailbox addresses.
+fn parse_recipient_fields(
     policy: ComposePolicy,
     recipients_text: &str,
+    cc_text: &str,
+    bcc_text: &str,
+) -> Result<RecipientFields, ComposeError> {
+    let mut total_count = 0;
+    let recipients = parse_optional_recipients(policy, recipients_text, &mut total_count)?;
+    let cc_recipients = parse_optional_recipients(policy, cc_text, &mut total_count)?;
+    let bcc_recipients = parse_optional_recipients(policy, bcc_text, &mut total_count)?;
+
+    if total_count == 0 {
+        return Err(ComposeError {
+            reason: "at least one recipient is required".to_string(),
+        });
+    }
+
+    Ok(RecipientFields {
+        to: recipients,
+        cc: cc_recipients,
+        bcc: bcc_recipients,
+    })
+}
+
+/// Parses one optional recipient field.
+fn parse_optional_recipients(
+    policy: ComposePolicy,
+    recipients_text: &str,
+    total_count: &mut usize,
 ) -> Result<Vec<String>, ComposeError> {
     let mut recipients = Vec::new();
 
@@ -491,7 +555,7 @@ fn parse_recipients(
             continue;
         }
 
-        if recipients.len() >= policy.max_recipients {
+        if *total_count >= policy.max_recipients {
             return Err(ComposeError {
                 reason: format!(
                     "recipient count exceeded maximum of {}",
@@ -502,12 +566,7 @@ fn parse_recipients(
 
         validate_recipient(policy, recipient)?;
         recipients.push(recipient.to_string());
-    }
-
-    if recipients.is_empty() {
-        return Err(ComposeError {
-            reason: "at least one recipient is required".to_string(),
-        });
+        *total_count += 1;
     }
 
     Ok(recipients)
@@ -960,8 +1019,9 @@ fn build_plain_text_submission_message(
 ) -> String {
     let body = normalize_body_line_endings(&request.body);
     format!(
-        "From: {canonical_username}\r\nTo: {}\r\nSubject: {}\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n{}",
-        request.recipients.join(", "),
+        "From: {canonical_username}\r\nTo: {}\r\n{}Subject: {}\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n{}",
+        header_recipients(&request.recipients),
+        cc_header(request),
         request.subject,
         body,
     )
@@ -975,8 +1035,9 @@ fn build_multipart_submission_message(
     let boundary = build_multipart_boundary(canonical_username, request);
     let mut output = String::new();
     output.push_str(&format!(
-        "From: {canonical_username}\r\nTo: {}\r\nSubject: {}\r\nMIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary=\"{}\"\r\n\r\n",
-        request.recipients.join(", "),
+        "From: {canonical_username}\r\nTo: {}\r\n{}Subject: {}\r\nMIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary=\"{}\"\r\n\r\n",
+        header_recipients(&request.recipients),
+        cc_header(request),
         request.subject,
         boundary,
     ));
@@ -1001,6 +1062,32 @@ fn build_multipart_submission_message(
     output
 }
 
+fn sendmail_args(canonical_username: &str, request: &ComposeRequest) -> Vec<String> {
+    let mut args = vec![
+        "-oi".to_string(),
+        "-f".to_string(),
+        canonical_username.to_string(),
+    ];
+    args.extend(request.all_recipients());
+    args
+}
+
+fn header_recipients(recipients: &[String]) -> String {
+    if recipients.is_empty() {
+        "undisclosed-recipients:;".to_string()
+    } else {
+        recipients.join(", ")
+    }
+}
+
+fn cc_header(request: &ComposeRequest) -> String {
+    if request.cc_recipients.is_empty() {
+        String::new()
+    } else {
+        format!("Cc: {}\r\n", header_recipients(&request.cc_recipients))
+    }
+}
+
 /// Normalizes the body to CRLF so the submission surface sees stable text.
 fn normalize_body_line_endings(body: &str) -> String {
     body.replace("\r\n", "\n")
@@ -1017,6 +1104,16 @@ fn build_multipart_boundary(canonical_username: &str, request: &ComposeRequest) 
     digest.update(canonical_username.as_bytes());
     digest.update(b"\0");
     for recipient in &request.recipients {
+        digest.update(recipient.as_bytes());
+        digest.update(b"\0");
+    }
+    digest.update(b"cc\0");
+    for recipient in &request.cc_recipients {
+        digest.update(recipient.as_bytes());
+        digest.update(b"\0");
+    }
+    digest.update(b"bcc\0");
+    for recipient in &request.bcc_recipients {
         digest.update(recipient.as_bytes());
         digest.update(b"\0");
     }
@@ -1290,6 +1387,33 @@ mod tests {
     }
 
     #[test]
+    fn accepts_to_cc_and_bcc_recipients() {
+        let request = ComposeRequest::new_with_routing(
+            ComposePolicy::default(),
+            "bob@example.com",
+            "carol@example.net",
+            "dana@example.org",
+            "Test message",
+            "Hello world\n",
+            Vec::new(),
+        )
+        .expect("compose request should parse");
+
+        assert_eq!(request.recipients, vec!["bob@example.com".to_string()]);
+        assert_eq!(request.cc_recipients, vec!["carol@example.net".to_string()]);
+        assert_eq!(request.bcc_recipients, vec!["dana@example.org".to_string()]);
+        assert_eq!(request.total_recipient_count(), 3);
+        assert_eq!(
+            request.all_recipients(),
+            vec![
+                "bob@example.com".to_string(),
+                "carol@example.net".to_string(),
+                "dana@example.org".to_string(),
+            ]
+        );
+    }
+
+    #[test]
     fn rejects_invalid_recipient_shapes() {
         let error = ComposeRequest::new(
             ComposePolicy::default(),
@@ -1507,10 +1631,10 @@ mod tests {
         assert_eq!(
             recorded.args.as_ref().expect("args should be captured"),
             &vec![
-                "-t".to_string(),
                 "-oi".to_string(),
                 "-f".to_string(),
                 "alice@example.com".to_string(),
+                "bob@example.com".to_string(),
             ]
         );
         let stdin_data = recorded
@@ -1523,6 +1647,57 @@ mod tests {
         assert!(stdin_text.contains("To: bob@example.com\r\n"));
         assert!(stdin_text.contains("Subject: Test message\r\n"));
         assert!(stdin_text.ends_with("Hello world\r\nSecond line\r\n"));
+    }
+
+    #[test]
+    fn sendmail_backend_uses_cc_header_and_bcc_envelope_only() {
+        let executor = Rc::new(RefCell::new(StubCommandExecutor::success(
+            CommandExecution {
+                status_code: 0,
+                stdout: String::new(),
+                stderr: String::new(),
+            },
+        )));
+        let backend = SendmailSubmissionBackend::new(executor.clone(), "/usr/sbin/sendmail");
+        let request = ComposeRequest::new_with_routing(
+            ComposePolicy::default(),
+            "bob@example.com",
+            "carol@example.net",
+            "dana@example.org",
+            "Test message",
+            "Hello world\n",
+            Vec::new(),
+        )
+        .expect("request should be valid");
+
+        backend
+            .submit_message("alice@example.com", &request)
+            .expect("submission should succeed");
+
+        let recorded = executor.borrow();
+        assert_eq!(
+            recorded.args.as_ref().expect("args should be captured"),
+            &vec![
+                "-oi".to_string(),
+                "-f".to_string(),
+                "alice@example.com".to_string(),
+                "bob@example.com".to_string(),
+                "carol@example.net".to_string(),
+                "dana@example.org".to_string(),
+            ]
+        );
+        let stdin_text = String::from_utf8(
+            recorded
+                .stdin_data
+                .as_ref()
+                .expect("stdin data should be captured")
+                .clone(),
+        )
+        .expect("submission should be utf-8");
+        assert!(stdin_text.contains("To: bob@example.com\r\n"));
+        assert!(stdin_text.contains("Cc: carol@example.net\r\n"));
+        assert!(!stdin_text.contains("Bcc:"));
+        assert!(!stdin_text.contains("dana@example.org"));
     }
 
     #[test]
@@ -1584,10 +1759,10 @@ mod tests {
         assert_eq!(
             args,
             &vec![
-                "-t".to_string(),
                 "-oi".to_string(),
                 "-f".to_string(),
                 sender.to_string(),
+                "bob@example.com".to_string(),
             ]
         );
         assert!(!args.iter().any(|arg| arg == "id"));

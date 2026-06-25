@@ -96,6 +96,8 @@ pub struct DraftRecordInput {
     pub canonical_username: String,
     pub now: u64,
     pub recipients_text: String,
+    pub cc_text: String,
+    pub bcc_text: String,
     pub subject: String,
     pub body: String,
     pub attachments: Vec<UploadedAttachment>,
@@ -111,7 +113,7 @@ impl std::fmt::Debug for DraftRecord {
             .field("created_at", &self.created_at)
             .field("updated_at", &self.updated_at)
             .field("expires_at", &self.expires_at)
-            .field("recipient_count", &self.request.recipients.len())
+            .field("recipient_count", &self.request.total_recipient_count())
             .field("subject_len", &self.request.subject.len())
             .field("body_len", &self.request.body.len())
             .field("attachment_count", &self.request.attachments.len())
@@ -133,9 +135,11 @@ impl DraftRecord {
         validate_draft_id(&input.draft_id)?;
         validate_canonical_username(&input.canonical_username)?;
 
-        let request = ComposeRequest::new_with_attachments(
+        let request = ComposeRequest::new_with_routing(
             policy.compose_policy,
             input.recipients_text,
+            input.cc_text,
+            input.bcc_text,
             input.subject,
             input.body,
             input.attachments,
@@ -166,7 +170,7 @@ impl DraftRecord {
             created_at: self.created_at,
             updated_at: self.updated_at,
             expires_at: self.expires_at,
-            recipient_count: self.request.recipients.len(),
+            recipient_count: self.request.total_recipient_count(),
             subject_len: self.request.subject.len(),
             body_len: self.request.body.len(),
             attachment_count: self.request.attachments.len(),
@@ -639,9 +643,11 @@ fn validate_compose_request(
     compose_policy: ComposePolicy,
     request: &ComposeRequest,
 ) -> Result<(), DraftError> {
-    ComposeRequest::new_with_attachments(
+    ComposeRequest::new_with_routing(
         compose_policy,
         request.recipients.join(", "),
+        request.cc_recipients.join(", "),
+        request.bcc_recipients.join(", "),
         request.subject.clone(),
         request.body.clone(),
         request.attachments.clone(),
@@ -717,13 +723,15 @@ fn validate_source_attachments(
 
 fn serialize_draft_metadata(record: &DraftRecord) -> String {
     let mut content = format!(
-        "version=2\n\
+        "version=3\n\
 draft_id={}\n\
 canonical_username_hex={}\n\
 created_at={}\n\
 updated_at={}\n\
 expires_at={}\n\
-recipients_hex={}\n\
+to_hex={}\n\
+cc_hex={}\n\
+bcc_hex={}\n\
 subject_hex={}\n\
 body_hex={}\n\
 attachment_count={}\n",
@@ -733,6 +741,8 @@ attachment_count={}\n",
         record.updated_at,
         record.expires_at,
         hex_lower(record.request.recipients.join(", ").as_bytes()),
+        hex_lower(record.request.cc_recipients.join(", ").as_bytes()),
+        hex_lower(record.request.bcc_recipients.join(", ").as_bytes()),
         hex_lower(record.request.subject.as_bytes()),
         hex_lower(record.request.body.as_bytes()),
         record.request.attachments.len()
@@ -784,6 +794,8 @@ fn parse_draft_metadata(
     let mut updated_at = None;
     let mut expires_at = None;
     let mut recipients = None;
+    let mut cc_recipients = None;
+    let mut bcc_recipients = None;
     let mut subject = None;
     let mut body = None;
     let mut attachment_count = None;
@@ -812,6 +824,9 @@ fn parse_draft_metadata(
             "updated_at" => updated_at = Some(parse_u64_field("updated_at", value)?),
             "expires_at" => expires_at = Some(parse_u64_field("expires_at", value)?),
             "recipients_hex" => recipients = Some(decode_hex_string(value)?),
+            "to_hex" => recipients = Some(decode_hex_string(value)?),
+            "cc_hex" => cc_recipients = Some(decode_hex_string(value)?),
+            "bcc_hex" => bcc_recipients = Some(decode_hex_string(value)?),
             "subject_hex" => subject = Some(decode_hex_string(value)?),
             "body_hex" => body = Some(decode_hex_string(value)?),
             "attachment_count" => {
@@ -839,7 +854,7 @@ fn parse_draft_metadata(
     if draft_id.is_none() {
         return Ok(None);
     }
-    if !matches!(version.as_deref(), Some("1") | Some("2")) {
+    if !matches!(version.as_deref(), Some("1") | Some("2") | Some("3")) {
         return Err(DraftError {
             reason: "unsupported draft metadata version".to_string(),
         });
@@ -898,9 +913,11 @@ fn parse_draft_metadata(
         );
     }
 
-    let request = ComposeRequest::new_with_attachments(
+    let request = ComposeRequest::new_with_routing(
         policy.compose_policy,
         required_field("recipients", recipients)?,
+        cc_recipients.unwrap_or_default(),
+        bcc_recipients.unwrap_or_default(),
         required_field("subject", subject)?,
         required_field("body", body)?,
         attachments,
@@ -1201,6 +1218,8 @@ mod tests {
             canonical_username: username.to_string(),
             now,
             recipients_text: "bob@example.com".to_string(),
+            cc_text: String::new(),
+            bcc_text: String::new(),
             subject: subject.to_string(),
             body: body.to_string(),
             attachments,
@@ -1256,14 +1275,18 @@ mod tests {
         let store = FileDraftStore::new(&dir, DraftPolicy::default());
         let draft = DraftRecord::new(
             DraftPolicy::default(),
-            input(
-                &draft_id(2),
-                "alice@example.com",
-                100,
-                "Quarterly update",
-                "Hello\nsaved draft",
-                vec![attachment(b"attachment bytes")],
-            ),
+            DraftRecordInput {
+                cc_text: "carol@example.net".to_string(),
+                bcc_text: "dana@example.org".to_string(),
+                ..input(
+                    &draft_id(2),
+                    "alice@example.com",
+                    100,
+                    "Quarterly update",
+                    "Hello\nsaved draft",
+                    vec![attachment(b"attachment bytes")],
+                )
+            },
         )
         .expect("draft should be valid");
 
@@ -1274,6 +1297,8 @@ mod tests {
             .expect("draft should exist");
 
         assert_eq!(loaded, draft);
+        assert_eq!(loaded.request.cc_recipients, vec!["carol@example.net"]);
+        assert_eq!(loaded.request.bcc_recipients, vec!["dana@example.org"]);
         assert_eq!(loaded.request.attachments[0].body, b"attachment bytes");
     }
 

@@ -693,19 +693,18 @@ impl RuntimeBrowserGateway {
         &self,
         context: &AuthenticationContext,
         validated_session: &ValidatedSession,
-        recipients: &str,
-        subject: &str,
-        body: &str,
-        attachments: &[UploadedAttachment],
+        send_request: BrowserSendRequest<'_>,
     ) -> BrowserSendOutcome {
         let throttle_service = self.build_submission_throttle_service();
         let mut audit_events = Vec::new();
-        let request = match ComposeRequest::new_with_attachments(
+        let request = match ComposeRequest::new_with_routing(
             ComposePolicy::default(),
-            recipients,
-            subject,
-            body,
-            attachments.to_vec(),
+            send_request.recipients,
+            send_request.cc_recipients,
+            send_request.bcc_recipients,
+            send_request.subject,
+            send_request.body,
+            send_request.attachments.to_vec(),
         ) {
             Ok(request) => request,
             Err(error) => {

@@ -108,10 +108,7 @@ pub trait BrowserGateway {
         &self,
         context: &AuthenticationContext,
         validated_session: &ValidatedSession,
-        recipients: &str,
-        subject: &str,
-        body: &str,
-        attachments: &[UploadedAttachment],
+        request: BrowserSendRequest<'_>,
     ) -> BrowserSendOutcome;
 
     fn list_drafts(
@@ -147,10 +144,23 @@ pub trait BrowserGateway {
 pub struct BrowserDraftSaveRequest<'a> {
     pub draft_id: Option<&'a str>,
     pub recipients: &'a str,
+    pub cc_recipients: &'a str,
+    pub bcc_recipients: &'a str,
     pub subject: &'a str,
     pub body: &'a str,
     pub attachments: &'a [UploadedAttachment],
     pub source_attachments: Option<&'a DraftSourceAttachments>,
+}
+
+/// Send fields parsed by the browser route layer.
+#[derive(Debug, Clone, Copy)]
+pub struct BrowserSendRequest<'a> {
+    pub recipients: &'a str,
+    pub cc_recipients: &'a str,
+    pub bcc_recipients: &'a str,
+    pub subject: &'a str,
+    pub body: &'a str,
+    pub attachments: &'a [UploadedAttachment],
 }
 
 /// The result of a browser login attempt.

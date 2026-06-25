@@ -3,19 +3,19 @@
     "by_classification": {
       "control_flow_invariant": 2,
       "panic_path_assumption": 28,
-      "production_adjacent_assumption": 608,
+      "production_adjacent_assumption": 614,
       "test_or_fixture_assumption": 76
     },
     "by_fail_closed_relevance": {
-      "high": 636,
+      "high": 642,
       "low": 76,
       "medium": 2
     },
-    "inventory_sha256": "eaea1f847a8b51dac00a82f25e8b117664ee22f7ed72576c10568769dc891ec4",
+    "inventory_sha256": "70a236a428c4c1fe208898238e46b9d0f93249d3edc86c3842564bcd2abc3cb0",
     "schema_version": 1,
     "slice": "V10 Slice 4",
     "source": "maint/security/v10-rust-assumption-audit.json",
-    "total_count": 714
+    "total_count": 720
   },
   "explicit_non_claims": [
     "This slice does not claim production Rust paths are panic-free.",
@@ -23,17 +23,17 @@
     "This slice does not claim broad public release readiness.",
     "This slice does not change production deployment state."
   ],
-  "generated_at_utc": "2026-06-25T10:58:50Z",
+  "generated_at_utc": "2026-06-25T14:45:30Z",
   "purpose": "Targeted fail-closed remediation register for Rust assumption handling after the Slice 4 audit.",
   "refined_current": {
     "by_classification": {
       "control_flow_invariant": 1,
       "production_adjacent_assumption": 3,
-      "test_or_fixture_assumption": 710
+      "test_or_fixture_assumption": 716
     },
     "by_fail_closed_relevance": {
       "high": 3,
-      "low": 710,
+      "low": 716,
       "medium": 1
     },
     "high_relevance_top_files": {
@@ -41,8 +41,8 @@
       "src/http_mailbox_backends.rs": 1,
       "src/rendering.rs": 1
     },
-    "inventory_sha256": "6ccd007239b21fc1efccb49097958f6326c26161788d3fa4d1735274c13311e5",
-    "total_count": 714
+    "inventory_sha256": "e56ddd65d8b55f52c1209dc3c584b3ecdb70db9a47f8e80470898785b2068845",
+    "total_count": 720
   },
   "required_followups": [
     "Use the refined high-relevance list to select the first concrete runtime code remediation.",
@@ -51,26 +51,26 @@
   ],
   "schema_version": 1,
   "selected_remediation": {
-    "classification_change_count": 634,
+    "classification_change_count": 640,
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
-    "reason": "Slice 4 intentionally failed closed by over-classifying source-file assumptions as high. Slice 5 narrows the first target by separating assumptions inside Rust test modules from production-adjacent runtime assumptions.",
+    "reason": "Separate assumptions inside Rust test modules from production-adjacent runtime assumptions before runtime code rewrites.",
     "remediation_type": "audit_precision_and_gate_remediation",
     "target": "src_test_module_assumption_reclassification"
   },
   "slice": "V10 Slice 5",
   "summary": {
-    "baseline_total_count": 714,
+    "baseline_total_count": 720,
     "classification_complete": true,
     "high_relevance_after": 3,
-    "high_relevance_before": 636,
+    "high_relevance_before": 642,
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
-    "refined_total_count": 714,
-    "source_test_module_assumption_count": 634,
-    "test_or_fixture_after": 710,
+    "refined_total_count": 720,
+    "source_test_module_assumption_count": 640,
+    "test_or_fixture_after": 716,
     "test_or_fixture_before": 76
   }
 }
