@@ -5,12 +5,13 @@
     "V10 Slice 0 is an intake inventory baseline.",
     "V10 Slice 1 records governance status and claims boundaries without product behavior changes.",
     "V10 Slice 2 provides explicit v10-check and acceptance-check gate visibility for the current governance boundary.",
-    "V10 Slice 3 classifies documentation placeholder and stale-status findings without expanding product or release claims."
+    "V10 Slice 3 classifies documentation placeholder and stale-status findings without expanding product or release claims.",
+    "V10 Slice 4 classifies Rust assumptions for fail-closed governance without changing product behavior."
   ],
   "assessed_source": {
-    "branch": "v10-doc-status-closure",
-    "head": "318d6983719fceb15a49f35451cdba144d30d08e",
-    "origin_main": "318d6983719fceb15a49f35451cdba144d30d08e",
+    "branch": "v10-rust-fail-closed-audit",
+    "head": "0e9b92c717ca553d16bd83eec6bf09f7a5e804cd",
+    "origin_main": "0e9b92c717ca553d16bd83eec6bf09f7a5e804cd",
     "status_clean": true
   },
   "carried_forward_slice0_signals": {
@@ -46,7 +47,9 @@
     "production deployment change",
     "that every historical document has been rewritten",
     "that every future-work item has been implemented",
-    "that all Rust assumptions are safe"
+    "that all Rust assumptions are safe",
+    "that panic-free production paths have been proven",
+    "that every high-relevance Rust assumption has been remediated"
   ],
   "gate_status": {
     "acceptance_check_definition": "Runs make security-check and make v10-check for local bounded acceptance.",
@@ -55,15 +58,33 @@
     "security_check": "preserved",
     "v10_check_target_present": true
   },
-  "generated_at_utc": "2026-06-25T08:27:19Z",
-  "purpose": "Documentation placeholder and stale-status closure for the V10 governance boundary.",
+  "generated_at_utc": "2026-06-25T09:38:24Z",
+  "purpose": "Rust assumption and fail-closed audit for the V10 governance boundary.",
   "required_followups": [
     "Classify Rust fail-closed assumptions from Slice 0.",
     "Refresh live-host evidence only through gated read-only or apply procedures.",
-    "Preserve V9 selected-cohort scope unless later evidence deliberately expands it."
+    "Preserve V9 selected-cohort scope unless later evidence deliberately expands it.",
+    "Review high-relevance production-adjacent Rust assumptions first.",
+    "Convert confirmed user-reachable assumptions into explicit errors or fail-closed responses in later slices.",
+    "Add targeted regression tests for each remediated assumption."
   ],
-  "schema_version": 4,
-  "slice": "V10 Slice 3",
+  "rust_assumption_fail_closed_audit": {
+    "audit_document": "docs/V10_RUST_ASSUMPTION_FAIL_CLOSED_AUDIT.md",
+    "audit_document_present": true,
+    "audit_register": "maint/security/v10-rust-assumption-audit.json",
+    "audit_register_present": true,
+    "audit_script": "maint/security/osmap-v10-rust-assumption-audit.py",
+    "audit_script_present": true,
+    "classification_complete": true,
+    "current_scanner_count": 714,
+    "inventory_sha256": "eaea1f847a8b51dac00a82f25e8b117664ee22f7ed72576c10568769dc891ec4",
+    "live_host_state_changed": false,
+    "product_behavior_changed": false,
+    "production_state_changed": false,
+    "slice0_carried_forward_rust_assumption_count": 712
+  },
+  "schema_version": 5,
+  "slice": "V10 Slice 4",
   "source_inputs": [
     "docs/V10_INTAKE_AUDIT.md",
     "maint/security/v10-intake-inventory.json",
@@ -75,6 +96,9 @@
     "Makefile",
     "maint/security/osmap-v10-governance-gate.sh",
     "docs/V10_DOCUMENTATION_STATUS_CLOSURE.md",
-    "maint/security/v10-documentation-status-closure.json"
+    "maint/security/v10-documentation-status-closure.json",
+    "docs/V10_RUST_ASSUMPTION_FAIL_CLOSED_AUDIT.md",
+    "maint/security/v10-rust-assumption-audit.json",
+    "maint/security/osmap-v10-rust-assumption-audit.py"
   ]
 }
