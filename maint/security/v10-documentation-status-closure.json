@@ -1,0 +1,482 @@
+{
+  "assessed_source": {
+    "branch": "v10-doc-status-closure",
+    "head": "318d6983719fceb15a49f35451cdba144d30d08e",
+    "origin_main": "318d6983719fceb15a49f35451cdba144d30d08e",
+    "status_clean": true
+  },
+  "closure_summary": {
+    "classification_complete": true,
+    "document_count": 155,
+    "live_host_state_changed": false,
+    "placeholder_inventory_count": 22,
+    "product_behavior_changed": false,
+    "production_state_changed": false,
+    "rust_assumption_count": 712,
+    "scan_match_count": 1494
+  },
+  "generated_at_utc": "2026-06-25T08:27:19Z",
+  "placeholder_classification_counts": {
+    "accepted_configuration_example_language": 1,
+    "accepted_gate_or_regression_sentinel": 2,
+    "accepted_historical_security_evidence_language": 9,
+    "accepted_platform_template_example": 2,
+    "accepted_product_safe_placeholder_language": 2,
+    "classified_governance_meta_language": 2,
+    "classified_historical_or_contextual_language": 4
+  },
+  "placeholder_classifications": [
+    {
+      "original_reason": "placeholder_or_todo_text",
+      "path": ".github/ISSUE_TEMPLATE/bug_report.yml",
+      "rationale": "GitHub issue templates use placeholder fields as example user-interface text. This is not an unresolved project implementation placeholder.",
+      "sample_count": 3,
+      "samples": [
+        {
+          "line": 19,
+          "snippet": "placeholder: 4c318d1 on main"
+        },
+        {
+          "line": 39,
+          "snippet": "placeholder: Session validation fails after successful login when..."
+        },
+        {
+          "line": 47,
+          "snippet": "placeholder: |"
+        }
+      ],
+      "slice3_disposition": "accepted_platform_template_example"
+    },
+    {
+      "original_reason": "placeholder_or_todo_text",
+      "path": ".github/ISSUE_TEMPLATE/feature_request.yml",
+      "rationale": "GitHub issue templates use placeholder fields as example user-interface text. This is not an unresolved project implementation placeholder.",
+      "sample_count": 1,
+      "samples": [
+        {
+          "line": 17,
+          "snippet": "placeholder: Operators need..."
+        }
+      ],
+      "slice3_disposition": "accepted_platform_template_example"
+    },
+    {
+      "original_reason": "placeholder_or_todo_text",
+      "path": "docs/DECISION_LOG.md",
+      "rationale": "The match discusses documentation governance or historical placeholder policy. Slice 3 replaces ambiguity with this explicit closure record.",
+      "sample_count": 1,
+      "samples": [
+        {
+          "line": 8,
+          "snippet": "placeholder documents for planned work. Those placeholders should contain"
+        }
+      ],
+      "slice3_disposition": "classified_governance_meta_language"
+    },
+    {
+      "original_reason": "placeholder_or_todo_text",
+      "path": "docs/MIME_AND_ATTACHMENT_POLICY_BASELINE.md",
+      "rationale": "The match documents historical fail-closed rendering or MIME behavior where safe placeholder output is the intended security behavior.",
+      "sample_count": 3,
+      "samples": [
+        {
+          "line": 27,
+          "snippet": "- explicit structure-withheld placeholder behavior when no bounded renderable"
+        },
+        {
+          "line": 58,
+          "snippet": "still fall back to an explicit placeholder"
+        },
+        {
+          "line": 162,
+          "snippet": "- unsupported HTML charsets fall back to an explicit withheld-body placeholder"
+        }
+      ],
+      "slice3_disposition": "accepted_historical_security_evidence_language"
+    },
+    {
+      "original_reason": "placeholder_or_todo_text",
+      "path": "docs/OSMAP_HELPER_SECURITY_REVIEW_2026_05_13.md",
+      "rationale": "The match is retained as historical or contextual wording and is bounded by the V10 claims and limitations register.",
+      "sample_count": 1,
+      "samples": [
+        {
+          "line": 12,
+          "snippet": "| Browser-facing runtime authority | Partially confirmed | `src/openbsd.rs` still gives serve mode `proc exec` because auth and send paths still execute `doveadm` and `sendmail`; with a helper socket configured, serve..."
+        }
+      ],
+      "slice3_disposition": "classified_historical_or_contextual_language"
+    },
+    {
+      "original_reason": "placeholder_or_todo_text",
+      "path": "docs/README.md",
+      "rationale": "The match discusses documentation governance or historical placeholder policy. Slice 3 replaces ambiguity with this explicit closure record.",
+      "sample_count": 1,
+      "samples": [
+        {
+          "line": 222,
+          "snippet": "Some later-phase or deferred documents remain placeholders so the intended"
+        }
+      ],
+      "slice3_disposition": "classified_governance_meta_language"
+    },
+    {
+      "original_reason": "placeholder_or_todo_text",
+      "path": "docs/ROUNDCUBE_DEPENDENCY_ANALYSIS.md",
+      "rationale": "The match refers to non-secret placeholder configuration examples or override descriptions, not embedded credentials.",
+      "sample_count": 1,
+      "samples": [
+        {
+          "line": 61,
+          "snippet": "- local secret files override placeholder values for the database DSN and"
+        }
+      ],
+      "slice3_disposition": "accepted_configuration_example_language"
+    },
+    {
+      "original_reason": "placeholder_or_todo_text",
+      "path": "docs/V4_ACCEPTANCE_CRITERIA.md",
+      "rationale": "The match documents historical fail-closed rendering or MIME behavior where safe placeholder output is the intended security behavior.",
+      "sample_count": 1,
+      "samples": [
+        {
+          "line": 58,
+          "snippet": "| MIME fail-closed behavior | Unsupported charsets, malformed boundaries, ambiguous multipart structures, excessive body size, excessive part counts, strange headers, and unsupported transfer shapes render an explicit..."
+        }
+      ],
+      "slice3_disposition": "accepted_historical_security_evidence_language"
+    },
+    {
+      "original_reason": "placeholder_or_todo_text",
+      "path": "docs/V4_AUDIT_REMEDIATION_REPORT.md",
+      "rationale": "The match is retained as historical or contextual wording and is bounded by the V10 claims and limitations register.",
+      "sample_count": 1,
+      "samples": [
+        {
+          "line": 29,
+          "snippet": "| V4.6 security claim matrix may be documentation-only | Confirmed and remediated | `docs/V4_SECURITY_CLAIM_MATRIX.md` now has a dedicated release gate, `maint/security/osmap-v4-security-claim-matrix-gate.sh`, wired i..."
+        }
+      ],
+      "slice3_disposition": "classified_historical_or_contextual_language"
+    },
+    {
+      "original_reason": "placeholder_or_todo_text",
+      "path": "docs/V4_CLOSEOUT_EVIDENCE.md",
+      "rationale": "The match is retained as historical or contextual wording and is bounded by the V10 claims and limitations register.",
+      "sample_count": 1,
+      "samples": [
+        {
+          "line": 144,
+          "snippet": "limitation, or non-goal cells are empty or placeholder text"
+        }
+      ],
+      "slice3_disposition": "classified_historical_or_contextual_language"
+    },
+    {
+      "original_reason": "placeholder_or_todo_text",
+      "path": "docs/V4_HOSTILE_CONTENT_SAFETY_GOALS.md",
+      "rationale": "The match documents historical fail-closed rendering or MIME behavior where safe placeholder output is the intended security behavior.",
+      "sample_count": 1,
+      "samples": [
+        {
+          "line": 47,
+          "snippet": "render an explicit withheld placeholder"
+        }
+      ],
+      "slice3_disposition": "accepted_historical_security_evidence_language"
+    },
+    {
+      "original_reason": "placeholder_or_todo_text",
+      "path": "docs/V4_HOSTILE_CONTENT_TEST_MATRIX.md",
+      "rationale": "The match documents historical fail-closed rendering or MIME behavior where safe placeholder output is the intended security behavior.",
+      "sample_count": 1,
+      "samples": [
+        {
+          "line": 19,
+          "snippet": "| malformed or unsupported MIME | render an explicit withheld placeholder or fail closed | hostile corpus MIME fixtures, MIME robustness assertions, and product-code MIME tests |"
+        }
+      ],
+      "slice3_disposition": "accepted_historical_security_evidence_language"
+    },
+    {
+      "original_reason": "placeholder_or_todo_text",
+      "path": "docs/V4_ROADMAP.md",
+      "rationale": "The match documents historical fail-closed rendering or MIME behavior where safe placeholder output is the intended security behavior.",
+      "sample_count": 1,
+      "samples": [
+        {
+          "line": 31,
+          "snippet": "| 4 | MIME ambiguity and metadata breadth | verify malformed, unsupported, nested, suspicious, or oversized MIME inputs fail closed or surface only bounded metadata | MIME and rendering fixtures prove withheld placeho..."
+        }
+      ],
+      "slice3_disposition": "accepted_historical_security_evidence_language"
+    },
+    {
+      "original_reason": "placeholder_or_todo_text",
+      "path": "docs/V4_SECURITY_CLAIM_MATRIX.md",
+      "rationale": "The match is retained as historical or contextual wording and is bounded by the V10 claims and limitations register.",
+      "sample_count": 1,
+      "samples": [
+        {
+          "line": 58,
+          "snippet": "cell is empty or placeholder text, a referenced repo path is missing, the V4"
+        }
+      ],
+      "slice3_disposition": "classified_historical_or_contextual_language"
+    },
+    {
+      "original_reason": "placeholder_or_todo_text",
+      "path": "docs/V4_SECURITY_GATES.md",
+      "rationale": "The match documents historical fail-closed rendering or MIME behavior where safe placeholder output is the intended security behavior.",
+      "sample_count": 1,
+      "samples": [
+        {
+          "line": 34,
+          "snippet": "| MIME ambiguity handling | Evidence proves malformed, unsupported, ambiguous, or oversized MIME bodies fail closed or render a clear withheld placeholder. |"
+        }
+      ],
+      "slice3_disposition": "accepted_historical_security_evidence_language"
+    },
+    {
+      "original_reason": "placeholder_or_todo_text",
+      "path": "docs/V7_BOUNDARY_HARDENING_DUE_DILIGENCE.md",
+      "rationale": "The match documents historical fail-closed rendering or MIME behavior where safe placeholder output is the intended security behavior.",
+      "sample_count": 1,
+      "samples": [
+        {
+          "line": 422,
+          "snippet": "sanitized-HTML path received no body and returned a safe placeholder."
+        }
+      ],
+      "slice3_disposition": "accepted_historical_security_evidence_language"
+    },
+    {
+      "original_reason": "placeholder_or_todo_text",
+      "path": "docs/V7_RENDERING_REGRESSION_CLOSEOUT.md",
+      "rationale": "The match documents historical fail-closed rendering or MIME behavior where safe placeholder output is the intended security behavior.",
+      "sample_count": 1,
+      "samples": [
+        {
+          "line": 5,
+          "snippet": "V7 entered stabilization freeze because daily-driver message rendering regressed after testing discipline weakened. A production-visible multipart HTML message rendered only the historical placeholder instead of a san..."
+        }
+      ],
+      "slice3_disposition": "accepted_historical_security_evidence_language"
+    },
+    {
+      "original_reason": "placeholder_or_todo_text",
+      "path": "docs/V8_MAIL_WORKFLOW_MATRIX.md",
+      "rationale": "The match documents historical fail-closed rendering or MIME behavior where safe placeholder output is the intended security behavior.",
+      "sample_count": 1,
+      "samples": [
+        {
+          "line": 50,
+          "snippet": "| `malformed_mime.eml` | malformed MIME | Fail closed with a safe placeholder and without raw HTML rendering |"
+        }
+      ],
+      "slice3_disposition": "accepted_historical_security_evidence_language"
+    },
+    {
+      "original_reason": "placeholder_or_todo_text",
+      "path": "maint/security/osmap-v4-security-claim-matrix-gate.sh",
+      "rationale": "The match is inside a gate, regression test, or required-text check that protects prior security behavior.",
+      "sample_count": 1,
+      "samples": [
+        {
+          "line": 114,
+          "snippet": "if re.search(r\"\\b(TBD|TODO|unknown|n/a)\\b\", value, flags=re.IGNORECASE):"
+        }
+      ],
+      "slice3_disposition": "accepted_gate_or_regression_sentinel"
+    },
+    {
+      "original_reason": "placeholder_or_todo_text",
+      "path": "maint/security/osmap-v7-rendering-regression-gate.sh",
+      "rationale": "The match is inside a gate, regression test, or required-text check that protects prior security behavior.",
+      "sample_count": 3,
+      "samples": [
+        {
+          "line": 67,
+          "snippet": "require_text src/rendering.rs \"fn malformed_mime_renders_safe_placeholder_or_errors_without_raw_html()\""
+        },
+        {
+          "line": 84,
+          "snippet": "run_cargo_test malformed_mime_renders_safe_placeholder_or_errors_without_raw_html"
+        },
+        {
+          "line": 94,
+          "snippet": "cargo test --quiet -- fixture_malformed_boundary_renders_safe_placeholder"
+        }
+      ],
+      "slice3_disposition": "accepted_gate_or_regression_sentinel"
+    },
+    {
+      "original_reason": "placeholder_or_todo_text",
+      "path": "src/http_ui.rs",
+      "rationale": "The literal word placeholder is used in source comments or safe browser output paths to describe intentionally withheld or bounded rendering, not missing implementation text.",
+      "sample_count": 4,
+      "samples": [
+        {
+          "line": 185,
+          "snippet": "\"<div class=\\\"login-field\\\"><label for=\\\"login-username\\\">Username or Email</label><svg aria-hidden=\\\"true\\\" viewBox=\\\"0 0 24 24\\\"><path d=\\\"M20 21a8 8 0 0 0-16 0\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\\" stroke-width=\\..."
+        },
+        {
+          "line": 186,
+          "snippet": "\"<div class=\\\"login-field\\\"><label for=\\\"login-password\\\">Password</label><svg aria-hidden=\\\"true\\\" viewBox=\\\"0 0 24 24\\\"><rect x=\\\"5\\\" y=\\\"10\\\" width=\\\"14\\\" height=\\\"10\\\" rx=\\\"2\\\" fill=\\\"none\\\" stroke=\\\"currentColor\\..."
+        },
+        {
+          "line": 187,
+          "snippet": "\"<div class=\\\"login-field\\\"><label for=\\\"login-totp\\\">TOTP Code</label><svg aria-hidden=\\\"true\\\" viewBox=\\\"0 0 24 24\\\"><path d=\\\"M12 3 19 6v5c0 5-2.6 8.5-7 10-4.4-1.5-7-5-7-10V6l7-3Z\\\" fill=\\\"none\\\" stroke=\\\"currentCo..."
+        }
+      ],
+      "slice3_disposition": "accepted_product_safe_placeholder_language"
+    },
+    {
+      "original_reason": "placeholder_or_todo_text",
+      "path": "src/rendering.rs",
+      "rationale": "The literal word placeholder is used in source comments or safe browser output paths to describe intentionally withheld or bounded rendering, not missing implementation text.",
+      "sample_count": 10,
+      "samples": [
+        {
+          "line": 6,
+          "snippet": "//! - it renders only selected plain text or explicit safe placeholders"
+        },
+        {
+          "line": 444,
+          "snippet": "/// Renders the selected body or a safe placeholder from MIME analysis."
+        },
+        {
+          "line": 462,
+          "snippet": "// HTML rather than showing the historical regression placeholder."
+        }
+      ],
+      "slice3_disposition": "accepted_product_safe_placeholder_language"
+    }
+  ],
+  "purpose": "Documentation placeholder and stale-status closure for the V10 governance boundary.",
+  "required_followups": [
+    "Classify Rust fail-closed assumptions from Slice 0.",
+    "Refresh live-host evidence only through gated read-only or apply procedures.",
+    "Preserve V9 selected-cohort scope unless later evidence deliberately expands it."
+  ],
+  "scan_pattern_counts": {
+    "Current Status": 12,
+    "Residual Risk": 19,
+    "TODO": 1,
+    "This does not claim": 10,
+    "V1": 47,
+    "V2": 64,
+    "V3": 152,
+    "V4": 170,
+    "V5": 99,
+    "V6": 257,
+    "V7": 127,
+    "V8": 98,
+    "V9": 121,
+    "What Is Still Missing": 14,
+    "future": 89,
+    "placeholder": 15,
+    "remaining": 128,
+    "stale": 71
+  },
+  "schema_version": 1,
+  "slice": "V10 Slice 3",
+  "source_inputs": [
+    "docs/V10_INTAKE_AUDIT.md",
+    "maint/security/v10-intake-inventory.json",
+    "docs/V10_GOVERNANCE_STATUS.md",
+    "docs/V10_CLAIMS_AND_LIMITATIONS.md",
+    "docs/V10_ACCEPTANCE_GATE.md",
+    "maint/security/v10-claims-boundary.json",
+    "docs/README.md"
+  ],
+  "stale_status_policy": {
+    "current_status_headings": "Allowed only with clear scope and current evidence boundary.",
+    "future_or_remaining_language": "Allowed only as explicitly bounded future work or residual risk.",
+    "todo_language": "Retained as a triage signal, not as an accepted product claim.",
+    "version_references": "Accepted as historical provenance unless used to expand current claims.",
+    "what_is_still_missing_sections": "Must be resolved, deferred, or bounded by current claims before release language expands."
+  },
+  "top_scan_paths": [
+    {
+      "match_count": 378,
+      "path": "docs/DECISION_LOG.md"
+    },
+    {
+      "match_count": 55,
+      "path": "docs/OWASP_ASVS_BASELINE.md"
+    },
+    {
+      "match_count": 54,
+      "path": "README.md"
+    },
+    {
+      "match_count": 40,
+      "path": "docs/V8_STABILIZATION_PROGRAM.md"
+    },
+    {
+      "match_count": 39,
+      "path": "docs/V9_PRODUCTION_CONVERGENCE.md"
+    },
+    {
+      "match_count": 37,
+      "path": "docs/KNOWN_LIMITATIONS.md"
+    },
+    {
+      "match_count": 32,
+      "path": "docs/V4_AUDIT_REMEDIATION_REPORT.md"
+    },
+    {
+      "match_count": 31,
+      "path": "docs/V6_CLOSEOUT_EVIDENCE.md"
+    },
+    {
+      "match_count": 29,
+      "path": "docs/V7_BOUNDARY_HARDENING_DUE_DILIGENCE.md"
+    },
+    {
+      "match_count": 28,
+      "path": "docs/V8_FINAL_REGRESSION_GATE_CLOSEOUT.md"
+    },
+    {
+      "match_count": 25,
+      "path": "docs/V4_CLOSEOUT_EVIDENCE.md"
+    },
+    {
+      "match_count": 24,
+      "path": "docs/BUILD_AND_RELEASE_PROCESS.md"
+    },
+    {
+      "match_count": 24,
+      "path": "docs/V6_TRACES/SLICE_09_CLOSEOUT.md"
+    },
+    {
+      "match_count": 24,
+      "path": "docs/V7_PRODUCTION_AVAILABILITY_CLOSEOUT.md"
+    },
+    {
+      "match_count": 22,
+      "path": "docs/README.md"
+    },
+    {
+      "match_count": 22,
+      "path": "docs/V6_TRACES/SLICE_02_GATES.md"
+    },
+    {
+      "match_count": 20,
+      "path": "docs/V4_RELEASE_OPERATOR_HANDOFF.md"
+    },
+    {
+      "match_count": 20,
+      "path": "docs/V6_SECURITY_GATES.md"
+    },
+    {
+      "match_count": 19,
+      "path": "docs/V5_BOUNDARY_HARDENING_EVIDENCE.md"
+    },
+    {
+      "match_count": 17,
+      "path": "docs/V6_ACCEPTANCE_CRITERIA.md"
+    }
+  ]
+}

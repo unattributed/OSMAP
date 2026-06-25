@@ -65,3 +65,10 @@ V10 may now claim that it has explicit local gate entry points for the current g
 - `make acceptance-check`
 
 This claim is limited to governance, claims-boundary, documentation-index, Makefile, and CI visibility validation. It does not expand the project into release readiness, production deployment, general hostile-email safety, or Roundcube feature parity.
+
+## Slice 3 Documentation Closure Boundary
+Slice 3 adds one bounded claim: the Slice 0 documentation placeholder and stale-status inventory has been classified for governance purposes.
+
+This does not claim that every historical document has been rewritten, every future-work item has been implemented, all Rust assumptions are safe, production deployment has changed, or broad public release readiness has been reached.
+
+The authoritative closure record is `docs/V10_DOCUMENTATION_STATUS_CLOSURE.md`, with machine-readable evidence in `maint/security/v10-documentation-status-closure.json`.
