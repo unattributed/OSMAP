@@ -1,0 +1,54 @@
+{
+  "allowed_claims": [
+    "OSMAP remains a focused browser-mail access layer over the existing mail stack.",
+    "V9 is accepted only as a selected-cohort release-candidate decision.",
+    "V10 Slice 0 is an intake inventory baseline.",
+    "V10 Slice 1 records governance status and claims boundaries without product behavior changes."
+  ],
+  "assessed_source": {
+    "branch": "v10-governance-status",
+    "head": "ec72b6f55687b716c0d21bdd4f44480b99ae5163",
+    "origin_main": "ec72b6f55687b716c0d21bdd4f44480b99ae5163",
+    "status_clean": true
+  },
+  "carried_forward_slice0_signals": {
+    "document_count": 155,
+    "placeholder_file_count": 22,
+    "rust_assumption_count": 712,
+    "scan_match_count": 1494
+  },
+  "explicit_non_claims": [
+    "full Roundcube feature parity",
+    "complete Roundcube replacement for every user group",
+    "general hostile-email safety",
+    "malware prevention",
+    "attachment preview safety",
+    "URL reputation or phishing prevention",
+    "unbounded MIME or mailbox parsing safety",
+    "broad public release readiness",
+    "production deployment change"
+  ],
+  "gate_status": {
+    "acceptance_check_target_present": false,
+    "release_check": "preserved",
+    "security_check": "preserved",
+    "v10_check_target_present": false
+  },
+  "generated_at_utc": "2026-06-25T04:57:50Z",
+  "purpose": "Governance status and claims baseline after V10 Slice 0 intake.",
+  "required_followups": [
+    "Define or explicitly defer acceptance-check and v10-check targets.",
+    "Triage documentation and placeholder inventory from Slice 0.",
+    "Classify Rust fail-closed assumptions from Slice 0.",
+    "Refresh live-host evidence only through gated read-only or apply procedures."
+  ],
+  "schema_version": 2,
+  "slice": "V10 Slice 1",
+  "source_inputs": [
+    "docs/V10_INTAKE_AUDIT.md",
+    "maint/security/v10-intake-inventory.json",
+    "docs/README.md",
+    "docs/RISK_REGISTER.md",
+    "docs/KNOWN_LIMITATIONS.md"
+  ]
+}
