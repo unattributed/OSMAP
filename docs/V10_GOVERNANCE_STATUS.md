@@ -79,3 +79,16 @@ V10 Slice 3 classifies the Slice 0 documentation placeholder and stale-status fi
 | Product behavior change | `0` | Slice 3 is documentation and governance only. |
 
 Slice 3 does not claim broad release readiness, complete Roundcube replacement, general hostile-email safety, or completion of the Rust assumption triage.
+
+## Slice 4 Rust Assumption Audit Status
+
+V10 Slice 4 classifies the current Rust assumption inventory for fail-closed governance. The machine-readable register is `maint/security/v10-rust-assumption-audit.json`, and the repeatable scanner is `maint/security/osmap-v10-rust-assumption-audit.py`.
+
+    | Item | Value | Disposition |
+    | --- | ---: | --- |
+    | Slice 0 carried-forward Rust assumption count | `712` | Preserved as the intake signal. |
+    | Current normalized scanner count | `714` | Recorded in the Slice 4 audit register. |
+    | Product behavior change | `0` | Slice 4 is audit and governance only. |
+    | Inventory SHA256 | `eaea1f847a8b51dac00a82f25e8b117664ee22f7ed72576c10568769dc891ec4` | Enforced by `make v10-check`. |
+
+    Slice 4 does not claim that all Rust assumptions are safe, that production request paths are panic-free, or that broad public release readiness has been reached.

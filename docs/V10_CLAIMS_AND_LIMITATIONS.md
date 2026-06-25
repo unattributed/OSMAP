@@ -72,3 +72,11 @@ Slice 3 adds one bounded claim: the Slice 0 documentation placeholder and stale-
 This does not claim that every historical document has been rewritten, every future-work item has been implemented, all Rust assumptions are safe, production deployment has changed, or broad public release readiness has been reached.
 
 The authoritative closure record is `docs/V10_DOCUMENTATION_STATUS_CLOSURE.md`, with machine-readable evidence in `maint/security/v10-documentation-status-closure.json`.
+
+## Slice 4 Rust Assumption Audit Boundary
+
+V10 Slice 4 adds one bounded claim: the current Rust assumption inventory has been scanned, classified, and made gate-visible for fail-closed governance.
+
+    This does not claim that all Rust assumptions are safe, that production request paths are panic-free, that every high-relevance assumption has been remediated, or that broad public release readiness has been reached.
+
+    The authoritative audit document is `docs/V10_RUST_ASSUMPTION_FAIL_CLOSED_AUDIT.md`, the machine-readable register is `maint/security/v10-rust-assumption-audit.json`, and drift is checked by `maint/security/osmap-v10-rust-assumption-audit.py` through `make v10-check`.
