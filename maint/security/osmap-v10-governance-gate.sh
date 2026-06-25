@@ -22,19 +22,24 @@ require_file docs/V10_CLAIMS_AND_LIMITATIONS.md
 require_file docs/V10_ACCEPTANCE_GATE.md
 require_file docs/V10_DOCUMENTATION_STATUS_CLOSURE.md
 require_file docs/V10_RUST_ASSUMPTION_FAIL_CLOSED_AUDIT.md
+require_file docs/V10_TARGETED_FAIL_CLOSED_REMEDIATION.md
 require_file maint/security/v10-intake-inventory.json
 require_file maint/security/v10-claims-boundary.json
 require_file maint/security/v10-documentation-status-closure.json
 require_file maint/security/v10-rust-assumption-audit.json
+require_file maint/security/v10-fail-closed-remediation.json
+require_file maint/security/osmap-v10-fail-closed-remediation.py
 require_file maint/security/osmap-v10-rust-assumption-audit.py
 require_file Makefile
 require_file .github/workflows/security-check.yml
 
 require_text Makefile "v10-check:"
 require_text Makefile "acceptance-check:"
+require_text Makefile "v10-fail-closed-remediation-check:"
 require_text Makefile "osmap-v10-governance-gate.sh"
 require_text .github/workflows/security-check.yml "security-check / v10 governance"
 require_text .github/workflows/security-check.yml "make v10-check"
+require_text docs/README.md "V10_TARGETED_FAIL_CLOSED_REMEDIATION.md"
 require_text docs/README.md "V10_RUST_ASSUMPTION_FAIL_CLOSED_AUDIT.md"
 require_text docs/README.md "V10_DOCUMENTATION_STATUS_CLOSURE.md"
 require_text docs/README.md "V10_ACCEPTANCE_GATE.md"
@@ -52,6 +57,8 @@ require_text docs/V10_DOCUMENTATION_STATUS_CLOSURE.md "Stale-status and version-
 require_text docs/V10_DOCUMENTATION_STATUS_CLOSURE.md "This closure does not claim"
 require_text docs/V10_RUST_ASSUMPTION_FAIL_CLOSED_AUDIT.md "Current normalized scanner count"
 require_text docs/V10_RUST_ASSUMPTION_FAIL_CLOSED_AUDIT.md "This closure does not claim"
+require_text docs/V10_TARGETED_FAIL_CLOSED_REMEDIATION.md "Selected remediation target"
+require_text docs/V10_TARGETED_FAIL_CLOSED_REMEDIATION.md "This slice does not claim"
 
 python3 - <<'EOPY'
 from pathlib import Path
@@ -64,10 +71,10 @@ claims = json.loads(Path('maint/security/v10-claims-boundary.json').read_text(en
 closure = json.loads(Path('maint/security/v10-documentation-status-closure.json').read_text(encoding='utf-8'))
 rust = json.loads(Path('maint/security/v10-rust-assumption-audit.json').read_text(encoding='utf-8'))
 
-if claims.get('schema_version', 0) < 5:
-    fail('v10-claims-boundary schema_version must be at least 5')
-if claims.get('slice') != 'V10 Slice 4':
-    fail('v10-claims-boundary slice must be V10 Slice 4')
+if claims.get('schema_version', 0) < 6:
+    fail('v10-claims-boundary schema_version must be at least 6')
+if claims.get('slice') != 'V10 Slice 5':
+    fail('v10-claims-boundary slice must be V10 Slice 5')
 
 gates = claims.get('gate_status', {})
 for key in ('acceptance_check_target_present', 'v10_check_target_present'):
@@ -130,6 +137,32 @@ if rust_status.get('current_scanner_count') != rust_summary.get('total_count'):
 if rust_status.get('inventory_sha256') != rust_summary.get('inventory_sha256'):
     fail('rust_assumption_fail_closed_audit inventory hash must match register')
 
+
+
+remediation = json.loads(Path('maint/security/v10-fail-closed-remediation.json').read_text(encoding='utf-8'))
+remediation_status = claims.get('targeted_fail_closed_remediation', {})
+remediation_summary = remediation.get('summary', {})
+if remediation.get('schema_version') != 1:
+    fail('fail-closed remediation schema_version must be 1')
+if remediation.get('slice') != 'V10 Slice 5':
+    fail('fail-closed remediation slice must be V10 Slice 5')
+if remediation_summary.get('classification_complete') is not True:
+    fail('fail-closed remediation classification_complete must be true')
+if remediation_summary.get('product_behavior_changed') is not False:
+    fail('fail-closed remediation product_behavior_changed must be false')
+if remediation_summary.get('production_state_changed') is not False:
+    fail('fail-closed remediation production_state_changed must be false')
+if remediation_summary.get('live_host_state_changed') is not False:
+    fail('fail-closed remediation live_host_state_changed must be false')
+if remediation_summary.get('source_test_module_assumption_count', 0) <= 0:
+    fail('fail-closed remediation must classify at least one source test-module assumption')
+if remediation_status.get('remediation_register_present') is not True:
+    fail('targeted_fail_closed_remediation.remediation_register_present must be true')
+if remediation_status.get('classification_complete') is not True:
+    fail('targeted_fail_closed_remediation.classification_complete must be true')
+if remediation_status.get('refined_inventory_sha256') != remediation.get('refined_current', {}).get('inventory_sha256'):
+    fail('targeted_fail_closed_remediation refined hash must match register')
+
 non_claims = ' '.join(claims.get('explicit_non_claims', []))
 for phrase in (
     'general hostile-email safety',
@@ -143,5 +176,6 @@ for phrase in (
 EOPY
 
 PYTHONDONTWRITEBYTECODE=1 python3 -B maint/security/osmap-v10-rust-assumption-audit.py --check maint/security/v10-rust-assumption-audit.json
+PYTHONDONTWRITEBYTECODE=1 python3 -B maint/security/osmap-v10-fail-closed-remediation.py --check maint/security/v10-fail-closed-remediation.json
 
 printf '%s\n' 'V10 governance gate passed'
