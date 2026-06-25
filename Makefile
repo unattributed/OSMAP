@@ -87,3 +87,6 @@ v10-check:
 acceptance-check:
 	$(MAKE) security-check
 	$(MAKE) v10-check
+
+v10-fail-closed-remediation-check:
+	python3 -B maint/security/osmap-v10-fail-closed-remediation.py --check maint/security/v10-fail-closed-remediation.json

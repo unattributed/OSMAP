@@ -6,12 +6,13 @@
     "V10 Slice 1 records governance status and claims boundaries without product behavior changes.",
     "V10 Slice 2 provides explicit v10-check and acceptance-check gate visibility for the current governance boundary.",
     "V10 Slice 3 classifies documentation placeholder and stale-status findings without expanding product or release claims.",
-    "V10 Slice 4 classifies Rust assumptions for fail-closed governance without changing product behavior."
+    "V10 Slice 4 classifies Rust assumptions for fail-closed governance without changing product behavior.",
+    "V10 Slice 5 narrows Rust fail-closed remediation by separating source test-module assumptions from production-adjacent runtime assumptions and gating that register."
   ],
   "assessed_source": {
-    "branch": "v10-rust-fail-closed-audit",
-    "head": "0e9b92c717ca553d16bd83eec6bf09f7a5e804cd",
-    "origin_main": "0e9b92c717ca553d16bd83eec6bf09f7a5e804cd",
+    "branch": "v10-targeted-fail-closed-remediation",
+    "head": "e91758b8f8a769052c3168cdbd1dfc795cbc31c7",
+    "origin_main": "e91758b8f8a769052c3168cdbd1dfc795cbc31c7",
     "status_clean": true
   },
   "carried_forward_slice0_signals": {
@@ -49,7 +50,10 @@
     "that every future-work item has been implemented",
     "that all Rust assumptions are safe",
     "that panic-free production paths have been proven",
-    "that every high-relevance Rust assumption has been remediated"
+    "that every high-relevance Rust assumption has been remediated",
+    "that runtime Rust product behavior changed in Slice 5",
+    "that production Rust paths are panic-free after Slice 5",
+    "that all high-relevance Rust assumptions have been remediated by Slice 5"
   ],
   "gate_status": {
     "acceptance_check_definition": "Runs make security-check and make v10-check for local bounded acceptance.",
@@ -58,15 +62,18 @@
     "security_check": "preserved",
     "v10_check_target_present": true
   },
-  "generated_at_utc": "2026-06-25T09:38:24Z",
-  "purpose": "Rust assumption and fail-closed audit for the V10 governance boundary.",
+  "generated_at_utc": "2026-06-25T10:58:50Z",
+  "purpose": "Targeted fail-closed remediation for the V10 governance boundary.",
   "required_followups": [
     "Classify Rust fail-closed assumptions from Slice 0.",
     "Refresh live-host evidence only through gated read-only or apply procedures.",
     "Preserve V9 selected-cohort scope unless later evidence deliberately expands it.",
     "Review high-relevance production-adjacent Rust assumptions first.",
     "Convert confirmed user-reachable assumptions into explicit errors or fail-closed responses in later slices.",
-    "Add targeted regression tests for each remediated assumption."
+    "Add targeted regression tests for each remediated assumption.",
+    "Use the refined high-relevance Rust list to select concrete runtime code remediations.",
+    "Convert selected user-reachable assumptions into explicit errors or fail-closed responses.",
+    "Add regression tests for each runtime fail-closed remediation."
   ],
   "rust_assumption_fail_closed_audit": {
     "audit_document": "docs/V10_RUST_ASSUMPTION_FAIL_CLOSED_AUDIT.md",
@@ -83,8 +90,8 @@
     "production_state_changed": false,
     "slice0_carried_forward_rust_assumption_count": 712
   },
-  "schema_version": 5,
-  "slice": "V10 Slice 4",
+  "schema_version": 6,
+  "slice": "V10 Slice 5",
   "source_inputs": [
     "docs/V10_INTAKE_AUDIT.md",
     "maint/security/v10-intake-inventory.json",
@@ -99,6 +106,26 @@
     "maint/security/v10-documentation-status-closure.json",
     "docs/V10_RUST_ASSUMPTION_FAIL_CLOSED_AUDIT.md",
     "maint/security/v10-rust-assumption-audit.json",
-    "maint/security/osmap-v10-rust-assumption-audit.py"
-  ]
+    "maint/security/osmap-v10-rust-assumption-audit.py",
+    "docs/V10_TARGETED_FAIL_CLOSED_REMEDIATION.md",
+    "maint/security/v10-fail-closed-remediation.json",
+    "maint/security/osmap-v10-fail-closed-remediation.py"
+  ],
+  "targeted_fail_closed_remediation": {
+    "classification_complete": true,
+    "high_relevance_after": 3,
+    "high_relevance_before": 636,
+    "live_host_state_changed": false,
+    "product_behavior_changed": false,
+    "production_state_changed": false,
+    "refined_inventory_sha256": "6ccd007239b21fc1efccb49097958f6326c26161788d3fa4d1735274c13311e5",
+    "remediation_document": "docs/V10_TARGETED_FAIL_CLOSED_REMEDIATION.md",
+    "remediation_document_present": true,
+    "remediation_register": "maint/security/v10-fail-closed-remediation.json",
+    "remediation_register_present": true,
+    "remediation_script": "maint/security/osmap-v10-fail-closed-remediation.py",
+    "remediation_script_present": true,
+    "selected_target": "src_test_module_assumption_reclassification",
+    "source_test_module_assumption_count": 634
+  }
 }

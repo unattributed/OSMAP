@@ -80,3 +80,9 @@ V10 Slice 4 adds one bounded claim: the current Rust assumption inventory has be
     This does not claim that all Rust assumptions are safe, that production request paths are panic-free, that every high-relevance assumption has been remediated, or that broad public release readiness has been reached.
 
     The authoritative audit document is `docs/V10_RUST_ASSUMPTION_FAIL_CLOSED_AUDIT.md`, the machine-readable register is `maint/security/v10-rust-assumption-audit.json`, and drift is checked by `maint/security/osmap-v10-rust-assumption-audit.py` through `make v10-check`.
+
+## V10 Slice 5 targeted fail-closed remediation
+
+V10 Slice 5 is allowed to claim that OSMAP now records a targeted fail-closed remediation register and gates the refined classification of Rust assumptions. It may also claim that assumptions inside Rust test modules are separated from production-adjacent runtime assumptions for remediation planning.
+
+V10 Slice 5 must not claim that production Rust paths are panic-free, that all high-relevance assumptions have been remediated, that runtime product behavior changed, or that broad public release readiness has been achieved.
