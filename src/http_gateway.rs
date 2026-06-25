@@ -261,19 +261,9 @@ impl BrowserGateway for RuntimeBrowserGateway {
         &self,
         context: &AuthenticationContext,
         validated_session: &ValidatedSession,
-        recipients: &str,
-        subject: &str,
-        body: &str,
-        attachments: &[UploadedAttachment],
+        request: BrowserSendRequest<'_>,
     ) -> BrowserSendOutcome {
-        self.send_message_impl(
-            context,
-            validated_session,
-            recipients,
-            subject,
-            body,
-            attachments,
-        )
+        self.send_message_impl(context, validated_session, request)
     }
 
     fn move_message(

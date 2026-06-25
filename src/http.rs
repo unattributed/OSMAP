@@ -768,11 +768,11 @@ pub use self::http_browser::{
     BrowserMailboxOutcome, BrowserMessageListDecision, BrowserMessageListOutcome,
     BrowserMessageMoveDecision, BrowserMessageMoveOutcome, BrowserMessageSearchDecision,
     BrowserMessageSearchOutcome, BrowserMessageViewDecision, BrowserMessageViewOutcome,
-    BrowserSendDecision, BrowserSendOutcome, BrowserSessionDecision, BrowserSessionListDecision,
-    BrowserSessionListOutcome, BrowserSessionRevokeDecision, BrowserSessionRevokeOutcome,
-    BrowserSessionRevokeScope, BrowserSessionValidationOutcome, BrowserSettingsDecision,
-    BrowserSettingsOutcome, BrowserSettingsUpdateDecision, BrowserSettingsUpdateOutcome,
-    BrowserVisibleSession, BrowserVisibleSettings,
+    BrowserSendDecision, BrowserSendOutcome, BrowserSendRequest, BrowserSessionDecision,
+    BrowserSessionListDecision, BrowserSessionListOutcome, BrowserSessionRevokeDecision,
+    BrowserSessionRevokeOutcome, BrowserSessionRevokeScope, BrowserSessionValidationOutcome,
+    BrowserSettingsDecision, BrowserSettingsOutcome, BrowserSettingsUpdateDecision,
+    BrowserSettingsUpdateOutcome, BrowserVisibleSession, BrowserVisibleSettings,
 };
 pub use self::http_gateway::RuntimeBrowserGateway;
 pub use self::http_runtime::run_http_server;
@@ -1508,12 +1508,16 @@ mod tests {
             &self,
             _context: &AuthenticationContext,
             _validated_session: &ValidatedSession,
-            recipients: &str,
-            _subject: &str,
-            _body: &str,
-            attachments: &[UploadedAttachment],
+            request: BrowserSendRequest<'_>,
         ) -> BrowserSendOutcome {
-            if recipients == "locked@example.com" {
+            let recipient_count = request
+                .recipients
+                .split(',')
+                .chain(request.cc_recipients.split(','))
+                .chain(request.bcc_recipients.split(','))
+                .filter(|recipient| !recipient.trim().is_empty())
+                .count();
+            if request.recipients == "locked@example.com" {
                 BrowserSendOutcome {
                     decision: BrowserSendDecision::Denied {
                         public_reason: TOO_MANY_SUBMISSIONS_PUBLIC_REASON.to_string(),
@@ -1526,7 +1530,7 @@ mod tests {
                         "stub submission throttled",
                     )],
                 }
-            } else if recipients == "bob@example.com" && attachments.len() <= 1 {
+            } else if recipient_count > 0 && request.attachments.len() <= 1 {
                 BrowserSendOutcome {
                     decision: BrowserSendDecision::Submitted,
                     audit_events: vec![LogEvent::new(
@@ -1767,6 +1771,8 @@ mod tests {
                     canonical_username: validated_session.record.canonical_username.clone(),
                     now: 100,
                     recipients_text: request.recipients.to_string(),
+                    cc_text: request.cc_recipients.to_string(),
+                    bcc_text: request.bcc_recipients.to_string(),
                     subject: request.subject.to_string(),
                     body: request.body.to_string(),
                     attachments,
@@ -2445,10 +2451,14 @@ mod tests {
         let outcome = gateway.send_message(
             &context,
             &validated_session,
-            "bob@example.com",
-            "Test",
-            "Hello",
-            &[],
+            BrowserSendRequest {
+                recipients: "bob@example.com",
+                cc_recipients: "",
+                bcc_recipients: "",
+                subject: "Test",
+                body: "Hello",
+                attachments: &[],
+            },
         );
         match outcome.decision {
             BrowserSendDecision::Denied {
@@ -4045,6 +4055,9 @@ mod tests {
         let body = body_text(&response);
         assert!(body.contains("name=\"csrf_token\""));
         assert!(body.contains("action=\"/send\""));
+        assert!(body.contains("name=\"to\""));
+        assert!(body.contains("name=\"cc\""));
+        assert!(body.contains("name=\"bcc\""));
         assert!(body.contains("formaction=\"/drafts/save\""));
         assert!(body.contains("href=\"/drafts\""));
     }
@@ -4057,7 +4070,7 @@ mod tests {
                 "POST",
                 "/drafts/save",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&to=bob%40example.com&subject=Draft%20Subject&body=Private%20draft%20body",
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&to=bob%40example.com&cc=carol%40example.net&bcc=dana%40example.org&subject=Draft%20Subject&body=Private%20draft%20body",
             ),
             "127.0.0.1",
         );
@@ -4074,6 +4087,8 @@ mod tests {
         let resume_body = body_text(&resume_response);
         assert!(resume_body.contains("Resume Draft"));
         assert!(resume_body.contains("Draft Subject"));
+        assert!(resume_body.contains("carol@example.net"));
+        assert!(resume_body.contains("dana@example.org"));
         assert!(resume_body.contains("Private draft body"));
         assert!(resume_body.contains("name=\"draft_id\""));
 

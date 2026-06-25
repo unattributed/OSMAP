@@ -30,6 +30,8 @@ where
         let mut compose_heading = "Compose";
         let mut context_notice: Option<String> = None;
         let mut to_value = String::new();
+        let cc_value = String::new();
+        let bcc_value = String::new();
         let mut subject_value = String::new();
         let mut body_value = String::new();
         let mut source_mailbox_name: Option<String> = None;
@@ -154,6 +156,8 @@ where
                     error_message: None,
                     context_notice: context_notice.as_deref(),
                     to_value: &to_value,
+                    cc_value: &cc_value,
+                    bcc_value: &bcc_value,
                     subject_value: &subject_value,
                     body_value: &body_value,
                     draft_id: None,
@@ -219,6 +223,8 @@ where
         }
 
         let recipients = form.get("to").cloned().unwrap_or_default();
+        let cc_recipients = form.get("cc").cloned().unwrap_or_default();
+        let bcc_recipients = form.get("bcc").cloned().unwrap_or_default();
         let subject = form.get("subject").cloned().unwrap_or_default();
         let body = form.get("body").cloned().unwrap_or_default();
         let original_attachment_parts = match selected_original_attachment_parts(&form) {
@@ -444,10 +450,14 @@ where
         let outcome = self.gateway.send_message(
             context,
             &validated_session,
-            &recipients,
-            &subject,
-            &body,
-            &send_attachments,
+            BrowserSendRequest {
+                recipients: &recipients,
+                cc_recipients: &cc_recipients,
+                bcc_recipients: &bcc_recipients,
+                subject: &subject,
+                body: &body,
+                attachments: &send_attachments,
+            },
         );
         audit_events.extend(outcome.audit_events);
 
@@ -487,6 +497,8 @@ where
                         error_message: Some(public_reason_message(&public_reason)),
                         context_notice: None,
                         to_value: &recipients,
+                        cc_value: &cc_recipients,
+                        bcc_value: &bcc_recipients,
                         subject_value: &subject,
                         body_value: &body,
                         draft_id: draft_id.as_deref(),

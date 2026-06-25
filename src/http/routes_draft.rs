@@ -153,6 +153,8 @@ where
                                 "Only the source attachments explicitly selected when this draft was saved remain selected."
                             }),
                             to_value: &draft.request.recipients.join(", "),
+                            cc_value: &draft.request.cc_recipients.join(", "),
+                            bcc_value: &draft.request.bcc_recipients.join(", "),
                             subject_value: &draft.request.subject,
                             body_value: &draft.request.body,
                             draft_id: Some(&draft.draft_id),
@@ -248,6 +250,8 @@ where
         }
 
         let recipients = form.get("to").cloned().unwrap_or_default();
+        let cc_recipients = form.get("cc").cloned().unwrap_or_default();
+        let bcc_recipients = form.get("bcc").cloned().unwrap_or_default();
         let subject = form.get("subject").cloned().unwrap_or_default();
         let body = form.get("body").cloned().unwrap_or_default();
         let draft_id = form.get("draft_id").map(String::as_str);
@@ -352,6 +356,8 @@ where
             BrowserDraftSaveRequest {
                 draft_id,
                 recipients: &recipients,
+                cc_recipients: &cc_recipients,
+                bcc_recipients: &bcc_recipients,
                 subject: &subject,
                 body: &body,
                 attachments: &parsed_form.attachments,
@@ -388,6 +394,8 @@ where
                             error_message: Some(public_reason_message(&public_reason)),
                             context_notice: None,
                             to_value: &recipients,
+                            cc_value: &cc_recipients,
+                            bcc_value: &bcc_recipients,
                             subject_value: &subject,
                             body_value: &body,
                             draft_id,
