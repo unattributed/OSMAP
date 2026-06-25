@@ -1,7 +1,7 @@
 # Keep developer entrypoints obvious and conservative so operators and
 # collaborating developers do not have to memorize cargo subcommands.
 
-.PHONY: build check test lint fmt-check supply-chain-check security-check release-check v6-check v7-check v7-rendering-regression-check v8-check v8-mail-workflow-check v8-attachment-safety-check v8-mailbox-operation-check v8-session-integrity-check v8-resource-robustness-check v8-final-regression-check install-hooks run
+.PHONY: build check test lint fmt-check supply-chain-check security-check release-check v6-check v7-check v7-rendering-regression-check v8-check v8-mail-workflow-check v8-attachment-safety-check v8-mailbox-operation-check v8-session-integrity-check v8-resource-robustness-check v8-final-regression-check install-hooks run v10-check acceptance-check
 
 build:
 	cargo build
@@ -80,3 +80,10 @@ install-hooks:
 
 run:
 	cargo run
+
+v10-check:
+	sh maint/security/osmap-v10-governance-gate.sh
+
+acceptance-check:
+	$(MAKE) security-check
+	$(MAKE) v10-check

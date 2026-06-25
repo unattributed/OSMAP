@@ -55,3 +55,13 @@ Slice 1 is complete only when these files exist, validate, and are indexed:
 - `docs/V10_CLAIMS_AND_LIMITATIONS.md`
 - `maint/security/v10-claims-boundary.json`
 - `docs/README.md` entries for both V10 documents
+
+
+## Slice 2 Gate Claim
+
+V10 may now claim that it has explicit local gate entry points for the current governance boundary:
+
+- `make v10-check`
+- `make acceptance-check`
+
+This claim is limited to governance, claims-boundary, documentation-index, Makefile, and CI visibility validation. It does not expand the project into release readiness, production deployment, general hostile-email safety, or Roundcube feature parity.
