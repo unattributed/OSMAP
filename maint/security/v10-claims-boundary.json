@@ -4,12 +4,13 @@
     "V9 is accepted only as a selected-cohort release-candidate decision.",
     "V10 Slice 0 is an intake inventory baseline.",
     "V10 Slice 1 records governance status and claims boundaries without product behavior changes.",
-    "V10 Slice 2 provides explicit v10-check and acceptance-check gate visibility for the current governance boundary."
+    "V10 Slice 2 provides explicit v10-check and acceptance-check gate visibility for the current governance boundary.",
+    "V10 Slice 3 classifies documentation placeholder and stale-status findings without expanding product or release claims."
   ],
   "assessed_source": {
-    "branch": "v10-acceptance-gate",
-    "head": "9d34ea5a754dd475d4b54825aeadbf71e31c1d03",
-    "origin_main": "9d34ea5a754dd475d4b54825aeadbf71e31c1d03",
+    "branch": "v10-doc-status-closure",
+    "head": "318d6983719fceb15a49f35451cdba144d30d08e",
+    "origin_main": "318d6983719fceb15a49f35451cdba144d30d08e",
     "status_clean": true
   },
   "carried_forward_slice0_signals": {
@@ -23,6 +24,16 @@
     "v10_job_name": "security-check / v10 governance",
     "workflow_path": ".github/workflows/security-check.yml"
   },
+  "documentation_status_closure": {
+    "closure_document": "docs/V10_DOCUMENTATION_STATUS_CLOSURE.md",
+    "closure_document_present": true,
+    "closure_json_present": true,
+    "closure_register": "maint/security/v10-documentation-status-closure.json",
+    "placeholder_inventory_classified": true,
+    "placeholder_inventory_count": 22,
+    "scan_match_count": 1494,
+    "stale_status_language_classified": true
+  },
   "explicit_non_claims": [
     "full Roundcube feature parity",
     "complete Roundcube replacement for every user group",
@@ -32,7 +43,10 @@
     "URL reputation or phishing prevention",
     "unbounded MIME or mailbox parsing safety",
     "broad public release readiness",
-    "production deployment change"
+    "production deployment change",
+    "that every historical document has been rewritten",
+    "that every future-work item has been implemented",
+    "that all Rust assumptions are safe"
   ],
   "gate_status": {
     "acceptance_check_definition": "Runs make security-check and make v10-check for local bounded acceptance.",
@@ -41,16 +55,15 @@
     "security_check": "preserved",
     "v10_check_target_present": true
   },
-  "generated_at_utc": "2026-06-25T05:48:21Z",
-  "purpose": "Acceptance gate and CI visibility baseline for the V10 governance boundary.",
+  "generated_at_utc": "2026-06-25T08:27:19Z",
+  "purpose": "Documentation placeholder and stale-status closure for the V10 governance boundary.",
   "required_followups": [
-    "Preserve and use the Slice 2 acceptance-check and v10-check targets for future V10 governance changes.",
-    "Triage documentation and placeholder inventory from Slice 0.",
     "Classify Rust fail-closed assumptions from Slice 0.",
-    "Refresh live-host evidence only through gated read-only or apply procedures."
+    "Refresh live-host evidence only through gated read-only or apply procedures.",
+    "Preserve V9 selected-cohort scope unless later evidence deliberately expands it."
   ],
-  "schema_version": 3,
-  "slice": "V10 Slice 2",
+  "schema_version": 4,
+  "slice": "V10 Slice 3",
   "source_inputs": [
     "docs/V10_INTAKE_AUDIT.md",
     "maint/security/v10-intake-inventory.json",
@@ -60,6 +73,8 @@
     "docs/V10_ACCEPTANCE_GATE.md",
     ".github/workflows/security-check.yml",
     "Makefile",
-    "maint/security/osmap-v10-governance-gate.sh"
+    "maint/security/osmap-v10-governance-gate.sh",
+    "docs/V10_DOCUMENTATION_STATUS_CLOSURE.md",
+    "maint/security/v10-documentation-status-closure.json"
   ]
 }

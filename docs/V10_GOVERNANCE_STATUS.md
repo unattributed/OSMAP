@@ -68,3 +68,14 @@ Future V10 slices should handle these as bounded, separately evidenced changes:
 V10 Slice 2 adds `make v10-check` and `make acceptance-check` as explicit local gate surfaces and exposes `security-check / v10 governance` in GitHub Actions.
 
 This update narrows the meaning of acceptance to the current V10 governance and claims boundary. It does not claim broad public release readiness or production deployment change.
+
+## Slice 3 Documentation Closure Status
+V10 Slice 3 classifies the Slice 0 documentation placeholder and stale-status findings.
+
+| Item | Value | Disposition |
+| --- | ---: | --- |
+| Placeholder or missing-work candidate files | `22` | Classified in `V10_DOCUMENTATION_STATUS_CLOSURE.md`. |
+| Governance-language matches | `1494` | Classified by pattern and bounded by `V10_CLAIMS_AND_LIMITATIONS.md`. |
+| Product behavior change | `0` | Slice 3 is documentation and governance only. |
+
+Slice 3 does not claim broad release readiness, complete Roundcube replacement, general hostile-email safety, or completion of the Rust assumption triage.
