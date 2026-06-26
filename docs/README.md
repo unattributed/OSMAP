@@ -269,3 +269,7 @@ V7 production availability was previously reopened pending real-login, real-mail
 <!-- OSMAP:V9-SLICE5-V7-CLOSEOUT:END -->
 
 - [V9 release candidate closeout](V9_RELEASE_CANDIDATE_CLOSEOUT.md)
+
+## V12 OpenPGP Documentation
+
+- `V12_OPENPGP_REQUIREMENTS_AND_CLAIMS.md` defines the bounded OpenPGP requirement, current allowed claims, non-claims, helper boundary expectations, account fingerprint binding rule, and Protected by Default rendering invariant.

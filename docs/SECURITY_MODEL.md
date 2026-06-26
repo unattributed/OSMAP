@@ -327,3 +327,9 @@ Even with the above controls, residual risks remain:
   larger part of the trust model over time
 - OpenBSD-specific hardening features should be treated as an advantage to
   exploit where feasible, not as optional decoration
+
+## V12 OpenPGP security boundary
+
+OpenPGP adds a high-risk cryptographic and private-key-adjacent boundary to OSMAP. The V12 requirement is therefore constrained by `docs/V12_OPENPGP_REQUIREMENTS_AND_CLAIMS.md` and must preserve the existing secure rendering path.
+
+The web request handler must not directly handle private key material. Account OpenPGP capability must be bound to explicit fingerprints. Decrypted content and verified signed content remain untrusted for browser rendering, attachment handling, link treatment, and logging.

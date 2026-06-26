@@ -1,0 +1,49 @@
+{
+  "carried_forward_release_blockers": [
+    "Slice 0 observed make release-check failing because V3 live MIME/HTML and pilot rehearsal evidence are stale relative to the assessed commit."
+  ],
+  "current_allowed_claims": [
+    "V12 has a documented OpenPGP requirement and claims boundary.",
+    "V12 requires account OpenPGP capability to bind to explicit configured fingerprints.",
+    "V12 requires decrypted content and verified signed content to remain within the Protected by Default rendering model.",
+    "V12 requires a narrow helper boundary before private key operations are integrated."
+  ],
+  "current_forbidden_claims": [
+    "OpenPGP decryption is implemented.",
+    "OpenPGP signature verification is implemented.",
+    "OpenPGP signing is implemented.",
+    "OpenPGP encryption is implemented.",
+    "Automatic email-address key matching is sufficient authorization.",
+    "Decrypted content is safe content.",
+    "Verified signature means safe content.",
+    "OSMAP stores OpenPGP passphrases."
+  ],
+  "planned_slices": {
+    "10": "Final regression and release evidence",
+    "2": "OpenPGP key inventory and diagnostics",
+    "3": "Account fingerprint binding",
+    "4": "Inbound PGP/MIME detection",
+    "5": "Decrypt and verify helper boundary",
+    "6": "Secure rendering after decrypt",
+    "7": "Outbound signing",
+    "8": "Outbound encryption and encrypt-to-self",
+    "9": "UI integration and terminology"
+  },
+  "purpose": "Document the bounded OpenPGP requirement and prevent overclaiming before implementation evidence exists.",
+  "required_design_invariants": {
+    "accounts_without_keys_keep_normal_behavior": true,
+    "ambiguous_key_match_fails_closed": true,
+    "decrypted_content_uses_secure_rendering_path": true,
+    "encrypt_to_self_supported_by_later_outbound_slice": true,
+    "explicit_fingerprint_binding_required": true,
+    "gpgme_preferred_runtime_path": true,
+    "narrow_helper_boundary_required": true,
+    "passphrases_not_stored_by_osmap": true,
+    "pgp_mime_first": true,
+    "sensitive_plaintext_not_logged": true,
+    "verified_signature_does_not_bypass_content_safety": true,
+    "web_handlers_do_not_handle_private_key_material": true
+  },
+  "schema": "osmap-v12-openpgp-claims-boundary-v1",
+  "version": "V12 Slice 1"
+}

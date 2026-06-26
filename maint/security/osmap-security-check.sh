@@ -308,4 +308,7 @@ else
 	sh maint/security/test-osmap-v3-release-check.sh
 fi
 
+echo "==> validating V12 OpenPGP claims boundary gate"
+sh maint/security/osmap-v12-openpgp-claims-gate.sh
+sh maint/security/test-osmap-v12-openpgp-claims-gate.sh
 echo "==> security-check complete"

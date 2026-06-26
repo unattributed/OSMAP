@@ -270,3 +270,9 @@ Remaining limitations after this closeout and the later V9 Slice 7 gate:
   gate are reconciled by `docs/V9_RELEASE_CANDIDATE_CLOSEOUT.md`.
 
 <!-- OSMAP:V9-SLICE5-V7-CLOSEOUT:END -->
+
+## V12 OpenPGP bounded implementation track
+
+Earlier documents correctly treated OpenPGP as out of scope for prior releases. V12 changes that status only within the boundary defined in `docs/V12_OPENPGP_REQUIREMENTS_AND_CLAIMS.md`.
+
+Until later V12 slices provide implementation evidence, OSMAP must not claim working OpenPGP decryption, verification, signing, encryption, key discovery, account binding, or UI integration. The current claim is limited to a documented requirement and claims boundary.
