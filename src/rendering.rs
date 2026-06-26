@@ -304,10 +304,9 @@ fn decode_encoded_words(value: &str) -> String {
             continue;
         }
 
-        let next_char = value[index..]
-            .chars()
-            .next()
-            .expect("index should remain at a valid char boundary");
+        let Some(next_char) = value[index..].chars().next() else {
+            break;
+        };
         decoded.push(next_char);
         index += next_char.len_utf8();
     }

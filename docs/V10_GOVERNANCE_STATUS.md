@@ -87,7 +87,7 @@ V10 Slice 4 classifies the current Rust assumption inventory for fail-closed gov
     | Item | Value | Disposition |
     | --- | ---: | --- |
     | Slice 0 carried-forward Rust assumption count | `712` | Preserved as the intake signal. |
-    | Current normalized scanner count | `714` | Recorded in the Slice 4 audit register. |
+    | Current normalized scanner count | `722` | Recorded in the Slice 4 audit register. |
     | Product behavior change | `0` | Slice 4 is audit and governance only. |
     | Inventory SHA256 | `eaea1f847a8b51dac00a82f25e8b117664ee22f7ed72576c10568769dc891ec4` | Enforced by `make v10-check`. |
 
@@ -99,10 +99,10 @@ Slice 5 records the first targeted fail-closed remediation after the Rust assump
 
 Evidence summary:
 
-- Baseline Slice 4 scanner count: 714
-- Refined Slice 5 scanner count: 714
-- Source test-module assumptions classified as test or fixture assumptions: 634
-- High-relevance assumptions before refinement: 636
-- High-relevance assumptions after refinement: 3
+- Baseline Slice 4 scanner count: 722
+- Refined Slice 5 scanner count: 722
+- Source test-module assumptions classified as test or fixture assumptions: 645
+- High-relevance assumptions before refinement: 644
+- High-relevance assumptions after refinement: 0
 
 This slice does not claim panic-free production paths, broad public release readiness, or runtime product behavior change. It narrows the target list so the next slice can safely select concrete runtime code remediations.

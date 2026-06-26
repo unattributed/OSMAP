@@ -17,7 +17,7 @@
     | Signal | Value |
     | --- | ---: |
     | Slice 0 carried-forward Rust assumption count | `712` |
-    | Current normalized scanner count | `714` |
+    | Current normalized scanner count | `722` |
     | Inventory SHA256 | `eaea1f847a8b51dac00a82f25e8b117664ee22f7ed72576c10568769dc891ec4` |
     | Classification complete | `true` |
     | Product behavior changed | `false` |
@@ -48,7 +48,7 @@
 
     | Relevance | Count |
     | --- | ---: |
-    | high | `636` |
+    | high | `644` |
 | low | `76` |
 | medium | `2` |
 

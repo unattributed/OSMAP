@@ -152,6 +152,8 @@ The implementation is documented as small security and workflow slices:
 | V7 | Boundary hardening, rendering recovery, and availability invariants | [Due diligence](docs/V7_BOUNDARY_HARDENING_DUE_DILIGENCE.md), [rendering closeout](docs/V7_RENDERING_REGRESSION_CLOSEOUT.md), [browser availability invariant](docs/V7_BROWSER_AVAILABILITY_INVARIANT.md), [throttle locking](docs/POST_V7_THROTTLE_TRANSACTION_LOCKING.md) |
 | V8 | Source stabilization through mandatory regression matrices | [Program](docs/V8_STABILIZATION_PROGRAM.md), [final closeout](docs/V8_FINAL_REGRESSION_GATE_CLOSEOUT.md) |
 | V9 | Production convergence and selected-cohort release-candidate decision | [Production convergence](docs/V9_PRODUCTION_CONVERGENCE.md), [release-candidate closeout](docs/V9_RELEASE_CANDIDATE_CLOSEOUT.md), [V7 production availability closeout](docs/V7_PRODUCTION_AVAILABILITY_CLOSEOUT.md) |
+| V10 | Governance, acceptance, and fail-closed assumption triage | [Governance status](docs/V10_GOVERNANCE_STATUS.md), [claims and limitations](docs/V10_CLAIMS_AND_LIMITATIONS.md), [targeted remediation](docs/V10_TARGETED_FAIL_CLOSED_REMEDIATION.md) |
+| V11 | Runtime fail-closed closure for refined high-relevance assumptions | [Runtime fail-closed closure](docs/V11_RUNTIME_FAIL_CLOSED_CLOSURE.md) |
 
 ### V3 assurance workstreams
 
