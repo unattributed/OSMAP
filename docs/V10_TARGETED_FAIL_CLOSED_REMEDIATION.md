@@ -14,19 +14,17 @@ This target was selected because the Slice 4 audit included source-file assumpti
 
 ## Evidence summary
 
-- Baseline Slice 4 scanner count: 714
-- Refined Slice 5 scanner count: 714
-- Source test-module assumptions classified as test or fixture assumptions: 634
-- High-relevance assumptions before refinement: 636
-- High-relevance assumptions after refinement: 3
+- Baseline Slice 4 scanner count: 722
+- Refined Slice 5 scanner count: 722
+- Source test-module assumptions classified as test or fixture assumptions: 645
+- High-relevance assumptions before refinement: 644
+- High-relevance assumptions after refinement: 0
 - Test or fixture assumptions before refinement: 76
-- Test or fixture assumptions after refinement: 710
+- Test or fixture assumptions after refinement: 721
 
 ## Refined high-relevance top files
 
-- src/http_gateway_mail.rs: 1
-- src/http_mailbox_backends.rs: 1
-- src/rendering.rs: 1
+- none
 
 ## What changed
 

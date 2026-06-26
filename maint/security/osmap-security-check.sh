@@ -115,6 +115,8 @@ sh maint/security/osmap-doc-governance-guard.sh
 echo "==> validating V7 boundary hardening invariants"
 sh maint/security/osmap-v7-boundary-hardening-gate.sh
 
+echo "==> validating V11 runtime fail-closed closure"
+sh maint/security/osmap-v11-runtime-fail-closed-gate.sh
 
 echo "==> validating TLS policy invariants"
 sh maint/security/osmap-tls-policy-guard.sh

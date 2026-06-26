@@ -575,11 +575,37 @@ impl RuntimeBrowserGateway {
         };
 
         if let Some(socket_path) = &self.mailbox_helper_socket_path {
+            let Some(grant_key_path) = self.mailbox_helper_grant_key_path.as_deref() else {
+                return BrowserAttachmentDownloadOutcome {
+                    decision: BrowserAttachmentDownloadDecision::Denied {
+                        public_reason:
+                            AttachmentDownloadPublicFailureReason::TemporarilyUnavailable
+                                .as_str()
+                                .to_string(),
+                    },
+                    audit_events: vec![build_http_warning_event(
+                        "attachment_download_failed",
+                        "attachment helper runtime configuration is incomplete",
+                        context,
+                    )
+                    .with_field(
+                        "canonical_username",
+                        validated_session.record.canonical_username.clone(),
+                    )
+                    .with_field(
+                        "session_ref",
+                        audit_session_ref(&validated_session.record.session_id),
+                    )
+                    .with_field("mailbox_name", request.mailbox_name.clone())
+                    .with_field("uid", request.uid.to_string())
+                    .with_field("part_path", part_path.to_string())
+                    .with_field("public_reason", "temporarily_unavailable")
+                    .with_field("reason", "mailbox_helper_grant_key_path_missing")],
+                };
+            };
             let helper_backend = MailboxHelperAttachmentDownloadBackend::new(
                 socket_path,
-                self.mailbox_helper_grant_key_path
-                    .as_deref()
-                    .expect("validated helper-backed runtime config includes a grant key path"),
+                grant_key_path,
                 self.expensive_route_helper_policy(),
             );
             let canonical_username = validated_session.record.canonical_username.clone();
@@ -1072,6 +1098,29 @@ mod tests {
         .expect("context should be valid")
     }
 
+    fn validated_session() -> ValidatedSession {
+        ValidatedSession {
+            record: crate::session::SessionRecord {
+                session_id: "session-id".to_string(),
+                csrf_token: "csrf-token".to_string(),
+                canonical_username: "alice@example.com".to_string(),
+                issued_at: 1,
+                expires_at: 3600,
+                last_seen_at: 1,
+                revoked_at: None,
+                remote_addr: "127.0.0.1".to_string(),
+                user_agent: "Firefox/Test".to_string(),
+                factor: crate::auth::RequiredSecondFactor::Totp,
+            },
+            audit_event: LogEvent::new(
+                LogLevel::Info,
+                EventCategory::Session,
+                "session_validated",
+                "session validated",
+            ),
+        }
+    }
+
     #[test]
     fn all_mailbox_search_deadline_detects_expired_budget() {
         let expired = Instant::now() - Duration::from_secs(1);
@@ -1120,6 +1169,38 @@ mod tests {
                 field.key,
                 "query" | "mailbox_name" | "session_id" | "csrf_token"
             )
+        }));
+    }
+
+    #[test]
+    fn attachment_download_fails_closed_when_helper_grant_key_path_is_missing() {
+        let temp_root = std::env::temp_dir().join(format!(
+            "osmap-attachment-missing-helper-grant-{}",
+            std::process::id()
+        ));
+        let mut gateway = RuntimeBrowserGateway::for_test(&temp_root);
+        gateway.mailbox_helper_socket_path = Some(temp_root.join("mailbox-helper.sock"));
+        gateway.mailbox_helper_grant_key_path = None;
+
+        let outcome = gateway.download_attachment_impl(
+            &test_context(),
+            &validated_session(),
+            "INBOX",
+            1,
+            "1",
+        );
+
+        assert_eq!(
+            outcome.decision,
+            BrowserAttachmentDownloadDecision::Denied {
+                public_reason: "temporarily_unavailable".to_string()
+            }
+        );
+        assert!(outcome.audit_events.iter().any(|event| {
+            event.action == "attachment_download_failed"
+                && event.fields.iter().any(|field| {
+                    field.key == "reason" && field.value == "mailbox_helper_grant_key_path_missing"
+                })
         }));
     }
 }
