@@ -333,3 +333,11 @@ Even with the above controls, residual risks remain:
 OpenPGP adds a high-risk cryptographic and private-key-adjacent boundary to OSMAP. The V12 requirement is therefore constrained by `docs/V12_OPENPGP_REQUIREMENTS_AND_CLAIMS.md` and must preserve the existing secure rendering path.
 
 The web request handler must not directly handle private key material. Account OpenPGP capability must be bound to explicit fingerprints. Decrypted content and verified signed content remain untrusted for browser rendering, attachment handling, link treatment, and logging.
+
+<!-- OSMAP:V12-SLICE2-DIAGNOSTICS:START -->
+
+### V12 OpenPGP diagnostic boundary
+
+The Slice 2 diagnostic helper is an operator-side evidence tool only. It may inspect public key metadata and toolchain availability, but it must not list secret keys, collect user ID values, prompt for passphrases, decrypt mail, sign mail, encrypt mail, or run inside web request handling.
+
+<!-- OSMAP:V12-SLICE2-DIAGNOSTICS:END -->

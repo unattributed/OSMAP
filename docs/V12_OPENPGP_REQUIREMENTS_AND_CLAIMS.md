@@ -71,3 +71,15 @@ OSMAP V12 does not claim Proton-style zero-access storage, browser-side cryptogr
 ## Slice Ownership
 
 Slice 1 is documentation and governance only. Slice 2 may introduce non-sensitive key inventory diagnostics. Slice 3 may introduce account fingerprint binding. Decrypt, verify, sign, encrypt, and UI work must remain out of claim scope until their dedicated slices pass evidence review.
+
+<!-- OSMAP:V12-SLICE2-DIAGNOSTICS:START -->
+
+## Slice 2 key inventory and diagnostics status
+
+Slice 2 adds diagnostics only. It provides a local operator diagnostic helper for OpenPGP public key inventory and toolchain visibility. It does not implement decryption, signature verification, signing, encryption, account binding, key discovery for delivery, or UI integration.
+
+The diagnostics helper must not list secret keys, collect user ID values, prompt for passphrases, decrypt messages, sign messages, encrypt messages, or run from a browser request handler. Its output is limited to public key fingerprints, public key metadata, user ID counts, subkey counts, toolchain status, and explicit safety invariant booleans.
+
+Slice 3 remains responsible for account capability binding by explicit configured fingerprints and fail-closed ambiguous-key behavior.
+
+<!-- OSMAP:V12-SLICE2-DIAGNOSTICS:END -->

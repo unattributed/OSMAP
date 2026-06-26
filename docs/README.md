@@ -273,3 +273,9 @@ V7 production availability was previously reopened pending real-login, real-mail
 ## V12 OpenPGP Documentation
 
 - `V12_OPENPGP_REQUIREMENTS_AND_CLAIMS.md` defines the bounded OpenPGP requirement, current allowed claims, non-claims, helper boundary expectations, account fingerprint binding rule, and Protected by Default rendering invariant.
+
+<!-- OSMAP:V12-SLICE2-DIAGNOSTICS:START -->
+
+- `V12_OPENPGP_KEY_INVENTORY_AND_DIAGNOSTICS.md` defines the diagnostics-only OpenPGP public key inventory boundary and evidence expectations for Slice 2.
+
+<!-- OSMAP:V12-SLICE2-DIAGNOSTICS:END -->

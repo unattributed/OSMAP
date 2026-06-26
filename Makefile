@@ -98,3 +98,5 @@ v10-fail-closed-remediation-check:
 v12-check:
 	sh maint/security/osmap-v12-openpgp-claims-gate.sh
 	sh maint/security/test-osmap-v12-openpgp-claims-gate.sh
+	sh maint/security/osmap-v12-openpgp-diagnostics-gate.sh
+	sh maint/security/test-osmap-v12-openpgp-diagnostics-gate.sh

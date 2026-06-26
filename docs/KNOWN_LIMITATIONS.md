@@ -276,3 +276,11 @@ Remaining limitations after this closeout and the later V9 Slice 7 gate:
 Earlier documents correctly treated OpenPGP as out of scope for prior releases. V12 changes that status only within the boundary defined in `docs/V12_OPENPGP_REQUIREMENTS_AND_CLAIMS.md`.
 
 Until later V12 slices provide implementation evidence, OSMAP must not claim working OpenPGP decryption, verification, signing, encryption, key discovery, account binding, or UI integration. The current claim is limited to a documented requirement and claims boundary.
+
+<!-- OSMAP:V12-SLICE2-DIAGNOSTICS:START -->
+
+### V12 Slice 2 diagnostics limitation
+
+V12 Slice 2 provides OpenPGP public key inventory and toolchain diagnostics only. OSMAP still must not claim implemented OpenPGP decryption, signature verification, signing, encryption, account binding, key discovery for delivery, or UI integration.
+
+<!-- OSMAP:V12-SLICE2-DIAGNOSTICS:END -->
