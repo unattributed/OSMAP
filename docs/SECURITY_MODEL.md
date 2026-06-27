@@ -357,3 +357,11 @@ OpenPGP capability is account-scoped and must be authorized by explicit full fin
 OpenPGP cryptographic work must remain outside the browser-facing request handler. Slice 4 defines a narrow `osmap-openpgp-helper` protocol scaffold that consumes validated account bindings, allows only non-cryptographic capability and policy checks, rejects unknown operations, and forbids plaintext, passphrase, private-key, raw-message, or browser-trusted HTML fields in the protocol boundary.
 
 <!-- OSMAP:V12-SLICE4-HELPER-PROTOCOL:END -->
+
+<!-- OSMAP:V12-SLICE5-GPGME-READINESS:START -->
+
+### V12 OpenPGP GPGME readiness boundary
+
+GPGME is the preferred future OpenPGP runtime integration path. Slice 5 validates dependency metadata and policy only. If GPGME metadata is missing, OpenPGP cryptographic helper work remains blocked rather than falling back to direct `gpg` runtime command execution. The browser-facing request handler still must not touch keys, passphrases, decrypted plaintext, raw message bodies, or trusted HTML derived from decrypted content.
+
+<!-- OSMAP:V12-SLICE5-GPGME-READINESS:END -->

@@ -1,0 +1,17 @@
+{
+  "schema": "osmap-v12-openpgp-gpgme-readiness-policy-v1",
+  "preferred_runtime_binding": "gpgme",
+  "require_gpgme_for_crypto_operations": true,
+  "allow_direct_gpg_runtime_for_crypto_operations": false,
+  "allow_crypto_operations_in_slice5": false,
+  "allow_secret_key_listing_in_slice5": false,
+  "allow_passphrase_prompting_in_slice5": false,
+  "allow_browser_handler_key_access_in_slice5": false,
+  "allowed_metadata_probes": [
+    "gpg --version",
+    "gpgme-config --version",
+    "pkg-config --modversion gpgme",
+    "pkg-config --cflags --libs gpgme"
+  ],
+  "future_helper_requirement": "Later OpenPGP crypto helper slices must use GPGME behind validated account fingerprints and must not fall back to direct browser-facing gpg command execution."
+}

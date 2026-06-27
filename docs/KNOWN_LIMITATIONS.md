@@ -300,3 +300,11 @@ V12 Slice 3 validates account-to-fingerprint configuration only. OSMAP still mus
 V12 Slice 4 validates the OpenPGP helper protocol scaffold only. OSMAP still must not claim implemented OpenPGP decryption, signature verification, signing, encryption, PGP/MIME handling, passphrase handling, GPGME runtime integration, helper cryptographic operations, or browser UI integration.
 
 <!-- OSMAP:V12-SLICE4-HELPER-PROTOCOL:END -->
+
+<!-- OSMAP:V12-SLICE5-GPGME-READINESS:START -->
+
+### V12 Slice 5 GPGME readiness limitation
+
+V12 Slice 5 validates GPGME readiness policy and dependency metadata only. It may report that the environment is blocked because GPGME metadata is missing, but that blocked state is safe and intentional. OSMAP still must not claim implemented OpenPGP decryption, signature verification, signing, encryption, PGP/MIME handling, passphrase handling, GPGME runtime integration, helper cryptographic operations, or browser UI integration.
+
+<!-- OSMAP:V12-SLICE5-GPGME-READINESS:END -->

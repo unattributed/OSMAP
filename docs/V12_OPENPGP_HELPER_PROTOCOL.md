@@ -70,3 +70,11 @@ A valid Slice 4 evidence run includes:
 - carried-forward `make release-check` status
 
 The known V3 stale live evidence release blocker remains carried forward until final release evidence is refreshed.
+
+<!-- OSMAP:V12-SLICE5-GPGME-READINESS:START -->
+
+## Slice 5 dependency readiness
+
+The Slice 4 helper protocol is not a cryptographic implementation. Slice 5 adds a dependency readiness gate for the future GPGME-backed helper. If GPGME metadata is absent, later OpenPGP cryptographic operations remain blocked and no direct `gpg` runtime fallback is allowed.
+
+<!-- OSMAP:V12-SLICE5-GPGME-READINESS:END -->

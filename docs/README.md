@@ -291,3 +291,9 @@ V7 production availability was previously reopened pending real-login, real-mail
 - `V12_OPENPGP_HELPER_PROTOCOL.md` defines the non-cryptographic helper protocol scaffold, request and response boundary, redaction expectations, and fail-closed validation evidence for Slice 4.
 
 <!-- OSMAP:V12-SLICE4-HELPER-PROTOCOL:END -->
+
+<!-- OSMAP:V12-SLICE5-GPGME-READINESS:START -->
+
+- `V12_OPENPGP_GPGME_READINESS.md` defines the GPGME readiness policy, metadata-only dependency probe, and fail-closed evidence expectations for Slice 5.
+
+<!-- OSMAP:V12-SLICE5-GPGME-READINESS:END -->

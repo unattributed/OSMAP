@@ -103,3 +103,13 @@ Slice 4 adds a testable non-cryptographic OpenPGP helper protocol scaffold. It p
 Slice 4 still does not implement decryption, signature verification, signing, encryption, helper cryptographic operations, passphrase handling, GPGME runtime integration, PGP/MIME parsing, or browser UI integration.
 
 <!-- OSMAP:V12-SLICE4-HELPER-PROTOCOL:END -->
+
+<!-- OSMAP:V12-SLICE5-GPGME-READINESS:START -->
+
+## Slice 5 GPGME readiness status
+
+Slice 5 adds a GPGME readiness and dependency metadata gate. It proves that later cryptographic helper work must require GPGME readiness and must not fall back to direct browser-facing `gpg` command execution.
+
+Slice 5 still does not implement decryption, signature verification, signing, encryption, helper cryptographic operations, passphrase handling, PGP/MIME parsing, GPGME runtime cryptographic integration, or browser UI integration.
+
+<!-- OSMAP:V12-SLICE5-GPGME-READINESS:END -->
