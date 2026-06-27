@@ -365,3 +365,11 @@ OpenPGP cryptographic work must remain outside the browser-facing request handle
 GPGME is the preferred future OpenPGP runtime integration path. Slice 5 validates dependency metadata and policy only. If GPGME metadata is missing, OpenPGP cryptographic helper work remains blocked rather than falling back to direct `gpg` runtime command execution. The browser-facing request handler still must not touch keys, passphrases, decrypted plaintext, raw message bodies, or trusted HTML derived from decrypted content.
 
 <!-- OSMAP:V12-SLICE5-GPGME-READINESS:END -->
+
+<!-- OSMAP:V12-SLICE6-GPGME-AVAILABILITY:START -->
+
+### V12 OpenPGP GPGME availability boundary
+
+Slice 6 proves that GPGME development metadata is available before later helper implementation begins. Availability proof does not enable runtime cryptography. Direct `gpg` runtime cryptographic fallback remains forbidden, and the browser-facing request handler still must not touch keys, passphrases, decrypted plaintext, raw message bodies, or trusted HTML derived from decrypted content.
+
+<!-- OSMAP:V12-SLICE6-GPGME-AVAILABILITY:END -->

@@ -113,3 +113,13 @@ Slice 5 adds a GPGME readiness and dependency metadata gate. It proves that late
 Slice 5 still does not implement decryption, signature verification, signing, encryption, helper cryptographic operations, passphrase handling, PGP/MIME parsing, GPGME runtime cryptographic integration, or browser UI integration.
 
 <!-- OSMAP:V12-SLICE5-GPGME-READINESS:END -->
+
+<!-- OSMAP:V12-SLICE6-GPGME-AVAILABILITY:START -->
+
+## Slice 6 GPGME availability status
+
+Slice 6 adds an operator-controlled GPGME availability and dependency proof gate. It proves that later cryptographic helper work must start from available GPGME development metadata and must not fall back to direct browser-facing `gpg` command execution.
+
+Slice 6 still does not implement decryption, signature verification, signing, encryption, helper cryptographic operations, passphrase handling, PGP/MIME parsing, GPGME runtime cryptographic integration, or browser UI integration.
+
+<!-- OSMAP:V12-SLICE6-GPGME-AVAILABILITY:END -->

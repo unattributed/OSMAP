@@ -55,3 +55,11 @@ The Slice 5 evidence archive must include:
 - optional carried-forward release-check output.
 
 The known stale V3 live evidence release blocker remains outside Slice 5 readiness scope.
+
+<!-- OSMAP:V12-SLICE6-GPGME-AVAILABILITY:START -->
+
+## Slice 6 availability proof
+
+Slice 5 allowed a safe `blocked_missing_gpgme` state. Slice 6 is stricter when run with `OSMAP_V12_REQUIRE_GPGME_AVAILABLE=1`: it requires `pkg-config gpgme` metadata and a successful compile/link probe before later GPGME-backed helper work may begin. Runtime cryptography remains disabled in Slice 6.
+
+<!-- OSMAP:V12-SLICE6-GPGME-AVAILABILITY:END -->

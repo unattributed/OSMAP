@@ -297,3 +297,9 @@ V7 production availability was previously reopened pending real-login, real-mail
 - `V12_OPENPGP_GPGME_READINESS.md` defines the GPGME readiness policy, metadata-only dependency probe, and fail-closed evidence expectations for Slice 5.
 
 <!-- OSMAP:V12-SLICE5-GPGME-READINESS:END -->
+
+<!-- OSMAP:V12-SLICE6-GPGME-AVAILABILITY:START -->
+
+- `V12_OPENPGP_GPGME_AVAILABILITY.md` defines the operator-controlled GPGME dependency remediation and proof gate for Slice 6.
+
+<!-- OSMAP:V12-SLICE6-GPGME-AVAILABILITY:END -->
