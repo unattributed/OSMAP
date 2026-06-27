@@ -3201,6 +3201,30 @@
       "line": 950
     },
     {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openpgp_helper_client.rs",
+      "kind": "expect_call",
+      "line": 243
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openpgp_helper_client.rs",
+      "kind": "expect_call",
+      "line": 274
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openpgp_helper_client.rs",
+      "kind": "expect_call",
+      "line": 277
+    },
+    {
       "classification": "control_flow_invariant",
       "disposition": "review_for_explicit_error_path_if_user_reachable",
       "fail_closed_relevance": "medium",
@@ -5777,7 +5801,7 @@
       "line": 521
     }
   ],
-  "generated_at_utc": "2026-06-27T09:03:14Z",
+  "generated_at_utc": "2026-06-27T14:19:57Z",
   "non_claims": [
     "This audit does not claim that all Rust assumptions are safe.",
     "This audit does not claim that production request paths are panic-free.",
@@ -5817,26 +5841,26 @@
     "by_classification": {
       "control_flow_invariant": 2,
       "panic_path_assumption": 28,
-      "production_adjacent_assumption": 616,
+      "production_adjacent_assumption": 619,
       "test_or_fixture_assumption": 76
     },
     "by_fail_closed_relevance": {
-      "high": 644,
+      "high": 647,
       "low": 76,
       "medium": 2
     },
     "by_kind": {
-      "expect_call": 680,
+      "expect_call": 683,
       "panic_macro": 34,
       "unreachable_macro": 2,
       "unwrap_call": 6
     },
     "classification_complete": true,
-    "inventory_sha256": "c19ab2dcd78b7f77e571ecb7306d781a1882b15dd82851a3153b2a233bbfa6fa",
+    "inventory_sha256": "bf2ce5a364cd4a1b83affb87e35252a40ac722b99e5774bb669cfad6a6f4b402",
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
     "slice0_carried_forward_rust_assumption_count": 712,
-    "total_count": 722
+    "total_count": 725
   }
 }
