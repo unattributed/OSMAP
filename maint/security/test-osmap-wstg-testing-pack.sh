@@ -23,6 +23,7 @@ echo "validating WSTG mapping and manifest"
 python3 - "$pack_dir" <<'PY'
 import csv
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -126,6 +127,26 @@ if set(manifest_paths) != expected_manifest_paths:
     missing = sorted(expected_manifest_paths - set(manifest_paths))
     extra = sorted(set(manifest_paths) - expected_manifest_paths)
     raise SystemExit(f"manifest inventory mismatch missing={missing} extra={extra}")
+
+attack_surface = json.loads((pack / "osmap-browser-attack-surface.json").read_text())
+attack_routes = attack_surface.get("routes", [])
+attack_keys = {(row["method"], row["path"]) for row in attack_routes}
+runtime_text = (pack.parents[1] / "src" / "http_runtime.rs").read_text()
+runtime_keys = {
+    (method.upper(), path)
+    for method, path in re.findall(r'\(HttpMethod::(Get|Post),\s*"([^"]+)"\)', runtime_text)
+}
+if attack_keys != runtime_keys:
+    raise SystemExit(
+        f"browser attack-surface route drift missing={sorted(runtime_keys - attack_keys)} "
+        f"stale={sorted(attack_keys - runtime_keys)}"
+    )
+for method, path in [("POST", "/send"), ("POST", "/drafts/save")]:
+    row = next(item for item in attack_routes if (item["method"], item["path"]) == (method, path))
+    if not {"to", "cc", "bcc"}.issubset(row["form_fields"]):
+        raise SystemExit(f"{method} {path} must inventory To/Cc/Bcc fields")
+    if not row.get("wstg_test_ids"):
+        raise SystemExit(f"{method} {path} must map to WSTG tests")
 
 env_text = (pack / ".env.example").read_text()
 for key in [
@@ -525,6 +546,9 @@ required_evidence = {
     "draft_save_missing_csrf.headers",
     "draft_save_cross_origin.headers",
     "draft_save_attachment_limit.headers",
+    "draft_multi_recipient_create.headers",
+    "draft_multi_recipient_resume.headers",
+    "draft_multi_recipient_delete.headers",
     "draft_delete.headers",
     "draft_send_cleanup.headers",
     "draft_send_resume_after_cleanup.headers",
@@ -549,6 +573,8 @@ for marker in [
     "draft_route_evidence_redaction",
     "store_body_evidence=False",
     "draft_save_attachment_limit",
+    "draft_multi_recipient_create",
+    "multi_recipient_values_preserved",
     "if send_draft_id:",
     'throttle_attempts_default = "6" if release_mode else "3"',
 ]:
@@ -688,6 +714,9 @@ if webmail["requires_authenticated_coverage"] is not True or webmail["requires_t
 required_evidence = {
     "webmail_inpv10_subject_newline.headers",
     "webmail_inpv10_recipient_newline.headers",
+    "webmail_inpv10_cc_newline.headers",
+    "webmail_inpv10_bcc_newline.headers",
+    "webmail_inpv10_aggregate_recipient_limit.headers",
     "webmail_inpv10_display_name.headers",
     "webmail_inpv10_mailbox_tamper.headers",
     "webmail_inpv10_uid_tamper.headers",
@@ -695,6 +724,7 @@ required_evidence = {
     "webmail_inpv10_attachment_filename.headers",
     "webmail_inpv10_dangerous_content_type.headers",
     "webmail_input_validation_static.txt",
+    "webmail_multi_recipient_unit.txt",
     "webmail_input_validation_redaction.txt",
 }
 missing = sorted(required_evidence - set(webmail["evidence_produced"]))
@@ -708,6 +738,11 @@ for marker in [
     "test_webmail_input_validation",
     "webmail_inpv10_subject_newline",
     "webmail_inpv10_recipient_newline",
+    "webmail_inpv10_cc_newline",
+    "webmail_inpv10_bcc_newline",
+    "webmail_inpv10_aggregate_recipient_limit",
+    "sendmail_backend_uses_cc_header_and_bcc_envelope_only",
+    "file_draft_store_round_trips_text_and_attachments",
     "webmail_inpv10_attachment_filename",
     "webmail_inpv10_dangerous_content_type",
     "write_webmail_input_validation_static_evidence",

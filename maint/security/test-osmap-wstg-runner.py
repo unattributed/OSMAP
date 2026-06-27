@@ -188,6 +188,15 @@ class RunnerBehaviorTests(unittest.TestCase):
         self.assertIn("OSMAP-WSTG-BUSL-005", coverage["static_only_tests"])
         self.assertIn("OSMAP-WSTG-INPV-007", coverage["not_applicable_tests"])
 
+    def test_browser_attack_surface_matches_runtime_router(self) -> None:
+        runner = WSTG.Runner(
+            config("https://example.test", "example.test", self.root),
+            self.mapping,
+            self.root / "attack-surface",
+        )
+        valid, findings = runner.write_attack_surface_inventory_evidence()
+        self.assertTrue(valid, findings)
+
 
 if __name__ == "__main__":
     unittest.main()

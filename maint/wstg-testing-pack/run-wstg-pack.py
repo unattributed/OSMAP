@@ -35,6 +35,7 @@ STATUS_NA = "not_applicable"
 PACK_ROOT = Path(__file__).resolve().parent
 REPO_ROOT = PACK_ROOT.parents[1]
 MAPPING_PATH = PACK_ROOT / "wstg-asvs-mapping.json"
+ATTACK_SURFACE_PATH = PACK_ROOT / "osmap-browser-attack-surface.json"
 DEFAULT_WSTG_MATRIX_FILE = "wstg-scenario-matrix.v42.json"
 ALLOWED_MATRIX_DISPOSITIONS = {
     "automated",
@@ -1889,11 +1890,15 @@ class Runner:
 
         static_ok = self.write_error_and_route_inventory_static_evidence()
         evidence_paths.append("evidence/error_route_inventory_static.txt")
+        attack_surface_ok, attack_surface_findings = self.write_attack_surface_inventory_evidence()
+        evidence_paths.append("evidence/browser_attack_surface_inventory.txt")
         failures: dict[str, object] = {}
         if leaked:
             failures["diagnostic_leaks"] = leaked
         if not static_ok:
             failures["static_boundary"] = "missing error/route inventory markers"
+        if not attack_surface_ok:
+            failures["attack_surface_inventory"] = attack_surface_findings
         if failures:
             return self.result(
                 "OSMAP-WSTG-INFO-003",
@@ -1909,6 +1914,99 @@ class Runner:
             evidence_paths,
             {"statuses": statuses},
         )
+
+    def write_attack_surface_inventory_evidence(self) -> tuple[bool, dict[str, object]]:
+        """Compare the reviewed input inventory with the actual router table."""
+        findings: dict[str, object] = {}
+        try:
+            inventory = json.loads(ATTACK_SURFACE_PATH.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            findings["inventory_error"] = str(exc)
+            self.write_text_evidence(
+                "browser_attack_surface_inventory.txt",
+                f"result=failed\ninventory_error={exc}\n",
+            )
+            return False, findings
+
+        routes = inventory.get("routes", [])
+        inventory_keys = {
+            (str(route.get("method", "")), str(route.get("path", "")))
+            for route in routes
+            if isinstance(route, dict)
+        }
+        runtime_path = REPO_ROOT / "src" / "http_runtime.rs"
+        runtime_text = runtime_path.read_text(encoding="utf-8", errors="replace")
+        runtime_keys = {
+            (method.upper(), path)
+            for method, path in re.findall(
+                r'\(HttpMethod::(Get|Post),\s*"([^"]+)"\)',
+                runtime_text,
+            )
+        }
+        missing_from_inventory = sorted(runtime_keys - inventory_keys)
+        stale_inventory = sorted(inventory_keys - runtime_keys)
+        if missing_from_inventory:
+            findings["missing_from_inventory"] = missing_from_inventory
+        if stale_inventory:
+            findings["stale_inventory"] = stale_inventory
+
+        known_tests = {str(item["test_id"]) for item in self.mapping["tests"]}
+        invalid_rows: list[dict[str, object]] = []
+        for route in routes:
+            if not isinstance(route, dict):
+                invalid_rows.append({"row": route, "reason": "not an object"})
+                continue
+            references = route.get("wstg_test_ids", [])
+            unknown = sorted(
+                str(reference)
+                for reference in references
+                if str(reference) not in known_tests
+            )
+            if not references or unknown:
+                invalid_rows.append(
+                    {
+                        "method": route.get("method"),
+                        "path": route.get("path"),
+                        "reason": "missing or unknown WSTG test references",
+                        "unknown": unknown,
+                    }
+                )
+            for field_name in ("query_fields", "form_fields"):
+                if not isinstance(route.get(field_name), list):
+                    invalid_rows.append(
+                        {
+                            "method": route.get("method"),
+                            "path": route.get("path"),
+                            "reason": f"{field_name} must be a list",
+                        }
+                    )
+        if invalid_rows:
+            findings["invalid_rows"] = invalid_rows
+
+        lines = [
+            "OSMAP V13 browser attack-surface inventory:",
+            f"inventory={ATTACK_SURFACE_PATH.relative_to(REPO_ROOT)}",
+            f"runtime_router={runtime_path.relative_to(REPO_ROOT)}",
+            f"inventory_route_count={len(inventory_keys)}",
+            f"runtime_route_count={len(runtime_keys)}",
+            f"result={'failed' if findings else 'passed'}",
+            "",
+            "Routes and input fields:",
+        ]
+        for route in routes:
+            if not isinstance(route, dict):
+                continue
+            query = ",".join(str(value) for value in route.get("query_fields", [])) or "none"
+            form = ",".join(str(value) for value in route.get("form_fields", [])) or "none"
+            tests = ",".join(str(value) for value in route.get("wstg_test_ids", [])) or "none"
+            lines.append(
+                f"- {route.get('method')} {route.get('path')} "
+                f"query={query} form={form} tests={tests}"
+            )
+        if findings:
+            lines.extend(["", "Findings:", json.dumps(findings, indent=2, sort_keys=True)])
+        self.write_text_evidence("browser_attack_surface_inventory.txt", "\n".join(lines) + "\n")
+        return not findings, findings
 
     def write_error_and_route_inventory_static_evidence(self) -> bool:
         files = [
@@ -2408,6 +2506,49 @@ class Runner:
             headers=same_origin_headers(self.config),
             store_body_evidence=False,
         )
+        cc_newline = self.form_post(
+            "webmail_inpv10_cc_newline",
+            "/send",
+            {
+                "csrf_token": self.csrf_token,
+                "to": self.config.test_email,
+                "cc": f"{self.config.test_email}\r\nBcc: injected@example.invalid",
+                "subject": f"{canary} cc newline",
+                "body": "CC newline probe",
+            },
+            cookies=self.cookie_jar,
+            headers=same_origin_headers(self.config),
+            store_body_evidence=False,
+        )
+        bcc_newline = self.form_post(
+            "webmail_inpv10_bcc_newline",
+            "/send",
+            {
+                "csrf_token": self.csrf_token,
+                "to": self.config.test_email,
+                "bcc": f"{self.config.test_email}\r\nCc: injected@example.invalid",
+                "subject": f"{canary} bcc newline",
+                "body": "BCC newline probe",
+            },
+            cookies=self.cookie_jar,
+            headers=same_origin_headers(self.config),
+            store_body_evidence=False,
+        )
+        aggregate_recipient_limit = self.form_post(
+            "webmail_inpv10_aggregate_recipient_limit",
+            "/send",
+            {
+                "csrf_token": self.csrf_token,
+                "to": ",".join(f"to{index}@example.invalid" for index in range(6)),
+                "cc": ",".join(f"cc{index}@example.invalid" for index in range(6)),
+                "bcc": ",".join(f"bcc{index}@example.invalid" for index in range(5)),
+                "subject": f"{canary} aggregate recipient limit",
+                "body": "aggregate recipient limit probe",
+            },
+            cookies=self.cookie_jar,
+            headers=same_origin_headers(self.config),
+            store_body_evidence=False,
+        )
         display_name = self.form_post(
             "webmail_inpv10_display_name",
             "/send",
@@ -2465,10 +2606,14 @@ class Runner:
             [("attachment", "safe.txt", "not/a/media/type/with-extra-slash", b"<script>alert(1)</script>")],
         )
         static_ok = self.write_webmail_input_validation_static_evidence()
+        multi_recipient_unit_ok = self.write_multi_recipient_unit_evidence()
         redaction_ok = self.write_webmail_input_validation_redaction_evidence([canary])
         statuses = {
             "subject_newline": subject_newline.status,
             "recipient_newline": recipient_newline.status,
+            "cc_newline": cc_newline.status,
+            "bcc_newline": bcc_newline.status,
+            "aggregate_recipient_limit": aggregate_recipient_limit.status,
             "display_name": display_name.status,
             "mailbox_tamper": mailbox_tamper.status,
             "uid_tamper": uid_tamper.status,
@@ -2480,6 +2625,9 @@ class Runner:
         for label in [
             "subject_newline",
             "recipient_newline",
+            "cc_newline",
+            "bcc_newline",
+            "aggregate_recipient_limit",
             "display_name",
             "uid_tamper",
             "attachment_filename",
@@ -2493,11 +2641,16 @@ class Runner:
                 failures[label] = statuses[label]
         if not static_ok:
             failures["static_boundary"] = "missing webmail input validation markers"
+        if not multi_recipient_unit_ok:
+            failures["multi_recipient_unit"] = "Cc/Bcc routing or draft persistence unit evidence failed"
         if not redaction_ok:
             failures["redaction"] = "webmail input validation evidence redaction scan failed"
         evidence_paths = [
             "evidence/webmail_inpv10_subject_newline.headers",
             "evidence/webmail_inpv10_recipient_newline.headers",
+            "evidence/webmail_inpv10_cc_newline.headers",
+            "evidence/webmail_inpv10_bcc_newline.headers",
+            "evidence/webmail_inpv10_aggregate_recipient_limit.headers",
             "evidence/webmail_inpv10_display_name.headers",
             "evidence/webmail_inpv10_mailbox_tamper.headers",
             "evidence/webmail_inpv10_uid_tamper.headers",
@@ -2505,6 +2658,7 @@ class Runner:
             "evidence/webmail_inpv10_attachment_filename.headers",
             "evidence/webmail_inpv10_dangerous_content_type.headers",
             "evidence/webmail_input_validation_static.txt",
+            "evidence/webmail_multi_recipient_unit.txt",
             "evidence/webmail_input_validation_redaction.txt",
         ]
         if failures:
@@ -2518,10 +2672,39 @@ class Runner:
         return self.result(
             "OSMAP-WSTG-INPV-004",
             STATUS_PASS,
-            "IMAP/SMTP and compose probes rejected header/newline, mailbox, UID, and attachment filename inputs, while malformed attachment content-type input reached the normalization path",
+            "IMAP/SMTP and compose probes rejected To/Cc/Bcc header injection, aggregate recipient-limit bypass, mailbox, UID, and attachment filename inputs, while malformed attachment content-type input reached the normalization path",
             evidence_paths,
             {"statuses": statuses},
         )
+
+    def write_multi_recipient_unit_evidence(self) -> bool:
+        """Execute privacy and persistence regressions for the Cc/Bcc boundary."""
+        filters = [
+            "sendmail_backend_uses_cc_header_and_bcc_envelope_only",
+            "file_draft_store_round_trips_text_and_attachments",
+        ]
+        output: list[str] = []
+        passed = True
+        for test_filter in filters:
+            try:
+                completed = subprocess.run(
+                    ["cargo", "test", test_filter, "--", "--nocapture"],
+                    cwd=REPO_ROOT,
+                    text=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    timeout=120,
+                    check=False,
+                )
+                output.append(f"filter={test_filter} returncode={completed.returncode}")
+                output.append(completed.stdout)
+                if completed.returncode != 0 or "1 passed" not in completed.stdout:
+                    passed = False
+            except (OSError, subprocess.TimeoutExpired) as exc:
+                output.append(f"filter={test_filter} ERROR: {exc}")
+                passed = False
+        self.write_text_evidence("webmail_multi_recipient_unit.txt", "\n".join(output))
+        return passed
 
     def test_http_input_tampering(self) -> TestResult:
         probes = {
@@ -2981,6 +3164,8 @@ class Runner:
             "rejects_attachment_filenames_with_path_separators",
             "rejects_subject_line_breaks",
             "sendmail_backend_keeps_shell_shaped_sender_as_one_arg_and_body_on_stdin",
+            "sendmail_backend_uses_cc_header_and_bcc_envelope_only",
+            "file_draft_store_round_trips_text_and_attachments",
             "doveadm_search_keeps_shell_shaped_query_as_one_argument",
             "strips_scriptable_attributes_forms_remote_fetch_surfaces_and_comments",
             "OSMAP-WSTG-INPV-004",
@@ -3684,13 +3869,18 @@ printf 'secret_review=No password, password hash, TOTP material, session cookie,
         body = f"OSMAP WSTG draft body proof {nonce}"
         delete_subject = f"OSMAP WSTG draft delete proof {nonce}"
         delete_body = f"OSMAP WSTG draft delete body {nonce}"
-        for value in [subject, body, delete_subject, delete_body, nonce]:
+        cc_value = f"cc-{nonce}@example.invalid"
+        bcc_value = f"bcc-{nonce}@example.invalid"
+        for value in [subject, body, delete_subject, delete_body, cc_value, bcc_value, nonce]:
             self.secrets.append(value)
 
         evidence_paths = [
             "evidence/draft_save_missing_csrf.headers",
             "evidence/draft_save_cross_origin.headers",
             "evidence/draft_save_attachment_limit.headers",
+            "evidence/draft_multi_recipient_create.headers",
+            "evidence/draft_multi_recipient_resume.headers",
+            "evidence/draft_multi_recipient_delete.headers",
             "evidence/draft_delete_create.headers",
             "evidence/draft_delete.headers",
             "evidence/draft_delete_resume.headers",
@@ -3748,6 +3938,48 @@ printf 'secret_review=No password, password hash, TOTP material, session cookie,
             ),
             cookies=self.cookie_jar,
         )
+
+        multi_recipient_create = self.form_post(
+            "draft_multi_recipient_create",
+            "/drafts/save",
+            {
+                "csrf_token": self.csrf_token,
+                "to": self.config.test_email,
+                "cc": cc_value,
+                "bcc": bcc_value,
+                "subject": subject,
+                "body": body,
+            },
+            cookies=self.cookie_jar,
+            headers=same_origin_headers(self.config),
+            store_body_evidence=False,
+        )
+        multi_recipient_id = draft_id_from_location(
+            multi_recipient_create.first_header("Location")
+        )
+        multi_recipient_resume: HttpEvidence | None = None
+        multi_recipient_delete: HttpEvidence | None = None
+        multi_recipient_values_preserved = False
+        if multi_recipient_id:
+            multi_recipient_resume = self.request(
+                "draft_multi_recipient_resume",
+                "GET",
+                f"/draft?id={urllib.parse.quote(multi_recipient_id)}",
+                cookies=self.cookie_jar,
+                store_body_evidence=False,
+            )
+            resume_text = html.unescape(multi_recipient_resume.body_text())
+            multi_recipient_values_preserved = (
+                cc_value in resume_text and bcc_value in resume_text
+            )
+            multi_recipient_delete = self.form_post(
+                "draft_multi_recipient_delete",
+                "/drafts/delete",
+                {"csrf_token": self.csrf_token, "draft_id": multi_recipient_id},
+                cookies=self.cookie_jar,
+                headers=same_origin_headers(self.config),
+                store_body_evidence=False,
+            )
 
         delete_create = self.form_post(
             "draft_delete_create",
@@ -3836,13 +4068,25 @@ printf 'secret_review=No password, password hash, TOTP material, session cookie,
 
         static_evidence = self.write_draft_static_boundary_evidence()
         redaction_evidence = self.write_draft_evidence_redaction_evidence(
-            [subject, body, delete_subject, delete_body, nonce, self.csrf_token],
+            [
+                subject,
+                body,
+                delete_subject,
+                delete_body,
+                cc_value,
+                bcc_value,
+                nonce,
+                self.csrf_token,
+            ],
         )
 
         expected_statuses = {
             "missing_csrf": missing.status,
             "cross_origin": cross.status,
             "attachment_limit": attachment_limit.status,
+            "multi_recipient_create": multi_recipient_create.status,
+            "multi_recipient_resume": status_of(multi_recipient_resume),
+            "multi_recipient_delete": status_of(multi_recipient_delete),
             "delete_create": delete_create.status,
             "delete": status_of(delete),
             "delete_resume": status_of(delete_resume),
@@ -3860,6 +4104,14 @@ printf 'secret_review=No password, password hash, TOTP material, session cookie,
             failures["cross_origin"] = cross.status
         if attachment_limit.status not in {400, 413}:
             failures["attachment_limit"] = attachment_limit.status
+        if multi_recipient_create.status != 303 or not multi_recipient_id:
+            failures["multi_recipient_create"] = multi_recipient_create.status
+        if multi_recipient_id and status_of(multi_recipient_resume) != 200:
+            failures["multi_recipient_resume"] = status_of(multi_recipient_resume)
+        if multi_recipient_id and not multi_recipient_values_preserved:
+            failures["multi_recipient_values_preserved"] = status_of(multi_recipient_resume)
+        if multi_recipient_id and status_of(multi_recipient_delete) != 303:
+            failures["multi_recipient_delete"] = status_of(multi_recipient_delete)
         if delete_create.status != 303 or not delete_draft_id:
             failures["delete_create"] = delete_create.status
         if delete_draft_id and status_of(delete) != 303:
@@ -3894,7 +4146,7 @@ printf 'secret_review=No password, password hash, TOTP material, session cookie,
         return self.result(
             "OSMAP-WSTG-BUSL-002",
             STATUS_PASS,
-            "draft save, list, resume, delete, send cleanup, CSRF, same-origin, stale-session, attachment-limit, and redaction evidence passed",
+            "draft save, To/Cc/Bcc persistence, list, resume, delete, send cleanup, CSRF, same-origin, stale-session, attachment-limit, and redaction evidence passed",
             evidence_paths,
             {"statuses": expected_statuses},
         )

@@ -4,6 +4,7 @@ path,file_type,purpose
 README.md,markdown,Operator guide and coverage matrix
 COVERAGE.md,markdown,Generated coverage and gap table from wstg-asvs-mapping.json
 MANIFEST.csv,csv,Pack file inventory
+osmap-browser-attack-surface.json,json,Canonical browser route and input inventory
 run.sh,bash,Thin shell entrypoint for the Python runner
 run-wstg-pack.py,python,Single evidence-producing WSTG runner
 wstg-asvs-mapping.json,json,Canonical WSTG v4.2 and ASVS 5.0.0 mapping

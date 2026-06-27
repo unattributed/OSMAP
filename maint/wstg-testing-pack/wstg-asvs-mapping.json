@@ -766,11 +766,12 @@
         "dynamic test",
         "static boundary review"
       ],
-      "expected_result": "Unauthenticated error responses do not expose stack traces, source locations, private paths, or unwrap diagnostics, and the browser route and architecture inventory remains explicit.",
+      "expected_result": "Unauthenticated error responses do not expose stack traces, source locations, private paths, or unwrap diagnostics, and every browser route and input field remains in the reviewed attack-surface inventory.",
       "evidence_produced": [
         "errh02_*.headers",
         "errh02_*.body",
-        "error_route_inventory_static.txt"
+        "error_route_inventory_static.txt",
+        "browser_attack_surface_inventory.txt"
       ],
       "release_required": true,
       "requires_authenticated_coverage": false,
@@ -951,6 +952,9 @@
       "evidence_produced": [
         "webmail_inpv10_subject_newline.headers",
         "webmail_inpv10_recipient_newline.headers",
+        "webmail_inpv10_cc_newline.headers",
+        "webmail_inpv10_bcc_newline.headers",
+        "webmail_inpv10_aggregate_recipient_limit.headers",
         "webmail_inpv10_display_name.headers",
         "webmail_inpv10_mailbox_tamper.headers",
         "webmail_inpv10_uid_tamper.headers",
@@ -958,6 +962,7 @@
         "webmail_inpv10_attachment_filename.headers",
         "webmail_inpv10_dangerous_content_type.headers",
         "webmail_input_validation_static.txt",
+        "webmail_multi_recipient_unit.txt",
         "webmail_input_validation_redaction.txt"
       ],
       "release_required": true,
@@ -1438,6 +1443,9 @@
         "draft_save_missing_csrf.headers",
         "draft_save_cross_origin.headers",
         "draft_save_attachment_limit.headers",
+        "draft_multi_recipient_create.headers",
+        "draft_multi_recipient_resume.headers",
+        "draft_multi_recipient_delete.headers",
         "draft_delete_create.headers",
         "draft_delete.headers",
         "draft_delete_resume.headers",

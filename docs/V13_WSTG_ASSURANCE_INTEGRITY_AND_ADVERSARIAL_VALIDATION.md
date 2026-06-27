@@ -80,5 +80,5 @@ The sprint is complete only when:
 
 - Slice 1: implemented and validated.
 - Slice 2: implemented and validated.
-- Slices 3 through 6: pending.
-
+- Slice 3: implemented and validated.
+- Slices 4 through 6: pending.
