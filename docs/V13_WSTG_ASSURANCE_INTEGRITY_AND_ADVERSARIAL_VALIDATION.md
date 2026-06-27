@@ -109,22 +109,57 @@ The sprint is complete only when:
   misuse regressions, safe EICAR detection through the configured Rspamd and
   ClamAV boundary, advisory and dependency-policy execution, CycloneDX SBOM
   generation, and host inspection of triggered security events.
-- Slice 6: completed. Pull requests 33 and 34 passed CodeQL and the repository
-  security workflow, then merged to protected `main`.
+- Slice 6: completed. Pull requests 33 through 37 passed their required
+  repository and CodeQL checks, then merged to protected `main`. The final
+  credentialed release run exercised the deployed application and exact
+  host-side validation source.
 
 ## Release Closeout
 
 - Final reviewed commit:
-  `1508f0c97b613e58e9573d2ca8bd93f55cd1eaa3`.
+  `7009b15322c4e7795c797c1387b403e0f4935adb`.
 - Production deployment session:
-  `/home/foo/osmap-binary-deployment/v13-wstg-assurance-final-20260627T032544Z`.
+  `/home/foo/osmap-binary-deployment/v13-auth-availability-20260627T161226Z`.
+- Production activation rollback session:
+  `/home/foo/osmap-service-activation/v13-auth-availability-20260627T161336Z`.
 - Live and staged binary SHA256:
-  `2507abb721e47117efbe1b9f23bc7304ff6d50b33729d52a3e7e719750fd3d8a`.
+  `333a417bf435ae74bfc2b7a9eebedeca1ad541cb527e2555fed408e11e24d963`.
 - Rollback script:
-  `/home/foo/osmap-binary-deployment/v13-wstg-assurance-final-20260627T032544Z/scripts/restore-binary-deployment.sh`.
+  `/home/foo/osmap-binary-deployment/v13-auth-availability-20260627T161226Z/scripts/restore-binary-deployment.sh`.
+- Authentication-timeout configuration restore script:
+  `/home/foo/osmap-binary-deployment/v13-auth-availability-20260627T161226Z/config/scripts/restore-auth-timeout-config.sh`.
 - Browser-facing validation passed for `GET /`, `GET /login`,
   `GET /healthz`, and invalid Host rejection with HTTP 421.
 - Final deployed operational evidence passed for CSP, Host and request
   desynchronization, real-browser reflected and stored XSS, attachment
   containment, Rspamd and ClamAV malware detection, dependency and CycloneDX
   validation, and triggered security logging with redaction.
+
+### Credentialed Release Evidence
+
+- Release run: `osmap-wstg-20260627-204207`.
+- Target: `https://mail.blackbagsecurity.com`.
+- Result counts: 42 pass, 0 fail, 0 warning, 0 skip, and 4 justified
+  not-applicable results.
+- Release errors: none.
+- Stable WSTG matrix: 97 scenarios, with 64 automated and 33
+  not-applicable dispositions, 0 invalid or missing dispositions, and 0
+  validation errors.
+- Credential-backed proof observed successful TOTP validation, login, session
+  issuance, protected-route access, logout, and post-logout invalidation.
+- Live evidence included real-browser reflected and stored XSS execution
+  checks, cross-account authorization isolation, source-attachment positive
+  and tamper cases, draft and bulk mailbox workflows, safe EICAR detection,
+  public-edge protocol probes, and host audit-event inspection.
+- Summary JSON SHA256:
+  `7f60024c71b9ff223bffa065357b0a6da28d5faf05cdfccabca7bdaeeffe44c8`.
+- Markdown report SHA256:
+  `748d5f817f52d7af1b5619fe53a0cfee9659559c34140b326757f58102915e63`.
+- The authenticated response corpus remains local and is not committed to
+  source control. The report and summary contain redacted evidence references,
+  and every runner redaction check passed.
+
+The release report retains explicit limitations for complete ASVS
+verification, archive-recursion and document-sanitization testing, and
+endpoint safety after attachment download. These are scope declarations, not
+passing claims.
