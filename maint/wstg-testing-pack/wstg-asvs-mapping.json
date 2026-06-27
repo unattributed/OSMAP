@@ -1,6 +1,7 @@
 {
   "standards": {
     "wstg": "OWASP Web Security Testing Guide v4.2",
+    "wstg_latest": "OWASP Web Security Testing Guide latest pinned development track",
     "asvs": "OWASP Application Security Verification Standard 5.0.0",
     "owasp_top_10_2025": "OWASP Top 10 2025"
   },
@@ -73,10 +74,11 @@
     },
     {
       "test_id": "OSMAP-WSTG-CONF-003",
-      "test_name": "WSTG-v42-CONF-12 Testing for Content Security Policy - OSMAP CSP regression",
+      "test_name": "WSTG-CONF-12 Testing for Content Security Policy - OSMAP CSP regression",
       "script_path": "run-wstg-pack.py",
-      "wstg": [
-        "WSTG-v42-CONF-12"
+      "wstg": [],
+      "wstg_latest": [
+        "WSTG-CONF-12"
       ],
       "wstg_section": "Testing for Content Security Policy",
       "asvs": [

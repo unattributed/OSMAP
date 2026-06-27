@@ -9,6 +9,7 @@ import sys
 import tempfile
 import threading
 import unittest
+from dataclasses import replace
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -139,6 +140,53 @@ class RunnerBehaviorTests(unittest.TestCase):
         evidence = WSTG.HttpEvidence("cleartext", None, "", [], b"", error="connection refused")
         runner.record_response_completeness(evidence, allow_transport_failure=True)
         self.assertEqual(runner.test_incomplete_evidence, [])
+
+    def test_release_rejects_missing_matrix(self) -> None:
+        cfg = replace(
+            config("https://example.test", "example.test", self.root),
+            release_mode=True,
+            wstg_matrix_file="/tmp/osmap-wstg-matrix-does-not-exist.json",
+        )
+
+        class ReleaseRunner:
+            config = cfg
+
+            @staticmethod
+            def finalize_release_authentication_proof() -> list[str]:
+                return []
+
+        results = []
+        for item in self.mapping["tests"]:
+            status = (
+                WSTG.STATUS_NA
+                if WSTG.test_assurance_class(item) == "not_applicable"
+                else WSTG.STATUS_PASS
+            )
+            results.append(WSTG.TestResult(item["test_id"], item["test_name"], status, "test"))
+        errors = WSTG.release_errors(self.mapping, results, ReleaseRunner(), None)
+        self.assertIn("active WSTG matrix does not exist", errors)
+        self.assertIn("active WSTG matrix contains no scenarios", errors)
+
+    def test_top10_reporting_separates_static_and_not_applicable_evidence(self) -> None:
+        tests = {item["test_id"]: item for item in self.mapping["tests"]}
+        results = [
+            WSTG.TestResult(
+                "OSMAP-WSTG-BUSL-005",
+                tests["OSMAP-WSTG-BUSL-005"]["test_name"],
+                WSTG.STATUS_PASS,
+                "static",
+            ),
+            WSTG.TestResult(
+                "OSMAP-WSTG-INPV-007",
+                tests["OSMAP-WSTG-INPV-007"]["test_name"],
+                WSTG.STATUS_NA,
+                "not applicable",
+            ),
+        ]
+        coverage = WSTG.proven_top10_coverage(self.mapping, results)["A06:2025"]
+        self.assertNotIn("OSMAP-WSTG-BUSL-005", coverage["tests"])
+        self.assertIn("OSMAP-WSTG-BUSL-005", coverage["static_only_tests"])
+        self.assertIn("OSMAP-WSTG-INPV-007", coverage["not_applicable_tests"])
 
 
 if __name__ == "__main__":

@@ -68,8 +68,12 @@ for item in mapping["tests"]:
     if item["test_id"] in seen:
         raise SystemExit(f"duplicate test_id: {item['test_id']}")
     seen.add(item["test_id"])
+    if not item["wstg"] and not item.get("wstg_latest"):
+        raise SystemExit(f"{item['test_id']} must map to stable or pinned-latest WSTG")
     if not all(value.startswith("WSTG-v42-") for value in item["wstg"]):
         raise SystemExit(f"{item['test_id']} contains non-v4.2 WSTG identifier")
+    if not all(value.startswith("WSTG-") for value in item.get("wstg_latest", [])):
+        raise SystemExit(f"{item['test_id']} contains invalid latest-track WSTG identifier")
     if not all(value.startswith("v5.0.0-") for value in item["asvs"]):
         raise SystemExit(f"{item['test_id']} contains non-ASVS-5.0.0 identifier")
     if not item["owasp_top_10_2025"]:
@@ -110,6 +114,18 @@ with (pack / "MANIFEST.csv").open(newline="") as handle:
 for rel_path in manifest_paths:
     if not (pack / rel_path).exists():
         raise SystemExit(f"manifest path does not exist: {rel_path}")
+expected_manifest_paths = {
+    str(path.relative_to(pack))
+    for path in pack.rglob("*")
+    if path.is_file()
+    and "__pycache__" not in path.parts
+    and "output" not in path.parts
+    and path.name != ".env"
+}
+if set(manifest_paths) != expected_manifest_paths:
+    missing = sorted(expected_manifest_paths - set(manifest_paths))
+    extra = sorted(set(manifest_paths) - expected_manifest_paths)
+    raise SystemExit(f"manifest inventory mismatch missing={missing} extra={extra}")
 
 env_text = (pack / ".env.example").read_text()
 for key in [
@@ -129,7 +145,7 @@ for key in [
     "OSMAP_WSTG_SOURCE_COMMIT=",
     "OSMAP_WSTG_MATRIX_FILE=wstg-scenario-matrix.v42.json",
     "OSMAP_WSTG_SOURCE_VERSION=latest",
-    "OSMAP_WSTG_SOURCE_COMMIT=7dea71b751ea76f792b89186655739720b614d9a",
+    "OSMAP_WSTG_SOURCE_COMMIT=8eb4e023d0116a4f5196f56ae9e69db1798888a0",
     "OSMAP_WSTG_MATRIX_FILE=wstg-scenario-matrix.latest.json",
     "OSMAP_RATE_LIMIT_DELAY_SECONDS=",
     "OSMAP_ALLOW_AUTHENTICATED_TESTS=false",
@@ -173,13 +189,15 @@ if unmapped:
     raise SystemExit(f"WSTG matrix must map every listed row after ATHN applicability closeout: {unmapped[:10]}")
 
 latest = json.loads((pack / "wstg-scenario-matrix.latest.json").read_text())
-expected_latest_commit = "7dea71b751ea76f792b89186655739720b614d9a"
+expected_latest_commit = "8eb4e023d0116a4f5196f56ae9e69db1798888a0"
 if latest.get("source_repo") != "https://github.com/OWASP/wstg":
     raise SystemExit("latest WSTG matrix must identify the OWASP/wstg repository")
 if latest.get("source_branch") != "master":
     raise SystemExit("latest WSTG matrix must identify the source branch")
 if latest.get("source_commit") != expected_latest_commit:
     raise SystemExit("latest WSTG matrix source commit is not pinned to the reviewed upstream commit")
+if "2026-06-27" not in latest.get("wstg_source", ""):
+    raise SystemExit("latest WSTG matrix capture date is stale")
 latest_scenarios = latest.get("scenarios", [])
 if len(latest_scenarios) != 114:
     raise SystemExit(f"unexpected latest WSTG scenario row count: {len(latest_scenarios)}")

@@ -2815,7 +2815,7 @@ class Runner:
             )
         return self.result(
             "OSMAP-WSTG-INPV-007",
-            STATUS_PASS,
+            STATUS_NA,
             "remaining Slice 4 injection classes are not applicable to the current OSMAP browser surface",
             evidence_paths,
             details,
@@ -3077,7 +3077,13 @@ class Runner:
         evidence = ["evidence/client_side_applicability_static.txt"]
         if matched or not static_ok:
             return self.result("OSMAP-WSTG-CLNT-003", STATUS_FAIL, "client-side/browser-storage applicability review found unexpected source markers", evidence, {"unexpected_markers": matched})
-        return self.result("OSMAP-WSTG-CLNT-003", STATUS_PASS, "remaining client-side and browser-storage rows are covered or not applicable to the current server-rendered surface", evidence, {"absent_markers_checked": absent_markers})
+        return self.result(
+            "OSMAP-WSTG-CLNT-003",
+            STATUS_NA,
+            "remaining client-side and browser-storage rows are not applicable to the current server-rendered surface",
+            evidence,
+            {"absent_markers_checked": absent_markers},
+        )
 
     def write_client_side_applicability_static_evidence(self, matched: list[str]) -> bool:
         files = [
@@ -4190,7 +4196,13 @@ printf 'secret_review=No password, password hash, TOTP material, session cookie,
         evidence = ["evidence/graphql_applicability_static.txt"]
         if matched or not static_ok:
             return self.result("OSMAP-WSTG-APIT-001", STATUS_FAIL, "GraphQL/API applicability review found unexpected source markers", evidence, {"unexpected_markers": matched})
-        return self.result("OSMAP-WSTG-APIT-001", STATUS_PASS, "GraphQL is not applicable; OSMAP exposes browser form routes rather than API routes", evidence, {"markers_checked": markers})
+        return self.result(
+            "OSMAP-WSTG-APIT-001",
+            STATUS_NA,
+            "GraphQL is not applicable; OSMAP exposes browser form routes rather than API routes",
+            evidence,
+            {"markers_checked": markers},
+        )
 
     def write_graphql_applicability_static_evidence(self, matched: list[str]) -> bool:
         files = [
@@ -4495,7 +4507,7 @@ printf 'secret_review=No password, password hash, TOTP material, session cookie,
             )
         return self.result(
             "OSMAP-WSTG-CRYP-002",
-            STATUS_PASS,
+            STATUS_NA,
             "padding-oracle and weak-encryption rows are not applicable to the current OSMAP browser surface",
             evidence_paths,
             {"source_markers_checked": banned_source_markers},
@@ -5116,7 +5128,10 @@ def generate_totp(secret: str, *, timestamp: int | None = None, digits: int = 6,
     return str(code_int % (10**digits)).zfill(digits)
 
 
-def active_matrix_metadata(config: Config) -> dict[str, object]:
+def active_matrix_metadata(
+    config: Config,
+    mapping: dict[str, object] | None = None,
+) -> dict[str, object]:
     matrix_path = (PACK_ROOT / config.wstg_matrix_file).resolve()
     try:
         relative_matrix = str(matrix_path.relative_to(PACK_ROOT))
@@ -5130,6 +5145,8 @@ def active_matrix_metadata(config: Config) -> dict[str, object]:
         "disposition_counts": {},
         "missing_disposition_count": 0,
         "invalid_disposition_count": 0,
+        "release_blocking_disposition_count": 0,
+        "validation_errors": [],
     }
     if not matrix_path.is_file():
         return metadata
@@ -5148,10 +5165,26 @@ def active_matrix_metadata(config: Config) -> dict[str, object]:
     disposition_counts: dict[str, int] = {}
     missing = 0
     invalid = 0
+    release_blocking = 0
+    validation_errors: list[str] = []
+    seen_wstg_ids: set[str] = set()
+    known_test_ids = {
+        str(item.get("test_id", ""))
+        for item in (mapping or {}).get("tests", [])
+        if isinstance(item, dict)
+    }
     for scenario in scenarios:
         if not isinstance(scenario, dict):
             invalid += 1
+            validation_errors.append("matrix contained a non-object scenario row")
             continue
+        wstg_id = str(scenario.get("wstg_id", "")).strip()
+        if not wstg_id:
+            validation_errors.append("matrix scenario row was missing wstg_id")
+        elif wstg_id in seen_wstg_ids:
+            validation_errors.append(f"matrix contained duplicate wstg_id {wstg_id}")
+        else:
+            seen_wstg_ids.add(wstg_id)
         disposition = str(scenario.get("disposition", "")).strip()
         if not disposition:
             missing += 1
@@ -5159,12 +5192,30 @@ def active_matrix_metadata(config: Config) -> dict[str, object]:
         disposition_counts[disposition] = disposition_counts.get(disposition, 0) + 1
         if disposition not in ALLOWED_MATRIX_DISPOSITIONS:
             invalid += 1
+        if disposition in {"manual", "deferred", "blocked"}:
+            release_blocking += 1
+        evidence_references = scenario.get("evidence_reference", [])
+        if not isinstance(evidence_references, list) or not evidence_references:
+            validation_errors.append(f"{wstg_id or '<unknown>'} had no evidence_reference")
+        elif mapping is not None:
+            unknown = sorted(
+                str(reference)
+                for reference in evidence_references
+                if str(reference) not in known_test_ids
+            )
+            if unknown:
+                validation_errors.append(
+                    f"{wstg_id or '<unknown>'} referenced unknown tests: {', '.join(unknown)}"
+                )
 
     metadata["scenario_count"] = len(scenarios)
     metadata["disposition_counts"] = disposition_counts
     metadata["missing_disposition_count"] = missing
     metadata["invalid_disposition_count"] = invalid
+    metadata["release_blocking_disposition_count"] = release_blocking
+    metadata["validation_errors"] = validation_errors
     metadata["wstg_source"] = payload.get("wstg_source", "")
+    metadata["matrix_source_commit"] = payload.get("source_commit", "")
     return metadata
 
 
@@ -5192,7 +5243,7 @@ def wstg_source_metadata(runner: Runner, matrix_metadata: dict[str, object]) -> 
 
 
 def write_summary(runner: Runner, args: argparse.Namespace, release_errors: list[str]) -> None:
-    matrix_metadata = active_matrix_metadata(runner.config)
+    matrix_metadata = active_matrix_metadata(runner.config, runner.mapping)
     data = {
         "generated_at": dt.datetime.now(dt.timezone.utc).isoformat(),
         "target": runner.config.base_url,
@@ -5221,7 +5272,8 @@ def write_summary(runner: Runner, args: argparse.Namespace, release_errors: list
     }
     (runner.run_dir / "summary.json").write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     (runner.run_dir / "report.md").write_text(render_markdown_report(runner, data), encoding="utf-8")
-    write_coverage_markdown(runner.mapping, PACK_ROOT / "COVERAGE.md", matrix_metadata)
+    if args.write_coverage:
+        write_coverage_markdown(runner.mapping, PACK_ROOT / "COVERAGE.md", matrix_metadata)
 
 
 def status_counts(results: list[TestResult]) -> dict[str, int]:
@@ -5260,15 +5312,25 @@ def render_markdown_report(runner: Runner, data: dict[str, object]) -> str:
     if data.get("release_errors"):
         lines.extend(["", "## Release Errors", ""])
         lines.extend(f"- {escape_md(error)}" for error in data["release_errors"])
-    lines.extend(["", "## OWASP Top 10 2025 Coverage", "", "| Category | Name | Passed tests | Failed/skipped | Static-only | Gaps |", "| --- | --- | --- | --- | --- | --- |"])
+    lines.extend([
+        "",
+        "## OWASP Top 10 2025 Coverage",
+        "",
+        "| Category | Name | Dynamic proof | Static evidence | Not applicable | Failed/skipped | Gaps |",
+        "| --- | --- | --- | --- | --- | --- | --- |",
+    ])
     coverage = data["owasp_top_10_2025_coverage"]
     for category, name in OWASP_TOP_10_2025.items():
         item = coverage[category]
         tests = ", ".join(f"`{test_id}`" for test_id in item["tests"]) or "none"
-        incomplete = ", ".join(f"`{test_id}`" for test_id in item.get("incomplete_tests", [])) or "none"
         static_only = ", ".join(f"`{test_id}`" for test_id in item.get("static_only_tests", [])) or "none"
+        not_applicable = ", ".join(f"`{test_id}`" for test_id in item.get("not_applicable_tests", [])) or "none"
+        incomplete = ", ".join(f"`{test_id}`" for test_id in item.get("incomplete_tests", [])) or "none"
         gaps = ", ".join(f"`{gap_id}`" for gap_id in item["gaps"]) or "none"
-        lines.append(f"| `{category}` | {escape_md(name)} | {tests} | {incomplete} | {static_only} | {gaps} |")
+        lines.append(
+            f"| `{category}` | {escape_md(name)} | {tests} | {static_only} | "
+            f"{not_applicable} | {incomplete} | {gaps} |"
+        )
     lines.extend(["", "## Results", "", "| Status | Test ID | Test | Message | Evidence |", "| --- | --- | --- | --- | --- |"])
     for result in runner.results:
         evidence = "<br>".join(f"`{item}`" for item in result.evidence) if result.evidence else ""
@@ -5349,15 +5411,16 @@ def write_coverage_markdown(mapping: dict[str, object], path: Path, matrix_metad
         "",
         "## Mapped Tests",
         "",
-        "| Test ID | Test | WSTG v4.2 | ASVS 5.0.0 | OWASP Top 10 2025 | Type | Release Required | Auth Required | TOTP Required | Safe For Release | Severity |",
-        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+        "| Test ID | Test | WSTG v4.2 | WSTG latest | ASVS 5.0.0 | OWASP Top 10 2025 | Type | Release Required | Auth Required | TOTP Required | Safe For Release | Severity |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
     ])
     for item in mapping["tests"]:
         lines.append(
-            "| `{}` | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} |".format(
+            "| `{}` | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} | {} |".format(
                 item["test_id"],
                 escape_md(item["test_name"]),
-                ", ".join(f"`{x}`" for x in item["wstg"]),
+                ", ".join(f"`{x}`" for x in item["wstg"]) or "n/a",
+                ", ".join(f"`{x}`" for x in item.get("wstg_latest", [])) or "n/a",
                 ", ".join(f"`{x}`" for x in item["asvs"]),
                 ", ".join(f"`{x}`" for x in item["owasp_top_10_2025"]),
                 ", ".join(item["test_type"]),
@@ -5441,6 +5504,7 @@ def proven_top10_coverage(mapping: dict[str, object], results: list[TestResult])
         item["tests"] = []
         item["incomplete_tests"] = []
         item["static_only_tests"] = []
+        item["not_applicable_tests"] = []
     by_id = {result.test_id: result for result in results}
     for item in mapping["tests"]:
         if item.get("release_required") is not True or item.get("safe_for_release") is not True:
@@ -5451,15 +5515,37 @@ def proven_top10_coverage(mapping: dict[str, object], results: list[TestResult])
             status = "missing"
         else:
             status = result.status
-        is_static_only = set(item.get("test_type", [])) == {"static review"}
+        assurance_class = test_assurance_class(item)
         for category in item.get("owasp_top_10_2025", []):
-            if status == STATUS_PASS:
+            if status == STATUS_PASS and assurance_class in {"dynamic", "hybrid", "tool"}:
                 coverage[category]["tests"].append(test_id)
+            elif status == STATUS_PASS and assurance_class == "static":
+                coverage[category]["static_only_tests"].append(test_id)
+            elif status == STATUS_NA or assurance_class == "not_applicable":
+                coverage[category]["not_applicable_tests"].append(test_id)
             else:
                 coverage[category]["incomplete_tests"].append(test_id)
-            if is_static_only:
-                coverage[category]["static_only_tests"].append(test_id)
     return coverage
+
+
+def test_assurance_class(item: dict[str, object]) -> str:
+    """Classify mapped evidence without converting static assertions into proof."""
+    test_types = {str(value).lower() for value in item.get("test_type", [])}
+    joined = " ".join(sorted(test_types))
+    has_dynamic = any(
+        marker in joined
+        for marker in ("dynamic", "authenticated", "host assisted")
+    )
+    has_static = "static" in joined or "evidence validation" in joined
+    if "applicability review" in joined and not has_dynamic:
+        return "not_applicable"
+    if "tool execution" in joined and not has_dynamic:
+        return "tool"
+    if has_dynamic and has_static:
+        return "hybrid"
+    if has_dynamic:
+        return "dynamic"
+    return "static"
 
 
 def escape_md(value: object) -> str:
@@ -5479,6 +5565,11 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser.add_argument("--unauthenticated", action="store_true", help="Force credential-gated tests to skip")
     parser.add_argument("--release", action="store_true", help="Fail closed on skipped, incomplete, or missing release-required WSTG coverage")
     parser.add_argument("--test-id", action="append", help="Run one test id; may be repeated")
+    parser.add_argument(
+        "--write-coverage",
+        action="store_true",
+        help="Regenerate the tracked COVERAGE.md file from the active matrix",
+    )
     return parser.parse_args(argv)
 
 
@@ -5488,13 +5579,29 @@ def release_errors(mapping: dict[str, object], results: list[TestResult], runner
     errors: list[str] = []
     if selected:
         errors.append("release mode must run the full WSTG pack, not selected tests")
-    matrix_metadata = active_matrix_metadata(runner.config)
+    matrix_metadata = active_matrix_metadata(runner.config, mapping)
+    if not matrix_metadata.get("exists"):
+        errors.append("active WSTG matrix does not exist")
+    if matrix_metadata.get("error"):
+        errors.append(f"active WSTG matrix could not be parsed: {matrix_metadata['error']}")
+    if not matrix_metadata.get("scenario_count"):
+        errors.append("active WSTG matrix contains no scenarios")
     if matrix_metadata.get("missing_disposition_count"):
         errors.append("active WSTG matrix has rows without a release disposition")
     if matrix_metadata.get("invalid_disposition_count"):
         errors.append("active WSTG matrix has rows with invalid release dispositions")
+    if matrix_metadata.get("release_blocking_disposition_count"):
+        errors.append("active WSTG matrix has manual, deferred, or blocked release work")
+    for validation_error in matrix_metadata.get("validation_errors", []):
+        errors.append(f"active WSTG matrix validation failed: {validation_error}")
     if runner.config.wstg_source_version.lower() == "latest" and not runner.config.wstg_source_commit:
         errors.append("latest-track WSTG release evidence must include OSMAP_WSTG_SOURCE_COMMIT")
+    matrix_source_commit = str(matrix_metadata.get("matrix_source_commit", ""))
+    if runner.config.wstg_source_version.lower() == "latest":
+        if not matrix_source_commit:
+            errors.append("latest-track WSTG matrix does not declare its source commit")
+        elif matrix_source_commit != runner.config.wstg_source_commit:
+            errors.append("latest-track WSTG source commit does not match the active matrix")
     by_id = {result.test_id: result for result in results}
     for item in mapping["tests"]:
         test_id = item["test_id"]
@@ -5504,7 +5611,12 @@ def release_errors(mapping: dict[str, object], results: list[TestResult], runner
         if result is None:
             errors.append(f"{test_id} missing from release run")
             continue
-        if result.status != STATUS_PASS:
+        expected_statuses = (
+            {STATUS_NA}
+            if test_assurance_class(item) == "not_applicable"
+            else {STATUS_PASS}
+        )
+        if result.status not in expected_statuses:
             errors.append(f"{test_id} has release-blocking status {result.status}")
         if item.get("requires_authenticated_coverage") is True:
             if "authenticated" not in item.get("test_type", []):
