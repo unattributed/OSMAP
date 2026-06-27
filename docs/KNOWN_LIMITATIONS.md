@@ -324,3 +324,11 @@ V12 Slice 6 proves dependency availability only. Even when `pkg-config gpgme` an
 V12 Slice 7 proves helper compile and link scaffolding only. Even when the scaffold links against GPGME, OSMAP still must not claim implemented OpenPGP decryption, signature verification, signing, encryption, PGP/MIME handling, passphrase handling, helper cryptographic operations, or browser UI integration.
 
 <!-- OSMAP:V12-SLICE7-HELPER-COMPILE:END -->
+
+<!-- OSMAP:V12-SLICE8-HELPER-INVOCATION:START -->
+
+### V12 Slice 8 helper invocation scaffold limitation
+
+V12 Slice 8 proves protocol-only helper invocation shape. It validates bounded JSON request and response behavior, exact argv discipline, no shell invocation, timeout handling, and fail-closed unknown operation behavior. It still does not implement OpenPGP decryption, signature verification, signing, encryption, PGP/MIME handling, passphrase handling, helper cryptographic operations, browser UI integration, or decrypted content rendering.
+
+<!-- OSMAP:V12-SLICE8-HELPER-INVOCATION:END -->

@@ -309,3 +309,9 @@ V7 production availability was previously reopened pending real-login, real-mail
 - `V12_OPENPGP_GPGME_HELPER_COMPILE_SCAFFOLD.md` defines the compile and link only helper scaffold for Slice 7.
 
 <!-- OSMAP:V12-SLICE7-HELPER-COMPILE:END -->
+
+<!-- OSMAP:V12-SLICE8-HELPER-INVOCATION:START -->
+
+- `V12_OPENPGP_HELPER_INVOCATION_SCAFFOLD.md` defines the protocol-only helper invocation scaffold for Slice 8.
+
+<!-- OSMAP:V12-SLICE8-HELPER-INVOCATION:END -->

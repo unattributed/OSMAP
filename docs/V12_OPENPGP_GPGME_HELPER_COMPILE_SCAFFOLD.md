@@ -44,3 +44,11 @@ A valid Slice 7 evidence run includes:
 - optional carried-forward `make release-check` output
 
 The known stale V3 live evidence release blocker remains outside Slice 7 scope.
+
+<!-- OSMAP:V12-SLICE8-HELPER-INVOCATION:START -->
+
+## Slice 8 helper invocation scaffold
+
+Slice 7 proved the GPGME-linked helper compile scaffold. Slice 8 adds protocol-only helper invocation evidence. The invoked helper remains non-cryptographic and must not be treated as implemented OpenPGP mail handling.
+
+<!-- OSMAP:V12-SLICE8-HELPER-INVOCATION:END -->

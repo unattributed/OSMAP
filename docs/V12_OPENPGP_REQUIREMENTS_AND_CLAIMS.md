@@ -133,3 +133,13 @@ Slice 7 adds a GPGME-linked helper compile scaffold and proves it can compile an
 Slice 7 still does not implement decryption, signature verification, signing, encryption, helper cryptographic operations, passphrase handling, PGP/MIME parsing, GPGME runtime cryptographic integration, or browser UI integration.
 
 <!-- OSMAP:V12-SLICE7-HELPER-COMPILE:END -->
+
+<!-- OSMAP:V12-SLICE8-HELPER-INVOCATION:START -->
+
+## Slice 8 helper invocation scaffold status
+
+Slice 8 adds a protocol-only helper invocation scaffold and proves exact argument discipline, bounded JSON request and response handling, no shell invocation, timeout handling, and fail-closed unknown operation behavior.
+
+Slice 8 still does not implement decryption, signature verification, signing, encryption, helper cryptographic operations, passphrase handling, PGP/MIME parsing, GPGME runtime cryptographic integration, decrypted content rendering, or browser UI integration.
+
+<!-- OSMAP:V12-SLICE8-HELPER-INVOCATION:END -->

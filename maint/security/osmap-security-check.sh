@@ -323,4 +323,6 @@ sh maint/security/osmap-v12-openpgp-gpgme-availability-gate.sh
 sh maint/security/test-osmap-v12-openpgp-gpgme-availability-gate.sh
 sh maint/security/osmap-v12-openpgp-helper-compile-scaffold-gate.sh
 sh maint/security/test-osmap-v12-openpgp-helper-compile-scaffold-gate.sh
+sh maint/security/osmap-v12-openpgp-helper-invocation-gate.sh
+sh maint/security/test-osmap-v12-openpgp-helper-invocation-gate.sh
 echo "==> security-check complete"

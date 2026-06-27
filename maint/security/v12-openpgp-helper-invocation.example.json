@@ -1,0 +1,45 @@
+{
+  "schema": "osmap-v12-openpgp-helper-invocation-scaffold-v1",
+  "helper_name": "osmap-openpgp-helper",
+  "helper_path": "maint/security/openpgp-helper/osmap-openpgp-helper-protocol-only.py",
+  "exact_argv": [
+    "--protocol-only"
+  ],
+  "allowed_operations": [
+    "diagnostic_ping",
+    "capability_status",
+    "policy_check"
+  ],
+  "limits": {
+    "max_request_bytes": 8192,
+    "max_response_bytes": 8192,
+    "timeout_seconds": 5
+  },
+  "required": {
+    "account_binding_required_before_runtime_crypto": true,
+    "bounded_request_bytes": true,
+    "bounded_response_bytes": true,
+    "exact_argv_required": true,
+    "malformed_json_fails_closed": true,
+    "no_shell_invocation": true,
+    "stderr_non_sensitive": true,
+    "stdin_json_only": true,
+    "stdout_json_only": true,
+    "timeout_enforced": true,
+    "unknown_operation_fails_closed": true
+  },
+  "safety_invariants": {
+    "browser_request_handler_touched_keys": false,
+    "direct_gpg_runtime_crypto_allowed": false,
+    "fallback_to_direct_gpg_crypto_allowed": false,
+    "message_decryption_attempted": false,
+    "message_encryption_attempted": false,
+    "message_signature_verification_attempted": false,
+    "message_signing_attempted": false,
+    "passphrases_prompted_or_stored": false,
+    "pgp_mime_parsing_attempted": false,
+    "runtime_crypto_enabled": false,
+    "secret_key_access_attempted": false,
+    "secret_key_listing_attempted": false
+  }
+}

@@ -8,8 +8,8 @@
 #include <stdio.h>
 
 int main(void) {
-    const char *version = gpgme_check_version(NULL);
-    if (version == NULL) {
+    const char *version = gpgme_check_version(0);
+    if (!version) {
         fputs("gpgme unavailable\n", stderr);
         return 2;
     }

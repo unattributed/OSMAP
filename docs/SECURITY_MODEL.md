@@ -381,3 +381,11 @@ Slice 6 proves that GPGME development metadata is available before later helper 
 Slice 7 proves that the future `osmap-openpgp-helper` boundary can be represented as a separate GPGME-linked helper scaffold. The scaffold is compile and link only. It does not enable runtime cryptography, does not parse PGP/MIME, and does not allow the browser-facing request handler to touch keys, passphrases, decrypted plaintext, raw message bodies, or trusted HTML derived from decrypted content.
 
 <!-- OSMAP:V12-SLICE7-HELPER-COMPILE:END -->
+
+<!-- OSMAP:V12-SLICE8-HELPER-INVOCATION:START -->
+
+### V12 OpenPGP helper invocation boundary
+
+Slice 8 proves protocol-only helper invocation through an exact argv list, bounded JSON stdin and stdout, timeout handling, and fail-closed unknown operation behavior. It does not enable runtime cryptography. The browser-facing request handler still must not touch keys, passphrases, decrypted plaintext, raw message bodies, or trusted HTML derived from decrypted content.
+
+<!-- OSMAP:V12-SLICE8-HELPER-INVOCATION:END -->
