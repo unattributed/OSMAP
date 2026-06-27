@@ -1,0 +1,24 @@
+{
+  "schema": "osmap-v12-openpgp-helper-client-integration-v1",
+  "purpose": "Validate V12 OpenPGP helper client integration discipline without enabling runtime crypto.",
+  "required_gates": [
+    "osmap-v12-openpgp-helper-invocation-gate.sh",
+    "osmap-v12-openpgp-rust-helper-client-gate.sh",
+    "osmap-v12-openpgp-helper-client-integration-gate.sh"
+  ],
+  "safety_invariants": {
+    "browser_handlers_touch_openpgp_helper": false,
+    "browser_ui_integrated": false,
+    "decrypted_content_rendering_enabled": false,
+    "direct_gpg_runtime_crypto_allowed": false,
+    "helper_process_spawned_by_slice": false,
+    "message_decryption_attempted": false,
+    "message_encryption_attempted": false,
+    "message_signature_verification_attempted": false,
+    "message_signing_attempted": false,
+    "passphrases_prompted_or_stored": false,
+    "pgp_mime_parsing_attempted": false,
+    "private_key_access_attempted": false,
+    "secret_key_listing_attempted": false
+  }
+}

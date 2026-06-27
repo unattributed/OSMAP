@@ -14,3 +14,10 @@ The boundary defines:
 The Slice 9 Rust boundary does not spawn the helper process. It prepares and validates invocation shape only. Process execution remains outside this slice to avoid expanding direct command-execution surfaces before the helper privilege and runtime boundary is reviewed.
 
 Slice 9 does not implement OpenPGP decryption, signature verification, signing, encryption, PGP/MIME parsing, passphrase handling, secret-key listing, private-key access, decrypted-content rendering, browser UI integration, or direct `gpg` cryptographic fallback.
+<!-- OSMAP:V12-SLICE10-HELPER-CLIENT-INTEGRATION:START -->
+
+## Slice 10 integration gate
+
+The Rust helper client boundary is now covered by a V12 integration gate. The gate validates check wiring and policy invariants only. It does not enable process spawning or cryptographic operations.
+
+<!-- OSMAP:V12-SLICE10-HELPER-CLIENT-INTEGRATION:END -->

@@ -150,3 +150,10 @@ Slice 8 still does not implement decryption, signature verification, signing, en
 Slice 9 adds the typed Rust application-side helper client boundary. It prepares exact protocol invocation plans and validates helper result classification. Slice 9 still does not implement OpenPGP decryption, signature verification, signing, encryption, helper cryptographic operations, passphrase handling, PGP/MIME parsing, or browser UI integration.
 
 <!-- OSMAP:V12-SLICE9-RUST-HELPER-CLIENT:END -->
+<!-- OSMAP:V12-SLICE10-HELPER-CLIENT-INTEGRATION:START -->
+
+## Slice 10 helper client integration status
+
+Slice 10 adds a helper client integration gate for V12. It verifies check wiring and policy invariants only. It still does not implement OpenPGP decryption, signature verification, signing, encryption, helper cryptographic operations, passphrase handling, PGP/MIME parsing, browser UI integration, or decrypted content rendering.
+
+<!-- OSMAP:V12-SLICE10-HELPER-CLIENT-INTEGRATION:END -->

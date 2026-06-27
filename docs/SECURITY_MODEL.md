@@ -396,3 +396,10 @@ Slice 8 proves protocol-only helper invocation through an exact argv list, bound
 Slice 9 keeps helper invocation planning typed and bounded in Rust while still avoiding process spawning and cryptographic operations. Request bodies are stdin-only JSON plans with bounded stdout and stderr handling and fail-closed result classification. The full security check skips only the duplicate nested cargo check inside this V12 gate and its regression wrapper because the security check already performs cargo check and cargo test before the V12 gate sequence.
 
 <!-- OSMAP:V12-SLICE9-RUST-HELPER-CLIENT:END -->
+<!-- OSMAP:V12-SLICE10-HELPER-CLIENT-INTEGRATION:START -->
+
+### V12 OpenPGP helper client integration gate
+
+Slice 10 proves that the protocol-only helper invocation scaffold and typed Rust helper client boundary are integrated into V12 checks and the full security check without enabling runtime cryptography. Browser-facing handlers remain outside the OpenPGP helper boundary.
+
+<!-- OSMAP:V12-SLICE10-HELPER-CLIENT-INTEGRATION:END -->

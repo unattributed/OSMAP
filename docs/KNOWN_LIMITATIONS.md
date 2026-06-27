@@ -339,3 +339,10 @@ V12 Slice 8 proves protocol-only helper invocation shape. It validates bounded J
 V12 Slice 9 adds typed Rust request and response boundary checks only. It does not spawn the helper, decrypt, verify, sign, encrypt, parse PGP/MIME, prompt for passphrases, touch private keys, or integrate browser UI.
 
 <!-- OSMAP:V12-SLICE9-RUST-HELPER-CLIENT:END -->
+<!-- OSMAP:V12-SLICE10-HELPER-CLIENT-INTEGRATION:START -->
+
+### V12 Slice 10 helper client integration limitation
+
+V12 Slice 10 adds an integration gate only. It does not spawn the helper, decrypt, verify, sign, encrypt, parse PGP/MIME, prompt for passphrases, touch private keys, render decrypted content, or expose browser UI controls.
+
+<!-- OSMAP:V12-SLICE10-HELPER-CLIENT-INTEGRATION:END -->

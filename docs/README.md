@@ -320,3 +320,8 @@ V7 production availability was previously reopened pending real-login, real-mail
 - `V12_OPENPGP_RUST_HELPER_CLIENT_BOUNDARY.md` defines the typed Rust application-side helper client boundary for Slice 9.
 
 <!-- OSMAP:V12-SLICE9-RUST-HELPER-CLIENT:END -->
+<!-- OSMAP:V12-SLICE10-HELPER-CLIENT-INTEGRATION:START -->
+
+- `V12_OPENPGP_HELPER_CLIENT_INTEGRATION_GATE.md` defines the non-cryptographic helper client integration gate for Slice 10.
+
+<!-- OSMAP:V12-SLICE10-HELPER-CLIENT-INTEGRATION:END -->

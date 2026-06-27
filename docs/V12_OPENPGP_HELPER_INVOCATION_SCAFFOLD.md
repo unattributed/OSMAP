@@ -72,3 +72,10 @@ The known stale V3 live evidence release blocker remains outside Slice 8 scope.
 The protocol-only helper invocation scaffold is now paired with a Rust-side typed request and response boundary. The Rust side still does not spawn the helper in Slice 9.
 
 <!-- OSMAP:V12-SLICE9-RUST-HELPER-CLIENT:END -->
+<!-- OSMAP:V12-SLICE10-HELPER-CLIENT-INTEGRATION:START -->
+
+## Slice 10 integration gate
+
+The helper invocation scaffold is now covered by a helper client integration gate that checks V12 wiring while keeping process execution and runtime cryptography disabled.
+
+<!-- OSMAP:V12-SLICE10-HELPER-CLIENT-INTEGRATION:END -->

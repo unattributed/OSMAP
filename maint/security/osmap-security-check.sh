@@ -327,4 +327,6 @@ sh maint/security/osmap-v12-openpgp-helper-invocation-gate.sh
 sh maint/security/test-osmap-v12-openpgp-helper-invocation-gate.sh
 OSMAP_V12_RUST_HELPER_CLIENT_SKIP_GATE_CARGO_CHECK=1 sh maint/security/osmap-v12-openpgp-rust-helper-client-gate.sh
 OSMAP_V12_RUST_HELPER_CLIENT_SKIP_GATE_CARGO_CHECK=1 sh maint/security/test-osmap-v12-openpgp-rust-helper-client-gate.sh
+sh maint/security/osmap-v12-openpgp-helper-client-integration-gate.sh
+sh maint/security/test-osmap-v12-openpgp-helper-client-integration-gate.sh
 echo "==> security-check complete"
