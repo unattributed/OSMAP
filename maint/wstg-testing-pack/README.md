@@ -76,6 +76,14 @@ The brute-force throttle probe defaults to three invalid attempts with a delay b
 
 Most host-assisted tests use `ssh $OSMAP_SSH_HOST` and read-only commands. Host-assisted checks are disabled unless `--include-host` or `OSMAP_ALLOW_HOST_ASSISTED_TESTS=true` is used. SSH-assisted host checks use `OSMAP_SSH_TIMEOUT_SECONDS`, defaulting to 300 seconds, so slower release hosts can finish bounded live validators without relaxing the browser request timeout.
 
+Network connection establishment and application response reads use separate
+deadlines. `OSMAP_CONNECT_TIMEOUT_SECONDS` defaults to 5 seconds so an
+intentionally closed cleartext port does not stall the pack.
+`OSMAP_REQUEST_TIMEOUT_SECONDS` defaults to 20 seconds so authentication
+evidence can include Dovecot's bounded penalty delay. Release-mode
+authentication retries are written under distinct `_retry` evidence labels;
+an incomplete first response still fails closed.
+
 Any test that sends mail, moves mail, deletes mail, mutates drafts, changes settings, or injects controlled messages must use dedicated validation accounts and controlled fixtures only.
 
 `OSMAP-WSTG-INPV-003` is the command-injection due-diligence lane. It uses safe

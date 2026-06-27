@@ -32,6 +32,7 @@ do
 	assert_contains_file "${env_file}" "OSMAP_SEND_WORKER_BUDGET=2"
 	assert_contains_file "${env_file}" "OSMAP_AUTH_WORKER_BUDGET=4"
 	assert_contains_file "${env_file}" "OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS=5"
+	assert_contains_file "${env_file}" "OSMAP_AUTH_BACKEND_TIMEOUT_SECONDS=20"
 done
 
 printf '%s\n' "OSMAP budget env example regression checks passed"

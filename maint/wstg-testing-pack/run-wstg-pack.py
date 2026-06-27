@@ -152,7 +152,8 @@ class Config:
     prompt_auth: bool
     allow_host_assisted: bool
     throttle_attempts: int
-    timeout: float
+    connect_timeout: float
+    response_timeout: float
     ssh_timeout: float
     release_mode: bool
     wstg_source_name: str
@@ -241,6 +242,9 @@ class Runner:
         self.csrf_token = ""
         self.prompted_password = ""
         self.last_login_set_cookie_headers: list[str] = []
+        # Keep every release-mode authentication attempt independently
+        # addressable so a successful retry cannot overwrite the first result.
+        self.authenticated_login_evidence: dict[str, list[str]] = {}
         self.mime_html_live_report: str | None = None
         self.authenticated_proof: dict[str, bool] = {
             "login": False,
@@ -408,14 +412,23 @@ class Runner:
         ):
             request_path = f"{self.config.base_path}{path}"
         evidence = HttpEvidence(label, None, "", [], b"")
+        conn: http.client.HTTPConnection | None = None
         try:
             if scheme == "https":
                 context = osmap_tls_client_context()
-                conn: http.client.HTTPConnection = http.client.HTTPSConnection(
-                    host, port=port, timeout=self.config.timeout, context=context
+                conn = http.client.HTTPSConnection(
+                    host, port=port, timeout=self.config.connect_timeout, context=context
                 )
             else:
-                conn = http.client.HTTPConnection(host, port=port, timeout=self.config.timeout)
+                conn = http.client.HTTPConnection(
+                    host, port=port, timeout=self.config.connect_timeout
+                )
+            # Establish the network connection under the short connect
+            # deadline, then allow application responses their independent
+            # bounded read deadline.
+            conn.connect()
+            if conn.sock is not None:
+                conn.sock.settimeout(self.config.response_timeout)
             conn.request(method, request_path, body=body_bytes, headers=headers)
             response = conn.getresponse()
             body_data = response.read(DEFAULT_BODY_LIMIT)
@@ -430,9 +443,11 @@ class Runner:
             )
             if store_cookies:
                 self.store_response_cookies(evidence)
-            conn.close()
         except (OSError, ssl.SSLError, socket.timeout) as exc:
             evidence = HttpEvidence(label, None, "", [], b"", error=str(exc))
+        finally:
+            if conn is not None:
+                conn.close()
         self.write_http_evidence(evidence, store_body=store_body_evidence)
         self.record_response_completeness(
             evidence,
@@ -451,11 +466,13 @@ class Runner:
         error = ""
         truncated = False
         try:
-            sock = socket.create_connection((host, self.config.port), timeout=self.config.timeout)
+            sock = socket.create_connection(
+                (host, self.config.port), timeout=self.config.connect_timeout
+            )
             if self.config.scheme == "https":
                 context = osmap_tls_client_context()
                 sock = context.wrap_socket(sock, server_hostname=host)
-            sock.settimeout(self.config.timeout)
+            sock.settimeout(self.config.response_timeout)
             sock.sendall(raw_request)
             while len(response) < DEFAULT_BODY_LIMIT:
                 chunk = sock.recv(min(4096, DEFAULT_BODY_LIMIT - len(response)))
@@ -659,6 +676,7 @@ class Runner:
         reason: str = "login",
         store_cookies: bool = False,
     ) -> HttpEvidence:
+        attempt_labels = [label]
         evidence = self.form_post(
             label,
             "/login",
@@ -672,8 +690,10 @@ class Runner:
         )
         if self.config.release_mode and evidence.status in {None, 401, 429}:
             time.sleep(max(10.0, self.config.rate_delay))
+            retry_label = f"{label}_retry"
+            attempt_labels.append(retry_label)
             evidence = self.form_post(
-                label,
+                retry_label,
                 "/login",
                 {
                     "username": self.config.test_email,
@@ -683,7 +703,16 @@ class Runner:
                 cookies=cookies,
                 store_cookies=store_cookies,
             )
+        self.authenticated_login_evidence[label] = [
+            f"evidence/{attempt_label}.headers" for attempt_label in attempt_labels
+        ]
         return evidence
+
+    def authenticated_login_evidence_paths(self, label: str) -> list[str]:
+        """Return every independently stored HTTP attempt for one login."""
+        return self.authenticated_login_evidence.get(
+            label, [f"evidence/{label}.headers"]
+        )
 
     def ensure_login(self) -> tuple[bool, str]:
         if self.authenticated:
@@ -1483,7 +1512,8 @@ class Runner:
         ok, message = self.ensure_login()
         if not ok:
             return self.result("OSMAP-WSTG-ATHN-004", STATUS_SKIP, message)
-        evidence_paths.extend(["evidence/auth_login.headers", "evidence/auth_mailboxes.headers"])
+        evidence_paths.extend(self.authenticated_login_evidence_paths("auth_login"))
+        evidence_paths.append("evidence/auth_mailboxes.headers")
         return self.result(
             "OSMAP-WSTG-ATHN-004",
             STATUS_PASS,
@@ -1687,10 +1717,15 @@ class Runner:
                 "OSMAP-WSTG-SESS-001",
                 STATUS_FAIL,
                 "session cookie is missing required flags",
-                ["evidence/auth_login.headers"],
+                self.authenticated_login_evidence_paths("auth_login"),
                 {"missing": missing},
             )
-        return self.result("OSMAP-WSTG-SESS-001", STATUS_PASS, "session cookie has Secure, HttpOnly, SameSite=Strict, and Path=/", ["evidence/auth_login.headers"])
+        return self.result(
+            "OSMAP-WSTG-SESS-001",
+            STATUS_PASS,
+            "session cookie has Secure, HttpOnly, SameSite=Strict, and Path=/",
+            self.authenticated_login_evidence_paths("auth_login"),
+        )
 
     def test_session_fixation(self) -> TestResult:
         if not self.authenticated_ready():
@@ -1703,8 +1738,15 @@ class Runner:
         )
         cookie_values = evidence.header_values("Set-Cookie")
         retained = any(f"osmap_session={fixed}" in value for value in cookie_values)
+        evidence_paths = self.authenticated_login_evidence_paths("session_fixation")
         if evidence.status != 303 or retained:
-            return self.result("OSMAP-WSTG-SESS-002", STATUS_FAIL, "pre-login session value was retained or login failed", ["evidence/session_fixation.headers"], {"http_status": evidence.status})
+            return self.result(
+                "OSMAP-WSTG-SESS-002",
+                STATUS_FAIL,
+                "pre-login session value was retained or login failed",
+                evidence_paths,
+                {"http_status": evidence.status},
+            )
         cleanup_jar = cookie_jar_from_set_cookie_headers(cookie_values)
         if "osmap_session" in cleanup_jar:
             cleanup_page = self.request(
@@ -1722,7 +1764,12 @@ class Runner:
                     cookies=cleanup_jar,
                     headers=same_origin_headers(self.config),
                 )
-        return self.result("OSMAP-WSTG-SESS-002", STATUS_PASS, "authentication issued a fresh session cookie", ["evidence/session_fixation.headers"])
+        return self.result(
+            "OSMAP-WSTG-SESS-002",
+            STATUS_PASS,
+            "authentication issued a fresh session cookie",
+            evidence_paths,
+        )
 
     def test_logout_csrf(self) -> TestResult:
         ok, message = self.ensure_login()
@@ -1857,7 +1904,6 @@ class Runner:
         if not redaction_ok:
             failures["redaction"] = "session lifecycle evidence redaction scan failed"
         evidence_paths = [
-            "evidence/session_lifecycle_login.headers",
             "evidence/session_lifecycle_mailboxes.headers",
             "evidence/session_lifecycle_mailboxes.body",
             "evidence/session_lifecycle_logout.headers",
@@ -1867,6 +1913,9 @@ class Runner:
             "evidence/session_lifecycle_executable.txt",
             "evidence/session_lifecycle_redaction.txt",
         ]
+        evidence_paths[0:0] = self.authenticated_login_evidence_paths(
+            "session_lifecycle_login"
+        )
         if failures:
             return self.result(
                 "OSMAP-WSTG-SESS-006",
@@ -5041,7 +5090,7 @@ printf 'secret_review=No password, password hash, TOTP material, session cookie,
             "--report",
             str(report_path),
             "--timeout",
-            str(self.config.timeout),
+            str(self.config.response_timeout),
         ]
         try:
             completed = subprocess.run(
@@ -5050,7 +5099,7 @@ printf 'secret_review=No password, password hash, TOTP material, session cookie,
                 text=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
-                timeout=max(30.0, self.config.timeout * 8),
+                timeout=max(30.0, self.config.response_timeout * 8),
                 check=False,
             )
             stdout_path.write_text(self.redact(completed.stdout), encoding="utf-8")
@@ -5785,6 +5834,18 @@ def build_config(args: argparse.Namespace) -> Config:
     )
     throttle_attempts_default = "6" if release_mode else "3"
     throttle_attempts_raw = merged.get("OSMAP_THROTTLE_PROBE_ATTEMPTS", throttle_attempts_default)
+    connect_timeout = float(
+        merged.get("OSMAP_CONNECT_TIMEOUT_SECONDS", "5") or "5"
+    )
+    response_timeout = float(
+        merged.get("OSMAP_REQUEST_TIMEOUT_SECONDS", "20") or "20"
+    )
+    if connect_timeout <= 0 or response_timeout <= 0:
+        raise SystemExit("WSTG network timeouts must be greater than zero")
+    if release_mode and response_timeout < 20:
+        raise SystemExit(
+            "release mode requires OSMAP_REQUEST_TIMEOUT_SECONDS of at least 20"
+        )
     if release_mode:
         allow_auth = True
         allow_host = True
@@ -5802,7 +5863,8 @@ def build_config(args: argparse.Namespace) -> Config:
         prompt_auth=prompt_auth,
         allow_host_assisted=allow_host,
         throttle_attempts=max(1, int(throttle_attempts_raw or throttle_attempts_default)),
-        timeout=float(merged.get("OSMAP_REQUEST_TIMEOUT_SECONDS", "12") or "12"),
+        connect_timeout=connect_timeout,
+        response_timeout=response_timeout,
         ssh_timeout=max(1.0, float(merged.get("OSMAP_SSH_TIMEOUT_SECONDS", "300") or "300")),
         release_mode=release_mode,
         wstg_source_name=merged.get("OSMAP_WSTG_SOURCE_NAME", "OWASP Web Security Testing Guide"),

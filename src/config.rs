@@ -24,6 +24,10 @@ use crate::throttle::{
 /// Conservative hard cap for admitted expensive browser route work.
 pub const DEFAULT_EXPENSIVE_REQUEST_TIMEOUT_SECONDS: u64 = 5;
 
+/// Bounded authentication-backend deadline with headroom above Dovecot's
+/// documented 15-second maximum authentication penalty.
+pub const DEFAULT_AUTH_BACKEND_TIMEOUT_SECONDS: u64 = 20;
+
 /// Runtime configuration that is safe to print in operator-facing startup
 /// output because it excludes secret-bearing fields.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -47,6 +51,7 @@ pub struct AppConfig {
     pub send_worker_budget: u64,
     pub auth_worker_budget: u64,
     pub expensive_request_timeout_seconds: u64,
+    pub auth_backend_timeout_seconds: u64,
     pub session_lifetime_seconds: u64,
     pub session_idle_timeout_seconds: u64,
     pub totp_allowed_skew_steps: i64,
@@ -262,6 +267,11 @@ impl AppConfig {
             "OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS",
             &DEFAULT_EXPENSIVE_REQUEST_TIMEOUT_SECONDS.to_string(),
         );
+        let auth_backend_timeout_value = read_value(
+            env_map,
+            "OSMAP_AUTH_BACKEND_TIMEOUT_SECONDS",
+            &DEFAULT_AUTH_BACKEND_TIMEOUT_SECONDS.to_string(),
+        );
         let session_lifetime_value = read_value(env_map, "OSMAP_SESSION_LIFETIME_SECS", "43200");
         let session_idle_timeout_value = read_value(
             env_map,
@@ -394,6 +404,10 @@ impl AppConfig {
             "OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS",
             &expensive_request_timeout_value,
         )?;
+        validate_non_empty(
+            "OSMAP_AUTH_BACKEND_TIMEOUT_SECONDS",
+            &auth_backend_timeout_value,
+        )?;
         validate_non_empty("OSMAP_SESSION_LIFETIME_SECS", &session_lifetime_value)?;
         validate_non_empty(
             "OSMAP_SESSION_IDLE_TIMEOUT_SECS",
@@ -473,6 +487,10 @@ impl AppConfig {
             "OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS",
             &expensive_request_timeout_value,
         )?;
+        let auth_backend_timeout_seconds = parse_u64(
+            "OSMAP_AUTH_BACKEND_TIMEOUT_SECONDS",
+            &auth_backend_timeout_value,
+        )?;
         let openbsd_confinement_mode =
             OpenbsdConfinementMode::parse(&openbsd_confinement_mode_value)?;
         let session_lifetime_seconds =
@@ -543,6 +561,18 @@ impl AppConfig {
             "OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS",
             expensive_request_timeout_seconds,
         )?;
+        validate_positive_u64(
+            "OSMAP_AUTH_BACKEND_TIMEOUT_SECONDS",
+            auth_backend_timeout_seconds,
+        )?;
+        if auth_backend_timeout_seconds < DEFAULT_AUTH_BACKEND_TIMEOUT_SECONDS {
+            return Err(BootstrapError::InvalidConfig {
+                field: "OSMAP_AUTH_BACKEND_TIMEOUT_SECONDS",
+                reason: format!(
+                    "value must be at least {DEFAULT_AUTH_BACKEND_TIMEOUT_SECONDS} seconds to exceed the supported Dovecot authentication penalty"
+                ),
+            });
+        }
         validate_budget_not_above_connection_cap(
             "OSMAP_MAILBOX_WORKER_BUDGET",
             mailbox_worker_budget,
@@ -660,6 +690,7 @@ impl AppConfig {
             send_worker_budget,
             auth_worker_budget,
             expensive_request_timeout_seconds,
+            auth_backend_timeout_seconds,
             session_lifetime_seconds,
             session_idle_timeout_seconds,
             totp_allowed_skew_steps,
@@ -1029,6 +1060,10 @@ mod tests {
             config.expensive_request_timeout_seconds,
             DEFAULT_EXPENSIVE_REQUEST_TIMEOUT_SECONDS
         );
+        assert_eq!(
+            config.auth_backend_timeout_seconds,
+            DEFAULT_AUTH_BACKEND_TIMEOUT_SECONDS
+        );
         assert_eq!(config.session_lifetime_seconds, 43200);
         assert_eq!(
             config.session_idle_timeout_seconds,
@@ -1099,6 +1134,10 @@ mod tests {
             (
                 "OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS".to_string(),
                 "7".to_string(),
+            ),
+            (
+                "OSMAP_AUTH_BACKEND_TIMEOUT_SECONDS".to_string(),
+                "21".to_string(),
             ),
             (
                 "OSMAP_SESSION_LIFETIME_SECS".to_string(),
@@ -1243,6 +1282,7 @@ mod tests {
         assert_eq!(config.send_worker_budget, 3);
         assert_eq!(config.auth_worker_budget, 6);
         assert_eq!(config.expensive_request_timeout_seconds, 7);
+        assert_eq!(config.auth_backend_timeout_seconds, 21);
         assert_eq!(config.session_lifetime_seconds, 3600);
         assert_eq!(config.session_idle_timeout_seconds, 900);
         assert_eq!(config.totp_allowed_skew_steps, 2);
@@ -1421,6 +1461,45 @@ mod tests {
             BootstrapError::InvalidConfig {
                 field: "OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS",
                 reason: "value must be greater than zero".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn rejects_zero_auth_backend_timeout() {
+        let env_map = BTreeMap::from([(
+            "OSMAP_AUTH_BACKEND_TIMEOUT_SECONDS".to_string(),
+            "0".to_string(),
+        )]);
+
+        let error = AppConfig::from_env_map(&env_map)
+            .expect_err("zero-valued authentication backend timeout must fail");
+
+        assert_eq!(
+            error,
+            BootstrapError::InvalidConfig {
+                field: "OSMAP_AUTH_BACKEND_TIMEOUT_SECONDS",
+                reason: "value must be greater than zero".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn rejects_auth_backend_timeout_without_penalty_headroom() {
+        let env_map = BTreeMap::from([(
+            "OSMAP_AUTH_BACKEND_TIMEOUT_SECONDS".to_string(),
+            "15".to_string(),
+        )]);
+
+        let error = AppConfig::from_env_map(&env_map)
+            .expect_err("authentication timeout must exceed Dovecot's penalty");
+
+        assert_eq!(
+            error,
+            BootstrapError::InvalidConfig {
+                field: "OSMAP_AUTH_BACKEND_TIMEOUT_SECONDS",
+                reason: "value must be at least 20 seconds to exceed the supported Dovecot authentication penalty"
+                    .to_string(),
             }
         );
     }
