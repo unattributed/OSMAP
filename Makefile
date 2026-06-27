@@ -112,3 +112,5 @@ v12-check:
 	sh maint/security/test-osmap-v12-openpgp-helper-compile-scaffold-gate.sh
 	sh maint/security/osmap-v12-openpgp-helper-invocation-gate.sh
 	sh maint/security/test-osmap-v12-openpgp-helper-invocation-gate.sh
+	sh maint/security/osmap-v12-openpgp-rust-helper-client-gate.sh
+	sh maint/security/test-osmap-v12-openpgp-rust-helper-client-gate.sh

@@ -389,3 +389,10 @@ Slice 7 proves that the future `osmap-openpgp-helper` boundary can be represente
 Slice 8 proves protocol-only helper invocation through an exact argv list, bounded JSON stdin and stdout, timeout handling, and fail-closed unknown operation behavior. It does not enable runtime cryptography. The browser-facing request handler still must not touch keys, passphrases, decrypted plaintext, raw message bodies, or trusted HTML derived from decrypted content.
 
 <!-- OSMAP:V12-SLICE8-HELPER-INVOCATION:END -->
+<!-- OSMAP:V12-SLICE9-RUST-HELPER-CLIENT:START -->
+
+### V12 OpenPGP Rust helper client boundary
+
+Slice 9 keeps helper invocation planning typed and bounded in Rust while still avoiding process spawning and cryptographic operations. Request bodies are stdin-only JSON plans with bounded stdout and stderr handling and fail-closed result classification. The full security check skips only the duplicate nested cargo check inside this V12 gate and its regression wrapper because the security check already performs cargo check and cargo test before the V12 gate sequence.
+
+<!-- OSMAP:V12-SLICE9-RUST-HELPER-CLIENT:END -->

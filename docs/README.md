@@ -315,3 +315,8 @@ V7 production availability was previously reopened pending real-login, real-mail
 - `V12_OPENPGP_HELPER_INVOCATION_SCAFFOLD.md` defines the protocol-only helper invocation scaffold for Slice 8.
 
 <!-- OSMAP:V12-SLICE8-HELPER-INVOCATION:END -->
+<!-- OSMAP:V12-SLICE9-RUST-HELPER-CLIENT:START -->
+
+- `V12_OPENPGP_RUST_HELPER_CLIENT_BOUNDARY.md` defines the typed Rust application-side helper client boundary for Slice 9.
+
+<!-- OSMAP:V12-SLICE9-RUST-HELPER-CLIENT:END -->

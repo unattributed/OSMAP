@@ -332,3 +332,10 @@ V12 Slice 7 proves helper compile and link scaffolding only. Even when the scaff
 V12 Slice 8 proves protocol-only helper invocation shape. It validates bounded JSON request and response behavior, exact argv discipline, no shell invocation, timeout handling, and fail-closed unknown operation behavior. It still does not implement OpenPGP decryption, signature verification, signing, encryption, PGP/MIME handling, passphrase handling, helper cryptographic operations, browser UI integration, or decrypted content rendering.
 
 <!-- OSMAP:V12-SLICE8-HELPER-INVOCATION:END -->
+<!-- OSMAP:V12-SLICE9-RUST-HELPER-CLIENT:START -->
+
+### V12 Slice 9 Rust helper client limitation
+
+V12 Slice 9 adds typed Rust request and response boundary checks only. It does not spawn the helper, decrypt, verify, sign, encrypt, parse PGP/MIME, prompt for passphrases, touch private keys, or integrate browser UI.
+
+<!-- OSMAP:V12-SLICE9-RUST-HELPER-CLIENT:END -->

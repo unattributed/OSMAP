@@ -65,3 +65,10 @@ The Slice 8 evidence archive must include:
 - optional carried-forward release-check output
 
 The known stale V3 live evidence release blocker remains outside Slice 8 scope.
+<!-- OSMAP:V12-SLICE9-RUST-HELPER-CLIENT:START -->
+
+## Slice 9 Rust client boundary
+
+The protocol-only helper invocation scaffold is now paired with a Rust-side typed request and response boundary. The Rust side still does not spawn the helper in Slice 9.
+
+<!-- OSMAP:V12-SLICE9-RUST-HELPER-CLIENT:END -->
