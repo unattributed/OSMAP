@@ -83,3 +83,13 @@ The diagnostics helper must not list secret keys, collect user ID values, prompt
 Slice 3 remains responsible for account capability binding by explicit configured fingerprints and fail-closed ambiguous-key behavior.
 
 <!-- OSMAP:V12-SLICE2-DIAGNOSTICS:END -->
+
+<!-- OSMAP:V12-SLICE3-ACCOUNT-BINDING:START -->
+
+## Slice 3 account fingerprint binding status
+
+Slice 3 adds account fingerprint binding validation only. It proves that OpenPGP capability must be configured by explicit full fingerprints and that email-only matching, user-ID matching, short key IDs, duplicate account bindings, and missing inventory fingerprints fail closed.
+
+Slice 3 still does not implement decryption, signature verification, signing, encryption, helper cryptographic operations, passphrase handling, PGP/MIME parsing, or browser UI integration.
+
+<!-- OSMAP:V12-SLICE3-ACCOUNT-BINDING:END -->

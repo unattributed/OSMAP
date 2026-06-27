@@ -279,3 +279,9 @@ V7 production availability was previously reopened pending real-login, real-mail
 - `V12_OPENPGP_KEY_INVENTORY_AND_DIAGNOSTICS.md` defines the diagnostics-only OpenPGP public key inventory boundary and evidence expectations for Slice 2.
 
 <!-- OSMAP:V12-SLICE2-DIAGNOSTICS:END -->
+
+<!-- OSMAP:V12-SLICE3-ACCOUNT-BINDING:START -->
+
+- `V12_OPENPGP_ACCOUNT_FINGERPRINT_BINDING.md` defines the account capability binding model, explicit full-fingerprint requirement, and fail-closed validation expectations for Slice 3.
+
+<!-- OSMAP:V12-SLICE3-ACCOUNT-BINDING:END -->

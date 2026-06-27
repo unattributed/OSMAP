@@ -284,3 +284,11 @@ Until later V12 slices provide implementation evidence, OSMAP must not claim wor
 V12 Slice 2 provides OpenPGP public key inventory and toolchain diagnostics only. OSMAP still must not claim implemented OpenPGP decryption, signature verification, signing, encryption, account binding, key discovery for delivery, or UI integration.
 
 <!-- OSMAP:V12-SLICE2-DIAGNOSTICS:END -->
+
+<!-- OSMAP:V12-SLICE3-ACCOUNT-BINDING:START -->
+
+### V12 Slice 3 account binding limitation
+
+V12 Slice 3 validates account-to-fingerprint configuration only. OSMAP still must not claim implemented OpenPGP decryption, signature verification, signing, encryption, PGP/MIME handling, passphrase handling, helper cryptographic operations, or browser UI integration.
+
+<!-- OSMAP:V12-SLICE3-ACCOUNT-BINDING:END -->

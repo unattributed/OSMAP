@@ -52,3 +52,11 @@ A valid Slice 2 evidence run includes:
 - carried-forward `make release-check` status
 
 The known V3 stale live evidence release blocker remains carried forward until final release evidence is refreshed.
+
+<!-- OSMAP:V12-SLICE3-ACCOUNT-BINDING:START -->
+
+## Slice 3 dependency on diagnostics
+
+Slice 3 adds account binding validation that can optionally compare configured full fingerprints against the Slice 2 diagnostics inventory. When such an inventory is supplied, configured fingerprints absent from the inventory fail closed.
+
+<!-- OSMAP:V12-SLICE3-ACCOUNT-BINDING:END -->

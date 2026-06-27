@@ -341,3 +341,11 @@ The web request handler must not directly handle private key material. Account O
 The Slice 2 diagnostic helper is an operator-side evidence tool only. It may inspect public key metadata and toolchain availability, but it must not list secret keys, collect user ID values, prompt for passphrases, decrypt mail, sign mail, encrypt mail, or run inside web request handling.
 
 <!-- OSMAP:V12-SLICE2-DIAGNOSTICS:END -->
+
+<!-- OSMAP:V12-SLICE3-ACCOUNT-BINDING:START -->
+
+### V12 OpenPGP account fingerprint binding boundary
+
+OpenPGP capability is account-scoped and must be authorized by explicit full fingerprints. Email-address-only key matching, user ID text matching, short key IDs, and automatic discovery are not authorization boundaries. Later helper and UI slices must consume validated account bindings and must preserve fail-closed behavior for missing or ambiguous bindings.
+
+<!-- OSMAP:V12-SLICE3-ACCOUNT-BINDING:END -->
