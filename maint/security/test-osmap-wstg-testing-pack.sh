@@ -17,6 +17,7 @@ fi
 
 echo "validating WSTG runner syntax"
 python3 -m py_compile "$pack_dir/run-wstg-pack.py"
+python3 "$repo_root/maint/security/test-osmap-wstg-runner.py"
 
 echo "validating WSTG mapping and manifest"
 python3 - "$pack_dir" <<'PY'

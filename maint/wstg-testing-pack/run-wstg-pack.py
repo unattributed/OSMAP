@@ -164,6 +164,23 @@ class Config:
             return self.parsed_base.port
         return 443 if self.scheme == "https" else 80
 
+    @property
+    def base_path(self) -> str:
+        """Return the normalized application mount path, without a trailing slash."""
+        path = self.parsed_base.path.rstrip("/")
+        return "" if path == "/" else path
+
+    @property
+    def authority(self) -> str:
+        """Return the HTTP authority, including a non-default target port."""
+        default_port = 443 if self.scheme == "https" else 80
+        return self.host if self.port == default_port else f"{self.host}:{self.port}"
+
+    @property
+    def origin(self) -> str:
+        """Return the configured same-origin value used by mutation probes."""
+        return f"{self.scheme}://{self.authority}"
+
 
 @dataclass
 class HttpEvidence:
@@ -221,6 +238,9 @@ class Runner:
             "logout": False,
             "session_invalidated": False,
         }
+        # These are reset for each mapped test. A test may not report pass when
+        # the runner could not collect a complete response from the target.
+        self.test_incomplete_evidence: list[dict[str, object]] = []
         self.secrets = [
             value
             for value in (
@@ -285,6 +305,7 @@ class Runner:
             test_id = item["test_id"]
             if selected_ids and test_id not in selected_ids:
                 continue
+            self.test_incomplete_evidence = []
             func = tests[test_id]
             try:
                 result = func()
@@ -294,6 +315,15 @@ class Runner:
                     STATUS_FAIL,
                     f"test raised unexpected error: {exc}",
                     details={"exception_type": type(exc).__name__},
+                )
+            if self.test_incomplete_evidence:
+                details = dict(result.details)
+                details["incomplete_evidence"] = list(self.test_incomplete_evidence)
+                result.details = details
+                result.status = STATUS_FAIL
+                result.message = (
+                    "target responses were unavailable or truncated; "
+                    "the security assertion could not be completed"
                 )
             self.results.append(result)
             print(f"{result.status.upper():15} {result.test_id} {result.message}")
@@ -336,19 +366,35 @@ class Runner:
         cookies: dict[str, str] | None = None,
         store_cookies: bool = False,
         store_body_evidence: bool = True,
+        allow_transport_failure: bool = False,
+        allow_truncated_response: bool = False,
     ) -> HttpEvidence:
         scheme = scheme or self.config.scheme
         host = host or self.config.host
         if port is None:
-            port = 443 if scheme == "https" else 80
+            if scheme == self.config.scheme and host == self.config.host:
+                port = self.config.port
+            else:
+                port = 443 if scheme == "https" else 80
         headers = dict(headers or {})
-        headers.setdefault("Host", host)
+        default_port = 443 if scheme == "https" else 80
+        authority = host if port == default_port else f"{host}:{port}"
+        headers.setdefault("Host", authority)
         headers.setdefault("User-Agent", "osmap-wstg-pack/1.0")
         if cookies:
             headers["Cookie"] = "; ".join(f"{key}={value}" for key, value in cookies.items())
         body_bytes = body.encode("utf-8") if isinstance(body, str) else body
         if body_bytes and "Content-Length" not in headers:
             headers["Content-Length"] = str(len(body_bytes))
+        request_path = path
+        if (
+            self.config.base_path
+            and host == self.config.host
+            and scheme == self.config.scheme
+            and port == self.config.port
+            and path.startswith("/")
+        ):
+            request_path = f"{self.config.base_path}{path}"
         evidence = HttpEvidence(label, None, "", [], b"")
         try:
             if scheme == "https":
@@ -358,7 +404,7 @@ class Runner:
                 )
             else:
                 conn = http.client.HTTPConnection(host, port=port, timeout=self.config.timeout)
-            conn.request(method, path, body=body_bytes, headers=headers)
+            conn.request(method, request_path, body=body_bytes, headers=headers)
             response = conn.getresponse()
             body_data = response.read(DEFAULT_BODY_LIMIT)
             truncated = bool(response.read(1))
@@ -376,10 +422,16 @@ class Runner:
         except (OSError, ssl.SSLError, socket.timeout) as exc:
             evidence = HttpEvidence(label, None, "", [], b"", error=str(exc))
         self.write_http_evidence(evidence, store_body=store_body_evidence)
+        self.record_response_completeness(
+            evidence,
+            allow_transport_failure=allow_transport_failure,
+            allow_truncated_response=allow_truncated_response,
+        )
         return evidence
 
     def raw_http_request(self, label: str, raw_request: bytes) -> HttpEvidence:
         host = self.config.host
+        raw_request = self.scope_raw_http_request(raw_request)
         response = b""
         error = ""
         truncated = False
@@ -403,7 +455,52 @@ class Runner:
 
         evidence = parse_raw_http_evidence(label, response, error=error, truncated=truncated)
         self.write_http_evidence(evidence)
+        self.record_response_completeness(evidence)
         return evidence
+
+    def scope_raw_http_request(self, raw_request: bytes) -> bytes:
+        """Apply the configured mount path and authority to a raw HTTP probe."""
+        if not raw_request:
+            return raw_request
+        header, separator, body = raw_request.partition(b"\r\n\r\n")
+        if not separator:
+            return raw_request
+        lines = header.split(b"\r\n")
+        if lines:
+            parts = lines[0].split(b" ", 2)
+            if len(parts) == 3 and parts[1].startswith(b"/") and self.config.base_path:
+                base_path = self.config.base_path.encode("ascii")
+                if not parts[1].startswith(base_path + b"/") and parts[1] != base_path:
+                    parts[1] = base_path + parts[1]
+                lines[0] = b" ".join(parts)
+        for index, line in enumerate(lines[1:], start=1):
+            if line.lower().startswith(b"host:"):
+                lines[index] = f"Host: {self.config.authority}".encode("ascii")
+        return b"\r\n".join(lines) + separator + body
+
+    def record_response_completeness(
+        self,
+        evidence: HttpEvidence,
+        *,
+        allow_transport_failure: bool = False,
+        allow_truncated_response: bool = False,
+    ) -> None:
+        """Record evidence conditions that make a security assertion incomplete."""
+        if evidence.status is None and not allow_transport_failure:
+            self.test_incomplete_evidence.append(
+                {
+                    "label": evidence.label,
+                    "condition": "transport_failure",
+                    "error": evidence.error or "no HTTP response",
+                }
+            )
+        if evidence.truncated and not allow_truncated_response:
+            self.test_incomplete_evidence.append(
+                {
+                    "label": evidence.label,
+                    "condition": "truncated_response",
+                }
+            )
 
     def form_post(
         self,
@@ -642,6 +739,7 @@ class Runner:
             "/login",
             scheme="http",
             port=80,
+            allow_transport_failure=True,
         )
         if http.status in {301, 302, 307, 308}:
             location = http.first_header("Location")
@@ -4212,7 +4310,14 @@ printf 'secret_review=No password, password hash, TOTP material, session cookie,
     def test_crypto_transport_security(self) -> TestResult:
         https = self.request("crypto_https_login", "GET", "/login")
         hsts = https.first_header("Strict-Transport-Security")
-        http = self.request("crypto_cleartext_login", "GET", "/login", scheme="http", port=80)
+        http = self.request(
+            "crypto_cleartext_login",
+            "GET",
+            "/login",
+            scheme="http",
+            port=80,
+            allow_transport_failure=True,
+        )
         static_ok = self.write_crypto_transport_static_evidence()
         tls_guard, tls_report, tls_stdout, tls_ok, tls_details = self.write_crypto_tls_standard_evidence()
         evidence_paths = [
@@ -4531,7 +4636,10 @@ printf 'secret_review=No password, password hash, TOTP material, session cookie,
 
 
 def same_origin_headers(config: Config) -> dict[str, str]:
-    return {"Origin": f"{config.scheme}://{config.host}", "Referer": f"{config.base_url}/mailboxes"}
+    return {
+        "Origin": config.origin,
+        "Referer": f"{config.base_url}/mailboxes",
+    }
 
 
 def local_git_head() -> str:
@@ -4927,13 +5035,21 @@ def load_env_file(path: Path) -> dict[str, str]:
 
 
 def build_config(args: argparse.Namespace) -> Config:
-    env_values = {}
-    env_values.update(load_env_file(PACK_ROOT / ".env"))
-    merged = dict(os.environ)
-    merged.update(env_values)
+    # Process environment values deliberately override the optional local file
+    # so CI and one-shot operator settings cannot be shadowed by stale secrets.
+    merged = load_env_file(PACK_ROOT / ".env")
+    merged.update(os.environ)
 
     base_url = args.base_url or merged.get("OSMAP_BASE_URL") or "https://mail.blackbagsecurity.com"
     parsed = urllib.parse.urlparse(base_url)
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        raise SystemExit("OSMAP_BASE_URL must be an absolute http or https URL")
+    if parsed.username or parsed.password or parsed.query or parsed.fragment:
+        raise SystemExit("OSMAP_BASE_URL must not contain credentials, a query, or a fragment")
+    try:
+        parsed.port
+    except ValueError as exc:
+        raise SystemExit(f"OSMAP_BASE_URL contains an invalid port: {exc}") from exc
     host = args.host or merged.get("OSMAP_HOST") or parsed.hostname or "mail.blackbagsecurity.com"
     output_root_raw = args.output_dir or merged.get("OSMAP_OUTPUT_DIR")
     output_root = Path(output_root_raw).expanduser() if output_root_raw else PACK_ROOT / "output"
