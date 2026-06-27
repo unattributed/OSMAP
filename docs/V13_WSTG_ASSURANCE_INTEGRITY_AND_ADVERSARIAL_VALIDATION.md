@@ -109,4 +109,22 @@ The sprint is complete only when:
   misuse regressions, safe EICAR detection through the configured Rspamd and
   ClamAV boundary, advisory and dependency-policy execution, CycloneDX SBOM
   generation, and host inspection of triggered security events.
-- Slice 6: pending merge, deployment, and live closeout.
+- Slice 6: completed. Pull requests 33 and 34 passed CodeQL and the repository
+  security workflow, then merged to protected `main`.
+
+## Release Closeout
+
+- Final reviewed commit:
+  `1508f0c97b613e58e9573d2ca8bd93f55cd1eaa3`.
+- Production deployment session:
+  `/home/foo/osmap-binary-deployment/v13-wstg-assurance-final-20260627T032544Z`.
+- Live and staged binary SHA256:
+  `2507abb721e47117efbe1b9f23bc7304ff6d50b33729d52a3e7e719750fd3d8a`.
+- Rollback script:
+  `/home/foo/osmap-binary-deployment/v13-wstg-assurance-final-20260627T032544Z/scripts/restore-binary-deployment.sh`.
+- Browser-facing validation passed for `GET /`, `GET /login`,
+  `GET /healthz`, and invalid Host rejection with HTTP 421.
+- Final deployed operational evidence passed for CSP, Host and request
+  desynchronization, real-browser reflected and stored XSS, attachment
+  containment, Rspamd and ClamAV malware detection, dependency and CycloneDX
+  validation, and triggered security logging with redaction.
