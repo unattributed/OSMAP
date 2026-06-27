@@ -14,10 +14,10 @@ impl RuntimeBrowserGateway {
                 self.doveadm_auth_socket_path.clone(),
                 "imap",
             )
-            .with_command_timeout_secs(
-                self.expensive_request_timeout_secs
-                    .min(crate::auth::DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS),
-            ),
+            // Dovecot intentionally delays repeated failures for as long as
+            // 15 seconds. Authentication therefore has a distinct bounded
+            // deadline instead of inheriting the shorter mailbox-work cap.
+            .with_command_timeout_secs(self.auth_backend_timeout_secs),
         )
     }
 
@@ -551,9 +551,7 @@ fn normalized_login_public_reason(public_reason: PublicFailureReason) -> &'stati
 fn records_login_throttle_failure(public_reason: PublicFailureReason) -> bool {
     matches!(
         public_reason,
-        PublicFailureReason::InvalidCredentials
-            | PublicFailureReason::InvalidSecondFactor
-            | PublicFailureReason::TemporarilyUnavailable
+        PublicFailureReason::InvalidCredentials | PublicFailureReason::InvalidSecondFactor
     )
 }
 
@@ -637,7 +635,7 @@ mod tests {
         assert!(records_login_throttle_failure(
             PublicFailureReason::InvalidSecondFactor
         ));
-        assert!(records_login_throttle_failure(
+        assert!(!records_login_throttle_failure(
             PublicFailureReason::TemporarilyUnavailable
         ));
         assert!(!records_login_throttle_failure(

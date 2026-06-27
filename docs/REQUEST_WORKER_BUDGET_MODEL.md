@@ -88,7 +88,10 @@ download; direct `doveadm` message search/view/move commands; sendmail-backed
 compose submission; and the external-auth stage of login.
 `OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS` is read during startup, reported in
 the non-secret bootstrap summary, and propagated into the browser-facing helper
-client policy or command timeout for those expensive route classes.
+client policy or command timeout for the mailbox and submission route classes.
+`OSMAP_AUTH_BACKEND_TIMEOUT_SECONDS` separately bounds external authentication
+and defaults to 20 seconds so the admitted auth worker can outlast Dovecot's
+documented 15-second maximum authentication penalty without becoming unbounded.
 
 All-visible-mailbox search also computes one aggregate fanout deadline for the
 route. Each per-mailbox search backend is built with the remaining whole-second
@@ -137,6 +140,7 @@ The first implemented configuration is:
 - `OSMAP_SEND_WORKER_BUDGET`
 - `OSMAP_AUTH_WORKER_BUDGET`
 - `OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS`
+- `OSMAP_AUTH_BACKEND_TIMEOUT_SECONDS`
 
 Each value rejects zero and defaults conservatively when absent. The route
 budgets must not exceed the connection cap.

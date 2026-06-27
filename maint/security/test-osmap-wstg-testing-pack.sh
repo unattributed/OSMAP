@@ -169,6 +169,8 @@ for key in [
     "OSMAP_WSTG_SOURCE_COMMIT=8eb4e023d0116a4f5196f56ae9e69db1798888a0",
     "OSMAP_WSTG_MATRIX_FILE=wstg-scenario-matrix.latest.json",
     "OSMAP_RATE_LIMIT_DELAY_SECONDS=",
+    "OSMAP_CONNECT_TIMEOUT_SECONDS=5",
+    "OSMAP_REQUEST_TIMEOUT_SECONDS=20",
     "OSMAP_ALLOW_AUTHENTICATED_TESTS=false",
 ]:
     if key not in env_text:

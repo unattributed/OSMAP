@@ -59,7 +59,8 @@ def config(base_url: str, host: str, output_dir: Path) -> object:
         prompt_auth=False,
         allow_host_assisted=False,
         throttle_attempts=1,
-        timeout=0.2,
+        connect_timeout=0.2,
+        response_timeout=0.4,
         ssh_timeout=1,
         release_mode=False,
         wstg_source_name="OWASP Web Security Testing Guide",
@@ -116,6 +117,76 @@ class RunnerBehaviorTests(unittest.TestCase):
             server.shutdown()
             server.server_close()
             thread.join(timeout=2)
+
+    def test_connection_and_response_deadlines_are_independent(self) -> None:
+        cfg = replace(
+            config("http://example.test", "example.test", self.root),
+            connect_timeout=0.13,
+            response_timeout=0.37,
+        )
+        runner = WSTG.Runner(cfg, self.mapping, self.root / "timeouts")
+        connection = mock.Mock()
+        connection.sock = mock.Mock()
+        response = mock.Mock(status=200, reason="OK")
+        response.getheaders.return_value = []
+        response.read.side_effect = [b"ok", b""]
+        connection.getresponse.return_value = response
+
+        with mock.patch.object(
+            WSTG.http.client, "HTTPConnection", return_value=connection
+        ) as constructor:
+            evidence = runner.request("timeout_split", "GET", "/login")
+
+        constructor.assert_called_once_with("example.test", port=80, timeout=0.13)
+        connection.connect.assert_called_once_with()
+        connection.sock.settimeout.assert_called_once_with(0.37)
+        self.assertEqual(evidence.status, 200)
+
+    def test_authenticated_retry_preserves_both_attempt_labels(self) -> None:
+        cfg = replace(
+            config("https://example.test", "example.test", self.root),
+            allow_authenticated=True,
+            prompt_auth=True,
+            release_mode=True,
+            test_email="user@example.test",
+        )
+        runner = WSTG.Runner(cfg, self.mapping, self.root / "auth-retry")
+        first = WSTG.HttpEvidence(
+            "session_fixation",
+            None,
+            "",
+            [],
+            b"",
+            error="read timed out",
+        )
+        retry = WSTG.HttpEvidence(
+            "session_fixation_retry",
+            303,
+            "See Other",
+            [("Set-Cookie", "osmap_session=fresh; Secure; HttpOnly")],
+            b"",
+        )
+
+        with (
+            mock.patch.object(runner, "auth_password", return_value="password"),
+            mock.patch.object(runner, "auth_totp_code", return_value="123456"),
+            mock.patch.object(runner, "form_post", side_effect=[first, retry]) as post,
+            mock.patch.object(WSTG.time, "sleep"),
+        ):
+            evidence = runner.authenticated_login("session_fixation")
+
+        self.assertEqual(evidence.status, 303)
+        self.assertEqual(
+            [call.args[0] for call in post.call_args_list],
+            ["session_fixation", "session_fixation_retry"],
+        )
+        self.assertEqual(
+            runner.authenticated_login_evidence_paths("session_fixation"),
+            [
+                "evidence/session_fixation.headers",
+                "evidence/session_fixation_retry.headers",
+            ],
+        )
 
     def test_same_origin_includes_non_default_port(self) -> None:
         cfg = config("https://example.test:8443/app", "example.test", self.root)
