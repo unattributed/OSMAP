@@ -349,3 +349,11 @@ The Slice 2 diagnostic helper is an operator-side evidence tool only. It may ins
 OpenPGP capability is account-scoped and must be authorized by explicit full fingerprints. Email-address-only key matching, user ID text matching, short key IDs, and automatic discovery are not authorization boundaries. Later helper and UI slices must consume validated account bindings and must preserve fail-closed behavior for missing or ambiguous bindings.
 
 <!-- OSMAP:V12-SLICE3-ACCOUNT-BINDING:END -->
+
+<!-- OSMAP:V12-SLICE4-HELPER-PROTOCOL:START -->
+
+### V12 OpenPGP helper protocol boundary
+
+OpenPGP cryptographic work must remain outside the browser-facing request handler. Slice 4 defines a narrow `osmap-openpgp-helper` protocol scaffold that consumes validated account bindings, allows only non-cryptographic capability and policy checks, rejects unknown operations, and forbids plaintext, passphrase, private-key, raw-message, or browser-trusted HTML fields in the protocol boundary.
+
+<!-- OSMAP:V12-SLICE4-HELPER-PROTOCOL:END -->

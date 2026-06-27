@@ -292,3 +292,11 @@ V12 Slice 2 provides OpenPGP public key inventory and toolchain diagnostics only
 V12 Slice 3 validates account-to-fingerprint configuration only. OSMAP still must not claim implemented OpenPGP decryption, signature verification, signing, encryption, PGP/MIME handling, passphrase handling, helper cryptographic operations, or browser UI integration.
 
 <!-- OSMAP:V12-SLICE3-ACCOUNT-BINDING:END -->
+
+<!-- OSMAP:V12-SLICE4-HELPER-PROTOCOL:START -->
+
+### V12 Slice 4 helper protocol limitation
+
+V12 Slice 4 validates the OpenPGP helper protocol scaffold only. OSMAP still must not claim implemented OpenPGP decryption, signature verification, signing, encryption, PGP/MIME handling, passphrase handling, GPGME runtime integration, helper cryptographic operations, or browser UI integration.
+
+<!-- OSMAP:V12-SLICE4-HELPER-PROTOCOL:END -->

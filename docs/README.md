@@ -285,3 +285,9 @@ V7 production availability was previously reopened pending real-login, real-mail
 - `V12_OPENPGP_ACCOUNT_FINGERPRINT_BINDING.md` defines the account capability binding model, explicit full-fingerprint requirement, and fail-closed validation expectations for Slice 3.
 
 <!-- OSMAP:V12-SLICE3-ACCOUNT-BINDING:END -->
+
+<!-- OSMAP:V12-SLICE4-HELPER-PROTOCOL:START -->
+
+- `V12_OPENPGP_HELPER_PROTOCOL.md` defines the non-cryptographic helper protocol scaffold, request and response boundary, redaction expectations, and fail-closed validation evidence for Slice 4.
+
+<!-- OSMAP:V12-SLICE4-HELPER-PROTOCOL:END -->

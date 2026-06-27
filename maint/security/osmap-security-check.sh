@@ -315,4 +315,6 @@ sh maint/security/osmap-v12-openpgp-diagnostics-gate.sh
 sh maint/security/test-osmap-v12-openpgp-diagnostics-gate.sh
 sh maint/security/osmap-v12-openpgp-account-binding-gate.sh
 sh maint/security/test-osmap-v12-openpgp-account-binding-gate.sh
+sh maint/security/osmap-v12-openpgp-helper-protocol-gate.sh
+sh maint/security/test-osmap-v12-openpgp-helper-protocol-gate.sh
 echo "==> security-check complete"

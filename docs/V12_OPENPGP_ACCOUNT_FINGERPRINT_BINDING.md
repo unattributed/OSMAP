@@ -53,3 +53,11 @@ Evidence for this slice must include:
 - regression tests proving email-only and user-ID matching fields fail closed,
 - regression tests proving missing inventory fingerprints fail closed when an inventory is supplied,
 - confirmation that no cryptographic operation is attempted.
+
+<!-- OSMAP:V12-SLICE4-HELPER-PROTOCOL:START -->
+
+## Slice 4 dependency on account binding
+
+Slice 4 helper protocol validation depends on the Slice 3 account binding rule: OpenPGP helper requests must consume explicit full fingerprints that were validated for the authenticated account. Email-address-only matching, user ID text matching, short key IDs, and automatic discovery are not helper authorization boundaries.
+
+<!-- OSMAP:V12-SLICE4-HELPER-PROTOCOL:END -->

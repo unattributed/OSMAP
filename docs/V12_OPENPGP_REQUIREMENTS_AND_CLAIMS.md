@@ -93,3 +93,13 @@ Slice 3 adds account fingerprint binding validation only. It proves that OpenPGP
 Slice 3 still does not implement decryption, signature verification, signing, encryption, helper cryptographic operations, passphrase handling, PGP/MIME parsing, or browser UI integration.
 
 <!-- OSMAP:V12-SLICE3-ACCOUNT-BINDING:END -->
+
+<!-- OSMAP:V12-SLICE4-HELPER-PROTOCOL:START -->
+
+## Slice 4 helper protocol status
+
+Slice 4 adds a testable non-cryptographic OpenPGP helper protocol scaffold. It proves that later helper work must consume validated account fingerprints, reject unknown operations, keep browser request handlers away from key material, and avoid plaintext, passphrase, private-key, raw-message, or trusted-HTML fields in protocol evidence.
+
+Slice 4 still does not implement decryption, signature verification, signing, encryption, helper cryptographic operations, passphrase handling, GPGME runtime integration, PGP/MIME parsing, or browser UI integration.
+
+<!-- OSMAP:V12-SLICE4-HELPER-PROTOCOL:END -->

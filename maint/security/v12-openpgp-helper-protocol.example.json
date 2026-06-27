@@ -1,0 +1,55 @@
+{
+  "schema": "osmap-v12-openpgp-helper-protocol-v1",
+  "helper_name": "osmap-openpgp-helper",
+  "purpose": "Define the non-cryptographic helper protocol scaffold before GPGME-backed OpenPGP operations are implemented.",
+  "allowed_operations": [
+    "capability_status",
+    "policy_check",
+    "diagnostic_ping"
+  ],
+  "request_boundary": {
+    "requires_request_id": true,
+    "requires_account": true,
+    "requires_validated_account_binding": true,
+    "requires_full_fingerprint_for_key_scoped_operations": true,
+    "rejects_short_key_ids": true,
+    "rejects_email_only_key_matching": true,
+    "rejects_uid_text_authorization": true,
+    "unknown_operations_fail_closed": true,
+    "message_material_transport": "opaque-reference-or-digest-only"
+  },
+  "response_boundary": {
+    "bounded_status_values": [
+      "ok",
+      "rejected",
+      "unavailable"
+    ],
+    "redacted_error_required": true,
+    "browser_trusted_html_allowed": false,
+    "message_body_return_allowed": false,
+    "private_key_material_return_allowed": false,
+    "passphrase_return_allowed": false
+  },
+  "logging_boundary": {
+    "log_plaintext_message_body": false,
+    "log_decrypted_message_body": false,
+    "log_passphrase": false,
+    "log_private_key_material": false,
+    "log_uid_values": false,
+    "log_full_raw_message": false,
+    "log_full_request_payload": false
+  },
+  "safety_invariants": {
+    "message_decryption_implemented": false,
+    "message_signature_verification_implemented": false,
+    "message_signing_implemented": false,
+    "message_encryption_implemented": false,
+    "pgp_mime_parsing_implemented": false,
+    "gpgme_runtime_invoked": false,
+    "secret_key_access_attempted": false,
+    "passphrases_prompted_or_stored": false,
+    "browser_request_handler_touched_keys": false,
+    "account_binding_required": true,
+    "unknown_operation_fails_closed": true
+  }
+}
