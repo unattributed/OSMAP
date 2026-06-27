@@ -39,6 +39,12 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy, rustfmt
+      # V12 proves that its non-cryptographic helper scaffold compiles and links
+      # against GPGME. Keep this explicit so a missing build dependency fails CI.
+      - name: install V12 GPGME build dependency
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends --yes libgpgme-dev pkg-config
       - name: run repo security gate
         env:
           OSMAP_BOOTSTRAP_CARGO_AUDIT: "1"
