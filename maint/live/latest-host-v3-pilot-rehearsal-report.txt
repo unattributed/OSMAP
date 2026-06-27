@@ -1,6 +1,6 @@
 host=mail.blackbagsecurity.com
-commit=2388a87
-generated_at_utc=2026-06-27T13:10:47Z
+commit=b96e98e
+generated_at_utc=2026-06-27T16:49:52Z
 workflow_inventory=docs/PILOT_WORKFLOW_INVENTORY.md
 credential_totp_login=passed
 mailbox_listing=passed

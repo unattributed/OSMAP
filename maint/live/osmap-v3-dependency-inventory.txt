@@ -49,7 +49,11 @@ osmap v0.1.0 (/home/foo/Workspace/OSMAP)
 │   │   │           ├── phf_shared v0.11.3 (*)
 │   │   │           ├── precomputed-hash v0.1.1
 │   │   │           └── serde v1.0.228
-│   │   │               └── serde_core v1.0.228
+│   │   │               ├── serde_core v1.0.228
+│   │   │               └── serde_derive v1.0.228 (proc-macro)
+│   │   │                   ├── proc-macro2 v1.0.106 (*)
+│   │   │                   ├── quote v1.0.45 (*)
+│   │   │                   └── syn v2.0.117 (*)
 │   │   │       [build-dependencies]
 │   │   │       ├── phf_codegen v0.11.3
 │   │   │       │   ├── phf_generator v0.11.3 (*)
@@ -149,6 +153,12 @@ osmap v0.1.0 (/home/foo/Workspace/OSMAP)
 │       │   └── typenum v1.19.0
 │       └── subtle v2.6.1
 ├── libc v0.2.183
+├── serde v1.0.228 (*)
+├── serde_json v1.0.150
+│   ├── itoa v1.0.18
+│   ├── memchr v2.8.2
+│   ├── serde_core v1.0.228
+│   └── zmij v1.0.21
 ├── sha1 v0.10.6
 │   ├── cfg-if v1.0.4
 │   ├── cpufeatures v0.2.17
