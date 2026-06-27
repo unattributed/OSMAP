@@ -9,43 +9,38 @@ The project favors a small trust boundary, least privilege, bounded behavior,
 safe mail rendering, auditable operations, and reversible deployment over
 feature breadth or Roundcube parity.
 
+
 ## Current posture
 
 | Area | Status |
 |---|---|
-| Source | Current `main` is post-V9 documentation reconciliation; the V9 selected-cohort release-candidate decision is anchored at `a8915c0993b96a9d53de083dc84cb7520aef0097` |
+| Source | Current `main` is beyond the former post-V9 documentation baseline. It now includes V10 governance, V11 runtime fail-closed closure, V12 non-cryptographic OpenPGP foundation closeout, and V13 WSTG assurance closeout records. |
 | Formal tagged release evidence | `v4.0.0`, the hostile-content safety release |
-| V5 | Boundary hardening deployed; later typed HTML source hardening is documented separately |
-| V6 | Production readiness passed, and V9 Slice 6 accepted the selected-cohort/no-Roundcube closeout criteria for the bounded V9 release-candidate scope |
-| V7 | Production availability reopening is closed for the tested selected-user path by V9 Slice 5 evidence |
-| V8 | Regression matrices and CI enforcement are complete; V8 does not by itself claim a new production deployment |
-| V9 | Release-candidate gate is PASS for selected-cohort operation under documented limitations; production runtime code remains `49c9f23` with documentation-only drift at the V9 gate |
+| V9 | Selected-cohort release-candidate gate is PASS at `a8915c0993b96a9d53de083dc84cb7520aef0097` under documented limitations. |
+| V10 | Governance, acceptance, documentation status, and fail-closed assumption triage are documented and gate-visible. |
+| V11 | Runtime fail-closed closure for the refined high-relevance assumption queue is documented and gated. |
+| V12 | OpenPGP secure foundation is complete through Slice 14 closeout readiness, but remains non-cryptographic. No decrypt, verify, sign, encrypt, PGP/MIME parsing, passphrase handling, private-key access, browser controls, or decrypted rendering is enabled. |
+| V13 | WSTG assurance integrity and adversarial validation are completed and deployed. The V13 closeout records final reviewed commit `7009b15322c4e7795c797c1387b403e0f4935adb`, live and staged binary SHA256 `333a417bf435ae74bfc2b7a9eebedeca1ad541cb527e2555fed408e11e24d963`, and credentialed release evidence with `42 pass`, `0 fail`, `0 warning`, `0 skip`, and `4` justified not-applicable results. |
 
-The current release evidence is anchored by `v4.0.0`, with evidence bundle commit `59da020`
-and assessed V4 code commit `09a95b7`. V4 does not claim rich-mail safety, malware prevention, attachment preview
-safety, or URL reputation. The release rule is that any later code change must refresh V4 evidence
-before inheriting the V4 claim.
+The current project status summary is maintained in
+`docs/CURRENT_PROJECT_STATUS.md`. Historical version documents remain valid as
+provenance for the slices that produced them, but the current README,
+`docs/CURRENT_PROJECT_STATUS.md`, `docs/README.md`, and the latest version
+closeout records control the present release posture.
 
-V9 production convergence intake on 2026-06-22 recorded `main`, the production
-checkout, and the live OpenBSD binary converged at `49c9f230d7865f01deadbc6a5a0f6e876c63e89b`. The deployed
-binary hash is `411c976cccb0687f1a6e840470584fd8921eb5469e68905e457cf3edfe0cdea3`. The PR #19 deployment evidence archive
-`osmap-forward-body-binary-deploy-20260622-133538Z.tar.gz` has SHA256 `21a2d3b97808fe6bc971974ef46a42d27216f31f04cefe7cf4894c1f667a7800` and replaced prior live
-binary hash `500cdd839be9c70297d33cbce6661815ebfb4740ba8b607f63a6cdf98ac7dca7`. The post-deployment forward/send retest reached
-OSMAP `/send` with HTTP `303` and Postfix/Brevo delivery queue `DDEA73CE8C4` was
-sent and removed.
-
-The final V9 gate on 2026-06-24 accepted `a8915c0993b96a9d53de083dc84cb7520aef0097`
-as a selected-cohort release candidate. That acceptance depends on the
-documented scope and limitations in
-`docs/V9_RELEASE_CANDIDATE_CLOSEOUT.md`; it is not a claim of complete
-Roundcube feature parity, general hostile email safety, unbounded mailbox
-parsing safety, or release readiness outside the selected-cohort scope.
+The current release evidence is still bounded. V4 remains the historical tagged
+hostile-content safety release. V9 accepted a selected-cohort release candidate.
+V13 records the current reviewed deployment and WSTG assurance closeout. None of
+those records claim complete Roundcube replacement, general hostile-email
+safety, unbounded mailbox parsing safety, full ASVS verification, or OpenPGP
+runtime cryptographic operation.
 
 Start with:
 
 - [Documentation index](docs/README.md)
 - [Project charter](docs/PROJECT_CHARTER.md)
 - [Program baseline](docs/PROGRAM_BASELINE.md)
+- [Current project status](docs/CURRENT_PROJECT_STATUS.md)
 - [Known limitations](docs/KNOWN_LIMITATIONS.md)
 - [Decision log](docs/DECISION_LOG.md)
 - [Internet exposure status](docs/INTERNET_EXPOSURE_STATUS.md)
@@ -92,6 +87,11 @@ Important gates:
 make v6-check
 make v7-check
 make v8-check
+make v10-check
+make v11-check
+make v12-check
+make v13-check
+make acceptance-check
 OSMAP_SECURITY_PROFILE=release make release-check
 ```
 
@@ -154,8 +154,8 @@ The implementation is documented as small security and workflow slices:
 | V9 | Production convergence and selected-cohort release-candidate decision | [Production convergence](docs/V9_PRODUCTION_CONVERGENCE.md), [release-candidate closeout](docs/V9_RELEASE_CANDIDATE_CLOSEOUT.md), [V7 production availability closeout](docs/V7_PRODUCTION_AVAILABILITY_CLOSEOUT.md) |
 | V10 | Governance, acceptance, and fail-closed assumption triage | [Governance status](docs/V10_GOVERNANCE_STATUS.md), [claims and limitations](docs/V10_CLAIMS_AND_LIMITATIONS.md), [targeted remediation](docs/V10_TARGETED_FAIL_CLOSED_REMEDIATION.md) |
 | V11 | Runtime fail-closed closure for refined high-relevance assumptions | [Runtime fail-closed closure](docs/V11_RUNTIME_FAIL_CLOSED_CLOSURE.md) |
-| V12 | OpenPGP secure foundation and helper boundary | [OpenPGP requirements and claims](docs/V12_OPENPGP_REQUIREMENTS_AND_CLAIMS.md), [closeout readiness audit](docs/V12_OPENPGP_CLOSEOUT_READINESS_AUDIT.md) |
-| V13 | WSTG assurance integrity and adversarial validation | [V13 sprint](docs/V13_WSTG_ASSURANCE_INTEGRITY_AND_ADVERSARIAL_VALIDATION.md) |
+| V12 | Non-cryptographic OpenPGP secure foundation through Slice 14 closeout readiness | [OpenPGP requirements and claims](docs/V12_OPENPGP_REQUIREMENTS_AND_CLAIMS.md), [closeout readiness audit](docs/V12_OPENPGP_CLOSEOUT_READINESS_AUDIT.md), [known limitations](docs/KNOWN_LIMITATIONS.md) |
+| V13 | WSTG assurance integrity, adversarial validation, and production deployment closeout | [V13 sprint and closeout](docs/V13_WSTG_ASSURANCE_INTEGRITY_AND_ADVERSARIAL_VALIDATION.md), [current project status](docs/CURRENT_PROJECT_STATUS.md) |
 
 
 ### V3 assurance workstreams
@@ -270,10 +270,20 @@ Limits of the claim:
 
 <!-- OSMAP:V9_STATUS:START -->
 
-## Current V9 status
+## Historical V9 status
 
 V9 release-candidate gate: PASS. Current main `a8915c0993b96a9d53de083dc84cb7520aef0097` is accepted as a selected-cohort release candidate under the documented limitations. The live production binary remains `411c976cccb0687f1a6e840470584fd8921eb5469e68905e457cf3edfe0cdea3` from production runtime source `49c9f230d7865f01deadbc6a5a0f6e876c63e89b`, with current main differing by documentation-only files.
 
 See `docs/V9_RELEASE_CANDIDATE_CLOSEOUT.md`.
+
+## Current V10 through V13 status
+
+The project has advanced beyond the V9 state above. Current public-safe status is summarized in `docs/CURRENT_PROJECT_STATUS.md`.
+
+- V10 adds governance, acceptance, documentation-status, and fail-closed assumption gates.
+- V11 closes the refined high-relevance runtime fail-closed queue without widening product scope.
+- V12 completes a non-cryptographic OpenPGP foundation through Slice 14 and keeps runtime cryptography disabled.
+- V13 completes and deploys the WSTG assurance integrity and adversarial validation sprint.
+
 
 <!-- OSMAP:V9_STATUS:END -->

@@ -179,7 +179,7 @@ The following remain out of scope for Version 3:
 
 - contacts, calendar, groupware, plugins, mobile app, and broad admin console
 - remote external content loading
-- OpenPGP implementation, except design-only investigation
+- OpenPGP runtime cryptographic implementation. V12 provides a non-cryptographic OpenPGP foundation only
 - broad runtime rewrite
 - general Roundcube parity
 
@@ -374,3 +374,23 @@ V12 Slice 13 defines inbound OpenPGP state decisions only. It does not spawn the
 V12 Slice 14 is an audit gate only. It does not implement helper spawning, PGP/MIME parsing, decrypt, verify, sign, encrypt, passphrase handling, private-key access, browser UI controls, key discovery, WKD, keyserver lookup, or decrypted-content rendering. The stale V3 live evidence `make release-check` blocker remains carried forward.
 
 <!-- OSMAP:V12-SLICE14-CLOSEOUT-READINESS:END -->
+
+
+## Version 13 WSTG assurance and deployment boundary
+
+V13 is the current WSTG assurance integrity, adversarial validation, and
+production deployment closeout. It records final reviewed commit
+`7009b15322c4e7795c797c1387b403e0f4935adb`, live and staged binary SHA256
+`333a417bf435ae74bfc2b7a9eebedeca1ad541cb527e2555fed408e11e24d963`, and
+credentialed release evidence with `42 pass`, `0 fail`, `0 warning`, `0 skip`,
+and `4` justified not-applicable results.
+
+V13 narrows assurance drift, but it does not eliminate every product limitation.
+The V13 closeout keeps explicit residual limits for complete ASVS verification,
+archive-recursion and document-sanitization testing, and endpoint safety after
+attachment download. Those remain scope declarations, not passing claims.
+
+V13 also does not convert V12 into runtime OpenPGP cryptography. Decryption,
+signature verification, signing, encryption, PGP/MIME parsing, passphrase
+handling, private-key access, browser OpenPGP controls, and decrypted-content
+rendering remain future work until separately implemented and evidenced.

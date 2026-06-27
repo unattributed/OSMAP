@@ -88,11 +88,21 @@ A release candidate should not be treated as credible if:
 - critical auth or session paths are untested
 - integration behavior changed without corresponding validation
 
-For Version 3, `make security-check` remains the developer and CI-oriented
-partial validation path. `make release-check` is the strict release path and
-must fail on skipped Cargo, clippy, rustfmt, supply-chain, dependency
-inventory, host-readiness, V2 carry-forward, sanitized evidence archive, or
-credential and TOTP-backed WSTG coverage.
+For the current tree, `make security-check` remains the developer and
+CI-oriented validation path. `make acceptance-check` runs the current acceptance
+surface, including `security-check`, `v10-check`, `v11-check`, `v12-check`, and
+`v13-check`.
+
+The strict release path remains evidence-dependent:
+
+```bash
+OSMAP_SECURITY_PROFILE=release make release-check
+```
+
+It must fail safely on skipped Cargo, clippy, rustfmt, supply-chain,
+dependency inventory, host-readiness, carry-forward evidence, sanitized
+evidence archive, stale WSTG evidence, or missing credential and TOTP-backed
+release coverage.
 
 ## V7 rendering regression close-out
 
@@ -104,3 +114,19 @@ This gate is intentionally not grep-only. It performs structural checks for dura
 
 Cargo and rustc are required for this close-out gate. A host that cannot run the Rust tests is not a valid close-out environment for this incident.
 
+
+
+## V12 and V13 gates
+
+`make v12-check` validates the non-cryptographic OpenPGP foundation. It covers
+claims, diagnostics, account fingerprint binding, helper protocol scaffolding,
+GPGME readiness and availability, compile and invocation scaffolds, the typed
+Rust helper-client boundary, helper-client integration, capability policy,
+outbound preflight policy, inbound security-state policy, and Slice 14 closeout
+readiness. It must not be treated as proof that runtime OpenPGP cryptography is
+implemented.
+
+`make v13-check` validates the WSTG assurance integrity and adversarial
+validation gate. It protects the distinction between dynamic proof, static
+evidence, manual review, and not-applicable dispositions, and it prevents stale
+or incomplete assurance artifacts from supporting release claims.
