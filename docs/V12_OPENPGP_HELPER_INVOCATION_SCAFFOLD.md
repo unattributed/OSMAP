@@ -20,7 +20,11 @@ The protocol-only helper is invoked with one exact argument:
 osmap-openpgp-helper-protocol-only.py --protocol-only
 ```
 
-The caller sends one bounded JSON object on stdin and expects one bounded JSON object on stdout. Stderr must remain non-sensitive and diagnostic only.
+The caller sends one JSON object bounded to 4096 bytes on stdin and expects
+one JSON object bounded to 8192 bytes on stdout. Requests and responses use
+exact versioned schemas. Duplicate fields, unknown fields, missing schemas,
+invalid fingerprints, malformed JSON, and unsupported arguments fail closed.
+Successful helper responses must not write stderr.
 
 The allowed protocol-only operations are:
 
@@ -29,6 +33,10 @@ The allowed protocol-only operations are:
 - `policy_check`
 
 Unknown operations must fail closed.
+
+`policy_check` accepts only a full uppercase hexadecimal account fingerprint.
+Email addresses, short key IDs, malformed hexadecimal values, and ambiguous
+field names are not account authorization inputs.
 
 ## Safety invariants
 

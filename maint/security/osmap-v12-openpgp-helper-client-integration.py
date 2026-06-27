@@ -85,16 +85,40 @@ def validate():
 
     required_rust = [
         "OpenPgpHelperInvocationPlan",
+        "OPENPGP_HELPER_PATH",
         "OPENPGP_HELPER_PROTOCOL_ARG",
+        "OPENPGP_HELPER_REQUEST_SCHEMA",
+        "OPENPGP_HELPER_RESPONSE_SCHEMA",
         "MAX_HELPER_REQUEST_BYTES",
         "MAX_HELPER_STDOUT_BYTES",
         "MAX_HELPER_STDERR_BYTES",
         "DEFAULT_HELPER_TIMEOUT",
         "classify_helper_result",
+        "serde_json::from_slice",
+        "#[cfg(test)]",
     ]
     missing_rust = [snippet for snippet in required_rust if snippet not in rust_source]
     if missing_rust:
         errors.append("missing Rust helper-client boundary snippets: " + ", ".join(missing_rust))
+
+    helper_source = read(HELPER_INVOCATION)
+    required_helper_contract = [
+        'MAX_REQUEST_BYTES = 4096',
+        'MAX_RESPONSE_BYTES = 8192',
+        'REQUEST_SCHEMA = "osmap-openpgp-helper-request-v1"',
+        'RESPONSE_SCHEMA = "osmap-openpgp-helper-response-v1"',
+        "strict_object",
+        "invalid_account_fingerprint",
+        "invalid_request_fields",
+    ]
+    missing_helper_contract = [
+        snippet for snippet in required_helper_contract if snippet not in helper_source
+    ]
+    if missing_helper_contract:
+        errors.append(
+            "protocol-only helper missing strict contract snippets: "
+            + ", ".join(missing_helper_contract)
+        )
 
     lib_text = read(LIB)
     if not re.search(r"pub\s+mod\s+openpgp_helper_client\s*;", lib_text):

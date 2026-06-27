@@ -32,24 +32,29 @@ def main():
         found = [token for token in forbidden_runtime_source if token in source]
         if found:
             return fail("forbidden token in Rust helper client source: " + ", ".join(found))
-        if "#[test]" in source:
-            return fail("Slice 9 keeps Rust behavior checks in the V12 gate to avoid V10 inventory drift")
         required_snippets = [
+            "OPENPGP_HELPER_PATH",
             "OPENPGP_HELPER_PROTOCOL_ARG",
+            "OPENPGP_HELPER_REQUEST_SCHEMA",
+            "OPENPGP_HELPER_RESPONSE_SCHEMA",
             "MAX_HELPER_REQUEST_BYTES",
             "MAX_HELPER_STDOUT_BYTES",
             "MAX_HELPER_STDERR_BYTES",
             "DEFAULT_HELPER_TIMEOUT",
             "OpenPgpHelperInvocationPlan",
-            "validate_helper_path",
-            "is_safe_helper_path_byte",
+            "with_account_fingerprint",
+            "normalize_full_fingerprint",
             "classify_helper_result",
+            "serde_json::from_slice",
+            "#[cfg(test)]",
+            "#[test]",
             "HelperExitNonZero",
             "MalformedHelperJson",
+            "UnexpectedHelperSchema",
+            "UnexpectedHelperOperation",
+            "RuntimeCryptoEnabled",
             "OversizedStdout",
             "OversizedStderr",
-            "byte.is_ascii_alphanumeric()",
-            "matches!(byte, b'/' | b'.' | b'_' | b'-')",
         ]
         missing = [snippet for snippet in required_snippets if snippet not in source]
         if missing:
@@ -60,6 +65,30 @@ def main():
         if lib_text.startswith("pub mod openpgp_helper_client;"):
             return fail("openpgp_helper_client module was inserted before crate docs")
         data = json.loads(CFG.read_text())
+        expected_config = {
+            "schema": "osmap-v12-openpgp-rust-helper-client-boundary-v8",
+            "helper_path": "/usr/local/libexec/osmap/osmap-openpgp-helper",
+            "request_schema": "osmap-openpgp-helper-request-v1",
+            "response_schema": "osmap-openpgp-helper-response-v1",
+        }
+        wrong_config = [
+            key for key, expected in expected_config.items() if data.get(key) != expected
+        ]
+        if wrong_config:
+            return fail("bad Rust helper client config: " + ", ".join(wrong_config))
+        if set(data.get("expected_operations", [])) != {
+            "capability_status",
+            "diagnostic_ping",
+            "policy_check",
+        }:
+            return fail("bad Rust helper client expected_operations")
+        if data.get("limits") != {
+            "max_request_bytes": 4096,
+            "max_stdout_bytes": 8192,
+            "max_stderr_bytes": 2048,
+            "timeout_seconds": 5,
+        }:
+            return fail("bad Rust helper client limits")
         invariants = data.get("safety_invariants", {})
         required_false = [
             "browser_ui_integrated",

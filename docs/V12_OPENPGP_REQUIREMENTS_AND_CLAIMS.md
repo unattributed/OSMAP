@@ -182,6 +182,6 @@ Slice 13 adds a non-cryptographic inbound OpenPGP security-state model. It prove
 
 ## Slice 14 closeout readiness status
 
-Slice 14 adds an audit-only closeout readiness gate. It confirms the V12 OpenPGP work remains a non-cryptographic foundation and that all V12 gates are represented in both `make v12-check` and `make security-check`. Runtime cryptography remains disabled.
+Slice 14 adds an audit-only closeout readiness gate. It confirms the V12 OpenPGP work remains a non-cryptographic foundation and that all V12 gates are represented in both `make v12-check` and `make security-check`. Its final remediation adds strict shared request and response schemas, fixed-path invocation planning, full-fingerprint validation, and executable hostile-response tests for the Rust boundary. Runtime cryptography remains disabled.
 
 <!-- OSMAP:V12-SLICE14-CLOSEOUT-READINESS:END -->

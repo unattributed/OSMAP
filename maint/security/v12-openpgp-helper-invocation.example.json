@@ -11,7 +11,7 @@
     "policy_check"
   ],
   "limits": {
-    "max_request_bytes": 8192,
+    "max_request_bytes": 4096,
     "max_response_bytes": 8192,
     "timeout_seconds": 5
   },
@@ -19,13 +19,18 @@
     "account_binding_required_before_runtime_crypto": true,
     "bounded_request_bytes": true,
     "bounded_response_bytes": true,
+    "duplicate_fields_fail_closed": true,
     "exact_argv_required": true,
+    "exact_schema_required": true,
+    "full_fingerprint_required": true,
     "malformed_json_fails_closed": true,
     "no_shell_invocation": true,
     "stderr_non_sensitive": true,
     "stdin_json_only": true,
+    "successful_stderr_empty": true,
     "stdout_json_only": true,
     "timeout_enforced": true,
+    "unknown_fields_fail_closed": true,
     "unknown_operation_fails_closed": true
   },
   "safety_invariants": {

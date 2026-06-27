@@ -6,6 +6,11 @@ The gate proves that the OpenPGP helper path remains bounded and non-cryptograph
 
 - the protocol-only helper invocation scaffold exists;
 - the typed Rust helper client module exists and is exposed by `src/lib.rs`;
+- the Rust and helper request fields, versioned schemas, limits, and operations
+  agree;
+- the Rust boundary has executable tests for valid, malformed, duplicate,
+  unknown-field, wrong-schema, wrong-operation, runtime-crypto, nonzero-exit,
+  stderr, and oversized-response cases;
 - V12 checks include the Rust helper-client gate and this integration gate;
 - the full security check includes the integration gate;
 - browser-facing handlers are not wired to OpenPGP helper code;

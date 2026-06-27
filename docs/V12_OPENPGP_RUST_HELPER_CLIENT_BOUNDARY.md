@@ -5,11 +5,17 @@ V12 Slice 9 adds the typed Rust application-side boundary used to prepare helper
 The boundary defines:
 
 - a fixed helper protocol mode argument;
+- one fixed install path, `/usr/local/libexec/osmap/osmap-openpgp-helper`;
 - typed allowed operations: `capability_status`, `diagnostic_ping`, and `policy_check`;
-- stdin-only JSON request planning;
+- stdin-only JSON request planning with one exact request schema;
+- full 40-byte or 64-byte hexadecimal fingerprint validation for policy checks;
 - bounded request, stdout, and stderr sizes;
 - timeout policy metadata;
-- fail-closed treatment for nonzero helper exit, malformed JSON, oversized stdout, and oversized stderr.
+- strict response deserialization with duplicate and unknown field rejection;
+- exact schema and operation binding with runtime-crypto rejection;
+- executable Rust tests for successful and hostile helper responses;
+- fail-closed treatment for nonzero helper exit, malformed JSON, unexpected
+  stderr, oversized stdout, and oversized stderr.
 
 The Slice 9 Rust boundary does not spawn the helper process. It prepares and validates invocation shape only. Process execution remains outside this slice to avoid expanding direct command-execution surfaces before the helper privilege and runtime boundary is reviewed.
 

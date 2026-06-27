@@ -14,19 +14,26 @@ from typing import Any
 
 SCHEMA = "osmap-v12-openpgp-helper-invocation-scaffold-v1"
 REPORT_SCHEMA = "osmap-v12-openpgp-helper-invocation-scaffold-report-v1"
+REQUEST_SCHEMA = "osmap-openpgp-helper-request-v1"
+RESPONSE_SCHEMA = "osmap-openpgp-helper-response-v1"
 ALLOWED_OPERATIONS = {"diagnostic_ping", "capability_status", "policy_check"}
 
 TRUE_REQUIRED = {
     "account_binding_required_before_runtime_crypto",
     "bounded_request_bytes",
     "bounded_response_bytes",
+    "duplicate_fields_fail_closed",
     "exact_argv_required",
+    "exact_schema_required",
+    "full_fingerprint_required",
     "malformed_json_fails_closed",
     "no_shell_invocation",
     "stderr_non_sensitive",
     "stdin_json_only",
+    "successful_stderr_empty",
     "stdout_json_only",
     "timeout_enforced",
+    "unknown_fields_fail_closed",
     "unknown_operation_fails_closed",
 }
 
@@ -97,8 +104,8 @@ def validate_config(data: dict[str, Any]) -> list[str]:
     if not isinstance(limits, dict):
         errors.append("limits must be an object")
     else:
-        if limits.get("max_request_bytes") != 8192:
-            errors.append("limits.max_request_bytes must be 8192")
+        if limits.get("max_request_bytes") != 4096:
+            errors.append("limits.max_request_bytes must be 4096")
         if limits.get("max_response_bytes") != 8192:
             errors.append("limits.max_response_bytes must be 8192")
         if limits.get("timeout_seconds") != 5:
@@ -128,12 +135,15 @@ def scan_helper_source(helper_path: pathlib.Path) -> list[str]:
         return [f"cannot read helper_path {helper_path}: {exc}"]
     if "ALLOWED_OPERATIONS" not in source:
         errors.append("helper source must define ALLOWED_OPERATIONS")
-    if "MAX_REQUEST_BYTES = 8192" not in source:
-        errors.append("helper source must define MAX_REQUEST_BYTES = 8192")
+    if "MAX_REQUEST_BYTES = 4096" not in source:
+        errors.append("helper source must define MAX_REQUEST_BYTES = 4096")
     if "MAX_RESPONSE_BYTES = 8192" not in source:
         errors.append("helper source must define MAX_RESPONSE_BYTES = 8192")
     if "runtime_crypto_enabled" not in source:
         errors.append("helper source must explicitly report runtime_crypto_enabled")
+    for schema_name in (REQUEST_SCHEMA, RESPONSE_SCHEMA):
+        if schema_name not in source:
+            errors.append(f"helper source must bind schema {schema_name}")
     for pattern in FORBIDDEN_HELPER_PATTERNS:
         if pattern in source:
             errors.append(f"forbidden helper source pattern present: {pattern}")
@@ -179,14 +189,39 @@ def run_invocation_matrix(helper_path: pathlib.Path, exact_argv: list[str], time
         payload = raw_payload if raw_payload is not None else (json.dumps(payload_obj).encode("utf-8") + b"\n")
         cases[name] = invoke_helper(helper_path, exact_argv, payload, timeout_seconds)
 
-    add_case("diagnostic_ping", {"operation": "diagnostic_ping"})
-    add_case("capability_status", {"operation": "capability_status"})
-    add_case("policy_check", {"operation": "policy_check", "account_fingerprint": "A" * 40})
-    add_case("unknown_operation", {"operation": "decrypt_message"})
+    add_case("diagnostic_ping", {"schema": REQUEST_SCHEMA, "operation": "diagnostic_ping"})
+    add_case("capability_status", {"schema": REQUEST_SCHEMA, "operation": "capability_status"})
+    add_case(
+        "policy_check",
+        {"schema": REQUEST_SCHEMA, "operation": "policy_check", "account_fingerprint": "A" * 40},
+    )
+    add_case("unknown_operation", {"schema": REQUEST_SCHEMA, "operation": "decrypt_message"})
+    add_case("missing_schema", {"operation": "diagnostic_ping"})
+    add_case(
+        "unexpected_field",
+        {"schema": REQUEST_SCHEMA, "operation": "diagnostic_ping", "account": "user@example.invalid"},
+    )
+    add_case(
+        "invalid_fingerprint",
+        {"schema": REQUEST_SCHEMA, "operation": "policy_check", "account_fingerprint": "G" * 40},
+    )
+    add_case(
+        "duplicate_operation",
+        None,
+        (
+            b'{"schema":"osmap-openpgp-helper-request-v1",'
+            b'"operation":"diagnostic_ping","operation":"capability_status"}'
+        ),
+    )
     add_case("malformed_json", None, b"{not json")
-    add_case("oversized_request", None, b"{" + (b"A" * 9000) + b"}")
-    add_case("invalid_argv", {"operation": "diagnostic_ping"})
-    cases["invalid_argv"] = invoke_helper(helper_path, ["--wrong-argument"], b'{"operation":"diagnostic_ping"}\n', timeout_seconds)
+    add_case("oversized_request", None, b"{" + (b"A" * 5000) + b"}")
+    add_case("invalid_argv", {"schema": REQUEST_SCHEMA, "operation": "diagnostic_ping"})
+    cases["invalid_argv"] = invoke_helper(
+        helper_path,
+        ["--wrong-argument"],
+        b'{"schema":"osmap-openpgp-helper-request-v1","operation":"diagnostic_ping"}\n',
+        timeout_seconds,
+    )
 
     for name in ("diagnostic_ping", "capability_status", "policy_check"):
         case = cases[name]
@@ -195,17 +230,38 @@ def run_invocation_matrix(helper_path: pathlib.Path, exact_argv: list[str], time
         if not case["stdout_json_object"]:
             errors.append(f"{name} must return a JSON object")
         stdout = case.get("stdout") or {}
+        if stdout.get("schema") != RESPONSE_SCHEMA:
+            errors.append(f"{name} must return the exact response schema")
+        if stdout.get("ok") is not True:
+            errors.append(f"{name} must return ok=true")
+        if stdout.get("operation") != name:
+            errors.append(f"{name} must bind the response operation")
         if stdout.get("runtime_crypto_enabled") is not False:
             errors.append(f"{name} must report runtime_crypto_enabled false")
+        if case["stderr_bytes"] != 0:
+            errors.append(f"{name} success must not write stderr")
         if case["stdout_bytes"] > 8192:
             errors.append(f"{name} response must be bounded")
-    for name in ("unknown_operation", "malformed_json", "oversized_request", "invalid_argv"):
+    if (cases["policy_check"].get("stdout") or {}).get("account_binding_present") is not True:
+        errors.append("policy_check must confirm a validated full fingerprint")
+    for name in (
+        "unknown_operation",
+        "missing_schema",
+        "unexpected_field",
+        "invalid_fingerprint",
+        "duplicate_operation",
+        "malformed_json",
+        "oversized_request",
+        "invalid_argv",
+    ):
         case = cases[name]
         if case["exit_status"] == 0:
             errors.append(f"{name} must fail closed")
         if not case["stdout_json_object"]:
             errors.append(f"{name} must return bounded JSON failure")
         stdout = case.get("stdout") or {}
+        if stdout.get("schema") != RESPONSE_SCHEMA:
+            errors.append(f"{name} must return the exact response schema")
         if stdout.get("ok") is not False:
             errors.append(f"{name} must return ok=false")
         if stdout.get("runtime_crypto_enabled") is not False:
@@ -255,7 +311,7 @@ def self_test() -> int:
         "helper_path": "helper.py",
         "exact_argv": ["--protocol-only"],
         "allowed_operations": sorted(ALLOWED_OPERATIONS),
-        "limits": {"max_request_bytes": 8192, "max_response_bytes": 8192, "timeout_seconds": 5},
+        "limits": {"max_request_bytes": 4096, "max_response_bytes": 8192, "timeout_seconds": 5},
         "required": {key: True for key in TRUE_REQUIRED},
         "safety_invariants": {key: False for key in FALSE_INVARIANTS},
     }
@@ -268,7 +324,11 @@ def self_test() -> int:
     assert any("runtime_crypto_enabled" in err for err in validate_config(bad))
     with tempfile.TemporaryDirectory(prefix="osmap-v12-helper-invocation-test-") as tmp:
         helper = pathlib.Path(tmp) / "bad-helper.py"
-        helper.write_text("MAX_REQUEST_BYTES = 8192\nMAX_RESPONSE_BYTES = 8192\nALLOWED_OPERATIONS = set()\nos.system('date')\n", encoding="utf-8")
+        helper.write_text(
+            "MAX_REQUEST_BYTES = 4096\nMAX_RESPONSE_BYTES = 8192\n"
+            "ALLOWED_OPERATIONS = set()\nos.system('date')\n",
+            encoding="utf-8",
+        )
         assert any("os.system" in err for err in scan_helper_source(helper))
     print("V12 OpenPGP helper invocation scaffold self-test passed")
     return 0

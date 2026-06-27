@@ -127,9 +127,32 @@ def validate():
     found_rust = [token for token in forbidden_rust if token in rust_text]
     if found_rust:
         errors.append("Rust helper client enables runtime process or crypto behavior: " + ", ".join(found_rust))
+    required_rust = [
+        "OPENPGP_HELPER_PATH",
+        "OPENPGP_HELPER_REQUEST_SCHEMA",
+        "OPENPGP_HELPER_RESPONSE_SCHEMA",
+        "with_account_fingerprint",
+        "serde_json::from_slice",
+        "#[cfg(test)]",
+        "#[test]",
+    ]
+    missing_rust = [token for token in required_rust if token not in rust_text]
+    if missing_rust:
+        errors.append(
+            "Rust helper client missing strict boundary evidence: "
+            + ", ".join(missing_rust)
+        )
 
     helper_text = read(HELPER_PROTOCOL)
-    required_helper_tokens = ["capability_status", "diagnostic_ping", "policy_check"]
+    required_helper_tokens = [
+        "capability_status",
+        "diagnostic_ping",
+        "policy_check",
+        "osmap-openpgp-helper-request-v1",
+        "osmap-openpgp-helper-response-v1",
+        "strict_object",
+        "invalid_account_fingerprint",
+    ]
     missing_helper = [token for token in required_helper_tokens if token not in helper_text]
     if missing_helper:
         errors.append("protocol-only helper missing expected non-crypto operations: " + ", ".join(missing_helper))

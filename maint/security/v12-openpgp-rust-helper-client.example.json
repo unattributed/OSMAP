@@ -1,6 +1,9 @@
 {
-  "schema": "osmap-v12-openpgp-rust-helper-client-boundary-v7",
+  "schema": "osmap-v12-openpgp-rust-helper-client-boundary-v8",
   "purpose": "Validate typed Rust helper client boundary without enabling cryptography.",
+  "helper_path": "/usr/local/libexec/osmap/osmap-openpgp-helper",
+  "request_schema": "osmap-openpgp-helper-request-v1",
+  "response_schema": "osmap-openpgp-helper-response-v1",
   "expected_operations": ["capability_status", "diagnostic_ping", "policy_check"],
   "limits": {
     "max_request_bytes": 4096,
