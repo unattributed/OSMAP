@@ -1,5 +1,5 @@
 {
-  "assessed_ref": "2388a876f46af156edd523df74ecbc0ef5a8c070",
+  "assessed_ref": "b96e98e059b71e531609304e7ec8b57fcaed407b",
   "components": [
     {
       "component": "hostile_corpus_metadata",
@@ -29,9 +29,9 @@
   ],
   "corpus_root": "tests/testdata/hostile-mail-corpus",
   "evidence_metadata": {
-    "generated_at_utc": "2026-06-27T13:15:59Z",
+    "generated_at_utc": "2026-06-27T16:50:23Z",
     "git": {
-      "commit": "2388a876f46af156edd523df74ecbc0ef5a8c070",
+      "commit": "b96e98e059b71e531609304e7ec8b57fcaed407b",
       "tags": []
     },
     "host": {
@@ -70,7 +70,7 @@
       }
     }
   },
-  "generated_at_utc": "2026-06-27T13:15:59Z",
+  "generated_at_utc": "2026-06-27T16:50:23Z",
   "network_assertions": {
     "beacon_requests": 0,
     "remote_fetches": 0,
