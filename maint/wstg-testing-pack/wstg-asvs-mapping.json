@@ -1742,6 +1742,8 @@
       ],
       "expected_result": "Triggered authentication failures appear as structured host events, and logs plus dynamic evidence disclose no passwords, TOTP material, session tokens, CSRF tokens, or message bodies.",
       "evidence_produced": [
+        "security_logging_trigger_invalid_login.headers",
+        "security_logging_trigger_invalid_login.body",
         "static_security_logging.txt",
         "security_logging_evidence_redaction.txt",
         "security_logging_host_events.txt"
