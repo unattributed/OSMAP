@@ -325,3 +325,8 @@ V7 production availability was previously reopened pending real-login, real-mail
 - `V12_OPENPGP_HELPER_CLIENT_INTEGRATION_GATE.md` defines the non-cryptographic helper client integration gate for Slice 10.
 
 <!-- OSMAP:V12-SLICE10-HELPER-CLIENT-INTEGRATION:END -->
+<!-- OSMAP:V12-SLICE11-CAPABILITY-POLICY:START -->
+
+- `V12_OPENPGP_CAPABILITY_POLICY_MODEL.md` defines the non-cryptographic OpenPGP capability policy model for Slice 11.
+
+<!-- OSMAP:V12-SLICE11-CAPABILITY-POLICY:END -->

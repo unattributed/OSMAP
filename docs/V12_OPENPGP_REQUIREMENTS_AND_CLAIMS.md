@@ -157,3 +157,10 @@ Slice 9 adds the typed Rust application-side helper client boundary. It prepares
 Slice 10 adds a helper client integration gate for V12. It verifies check wiring and policy invariants only. It still does not implement OpenPGP decryption, signature verification, signing, encryption, helper cryptographic operations, passphrase handling, PGP/MIME parsing, browser UI integration, or decrypted content rendering.
 
 <!-- OSMAP:V12-SLICE10-HELPER-CLIENT-INTEGRATION:END -->
+<!-- OSMAP:V12-SLICE11-CAPABILITY-POLICY:START -->
+
+## Slice 11 capability policy status
+
+Slice 11 adds a non-cryptographic OpenPGP capability policy model. It proves account capability states and fail-closed outcomes for missing account keys, explicit configured fingerprints, ambiguous or duplicate bindings, missing recipient key policy, signed content, and decrypted content. Runtime cryptography remains disabled.
+
+<!-- OSMAP:V12-SLICE11-CAPABILITY-POLICY:END -->

@@ -346,3 +346,10 @@ V12 Slice 9 adds typed Rust request and response boundary checks only. It does n
 V12 Slice 10 adds an integration gate only. It does not spawn the helper, decrypt, verify, sign, encrypt, parse PGP/MIME, prompt for passphrases, touch private keys, render decrypted content, or expose browser UI controls.
 
 <!-- OSMAP:V12-SLICE10-HELPER-CLIENT-INTEGRATION:END -->
+<!-- OSMAP:V12-SLICE11-CAPABILITY-POLICY:START -->
+
+### V12 Slice 11 capability policy limitation
+
+V12 Slice 11 defines capability states and fail-closed policy outcomes only. It does not expose UI controls, spawn the helper, parse PGP/MIME, decrypt, verify, sign, encrypt, prompt for passphrases, access private keys, or render decrypted content.
+
+<!-- OSMAP:V12-SLICE11-CAPABILITY-POLICY:END -->

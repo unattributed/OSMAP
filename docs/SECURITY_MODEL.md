@@ -403,3 +403,10 @@ Slice 9 keeps helper invocation planning typed and bounded in Rust while still a
 Slice 10 proves that the protocol-only helper invocation scaffold and typed Rust helper client boundary are integrated into V12 checks and the full security check without enabling runtime cryptography. Browser-facing handlers remain outside the OpenPGP helper boundary.
 
 <!-- OSMAP:V12-SLICE10-HELPER-CLIENT-INTEGRATION:END -->
+<!-- OSMAP:V12-SLICE11-CAPABILITY-POLICY:START -->
+
+### V12 OpenPGP capability policy model
+
+Slice 11 models OpenPGP capability as unavailable, available, or fail-closed. Signature status does not make content safe, and decrypted content remains hostile until it passes through the existing secure rendering path.
+
+<!-- OSMAP:V12-SLICE11-CAPABILITY-POLICY:END -->
