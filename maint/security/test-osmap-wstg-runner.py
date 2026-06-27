@@ -12,6 +12,7 @@ import unittest
 from dataclasses import replace
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from unittest import mock
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -204,6 +205,27 @@ class RunnerBehaviorTests(unittest.TestCase):
         )
         valid, findings = runner.write_attack_surface_inventory_evidence()
         self.assertTrue(valid, findings)
+
+    def test_webmail_static_evidence_scans_draft_persistence(self) -> None:
+        runner = WSTG.Runner(
+            config("https://example.test", "example.test", self.root),
+            self.mapping,
+            self.root / "webmail-static",
+        )
+        self.assertTrue(runner.write_webmail_input_validation_static_evidence())
+
+    def test_nonzero_ssh_exit_is_explicitly_incomplete(self) -> None:
+        runner = WSTG.Runner(
+            config("https://example.test", "example.test", self.root),
+            self.mapping,
+            self.root / "ssh-failure",
+        )
+        completed = mock.Mock(returncode=23, stdout="")
+        with mock.patch.object(WSTG.subprocess, "run", return_value=completed):
+            output = runner.run_ssh("ssh_failure.txt", "false")
+        self.assertEqual(output, "ERROR: ssh command exited with status 23\n")
+        evidence = runner.evidence_dir / "ssh_failure.txt"
+        self.assertEqual(evidence.read_text(), output)
 
 
 if __name__ == "__main__":

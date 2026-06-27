@@ -512,7 +512,10 @@ for marker in [
     "authz_cross_user_attachment",
     "authz_cross_user_sent",
     "authz_cross_user_search",
+    "secondary_sent_mailbox_created",
+    "mailbox create -u",
     "authorization_account_isolation_redaction",
+    "ssh command exited with status",
 ]:
     if marker not in runner:
         raise SystemExit(f"runner missing authorization account-isolation marker {marker}")

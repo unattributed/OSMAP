@@ -3314,6 +3314,7 @@ class Runner:
             REPO_ROOT / "src" / "http_form.rs",
             REPO_ROOT / "src" / "attachment.rs",
             REPO_ROOT / "src" / "mailbox.rs",
+            REPO_ROOT / "src" / "draft.rs",
             REPO_ROOT / "src" / "rendering_html.rs",
             REPO_ROOT / "docs" / "V3_WEBMAIL_INPUT_VALIDATION_EVIDENCE.md",
         ]
@@ -3776,6 +3777,7 @@ class Runner:
             if "=" in line:
                 key, value = line.split("=", 1)
                 fields[key.strip()] = value.strip()
+        sent_mailbox_created = fields.get("secondary_sent_mailbox_created") == "1"
 
         evidence_paths = [
             "evidence/authorization_account_isolation_fixture.txt",
@@ -3793,6 +3795,46 @@ class Runner:
             "evidence/authorization_account_isolation_static.txt",
             "evidence/authorization_account_isolation_redaction.txt",
         ]
+        required_fixture_fields = [
+            "secondary_inbox_uid",
+            "secondary_sent_uid",
+            "secondary_unique_mailbox",
+            "secondary_unique_uid",
+            "fixture_result",
+        ]
+        missing_fixture_fields = [
+            field for field in required_fixture_fields if not fields.get(field)
+        ]
+        if (
+            "ERROR:" in remote_report
+            or fields.get("fixture_result") != "prepared"
+            or missing_fixture_fields
+        ):
+            self.cleanup_secondary_authorization_fixture(
+                inbox_subject,
+                sent_subject,
+                sent_mailbox_created=sent_mailbox_created,
+            )
+            static_ok = self.write_authorization_account_isolation_static_evidence()
+            redaction_ok = self.write_authorization_account_isolation_redaction_evidence(
+                [token, inbox_subject, sent_subject, attachment_marker],
+            )
+            return self.result(
+                "OSMAP-WSTG-ATHZ-001",
+                STATUS_FAIL,
+                "secondary authorization fixture preparation failed",
+                [
+                    "evidence/authorization_account_isolation_fixture.txt",
+                    "evidence/authorization_account_isolation_cleanup.txt",
+                    "evidence/authorization_account_isolation_static.txt",
+                    "evidence/authorization_account_isolation_redaction.txt",
+                ],
+                {
+                    "missing_fixture_fields": missing_fixture_fields,
+                    "static_ok": static_ok,
+                    "redaction_ok": redaction_ok,
+                },
+            )
         secondary_mailbox = fields.get("secondary_unique_mailbox", "")
         secondary_mailbox_uid = fields.get("secondary_unique_uid", "1")
         inbox_uid = fields.get("secondary_inbox_uid", "1")
@@ -3861,7 +3903,11 @@ class Runner:
             cookies={"osmap_session": "f" * 64},
             store_body_evidence=False,
         )
-        self.cleanup_secondary_authorization_fixture(inbox_subject, sent_subject)
+        self.cleanup_secondary_authorization_fixture(
+            inbox_subject,
+            sent_subject,
+            sent_mailbox_created=sent_mailbox_created,
+        )
 
         static_ok = self.write_authorization_account_isolation_static_evidence()
         redaction_ok = self.write_authorization_account_isolation_redaction_evidence(
@@ -3889,21 +3935,6 @@ class Runner:
             "stale_cookie": stale_cookie.status,
         }
         failures: dict[str, object] = {}
-        missing_fields = [
-            field
-            for field in [
-                "secondary_inbox_uid",
-                "secondary_sent_uid",
-                "secondary_unique_mailbox",
-                "secondary_unique_uid",
-                "fixture_result",
-            ]
-            if not fields.get(field)
-        ]
-        if "ERROR:" in remote_report or fields.get("fixture_result") != "prepared":
-            failures["fixture"] = "secondary fixture was not prepared"
-        if missing_fields:
-            failures["missing_fixture_fields"] = missing_fields
         if mailbox_tamper.status not in {200, 400, 404, 503}:
             failures["mailbox_tamper_status"] = mailbox_tamper.status
         if secondary_only_mailbox_probe.status not in {200, 400, 404, 503}:
@@ -3952,7 +3983,13 @@ unique_mailbox={shlex.quote(unique_mailbox)}
 unique_subject="$inbox_subject unique mailbox"
 doveadm='/usr/local/bin/doveadm -o stats_writer_socket_path='
 doas -u vmail $doveadm mailbox list -u "$secondary" | grep -Fxq INBOX
+sent_mailbox_created=0
+if ! doas -u vmail $doveadm mailbox list -u "$secondary" | grep -Fxq Sent; then
+  doas -u vmail $doveadm mailbox create -u "$secondary" Sent
+  sent_mailbox_created=1
+fi
 doas -u vmail $doveadm mailbox list -u "$secondary" | grep -Fxq Sent
+printf 'secondary_sent_mailbox_created=%s\\n' "$sent_mailbox_created"
 doas -u vmail $doveadm mailbox create -u "$secondary" "$unique_mailbox" >/dev/null 2>&1 || true
 doas -u vmail $doveadm mailbox list -u "$secondary" | grep -Fxq "$unique_mailbox"
 {{
@@ -4036,7 +4073,13 @@ printf 'secret_review=No password, password hash, TOTP material, session cookie,
 """
         return self.run_ssh("authorization_account_isolation_fixture.txt", command)
 
-    def cleanup_secondary_authorization_fixture(self, inbox_subject: str, sent_subject: str) -> None:
+    def cleanup_secondary_authorization_fixture(
+        self,
+        inbox_subject: str,
+        sent_subject: str,
+        *,
+        sent_mailbox_created: bool,
+    ) -> None:
         unique_mailbox = "OSMAP-WSTG-ATHZ-" + hashlib.sha256(
             inbox_subject.encode("utf-8")
         ).hexdigest()[:12]
@@ -4046,12 +4089,14 @@ printf 'secret_review=No password, password hash, TOTP material, session cookie,
             f"inbox_subject={shlex.quote(inbox_subject)}; "
             f"sent_subject={shlex.quote(sent_subject)}; "
             f"unique_mailbox={shlex.quote(unique_mailbox)}; "
+            f"sent_mailbox_created={'1' if sent_mailbox_created else '0'}; "
             "doveadm='/usr/local/bin/doveadm -o stats_writer_socket_path='; "
             'doas -u vmail $doveadm expunge -u "$secondary" mailbox INBOX header Subject "$inbox_subject" >/dev/null 2>&1 || true; '
             'doas -u vmail $doveadm expunge -u "$secondary" mailbox INBOX header Subject "$sent_subject" >/dev/null 2>&1 || true; '
             'doas -u vmail $doveadm expunge -u "$secondary" mailbox Sent header Subject "$sent_subject" >/dev/null 2>&1 || true; '
             'doas -u vmail $doveadm expunge -u "$secondary" mailbox "$unique_mailbox" all >/dev/null 2>&1 || true; '
             'doas -u vmail $doveadm mailbox delete -u "$secondary" "$unique_mailbox" >/dev/null 2>&1 || true; '
+            'if [ "$sent_mailbox_created" = "1" ]; then doas -u vmail $doveadm mailbox delete -u "$secondary" Sent >/dev/null 2>&1 || true; fi; '
             "printf 'cleanup_result=attempted\\n'"
         )
         self.run_ssh("authorization_account_isolation_cleanup.txt", command)
@@ -5293,6 +5338,11 @@ printf 'secret_review=No password, password hash, TOTP material, session cookie,
                 timeout=self.config.ssh_timeout,
             )
             output = completed.stdout
+            if completed.returncode != 0:
+                output = (
+                    f"ERROR: ssh command exited with status {completed.returncode}\n"
+                    f"{output}"
+                )
         except (OSError, subprocess.TimeoutExpired) as exc:
             output = f"ERROR: {exc}\n"
         self.write_text_evidence(filename, output)
