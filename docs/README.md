@@ -340,3 +340,8 @@ V7 production availability was previously reopened pending real-login, real-mail
 - `V12_OPENPGP_INBOUND_SECURITY_STATE_MODEL.md` defines the non-cryptographic inbound OpenPGP security-state model for Slice 13.
 
 <!-- OSMAP:V12-SLICE13-INBOUND-SECURITY-STATE:END -->
+<!-- OSMAP:V12-SLICE14-CLOSEOUT-READINESS:START -->
+
+- `V12_OPENPGP_CLOSEOUT_READINESS_AUDIT.md` audits the V12 non-cryptographic OpenPGP foundation before future runtime crypto work.
+
+<!-- OSMAP:V12-SLICE14-CLOSEOUT-READINESS:END -->

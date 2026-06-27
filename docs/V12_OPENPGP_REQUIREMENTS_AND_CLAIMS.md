@@ -178,3 +178,10 @@ Slice 12 adds a non-cryptographic outbound OpenPGP preflight model. It proves fa
 Slice 13 adds a non-cryptographic inbound OpenPGP security-state model. It proves fail-closed and metadata-only outcomes for encrypted, signed, verified, decrypted, renderable, failed, and ambiguous states. Runtime cryptography remains disabled.
 
 <!-- OSMAP:V12-SLICE13-INBOUND-SECURITY-STATE:END -->
+<!-- OSMAP:V12-SLICE14-CLOSEOUT-READINESS:START -->
+
+## Slice 14 closeout readiness status
+
+Slice 14 adds an audit-only closeout readiness gate. It confirms the V12 OpenPGP work remains a non-cryptographic foundation and that all V12 gates are represented in both `make v12-check` and `make security-check`. Runtime cryptography remains disabled.
+
+<!-- OSMAP:V12-SLICE14-CLOSEOUT-READINESS:END -->

@@ -367,3 +367,10 @@ V12 Slice 12 defines outbound encryption and signing preflight policy decisions 
 V12 Slice 13 defines inbound OpenPGP state decisions only. It does not spawn the helper, parse PGP/MIME, decrypt, verify, sign, encrypt, prompt for passphrases, access private keys, expose browser UI controls, or render decrypted content.
 
 <!-- OSMAP:V12-SLICE13-INBOUND-SECURITY-STATE:END -->
+<!-- OSMAP:V12-SLICE14-CLOSEOUT-READINESS:START -->
+
+### V12 Slice 14 closeout readiness limitation
+
+V12 Slice 14 is an audit gate only. It does not implement helper spawning, PGP/MIME parsing, decrypt, verify, sign, encrypt, passphrase handling, private-key access, browser UI controls, key discovery, WKD, keyserver lookup, or decrypted-content rendering. The stale V3 live evidence `make release-check` blocker remains carried forward.
+
+<!-- OSMAP:V12-SLICE14-CLOSEOUT-READINESS:END -->
