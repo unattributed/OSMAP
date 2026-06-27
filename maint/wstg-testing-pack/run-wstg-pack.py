@@ -3623,7 +3623,7 @@ class Runner:
             "rcctl check rspamd; rcctl check clamd; "
             "rspamadm configtest; "
             "rspamadm configdump antivirus; "
-            "{ printf '%s' 'X5O!P%@AP[4\\\\PZX54(P^)7CC)7}$'; "
+            "{ printf '%s\\134%s' 'X5O!P%@AP[4' 'PZX54(P^)7CC)7}$'; "
             "printf '%s' 'EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*'; } "
             "| doas -u _rspamd clamdscan - 2>&1; "
             "status=$?; printf 'scan_exit=%s\\n' \"$status\"; "
@@ -5149,6 +5149,15 @@ printf 'secret_review=No password, password hash, TOTP material, session cookie,
         return not missing
 
     def test_security_logging_static(self) -> TestResult:
+        trigger = self.form_post(
+            "security_logging_trigger_invalid_login",
+            "/login",
+            {
+                "username": "wstg-log-trigger.invalid",
+                "password": "invalid-security-log-trigger",
+                "totp_code": "000000",
+            },
+        )
         files = [
             REPO_ROOT / "src" / "auth.rs",
             REPO_ROOT / "src" / "session.rs",
@@ -5211,14 +5220,17 @@ printf 'secret_review=No password, password hash, TOTP material, session cookie,
         host_log = ""
         host_log_evidence = "evidence/security_logging_host_events.txt"
         host_failures: list[str] = []
+        if trigger.status not in {401, 429}:
+            host_failures.append(f"invalid login trigger returned HTTP {trigger.status}")
         if self.config.allow_host_assisted:
+            time.sleep(min(max(self.config.rate_delay, 0.2), 1.0))
             host_log = self.run_ssh(
                 "security_logging_host_events.txt",
                 "doas tail -n 4000 /var/log/osmap/serve.log 2>/dev/null "
                 "| egrep 'action=(login_denied|second_factor_denied|session_revoked|http_csrf_invalid)' "
                 "| tail -n 80",
             )
-            for marker in ["category=auth", "action=second_factor_denied", "request_id="]:
+            for marker in ["category=auth", "action=login_denied", "request_id="]:
                 if marker not in host_log:
                     host_failures.append(marker)
             forbidden_host_patterns = [
@@ -5232,7 +5244,13 @@ printf 'secret_review=No password, password hash, TOTP material, session cookie,
             )
         elif self.config.release_mode:
             host_failures.append("host-assisted security event inspection disabled")
-        evidence_paths = [static_evidence, redaction_evidence, host_log_evidence]
+        evidence_paths = [
+            "evidence/security_logging_trigger_invalid_login.headers",
+            "evidence/security_logging_trigger_invalid_login.body",
+            static_evidence,
+            redaction_evidence,
+            host_log_evidence,
+        ]
         if missing:
             return self.result(
                 "OSMAP-WSTG-LOGG-001",
