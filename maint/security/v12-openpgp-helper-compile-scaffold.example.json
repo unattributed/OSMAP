@@ -1,0 +1,32 @@
+{
+  "schema": "osmap-v12-openpgp-helper-compile-scaffold-v1",
+  "helper_name": "osmap-openpgp-helper",
+  "source_path": "maint/security/openpgp-helper/osmap-openpgp-helper-compile-only.c",
+  "required": {
+    "preferred_runtime_binding_is_gpgme": true,
+    "gpgme_metadata_required": true,
+    "compile_and_link_probe_required": true,
+    "unknown_operations_fail_closed": true,
+    "account_binding_required_before_runtime_crypto": true
+  },
+  "source_scanner": {
+    "reject_gpgme_message_operations": true,
+    "reject_key_lookup_operations": true,
+    "reject_passphrase_callback": true,
+    "reject_process_command_fallbacks": true
+  },
+  "safety_invariants": {
+    "browser_request_handler_touched_keys": false,
+    "direct_gpg_runtime_crypto_allowed": false,
+    "fallback_to_direct_gpg_crypto_allowed": false,
+    "message_decryption_attempted": false,
+    "message_encryption_attempted": false,
+    "message_signature_verification_attempted": false,
+    "message_signing_attempted": false,
+    "passphrases_prompted_or_stored": false,
+    "pgp_mime_parsing_attempted": false,
+    "runtime_crypto_enabled": false,
+    "secret_key_access_attempted": false,
+    "secret_key_listing_attempted": false
+  }
+}

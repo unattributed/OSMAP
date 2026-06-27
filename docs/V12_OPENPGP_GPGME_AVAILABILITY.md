@@ -35,3 +35,11 @@ A successful Slice 6 report proves these constraints:
 - The browser-facing request handler still does not touch keys, passphrases, decrypted plaintext, raw message bodies, or trusted HTML derived from decrypted content.
 
 The known V3 stale live evidence release blocker remains carried forward until final release evidence is refreshed.
+
+<!-- OSMAP:V12-SLICE7-HELPER-COMPILE:START -->
+
+## Slice 7 helper compile scaffold
+
+Slice 6 proved GPGME availability. Slice 7 uses that availability to compile and link a helper-shaped scaffold against GPGME. The scaffold remains non-cryptographic and must not be treated as implemented OpenPGP mail handling.
+
+<!-- OSMAP:V12-SLICE7-HELPER-COMPILE:END -->

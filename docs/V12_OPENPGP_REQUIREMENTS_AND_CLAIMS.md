@@ -123,3 +123,13 @@ Slice 6 adds an operator-controlled GPGME availability and dependency proof gate
 Slice 6 still does not implement decryption, signature verification, signing, encryption, helper cryptographic operations, passphrase handling, PGP/MIME parsing, GPGME runtime cryptographic integration, or browser UI integration.
 
 <!-- OSMAP:V12-SLICE6-GPGME-AVAILABILITY:END -->
+
+<!-- OSMAP:V12-SLICE7-HELPER-COMPILE:START -->
+
+## Slice 7 helper compile scaffold status
+
+Slice 7 adds a GPGME-linked helper compile scaffold and proves it can compile and link without enabling OpenPGP runtime cryptography.
+
+Slice 7 still does not implement decryption, signature verification, signing, encryption, helper cryptographic operations, passphrase handling, PGP/MIME parsing, GPGME runtime cryptographic integration, or browser UI integration.
+
+<!-- OSMAP:V12-SLICE7-HELPER-COMPILE:END -->

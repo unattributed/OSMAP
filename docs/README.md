@@ -303,3 +303,9 @@ V7 production availability was previously reopened pending real-login, real-mail
 - `V12_OPENPGP_GPGME_AVAILABILITY.md` defines the operator-controlled GPGME dependency remediation and proof gate for Slice 6.
 
 <!-- OSMAP:V12-SLICE6-GPGME-AVAILABILITY:END -->
+
+<!-- OSMAP:V12-SLICE7-HELPER-COMPILE:START -->
+
+- `V12_OPENPGP_GPGME_HELPER_COMPILE_SCAFFOLD.md` defines the compile and link only helper scaffold for Slice 7.
+
+<!-- OSMAP:V12-SLICE7-HELPER-COMPILE:END -->

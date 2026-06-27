@@ -316,3 +316,11 @@ V12 Slice 5 validates GPGME readiness policy and dependency metadata only. It ma
 V12 Slice 6 proves dependency availability only. Even when `pkg-config gpgme` and the compile/link probe pass, OSMAP still must not claim implemented OpenPGP decryption, signature verification, signing, encryption, PGP/MIME handling, passphrase handling, helper cryptographic operations, or browser UI integration.
 
 <!-- OSMAP:V12-SLICE6-GPGME-AVAILABILITY:END -->
+
+<!-- OSMAP:V12-SLICE7-HELPER-COMPILE:START -->
+
+### V12 Slice 7 helper compile scaffold limitation
+
+V12 Slice 7 proves helper compile and link scaffolding only. Even when the scaffold links against GPGME, OSMAP still must not claim implemented OpenPGP decryption, signature verification, signing, encryption, PGP/MIME handling, passphrase handling, helper cryptographic operations, or browser UI integration.
+
+<!-- OSMAP:V12-SLICE7-HELPER-COMPILE:END -->
