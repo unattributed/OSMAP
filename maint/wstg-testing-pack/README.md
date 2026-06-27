@@ -24,8 +24,8 @@ Identifier rules:
 Canonical files:
 
 - `wstg-asvs-mapping.json`, implemented test mapping
-- `wstg-scenario-matrix.v42.csv`, v4.2 due-diligence matrix
-- `wstg-scenario-matrix.v42.json`, v4.2 due-diligence matrix
+- `wstg-scenario-matrix.v42.csv`, tabular v4.2 scenario inventory
+- `wstg-scenario-matrix.v42.json`, release-authoritative v4.2 due-diligence matrix
 - `wstg-scenario-matrix.latest.json`, latest-track matrix when generated
 - `COVERAGE.md`, rendered coverage and gap table
 
@@ -119,10 +119,22 @@ Release mode:
 
 Release mode enables authenticated and host-assisted coverage, rejects selected test subsets, and exits nonzero when release-required tests are skipped, missing, warning, failing, or incomplete.
 
+Release mode also rejects a missing, malformed, empty, stale, or internally
+inconsistent active matrix. Manual, deferred, and blocked matrix rows remain
+release blockers until their evidence is completed and the row is given an
+appropriate final disposition.
+
 Run one mapped test:
 
 ```bash
 ./run.sh --test-id OSMAP-WSTG-CONF-002
+```
+
+Regenerate the tracked coverage document only when mapping or matrix data has
+intentionally changed:
+
+```bash
+./run.sh --unauthenticated --write-coverage
 ```
 
 ## Outputs
@@ -152,11 +164,12 @@ Version 3 summaries include:
 
 ## Statuses
 
-- `pass`, expected secure behavior was observed
+- `pass`, expected dynamic, tool-backed, or static behavior was observed
 - `fail`, confirmed behavior violates the mapped expectation
 - `warning`, evidence was useful but inconclusive under safe limits
 - `skip`, test was intentionally not run, usually due to missing credentials
-- `not_applicable`, the mapped area does not apply to current OSMAP scope
+- `not_applicable`, the mapped area does not apply to current OSMAP scope; it is
+  reported separately and is never counted as dynamic proof
 
 ## Adding A Test
 

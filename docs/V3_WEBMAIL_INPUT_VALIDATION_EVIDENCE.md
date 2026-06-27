@@ -11,6 +11,13 @@ stored browser rendering.
 
 ## Dynamic Evidence
 
+V13 extends the authenticated compose probes across every recipient field.
+To, Cc, and Bcc each receive newline/header-injection inputs, and a combined
+17-recipient request verifies that the 16-recipient limit applies across all
+three fields rather than independently per field. Executable Rust regressions
+also confirm that Cc is emitted as a message header, Bcc remains envelope-only,
+and saved drafts round-trip Cc/Bcc metadata.
+
 The WSTG runner uses a real authenticated password-plus-TOTP session. Rejected
 probes must fail before local submission; the attachment content-type probe is
 the one accepted positive control and must reach delivery with a malformed
