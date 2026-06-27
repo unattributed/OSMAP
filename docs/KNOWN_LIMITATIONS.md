@@ -353,3 +353,10 @@ V12 Slice 10 adds an integration gate only. It does not spawn the helper, decryp
 V12 Slice 11 defines capability states and fail-closed policy outcomes only. It does not expose UI controls, spawn the helper, parse PGP/MIME, decrypt, verify, sign, encrypt, prompt for passphrases, access private keys, or render decrypted content.
 
 <!-- OSMAP:V12-SLICE11-CAPABILITY-POLICY:END -->
+<!-- OSMAP:V12-SLICE12-OUTBOUND-PREFLIGHT:START -->
+
+### V12 Slice 12 outbound preflight limitation
+
+V12 Slice 12 defines outbound encryption and signing preflight policy decisions only. It does not spawn the helper, construct PGP/MIME, encrypt, sign, decrypt, verify, prompt for passphrases, access private keys, expose browser UI controls, perform key discovery, or generate sent encrypted mail.
+
+<!-- OSMAP:V12-SLICE12-OUTBOUND-PREFLIGHT:END -->

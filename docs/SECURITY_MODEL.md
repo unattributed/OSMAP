@@ -410,3 +410,10 @@ Slice 10 proves that the protocol-only helper invocation scaffold and typed Rust
 Slice 11 models OpenPGP capability as unavailable, available, or fail-closed. Signature status does not make content safe, and decrypted content remains hostile until it passes through the existing secure rendering path.
 
 <!-- OSMAP:V12-SLICE11-CAPABILITY-POLICY:END -->
+<!-- OSMAP:V12-SLICE12-OUTBOUND-PREFLIGHT:START -->
+
+### V12 outbound OpenPGP preflight model
+
+Slice 12 requires outbound OpenPGP decisions to fail closed when required recipient key policy is missing or ambiguous, encrypt-to-self cannot be satisfied, signing is requested without sender signing capability, or unencrypted send is not explicitly permitted by account policy. Recipient keys are policy objects, not inferred from recipient text.
+
+<!-- OSMAP:V12-SLICE12-OUTBOUND-PREFLIGHT:END -->

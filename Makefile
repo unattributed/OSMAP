@@ -118,3 +118,5 @@ v12-check:
 	sh maint/security/test-osmap-v12-openpgp-helper-client-integration-gate.sh
 	sh maint/security/osmap-v12-openpgp-capability-policy-gate.sh
 	sh maint/security/test-osmap-v12-openpgp-capability-policy-gate.sh
+	sh maint/security/osmap-v12-openpgp-outbound-preflight-policy-gate.sh
+	sh maint/security/test-osmap-v12-openpgp-outbound-preflight-policy-gate.sh

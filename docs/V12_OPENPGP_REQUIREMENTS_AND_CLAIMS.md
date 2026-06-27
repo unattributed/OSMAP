@@ -164,3 +164,10 @@ Slice 10 adds a helper client integration gate for V12. It verifies check wiring
 Slice 11 adds a non-cryptographic OpenPGP capability policy model. It proves account capability states and fail-closed outcomes for missing account keys, explicit configured fingerprints, ambiguous or duplicate bindings, missing recipient key policy, signed content, and decrypted content. Runtime cryptography remains disabled.
 
 <!-- OSMAP:V12-SLICE11-CAPABILITY-POLICY:END -->
+<!-- OSMAP:V12-SLICE12-OUTBOUND-PREFLIGHT:START -->
+
+## Slice 12 outbound preflight status
+
+Slice 12 adds a non-cryptographic outbound OpenPGP preflight model. It proves fail-closed policy outcomes for missing or ambiguous recipient key policy, missing sender encrypt-to-self capability, missing sender signing capability, and unencrypted send when not explicitly allowed. Runtime cryptography remains disabled.
+
+<!-- OSMAP:V12-SLICE12-OUTBOUND-PREFLIGHT:END -->

@@ -330,3 +330,8 @@ V7 production availability was previously reopened pending real-login, real-mail
 - `V12_OPENPGP_CAPABILITY_POLICY_MODEL.md` defines the non-cryptographic OpenPGP capability policy model for Slice 11.
 
 <!-- OSMAP:V12-SLICE11-CAPABILITY-POLICY:END -->
+<!-- OSMAP:V12-SLICE12-OUTBOUND-PREFLIGHT:START -->
+
+- `V12_OPENPGP_OUTBOUND_PREFLIGHT_POLICY.md` defines the non-cryptographic outbound OpenPGP preflight policy model for Slice 12.
+
+<!-- OSMAP:V12-SLICE12-OUTBOUND-PREFLIGHT:END -->
