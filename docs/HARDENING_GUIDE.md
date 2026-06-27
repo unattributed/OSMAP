@@ -169,6 +169,9 @@ timeouts. Budget exhaustion fails fast with `503 Service Unavailable`,
 `Retry-After`, and bounded audit events. The browser runtime now also
 propagates `OSMAP_EXPENSIVE_REQUEST_TIMEOUT_SECONDS` into helper-backed
 search/view/move/attachment work, direct `doveadm` search/view/move commands,
-sendmail-backed compose submission, and external-auth login so admitted budget
-slots have route-level backend caps. Adjacent controls such as nginx request
-limits, PF, and host monitoring remain part of the credible DoS posture.
+and sendmail-backed compose submission. External-auth login uses the distinct
+`OSMAP_AUTH_BACKEND_TIMEOUT_SECONDS` deadline so Dovecot's bounded
+authentication penalty cannot exceed OSMAP's dependency timeout. Backend
+availability failures do not add credential-failure throttle strikes. Adjacent
+controls such as nginx request limits, PF, and host monitoring remain part of
+the credible DoS posture.

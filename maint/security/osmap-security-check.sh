@@ -118,12 +118,17 @@ sh maint/security/osmap-v7-boundary-hardening-gate.sh
 echo "==> validating V11 runtime fail-closed closure"
 sh maint/security/osmap-v11-runtime-fail-closed-gate.sh
 
+echo "==> validating V13 WSTG assurance integrity"
+sh maint/security/osmap-v13-wstg-assurance-gate.sh
+
+
 echo "==> validating TLS policy invariants"
 sh maint/security/osmap-tls-policy-guard.sh
 
 echo "==> validating Python security tooling syntax"
 python3 -m py_compile \
 	maint/security/osmap-cwe-top25-guard.py \
+	maint/security/test-osmap-wstg-runner.py \
 	maint/border-testing-pack/run-border-pack.py \
 	maint/wstg-testing-pack/run-wstg-pack.py \
 	maint/security/osmap-live-tls-standard-validate.py

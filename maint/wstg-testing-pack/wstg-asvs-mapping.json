@@ -1,6 +1,7 @@
 {
   "standards": {
     "wstg": "OWASP Web Security Testing Guide v4.2",
+    "wstg_latest": "OWASP Web Security Testing Guide latest pinned development track",
     "asvs": "OWASP Application Security Verification Standard 5.0.0",
     "owasp_top_10_2025": "OWASP Top 10 2025"
   },
@@ -73,10 +74,11 @@
     },
     {
       "test_id": "OSMAP-WSTG-CONF-003",
-      "test_name": "WSTG-v42-CONF-12 Testing for Content Security Policy - OSMAP CSP regression",
+      "test_name": "WSTG-CONF-12 Testing for Content Security Policy - OSMAP CSP regression",
       "script_path": "run-wstg-pack.py",
-      "wstg": [
-        "WSTG-v42-CONF-12"
+      "wstg": [],
+      "wstg_latest": [
+        "WSTG-CONF-12"
       ],
       "wstg_section": "Testing for Content Security Policy",
       "asvs": [
@@ -90,7 +92,9 @@
       ],
       "expected_result": "CSP is default-deny, disallows script execution, limits forms to self, and denies framing.",
       "evidence_produced": [
-        "csp.headers"
+        "csp_login.headers",
+        "csp_root.headers",
+        "csp_not_found.headers"
       ],
       "release_required": true,
       "requires_authenticated_coverage": false,
@@ -370,8 +374,12 @@
         "authenticated",
         "dynamic test"
       ],
-      "expected_result": "Valid credentials plus current TOTP create an authenticated browser session.",
+      "expected_result": "Missing or incorrect factors cannot create a session, TOTP replay protections pass executable regressions, and valid credentials plus current TOTP create an authenticated browser session.",
       "evidence_produced": [
+        "mfa_wrong_totp.headers",
+        "mfa_missing_totp.headers",
+        "mfa_wrong_password.headers",
+        "mfa_replay_unit.txt",
         "auth_login.headers",
         "auth_mailboxes.headers"
       ],
@@ -622,7 +630,7 @@
         "dynamic test",
         "static boundary review"
       ],
-      "expected_result": "A real authenticated session can access a protected route, valid logout revokes the server-side session, the old cookie and a synthetic stale cookie cannot reuse protected access, and static evidence covers idle timeout, absolute timeout, concurrent-session policy, exposed-token controls, session puzzling, and revocation race behavior.",
+      "expected_result": "A real authenticated session can access a protected route, valid logout revokes server-side state, old and stale cookies fail, and executable timeout and race regressions pass.",
       "evidence_produced": [
         "session_lifecycle_login.headers",
         "session_lifecycle_mailboxes.headers",
@@ -631,6 +639,7 @@
         "session_lifecycle_old_cookie_after_logout.headers",
         "session_lifecycle_stale_cookie.headers",
         "session_lifecycle_static.txt",
+        "session_lifecycle_executable.txt",
         "session_lifecycle_redaction.txt"
       ],
       "release_required": true,
@@ -764,11 +773,12 @@
         "dynamic test",
         "static boundary review"
       ],
-      "expected_result": "Unauthenticated error responses do not expose stack traces, source locations, private paths, or unwrap diagnostics, and the browser route and architecture inventory remains explicit.",
+      "expected_result": "Unauthenticated error responses do not expose stack traces, source locations, private paths, or unwrap diagnostics, and every browser route and input field remains in the reviewed attack-surface inventory.",
       "evidence_produced": [
         "errh02_*.headers",
         "errh02_*.body",
-        "error_route_inventory_static.txt"
+        "error_route_inventory_static.txt",
+        "browser_attack_surface_inventory.txt"
       ],
       "release_required": true,
       "requires_authenticated_coverage": false,
@@ -949,6 +959,9 @@
       "evidence_produced": [
         "webmail_inpv10_subject_newline.headers",
         "webmail_inpv10_recipient_newline.headers",
+        "webmail_inpv10_cc_newline.headers",
+        "webmail_inpv10_bcc_newline.headers",
+        "webmail_inpv10_aggregate_recipient_limit.headers",
         "webmail_inpv10_display_name.headers",
         "webmail_inpv10_mailbox_tamper.headers",
         "webmail_inpv10_uid_tamper.headers",
@@ -956,6 +969,7 @@
         "webmail_inpv10_attachment_filename.headers",
         "webmail_inpv10_dangerous_content_type.headers",
         "webmail_input_validation_static.txt",
+        "webmail_multi_recipient_unit.txt",
         "webmail_input_validation_redaction.txt"
       ],
       "release_required": true,
@@ -1042,6 +1056,8 @@
       "evidence_produced": [
         "http_inpv15_cl_te_smuggling.headers",
         "http_inpv15_duplicate_content_length.headers",
+        "http_inpv15_te_cl_pipeline.headers",
+        "http_inpv15_obfuscated_transfer_encoding.headers",
         "http_inpv15_encoded_crlf_target.headers",
         "http_inpv16_missing_host.headers",
         "http_inpv16_folded_header.headers",
@@ -1156,10 +1172,14 @@
         "dynamic test",
         "static boundary review"
       ],
-      "expected_result": "Live injected HTML email evidence shows sanitized rendering, unsafe scheme rejection, external fetch blocking, and escaped plaintext fallback.",
+      "expected_result": "Live injected HTML email evidence and a real browser show sanitized stored content, inactive reflected payloads, unsafe scheme rejection, external fetch blocking, and escaped plaintext fallback.",
       "evidence_produced": [
         "mime_html_live_report.txt",
-        "static_html_rendering.txt"
+        "static_html_rendering.txt",
+        "browser_stored_xss_fixture.txt",
+        "browser_driver_bootstrap.txt",
+        "browser_xss_report.json",
+        "browser_xss_stdout.txt"
       ],
       "release_required": true,
       "requires_authenticated_coverage": false,
@@ -1234,10 +1254,11 @@
         "dynamic test",
         "static boundary review"
       ],
-      "expected_result": "Live attachment evidence shows bounded multipart handling and forced-download attachment responses with nosniff and no-store.",
+      "expected_result": "Live attachment evidence shows bounded multipart handling, forced-download controls, and an active Rspamd and ClamAV reject path that detects the safe EICAR test signature.",
       "evidence_produced": [
         "mime_html_live_report.txt",
-        "static_attachment_handling.txt"
+        "static_attachment_handling.txt",
+        "mailstack_malware_boundary.txt"
       ],
       "release_required": true,
       "requires_authenticated_coverage": false,
@@ -1382,10 +1403,13 @@
         "tool execution",
         "static boundary review"
       ],
-      "expected_result": "Repo contains lockfile and supply-chain documentation or tooling, and locked Cargo metadata resolves successfully.",
+      "expected_result": "Locked metadata resolves, advisory and dependency-policy gates pass, duplicate versions are rejected, and a valid CycloneDX SBOM is generated.",
       "evidence_produced": [
         "static_dependency_alignment.txt",
-        "dependency_metadata_locked.txt"
+        "dependency_metadata_locked.txt",
+        "dependency_supply_chain_gate.txt",
+        "dependency_cyclonedx_sbom.json",
+        "dependency_cyclonedx_stdout.txt"
       ],
       "release_required": true,
       "requires_authenticated_coverage": false,
@@ -1436,6 +1460,9 @@
         "draft_save_missing_csrf.headers",
         "draft_save_cross_origin.headers",
         "draft_save_attachment_limit.headers",
+        "draft_multi_recipient_create.headers",
+        "draft_multi_recipient_resume.headers",
+        "draft_multi_recipient_delete.headers",
         "draft_delete_create.headers",
         "draft_delete.headers",
         "draft_delete_resume.headers",
@@ -1640,11 +1667,13 @@
       ],
       "asvs_section": "Architecture, Access Control, CSRF, Validation, and Error Handling",
       "test_type": [
+        "tool execution",
         "static boundary review"
       ],
-      "expected_result": "Browser form-backed state transitions have CSRF, same-origin, duplicate-field, tamper, lifecycle, and misuse-limit evidence.",
+      "expected_result": "Executable workflow regressions enforce CSRF, same-origin, duplicate-field, tamper, lifecycle, failure-preservation, and misuse limits.",
       "evidence_produced": [
-        "form_route_state_transitions_static.txt"
+        "form_route_state_transitions_static.txt",
+        "form_route_state_transitions_executable.txt"
       ],
       "release_required": true,
       "requires_authenticated_coverage": false,
@@ -1706,13 +1735,18 @@
         "A09:2025"
       ],
       "test_type": [
+        "host assisted",
+        "dynamic test",
         "evidence validation",
         "static boundary review"
       ],
-      "expected_result": "Source and docs show structured auth, session, mailbox, request, and release-gate events, and dynamic WSTG evidence redaction finds no passwords, TOTP material, session tokens, CSRF tokens, or message bodies.",
+      "expected_result": "Triggered authentication failures appear as structured host events, and logs plus dynamic evidence disclose no passwords, TOTP material, session tokens, CSRF tokens, or message bodies.",
       "evidence_produced": [
+        "security_logging_trigger_invalid_login.headers",
+        "security_logging_trigger_invalid_login.body",
         "static_security_logging.txt",
-        "security_logging_evidence_redaction.txt"
+        "security_logging_evidence_redaction.txt",
+        "security_logging_host_events.txt"
       ],
       "release_required": true,
       "requires_authenticated_coverage": false,
@@ -1750,7 +1784,7 @@
       "asvs": [
         "v5.0.0-10.2.1"
       ],
-      "reason": "The pack validates OSMAP browser boundaries and source controls. Mail-stack content filtering belongs to the mailstack validation tooling and is not broadened here.",
+      "reason": "The pack validates the configured Rspamd to ClamAV reject path with the safe EICAR signature, but does not claim archive recursion, document sanitization, or endpoint safety after download.",
       "owasp_top_10_2025": [
         "A06:2025",
         "A08:2025"

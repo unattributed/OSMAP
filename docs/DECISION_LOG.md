@@ -6928,3 +6928,19 @@ Evidence:
 - Closeout document: `docs/V9_RELEASE_CANDIDATE_CLOSEOUT.md`
 
 Boundary: this decision does not claim complete Roundcube replacement, general hostile email safety, or unbounded release readiness.
+
+## 2026-06-27: Separate authentication dependency deadlines from mailbox work
+
+- Decision: external `doveadm auth test` calls use the independently
+  configurable `OSMAP_AUTH_BACKEND_TIMEOUT_SECONDS` deadline, defaulting to 20
+  seconds.
+- Reason: Dovecot may deliberately delay repeated authentication failures for
+  as long as 15 seconds. The former five-second shared deadline converted this
+  security control into browser-login backend failures.
+- Decision: backend-unavailable outcomes remain externally normalized but do
+  not add OSMAP credential-failure throttle strikes.
+- Decision: the WSTG runner separately bounds connection establishment and
+  response reads, and preserves release authentication retries as distinct
+  evidence files.
+- Boundary: login worker budgets, OSMAP throttle limits, Dovecot penalties,
+  and bounded command execution remain enabled.

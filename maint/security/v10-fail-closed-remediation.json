@@ -11,7 +11,7 @@
       "low": 76,
       "medium": 2
     },
-    "inventory_sha256": "29cc15a3e6a638f8d5d637520754bada152d8f2b94c5cd01b789517171d656da",
+    "inventory_sha256": "c19ab2dcd78b7f77e571ecb7306d781a1882b15dd82851a3153b2a233bbfa6fa",
     "schema_version": 1,
     "slice": "V10 Slice 4",
     "source": "maint/security/v10-rust-assumption-audit.json",
@@ -23,7 +23,7 @@
     "This slice does not claim broad public release readiness.",
     "This slice does not change production deployment state."
   ],
-  "generated_at_utc": "2026-06-25T17:14:41Z",
+  "generated_at_utc": "2026-06-27T09:03:14Z",
   "purpose": "Targeted fail-closed remediation register for Rust assumption handling after the Slice 4 audit.",
   "refined_current": {
     "by_classification": {
@@ -35,7 +35,7 @@
       "medium": 1
     },
     "high_relevance_top_files": {},
-    "inventory_sha256": "5cebb6f95b4fea0be7fac9c6290439c0cf37663fe82d0e898077318fe90e4ec3",
+    "inventory_sha256": "07b07419f904e1e6571091d93455f47d05eff1a6e15aa67850f82e2b85cba0f0",
     "total_count": 722
   },
   "required_followups": [

@@ -36,6 +36,7 @@ pub struct BootstrapReport {
     pub send_worker_budget: String,
     pub auth_worker_budget: String,
     pub expensive_request_timeout_seconds: String,
+    pub auth_backend_timeout_seconds: String,
     pub session_lifetime_seconds: String,
     pub session_idle_timeout_seconds: String,
     pub totp_allowed_skew_steps: String,
@@ -111,6 +112,10 @@ impl BootstrapReport {
         .with_field(
             "expensive_request_timeout_seconds",
             self.expensive_request_timeout_seconds.clone(),
+        )
+        .with_field(
+            "auth_backend_timeout_seconds",
+            self.auth_backend_timeout_seconds.clone(),
         )
         .with_field(
             "session_lifetime_seconds",
@@ -244,6 +249,7 @@ fn report_from_config(config: &AppConfig) -> BootstrapReport {
         send_worker_budget: config.send_worker_budget.to_string(),
         auth_worker_budget: config.auth_worker_budget.to_string(),
         expensive_request_timeout_seconds: config.expensive_request_timeout_seconds.to_string(),
+        auth_backend_timeout_seconds: config.auth_backend_timeout_seconds.to_string(),
         session_lifetime_seconds: config.session_lifetime_seconds.to_string(),
         session_idle_timeout_seconds: config.session_idle_timeout_seconds.to_string(),
         totp_allowed_skew_steps: config.totp_allowed_skew_steps.to_string(),
@@ -322,6 +328,7 @@ mod tests {
             send_worker_budget: 2,
             auth_worker_budget: 4,
             expensive_request_timeout_seconds: 5,
+            auth_backend_timeout_seconds: 20,
             session_lifetime_seconds: 43200,
             session_idle_timeout_seconds: 1800,
             totp_allowed_skew_steps: 1,
@@ -447,6 +454,10 @@ mod tests {
                 crate::logging::LogField {
                     key: "expensive_request_timeout_seconds",
                     value: "5".to_string(),
+                },
+                crate::logging::LogField {
+                    key: "auth_backend_timeout_seconds",
+                    value: "20".to_string(),
                 },
                 crate::logging::LogField {
                     key: "session_lifetime_seconds",

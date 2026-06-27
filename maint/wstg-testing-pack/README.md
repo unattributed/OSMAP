@@ -24,8 +24,8 @@ Identifier rules:
 Canonical files:
 
 - `wstg-asvs-mapping.json`, implemented test mapping
-- `wstg-scenario-matrix.v42.csv`, v4.2 due-diligence matrix
-- `wstg-scenario-matrix.v42.json`, v4.2 due-diligence matrix
+- `wstg-scenario-matrix.v42.csv`, tabular v4.2 scenario inventory
+- `wstg-scenario-matrix.v42.json`, release-authoritative v4.2 due-diligence matrix
 - `wstg-scenario-matrix.latest.json`, latest-track matrix when generated
 - `COVERAGE.md`, rendered coverage and gap table
 
@@ -76,6 +76,14 @@ The brute-force throttle probe defaults to three invalid attempts with a delay b
 
 Most host-assisted tests use `ssh $OSMAP_SSH_HOST` and read-only commands. Host-assisted checks are disabled unless `--include-host` or `OSMAP_ALLOW_HOST_ASSISTED_TESTS=true` is used. SSH-assisted host checks use `OSMAP_SSH_TIMEOUT_SECONDS`, defaulting to 300 seconds, so slower release hosts can finish bounded live validators without relaxing the browser request timeout.
 
+Network connection establishment and application response reads use separate
+deadlines. `OSMAP_CONNECT_TIMEOUT_SECONDS` defaults to 5 seconds so an
+intentionally closed cleartext port does not stall the pack.
+`OSMAP_REQUEST_TIMEOUT_SECONDS` defaults to 20 seconds so authentication
+evidence can include Dovecot's bounded penalty delay. Release-mode
+authentication retries are written under distinct `_retry` evidence labels;
+an incomplete first response still fails closed.
+
 Any test that sends mail, moves mail, deletes mail, mutates drafts, changes settings, or injects controlled messages must use dedicated validation accounts and controlled fixtures only.
 
 `OSMAP-WSTG-INPV-003` is the command-injection due-diligence lane. It uses safe
@@ -119,10 +127,22 @@ Release mode:
 
 Release mode enables authenticated and host-assisted coverage, rejects selected test subsets, and exits nonzero when release-required tests are skipped, missing, warning, failing, or incomplete.
 
+Release mode also rejects a missing, malformed, empty, stale, or internally
+inconsistent active matrix. Manual, deferred, and blocked matrix rows remain
+release blockers until their evidence is completed and the row is given an
+appropriate final disposition.
+
 Run one mapped test:
 
 ```bash
 ./run.sh --test-id OSMAP-WSTG-CONF-002
+```
+
+Regenerate the tracked coverage document only when mapping or matrix data has
+intentionally changed:
+
+```bash
+./run.sh --unauthenticated --write-coverage
 ```
 
 ## Outputs
@@ -152,11 +172,12 @@ Version 3 summaries include:
 
 ## Statuses
 
-- `pass`, expected secure behavior was observed
+- `pass`, expected dynamic, tool-backed, or static behavior was observed
 - `fail`, confirmed behavior violates the mapped expectation
 - `warning`, evidence was useful but inconclusive under safe limits
 - `skip`, test was intentionally not run, usually due to missing credentials
-- `not_applicable`, the mapped area does not apply to current OSMAP scope
+- `not_applicable`, the mapped area does not apply to current OSMAP scope; it is
+  reported separately and is never counted as dynamic proof
 
 ## Adding A Test
 

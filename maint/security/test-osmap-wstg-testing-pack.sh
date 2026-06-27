@@ -17,11 +17,13 @@ fi
 
 echo "validating WSTG runner syntax"
 python3 -m py_compile "$pack_dir/run-wstg-pack.py"
+python3 "$repo_root/maint/security/test-osmap-wstg-runner.py"
 
 echo "validating WSTG mapping and manifest"
 python3 - "$pack_dir" <<'PY'
 import csv
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -67,8 +69,12 @@ for item in mapping["tests"]:
     if item["test_id"] in seen:
         raise SystemExit(f"duplicate test_id: {item['test_id']}")
     seen.add(item["test_id"])
+    if not item["wstg"] and not item.get("wstg_latest"):
+        raise SystemExit(f"{item['test_id']} must map to stable or pinned-latest WSTG")
     if not all(value.startswith("WSTG-v42-") for value in item["wstg"]):
         raise SystemExit(f"{item['test_id']} contains non-v4.2 WSTG identifier")
+    if not all(value.startswith("WSTG-") for value in item.get("wstg_latest", [])):
+        raise SystemExit(f"{item['test_id']} contains invalid latest-track WSTG identifier")
     if not all(value.startswith("v5.0.0-") for value in item["asvs"]):
         raise SystemExit(f"{item['test_id']} contains non-ASVS-5.0.0 identifier")
     if not item["owasp_top_10_2025"]:
@@ -109,6 +115,38 @@ with (pack / "MANIFEST.csv").open(newline="") as handle:
 for rel_path in manifest_paths:
     if not (pack / rel_path).exists():
         raise SystemExit(f"manifest path does not exist: {rel_path}")
+expected_manifest_paths = {
+    str(path.relative_to(pack))
+    for path in pack.rglob("*")
+    if path.is_file()
+    and "__pycache__" not in path.parts
+    and "output" not in path.parts
+    and path.name != ".env"
+}
+if set(manifest_paths) != expected_manifest_paths:
+    missing = sorted(expected_manifest_paths - set(manifest_paths))
+    extra = sorted(set(manifest_paths) - expected_manifest_paths)
+    raise SystemExit(f"manifest inventory mismatch missing={missing} extra={extra}")
+
+attack_surface = json.loads((pack / "osmap-browser-attack-surface.json").read_text())
+attack_routes = attack_surface.get("routes", [])
+attack_keys = {(row["method"], row["path"]) for row in attack_routes}
+runtime_text = (pack.parents[1] / "src" / "http_runtime.rs").read_text()
+runtime_keys = {
+    (method.upper(), path)
+    for method, path in re.findall(r'\(HttpMethod::(Get|Post),\s*"([^"]+)"\)', runtime_text)
+}
+if attack_keys != runtime_keys:
+    raise SystemExit(
+        f"browser attack-surface route drift missing={sorted(runtime_keys - attack_keys)} "
+        f"stale={sorted(attack_keys - runtime_keys)}"
+    )
+for method, path in [("POST", "/send"), ("POST", "/drafts/save")]:
+    row = next(item for item in attack_routes if (item["method"], item["path"]) == (method, path))
+    if not {"to", "cc", "bcc"}.issubset(row["form_fields"]):
+        raise SystemExit(f"{method} {path} must inventory To/Cc/Bcc fields")
+    if not row.get("wstg_test_ids"):
+        raise SystemExit(f"{method} {path} must map to WSTG tests")
 
 env_text = (pack / ".env.example").read_text()
 for key in [
@@ -128,9 +166,11 @@ for key in [
     "OSMAP_WSTG_SOURCE_COMMIT=",
     "OSMAP_WSTG_MATRIX_FILE=wstg-scenario-matrix.v42.json",
     "OSMAP_WSTG_SOURCE_VERSION=latest",
-    "OSMAP_WSTG_SOURCE_COMMIT=7dea71b751ea76f792b89186655739720b614d9a",
+    "OSMAP_WSTG_SOURCE_COMMIT=8eb4e023d0116a4f5196f56ae9e69db1798888a0",
     "OSMAP_WSTG_MATRIX_FILE=wstg-scenario-matrix.latest.json",
     "OSMAP_RATE_LIMIT_DELAY_SECONDS=",
+    "OSMAP_CONNECT_TIMEOUT_SECONDS=5",
+    "OSMAP_REQUEST_TIMEOUT_SECONDS=20",
     "OSMAP_ALLOW_AUTHENTICATED_TESTS=false",
 ]:
     if key not in env_text:
@@ -172,13 +212,15 @@ if unmapped:
     raise SystemExit(f"WSTG matrix must map every listed row after ATHN applicability closeout: {unmapped[:10]}")
 
 latest = json.loads((pack / "wstg-scenario-matrix.latest.json").read_text())
-expected_latest_commit = "7dea71b751ea76f792b89186655739720b614d9a"
+expected_latest_commit = "8eb4e023d0116a4f5196f56ae9e69db1798888a0"
 if latest.get("source_repo") != "https://github.com/OWASP/wstg":
     raise SystemExit("latest WSTG matrix must identify the OWASP/wstg repository")
 if latest.get("source_branch") != "master":
     raise SystemExit("latest WSTG matrix must identify the source branch")
 if latest.get("source_commit") != expected_latest_commit:
     raise SystemExit("latest WSTG matrix source commit is not pinned to the reviewed upstream commit")
+if "2026-06-27" not in latest.get("wstg_source", ""):
+    raise SystemExit("latest WSTG matrix capture date is stale")
 latest_scenarios = latest.get("scenarios", [])
 if len(latest_scenarios) != 114:
     raise SystemExit(f"unexpected latest WSTG scenario row count: {len(latest_scenarios)}")
@@ -472,7 +514,10 @@ for marker in [
     "authz_cross_user_attachment",
     "authz_cross_user_sent",
     "authz_cross_user_search",
+    "secondary_sent_mailbox_created",
+    "mailbox create -u",
     "authorization_account_isolation_redaction",
+    "ssh command exited with status",
 ]:
     if marker not in runner:
         raise SystemExit(f"runner missing authorization account-isolation marker {marker}")
@@ -506,6 +551,9 @@ required_evidence = {
     "draft_save_missing_csrf.headers",
     "draft_save_cross_origin.headers",
     "draft_save_attachment_limit.headers",
+    "draft_multi_recipient_create.headers",
+    "draft_multi_recipient_resume.headers",
+    "draft_multi_recipient_delete.headers",
     "draft_delete.headers",
     "draft_send_cleanup.headers",
     "draft_send_resume_after_cleanup.headers",
@@ -530,6 +578,8 @@ for marker in [
     "draft_route_evidence_redaction",
     "store_body_evidence=False",
     "draft_save_attachment_limit",
+    "draft_multi_recipient_create",
+    "multi_recipient_values_preserved",
     "if send_draft_id:",
     'throttle_attempts_default = "6" if release_mode else "3"',
 ]:
@@ -669,6 +719,9 @@ if webmail["requires_authenticated_coverage"] is not True or webmail["requires_t
 required_evidence = {
     "webmail_inpv10_subject_newline.headers",
     "webmail_inpv10_recipient_newline.headers",
+    "webmail_inpv10_cc_newline.headers",
+    "webmail_inpv10_bcc_newline.headers",
+    "webmail_inpv10_aggregate_recipient_limit.headers",
     "webmail_inpv10_display_name.headers",
     "webmail_inpv10_mailbox_tamper.headers",
     "webmail_inpv10_uid_tamper.headers",
@@ -676,6 +729,7 @@ required_evidence = {
     "webmail_inpv10_attachment_filename.headers",
     "webmail_inpv10_dangerous_content_type.headers",
     "webmail_input_validation_static.txt",
+    "webmail_multi_recipient_unit.txt",
     "webmail_input_validation_redaction.txt",
 }
 missing = sorted(required_evidence - set(webmail["evidence_produced"]))
@@ -689,6 +743,11 @@ for marker in [
     "test_webmail_input_validation",
     "webmail_inpv10_subject_newline",
     "webmail_inpv10_recipient_newline",
+    "webmail_inpv10_cc_newline",
+    "webmail_inpv10_bcc_newline",
+    "webmail_inpv10_aggregate_recipient_limit",
+    "sendmail_backend_uses_cc_header_and_bcc_envelope_only",
+    "file_draft_store_round_trips_text_and_attachments",
     "webmail_inpv10_attachment_filename",
     "webmail_inpv10_dangerous_content_type",
     "write_webmail_input_validation_static_evidence",
@@ -795,6 +854,8 @@ if host["requires_authenticated_coverage"] is not False or host["requires_totp"]
 required_evidence = {
     "http_inpv15_cl_te_smuggling.headers",
     "http_inpv15_duplicate_content_length.headers",
+    "http_inpv15_te_cl_pipeline.headers",
+    "http_inpv15_obfuscated_transfer_encoding.headers",
     "http_inpv15_encoded_crlf_target.headers",
     "http_inpv16_missing_host.headers",
     "http_inpv16_folded_header.headers",
@@ -817,6 +878,9 @@ for marker in [
     "parse_raw_http_evidence",
     "test_http_host_and_smuggling_input",
     "http_inpv15_cl_te_smuggling",
+    "http_inpv15_te_cl_pipeline",
+    "http_inpv15_obfuscated_transfer_encoding",
+    "raw_response_count",
     "http_inpv17_untrusted_host",
     "write_http_host_smuggling_static_evidence",
 ]:
@@ -1349,11 +1413,30 @@ pack = Path(sys.argv[1])
 mapping = json.loads((pack / "wstg-asvs-mapping.json").read_text())
 tests = {item["test_id"]: item for item in mapping["tests"]}
 expected = {
-    "OSMAP-WSTG-CLNT-002": {"mime_html_live_report.txt", "static_html_rendering.txt"},
-    "OSMAP-WSTG-BUSL-001": {"mime_html_live_report.txt", "static_attachment_handling.txt"},
+    "OSMAP-WSTG-CLNT-002": {
+        "mime_html_live_report.txt",
+        "static_html_rendering.txt",
+        "browser_stored_xss_fixture.txt",
+        "browser_driver_bootstrap.txt",
+        "browser_xss_report.json",
+    },
+    "OSMAP-WSTG-BUSL-001": {
+        "mime_html_live_report.txt",
+        "static_attachment_handling.txt",
+        "mailstack_malware_boundary.txt",
+    },
     "OSMAP-WSTG-BUSL-004": {"bulk_folder_actions_live_report.txt", "static_bulk_folder_actions.txt"},
-    "OSMAP-WSTG-CONF-007": {"static_dependency_alignment.txt", "dependency_metadata_locked.txt"},
-    "OSMAP-WSTG-LOGG-001": {"static_security_logging.txt", "security_logging_evidence_redaction.txt"},
+    "OSMAP-WSTG-CONF-007": {
+        "static_dependency_alignment.txt",
+        "dependency_metadata_locked.txt",
+        "dependency_supply_chain_gate.txt",
+        "dependency_cyclonedx_sbom.json",
+    },
+    "OSMAP-WSTG-LOGG-001": {
+        "static_security_logging.txt",
+        "security_logging_evidence_redaction.txt",
+        "security_logging_host_events.txt",
+    },
 }
 for test_id, evidence in expected.items():
     item = tests[test_id]
@@ -1372,6 +1455,11 @@ for marker in [
     "osmap-live-validate-archive-shortcut.ksh",
     "X-OSMAP-WSTG-Body-Truncated",
     "proven_top10_coverage",
+    "write_browser_xss_evidence",
+    "Eicar-Test-Signature FOUND",
+    "dependency_supply_chain_gate.txt",
+    "session_lifecycle_executable.txt",
+    "form_route_state_transitions_executable.txt",
 ]:
     if marker not in runner:
         raise SystemExit(f"runner missing live WSTG marker {marker}")

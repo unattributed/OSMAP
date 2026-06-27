@@ -1,7 +1,7 @@
 # Keep developer entrypoints obvious and conservative so operators and
 # collaborating developers do not have to memorize cargo subcommands.
 
-.PHONY: build check test lint fmt-check supply-chain-check security-check release-check v6-check v7-check v7-rendering-regression-check v8-check v8-mail-workflow-check v8-attachment-safety-check v8-mailbox-operation-check v8-session-integrity-check v8-resource-robustness-check v8-final-regression-check install-hooks run v10-check v11-check acceptance-check v12-check
+.PHONY: build check test lint fmt-check supply-chain-check security-check release-check v6-check v7-check v7-rendering-regression-check v8-check v8-mail-workflow-check v8-attachment-safety-check v8-mailbox-operation-check v8-session-integrity-check v8-resource-robustness-check v8-final-regression-check install-hooks run v10-check v11-check v12-check v13-check acceptance-check
 
 build:
 	cargo build
@@ -87,10 +87,15 @@ v10-check:
 v11-check:
 	sh maint/security/osmap-v11-runtime-fail-closed-gate.sh
 
+v13-check:
+	sh maint/security/osmap-v13-wstg-assurance-gate.sh
+
 acceptance-check:
 	$(MAKE) security-check
 	$(MAKE) v10-check
 	$(MAKE) v11-check
+	$(MAKE) v12-check
+	$(MAKE) v13-check
 
 v10-fail-closed-remediation-check:
 	python3 -B maint/security/osmap-v10-fail-closed-remediation.py --check maint/security/v10-fail-closed-remediation.json

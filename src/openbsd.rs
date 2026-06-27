@@ -647,6 +647,7 @@ mod tests {
             send_worker_budget: 2,
             auth_worker_budget: 4,
             expensive_request_timeout_seconds: 5,
+            auth_backend_timeout_seconds: 20,
             session_lifetime_seconds: 43200,
             session_idle_timeout_seconds: 1800,
             totp_allowed_skew_steps: 1,
