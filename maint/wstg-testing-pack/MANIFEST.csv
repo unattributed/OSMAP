@@ -5,6 +5,7 @@ README.md,markdown,Operator guide and coverage matrix
 COVERAGE.md,markdown,Generated coverage and gap table from wstg-asvs-mapping.json
 MANIFEST.csv,csv,Pack file inventory
 osmap-browser-attack-surface.json,json,Canonical browser route and input inventory
+browser-xss-evidence.py,python,Headless Firefox reflected and stored XSS execution probe
 run.sh,bash,Thin shell entrypoint for the Python runner
 run-wstg-pack.py,python,Single evidence-producing WSTG runner
 wstg-asvs-mapping.json,json,Canonical WSTG v4.2 and ASVS 5.0.0 mapping
@@ -12,3 +13,4 @@ wstg-scenario-matrix.v42.csv,csv,Tabular stable WSTG v4.2 scenario inventory
 wstg-scenario-matrix.v42.json,json,Release-authoritative stable WSTG v4.2 scenario matrix
 wstg-scenario-matrix.latest.json,json,Pinned latest-track WSTG source matrix
 scripts/README.md,markdown,Documents retirement of old ad hoc numbered scripts
+scripts/bootstrap-geckodriver.sh,bash,Installs the checksum-pinned headless Firefox driver

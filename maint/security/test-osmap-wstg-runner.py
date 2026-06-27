@@ -130,6 +130,12 @@ class RunnerBehaviorTests(unittest.TestCase):
         )
         self.assertIn(b"GET /app/login HTTP/1.1", scoped)
         self.assertIn(b"Host: example.test:8443", scoped)
+        hostile = runner.scope_raw_http_request(
+            b"GET /login HTTP/1.1\r\nHost: attacker.invalid\r\n\r\n",
+            rewrite_host=False,
+        )
+        self.assertIn(b"GET /app/login HTTP/1.1", hostile)
+        self.assertIn(b"Host: attacker.invalid", hostile)
 
     def test_explicitly_allowed_closed_cleartext_port_is_not_incomplete(self) -> None:
         runner = WSTG.Runner(
@@ -168,7 +174,9 @@ class RunnerBehaviorTests(unittest.TestCase):
         self.assertIn("active WSTG matrix contains no scenarios", errors)
 
     def test_top10_reporting_separates_static_and_not_applicable_evidence(self) -> None:
-        tests = {item["test_id"]: item for item in self.mapping["tests"]}
+        mapping = json.loads(json.dumps(self.mapping))
+        tests = {item["test_id"]: item for item in mapping["tests"]}
+        tests["OSMAP-WSTG-BUSL-005"]["test_type"] = ["static boundary review"]
         results = [
             WSTG.TestResult(
                 "OSMAP-WSTG-BUSL-005",
@@ -183,10 +191,10 @@ class RunnerBehaviorTests(unittest.TestCase):
                 "not applicable",
             ),
         ]
-        coverage = WSTG.proven_top10_coverage(self.mapping, results)["A06:2025"]
-        self.assertNotIn("OSMAP-WSTG-BUSL-005", coverage["tests"])
-        self.assertIn("OSMAP-WSTG-BUSL-005", coverage["static_only_tests"])
-        self.assertIn("OSMAP-WSTG-INPV-007", coverage["not_applicable_tests"])
+        coverage = WSTG.proven_top10_coverage(mapping, results)
+        self.assertNotIn("OSMAP-WSTG-BUSL-005", coverage["A06:2025"]["tests"])
+        self.assertIn("OSMAP-WSTG-BUSL-005", coverage["A06:2025"]["static_only_tests"])
+        self.assertIn("OSMAP-WSTG-INPV-007", coverage["A05:2025"]["not_applicable_tests"])
 
     def test_browser_attack_surface_matches_runtime_router(self) -> None:
         runner = WSTG.Runner(

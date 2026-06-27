@@ -8,6 +8,8 @@ fail() {
 
 doc=docs/V13_WSTG_ASSURANCE_INTEGRITY_AND_ADVERSARIAL_VALIDATION.md
 [ -s "$doc" ] || fail "missing V13 sprint document"
+[ -s maint/wstg-testing-pack/browser-xss-evidence.py ] || fail "missing browser XSS execution probe"
+[ -s maint/security/osmap-cyclonedx-sbom.py ] || fail "missing CycloneDX SBOM generator"
 
 for marker in \
 	"Fail-Closed Runner Core" \

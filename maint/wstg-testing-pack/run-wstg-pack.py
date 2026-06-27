@@ -103,6 +103,7 @@ def parse_raw_http_evidence(
 ) -> HttpEvidence:
     if not response:
         return HttpEvidence(label, None, "", [], b"", truncated=truncated, error=error)
+    response_count = len(re.findall(rb"(?m)^HTTP/\S+\s+\d{3}\b", response))
     header_bytes, separator, body = response.partition(b"\r\n\r\n")
     if not separator:
         header_bytes, separator, body = response.partition(b"\n\n")
@@ -124,7 +125,16 @@ def parse_raw_http_evidence(
         else:
             error = error or "raw response did not start with an HTTP status line"
             body = response
-    return HttpEvidence(label, status, reason, headers, body, truncated=truncated, error=error)
+    return HttpEvidence(
+        label,
+        status,
+        reason,
+        headers,
+        body,
+        truncated=truncated,
+        error=error,
+        raw_response_count=response_count,
+    )
 
 
 @dataclass
@@ -192,6 +202,7 @@ class HttpEvidence:
     body: bytes
     truncated: bool = False
     error: str = ""
+    raw_response_count: int = 0
 
     def header_values(self, name: str) -> list[str]:
         needle = name.lower()
@@ -432,7 +443,10 @@ class Runner:
 
     def raw_http_request(self, label: str, raw_request: bytes) -> HttpEvidence:
         host = self.config.host
-        raw_request = self.scope_raw_http_request(raw_request)
+        # Host-header probes intentionally carry malformed, duplicate, or
+        # untrusted values. Only scope the target path here; rewriting Host
+        # would erase the adversarial condition and create false assurance.
+        raw_request = self.scope_raw_http_request(raw_request, rewrite_host=False)
         response = b""
         error = ""
         truncated = False
@@ -459,7 +473,12 @@ class Runner:
         self.record_response_completeness(evidence)
         return evidence
 
-    def scope_raw_http_request(self, raw_request: bytes) -> bytes:
+    def scope_raw_http_request(
+        self,
+        raw_request: bytes,
+        *,
+        rewrite_host: bool = True,
+    ) -> bytes:
         """Apply the configured mount path and authority to a raw HTTP probe."""
         if not raw_request:
             return raw_request
@@ -474,9 +493,10 @@ class Runner:
                 if not parts[1].startswith(base_path + b"/") and parts[1] != base_path:
                     parts[1] = base_path + parts[1]
                 lines[0] = b" ".join(parts)
-        for index, line in enumerate(lines[1:], start=1):
-            if line.lower().startswith(b"host:"):
-                lines[index] = f"Host: {self.config.authority}".encode("ascii")
+        if rewrite_host:
+            for index, line in enumerate(lines[1:], start=1):
+                if line.lower().startswith(b"host:"):
+                    lines[index] = f"Host: {self.config.authority}".encode("ascii")
         return b"\r\n".join(lines) + separator + body
 
     def record_response_completeness(
@@ -809,22 +829,50 @@ class Runner:
         )
 
     def test_csp(self) -> TestResult:
-        evidence = self.request("csp", "GET", "/login")
-        csp = evidence.first_header("Content-Security-Policy").lower()
+        probes = {
+            "csp_login": "/login",
+            "csp_root": "/",
+            "csp_not_found": "/wstg-csp-not-found",
+        }
         required = ["default-src 'none'", "form-action 'self'", "base-uri 'none'", "frame-ancestors 'none'"]
-        if not csp:
-            return self.result("OSMAP-WSTG-CONF-003", STATUS_FAIL, "CSP header missing", ["evidence/csp.headers"])
-        missing = [token for token in required if token not in csp]
-        risky = any(token in csp for token in ["script-src 'unsafe-inline'", "default-src *", "script-src *"])
-        if missing or risky:
+        policies: dict[str, str] = {}
+        failures: dict[str, object] = {}
+        evidence_paths: list[str] = []
+        for label, path in probes.items():
+            evidence = self.request(label, "GET", path)
+            evidence_paths.append(f"evidence/{label}.headers")
+            values = evidence.header_values("Content-Security-Policy")
+            report_only = evidence.header_values("Content-Security-Policy-Report-Only")
+            policy = values[0].lower() if values else ""
+            policies[label] = policy
+            missing = [token for token in required if token not in policy]
+            risky = any(
+                token in policy
+                for token in ["script-src 'unsafe-inline'", "'unsafe-eval'", "default-src *", "script-src *"]
+            )
+            if len(values) != 1 or report_only or missing or risky:
+                failures[label] = {
+                    "policy_count": len(values),
+                    "report_only_count": len(report_only),
+                    "missing": missing,
+                    "risky": risky,
+                }
+        if len(set(policies.values())) != 1:
+            failures["inconsistent_policies"] = policies
+        if failures:
             return self.result(
                 "OSMAP-WSTG-CONF-003",
                 STATUS_FAIL,
-                "CSP is missing required directives or allows risky script behavior",
-                ["evidence/csp.headers"],
-                {"missing": missing, "csp": csp},
+                "CSP is missing, inconsistent, duplicated, report-only, or permits risky script behavior",
+                evidence_paths,
+                failures,
             )
-        return self.result("OSMAP-WSTG-CONF-003", STATUS_PASS, "CSP remains narrow and default-deny", ["evidence/csp.headers"])
+        return self.result(
+            "OSMAP-WSTG-CONF-003",
+            STATUS_PASS,
+            "CSP is consistently enforced and remains narrow and default-deny",
+            evidence_paths,
+        )
 
     def test_sensitive_extension_and_backup_exposure(self) -> TestResult:
         probes = {
@@ -1377,10 +1425,100 @@ class Runner:
         )
 
     def test_authenticated_login(self) -> TestResult:
+        if not self.authenticated_ready():
+            return self.result(
+                "OSMAP-WSTG-ATHN-004",
+                STATUS_SKIP,
+                "authenticated tests disabled or credentials/TOTP secret missing",
+            )
+        valid_code = self.auth_totp_code("MFA negative-path evidence")
+        invalid_code = ("0" if valid_code[-1:] != "0" else "1") + valid_code[1:]
+        probes = {
+            "mfa_wrong_totp": {
+                "username": self.config.test_email,
+                "password": self.auth_password(),
+                "totp_code": invalid_code,
+            },
+            "mfa_missing_totp": {
+                "username": self.config.test_email,
+                "password": self.auth_password(),
+                "totp_code": "",
+            },
+            "mfa_wrong_password": {
+                "username": self.config.test_email,
+                "password": f"wrong-{hashlib.sha256(str(time.time()).encode()).hexdigest()[:16]}",
+                "totp_code": valid_code,
+            },
+        }
+        failures: dict[str, object] = {}
+        evidence_paths: list[str] = []
+        statuses: dict[str, int | None] = {}
+        for label, values in probes.items():
+            evidence = self.form_post(label, "/login", values)
+            evidence_paths.extend([f"evidence/{label}.headers", f"evidence/{label}.body"])
+            statuses[label] = evidence.status
+            if evidence.status not in {401, 429} or evidence.header_values("Set-Cookie"):
+                failures[label] = {
+                    "status": evidence.status,
+                    "issued_cookie": bool(evidence.header_values("Set-Cookie")),
+                }
+        unit_ok = self.write_executable_regression_evidence(
+            "mfa_replay_unit.txt",
+            [
+                "file_backed_verifier_rejects_reused_counter_and_accepts_newer_counter",
+                "replay_store_allows_only_one_concurrent_counter_consumer",
+            ],
+        )
+        evidence_paths.append("evidence/mfa_replay_unit.txt")
+        if not unit_ok:
+            failures["replay_regressions"] = "TOTP replay regression tests failed"
+        if failures:
+            return self.result(
+                "OSMAP-WSTG-ATHN-004",
+                STATUS_FAIL,
+                "MFA negative-path or replay evidence failed",
+                evidence_paths,
+                {"statuses": statuses, "failures": failures},
+            )
         ok, message = self.ensure_login()
         if not ok:
             return self.result("OSMAP-WSTG-ATHN-004", STATUS_SKIP, message)
-        return self.result("OSMAP-WSTG-ATHN-004", STATUS_PASS, "authenticated login and mailbox access succeeded", ["evidence/auth_login.headers", "evidence/auth_mailboxes.headers"])
+        evidence_paths.extend(["evidence/auth_login.headers", "evidence/auth_mailboxes.headers"])
+        return self.result(
+            "OSMAP-WSTG-ATHN-004",
+            STATUS_PASS,
+            "MFA rejected missing and incorrect factors, replay regressions passed, and authenticated mailbox access succeeded",
+            evidence_paths,
+            {"statuses": statuses},
+        )
+
+    def write_executable_regression_evidence(self, filename: str, filters: list[str]) -> bool:
+        output: list[str] = []
+        passed = True
+        for test_filter in filters:
+            try:
+                completed = subprocess.run(
+                    ["cargo", "test", test_filter, "--", "--nocapture"],
+                    cwd=REPO_ROOT,
+                    text=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    timeout=180,
+                    check=False,
+                )
+                output.extend(
+                    [
+                        f"filter={test_filter} returncode={completed.returncode}",
+                        completed.stdout,
+                    ]
+                )
+                if completed.returncode != 0 or "1 passed" not in completed.stdout:
+                    passed = False
+            except (OSError, subprocess.TimeoutExpired) as exc:
+                output.append(f"filter={test_filter} ERROR: {exc}")
+                passed = False
+        self.write_text_evidence(filename, "\n".join(output))
+        return passed
 
     def test_authentication_feature_applicability(self) -> TestResult:
         evidence_paths: list[str] = []
@@ -1685,6 +1823,14 @@ class Runner:
             store_body_evidence=False,
         )
         static_ok = self.write_session_lifecycle_static_evidence()
+        executable_ok = self.write_executable_regression_evidence(
+            "session_lifecycle_executable.txt",
+            [
+                "validate_session_auto_revokes_idle_records",
+                "logout_racing_with_validation_leaves_session_revoked",
+                "revoke_all_racing_with_listing_leaves_all_sessions_revoked",
+            ],
+        )
         redaction_ok = self.write_session_lifecycle_redaction_evidence([csrf_token])
         statuses = {
             "login": login.status,
@@ -1706,6 +1852,8 @@ class Runner:
             failures["stale_cookie"] = stale_cookie.status
         if not static_ok:
             failures["static_boundary"] = "missing session lifecycle markers"
+        if not executable_ok:
+            failures["executable_regressions"] = "timeout or session-race regression tests failed"
         if not redaction_ok:
             failures["redaction"] = "session lifecycle evidence redaction scan failed"
         evidence_paths = [
@@ -1716,6 +1864,7 @@ class Runner:
             "evidence/session_lifecycle_old_cookie_after_logout.headers",
             "evidence/session_lifecycle_stale_cookie.headers",
             "evidence/session_lifecycle_static.txt",
+            "evidence/session_lifecycle_executable.txt",
             "evidence/session_lifecycle_redaction.txt",
         ]
         if failures:
@@ -1729,7 +1878,7 @@ class Runner:
         return self.result(
             "OSMAP-WSTG-SESS-006",
             STATUS_PASS,
-            "session lifecycle evidence covers logout invalidation, stale-cookie rejection, timeout policy, exposed-token controls, concurrent-session policy, and race handling",
+            "session lifecycle evidence executes timeout and race regressions and covers logout invalidation, stale-cookie rejection, exposed-token controls, and concurrent-session policy",
             evidence_paths,
             {"statuses": statuses},
         )
@@ -2679,32 +2828,13 @@ class Runner:
 
     def write_multi_recipient_unit_evidence(self) -> bool:
         """Execute privacy and persistence regressions for the Cc/Bcc boundary."""
-        filters = [
-            "sendmail_backend_uses_cc_header_and_bcc_envelope_only",
-            "file_draft_store_round_trips_text_and_attachments",
-        ]
-        output: list[str] = []
-        passed = True
-        for test_filter in filters:
-            try:
-                completed = subprocess.run(
-                    ["cargo", "test", test_filter, "--", "--nocapture"],
-                    cwd=REPO_ROOT,
-                    text=True,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                    timeout=120,
-                    check=False,
-                )
-                output.append(f"filter={test_filter} returncode={completed.returncode}")
-                output.append(completed.stdout)
-                if completed.returncode != 0 or "1 passed" not in completed.stdout:
-                    passed = False
-            except (OSError, subprocess.TimeoutExpired) as exc:
-                output.append(f"filter={test_filter} ERROR: {exc}")
-                passed = False
-        self.write_text_evidence("webmail_multi_recipient_unit.txt", "\n".join(output))
-        return passed
+        return self.write_executable_regression_evidence(
+            "webmail_multi_recipient_unit.txt",
+            [
+                "sendmail_backend_uses_cc_header_and_bcc_envelope_only",
+                "file_draft_store_round_trips_text_and_attachments",
+            ],
+        )
 
     def test_http_input_tampering(self) -> TestResult:
         probes = {
@@ -2818,6 +2948,28 @@ class Runner:
                 + b"Content-Length: 5\r\n"
                 + b"Connection: close\r\n\r\nabcde"
             ),
+            "http_inpv15_te_cl_pipeline": (
+                b"POST /login HTTP/1.1\r\n"
+                + f"Host: {host}\r\n".encode("ascii")
+                + b"Transfer-Encoding: chunked\r\n"
+                + b"Content-Length: 6\r\n"
+                + b"Connection: keep-alive\r\n\r\n"
+                + b"0\r\n\r\n"
+                + b"GET /healthz HTTP/1.1\r\n"
+                + f"Host: {host}\r\n".encode("ascii")
+                + b"Connection: close\r\n\r\n"
+            ),
+            "http_inpv15_obfuscated_transfer_encoding": (
+                b"POST /login HTTP/1.1\r\n"
+                + f"Host: {host}\r\n".encode("ascii")
+                + b"Transfer-Encoding : chunked\r\n"
+                + b"Content-Length: 4\r\n"
+                + b"Connection: keep-alive\r\n\r\n"
+                + b"0\r\n\r\n"
+                + b"GET /healthz HTTP/1.1\r\n"
+                + f"Host: {host}\r\n".encode("ascii")
+                + b"Connection: close\r\n\r\n"
+            ),
             "http_inpv15_encoded_crlf_target": (
                 b"GET /login%0d%0aX-Injected:%20yes HTTP/1.1\r\n"
                 + f"Host: {host}\r\n".encode("ascii")
@@ -2861,6 +3013,8 @@ class Runner:
         reject_labels = [
             "http_inpv15_cl_te_smuggling",
             "http_inpv15_duplicate_content_length",
+            "http_inpv15_te_cl_pipeline",
+            "http_inpv15_obfuscated_transfer_encoding",
             "http_inpv16_missing_host",
             "http_inpv16_folded_header",
             "http_inpv16_non_normalized_target",
@@ -2871,6 +3025,10 @@ class Runner:
             evidence = evidence_by_label[label]
             if evidence.status != 400:
                 failures[label] = evidence.status or evidence.error
+            if evidence.raw_response_count > 1:
+                failures[f"{label}_desynchronized"] = {
+                    "response_count": evidence.raw_response_count,
+                }
 
         crlf = evidence_by_label["http_inpv15_encoded_crlf_target"]
         crlf_text = "\n".join([crlf.body_text(), "\n".join(f"{k}: {v}" for k, v in crlf.headers)])
@@ -2908,7 +3066,13 @@ class Runner:
             f"evidence/{label}.headers"
             for label in raw_probes
         ] + ["evidence/http_host_smuggling_static.txt"]
-        statuses = {label: evidence.status for label, evidence in evidence_by_label.items()}
+        statuses = {
+            label: {
+                "status": evidence.status,
+                "raw_response_count": evidence.raw_response_count,
+            }
+            for label, evidence in evidence_by_label.items()
+        }
         if failures:
             return self.result(
                 "OSMAP-WSTG-INPV-006",
@@ -3357,7 +3521,15 @@ class Runner:
             return self.result("OSMAP-WSTG-CLNT-002", STATUS_SKIP, "host-assisted live HTML rendering evidence disabled")
         static_ok = self.write_html_rendering_static_boundary_evidence()
         live = self.mime_html_live_evidence()
-        evidence_paths = ["evidence/mime_html_live_report.txt", "evidence/static_html_rendering.txt"]
+        browser_ok, browser_details = self.write_browser_xss_evidence()
+        evidence_paths = [
+            "evidence/mime_html_live_report.txt",
+            "evidence/static_html_rendering.txt",
+            "evidence/browser_stored_xss_fixture.txt",
+            "evidence/browser_driver_bootstrap.txt",
+            "evidence/browser_xss_report.json",
+            "evidence/browser_xss_stdout.txt",
+        ]
         required = [
             "result=v3_mime_html_live_proof_passed",
             "sanitized_html_mode=present",
@@ -3365,6 +3537,7 @@ class Runner:
             "sanitized_html_data_scheme=absent",
             "sanitized_html_remote_payload=absent",
             "sanitized_html_body_marker_audit_leakage=absent",
+            "browser_xss_fixture=present",
         ]
         missing = [marker for marker in required if marker not in live]
         failures: dict[str, object] = {}
@@ -3374,16 +3547,93 @@ class Runner:
             failures["static_boundary"] = "missing HTML rendering boundary markers"
         if missing:
             failures["missing_live_markers"] = missing
+        if not browser_ok:
+            failures["browser_execution"] = browser_details
         if failures:
             return self.result("OSMAP-WSTG-CLNT-002", STATUS_FAIL, "live HTML rendering WSTG evidence did not meet expected outcomes", evidence_paths, failures)
-        return self.result("OSMAP-WSTG-CLNT-002", STATUS_PASS, "host-backed HTML sanitization and unsafe-content rejection evidence passed", evidence_paths)
+        return self.result(
+            "OSMAP-WSTG-CLNT-002",
+            STATUS_PASS,
+            "host-backed sanitization and real-browser reflected and stored XSS execution checks passed",
+            evidence_paths,
+        )
+
+    def write_browser_xss_evidence(self) -> tuple[bool, dict[str, object]]:
+        remote_repo = os.environ.get("OSMAP_WSTG_REMOTE_REPO", "/home/foo/OSMAP")
+        fixture = self.run_ssh(
+            "browser_stored_xss_fixture.txt",
+            f"cat {shlex.quote(remote_repo)}/maint/live/latest-host-v3-browser-xss-fixture.txt",
+        )
+        fixture_path = self.evidence_dir / "browser_stored_xss_fixture.txt"
+        report_path = self.evidence_dir / "browser_xss_report.json"
+        stdout_path = self.evidence_dir / "browser_xss_stdout.txt"
+        if "ERROR:" in fixture or not fixture.strip():
+            return False, {"fixture": "host-generated sanitized fixture was unavailable"}
+        command = [
+            sys.executable,
+            str(PACK_ROOT / "browser-xss-evidence.py"),
+            "--base-url",
+            self.config.base_url,
+            "--stored-fixture",
+            str(fixture_path),
+            "--report",
+            str(report_path),
+        ]
+        try:
+            bootstrap = subprocess.run(
+                ["sh", str(PACK_ROOT / "scripts" / "bootstrap-geckodriver.sh")],
+                cwd=REPO_ROOT,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                timeout=120,
+                check=False,
+            )
+            self.write_text_evidence("browser_driver_bootstrap.txt", bootstrap.stdout)
+            if bootstrap.returncode != 0:
+                return False, {"driver_bootstrap_returncode": bootstrap.returncode}
+            completed = subprocess.run(
+                command,
+                cwd=REPO_ROOT,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                timeout=120,
+                check=False,
+            )
+            stdout_path.write_text(self.redact(completed.stdout), encoding="utf-8")
+            details: dict[str, object] = {"returncode": completed.returncode}
+            if report_path.exists():
+                report = json.loads(report_path.read_text(encoding="utf-8"))
+                details["result"] = report.get("result")
+                details["failures"] = report.get("failures", [])
+            return completed.returncode == 0 and details.get("result") == "passed", details
+        except (OSError, subprocess.TimeoutExpired, json.JSONDecodeError) as exc:
+            stdout_path.write_text(f"ERROR: {exc}\n", encoding="utf-8")
+            return False, {"error": str(exc)}
 
     def test_attachment_live(self) -> TestResult:
         if not self.config.allow_host_assisted:
             return self.result("OSMAP-WSTG-BUSL-001", STATUS_SKIP, "host-assisted live attachment evidence disabled")
         static_ok = self.write_attachment_static_boundary_evidence()
         live = self.mime_html_live_evidence()
-        evidence_paths = ["evidence/mime_html_live_report.txt", "evidence/static_attachment_handling.txt"]
+        malware_boundary = self.run_ssh(
+            "mailstack_malware_boundary.txt",
+            "set +e; "
+            "rcctl check rspamd; rcctl check clamd; "
+            "rspamadm configtest; "
+            "rspamadm configdump antivirus; "
+            "{ printf '%s' 'X5O!P%@AP[4\\\\PZX54(P^)7CC)7}$'; "
+            "printf '%s' 'EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*'; } "
+            "| doas -u _rspamd clamdscan - 2>&1; "
+            "status=$?; printf 'scan_exit=%s\\n' \"$status\"; "
+            "test \"$status\" -eq 1",
+        )
+        evidence_paths = [
+            "evidence/mime_html_live_report.txt",
+            "evidence/static_attachment_handling.txt",
+            "evidence/mailstack_malware_boundary.txt",
+        ]
         required = [
             "result=v3_mime_html_live_proof_passed",
             "inline_image_attachment_download_status=HTTP/1.1 200 OK",
@@ -3401,9 +3651,25 @@ class Runner:
             failures["static_boundary"] = "missing attachment handling boundary markers"
         if missing:
             failures["missing_live_markers"] = missing
+        for marker in [
+            "rspamd(ok)",
+            "clamd(ok)",
+            "syntax OK",
+            'action = "reject"',
+            "scan_mime_parts = true",
+            "Eicar-Test-Signature FOUND",
+            "scan_exit=1",
+        ]:
+            if marker not in malware_boundary:
+                failures.setdefault("mailstack_malware_boundary", []).append(marker)
         if failures:
             return self.result("OSMAP-WSTG-BUSL-001", STATUS_FAIL, "live attachment WSTG evidence did not meet expected outcomes", evidence_paths, failures)
-        return self.result("OSMAP-WSTG-BUSL-001", STATUS_PASS, "host-backed attachment download, forced-download, and redaction evidence passed", evidence_paths)
+        return self.result(
+            "OSMAP-WSTG-BUSL-001",
+            STATUS_PASS,
+            "attachment containment and the adjacent Rspamd and ClamAV malware-detection boundary passed",
+            evidence_paths,
+        )
 
     def write_bulk_folder_actions_static_boundary_evidence(self) -> bool:
         files = [
@@ -4388,10 +4654,35 @@ printf 'secret_review=No password, password hash, TOTP material, session cookie,
 
     def test_form_route_state_transitions_static(self) -> TestResult:
         static_ok = self.write_form_route_state_transitions_static_evidence()
-        evidence = ["evidence/form_route_state_transitions_static.txt"]
-        if not static_ok:
-            return self.result("OSMAP-WSTG-BUSL-005", STATUS_FAIL, "form-backed route and state-transition evidence is missing expected guards", evidence)
-        return self.result("OSMAP-WSTG-BUSL-005", STATUS_PASS, "form-backed route inventory and state-transition guard evidence is present", evidence)
+        executable_ok = self.write_executable_regression_evidence(
+            "form_route_state_transitions_executable.txt",
+            [
+                "authenticated_post_routes_reject_cross_origin_headers",
+                "rejects_duplicate_urlencoded_fields",
+                "message_move_rejects_tampered_invalid_uid_without_success_redirect",
+                "bulk_move_rejects_oversized_selection_before_moving",
+                "send_failure_preserves_draft",
+                "session_revoke_rejects_unknown_session_for_user",
+            ],
+        )
+        evidence = [
+            "evidence/form_route_state_transitions_static.txt",
+            "evidence/form_route_state_transitions_executable.txt",
+        ]
+        if not static_ok or not executable_ok:
+            return self.result(
+                "OSMAP-WSTG-BUSL-005",
+                STATUS_FAIL,
+                "form-backed state-transition guards or executable misuse regressions failed",
+                evidence,
+                {"static_ok": static_ok, "executable_ok": executable_ok},
+            )
+        return self.result(
+            "OSMAP-WSTG-BUSL-005",
+            STATUS_PASS,
+            "executable workflow misuse, limit, CSRF, tampering, and failure-preservation regressions passed",
+            evidence,
+        )
 
     def write_form_route_state_transitions_static_evidence(self) -> bool:
         files = [
@@ -4565,11 +4856,69 @@ printf 'secret_review=No password, password hash, TOTP material, session cookie,
         except (OSError, subprocess.TimeoutExpired) as exc:
             metadata_text = f"ERROR: {exc}\n"
         metadata_evidence = self.write_text_evidence("dependency_metadata_locked.txt", metadata_text)
+        supply_chain = subprocess.run(
+            ["sh", "maint/security/osmap-supply-chain-check.sh"],
+            cwd=REPO_ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            timeout=300,
+            check=False,
+        )
+        supply_chain_evidence = self.write_text_evidence(
+            "dependency_supply_chain_gate.txt",
+            supply_chain.stdout,
+        )
+        sbom_path = self.evidence_dir / "dependency_cyclonedx_sbom.json"
+        sbom = subprocess.run(
+            [
+                sys.executable,
+                "maint/security/osmap-cyclonedx-sbom.py",
+                "--output",
+                str(sbom_path),
+            ],
+            cwd=REPO_ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            timeout=120,
+            check=False,
+        )
+        sbom_stdout = self.write_text_evidence("dependency_cyclonedx_stdout.txt", sbom.stdout)
+        sbom_ok = False
+        if sbom.returncode == 0 and sbom_path.exists():
+            document = json.loads(sbom_path.read_text(encoding="utf-8"))
+            sbom_ok = (
+                document.get("bomFormat") == "CycloneDX"
+                and document.get("specVersion") == "1.5"
+                and bool(document.get("components"))
+                and bool(document.get("dependencies"))
+            )
+        evidence_paths = [
+            evidence,
+            metadata_evidence,
+            supply_chain_evidence,
+            "evidence/dependency_cyclonedx_sbom.json",
+            sbom_stdout,
+        ]
         if missing_files:
-            return self.result("OSMAP-WSTG-CONF-007", STATUS_FAIL, "dependency alignment files are missing", [evidence, metadata_evidence], {"missing": missing_files})
+            return self.result("OSMAP-WSTG-CONF-007", STATUS_FAIL, "dependency alignment files are missing", evidence_paths, {"missing": missing_files})
         if not metadata_ok:
-            return self.result("OSMAP-WSTG-CONF-007", STATUS_FAIL, "locked dependency metadata command failed", [evidence, metadata_evidence])
-        return self.result("OSMAP-WSTG-CONF-007", STATUS_PASS, "lockfile, supply-chain policy, and locked dependency metadata validated", [evidence, metadata_evidence])
+            return self.result("OSMAP-WSTG-CONF-007", STATUS_FAIL, "locked dependency metadata command failed", evidence_paths)
+        if supply_chain.returncode != 0 or not sbom_ok:
+            return self.result(
+                "OSMAP-WSTG-CONF-007",
+                STATUS_FAIL,
+                "advisory, policy, duplicate-version, or SBOM validation failed",
+                evidence_paths,
+                {"supply_chain_returncode": supply_chain.returncode, "sbom_ok": sbom_ok},
+            )
+        return self.result(
+            "OSMAP-WSTG-CONF-007",
+            STATUS_PASS,
+            "advisories, dependency policy, duplicates, locked metadata, and CycloneDX SBOM validated",
+            evidence_paths,
+        )
 
     def test_crypto_transport_security(self) -> TestResult:
         https = self.request("crypto_https_login", "GET", "/login")
@@ -4859,12 +5208,37 @@ printf 'secret_review=No password, password hash, TOTP material, session cookie,
         else:
             redaction_lines.append("result=passed")
         redaction_evidence = self.write_text_evidence("security_logging_evidence_redaction.txt", "\n".join(redaction_lines) + "\n")
+        host_log = ""
+        host_log_evidence = "evidence/security_logging_host_events.txt"
+        host_failures: list[str] = []
+        if self.config.allow_host_assisted:
+            host_log = self.run_ssh(
+                "security_logging_host_events.txt",
+                "doas tail -n 4000 /var/log/osmap/serve.log 2>/dev/null "
+                "| egrep 'action=(login_denied|second_factor_denied|session_revoked|http_csrf_invalid)' "
+                "| tail -n 80",
+            )
+            for marker in ["category=auth", "action=second_factor_denied", "request_id="]:
+                if marker not in host_log:
+                    host_failures.append(marker)
+            forbidden_host_patterns = [
+                r"(?i)password=",
+                r"(?i)totp_code=",
+                r"(?i)csrf_token=",
+                r"(?i)osmap_session=",
+            ]
+            host_failures.extend(
+                pattern for pattern in forbidden_host_patterns if re.search(pattern, host_log)
+            )
+        elif self.config.release_mode:
+            host_failures.append("host-assisted security event inspection disabled")
+        evidence_paths = [static_evidence, redaction_evidence, host_log_evidence]
         if missing:
             return self.result(
                 "OSMAP-WSTG-LOGG-001",
                 STATUS_FAIL,
                 "security logging and redaction markers were missing from source/docs",
-                [static_evidence, redaction_evidence],
+                evidence_paths,
                 {"missing": missing},
             )
         if leaks:
@@ -4872,14 +5246,22 @@ printf 'secret_review=No password, password hash, TOTP material, session cookie,
                 "OSMAP-WSTG-LOGG-001",
                 STATUS_FAIL,
                 "dynamic WSTG evidence disclosed sensitive logging or token material",
-                [static_evidence, redaction_evidence],
+                evidence_paths,
                 {"leaks": leaks},
+            )
+        if host_failures:
+            return self.result(
+                "OSMAP-WSTG-LOGG-001",
+                STATUS_FAIL,
+                "triggered security events were missing or disclosed sensitive values",
+                evidence_paths,
+                {"host_failures": host_failures},
             )
         return self.result(
             "OSMAP-WSTG-LOGG-001",
             STATUS_PASS,
-            "structured logging markers and dynamic evidence redaction scan passed",
-            [static_evidence, redaction_evidence],
+            "triggered authentication events, structured fields, and evidence redaction passed",
+            evidence_paths,
         )
 
     def run_ssh(self, filename: str, command: str) -> str:

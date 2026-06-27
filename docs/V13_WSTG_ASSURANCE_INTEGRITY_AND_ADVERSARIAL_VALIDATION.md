@@ -10,6 +10,26 @@ V13 is intentionally isolated from the concurrently developed V12 OpenPGP
 work. It is based on the reviewed `origin/main` V11 baseline and does not
 modify V12 files or make OpenPGP claims.
 
+## Audit Findings and Closure
+
+The code and security audit confirmed these material assurance defects and
+closed them in V13:
+
+| Finding | Risk | V13 closure |
+| --- | --- | --- |
+| Transport failures and truncated responses could still support a passing assertion | False assurance | Every mapped test now fails on incomplete target evidence, except the explicit closed cleartext-port case |
+| Matrix input and evidence references were not release-authoritative | Coverage drift | Release mode validates matrix structure, dispositions, references, provenance, and source pins |
+| Static review and not-applicable decisions were counted as dynamic proof | Inflated assurance | Reports classify dynamic, hybrid, tool, static, and not-applicable evidence separately |
+| The runner rewrote hostile raw Host headers to the canonical host | False-negative Host-header testing | Adversarial Host values are preserved while only target paths are mount-scoped |
+| Current To, Cc, Bcc, draft, settings, sorting, and source-attachment inputs were incomplete | Missed production attack surface | A canonical route and field inventory now gates current coverage |
+| CSP checks covered one response and accepted weak variants | Browser policy regression | Login, root, and error responses must carry one consistent enforced default-deny policy |
+| XSS checks searched response strings without executing a browser | Missed DOM or stored execution | Checksum-pinned geckodriver and headless Firefox execute reflected and stored hostile fixtures |
+| MFA evidence proved only a successful login | Authentication bypass blind spots | Missing and incorrect factors are rejected and replay plus concurrent-consumption regressions execute |
+| Session timeout and race claims were static | Session lifecycle blind spots | Timeout, logout race, and revoke-all race regressions execute and live stale-cookie reuse is rejected |
+| Request-smuggling evidence lacked pipelined response-count checks | Desynchronization blind spots | CL.TE, TE.CL, obfuscated transfer encoding, duplicate framing, and pipelined response counts are tested through the public edge |
+| Business-logic claims were source-marker checks | Workflow misuse blind spots | CSRF, cross-origin, duplicate-field, tamper, limit, failure-preservation, and session-revoke regressions execute |
+| Malicious-file, dependency, SBOM, and logging claims lacked operational proof | Operational control blind spots | Safe EICAR detection, Rspamd to ClamAV reject configuration, advisory and policy gates, CycloneDX generation, and triggered host event inspection execute |
+
 ## Governing Outcome
 
 The sprint is complete only when:
@@ -81,4 +101,12 @@ The sprint is complete only when:
 - Slice 1: implemented and validated.
 - Slice 2: implemented and validated.
 - Slice 3: implemented and validated.
-- Slices 4 through 6: pending.
+- Slice 4: implemented and validated. It adds real Firefox execution for
+  reflected and stored XSS, consistent enforced-CSP checks, MFA negative paths
+  plus replay regressions, executable session timeout and race evidence, and
+  two-hop request desynchronization probes that reject multiple responses.
+- Slice 5: implemented and validated. It adds executable business workflow
+  misuse regressions, safe EICAR detection through the configured Rspamd and
+  ClamAV boundary, advisory and dependency-policy execution, CycloneDX SBOM
+  generation, and host inspection of triggered security events.
+- Slice 6: pending merge, deployment, and live closeout.

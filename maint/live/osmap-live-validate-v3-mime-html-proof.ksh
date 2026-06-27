@@ -10,6 +10,7 @@ set -eu
 
 PROJECT_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 REPORT_PATH="${PROJECT_ROOT}/maint/live/latest-host-v3-mime-html-proof-report.txt"
+BROWSER_FIXTURE_PATH="${PROJECT_ROOT}/maint/live/latest-host-v3-browser-xss-fixture.txt"
 
 WORK_ROOT="${OSMAP_LIVE_WORK_ROOT:-/home/osmap-live-v3-mime-html-proof-$$}"
 STATE_ROOT="${WORK_ROOT}/state"
@@ -104,6 +105,8 @@ require_tool grep
 require_tool nc
 require_tool sed
 require_tool sha256
+
+rm -f "${BROWSER_FIXTURE_PATH}"
 
 if [ -z "${LISTEN_PORT}" ]; then
   LISTEN_PORT="$((19000 + ($$ % 1000)))"
@@ -436,6 +439,8 @@ inject_html_message() {
     printf '<style>@import url("https://%s/style.css");</style>' "${HTML_REMOTE_MARKER}"
     printf '</head><body>'
     printf '<p style="background-image:url(https://%s/bg.png)" onclick="alert(1)">%s</p>' "${HTML_REMOTE_MARKER}" "${HTML_SAFE_TEXT}"
+    printf '<script>window.__osmap_wstg_stored_xss="%s"</script>' "${HTML_UNSAFE_MARKER}"
+    printf '<img src=x onerror="window.__osmap_wstg_stored_xss=&quot;%s&quot;">' "${HTML_UNSAFE_MARKER}"
     printf '<a href="https://example.com/safe">safe link</a>'
     printf '<a href="/relative/path">relative link</a>'
     printf '<a href="//%s/protocol-relative">protocol relative link</a>' "${HTML_REMOTE_MARKER}"
@@ -580,6 +585,8 @@ assert_absent "sanitized_html_comment_payload" "${html_body}" "hidden operator n
 assert_absent "sanitized_html_svg_payload" "${html_body}" "svg text"
 assert_absent "sanitized_html_iframe_payload" "${html_body}" "frame text"
 assert_absent "sanitized_html_object_payload" "${html_body}" "object text"
+printf '%s' "${html_body}" > "${BROWSER_FIXTURE_PATH}"
+write_report "browser_xss_fixture" "present"
 
 if doas grep -Fq "${HTML_SAFE_TEXT}" "${HTTP_LOG_PATH}" 2>/dev/null; then
   fail "audit log contained sanitized HTML body marker"

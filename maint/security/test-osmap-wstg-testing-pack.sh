@@ -849,6 +849,8 @@ if host["requires_authenticated_coverage"] is not False or host["requires_totp"]
 required_evidence = {
     "http_inpv15_cl_te_smuggling.headers",
     "http_inpv15_duplicate_content_length.headers",
+    "http_inpv15_te_cl_pipeline.headers",
+    "http_inpv15_obfuscated_transfer_encoding.headers",
     "http_inpv15_encoded_crlf_target.headers",
     "http_inpv16_missing_host.headers",
     "http_inpv16_folded_header.headers",
@@ -871,6 +873,9 @@ for marker in [
     "parse_raw_http_evidence",
     "test_http_host_and_smuggling_input",
     "http_inpv15_cl_te_smuggling",
+    "http_inpv15_te_cl_pipeline",
+    "http_inpv15_obfuscated_transfer_encoding",
+    "raw_response_count",
     "http_inpv17_untrusted_host",
     "write_http_host_smuggling_static_evidence",
 ]:
@@ -1403,11 +1408,30 @@ pack = Path(sys.argv[1])
 mapping = json.loads((pack / "wstg-asvs-mapping.json").read_text())
 tests = {item["test_id"]: item for item in mapping["tests"]}
 expected = {
-    "OSMAP-WSTG-CLNT-002": {"mime_html_live_report.txt", "static_html_rendering.txt"},
-    "OSMAP-WSTG-BUSL-001": {"mime_html_live_report.txt", "static_attachment_handling.txt"},
+    "OSMAP-WSTG-CLNT-002": {
+        "mime_html_live_report.txt",
+        "static_html_rendering.txt",
+        "browser_stored_xss_fixture.txt",
+        "browser_driver_bootstrap.txt",
+        "browser_xss_report.json",
+    },
+    "OSMAP-WSTG-BUSL-001": {
+        "mime_html_live_report.txt",
+        "static_attachment_handling.txt",
+        "mailstack_malware_boundary.txt",
+    },
     "OSMAP-WSTG-BUSL-004": {"bulk_folder_actions_live_report.txt", "static_bulk_folder_actions.txt"},
-    "OSMAP-WSTG-CONF-007": {"static_dependency_alignment.txt", "dependency_metadata_locked.txt"},
-    "OSMAP-WSTG-LOGG-001": {"static_security_logging.txt", "security_logging_evidence_redaction.txt"},
+    "OSMAP-WSTG-CONF-007": {
+        "static_dependency_alignment.txt",
+        "dependency_metadata_locked.txt",
+        "dependency_supply_chain_gate.txt",
+        "dependency_cyclonedx_sbom.json",
+    },
+    "OSMAP-WSTG-LOGG-001": {
+        "static_security_logging.txt",
+        "security_logging_evidence_redaction.txt",
+        "security_logging_host_events.txt",
+    },
 }
 for test_id, evidence in expected.items():
     item = tests[test_id]
@@ -1426,6 +1450,11 @@ for marker in [
     "osmap-live-validate-archive-shortcut.ksh",
     "X-OSMAP-WSTG-Body-Truncated",
     "proven_top10_coverage",
+    "write_browser_xss_evidence",
+    "Eicar-Test-Signature FOUND",
+    "dependency_supply_chain_gate.txt",
+    "session_lifecycle_executable.txt",
+    "form_route_state_transitions_executable.txt",
 ]:
     if marker not in runner:
         raise SystemExit(f"runner missing live WSTG marker {marker}")
