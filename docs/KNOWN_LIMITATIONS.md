@@ -360,3 +360,10 @@ V12 Slice 11 defines capability states and fail-closed policy outcomes only. It 
 V12 Slice 12 defines outbound encryption and signing preflight policy decisions only. It does not spawn the helper, construct PGP/MIME, encrypt, sign, decrypt, verify, prompt for passphrases, access private keys, expose browser UI controls, perform key discovery, or generate sent encrypted mail.
 
 <!-- OSMAP:V12-SLICE12-OUTBOUND-PREFLIGHT:END -->
+<!-- OSMAP:V12-SLICE13-INBOUND-SECURITY-STATE:START -->
+
+### V12 Slice 13 inbound security-state limitation
+
+V12 Slice 13 defines inbound OpenPGP state decisions only. It does not spawn the helper, parse PGP/MIME, decrypt, verify, sign, encrypt, prompt for passphrases, access private keys, expose browser UI controls, or render decrypted content.
+
+<!-- OSMAP:V12-SLICE13-INBOUND-SECURITY-STATE:END -->

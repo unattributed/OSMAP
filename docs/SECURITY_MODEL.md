@@ -417,3 +417,10 @@ Slice 11 models OpenPGP capability as unavailable, available, or fail-closed. Si
 Slice 12 requires outbound OpenPGP decisions to fail closed when required recipient key policy is missing or ambiguous, encrypt-to-self cannot be satisfied, signing is requested without sender signing capability, or unencrypted send is not explicitly permitted by account policy. Recipient keys are policy objects, not inferred from recipient text.
 
 <!-- OSMAP:V12-SLICE12-OUTBOUND-PREFLIGHT:END -->
+<!-- OSMAP:V12-SLICE13-INBOUND-SECURITY-STATE:START -->
+
+### V12 inbound OpenPGP security-state model
+
+Slice 13 requires inbound OpenPGP state labels to remain policy metadata until later cryptographic implementation exists. Encrypted does not mean decrypted, signed does not mean trusted, verified does not mean safe, and decrypted content remains hostile until it passes through the existing secure rendering path.
+
+<!-- OSMAP:V12-SLICE13-INBOUND-SECURITY-STATE:END -->

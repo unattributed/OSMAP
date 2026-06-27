@@ -171,3 +171,10 @@ Slice 11 adds a non-cryptographic OpenPGP capability policy model. It proves acc
 Slice 12 adds a non-cryptographic outbound OpenPGP preflight model. It proves fail-closed policy outcomes for missing or ambiguous recipient key policy, missing sender encrypt-to-self capability, missing sender signing capability, and unencrypted send when not explicitly allowed. Runtime cryptography remains disabled.
 
 <!-- OSMAP:V12-SLICE12-OUTBOUND-PREFLIGHT:END -->
+<!-- OSMAP:V12-SLICE13-INBOUND-SECURITY-STATE:START -->
+
+## Slice 13 inbound security-state status
+
+Slice 13 adds a non-cryptographic inbound OpenPGP security-state model. It proves fail-closed and metadata-only outcomes for encrypted, signed, verified, decrypted, renderable, failed, and ambiguous states. Runtime cryptography remains disabled.
+
+<!-- OSMAP:V12-SLICE13-INBOUND-SECURITY-STATE:END -->

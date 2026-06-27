@@ -333,4 +333,6 @@ sh maint/security/osmap-v12-openpgp-capability-policy-gate.sh
 sh maint/security/test-osmap-v12-openpgp-capability-policy-gate.sh
 sh maint/security/osmap-v12-openpgp-outbound-preflight-policy-gate.sh
 sh maint/security/test-osmap-v12-openpgp-outbound-preflight-policy-gate.sh
+sh maint/security/osmap-v12-openpgp-inbound-security-state-gate.sh
+sh maint/security/test-osmap-v12-openpgp-inbound-security-state-gate.sh
 echo "==> security-check complete"
