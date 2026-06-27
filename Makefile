@@ -1,7 +1,7 @@
 # Keep developer entrypoints obvious and conservative so operators and
 # collaborating developers do not have to memorize cargo subcommands.
 
-.PHONY: build check test lint fmt-check supply-chain-check security-check release-check v6-check v7-check v7-rendering-regression-check v8-check v8-mail-workflow-check v8-attachment-safety-check v8-mailbox-operation-check v8-session-integrity-check v8-resource-robustness-check v8-final-regression-check install-hooks run v10-check v11-check v13-check acceptance-check
+.PHONY: build check test lint fmt-check supply-chain-check security-check release-check v6-check v7-check v7-rendering-regression-check v8-check v8-mail-workflow-check v8-attachment-safety-check v8-mailbox-operation-check v8-session-integrity-check v8-resource-robustness-check v8-final-regression-check install-hooks run v10-check v11-check v12-check v13-check acceptance-check
 
 build:
 	cargo build
@@ -94,7 +94,38 @@ acceptance-check:
 	$(MAKE) security-check
 	$(MAKE) v10-check
 	$(MAKE) v11-check
+	$(MAKE) v12-check
 	$(MAKE) v13-check
 
 v10-fail-closed-remediation-check:
 	python3 -B maint/security/osmap-v10-fail-closed-remediation.py --check maint/security/v10-fail-closed-remediation.json
+
+v12-check:
+	sh maint/security/osmap-v12-openpgp-claims-gate.sh
+	sh maint/security/test-osmap-v12-openpgp-claims-gate.sh
+	sh maint/security/osmap-v12-openpgp-diagnostics-gate.sh
+	sh maint/security/test-osmap-v12-openpgp-diagnostics-gate.sh
+	sh maint/security/osmap-v12-openpgp-account-binding-gate.sh
+	sh maint/security/test-osmap-v12-openpgp-account-binding-gate.sh
+	sh maint/security/osmap-v12-openpgp-helper-protocol-gate.sh
+	sh maint/security/test-osmap-v12-openpgp-helper-protocol-gate.sh
+	sh maint/security/osmap-v12-openpgp-gpgme-readiness-gate.sh
+	sh maint/security/test-osmap-v12-openpgp-gpgme-readiness-gate.sh
+	sh maint/security/osmap-v12-openpgp-gpgme-availability-gate.sh
+	sh maint/security/test-osmap-v12-openpgp-gpgme-availability-gate.sh
+	sh maint/security/osmap-v12-openpgp-helper-compile-scaffold-gate.sh
+	sh maint/security/test-osmap-v12-openpgp-helper-compile-scaffold-gate.sh
+	sh maint/security/osmap-v12-openpgp-helper-invocation-gate.sh
+	sh maint/security/test-osmap-v12-openpgp-helper-invocation-gate.sh
+	sh maint/security/osmap-v12-openpgp-rust-helper-client-gate.sh
+	sh maint/security/test-osmap-v12-openpgp-rust-helper-client-gate.sh
+	sh maint/security/osmap-v12-openpgp-helper-client-integration-gate.sh
+	sh maint/security/test-osmap-v12-openpgp-helper-client-integration-gate.sh
+	sh maint/security/osmap-v12-openpgp-capability-policy-gate.sh
+	sh maint/security/test-osmap-v12-openpgp-capability-policy-gate.sh
+	sh maint/security/osmap-v12-openpgp-outbound-preflight-policy-gate.sh
+	sh maint/security/test-osmap-v12-openpgp-outbound-preflight-policy-gate.sh
+	sh maint/security/osmap-v12-openpgp-inbound-security-state-gate.sh
+	sh maint/security/test-osmap-v12-openpgp-inbound-security-state-gate.sh
+	sh maint/security/osmap-v12-openpgp-closeout-readiness-gate.sh
+	sh maint/security/test-osmap-v12-openpgp-closeout-readiness-gate.sh

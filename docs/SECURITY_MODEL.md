@@ -327,3 +327,107 @@ Even with the above controls, residual risks remain:
   larger part of the trust model over time
 - OpenBSD-specific hardening features should be treated as an advantage to
   exploit where feasible, not as optional decoration
+
+## V12 OpenPGP security boundary
+
+OpenPGP adds a high-risk cryptographic and private-key-adjacent boundary to OSMAP. The V12 requirement is therefore constrained by `docs/V12_OPENPGP_REQUIREMENTS_AND_CLAIMS.md` and must preserve the existing secure rendering path.
+
+The web request handler must not directly handle private key material. Account OpenPGP capability must be bound to explicit fingerprints. Decrypted content and verified signed content remain untrusted for browser rendering, attachment handling, link treatment, and logging.
+
+<!-- OSMAP:V12-SLICE2-DIAGNOSTICS:START -->
+
+### V12 OpenPGP diagnostic boundary
+
+The Slice 2 diagnostic helper is an operator-side evidence tool only. It may inspect public key metadata and toolchain availability, but it must not list secret keys, collect user ID values, prompt for passphrases, decrypt mail, sign mail, encrypt mail, or run inside web request handling.
+
+<!-- OSMAP:V12-SLICE2-DIAGNOSTICS:END -->
+
+<!-- OSMAP:V12-SLICE3-ACCOUNT-BINDING:START -->
+
+### V12 OpenPGP account fingerprint binding boundary
+
+OpenPGP capability is account-scoped and must be authorized by explicit full fingerprints. Email-address-only key matching, user ID text matching, short key IDs, and automatic discovery are not authorization boundaries. Later helper and UI slices must consume validated account bindings and must preserve fail-closed behavior for missing or ambiguous bindings.
+
+<!-- OSMAP:V12-SLICE3-ACCOUNT-BINDING:END -->
+
+<!-- OSMAP:V12-SLICE4-HELPER-PROTOCOL:START -->
+
+### V12 OpenPGP helper protocol boundary
+
+OpenPGP cryptographic work must remain outside the browser-facing request handler. Slice 4 defines a narrow `osmap-openpgp-helper` protocol scaffold that consumes validated account bindings, allows only non-cryptographic capability and policy checks, rejects unknown operations, and forbids plaintext, passphrase, private-key, raw-message, or browser-trusted HTML fields in the protocol boundary.
+
+<!-- OSMAP:V12-SLICE4-HELPER-PROTOCOL:END -->
+
+<!-- OSMAP:V12-SLICE5-GPGME-READINESS:START -->
+
+### V12 OpenPGP GPGME readiness boundary
+
+GPGME is the preferred future OpenPGP runtime integration path. Slice 5 validates dependency metadata and policy only. If GPGME metadata is missing, OpenPGP cryptographic helper work remains blocked rather than falling back to direct `gpg` runtime command execution. The browser-facing request handler still must not touch keys, passphrases, decrypted plaintext, raw message bodies, or trusted HTML derived from decrypted content.
+
+<!-- OSMAP:V12-SLICE5-GPGME-READINESS:END -->
+
+<!-- OSMAP:V12-SLICE6-GPGME-AVAILABILITY:START -->
+
+### V12 OpenPGP GPGME availability boundary
+
+Slice 6 proves that GPGME development metadata is available before later helper implementation begins. Availability proof does not enable runtime cryptography. Direct `gpg` runtime cryptographic fallback remains forbidden, and the browser-facing request handler still must not touch keys, passphrases, decrypted plaintext, raw message bodies, or trusted HTML derived from decrypted content.
+
+<!-- OSMAP:V12-SLICE6-GPGME-AVAILABILITY:END -->
+
+<!-- OSMAP:V12-SLICE7-HELPER-COMPILE:START -->
+
+### V12 OpenPGP helper compile scaffold boundary
+
+Slice 7 proves that the future `osmap-openpgp-helper` boundary can be represented as a separate GPGME-linked helper scaffold. The scaffold is compile and link only. It does not enable runtime cryptography, does not parse PGP/MIME, and does not allow the browser-facing request handler to touch keys, passphrases, decrypted plaintext, raw message bodies, or trusted HTML derived from decrypted content.
+
+<!-- OSMAP:V12-SLICE7-HELPER-COMPILE:END -->
+
+<!-- OSMAP:V12-SLICE8-HELPER-INVOCATION:START -->
+
+### V12 OpenPGP helper invocation boundary
+
+Slice 8 proves protocol-only helper invocation through an exact argv list, bounded JSON stdin and stdout, timeout handling, and fail-closed unknown operation behavior. It does not enable runtime cryptography. The browser-facing request handler still must not touch keys, passphrases, decrypted plaintext, raw message bodies, or trusted HTML derived from decrypted content.
+
+<!-- OSMAP:V12-SLICE8-HELPER-INVOCATION:END -->
+<!-- OSMAP:V12-SLICE9-RUST-HELPER-CLIENT:START -->
+
+### V12 OpenPGP Rust helper client boundary
+
+Slice 9 keeps helper invocation planning typed and bounded in Rust while still avoiding process spawning and cryptographic operations. Request bodies are stdin-only JSON plans with bounded stdout and stderr handling and fail-closed result classification. The full security check skips only the duplicate nested cargo check inside this V12 gate and its regression wrapper because the security check already performs cargo check and cargo test before the V12 gate sequence.
+
+<!-- OSMAP:V12-SLICE9-RUST-HELPER-CLIENT:END -->
+<!-- OSMAP:V12-SLICE10-HELPER-CLIENT-INTEGRATION:START -->
+
+### V12 OpenPGP helper client integration gate
+
+Slice 10 proves that the protocol-only helper invocation scaffold and typed Rust helper client boundary are integrated into V12 checks and the full security check without enabling runtime cryptography. Browser-facing handlers remain outside the OpenPGP helper boundary.
+
+<!-- OSMAP:V12-SLICE10-HELPER-CLIENT-INTEGRATION:END -->
+<!-- OSMAP:V12-SLICE11-CAPABILITY-POLICY:START -->
+
+### V12 OpenPGP capability policy model
+
+Slice 11 models OpenPGP capability as unavailable, available, or fail-closed. Signature status does not make content safe, and decrypted content remains hostile until it passes through the existing secure rendering path.
+
+<!-- OSMAP:V12-SLICE11-CAPABILITY-POLICY:END -->
+<!-- OSMAP:V12-SLICE12-OUTBOUND-PREFLIGHT:START -->
+
+### V12 outbound OpenPGP preflight model
+
+Slice 12 requires outbound OpenPGP decisions to fail closed when required recipient key policy is missing or ambiguous, encrypt-to-self cannot be satisfied, signing is requested without sender signing capability, or unencrypted send is not explicitly permitted by account policy. Recipient keys are policy objects, not inferred from recipient text.
+
+<!-- OSMAP:V12-SLICE12-OUTBOUND-PREFLIGHT:END -->
+<!-- OSMAP:V12-SLICE13-INBOUND-SECURITY-STATE:START -->
+
+### V12 inbound OpenPGP security-state model
+
+Slice 13 requires inbound OpenPGP state labels to remain policy metadata until later cryptographic implementation exists. Encrypted does not mean decrypted, signed does not mean trusted, verified does not mean safe, and decrypted content remains hostile until it passes through the existing secure rendering path.
+
+<!-- OSMAP:V12-SLICE13-INBOUND-SECURITY-STATE:END -->
+<!-- OSMAP:V12-SLICE14-CLOSEOUT-READINESS:START -->
+
+### V12 closeout readiness boundary
+
+Slice 14 audits that the V12 OpenPGP foundation remains non-cryptographic and fail-closed. It verifies gate integration and confirms no browser handler, helper spawning, PGP/MIME parsing, cryptographic operation, passphrase handling, private-key access, or decrypted-content rendering has been enabled.
+
+<!-- OSMAP:V12-SLICE14-CLOSEOUT-READINESS:END -->

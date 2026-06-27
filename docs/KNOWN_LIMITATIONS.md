@@ -270,3 +270,107 @@ Remaining limitations after this closeout and the later V9 Slice 7 gate:
   gate are reconciled by `docs/V9_RELEASE_CANDIDATE_CLOSEOUT.md`.
 
 <!-- OSMAP:V9-SLICE5-V7-CLOSEOUT:END -->
+
+## V12 OpenPGP bounded implementation track
+
+Earlier documents correctly treated OpenPGP as out of scope for prior releases. V12 changes that status only within the boundary defined in `docs/V12_OPENPGP_REQUIREMENTS_AND_CLAIMS.md`.
+
+Until later V12 slices provide implementation evidence, OSMAP must not claim working OpenPGP decryption, verification, signing, encryption, key discovery, account binding, or UI integration. The current claim is limited to a documented requirement and claims boundary.
+
+<!-- OSMAP:V12-SLICE2-DIAGNOSTICS:START -->
+
+### V12 Slice 2 diagnostics limitation
+
+V12 Slice 2 provides OpenPGP public key inventory and toolchain diagnostics only. OSMAP still must not claim implemented OpenPGP decryption, signature verification, signing, encryption, account binding, key discovery for delivery, or UI integration.
+
+<!-- OSMAP:V12-SLICE2-DIAGNOSTICS:END -->
+
+<!-- OSMAP:V12-SLICE3-ACCOUNT-BINDING:START -->
+
+### V12 Slice 3 account binding limitation
+
+V12 Slice 3 validates account-to-fingerprint configuration only. OSMAP still must not claim implemented OpenPGP decryption, signature verification, signing, encryption, PGP/MIME handling, passphrase handling, helper cryptographic operations, or browser UI integration.
+
+<!-- OSMAP:V12-SLICE3-ACCOUNT-BINDING:END -->
+
+<!-- OSMAP:V12-SLICE4-HELPER-PROTOCOL:START -->
+
+### V12 Slice 4 helper protocol limitation
+
+V12 Slice 4 validates the OpenPGP helper protocol scaffold only. OSMAP still must not claim implemented OpenPGP decryption, signature verification, signing, encryption, PGP/MIME handling, passphrase handling, GPGME runtime integration, helper cryptographic operations, or browser UI integration.
+
+<!-- OSMAP:V12-SLICE4-HELPER-PROTOCOL:END -->
+
+<!-- OSMAP:V12-SLICE5-GPGME-READINESS:START -->
+
+### V12 Slice 5 GPGME readiness limitation
+
+V12 Slice 5 validates GPGME readiness policy and dependency metadata only. It may report that the environment is blocked because GPGME metadata is missing, but that blocked state is safe and intentional. OSMAP still must not claim implemented OpenPGP decryption, signature verification, signing, encryption, PGP/MIME handling, passphrase handling, GPGME runtime integration, helper cryptographic operations, or browser UI integration.
+
+<!-- OSMAP:V12-SLICE5-GPGME-READINESS:END -->
+
+<!-- OSMAP:V12-SLICE6-GPGME-AVAILABILITY:START -->
+
+### V12 Slice 6 GPGME availability limitation
+
+V12 Slice 6 proves dependency availability only. Even when `pkg-config gpgme` and the compile/link probe pass, OSMAP still must not claim implemented OpenPGP decryption, signature verification, signing, encryption, PGP/MIME handling, passphrase handling, helper cryptographic operations, or browser UI integration.
+
+<!-- OSMAP:V12-SLICE6-GPGME-AVAILABILITY:END -->
+
+<!-- OSMAP:V12-SLICE7-HELPER-COMPILE:START -->
+
+### V12 Slice 7 helper compile scaffold limitation
+
+V12 Slice 7 proves helper compile and link scaffolding only. Even when the scaffold links against GPGME, OSMAP still must not claim implemented OpenPGP decryption, signature verification, signing, encryption, PGP/MIME handling, passphrase handling, helper cryptographic operations, or browser UI integration.
+
+<!-- OSMAP:V12-SLICE7-HELPER-COMPILE:END -->
+
+<!-- OSMAP:V12-SLICE8-HELPER-INVOCATION:START -->
+
+### V12 Slice 8 helper invocation scaffold limitation
+
+V12 Slice 8 proves protocol-only helper invocation shape. It validates bounded JSON request and response behavior, exact argv discipline, no shell invocation, timeout handling, and fail-closed unknown operation behavior. It still does not implement OpenPGP decryption, signature verification, signing, encryption, PGP/MIME handling, passphrase handling, helper cryptographic operations, browser UI integration, or decrypted content rendering.
+
+<!-- OSMAP:V12-SLICE8-HELPER-INVOCATION:END -->
+<!-- OSMAP:V12-SLICE9-RUST-HELPER-CLIENT:START -->
+
+### V12 Slice 9 Rust helper client limitation
+
+V12 Slice 9 adds typed Rust request and response boundary checks only. It does not spawn the helper, decrypt, verify, sign, encrypt, parse PGP/MIME, prompt for passphrases, touch private keys, or integrate browser UI.
+
+<!-- OSMAP:V12-SLICE9-RUST-HELPER-CLIENT:END -->
+<!-- OSMAP:V12-SLICE10-HELPER-CLIENT-INTEGRATION:START -->
+
+### V12 Slice 10 helper client integration limitation
+
+V12 Slice 10 adds an integration gate only. It does not spawn the helper, decrypt, verify, sign, encrypt, parse PGP/MIME, prompt for passphrases, touch private keys, render decrypted content, or expose browser UI controls.
+
+<!-- OSMAP:V12-SLICE10-HELPER-CLIENT-INTEGRATION:END -->
+<!-- OSMAP:V12-SLICE11-CAPABILITY-POLICY:START -->
+
+### V12 Slice 11 capability policy limitation
+
+V12 Slice 11 defines capability states and fail-closed policy outcomes only. It does not expose UI controls, spawn the helper, parse PGP/MIME, decrypt, verify, sign, encrypt, prompt for passphrases, access private keys, or render decrypted content.
+
+<!-- OSMAP:V12-SLICE11-CAPABILITY-POLICY:END -->
+<!-- OSMAP:V12-SLICE12-OUTBOUND-PREFLIGHT:START -->
+
+### V12 Slice 12 outbound preflight limitation
+
+V12 Slice 12 defines outbound encryption and signing preflight policy decisions only. It does not spawn the helper, construct PGP/MIME, encrypt, sign, decrypt, verify, prompt for passphrases, access private keys, expose browser UI controls, perform key discovery, or generate sent encrypted mail.
+
+<!-- OSMAP:V12-SLICE12-OUTBOUND-PREFLIGHT:END -->
+<!-- OSMAP:V12-SLICE13-INBOUND-SECURITY-STATE:START -->
+
+### V12 Slice 13 inbound security-state limitation
+
+V12 Slice 13 defines inbound OpenPGP state decisions only. It does not spawn the helper, parse PGP/MIME, decrypt, verify, sign, encrypt, prompt for passphrases, access private keys, expose browser UI controls, or render decrypted content.
+
+<!-- OSMAP:V12-SLICE13-INBOUND-SECURITY-STATE:END -->
+<!-- OSMAP:V12-SLICE14-CLOSEOUT-READINESS:START -->
+
+### V12 Slice 14 closeout readiness limitation
+
+V12 Slice 14 is an audit gate only. It does not implement helper spawning, PGP/MIME parsing, decrypt, verify, sign, encrypt, passphrase handling, private-key access, browser UI controls, key discovery, WKD, keyserver lookup, or decrypted-content rendering. The stale V3 live evidence `make release-check` blocker remains carried forward.
+
+<!-- OSMAP:V12-SLICE14-CLOSEOUT-READINESS:END -->

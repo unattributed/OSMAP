@@ -1,0 +1,162 @@
+{
+  "schema": "osmap-v12-openpgp-outbound-preflight-policy-v1",
+  "purpose": "Define outbound OpenPGP send preflight outcomes without enabling runtime crypto.",
+  "preflight_cases": [
+    {
+      "name": "allow_required_all_recipient_keys_present",
+      "sender_account_policy": {
+        "openpgp_enabled": true,
+        "primary_fingerprint": "0123456789ABCDEF0123456789ABCDEF01234567",
+        "can_encrypt_to_self": true,
+        "can_sign": true,
+        "unencrypted_send_permitted": false
+      },
+      "send_policy": {
+        "encryption_required": true,
+        "encrypt_to_self_required": true,
+        "signing_requested": true
+      },
+      "recipient_key_policies": [
+        {"recipient_id": "recipient-a", "configured_fingerprints": ["89ABCDEF0123456789ABCDEF0123456789ABCDEF"]},
+        {"recipient_id": "recipient-b", "configured_fingerprints": ["FEDCBA9876543210FEDCBA9876543210FEDCBA98"]}
+      ],
+      "expected_decision": "allow",
+      "expected_outcome": "encryption_preflight_allowed"
+    },
+    {
+      "name": "fail_closed_missing_recipient_key_policy",
+      "sender_account_policy": {
+        "openpgp_enabled": true,
+        "primary_fingerprint": "0123456789ABCDEF0123456789ABCDEF01234567",
+        "can_encrypt_to_self": true,
+        "can_sign": false,
+        "unencrypted_send_permitted": false
+      },
+      "send_policy": {
+        "encryption_required": true,
+        "encrypt_to_self_required": true,
+        "signing_requested": false
+      },
+      "recipient_key_policies": [
+        {"recipient_id": "recipient-a", "configured_fingerprints": []}
+      ],
+      "expected_decision": "fail_closed",
+      "expected_outcome": "recipient_key_policy_missing"
+    },
+    {
+      "name": "fail_closed_ambiguous_recipient_key_policy",
+      "sender_account_policy": {
+        "openpgp_enabled": true,
+        "primary_fingerprint": "0123456789ABCDEF0123456789ABCDEF01234567",
+        "can_encrypt_to_self": true,
+        "can_sign": false,
+        "unencrypted_send_permitted": false
+      },
+      "send_policy": {
+        "encryption_required": true,
+        "encrypt_to_self_required": true,
+        "signing_requested": false
+      },
+      "recipient_key_policies": [
+        {"recipient_id": "recipient-a", "configured_fingerprints": ["89ABCDEF0123456789ABCDEF0123456789ABCDEF", "FEDCBA9876543210FEDCBA9876543210FEDCBA98"]}
+      ],
+      "expected_decision": "fail_closed",
+      "expected_outcome": "ambiguous_recipient_key_policy"
+    },
+    {
+      "name": "fail_closed_encrypt_to_self_sender_key_missing",
+      "sender_account_policy": {
+        "openpgp_enabled": true,
+        "primary_fingerprint": "",
+        "can_encrypt_to_self": false,
+        "can_sign": false,
+        "unencrypted_send_permitted": false
+      },
+      "send_policy": {
+        "encryption_required": true,
+        "encrypt_to_self_required": true,
+        "signing_requested": false
+      },
+      "recipient_key_policies": [
+        {"recipient_id": "recipient-a", "configured_fingerprints": ["89ABCDEF0123456789ABCDEF0123456789ABCDEF"]}
+      ],
+      "expected_decision": "fail_closed",
+      "expected_outcome": "sender_encrypt_to_self_key_missing"
+    },
+    {
+      "name": "fail_closed_signing_requested_sender_signing_missing",
+      "sender_account_policy": {
+        "openpgp_enabled": true,
+        "primary_fingerprint": "0123456789ABCDEF0123456789ABCDEF01234567",
+        "can_encrypt_to_self": true,
+        "can_sign": false,
+        "unencrypted_send_permitted": false
+      },
+      "send_policy": {
+        "encryption_required": true,
+        "encrypt_to_self_required": true,
+        "signing_requested": true
+      },
+      "recipient_key_policies": [
+        {"recipient_id": "recipient-a", "configured_fingerprints": ["89ABCDEF0123456789ABCDEF0123456789ABCDEF"]}
+      ],
+      "expected_decision": "fail_closed",
+      "expected_outcome": "sender_signing_capability_missing"
+    },
+    {
+      "name": "allow_unencrypted_send_by_account_policy",
+      "sender_account_policy": {
+        "openpgp_enabled": false,
+        "primary_fingerprint": "",
+        "can_encrypt_to_self": false,
+        "can_sign": false,
+        "unencrypted_send_permitted": true
+      },
+      "send_policy": {
+        "encryption_required": false,
+        "encrypt_to_self_required": false,
+        "signing_requested": false
+      },
+      "recipient_key_policies": [],
+      "expected_decision": "allow",
+      "expected_outcome": "unencrypted_send_allowed_by_account_policy"
+    },
+    {
+      "name": "fail_closed_unencrypted_send_disallowed",
+      "sender_account_policy": {
+        "openpgp_enabled": false,
+        "primary_fingerprint": "",
+        "can_encrypt_to_self": false,
+        "can_sign": false,
+        "unencrypted_send_permitted": false
+      },
+      "send_policy": {
+        "encryption_required": false,
+        "encrypt_to_self_required": false,
+        "signing_requested": false
+      },
+      "recipient_key_policies": [],
+      "expected_decision": "fail_closed",
+      "expected_outcome": "unencrypted_send_disallowed_by_account_policy"
+    }
+  ],
+  "safety_invariants": {
+    "browser_ui_integrated": false,
+    "direct_gpg_runtime_crypto_allowed": false,
+    "helper_process_spawned_by_slice": false,
+    "key_discovery_enabled": false,
+    "keyserver_lookup_enabled": false,
+    "message_decryption_attempted": false,
+    "message_encryption_attempted": false,
+    "message_signature_verification_attempted": false,
+    "message_signing_attempted": false,
+    "passphrases_prompted_or_stored": false,
+    "pgp_mime_construction_enabled": false,
+    "pgp_mime_parsing_attempted": false,
+    "private_key_access_attempted": false,
+    "recipient_email_text_trusted_for_key_selection": false,
+    "sent_encrypted_mail_generation_enabled": false,
+    "uid_text_trusted_for_key_selection": false,
+    "wkd_lookup_enabled": false
+  }
+}

@@ -121,6 +121,7 @@ sh maint/security/osmap-v11-runtime-fail-closed-gate.sh
 echo "==> validating V13 WSTG assurance integrity"
 sh maint/security/osmap-v13-wstg-assurance-gate.sh
 
+
 echo "==> validating TLS policy invariants"
 sh maint/security/osmap-tls-policy-guard.sh
 
@@ -312,4 +313,33 @@ else
 	sh maint/security/test-osmap-v3-release-check.sh
 fi
 
+echo "==> validating V12 OpenPGP claims boundary gate"
+sh maint/security/osmap-v12-openpgp-claims-gate.sh
+sh maint/security/test-osmap-v12-openpgp-claims-gate.sh
+sh maint/security/osmap-v12-openpgp-diagnostics-gate.sh
+sh maint/security/test-osmap-v12-openpgp-diagnostics-gate.sh
+sh maint/security/osmap-v12-openpgp-account-binding-gate.sh
+sh maint/security/test-osmap-v12-openpgp-account-binding-gate.sh
+sh maint/security/osmap-v12-openpgp-helper-protocol-gate.sh
+sh maint/security/test-osmap-v12-openpgp-helper-protocol-gate.sh
+sh maint/security/osmap-v12-openpgp-gpgme-readiness-gate.sh
+sh maint/security/test-osmap-v12-openpgp-gpgme-readiness-gate.sh
+sh maint/security/osmap-v12-openpgp-gpgme-availability-gate.sh
+sh maint/security/test-osmap-v12-openpgp-gpgme-availability-gate.sh
+sh maint/security/osmap-v12-openpgp-helper-compile-scaffold-gate.sh
+sh maint/security/test-osmap-v12-openpgp-helper-compile-scaffold-gate.sh
+sh maint/security/osmap-v12-openpgp-helper-invocation-gate.sh
+sh maint/security/test-osmap-v12-openpgp-helper-invocation-gate.sh
+OSMAP_V12_RUST_HELPER_CLIENT_SKIP_GATE_CARGO_CHECK=1 sh maint/security/osmap-v12-openpgp-rust-helper-client-gate.sh
+OSMAP_V12_RUST_HELPER_CLIENT_SKIP_GATE_CARGO_CHECK=1 sh maint/security/test-osmap-v12-openpgp-rust-helper-client-gate.sh
+sh maint/security/osmap-v12-openpgp-helper-client-integration-gate.sh
+sh maint/security/test-osmap-v12-openpgp-helper-client-integration-gate.sh
+sh maint/security/osmap-v12-openpgp-capability-policy-gate.sh
+sh maint/security/test-osmap-v12-openpgp-capability-policy-gate.sh
+sh maint/security/osmap-v12-openpgp-outbound-preflight-policy-gate.sh
+sh maint/security/test-osmap-v12-openpgp-outbound-preflight-policy-gate.sh
+sh maint/security/osmap-v12-openpgp-inbound-security-state-gate.sh
+sh maint/security/test-osmap-v12-openpgp-inbound-security-state-gate.sh
+sh maint/security/osmap-v12-openpgp-closeout-readiness-gate.sh
+sh maint/security/test-osmap-v12-openpgp-closeout-readiness-gate.sh
 echo "==> security-check complete"

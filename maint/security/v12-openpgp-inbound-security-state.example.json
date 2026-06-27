@@ -1,0 +1,133 @@
+{
+  "schema": "osmap-v12-openpgp-inbound-security-state-v1",
+  "purpose": "Define inbound OpenPGP message security-state outcomes without enabling runtime crypto.",
+  "state_cases": [
+    {
+      "name": "encrypted_not_decrypted",
+      "input_state": {
+        "openpgp_label_detected": true,
+        "encrypted": true,
+        "signed": false,
+        "verified": false,
+        "decrypted": false,
+        "rendered_through_secure_path": false,
+        "ambiguous": false,
+        "failed": false
+      },
+      "expected_decision": "hold_closed",
+      "expected_outcome": "encrypted_content_not_decrypted"
+    },
+    {
+      "name": "signed_not_trusted",
+      "input_state": {
+        "openpgp_label_detected": true,
+        "encrypted": false,
+        "signed": true,
+        "verified": false,
+        "decrypted": false,
+        "rendered_through_secure_path": false,
+        "ambiguous": false,
+        "failed": false
+      },
+      "expected_decision": "metadata_only",
+      "expected_outcome": "signature_present_but_not_trusted"
+    },
+    {
+      "name": "verified_not_safe",
+      "input_state": {
+        "openpgp_label_detected": true,
+        "encrypted": false,
+        "signed": true,
+        "verified": true,
+        "decrypted": false,
+        "rendered_through_secure_path": false,
+        "ambiguous": false,
+        "failed": false
+      },
+      "expected_decision": "metadata_only",
+      "expected_outcome": "verified_signature_does_not_make_content_safe"
+    },
+    {
+      "name": "decrypted_not_renderable",
+      "input_state": {
+        "openpgp_label_detected": true,
+        "encrypted": true,
+        "signed": false,
+        "verified": false,
+        "decrypted": true,
+        "rendered_through_secure_path": false,
+        "ambiguous": false,
+        "failed": false
+      },
+      "expected_decision": "hold_closed",
+      "expected_outcome": "decrypted_content_requires_secure_rendering"
+    },
+    {
+      "name": "renderable_requires_secure_path",
+      "input_state": {
+        "openpgp_label_detected": true,
+        "encrypted": true,
+        "signed": true,
+        "verified": true,
+        "decrypted": true,
+        "rendered_through_secure_path": true,
+        "ambiguous": false,
+        "failed": false
+      },
+      "expected_decision": "renderable_after_secure_path",
+      "expected_outcome": "content_renderable_only_after_secure_path"
+    },
+    {
+      "name": "failed_or_ambiguous_fails_closed",
+      "input_state": {
+        "openpgp_label_detected": true,
+        "encrypted": true,
+        "signed": true,
+        "verified": false,
+        "decrypted": false,
+        "rendered_through_secure_path": false,
+        "ambiguous": true,
+        "failed": false
+      },
+      "expected_decision": "fail_closed",
+      "expected_outcome": "ambiguous_or_failed_inbound_security_state"
+    },
+    {
+      "name": "unsigned_unencrypted_normal_path",
+      "input_state": {
+        "openpgp_label_detected": false,
+        "encrypted": false,
+        "signed": false,
+        "verified": false,
+        "decrypted": false,
+        "rendered_through_secure_path": true,
+        "ambiguous": false,
+        "failed": false
+      },
+      "expected_decision": "normal_secure_rendering_path",
+      "expected_outcome": "no_openpgp_claims"
+    }
+  ],
+  "safety_invariants": {
+    "browser_ui_integrated": false,
+    "browser_handlers_touch_openpgp_state": false,
+    "browser_handlers_touch_keys": false,
+    "decrypted_body_logged": false,
+    "decrypted_content_rendering_enabled": false,
+    "direct_gpg_runtime_crypto_allowed": false,
+    "helper_process_spawned_by_slice": false,
+    "key_discovery_enabled": false,
+    "keyserver_lookup_enabled": false,
+    "message_decryption_attempted": false,
+    "message_encryption_attempted": false,
+    "message_signature_verification_attempted": false,
+    "message_signing_attempted": false,
+    "passphrases_prompted_or_stored": false,
+    "pgp_mime_construction_enabled": false,
+    "pgp_mime_parsing_attempted": false,
+    "private_key_access_attempted": false,
+    "raw_decrypted_body_persisted": false,
+    "signature_verification_trusted_for_content_safety": false,
+    "wkd_lookup_enabled": false
+  }
+}

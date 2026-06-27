@@ -1,0 +1,93 @@
+{
+  "schema": "osmap-v12-openpgp-capability-policy-v1",
+  "purpose": "Define account capability states and policy outcomes without enabling OpenPGP runtime crypto.",
+  "capability_states": [
+    {
+      "name": "unavailable_no_account_key",
+      "account_openpgp_enabled": false,
+      "configured_account_fingerprints": [],
+      "recipient_encryption_required": false,
+      "recipient_key_policy_present": false,
+      "expected_capability": "unavailable",
+      "expected_outcome": "no_openpgp_controls"
+    },
+    {
+      "name": "available_configured_fingerprint",
+      "account_openpgp_enabled": true,
+      "configured_account_fingerprints": ["0123456789ABCDEF0123456789ABCDEF01234567"],
+      "recipient_encryption_required": false,
+      "recipient_key_policy_present": false,
+      "expected_capability": "available",
+      "expected_outcome": "capability_available"
+    },
+    {
+      "name": "fail_closed_ambiguous_account_binding",
+      "account_openpgp_enabled": true,
+      "configured_account_fingerprints": [
+        "0123456789ABCDEF0123456789ABCDEF01234567",
+        "89ABCDEF0123456789ABCDEF0123456789ABCDEF"
+      ],
+      "recipient_encryption_required": false,
+      "recipient_key_policy_present": false,
+      "expected_capability": "fail_closed",
+      "expected_outcome": "ambiguous_account_binding"
+    },
+    {
+      "name": "fail_closed_duplicate_account_binding",
+      "account_openpgp_enabled": true,
+      "configured_account_fingerprints": [
+        "0123456789ABCDEF0123456789ABCDEF01234567",
+        "0123456789ABCDEF0123456789ABCDEF01234567"
+      ],
+      "recipient_encryption_required": false,
+      "recipient_key_policy_present": false,
+      "expected_capability": "fail_closed",
+      "expected_outcome": "duplicate_account_binding"
+    },
+    {
+      "name": "fail_closed_recipient_key_missing",
+      "account_openpgp_enabled": true,
+      "configured_account_fingerprints": ["0123456789ABCDEF0123456789ABCDEF01234567"],
+      "recipient_encryption_required": true,
+      "recipient_key_policy_present": false,
+      "expected_capability": "fail_closed",
+      "expected_outcome": "recipient_key_policy_missing"
+    },
+    {
+      "name": "signed_not_safe",
+      "account_openpgp_enabled": true,
+      "configured_account_fingerprints": ["0123456789ABCDEF0123456789ABCDEF01234567"],
+      "signature_status_available": true,
+      "content_treated_as_safe": false,
+      "expected_capability": "available",
+      "expected_outcome": "signature_does_not_make_content_safe"
+    },
+    {
+      "name": "decrypted_still_hostile",
+      "account_openpgp_enabled": true,
+      "configured_account_fingerprints": ["0123456789ABCDEF0123456789ABCDEF01234567"],
+      "decryption_status_available": true,
+      "secure_rendering_required": true,
+      "content_treated_as_safe": false,
+      "expected_capability": "available",
+      "expected_outcome": "decrypted_content_requires_secure_rendering"
+    }
+  ],
+  "safety_invariants": {
+    "browser_ui_integrated": false,
+    "decrypted_content_rendering_enabled": false,
+    "helper_process_spawned_by_slice": false,
+    "key_discovery_enabled": false,
+    "keyserver_lookup_enabled": false,
+    "message_decryption_attempted": false,
+    "message_encryption_attempted": false,
+    "message_signature_verification_attempted": false,
+    "message_signing_attempted": false,
+    "passphrases_prompted_or_stored": false,
+    "pgp_mime_parsing_attempted": false,
+    "private_key_access_attempted": false,
+    "signature_means_content_safe": false,
+    "uid_text_trusted_for_key_selection": false,
+    "wkd_lookup_enabled": false
+  }
+}

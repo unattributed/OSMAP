@@ -1,0 +1,32 @@
+{
+  "schema": "osmap-v12-openpgp-account-bindings-v1",
+  "purpose": "Example only. Operators must replace this with local account identities and full OpenPGP fingerprints.",
+  "accounts": [
+    {
+      "account": "example.user@example.invalid",
+      "openpgp_enabled": true,
+      "primary_fingerprint": "0123456789ABCDEF0123456789ABCDEF01234567",
+      "allowed_fingerprints": [
+        "0123456789ABCDEF0123456789ABCDEF01234567"
+      ],
+      "policy": {
+        "require_explicit_fingerprint": true,
+        "reject_email_only_key_match": true,
+        "reject_short_key_ids": true,
+        "ambiguous_match_fails_closed": true
+      }
+    },
+    {
+      "account": "plain.user@example.invalid",
+      "openpgp_enabled": false,
+      "primary_fingerprint": "",
+      "allowed_fingerprints": [],
+      "policy": {
+        "require_explicit_fingerprint": true,
+        "reject_email_only_key_match": true,
+        "reject_short_key_ids": true,
+        "ambiguous_match_fails_closed": true
+      }
+    }
+  ]
+}

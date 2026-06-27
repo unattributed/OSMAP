@@ -154,7 +154,9 @@ The implementation is documented as small security and workflow slices:
 | V9 | Production convergence and selected-cohort release-candidate decision | [Production convergence](docs/V9_PRODUCTION_CONVERGENCE.md), [release-candidate closeout](docs/V9_RELEASE_CANDIDATE_CLOSEOUT.md), [V7 production availability closeout](docs/V7_PRODUCTION_AVAILABILITY_CLOSEOUT.md) |
 | V10 | Governance, acceptance, and fail-closed assumption triage | [Governance status](docs/V10_GOVERNANCE_STATUS.md), [claims and limitations](docs/V10_CLAIMS_AND_LIMITATIONS.md), [targeted remediation](docs/V10_TARGETED_FAIL_CLOSED_REMEDIATION.md) |
 | V11 | Runtime fail-closed closure for refined high-relevance assumptions | [Runtime fail-closed closure](docs/V11_RUNTIME_FAIL_CLOSED_CLOSURE.md) |
+| V12 | OpenPGP secure foundation and helper boundary | [OpenPGP requirements and claims](docs/V12_OPENPGP_REQUIREMENTS_AND_CLAIMS.md), [closeout readiness audit](docs/V12_OPENPGP_CLOSEOUT_READINESS_AUDIT.md) |
 | V13 | WSTG assurance integrity and adversarial validation | [V13 sprint](docs/V13_WSTG_ASSURANCE_INTEGRITY_AND_ADVERSARIAL_VALIDATION.md) |
+
 
 ### V3 assurance workstreams
 

@@ -188,7 +188,13 @@ Current public documentation map:
 - `V10_GOVERNANCE_STATUS.md`
 - `V10_INTAKE_AUDIT.md`
 - `V11_RUNTIME_FAIL_CLOSED_CLOSURE.md`
+- `V12_OPENPGP_REQUIREMENTS_AND_CLAIMS.md`
+- `V12_OPENPGP_CLOSEOUT_READINESS_AUDIT.md`
+- `V12_OPENPGP_CAPABILITY_POLICY_MODEL.md`
+- `V12_OPENPGP_OUTBOUND_PREFLIGHT_POLICY.md`
+- `V12_OPENPGP_INBOUND_SECURITY_STATE_MODEL.md`
 - `V13_WSTG_ASSURANCE_INTEGRITY_AND_ADVERSARIAL_VALIDATION.md`
+
 - `V9_RELEASE_CANDIDATE_CLOSEOUT.md`
 - `REQUEST_WORKER_BUDGET_MODEL.md`
 - `MAIL_HOST_BINARY_DEPLOYMENT_SOP.md`
@@ -270,3 +276,79 @@ V7 production availability was previously reopened pending real-login, real-mail
 <!-- OSMAP:V9-SLICE5-V7-CLOSEOUT:END -->
 
 - [V9 release candidate closeout](V9_RELEASE_CANDIDATE_CLOSEOUT.md)
+
+## V12 OpenPGP Documentation
+
+- `V12_OPENPGP_REQUIREMENTS_AND_CLAIMS.md` defines the bounded OpenPGP requirement, current allowed claims, non-claims, helper boundary expectations, account fingerprint binding rule, and Protected by Default rendering invariant.
+
+<!-- OSMAP:V12-SLICE2-DIAGNOSTICS:START -->
+
+- `V12_OPENPGP_KEY_INVENTORY_AND_DIAGNOSTICS.md` defines the diagnostics-only OpenPGP public key inventory boundary and evidence expectations for Slice 2.
+
+<!-- OSMAP:V12-SLICE2-DIAGNOSTICS:END -->
+
+<!-- OSMAP:V12-SLICE3-ACCOUNT-BINDING:START -->
+
+- `V12_OPENPGP_ACCOUNT_FINGERPRINT_BINDING.md` defines the account capability binding model, explicit full-fingerprint requirement, and fail-closed validation expectations for Slice 3.
+
+<!-- OSMAP:V12-SLICE3-ACCOUNT-BINDING:END -->
+
+<!-- OSMAP:V12-SLICE4-HELPER-PROTOCOL:START -->
+
+- `V12_OPENPGP_HELPER_PROTOCOL.md` defines the non-cryptographic helper protocol scaffold, request and response boundary, redaction expectations, and fail-closed validation evidence for Slice 4.
+
+<!-- OSMAP:V12-SLICE4-HELPER-PROTOCOL:END -->
+
+<!-- OSMAP:V12-SLICE5-GPGME-READINESS:START -->
+
+- `V12_OPENPGP_GPGME_READINESS.md` defines the GPGME readiness policy, metadata-only dependency probe, and fail-closed evidence expectations for Slice 5.
+
+<!-- OSMAP:V12-SLICE5-GPGME-READINESS:END -->
+
+<!-- OSMAP:V12-SLICE6-GPGME-AVAILABILITY:START -->
+
+- `V12_OPENPGP_GPGME_AVAILABILITY.md` defines the operator-controlled GPGME dependency remediation and proof gate for Slice 6.
+
+<!-- OSMAP:V12-SLICE6-GPGME-AVAILABILITY:END -->
+
+<!-- OSMAP:V12-SLICE7-HELPER-COMPILE:START -->
+
+- `V12_OPENPGP_GPGME_HELPER_COMPILE_SCAFFOLD.md` defines the compile and link only helper scaffold for Slice 7.
+
+<!-- OSMAP:V12-SLICE7-HELPER-COMPILE:END -->
+
+<!-- OSMAP:V12-SLICE8-HELPER-INVOCATION:START -->
+
+- `V12_OPENPGP_HELPER_INVOCATION_SCAFFOLD.md` defines the protocol-only helper invocation scaffold for Slice 8.
+
+<!-- OSMAP:V12-SLICE8-HELPER-INVOCATION:END -->
+<!-- OSMAP:V12-SLICE9-RUST-HELPER-CLIENT:START -->
+
+- `V12_OPENPGP_RUST_HELPER_CLIENT_BOUNDARY.md` defines the typed Rust application-side helper client boundary for Slice 9.
+
+<!-- OSMAP:V12-SLICE9-RUST-HELPER-CLIENT:END -->
+<!-- OSMAP:V12-SLICE10-HELPER-CLIENT-INTEGRATION:START -->
+
+- `V12_OPENPGP_HELPER_CLIENT_INTEGRATION_GATE.md` defines the non-cryptographic helper client integration gate for Slice 10.
+
+<!-- OSMAP:V12-SLICE10-HELPER-CLIENT-INTEGRATION:END -->
+<!-- OSMAP:V12-SLICE11-CAPABILITY-POLICY:START -->
+
+- `V12_OPENPGP_CAPABILITY_POLICY_MODEL.md` defines the non-cryptographic OpenPGP capability policy model for Slice 11.
+
+<!-- OSMAP:V12-SLICE11-CAPABILITY-POLICY:END -->
+<!-- OSMAP:V12-SLICE12-OUTBOUND-PREFLIGHT:START -->
+
+- `V12_OPENPGP_OUTBOUND_PREFLIGHT_POLICY.md` defines the non-cryptographic outbound OpenPGP preflight policy model for Slice 12.
+
+<!-- OSMAP:V12-SLICE12-OUTBOUND-PREFLIGHT:END -->
+<!-- OSMAP:V12-SLICE13-INBOUND-SECURITY-STATE:START -->
+
+- `V12_OPENPGP_INBOUND_SECURITY_STATE_MODEL.md` defines the non-cryptographic inbound OpenPGP security-state model for Slice 13.
+
+<!-- OSMAP:V12-SLICE13-INBOUND-SECURITY-STATE:END -->
+<!-- OSMAP:V12-SLICE14-CLOSEOUT-READINESS:START -->
+
+- `V12_OPENPGP_CLOSEOUT_READINESS_AUDIT.md` audits the V12 non-cryptographic OpenPGP foundation before future runtime crypto work.
+
+<!-- OSMAP:V12-SLICE14-CLOSEOUT-READINESS:END -->

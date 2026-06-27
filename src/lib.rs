@@ -23,6 +23,7 @@ pub mod mailbox;
 pub mod mailbox_helper;
 pub mod mime;
 pub mod openbsd;
+pub mod openpgp_helper_client;
 pub mod rendering;
 pub mod rendering_html;
 pub mod send;

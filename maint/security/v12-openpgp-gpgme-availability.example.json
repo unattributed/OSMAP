@@ -1,0 +1,35 @@
+{
+  "schema": "osmap-v12-openpgp-gpgme-availability-v1",
+  "purpose": "Validate that GPGME development metadata is available before any OpenPGP cryptographic helper work is implemented.",
+  "dependency_policy": {
+    "preferred_runtime_binding": "gpgme",
+    "require_pkg_config_metadata": true,
+    "require_no_direct_gpg_crypto_fallback": true,
+    "direct_gpg_runtime_crypto_allowed": false,
+    "runtime_crypto_enabled": false,
+    "metadata_probe_only": true,
+    "compile_or_link_probe_crypto_allowed": false
+  },
+  "remediation_policy": {
+    "install_is_operator_controlled": true,
+    "debian_packages": ["pkg-config", "libgpgme-dev"],
+    "openbsd_packages": ["pkgconf", "gpgme"]
+  },
+  "safety_invariants": {
+    "preferred_runtime_binding_is_gpgme": true,
+    "gpgme_metadata_probe_only": true,
+    "gpg_version_metadata_only": true,
+    "runtime_crypto_enabled": false,
+    "direct_gpg_runtime_crypto_allowed": false,
+    "fallback_to_direct_gpg_crypto_allowed": false,
+    "message_decryption_attempted": false,
+    "message_signature_verification_attempted": false,
+    "message_signing_attempted": false,
+    "message_encryption_attempted": false,
+    "pgp_mime_parsing_attempted": false,
+    "passphrases_prompted_or_stored": false,
+    "secret_key_access_attempted": false,
+    "secret_key_listing_attempted": false,
+    "browser_request_handler_touched_keys": false
+  }
+}

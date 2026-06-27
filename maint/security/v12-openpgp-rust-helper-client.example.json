@@ -1,0 +1,28 @@
+{
+  "schema": "osmap-v12-openpgp-rust-helper-client-boundary-v8",
+  "purpose": "Validate typed Rust helper client boundary without enabling cryptography.",
+  "helper_path": "/usr/local/libexec/osmap/osmap-openpgp-helper",
+  "request_schema": "osmap-openpgp-helper-request-v1",
+  "response_schema": "osmap-openpgp-helper-response-v1",
+  "expected_operations": ["capability_status", "diagnostic_ping", "policy_check"],
+  "limits": {
+    "max_request_bytes": 4096,
+    "max_stdout_bytes": 8192,
+    "max_stderr_bytes": 2048,
+    "timeout_seconds": 5
+  },
+  "safety_invariants": {
+    "browser_ui_integrated": false,
+    "direct_gpg_runtime_crypto_allowed": false,
+    "helper_process_spawned_by_slice": false,
+    "message_decryption_attempted": false,
+    "message_encryption_attempted": false,
+    "message_signature_verification_attempted": false,
+    "message_signing_attempted": false,
+    "passphrases_prompted_or_stored": false,
+    "pgp_mime_parsing_attempted": false,
+    "private_key_access_attempted": false,
+    "secret_key_listing_attempted": false,
+    "shell_invocation_allowed": false
+  }
+}
