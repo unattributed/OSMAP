@@ -44,3 +44,7 @@ GitHub Actions remains the merge gate before this slice is merged to `origin/mai
 - No JavaScript is introduced or required by this slice.
 - The local inline SVG foundation performs no runtime asset fetch.
 - Runtime UI remains server-rendered Rust HTML under the existing restrictive CSP.
+
+## V4 hostile-route compatibility
+
+Authenticated message routes retain the V4 hostile-content zero auto-fetch-surface invariant. Slice 2 therefore keeps the authenticated app-header brand mark as inert text with the shared `ui-icon brand-icon` classes. Inline SVG remains local-only and dependency-free, but it must not be added to route-backed message views unless the hostile-route assurance model is explicitly updated with evidence.
