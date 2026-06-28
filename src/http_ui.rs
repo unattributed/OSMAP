@@ -796,32 +796,51 @@ pub fn render_message_view_page(
         "<span class=\"badge badge-ok\">Plain text message</span>"
     };
 
+    let remote_content_state = if rendered.contains_html_body {
+        "blocked by policy"
+    } else {
+        "not requested by selected body"
+    };
+    let protected_reader_strip = format!(
+        concat!(
+            "<section class=\"protected-trust-strip\" aria-label=\"Protected by Default reader trust strip\">",
+            "<div><strong>Protected by Default</strong><p>Verified signatures do not make content safe. Rendered and future decrypted content must still pass protected rendering.</p></div>",
+            "<div class=\"trust-strip-badges\" aria-label=\"Reader protection states\">",
+            "<span class=\"badge badge-ok\">Remote content blocked</span>",
+            "<span class=\"badge\">{} rendering</span>",
+            "<span class=\"badge\">Source view escaped</span>",
+            "</div></section>"
+        ),
+        escape_html(rendered.rendering_mode.as_str()),
+    );
     TrustedHtml::from_template(format!(
         concat!(
             "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
             "{}",
             "<div class=\"mail-shell mail-shell-three\">",
             "{}",
+            "{}",
             "<section class=\"message-summary-pane\" aria-labelledby=\"message-title\">",
             "<p><a href=\"/mailbox?name={}\">Back to mailbox</a></p>",
             "<h1 id=\"message-title\" class=\"section-title\">{}</h1>",
             "<p class=\"muted\">from {}</p>",
-            "<div class=\"badge-list\"><span class=\"badge badge-ok\">2FA session</span>{}<span class=\"badge\">{}</span></div>",
-            "<dl class=\"message-meta\"><dt>Mailbox</dt><dd>{}</dd><dt>UID</dt><dd>{}</dd><dt>Received</dt><dd>{}</dd><dt>MIME Type</dt><dd>{}</dd><dt>Body Source</dt><dd>{}</dd><dt>Rendering Mode</dt><dd>{}</dd><dt>HTML Present</dt><dd>{}</dd></dl>",
+            "<div class=\"badge-list reader-badge-list\" aria-label=\"Reader status\"><span class=\"badge badge-ok\">2FA session</span><span class=\"badge badge-ok\">Protected by Default</span>{}<span class=\"badge\">{}</span></div>",
+            "<dl class=\"message-meta reader-meta\"><dt>Mailbox</dt><dd>{}</dd><dt>UID</dt><dd>{}</dd><dt>Received</dt><dd>{}</dd><dt>MIME Type</dt><dd>{}</dd><dt>Body Source</dt><dd>{}</dd><dt>Rendering Mode</dt><dd>{}</dd><dt>HTML Present</dt><dd>{}</dd><dt>Protection</dt><dd>Protected by Default</dd><dt>Remote Content</dt><dd>{}</dd></dl>",
             "<div class=\"toolbar\" aria-label=\"Message actions\"><a class=\"button-link\" href=\"/compose?mode=reply&mailbox={}&uid={}\">Reply</a><a class=\"button-link\" href=\"/compose?mode=forward&mailbox={}&uid={}\">Forward</a></div>",
             "<div class=\"action-stack\">{}{}{}</div>",
             "</section>",
-            "<article class=\"reading-pane\" aria-labelledby=\"reading-title\">",
+            "<article class=\"reading-pane protected-reading-pane\" aria-labelledby=\"reading-title\" data-reader-mode=\"Protected Reader\">",
             "<h2 id=\"reading-title\">Reading Pane</h2>",
             "{}{}",
             "<section class=\"panel\"><h2>Attachments</h2><ul class=\"attachment-list\">{}</ul></section>",
-            "<section class=\"body-panel\"><h2>Body</h2>{}</section>",
+            "<section class=\"body-panel\"><h2>Body</h2><div class=\"reader-section-heading\" data-protected-body-panel=\"true\"><span class=\"badge badge-ok\">Protected rendering</span></div><p class=\"muted reader-boundary-note\">Message content is rendered through the protected server-side pipeline. Source and body controls remain explicit, escaped, authorized, and bounded.</p>{}</section>",
             "</article>",
             "</div>",
             "</main>"
         ),
         app_header(canonical_username, csrf_token, "mailboxes"),
         folder_pane(user_visible_mailboxes, Some(&rendered.mailbox_name)),
+        protected_reader_strip,
         escape_html(&url_encode(&rendered.mailbox_name)),
         escape_html(rendered.subject.as_deref().unwrap_or("<none>")),
         escape_html(rendered.from.as_deref().unwrap_or("<none>")),
@@ -838,6 +857,7 @@ pub fn render_message_view_page(
         escape_html(rendered.body_source.as_str()),
         escape_html(rendered.rendering_mode.as_str()),
         if rendered.contains_html_body { "yes" } else { "no" },
+        remote_content_state,
         escape_html(&url_encode(&rendered.mailbox_name)),
         rendered.uid,
         escape_html(&url_encode(&rendered.mailbox_name)),

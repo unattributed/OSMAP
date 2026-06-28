@@ -401,3 +401,7 @@ V7 production availability was previously reopened pending real-login, real-mail
 ## V14 Slice 4 Modern Inbox and Message List
 
 - `V14_SLICE_4_MODERN_INBOX_MESSAGE_LIST.md` records the functional, security, and governance acceptance model for the modern mailbox message-list slice.
+
+## V14 Slice 5 Modern Reader and Protected by Default Trust Strip
+
+- `V14_SLICE_5_MODERN_READER_TRUST_STRIP.md` records the functional, security, and governance acceptance model for the modern reader and Protected by Default trust-strip slice.
