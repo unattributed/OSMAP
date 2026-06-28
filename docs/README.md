@@ -203,6 +203,7 @@ Current public documentation map:
 - `V12_OPENPGP_OUTBOUND_PREFLIGHT_POLICY.md`
 - `V12_OPENPGP_INBOUND_SECURITY_STATE_MODEL.md`
 - `V13_WSTG_ASSURANCE_INTEGRITY_AND_ADVERSARIAL_VALIDATION.md`
+- `V14_STREAMLINE_WEBUI_OPENPGP_UX.md`
 - `CURRENT_PROJECT_STATUS.md`
 
 - `V9_RELEASE_CANDIDATE_CLOSEOUT.md`
@@ -383,3 +384,8 @@ V7 production availability was previously reopened pending real-login, real-mail
 - `V12_OPENPGP_CLOSEOUT_READINESS_AUDIT.md` audits the V12 non-cryptographic OpenPGP foundation before future runtime crypto work.
 
 <!-- OSMAP:V12-SLICE14-CLOSEOUT-READINESS:END -->
+
+## V14 Streamline WebUI and OpenPGP UX
+
+- `V14_STREAMLINE_WEBUI_OPENPGP_UX.md` records the V14 UI claims, design boundary, OpenPGP UX constraints, JavaScript-free runtime rule, and low-SBOM implementation rules.
+- `design/v14-approved-ui-reference/README.md` records the approved UI reference images and states that they are design references only, not runtime browser assets.

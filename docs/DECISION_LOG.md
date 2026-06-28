@@ -6960,3 +6960,20 @@ visible without requiring maintainers to infer them from historical slice files.
 Boundary: this is documentation reconciliation only. It does not change product
 behavior, deployment state, OpenPGP runtime capability, release evidence, or
 production configuration.
+
+## 2026-06-28, Start V14 Streamline WebUI and OpenPGP UX integration
+
+Decision: start V14 as an authenticated WebUI modernization and OpenPGP UX
+integration sprint, beginning with documentation, approved visual references,
+implementation rules, and claim boundaries.
+
+Reason: the project needs a modern authenticated application shell and account
+security surfaces while preserving OSMAP's existing secure rendering model,
+small trust boundary, JavaScript-free browser posture, and low dependency
+footprint.
+
+Boundary: this Slice 1 decision is documentation and design-reference control
+only. It does not change runtime UI behavior, deployment state, OpenPGP runtime
+capability, production configuration, live-host posture, or current V13
+production evidence. V13 remains the current reviewed production and assurance
+closeout until a later V14 closeout explicitly supersedes it.
