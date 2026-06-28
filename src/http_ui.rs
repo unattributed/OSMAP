@@ -425,23 +425,37 @@ pub(crate) fn render_message_list_page(
             ),
             (false, false) => String::new(),
         };
+        let subject_label = message.subject.as_deref().unwrap_or("<none>");
+        let from_label = message.from.as_deref().unwrap_or("<none>");
+        let flags_label = if message.flags.is_empty() {
+            "<none>".to_string()
+        } else {
+            message.flags.join(" ")
+        };
         rows.push_str(&format!(
-            "<tr>{}<td><a href=\"{}\">{}</a></td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td>{}</tr>",
+            "<tr class=\"message-row\">{}<td class=\"message-uid-cell\"><a class=\"message-uid-link\" href=\"{}\">#{}</a></td><td class=\"message-subject-cell\"><a class=\"message-subject-link\" href=\"{}\">{}</a><div class=\"message-preview-meta\"><span>from {}</span><span>{}</span></div></td><td class=\"message-from-cell\">{}</td><td class=\"message-date-cell\">{}</td><td class=\"message-flags-cell\"><span class=\"message-flags\">{}</span></td><td class=\"message-size-cell\">{} bytes</td>{}</tr>",
             selection_cells,
             escape_html(&message_href),
             message.uid,
-            escape_html(message.subject.as_deref().unwrap_or("<none>")),
-            escape_html(message.from.as_deref().unwrap_or("<none>")),
+            escape_html(&message_href),
+            escape_html(subject_label),
+            escape_html(from_label),
             escape_html(&message.date_received),
-            escape_html(&message.flags.join(" ")),
+            escape_html(from_label),
+            escape_html(&message.date_received),
+            escape_html(&flags_label),
             message.size_virtual,
             if archive_actions_available {
-                format!("<td>{archive_action}</td>")
+                format!("<td class=\"message-action-cell\">{archive_action}</td>")
             } else {
                 String::new()
             },
         ));
     }
+    if messages.is_empty() {
+        rows.push_str("<tr class=\"message-empty-row\"><td colspan=\"9\"><div class=\"message-empty-state\"><strong>No messages shown.</strong><br><span class=\"muted\">This mailbox has no visible messages for the current bounded query.</span></div></td></tr>");
+    }
+
     let bulk_move_form = if bulk_actions_available && !messages.is_empty() {
         let destination_options = bulk_actions
             .move_destinations
@@ -496,11 +510,11 @@ pub(crate) fn render_message_list_page(
             "{}",
             "<section class=\"content-pane\" aria-labelledby=\"mailbox-title\">",
             "<div class=\"section-header\"><div><h1 id=\"mailbox-title\" class=\"section-title\">Mailbox: {}</h1><p class=\"muted\">Signed in as <strong>{}</strong>. Message data remains fetched through the reviewed mailbox route.</p></div>",
-            "<div class=\"badge-list\"><span class=\"badge badge-ok\">2FA active</span><span class=\"badge\">Remote content blocked</span></div></div>",
+            "<div class=\"badge-list message-list-summary\" aria-label=\"Message list status\"><span class=\"badge badge-ok\">2FA active</span><span class=\"badge\">Remote content blocked</span><span class=\"badge\">sorting/search preserved</span><span class=\"badge\">bulk actions CSRF-bound</span></div></div>",
             "{}{}",
             "<form class=\"search-row\" method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><label for=\"mailbox-search\">Search query<input id=\"mailbox-search\" type=\"text\" name=\"q\" autocomplete=\"off\"></label>{}<button type=\"submit\">Search</button><label><input type=\"checkbox\" name=\"scope\" value=\"all\"> Search all mailboxes</label></form>",
             "<div class=\"toolbar\" aria-label=\"Mailbox actions\">{}{}</div>",
-            "<div class=\"table-wrap\"><table class=\"message-list-table\"><thead><tr>{}{}{}{}</tr></thead><tbody>{}</tbody></table></div>",
+            "<div class=\"table-wrap\"><table class=\"message-list-table\" aria-label=\"Mailbox message list\"><thead><tr>{}{}{}{}</tr></thead><tbody>{}</tbody></table></div>",
             "</section>",
             "</main>"
         ),

@@ -397,3 +397,7 @@ V7 production availability was previously reopened pending real-login, real-mail
 ## V14 Slice 3 Authenticated App Shell
 
 - `V14_SLICE_3_AUTHENTICATED_APP_SHELL.md` records the authenticated app-shell functional, security, and governance acceptance rules for the V14 Streamline WebUI sprint.
+
+## V14 Slice 4 Modern Inbox and Message List
+
+- `V14_SLICE_4_MODERN_INBOX_MESSAGE_LIST.md` records the functional, security, and governance acceptance model for the modern mailbox message-list slice.
