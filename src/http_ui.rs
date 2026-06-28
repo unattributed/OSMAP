@@ -75,7 +75,7 @@ pub(crate) struct SettingsPageModel<'a> {
 
 fn logout_form(csrf_token: &str) -> String {
     format!(
-        "<form class=\"logout-form\" method=\"post\" action=\"/logout\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button type=\"submit\">Log Out</button></form>",
+        "<form class=\"logout-form\" method=\"post\" action=\"/logout\" aria-label=\"Sign out of current session\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><button class=\"logout-button\" type=\"submit\">Log Out</button></form>",
         escape_html(csrf_token)
     )
 }
@@ -83,9 +83,10 @@ fn logout_form(csrf_token: &str) -> String {
 fn app_header(canonical_username: &str, csrf_token: &str, current: &str) -> String {
     format!(
         concat!(
-            "<header class=\"topbar\">",
+            "<a class=\"skip-link\" href=\"#main-content\">Skip to content</a>",
+            "<header class=\"topbar\" role=\"banner\" aria-label=\"Authenticated OSMAP shell\">",
             "<div class=\"brand\"><span class=\"brand-mark\" aria-hidden=\"true\"><span class=\"ui-icon brand-icon\">OS</span></span><span>OSMAP</span></div>",
-            "<nav class=\"top-actions\" aria-label=\"Primary\">",
+            "<nav class=\"top-actions\" aria-label=\"Primary navigation\">",
             "<a href=\"/mailboxes\"{}>Mailboxes</a>",
             "<a href=\"/compose\"{}>Compose</a>",
             "<a href=\"/drafts\"{}>Drafts</a>",
@@ -93,9 +94,9 @@ fn app_header(canonical_username: &str, csrf_token: &str, current: &str) -> Stri
             "<a href=\"/settings\"{}>Settings</a>",
             "{}",
             "</nav>",
-            "<div class=\"status-row\" aria-label=\"Security status\">",
-            "<span class=\"status-pill badge-ok\">2FA session</span>",
-            "<span class=\"status-pill\">signed in as <strong>{}</strong></span>",
+            "<div class=\"status-row auth-status\" aria-label=\"Session status and identity\">",
+            "<span class=\"status-pill badge-ok shell-session-chip\">2FA session</span>",
+            "<span class=\"status-pill identity-chip\">signed in as <strong>{}</strong></span>",
             "</div>",
             "</header>"
         ),
@@ -211,7 +212,7 @@ pub(crate) fn render_mailboxes_page(
 ) -> TrustedHtml {
     TrustedHtml::from_template(format!(
         concat!(
-            "<main class=\"page-shell\">",
+            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
             "{}",
             "<div class=\"mail-shell\">",
             "{}",
@@ -491,7 +492,7 @@ pub(crate) fn render_message_list_page(
 
     TrustedHtml::from_template(format!(
         concat!(
-            "<main class=\"page-shell\">",
+            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
             "{}",
             "<section class=\"content-pane\" aria-labelledby=\"mailbox-title\">",
             "<div class=\"section-header\"><div><h1 id=\"mailbox-title\" class=\"section-title\">Mailbox: {}</h1><p class=\"muted\">Signed in as <strong>{}</strong>. Message data remains fetched through the reviewed mailbox route.</p></div>",
@@ -602,7 +603,7 @@ pub(crate) fn render_message_search_page(
 
     TrustedHtml::from_template(format!(
         concat!(
-            "<main class=\"page-shell\">",
+            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
             "{}",
             "<section class=\"content-pane\">",
             "<p>{}<a href=\"/mailboxes\">All mailboxes</a></p>",
@@ -783,7 +784,7 @@ pub fn render_message_view_page(
 
     TrustedHtml::from_template(format!(
         concat!(
-            "<main class=\"page-shell\">",
+            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
             "{}",
             "<div class=\"mail-shell mail-shell-three\">",
             "{}",
@@ -908,7 +909,7 @@ pub(crate) fn render_sessions_page(
 
     TrustedHtml::from_template(format!(
         concat!(
-            "<main class=\"page-shell\">",
+            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
             "{}",
             "<section class=\"content-pane\">",
             "<h1>Sessions</h1>",
@@ -974,7 +975,7 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
 
     TrustedHtml::from_template(format!(
         concat!(
-            "<main class=\"page-shell\">",
+            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
             "{}",
             "<section class=\"content-pane\">",
             "<h1>{}</h1>",
@@ -1151,7 +1152,7 @@ pub(crate) fn render_draft_list_page(model: &DraftListPageModel<'_>) -> TrustedH
 
     TrustedHtml::from_template(format!(
         concat!(
-            "<main class=\"page-shell\">",
+            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
             "{}",
             "<section class=\"content-pane\">",
             "<h1>Drafts</h1>{}{}",
@@ -1203,7 +1204,7 @@ pub(crate) fn render_settings_page(model: &SettingsPageModel<'_>) -> TrustedHtml
 
     TrustedHtml::from_template(format!(
         concat!(
-            "<main class=\"page-shell\">",
+            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
             "{}",
             "<section class=\"content-pane\">",
             "<h1>Settings</h1>{}{}",

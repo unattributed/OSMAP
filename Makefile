@@ -133,3 +133,4 @@ v12-check:
 v14-check:
 	sh maint/security/osmap-v14-streamline-webui-docs-gate.sh
 	sh maint/security/osmap-v14-css-icon-foundation-gate.sh
+	sh maint/security/osmap-v14-auth-shell-gate.sh
