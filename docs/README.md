@@ -393,3 +393,7 @@ V7 production availability was previously reopened pending real-login, real-mail
 ## V14 Slice 2 CSS and Local Icon Foundation
 
 - `V14_SLICE_2_CSS_ICON_FOUNDATION.md` records the CSS-only and local inline SVG icon foundation for the V14 Streamline WebUI sprint.
+
+## V14 Slice 3 Authenticated App Shell
+
+- `V14_SLICE_3_AUTHENTICATED_APP_SHELL.md` records the authenticated app-shell functional, security, and governance acceptance rules for the V14 Streamline WebUI sprint.
