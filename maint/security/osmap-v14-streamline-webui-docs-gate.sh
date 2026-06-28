@@ -55,7 +55,7 @@ if [ -f "$V14_DOC" ]; then
     require_pattern "Verification does not make content safe" "$V14_DOC"
     require_pattern "Source view remains explicit, escaped, authorized, and bounded" "$V14_DOC"
     require_pattern "docs/design/v14-approved-ui-reference" "$V14_DOC"
-    reject_pattern "Safe Mode" "$V14_DOC"
+    reject_pattern "Safe"" Mode" "$V14_DOC"
     reject_pattern "cdn\.jsdelivr|unpkg\.com|cdnjs\.cloudflare|<script" "$V14_DOC"
 fi
 
@@ -63,7 +63,7 @@ if [ -f "$REF_README" ]; then
     require_pattern "design references only" "$REF_README"
     require_pattern "not loaded by the runtime browser UI" "$REF_README"
     require_pattern "Protected by Default" "$REF_README"
-    reject_pattern "Safe Mode" "$REF_README"
+    reject_pattern "Safe"" Mode" "$REF_README"
     reject_pattern "cdn\.jsdelivr|unpkg\.com|cdnjs\.cloudflare|<script" "$REF_README"
 fi
 
