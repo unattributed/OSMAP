@@ -111,9 +111,43 @@ Primary outputs:
 - `EDGE_CUTOVER_PLAN.md`
 - `INTERNET_EXPOSURE_STATUS.md`
 
-## Later Phases
 
-Later phases cover Version 3 workflow refinement, broader migration rollout,
-packaging or ports integration, deeper hardening, and eventual Roundcube
-retirement. They should build on the closed Version 2 evidence instead of
-reopening Version 2 as a feature-expansion phase.
+## Version 3 Through Version 13 Closeout
+
+Objective:
+Preserve phase discipline while recording that the project has moved beyond the
+original early planning phases into versioned hardening, deployment, assurance,
+and OpenPGP foundation work.
+
+Primary outputs:
+
+- `V3_*` WSTG, workflow, and daily-driver assurance records
+- `V4_*` hostile-content safety release records
+- `V5_BOUNDARY_HARDENING_EVIDENCE.md`
+- `V6_*` controlled Roundcube retirement readiness records
+- `V7_*` rendering and availability closure records
+- `V8_*` stabilization and regression matrix records
+- `V9_PRODUCTION_CONVERGENCE.md`
+- `V9_RELEASE_CANDIDATE_CLOSEOUT.md`
+- `V10_*` governance, claims, documentation, and fail-closed assumption records
+- `V11_RUNTIME_FAIL_CLOSED_CLOSURE.md`
+- `V12_OPENPGP_*` non-cryptographic OpenPGP foundation records
+- `V13_WSTG_ASSURANCE_INTEGRITY_AND_ADVERSARIAL_VALIDATION.md`
+- `CURRENT_PROJECT_STATUS.md`
+
+Current boundary:
+V13 is the latest WSTG assurance and deployment closeout. V12 is an OpenPGP
+foundation only and does not enable runtime cryptography. V9 remains a
+selected-cohort release-candidate decision, not broad Roundcube parity or a
+general hostile-mail safety claim.
+
+## Future Phases
+
+Future phases should be opened only when they have a bounded definition, tests,
+security gates, evidence archives, rollback expectations, and documentation
+updates in the same change stream.
+
+Likely future work includes runtime OpenPGP cryptography, broader UX polish,
+packaging or ports integration, additional selected-cohort expansion, and
+further Roundcube retirement work. None of those are current claims until a
+later version definition and evidence chain explicitly bring them into scope.

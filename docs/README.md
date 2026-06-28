@@ -14,9 +14,10 @@ The repository deliberately separates:
 - Agent-facing collaboration guidance in the tracked repository root file
   `AGENTS.md`
 
-As of June 24, 2026, the project has substantive public-safe documentation
-through the Version 9 selected-cohort release-candidate closeout. The current
-baseline was built from:
+As of June 27, 2026, the project has substantive public-safe documentation
+through the Version 13 WSTG assurance and deployment closeout, plus the Version
+12 non-cryptographic OpenPGP foundation closeout. The current baseline was built
+from:
 
 - private early project planning notes, distilled into public-safe docs
 - repository phase control blocks
@@ -39,6 +40,13 @@ baseline was built from:
 - repo-owned Version 9 production convergence intake, PR #19 deployment
   evidence references, V6 and V7 reconciliation, and selected-cohort
   release-candidate closeout
+- repo-owned Version 10 governance, acceptance, documentation-status, and
+  fail-closed assumption-triage records
+- repo-owned Version 11 runtime fail-closed closure records
+- repo-owned Version 12 non-cryptographic OpenPGP foundation records through
+  Slice 14 closeout readiness
+- repo-owned Version 13 WSTG assurance integrity, adversarial validation,
+  credentialed release, and production deployment closeout records
 
 The documents in this folder are written for two audiences:
 
@@ -49,6 +57,7 @@ The documents in this folder are written for two audiences:
 Current public documentation map:
 
 - `README.md`
+- `CURRENT_PROJECT_STATUS.md`
 - `PROJECT_CHARTER.md`
 - `PROGRAM_BASELINE.md`
 - `ACCEPTANCE_CRITERIA.md`
@@ -194,6 +203,7 @@ Current public documentation map:
 - `V12_OPENPGP_OUTBOUND_PREFLIGHT_POLICY.md`
 - `V12_OPENPGP_INBOUND_SECURITY_STATE_MODEL.md`
 - `V13_WSTG_ASSURANCE_INTEGRITY_AND_ADVERSARIAL_VALIDATION.md`
+- `CURRENT_PROJECT_STATUS.md`
 
 - `V9_RELEASE_CANDIDATE_CLOSEOUT.md`
 - `REQUEST_WORKER_BUDGET_MODEL.md`
@@ -230,7 +240,12 @@ closed for the tested selected-user production path by V9 Slice 5. Version 8
 adds source-level regression coverage and mandatory CI enforcement. Version 9
 reconciles source, production checkout, live binary identity, PR #19 deployment
 evidence, V6 selected-cohort closure, V7 production availability, and the
-bounded selected-cohort release-candidate PASS decision. Requested additional
+bounded selected-cohort release-candidate PASS decision. Version 10 adds
+governance and fail-closed assumption triage. Version 11 closes the refined
+high-relevance runtime fail-closed queue. Version 12 establishes a
+non-cryptographic OpenPGP foundation without enabling runtime crypto. Version
+13 completes WSTG assurance integrity, adversarial validation, credentialed
+release evidence, and production deployment closeout. Requested additional
 functionality and Thunderbird-like UX polish remain future-version work unless
 a later definition explicitly brings them into scope.
 
@@ -250,6 +265,22 @@ In practice, the repository should follow this policy:
 - keep workflow definitions and issue or pull-request templates under `.github/`
 - add new narrative or design documents under `docs/` by default unless there
   is a clear platform-specific reason not to
+
+
+## Current Status Authority
+
+Use `CURRENT_PROJECT_STATUS.md` as the short current-state authority. Historical
+version documents are retained for evidence provenance, but they should not be
+read as overriding the latest current-status and closeout records.
+
+Current high-level boundaries:
+
+- V13 is the latest deployment and WSTG assurance closeout record.
+- V12 OpenPGP work is a non-cryptographic foundation only.
+- V9 remains the selected-cohort release-candidate decision, not a broad public
+  release claim.
+- Full Roundcube parity, general hostile-email safety, full ASVS verification,
+  and OpenPGP runtime cryptography remain non-claims.
 
 For repeat live-host validation on `mail.blackbagsecurity.com`, the standard
 host-side checkout is now `~/OSMAP`. The repo-owned wrapper

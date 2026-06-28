@@ -6944,3 +6944,19 @@ Boundary: this decision does not claim complete Roundcube replacement, general h
   evidence files.
 - Boundary: login worker budgets, OSMAP throttle limits, Dovecot penalties,
   and bounded command execution remain enabled.
+
+## 2026-06-27, Reconcile current documentation status through V13
+
+The documentation review found that the root README and documentation index
+still framed the project as post-V9 even though the repository now contains V10,
+V11, V12, and V13 records.
+
+Decision: add `docs/CURRENT_PROJECT_STATUS.md` and update the root README,
+`docs/README.md`, `docs/KNOWN_LIMITATIONS.md`, `docs/PHASE_ROADMAP.md`,
+`docs/TEST_STRATEGY.md`, and `docs/BUILD_AND_RELEASE_PROCESS.md` so current
+status, current gates, OpenPGP non-claims, and V13 deployment evidence are
+visible without requiring maintainers to infer them from historical slice files.
+
+Boundary: this is documentation reconciliation only. It does not change product
+behavior, deployment state, OpenPGP runtime capability, release evidence, or
+production configuration.

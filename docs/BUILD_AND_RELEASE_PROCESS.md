@@ -185,6 +185,47 @@ requires source identity, rebuilt binary identity, installed live binary hash,
 service restart or continuity evidence, service health, functional operation,
 selected logs, rollback reference, archive, and checksum.
 
+
+## Current V10 Through V13 Release And Assurance Posture
+
+The project has advanced beyond the V9 production-convergence state. The
+current repo-owned validation surface includes:
+
+```bash
+make security-check
+make acceptance-check
+make v10-check
+make v11-check
+make v12-check
+make v13-check
+```
+
+V10 adds governance, claims-boundary, documentation-status, and fail-closed
+assumption-triage checks. V11 closes the refined high-relevance runtime
+fail-closed queue. V12 validates the non-cryptographic OpenPGP foundation and
+must not be described as runtime decryption, verification, signing, encryption,
+PGP/MIME handling, passphrase handling, private-key access, browser controls,
+or decrypted-content rendering. V13 validates WSTG assurance integrity,
+adversarial coverage, credentialed release evidence, and the deployment closeout
+record.
+
+The current V13 production deployment closeout records:
+
+- final reviewed commit:
+  `7009b15322c4e7795c797c1387b403e0f4935adb`
+- live and staged binary SHA256:
+  `333a417bf435ae74bfc2b7a9eebedeca1ad541cb527e2555fed408e11e24d963`
+- release run:
+  `osmap-wstg-20260627-204207`
+- credentialed release evidence:
+  `42 pass`, `0 fail`, `0 warning`, `0 skip`, and `4` justified
+  not-applicable results
+
+Strict release validation remains separate from source sync and developer CI.
+A production deployment claim still requires exact source identity, binary
+identity, activation or continuity evidence, service health, functional proof,
+selected logs, rollback reference, archive, and checksum.
+
 ## Rollback Strategy
 
 Every release process should assume rollback may be necessary.

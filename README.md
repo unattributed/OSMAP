@@ -9,43 +9,55 @@ The project favors a small trust boundary, least privilege, bounded behavior,
 safe mail rendering, auditable operations, and reversible deployment over
 feature breadth or Roundcube parity.
 
-## Current posture
+## Current V13 status
 
-| Area | Status |
+V13 is the current reviewed production and assurance closeout. It supersedes
+earlier post-V9 status summaries as the description of the present project
+state.
+
+| Current record | V13 evidence |
 |---|---|
-| Source | Current `main` is post-V9 documentation reconciliation; the V9 selected-cohort release-candidate decision is anchored at `a8915c0993b96a9d53de083dc84cb7520aef0097` |
-| Formal tagged release evidence | `v4.0.0`, the hostile-content safety release |
-| V5 | Boundary hardening deployed; later typed HTML source hardening is documented separately |
-| V6 | Production readiness passed, and V9 Slice 6 accepted the selected-cohort/no-Roundcube closeout criteria for the bounded V9 release-candidate scope |
-| V7 | Production availability reopening is closed for the tested selected-user path by V9 Slice 5 evidence |
-| V8 | Regression matrices and CI enforcement are complete; V8 does not by itself claim a new production deployment |
-| V9 | Release-candidate gate is PASS for selected-cohort operation under documented limitations; production runtime code remains `49c9f23` with documentation-only drift at the V9 gate |
+| Status | WSTG assurance integrity, adversarial validation, and production deployment closeout completed |
+| Final reviewed commit | `7009b15322c4e7795c797c1387b403e0f4935adb` |
+| Live and staged binary SHA256 | `333a417bf435ae74bfc2b7a9eebedeca1ad541cb527e2555fed408e11e24d963` |
+| Credentialed release run | `osmap-wstg-20260627-204207` against `https://mail.blackbagsecurity.com` |
+| Credentialed result | `42 pass`, `0 fail`, `0 warning`, `0 skip`, and `4` justified not-applicable results |
+| WSTG matrix | `97` scenarios: `64` automated and `33` not applicable, with no invalid or missing dispositions |
+| Browser edge | `GET /`, `GET /login`, and `GET /healthz` passed; invalid Host was rejected with HTTP `421` |
 
-The current release evidence is anchored by `v4.0.0`, with evidence bundle commit `59da020`
-and assessed V4 code commit `09a95b7`. V4 does not claim rich-mail safety, malware prevention, attachment preview
-safety, or URL reputation. The release rule is that any later code change must refresh V4 evidence
-before inheriting the V4 claim.
+V13 also records passing live checks for CSP, Host and request
+desynchronization, reflected and stored XSS, cross-account authorization
+isolation, attachment containment, Rspamd and ClamAV detection, dependency and
+CycloneDX validation, and security-event logging with redaction.
 
-V9 production convergence intake on 2026-06-22 recorded `main`, the production
-checkout, and the live OpenBSD binary converged at `49c9f230d7865f01deadbc6a5a0f6e876c63e89b`. The deployed
-binary hash is `411c976cccb0687f1a6e840470584fd8921eb5469e68905e457cf3edfe0cdea3`. The PR #19 deployment evidence archive
-`osmap-forward-body-binary-deploy-20260622-133538Z.tar.gz` has SHA256 `21a2d3b97808fe6bc971974ef46a42d27216f31f04cefe7cf4894c1f667a7800` and replaced prior live
-binary hash `500cdd839be9c70297d33cbce6661815ebfb4740ba8b607f63a6cdf98ac7dca7`. The post-deployment forward/send retest reached
-OSMAP `/send` with HTTP `303` and Postfix/Brevo delivery queue `DDEA73CE8C4` was
-sent and removed.
+The current project status summary is maintained in
+`docs/CURRENT_PROJECT_STATUS.md`. Historical version documents remain valid as
+provenance for the slices that produced them, but the current README,
+`docs/CURRENT_PROJECT_STATUS.md`, `docs/README.md`, and the latest version
+closeout records control the present release posture.
 
-The final V9 gate on 2026-06-24 accepted `a8915c0993b96a9d53de083dc84cb7520aef0097`
-as a selected-cohort release candidate. That acceptance depends on the
-documented scope and limitations in
-`docs/V9_RELEASE_CANDIDATE_CLOSEOUT.md`; it is not a claim of complete
-Roundcube feature parity, general hostile email safety, unbounded mailbox
-parsing safety, or release readiness outside the selected-cohort scope.
+### Capability boundary
+
+V12 remains a non-cryptographic OpenPGP foundation. It provides requirements,
+diagnostics, account fingerprint binding, helper protocol and client
+scaffolding, GPGME readiness gates, and capability policy models. It does not
+enable decrypt, verify, sign, encrypt, PGP/MIME parsing, passphrase handling,
+private-key access, browser OpenPGP controls, key discovery, or decrypted
+rendering.
+
+The current release evidence is still bounded. V4 remains the historical tagged
+hostile-content safety release, and V9 remains historical selected-cohort
+release-candidate provenance. The current V13 record does not claim complete
+Roundcube replacement, general hostile-email safety, unbounded MIME or mailbox
+safety, full ASVS verification, endpoint safety after attachment download, or
+OpenPGP runtime cryptographic operation.
 
 Start with:
 
 - [Documentation index](docs/README.md)
 - [Project charter](docs/PROJECT_CHARTER.md)
 - [Program baseline](docs/PROGRAM_BASELINE.md)
+- [Current project status](docs/CURRENT_PROJECT_STATUS.md)
 - [Known limitations](docs/KNOWN_LIMITATIONS.md)
 - [Decision log](docs/DECISION_LOG.md)
 - [Internet exposure status](docs/INTERNET_EXPOSURE_STATUS.md)
@@ -92,6 +104,11 @@ Important gates:
 make v6-check
 make v7-check
 make v8-check
+make v10-check
+make v11-check
+make v12-check
+make v13-check
+make acceptance-check
 OSMAP_SECURITY_PROFILE=release make release-check
 ```
 
@@ -141,22 +158,24 @@ The implementation is documented as small security and workflow slices:
 
 ## Development versions
 
+Versions are listed newest first. Historical entries remain evidence provenance,
+not competing descriptions of the current V13 state.
+
 | Version | Purpose and status | Authoritative documents |
 |---|---|---|
-| V1 | Narrow browser-mail baseline and closeout | [Acceptance criteria](docs/ACCEPTANCE_CRITERIA.md), [closeout SOP](docs/V1_CLOSEOUT_SOP.md), [work rules](docs/V1_CLOSEOUT_WORK_RULES.md) |
-| V2 | Migration-capable pilot and operator readiness | [Definition](docs/V2_DEFINITION.md), [acceptance criteria](docs/V2_ACCEPTANCE_CRITERIA.md), [pilot closeout](docs/V2_PILOT_CLOSEOUT.md), [pilot status](docs/V2_PILOT_STATUS.md) |
-| V3 | Daily-driver hardening and WSTG due diligence | [Definition](docs/V3_DEFINITION.md), [roadmap](docs/V3_ROADMAP.md), [security gates](docs/V3_SECURITY_GATES.md), [WSTG plan](docs/V3_WSTG_DUE_DILIGENCE_PLAN.md) |
-| V4 | Hostile-content safety release | [Definition](docs/V4_DEFINITION.md), [acceptance criteria](docs/V4_ACCEPTANCE_CRITERIA.md), [security gates](docs/V4_SECURITY_GATES.md), [closeout evidence](docs/V4_CLOSEOUT_EVIDENCE.md), [operator handoff](docs/V4_RELEASE_OPERATOR_HANDOFF.md) |
-| V5 | Identity, Host, origin, response, and trusted HTML boundaries | [Boundary evidence](docs/V5_BOUNDARY_HARDENING_EVIDENCE.md), [production deployment](docs/V5_PRODUCTION_DEPLOYMENT_COMPLETE.md) |
-| V6 | Controlled Roundcube retirement readiness | [Definition](docs/V6_DEFINITION.md), [acceptance criteria](docs/V6_ACCEPTANCE_CRITERIA.md), [roadmap](docs/V6_ROADMAP.md), [security gates](docs/V6_SECURITY_GATES.md), [closeout evidence](docs/V6_CLOSEOUT_EVIDENCE.md) |
-| V7 | Boundary hardening, rendering recovery, and availability invariants | [Due diligence](docs/V7_BOUNDARY_HARDENING_DUE_DILIGENCE.md), [rendering closeout](docs/V7_RENDERING_REGRESSION_CLOSEOUT.md), [browser availability invariant](docs/V7_BROWSER_AVAILABILITY_INVARIANT.md), [throttle locking](docs/POST_V7_THROTTLE_TRANSACTION_LOCKING.md) |
-| V8 | Source stabilization through mandatory regression matrices | [Program](docs/V8_STABILIZATION_PROGRAM.md), [final closeout](docs/V8_FINAL_REGRESSION_GATE_CLOSEOUT.md) |
-| V9 | Production convergence and selected-cohort release-candidate decision | [Production convergence](docs/V9_PRODUCTION_CONVERGENCE.md), [release-candidate closeout](docs/V9_RELEASE_CANDIDATE_CLOSEOUT.md), [V7 production availability closeout](docs/V7_PRODUCTION_AVAILABILITY_CLOSEOUT.md) |
-| V10 | Governance, acceptance, and fail-closed assumption triage | [Governance status](docs/V10_GOVERNANCE_STATUS.md), [claims and limitations](docs/V10_CLAIMS_AND_LIMITATIONS.md), [targeted remediation](docs/V10_TARGETED_FAIL_CLOSED_REMEDIATION.md) |
+| V13 | WSTG assurance integrity, adversarial validation, and production deployment closeout | [V13 sprint and closeout](docs/V13_WSTG_ASSURANCE_INTEGRITY_AND_ADVERSARIAL_VALIDATION.md), [current project status](docs/CURRENT_PROJECT_STATUS.md) |
+| V12 | Non-cryptographic OpenPGP secure foundation through Slice 14 closeout readiness | [OpenPGP requirements and claims](docs/V12_OPENPGP_REQUIREMENTS_AND_CLAIMS.md), [closeout readiness audit](docs/V12_OPENPGP_CLOSEOUT_READINESS_AUDIT.md), [known limitations](docs/KNOWN_LIMITATIONS.md) |
 | V11 | Runtime fail-closed closure for refined high-relevance assumptions | [Runtime fail-closed closure](docs/V11_RUNTIME_FAIL_CLOSED_CLOSURE.md) |
-| V12 | OpenPGP secure foundation and helper boundary | [OpenPGP requirements and claims](docs/V12_OPENPGP_REQUIREMENTS_AND_CLAIMS.md), [closeout readiness audit](docs/V12_OPENPGP_CLOSEOUT_READINESS_AUDIT.md) |
-| V13 | WSTG assurance integrity and adversarial validation | [V13 sprint](docs/V13_WSTG_ASSURANCE_INTEGRITY_AND_ADVERSARIAL_VALIDATION.md) |
-
+| V10 | Governance, acceptance, and fail-closed assumption triage | [Governance status](docs/V10_GOVERNANCE_STATUS.md), [claims and limitations](docs/V10_CLAIMS_AND_LIMITATIONS.md), [targeted remediation](docs/V10_TARGETED_FAIL_CLOSED_REMEDIATION.md) |
+| V9 | Historical production convergence and selected-cohort release-candidate decision | [Production convergence](docs/V9_PRODUCTION_CONVERGENCE.md), [release-candidate closeout](docs/V9_RELEASE_CANDIDATE_CLOSEOUT.md) |
+| V8 | Source stabilization through mandatory regression matrices | [Program](docs/V8_STABILIZATION_PROGRAM.md), [final closeout](docs/V8_FINAL_REGRESSION_GATE_CLOSEOUT.md) |
+| V7 | Boundary hardening, rendering recovery, and availability invariants | [Due diligence](docs/V7_BOUNDARY_HARDENING_DUE_DILIGENCE.md), [rendering closeout](docs/V7_RENDERING_REGRESSION_CLOSEOUT.md), [production availability closeout](docs/V7_PRODUCTION_AVAILABILITY_CLOSEOUT.md) |
+| V6 | Controlled Roundcube retirement readiness | [Definition](docs/V6_DEFINITION.md), [acceptance criteria](docs/V6_ACCEPTANCE_CRITERIA.md), [closeout evidence](docs/V6_CLOSEOUT_EVIDENCE.md) |
+| V5 | Identity, Host, origin, response, and trusted HTML boundaries | [Boundary evidence](docs/V5_BOUNDARY_HARDENING_EVIDENCE.md), [production deployment](docs/V5_PRODUCTION_DEPLOYMENT_COMPLETE.md) |
+| V4 | Hostile-content safety release | [Definition](docs/V4_DEFINITION.md), [security gates](docs/V4_SECURITY_GATES.md), [closeout evidence](docs/V4_CLOSEOUT_EVIDENCE.md) |
+| V3 | Daily-driver hardening and WSTG due diligence | [Definition](docs/V3_DEFINITION.md), [security gates](docs/V3_SECURITY_GATES.md), [WSTG plan](docs/V3_WSTG_DUE_DILIGENCE_PLAN.md) |
+| V2 | Migration-capable pilot and operator readiness | [Definition](docs/V2_DEFINITION.md), [pilot closeout](docs/V2_PILOT_CLOSEOUT.md) |
+| V1 | Narrow browser-mail baseline and closeout | [Acceptance criteria](docs/ACCEPTANCE_CRITERIA.md), [closeout SOP](docs/V1_CLOSEOUT_SOP.md) |
 
 ### V3 assurance workstreams
 
@@ -230,50 +249,3 @@ OSMAP is licensed under the [ISC License](LICENSE).
 It is provided without warranty. Operators remain responsible for deployment,
 configuration, monitoring, backup, recovery, legal compliance, and risk
 acceptance.
-
-<!-- OSMAP:V9-SLICE5-V7-CLOSEOUT:START -->
-
-## V7 production availability closeout
-
-V9 Slice 5 closes the V7 production availability reopening based on current evidence.
-
-**Verdict:** `V7_PRODUCTION_AVAILABILITY_CAN_BE_CLOSED`
-
-Evidence basis:
-
-- V9 Slice 5 evidence archive: `osmap-v9-slice-5-v7-production-closeout-20260624-131645Z.tar.gz`
-- V9 Slice 5 archive SHA256: `2a2514ca62028bb1d444802b2f614014e7dae92e52864517caebdfadd39b7076`
-- V9 Slice 3 hold-period archive SHA256: `18c3710a109d8d5152e11d2cebafacae4c8047be9587a5d5ef691d462bba6b0d`
-- V9 Slice 4 hostile-content carry-forward archive SHA256: `0a67c1e254a7277003253d26fc5b3d5700072fe53c453a6dc890374ae53c2ac1`
-- Current documented main head: `fcf360587daeda57f2de515ef8f85fc69d016f4e`
-- Production runtime source head remains the PR #19 source point: `49c9f230d7865f01deadbc6a5a0f6e876c63e89b`
-- Production runtime binary SHA256 remains: `411c976cccb0687f1a6e840470584fd8921eb5469e68905e457cf3edfe0cdea3`
-
-What is proven:
-
-- V7 rendering regression gate passed against current `origin/main`.
-- V7 rendering gate wrapper passed against current `origin/main`.
-- V7 boundary hardening gate passed against current `origin/main`.
-- V9 Slice 3 proved real browser login, mailbox listing, message view, sanitized HTML rendering, send submission, and Postfix/Brevo delivery during a production hold window.
-- The production snapshot showed `osmap_mailbox_helper(ok)` and `osmap_serve(ok)` with no crash, panic, or restart markers in the bounded scan.
-- V9 Slice 4 proved the V4 hostile-content containment gate still passes against current `origin/main`.
-
-Limits of the claim:
-
-- This closes the V7 production availability reopening only for the tested selected-user production path and the current rendering policy.
-- Slice 5 was not by itself a general release-candidate decision; Slice 7 later accepted the bounded V9 selected-cohort release candidate.
-- This does not claim complete Roundcube replacement.
-- Production was not rebuilt for Slice 2 documentation-only changes, and no rebuild is required for that documentation merge.
-- V6 selected-cohort/no-Roundcube closure and the final V9 release-candidate gate are reconciled by `docs/V9_RELEASE_CANDIDATE_CLOSEOUT.md`.
-
-<!-- OSMAP:V9-SLICE5-V7-CLOSEOUT:END -->
-
-<!-- OSMAP:V9_STATUS:START -->
-
-## Current V9 status
-
-V9 release-candidate gate: PASS. Current main `a8915c0993b96a9d53de083dc84cb7520aef0097` is accepted as a selected-cohort release candidate under the documented limitations. The live production binary remains `411c976cccb0687f1a6e840470584fd8921eb5469e68905e457cf3edfe0cdea3` from production runtime source `49c9f230d7865f01deadbc6a5a0f6e876c63e89b`, with current main differing by documentation-only files.
-
-See `docs/V9_RELEASE_CANDIDATE_CLOSEOUT.md`.
-
-<!-- OSMAP:V9_STATUS:END -->
