@@ -139,9 +139,13 @@ fn browser_css() -> &'static str {
         ".muted{color:var(--muted)}",
         ".page-shell{min-height:100vh;padding:1.5rem}",
         ".topbar{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1rem;padding:.8rem 1rem;background:var(--panel);border:1px solid var(--line);border-radius:8px}",
-        ".brand{display:flex;align-items:center;gap:.65rem;font-weight:800}",
+        ".brand{display:flex;align-items:center;gap:.65rem;font-weight:800;letter-spacing:.01em}",
+        ".ui-icon{display:inline-block;width:1rem;height:1rem;flex:0 0 auto;vertical-align:-.15em;color:currentColor}",
+        ".brand-icon{width:1.25rem;height:1.25rem}",
         ".brand-mark{display:inline-grid;place-items:center;width:2.1rem;height:2.1rem;border-radius:7px;background:#dbeafe;color:#123b7a;border:1px solid #b8cffc;font-weight:900}",
         ".top-actions,.toolbar,.status-row,.badge-list{display:flex;align-items:center;gap:.55rem;flex-wrap:wrap}",
+        ".top-actions a{display:inline-flex;align-items:center;min-height:2.15rem;padding:.42rem .58rem;border-radius:7px;color:#223047;text-decoration:none}",
+        ".top-actions a:hover,.top-actions a[aria-current=page]{background:#eaf2ff;color:#123b7a;text-decoration:none}",
         ".logout-form{display:inline-flex}",
         ".badge,.status-pill{display:inline-flex;align-items:center;gap:.35rem;border:1px solid var(--line);border-radius:999px;background:#fff;padding:.35rem .6rem;color:#223047;font-size:.86rem}",
         ".badge-ok{border-color:#b7dfc2;background:#eefaf1;color:#14532d}",
@@ -207,6 +211,7 @@ fn browser_css() -> &'static str {
         ".message-html pre,pre{white-space:pre-wrap;overflow-wrap:anywhere}",
         ".message-html a{word-break:break-word}",
         ".message-html a[href]::after{content:\" (\" attr(href) \")\";font-size:.86em;color:var(--muted);overflow-wrap:anywhere}",
+        "@media (prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}",
         "@media (max-width:56rem){.page-shell{padding:.75rem}.topbar,.section-header{align-items:stretch;flex-direction:column}.mail-shell,.mail-shell-three{grid-template-columns:1fr}.search-row{grid-template-columns:1fr}.login-card{padding:1.25rem}.login-title{font-size:2.35rem}.login-shield{width:3.8rem;height:3.8rem}.security-grid{grid-template-columns:1fr}.login-decor{display:none}}"
     )
 }

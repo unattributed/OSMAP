@@ -389,3 +389,7 @@ V7 production availability was previously reopened pending real-login, real-mail
 
 - `V14_STREAMLINE_WEBUI_OPENPGP_UX.md` records the V14 UI claims, design boundary, OpenPGP UX constraints, JavaScript-free runtime rule, and low-SBOM implementation rules.
 - `design/v14-approved-ui-reference/README.md` records the approved UI reference images and states that they are design references only, not runtime browser assets.
+
+## V14 Slice 2 CSS and Local Icon Foundation
+
+- `V14_SLICE_2_CSS_ICON_FOUNDATION.md` records the CSS-only and local inline SVG icon foundation for the V14 Streamline WebUI sprint.
