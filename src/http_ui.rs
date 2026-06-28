@@ -84,7 +84,7 @@ fn app_header(canonical_username: &str, csrf_token: &str, current: &str) -> Stri
     format!(
         concat!(
             "<header class=\"topbar\">",
-            "<div class=\"brand\"><span class=\"brand-mark\" aria-hidden=\"true\">OS</span><span>OSMAP</span></div>",
+            "<div class=\"brand\"><span class=\"brand-mark\" aria-hidden=\"true\"><span class=\"ui-icon brand-icon\">OS</span></span><span>OSMAP</span></div>",
             "<nav class=\"top-actions\" aria-label=\"Primary\">",
             "<a href=\"/mailboxes\"{}>Mailboxes</a>",
             "<a href=\"/compose\"{}>Compose</a>",
