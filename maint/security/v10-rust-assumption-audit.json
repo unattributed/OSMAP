@@ -1454,7 +1454,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_support.rs",
       "kind": "expect_call",
-      "line": 419
+      "line": 420
     },
     {
       "classification": "production_adjacent_assumption",
@@ -5801,7 +5801,7 @@
       "line": 521
     }
   ],
-  "generated_at_utc": "2026-06-29T05:59:01Z",
+  "generated_at_utc": "2026-06-29T07:59:49Z",
   "non_claims": [
     "This audit does not claim that all Rust assumptions are safe.",
     "This audit does not claim that production request paths are panic-free.",
@@ -5856,7 +5856,7 @@
       "unwrap_call": 6
     },
     "classification_complete": true,
-    "inventory_sha256": "c56d4907a4eee10b90e7e16412ac263c70efaa790bb1d664de4163febfddaf17",
+    "inventory_sha256": "bbe0b55b8190c9a126312554f4ef3af2f9e7e475dbd169ae7efed8b59b035bd5",
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
