@@ -141,3 +141,4 @@ v14-check:
 	sh maint/security/osmap-v14-account-security-openpgp-controls-gate.sh
 	sh maint/security/osmap-v14-no-js-low-sbom-gate.sh
 	sh maint/security/osmap-v14-accessibility-responsive-gate.sh
+	sh maint/security/osmap-v14-final-regression-closeout-gate.sh
