@@ -1015,6 +1015,19 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
         model.source_attachments,
         model.selected_source_part_paths,
     );
+    let openpgp_compose_controls = concat!(
+        "<section class=\"openpgp-compose-controls panel\" aria-label=\"OpenPGP compose controls\" data-openpgp-compose-controls=\"ui-only\">",
+        "<h2>OpenPGP compose controls</h2>",
+        "<p>No account OpenPGP capability is configured for compose in this UI-only slice. No encrypt, sign, key lookup, private-key access, passphrase handling, or message mutation was attempted.</p>",
+        "<fieldset class=\"openpgp-compose-option-list\" disabled aria-describedby=\"openpgp-compose-boundary\">",
+        "<legend>Future account-controlled actions</legend>",
+        "<label for=\"openpgp-compose-encrypt\"><input id=\"openpgp-compose-encrypt\" type=\"checkbox\" disabled>Encrypt when configured</label>",
+        "<label for=\"openpgp-compose-sign\"><input id=\"openpgp-compose-sign\" type=\"checkbox\" disabled>Sign when configured</label>",
+        "<label for=\"openpgp-compose-recipients\"><input id=\"openpgp-compose-recipients\" type=\"checkbox\" disabled>Require configured recipient keys</label>",
+        "</fieldset>",
+        "<p id=\"openpgp-compose-boundary\" class=\"muted openpgp-compose-boundary-note\">Controls are presentation only and remain locked until account capability, recipient-key, and policy evidence exists. Send Message and Save Draft remain unchanged plaintext submission paths in this slice.</p>",
+        "</section>"
+    );
 
     TrustedHtml::from_template(format!(
         concat!(
@@ -1026,6 +1039,7 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
             "{}{}{}{}",
             "<form method=\"post\" action=\"/send\" enctype=\"multipart/form-data\">",
             "<input type=\"hidden\" name=\"csrf_token\" value=\"{}\">",
+            "{}",
             "{}",
             "{}",
             "{}",
@@ -1051,6 +1065,7 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
         draft_id_field,
         render_source_attachment_hidden_fields(model.source_mailbox_name, model.source_uid),
         source_attachment_controls,
+        openpgp_compose_controls,
         escape_html(model.to_value),
         escape_html(model.cc_value),
         escape_html(model.bcc_value),

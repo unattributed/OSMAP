@@ -7,7 +7,8 @@
     "V10 Slice 2 provides explicit v10-check and acceptance-check gate visibility for the current governance boundary.",
     "V10 Slice 3 classifies documentation placeholder and stale-status findings without expanding product or release claims.",
     "V10 Slice 4 classifies Rust assumptions for fail-closed governance without changing product behavior.",
-    "V10 Slice 5 narrows Rust fail-closed remediation by separating source test-module assumptions from production-adjacent runtime assumptions and gating that register."
+    "V10 Slice 5 narrows Rust fail-closed remediation by separating source test-module assumptions from production-adjacent runtime assumptions and gating that register.",
+    "V14 Slice 7 adds UI-only compose OpenPGP controls without OpenPGP runtime capability change."
   ],
   "assessed_source": {
     "branch": "v10-targeted-fail-closed-remediation",
@@ -53,7 +54,11 @@
     "that every high-relevance Rust assumption has been remediated",
     "that runtime Rust product behavior changed in Slice 5",
     "that production Rust paths are panic-free after Slice 5",
-    "that all high-relevance Rust assumptions have been remediated by Slice 5"
+    "that all high-relevance Rust assumptions have been remediated by Slice 5",
+    "that V14 Slice 7 encrypts outbound messages",
+    "that V14 Slice 7 signs outbound messages",
+    "that V14 Slice 7 performs OpenPGP key lookup or recipient-key resolution",
+    "that V14 Slice 7 handles passphrases or private keys"
   ],
   "gate_status": {
     "acceptance_check_definition": "Runs make security-check and make v10-check for local bounded acceptance.",
@@ -62,7 +67,7 @@
     "security_check": "preserved",
     "v10_check_target_present": true
   },
-  "generated_at_utc": "2026-06-29T03:20:57Z",
+  "generated_at_utc": "2026-06-29T04:24:11Z",
   "purpose": "Targeted fail-closed remediation for the V10 governance boundary.",
   "required_followups": [
     "Classify Rust fail-closed assumptions from Slice 0.",
@@ -84,7 +89,7 @@
     "audit_script_present": true,
     "classification_complete": true,
     "current_scanner_count": 725,
-    "inventory_sha256": "c71c841c23d3e39b535475a595f1827774d0526e0de72628c1c23f8c559aaf6a",
+    "inventory_sha256": "c4d1adf8b83c8a07a57effa8db82a04fad6e9684244bc34d3901048933dbf8cf",
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
@@ -109,7 +114,11 @@
     "maint/security/osmap-v10-rust-assumption-audit.py",
     "docs/V10_TARGETED_FAIL_CLOSED_REMEDIATION.md",
     "maint/security/v10-fail-closed-remediation.json",
-    "maint/security/osmap-v10-fail-closed-remediation.py"
+    "maint/security/osmap-v10-fail-closed-remediation.py",
+    "docs/V14_SLICE_7_COMPOSE_OPENPGP_CONTROLS.md",
+    "maint/security/osmap-v14-compose-openpgp-controls-gate.sh",
+    "src/http_ui.rs",
+    "src/http_support.rs"
   ],
   "targeted_fail_closed_remediation": {
     "classification_complete": true,
@@ -118,7 +127,7 @@
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
-    "refined_inventory_sha256": "7008bd3bc408f3159496d7e1286003f26d28e3078e2b2164373a0f2ed722eb4d",
+    "refined_inventory_sha256": "e0c0a77c87e91fc0c85d767e8e130564a7e4a65000011f3e13f0037853320903",
     "remediation_document": "docs/V10_TARGETED_FAIL_CLOSED_REMEDIATION.md",
     "remediation_document_present": true,
     "remediation_register": "maint/security/v10-fail-closed-remediation.json",
