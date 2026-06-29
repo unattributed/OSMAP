@@ -261,6 +261,7 @@ fn browser_css() -> &'static str {
         ".message-html a{word-break:break-word}",
         ".message-html a[href]::after{content:\" (\" attr(href) \")\";font-size:.86em;color:var(--muted);overflow-wrap:anywhere}",
         "@media (prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}",
+        "@media (max-width:40rem){.message-list-table th,.message-list-table td{padding:.5rem}.toolbar,.badge-list{align-items:stretch;flex-direction:column}.button-link,button{width:100%}}",
         "@media (max-width:56rem){.page-shell{padding:.75rem}.topbar,.section-header{align-items:stretch;flex-direction:column}.mail-shell,.mail-shell-three{grid-template-columns:1fr}.search-row{grid-template-columns:1fr}.login-card{padding:1.25rem}.login-title{font-size:2.35rem}.login-shield{width:3.8rem;height:3.8rem}.security-grid{grid-template-columns:1fr}.login-decor{display:none}}"
     )
 }

@@ -412,16 +412,16 @@ pub(crate) fn render_message_list_page(
         };
         let selection_cells = match (bulk_actions_available, archive_actions_available) {
             (true, true) => format!(
-                "<td><input form=\"bulk-move-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\"></td><td><input form=\"bulk-archive-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\"></td>",
-                message.uid, message.uid, message.uid, message.uid
+                "<td><input form=\"bulk-move-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\" aria-label=\"Select message #{} for bulk move\"></td><td><input form=\"bulk-archive-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\" aria-label=\"Select message #{} for bulk archive\"></td>",
+                message.uid, message.uid, message.uid, message.uid, message.uid, message.uid
             ),
             (true, false) => format!(
-                "<td><input form=\"bulk-move-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\"></td>",
-                message.uid, message.uid
+                "<td><input form=\"bulk-move-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\" aria-label=\"Select message #{} for bulk move\"></td>",
+                message.uid, message.uid, message.uid
             ),
             (false, true) => format!(
-                "<td><input form=\"bulk-archive-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\"></td>",
-                message.uid, message.uid
+                "<td><input form=\"bulk-archive-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\" aria-label=\"Select message #{} for bulk archive\"></td>",
+                message.uid, message.uid, message.uid
             ),
             (false, false) => String::new(),
         };
