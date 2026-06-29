@@ -1258,6 +1258,24 @@ pub(crate) fn render_settings_page(model: &SettingsPageModel<'_>) -> TrustedHtml
         } else {
             ""
         };
+    let account_security_panel = concat!(
+        r#"<section class="panel account-security-panel" aria-labelledby="account-security-title">"#,
+        r#"<h2 id="account-security-title">Account Security</h2>"#,
+        r#"<p class="muted">OpenPGP account controls are shown here as UI-only placeholders until a later evidenced slice wires configured-account policy into runtime behavior.</p>"#,
+        r#"<div class="openpgp-account-security" aria-label="OpenPGP account controls" data-openpgp-account-controls="ui-only">"#,
+        r#"<div class="badge-list openpgp-account-badges" aria-label="OpenPGP account status"><span class="badge badge-warn">OpenPGP not configured</span><span class="badge">UI-only controls</span><span class="badge">Protected by Default preserved</span></div>"#,
+        r#"<dl class="openpgp-state-list"><dt>Account capability</dt><dd>not configured</dd><dt>Signing policy</dt><dd>not active</dd><dt>Encryption policy</dt><dd>not active</dd><dt>Private key access</dt><dd>not attempted</dd><dt>Passphrase handling</dt><dd>not present</dd></dl>"#,
+        r#"<fieldset class="openpgp-account-control-set" disabled>"#,
+        r#"<legend>Future configured-account controls</legend>"#,
+        r#"<label for="openpgp-account-enable"><input id="openpgp-account-enable" type="checkbox" disabled> Enable OpenPGP for this account</label>"#,
+        r#"<label for="openpgp-account-require-sign"><input id="openpgp-account-require-sign" type="checkbox" disabled> Require signing when configured</label>"#,
+        r#"<label for="openpgp-account-require-encrypt"><input id="openpgp-account-require-encrypt" type="checkbox" disabled> Require encryption when configured</label>"#,
+        r#"</fieldset>"#,
+        r#"<p class="muted openpgp-account-boundary-note">These controls are placeholders for a later evidenced slice. They submit no OpenPGP form fields and do not activate cryptographic behavior.</p>"#,
+        r#"</div>"#,
+        r#"</section>"#,
+    );
+
     let archive_mailbox_name = model.archive_mailbox_name.unwrap_or("");
 
     TrustedHtml::from_template(format!(
@@ -1267,6 +1285,7 @@ pub(crate) fn render_settings_page(model: &SettingsPageModel<'_>) -> TrustedHtml
             "<section class=\"content-pane\">",
             "<h1>Settings</h1>{}{}",
             "<p class=\"muted\">This settings slice stays intentionally small. It controls HTML display preference and one optional archive mailbox shortcut without turning OSMAP into a broad preference UI.</p>",
+            "{}",
             "<form method=\"post\" action=\"/settings\" class=\"action-stack\">",
             "<input type=\"hidden\" name=\"csrf_token\" value=\"{}\">",
             "<fieldset class=\"panel\">",
@@ -1288,6 +1307,7 @@ pub(crate) fn render_settings_page(model: &SettingsPageModel<'_>) -> TrustedHtml
         app_header(model.canonical_username, model.csrf_token, "settings"),
         success_banner,
         error_banner,
+        account_security_panel,
         escape_html(model.csrf_token),
         prefer_sanitized_html_checked,
         prefer_plain_text_checked,

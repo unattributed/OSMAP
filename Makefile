@@ -138,3 +138,4 @@ v14-check:
 	sh maint/security/osmap-v14-reader-trust-strip-gate.sh
 	sh maint/security/osmap-v14-openpgp-reader-states-gate.sh
 	sh maint/security/osmap-v14-compose-openpgp-controls-gate.sh
+	sh maint/security/osmap-v14-account-security-openpgp-controls-gate.sh
