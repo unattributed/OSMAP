@@ -409,3 +409,4 @@ V7 production availability was previously reopened pending real-login, real-mail
 ## V14 Slice 6 OpenPGP Reader States
 
 - `V14_SLICE_6_OPENPGP_READER_STATES.md` records the functional, security, and governance acceptance model for UI-only OpenPGP reader-state presentation.
+- `V14_SLICE_7_COMPOSE_OPENPGP_CONTROLS.md`

@@ -1454,7 +1454,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_support.rs",
       "kind": "expect_call",
-      "line": 404
+      "line": 411
     },
     {
       "classification": "production_adjacent_assumption",
@@ -1462,7 +1462,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_ui.rs",
       "kind": "expect_call",
-      "line": 1318
+      "line": 1333
     },
     {
       "classification": "production_adjacent_assumption",
@@ -1470,7 +1470,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_ui.rs",
       "kind": "expect_call",
-      "line": 1320
+      "line": 1335
     },
     {
       "classification": "production_adjacent_assumption",
@@ -5801,7 +5801,7 @@
       "line": 521
     }
   ],
-  "generated_at_utc": "2026-06-29T03:20:57Z",
+  "generated_at_utc": "2026-06-29T04:24:11Z",
   "non_claims": [
     "This audit does not claim that all Rust assumptions are safe.",
     "This audit does not claim that production request paths are panic-free.",
@@ -5856,7 +5856,7 @@
       "unwrap_call": 6
     },
     "classification_complete": true,
-    "inventory_sha256": "c71c841c23d3e39b535475a595f1827774d0526e0de72628c1c23f8c559aaf6a",
+    "inventory_sha256": "c4d1adf8b83c8a07a57effa8db82a04fad6e9684244bc34d3901048933dbf8cf",
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
