@@ -813,11 +813,19 @@ pub fn render_message_view_page(
         ),
         escape_html(rendered.rendering_mode.as_str()),
     );
+    let openpgp_reader_states = concat!(
+        "<section class=\"openpgp-reader-states\" aria-label=\"OpenPGP reader states\" data-openpgp-reader-states=\"ui-only\">",
+        "<div><strong>OpenPGP reader state</strong><p>No account OpenPGP capability is configured for this reader session. No decrypt, verify, key discovery, private-key access, or passphrase handling was attempted.</p></div>",
+        "<dl class=\"openpgp-state-list\"><dt>Encrypted</dt><dd>not assessed</dd><dt>Decrypted locally</dt><dd>not produced</dd><dt>Signature</dt><dd>not verified</dd><dt>Signer</dt><dd>unknown until configured evidence exists</dd><dt>Missing key</dt><dd>not actionable in this UI-only slice</dd></dl>",
+        "<p class=\"muted openpgp-boundary-note\">Verified signatures do not make content safe. Future decrypted content must still pass Protected by Default rendering.</p>",
+        "</section>"
+    );
     TrustedHtml::from_template(format!(
         concat!(
             "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
             "{}",
             "<div class=\"mail-shell mail-shell-three\">",
+            "{}",
             "{}",
             "{}",
             "<section class=\"message-summary-pane\" aria-labelledby=\"message-title\">",
@@ -841,6 +849,7 @@ pub fn render_message_view_page(
         app_header(canonical_username, csrf_token, "mailboxes"),
         folder_pane(user_visible_mailboxes, Some(&rendered.mailbox_name)),
         protected_reader_strip,
+        openpgp_reader_states,
         escape_html(&url_encode(&rendered.mailbox_name)),
         escape_html(rendered.subject.as_deref().unwrap_or("<none>")),
         escape_html(rendered.from.as_deref().unwrap_or("<none>")),

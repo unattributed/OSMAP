@@ -405,3 +405,7 @@ V7 production availability was previously reopened pending real-login, real-mail
 ## V14 Slice 5 Modern Reader and Protected by Default Trust Strip
 
 - `V14_SLICE_5_MODERN_READER_TRUST_STRIP.md` records the functional, security, and governance acceptance model for the modern reader and Protected by Default trust-strip slice.
+
+## V14 Slice 6 OpenPGP Reader States
+
+- `V14_SLICE_6_OPENPGP_READER_STATES.md` records the functional, security, and governance acceptance model for UI-only OpenPGP reader-state presentation.
