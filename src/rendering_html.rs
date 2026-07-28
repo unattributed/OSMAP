@@ -346,6 +346,59 @@ mod tests {
     }
 
     #[test]
+    fn strips_mathml_annotation_xml_mutation_payloads() {
+        let sanitized = sanitize_html_body(
+            HtmlRenderingPolicy::default(),
+            concat!(
+                "<p>Visible security text</p>",
+                "<math><annotation-xml encoding=\"text/html\">",
+                "<style><img src=x onerror=alert('MATHML_XSS')></style>",
+                "</annotation-xml></math>"
+            ),
+            None,
+            16 * 1024,
+        )
+        .expect("sanitization should succeed")
+        .expect("safe visible text should remain");
+
+        assert!(sanitized.body_html.contains("Visible security text"));
+        assert!(!sanitized.body_html.contains("<math"));
+        assert!(!sanitized.body_html.contains("annotation-xml"));
+        assert!(!sanitized.body_html.contains("<style"));
+        assert!(!sanitized.body_html.contains("<img"));
+        assert!(!sanitized.body_html.contains("onerror"));
+        assert!(!sanitized.body_html.contains("MATHML_XSS"));
+    }
+
+    #[test]
+    fn strips_svg_animation_url_rewrite_payloads() {
+        let sanitized = sanitize_html_body(
+            HtmlRenderingPolicy::default(),
+            concat!(
+                "<p>Visible security text</p>",
+                "<svg xmlns=\"http://www.w3.org/2000/svg\"><a>",
+                "<set attributeName=\"href\" to=\"javascript:alert('SET_XSS')\"></set>",
+                "<animate attributeName=\"href\" values=\"https://safe.invalid;",
+                "javascript:alert('ANIMATE_XSS')\"></animate>",
+                "<text y=\"30\">click</text></a></svg>"
+            ),
+            None,
+            16 * 1024,
+        )
+        .expect("sanitization should succeed")
+        .expect("safe visible text should remain");
+
+        assert!(sanitized.body_html.contains("Visible security text"));
+        assert!(!sanitized.body_html.contains("<svg"));
+        assert!(!sanitized.body_html.contains("<set"));
+        assert!(!sanitized.body_html.contains("<animate"));
+        assert!(!sanitized.body_html.contains("attributeName"));
+        assert!(!sanitized.body_html.contains("javascript:"));
+        assert!(!sanitized.body_html.contains("SET_XSS"));
+        assert!(!sanitized.body_html.contains("ANIMATE_XSS"));
+    }
+
+    #[test]
     fn returns_none_when_html_sanitizes_to_no_visible_output() {
         let sanitized = sanitize_html_body(
             HtmlRenderingPolicy::default(),

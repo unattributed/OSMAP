@@ -2,7 +2,7 @@
 
 set -eu
 
-repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
+repo_root=$(CDPATH='' cd -- "$(dirname -- "$0")/../.." && pwd)
 source_makefile="${repo_root}/Makefile"
 source_pre_commit="${repo_root}/.githooks/pre-commit"
 source_pre_push="${repo_root}/.githooks/pre-push"
@@ -28,6 +28,16 @@ fake_security_dir="${fake_repo}/maint/security"
 hook_workdir="${fake_repo}/maint/security"
 bin_dir="${tmp_root}/bin"
 real_make=$(command -v make)
+source_git_dir=$(git -C "${repo_root}" rev-parse --absolute-git-dir)
+
+# This regression creates and operates on a separate temporary repository.
+# Remove the invoking hook's repository-local environment before doing so.
+while IFS= read -r git_local_env; do
+    [ -n "${git_local_env}" ] || continue
+    unset "${git_local_env}"
+done <<EOF_GIT_LOCAL_ENV
+$(git -C "${repo_root}" rev-parse --local-env-vars)
+EOF_GIT_LOCAL_ENV
 
 cleanup() {
 	rm -rf "${tmp_root}"
@@ -169,6 +179,7 @@ pre_commit_log="${tmp_root}/pre-commit.log"
 pre_commit_output=$(
 	cd "${hook_workdir}" && \
 		env \
+			GIT_DIR="${source_git_dir}" \
 			PATH="${bin_dir}:$PATH" \
 			OSMAP_TEST_HOOK_LOG_FILE="${pre_commit_log}" \
 			sh "${fake_hooks_dir}/pre-commit"
@@ -182,6 +193,7 @@ pre_push_output=$(
 	cd "${hook_workdir}" && \
 		printf '%s\n' "refs/heads/main HEAD refs/heads/main HEAD" | \
 		env \
+			GIT_DIR="${source_git_dir}" \
 			PATH="${bin_dir}:$PATH" \
 			OSMAP_TEST_HOOK_LOG_FILE="${pre_push_log}" \
 			sh "${fake_hooks_dir}/pre-push" origin git@github.com:unattributed/OSMAP.git

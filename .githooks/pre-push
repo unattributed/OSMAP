@@ -2,6 +2,16 @@
 
 set -eu
 
+# Git exports repository-local variables to hooks. Clear them before resolving
+# the worktree from the hook's current directory so nested Git repositories and
+# linked worktrees cannot inherit the caller's GIT_DIR or index path.
+while IFS= read -r git_local_env; do
+    [ -n "$git_local_env" ] || continue
+    unset "$git_local_env"
+done <<EOF_GIT_LOCAL_ENV
+$(git rev-parse --local-env-vars)
+EOF_GIT_LOCAL_ENV
+
 repo_root=$(git rev-parse --show-toplevel)
 cd "$repo_root"
 
