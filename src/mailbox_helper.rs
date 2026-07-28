@@ -925,6 +925,18 @@ mod tests {
         }
     }
 
+    fn parse_helper_test_response(response_bytes: Vec<u8>) -> MailboxHelperResponse {
+        let response_text = String::from_utf8(response_bytes).expect("response should be utf-8");
+        parse_response(
+            MailboxListingPolicy::default(),
+            MessageListPolicy::default(),
+            MessageSearchPolicy::default(),
+            MessageViewPolicy::default(),
+            &response_text,
+        )
+        .expect("response should parse")
+    }
+
     fn run_helper_round_trip(trusted_peer_uid: u32, request: &str) -> MailboxHelperResponse {
         let socket_path = temp_socket_path("mailbox-helper-authz");
         let backends = helper_test_backends();
@@ -945,24 +957,33 @@ mod tests {
         server.join().expect("helper thread should complete");
         let _ = fs::remove_file(&socket_path);
 
-        let response_text = String::from_utf8(response_bytes).expect("response should be utf-8");
-        parse_response(
-            MailboxListingPolicy::default(),
-            MessageListPolicy::default(),
-            MessageSearchPolicy::default(),
-            MessageViewPolicy::default(),
-            &response_text,
-        )
-        .expect("response should parse")
+        parse_helper_test_response(response_bytes)
+    }
+
+    fn run_untrusted_helper_round_trip(trusted_peer_uid: u32) -> MailboxHelperResponse {
+        let socket_path = temp_socket_path("mailbox-helper-authz");
+        let backends = helper_test_backends();
+        let server =
+            spawn_test_helper_with_trusted_uid(socket_path.clone(), backends, trusted_peer_uid);
+
+        wait_for_socket(&socket_path);
+        let mut client_stream =
+            UnixStream::connect(&socket_path).expect("test client should connect to helper");
+        client_stream
+            .set_read_timeout(Some(Duration::from_secs(1)))
+            .expect("test client read timeout should be configured");
+
+        let response_bytes = read_helper_test_response(&mut client_stream);
+        server.join().expect("helper thread should complete");
+        let _ = fs::remove_file(&socket_path);
+
+        parse_helper_test_response(response_bytes)
     }
 
     #[test]
     fn helper_rejects_untrusted_peer_uid() {
         let current_uid = test_runtime_uid();
-        let response = run_helper_round_trip(
-            current_uid.saturating_add(1),
-            &signed_mailbox_list_request_text("alice@example.com"),
-        );
+        let response = run_untrusted_helper_round_trip(current_uid.saturating_add(1));
 
         assert_eq!(
             response,
