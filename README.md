@@ -92,6 +92,16 @@ Detailed scope:
 
 ## Developer entry points
 
+Debian-family collaborators, including Parrot OS users, should begin with the
+[development environment bootstrap](docs/DEBIAN_DEVELOPMENT_BOOTSTRAP.md):
+
+```sh
+bash maint/development/bootstrap-debian.sh
+make verify-debian
+```
+
+Build and validation entry points:
+
 ```sh
 cargo build
 cargo test

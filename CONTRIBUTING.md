@@ -56,6 +56,21 @@ Contributors should preserve these project rules:
 If a proposed change has a non-obvious design or operational cost, open an
 issue first before investing heavily in implementation.
 
+## Development Workstation
+
+Debian-family collaborators, including Parrot OS users, should follow
+[`docs/DEBIAN_DEVELOPMENT_BOOTSTRAP.md`](docs/DEBIAN_DEVELOPMENT_BOOTSTRAP.md).
+
+The repository provides:
+
+- `make bootstrap-debian` for the reviewed package and toolchain installation;
+- `make verify-debian` for read-only workstation verification;
+- `rust-toolchain.toml` for the reviewed Rust, Clippy, and rustfmt versions.
+
+OpenBSD-specific runtime, service, `ksh`, `doas`, `signify`, and confinement
+validation remains authoritative on OpenBSD. Do not install tools merely to
+make Linux and OpenBSD inventories look identical.
+
 ## Development Workflow
 
 1. Start from the current repository state, not from stale summaries.

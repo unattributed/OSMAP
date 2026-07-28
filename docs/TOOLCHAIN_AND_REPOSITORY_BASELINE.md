@@ -101,6 +101,11 @@ The reviewed development and release toolchain is:
 - cargo-audit `0.22.1`
 - cargo-deny `0.18.3`
 
+`rust-toolchain.toml` pins the reviewed collaborator toolchain and components.
+The Debian-family installation and verification procedure is maintained in
+[`DEBIAN_DEVELOPMENT_BOOTSTRAP.md`](DEBIAN_DEVELOPMENT_BOOTSTRAP.md) and the
+repo-owned scripts under `maint/development/`.
+
 `Cargo.toml` declares Rust `1.86` as the minimum supported language floor. The
 developer gate runs build checks, tests, strict Clippy, formatting, supply-chain
 validation, security invariants, and the V8 regression matrices. Release mode

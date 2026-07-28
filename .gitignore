@@ -1,5 +1,6 @@
 PKCB/
 target/
+.venv/
 __pycache__/
 maint/live/latest-*.txt
 !maint/live/latest-host-v2-readiness-report.txt

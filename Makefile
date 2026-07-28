@@ -1,7 +1,13 @@
 # Keep developer entrypoints obvious and conservative so operators and
 # collaborating developers do not have to memorize cargo subcommands.
 
-.PHONY: build check test lint fmt-check supply-chain-check security-check release-check v6-check v7-check v7-rendering-regression-check v8-check v8-mail-workflow-check v8-attachment-safety-check v8-mailbox-operation-check v8-session-integrity-check v8-resource-robustness-check v8-final-regression-check install-hooks run v10-check v11-check v12-check v13-check v14-check acceptance-check
+.PHONY: bootstrap-debian verify-debian build check test lint fmt-check supply-chain-check security-check release-check v6-check v7-check v7-rendering-regression-check v8-check v8-mail-workflow-check v8-attachment-safety-check v8-mailbox-operation-check v8-session-integrity-check v8-resource-robustness-check v8-final-regression-check install-hooks run v10-check v11-check v12-check v13-check v14-check acceptance-check
+
+bootstrap-debian:
+	bash maint/development/bootstrap-debian.sh
+
+verify-debian:
+	bash maint/development/verify-debian.sh
 
 build:
 	cargo build
