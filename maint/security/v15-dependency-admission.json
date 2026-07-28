@@ -1,0 +1,493 @@
+{
+  "cargo_baseline": {
+    "cargo_lock_sha256": "83af34469de7f7c8c4d6f02dbf9b1289fbf8b7881ee7f24bfd6748f378de266e",
+    "cargo_toml_sha256": "f8dc01188aa4815033c8405ffab5050a404972312dbbd7f99cae481b1938418f",
+    "locked_package_count": 82
+  },
+  "dependencies": [
+    {
+      "decision": "accepted_existing_baseline",
+      "default_feature_review": {
+        "rationale": "Default features are enabled and explicitly recorded; any change requires a new admission decision.",
+        "status": "accepted_existing_default_features"
+      },
+      "default_features": true,
+      "feature_minimisation": {
+        "rationale": "The accepted manifest requests features []. Any feature change invalidates this record.",
+        "status": "accepted_existing_feature_set"
+      },
+      "features": [],
+      "licence_compatibility": {
+        "rationale": "Licence compatibility is enforced by deny.toml and cargo deny --locked check licenses; no project exception is recorded.",
+        "status": "enforced_by_cargo_deny"
+      },
+      "locally_maintained_code_removed": "None in this implementation; this dependency already existed at the accepted baseline.",
+      "maintainer_provenance": {
+        "rationale": "Sourced through the approved crates.io registry and pinned by Cargo.lock checksum. This baseline does not claim a fresh independent identity audit of every upstream maintainer.",
+        "status": "registry_and_lockfile_provenance"
+      },
+      "maintenance_status": {
+        "rationale": "The locked version is part of the accepted build and passes current RustSec, source, licence, and duplicate-version gates. Upstream activity must be reassessed when it changes.",
+        "status": "accepted_existing_baseline"
+      },
+      "name": "ammonia",
+      "openbsd_compatibility": {
+        "rationale": "Already in the accepted OSMAP build validated on the authoritative OpenBSD target. A new version or feature set requires renewed validation.",
+        "status": "validated_existing_runtime_baseline"
+      },
+      "optional": false,
+      "purpose": "Sanitise untrusted HTML email content to OSMAP's narrow browser-safe subset.",
+      "removal_analysis": "Removal would require disabling HTML rendering or implementing and maintaining equivalent standards-aware sanitisation locally.",
+      "replacement_analysis": "Replace only with a smaller, actively maintained HTML5-aware sanitizer that passes the complete hostile-content corpus.",
+      "requirement": "4.1.4",
+      "sbom_effect": {
+        "rationale": "This implementation adds no dependency. The accepted baseline contains eight direct declarations and 82 locked packages.",
+        "status": "existing_baseline_no_delta"
+      },
+      "scope": "dependencies",
+      "source": "crates.io",
+      "transitive_dependency_inventory": {
+        "cargo_lock_sha256": "83af34469de7f7c8c4d6f02dbf9b1289fbf8b7881ee7f24bfd6748f378de266e",
+        "locked_package_count": 82,
+        "rationale": "The exact transitive graph is bound by the reviewed Cargo.lock digest and locked package count.",
+        "status": "bound_to_reviewed_lockfile"
+      },
+      "trust_boundary_justification": "Processes attacker-controlled message HTML immediately before server-rendered browser output.",
+      "trusted_computing_base_effect": "Existing accepted runtime trusted-computing-base component; this admission implementation adds governance only and no runtime delta.",
+      "unsafe_code_assessment": {
+        "rationale": "No complete source-level unsafe audit of this existing upstream crate and transitive graph is claimed. New or changed dependencies require a fresh unsafe-code assessment.",
+        "status": "not_independently_source_audited_existing_baseline"
+      },
+      "vulnerability_review": {
+        "rationale": "The supply-chain gate runs cargo audit --deny warnings against the refreshed RustSec advisory database.",
+        "status": "enforced_by_rustsec_gate"
+      }
+    },
+    {
+      "decision": "accepted_existing_baseline",
+      "default_feature_review": {
+        "rationale": "Default features are enabled and explicitly recorded; any change requires a new admission decision.",
+        "status": "accepted_existing_default_features"
+      },
+      "default_features": true,
+      "feature_minimisation": {
+        "rationale": "The accepted manifest requests features []. Any feature change invalidates this record.",
+        "status": "accepted_existing_feature_set"
+      },
+      "features": [],
+      "licence_compatibility": {
+        "rationale": "Licence compatibility is enforced by deny.toml and cargo deny --locked check licenses; no project exception is recorded.",
+        "status": "enforced_by_cargo_deny"
+      },
+      "locally_maintained_code_removed": "None in this implementation; this dependency already existed at the accepted baseline.",
+      "maintainer_provenance": {
+        "rationale": "Sourced through the approved crates.io registry and pinned by Cargo.lock checksum. This baseline does not claim a fresh independent identity audit of every upstream maintainer.",
+        "status": "registry_and_lockfile_provenance"
+      },
+      "maintenance_status": {
+        "rationale": "The locked version is part of the accepted build and passes current RustSec, source, licence, and duplicate-version gates. Upstream activity must be reassessed when it changes.",
+        "status": "accepted_existing_baseline"
+      },
+      "name": "getrandom",
+      "openbsd_compatibility": {
+        "rationale": "Already in the accepted OSMAP build validated on the authoritative OpenBSD target. A new version or feature set requires renewed validation.",
+        "status": "validated_existing_runtime_baseline"
+      },
+      "optional": false,
+      "purpose": "Obtain operating-system randomness for security tokens and collision-resistant temporary identifiers.",
+      "removal_analysis": "Removal is not acceptable while OSMAP creates bearer tokens, nonce material, or collision-resistant temporary names.",
+      "replacement_analysis": "Replacement requires an equally direct, audited operating-system randomness interface with OpenBSD support.",
+      "requirement": "0.2.16",
+      "sbom_effect": {
+        "rationale": "This implementation adds no dependency. The accepted baseline contains eight direct declarations and 82 locked packages.",
+        "status": "existing_baseline_no_delta"
+      },
+      "scope": "dependencies",
+      "source": "crates.io",
+      "transitive_dependency_inventory": {
+        "cargo_lock_sha256": "83af34469de7f7c8c4d6f02dbf9b1289fbf8b7881ee7f24bfd6748f378de266e",
+        "locked_package_count": 82,
+        "rationale": "The exact transitive graph is bound by the reviewed Cargo.lock digest and locked package count.",
+        "status": "bound_to_reviewed_lockfile"
+      },
+      "trust_boundary_justification": "Bridges OSMAP security-sensitive token generation to the operating-system random source.",
+      "trusted_computing_base_effect": "Existing accepted runtime trusted-computing-base component; this admission implementation adds governance only and no runtime delta.",
+      "unsafe_code_assessment": {
+        "rationale": "No complete source-level unsafe audit of this existing upstream crate and transitive graph is claimed. New or changed dependencies require a fresh unsafe-code assessment.",
+        "status": "not_independently_source_audited_existing_baseline"
+      },
+      "vulnerability_review": {
+        "rationale": "The supply-chain gate runs cargo audit --deny warnings against the refreshed RustSec advisory database.",
+        "status": "enforced_by_rustsec_gate"
+      }
+    },
+    {
+      "decision": "accepted_existing_baseline",
+      "default_feature_review": {
+        "rationale": "Default features are enabled and explicitly recorded; any change requires a new admission decision.",
+        "status": "accepted_existing_default_features"
+      },
+      "default_features": true,
+      "feature_minimisation": {
+        "rationale": "The accepted manifest requests features []. Any feature change invalidates this record.",
+        "status": "accepted_existing_feature_set"
+      },
+      "features": [],
+      "licence_compatibility": {
+        "rationale": "Licence compatibility is enforced by deny.toml and cargo deny --locked check licenses; no project exception is recorded.",
+        "status": "enforced_by_cargo_deny"
+      },
+      "locally_maintained_code_removed": "None in this implementation; this dependency already existed at the accepted baseline.",
+      "maintainer_provenance": {
+        "rationale": "Sourced through the approved crates.io registry and pinned by Cargo.lock checksum. This baseline does not claim a fresh independent identity audit of every upstream maintainer.",
+        "status": "registry_and_lockfile_provenance"
+      },
+      "maintenance_status": {
+        "rationale": "The locked version is part of the accepted build and passes current RustSec, source, licence, and duplicate-version gates. Upstream activity must be reassessed when it changes.",
+        "status": "accepted_existing_baseline"
+      },
+      "name": "hmac",
+      "openbsd_compatibility": {
+        "rationale": "Already in the accepted OSMAP build validated on the authoritative OpenBSD target. A new version or feature set requires renewed validation.",
+        "status": "validated_existing_runtime_baseline"
+      },
+      "optional": false,
+      "purpose": "Provide the generic HMAC construction used by TOTP and authenticated helper protocols.",
+      "removal_analysis": "Removal would require removing HMAC-backed authentication and protocol-integrity features.",
+      "replacement_analysis": "Replacement requires a maintained RustCrypto-compatible HMAC implementation with equivalent constant-time behaviour.",
+      "requirement": "0.12.1",
+      "sbom_effect": {
+        "rationale": "This implementation adds no dependency. The accepted baseline contains eight direct declarations and 82 locked packages.",
+        "status": "existing_baseline_no_delta"
+      },
+      "scope": "dependencies",
+      "source": "crates.io",
+      "transitive_dependency_inventory": {
+        "cargo_lock_sha256": "83af34469de7f7c8c4d6f02dbf9b1289fbf8b7881ee7f24bfd6748f378de266e",
+        "locked_package_count": 82,
+        "rationale": "The exact transitive graph is bound by the reviewed Cargo.lock digest and locked package count.",
+        "status": "bound_to_reviewed_lockfile"
+      },
+      "trust_boundary_justification": "Handles cryptographic authentication material and integrity decisions.",
+      "trusted_computing_base_effect": "Existing accepted runtime trusted-computing-base component; this admission implementation adds governance only and no runtime delta.",
+      "unsafe_code_assessment": {
+        "rationale": "No complete source-level unsafe audit of this existing upstream crate and transitive graph is claimed. New or changed dependencies require a fresh unsafe-code assessment.",
+        "status": "not_independently_source_audited_existing_baseline"
+      },
+      "vulnerability_review": {
+        "rationale": "The supply-chain gate runs cargo audit --deny warnings against the refreshed RustSec advisory database.",
+        "status": "enforced_by_rustsec_gate"
+      }
+    },
+    {
+      "decision": "accepted_existing_baseline",
+      "default_feature_review": {
+        "rationale": "Default features are enabled and explicitly recorded; any change requires a new admission decision.",
+        "status": "accepted_existing_default_features"
+      },
+      "default_features": true,
+      "feature_minimisation": {
+        "rationale": "The accepted manifest requests features []. Any feature change invalidates this record.",
+        "status": "accepted_existing_feature_set"
+      },
+      "features": [],
+      "licence_compatibility": {
+        "rationale": "Licence compatibility is enforced by deny.toml and cargo deny --locked check licenses; no project exception is recorded.",
+        "status": "enforced_by_cargo_deny"
+      },
+      "locally_maintained_code_removed": "None in this implementation; this dependency already existed at the accepted baseline.",
+      "maintainer_provenance": {
+        "rationale": "Sourced through the approved crates.io registry and pinned by Cargo.lock checksum. This baseline does not claim a fresh independent identity audit of every upstream maintainer.",
+        "status": "registry_and_lockfile_provenance"
+      },
+      "maintenance_status": {
+        "rationale": "The locked version is part of the accepted build and passes current RustSec, source, licence, and duplicate-version gates. Upstream activity must be reassessed when it changes.",
+        "status": "accepted_existing_baseline"
+      },
+      "name": "libc",
+      "openbsd_compatibility": {
+        "rationale": "Already in the accepted OSMAP build validated on the authoritative OpenBSD target. A new version or feature set requires renewed validation.",
+        "status": "validated_existing_runtime_baseline"
+      },
+      "optional": false,
+      "purpose": "Expose narrowly reviewed operating-system interfaces required for OpenBSD confinement and peer credential handling.",
+      "removal_analysis": "Removal would require eliminating the OpenBSD confinement and credential interfaces that depend on libc bindings.",
+      "replacement_analysis": "Replacement requires equivalent audited OpenBSD bindings without expanding unsafe or platform-specific code.",
+      "requirement": "0.2.177",
+      "sbom_effect": {
+        "rationale": "This implementation adds no dependency. The accepted baseline contains eight direct declarations and 82 locked packages.",
+        "status": "existing_baseline_no_delta"
+      },
+      "scope": "dependencies",
+      "source": "crates.io",
+      "transitive_dependency_inventory": {
+        "cargo_lock_sha256": "83af34469de7f7c8c4d6f02dbf9b1289fbf8b7881ee7f24bfd6748f378de266e",
+        "locked_package_count": 82,
+        "rationale": "The exact transitive graph is bound by the reviewed Cargo.lock digest and locked package count.",
+        "status": "bound_to_reviewed_lockfile"
+      },
+      "trust_boundary_justification": "Crosses the Rust-to-operating-system boundary and is the only accepted source of low-level platform bindings.",
+      "trusted_computing_base_effect": "Existing accepted runtime trusted-computing-base component; this admission implementation adds governance only and no runtime delta.",
+      "unsafe_code_assessment": {
+        "rationale": "No complete source-level unsafe audit of this existing upstream crate and transitive graph is claimed. New or changed dependencies require a fresh unsafe-code assessment.",
+        "status": "not_independently_source_audited_existing_baseline"
+      },
+      "vulnerability_review": {
+        "rationale": "The supply-chain gate runs cargo audit --deny warnings against the refreshed RustSec advisory database.",
+        "status": "enforced_by_rustsec_gate"
+      }
+    },
+    {
+      "decision": "accepted_existing_baseline",
+      "default_feature_review": {
+        "rationale": "Default features are enabled and explicitly recorded; any change requires a new admission decision.",
+        "status": "accepted_existing_default_features"
+      },
+      "default_features": true,
+      "feature_minimisation": {
+        "rationale": "The accepted manifest requests features ['derive']. Any feature change invalidates this record.",
+        "status": "accepted_existing_feature_set"
+      },
+      "features": [
+        "derive"
+      ],
+      "licence_compatibility": {
+        "rationale": "Licence compatibility is enforced by deny.toml and cargo deny --locked check licenses; no project exception is recorded.",
+        "status": "enforced_by_cargo_deny"
+      },
+      "locally_maintained_code_removed": "None in this implementation; this dependency already existed at the accepted baseline.",
+      "maintainer_provenance": {
+        "rationale": "Sourced through the approved crates.io registry and pinned by Cargo.lock checksum. This baseline does not claim a fresh independent identity audit of every upstream maintainer.",
+        "status": "registry_and_lockfile_provenance"
+      },
+      "maintenance_status": {
+        "rationale": "The locked version is part of the accepted build and passes current RustSec, source, licence, and duplicate-version gates. Upstream activity must be reassessed when it changes.",
+        "status": "accepted_existing_baseline"
+      },
+      "name": "serde",
+      "openbsd_compatibility": {
+        "rationale": "Already in the accepted OSMAP build validated on the authoritative OpenBSD target. A new version or feature set requires renewed validation.",
+        "status": "validated_existing_runtime_baseline"
+      },
+      "optional": false,
+      "purpose": "Derive bounded structured serialisation and deserialisation for repository-owned state and helper protocol types.",
+      "removal_analysis": "Removal would require replacing all derived structured serialisation with locally maintained parsers and encoders.",
+      "replacement_analysis": "Replacement requires an equally mature, auditable typed serialisation framework with smaller or equivalent TCB impact.",
+      "requirement": "1.0.228",
+      "sbom_effect": {
+        "rationale": "This implementation adds no dependency. The accepted baseline contains eight direct declarations and 82 locked packages.",
+        "status": "existing_baseline_no_delta"
+      },
+      "scope": "dependencies",
+      "source": "crates.io",
+      "transitive_dependency_inventory": {
+        "cargo_lock_sha256": "83af34469de7f7c8c4d6f02dbf9b1289fbf8b7881ee7f24bfd6748f378de266e",
+        "locked_package_count": 82,
+        "rationale": "The exact transitive graph is bound by the reviewed Cargo.lock digest and locked package count.",
+        "status": "bound_to_reviewed_lockfile"
+      },
+      "trust_boundary_justification": "Parses data crossing file, process, and helper-protocol trust boundaries.",
+      "trusted_computing_base_effect": "Existing accepted runtime trusted-computing-base component; this admission implementation adds governance only and no runtime delta.",
+      "unsafe_code_assessment": {
+        "rationale": "No complete source-level unsafe audit of this existing upstream crate and transitive graph is claimed. New or changed dependencies require a fresh unsafe-code assessment.",
+        "status": "not_independently_source_audited_existing_baseline"
+      },
+      "vulnerability_review": {
+        "rationale": "The supply-chain gate runs cargo audit --deny warnings against the refreshed RustSec advisory database.",
+        "status": "enforced_by_rustsec_gate"
+      }
+    },
+    {
+      "decision": "accepted_existing_baseline",
+      "default_feature_review": {
+        "rationale": "Default features are enabled and explicitly recorded; any change requires a new admission decision.",
+        "status": "accepted_existing_default_features"
+      },
+      "default_features": true,
+      "feature_minimisation": {
+        "rationale": "The accepted manifest requests features []. Any feature change invalidates this record.",
+        "status": "accepted_existing_feature_set"
+      },
+      "features": [],
+      "licence_compatibility": {
+        "rationale": "Licence compatibility is enforced by deny.toml and cargo deny --locked check licenses; no project exception is recorded.",
+        "status": "enforced_by_cargo_deny"
+      },
+      "locally_maintained_code_removed": "None in this implementation; this dependency already existed at the accepted baseline.",
+      "maintainer_provenance": {
+        "rationale": "Sourced through the approved crates.io registry and pinned by Cargo.lock checksum. This baseline does not claim a fresh independent identity audit of every upstream maintainer.",
+        "status": "registry_and_lockfile_provenance"
+      },
+      "maintenance_status": {
+        "rationale": "The locked version is part of the accepted build and passes current RustSec, source, licence, and duplicate-version gates. Upstream activity must be reassessed when it changes.",
+        "status": "accepted_existing_baseline"
+      },
+      "name": "serde_json",
+      "openbsd_compatibility": {
+        "rationale": "Already in the accepted OSMAP build validated on the authoritative OpenBSD target. A new version or feature set requires renewed validation.",
+        "status": "validated_existing_runtime_baseline"
+      },
+      "optional": false,
+      "purpose": "Encode and decode bounded JSON used by repository-owned state, evidence, and helper protocol surfaces.",
+      "removal_analysis": "Removal would require replacing JSON protocol and evidence surfaces or maintaining a custom JSON parser.",
+      "replacement_analysis": "Replacement requires an equally strict JSON implementation compatible with the existing serde model.",
+      "requirement": "1.0.145",
+      "sbom_effect": {
+        "rationale": "This implementation adds no dependency. The accepted baseline contains eight direct declarations and 82 locked packages.",
+        "status": "existing_baseline_no_delta"
+      },
+      "scope": "dependencies",
+      "source": "crates.io",
+      "transitive_dependency_inventory": {
+        "cargo_lock_sha256": "83af34469de7f7c8c4d6f02dbf9b1289fbf8b7881ee7f24bfd6748f378de266e",
+        "locked_package_count": 82,
+        "rationale": "The exact transitive graph is bound by the reviewed Cargo.lock digest and locked package count.",
+        "status": "bound_to_reviewed_lockfile"
+      },
+      "trust_boundary_justification": "Parses structured data crossing file, helper, and evidence boundaries.",
+      "trusted_computing_base_effect": "Existing accepted runtime trusted-computing-base component; this admission implementation adds governance only and no runtime delta.",
+      "unsafe_code_assessment": {
+        "rationale": "No complete source-level unsafe audit of this existing upstream crate and transitive graph is claimed. New or changed dependencies require a fresh unsafe-code assessment.",
+        "status": "not_independently_source_audited_existing_baseline"
+      },
+      "vulnerability_review": {
+        "rationale": "The supply-chain gate runs cargo audit --deny warnings against the refreshed RustSec advisory database.",
+        "status": "enforced_by_rustsec_gate"
+      }
+    },
+    {
+      "decision": "accepted_existing_baseline",
+      "default_feature_review": {
+        "rationale": "Default features are enabled and explicitly recorded; any change requires a new admission decision.",
+        "status": "accepted_existing_default_features"
+      },
+      "default_features": true,
+      "feature_minimisation": {
+        "rationale": "The accepted manifest requests features []. Any feature change invalidates this record.",
+        "status": "accepted_existing_feature_set"
+      },
+      "features": [],
+      "licence_compatibility": {
+        "rationale": "Licence compatibility is enforced by deny.toml and cargo deny --locked check licenses; no project exception is recorded.",
+        "status": "enforced_by_cargo_deny"
+      },
+      "locally_maintained_code_removed": "None in this implementation; this dependency already existed at the accepted baseline.",
+      "maintainer_provenance": {
+        "rationale": "Sourced through the approved crates.io registry and pinned by Cargo.lock checksum. This baseline does not claim a fresh independent identity audit of every upstream maintainer.",
+        "status": "registry_and_lockfile_provenance"
+      },
+      "maintenance_status": {
+        "rationale": "The locked version is part of the accepted build and passes current RustSec, source, licence, and duplicate-version gates. Upstream activity must be reassessed when it changes.",
+        "status": "accepted_existing_baseline"
+      },
+      "name": "sha1",
+      "openbsd_compatibility": {
+        "rationale": "Already in the accepted OSMAP build validated on the authoritative OpenBSD target. A new version or feature set requires renewed validation.",
+        "status": "validated_existing_runtime_baseline"
+      },
+      "optional": false,
+      "purpose": "Provide HMAC-SHA1 for RFC 6238 TOTP interoperability; it is not used as a general collision-resistant hash.",
+      "removal_analysis": "Removal requires retiring SHA-1-based TOTP compatibility or replacing TOTP as an authentication factor.",
+      "replacement_analysis": "Replacement is constrained by deployed authenticator interoperability; migration requires an explicit compatibility plan.",
+      "requirement": "0.10.6",
+      "sbom_effect": {
+        "rationale": "This implementation adds no dependency. The accepted baseline contains eight direct declarations and 82 locked packages.",
+        "status": "existing_baseline_no_delta"
+      },
+      "scope": "dependencies",
+      "source": "crates.io",
+      "transitive_dependency_inventory": {
+        "cargo_lock_sha256": "83af34469de7f7c8c4d6f02dbf9b1289fbf8b7881ee7f24bfd6748f378de266e",
+        "locked_package_count": 82,
+        "rationale": "The exact transitive graph is bound by the reviewed Cargo.lock digest and locked package count.",
+        "status": "bound_to_reviewed_lockfile"
+      },
+      "trust_boundary_justification": "Processes TOTP secret material and authentication codes.",
+      "trusted_computing_base_effect": "Existing accepted runtime trusted-computing-base component; this admission implementation adds governance only and no runtime delta.",
+      "unsafe_code_assessment": {
+        "rationale": "No complete source-level unsafe audit of this existing upstream crate and transitive graph is claimed. New or changed dependencies require a fresh unsafe-code assessment.",
+        "status": "not_independently_source_audited_existing_baseline"
+      },
+      "vulnerability_review": {
+        "rationale": "The supply-chain gate runs cargo audit --deny warnings against the refreshed RustSec advisory database.",
+        "status": "enforced_by_rustsec_gate"
+      }
+    },
+    {
+      "decision": "accepted_existing_baseline",
+      "default_feature_review": {
+        "rationale": "Default features are enabled and explicitly recorded; any change requires a new admission decision.",
+        "status": "accepted_existing_default_features"
+      },
+      "default_features": true,
+      "feature_minimisation": {
+        "rationale": "The accepted manifest requests features []. Any feature change invalidates this record.",
+        "status": "accepted_existing_feature_set"
+      },
+      "features": [],
+      "licence_compatibility": {
+        "rationale": "Licence compatibility is enforced by deny.toml and cargo deny --locked check licenses; no project exception is recorded.",
+        "status": "enforced_by_cargo_deny"
+      },
+      "locally_maintained_code_removed": "None in this implementation; this dependency already existed at the accepted baseline.",
+      "maintainer_provenance": {
+        "rationale": "Sourced through the approved crates.io registry and pinned by Cargo.lock checksum. This baseline does not claim a fresh independent identity audit of every upstream maintainer.",
+        "status": "registry_and_lockfile_provenance"
+      },
+      "maintenance_status": {
+        "rationale": "The locked version is part of the accepted build and passes current RustSec, source, licence, and duplicate-version gates. Upstream activity must be reassessed when it changes.",
+        "status": "accepted_existing_baseline"
+      },
+      "name": "sha2",
+      "openbsd_compatibility": {
+        "rationale": "Already in the accepted OSMAP build validated on the authoritative OpenBSD target. A new version or feature set requires renewed validation.",
+        "status": "validated_existing_runtime_baseline"
+      },
+      "optional": false,
+      "purpose": "Provide SHA-256 family hashing for bounded identifiers, digests, and authenticated protocol support.",
+      "removal_analysis": "Removal would require replacing every SHA-256-backed identifier and integrity construction.",
+      "replacement_analysis": "Replacement requires a maintained cryptographic hash implementation with equivalent API and OpenBSD portability.",
+      "requirement": "0.10.9",
+      "sbom_effect": {
+        "rationale": "This implementation adds no dependency. The accepted baseline contains eight direct declarations and 82 locked packages.",
+        "status": "existing_baseline_no_delta"
+      },
+      "scope": "dependencies",
+      "source": "crates.io",
+      "transitive_dependency_inventory": {
+        "cargo_lock_sha256": "83af34469de7f7c8c4d6f02dbf9b1289fbf8b7881ee7f24bfd6748f378de266e",
+        "locked_package_count": 82,
+        "rationale": "The exact transitive graph is bound by the reviewed Cargo.lock digest and locked package count.",
+        "status": "bound_to_reviewed_lockfile"
+      },
+      "trust_boundary_justification": "Processes security-relevant digests and integrity-bound values.",
+      "trusted_computing_base_effect": "Existing accepted runtime trusted-computing-base component; this admission implementation adds governance only and no runtime delta.",
+      "unsafe_code_assessment": {
+        "rationale": "No complete source-level unsafe audit of this existing upstream crate and transitive graph is claimed. New or changed dependencies require a fresh unsafe-code assessment.",
+        "status": "not_independently_source_audited_existing_baseline"
+      },
+      "vulnerability_review": {
+        "rationale": "The supply-chain gate runs cargo audit --deny warnings against the refreshed RustSec advisory database.",
+        "status": "enforced_by_rustsec_gate"
+      }
+    }
+  ],
+  "policy": {
+    "admission_model": "risk_based",
+    "change_triggers": [
+      "dependency_addition",
+      "dependency_removal",
+      "version_change",
+      "source_change",
+      "scope_change",
+      "optional_flag_change",
+      "feature_change",
+      "default_feature_change",
+      "Cargo.lock_change"
+    ],
+    "fail_closed": true,
+    "numeric_dependency_ceiling": null,
+    "scope": "all_direct_cargo_dependencies"
+  },
+  "schema": "osmap-v15-risk-based-dependency-admission-v1"
+}

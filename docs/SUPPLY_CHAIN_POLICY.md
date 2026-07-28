@@ -88,6 +88,50 @@ The gate fails on:
 No project exception is currently recorded for a vulnerable advisory,
 unapproved source, duplicate dependency version, or unapproved license.
 
+## Risk-Based Dependency Admission
+
+OSMAP does not use an arbitrary dependency-count or SBOM-size ceiling. A small
+count can still hide a high-risk parser, cryptographic, native, or heavily
+transitive dependency, while a larger count can be justified when the total
+trusted-computing-base effect is understood and bounded.
+
+Every direct Cargo dependency, including development, build, and target-specific
+dependencies, must have a matching entry in
+`maint/security/v15-dependency-admission.json`. The admission record is
+machine-checked against `Cargo.toml` and `Cargo.lock` and must include:
+
+- purpose and trust-boundary justification
+- maintainer and source provenance
+- licence compatibility
+- maintenance status
+- OpenBSD compatibility
+- unsafe-code assessment
+- transitive dependency inventory
+- vulnerability review
+- selected-feature minimisation
+- default-feature review
+- replacement and removal analysis
+- SBOM effect
+- locally maintained code removed
+- total trusted-computing-base effect
+
+The record binds the exact manifest and lockfile digests. A dependency addition,
+removal, version change, source change, scope change, optionality change, or
+feature change therefore fails closed until the admission record is reviewed
+and refreshed.
+
+Existing dependencies are recorded as an accepted baseline without claiming an
+independent source audit that has not been performed. New or changed
+dependencies require a new risk decision rather than inheriting the baseline
+decision.
+
+The executable controls are:
+
+- `maint/security/osmap-v15-dependency-admission-gate.py`
+- `maint/security/test-osmap-v15-dependency-admission-gate.py`
+- the `risk-based direct dependency admission` phase of
+  `maint/security/osmap-supply-chain-check.sh`
+
 ## Update Policy
 
 Dependency updates should be:

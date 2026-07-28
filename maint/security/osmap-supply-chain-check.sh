@@ -96,6 +96,11 @@ if [ "$deny_version" != "$OSMAP_CARGO_DENY_VERSION" ]; then
 	exit 1
 fi
 
+echo "==> risk-based direct dependency admission"
+python3 -B maint/security/osmap-v15-dependency-admission-gate.py \
+    --repo "$repo_root" \
+    --record maint/security/v15-dependency-admission.json
+
 echo "==> cargo audit vulnerable and yanked advisories"
 if command -v git >/dev/null 2>&1; then
 	if [ -d "$OSMAP_RUSTSEC_ADVISORY_DB_PATH/.git" ]; then
