@@ -331,7 +331,7 @@ fn parse_headers(
             return Err(parse_error("malformed http header line"));
         };
 
-        let normalized_name = name.trim().to_ascii_lowercase();
+        let normalized_name = name.to_ascii_lowercase();
         if normalized_name.is_empty() {
             return Err(parse_error("http header name must not be empty"));
         }
@@ -421,7 +421,7 @@ fn parse_content_type_header_bytes(header_bytes: &[u8]) -> Option<&str> {
     let header_text = std::str::from_utf8(header_bytes).ok()?;
     for line in header_text.lines().skip(1) {
         if let Some((name, value)) = line.split_once(':') {
-            if name.trim().eq_ignore_ascii_case("content-type") {
+            if name.eq_ignore_ascii_case("content-type") {
                 return Some(value.trim());
             }
         }
@@ -669,5 +669,51 @@ mod tests {
         let request = request_with_headers(&[("X-Forwarded-For", "198.51.100.13, 198.51.100.24")]);
 
         assert_eq!(effective_remote_addr(&request, "127.0.0.1"), "127.0.0.1");
+    }
+
+    fn parse_error_reason(request: &[u8], policy: &HttpPolicy) -> String {
+        match crate::http::parse_http_request_bytes(request, policy) {
+            Ok(_) => "request unexpectedly parsed".to_string(),
+            Err(error) => error.reason,
+        }
+    }
+
+    #[test]
+    fn rejects_whitespace_between_header_names_and_colons() {
+        let requests: &[&[u8]] = &[
+            b"GET /login HTTP/1.1\r\nHost : localhost\r\n\r\n",
+            b"GET /login HTTP/1.1\r\nHost\t: localhost\r\n\r\n",
+            b"GET /login HTTP/1.1\r\n Host: localhost\r\n\r\n",
+            b"POST /login HTTP/1.1\r\nHost: localhost\r\nContent-Length : 0\r\n\r\n",
+            b"POST /login HTTP/1.1\r\nHost: localhost\r\nTransfer-Encoding : chunked\r\nContent-Length: 0\r\n\r\n",
+        ];
+
+        for request in requests {
+            assert_eq!(
+                parse_error_reason(request, &HttpPolicy::default()),
+                "http header name contained unsupported characters"
+            );
+        }
+    }
+
+    #[test]
+    fn malformed_content_type_name_does_not_expand_body_budget() {
+        let body = b"0123456789abcdef";
+        let headers = format!(
+            "POST /send HTTP/1.1\r\nHost: localhost\r\nContent-Type : multipart/form-data; boundary=test\r\nContent-Length: {}\r\n\r\n",
+            body.len()
+        );
+        let mut request = headers.into_bytes();
+        request.extend_from_slice(body);
+        let policy = HttpPolicy {
+            max_body_bytes: 4,
+            max_upload_body_bytes: body.len(),
+            ..HttpPolicy::default()
+        };
+
+        assert_eq!(
+            parse_error_reason(&request, &policy),
+            "http body exceeded maximum length"
+        );
     }
 }
