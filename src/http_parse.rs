@@ -109,6 +109,7 @@ pub(crate) fn read_http_request(
                 if end > policy.max_header_bytes {
                     return Err(parse_error("http headers exceeded maximum length"));
                 }
+                validate_header_line_endings(&buffer[..end])?;
                 let header_text = std::str::from_utf8(&buffer[..end])
                     .map_err(|_| parse_error("http headers were not valid utf-8"))?;
                 let headers = parse_headers(header_text, policy)?;
@@ -158,6 +159,7 @@ pub fn parse_http_request_bytes(
         return Err(parse_error("http headers exceeded maximum length"));
     }
 
+    validate_header_line_endings(&input[..header_end])?;
     let header_block = std::str::from_utf8(&input[..header_end])
         .map_err(|_| parse_error("http headers were not valid utf-8"))?;
     let body = &input[header_end + 4..];
@@ -174,19 +176,7 @@ pub fn parse_http_request_bytes(
     let request_line = lines
         .next()
         .ok_or_else(|| parse_error("missing http request line"))?;
-    let mut request_line_parts = request_line.split_whitespace();
-    let method_text = request_line_parts
-        .next()
-        .ok_or_else(|| parse_error("http request line missing method"))?;
-    let target = request_line_parts
-        .next()
-        .ok_or_else(|| parse_error("http request line missing target"))?;
-    let version = request_line_parts
-        .next()
-        .ok_or_else(|| parse_error("http request line missing version"))?;
-    if request_line_parts.next().is_some() {
-        return Err(parse_error("http request line contained unexpected fields"));
-    }
+    let (method_text, target, version) = parse_request_line_fields(request_line)?;
 
     if version != "HTTP/1.1" && version != "HTTP/1.0" {
         return Err(parse_error("unsupported http version"));
@@ -308,6 +298,57 @@ pub(crate) fn compose_source_from_request(
         }
         _ => Err("compose source requires mode, mailbox, and uid together".to_string()),
     }
+}
+
+/// Rejects request-line ambiguity instead of accepting generic whitespace.
+fn parse_request_line_fields(request_line: &str) -> Result<(&str, &str, &str), HttpRequestError> {
+    let space_count = request_line.bytes().filter(|byte| *byte == b' ').count();
+    let has_non_space_whitespace = request_line
+        .bytes()
+        .any(|byte| byte.is_ascii_whitespace() && byte != b' ');
+
+    if space_count != 2 || has_non_space_whitespace {
+        return Err(parse_error(
+            "http request line must use exactly one space between fields",
+        ));
+    }
+
+    let mut parts = request_line.split(' ');
+    let method = parts.next().unwrap_or_default();
+    let target = parts.next().unwrap_or_default();
+    let version = parts.next().unwrap_or_default();
+
+    if method.is_empty() || target.is_empty() || version.is_empty() || parts.next().is_some() {
+        return Err(parse_error(
+            "http request line must use exactly one space between fields",
+        ));
+    }
+
+    Ok((method, target, version))
+}
+
+/// Requires every line ending inside the header block to be CRLF.
+fn validate_header_line_endings(header_bytes: &[u8]) -> Result<(), HttpRequestError> {
+    let mut index = 0;
+    while index < header_bytes.len() {
+        match header_bytes[index] {
+            b'\r' => {
+                if header_bytes.get(index + 1) != Some(&b'\n') {
+                    return Err(parse_error(
+                        "http header block contained non-crlf line endings",
+                    ));
+                }
+                index += 2;
+            }
+            b'\n' => {
+                return Err(parse_error(
+                    "http header block contained non-crlf line endings",
+                ));
+            }
+            _ => index += 1,
+        }
+    }
+    Ok(())
 }
 
 /// Finds the end of the HTTP header block.
@@ -714,6 +755,31 @@ mod tests {
         assert_eq!(
             parse_error_reason(&request, &policy),
             "http body exceeded maximum length"
+        );
+    }
+
+    #[test]
+    fn rejects_ambiguous_request_line_separators() {
+        let requests: &[&[u8]] = &[
+            b" GET /login HTTP/1.1\r\nHost: localhost\r\n\r\n",
+            b"GET  /login HTTP/1.1\r\nHost: localhost\r\n\r\n",
+            b"GET\t/login\tHTTP/1.1\r\nHost: localhost\r\n\r\n",
+            b"GET /login  HTTP/1.1\r\nHost: localhost\r\n\r\n",
+        ];
+        for request in requests {
+            assert_eq!(
+                parse_error_reason(request, &HttpPolicy::default()),
+                "http request line must use exactly one space between fields"
+            );
+        }
+    }
+
+    #[test]
+    fn rejects_mixed_header_line_terminators() {
+        let request = b"GET /login HTTP/1.1\r\nHost: localhost\nConnection: close\r\n\r\n";
+        assert_eq!(
+            parse_error_reason(request, &HttpPolicy::default()),
+            "http header block contained non-crlf line endings"
         );
     }
 }

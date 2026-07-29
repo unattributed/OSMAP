@@ -67,7 +67,7 @@
     "security_check": "preserved",
     "v10_check_target_present": true
   },
-  "generated_at_utc": "2026-06-29T05:59:01Z",
+  "generated_at_utc": "2026-07-29T19:48:23Z",
   "purpose": "Targeted fail-closed remediation for the V10 governance boundary.",
   "required_followups": [
     "Classify Rust fail-closed assumptions from Slice 0.",
@@ -89,7 +89,7 @@
     "audit_script_present": true,
     "classification_complete": true,
     "current_scanner_count": 732,
-    "inventory_sha256": "c7e39e428e16c45738906adc2cf5043c261f263778e8f6881c534f765d208e37",
+    "inventory_sha256": "7169a1aef3250ef58f289bc42938117ed9ac308ea9da748dbb7c9293b651e8d7",
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
@@ -127,7 +127,7 @@
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
-    "refined_inventory_sha256": "75d74e2ef3990b09fd0d600b2e98fe0b1a3ca081c10fdcd63ec5359658ec7154",
+    "refined_inventory_sha256": "47064992cde5364b826d2dce82b4cbec7c7c0c82290cd2feaeed12d5816b5d32",
     "remediation_document": "docs/V10_TARGETED_FAIL_CLOSED_REMEDIATION.md",
     "remediation_document_present": true,
     "remediation_register": "maint/security/v10-fail-closed-remediation.json",
