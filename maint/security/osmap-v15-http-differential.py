@@ -358,6 +358,7 @@ def direct_origin_batch(
             for case_id, request in requests
         ],
     }
+    remote_command = f"python3 -c {shlex.quote(REMOTE_DIRECT_RUNNER)}"
     completed = subprocess.run(
         [
             "ssh",
@@ -366,9 +367,7 @@ def direct_origin_batch(
             "-o", "ServerAliveInterval=5",
             "-o", "ServerAliveCountMax=2",
             ssh_host,
-            "python3",
-            "-c",
-            REMOTE_DIRECT_RUNNER,
+            remote_command,
         ],
         input=json.dumps(payload),
         text=True,

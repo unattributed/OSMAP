@@ -28,6 +28,13 @@ if len(cases) != 37:
 if len({case["id"] for case in cases}) != 37:
     raise SystemExit("FAIL: corpus IDs are not unique")
 
+
+remote_command = f"python3 -c {module.shlex.quote('print((1 + 2))')}"
+if module.shlex.split(remote_command) != ["python3", "-c", "print((1 + 2))"]:
+    raise SystemExit("FAIL: remote Python command quoting differs")
+if len(module.shlex.split(remote_command)) != 3:
+    raise SystemExit("FAIL: remote Python source was split by the shell")
+
 required_ids = {
     "valid_get",
     "leading_request_line_whitespace",
