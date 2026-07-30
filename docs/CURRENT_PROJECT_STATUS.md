@@ -137,3 +137,9 @@ Any future slice that changes current release posture, production deployment,
 OpenPGP capability, WSTG assurance, or selected-cohort scope must update this
 file, the root README, docs/README.md, KNOWN_LIMITATIONS.md, and the relevant
 version closeout document in the same change stream.
+
+<!-- v15-slice-03e-status:start -->
+## Current V15 assurance status
+
+V15 Slice 03D is complete at signed commit `315534ff915f4ae3e5ba8a5778060891ccefec07`. The accepted OpenBSD production binary is `4dc1005f1e3f11ecf463fa4724a432622b7952bd378831f4c135ef3544f0f5bf`, direct-origin strict parsing and corrected TLS-edge canonicalisation acceptance passed, rollback was not required, and effective nginx, mailbox-helper, listener, and PF controls remained unchanged under their accepted evidence contracts. Slice 03E local CI status is **PASS**. See [V15_HTTP_DIFFERENTIAL_ASSURANCE.md](V15_HTTP_DIFFERENTIAL_ASSURANCE.md).
+<!-- v15-slice-03e-status:end -->
