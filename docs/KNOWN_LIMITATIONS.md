@@ -28,6 +28,10 @@
 - The current HTTP runtime now has clearer connection-pressure, write-failure,
   and accept-failure observability, but it still depends on adjacent controls
   and does not yet provide a complete request-resource exhaustion strategy
+- V15 closes every required policy in a fixed 37-case HTTP edge/origin corpus,
+  including forwarding cardinality and selected canonicalization behavior. It
+  does not claim universal equivalence across every HTTP client, intermediary,
+  protocol version, nginx release, or request grammar.
 - Runtime auth, mailbox, and sendmail command execution now has a shared
   timeout-enforced executor with a bounded environment and explicit stdout and
   stderr byte caps. It still depends on the synchronous request model, so very

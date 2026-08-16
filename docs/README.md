@@ -207,7 +207,8 @@ Current public documentation map:
 - `V14_STREAMLINE_WEBUI_OPENPGP_UX.md`
 - `V14_SLICE_10_ACCESSIBILITY_RESPONSIVE_PASS.md`
 - `V14_FINAL_REGRESSION_EVIDENCE_CLOSEOUT.md`
-- `V15_HTTP_DIFFERENTIAL_ASSURANCE.md`
+- `V15_HTTP_DIFFERENTIAL_ASSURANCE.md` — fixed-corpus parser, forwarding,
+  deployment, and Slice 04 policy-closure evidence
 - `CURRENT_PROJECT_STATUS.md`
 
 - `V9_RELEASE_CANDIDATE_CLOSEOUT.md`

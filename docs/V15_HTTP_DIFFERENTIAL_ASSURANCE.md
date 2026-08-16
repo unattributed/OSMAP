@@ -235,3 +235,47 @@ Effective nginx configuration, mailbox-helper state, OSMAP listener exposure, an
 
 Slice 03D status: **COMPLETE**. Slice 03E is a nonfunctional closeout and protected-integration slice. It introduces no JavaScript, Node.js, npm, frontend framework, external CDN, production Rust behaviour, or new dependency.
 <!-- slice-03e-closeout:end -->
+
+<!-- slice-04-closeout:start -->
+## V15 Slice 04 policy closure
+
+Slice 04 is complete for the fixed 37-case HTTP edge/origin corpus.
+
+| Item | Accepted value |
+|---|---|
+| Implementation commit | `158f61d3735712faac019cae97f7ef3e26787973` |
+| Assessed policy and harness commit | `6e28ae4ed8b83584ba5df1e522e17b358e5e8ebd` |
+| Signing fingerprint | `F55E404E91A0753701F91B01A7228D3FB5084B34` |
+| Deployed release binary SHA-256 | `d7426c8b51bed05f535da7195246a04365c3c5f39967a0170e64f350761cc85e` |
+| Evidence archive | `osmap-v15-slice04-evidence-6e28ae4.tar.gz` |
+| Evidence archive SHA-256 | `de1a823e21c7a5014ec840c132d9e77b5759b03186727947f51cd5947d16fb6d` |
+| Previous binary rollback SHA-256 | `4dc1005f1e3f11ecf463fa4724a432622b7952bd378831f4c135ef3544f0f5bf` |
+
+The archive's internal manifest verified every file. It preserves exact
+base64-encoded corpus requests, raw edge and direct-origin responses, response
+and connection observations, token-correlated forwarding logs, application
+outcomes, signed commit identities, deployment diffs, and service state.
+
+Both the offline and live required-policy campaigns passed:
+
+```text
+case_count=37
+required_policy_failures=0
+measured_unique_cases=0
+origin_request_cardinality_violations=0
+```
+
+The parser now rejects non-ASCII-decimal `Content-Length` values and enforces
+an 8 KiB generic header-value limit. nginx closes OSMAP client connections
+after one response, so the pipelined second request no longer reaches the
+origin. The conditional test log does not record normal browser query strings.
+
+The deployed services remained healthy after the bounded binary installation,
+nginx configuration validation, OSMAP restart, and nginx reload. Rollback
+copies and an executable restore procedure remain under the host-side Slice 04
+deployment sessions.
+
+The historical Slice 03 evidence and conclusions above remain unchanged.
+Slice 04 does not claim universal HTTP parser equivalence beyond the fixed
+corpus and accepted edge configuration.
+<!-- slice-04-closeout:end -->

@@ -6977,3 +6977,29 @@ only. It does not change runtime UI behavior, deployment state, OpenPGP runtime
 capability, production configuration, live-host posture, or current V13
 production evidence. V13 remains the current reviewed production and assurance
 closeout until a later V14 closeout explicitly supersedes it.
+
+## 2026-08-16, Close V15 HTTP differential policies
+
+Decision: close all observation-only policies in the fixed 37-case corpus and
+enforce explicit origin, edge, semantic-shape, and forwarding-cardinality
+outcomes.
+
+The origin retains its narrow field-name policy, requires ASCII decimal digits
+for `Content-Length`, and limits each header value to 8 KiB. The OSMAP nginx
+locations close client connections after one response, preventing a pipelined
+second request from becoming another origin request. A conditional forensic
+log is active only for bounded `OSMAPS04-*` tokens; ordinary browser queries
+remain excluded.
+
+Evidence: implementation `158f61d3735712faac019cae97f7ef3e26787973`,
+assessed policy/harness `6e28ae4ed8b83584ba5df1e522e17b358e5e8ebd`,
+deployed binary SHA-256
+`d7426c8b51bed05f535da7195246a04365c3c5f39967a0170e64f350761cc85e`,
+and evidence archive SHA-256
+`de1a823e21c7a5014ec840c132d9e77b5759b03186727947f51cd5947d16fb6d`.
+Offline and live campaigns each passed 37 cases with zero policy failures,
+measured cases, or cardinality violations.
+
+Boundary: preserve all Slice 03 conclusions and raw evidence. This decision is
+limited to the accepted corpus and edge configuration and does not claim
+universal HTTP parser equivalence.

@@ -141,5 +141,5 @@ version closeout document in the same change stream.
 <!-- v15-slice-03e-status:start -->
 ## Current V15 assurance status
 
-V15 Slice 03D is complete at signed commit `315534ff915f4ae3e5ba8a5778060891ccefec07`. The accepted OpenBSD production binary is `4dc1005f1e3f11ecf463fa4724a432622b7952bd378831f4c135ef3544f0f5bf`, direct-origin strict parsing and corrected TLS-edge canonicalisation acceptance passed, rollback was not required, and effective nginx, mailbox-helper, listener, and PF controls remained unchanged under their accepted evidence contracts. Slice 03E local CI status is **PASS**. See [V15_HTTP_DIFFERENTIAL_ASSURANCE.md](V15_HTTP_DIFFERENTIAL_ASSURANCE.md).
+V15 Slice 04 closes every policy in the fixed 37-case HTTP differential corpus. The signed implementation commit is `158f61d3735712faac019cae97f7ef3e26787973`, the assessed policy/harness commit is `6e28ae4ed8b83584ba5df1e522e17b358e5e8ebd`, and the deployed OpenBSD binary SHA-256 is `d7426c8b51bed05f535da7195246a04365c3c5f39967a0170e64f350761cc85e`. Offline and live campaigns both report 37 cases, zero required-policy failures, zero measured cases, and zero cardinality violations. Historical Slice 03 conclusions and evidence remain accepted. See [V15_HTTP_DIFFERENTIAL_ASSURANCE.md](V15_HTTP_DIFFERENTIAL_ASSURANCE.md).
 <!-- v15-slice-03e-status:end -->

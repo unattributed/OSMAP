@@ -9,6 +9,19 @@ The project favors a small trust boundary, least privilege, bounded behavior,
 safe mail rendering, auditable operations, and reversible deployment over
 feature breadth or Roundcube parity.
 
+## Current V15 HTTP assurance status
+
+V15 Slice 04 is deployed and closes the fixed 37-case HTTP edge/origin
+differential corpus. The signed parser implementation rejects non-decimal
+`Content-Length`, bounds every header value to 8 KiB, and pairs with an nginx
+one-request-per-client-connection control. Both offline and live campaigns
+passed with zero required-policy failures, observation-only cases, or origin
+cardinality violations. The evidence and precise claim boundary are recorded
+in [V15 HTTP differential assurance](docs/V15_HTTP_DIFFERENTIAL_ASSURANCE.md).
+
+This bounded result does not claim universal HTTP parser equivalence or widen
+the project's broader production and hostile-content claims.
+
 ## Current V13 status
 
 V13 is the current reviewed production and assurance closeout. It supersedes
