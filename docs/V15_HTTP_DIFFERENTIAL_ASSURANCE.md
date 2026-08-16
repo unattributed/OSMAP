@@ -71,10 +71,12 @@ The corpus covers:
 - request-line, field, and header-block limits
 
 Every case now has an enforceable policy. `REJECT_BEFORE_ORIGIN` requires zero
-origin requests and a rejecting edge outcome. `FORWARD_EXACTLY_ONE` requires
-one response and one origin request with the same method, complete target, and
-authority. `CANONICALIZE_EXACTLY_ONE` permits only syntax canonicalization or
-discarding an unused field while preserving that same semantic shape.
+origin requests and a rejecting edge outcome. `REJECT_OR_FORWARD_ONCE` permits
+the edge either to reject directly or to forward one unchanged semantic shape
+to the strict origin for rejection. `FORWARD_EXACTLY_ONE` requires one response
+and one origin request with the same method, complete target, and authority.
+`CANONICALIZE_EXACTLY_ONE` permits only syntax canonicalization or discarding
+unused bytes or fields while preserving that same semantic shape.
 
 The six former observation-only cases are closed as follows:
 
@@ -91,6 +93,9 @@ The three previously accepted request-syntax normalizations use
 `CANONICALIZE_EXACTLY_ONE`. The pipelining case uses
 `FORWARD_EXACTLY_ONE`: nginx must close the client connection after the first
 response, preventing queued bytes from becoming another origin request.
+Unambiguous chunked framing and non-message trailing bytes may likewise be
+canonicalized only into one equivalent origin request; every other hostile
+case must be rejected at the edge or by one strict origin request.
 
 ## Evidence Handling
 

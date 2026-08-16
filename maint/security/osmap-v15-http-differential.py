@@ -25,6 +25,7 @@ EDGE_POLICIES = {
     "CANONICALIZE_EXACTLY_ONE",
     "FORWARD_EXACTLY_ONE",
     "REJECT_BEFORE_ORIGIN",
+    "REJECT_OR_FORWARD_ONCE",
 }
 REJECT_STATUS = {400, 408, 411, 413, 414, 421, 431, 501, 505}
 
@@ -255,6 +256,7 @@ def send_tls_request(
     request: bytes,
     *,
     timeout: float,
+    server_name: str | None = None,
 ) -> RawHttpResponse:
     response = bytearray()
     connection_closed = False
@@ -266,7 +268,10 @@ def send_tls_request(
     try:
         with socket.create_connection((host, port), timeout=timeout) as raw:
             raw.settimeout(timeout)
-            with context.wrap_socket(raw, server_hostname=host) as tls:
+            with context.wrap_socket(
+                raw,
+                server_hostname=server_name or host,
+            ) as tls:
                 tls.settimeout(timeout)
                 tls.sendall(request)
                 while len(response) < 1024 * 1024:
@@ -450,7 +455,7 @@ def required_forward_shape(request: bytes) -> dict[str, str]:
     lines = text.replace("\r\n", "\n").split("\n")
     request_fields = lines[0].split()
     if len(request_fields) != 3:
-        fail("forwarding policy request lacks one semantic request line")
+        return {}
     authority = ""
     for line in lines[1:]:
         if ":" not in line:
@@ -460,7 +465,7 @@ def required_forward_shape(request: bytes) -> dict[str, str]:
             authority = value.strip()
             break
     if not authority:
-        fail("forwarding policy request lacks one semantic Host value")
+        return {}
     return {
         "method": request_fields[0],
         "request_uri": request_fields[1],
@@ -494,9 +499,16 @@ def parse_forwarding_observation(
     ]
     expected_shape = None
     shape_matches = len(forwarded_entries) == 0
-    if required_policy != "REJECT_BEFORE_ORIGIN":
+    if required_policy in {
+        "CANONICALIZE_EXACTLY_ONE",
+        "FORWARD_EXACTLY_ONE",
+    } or (
+        required_policy == "REJECT_OR_FORWARD_ONCE" and forwarded_entries
+    ):
         expected_shape = required_forward_shape(request)
         shape_matches = (
+            bool(expected_shape)
+            and
             len(forwarded_entries) == 1
             and all(
                 forwarded_entries[0].get(key) == expected
@@ -519,17 +531,24 @@ def edge_policy_result(
     forwarding: dict[str, Any],
 ) -> tuple[str, str]:
     observed_count = forwarding.get("origin_request_count")
-    expected_count = (
-        0 if required_policy == "REJECT_BEFORE_ORIGIN" else 1
+    allowed_counts = (
+        {0, 1}
+        if required_policy == "REJECT_OR_FORWARD_ONCE"
+        else {0}
+        if required_policy == "REJECT_BEFORE_ORIGIN"
+        else {1}
     )
-    if observed_count != expected_count:
+    if observed_count not in allowed_counts:
         return (
             "FAIL",
             f"edge forwarded {observed_count} origin requests; "
-            f"policy requires {expected_count}",
+            f"policy allows {sorted(allowed_counts)}",
         )
 
-    if required_policy == "REJECT_BEFORE_ORIGIN":
+    if required_policy in {
+        "REJECT_BEFORE_ORIGIN",
+        "REJECT_OR_FORWARD_ONCE",
+    } and observed_count == 0:
         if response.status is None:
             if response.connection_closed or response.timed_out or response.error:
                 return "PASS", "edge rejected or closed before origin"
@@ -537,6 +556,15 @@ def edge_policy_result(
         if response.status in REJECT_STATUS or response.status >= 400:
             return "PASS", "edge returned a rejecting status before origin"
         return "FAIL", "edge returned a successful status without forwarding"
+
+    if required_policy == "REJECT_OR_FORWARD_ONCE":
+        if not forwarding.get("shape_matches"):
+            return "FAIL", "forwarded method, target, or authority differs"
+        if response.response_count != 1:
+            return "FAIL", "edge did not return exactly one rejecting response"
+        if response.status is None or response.status < 400:
+            return "FAIL", "forwarded hostile shape was not rejected"
+        return "PASS", "edge forwarded once to an origin rejection"
 
     if required_policy in {
         "CANONICALIZE_EXACTLY_ONE",
@@ -666,6 +694,10 @@ def main() -> None:
         default="inventory",
     )
     parser.add_argument("--edge-host", default="mail.blackbagsecurity.com")
+    parser.add_argument(
+        "--edge-connect-host",
+        help="optional edge address when TLS SNI must remain --edge-host",
+    )
     parser.add_argument("--edge-port", type=int, default=443)
     parser.add_argument("--ssh-host", default="mail")
     parser.add_argument("--direct-host", default="127.0.0.1")
@@ -698,10 +730,11 @@ def main() -> None:
     if arguments.mode == "live":
         for case, _, raw in rendered:
             edge_results[case["id"]] = send_tls_request(
-                arguments.edge_host,
+                arguments.edge_connect_host or arguments.edge_host,
                 arguments.edge_port,
                 raw,
                 timeout=arguments.timeout,
+                server_name=arguments.edge_host,
             )
 
     host_logs = ""
@@ -769,12 +802,14 @@ def main() -> None:
             )
             if edge_state == "FAIL":
                 required_failures += 1
-            expected_count = (
-                0
+            allowed_counts = (
+                {0, 1}
+                if case["required_edge_policy"] == "REJECT_OR_FORWARD_ONCE"
+                else {0}
                 if case["required_edge_policy"] == "REJECT_BEFORE_ORIGIN"
-                else 1
+                else {1}
             )
-            if forwarding["origin_request_count"] != expected_count:
+            if forwarding["origin_request_count"] not in allowed_counts:
                 cardinality_violations += 1
             item.update({
                 "edge": edge.to_dict(),

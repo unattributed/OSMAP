@@ -157,6 +157,14 @@ if module.edge_policy_result(
     "REJECT_BEFORE_ORIGIN", response_400, forwarded_once
 )[0] != "FAIL":
     raise SystemExit("FAIL: cardinality violation was not rejected")
+if module.edge_policy_result(
+    "REJECT_OR_FORWARD_ONCE", response_400, forwarded_once
+)[0] != "PASS":
+    raise SystemExit("FAIL: one forwarded origin rejection was not accepted")
+if module.edge_policy_result(
+    "REJECT_OR_FORWARD_ONCE", response_200, forwarded_once
+)[0] != "FAIL":
+    raise SystemExit("FAIL: forwarded hostile acceptance was not rejected")
 
 closed = module.parse_raw_response(
     b"",
@@ -167,6 +175,9 @@ if module.edge_policy_result(
     "REJECT_BEFORE_ORIGIN", closed, rejected_before_origin
 )[0] != "PASS":
     raise SystemExit("FAIL: connection-close rejection differs")
+
+if "server_name" not in module.send_tls_request.__annotations__:
+    raise SystemExit("FAIL: TLS edge SNI override is unavailable")
 
 with tempfile.TemporaryDirectory(prefix="osmap-http-diff-test.") as temp:
     output = Path(temp)
