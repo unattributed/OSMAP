@@ -13,6 +13,12 @@ location ^~ /osmap/ { return 301 /; }
 location / {
     limit_except GET POST { deny all; }
 
+    # Match the public edge's one-request-per-client-connection boundary.
+    keepalive_timeout 0;
+
+    access_log /var/log/nginx/mail.private.access.log main_security;
+    access_log /var/log/nginx/osmap.differential.access.log osmap_differential_security if=$osmap_differential_loggable;
+
     proxy_pass http://127.0.0.1:8080;
     proxy_http_version 1.1;
     proxy_set_header Host $host;

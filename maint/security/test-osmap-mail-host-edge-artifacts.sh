@@ -76,6 +76,8 @@ assert_contains_file "${osmap_root}" "proxy_pass http://127.0.0.1:8080;"
 assert_contains_file "${osmap_root}" 'proxy_set_header Host $host;'
 assert_contains_file "${osmap_root}" 'proxy_set_header X-Real-IP $remote_addr;'
 assert_contains_file "${osmap_root}" 'proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;'
+assert_contains_file "${osmap_root}" "keepalive_timeout 0;"
+assert_contains_file "${osmap_root}" "osmap.differential.access.log osmap_differential_security"
 assert_not_contains_file "${osmap_root}" "control-plane-allow.tmpl"
 
 assert_contains_file "${osmap_public_root}" "limit_req zone=osmap_public_login burst=6 nodelay;"
@@ -84,16 +86,22 @@ assert_contains_file "${osmap_public_root}" "limit_conn osmap_public_connections
 assert_contains_file "${osmap_public_root}" "proxy_pass http://127.0.0.1:8080;"
 assert_contains_file "${osmap_public_root}" 'proxy_set_header Host $host;'
 assert_contains_file "${osmap_public_root}" 'proxy_set_header X-Real-IP $remote_addr;'
+assert_contains_file "${osmap_public_root}" "keepalive_timeout 0;"
+assert_contains_file "${osmap_public_root}" "osmap.differential.access.log osmap_differential_security"
 
 assert_contains_file "${osmap_edge_http}" "log_format osmap_public_security"
 assert_contains_file "${osmap_edge_http}" 'uri="$uri"'
-assert_not_contains_file "${osmap_edge_http}" '$request_uri'
+assert_contains_file "${osmap_edge_http}" "map \$request \$osmap_differential_loggable"
+assert_contains_file "${osmap_edge_http}" "~OSMAPS04-[A-Za-z0-9_-]+ 1;"
+assert_contains_file "${osmap_edge_http}" "log_format osmap_differential_security"
+assert_contains_file "${osmap_edge_http}" 'request_uri="$request_uri"'
 assert_not_contains_file "${osmap_edge_http}" '$http_referer'
 assert_not_contains_file "${osmap_edge_http}" '$http_x_forwarded_for'
 assert_contains_file "${osmap_edge_http}" "zone=osmap_public_login:1m rate=12r/m;"
 
 assert_contains_file "${osmap_newsyslog}" "osmap.public.access.log root:wheel 640"
 assert_contains_file "${osmap_newsyslog}" "osmap.public.error.log  root:wheel 640"
+assert_contains_file "${osmap_newsyslog}" "osmap.differential.access.log root:wheel 640"
 
 assert_contains_file "${pf_macros}" 'wan_blocked_tcp_svcs   = "{ 110, 143, 465, 587, 993, 995, 2000, 4190, 8080, 9999 }"'
 assert_not_contains_file "${pf_macros}" 'wan_blocked_tcp_svcs   = "{ 110, 143, 443, 465, 587, 993, 995, 2000, 4190, 8080, 9999 }"'

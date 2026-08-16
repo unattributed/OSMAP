@@ -41,6 +41,12 @@ required_ids = {
     "content_length_plus_transfer_encoding",
     "pipelined_second_request",
     "oversized_header_block",
+    "valid_post_content_length_zero",
+    "underscore_field_name",
+    "dot_in_field_name",
+    "comma_content_length_same",
+    "malformed_content_length_plus",
+    "oversized_header_field",
 }
 actual_ids = {case["id"] for case in cases}
 if not required_ids.issubset(actual_ids):
@@ -69,6 +75,14 @@ if len(rendered["oversized_request_line"]) <= 2048:
     raise SystemExit("FAIL: oversized request-line generator is too small")
 if len(rendered["oversized_header_block"]) <= 16 * 1024:
     raise SystemExit("FAIL: oversized header block is too small")
+if any(
+    "MEASURE" in (
+        case["required_origin_policy"],
+        case["required_edge_policy"],
+    )
+    for case in cases
+):
+    raise SystemExit("FAIL: corpus retains an observation-only policy")
 
 accepted = {"accepted": True}
 rejected = {"accepted": False}
@@ -77,7 +91,6 @@ expected = [
     ("ACCEPT", rejected, "FAIL"),
     ("REJECT_CLOSE", rejected, "PASS"),
     ("REJECT_CLOSE", accepted, "FAIL"),
-    ("MEASURE", accepted, "MEASURED"),
 ]
 for policy, oracle, state in expected:
     actual, _ = module.origin_policy_result(policy, oracle)
@@ -101,19 +114,58 @@ if response_200.status != 200 or response_200.response_count != 1:
 if response_400.status != 400:
     raise SystemExit("FAIL: 400 response parser differs")
 
-if module.edge_policy_result("ACCEPT", response_200)[0] != "PASS":
-    raise SystemExit("FAIL: edge ACCEPT classification differs")
-if module.edge_policy_result("REJECT_OR_CLOSE", response_400)[0] != "PASS":
+token = "OSMAPS04-TEST-valid_get"
+request = module.render_request(
+    next(case for case in cases if case["id"] == "valid_get"),
+    "mail.blackbagsecurity.com",
+    token,
+)
+host_logs = (
+    f'token="{token}" method="GET" '
+    f'request_uri="/login?osmap_s03={token}" '
+    'host="mail.blackbagsecurity.com" status="200" '
+    'upstream_addr="127.0.0.1:8080" upstream_status="200"\n'
+)
+forwarded_once = module.parse_forwarding_observation(
+    host_logs,
+    token,
+    request,
+    "FORWARD_EXACTLY_ONE",
+)
+if forwarded_once["origin_request_count"] != 1:
+    raise SystemExit("FAIL: one forwarded request was not counted")
+if not forwarded_once["shape_matches"]:
+    raise SystemExit("FAIL: equivalent forwarded shape did not match")
+if module.edge_policy_result(
+    "FORWARD_EXACTLY_ONE", response_200, forwarded_once
+)[0] != "PASS":
+    raise SystemExit("FAIL: exact-one forwarding classification differs")
+
+rejected_before_origin = {
+    "origin_request_count": 0,
+    "shape_matches": True,
+}
+if module.edge_policy_result(
+    "REJECT_BEFORE_ORIGIN", response_400, rejected_before_origin
+)[0] != "PASS":
     raise SystemExit("FAIL: edge rejection classification differs")
-if module.edge_policy_result("REJECT_OR_CLOSE", response_200)[0] != "FAIL":
-    raise SystemExit("FAIL: successful hostile edge response was not rejected")
+if module.edge_policy_result(
+    "REJECT_BEFORE_ORIGIN", response_200, rejected_before_origin
+)[0] != "FAIL":
+    raise SystemExit("FAIL: successful no-forward outcome was not rejected")
+if module.edge_policy_result(
+    "REJECT_BEFORE_ORIGIN", response_400, forwarded_once
+)[0] != "FAIL":
+    raise SystemExit("FAIL: cardinality violation was not rejected")
 
 closed = module.parse_raw_response(
     b"",
     connection_closed=True,
     timed_out=False,
 )
-if module.edge_policy_result("REJECT_OR_CLOSE", closed)[0] != "PASS":
+if module.edge_policy_result(
+    "REJECT_BEFORE_ORIGIN", closed, rejected_before_origin
+)[0] != "PASS":
     raise SystemExit("FAIL: connection-close rejection differs")
 
 with tempfile.TemporaryDirectory(prefix="osmap-http-diff-test.") as temp:
@@ -126,12 +178,14 @@ with tempfile.TemporaryDirectory(prefix="osmap-http-diff-test.") as temp:
         "authority": "mail.blackbagsecurity.com",
         "case_count": 1,
         "required_policy_failures": 0,
-        "measured_only_cases": 0,
+        "measured_unique_cases": 0,
+        "origin_request_cardinality_violations": 0,
         "host_log_capture_sha256": None,
         "cases": [{
             "id": "valid_get",
             "class": "control",
             "required_origin_policy": "ACCEPT",
+            "required_edge_policy": "FORWARD_EXACTLY_ONE",
             "oracle": accepted,
             "origin_policy_result": "PASS",
         }],

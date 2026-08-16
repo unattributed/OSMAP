@@ -391,6 +391,11 @@ fn parse_headers(
         }
 
         let normalized_value = value.trim().to_string();
+        if normalized_value.len() > policy.max_header_value_bytes {
+            return Err(parse_error(format!(
+                "http header value for {normalized_name} exceeded maximum length"
+            )));
+        }
         if normalized_value.chars().any(char::is_control) {
             return Err(parse_error(format!(
                 "http header value for {normalized_name} contained control characters"
@@ -449,6 +454,9 @@ fn parse_content_length_from_headers(
     headers
         .get("content-length")
         .map(|value| {
+            if value.is_empty() || !value.bytes().all(|byte| byte.is_ascii_digit()) {
+                return Err(parse_error("invalid content-length header"));
+            }
             value
                 .parse::<usize>()
                 .map_err(|_| parse_error("invalid content-length header"))
@@ -780,6 +788,48 @@ mod tests {
         assert_eq!(
             parse_error_reason(request, &HttpPolicy::default()),
             "http header block contained non-crlf line endings"
+        );
+    }
+
+    #[test]
+    fn content_length_requires_ascii_decimal_digits_only() {
+        for value in ["+0", "-0", "0 0", "0,0", "0x0", ""] {
+            let request = format!(
+                "POST /login HTTP/1.1\r\nHost: localhost\r\nContent-Length: {value}\r\n\r\n"
+            );
+            assert_eq!(
+                parse_error_reason(request.as_bytes(), &HttpPolicy::default()),
+                "invalid content-length header",
+                "value {value:?} must be rejected"
+            );
+        }
+
+        let parsed = crate::http::parse_http_request_bytes(
+            b"POST /login HTTP/1.1\r\nHost: localhost\r\nContent-Length: 0\r\n\r\n",
+            &HttpPolicy::default(),
+        )
+        .expect("an ASCII-decimal zero content length should parse");
+        assert!(parsed.body.is_empty());
+    }
+
+    #[test]
+    fn enforces_generic_header_value_limit() {
+        let accepted_value = "a".repeat(8);
+        let accepted =
+            format!("GET /login HTTP/1.1\r\nHost: x\r\nX-Test: {accepted_value}\r\n\r\n");
+        let policy = HttpPolicy {
+            max_header_value_bytes: 8,
+            ..HttpPolicy::default()
+        };
+        crate::http::parse_http_request_bytes(accepted.as_bytes(), &policy)
+            .expect("a header value exactly at the limit should parse");
+
+        let rejected_value = "a".repeat(9);
+        let rejected =
+            format!("GET /login HTTP/1.1\r\nHost: x\r\nX-Test: {rejected_value}\r\n\r\n");
+        assert_eq!(
+            parse_error_reason(rejected.as_bytes(), &policy),
+            "http header value for x-test exceeded maximum length"
         );
     }
 }

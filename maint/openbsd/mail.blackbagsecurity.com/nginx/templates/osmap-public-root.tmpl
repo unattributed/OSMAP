@@ -12,6 +12,14 @@ location = /login {
     limit_req zone=osmap_public_login burst=6 nodelay;
     limit_conn osmap_public_connections 10;
 
+    # One client connection may submit only one OSMAP request. Closing after
+    # the response prevents queued pipelined bytes from becoming a second
+    # origin request.
+    keepalive_timeout 0;
+
+    access_log /var/log/nginx/osmap.public.access.log osmap_public_security;
+    access_log /var/log/nginx/osmap.differential.access.log osmap_differential_security if=$osmap_differential_loggable;
+
     proxy_pass http://127.0.0.1:8080;
     proxy_http_version 1.1;
     proxy_set_header Host $host;
@@ -25,6 +33,11 @@ location / {
     limit_except GET POST { deny all; }
     limit_req zone=osmap_public_general burst=30 nodelay;
     limit_conn osmap_public_connections 10;
+
+    keepalive_timeout 0;
+
+    access_log /var/log/nginx/osmap.public.access.log osmap_public_security;
+    access_log /var/log/nginx/osmap.differential.access.log osmap_differential_security if=$osmap_differential_loggable;
 
     proxy_pass http://127.0.0.1:8080;
     proxy_http_version 1.1;

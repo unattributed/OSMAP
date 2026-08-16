@@ -6,15 +6,15 @@
       "id": "valid_get",
       "rationale": "Canonical unauthenticated GET control.",
       "request_template": "GET /login?osmap_s03={token} HTTP/1.1\r\nHost: {authority}\r\nConnection: close\r\n\r\n",
-      "required_edge_policy": "ACCEPT",
+      "required_edge_policy": "FORWARD_EXACTLY_ONE",
       "required_origin_policy": "ACCEPT"
     },
     {
       "class": "control",
       "id": "valid_post_content_length_zero",
-      "rationale": "Canonical zero-length POST parser control; route status is measured.",
+      "rationale": "Canonical zero-length POST must reach the origin once; its application status is recorded separately.",
       "request_template": "POST /login?osmap_s03={token} HTTP/1.1\r\nHost: {authority}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
-      "required_edge_policy": "MEASURE",
+      "required_edge_policy": "FORWARD_EXACTLY_ONE",
       "required_origin_policy": "ACCEPT"
     },
     {
@@ -22,15 +22,15 @@
       "id": "leading_request_line_whitespace",
       "rationale": "Strict request-line policy rejects leading whitespace.",
       "request_template": " GET /login?osmap_s03={token} HTTP/1.1\r\nHost: {authority}\r\nConnection: close\r\n\r\n",
-      "required_edge_policy": "REJECT_OR_CLOSE",
+      "required_edge_policy": "REJECT_BEFORE_ORIGIN",
       "required_origin_policy": "REJECT_CLOSE"
     },
     {
       "class": "request_line",
       "id": "double_space_request_line",
-      "rationale": "Strict request-line policy requires one SP separator.",
+      "rationale": "The strict origin rejects the raw line while the edge may safely canonicalize it into one equivalent request.",
       "request_template": "GET  /login?osmap_s03={token} HTTP/1.1\r\nHost: {authority}\r\nConnection: close\r\n\r\n",
-      "required_edge_policy": "REJECT_OR_CLOSE",
+      "required_edge_policy": "CANONICALIZE_EXACTLY_ONE",
       "required_origin_policy": "REJECT_CLOSE"
     },
     {
@@ -38,23 +38,23 @@
       "id": "tab_request_line_separator",
       "rationale": "HTAB request-line separators are a parser-differential risk.",
       "request_template": "GET\t/login?osmap_s03={token}\tHTTP/1.1\r\nHost: {authority}\r\nConnection: close\r\n\r\n",
-      "required_edge_policy": "REJECT_OR_CLOSE",
+      "required_edge_policy": "REJECT_BEFORE_ORIGIN",
       "required_origin_policy": "REJECT_CLOSE"
     },
     {
       "class": "line_termination",
       "id": "bare_lf_header_lines",
-      "rationale": "OSMAP requires CRLF framing.",
+      "rationale": "OSMAP requires CRLF; the edge may safely canonicalize one unambiguous message.",
       "request_template": "GET /login?osmap_s03={token} HTTP/1.1\nHost: {authority}\nConnection: close\n\n",
-      "required_edge_policy": "REJECT_OR_CLOSE",
+      "required_edge_policy": "CANONICALIZE_EXACTLY_ONE",
       "required_origin_policy": "REJECT_CLOSE"
     },
     {
       "class": "line_termination",
       "id": "mixed_crlf_lf",
-      "rationale": "Mixed line termination must fail closed.",
+      "rationale": "The origin rejects mixed termination while the edge may canonicalize one unambiguous message.",
       "request_template": "GET /login?osmap_s03={token} HTTP/1.1\r\nHost: {authority}\nConnection: close\r\n\r\n",
-      "required_edge_policy": "REJECT_OR_CLOSE",
+      "required_edge_policy": "CANONICALIZE_EXACTLY_ONE",
       "required_origin_policy": "REJECT_CLOSE"
     },
     {
@@ -62,7 +62,7 @@
       "id": "obs_fold_header",
       "rationale": "Obsolete folded fields must not be interpreted differently.",
       "request_template": "GET /login?osmap_s03={token} HTTP/1.1\r\nHost: {authority}\r\nX-Test: one\r\n two\r\nConnection: close\r\n\r\n",
-      "required_edge_policy": "REJECT_OR_CLOSE",
+      "required_edge_policy": "REJECT_BEFORE_ORIGIN",
       "required_origin_policy": "REJECT_CLOSE"
     },
     {
@@ -70,7 +70,7 @@
       "id": "whitespace_before_colon",
       "rationale": "RFC 9112 requires rejection of whitespace before colon.",
       "request_template": "GET /login?osmap_s03={token} HTTP/1.1\r\nHost : {authority}\r\nConnection: close\r\n\r\n",
-      "required_edge_policy": "REJECT_OR_CLOSE",
+      "required_edge_policy": "REJECT_BEFORE_ORIGIN",
       "required_origin_policy": "REJECT_CLOSE"
     },
     {
@@ -78,31 +78,31 @@
       "id": "space_in_field_name",
       "rationale": "SP is not a valid field-name byte.",
       "request_template": "GET /login?osmap_s03={token} HTTP/1.1\r\nHost: {authority}\r\nX Bad: value\r\nConnection: close\r\n\r\n",
-      "required_edge_policy": "REJECT_OR_CLOSE",
+      "required_edge_policy": "REJECT_BEFORE_ORIGIN",
       "required_origin_policy": "REJECT_CLOSE"
     },
     {
       "class": "edge_difference",
       "id": "underscore_field_name",
-      "rationale": "Measure nginx invalid-header policy versus OSMAP tchar handling.",
+      "rationale": "OSMAP retains its narrow field-name allowlist; the edge may discard this unused field while forwarding one equivalent request.",
       "request_template": "GET /login?osmap_s03={token} HTTP/1.1\r\nHost: {authority}\r\nX_Test: value\r\nConnection: close\r\n\r\n",
-      "required_edge_policy": "MEASURE",
-      "required_origin_policy": "MEASURE"
+      "required_edge_policy": "CANONICALIZE_EXACTLY_ONE",
+      "required_origin_policy": "REJECT_CLOSE"
     },
     {
       "class": "edge_difference",
       "id": "dot_in_field_name",
-      "rationale": "Measure edge forwarding of a field name OSMAP accepts.",
+      "rationale": "OSMAP retains its narrow field-name allowlist; the edge may discard this unused field while forwarding one equivalent request.",
       "request_template": "GET /login?osmap_s03={token} HTTP/1.1\r\nHost: {authority}\r\nX.Test: value\r\nConnection: close\r\n\r\n",
-      "required_edge_policy": "MEASURE",
-      "required_origin_policy": "MEASURE"
+      "required_edge_policy": "CANONICALIZE_EXACTLY_ONE",
+      "required_origin_policy": "REJECT_CLOSE"
     },
     {
       "class": "host",
       "id": "missing_host",
       "rationale": "HTTP/1.1 requires Host.",
       "request_template": "GET /login?osmap_s03={token} HTTP/1.1\r\nConnection: close\r\n\r\n",
-      "required_edge_policy": "REJECT_OR_CLOSE",
+      "required_edge_policy": "REJECT_BEFORE_ORIGIN",
       "required_origin_policy": "REJECT_CLOSE"
     },
     {
@@ -110,7 +110,7 @@
       "id": "empty_host",
       "rationale": "Empty authority must fail closed.",
       "request_template": "GET /login?osmap_s03={token} HTTP/1.1\r\nHost:\r\nConnection: close\r\n\r\n",
-      "required_edge_policy": "REJECT_OR_CLOSE",
+      "required_edge_policy": "REJECT_BEFORE_ORIGIN",
       "required_origin_policy": "REJECT_CLOSE"
     },
     {
@@ -118,7 +118,7 @@
       "id": "duplicate_host_same",
       "rationale": "Duplicate Host is rejected even when values agree.",
       "request_template": "GET /login?osmap_s03={token} HTTP/1.1\r\nHost: {authority}\r\nHost: {authority}\r\nConnection: close\r\n\r\n",
-      "required_edge_policy": "REJECT_OR_CLOSE",
+      "required_edge_policy": "REJECT_BEFORE_ORIGIN",
       "required_origin_policy": "REJECT_CLOSE"
     },
     {
@@ -126,7 +126,7 @@
       "id": "duplicate_host_conflicting",
       "rationale": "Conflicting authority is a routing differential.",
       "request_template": "GET /login?osmap_s03={token} HTTP/1.1\r\nHost: {authority}\r\nHost: attacker.invalid\r\nConnection: close\r\n\r\n",
-      "required_edge_policy": "REJECT_OR_CLOSE",
+      "required_edge_policy": "REJECT_BEFORE_ORIGIN",
       "required_origin_policy": "REJECT_CLOSE"
     },
     {
@@ -134,7 +134,7 @@
       "id": "host_with_path",
       "rationale": "Host must not contain path characters.",
       "request_template": "GET /login?osmap_s03={token} HTTP/1.1\r\nHost: {authority}/admin\r\nConnection: close\r\n\r\n",
-      "required_edge_policy": "REJECT_OR_CLOSE",
+      "required_edge_policy": "REJECT_BEFORE_ORIGIN",
       "required_origin_policy": "REJECT_CLOSE"
     },
     {
@@ -142,7 +142,7 @@
       "id": "duplicate_content_length_same",
       "rationale": "OSMAP rejects every duplicate framing field.",
       "request_template": "POST /login?osmap_s03={token} HTTP/1.1\r\nHost: {authority}\r\nContent-Length: 0\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
-      "required_edge_policy": "REJECT_OR_CLOSE",
+      "required_edge_policy": "REJECT_BEFORE_ORIGIN",
       "required_origin_policy": "REJECT_CLOSE"
     },
     {
@@ -150,39 +150,39 @@
       "id": "duplicate_content_length_conflicting",
       "rationale": "Conflicting lengths are a request-smuggling primitive.",
       "request_template": "POST /login?osmap_s03={token} HTTP/1.1\r\nHost: {authority}\r\nContent-Length: 0\r\nContent-Length: 1\r\nConnection: close\r\n\r\nX",
-      "required_edge_policy": "REJECT_OR_CLOSE",
+      "required_edge_policy": "REJECT_BEFORE_ORIGIN",
       "required_origin_policy": "REJECT_CLOSE"
     },
     {
       "class": "framing",
       "id": "comma_content_length_same",
-      "rationale": "Measure comma-list normalisation differences.",
+      "rationale": "OSMAP deliberately rejects comma-list framing and the edge must reject it before origin.",
       "request_template": "POST /login?osmap_s03={token} HTTP/1.1\r\nHost: {authority}\r\nContent-Length: 0, 0\r\nConnection: close\r\n\r\n",
-      "required_edge_policy": "MEASURE",
-      "required_origin_policy": "MEASURE"
+      "required_edge_policy": "REJECT_BEFORE_ORIGIN",
+      "required_origin_policy": "REJECT_CLOSE"
     },
     {
       "class": "framing",
       "id": "comma_content_length_conflicting",
       "rationale": "Conflicting comma-list lengths must fail closed.",
       "request_template": "POST /login?osmap_s03={token} HTTP/1.1\r\nHost: {authority}\r\nContent-Length: 0, 1\r\nConnection: close\r\n\r\nX",
-      "required_edge_policy": "REJECT_OR_CLOSE",
+      "required_edge_policy": "REJECT_BEFORE_ORIGIN",
       "required_origin_policy": "REJECT_CLOSE"
     },
     {
       "class": "framing",
       "id": "malformed_content_length_plus",
-      "rationale": "Measure plus-sign integer parsing across recipients.",
+      "rationale": "Content-Length admits ASCII decimal digits only at both recipients.",
       "request_template": "POST /login?osmap_s03={token} HTTP/1.1\r\nHost: {authority}\r\nContent-Length: +0\r\nConnection: close\r\n\r\n",
-      "required_edge_policy": "MEASURE",
-      "required_origin_policy": "MEASURE"
+      "required_edge_policy": "REJECT_BEFORE_ORIGIN",
+      "required_origin_policy": "REJECT_CLOSE"
     },
     {
       "class": "framing",
       "id": "malformed_content_length_hex",
       "rationale": "Hex-like lengths must be rejected.",
       "request_template": "POST /login?osmap_s03={token} HTTP/1.1\r\nHost: {authority}\r\nContent-Length: 0x0\r\nConnection: close\r\n\r\n",
-      "required_edge_policy": "REJECT_OR_CLOSE",
+      "required_edge_policy": "REJECT_BEFORE_ORIGIN",
       "required_origin_policy": "REJECT_CLOSE"
     },
     {
@@ -190,7 +190,7 @@
       "id": "transfer_encoding_chunked",
       "rationale": "OSMAP does not admit Transfer-Encoding.",
       "request_template": "POST /login?osmap_s03={token} HTTP/1.1\r\nHost: {authority}\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n0\r\n\r\n",
-      "required_edge_policy": "REJECT_OR_CLOSE",
+      "required_edge_policy": "REJECT_BEFORE_ORIGIN",
       "required_origin_policy": "REJECT_CLOSE"
     },
     {
@@ -198,7 +198,7 @@
       "id": "transfer_encoding_obfuscated",
       "rationale": "Transfer-coding chains must fail closed.",
       "request_template": "POST /login?osmap_s03={token} HTTP/1.1\r\nHost: {authority}\r\nTransfer-Encoding: chunked, identity\r\nConnection: close\r\n\r\n0\r\n\r\n",
-      "required_edge_policy": "REJECT_OR_CLOSE",
+      "required_edge_policy": "REJECT_BEFORE_ORIGIN",
       "required_origin_policy": "REJECT_CLOSE"
     },
     {
@@ -206,7 +206,7 @@
       "id": "content_length_plus_transfer_encoding",
       "rationale": "CL plus TE is a primary desynchronisation shape.",
       "request_template": "POST /login?osmap_s03={token} HTTP/1.1\r\nHost: {authority}\r\nContent-Length: 4\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n0\r\n\r\n",
-      "required_edge_policy": "REJECT_OR_CLOSE",
+      "required_edge_policy": "REJECT_BEFORE_ORIGIN",
       "required_origin_policy": "REJECT_CLOSE"
     },
     {
@@ -214,7 +214,7 @@
       "id": "truncated_declared_body",
       "rationale": "Early close before declared body completion must reject.",
       "request_template": "POST /login?osmap_s03={token} HTTP/1.1\r\nHost: {authority}\r\nContent-Length: 4\r\nConnection: close\r\n\r\nab",
-      "required_edge_policy": "REJECT_OR_CLOSE",
+      "required_edge_policy": "REJECT_BEFORE_ORIGIN",
       "required_origin_policy": "REJECT_CLOSE"
     },
     {
@@ -222,15 +222,15 @@
       "id": "extra_bytes_after_declared_body",
       "rationale": "Bytes beyond the declared body must not become a second message.",
       "request_template": "POST /login?osmap_s03={token} HTTP/1.1\r\nHost: {authority}\r\nContent-Length: 0\r\nConnection: close\r\n\r\nX",
-      "required_edge_policy": "REJECT_OR_CLOSE",
+      "required_edge_policy": "REJECT_BEFORE_ORIGIN",
       "required_origin_policy": "REJECT_CLOSE"
     },
     {
       "class": "pipelining",
       "id": "pipelined_second_request",
-      "rationale": "The sequential listener admits exactly one request per connection.",
+      "rationale": "The edge may forward only the first complete request and must close before queued bytes create a second origin request.",
       "request_template": "GET /login?osmap_s03={token} HTTP/1.1\r\nHost: {authority}\r\nConnection: keep-alive\r\n\r\nGET /login?osmap_s03={token}-second HTTP/1.1\r\nHost: {authority}\r\nConnection: close\r\n\r\n",
-      "required_edge_policy": "REJECT_OR_CLOSE",
+      "required_edge_policy": "FORWARD_EXACTLY_ONE",
       "required_origin_policy": "REJECT_CLOSE"
     },
     {
@@ -238,7 +238,7 @@
       "id": "get_with_declared_body",
       "rationale": "GET bodies are outside OSMAP's accepted browser surface.",
       "request_template": "GET /login?osmap_s03={token} HTTP/1.1\r\nHost: {authority}\r\nContent-Length: 1\r\nConnection: close\r\n\r\nX",
-      "required_edge_policy": "REJECT_OR_CLOSE",
+      "required_edge_policy": "REJECT_BEFORE_ORIGIN",
       "required_origin_policy": "REJECT_CLOSE"
     },
     {
@@ -246,7 +246,7 @@
       "id": "post_without_content_length",
       "rationale": "POST requires explicit Content-Length.",
       "request_template": "POST /login?osmap_s03={token} HTTP/1.1\r\nHost: {authority}\r\nConnection: close\r\n\r\n",
-      "required_edge_policy": "REJECT_OR_CLOSE",
+      "required_edge_policy": "REJECT_BEFORE_ORIGIN",
       "required_origin_policy": "REJECT_CLOSE"
     },
     {
@@ -254,7 +254,7 @@
       "id": "target_fragment",
       "rationale": "Fragments are not valid origin-form request targets.",
       "request_template": "GET /login?osmap_s03={token}#fragment HTTP/1.1\r\nHost: {authority}\r\nConnection: close\r\n\r\n",
-      "required_edge_policy": "REJECT_OR_CLOSE",
+      "required_edge_policy": "REJECT_BEFORE_ORIGIN",
       "required_origin_policy": "REJECT_CLOSE"
     },
     {
@@ -262,7 +262,7 @@
       "id": "target_dot_segments",
       "rationale": "OSMAP requires normalized request targets.",
       "request_template": "GET /a/../login?osmap_s03={token} HTTP/1.1\r\nHost: {authority}\r\nConnection: close\r\n\r\n",
-      "required_edge_policy": "REJECT_OR_CLOSE",
+      "required_edge_policy": "REJECT_BEFORE_ORIGIN",
       "required_origin_policy": "REJECT_CLOSE"
     },
     {
@@ -270,7 +270,7 @@
       "id": "target_double_slash",
       "rationale": "Multiple path separators are rejected rather than normalized.",
       "request_template": "GET /login//?osmap_s03={token} HTTP/1.1\r\nHost: {authority}\r\nConnection: close\r\n\r\n",
-      "required_edge_policy": "REJECT_OR_CLOSE",
+      "required_edge_policy": "REJECT_BEFORE_ORIGIN",
       "required_origin_policy": "REJECT_CLOSE"
     },
     {
@@ -281,7 +281,7 @@
       },
       "id": "oversized_request_line",
       "rationale": "Exceeds OSMAP's 2048-byte request-target policy.",
-      "required_edge_policy": "REJECT_OR_CLOSE",
+      "required_edge_policy": "REJECT_BEFORE_ORIGIN",
       "required_origin_policy": "REJECT_CLOSE"
     },
     {
@@ -291,9 +291,9 @@
         "value_bytes": 9000
       },
       "id": "oversized_header_field",
-      "rationale": "Measure nginx field-buffer policy versus OSMAP's block-level cap.",
-      "required_edge_policy": "MEASURE",
-      "required_origin_policy": "MEASURE"
+      "rationale": "A field value above OSMAP's 8 KiB per-field limit must be rejected at both recipients.",
+      "required_edge_policy": "REJECT_BEFORE_ORIGIN",
+      "required_origin_policy": "REJECT_CLOSE"
     },
     {
       "class": "limits",
@@ -303,10 +303,10 @@
       },
       "id": "oversized_header_block",
       "rationale": "Exceeds OSMAP's 16 KiB total header policy.",
-      "required_edge_policy": "REJECT_OR_CLOSE",
+      "required_edge_policy": "REJECT_BEFORE_ORIGIN",
       "required_origin_policy": "REJECT_CLOSE"
     }
   ],
-  "schema": "osmap-v15-http-differential-corpus-v1",
+  "schema": "osmap-v15-http-differential-corpus-v2",
   "standards_boundary": "RFC 9112 HTTP/1.1 message syntax and routing"
 }

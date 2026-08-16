@@ -13,6 +13,8 @@ The V15 differential harness preserves the exact request bytes and records:
 - raw direct-origin response over the OpenBSD loopback listener
 - nginx and OSMAP log lines containing the per-case run token
 - the required strict origin policy and edge policy for every corpus case
+- token-correlated edge interpretation and origin forwarding count
+- the application response separately from parser and forwarding decisions
 
 ## Repository Components
 
@@ -68,8 +70,27 @@ The corpus covers:
 - request-target normalization
 - request-line, field, and header-block limits
 
-Cases explicitly marked `MEASURE` are retained as evidence until the edge
-and origin policy is reviewed. They are not silently converted to PASS.
+Every case now has an enforceable policy. `REJECT_BEFORE_ORIGIN` requires zero
+origin requests and a rejecting edge outcome. `FORWARD_EXACTLY_ONE` requires
+one response and one origin request with the same method, complete target, and
+authority. `CANONICALIZE_EXACTLY_ONE` permits only syntax canonicalization or
+discarding an unused field while preserving that same semantic shape.
+
+The six former observation-only cases are closed as follows:
+
+| Case | Origin | Edge |
+|---|---|---|
+| `valid_post_content_length_zero` | accept | forward exactly one; record the route status separately |
+| `underscore_field_name` | reject under OSMAP's narrow field-name allowlist | discard the unused field and canonicalize exactly one equivalent request |
+| `dot_in_field_name` | reject under OSMAP's narrow field-name allowlist | discard the unused field and canonicalize exactly one equivalent request |
+| `comma_content_length_same` | reject strict framing | reject before origin |
+| `malformed_content_length_plus` | reject non-digit Content-Length | reject before origin |
+| `oversized_header_field` | reject above the 8 KiB value limit | reject before origin |
+
+The three previously accepted request-syntax normalizations use
+`CANONICALIZE_EXACTLY_ONE`. The pipelining case uses
+`FORWARD_EXACTLY_ONE`: nginx must close the client connection after the first
+response, preventing queued bytes from becoming another origin request.
 
 ## Evidence Handling
 
@@ -78,12 +99,26 @@ They contain no credentials or session material. The live bundle must keep
 the host log capture and JSON result together with the SHA-256 evidence
 manifest.
 
+Normal public access logs continue to omit query strings. A separate
+conditional log records the complete target and upstream outcome only when the
+request contains a bounded `OSMAPS04-*` differential token. This makes live
+forwarding cardinality deterministic without exposing normal browser queries.
+
 ## Acceptance Boundary
 
-The harness implementation can be accepted when its self-tests, offline
-inventory, and normal OSMAP gates pass. Parser conformance is accepted only
-after a separate live campaign runs the complete corpus with required-policy
-enforcement.
+Acceptance requires the complete offline and live campaigns to report:
+
+```text
+case_count=37
+required_policy_failures=0
+measured_unique_cases=0
+origin_request_cardinality_violations=0
+```
+
+Parser conformance is accepted only after the live campaign runs the complete
+corpus with required-policy enforcement. The isolated nginx regression test
+also proves that a pipelined second request is not forwarded while a new client
+connection remains usable.
 
 <!-- slice-03e-closeout:start -->
 # OSMAP V15 request-line parser assurance closeout

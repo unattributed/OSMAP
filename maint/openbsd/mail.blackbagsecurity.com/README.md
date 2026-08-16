@@ -33,6 +33,10 @@ the private/control listeners:
 - the public access log records normalized paths without query strings,
   referrers, cookies, or client-supplied forwarding chains
 - public OSMAP logs are retained as `root:wheel` mode `0640`
+- a conditional differential log records method, complete test target,
+  authority, and upstream outcome only for bounded `OSMAPS04-*` corpus tokens
+- OSMAP locations close the client connection after one response so queued
+  pipelined bytes cannot create a second origin request
 - public requests have conservative per-source request and connection limits;
   application throttling remains authoritative for authentication decisions
 

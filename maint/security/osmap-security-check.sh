@@ -131,7 +131,9 @@ python3 -m py_compile \
 	maint/security/test-osmap-wstg-runner.py \
 	maint/border-testing-pack/run-border-pack.py \
 	maint/wstg-testing-pack/run-wstg-pack.py \
-	maint/security/osmap-live-tls-standard-validate.py
+	maint/security/osmap-live-tls-standard-validate.py \
+	maint/security/osmap-v15-http-differential.py \
+	maint/security/test-osmap-v15-http-differential.py
 
 echo "==> validating CWE Top 25 weak-pattern guard"
 sh maint/security/test-osmap-cwe-top25-guard.sh
@@ -200,6 +202,10 @@ sh maint/security/test-osmap-live-validate-edge-cutover.sh
 
 echo "==> validating reviewed mail host edge artifacts"
 sh maint/security/test-osmap-mail-host-edge-artifacts.sh
+
+echo "==> validating V15 HTTP differential policy closure"
+python3 -B maint/security/test-osmap-v15-http-differential.py .
+sh maint/security/test-osmap-v15-nginx-single-request.sh
 
 echo "==> validating edge cutover rehearsal wrapper behavior"
 sh maint/security/test-osmap-live-rehearse-edge-cutover.sh

@@ -18,10 +18,14 @@ import subprocess
 import sys
 from typing import Any
 
-CORPUS_SCHEMA = "osmap-v15-http-differential-corpus-v1"
-RESULT_SCHEMA = "osmap-v15-http-differential-result-v1"
-ORIGIN_POLICIES = {"ACCEPT", "REJECT_CLOSE", "MEASURE"}
-EDGE_POLICIES = {"ACCEPT", "REJECT_OR_CLOSE", "MEASURE"}
+CORPUS_SCHEMA = "osmap-v15-http-differential-corpus-v2"
+RESULT_SCHEMA = "osmap-v15-http-differential-result-v2"
+ORIGIN_POLICIES = {"ACCEPT", "REJECT_CLOSE"}
+EDGE_POLICIES = {
+    "CANONICALIZE_EXACTLY_ONE",
+    "FORWARD_EXACTLY_ONE",
+    "REJECT_BEFORE_ORIGIN",
+}
 REJECT_STATUS = {400, 408, 411, 413, 414, 421, 431, 501, 505}
 
 
@@ -359,8 +363,10 @@ def direct_origin_batch(
         ],
     }
     remote_command = f"python3 -c {shlex.quote(REMOTE_DIRECT_RUNNER)}"
-    completed = subprocess.run(
-        [
+    command = (
+        ["python3", "-c", REMOTE_DIRECT_RUNNER]
+        if ssh_host == "local"
+        else [
             "ssh",
             "-o", "BatchMode=yes",
             "-o", "ConnectTimeout=10",
@@ -368,7 +374,10 @@ def direct_origin_batch(
             "-o", "ServerAliveCountMax=2",
             ssh_host,
             remote_command,
-        ],
+        ]
+    )
+    completed = subprocess.run(
+        command,
         input=json.dumps(payload),
         text=True,
         stdout=subprocess.PIPE,
@@ -425,8 +434,6 @@ def origin_policy_result(
     if not isinstance(accepted, bool):
         return "FAIL", "oracle result lacks boolean accepted"
 
-    if required_policy == "MEASURE":
-        return "MEASURED", "case is observation-only"
     if required_policy == "ACCEPT":
         if accepted:
             return "PASS", "origin parser accepted required control"
@@ -438,24 +445,111 @@ def origin_policy_result(
     return "FAIL", f"unsupported origin policy {required_policy!r}"
 
 
+def required_forward_shape(request: bytes) -> dict[str, str]:
+    text = request.decode("iso-8859-1")
+    lines = text.replace("\r\n", "\n").split("\n")
+    request_fields = lines[0].split()
+    if len(request_fields) != 3:
+        fail("forwarding policy request lacks one semantic request line")
+    authority = ""
+    for line in lines[1:]:
+        if ":" not in line:
+            continue
+        name, value = line.split(":", 1)
+        if name.lower() == "host":
+            authority = value.strip()
+            break
+    if not authority:
+        fail("forwarding policy request lacks one semantic Host value")
+    return {
+        "method": request_fields[0],
+        "request_uri": request_fields[1],
+        "host": authority,
+    }
+
+
+def parse_forwarding_observation(
+    host_logs: str,
+    token: str,
+    request: bytes,
+    required_policy: str,
+) -> dict[str, Any]:
+    matching_entries = []
+    for line in host_logs.splitlines():
+        fields = dict(re.findall(r'([a-z_]+)="([^"]*)"', line))
+        observed_token = fields.get("token", "")
+        if not observed_token:
+            match = re.search(
+                r"OSMAPS04-[A-Za-z0-9_-]+",
+                fields.get("request_uri", "") + fields.get("request", ""),
+            )
+            observed_token = match.group(0) if match else ""
+        if observed_token == token or observed_token.startswith(f"{token}-"):
+            matching_entries.append(fields)
+
+    forwarded_entries = [
+        entry
+        for entry in matching_entries
+        if entry.get("upstream_addr") not in {None, "", "-"}
+    ]
+    expected_shape = None
+    shape_matches = len(forwarded_entries) == 0
+    if required_policy != "REJECT_BEFORE_ORIGIN":
+        expected_shape = required_forward_shape(request)
+        shape_matches = (
+            len(forwarded_entries) == 1
+            and all(
+                forwarded_entries[0].get(key) == expected
+                for key, expected in expected_shape.items()
+            )
+        )
+    return {
+        "correlation_token": token,
+        "edge_request_count": len(matching_entries),
+        "origin_request_count": len(forwarded_entries),
+        "expected_shape": expected_shape,
+        "shape_matches": shape_matches,
+        "edge_log_entries": matching_entries,
+    }
+
+
 def edge_policy_result(
     required_policy: str,
     response: RawHttpResponse,
+    forwarding: dict[str, Any],
 ) -> tuple[str, str]:
-    if required_policy == "MEASURE":
-        return "MEASURED", "edge behaviour is observation-only"
-    if required_policy == "ACCEPT":
-        if response.status is not None and response.status < 400:
-            return "PASS", "edge accepted required control"
-        return "FAIL", "edge did not accept required control"
-    if required_policy == "REJECT_OR_CLOSE":
+    observed_count = forwarding.get("origin_request_count")
+    expected_count = (
+        0 if required_policy == "REJECT_BEFORE_ORIGIN" else 1
+    )
+    if observed_count != expected_count:
+        return (
+            "FAIL",
+            f"edge forwarded {observed_count} origin requests; "
+            f"policy requires {expected_count}",
+        )
+
+    if required_policy == "REJECT_BEFORE_ORIGIN":
         if response.status is None:
             if response.connection_closed or response.timed_out or response.error:
-                return "PASS", "edge rejected or closed without a successful response"
+                return "PASS", "edge rejected or closed before origin"
             return "FAIL", "edge returned no classifiable outcome"
         if response.status in REJECT_STATUS or response.status >= 400:
-            return "PASS", "edge returned a rejecting status"
-        return "FAIL", "edge returned a successful status for a hostile shape"
+            return "PASS", "edge returned a rejecting status before origin"
+        return "FAIL", "edge returned a successful status without forwarding"
+
+    if required_policy in {
+        "CANONICALIZE_EXACTLY_ONE",
+        "FORWARD_EXACTLY_ONE",
+    }:
+        if not forwarding.get("shape_matches"):
+            return "FAIL", "forwarded method, target, or authority differs"
+        if response.response_count != 1:
+            return "FAIL", "edge did not return exactly one application response"
+        if required_policy == "CANONICALIZE_EXACTLY_ONE":
+            return "PASS", "edge canonicalized to one equivalent origin request"
+        return "PASS", "edge forwarded exactly one equivalent origin request"
+
     return "FAIL", f"unsupported edge policy {required_policy!r}"
 
 
@@ -464,6 +558,9 @@ def capture_host_logs(ssh_host: str, run_prefix: str) -> str:
     command = (
         "set -eu; "
         f"prefix={quoted}; "
+        "printf '%s\n' '--- differential access log ---'; "
+        "doas grep -F \"$prefix\" "
+        "/var/log/nginx/osmap.differential.access.log 2>/dev/null || true; "
         "printf '%s\n' '--- nginx access log ---'; "
         "doas grep -F \"$prefix\" "
         "/var/log/nginx/osmap.public.access.log 2>/dev/null | tail -200 || true; "
@@ -474,8 +571,10 @@ def capture_host_logs(ssh_host: str, run_prefix: str) -> str:
         "doas grep -F \"$prefix\" "
         "/var/log/osmap/serve.log 2>/dev/null | tail -200 || true"
     )
-    completed = subprocess.run(
-        [
+    run_command = (
+        ["/bin/ksh", "-c", command]
+        if ssh_host == "local"
+        else [
             "ssh",
             "-o", "BatchMode=yes",
             "-o", "ConnectTimeout=10",
@@ -483,7 +582,10 @@ def capture_host_logs(ssh_host: str, run_prefix: str) -> str:
             "-o", "ServerAliveCountMax=2",
             ssh_host,
             command,
-        ],
+        ]
+    )
+    completed = subprocess.run(
+        run_command,
         text=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -515,18 +617,25 @@ def write_reports(
         f"- Run ID: `{result['run_id']}`",
         f"- Cases: {result['case_count']}",
         f"- Required-policy failures: {result['required_policy_failures']}",
-        f"- Measured-only cases: {result['measured_only_cases']}",
+        f"- Measured unique cases: {result['measured_unique_cases']}",
+        "- Origin request cardinality violations: "
+        f"{result['origin_request_cardinality_violations']}",
         "",
-        "| Case | Class | Origin policy | Oracle | Origin result | Edge result |",
-        "|---|---|---|---|---|---|",
+        "| Case | Origin policy | Edge policy | Oracle | Origin result | Forwarded | Edge result | Application |",
+        "|---|---|---|---|---|---|---|---|",
     ]
     for item in result["cases"]:
         edge_result = item.get("edge_policy_result", "not-run")
+        application_outcome = item.get("application_outcome") or {}
         rows.append(
-            f"| `{item['id']}` | `{item['class']}` | "
+            f"| `{item['id']}` | "
             f"`{item['required_origin_policy']}` | "
+            f"`{item['required_edge_policy']}` | "
             f"`{'accept' if item['oracle']['accepted'] else 'reject'}` | "
-            f"`{item['origin_policy_result']}` | `{edge_result}` |"
+            f"`{item['origin_policy_result']}` | "
+            f"`{item.get('forwarding_observation', {}).get('origin_request_count', 'not-run')}` | "
+            f"`{edge_result}` | "
+            f"`{application_outcome.get('status', 'not-run')}` |"
         )
     rows.extend([
         "",
@@ -566,8 +675,8 @@ def main() -> None:
 
     corpus = load_corpus(arguments.corpus)
     run_id = (
-        "OSMAPS03-"
-        + dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+        "OSMAPS04-"
+        + dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
     )
     rendered: list[tuple[dict[str, Any], str, bytes]] = []
     for case in corpus["cases"]:
@@ -585,9 +694,36 @@ def main() -> None:
             [(case["id"], raw) for case, _, raw in rendered],
         )
 
+    edge_results: dict[str, RawHttpResponse] = {}
+    if arguments.mode == "live":
+        for case, _, raw in rendered:
+            edge_results[case["id"]] = send_tls_request(
+                arguments.edge_host,
+                arguments.edge_port,
+                raw,
+                timeout=arguments.timeout,
+            )
+
+    host_logs = ""
+    if arguments.mode == "live":
+        host_logs = capture_host_logs(arguments.ssh_host, run_id)
+        arguments.output_dir.mkdir(parents=True, exist_ok=True)
+        (arguments.output_dir / "http-differential-host-logs.txt").write_text(
+            host_logs,
+            encoding="utf-8",
+        )
+
     results = []
     required_failures = 0
-    measured = 0
+    measured_unique_cases = sum(
+        1
+        for case in corpus["cases"]
+        if "MEASURE" in {
+            case["required_origin_policy"],
+            case["required_edge_policy"],
+        }
+    )
+    cardinality_violations = 0
 
     for case, token, raw in rendered:
         oracle_result = run_oracle(
@@ -601,8 +737,6 @@ def main() -> None:
         )
         if origin_state == "FAIL":
             required_failures += 1
-        elif origin_state == "MEASURED":
-            measured += 1
 
         item: dict[str, Any] = {
             "id": case["id"],
@@ -620,38 +754,47 @@ def main() -> None:
         }
 
         if arguments.mode == "live":
-            edge = send_tls_request(
-                arguments.edge_host,
-                arguments.edge_port,
-                raw,
-                timeout=arguments.timeout,
-            )
+            edge = edge_results[case["id"]]
             direct = direct_results[case["id"]]
+            forwarding = parse_forwarding_observation(
+                host_logs,
+                token,
+                raw,
+                case["required_edge_policy"],
+            )
             edge_state, edge_message = edge_policy_result(
                 case["required_edge_policy"],
                 edge,
+                forwarding,
             )
             if edge_state == "FAIL":
                 required_failures += 1
-            elif edge_state == "MEASURED":
-                measured += 1
+            expected_count = (
+                0
+                if case["required_edge_policy"] == "REJECT_BEFORE_ORIGIN"
+                else 1
+            )
+            if forwarding["origin_request_count"] != expected_count:
+                cardinality_violations += 1
             item.update({
                 "edge": edge.to_dict(),
                 "direct_origin": direct.to_dict(),
+                "forwarding_observation": forwarding,
                 "edge_policy_result": edge_state,
                 "edge_policy_message": edge_message,
+                "application_outcome": (
+                    {
+                        "status": edge.status,
+                        "reason": edge.reason,
+                        "response_count": edge.response_count,
+                        "raw_sha256": edge.raw_sha256,
+                    }
+                    if forwarding["origin_request_count"] == 1
+                    else None
+                ),
             })
 
         results.append(item)
-
-    host_logs = ""
-    if arguments.mode == "live":
-        host_logs = capture_host_logs(arguments.ssh_host, run_id)
-        arguments.output_dir.mkdir(parents=True, exist_ok=True)
-        (arguments.output_dir / "http-differential-host-logs.txt").write_text(
-            host_logs,
-            encoding="utf-8",
-        )
 
     report = {
         "schema": RESULT_SCHEMA,
@@ -661,7 +804,8 @@ def main() -> None:
         "authority": arguments.authority,
         "case_count": len(results),
         "required_policy_failures": required_failures,
-        "measured_only_cases": measured,
+        "measured_unique_cases": measured_unique_cases,
+        "origin_request_cardinality_violations": cardinality_violations,
         "host_log_capture_sha256": (
             hashlib.sha256(host_logs.encode("utf-8")).hexdigest()
             if host_logs
@@ -675,7 +819,8 @@ def main() -> None:
     print(f"run_id={run_id}")
     print(f"case_count={len(results)}")
     print(f"required_policy_failures={required_failures}")
-    print(f"measured_only_cases={measured}")
+    print(f"measured_unique_cases={measured_unique_cases}")
+    print(f"origin_request_cardinality_violations={cardinality_violations}")
     print("PASS: HTTP differential harness completed")
 
     if arguments.enforcement == "required-policy" and required_failures:

@@ -117,6 +117,9 @@ pub const DEFAULT_HTTP_MAX_FORM_FIELDS: usize = 16;
 /// Conservative upper bound for header count in one request.
 pub const DEFAULT_HTTP_MAX_HEADER_COUNT: usize = 64;
 
+/// Conservative upper bound for any individual request-header value.
+pub const DEFAULT_HTTP_MAX_HEADER_VALUE_BYTES: usize = 8 * 1024;
+
 /// Conservative upper bound for the `Host` header value.
 pub const DEFAULT_HTTP_MAX_HOST_HEADER_BYTES: usize = 512;
 
@@ -169,6 +172,7 @@ pub struct HttpPolicy {
     pub max_header_bytes: usize,
     pub max_request_target_bytes: usize,
     pub max_header_count: usize,
+    pub max_header_value_bytes: usize,
     pub max_query_fields: usize,
     pub max_body_bytes: usize,
     pub max_upload_body_bytes: usize,
@@ -195,6 +199,7 @@ impl HttpPolicy {
             max_header_bytes: DEFAULT_HTTP_MAX_HEADER_BYTES,
             max_request_target_bytes: DEFAULT_HTTP_MAX_REQUEST_TARGET_BYTES,
             max_header_count: DEFAULT_HTTP_MAX_HEADER_COUNT,
+            max_header_value_bytes: DEFAULT_HTTP_MAX_HEADER_VALUE_BYTES,
             max_query_fields: DEFAULT_HTTP_MAX_QUERY_FIELDS,
             max_body_bytes: DEFAULT_HTTP_MAX_BODY_BYTES,
             max_upload_body_bytes: DEFAULT_HTTP_MAX_UPLOAD_BODY_BYTES,
@@ -225,6 +230,7 @@ impl Default for HttpPolicy {
             max_header_bytes: DEFAULT_HTTP_MAX_HEADER_BYTES,
             max_request_target_bytes: DEFAULT_HTTP_MAX_REQUEST_TARGET_BYTES,
             max_header_count: DEFAULT_HTTP_MAX_HEADER_COUNT,
+            max_header_value_bytes: DEFAULT_HTTP_MAX_HEADER_VALUE_BYTES,
             max_query_fields: DEFAULT_HTTP_MAX_QUERY_FIELDS,
             max_body_bytes: DEFAULT_HTTP_MAX_BODY_BYTES,
             max_upload_body_bytes: DEFAULT_HTTP_MAX_UPLOAD_BODY_BYTES,
