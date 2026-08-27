@@ -29,7 +29,7 @@ key:
 
 Use an explicitly signed commit and a concise lowercase commit message:
 
-    git commit -S F55E404E91A0753701F91B01A7228D3FB5084B34 -m "<lowercase commit message>"
+    git commit --gpg-sign=F55E404E91A0753701F91B01A7228D3FB5084B34 -m "<lowercase commit message>"
 
 Do not create unsigned commits.
 
@@ -40,16 +40,21 @@ require explicit operator approval.
 Do not create or switch branches unless the task requires it or the operator
 explicitly approves it.
 
-Before every command that may trigger an encrypted private-key passphrase
-prompt, including signed commits, direct GPG operations, SSH authentication,
-and SSH-backed Git fetch or push operations, use this checkpoint:
+GitHub SSH transport on a qualified operator workstation is intentionally
+passwordless. If SSH unexpectedly requests a private-key passphrase, stop and
+report workstation bootstrap noncompliance. Do not retrieve a Proton Pass secret
+for GitHub SSH.
+
+Before every command that may trigger the Shopkeeper OpenPGP private-key
+passphrase, including signed commits, direct GPG operations, or signing-key
+unlock operations, use this checkpoint:
 
     echo
     echo "============================================================"
-    echo "PRIVATE KEY PASSPHRASE MAY BE REQUIRED"
+    echo "OPENPGP PRIVATE KEY PASSPHRASE MAY BE REQUIRED"
     echo "============================================================"
-    echo "Retrieve the required passphrase from Proton Pass and copy it"
-    echo "to the system clipboard."
+    echo "Retrieve the Shopkeeper OpenPGP passphrase from Proton Pass"
+    echo "and copy it to the system clipboard."
     echo
     read -r -p "Press Enter when the passphrase is ready in the clipboard..."
     echo
@@ -66,6 +71,14 @@ outgoing commit in VSCodium before approving synchronization.
 
 Only an explicit instruction such as "push", "sync", or "push this commit"
 authorizes a remote write.
+
+After an approved push, refresh `origin` and prove local/remote SHA equality
+before reporting synchronization as successful:
+
+    git fetch --prune origin
+    git rev-parse HEAD
+    git rev-parse origin/main
+    git status --short --branch
 
 ## Validation
 
