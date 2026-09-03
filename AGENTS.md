@@ -106,3 +106,20 @@ before reporting synchronization as successful:
 - If a new commit changes only evidence or agent guidance, refresh any
   commit-pinned release reports before claiming the full release gate passes for
   that new commit.
+
+## Sprint Artifact And Evidence SOP
+
+This repository uses sprint-scoped artifact storage for all operator deliveries and retained evidence.
+
+- Do not write new sprint delivery or evidence artifacts directly into `/home/foo/Downloads`.
+- Before creating the first retained artifact for a sprint, create one stable sprint root at `/home/foo/Downloads/<sprint-id>/`.
+- Create the sprint root with owner-only permissions where practical, for example `mkdir -p "$SPRINT_ROOT"` followed by `chmod 700 "$SPRINT_ROOT"`.
+- Keep every retained artifact associated with that sprint under the sprint root, including delivery `.tar.gz` bundles, portable `.tar.gz.sha256` sidecars, evidence archives, evidence sidecars, terminal logs, status files, manifests, extracted operator bundles, and related handoff files.
+- Reuse the same sprint root across slices, retries, resumptions, and evidence refreshes belonging to that sprint instead of returning to the top-level Downloads directory.
+- Operator bundles must default retained output variables such as `OUT_ROOT`, evidence directories, archive paths, sidecars, logs, and status paths to the sprint root rather than directly to `$HOME/Downloads`.
+- SHA-256 sidecars must remain portable by containing the archive basename, never an absolute path.
+- Temporary build/runtime scratch that does not need retention should use `/tmp` or another purpose-specific temporary location rather than the sprint artifact directory.
+- Do not move, rename, inspect, or delete unrelated pre-existing Downloads content merely to enforce this layout.
+- When a historical sprint has no previously defined directory name, choose a concise stable slug and record it in the operator bundle. For the current PR #56 Slice 00 workstream, use `/home/foo/Downloads/osmap-pr56-slice-00/`.
+
+This layout is mandatory for newly generated sprint artifacts. Existing top-level Downloads artifacts may remain in place unless a separate bounded cleanup or archival operation is explicitly authorized.
