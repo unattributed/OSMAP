@@ -40,7 +40,7 @@ case "$cmd" in
 			exit 1
 		fi
 		if [ "${2:-}" = "--version" ]; then
-			printf '%s\n' 'rustfmt 1.8.0'
+			printf 'rustfmt %s\n' "${OSMAP_TEST_RUSTFMT_VERSION:-1.8.0}"
 			exit 0
 		fi
 		exit 0
@@ -393,6 +393,19 @@ assert_fails cargo-skipped PATH="$missing_cargo_bin:/bin:/usr/bin"
 assert_fails missing-clippy OSMAP_TEST_MISSING_CLIPPY=1
 assert_fails missing-rustfmt OSMAP_TEST_MISSING_RUSTFMT=1
 assert_fails missing-supply-chain-tool OSMAP_TEST_MISSING_AUDIT=1
+
+rustfmt_stable_case="$tmp_root/rustfmt-stable"
+if ! run_release_case rustfmt-stable OSMAP_TEST_RUSTFMT_VERSION=1.8.0-stable; then
+	echo "expected rustfmt 1.8.0-stable to satisfy the reviewed 1.8.0 policy" >&2
+	cat "$rustfmt_stable_case/output.txt" >&2
+	exit 1
+fi
+
+assert_fails rustfmt-wrong-patch OSMAP_TEST_RUSTFMT_VERSION=1.8.1
+assert_fails rustfmt-wrong-patch-stable OSMAP_TEST_RUSTFMT_VERSION=1.8.1-stable
+assert_fails rustfmt-wrong-minor OSMAP_TEST_RUSTFMT_VERSION=1.7.0
+assert_fails rustfmt-malformed OSMAP_TEST_RUSTFMT_VERSION=malformed
+assert_fails rustfmt-unsupported-channel OSMAP_TEST_RUSTFMT_VERSION=1.8.0-nightly
 
 skip_case="$tmp_root/auth-skip"
 mkdir -p "$skip_case/bin"

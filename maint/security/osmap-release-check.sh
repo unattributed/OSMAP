@@ -117,6 +117,21 @@ check_exact_version() {
 	return 0
 }
 
+normalize_rustfmt_version() {
+	version=$1
+	printf '%s\n' "$version" | awk '
+		/^[0-9]+\.[0-9]+\.[0-9]+(-stable)?$/ {
+			sub(/-stable$/, "", $0)
+			print
+			valid=1
+		}
+		END {
+			if (!valid)
+				exit 1
+		}
+	'
+}
+
 run_phase() {
 	label=$1
 	shift
@@ -858,7 +873,13 @@ if command -v cargo >/dev/null 2>&1; then
 		fail "missing required cargo subcommand: clippy"
 	fi
 	if cargo fmt --version >/dev/null 2>&1; then
-		check_exact_version rustfmt "$(cargo fmt --version | awk '{ print $2 }')" "$OSMAP_RELEASE_RUSTFMT_VERSION" || true
+		rustfmt_reported_version=$(cargo fmt --version | awk '{ print $2 }')
+		if rustfmt_numeric_version=$(normalize_rustfmt_version "$rustfmt_reported_version"); then
+			check_exact_version rustfmt "$rustfmt_numeric_version" "$OSMAP_RELEASE_RUSTFMT_VERSION" || true
+		else
+			add_skip "rustfmt version is malformed or uses an unsupported suffix: $rustfmt_reported_version"
+			fail "rustfmt version is malformed or uses an unsupported suffix: $rustfmt_reported_version"
+		fi
 	else
 		add_skip "missing required cargo subcommand: fmt"
 		fail "missing required cargo subcommand: fmt"
