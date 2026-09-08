@@ -2,9 +2,11 @@
 
 ## Status
 
-Phase 1 interim TOTP initial-provisioning capability delivered and
-production-contract qualified. The broader administrative control plane remains
-future work, and this status does not authorize retirement of PostfixAdmin.
+Phase 1 interim TOTP initial-provisioning capability remains
+production-contract qualified. Governed TOTP revocation is now implemented and
+production read-only contract qualified. Rotation, recovery, and the broader
+administrative control plane remain future work, and this status does not
+authorize retirement of PostfixAdmin.
 
 ## Purpose
 
@@ -20,13 +22,12 @@ maintainability, and governance requirements.
   alias administration.
 - OSMAP authenticates existing mailbox users and requires TOTP for browser
   access.
-- OSMAP now includes a reviewed interim operator CLI for canonical mailbox
-  identity checks, read-only TOTP inspection, dry-run planning, and governed
-  initial TOTP provisioning.
+- OSMAP now includes reviewed interim operator tooling for canonical mailbox
+  identity checks, read-only TOTP inspection, dry-run planning, governed
+  initial TOTP provisioning, and governed TOTP revocation.
 - Existing factors fail closed and are never implicitly overwritten or rotated.
-  TOTP rotation, revocation, recovery, broader mailbox/domain/alias
-  administration, and an administrative service or browser surface remain
-  future work.
+  TOTP rotation, recovery, broader mailbox/domain/alias administration, and an
+  administrative service or browser surface remain future work.
 - PostfixAdmin must remain available until replacement capability, migration,
   rollback, and production evidence are complete.
 
@@ -86,12 +87,15 @@ At minimum, it must provide:
 
 ### Phase 1: Operator Tool
 
-The first bounded operator-tool slice is delivered for mailbox identity
-inspection and initial TOTP provisioning. It provides read-only check, dry-run,
-governed provisioning, local enrollment verification, fail-closed existing
-factor handling, and bounded rollback on failed installation. Rotation,
-revocation, recovery, and broader domain, mailbox, and alias administration
-remain separate future slices.
+The first two bounded operator-tool slices are delivered for mailbox identity
+inspection, initial TOTP provisioning, and governed TOTP revocation. They
+provide read-only inspection and planning, governed initial provisioning,
+local enrollment verification, fail-closed existing-factor handling, bounded
+rollback on failed installation, and preservation-first revocation with
+digest-based stale-state protection. Rotation, recovery, and broader domain,
+mailbox, and alias administration remain separate future slices. The Slice 01
+production qualification is read-only and does not claim that a live
+revocation mutation was performed.
 
 ### Phase 2: Administrative Service Boundary
 
@@ -167,9 +171,31 @@ Fresh integration qualification on 2026-09-08 established:
 - the validation invoked no provisioning operation and performed no production
   mutation.
 
-This evidence qualifies the delivered initial-provisioning boundary only. It
-does not claim completion of rotation, revocation, recovery, the wider
-administrative control plane, or PostfixAdmin migration and retirement.
+### Delivered Slice 01 Revocation Evidence
+
+Governed TOTP revocation is implemented by
+`maint/live/osmap-revoke-totp-over-ssh.sh` and documented by
+`docs/TOTP_OPERATOR_REVOCATION_SOP.md`.
+
+Fresh qualification on 2026-09-08 established:
+
+- Bash syntax, ShellCheck, local self-test, negative identity checks,
+  documentation governance, and the full developer `make security-check`
+  passed;
+- the qualified revocation script SHA-256 is
+  `3bb7b4853e1c9cc1c4a7192e2e5fffcb63e85296640e2e506eb82b4dec9b0c95`;
+- a production read-only `--check` confirmed the existing factor was a regular
+  `_osmap:_osmap` file with mode `0600` and confirmed safe revoked-directory
+  metadata;
+- a production read-only `--dry-run` confirmed preservation-first revocation,
+  atomic no-overwrite linking, digest compare-and-swap protection,
+  `would_revoke=true`, no replacement provisioning, and no session revocation;
+- no `--revoke` operation was invoked and no production mutation occurred.
+
+This evidence qualifies the delivered initial-provisioning boundary and the
+read-only revocation contract. It does not claim completion of rotation,
+recovery, the wider administrative control plane, or PostfixAdmin migration
+and retirement, and it does not claim execution of a live revocation mutation.
 
 ## PostfixAdmin Retirement Criteria
 
@@ -205,7 +231,8 @@ A future implementation should produce:
 ## Decision Requested
 
 Retain this document as the bounded engineering request and record the
-interim initial-TOTP-provisioning slice as delivered. Remaining control-plane
-capabilities should continue as separately reviewed slices. No PostfixAdmin
+interim initial-TOTP-provisioning and governed-revocation slices as delivered.
+Remaining control-plane capabilities should continue as separately reviewed
+slices. No PostfixAdmin
 retirement claim is authorized until every acceptance and migration gate is
 complete.
