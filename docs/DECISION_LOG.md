@@ -1,5 +1,26 @@
 # Decision Log
 
+## 2026-09-15 — Full-functional UX epic planning intake
+
+The operator rejected further Roundcube migration planning, reported Roundcube
+removed, and requested full functional completion of the supplied settings,
+compose and inbox/reader mockups with a dark-mode option for every page.
+The subsequent instruction is to codify an agent-executable epic and sprints,
+not to implement or mutate live systems during this planning delivery.
+
+The revision-1 plan is `UX_FULL_FUNCTIONAL_EPIC.md`, with 12 sprints and
+48 slices in `UX_FULL_FUNCTIONAL_SLICES.md`. A signed-commit-anchored checksum
+manifest and `UX_AGENT_EXECUTION_CONTRACT.md` separate frozen requirements
+from progress in `UX_EXECUTION_LEDGER.md`. Operator-approved amendments are
+required for scope or acceptance changes; no checksum scheme is claimed to
+prevent all file changes.
+
+Runtime crypto location/custody, JavaScript-free interaction conflicts, identity
+authority, unspecified ancillary actions and live deployment authority are
+unresolved gates, not agent-selected policy exceptions. Initial state is
+NOT_STARTED for all slices. No new UX, crypto, recovery, release or deployment
+capability follows from this planning commit.
+
 ## 2026-09-15 — Operator-directed TOTP sprint closure with residuals
 
 After being informed that private-terminal recovery enrollment and verified

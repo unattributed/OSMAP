@@ -14,6 +14,21 @@ statement as provenance rather than current release posture.
 
 ## Current source posture
 
+### Full-functional UX planning intake, 2026-09-15
+
+The operator requested a codified full-functional UX epic against four supplied
+mockups, including every-page dark mode and missing runtime OpenPGP/account/mail
+capabilities. `UX_FULL_FUNCTIONAL_EPIC.md` and
+`UX_FULL_FUNCTIONAL_SLICES.md` define 12 sprints and 48 slices. All are
+NOT_STARTED; the first candidate is S00-01 after signed-plan acceptance.
+Architecture conflicts and live authority remain explicit decision gates.
+See `UX_AGENT_EXECUTION_CONTRACT.md` and `UX_EXECUTION_LEDGER.md`.
+This planning intake adds no runtime capability or deployment qualification.
+The operator reports Roundcube completely removed; the UX epic does not include
+Roundcube migration, coexistence or restoration.
+
+### Earlier TOTP administrative-closeout record
+
 As of 2026-09-15, the approved TOTP lifecycle continuation contains Slice 02
 (planned rotation), Slice 03 (recovery), and Slice 04 (integration closeout).
 Slice 02 was delivered as signed commit `77dc836` and continuation was approved.

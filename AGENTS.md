@@ -4,6 +4,19 @@ This repository is the OpenBSD Secure Mail Access Platform. Treat it as a
 security-sensitive mail application with a live validation target at
 `mail.blackbagsecurity.com`.
 
+## Full-functional UX epic execution
+
+For work assigned to the OSMAP-UX epic, read
+`docs/UX_FULL_FUNCTIONAL_EPIC.md`, `docs/UX_FULL_FUNCTIONAL_SLICES.md`,
+`docs/UX_AGENT_EXECUTION_CONTRACT.md`, and `docs/UX_EXECUTION_LEDGER.md`
+before task edits. Verify the operator-accepted signed plan anchor and
+`docs/UX_PLAN_SHA256SUMS`; if no anchor is accepted, do not start implementation.
+Keep progress in the ledger, not the frozen plan. Plan changes require the
+documented operator-approved amendment process. A planning request does not
+authorize live mutation, runtime cryptography, deployment or synchronization.
+These epic-specific rules do not override higher-priority instructions or the
+operator's explicit instructions.
+
 ## Working Rules
 
 - Keep changes small, reviewed, and aligned with the existing Rust, shell, and

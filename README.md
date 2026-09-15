@@ -56,6 +56,13 @@ See the [architecture](docs/ARCHITECTURE.md) and
 
 ## Project status
 
+The operator requested a full-functional UX implementation plan covering the
+approved mockups, every-page light/dark mode, missing account/mail capabilities,
+and runtime OpenPGP. The [epic](docs/UX_FULL_FUNCTIONAL_EPIC.md) defines 12
+sprints and 48 slices with decision and security gates. This is planning only:
+no new UX or cryptographic capability is claimed by publication of the plan.
+The operator reports Roundcube removed; this epic is not a retirement project.
+
 The current bounded development sprint covers operator-assisted TOTP rotation,
 recovery, and integration closeout. Rotation has a signed source delivery;
 recovery now requires a short-lived signed operator approval and remains under

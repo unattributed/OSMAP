@@ -1,5 +1,17 @@
 # Known Limitations
 
+## Full-functional UX epic planning boundary
+
+The operator-requested `UX_FULL_FUNCTIONAL_EPIC.md` is a plan, not a
+functional-completion claim. Its 48 slices have not started. Runtime OpenPGP,
+new account workflows, ancillary mockup functions and every-page dark mode
+remain unqualified until their implementation and acceptance evidence exists.
+Browser-only decryption versus server-side helper custody, and pane-only
+updates versus the no-JavaScript policy, require explicit decisions before
+dependent implementation. Do not resolve either conflict by changing security
+claims or disabling gates. Roundcube removal is operator-reported, not proof
+that all pictured OSMAP functions already work.
+
 ## TOTP lifecycle continuation and host migration
 
 The Slice 02 rotation coordinator is a sequential operator workflow, not an
