@@ -13,7 +13,8 @@ fi
 
 : "${TMPDIR:=/tmp/osmap-tmp}"
 : "${CARGO_HOME:=/tmp/osmap-cargo-home}"
-: "${CARGO_TARGET_DIR:=/tmp/osmap-target}"
+# Keep compiled fixture paths scoped to this checkout, unless explicitly set.
+: "${CARGO_TARGET_DIR:=$repo_root/target}"
 : "${OSMAP_RELEASE_EVIDENCE_DIR:=$repo_root/maint/live}"
 : "${OSMAP_RELEASE_RUSTC_VERSION:=1.94.1}"
 : "${OSMAP_RELEASE_CARGO_VERSION:=1.94.1}"

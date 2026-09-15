@@ -7,7 +7,8 @@ cd "$repo_root"
 
 : "${TMPDIR:=/tmp/osmap-tmp}"
 : "${CARGO_HOME:=/tmp/osmap-cargo-home}"
-: "${CARGO_TARGET_DIR:=/tmp/osmap-target}"
+# Tests embed CARGO_MANIFEST_DIR; do not reuse binaries from another checkout.
+: "${CARGO_TARGET_DIR:=$repo_root/target}"
 
 mkdir -p "$TMPDIR" "$CARGO_HOME" "$CARGO_TARGET_DIR"
 export TMPDIR CARGO_HOME CARGO_TARGET_DIR
@@ -196,6 +197,9 @@ sh maint/security/test-osmap-v2-validation-password-override.sh
 
 echo "==> validating hook installation and security gate invocation"
 sh maint/security/test-osmap-install-hooks.sh
+
+echo "==> validating checkout-local Cargo target defaults"
+sh maint/security/test-osmap-cargo-target-defaults.sh
 
 echo "==> validating v2 readiness ssh wrapper command assembly"
 sh maint/security/test-osmap-run-v2-readiness-over-ssh.sh

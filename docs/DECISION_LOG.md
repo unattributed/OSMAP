@@ -1,5 +1,20 @@
 # Decision Log
 
+## 2026-09-15 — Isolate default build caches between worktrees
+
+The operator supplied VSCodium Git logs showing local pre-push failures in
+the V4 hostile-content assurance test. The current corpus existed, but the
+shared `/tmp/osmap-target` test binary embedded a removed temporary checkout
+path. A fresh dedicated cache passed the full gate. The unrelated missing
+documentation-index entry was already corrected in signed commit `afadac2`.
+
+Default the developer, release and standalone V4 gates to each checkout's
+ignored `target/` directory, retaining explicit nonempty overrides. Add an
+18-case initialization regression to the developer gate. No cache deletion,
+test bypass, source fixture-path weakening, runtime change or deployment is
+authorized or needed. This is a local Git-hook issue, not evidence of a
+GitHub Actions service failure.
+
 ## 2026-09-15 — Full-functional UX epic planning intake
 
 The operator rejected further Roundcube migration planning, reported Roundcube

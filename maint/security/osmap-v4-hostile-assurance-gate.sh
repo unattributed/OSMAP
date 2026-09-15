@@ -7,7 +7,8 @@ cd "$repo_root"
 
 : "${TMPDIR:=/tmp/osmap-tmp}"
 : "${CARGO_HOME:=/tmp/osmap-cargo-home}"
-: "${CARGO_TARGET_DIR:=/tmp/osmap-target}"
+# Keep compiled fixture paths scoped to this checkout, unless explicitly set.
+: "${CARGO_TARGET_DIR:=$repo_root/target}"
 : "${OSMAP_RELEASE_EVIDENCE_DIR:=$repo_root/maint/live}"
 : "${OSMAP_V4_ASSURANCE_CORPUS_DIR:=tests/testdata/hostile-mail-corpus}"
 : "${OSMAP_V4_ASSURANCE_REPORT:=$OSMAP_RELEASE_EVIDENCE_DIR/osmap-v4-hostile-assurance-report.json}"

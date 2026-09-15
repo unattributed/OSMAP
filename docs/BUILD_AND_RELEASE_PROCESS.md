@@ -16,6 +16,22 @@ The build process should:
 
 The build should avoid hidden network-time side effects wherever possible.
 
+### Checkout-local Cargo build cache
+
+The developer security, strict release, and standalone V4 assurance gates
+default `CARGO_TARGET_DIR` to the current checkout's ignored `target/` directory.
+This keeps test binaries that embed `CARGO_MANIFEST_DIR` from being reused after
+another worktree is removed. The prior shared `/tmp/osmap-target` default could
+make VSCodium's pre-push hook fail at the V4 corpus `MANIFEST.json` assertion
+even though the current checkout's fixture existed.
+
+An explicit nonempty `CARGO_TARGET_DIR` remains supported. When overriding it,
+use a cache dedicated to that checkout; unset an old shared override to restore
+the safe default. This change does not delete existing caches, skip tests or
+alter release acceptance. Both Git hooks still run the full developer gate.
+The initialization regression covers two checkout paths, spaces, outside-root
+invocation, unset/empty defaults, and explicit overrides for all three gates.
+
 ## Artifact Generation
 
 Release artifacts should eventually include:
