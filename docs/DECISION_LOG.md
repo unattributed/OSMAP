@@ -1,5 +1,22 @@
 # Decision Log
 
+## 2026-09-15 — Operator-directed TOTP sprint closure with residuals
+
+After being informed that private-terminal recovery enrollment and verified
+cleanup remained outstanding, the operator accepted the delivered work and
+explicitly instructed "close and sync". Record Slice 04 and the sprint as
+administratively closed, with no open sprint slices, without representing the
+missing recovery or cleanup evidence as passed. Retain those items as
+operator-owned follow-up work in `TOTP_LIFECYCLE_SPRINT.md`.
+
+This is a documentation closeout of the delivered scope, not a relaxation of
+runtime authorization, signing, identity, session, or release gates. Last
+observed active and archived validation factors are not declared removed.
+Future recovery/cleanup requires fresh scoped checks and the reviewed workflow.
+No strict-release, new browser WSTG, real-user recovery, or Vultr qualification
+is added. The operator's instruction explicitly authorizes synchronization of
+this bounded closeout record after signing and verification.
+
 ## 2026-09-15 — Separate test custody from real-user MFA recovery
 
 The operator approved a controlled rehearsal for the reserved obsd1 validation

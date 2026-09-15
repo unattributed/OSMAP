@@ -2,7 +2,10 @@
 
 ## Status and scope
 
-Slice 04 is in progress, not closed. The operator authorized host operations on
+Slice 04 was administratively closed by operator direction on 2026-09-15,
+with controlled recovery validation deferred and live-account cleanup
+unverified. The operator's acceptance and "close and sync" instruction do not
+supply missing technical evidence. The operator authorized host operations on
 obsd1 at `192.168.1.44`, expected hostname `obsd1.blackbagsecurity.com`.
 Native synthetic tests passed on OpenBSD 7.9 on 2026-09-15 UTC (2026-09-14 in
 the operator's America/Toronto timezone). That checkpoint changed no live
@@ -10,7 +13,7 @@ factor. Subsequent operator enrollment/rotation is recorded below; controlled
 recovery and strict-release qualification are not claimed.
 Vultr was not contacted for this integration work.
 
-The unchanged lifecycle implementation assessed is signed commit
+The initial unchanged lifecycle implementation assessed was signed commit
 `cdb8c29cff9b33a1749f406251a4e893e9e89631`, following signed rotation commit
 `77dc836b7b8da27ca5c98bf5d7bd25315411227c`. Both were synchronized to main via
 PR #61 without rewriting either signed commit. A fresh fetch proved local and
@@ -101,7 +104,14 @@ unavailable; no strict release or new authenticated browser WSTG pass is claimed
 Retained source hashes identify the candidate separately from the earlier
 signed checkpoint. Real-user identity checks remain outside this rehearsal.
 
-## Remaining acceptance and human interaction
+## Deferred validation and cleanup after administrative closure
+
+The steps below remain operator-owned follow-up work, not completed acceptance
+criteria. The signed rehearsal implementation `87a10dad103d565f65f09edca850945d5e0ce551`
+was synchronized through PR #63 with verified workstation/remote/obsd1 SHA
+equality. This closeout changes documentation only; it performs no recovery,
+factor/session cleanup, service action, or credential change. The last
+reconciled active/archive factor state above must not be assumed cleaned.
 
 Use an unrecorded local terminal and a controlled authenticator. Do not paste
 seeds, QR images, codes, passwords, session data, or private case evidence into
@@ -118,8 +128,10 @@ chat or retained logs. The agent's captured tool terminal is not that surface.
 4. Restore or remove temporary validation credentials and test state through a
    bounded reviewed cleanup; verify cleanup, then record operator acceptance.
 
-Real enrollment and the recovery attestations require human participation;
-Slice 04 and the sprint remain open until the acceptance evidence exists.
+Real enrollment and the recovery attestations require human participation.
+The operator explicitly closed the sprint without that remaining evidence;
+full lifecycle validation remains unproven and requires a reopened or separate
+bounded task. Original passing/failing observations are unchanged.
 Do not claim strict-release or browser WSTG success from these operator tests.
 
 ## Retained records

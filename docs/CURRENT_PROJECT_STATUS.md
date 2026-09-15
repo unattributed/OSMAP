@@ -22,7 +22,11 @@ short-lived signed operator-approval boundary; its signed delivery is recorded
 in the sprint handoff. Both commits are synchronized through PR #61. Slice 04
 native synthetic checks passed on obsd1. Operator-reported initial enrollment
 and planned rotation were reconciled through read-only factor digests.
-Controlled recovery rehearsal, cleanup, and acceptance remain. A separate
+The operator subsequently accepted the delivery and directed closure and sync.
+Slice 04 and the sprint are administratively closed with deferred controlled
+recovery validation and unverified live-account cleanup, not full validation
+acceptance. No slices remain open in this sprint. These residuals are tracked in
+`TOTP_LIFECYCLE_SPRINT.md`; they are not passed checks. A separate
 reserved-account test-custody mode preserves real-user identity requirements;
 it does not establish production recovery qualification.
 See `TOTP_LIFECYCLE_OBSD1_EVIDENCE.md`.

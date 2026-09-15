@@ -24,9 +24,13 @@ this sprint's validation scope.
 
 Slice 04 native synthetic rotation/recovery tests passed on obsd1. Initial
 provisioning and planned rotation subsequently passed operator enrollment and
-read-only digest reconciliation. Controlled recovery and closeout remain. Native
+read-only digest reconciliation. The operator directed administrative closure
+on 2026-09-15 with controlled recovery validation deferred and live-account
+cleanup unverified. The last reconciled test factor remained active with its
+predecessor archived; closure does not remove or disable either. Native
 tests mock SSH, doas, mailbox, and human boundaries and cannot replace these
-checks. See `TOTP_LIFECYCLE_OBSD1_EVIDENCE.md`; the sprint remains open.
+checks. See `TOTP_LIFECYCLE_OBSD1_EVIDENCE.md` and the operator-owned residuals
+in `TOTP_LIFECYCLE_SPRINT.md`. The sprint is closed, not fully validated.
 
 The opt-in controlled rehearsal is restricted to one reserved account on
 obsd1. Test custody is not real-user identity verification. Its read-only guard

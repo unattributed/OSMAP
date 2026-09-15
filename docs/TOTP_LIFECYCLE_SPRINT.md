@@ -9,10 +9,13 @@ initial provisioning (Slice 00, PR #56) and revocation (Slice 01, PR #60).
 | --- | --- | --- |
 | 02 | Governed planned TOTP rotation | Signed delivery `77dc836`; continuation approved by operator |
 | 03 | Governed lost-authenticator recovery | Signed `cdb8c29`; synchronized with Slice 02 through PR #61 |
-| 04 | Integration validation on obsd1, operator documentation, closeout | In progress: native synthetic tests passed; human authenticator acceptance pending |
+| 04 | Integration validation on obsd1, operator documentation, closeout | Closed by operator direction on 2026-09-15, with deferred recovery validation and unverified cleanup |
 
-Slice 04 remains for integration and closeout after Slice 03 signed delivery
-and operator review. This sprint does not include domain/mailbox/alias administration,
+The operator accepted the delivered work and explicitly directed "close and
+sync" after being informed of the remaining private-terminal recovery and
+cleanup work. Slice 04 and this sprint are administratively closed with the
+residuals below; this is not a claim that every original acceptance test passed.
+This sprint does not include domain/mailbox/alias administration,
 browser administration, or PostfixAdmin replacement.
 
 Slice 02 and Slice 03 are now synchronized to main, with both original
@@ -20,10 +23,29 @@ Shopkeeper signatures preserved. The operator authorized continuation. Slice 04
 has passed 19 rotation and 17 recovery tests in isolated native OpenBSD
 execution. The operator subsequently completed initial enrollment and planned
 rotation; read-only digest reconciliation confirmed the replacement and its
-preserved predecessor. Controlled recovery rehearsal, cleanup, and acceptance
-remain. The opt-in test-custody policy in `TOTP_OPERATOR_RECOVERY_SOP.md` does
+preserved predecessor. The later signed checkpoint `87a10da`, synchronized
+through PR #63, passed 19 rotation and 30 recovery/rehearsal tests locally and
+in native synthetic execution. Its browser-maintenance guard was exercised
+and the service restored. The opt-in test-custody policy in `TOTP_OPERATOR_RECOVERY_SOP.md` does
 not qualify real-user recovery or relax its identity requirements. See
-`TOTP_LIFECYCLE_OBSD1_EVIDENCE.md`. One slice remains open; the sprint is not closed.
+`TOTP_LIFECYCLE_OBSD1_EVIDENCE.md`. No slices remain open in this sprint.
+
+### Deferred work and retained operational state
+
+- Controlled recovery with a human-operated replacement authenticator was not
+  performed. No successful recovery approval/enrollment/mutation is claimed.
+- Cleanup of the live validation account's factor state is unverified. The
+  last reconciled state has the planned-rotation replacement active and its
+  predecessor archived. Administrative closure does not remove those factors,
+  revoke sessions, disable the account, or establish current containment.
+- These residuals remain operator-owned follow-up work. Reopen validation or
+  authorize a separate bounded recovery/cleanup task before claiming full
+  lifecycle acceptance. Use fresh state checks, the reviewed SOPs, and private
+  authenticator entry; do not reuse historical maintenance attestations.
+- No real-user recovery, strict-release, new browser WSTG, or Vultr
+  qualification follows from this closeout. Runtime security gates remain
+  unchanged. Temporary synthetic test stores and native source copies were
+  cleaned separately; that is not live-account cleanup.
 
 All retained sprint artifacts use
 `/home/foo/Downloads/osmap-totp-lifecycle/` (owner-only). Temporary synthetic
