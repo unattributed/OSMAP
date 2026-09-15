@@ -7059,3 +7059,19 @@ including in-scope preparation and controlled validation. This is not an
 attestation of a real claimant's identity, session revocation, or containment;
 the recovery approval boundary remains in force. Preserve unrelated host state
 and the separate signed-commit review requirement before Git synchronization.
+
+### Distinguish native synthetic lifecycle checks from live acceptance
+
+Following the authorized, signature-preserving synchronization of Slices 02–03
+through PR #61, Slice 04 runs the lifecycle regression suites on obsd1 OpenBSD
+7.9. Native file utilities replace Linux adapters only on OpenBSD; SSH, doas,
+mailbox, and human boundaries remain synthetic. A dedicated fail-closed native
+runner and local runner-boundary tests make that distinction explicit.
+The original legacy self-tests remain Linux-workstation checks. This does not
+port the full operator workflow to OpenBSD or qualify real recovery controls.
+
+Read-only live checks found the controlled mailbox exists without an active
+factor. Do not bypass enrollment or fabricate a signed recovery attestation to
+finish the sprint. Human-operated enrollment, approved controlled mutation,
+external recovery controls, cleanup, and acceptance remain pending. Record
+these limits in `TOTP_LIFECYCLE_OBSD1_EVIDENCE.md` and keep Slice 04 open.

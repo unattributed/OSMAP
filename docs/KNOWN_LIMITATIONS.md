@@ -22,6 +22,12 @@ See `TOTP_OPERATOR_RECOVERY_SOP.md`; controlled host qualification is pending
 on obsd1 at `192.168.1.44`, the operator-selected sprint target. Vultr is outside
 this sprint's validation scope.
 
+Slice 04 native synthetic rotation/recovery tests passed on obsd1, but the
+controlled live mailbox currently has no active factor. Initial provisioning
+and real-authenticator rotation/recovery acceptance remain outstanding. Native
+tests mock SSH, doas, mailbox, and human boundaries and cannot replace these
+checks. See `TOTP_LIFECYCLE_OBSD1_EVIDENCE.md`; the sprint remains open.
+
 ## Current Documentation Limitations
 
 - Phase 1 is evidence-based but still intentionally public-safe, so some local

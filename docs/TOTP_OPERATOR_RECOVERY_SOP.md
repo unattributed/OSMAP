@@ -152,5 +152,7 @@ tests, real detached-signature tests with disposable synthetic keys, Bash
 syntax, ShellCheck, documentation/publication checks, and `make security-check`.
 `gpg` and `gpgconf` are required for the local signature tests; they do not sign
 real approvals or commits. Native OpenBSD/real-authenticator recovery on the
-selected obsd1 host remains a separate Slice 04 evidence requirement. The
+selected obsd1 host remains a separate Slice 04 evidence requirement. Native
+synthetic tests passed; see `TOTP_LIFECYCLE_OBSD1_EVIDENCE.md` for their precise
+boundary and the outstanding human acceptance work. The
 unavailable Vultr instance is not a dependency for this sprint.

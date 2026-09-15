@@ -8,12 +8,20 @@ initial provisioning (Slice 00, PR #56) and revocation (Slice 01, PR #60).
 | Slice | Scope | State |
 | --- | --- | --- |
 | 02 | Governed planned TOTP rotation | Signed delivery `77dc836`; continuation approved by operator |
-| 03 | Governed lost-authenticator recovery | Implementation complete; local qualification passed; signed delivery recorded in the sprint handoff |
-| 04 | Integration validation on obsd1, operator documentation, closeout | Planned; controlled host evidence remains separate |
+| 03 | Governed lost-authenticator recovery | Signed `cdb8c29`; synchronized with Slice 02 through PR #61 |
+| 04 | Integration validation on obsd1, operator documentation, closeout | In progress: native synthetic tests passed; human authenticator acceptance pending |
 
 Slice 04 remains for integration and closeout after Slice 03 signed delivery
 and operator review. This sprint does not include domain/mailbox/alias administration,
 browser administration, or PostfixAdmin replacement.
+
+Slice 02 and Slice 03 are now synchronized to main, with both original
+Shopkeeper signatures preserved. The operator authorized continuation. Slice 04
+has passed 19 rotation and 17 recovery tests in isolated native OpenBSD
+execution, and read-only checks found the controlled mailbox has no active
+factor. Real enrollment, controlled rotation/recovery, external recovery
+attestations, cleanup, and acceptance remain. See
+`TOTP_LIFECYCLE_OBSD1_EVIDENCE.md`. One slice remains open; the sprint is not closed.
 
 All retained sprint artifacts use
 `/home/foo/Downloads/osmap-totp-lifecycle/` (owner-only). Temporary synthetic

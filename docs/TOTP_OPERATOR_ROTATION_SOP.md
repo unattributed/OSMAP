@@ -104,6 +104,8 @@ Run `python3 maint/security/test-osmap-totp-rotation.py`, both companion
 additional tests execute the real remote shell programs with local SSH/doas
 and OpenBSD utility adapters against a synthetic store, covering preservation,
 installation, no-overwrite, stale digest, file modes, and directory safety.
-They do not prove native OpenBSD execution, actual QR enrollment, or production
+The native qualification runner additionally executes these synthetic tests on
+OpenBSD with native filesystem utilities; see `TOTP_LIFECYCLE_OBSD1_EVIDENCE.md`.
+Neither run proves actual QR enrollment, privileged live mutation, or production
 rotation. See `TOTP_LIFECYCLE_SPRINT.md` for pending live evidence and release
 limitations. Slice delivery requires a signed, verified commit and review.

@@ -3,6 +3,7 @@
 import hashlib
 import os
 import grp
+import platform
 from pathlib import Path
 import pwd
 import subprocess
@@ -176,9 +177,11 @@ test_uri=$(build_otpauth_uri alice@example.com "$test_secret")
 class RemotePrimitiveTests(unittest.TestCase):
     """Run the actual remote shell programs against a synthetic local store.
 
-    SSH, doas and OpenBSD utility syntax are adapters only. File type, modes,
+    SSH and doas are adapters; OpenBSD utility syntax is adapted only on Linux.
+    On OpenBSD, stat and sha256 use the native programs unchanged. File type, modes,
     links, stale digests, archive preservation and candidate installation use
-    real filesystem operations. This is not a native OpenBSD qualification.
+    real filesystem operations. Even on OpenBSD this is synthetic-store evidence,
+    not live mailbox, privileged-operation, or real-authenticator acceptance.
     """
 
     def setUp(self):
@@ -233,6 +236,9 @@ sha256sum "$2" | awk '{print $1}'
 ''',
             "qrencode": "#!/bin/sh\nexit 99\n",  # Enrollment is explicitly mocked.
         }
+        if platform.system() == "OpenBSD":
+            del adapters["stat"]
+            del adapters["sha256"]
         for name, script in adapters.items():
             path = self.bin / name
             path.write_text(script)
