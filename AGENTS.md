@@ -98,6 +98,15 @@ before reporting synchronization as successful:
 - Do not substitute the former LAN host for current production validation.
   Verify target identity explicitly; historical LAN-host evidence does not
   qualify the migrated instance.
+- The operator explicitly selected `obsd1.blackbagsecurity.com` at
+  `192.168.1.44` as the validation target for the current TOTP lifecycle sprint.
+  Use that IP for this sprint, with the expected hostname `obsd1.blackbagsecurity.com`.
+  Do not contact Vultr for this sprint unless separately instructed. Label all
+  resulting host evidence as obsd1 evidence, not Vultr qualification.
+- The operator granted full authority to operate on obsd1 for this sprint.
+  Use that authority for in-scope preparation and controlled validation while
+  preserving unrelated state. It does not supply recovery identity/session/
+  containment attestations or waive signed-commit review before synchronization.
 - Use temporary validation credentials and controlled validation accounts for
   live evidence, restoring or removing them afterward.
 

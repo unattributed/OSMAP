@@ -5,7 +5,9 @@
 Slice 02 provides planned operator-assisted rotation for an existing canonical
 mailbox with an existing safe active factor. It composes the accepted revocation
 and no-overwrite provisioning primitives, with replacement enrollment verified
-before removing the original factor. Lost-authenticator recovery remains Slice 03.
+before removing the original factor. Lost-authenticator recovery uses the
+separately governed Slice 03 coordinator and signed approval boundary in
+`TOTP_OPERATOR_RECOVERY_SOP.md`; do not substitute rotation for that procedure.
 
 The implementation is `maint/live/osmap-rotate-totp-over-ssh.sh`.
 The coordinator makes no browser, mail-runtime, service, session, or replay-store
@@ -30,8 +32,8 @@ changes. PostfixAdmin remains in service.
 ```bash
 bash maint/live/osmap-rotate-totp-over-ssh.sh \
   --dry-run alice@example.com \
-  --host mail.blackbagsecurity.com \
-  --expected-hostname mail.blackbagsecurity.com
+  --host 192.168.1.44 \
+  --expected-hostname obsd1.blackbagsecurity.com
 ```
 
 Use the real canonical account only in the operator terminal; do not commit
@@ -42,8 +44,9 @@ Only the archive directory itself may be missing. Store ancestors must be
 non-symlink directories owned by root or the runtime owner, without group/world
 write permission. Environment overrides containing shell syntax are refused.
 
-`192.168.1.44` requires `--expected-hostname obsd1.blackbagsecurity.com` and is
-the former host. Testing there is not production evidence for Vultr.
+The operator selected `192.168.1.44` with expected hostname
+`obsd1.blackbagsecurity.com` for this sprint. Testing there is obsd1 evidence;
+Vultr is outside this sprint's validation scope.
 
 ## Planned rotation
 

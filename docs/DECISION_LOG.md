@@ -7025,3 +7025,37 @@ is `obsd1.blackbagsecurity.com` at `192.168.1.44`. New rotation commands require
 explicit SSH and expected-hostname targets with strict saved-host-key checking.
 Old evidence remains historical and cannot qualify the new host. Retained
 artifacts for this sprint use `/home/foo/Downloads/osmap-totp-lifecycle/`.
+
+### Require explicit signed attestations for lost-authenticator recovery
+
+The operator authorized Slice 03 after the signed Slice 02 delivery `77dc836`.
+Recovery reuses the qualified replacement sequence and requires a detached
+Shopkeeper signature binding the exact canonical account, SSH target, expected
+hostname, and active factor digest to a maximum 15-minute approval. Unknown,
+duplicate, missing, expired, changed, or incorrectly signed approval data fails
+closed before mutation. The same approval is checked before enrollment and
+again after operator confirmation, immediately before revocation.
+
+Independent identity verification, prior session revocation, and ongoing access
+containment must be established by the operator and attested in the signed
+record. The tool does not perform or independently verify these controls and
+cannot sign approvals. This interim single-operator policy pins the existing
+Shopkeeper identity and does not claim separation of duties or online key-
+revocation discovery. Autonomous commit signing is not authorization to sign a
+recovery approval. No browser surface, missing-factor recovery, replay reset,
+automatic mutation retry, automatic restoration, or mail-cryptography capability
+is added. The shared sequence still requires serialized administration and can
+leave no active factor after an unsuccessful installation.
+
+### Use obsd1 as the operator-selected lifecycle sprint target
+
+The operator clarified that current sprint work is on obsd1 at `192.168.1.44`.
+SSH access and hostname `obsd1.blackbagsecurity.com` were confirmed. Use this
+target for Slices 03–04; Vultr connectivity and qualification are outside the
+sprint scope. Preserve the migration history but do not treat it as an instruction
+to validate against Vultr. Label resulting evidence with the actual obsd1 host.
+The operator then granted full authority to operate on obsd1 for the sprint,
+including in-scope preparation and controlled validation. This is not an
+attestation of a real claimant's identity, session revocation, or containment;
+the recovery approval boundary remains in force. Preserve unrelated host state
+and the separate signed-commit review requirement before Git synchronization.

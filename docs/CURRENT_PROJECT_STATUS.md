@@ -16,12 +16,20 @@ statement as provenance rather than current release posture.
 
 As of 2026-09-14, the approved TOTP lifecycle continuation contains Slice 02
 (planned rotation), Slice 03 (recovery), and Slice 04 (integration closeout).
-Slice 02 is implemented with local checks passed, pending signing and review. No new production
-qualification is claimed. `mail.blackbagsecurity.com` is now the Vultr instance;
+Slice 02 was delivered as signed commit `77dc836` and continuation was approved.
+Slice 03 recovery implementation and local qualification are complete with a
+short-lived signed operator-approval boundary; its signed delivery is recorded
+in the sprint handoff. Slice 04 integration and closeout remain. No new production qualification
+is claimed. `mail.blackbagsecurity.com` is now the Vultr instance;
 the former LAN host is `obsd1.blackbagsecurity.com` at `192.168.1.44`. Earlier
 deployment records below describe their assessed host at the recorded time.
 See [TOTP_LIFECYCLE_SPRINT.md](TOTP_LIFECYCLE_SPRINT.md) for controlling sprint
 status and evidence boundaries.
+
+The operator selected obsd1 at `192.168.1.44` for current sprint validation;
+SSH access and its system hostname were confirmed. Vultr is not this sprint's
+validation target or completion dependency. Resulting host evidence must be
+identified as obsd1 evidence.
 
 The repository now contains completed governance, hardening, OpenPGP foundation,
 and WSTG assurance work through V13. Earlier README language that described the

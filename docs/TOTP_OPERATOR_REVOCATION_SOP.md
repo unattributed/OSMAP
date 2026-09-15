@@ -231,8 +231,11 @@ A planned rotation coordinator is being qualified in Slice 02; see
    before revocation;
 3. any required session-handling decision.
 
-Recovery for a lost authenticator is also a separate slice because it requires a
-stronger identity/authorization decision than ordinary planned revocation.
+Recovery for a lost authenticator is implemented separately in the Slice 03
+candidate because it requires a stronger identity/authorization decision than
+ordinary planned revocation; see `TOTP_OPERATOR_RECOVERY_SOP.md`. That tool
+requires signed external identity, session-revocation, and containment
+attestations. This standalone revocation tool does not supply those controls.
 
 ## Evidence Rules
 

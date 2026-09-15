@@ -3,15 +3,23 @@
 ## Status
 
 The operator approved a bounded continuation on 2026-09-14: Slice 02 planned
-rotation, Slice 03 recovery, and Slice 04 integration closeout. Slice 02 has
-passed local qualification and awaits signing and review; the production qualification below
+rotation, Slice 03 recovery, and Slice 04 integration closeout. Slice 02 was
+delivered in signed commit `77dc836`. The operator authorized Slice 03, which
+adds short-lived signed recovery approvals and has passed local qualification.
+The production qualification below
 applies to the earlier assessed host. The migrated Vultr instance requires fresh
-evidence. See `TOTP_LIFECYCLE_SPRINT.md` and `TOTP_OPERATOR_ROTATION_SOP.md`.
+evidence. See `TOTP_LIFECYCLE_SPRINT.md`, `TOTP_OPERATOR_ROTATION_SOP.md`, and
+`TOTP_OPERATOR_RECOVERY_SOP.md`.
+
+The operator selected obsd1 at `192.168.1.44` as this sprint's validation target.
+Vultr checks are outside its scope; obsd1 evidence will not be presented as
+Vultr qualification.
 
 Phase 1 interim TOTP initial-provisioning capability remains
 production-contract qualified. Governed TOTP revocation is now implemented and
-production read-only contract qualified. Rotation, recovery, and the broader
-administrative control plane remain future work, and this status does not
+production read-only contract qualified on the earlier assessed host. Rotation
+and recovery source work does not extend that production qualification. The
+broader administrative control plane remains future work, and this status does not
 authorize retirement of PostfixAdmin.
 
 ## Purpose

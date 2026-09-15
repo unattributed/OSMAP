@@ -57,9 +57,13 @@ See the [architecture](docs/ARCHITECTURE.md) and
 ## Project status
 
 The current bounded development sprint covers operator-assisted TOTP rotation,
-recovery, and integration closeout. See the [sprint record](docs/TOTP_LIFECYCLE_SPRINT.md).
+recovery, and integration closeout. Rotation has a signed source delivery;
+recovery now requires a short-lived signed operator approval and remains under
+local qualification. See the [sprint record](docs/TOTP_LIFECYCLE_SPRINT.md).
 The mail host has migrated to Vultr; historical on-premises validation does not
 establish qualification of that instance.
+The operator selected obsd1 at `192.168.1.44` for this sprint's validation;
+Vultr is outside the sprint's validation scope.
 
 OSMAP is actively developed and security-sensitive. The crate is currently
 version `0.1.0`. The repository contains production-validated and deployed

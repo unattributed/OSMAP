@@ -115,7 +115,9 @@ does not qualify the Vultr instance.
 The current TOTP implementation does not yet include:
 
 - self-service browser enrollment or administration
-- qualified lost-authenticator recovery (planned Slice 03)
+- production-qualified lost-authenticator recovery (Slice 03 adds local
+  operator tooling with signed identity/session/containment attestations;
+  see `TOTP_OPERATOR_RECOVERY_SOP.md`)
 - automated session revocation coupled to factor lifecycle changes
 - phishing-resistant factor support
 

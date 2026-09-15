@@ -11,6 +11,17 @@ has not been production-qualified on the migrated Vultr mail host. Historical
 LAN-host evidence cannot be carried forward as Vultr validation. See
 `TOTP_LIFECYCLE_SPRINT.md` and `TOTP_OPERATOR_ROTATION_SOP.md`.
 
+Slice 03 recovery adds short-lived, signer-pinned operator approvals. Identity
+checks, session revocation, and access containment are signed attestations
+established externally, not actions performed or independently verified by the
+tool. Recovery requires an existing mailbox and active factor; it does not
+recover absent factors, provide browser recovery, or maintain a consumed-
+approval database. The local key inventory must be kept current. The tool does
+not sign approvals, release containment, or extend mail OpenPGP capabilities.
+See `TOTP_OPERATOR_RECOVERY_SOP.md`; controlled host qualification is pending
+on obsd1 at `192.168.1.44`, the operator-selected sprint target. Vultr is outside
+this sprint's validation scope.
+
 ## Current Documentation Limitations
 
 - Phase 1 is evidence-based but still intentionally public-safe, so some local

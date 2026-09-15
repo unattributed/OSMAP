@@ -115,6 +115,9 @@ sh maint/security/osmap-doc-governance-guard.sh
 echo "==> validating governed TOTP rotation transitions"
 python3 maint/security/test-osmap-totp-rotation.py
 
+echo "==> validating governed TOTP recovery approvals and transitions"
+python3 maint/security/test-osmap-totp-recovery.py
+
 echo "==> validating V7 boundary hardening invariants"
 sh maint/security/osmap-v7-boundary-hardening-gate.sh
 

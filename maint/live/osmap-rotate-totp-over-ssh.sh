@@ -115,26 +115,36 @@ rotation_authorize() {
 }
 
 rotation_pending() {
-    printf '%s\n' 'TOTP_ROTATION=INCOMPLETE' 'manual_review_required=true' \
+    printf '%s\n' "TOTP_${1:-ROTATION}=INCOMPLETE" 'manual_review_required=true' \
         'automatic_mutation_retry=false' 'old_factor_restore_performed=false' >&2
     return 24
 }
 
-run_rotation() {
+run_factor_replacement() {
     local account="$1" host="$2" expected_hostname="$3" mutation="$4"
+    local workflow="$5"
     local old_digest new_digest final_digest stamp output secret
+    [[ "${workflow}" == ROTATION || "${workflow}" == RECOVERY ]] || return 2
     rotation_validate "${account}" "${host}" "${expected_hostname}" || return 2
     require_command ssh || return 1
     require_command python3 || return 1
     require_command sha256sum || return 1
     old_digest="$(rotation_snapshot "${account}" "${host}" "${expected_hostname}")" || return 1
+    if [[ "${workflow}" == RECOVERY ]]; then
+        recovery_approve_snapshot "${account}" "${host}" "${expected_hostname}" "${old_digest}" || return 1
+    fi
     printf '%s\n' "account=${account}" "ssh_host=${host}" "expected_hostname=${expected_hostname}" \
         "previous_factor_sha256=${old_digest}" 'session_revocation_performed=false' \
         'replay_counter_reset=false' 'automatic_mutation_retry=false'
     if [[ "${mutation}" == false ]]; then
-        printf '%s\n' 'would_rotate=true' 'preinstall_enrollment_verification=true' \
+        if [[ "${workflow}" == ROTATION ]]; then
+            printf '%s\n' 'would_rotate=true'
+        else
+            printf '%s\n' 'would_recover=true'
+        fi
+        printf '%s\n' 'preinstall_enrollment_verification=true' \
             'preserve_before_revoke=true' 'replacement_no_overwrite=true' \
-            'whole_rotation_atomic=false' 'TOTP_ROTATION_DRY_RUN=PASS'
+            'whole_rotation_atomic=false' "TOTP_${workflow}_DRY_RUN=PASS"
         return 0
     fi
 
@@ -142,7 +152,11 @@ run_rotation() {
     require_command qrencode || return 1
     prepare_enrollment_material "${account}" || return 1
     show_and_verify_enrollment "${account}" || return 1
-    rotation_authorize "${account}" "${host}" "${expected_hostname}" || return 1
+    if [[ "${workflow}" == RECOVERY ]]; then
+        recovery_authorize "${account}" "${host}" "${expected_hostname}" || return 1
+    else
+        rotation_authorize "${account}" "${host}" "${expected_hostname}" || return 1
+    fi
     secret="$(<"${SECRET_FILE}")"
     printf '# %s\nsecret=%s\n' "${account}" "${secret}" > "${WORK_ROOT}/candidate.totp" || return 1
     unset secret
@@ -154,42 +168,49 @@ run_rotation() {
         printf '%s\n' 'ERROR: factor changed during enrollment; no mutation attempted' >&2
         return 1
     }
+    if [[ "${workflow}" == RECOVERY ]]; then
+        recovery_approve_snapshot "${account}" "${host}" "${expected_hostname}" "${old_digest}" || return 1
+    fi
     stamp="$(date -u '+%Y%m%dT%H%M%SZ')" || return 1
     printf '%s\n' "revoke_stamp=${stamp}" "replacement_factor_sha256=${new_digest}"
 
     # A lost response is not permission to proceed. Retain the archive and
     # require read-only reconciliation before any fresh operator decision.
     if ! output="$(rotation_revoke "${account}" "${host}" "${old_digest}" "${stamp}")"; then
-        rotation_pending
+        rotation_pending "${workflow}"
         return 24
     fi
     if ! grep -Fxq 'TOTP_REVOCATION=PASS' <<<"${output}" ||
        ! grep -Fxq 'active_factor_absent=true' <<<"${output}" ||
        ! grep -Fxq 'revoked_factor_preserved=true' <<<"${output}" ||
        ! grep -Fxq "revoked_factor_sha256=${old_digest}" <<<"${output}"; then
-        rotation_pending
+        rotation_pending "${workflow}"
         return 24
     fi
     printf '%s\n' 'previous_factor_revoked_and_preserved=true'
     # Do not use run_provision: its ambiguity handling may mutate. Here every
     # unsuccessful install stops with the previous factor preserved.
     if ! output="$(remote_provision "${account}" "${host}" "${WORK_ROOT}/candidate.totp" "${new_digest}")"; then
-        rotation_pending
+        rotation_pending "${workflow}"
         return 24
     fi
     if ! grep -Fxq 'TOTP_PROVISIONING=PASS' <<<"${output}"; then
-        rotation_pending
+        rotation_pending "${workflow}"
         return 24
     fi
     final_digest="$(rotation_snapshot "${account}" "${host}" "${expected_hostname}")" || {
-        rotation_pending
+        rotation_pending "${workflow}"
         return 24
     }
     [[ "${final_digest}" == "${new_digest}" ]] || {
-        rotation_pending
+        rotation_pending "${workflow}"
         return 24
     }
-    printf '%s\n' 'replacement_factor_verified=true' 'TOTP_ROTATION=PASS'
+    printf '%s\n' 'replacement_factor_verified=true' "TOTP_${workflow}=PASS"
+}
+
+run_rotation() {
+    run_factor_replacement "$@" ROTATION
 }
 
 rotation_main() {
