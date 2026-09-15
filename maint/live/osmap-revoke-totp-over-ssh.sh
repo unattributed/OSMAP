@@ -725,6 +725,11 @@ self_test() {
     printf '%s\n' "SELF_TEST=PASS"
 }
 
+# The lifecycle coordinator uses these primitives in an isolated subshell.
+if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
+    return 0
+fi
+
 operation=""
 account=""
 host="${DEFAULT_HOST}"

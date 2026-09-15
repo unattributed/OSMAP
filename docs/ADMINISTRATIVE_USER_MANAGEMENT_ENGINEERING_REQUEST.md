@@ -2,6 +2,12 @@
 
 ## Status
 
+The operator approved a bounded continuation on 2026-09-14: Slice 02 planned
+rotation, Slice 03 recovery, and Slice 04 integration closeout. Slice 02 has
+passed local qualification and awaits signing and review; the production qualification below
+applies to the earlier assessed host. The migrated Vultr instance requires fresh
+evidence. See `TOTP_LIFECYCLE_SPRINT.md` and `TOTP_OPERATOR_ROTATION_SOP.md`.
+
 Phase 1 interim TOTP initial-provisioning capability remains
 production-contract qualified. Governed TOTP revocation is now implemented and
 production read-only contract qualified. Rotation, recovery, and the broader

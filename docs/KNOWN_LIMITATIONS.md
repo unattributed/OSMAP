@@ -1,5 +1,16 @@
 # Known Limitations
 
+## TOTP lifecycle continuation and host migration
+
+The Slice 02 rotation coordinator is a sequential operator workflow, not an
+atomic factor swap or a shared administration lock. Operators must serialize
+factor changes; an interrupted install can leave no active factor. The tool
+does not restore old factors automatically, revoke browser sessions, reset
+replay counters, or establish lost-authenticator recovery identity. Rotation
+has not been production-qualified on the migrated Vultr mail host. Historical
+LAN-host evidence cannot be carried forward as Vultr validation. See
+`TOTP_LIFECYCLE_SPRINT.md` and `TOTP_OPERATOR_ROTATION_SOP.md`.
+
 ## Current Documentation Limitations
 
 - Phase 1 is evidence-based but still intentionally public-safe, so some local

@@ -45,19 +45,17 @@ passwordless. If SSH unexpectedly requests a private-key passphrase, stop and
 report workstation bootstrap noncompliance. Do not retrieve a Proton Pass secret
 for GitHub SSH.
 
-Before every command that may trigger the Shopkeeper OpenPGP private-key
-passphrase, including signed commits, direct GPG operations, or signing-key
-unlock operations, use this checkpoint:
+Use the configured workstation `gpg-agent` for Shopkeeper signing. The operator
+superseded the manual clipboard/Proton Pass checkpoint on 2026-09-14.
 
-    echo
-    echo "============================================================"
-    echo "OPENPGP PRIVATE KEY PASSPHRASE MAY BE REQUIRED"
-    echo "============================================================"
-    echo "Retrieve the Shopkeeper OpenPGP passphrase from Proton Pass"
-    echo "and copy it to the system clipboard."
-    echo
-    read -r -p "Press Enter when the passphrase is ready in the clipboard..."
-    echo
+- Do not ask for a clipboard-readiness confirmation before signing.
+- Do not retrieve, print, or pass the private-key passphrase through shell
+  arguments, environment variables, repository files, logs, or chat.
+- Use the agent's existing credential cache. Noninteractive signing may use
+  `gpg --batch --pinentry-mode error`; if the agent cannot sign, report the
+  concrete failure rather than creating an unsigned commit or bypassing checks.
+- This removes only the manual signing checkpoint. Signature verification and
+  operator review before any push or synchronization remain mandatory.
 
 After each commit, verify:
 
@@ -94,7 +92,12 @@ before reporting synchronization as successful:
 
 - Keep the standard host checkout at `~/OSMAP` on `mail.blackbagsecurity.com`
   synced to the branch being validated.
-- Prefer the LAN SSH target when WAN hairpinning from the workstation is blocked.
+- `mail.blackbagsecurity.com` now denotes the Vultr mail instance. The former
+  on-premises host is `obsd1.blackbagsecurity.com` at `192.168.1.44`, with local
+  `/etc/hosts` alias `mail-source-grace` on the operator workstation.
+- Do not substitute the former LAN host for current production validation.
+  Verify target identity explicitly; historical LAN-host evidence does not
+  qualify the migrated instance.
 - Use temporary validation credentials and controlled validation accounts for
   live evidence, restoring or removing them afterward.
 
@@ -120,6 +123,9 @@ This repository uses sprint-scoped artifact storage for all operator deliveries 
 - SHA-256 sidecars must remain portable by containing the archive basename, never an absolute path.
 - Temporary build/runtime scratch that does not need retention should use `/tmp` or another purpose-specific temporary location rather than the sprint artifact directory.
 - Do not move, rename, inspect, or delete unrelated pre-existing Downloads content merely to enforce this layout.
-- When a historical sprint has no previously defined directory name, choose a concise stable slug and record it in the operator bundle. For the current PR #56 Slice 00 workstream, use `/home/foo/Downloads/osmap-pr56-slice-00/`.
+- When a historical sprint has no previously defined directory name, choose a concise stable slug and record it in the operator bundle. For the historical PR #56 Slice 00 workstream, use `/home/foo/Downloads/osmap-pr56-slice-00/`.
+- The approved TOTP lifecycle continuation (Slices 02–04) uses
+  `/home/foo/Downloads/osmap-totp-lifecycle/` throughout implementation and
+  closeout. The PR #56 directory above remains the historical Slice 00 root.
 
 This layout is mandatory for newly generated sprint artifacts. Existing top-level Downloads artifacts may remain in place unless a separate bounded cleanup or archival operation is explicitly authorized.

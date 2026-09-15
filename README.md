@@ -56,6 +56,11 @@ See the [architecture](docs/ARCHITECTURE.md) and
 
 ## Project status
 
+The current bounded development sprint covers operator-assisted TOTP rotation,
+recovery, and integration closeout. See the [sprint record](docs/TOTP_LIFECYCLE_SPRINT.md).
+The mail host has migrated to Vultr; historical on-premises validation does not
+establish qualification of that instance.
+
 OSMAP is actively developed and security-sensitive. The crate is currently
 version `0.1.0`. The repository contains production-validated and deployed
 slices, but those results are bounded to the documented OpenBSD host,

@@ -7003,3 +7003,25 @@ measured cases, or cardinality violations.
 Boundary: preserve all Slice 03 conclusions and raw evidence. This decision is
 limited to the accepted corpus and edge configuration and does not claim
 universal HTTP parser equivalence.
+
+## 2026-09-14
+
+### Bound the TOTP lifecycle continuation to three operator-tool slices
+
+The operator approved Slice 02 rotation, Slice 03 recovery, and Slice 04
+integration/documentation closeout. Broader administration and PostfixAdmin
+retirement remain outside this sprint. Slice 02 composes the existing factor
+preservation and no-overwrite installation primitives, verifies replacement
+enrollment before revocation, and stops for manual reconciliation after any
+unverified mutation. It does not automatically restore old factors, reset replay
+counters, revoke sessions, or provide a cross-process transaction. Operators
+must serialize factor administration. Reusable enrollment material is removed
+from subprocess arguments in the shared provisioning helpers.
+
+### Separate migrated-host identity from historical deployment evidence
+
+`mail.blackbagsecurity.com` now denotes the Vultr instance. The former LAN host
+is `obsd1.blackbagsecurity.com` at `192.168.1.44`. New rotation commands require
+explicit SSH and expected-hostname targets with strict saved-host-key checking.
+Old evidence remains historical and cannot qualify the new host. Retained
+artifacts for this sprint use `/home/foo/Downloads/osmap-totp-lifecycle/`.

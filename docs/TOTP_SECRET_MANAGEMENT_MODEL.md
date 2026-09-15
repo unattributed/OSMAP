@@ -106,12 +106,17 @@ more auth-path expansion.
 
 ## What Is Still Missing
 
-The current TOTP slice does not yet include:
+Initial operator provisioning and governed revocation were delivered in Slices
+00 and 01. Slice 02 adds a planned rotation coordinator under local
+qualification; see `TOTP_OPERATOR_ROTATION_SOP.md` and
+`TOTP_LIFECYCLE_SPRINT.md`. Production evidence predating the mail-host migration
+does not qualify the Vultr instance.
 
-- enrollment workflows
-- secret rotation workflows
-- backup and recovery handling for enrolled factors
-- operator tooling for secret provisioning
+The current TOTP implementation does not yet include:
+
+- self-service browser enrollment or administration
+- qualified lost-authenticator recovery (planned Slice 03)
+- automated session revocation coupled to factor lifecycle changes
 - phishing-resistant factor support
 
 Those belong to later WP3/WP4 work rather than this backend foundation slice.

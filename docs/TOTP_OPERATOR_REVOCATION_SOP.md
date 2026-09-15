@@ -223,10 +223,12 @@ reviewed.
 
 This tool does not rotate a factor and does not provision a replacement.
 
-A planned rotation is expected to become a separately governed composition of:
+A planned rotation coordinator is being qualified in Slice 02; see
+`TOTP_OPERATOR_ROTATION_SOP.md`. Its separately governed composition covers:
 
 1. approved revocation;
-2. independently authorized new-factor provisioning;
+2. explicitly authorized new-factor provisioning with enrollment verified
+   before revocation;
 3. any required session-handling decision.
 
 Recovery for a lost authenticator is also a separate slice because it requires a

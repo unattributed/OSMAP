@@ -113,11 +113,13 @@ PY
 }
 
 build_otpauth_uri() {
-    python3 - "$1" "$2" "${ISSUER}" <<'PY'
+    python3 - "$1" "${ISSUER}" 3<<<"$2" <<'PY'
 import sys
 import urllib.parse
 
-account, secret, issuer = sys.argv[1:4]
+account, issuer = sys.argv[1:3]
+with open(3) as channel:
+    secret = channel.read().strip()
 label = urllib.parse.quote(f"{issuer}:{account}", safe="")
 query = urllib.parse.urlencode({
     "secret": secret,
@@ -134,16 +136,17 @@ totp_code() {
     local secret="$1"
     local epoch="${2:-$(date +%s)}"
     local digits="${3:-6}"
-    python3 - "${secret}" "${epoch}" "${digits}" <<'PY'
+    python3 - "${epoch}" "${digits}" 3<<<"${secret}" <<'PY'
 import base64
 import hashlib
 import hmac
 import struct
 import sys
 
-secret = sys.argv[1].strip().upper()
-epoch = int(sys.argv[2])
-digits = int(sys.argv[3])
+with open(3) as channel:
+    secret = channel.read().strip().upper()
+epoch = int(sys.argv[1])
+digits = int(sys.argv[2])
 pad = "=" * ((8 - len(secret) % 8) % 8)
 key = base64.b32decode(secret + pad, casefold=True)
 counter = epoch // 30
@@ -159,16 +162,18 @@ verify_totp_code() {
     local secret="$1"
     local code="$2"
     local epoch="${3:-$(date +%s)}"
-    python3 - "${secret}" "${code}" "${epoch}" <<'PY'
+    python3 - "${epoch}" 3<<<"${secret}" 4<<<"${code}" <<'PY'
 import base64
 import hashlib
 import hmac
 import struct
 import sys
 
-secret = sys.argv[1].strip().upper()
-code = sys.argv[2].strip()
-epoch = int(sys.argv[3])
+with open(3) as channel:
+    secret = channel.read().strip().upper()
+with open(4) as channel:
+    code = channel.read().strip()
+epoch = int(sys.argv[1])
 
 if len(code) != 6 or not code.isdigit():
     raise SystemExit(1)
@@ -346,25 +351,25 @@ prepare_enrollment_material() {
     local account="$1"
     local secret uri
 
-    require_command python3
-    require_command qrencode
+    require_command python3 || return 1
+    require_command qrencode || return 1
 
-    WORK_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/osmap-totp-enrollment.XXXXXXXX")"
-    chmod 700 "${WORK_ROOT}"
+    WORK_ROOT="$(mktemp -d "${TMPDIR:-/tmp}/osmap-totp-enrollment.XXXXXXXX")" || return 1
+    chmod 700 "${WORK_ROOT}" || return 1
     SECRET_FILE="${WORK_ROOT}/secret"
     URI_FILE="${WORK_ROOT}/otpauth-uri"
 
-    secret="$(generate_secret)"
-    uri="$(build_otpauth_uri "${account}" "${secret}")"
+    secret="$(generate_secret)" || return 1
+    uri="$(build_otpauth_uri "${account}" "${secret}")" || return 1
 
-    printf '%s\n' "${secret}" > "${SECRET_FILE}"
-    printf '%s\n' "${uri}" > "${URI_FILE}"
+    printf '%s\n' "${secret}" > "${SECRET_FILE}" || return 1
+    printf '%s\n' "${uri}" > "${URI_FILE}" || return 1
     chmod 600 "${SECRET_FILE}" "${URI_FILE}"
 }
 
 show_and_verify_enrollment() {
     local account="$1"
-    local secret uri code
+    local secret code
 
     [[ -r /dev/tty && -w /dev/tty ]] || {
         printf 'ERROR: enrollment requires an interactive /dev/tty\n' >&2
@@ -372,7 +377,6 @@ show_and_verify_enrollment() {
     }
 
     secret="$(<"${SECRET_FILE}")"
-    uri="$(<"${URI_FILE}")"
 
     {
         printf '\n'
@@ -384,7 +388,7 @@ show_and_verify_enrollment() {
         printf '\n'
     } > /dev/tty
 
-    qrencode -t ANSIUTF8 "${uri}" > /dev/tty
+    qrencode -t ANSIUTF8 < "${URI_FILE}" > /dev/tty || return 1
 
     {
         printf '\n'
@@ -394,7 +398,7 @@ show_and_verify_enrollment() {
         printf '%s\n' "Before any server mutation, enter a current code from the enrolled authenticator."
     } > /dev/tty
 
-    IFS= read -r -s -p "Current 6-digit TOTP code: " code < /dev/tty
+    IFS= read -r -s -p "Current 6-digit TOTP code: " code < /dev/tty || return 1
     printf '\n' > /dev/tty
 
     if verify_totp_code "${secret}" "${code}"; then
@@ -761,6 +765,12 @@ self_test() {
 
     printf '%s\n' "SELF_TEST=PASS"
 }
+
+# The lifecycle coordinator reuses enrollment and no-overwrite installation.
+# Sourcing must not dispatch an operation; standalone CLI behavior is unchanged.
+if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
+    return 0
+fi
 
 operation=""
 account=""
