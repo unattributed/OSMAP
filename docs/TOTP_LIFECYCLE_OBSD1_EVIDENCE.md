@@ -5,8 +5,9 @@
 Slice 04 is in progress, not closed. The operator authorized host operations on
 obsd1 at `192.168.1.44`, expected hostname `obsd1.blackbagsecurity.com`.
 Native synthetic tests passed on OpenBSD 7.9 on 2026-09-15 UTC (2026-09-14 in
-the operator's America/Toronto timezone). No live factor was changed and no
-real-authenticator acceptance or strict-release qualification is claimed.
+the operator's America/Toronto timezone). That checkpoint changed no live
+factor. Subsequent operator enrollment/rotation is recorded below; controlled
+recovery and strict-release qualification are not claimed.
 Vultr was not contacted for this integration work.
 
 The unchanged lifecycle implementation assessed is signed commit
@@ -22,8 +23,8 @@ to that same candidate; no binary installation or service restart was performed.
 | --- | --- | --- |
 | Workstation regression | 19 rotation and 17 recovery tests passed; both legacy self-tests passed | Native live-host mutation or a human's authenticator |
 | Native synthetic execution | All 19 rotation and 17 recovery tests passed on OpenBSD 7.9 | Real SSH, doas privileges, Dovecot identity, session containment, or QR acceptance |
-| Live read-only inspection | Host identity, clean source checkout, factor-store ancestry, and archive directory checked; controlled mailbox exists but has no active factor | Successful rotation or recovery, both of which require an active factor |
-| Real authenticator and controlled mutation | Pending | No pass may be inferred from the three evidence classes above |
+| Live read-only inspection | Initial absent-factor baseline; later exact active/archive digest reconciliation after operator enrollment and rotation | Human QR/code handling or successful controlled recovery |
+| Real authenticator and controlled mutation | Operator-reported initial provisioning and planned rotation passed; recovery pending | No real-user recovery or strict-release pass may be inferred |
 
 ## Native harness
 
@@ -50,8 +51,8 @@ No production check or legacy self-test was weakened or bypassed.
 
 ## Live read-only findings
 
-The existing controlled validation mailbox is available through Dovecot. Its
-active factor is absent. The revocation dry-run returned its documented
+At the initial checkpoint, the controlled validation mailbox was available
+through Dovecot but its active factor was absent. The revocation dry-run returned its documented
 no-active-factor disposition; rotation refused before enrollment or mutation.
 The factor directories are owned by `_osmap:_osmap` with mode `0700`, and the
 checked ancestry has no group/world-writable directories. Passwordless SSH and
@@ -62,25 +63,59 @@ The missing workstation `qrencode` prerequisite was installed from the existing
 configured package repository (version 4.1.1). No other package was upgraded or
 removed. No enrollment seed, QR code, URI, or authenticator code was captured.
 
+## Subsequent controlled-account progress
+
+At checkpoint `691b9606694080e67e3aa060b449dd510254f230`, the operator reported
+successful initial enrollment/provisioning and then planned rotation for the
+reserved validation account. Rotation stamp: `20260915T021217Z`. Independent
+read-only reconciliation matched the active replacement digest
+`5a5060e372462599dccfcdc9e3fa08a836a5edb277e5ae5a0d74298195084b20` and preserved
+predecessor digest
+`515631e1b035bcba9c941d4b3c05430ef02768b0d7b5a8b6f6bc865bfcd08c19`.
+Both were regular non-symlink `_osmap:_osmap` files with mode `0600`. Factor
+bodies, QR codes, and authenticator codes were not exported. Do not repeat
+provisioning or planned rotation to stand in for recovery.
+
+The operator approved a truthful controlled test-custody rehearsal and a brief
+obsd1 browser-maintenance window. The separate rehearsal policy is described in
+`TOTP_OPERATOR_RECOVERY_SOP.md`; it is not a real-person identity attestation.
+Before maintenance, a non-locking inventory found 16 test-account records,
+14 marked revoked and none apparently usable by recorded time limits. This
+historical inventory does not establish containment. The new read-only guard
+must pass under maintenance before any rehearsal approval is signed.
+
+The approved stop/check/start rehearsal subsequently passed on obsd1. Under
+the existing session-store lock, the guard found 16 reserved-account records:
+14 already revoked and 2 expired but unrevoked, with zero usable sessions.
+The browser service was restored and `/healthz` returned HTTP 200 with the
+explicit obsd1 Host header. An IP Host header correctly returned HTTP 421;
+it was not used as a positive health result. No factor or session mutation
+occurred during this maintenance check. SMTP/IMAP services were not stopped.
+This validates the containment procedure, not completed factor recovery.
+
+The candidate's 19 rotation and 30 recovery/rehearsal tests passed locally and
+in native synthetic execution. Four native-runner boundary tests, both legacy
+workstation self-tests, ShellCheck, and the developer gate also passed. The
+developer gate's optional nginx runtime check remains skipped where nginx is
+unavailable; no strict release or new authenticated browser WSTG pass is claimed.
+Retained source hashes identify the candidate separately from the earlier
+signed checkpoint. Real-user identity checks remain outside this rehearsal.
+
 ## Remaining acceptance and human interaction
 
 Use an unrecorded local terminal and a controlled authenticator. Do not paste
 seeds, QR images, codes, passwords, session data, or private case evidence into
 chat or retained logs. The agent's captured tool terminal is not that surface.
 
-1. Establish the controlled account's authorization and test ownership. Because
-   its factor is absent, initial provisioning must first use the reviewed
-   provisioning SOP and successful authenticator enrollment; neither rotation
-   nor recovery should be repurposed as absent-factor provisioning.
-2. Rehearse planned rotation with the human-operated authenticator and exact
-   operator confirmation. Retain only sanitized outcome and digest evidence.
-3. Establish and record recovery's independent identity, session-revocation,
-   access-containment, and serialized-administration controls before approving
-   recovery. Host authority and automatic commit signing do not attest them.
-4. Use a short-lived signed recovery approval, verify replacement enrollment,
+1. Preserve completed provisioning and planned-rotation evidence above.
+2. Establish the reviewed rehearsal's test-custody, no-usable-session, stopped
+   browser-service, and serialized-administration controls. Real-user recovery
+   still requires independent identity and session-revocation attestations;
+   rehearsal evidence must not substitute for them.
+3. Use a short-lived signed rehearsal approval, verify replacement enrollment,
    perform the controlled recovery, and reconcile the result read-only. Do not
    automatically retry or restore a factor after an ambiguous result.
-5. Restore or remove temporary validation credentials and test state through a
+4. Restore or remove temporary validation credentials and test state through a
    bounded reviewed cleanup; verify cleanup, then record operator acceptance.
 
 Real enrollment and the recovery attestations require human participation;
@@ -95,3 +130,13 @@ All retained records use `/home/foo/Downloads/osmap-totp-lifecycle/`:
 `slice04-native-source-sha256.txt`, and `slice04-host-preflight.log`.
 The failed first attempt is retained as such, not as passing evidence.
 These are scoped integration records, not validated release-report replacements.
+
+Later retained records include `slice04-post-provision-readonly.log`,
+`slice04-post-rotation-readonly.log`, `slice04-rotation-reconciliation.log`,
+and `slice04-recovery-preparation.md`. The handoff distinguishes operator
+reports, independent read-only observations, and pending acceptance.
+The rehearsal adds `slice04-rehearsal-source-sha256.txt`,
+`slice04-rehearsal-native-final.log`, and
+`slice04-rehearsal-maintenance-check.log`. The maintenance check preceded a
+stricter literal-config parser; that parser was subsequently verified against
+the live configuration read-only. No second outage was required for that check.

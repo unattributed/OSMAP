@@ -124,13 +124,13 @@ run_factor_replacement() {
     local account="$1" host="$2" expected_hostname="$3" mutation="$4"
     local workflow="$5"
     local old_digest new_digest final_digest stamp output secret
-    [[ "${workflow}" == ROTATION || "${workflow}" == RECOVERY ]] || return 2
+    [[ "${workflow}" == ROTATION || "${workflow}" == RECOVERY || "${workflow}" == RECOVERY_REHEARSAL ]] || return 2
     rotation_validate "${account}" "${host}" "${expected_hostname}" || return 2
     require_command ssh || return 1
     require_command python3 || return 1
     require_command sha256sum || return 1
     old_digest="$(rotation_snapshot "${account}" "${host}" "${expected_hostname}")" || return 1
-    if [[ "${workflow}" == RECOVERY ]]; then
+    if [[ "${workflow}" != ROTATION ]]; then
         recovery_approve_snapshot "${account}" "${host}" "${expected_hostname}" "${old_digest}" || return 1
     fi
     printf '%s\n' "account=${account}" "ssh_host=${host}" "expected_hostname=${expected_hostname}" \
@@ -152,7 +152,7 @@ run_factor_replacement() {
     require_command qrencode || return 1
     prepare_enrollment_material "${account}" || return 1
     show_and_verify_enrollment "${account}" || return 1
-    if [[ "${workflow}" == RECOVERY ]]; then
+    if [[ "${workflow}" != ROTATION ]]; then
         recovery_authorize "${account}" "${host}" "${expected_hostname}" || return 1
     else
         rotation_authorize "${account}" "${host}" "${expected_hostname}" || return 1
@@ -168,7 +168,7 @@ run_factor_replacement() {
         printf '%s\n' 'ERROR: factor changed during enrollment; no mutation attempted' >&2
         return 1
     }
-    if [[ "${workflow}" == RECOVERY ]]; then
+    if [[ "${workflow}" != ROTATION ]]; then
         recovery_approve_snapshot "${account}" "${host}" "${expected_hostname}" "${old_digest}" || return 1
     fi
     stamp="$(date -u '+%Y%m%dT%H%M%SZ')" || return 1

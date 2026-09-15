@@ -18,9 +18,11 @@ browser administration, or PostfixAdmin replacement.
 Slice 02 and Slice 03 are now synchronized to main, with both original
 Shopkeeper signatures preserved. The operator authorized continuation. Slice 04
 has passed 19 rotation and 17 recovery tests in isolated native OpenBSD
-execution, and read-only checks found the controlled mailbox has no active
-factor. Real enrollment, controlled rotation/recovery, external recovery
-attestations, cleanup, and acceptance remain. See
+execution. The operator subsequently completed initial enrollment and planned
+rotation; read-only digest reconciliation confirmed the replacement and its
+preserved predecessor. Controlled recovery rehearsal, cleanup, and acceptance
+remain. The opt-in test-custody policy in `TOTP_OPERATOR_RECOVERY_SOP.md` does
+not qualify real-user recovery or relax its identity requirements. See
 `TOTP_LIFECYCLE_OBSD1_EVIDENCE.md`. One slice remains open; the sprint is not closed.
 
 All retained sprint artifacts use
@@ -141,3 +143,9 @@ substituted approvals, denied authorization, stale factors, and partial failure.
 
 These are operator-tool regression checks, not new passing browser WSTG
 scenarios. Existing committed WSTG matrix outcomes are unchanged.
+
+The Slice 04 rehearsal adds negative coverage for production/rehearsal schema
+separation, exact reserved target, fresh signed controls, loss of maintenance
+containment, bounded session parsing, and distinct partial/success labels.
+The read-only session guard checks usable sessions; it does not perform session
+revocation. Human enrollment and restored-service acceptance remain separate.

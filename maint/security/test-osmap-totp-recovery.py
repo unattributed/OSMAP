@@ -26,6 +26,7 @@ def module_at(name, path):
 
 
 approval = module_at("recovery_approval", VERIFIER)
+guard = module_at("rehearsal_guard", ROOT / "maint/live/osmap-totp-rehearsal-check.py")
 rotation = module_at("rotation_tests", ROOT / "maint/security/test-osmap-totp-rotation.py")
 OLD = rotation.OLD
 
@@ -47,6 +48,53 @@ def validate(payload):
 
 
 class ApprovalPolicyTests(unittest.TestCase):
+    def rehearsal_payload(self):
+        payload = valid_payload()
+        account, host, hostname = approval.REHEARSAL_TARGET
+        payload.update(schema=approval.REHEARSAL_SCHEMA, account=account, ssh_host=host,
+                       expected_hostname=hostname, identity_method="controlled_test_custody")
+        payload["no_valid_sessions"] = payload.pop("sessions_revoked")
+        return payload
+
+    def validate_rehearsal(self, payload, target=None, rehearsal=True):
+        return approval.validate_payload(json.dumps(payload).encode(),
+                                         *(target or approval.REHEARSAL_TARGET),
+                                         OLD, int(time.time()), rehearsal=rehearsal)
+
+    def test_rehearsal_and_production_approvals_are_not_interchangeable(self):
+        payload = self.rehearsal_payload()
+        self.validate_rehearsal(payload)
+        with self.assertRaises(approval.ApprovalError):
+            self.validate_rehearsal(payload, rehearsal=False)
+        production = dict(payload, schema=approval.SCHEMA, identity_method="in_person")
+        production["sessions_revoked"] = production.pop("no_valid_sessions")
+        self.validate_rehearsal(production, rehearsal=False)
+        with self.assertRaises(approval.ApprovalError):
+            self.validate_rehearsal(production)
+
+    def test_rehearsal_cannot_select_another_account_host_or_hostname(self):
+        for index, field in enumerate(("account", "ssh_host", "expected_hostname")):
+            payload = self.rehearsal_payload()
+            target = list(approval.REHEARSAL_TARGET)
+            target[index] = payload[field] = "other.example.com"
+            with self.subTest(field=field), self.assertRaises(approval.ApprovalError):
+                self.validate_rehearsal(payload, target)
+
+    def test_rehearsal_keeps_freshness_exact_fields_and_truthful_controls(self):
+        changes = {"no_valid_sessions": False, "access_contained": False,
+                   "identity_method": "in_person", "identity_case": "",
+                   "expires_at": 0, "issued_at": True, "previous_factor_sha256": "0" * 64}
+        for field, value in changes.items():
+            payload = self.rehearsal_payload()
+            payload[field] = value
+            with self.subTest(field=field), self.assertRaises(approval.ApprovalError):
+                self.validate_rehearsal(payload)
+        for value in ("true", 1, None):
+            with self.assertRaises(approval.ApprovalError):
+                self.validate_rehearsal(dict(self.rehearsal_payload(), no_valid_sessions=value))
+        with self.assertRaises(approval.ApprovalError):
+            self.validate_rehearsal(dict(self.rehearsal_payload(), sessions_revoked=True))
+
     def test_valid_policy(self):
         self.assertEqual(validate(valid_payload())["request_id"], "synthetic-case-1")
 
@@ -228,11 +276,23 @@ recovery_main "$operation" alice@example.com --host 192.0.2.1 \
 
 
 class RecoveryTransitionTests(unittest.TestCase):
-    def run_case(self, case="success", mutation=True):
+    def run_case(self, case="success", mutation=True, rehearsal=False):
         with tempfile.TemporaryDirectory(prefix="osmap-recovery-test-") as root:
             env = dict(os.environ, RECOVERY_SCRIPT=str(SCRIPT), CASE=case, CASE_ROOT=root,
                        OLD_DIGEST=OLD, MUTATION=str(mutation).lower())
-            result = subprocess.run(["bash", "-c", RECOVERY_HARNESS], env=env,
+            harness = RECOVERY_HARNESS
+            if rehearsal:
+                harness = harness.replace("'RECOVERY_APPROVAL=PASS'", "'REHEARSAL_APPROVAL=PASS'")
+                harness = harness.replace('recovery_main "$operation" alice@example.com --host 192.0.2.1',
+                    '''rehearsal_check() {
+    printf '%s\\n' guard >> "$CASE_ROOT/approvals"
+    [[ "$CASE" != containment_failed ]] || return 1
+    [[ "$CASE" != containment_lost || ! -f "$CASE_ROOT/enrolled" ]]
+}
+recovery_main --controlled-rehearsal "$operation" osmap-helper-validation@blackbagsecurity.com --host 192.168.1.44''')
+                harness = harness.replace("--expected-hostname test.example.com --approval",
+                                          "--expected-hostname obsd1.blackbagsecurity.com --approval")
+            result = subprocess.run(["bash", "-c", harness], env=env,
                                     capture_output=True, text=True, timeout=15, start_new_session=True)
             events_path = Path(root, "events")
             events = events_path.read_text().splitlines() if events_path.exists() else []
@@ -240,6 +300,50 @@ class RecoveryTransitionTests(unittest.TestCase):
             checks = approvals_path.read_text().splitlines() if approvals_path.exists() else []
             self.assertFalse(Path(root, "enrollment").exists(), "secret scratch leaked")
             return result, events, checks
+
+    def test_rehearsal_checks_containment_twice_and_labels_result_distinctly(self):
+        result, events, checks = self.run_case(rehearsal=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(checks, ["guard", "approval", "guard", "approval"])
+        self.assertEqual(events, ["enroll", "authorize", "revoke", "provision"])
+        self.assertIn("TOTP_RECOVERY_REHEARSAL=PASS", result.stdout)
+        self.assertNotIn("TOTP_RECOVERY=PASS", result.stdout)
+
+    def test_rehearsal_containment_loss_and_approval_failure_never_mutate(self):
+        for case in ("containment_failed", "containment_lost", "unsigned",
+                     "expired_after_enrollment", "changed_approval", "no_tty"):
+            result, events, _ = self.run_case(case, rehearsal=True)
+            self.assertNotEqual(result.returncode, 0, case)
+            self.assertNotIn("revoke", events)
+            self.assertNotIn("provision", events)
+
+    def test_rehearsal_dry_run_and_partial_results_are_not_real_recovery(self):
+        result, events, checks = self.run_case(mutation=False, rehearsal=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(events, [])
+        self.assertEqual(checks, ["guard", "approval"])
+        self.assertIn("TOTP_RECOVERY_REHEARSAL_DRY_RUN=PASS", result.stdout)
+        result, _, _ = self.run_case("install_failed", rehearsal=True)
+        self.assertEqual(result.returncode, 24)
+        self.assertIn("TOTP_RECOVERY_REHEARSAL=INCOMPLETE", result.stderr)
+
+    def test_rehearsal_wrong_target_refused_before_any_ssh(self):
+        result = subprocess.run(["bash", str(SCRIPT), "--controlled-rehearsal", "--request",
+                                 "alice@example.com", "--host", "192.168.1.44",
+                                 "--expected-hostname", "obsd1.blackbagsecurity.com"],
+                                capture_output=True, text=True, timeout=5)
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertNotIn("ssh:", result.stderr)
+        for key, value in (("OSMAP_TOTP_SECRET_DIR", "/tmp/elsewhere"),
+                           ("OSMAP_TOTP_REVOKED_DIR", "/tmp/elsewhere"),
+                           ("OSMAP_TOTP_OWNER", "root"), ("OSMAP_TOTP_GROUP", "wheel")):
+            result = subprocess.run(["bash", str(SCRIPT), "--controlled-rehearsal", "--request",
+                                     approval.REHEARSAL_TARGET[0], "--host", "192.168.1.44",
+                                     "--expected-hostname", "obsd1.blackbagsecurity.com"],
+                                    env=dict(os.environ, **{key: value}), capture_output=True,
+                                    text=True, timeout=5)
+            self.assertEqual(result.returncode, 2, key)
+            self.assertNotIn("ssh:", result.stderr)
 
     def test_recovery_verifies_approval_before_enrollment_and_again_before_mutation(self):
         result, events, checks = self.run_case()
@@ -289,6 +393,94 @@ class RecoveryTransitionTests(unittest.TestCase):
                                     text=True, timeout=5, start_new_session=True)
             self.assertEqual(result.returncode, 2, result.stderr)
             self.assertNotIn("ssh:", result.stderr)
+
+
+class RehearsalGuardTests(unittest.TestCase):
+    def record(self, **changes):
+        fields = dict(session_id="a" * 64, csrf_token="b" * 64,
+                      canonical_username=guard.ACCOUNT, issued_at="100", expires_at="10000",
+                      last_seen_at="200", revoked_at="", remote_addr="127.0.0.1",
+                      user_agent="synthetic", factor="totp")
+        fields.update(changes)
+        return "".join(f"{key}={value}\n" for key, value in fields.items())
+
+    def check_fixture(self, content, now=500, symlink=False):
+        with tempfile.TemporaryDirectory(prefix="osmap-rehearsal-session-") as root:
+            directory = Path(root)
+            path = directory / ("a" * 64 + ".session")
+            path.write_text(content)
+            path.chmod(0o600)
+            if symlink:
+                path.rename(directory / "original")
+                path.symlink_to(directory / "original")
+            return guard.check_records(directory, os.getuid(), now)
+
+    def test_usable_session_refused_but_revoked_or_expired_are_distinguished(self):
+        with self.assertRaises(guard.Refused):
+            self.check_fixture(self.record())
+        self.assertEqual(self.check_fixture(self.record(revoked_at="300")), (1, 1, 0))
+        self.assertEqual(self.check_fixture(self.record(expires_at="400")), (1, 0, 1))
+        self.assertEqual(self.check_fixture(self.record(), now=2000), (1, 0, 1))
+        self.assertEqual(self.check_fixture(self.record(canonical_username="other@example.com")), (0, 0, 0))
+
+    def test_malformed_duplicate_future_and_symlink_records_refused(self):
+        for content in (self.record() + "revoked_at=1\n", self.record(revoked_at="later"),
+                        self.record(revoked_at="900"), self.record(csrf_token="invalid"),
+                        self.record() + "extra=1\n", self.record(user_agent="unsafe\rvalue")):
+            with self.subTest(content_type="synthetic"), self.assertRaises(guard.Refused):
+                self.check_fixture(content)
+        with self.assertRaises((guard.Refused, OSError)):
+            self.check_fixture(self.record(revoked_at="300"), symlink=True)
+
+    def test_config_must_bind_exact_listener_directory_and_timeouts(self):
+        valid = ("OSMAP_SESSION_DIR=/var/lib/osmap/sessions\nOSMAP_LISTEN_ADDR=127.0.0.1:8080\n"
+                 "OSMAP_SESSION_LIFETIME_SECS=43200\nOSMAP_SESSION_IDLE_TIMEOUT_SECS=1800\n")
+        guard.check_config(valid)
+        for text in (valid.replace("8080", "8081"), valid.replace("1800", "9999"),
+                     valid + "OSMAP_SESSION_DIR=/tmp/elsewhere\n", "",
+                     valid + "export OSMAP_SESSION_DIR=/tmp/elsewhere\n",
+                     valid + "OTHER=value; OSMAP_SESSION_DIR=/tmp/elsewhere\n",
+                     valid + "OTHER=$(command)\n"):
+            with self.assertRaises(guard.Refused):
+                guard.check_config(text)
+
+    def test_unsafe_file_metadata_and_directory_ancestry_refused(self):
+        with tempfile.TemporaryDirectory(prefix="osmap-rehearsal-metadata-") as root:
+            path = Path(root, "record")
+            path.write_text("synthetic")
+            path.chmod(0o644)
+            with self.assertRaises(guard.Refused):
+                guard.read_regular(path, os.getuid())
+            path.chmod(0o600)
+            with self.assertRaises(guard.Refused):
+                guard.read_regular(path, os.getuid() + 1)
+            os.link(path, Path(root, "second"))
+            with self.assertRaises(guard.Refused):
+                guard.read_regular(path, os.getuid())
+            directory_link = Path(root, "directory-link")
+            directory_link.symlink_to(root)
+            with self.assertRaises(guard.Refused):
+                guard.safe_ancestry(directory_link, os.getuid())
+
+    def test_running_or_uncertain_service_is_refused(self):
+        for code in (0, 2, 255):
+            with mock.patch.object(guard.subprocess, "run", return_value=subprocess.CompletedProcess([], code)), \
+                    self.assertRaises(guard.Refused):
+                guard.service_stopped()
+        with mock.patch.object(guard.subprocess, "run", return_value=subprocess.CompletedProcess([], 1)), \
+                mock.patch.object(guard.socket, "socket") as probe:
+            probe.return_value.__enter__.return_value.connect_ex.return_value = 0
+            with self.assertRaises(guard.Refused):
+                guard.service_stopped()
+            probe.return_value.__enter__.return_value.connect_ex.return_value = guard.errno.ECONNREFUSED
+            guard.service_stopped()
+
+    def test_other_platform_never_runs_host_commands(self):
+        with mock.patch.object(guard.platform, "system", return_value="Linux"), \
+                mock.patch.object(guard.subprocess, "run") as run, mock.patch("builtins.print") as output:
+            self.assertEqual(guard.main(), 1)
+            run.assert_not_called()
+            output.assert_called_once_with("REHEARSAL_CONTAINMENT=REFUSED")
 
 
 if __name__ == "__main__":

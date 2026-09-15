@@ -14,14 +14,18 @@ statement as provenance rather than current release posture.
 
 ## Current source posture
 
-As of 2026-09-14, the approved TOTP lifecycle continuation contains Slice 02
+As of 2026-09-15, the approved TOTP lifecycle continuation contains Slice 02
 (planned rotation), Slice 03 (recovery), and Slice 04 (integration closeout).
 Slice 02 was delivered as signed commit `77dc836` and continuation was approved.
 Slice 03 recovery implementation and local qualification are complete with a
 short-lived signed operator-approval boundary; its signed delivery is recorded
 in the sprint handoff. Both commits are synchronized through PR #61. Slice 04
-native synthetic checks passed on obsd1; human authenticator acceptance and
-controlled mutation evidence remain. See `TOTP_LIFECYCLE_OBSD1_EVIDENCE.md`.
+native synthetic checks passed on obsd1. Operator-reported initial enrollment
+and planned rotation were reconciled through read-only factor digests.
+Controlled recovery rehearsal, cleanup, and acceptance remain. A separate
+reserved-account test-custody mode preserves real-user identity requirements;
+it does not establish production recovery qualification.
+See `TOTP_LIFECYCLE_OBSD1_EVIDENCE.md`.
 No new production qualification
 is claimed. `mail.blackbagsecurity.com` is now the Vultr instance;
 the former LAN host is `obsd1.blackbagsecurity.com` at `192.168.1.44`. Earlier

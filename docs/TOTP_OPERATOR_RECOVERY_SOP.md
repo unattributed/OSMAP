@@ -26,7 +26,60 @@ Routine autonomous commit signing does not authorize signing recovery approvals.
 The recovery tool only verifies approvals; it cannot create a valid approval
 by itself and never invokes a signing operation.
 
-## Required external controls
+## Controlled validation-account rehearsal (Slice 04)
+
+This opt-in mode is **not real-user recovery qualification**. The operator
+authorized a truthful test-custody rehearsal because the reserved validation
+account has no real claimant whose identity could be independently checked.
+Do not invent an in-person check to make a production approval pass.
+
+Add `--controlled-rehearsal` to the request, dry-run, and recovery commands only
+for `osmap-helper-validation@blackbagsecurity.com`, host `192.168.1.44`, expected
+hostname `obsd1.blackbagsecurity.com`. Other accounts, target aliases, runtime
+identities, and factor-directory overrides are rejected before SSH. Production
+recovery remains unchanged and rejects rehearsal approvals, even when signed.
+
+The rehearsal approval uses `osmap-totp-controlled-rehearsal-v1`, requires
+`identity_method=controlled_test_custody`, and replaces `sessions_revoked` with
+the JSON boolean `no_valid_sessions`. All other fields, private-file checks,
+pinned signature verification, exact factor binding, revalidation, and the
+maximum 900-second lifetime remain required. `identity_case` records test
+custody, not a person's identity check. A suitable non-secret case label is
+`osmap-slice04-recovery-01`; the label itself is not evidence. Templates remain
+intentionally invalid and are never signed automatically by the verifier.
+
+Before approval, establish test-account custody and the authorized browser
+maintenance window. Stop only `osmap_serve` on obsd1 through the reviewed host
+service procedure; this interrupts **all OSMAP browser users on that host**.
+Do not stop SMTP/IMAP, contact Vultr, change boot enablement, or restart the
+browser service while a recovery result is ambiguous. Verify the restoration
+configuration before stopping the service. Serialize service and factor
+administration throughout the window, including manual and legacy tools.
+
+`maint/live/osmap-totp-rehearsal-check.py` runs read-only on the fixed OpenBSD
+host through strict SSH/doas before each approval verification. It checks the
+expected session/listener/time-limit configuration, stopped service and workers,
+closed loopback listener, safe file ancestry and metadata, and bounded session
+records under the existing session-store lock. It refuses usable sessions for
+the reserved account. It distinguishes already-revoked records from expired
+unrevoked records; neither is reported as a new revocation. If usable sessions
+exist, stop and use a separately reviewed revocation path. Never erase another
+account's session state to satisfy this guard.
+
+The guard does not stop services, revoke sessions, contain SMTP/IMAP, or prevent
+another privileged operator from restarting a service after the check. Its
+lock is released before enrollment and factor replacement; it does not make
+the workflow atomic. These limitations require serialized maintenance.
+
+The private terminal confirmation starts with `REHEARSE`, not `RECOVER`.
+Results use `TOTP_RECOVERY_REHEARSAL`, never `TOTP_RECOVERY=PASS`. A successful
+rehearsal exercises the shared replacement engine but does not prove a real
+claimant's identity or satisfy production recovery acceptance. Keep QR/code
+entry unrecorded. Reconcile the result and approved cleanup before restoring
+the browser service; verify restored service health. No automatic mutation
+retry, old-factor restoration, replay reset, or service restart is introduced.
+
+## Required external controls for real-user recovery
 
 Before an operator approves a recovery:
 

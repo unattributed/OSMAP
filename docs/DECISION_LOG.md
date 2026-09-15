@@ -1,5 +1,21 @@
 # Decision Log
 
+## 2026-09-15 — Separate test custody from real-user MFA recovery
+
+The operator approved a controlled rehearsal for the reserved obsd1 validation
+account, not invented identity-verification evidence. Add an explicit opt-in,
+fixed-target rehearsal schema with test-custody and no-usable-session
+attestations. Preserve the production schema and its independent identity and
+revocation requirements; neither schema can authorize the other mode.
+
+The rehearsal retains pinned signatures, freshness, factor-state binding,
+private enrollment, typed confirmation, and failure reconciliation. A read-only
+host guard requires stopped browser service and no usable test-account sessions
+before each approval check. Maintenance is operator-approved and serialized;
+the guard does not revoke sessions or enforce a lasting admission lock.
+Results are distinctly labeled and do not qualify real-user recovery, browser
+WSTG, the strict release gate, or Vultr. SMTP/IMAP are outside this window.
+
 ## 2026-03-27
 
 ### Keep planning artifacts public and non-sensitive

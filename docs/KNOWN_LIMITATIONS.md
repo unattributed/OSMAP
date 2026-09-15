@@ -22,11 +22,18 @@ See `TOTP_OPERATOR_RECOVERY_SOP.md`; controlled host qualification is pending
 on obsd1 at `192.168.1.44`, the operator-selected sprint target. Vultr is outside
 this sprint's validation scope.
 
-Slice 04 native synthetic rotation/recovery tests passed on obsd1, but the
-controlled live mailbox currently has no active factor. Initial provisioning
-and real-authenticator rotation/recovery acceptance remain outstanding. Native
+Slice 04 native synthetic rotation/recovery tests passed on obsd1. Initial
+provisioning and planned rotation subsequently passed operator enrollment and
+read-only digest reconciliation. Controlled recovery and closeout remain. Native
 tests mock SSH, doas, mailbox, and human boundaries and cannot replace these
 checks. See `TOTP_LIFECYCLE_OBSD1_EVIDENCE.md`; the sprint remains open.
+
+The opt-in controlled rehearsal is restricted to one reserved account on
+obsd1. Test custody is not real-user identity verification. Its read-only guard
+requires stopped browser service and no usable test-account sessions, but
+does not revoke sessions, contain SMTP/IMAP, or prevent a privileged service
+restart after inspection. Maintenance must be serialized and affects every
+browser user on obsd1. Real-user recovery approvals cannot use this schema.
 
 ## Current Documentation Limitations
 

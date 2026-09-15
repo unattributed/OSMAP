@@ -13,6 +13,9 @@ import time
 
 SHOPKEEPER = "F55E404E91A0753701F91B01A7228D3FB5084B34"
 SCHEMA = "osmap-totp-recovery-approval-v1"
+REHEARSAL_SCHEMA = "osmap-totp-controlled-rehearsal-v1"
+REHEARSAL_TARGET = ("osmap-helper-validation@blackbagsecurity.com",
+                    "192.168.1.44", "obsd1.blackbagsecurity.com")
 MAX_BYTES = 16384
 FIELDS = {
     "schema", "account", "ssh_host", "expected_hostname", "previous_factor_sha256",
@@ -47,14 +50,18 @@ def unique_object(pairs):
     return result
 
 
-def validate_payload(data, account, host, hostname, digest, now):
+def validate_payload(data, account, host, hostname, digest, now, rehearsal=False):
     try:
         approval = json.loads(data, object_pairs_hook=unique_object)
     except (ValueError, UnicodeError, RecursionError) as error:
         raise ApprovalError("invalid approval JSON") from error
-    if not isinstance(approval, dict) or set(approval) != FIELDS:
+    fields = (FIELDS - {"sessions_revoked"}) | {"no_valid_sessions"} if rehearsal else FIELDS
+    if rehearsal and (account, host, hostname) != REHEARSAL_TARGET:
+        raise ApprovalError("rehearsal is restricted to the reserved obsd1 validation account")
+    if not isinstance(approval, dict) or set(approval) != fields:
         raise ApprovalError("unexpected approval schema fields")
-    expected = {"schema": SCHEMA, "account": account, "ssh_host": host,
+    expected = {"schema": REHEARSAL_SCHEMA if rehearsal else SCHEMA,
+                "account": account, "ssh_host": host,
                 "expected_hostname": hostname, "previous_factor_sha256": digest}
     if any(approval[key] != value for key, value in expected.items()):
         raise ApprovalError("approval does not match the exact account, host and factor state")
@@ -64,9 +71,11 @@ def validate_payload(data, account, host, hostname, digest, now):
         value = approval[field]
         if not isinstance(value, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}", value):
             raise ApprovalError("missing or invalid opaque approval reference")
-    if approval["identity_method"] not in ("in_person", "established_out_of_band"):
-        raise ApprovalError("independent identity verification must be attested")
-    if approval["sessions_revoked"] is not True or approval["access_contained"] is not True:
+    methods = ("controlled_test_custody",) if rehearsal else ("in_person", "established_out_of_band")
+    if approval["identity_method"] not in methods:
+        raise ApprovalError("the required identity or test-custody method must be attested")
+    session_field = "no_valid_sessions" if rehearsal else "sessions_revoked"
+    if approval[session_field] is not True or approval["access_contained"] is not True:
         raise ApprovalError("session revocation and access containment must be attested")
     issued, expires = approval["issued_at"], approval["expires_at"]
     if (type(issued) is not int or type(expires) is not int
@@ -102,18 +111,19 @@ def verify_signature(data, signature, expected_signer=SHOPKEEPER):
         raise ApprovalError("approval is not signed by the pinned Shopkeeper identity")
 
 
-def verify_approval(path, signature_path, account, host, hostname, digest):
+def verify_approval(path, signature_path, account, host, hostname, digest, rehearsal=False):
     data, signature = read_private_file(path), read_private_file(signature_path)
     verify_signature(data, signature)
     # Timestamp is sampled after signature checking so a slow verifier cannot
     # make an already expired approval valid at the end of verification.
-    approval = validate_payload(data, account, host, hostname, digest, int(time.time()))
+    approval = validate_payload(data, account, host, hostname, digest, int(time.time()), rehearsal)
     return approval, hashlib.sha256(data).hexdigest()
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--template", action="store_true")
+    parser.add_argument("--controlled-rehearsal", action="store_true")
     parser.add_argument("--approval")
     parser.add_argument("--signature")
     parser.add_argument("--account", required=True)
@@ -121,33 +131,43 @@ def main():
     parser.add_argument("--expected-hostname", required=True)
     parser.add_argument("--digest", required=True)
     args = parser.parse_args()
+    if args.controlled_rehearsal and (args.account, args.host, args.expected_hostname) != REHEARSAL_TARGET:
+        parser.error("controlled rehearsal requires the exact reserved obsd1 target")
     if args.template:
         if args.approval or args.signature:
             parser.error("template mode cannot verify an approval")
         now = int(time.time())
         print(json.dumps({
-            "schema": SCHEMA, "account": args.account, "ssh_host": args.host,
+            "schema": REHEARSAL_SCHEMA if args.controlled_rehearsal else SCHEMA,
+            "account": args.account, "ssh_host": args.host,
             "expected_hostname": args.expected_hostname, "previous_factor_sha256": args.digest,
             "request_id": "", "issued_at": now, "expires_at": now + 900,
             "identity_method": "REQUIRES_OPERATOR_VERIFICATION", "identity_case": "",
             "session_case": "", "containment_case": "",
-            "sessions_revoked": False, "access_contained": False,
+            ("no_valid_sessions" if args.controlled_rehearsal else "sessions_revoked"): False,
+            "access_contained": False,
         }, indent=2))
         return 0
     if not args.approval or not args.signature:
         parser.error("verification requires --approval and --signature")
     try:
         approval, digest = verify_approval(args.approval, args.signature, args.account,
-                                          args.host, args.expected_hostname, args.digest)
+                                          args.host, args.expected_hostname, args.digest,
+                                          args.controlled_rehearsal)
     except (ApprovalError, OSError, subprocess.SubprocessError):
         # Neither an untrusted approval nor gpg's diagnostic text is reflected.
-        print("RECOVERY_APPROVAL=REFUSED")
+        print("REHEARSAL_APPROVAL=REFUSED" if args.controlled_rehearsal else "RECOVERY_APPROVAL=REFUSED")
         return 1
-    print("RECOVERY_APPROVAL=PASS")
+    print("REHEARSAL_APPROVAL=PASS" if args.controlled_rehearsal else "RECOVERY_APPROVAL=PASS")
     print(f"approval_sha256={digest}")
     print(f"approval_request_id={approval['request_id']}")
-    print("identity_verification_attested=true")
-    print("session_revocation_attested=true")
+    if args.controlled_rehearsal:
+        print("test_account_custody_attested=true")
+        print("real_user_identity_verification=false")
+        print("no_valid_sessions_attested=true")
+    else:
+        print("identity_verification_attested=true")
+        print("session_revocation_attested=true")
     print("access_containment_attested=true")
     return 0
 
