@@ -30,10 +30,12 @@ PROBE
                 OSMAP_RELEASE_EVIDENCE_DIR="$test_root/evidence"
                 OSMAP_SECURITY_PROFILE=release
                 export TMPDIR CARGO_HOME OSMAP_RELEASE_EVIDENCE_DIR OSMAP_SECURITY_PROFILE
-                case "$mode" in
-                    empty) CARGO_TARGET_DIR=; export CARGO_TARGET_DIR ;;
-                    explicit) CARGO_TARGET_DIR="$expected"; export CARGO_TARGET_DIR ;;
-                esac
+                if [ "$mode" = empty ]; then
+                    CARGO_TARGET_DIR=
+                else
+                    CARGO_TARGET_DIR="$expected"
+                fi
+                export CARGO_TARGET_DIR
                 # Invocation from outside the fixture checkout must still work.
                 cd "$test_root"
                 sh "$fixture_gate"
