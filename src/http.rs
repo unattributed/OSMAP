@@ -1212,7 +1212,7 @@ mod tests {
 
         fn list_messages(
             &self,
-            _context: &AuthenticationContext,
+            context: &AuthenticationContext,
             validated_session: &ValidatedSession,
             mailbox_name: &str,
         ) -> BrowserMessageListOutcome {
@@ -1220,26 +1220,30 @@ mod tests {
                 decision: BrowserMessageListDecision::Listed {
                     canonical_username: validated_session.record.canonical_username.clone(),
                     mailbox_name: mailbox_name.to_string(),
-                    messages: vec![
-                        MessageSummary {
-                            mailbox_name: mailbox_name.to_string(),
-                            uid: 9,
-                            flags: vec!["\\Seen".to_string()],
-                            date_received: "2026-03-27 11:00:00 +0000".to_string(),
-                            size_virtual: 512,
-                            subject: Some("Quarterly report".to_string()),
-                            from: Some("Alice <alice@example.com>".to_string()),
-                        },
-                        MessageSummary {
-                            mailbox_name: mailbox_name.to_string(),
-                            uid: 10,
-                            flags: Vec::new(),
-                            date_received: "2026-03-28 12:00:00 +0000".to_string(),
-                            size_virtual: 768,
-                            subject: Some("Follow-up".to_string()),
-                            from: Some("Bob <bob@example.com>".to_string()),
-                        },
-                    ],
+                    messages: if context.user_agent == "OSMAP/EmptyMailbox" {
+                        Vec::new()
+                    } else {
+                        vec![
+                            MessageSummary {
+                                mailbox_name: mailbox_name.to_string(),
+                                uid: 9,
+                                flags: vec!["\\Seen".to_string()],
+                                date_received: "2026-03-27 11:00:00 +0000".to_string(),
+                                size_virtual: 512,
+                                subject: Some("Quarterly report".to_string()),
+                                from: Some("Alice <alice@example.com>".to_string()),
+                            },
+                            MessageSummary {
+                                mailbox_name: mailbox_name.to_string(),
+                                uid: 10,
+                                flags: Vec::new(),
+                                date_received: "2026-03-28 12:00:00 +0000".to_string(),
+                                size_virtual: 768,
+                                subject: Some("Follow-up".to_string()),
+                                from: Some("Bob <bob@example.com>".to_string()),
+                            },
+                        ]
+                    },
                 },
                 audit_events: vec![LogEvent::new(
                     LogLevel::Info,
@@ -1259,6 +1263,17 @@ mod tests {
             field: MessageSearchField,
         ) -> BrowserMessageSearchOutcome {
             let mailbox_name = mailbox_name.map(str::to_string);
+            if query == "ux-empty-fixture" {
+                return BrowserMessageSearchOutcome {
+                    decision: BrowserMessageSearchDecision::Listed {
+                        canonical_username: validated_session.record.canonical_username.clone(),
+                        mailbox_name,
+                        query: query.to_string(),
+                        results: Vec::new(),
+                    },
+                    audit_events: Vec::new(),
+                };
+            }
             if mailbox_name.as_deref() == Some("MissingArchive") {
                 return BrowserMessageSearchOutcome {
                     decision: BrowserMessageSearchDecision::Denied {

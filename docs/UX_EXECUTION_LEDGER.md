@@ -179,3 +179,45 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   runtime check remains skipped; no new release or cryptographic claim.
 - No account/credential/service mutation, new runtime dependency or migration.
   Signed decision delivery follows; independent human requirements stay open.
+
+### S00-03 delivery / S00-04 work order — 2026-09-29
+
+- S00-03 signed delivery `53d3655`, verified Shopkeeper signature and clean
+  worktree. Accepted for continued delegated engineering; no human recovery,
+  independent usability, release, sync or deployment acceptance is inferred.
+- S00-04: IN_PROGRESS; base `53d3655`, original plan anchor unchanged. Allowed
+  files: `docs/UX_S00_ACCEPTANCE.md`, `maint/ux/acceptance.json`, synthetic
+  fixture module and test gateway in `src/http.rs`, intake factual corrections,
+  ledger, README/current-status/limitations/index, and necessary generated V10
+  audit registers. No runtime changes or live writes.
+- Deliverable: 110 stable control cases across UX01–17, positive/negative
+  designs and evidence fields; additional empty/error route fixtures; baseline
+  visual evidence and truthful prior-TOTP reconciliation. Missing historical
+  Downloads evidence stays missing, not silently reconstructed.
+- Test matrix: 360/768/1440 baseline screenshots; route status/CSP and no-script
+  assertions; matrix coverage/schema check; `git diff --check`, formatting,
+  `make acceptance-check`, `make v10-check`, `make v14-check`, signed pre-commit
+  `make security-check`. S00 evidence root remains stable. No state migration;
+  source-only rollback. Next engineering sprint is S01 appearance and shell.
+
+### S00-04 verification — 2026-09-29 — VERIFIED
+
+- 110 unique control cases cover all 17 parents, each linked to a shared
+  positive/negative design and owning slice. Every status remains
+  `NOT_YET_ACCEPTED`; no baseline screenshot is a functionality acceptance.
+- The real router rendered 20 synthetic states and 60 screenshots at
+  360/768/1440 pixels. Additional empty-mailbox and attachment-unavailable
+  images were inspected; the latter demonstrates the current missing error
+  heading/navigation. These join the previously inspected baseline defects.
+- Acceptance fixture route manifest SHA-256:
+  `8853f3ee11decb0d7f0b09f7b1f0affc43959b86876236a5f8d701528b952fc1`.
+  Screenshot capture manifest SHA-256:
+  `1d11756b8b16ff08ad69e16fc8e19aa8927c640bc6156bbebc2fb07451d51add`.
+- Fixture assertions, matrix schema/coverage, `make acceptance-check`,
+  `make v10-check`, `make v14-check`, formatting, `git diff --check` and
+  original plan checksums passed. Logs remain in S00 `gates/s00-04-*`.
+  Generated V10 registers reflect test-only source changes without relaxing
+  a gate. Optional local nginx check remains skipped; no release claim.
+- Historical TOTP raw artifacts remain unavailable as documented. Intake
+  creates no runtime capability, host mutation, migration or human attestation.
+  Signed delivery follows, then S01 begins under the existing mandate.

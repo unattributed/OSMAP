@@ -59,14 +59,16 @@ See the [architecture](docs/ARCHITECTURE.md) and
 The operator requested a full-functional UX implementation plan covering the
 approved mockups, every-page light/dark mode, missing account/mail capabilities,
 and runtime OpenPGP. The [epic](docs/UX_FULL_FUNCTIONAL_EPIC.md) defines 12
-sprints and 48 slices with decision and security gates. This is planning only:
-no new UX or cryptographic capability is claimed by publication of the plan.
+sprints and 48 slices with decision and security gates. Autonomous engineering
+started on 2026-09-29: intake now records the exact reference controls, real
+route baselines, architecture decisions and acceptance cases. Follow the
+[execution ledger](docs/UX_EXECUTION_LEDGER.md) for signed slice deliveries.
+Intake adds no runtime UX or cryptographic capability.
 The operator reports Roundcube removed; this epic is not a retirement project.
 
-The current bounded development sprint covers operator-assisted TOTP rotation,
-recovery, and integration closeout. Rotation has a signed source delivery;
-recovery now requires a short-lived signed operator approval and remains under
-local qualification. See the [sprint record](docs/TOTP_LIFECYCLE_SPRINT.md).
+The earlier TOTP lifecycle sprint is administratively closed with controlled
+recovery and live-account cleanup residuals. Recovery requires a short-lived
+signed human operator approval. See the [sprint record](docs/TOTP_LIFECYCLE_SPRINT.md).
 The mail host has migrated to Vultr; historical on-premises validation does not
 establish qualification of that instance.
 The operator selected obsd1 at `192.168.1.44` for this sprint's validation;

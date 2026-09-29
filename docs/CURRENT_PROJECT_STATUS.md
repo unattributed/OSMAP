@@ -14,16 +14,21 @@ statement as provenance rather than current release posture.
 
 ## Current source posture
 
-### Full-functional UX planning intake, 2026-09-15
+### Full-functional UX engineering intake, 2026-09-29
 
 The operator requested a codified full-functional UX epic against four supplied
 mockups, including every-page dark mode and missing runtime OpenPGP/account/mail
 capabilities. `UX_FULL_FUNCTIONAL_EPIC.md` and
-`UX_FULL_FUNCTIONAL_SLICES.md` define 12 sprints and 48 slices. All are
-NOT_STARTED; the first candidate is S00-01 after signed-plan acceptance.
-Architecture conflicts and live authority remain explicit decision gates.
+`UX_FULL_FUNCTIONAL_SLICES.md` define 12 sprints and 48 slices. All were
+initially NOT_STARTED. The operator's 2026-09-29 autonomous mandate now
+authorizes engineering across the epic on parrot-2TB and obsd1. The signed
+plan anchor and all original reference hashes verify. S00-01/02/03 have signed
+source deliveries; S00-04 has completed the acceptance design and baseline
+verification for its signed checkpoint. D01–D06 are recorded
+as delegated engineering decisions in `UX_DECISIONS.md`. Independent human
+identity/accessibility and final release acceptance remain separate.
 See `UX_AGENT_EXECUTION_CONTRACT.md` and `UX_EXECUTION_LEDGER.md`.
-This planning intake adds no runtime capability or deployment qualification.
+This engineering intake adds no runtime capability or deployment qualification.
 The operator reports Roundcube completely removed; the UX epic does not include
 Roundcube migration, coexistence or restoration.
 

@@ -33,10 +33,25 @@ fn ux_synthetic_route_baselines() {
     }
     let cases = [
         ("login", "/login", false, 200),
+        ("login-error", "/login", false, 401),
+        ("host-rejected", "/login", false, 421),
         ("redirect", "/", false, 303),
         ("mailboxes", "/mailboxes", true, 200),
         ("inbox", "/mailbox?name=INBOX", true, 200),
+        ("mailbox-empty", "/mailbox?name=INBOX", true, 200),
         ("search", "/search?mailbox=INBOX&q=report", true, 200),
+        (
+            "search-empty",
+            "/search?mailbox=INBOX&q=ux-empty-fixture",
+            true,
+            200,
+        ),
+        (
+            "attachment-unavailable",
+            "/attachment?mailbox=INBOX&uid=9&part=1.99",
+            true,
+            404,
+        ),
         ("reader", "/message?mailbox=INBOX&uid=9", true, 200),
         (
             "source",
@@ -65,12 +80,22 @@ fn ux_synthetic_route_baselines() {
     ];
     let mut manifest = Vec::new();
     for (name, path, authenticated, expected_status) in cases {
-        let headers = if authenticated {
+        let mut headers = if authenticated {
             authenticated_headers().to_vec()
         } else {
             vec![("User-Agent", "OSMAP/SyntheticUX")]
         };
-        let response = app().handle_request(&request("GET", path, &headers, ""), "127.0.0.1");
+        if name == "mailbox-empty" {
+            headers[0] = ("User-Agent", "OSMAP/EmptyMailbox");
+        }
+        let method = if name == "login-error" { "POST" } else { "GET" };
+        let mut fixture_request = request(method, path, &headers, "");
+        if name == "host-rejected" {
+            fixture_request
+                .headers
+                .insert("host".to_string(), "unaccepted.example.test".to_string());
+        }
+        let response = app().handle_request(&fixture_request, "127.0.0.1");
         assert_eq!(response.response.status_code, expected_status, "{name}");
         let csp = response
             .response
@@ -86,7 +111,7 @@ fn ux_synthetic_route_baselines() {
             fs::write(directory.join(format!("{name}.html")), &html).expect("write fixture");
         }
         manifest.push(serde_json::json!({
-            "name": name, "method": "GET", "route": path,
+            "name": name, "method": method, "route": path,
             "status": expected_status, "authenticated_fixture": authenticated,
             "html_sha256": format!("{:x}", Sha256::digest(html.as_bytes())),
             "csp": csp, "synthetic": true, "tokens_redacted": true,

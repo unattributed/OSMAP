@@ -1,15 +1,16 @@
 # Known Limitations
 
-## Full-functional UX epic planning boundary
+## Full-functional UX epic execution boundary
 
 The operator-requested `UX_FULL_FUNCTIONAL_EPIC.md` is a plan, not a
-functional-completion claim. Its 48 slices have not started. Runtime OpenPGP,
+functional-completion claim. S00 intake is underway as of 2026-09-29 under the
+operator's autonomous engineering mandate; see `UX_EXECUTION_LEDGER.md` for
+verified signed progress. Runtime OpenPGP,
 new account workflows, ancillary mockup functions and every-page dark mode
 remain unqualified until their implementation and acceptance evidence exists.
-Browser-only decryption versus server-side helper custody, and pane-only
-updates versus the no-JavaScript policy, require explicit decisions before
-dependent implementation. Do not resolve either conflict by changing security
-claims or disabling gates. Roundcube removal is operator-reported, not proof
+`UX_DECISIONS.md` selects isolated host-helper cryptography and script-free full
+navigation with preserved context. These decisions are not implemented crypto
+or visual acceptance, and do not weaken existing gates. Roundcube removal is operator-reported, not proof
 that all pictured OSMAP functions already work.
 
 ## TOTP lifecycle continuation and host migration

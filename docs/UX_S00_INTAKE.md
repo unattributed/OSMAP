@@ -75,7 +75,7 @@ their reference IDs. The S00-04 matrix expands these into executable cases.
 | C5 subject/security icon | UX06 | Subject field exists; crypto metadata unavailable | S03-01, S07-01 |
 | C6 Sign | UX08 | Disabled | S07-01 |
 | C6 Encrypt | UX08 | Disabled | S07-01 |
-| C6 Encrypt to self | UX08 | Disabled | S07-01 |
+| C6 Encrypt to self | UX08 | Absent; disabled compose options are sign/encrypt/require recipient keys | S07-01 |
 | C6 recipient key ready | UX08 | No actual recipient binding/capability evidence | S07-01 |
 | C7 message body | UX07 | Plain text textarea and server-side bounds | S03-03 |
 | C8 bold | UX07 | Absent | S03-03 |

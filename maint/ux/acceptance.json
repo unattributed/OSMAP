@@ -1,0 +1,1441 @@
+{
+  "schema_version": 1,
+  "epic": "OSMAP-UX",
+  "plan_anchor": "74522e5f99024720a3c47a3744207ff453de5731",
+  "runtime_baseline": "2a6993fe7df42a57f0cbb5fe3e33e331b400fef9",
+  "classification": "acceptance design, not passing runtime evidence",
+  "common_visual_matrix": {
+    "widths_css_px": [
+      360,
+      768,
+      1440
+    ],
+    "preferences": [
+      "light",
+      "dark",
+      "system"
+    ],
+    "system_schemes": [
+      "light",
+      "dark"
+    ],
+    "zoom_percent": [
+      100,
+      200
+    ],
+    "additional": [
+      "keyboard-only",
+      "forced-colours",
+      "long text",
+      "empty/error/security states"
+    ]
+  },
+  "common_negative_controls": [
+    "missing/expired session",
+    "wrong account",
+    "missing/bad CSRF on mutation",
+    "cross-origin mutation",
+    "oversized input",
+    "stale revision",
+    "interruption/restart"
+  ],
+  "test_designs": {
+    "UX01": {
+      "positive": "Follow each navigation link or native disclosure with keyboard and pointer; selected page and signed-in identity agree with the response.",
+      "negative": "Invalid session redirects; long/escaped identity cannot inject markup; no external request or script; absent backend has no success claim."
+    },
+    "UX02": {
+      "positive": "Select light/dark/system, reload, navigate and log out; sign into a second account and recover its own preference; inspect every HTML route and native control.",
+      "negative": "Malformed/duplicate theme input defaults safely; forged/CSRF write refused; parallel appearance and security-preference writes preserve both; rollback reads old settings."
+    },
+    "UX03": {
+      "positive": "Use the named list/search/sort/selection/flag control with empty, single and multiple results; verify stable bounded ordering and visible state after reload.",
+      "negative": "Unknown folder, stale UID, invalid filter/sort, oversized query/selection and cross-account request refuse or use documented safe default without command execution."
+    },
+    "UX04": {
+      "positive": "Perform the named action on a controlled message; verify resulting mailbox/flags and preserved query/selection, including restore and partial bulk results.",
+      "negative": "Reject missing CSRF, wrong owner, duplicate/stale tuple and excessive bulk selection; no permanent delete or automatic retry after unknown outcome."
+    },
+    "UX05": {
+      "positive": "Open the named reader/body/source/attachment control for synthetic plain and HTML MIME; verify escaped or sanitized content, exact authorised source and forced-download bytes.",
+      "negative": "Cross-account/stale UID/part denied; hostile names/content cannot create active markup; remote resources remain blocked; size/depth limits refuse safely."
+    },
+    "UX06": {
+      "positive": "Exercise the named compose identity/recipient/draft/header control; save/resume preserves allowed values and source context; Reply All excludes self and deduplicates recipients.",
+      "negative": "Forged sender, header injection, malformed addresses, stale draft revision, cross-account draft and interrupted save do not send or overwrite unrelated state."
+    },
+    "UX07": {
+      "positive": "Apply the named formatting/upload/remove/preview control to synthetic text and local files; preview and independently parsed emitted MIME agree; draft resume preserves selected attachments.",
+      "negative": "Reject hostile markup/URL, oversized/unsafe filename/content and path traversal; no remote fetch; interrupted uploads clean only owned scratch; failed send preserves values."
+    },
+    "UX08": {
+      "positive": "Exercise the named preflight/sign/encrypt/self/schedule/send option with usable disposable keys; inspect delivered bytes and Sent reconciliation, including local sink receipt.",
+      "negative": "Missing/revoked/expired/ambiguous key, locked agent, stale policy, Bcc leak and unknown submission block success; no downgrade or automatic duplicate send."
+    },
+    "UX09": {
+      "positive": "Inspect the named account/key/status control using unconfigured, configured and unavailable account states; full fingerprints and capability come from actual authorised records.",
+      "negative": "No copied example fingerprint/date, guessed capability, script clipboard success, global search on account settings or cross-account public binding."
+    },
+    "UX10": {
+      "positive": "Save each signing/encryption/self policy with fresh step-up, reload and enforce it against actual delivered bytes; stale policies rechecked at dispatch.",
+      "negative": "Reject CSRF, stale/replayed step-up and unusable keys; required protection cannot be bypassed by forged form fields or delayed send."
+    },
+    "UX11": {
+      "positive": "Change a disposable own-account password through the authoritative helper; verify new authentication, old-password refusal, timestamp and scoped session revocation.",
+      "negative": "Wrong/stale password/TOTP, replay, races and partial backend failure cannot report complete success; unknown backend status remains unknown."
+    },
+    "UX12": {
+      "positive": "Add/verify/replace/remove a disposable recovery contact through a local sink; exercise governed recovery transitions with explicitly labelled test custody.",
+      "negative": "Expired/replayed tokens, resend limits, same-mailbox-only proof, absent independent identity attestation and interrupted factor mutation cannot bypass MFA or auto-restore factors."
+    },
+    "UX13": {
+      "positive": "Inspect the principles strip against actual CSP, assets, renderer and crypto execution location.",
+      "negative": "No zero-knowledge/browser-only plaintext, guaranteed safety or enabled-crypto claim without evidence; hostile mail cannot inject a status badge."
+    },
+    "UX14": {
+      "positive": "Upload/list/download/bin/restore/delete synthetic private documents; exact bytes, quota totals and retention state reconcile across restart.",
+      "negative": "Other account/forged ID/CSRF, unsafe name, MIME ambiguity, overquota and interrupted write denied safely; no inline preview or host-path disclosure."
+    },
+    "UX15": {
+      "positive": "Independently verify/decrypt disposable PGP/MIME through the native helper and distinguish result, identity binding, key validity and sanitized rendering.",
+      "negative": "Tamper/wrong key/unknown signer/revoked key/unsupported format/timeout fail closed; verified/decrypted never bypasses sanitizer or becomes a safety claim."
+    },
+    "UX16": {
+      "positive": "Induce the named empty/error/unavailable state through real route and controlled backend outcomes; visible guidance offers only valid, safe recovery actions.",
+      "negative": "Error cannot leak secrets, private paths or wrong-account state; retries are read-only and cannot duplicate submission or privileged mutation."
+    },
+    "UX17": {
+      "positive": "Complete the named interaction/accessibility journey in normal and key-enabled/disabled accounts; record approved full-navigation and host-plaintext deviations explicitly.",
+      "negative": "No script/CSP expansion, missing auth/CSRF, unbounded helper work or unproven human acceptance; failed controls remain open."
+    }
+  },
+  "cases": [
+    {
+      "id": "UX01-001",
+      "parent": "UX01",
+      "reference_control": "A1/C1/I1 Compose",
+      "owning_slices": [
+        "S01-02"
+      ],
+      "baseline_observation": "`app_header`: working link; no icon rail",
+      "test_design": "UX01",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX01-002",
+      "parent": "UX01",
+      "reference_control": "A1/C1/I1 Inbox",
+      "owning_slices": [
+        "S01-02"
+      ],
+      "baseline_observation": "Mailboxes link; no direct rail Inbox",
+      "test_design": "UX01",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX01-003",
+      "parent": "UX01",
+      "reference_control": "A1/C1/I1 Sent",
+      "owning_slices": [
+        "S01-02"
+      ],
+      "baseline_observation": "Folder list only, no primary Sent shortcut",
+      "test_design": "UX01",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX14-001",
+      "parent": "UX14",
+      "reference_control": "A1/C1/I1 Documents",
+      "owning_slices": [
+        "S08-01"
+      ],
+      "baseline_observation": "No store, routes or navigation",
+      "test_design": "UX14",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX04-001",
+      "parent": "UX04",
+      "reference_control": "A1/C1/I1 Archive",
+      "owning_slices": [
+        "S01-02",
+        "S02-03"
+      ],
+      "baseline_observation": "Folder and configured archive route; no rail shortcut",
+      "test_design": "UX04",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX04-002",
+      "parent": "UX04",
+      "reference_control": "A1/C1/I1 Bin",
+      "owning_slices": [
+        "S02-03"
+      ],
+      "baseline_observation": "Trash move on reader; no dedicated rail entry/restore affordance",
+      "test_design": "UX04",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX09-001",
+      "parent": "UX09",
+      "reference_control": "A1/C1/I1 Security",
+      "owning_slices": [
+        "S04-01"
+      ],
+      "baseline_observation": "Settings and Sessions exist, no separate security navigation",
+      "test_design": "UX09",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX01-004",
+      "parent": "UX01",
+      "reference_control": "A2/C1/I1 Settings selection",
+      "owning_slices": [
+        "S01-02"
+      ],
+      "baseline_observation": "Current-page text link; reference gear rail missing",
+      "test_design": "UX01",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX01-005",
+      "parent": "UX01",
+      "reference_control": "A1/C1/I1 rail collapse",
+      "owning_slices": [
+        "S01-02"
+      ],
+      "baseline_observation": "Absent",
+      "test_design": "UX01",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX01-006",
+      "parent": "UX01",
+      "reference_control": "A3/C2/I3 OSMAP identity",
+      "owning_slices": [
+        "S01-02"
+      ],
+      "baseline_observation": "Text/OS monogram in topbar; local shield alignment needed",
+      "test_design": "UX01",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX01-007",
+      "parent": "UX01",
+      "reference_control": "A3/C2/I3 notifications",
+      "owning_slices": [
+        "S08-04"
+      ],
+      "baseline_observation": "Absent; no event inbox",
+      "test_design": "UX01",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX01-008",
+      "parent": "UX01",
+      "reference_control": "A3/C2/I3 user menu",
+      "owning_slices": [
+        "S01-02"
+      ],
+      "baseline_observation": "Identity chip and Log Out form, no bounded menu",
+      "test_design": "UX01",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX09-002",
+      "parent": "UX09",
+      "reference_control": "A4 settings heading",
+      "owning_slices": [
+        "S04-01"
+      ],
+      "baseline_observation": "`render_settings_page`, heading and account present",
+      "test_design": "UX09",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX09-003",
+      "parent": "UX09",
+      "reference_control": "A4 absence of global search",
+      "owning_slices": [
+        "S01-03"
+      ],
+      "baseline_observation": "Settings currently has no search",
+      "test_design": "UX09",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX09-004",
+      "parent": "UX09",
+      "reference_control": "A5 OpenPGP capability card",
+      "owning_slices": [
+        "S05-02"
+      ],
+      "baseline_observation": "Explicit unavailable status, no runtime capability",
+      "test_design": "UX09",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX09-005",
+      "parent": "UX09",
+      "reference_control": "A6 Manage Keys",
+      "owning_slices": [
+        "S05-02"
+      ],
+      "baseline_observation": "Absent; no public-key route/store",
+      "test_design": "UX09",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX09-006",
+      "parent": "UX09",
+      "reference_control": "A7 full fingerprint",
+      "owning_slices": [
+        "S05-02"
+      ],
+      "baseline_observation": "Absent; binding model is separate scaffold",
+      "test_design": "UX09",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX09-007",
+      "parent": "UX09",
+      "reference_control": "A7 copy/select",
+      "owning_slices": [
+        "S09-03"
+      ],
+      "baseline_observation": "No configured fingerprint; selectable text decision needed",
+      "test_design": "UX09",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX10-001",
+      "parent": "UX10",
+      "reference_control": "A8 signing policy",
+      "owning_slices": [
+        "S07-01"
+      ],
+      "baseline_observation": "Disabled control; no persisted runtime policy",
+      "test_design": "UX10",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX10-002",
+      "parent": "UX10",
+      "reference_control": "A9 encryption policy",
+      "owning_slices": [
+        "S07-01"
+      ],
+      "baseline_observation": "Disabled control; no actual encrypted send",
+      "test_design": "UX10",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX10-003",
+      "parent": "UX10",
+      "reference_control": "A10 encrypt to self",
+      "owning_slices": [
+        "S07-01"
+      ],
+      "baseline_observation": "Absent from settings; no runtime sender-recipient integration",
+      "test_design": "UX10",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX11-001",
+      "parent": "UX11",
+      "reference_control": "A11 password status",
+      "owning_slices": [
+        "S04-01"
+      ],
+      "baseline_observation": "Card absent; authoritative status unknown",
+      "test_design": "UX11",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX11-002",
+      "parent": "UX11",
+      "reference_control": "A11 last changed",
+      "owning_slices": [
+        "S04-02"
+      ],
+      "baseline_observation": "No authoritative timestamp adapter",
+      "test_design": "UX11",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX11-003",
+      "parent": "UX11",
+      "reference_control": "A12 Change password",
+      "owning_slices": [
+        "S04-02"
+      ],
+      "baseline_observation": "Absent; authoritative helper absent",
+      "test_design": "UX11",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX12-001",
+      "parent": "UX12",
+      "reference_control": "A13 recovery contact/status",
+      "owning_slices": [
+        "S04-03"
+      ],
+      "baseline_observation": "Card absent; no proof lifecycle/store",
+      "test_design": "UX12",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX12-002",
+      "parent": "UX12",
+      "reference_control": "A14 Manage contact",
+      "owning_slices": [
+        "S04-03"
+      ],
+      "baseline_observation": "Absent",
+      "test_design": "UX12",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX13-001",
+      "parent": "UX13",
+      "reference_control": "A15 principles strip",
+      "owning_slices": [
+        "S01-03"
+      ],
+      "baseline_observation": "Absent; never copy reference zero-knowledge claim",
+      "test_design": "UX13",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX03-001",
+      "parent": "UX03",
+      "reference_control": "C2/I2 search",
+      "owning_slices": [
+        "S02-01"
+      ],
+      "baseline_observation": "`/search`, scoped/all-mailbox search; no topbar search",
+      "test_design": "UX03",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX03-002",
+      "parent": "UX03",
+      "reference_control": "C2/I2 command field/shortcut",
+      "owning_slices": [
+        "S02-01"
+      ],
+      "baseline_observation": "Absent; finite navigation menu under D01/D05 needed",
+      "test_design": "UX03",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX01-009",
+      "parent": "UX01",
+      "reference_control": "C2/I3 protection status/dropdown",
+      "owning_slices": [
+        "S01-03"
+      ],
+      "baseline_observation": "Session chip and reader trust strip; shared compact details needed",
+      "test_design": "UX01",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX06-001",
+      "parent": "UX06",
+      "reference_control": "C3 close",
+      "owning_slices": [
+        "S03-02"
+      ],
+      "baseline_observation": "Navigation links; no save-and-close action",
+      "test_design": "UX06",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX06-002",
+      "parent": "UX06",
+      "reference_control": "C3 minimize",
+      "owning_slices": [
+        "S03-02"
+      ],
+      "baseline_observation": "Absent",
+      "test_design": "UX06",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX06-003",
+      "parent": "UX06",
+      "reference_control": "C3 expand",
+      "owning_slices": [
+        "S03-02"
+      ],
+      "baseline_observation": "Absent",
+      "test_design": "UX06",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX06-004",
+      "parent": "UX06",
+      "reference_control": "C3 more",
+      "owning_slices": [
+        "S03-02"
+      ],
+      "baseline_observation": "No approved menu; define finite actions",
+      "test_design": "UX06",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX06-005",
+      "parent": "UX06",
+      "reference_control": "C4 From identity",
+      "owning_slices": [
+        "S03-01"
+      ],
+      "baseline_observation": "Canonical username determines From; no impersonation selector",
+      "test_design": "UX06",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX06-006",
+      "parent": "UX06",
+      "reference_control": "C4 To",
+      "owning_slices": [
+        "S03-01"
+      ],
+      "baseline_observation": "Existing validated recipient text field",
+      "test_design": "UX06",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX06-007",
+      "parent": "UX06",
+      "reference_control": "C4 add Cc",
+      "owning_slices": [
+        "S03-01"
+      ],
+      "baseline_observation": "Existing labelled Cc field, always visible",
+      "test_design": "UX06",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX06-008",
+      "parent": "UX06",
+      "reference_control": "C4 add Bcc",
+      "owning_slices": [
+        "S03-01"
+      ],
+      "baseline_observation": "Existing labelled Bcc field, always visible",
+      "test_design": "UX06",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX06-009",
+      "parent": "UX06",
+      "reference_control": "C4 recipient remove",
+      "owning_slices": [
+        "S03-01"
+      ],
+      "baseline_observation": "Edit text, no token/chip editor",
+      "test_design": "UX06",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX06-010",
+      "parent": "UX06",
+      "reference_control": "C4 contacts",
+      "owning_slices": [
+        "S03-01"
+      ],
+      "baseline_observation": "No address book or explicit contact selector",
+      "test_design": "UX06",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX08-001",
+      "parent": "UX08",
+      "reference_control": "C4 OpenPGP enabled state",
+      "owning_slices": [
+        "S07-01"
+      ],
+      "baseline_observation": "Unavailable; never infer from reference",
+      "test_design": "UX08",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX06-011",
+      "parent": "UX06",
+      "reference_control": "C5 subject/security icon",
+      "owning_slices": [
+        "S03-01",
+        "S07-01"
+      ],
+      "baseline_observation": "Subject field exists; crypto metadata unavailable",
+      "test_design": "UX06",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX08-002",
+      "parent": "UX08",
+      "reference_control": "C6 Sign",
+      "owning_slices": [
+        "S07-01"
+      ],
+      "baseline_observation": "Disabled",
+      "test_design": "UX08",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX08-003",
+      "parent": "UX08",
+      "reference_control": "C6 Encrypt",
+      "owning_slices": [
+        "S07-01"
+      ],
+      "baseline_observation": "Disabled",
+      "test_design": "UX08",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX08-004",
+      "parent": "UX08",
+      "reference_control": "C6 Encrypt to self",
+      "owning_slices": [
+        "S07-01"
+      ],
+      "baseline_observation": "Absent; disabled compose options are sign/encrypt/require recipient keys",
+      "test_design": "UX08",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX08-005",
+      "parent": "UX08",
+      "reference_control": "C6 recipient key ready",
+      "owning_slices": [
+        "S07-01"
+      ],
+      "baseline_observation": "No actual recipient binding/capability evidence",
+      "test_design": "UX08",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX07-001",
+      "parent": "UX07",
+      "reference_control": "C7 message body",
+      "owning_slices": [
+        "S03-03"
+      ],
+      "baseline_observation": "Plain text textarea and server-side bounds",
+      "test_design": "UX07",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX07-002",
+      "parent": "UX07",
+      "reference_control": "C8 bold",
+      "owning_slices": [
+        "S03-03"
+      ],
+      "baseline_observation": "Absent",
+      "test_design": "UX07",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX07-003",
+      "parent": "UX07",
+      "reference_control": "C8 italic",
+      "owning_slices": [
+        "S03-03"
+      ],
+      "baseline_observation": "Absent",
+      "test_design": "UX07",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX07-004",
+      "parent": "UX07",
+      "reference_control": "C8 underline",
+      "owning_slices": [
+        "S03-03"
+      ],
+      "baseline_observation": "Absent",
+      "test_design": "UX07",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX07-005",
+      "parent": "UX07",
+      "reference_control": "C8 ordered list",
+      "owning_slices": [
+        "S03-03"
+      ],
+      "baseline_observation": "Absent",
+      "test_design": "UX07",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX07-006",
+      "parent": "UX07",
+      "reference_control": "C8 unordered list",
+      "owning_slices": [
+        "S03-03"
+      ],
+      "baseline_observation": "Absent",
+      "test_design": "UX07",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX07-007",
+      "parent": "UX07",
+      "reference_control": "C8 link",
+      "owning_slices": [
+        "S03-03"
+      ],
+      "baseline_observation": "Plain text only; constrained authoring needed",
+      "test_design": "UX07",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX07-008",
+      "parent": "UX07",
+      "reference_control": "C8 image",
+      "owning_slices": [
+        "S03-03"
+      ],
+      "baseline_observation": "Attachment upload exists; no inline/remote image authoring",
+      "test_design": "UX07",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX07-009",
+      "parent": "UX07",
+      "reference_control": "C8 attachment button",
+      "owning_slices": [
+        "S03-04"
+      ],
+      "baseline_observation": "Multipart file input exists",
+      "test_design": "UX07",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX07-010",
+      "parent": "UX07",
+      "reference_control": "C8 emoji",
+      "owning_slices": [
+        "S03-03"
+      ],
+      "baseline_observation": "Unicode text allowed, no insertion affordance",
+      "test_design": "UX07",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX07-011",
+      "parent": "UX07",
+      "reference_control": "C8 more/preview",
+      "owning_slices": [
+        "S03-03"
+      ],
+      "baseline_observation": "No approved toolbar menu or preview route",
+      "test_design": "UX07",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX07-012",
+      "parent": "UX07",
+      "reference_control": "C9 attachment name/size",
+      "owning_slices": [
+        "S03-04"
+      ],
+      "baseline_observation": "Source attachment metadata and retained-draft count",
+      "test_design": "UX07",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX07-013",
+      "parent": "UX07",
+      "reference_control": "C9 add more",
+      "owning_slices": [
+        "S03-04"
+      ],
+      "baseline_observation": "Multiple file input; server save/send bounds",
+      "test_design": "UX07",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX07-014",
+      "parent": "UX07",
+      "reference_control": "C9 remove",
+      "owning_slices": [
+        "S03-04"
+      ],
+      "baseline_observation": "Source selection checkboxes; no retained-upload removal UI",
+      "test_design": "UX07",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX08-006",
+      "parent": "UX08",
+      "reference_control": "C10 delete/cancel",
+      "owning_slices": [
+        "S03-02"
+      ],
+      "baseline_observation": "Draft delete route exists; compose discard confirmation absent",
+      "test_design": "UX08",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX08-007",
+      "parent": "UX08",
+      "reference_control": "C10 security check",
+      "owning_slices": [
+        "S07-01"
+      ],
+      "baseline_observation": "No actual runtime preflight",
+      "test_design": "UX08",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX08-008",
+      "parent": "UX08",
+      "reference_control": "C10 schedule",
+      "owning_slices": [
+        "S08-03"
+      ],
+      "baseline_observation": "No job store/worker/timezone model",
+      "test_design": "UX08",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX08-009",
+      "parent": "UX08",
+      "reference_control": "C10 more",
+      "owning_slices": [
+        "S08-02"
+      ],
+      "baseline_observation": "No finite menu",
+      "test_design": "UX08",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX08-010",
+      "parent": "UX08",
+      "reference_control": "C11 primary send",
+      "owning_slices": [
+        "S03-04",
+        "S07-04"
+      ],
+      "baseline_observation": "Ordinary send + Sent reconciliation exists; no protected-send claim",
+      "test_design": "UX08",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX08-011",
+      "parent": "UX08",
+      "reference_control": "C11 send dropdown",
+      "owning_slices": [
+        "S07-01",
+        "S08-03"
+      ],
+      "baseline_observation": "Absent; finite modes under D05",
+      "test_design": "UX08",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX03-003",
+      "parent": "UX03",
+      "reference_control": "I4 list select",
+      "owning_slices": [
+        "S02-01"
+      ],
+      "baseline_observation": "Per-message bulk checkbox exists",
+      "test_design": "UX03",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX03-004",
+      "parent": "UX03",
+      "reference_control": "I4 select menu",
+      "owning_slices": [
+        "S02-01"
+      ],
+      "baseline_observation": "No select-all/none server affordance",
+      "test_design": "UX03",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX03-005",
+      "parent": "UX03",
+      "reference_control": "I4 unread filter",
+      "owning_slices": [
+        "S02-01"
+      ],
+      "baseline_observation": "Flags displayed but filter absent",
+      "test_design": "UX03",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX03-006",
+      "parent": "UX03",
+      "reference_control": "I4 sort",
+      "owning_slices": [
+        "S02-01"
+      ],
+      "baseline_observation": "Allowlisted server sort links exist",
+      "test_design": "UX03",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX03-007",
+      "parent": "UX03",
+      "reference_control": "I5 avatar",
+      "owning_slices": [
+        "S02-01"
+      ],
+      "baseline_observation": "Sender text only; safe initials needed",
+      "test_design": "UX03",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX03-008",
+      "parent": "UX03",
+      "reference_control": "I5 sender/subject/time",
+      "owning_slices": [
+        "S02-01"
+      ],
+      "baseline_observation": "Existing table fields; compact row needed",
+      "test_design": "UX03",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX03-009",
+      "parent": "UX03",
+      "reference_control": "I5 preview",
+      "owning_slices": [
+        "S02-01"
+      ],
+      "baseline_observation": "Metadata only; no bounded preview body",
+      "test_design": "UX03",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX03-010",
+      "parent": "UX03",
+      "reference_control": "I6 selected row",
+      "owning_slices": [
+        "S02-02"
+      ],
+      "baseline_observation": "Reader page separately fetched; selected list not coordinated",
+      "test_design": "UX03",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX04-003",
+      "parent": "UX04",
+      "reference_control": "I7 archive",
+      "owning_slices": [
+        "S02-03"
+      ],
+      "baseline_observation": "CSRF-bound move to configured archive exists",
+      "test_design": "UX04",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX04-004",
+      "parent": "UX04",
+      "reference_control": "I7 delete",
+      "owning_slices": [
+        "S02-03"
+      ],
+      "baseline_observation": "CSRF-bound move to Trash exists",
+      "test_design": "UX04",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX04-005",
+      "parent": "UX04",
+      "reference_control": "I7 mark read/unread",
+      "owning_slices": [
+        "S02-01"
+      ],
+      "baseline_observation": "Flags read, no flag mutation helper/route",
+      "test_design": "UX04",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX04-006",
+      "parent": "UX04",
+      "reference_control": "I7 snooze",
+      "owning_slices": [
+        "S08-03"
+      ],
+      "baseline_observation": "Absent",
+      "test_design": "UX04",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX04-007",
+      "parent": "UX04",
+      "reference_control": "I7 label",
+      "owning_slices": [
+        "S08-02"
+      ],
+      "baseline_observation": "Absent",
+      "test_design": "UX04",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX04-008",
+      "parent": "UX04",
+      "reference_control": "I7 security/more/back",
+      "owning_slices": [
+        "S02-02",
+        "S08-02"
+      ],
+      "baseline_observation": "Basic mailbox link; finite controls and context needed",
+      "test_design": "UX04",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX05-001",
+      "parent": "UX05",
+      "reference_control": "I8 subject/sender/recipient/time",
+      "owning_slices": [
+        "S02-04"
+      ],
+      "baseline_observation": "Existing reader metadata",
+      "test_design": "UX05",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX03-011",
+      "parent": "UX03",
+      "reference_control": "I8 star",
+      "owning_slices": [
+        "S02-01"
+      ],
+      "baseline_observation": "No flag mutation",
+      "test_design": "UX03",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX15-001",
+      "parent": "UX15",
+      "reference_control": "I8 OpenPGP indicator",
+      "owning_slices": [
+        "S06-02"
+      ],
+      "baseline_observation": "Foundation state only; no verification/decryption",
+      "test_design": "UX15",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX15-002",
+      "parent": "UX15",
+      "reference_control": "I9 encrypted",
+      "owning_slices": [
+        "S06-01"
+      ],
+      "baseline_observation": "No runtime PGP/MIME classifier",
+      "test_design": "UX15",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX15-003",
+      "parent": "UX15",
+      "reference_control": "I9 decrypted locally",
+      "owning_slices": [
+        "S06-03"
+      ],
+      "baseline_observation": "No runtime decryption; host-location conflict D02",
+      "test_design": "UX15",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX15-004",
+      "parent": "UX15",
+      "reference_control": "I9 signature verified",
+      "owning_slices": [
+        "S06-02"
+      ],
+      "baseline_observation": "No runtime verification",
+      "test_design": "UX15",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX05-002",
+      "parent": "UX05",
+      "reference_control": "I9 remote blocked",
+      "owning_slices": [
+        "S02-04"
+      ],
+      "baseline_observation": "Rendering policy metadata exists",
+      "test_design": "UX05",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX05-003",
+      "parent": "UX05",
+      "reference_control": "I9 View Source",
+      "owning_slices": [
+        "S02-04"
+      ],
+      "baseline_observation": "Absent despite source-escaped badge; no source route or details control",
+      "test_design": "UX05",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX15-005",
+      "parent": "UX15",
+      "reference_control": "I10 sanitized after decryption",
+      "owning_slices": [
+        "S06-04"
+      ],
+      "baseline_observation": "No decryption; ordinary sanitizer already active",
+      "test_design": "UX15",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX05-004",
+      "parent": "UX05",
+      "reference_control": "I11 body",
+      "owning_slices": [
+        "S02-04"
+      ],
+      "baseline_observation": "`RenderedMessageView`, escaped/plain or sanitized HTML",
+      "test_design": "UX05",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX05-005",
+      "parent": "UX05",
+      "reference_control": "I12 attachment list/download",
+      "owning_slices": [
+        "S02-04"
+      ],
+      "baseline_observation": "Authenticated part route, forced download and bounds",
+      "test_design": "UX05",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX04-009",
+      "parent": "UX04",
+      "reference_control": "I13 Reply",
+      "owning_slices": [
+        "S03-01"
+      ],
+      "baseline_observation": "Existing prefill route",
+      "test_design": "UX04",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX04-010",
+      "parent": "UX04",
+      "reference_control": "I13 Reply all",
+      "owning_slices": [
+        "S03-01"
+      ],
+      "baseline_observation": "Absent; parser only accepts reply/forward",
+      "test_design": "UX04",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX04-011",
+      "parent": "UX04",
+      "reference_control": "I13 Forward",
+      "owning_slices": [
+        "S03-01"
+      ],
+      "baseline_observation": "Existing prefill and selected source attachments",
+      "test_design": "UX04",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX09-008",
+      "parent": "UX09",
+      "reference_control": "I14 OpenPGP footer/settings",
+      "owning_slices": [
+        "S09-02"
+      ],
+      "baseline_observation": "Explicit unavailable copy and settings link",
+      "test_design": "UX09",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX03-012",
+      "parent": "UX03",
+      "reference_control": "I15 attachment icon",
+      "owning_slices": [
+        "S02-01"
+      ],
+      "baseline_observation": "List metadata does not include attachment presence",
+      "test_design": "UX03",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX03-013",
+      "parent": "UX03",
+      "reference_control": "I15 protected icon",
+      "owning_slices": [
+        "S01-03"
+      ],
+      "baseline_observation": "Must distinguish renderer policy from cryptographic result",
+      "test_design": "UX03",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX03-014",
+      "parent": "UX03",
+      "reference_control": "I15 star/read state",
+      "owning_slices": [
+        "S02-01"
+      ],
+      "baseline_observation": "Flags are displayed; interactive change missing",
+      "test_design": "UX03",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX16-001",
+      "parent": "UX16",
+      "reference_control": "F empty mailbox",
+      "owning_slices": [
+        "S02-04"
+      ],
+      "baseline_observation": "UI empty state exists; add fixture and useful compose CTA",
+      "test_design": "UX16",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX16-002",
+      "parent": "UX16",
+      "reference_control": "F failed load/retry",
+      "owning_slices": [
+        "S02-04"
+      ],
+      "baseline_observation": "503 safe error exists; contextual read-only retry missing",
+      "test_design": "UX16",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX16-003",
+      "parent": "UX16",
+      "reference_control": "F attachment unavailable",
+      "owning_slices": [
+        "S02-04"
+      ],
+      "baseline_observation": "Safe denied route; explicit return/retry affordance missing",
+      "test_design": "UX16",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX16-004",
+      "parent": "UX16",
+      "reference_control": "F OpenPGP unavailable",
+      "owning_slices": [
+        "S06-04"
+      ],
+      "baseline_observation": "Honest scaffold-only state exists",
+      "test_design": "UX16",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX16-005",
+      "parent": "UX16",
+      "reference_control": "F missing key",
+      "owning_slices": [
+        "S06-04"
+      ],
+      "baseline_observation": "Runtime state unavailable",
+      "test_design": "UX16",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX16-006",
+      "parent": "UX16",
+      "reference_control": "F unverified signature",
+      "owning_slices": [
+        "S06-04"
+      ],
+      "baseline_observation": "Runtime state unavailable; no positive badge permitted",
+      "test_design": "UX16",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX16-007",
+      "parent": "UX16",
+      "reference_control": "F remote blocked",
+      "owning_slices": [
+        "S02-04"
+      ],
+      "baseline_observation": "Existing rendering state",
+      "test_design": "UX16",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX16-008",
+      "parent": "UX16",
+      "reference_control": "F empty search/reset",
+      "owning_slices": [
+        "S02-04"
+      ],
+      "baseline_observation": "Empty results renderer; add fixture and clear action",
+      "test_design": "UX16",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX17-001",
+      "parent": "UX17",
+      "reference_control": "F pane-only/no reload",
+      "owning_slices": [
+        "S00-02"
+      ],
+      "baseline_observation": "Conflicts with script-free boundary; D01 required",
+      "test_design": "UX17",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX17-002",
+      "parent": "UX17",
+      "reference_control": "F browser/VM-only plaintext",
+      "owning_slices": [
+        "S00-02"
+      ],
+      "baseline_observation": "Conflicts with helper design; D02 required",
+      "test_design": "UX17",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX17-003",
+      "parent": "UX17",
+      "reference_control": "F keyboard/focus",
+      "owning_slices": [
+        "S01-04",
+        "S09-04"
+      ],
+      "baseline_observation": "Visible focus and labels exist; browser audit required",
+      "test_design": "UX17",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    },
+    {
+      "id": "UX02-001",
+      "parent": "UX02",
+      "reference_control": "All light/dark/system",
+      "owning_slices": [
+        "S01-01",
+        "S01-04"
+      ],
+      "baseline_observation": "Light-only CSS; persistence absent",
+      "test_design": "UX02",
+      "status": "NOT_YET_ACCEPTED",
+      "evidence": []
+    }
+  ]
+}
