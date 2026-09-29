@@ -786,6 +786,9 @@ pub use self::http_runtime::run_http_server;
 #[cfg(test)]
 mod tests {
     use super::*;
+    mod ux_fixtures {
+        include!("http/ux_fixtures.rs");
+    }
     use crate::auth::RequiredSecondFactor;
     use crate::mailbox::MessageView;
     use crate::mime::{AttachmentDisposition, MimeBodySource};
