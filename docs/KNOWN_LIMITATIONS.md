@@ -3,11 +3,13 @@
 ## Full-functional UX epic execution boundary
 
 The operator-requested `UX_FULL_FUNCTIONAL_EPIC.md` is a plan, not a
-functional-completion claim. S00 intake is underway as of 2026-09-29 under the
-operator's autonomous engineering mandate; see `UX_EXECUTION_LEDGER.md` for
-verified signed progress. Runtime OpenPGP,
-new account workflows, ancillary mockup functions and every-page dark mode
-remain unqualified until their implementation and acceptance evidence exists.
+functional-completion claim. S00 engineering intake is complete as of
+2026-09-29; S01 adds account-persisted light/dark/system appearance. See
+`UX_EXECUTION_LEDGER.md` for verified signed progress. Runtime OpenPGP,
+new account workflows and ancillary mockup functions remain unqualified until
+their implementation and acceptance evidence exists. Appearance has local
+route/browser evidence; the full responsive/accessibility matrix and native
+host qualification are separate remaining gates.
 `UX_DECISIONS.md` selects isolated host-helper cryptography and script-free full
 navigation with preserved context. These decisions are not implemented crypto
 or visual acceptance, and do not weaken existing gates. Roundcube removal is operator-reported, not proof

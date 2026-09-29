@@ -42,6 +42,19 @@ pub trait BrowserGateway {
         scope: BrowserSessionRevokeScope,
     ) -> BrowserSessionRevokeOutcome;
 
+    fn load_appearance(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+    ) -> std::io::Result<AppearancePreference>;
+
+    fn update_appearance(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        appearance: AppearancePreference,
+    ) -> std::io::Result<()>;
+
     fn load_settings(
         &self,
         context: &AuthenticationContext,
@@ -176,6 +189,7 @@ pub enum BrowserLoginDecision {
     Authenticated {
         canonical_username: String,
         session_token: SessionToken,
+        appearance: AppearancePreference,
     },
     Denied {
         public_reason: String,

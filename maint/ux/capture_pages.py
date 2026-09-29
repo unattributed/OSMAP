@@ -24,10 +24,14 @@ def main():
     parser.add_argument("--browser", default="/usr/bin/microsoft-edge-stable")
     parser.add_argument("--schemes", nargs="+", choices=["light", "dark"], default=["light"])
     parser.add_argument("--widths", nargs="+", type=int, default=[360, 768, 1440])
+    parser.add_argument("--names", nargs="+", help="capture only these manifest fixture names")
     args = parser.parse_args()
     fixtures = args.fixtures.resolve(strict=True)
     routes = json.loads((fixtures / "routes.json").read_text())
     assert all(item["synthetic"] and item["tokens_redacted"] for item in routes)
+    if args.names:
+        assert set(args.names) <= {item["name"] for item in routes}
+        routes = [item for item in routes if item["name"] in args.names]
     policies = {f"/{item['name']}.html": item["csp"] for item in routes}
     args.output.mkdir(parents=True, exist_ok=True, mode=0o700)
 
@@ -82,6 +86,7 @@ def main():
                             document_width: document.documentElement.scrollWidth,
                             background: getComputedStyle(document.body).backgroundColor,
                             foreground: getComputedStyle(document.body).color,
+                            appearance: document.documentElement.dataset.appearance,
                             headings: Array.from(document.querySelectorAll('h1')).map(e => e.textContent),
                             controls: document.querySelectorAll('a,button,input,select,textarea,summary').length,
                             scripts: document.scripts.length

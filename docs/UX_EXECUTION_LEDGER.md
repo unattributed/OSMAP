@@ -221,3 +221,60 @@ with later outcomes. Correct errors using a new entry referencing the old one.
 - Historical TOTP raw artifacts remain unavailable as documented. Intake
   creates no runtime capability, host mutation, migration or human attestation.
   Signed delivery follows, then S01 begins under the existing mandate.
+
+### S00-04 delivery / S01-01 work order — 2026-09-29
+
+- S00-04 signed delivery `85e1701`, verified Shopkeeper signature, clean
+  worktree; all four intake slices are complete for delegated engineering.
+  No GitHub synchronization, deployment, human or strict-release acceptance.
+- S01-01: IN_PROGRESS; base `85e1701`, frozen plan anchor unchanged. Allowed
+  files: new appearance module and form route, lib/HTTP modules and gateway,
+  shared UI/CSS, focused tests/fixtures/capture harness, ledger/current status/
+  limitations/index and generated V10 registers. No runtime dependencies.
+- Deliver light/dark/system tokens, strict account sidecar, authenticated
+  same-origin CSRF write and typed presentation cookie. Login restores account
+  choice; cookie retains colours through HTML redirects/errors/logout. Invalid
+  cookie defaults to system; malformed record displays safe fallback with an
+  audit event. No security setting format, grant, crypto or authority change.
+- Budgets: 64-byte sidecar, 512-byte two-field write form, existing session
+  validation and request limits. Atomic private-file replacement; concurrent
+  account/security writes isolated by file. Old binaries ignore the new
+  sidecar and cookie; source rollback needs no destructive state migration.
+- Verify persistence/restart, account isolation, malformed/symlink/duplicate
+  and concurrent records, session/CSRF/origin/form failures, login precedence,
+  HTML versus download handling, actual route screenshots in both OS schemes;
+  common acceptance/V10/V14 gates and signed pre-commit security gate.
+  Retained evidence: `/home/foo/Downloads/osmap-ux-s01/run-20260929/`.
+
+### S01-01 work-order refinement — 2026-09-29
+
+- Include `maint/wstg-testing-pack/osmap-browser-attack-surface.json` in the
+  allowed evidence files for the new form route. The first acceptance run
+  correctly rejected its omission (`missing_from_inventory`); preserve this
+  enforcement and register the route/query fields before rerunning. New route
+  auth/origin/CSRF cases are exercised by focused tests; inventory registration
+  is not live WSTG qualification.
+
+### S01-01 verification — 2026-09-29 — VERIFIED
+
+- Implemented native Light/Dark/System settings, account-isolated 64-byte
+  versioned sidecars, atomic private-file saves, login/account precedence and
+  host-only HttpOnly/SameSite presentation cookies. No JavaScript, runtime
+  dependency, security-setting rewrite or cryptographic capability added.
+- Ten focused appearance tests pass; the full library result is 556 passed,
+  four existing ignored tests. Coverage includes bounded form/session/origin/
+  CSRF rejection, duplicate/malformed records/cookies, account isolation and
+  restart, 16 concurrent writers, symlink refusal, store failure, navigation/
+  logout/login precedence and unchanged plain/download payloads.
+- Captured 120 synthetic screenshots: all 20 route states at 1440 pixels in
+  all three preferences and both OS schemes. Computed theme/background values
+  match in every case, with zero scripts, external requests or overflow.
+  Visually inspected dark settings and system-dark login. Full every-page
+  responsive, keyboard and contrast inspection remains S01-04.
+- Corrected the inventory omission reported by the first acceptance run.
+  `make acceptance-check` rerun, V10/V14, clippy with warnings denied,
+  formatting, diff whitespace and original plan hashes pass. Evidence is
+  S01 `gates/s01-01-*` and `themes/{light,dark,system}/screenshots/capture.json`.
+  No native-host or strict-release qualification is inferred.
+- Rollback: previous signed source ignores sidecars and cookies; old security
+  settings remain unchanged. Signed delivery follows before S01-02 shell work.

@@ -3,6 +3,7 @@
 //! Keeping these rendering helpers separate from routing reduces the amount of
 //! browser-facing template code inside the request parser and route logic.
 
+use crate::appearance::AppearancePreference;
 use crate::draft::DraftSummary;
 use crate::html::TrustedHtml;
 use crate::http::BrowserVisibleSession;
@@ -69,6 +70,7 @@ pub(crate) struct SettingsPageModel<'a> {
     pub csrf_token: &'a str,
     pub success_message: Option<&'a str>,
     pub error_message: Option<&'a str>,
+    pub appearance: AppearancePreference,
     pub html_display_preference: HtmlDisplayPreference,
     pub archive_mailbox_name: Option<&'a str>,
 }
@@ -1276,6 +1278,19 @@ pub(crate) fn render_settings_page(model: &SettingsPageModel<'_>) -> TrustedHtml
         r#"</section>"#,
     );
 
+    let mut appearance_choices = String::new();
+    for (value, label) in [
+        (AppearancePreference::Light, "Light"),
+        (AppearancePreference::Dark, "Dark"),
+        (AppearancePreference::System, "System"),
+    ] {
+        appearance_choices.push_str(&format!(
+            "<label class=\"appearance-choice\"><input type=\"radio\" name=\"appearance\" value=\"{}\"{}> {}</label>",
+            value.as_str(), if value == model.appearance { " checked" } else { "" }, label));
+    }
+    let appearance_panel = format!(
+        "<section class=\"panel appearance-panel\" aria-labelledby=\"appearance-title\"><h2 id=\"appearance-title\">Appearance</h2><p class=\"muted\">Choose a theme for your account. System follows this device’s light or dark setting.</p><form method=\"post\" action=\"/settings/appearance\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><fieldset><legend>Theme</legend><div class=\"appearance-choices\">{}</div></fieldset><button type=\"submit\">Save Appearance</button></form></section>",
+        escape_html(model.csrf_token), appearance_choices);
     let archive_mailbox_name = model.archive_mailbox_name.unwrap_or("");
 
     TrustedHtml::from_template(format!(
@@ -1283,7 +1298,7 @@ pub(crate) fn render_settings_page(model: &SettingsPageModel<'_>) -> TrustedHtml
             "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
             "{}",
             "<section class=\"content-pane\">",
-            "<h1>Settings</h1>{}{}",
+            "<h1>Settings</h1>{}{}{}",
             "<p class=\"muted\">This settings slice stays intentionally small. It controls HTML display preference and one optional archive mailbox shortcut without turning OSMAP into a broad preference UI.</p>",
             "{}",
             "<form method=\"post\" action=\"/settings\" class=\"action-stack\">",
@@ -1307,6 +1322,7 @@ pub(crate) fn render_settings_page(model: &SettingsPageModel<'_>) -> TrustedHtml
         app_header(model.canonical_username, model.csrf_token, "settings"),
         success_banner,
         error_banner,
+        appearance_panel,
         account_security_panel,
         escape_html(model.csrf_token),
         prefer_sanitized_html_checked,

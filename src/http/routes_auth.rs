@@ -86,15 +86,24 @@ where
         audit_events.insert(0, budget_event);
 
         match outcome.decision {
-            BrowserLoginDecision::Authenticated { session_token, .. } => HandledHttpResponse {
-                response: redirect_response(303, "See Other", "/mailboxes").with_header(
-                    "Set-Cookie",
-                    build_session_cookie(
-                        self.policy.session_cookie_name,
-                        session_token.as_str(),
-                        self.policy.secure_session_cookie,
+            BrowserLoginDecision::Authenticated {
+                session_token,
+                appearance,
+                ..
+            } => HandledHttpResponse {
+                response: redirect_response(303, "See Other", "/mailboxes")
+                    .with_header(
+                        "Set-Cookie",
+                        build_session_cookie(
+                            self.policy.session_cookie_name,
+                            session_token.as_str(),
+                            self.policy.secure_session_cookie,
+                        ),
+                    )
+                    .with_header(
+                        "Set-Cookie",
+                        appearance.cookie(self.policy.secure_session_cookie),
                     ),
-                ),
                 audit_events,
             },
             BrowserLoginDecision::Denied { public_reason } => HandledHttpResponse {

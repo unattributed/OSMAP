@@ -27,6 +27,9 @@ fn redact_fixture_tokens(html: &str) -> String {
 #[test]
 fn ux_synthetic_route_baselines() {
     let output_dir = std::env::var_os("OSMAP_UX_FIXTURE_DIR").map(PathBuf::from);
+    let appearance = std::env::var("OSMAP_UX_FIXTURE_APPEARANCE")
+        .map(|value| AppearancePreference::parse(&value).expect("valid fixture appearance"))
+        .unwrap_or_default();
     if let Some(path) = &output_dir {
         assert!(path.is_absolute(), "fixture directory must be absolute");
         fs::create_dir_all(path).expect("create fixture directory");
@@ -90,6 +93,21 @@ fn ux_synthetic_route_baselines() {
         }
         let method = if name == "login-error" { "POST" } else { "GET" };
         let mut fixture_request = request(method, path, &headers, "");
+        fixture_request
+            .headers
+            .entry("cookie".into())
+            .or_default()
+            .push_str(&format!("; osmap_appearance={}", appearance.as_str()));
+        let marker = match appearance {
+            AppearancePreference::Light => ";AppearanceLight",
+            AppearancePreference::Dark => ";AppearanceDark",
+            AppearancePreference::System => ";AppearanceSystem",
+        };
+        fixture_request
+            .headers
+            .entry("user-agent".into())
+            .or_default()
+            .push_str(marker);
         if name == "host-rejected" {
             fixture_request
                 .headers
@@ -115,6 +133,7 @@ fn ux_synthetic_route_baselines() {
             "status": expected_status, "authenticated_fixture": authenticated,
             "html_sha256": format!("{:x}", Sha256::digest(html.as_bytes())),
             "csp": csp, "synthetic": true, "tokens_redacted": true,
+            "appearance": appearance.as_str(),
         }));
     }
     if let Some(directory) = &output_dir {

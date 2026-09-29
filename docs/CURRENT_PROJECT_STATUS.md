@@ -23,8 +23,9 @@ capabilities. `UX_FULL_FUNCTIONAL_EPIC.md` and
 initially NOT_STARTED. The operator's 2026-09-29 autonomous mandate now
 authorizes engineering across the epic on parrot-2TB and obsd1. The signed
 plan anchor and all original reference hashes verify. S00-01/02/03 have signed
-source deliveries; S00-04 has completed the acceptance design and baseline
-verification for its signed checkpoint. D01–D06 are recorded
+source deliveries; S00-04 is delivered as `85e1701`. S01-01 implements
+persistent light/dark/system preferences and has passed local gate verification.
+D01–D06 are recorded
 as delegated engineering decisions in `UX_DECISIONS.md`. Independent human
 identity/accessibility and final release acceptance remain separate.
 See `UX_AGENT_EXECUTION_CONTRACT.md` and `UX_EXECUTION_LEDGER.md`.

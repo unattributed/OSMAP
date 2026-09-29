@@ -25,13 +25,33 @@ where
                 Ok(result) => result,
                 Err(response) => return response,
             };
-        let success_message =
-            if request.query_params.get("updated").map(String::as_str) == Some("1") {
-                Some("Settings were updated.")
-            } else {
-                None
-            };
+        let success_message = if request
+            .query_params
+            .get("appearance_updated")
+            .map(String::as_str)
+            == Some("1")
+        {
+            Some("Appearance was updated.")
+        } else if request.query_params.get("updated").map(String::as_str) == Some("1") {
+            Some("Settings were updated.")
+        } else {
+            None
+        };
 
+        let (appearance, appearance_error) = match self
+            .gateway
+            .load_appearance(context, &validated_session)
+        {
+            Ok(value) => (value, None),
+            Err(_) => {
+                audit_events.push(build_http_warning_event(
+                    "appearance_load_failed",
+                    "appearance preference unavailable",
+                    context,
+                ));
+                (AppearancePreference::System, Some("Your saved appearance could not be loaded. System colours are being used; you can save a new preference below."))
+            }
+        };
         let outcome = self.gateway.load_settings(context, &validated_session);
         audit_events.extend(outcome.audit_events);
 
@@ -48,10 +68,15 @@ where
                         canonical_username: &canonical_username,
                         csrf_token: &validated_session.record.csrf_token,
                         success_message,
-                        error_message: None,
+                        error_message: appearance_error,
+                        appearance,
                         html_display_preference: settings.html_display_preference,
                         archive_mailbox_name: settings.archive_mailbox_name.as_deref(),
                     }),
+                )
+                .with_header(
+                    "Set-Cookie",
+                    appearance.cookie(self.policy.secure_session_cookie),
                 ),
                 audit_events,
             },

@@ -11,6 +11,7 @@ mod http_browser;
 mod http_gateway;
 #[path = "http_runtime.rs"]
 mod http_runtime;
+mod routes_appearance;
 mod routes_auth;
 mod routes_compose;
 mod routes_draft;
@@ -21,6 +22,7 @@ use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
+use crate::appearance::{AppearancePreference, AppearanceStore};
 use crate::attachment::{
     AttachmentDownloadDecision, AttachmentDownloadPolicy, AttachmentDownloadPublicFailureReason,
     AttachmentDownloadService, DownloadedAttachment,
@@ -789,6 +791,9 @@ mod tests {
     mod ux_fixtures {
         include!("http/ux_fixtures.rs");
     }
+    mod appearance_tests {
+        include!("http/appearance_tests.rs");
+    }
     use crate::auth::RequiredSecondFactor;
     use crate::mailbox::MessageView;
     use crate::mime::{AttachmentDisposition, MimeBodySource};
@@ -888,6 +893,7 @@ mod tests {
             BrowserLoginOutcome {
                 decision: BrowserLoginDecision::Authenticated {
                     canonical_username: username.to_string(),
+                    appearance: AppearancePreference::System,
                     session_token: SessionToken::new(
                         "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                     )
@@ -1078,6 +1084,36 @@ mod tests {
             }
         }
 
+        fn load_appearance(
+            &self,
+            context: &AuthenticationContext,
+            _session: &ValidatedSession,
+        ) -> std::io::Result<AppearancePreference> {
+            if context.user_agent.contains("AppearanceUnavailable") {
+                return Err(std::io::Error::other("synthetic store unavailable"));
+            }
+            Ok(if context.user_agent.contains("AppearanceDark") {
+                AppearancePreference::Dark
+            } else if context.user_agent.contains("AppearanceLight") {
+                AppearancePreference::Light
+            } else {
+                AppearancePreference::System
+            })
+        }
+
+        fn update_appearance(
+            &self,
+            context: &AuthenticationContext,
+            _session: &ValidatedSession,
+            _appearance: AppearancePreference,
+        ) -> std::io::Result<()> {
+            if context.user_agent.contains("AppearanceUnavailable") {
+                Err(std::io::Error::other("synthetic store unavailable"))
+            } else {
+                Ok(())
+            }
+        }
+
         fn load_settings(
             &self,
             context: &AuthenticationContext,
@@ -1220,7 +1256,7 @@ mod tests {
                 decision: BrowserMessageListDecision::Listed {
                     canonical_username: validated_session.record.canonical_username.clone(),
                     mailbox_name: mailbox_name.to_string(),
-                    messages: if context.user_agent == "OSMAP/EmptyMailbox" {
+                    messages: if context.user_agent.starts_with("OSMAP/EmptyMailbox") {
                         Vec::new()
                     } else {
                         vec![

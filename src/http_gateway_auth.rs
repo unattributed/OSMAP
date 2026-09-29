@@ -219,8 +219,19 @@ impl RuntimeBrowserGateway {
                                         ),
                                     ),
                                 }
+                                let appearance = AppearanceStore::new(&self.settings_dir)
+                                    .load(&canonical_username)
+                                    .unwrap_or_else(|_| {
+                                        audit_events.push(build_http_warning_event(
+                                            "appearance_load_failed",
+                                            "appearance preference unavailable at login",
+                                            context,
+                                        ));
+                                        AppearancePreference::System
+                                    });
                                 BrowserLoginOutcome {
                                     decision: BrowserLoginDecision::Authenticated {
+                                        appearance,
                                         canonical_username,
                                         session_token: issued_session.token,
                                     },

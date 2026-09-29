@@ -69,6 +69,19 @@ where
 {
     /// Handles one parsed HTTP request from the supplied remote address.
     pub fn handle_request(&self, request: &HttpRequest, remote_addr: &str) -> HandledHttpResponse {
+        let mut handled = self.handle_request_inner(request, remote_addr);
+        crate::http_support::apply_appearance(
+            &mut handled.response,
+            request.headers.get("cookie").map(String::as_str),
+        );
+        handled
+    }
+
+    fn handle_request_inner(
+        &self,
+        request: &HttpRequest,
+        remote_addr: &str,
+    ) -> HandledHttpResponse {
         let effective_remote_addr = effective_remote_addr(request, remote_addr);
         let context = match AuthenticationContext::new(
             self.policy.authentication_policy,
@@ -136,6 +149,9 @@ where
             (HttpMethod::Post, "/drafts/save") => self.handle_draft_save(request, &context),
             (HttpMethod::Post, "/drafts/delete") => self.handle_draft_delete(request, &context),
             (HttpMethod::Post, "/sessions/revoke") => self.handle_session_revoke(request, &context),
+            (HttpMethod::Post, "/settings/appearance") => {
+                self.handle_appearance_update(request, &context)
+            }
             (HttpMethod::Post, "/settings") => self.handle_settings_update(request, &context),
             (HttpMethod::Post, "/logout") => self.handle_logout(request, &context),
             _ => HandledHttpResponse {
