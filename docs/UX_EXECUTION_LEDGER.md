@@ -111,3 +111,40 @@ with later outcomes. Correct errors using a new entry referencing the old one.
 - Signing checkpoint follows; delivery SHA is recorded in the next append-only
   entry. Continued engineering is authorized by the mandate; final human
   acceptance remains distinct. Sync/deployment: not performed.
+
+### S00-01 delivery / S00-02 work order — 2026-09-29
+
+- S00-01: COMMITTED and accepted for continued engineering under the delegated
+  mandate, without claiming independent human acceptance. Signed delivery
+  `167ab90`; Shopkeeper signature verified; worktree clean after delivery.
+  `origin/main...HEAD` is checked locally; no fetch/push/deployment performed.
+- Baseline route manifest SHA-256:
+  `1afbc1f36fbb818fdd8d28d6495ae23d0ff000244e5c97b5133d60f716f255b8`;
+  screenshot capture manifest:
+  `d58923350a9346fb8f6e070fe686e360f28f9e9b58f30fc0d131bdf051a064f7`.
+- S00-02: IN_PROGRESS. Base `167ab90`, unchanged signed plan anchor.
+  Allowed files: `docs/UX_DECISIONS.md`, index and this ledger. Resolve D01/D02/
+  D03 within the delegated engineering authority: preserve script-free CSP,
+  full navigation with context, host-helper plaintext location, private-key
+  custody, initial interoperability profile and concrete runtime budgets.
+- Scope: decision records only; no helper/runtime/key/host mutation. Evidence:
+  current source inspection and primary RFC/GPGME specifications linked in the
+  decisions. No new dependency is introduced by writing an architecture record.
+- Tests: documentation/governance, `git diff --check`, `make acceptance-check`,
+  `make v10-check`, `make v14-check`, mandatory pre-commit `make security-check`.
+  Documentation-only rollback; no state migration. Human-only recovery and
+  independent usability acceptance remain outside delegated engineering claims.
+
+### S00-02 verification — 2026-09-29 — VERIFIED
+
+- D01/D02/D03 recorded in `UX_DECISIONS.md` using delegated engineering
+  authority. Native HTML/full navigation, honest host-side decryption location,
+  isolated GPGME execution, no web private-key/passphrase flow, explicit key
+  bindings and bounded initial PGP/MIME profile are fixed for implementation.
+  These decisions add no runtime cryptographic capability.
+- `make acceptance-check` (including `make security-check`), `make v10-check`,
+  `make v14-check`, `git diff --check` and unchanged-plan checksum verification
+  passed. Evidence: S00 run `gates/s00-02-*`; only the previously documented
+  optional workstation nginx runtime check is skipped. No strict-release claim.
+- No live writes, migrations, secrets or new runtime dependencies. Signed
+  delivery checkpoint follows; the next entry records its verified SHA.
