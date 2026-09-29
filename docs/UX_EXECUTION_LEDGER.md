@@ -278,3 +278,66 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   No native-host or strict-release qualification is inferred.
 - Rollback: previous signed source ignores sidecars and cookies; old security
   settings remain unchanged. Signed delivery follows before S01-02 shell work.
+
+### S01-01 delivery / S01-02 work order — 2026-09-29
+
+- S01-01 signed delivery `46c9d6b`, verified Shopkeeper signature and clean
+  worktree. Accepted for continued engineering under delegated authority;
+  no synchronization, deployment or independent human acceptance.
+- S01-02: IN_PROGRESS; base `46c9d6b`, unchanged frozen plan. Allowed files:
+  shared UI/CSS, mailbox navigation route/dispatcher/imports, focused shell
+  tests/fixtures/browser capture, ledger/current status and generated V10/WSTG
+  route inventory. No runtime dependencies, new persistence or host writes.
+- Deliver local named SVG rail, current-page state, native details collapse
+  and account menu, CSRF logout, Inbox/Sent/Drafts/Archive/Bin navigation and
+  Settings/Sessions. Archive resolves only the authenticated saved existing
+  mailbox. Missing configuration/folder/backend has an explicit actionable
+  state. Documents/notifications remain their later owning slices.
+- Move shared navigation before the main landmark so Skip to content actually
+  bypasses it. Native collapse is per-page; mobile expansion overlays the rail
+  without shrinking content into an unusable column. Preserve full accessible
+  identity while wrapping/truncating visually long names.
+- Test exact navigation and archive/session/input boundaries, escaped long
+  identity, keyboard skip/disclosures/menu, widths 360/768/1440 in representative
+  themes, no external fetch/script, common acceptance/V10/V14 and mandatory
+  pre-commit security checks. Source-only rollback; retain S01 evidence root.
+
+### S01-02 gate refinement — 2026-09-29
+
+- Include `tests/v4_hostile_assurance.rs` in allowed files. Its old whole-page
+  auto-fetch counter counts every SVG, including the newly required static
+  application icons. Retain the absolute prohibition inside message content;
+  allow only strictly validated path/circle/rect geometry in the trusted shell
+  before the main landmark. Add negative checks for active/linked/foreign SVG
+  content. No renderer allowlist or CSP change is authorized by this refinement.
+- Browser interaction checks found the mobile account popover extending beyond
+  the left edge, and narrow settings metadata becoming a one-character column.
+  Anchor the menu to the header and stack metadata at small widths. Re-run
+  keyboard/menu and responsive evidence before delivery.
+
+### S01-02 verification — 2026-09-29 — VERIFIED
+
+- Added the native collapsible icon rail, selected state, real mailbox/compose/
+  draft/settings/session links, account disclosure with full identity and
+  CSRF-bound logout. Skip navigation now precedes and bypasses the header.
+  Archive navigation checks the saved account setting and actual folder list;
+  unset, missing and unavailable states have distinct messages and navigation.
+- Full library: 559 passed, four existing ignored. Focused shell tests cover
+  routes/selected state, auth and strict shortcut query, stale/unset/backend
+  archive cases and escaped long identity. V4 hostile-content corpus plus the
+  new strict local-vector negative test pass; SVG remains forbidden in mail.
+- Browser evidence: 25 synthetic route states; first 150-capture matrix exposed
+  the known reader/draft overflow, plus the new mobile menu issue. Corrected
+  menu anchoring and narrow metadata. Twelve final keyboard interaction cases
+  (normal/long identity, three widths, both OS themes) pass skip/focus/native
+  collapse and account-menu containment with zero settings overflow. Inspected
+  small dark account menu and expanded desktop rail images. Final captures are
+  S01 `shell-rerun/interaction` and `shell-rerun/screenshots`.
+- The reader and draft table retain their baseline narrow-screen overflow;
+  these are explicitly carried into the shared component/responsive slices,
+  not represented as full every-page acceptance. Documents and notifications
+  remain their named later slices.
+- `make acceptance-check` rerun, V10/V14, strict clippy, formatting, diff and
+  frozen-plan hashes pass. First failed gate and browser logs are retained.
+  No renderer/CSP weakening, state migration, native-host/release claim or
+  deployment. Signed checkpoint follows before S01-03.

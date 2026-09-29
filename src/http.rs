@@ -51,8 +51,8 @@ use crate::http_support::{
 use crate::http_ui::{
     render_compose_page, render_draft_list_page, render_login_page, render_mailboxes_page,
     render_message_list_page, render_message_search_page, render_message_view_page,
-    render_sessions_page, render_settings_page, ComposePageModel, DraftListPageModel,
-    MessageListBulkActions, MessageListSortLinks, SettingsPageModel,
+    render_navigation_notice, render_sessions_page, render_settings_page, ComposePageModel,
+    DraftListPageModel, MessageListBulkActions, MessageListSortLinks, SettingsPageModel,
 };
 use crate::logging::LogEvent;
 #[cfg(test)]
@@ -794,6 +794,9 @@ mod tests {
     mod appearance_tests {
         include!("http/appearance_tests.rs");
     }
+    mod shell_tests {
+        include!("http/shell_tests.rs");
+    }
     use crate::auth::RequiredSecondFactor;
     use crate::mailbox::MessageView;
     use crate::mime::{AttachmentDisposition, MimeBodySource};
@@ -1119,19 +1122,35 @@ mod tests {
             context: &AuthenticationContext,
             validated_session: &ValidatedSession,
         ) -> BrowserSettingsOutcome {
+            if context.user_agent.contains("SettingsUnavailable") {
+                return BrowserSettingsOutcome {
+                    decision: BrowserSettingsDecision::Denied {
+                        public_reason: "temporarily_unavailable".into(),
+                    },
+                    audit_events: Vec::new(),
+                };
+            }
             BrowserSettingsOutcome {
                 decision: BrowserSettingsDecision::Loaded {
-                    canonical_username: validated_session.record.canonical_username.clone(),
+                    canonical_username: if context.user_agent.contains("LongIdentity") {
+                        format!("{}@example.test", "long-account-name-".repeat(16))
+                    } else {
+                        validated_session.record.canonical_username.clone()
+                    },
                     settings: BrowserVisibleSettings {
                         html_display_preference: HtmlDisplayPreference::PreferSanitizedHtml,
-                        archive_mailbox_name: Some(
-                            if context.user_agent == "Firefox/InvalidArchiveTest" {
-                                "MissingArchive"
-                            } else {
-                                "Archive/2026"
-                            }
-                            .to_string(),
-                        ),
+                        archive_mailbox_name: if context.user_agent.contains("NoArchiveTest") {
+                            None
+                        } else {
+                            Some(
+                                if context.user_agent.contains("InvalidArchiveTest") {
+                                    "MissingArchive"
+                                } else {
+                                    "Archive/2026"
+                                }
+                                .to_string(),
+                            )
+                        },
                     },
                 },
                 audit_events: vec![LogEvent::new(

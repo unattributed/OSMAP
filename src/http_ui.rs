@@ -82,54 +82,84 @@ fn logout_form(csrf_token: &str) -> String {
     )
 }
 
+/// Repository-owned vector paths; decorative, never fetched from a network.
+fn shell_icon(name: &str) -> String {
+    let path = match name {
+        "shield" => "<path d=\"M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6z\"/><path d=\"m8 12 3 3 5-6\"/>",
+        "inbox" => "<path d=\"M4 4h16l2 10v6H2v-6zM2 14h6l2 3h4l2-3h6\"/>",
+        "sent" => "<path d=\"m3 3 18 9-18 9 4-9zM7 12h14\"/>",
+        "archive" => "<rect x=\"3\" y=\"3\" width=\"18\" height=\"5\" rx=\"1\"/><path d=\"M5 8v13h14V8M9 12h6\"/>",
+        "bin" => "<path d=\"M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7\"/>",
+        "compose" => "<path d=\"m14 4 6 6M4 20l5-1L21 7l-4-4L5 15z\"/>",
+        "drafts" => "<path d=\"M5 3h9l5 5v13H5zM14 3v6h5M9 13h6M9 17h6\"/>",
+        "settings" => "<path d=\"m10 3-.5 3-2 1-3-.7-2 3 2.3 2v2l-2.3 2 2 3 3-.7 2 1 .5 3h4l.5-3 2-1 3 .7 2-3-2.3-2v-2l2.3-2-2-3-3 .7-2-1L14 3z\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/>",
+        "folders" => "<path d=\"M3 5h7l2 3h9v13H3zM3 5V3h7l2 2h9v3\"/>",
+        "menu" => "<path d=\"M4 6h16M4 12h16M4 18h16\"/>",
+        _ => "<path d=\"m7 10 5 5 5-5\"/>",
+    };
+    format!("<svg class=\"shell-icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\">{path}</svg>")
+}
+
 fn app_header(canonical_username: &str, csrf_token: &str, current: &str) -> String {
-    format!(
-        concat!(
-            "<a class=\"skip-link\" href=\"#main-content\">Skip to content</a>",
-            "<header class=\"topbar\" role=\"banner\" aria-label=\"Authenticated OSMAP shell\">",
-            "<div class=\"brand\"><span class=\"brand-mark\" aria-hidden=\"true\"><span class=\"ui-icon brand-icon\">OS</span></span><span>OSMAP</span></div>",
-            "<nav class=\"top-actions\" aria-label=\"Primary navigation\">",
-            "<a href=\"/mailboxes\"{}>Mailboxes</a>",
-            "<a href=\"/compose\"{}>Compose</a>",
-            "<a href=\"/drafts\"{}>Drafts</a>",
-            "<a href=\"/sessions\"{}>Sessions</a>",
-            "<a href=\"/settings\"{}>Settings</a>",
-            "{}",
-            "</nav>",
-            "<div class=\"status-row auth-status\" aria-label=\"Session status and identity\">",
-            "<span class=\"status-pill badge-ok shell-session-chip\">2FA session</span>",
-            "<span class=\"status-pill identity-chip\">signed in as <strong>{}</strong></span>",
-            "</div>",
-            "</header>"
+    let mut links = String::new();
+    for (name, label, href, icon) in [
+        ("compose", "Compose", "/compose", "compose"),
+        ("inbox", "Inbox", "/mailbox?name=INBOX", "inbox"),
+        ("sent", "Sent", "/mailbox?name=Sent", "sent"),
+        ("drafts", "Drafts", "/drafts", "drafts"),
+        (
+            "archive",
+            "Archive",
+            "/mailbox/shortcut?kind=archive",
+            "archive",
         ),
-        if current == "mailboxes" {
-            " aria-current=\"page\""
-        } else {
-            ""
-        },
-        if current == "compose" {
-            " aria-current=\"page\""
-        } else {
-            ""
-        },
-        if current == "drafts" {
-            " aria-current=\"page\""
-        } else {
-            ""
-        },
-        if current == "sessions" {
-            " aria-current=\"page\""
-        } else {
-            ""
-        },
-        if current == "settings" {
-            " aria-current=\"page\""
-        } else {
-            ""
-        },
-        logout_form(csrf_token),
-        escape_html(canonical_username),
-    )
+        ("bin", "Bin", "/mailbox?name=Trash", "bin"),
+        ("mailboxes", "All mailboxes", "/mailboxes", "folders"),
+        ("sessions", "Sessions", "/sessions", "shield"),
+        ("settings", "Settings", "/settings", "settings"),
+    ] {
+        links.push_str(&format!(
+            "<a class=\"rail-link{}\" href=\"{}\" aria-label=\"{}\" title=\"{}\"{}>{}<span class=\"rail-label\">{}</span></a>",
+            if name == "compose" { " rail-compose" } else { "" },
+            escape_html(href), label, label,
+            if name == current { " aria-current=\"page\"" } else { "" },
+            shell_icon(icon), label));
+    }
+    format!(concat!(
+        "<a class=\"skip-link\" href=\"#main-content\">Skip to content</a>",
+        "<aside class=\"app-rail\" aria-label=\"Application navigation\">",
+        "<details class=\"rail-disclosure\"><summary title=\"Navigation labels\">{}<span class=\"sr-only rail-expand-label\">Expand navigation</span><span class=\"sr-only rail-collapse-label\">Collapse navigation</span></summary><p class=\"sr-only\">Navigation labels are expanded.</p></details>",
+        "<nav class=\"rail-links\" aria-label=\"Primary navigation\">{}</nav></aside>",
+        "<header class=\"topbar\" role=\"banner\" aria-label=\"Authenticated OSMAP shell\">",
+        "<a class=\"brand\" href=\"/mailboxes\" aria-label=\"OSMAP mailboxes\"><span class=\"brand-mark\" aria-hidden=\"true\"><span class=\"ui-icon brand-icon\">{}</span></span><span>OSMAP</span></a>",
+        "<div class=\"status-row auth-status\" aria-label=\"Session status and identity\">",
+        "<span class=\"status-pill badge-ok shell-session-chip\">2FA session</span>",
+        "<details class=\"account-menu\"><summary class=\"identity-chip\"><span class=\"account-name\" title=\"{}\">{}</span>{}</summary>",
+        "<div class=\"account-menu-panel\"><p class=\"muted\">Signed in as <strong>{}</strong></p><a href=\"/settings\">Account settings</a><a href=\"/settings#appearance-title\">Appearance</a><a href=\"/sessions\">Manage sessions</a>{}</div>",
+        "</details></div></header>"
+    ), shell_icon("menu"), links, shell_icon("shield"), escape_html(canonical_username),
+        escape_html(canonical_username), shell_icon("chevron"), escape_html(canonical_username), logout_form(csrf_token))
+}
+
+fn mailbox_nav_section(mailbox_name: &str, archive_mailbox_name: Option<&str>) -> &'static str {
+    match mailbox_name {
+        "INBOX" => "inbox",
+        "Sent" => "sent",
+        "Trash" => "bin",
+        value if Some(value) == archive_mailbox_name => "archive",
+        _ => "mailboxes",
+    }
+}
+
+pub(crate) fn render_navigation_notice(
+    canonical_username: &str,
+    csrf_token: &str,
+    title: &str,
+    message: &str,
+) -> TrustedHtml {
+    TrustedHtml::from_template(format!(
+        "{}<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\"><section class=\"content-pane\"><h1>{}</h1><p>{}</p><div class=\"toolbar\"><a class=\"button-link\" href=\"/mailboxes\">All mailboxes</a><a class=\"button-link\" href=\"/settings\">Settings</a></div></section></main>",
+        app_header(canonical_username, csrf_token, "archive"), escape_html(title), escape_html(message)))
 }
 
 fn folder_pane(mailboxes: &[MailboxEntry], current_mailbox_name: Option<&str>) -> String {
@@ -214,8 +244,8 @@ pub(crate) fn render_mailboxes_page(
 ) -> TrustedHtml {
     TrustedHtml::from_template(format!(
         concat!(
-            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
             "{}",
+            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
             "<div class=\"mail-shell\">",
             "{}",
             "<section class=\"content-pane\" aria-labelledby=\"mailboxes-title\">",
@@ -508,8 +538,8 @@ pub(crate) fn render_message_list_page(
 
     TrustedHtml::from_template(format!(
         concat!(
-            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
             "{}",
+            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
             "<section class=\"content-pane\" aria-labelledby=\"mailbox-title\">",
             "<div class=\"section-header\"><div><h1 id=\"mailbox-title\" class=\"section-title\">Mailbox: {}</h1><p class=\"muted\">Signed in as <strong>{}</strong>. Message data remains fetched through the reviewed mailbox route.</p></div>",
             "<div class=\"badge-list message-list-summary\" aria-label=\"Message list status\"><span class=\"badge badge-ok\">2FA active</span><span class=\"badge\">Remote content blocked</span><span class=\"badge\">sorting/search preserved</span><span class=\"badge\">bulk actions CSRF-bound</span></div></div>",
@@ -520,7 +550,7 @@ pub(crate) fn render_message_list_page(
             "</section>",
             "</main>"
         ),
-        app_header(canonical_username, csrf_token, "mailboxes"),
+        app_header(canonical_username, csrf_token, mailbox_nav_section(mailbox_name, bulk_actions.archive_mailbox_name)),
         escape_html(mailbox_name),
         escape_html(canonical_username),
         success_banner,
@@ -619,8 +649,8 @@ pub(crate) fn render_message_search_page(
 
     TrustedHtml::from_template(format!(
         concat!(
-            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
             "{}",
+            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
             "<section class=\"content-pane\">",
             "<p>{}<a href=\"/mailboxes\">All mailboxes</a></p>",
             "<h1>Search Results</h1>",
@@ -824,8 +854,8 @@ pub fn render_message_view_page(
     );
     TrustedHtml::from_template(format!(
         concat!(
-            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
             "{}",
+            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
             "<div class=\"mail-shell mail-shell-three\">",
             "{}",
             "{}",
@@ -848,7 +878,7 @@ pub fn render_message_view_page(
             "</div>",
             "</main>"
         ),
-        app_header(canonical_username, csrf_token, "mailboxes"),
+        app_header(canonical_username, csrf_token, mailbox_nav_section(&rendered.mailbox_name, archive_mailbox_name)),
         folder_pane(user_visible_mailboxes, Some(&rendered.mailbox_name)),
         protected_reader_strip,
         openpgp_reader_states,
@@ -954,8 +984,8 @@ pub(crate) fn render_sessions_page(
 
     TrustedHtml::from_template(format!(
         concat!(
-            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
             "{}",
+            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
             "<section class=\"content-pane\">",
             "<h1>Sessions</h1>",
             "<p class=\"muted\">Concurrent browser sessions are allowed. Use the device label, remote address, and last-seen time to identify sessions before revoking one, other sessions, or all sessions.</p>",
@@ -1033,8 +1063,8 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
 
     TrustedHtml::from_template(format!(
         concat!(
-            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
             "{}",
+            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
             "<section class=\"content-pane\">",
             "<h1>{}</h1>",
             "<p class=\"muted\">This send slice uses the local submission surface, keeps the browser body plain-text-first, and accepts bounded new file uploads or explicitly selected source-message attachments.</p>",
@@ -1212,8 +1242,8 @@ pub(crate) fn render_draft_list_page(model: &DraftListPageModel<'_>) -> TrustedH
 
     TrustedHtml::from_template(format!(
         concat!(
-            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
             "{}",
+            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
             "<section class=\"content-pane\">",
             "<h1>Drafts</h1>{}{}",
             "<p class=\"muted\">Saved drafts are bounded server-side compose state. Stored attachments remain send-only and are not previewed.</p>",
@@ -1295,8 +1325,8 @@ pub(crate) fn render_settings_page(model: &SettingsPageModel<'_>) -> TrustedHtml
 
     TrustedHtml::from_template(format!(
         concat!(
-            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
             "{}",
+            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
             "<section class=\"content-pane\">",
             "<h1>Settings</h1>{}{}{}",
             "<p class=\"muted\">This settings slice stays intentionally small. It controls HTML display preference and one optional archive mailbox shortcut without turning OSMAP into a broad preference UI.</p>",

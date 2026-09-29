@@ -133,6 +133,9 @@ where
             (HttpMethod::Post, "/login") => self.handle_login(request, &context),
             (HttpMethod::Get, "/") => self.handle_root_redirect(request, &context),
             (HttpMethod::Get, "/mailboxes") => self.handle_mailboxes(request, &context),
+            (HttpMethod::Get, "/mailbox/shortcut") => {
+                self.handle_mailbox_shortcut(request, &context)
+            }
             (HttpMethod::Get, "/mailbox") => self.handle_mailbox_messages(request, &context),
             (HttpMethod::Get, "/search") => self.handle_message_search(request, &context),
             (HttpMethod::Get, "/message") => self.handle_message_view(request, &context),

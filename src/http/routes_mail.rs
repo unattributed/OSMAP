@@ -29,6 +29,80 @@ impl<G> BrowserApp<G>
 where
     G: BrowserGateway,
 {
+    /// Resolves an account's configured archive target; never invents a folder.
+    pub(super) fn handle_mailbox_shortcut(
+        &self,
+        request: &HttpRequest,
+        context: &AuthenticationContext,
+    ) -> HandledHttpResponse {
+        let (validated_session, mut audit_events) =
+            match self.require_validated_session(request, context) {
+                Ok(result) => result,
+                Err(response) => return response,
+            };
+        let notice = |status, reason, title, message, audit_events| HandledHttpResponse {
+            response: html_response(
+                status,
+                reason,
+                title,
+                render_navigation_notice(
+                    &validated_session.record.canonical_username,
+                    &validated_session.record.csrf_token,
+                    title,
+                    message,
+                ),
+            ),
+            audit_events,
+        };
+        if request.query_params.len() != 1
+            || request.query_params.get("kind").map(String::as_str) != Some("archive")
+        {
+            return notice(
+                400,
+                "Bad Request",
+                "Unknown Mailbox Shortcut",
+                "Choose a mailbox from the navigation.",
+                audit_events,
+            );
+        }
+        let outcome = self.gateway.load_settings(context, &validated_session);
+        audit_events.extend(outcome.audit_events);
+        let archive = match outcome.decision {
+            BrowserSettingsDecision::Loaded { settings, .. } => match settings.archive_mailbox_name
+            {
+                Some(name) => name,
+                None => {
+                    return notice(
+                        200,
+                        "OK",
+                        "Choose Your Archive Mailbox",
+                        "Select an existing archive mailbox in Settings to use this shortcut.",
+                        audit_events,
+                    )
+                }
+            },
+            BrowserSettingsDecision::Denied { .. } => {
+                return notice(
+                    503,
+                    "Service Unavailable",
+                    "Archive Temporarily Unavailable",
+                    "Your archive setting could not be loaded. Try again shortly.",
+                    audit_events,
+                )
+            }
+        };
+        let outcome = self.gateway.list_mailboxes(context, &validated_session);
+        audit_events.extend(outcome.audit_events);
+        match outcome.decision {
+            BrowserMailboxDecision::Listed { mailboxes, .. } if mailbox_name_exists(&mailboxes, &archive) => HandledHttpResponse {
+                response: redirect_response(303, "See Other", &format!("/mailbox?name={}", url_encode(&archive))),
+                audit_events,
+            },
+            BrowserMailboxDecision::Listed { .. } => notice(404, "Not Found", "Archive Mailbox Not Found", "Your saved archive mailbox is no longer available. Choose another mailbox in Settings.", audit_events),
+            BrowserMailboxDecision::Denied { .. } => notice(503, "Service Unavailable", "Archive Temporarily Unavailable", "Your mailboxes could not be loaded. Try again shortly.", audit_events),
+        }
+    }
+
     fn validated_archive_mailbox_name(
         &self,
         context: &AuthenticationContext,

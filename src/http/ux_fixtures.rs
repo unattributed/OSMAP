@@ -71,6 +71,31 @@ fn ux_synthetic_route_baselines() {
         ),
         ("drafts-empty", "/drafts", true, 200),
         ("settings", "/settings", true, 200),
+        ("settings-long-identity", "/settings", true, 200),
+        (
+            "archive-shortcut",
+            "/mailbox/shortcut?kind=archive",
+            true,
+            303,
+        ),
+        (
+            "archive-unconfigured",
+            "/mailbox/shortcut?kind=archive",
+            true,
+            200,
+        ),
+        (
+            "archive-missing",
+            "/mailbox/shortcut?kind=archive",
+            true,
+            404,
+        ),
+        (
+            "archive-unavailable",
+            "/mailbox/shortcut?kind=archive",
+            true,
+            503,
+        ),
         ("sessions", "/sessions", true, 200),
         ("not-found", "/not-a-route", false, 404),
         ("invalid-search", "/search", true, 400),
@@ -90,6 +115,13 @@ fn ux_synthetic_route_baselines() {
         };
         if name == "mailbox-empty" {
             headers[0] = ("User-Agent", "OSMAP/EmptyMailbox");
+        }
+        match name {
+            "settings-long-identity" => headers[0] = ("User-Agent", "OSMAP/LongIdentity"),
+            "archive-unconfigured" => headers[0] = ("User-Agent", "OSMAP/NoArchiveTest"),
+            "archive-missing" => headers[0] = ("User-Agent", "OSMAP/InvalidArchiveTest"),
+            "archive-unavailable" => headers[0] = ("User-Agent", "OSMAP/SettingsUnavailable"),
+            _ => {}
         }
         let method = if name == "login-error" { "POST" } else { "GET" };
         let mut fixture_request = request(method, path, &headers, "");

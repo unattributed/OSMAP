@@ -25,6 +25,7 @@ def main():
     parser.add_argument("--schemes", nargs="+", choices=["light", "dark"], default=["light"])
     parser.add_argument("--widths", nargs="+", type=int, default=[360, 768, 1440])
     parser.add_argument("--names", nargs="+", help="capture only these manifest fixture names")
+    parser.add_argument("--shell-checks", action="store_true", help="exercise native keyboard and shell disclosures")
     args = parser.parse_args()
     fixtures = args.fixtures.resolve(strict=True)
     routes = json.loads((fixtures / "routes.json").read_text())
@@ -56,6 +57,7 @@ def main():
     thread.start()
     origin = f"http://127.0.0.1:{server.server_port}"
     results = []
+    shell_results = []
     try:
         with sync_playwright() as playwright:
             browser = playwright.chromium.launch(executable_path=args.browser, headless=True)
@@ -77,6 +79,36 @@ def main():
                     for item in routes:
                         response = page.goto(f"{origin}/{item['name']}.html", wait_until="networkidle")
                         assert response and response.status == 200
+                        if args.shell_checks and item["name"] in {"settings", "settings-long-identity"}:
+                            page.keyboard.press("Tab")
+                            assert page.locator(":focus").get_attribute("class") == "skip-link"
+                            page.keyboard.press("Enter")
+                            assert page.locator(":focus").get_attribute("id") == "main-content"
+                            toggle = page.locator(".rail-disclosure summary")
+                            toggle.focus()
+                            page.keyboard.press("Enter")
+                            assert page.locator(".rail-disclosure").get_attribute("open") is not None
+                            assert page.locator(".rail-label").first.is_visible()
+                            assert page.locator(".rail-links a[aria-current=page]").get_attribute("aria-label") == "Settings"
+                            expanded = args.output / f"{item['name']}-expanded-{scheme}-{width}.png"
+                            page.screenshot(path=str(expanded), full_page=True)
+                            page.keyboard.press("Enter")
+                            assert page.locator(".rail-disclosure").get_attribute("open") is None
+                            menu = page.locator(".account-menu summary")
+                            menu.focus()
+                            page.keyboard.press("Enter")
+                            assert page.locator(".account-menu-panel .logout-button").is_visible()
+                            assert page.locator(".account-menu-panel a[href='/sessions']").is_visible()
+                            bounds = page.locator(".account-menu-panel").bounding_box()
+                            assert bounds and bounds["x"] >= 0 and bounds["x"] + bounds["width"] <= width + 1
+                            account = args.output / f"{item['name']}-account-menu-{scheme}-{width}.png"
+                            page.screenshot(path=str(account), full_page=True)
+                            page.keyboard.press("Enter")
+                            shell_results.append({"fixture": item["name"], "scheme": scheme, "width": width,
+                                                  "skip_link": True, "keyboard_disclosures": True,
+                                                  "account_menu_within_viewport": True,
+                                                  "screenshots": {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
+                                                                  for p in [expanded, account]}})
                         if item["name"] == "source":
                             for summary in page.locator("summary").all():
                                 if "source" in summary.inner_text().lower():
@@ -100,7 +132,8 @@ def main():
                     assert not blocked_requests, "synthetic pages attempted external requests"
                     context.close()
             report = {"synthetic": True, "browser_version": browser.version,
-                      "browser_executable": args.browser, "screenshots": results}
+                      "browser_executable": args.browser, "screenshots": results,
+                      "shell_checks": shell_results}
             (args.output / "capture.json").write_text(json.dumps(report, indent=2) + "\n")
             browser.close()
     finally:
