@@ -148,3 +148,34 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   optional workstation nginx runtime check is skipped. No strict-release claim.
 - No live writes, migrations, secrets or new runtime dependencies. Signed
   delivery checkpoint follows; the next entry records its verified SHA.
+
+### S00-02 delivery / S00-03 work order — 2026-09-29
+
+- S00-02 signed delivery `1866f6b`, Shopkeeper signature verified; clean
+  worktree. Accepted for continued engineering under delegated authority;
+  no independent human/release acceptance claimed. No sync or deployment.
+- S00-03: IN_PROGRESS; base `1866f6b`, unchanged plan anchor. Allowed files:
+  append D04/D05/D06 and threat/migration map in `UX_DECISIONS.md`, this ledger
+  and documentation index if needed. Concrete account-helper authority, finite
+  ancillary actions, quotas/retention/time limits and exact host scope required.
+- Scope: documentation and bounded read-only obsd1 preflight only. Strict SSH
+  confirmed target identity, clean baseline checkout and healthy OSMAP services.
+  Sanitized driver-only inspection confirmed Dovecot SQL passdb and running
+  mysqld/Dovecot; no database credentials or query values were exported. An
+  initial guessed doveconf executable path was absent; command discovery
+  resolved it. No mutation occurred in either preflight.
+- Tests: `git diff --check`, `make acceptance-check`, `make v10-check`,
+  `make v14-check`, pre-commit `make security-check`. No state migration;
+  source-only rollback. Human identity evidence remains a separate requirement.
+
+### S00-03 verification — 2026-09-29 — VERIFIED
+
+- D04/D05/D06 now fix the authoritative account-helper boundary, human recovery
+  requirements, finite action inventory, per-account quotas/retention, scheduler
+  uncertainty policy, privilege/threat map and reversible obsd1 scope.
+- `make acceptance-check` (with `make security-check`), `make v10-check`,
+  `make v14-check`, `git diff --check` and original plan checksums passed.
+  Logs are `gates/s00-03-*` under the S00 run. Optional workstation nginx
+  runtime check remains skipped; no new release or cryptographic claim.
+- No account/credential/service mutation, new runtime dependency or migration.
+  Signed decision delivery follows; independent human requirements stay open.
