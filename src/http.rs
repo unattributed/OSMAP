@@ -5,6 +5,8 @@
 //! the goal is an explicit, reviewable request path that consumes the existing
 //! auth, session, mailbox, and rendering layers.
 
+pub(crate) mod compose_actions;
+mod compose_enhancement;
 #[path = "http_browser.rs"]
 mod http_browser;
 #[path = "http_gateway.rs"]
@@ -796,6 +798,12 @@ pub use self::http_runtime::run_http_server;
 #[cfg(test)]
 mod tests {
     use super::*;
+    mod compose_enhancement_tests {
+        include!("http/compose_enhancement_tests.rs");
+    }
+    mod compose_format_tests {
+        include!("http/compose_format_tests.rs");
+    }
     mod ux_fixtures {
         include!("http/ux_fixtures.rs");
     }
@@ -1959,7 +1967,8 @@ mod tests {
                 request.subject,
                 request.body,
                 request.attachments.to_vec(),
-            );
+            )
+            .and_then(|compose| compose.with_body_format(request.body_format));
             if request.recipients == "locked@example.com" {
                 BrowserSendOutcome {
                     decision: BrowserSendDecision::Denied {
@@ -2255,6 +2264,7 @@ mod tests {
                     }
                 }
             };
+            record.request.body_format = request.body_format;
             record.request.reply_thread = request.reply_thread.cloned();
             record.revision = request.expected_revision;
             if let Some(existing) = existing {
@@ -3041,6 +3051,7 @@ mod tests {
                 bcc_recipients: "",
                 subject: "Test",
                 body: "Hello",
+                body_format: crate::compose_format::BodyFormat::Plain,
                 attachments: &[],
             },
         );

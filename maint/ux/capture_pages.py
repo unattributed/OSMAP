@@ -30,6 +30,7 @@ def main():
     parser.add_argument("--contrast", action="store_true", help="audit computed flat text and meaningful UI colours")
     parser.add_argument("--expand-details", action="store_true", help="audit disclosed main-content states")
     parser.add_argument("--viewport-only", action="store_true", help="capture the visible viewport for review; DOM audits still cover the full page")
+    parser.add_argument("--height", type=int, default=1000, help="CSS viewport height; use 1100 for the approved page references")
     parser.add_argument("--schemes", nargs="+", choices=["light", "dark"], default=["light"])
     parser.add_argument("--widths", nargs="+", type=int, default=[360, 768, 1440])
     parser.add_argument("--names", nargs="+", help="capture only these manifest fixture names")
@@ -72,7 +73,7 @@ def main():
             for scheme in args.schemes:
                 for physical_width in args.widths:
                     width = physical_width // args.zoom
-                    context = browser.new_context(viewport={"width": width, "height": 1000},
+                    context = browser.new_context(viewport={"width": width, "height": args.height},
                                                   device_scale_factor=args.zoom,
                                                   color_scheme=scheme, reduced_motion="reduce",
                                                   forced_colors=args.forced_colors)
@@ -200,6 +201,7 @@ def main():
                                         "width": width, "physical_width": physical_width,
                                         "metrics": metrics, "contrast": contrast,
                                         "expected_appearance": item["appearance"], "table_checks": table_checks,
+                                        "expected_script_count": item.get("script_count", 0),
                                         "sha256": hashlib.sha256(screenshot.read_bytes()).hexdigest()})
                     assert not blocked_requests, "synthetic pages attempted external requests"
                     context.close()
@@ -211,7 +213,7 @@ def main():
                     reasons.append("horizontal page overflow")
                 if metrics["authenticated_shell"] and metrics["main_left"] + 1 < metrics["navigation_width"]:
                     reasons.append("main content overlaps the fixed navigation")
-                if metrics["scripts"] or metrics["main_landmarks"] != 1 or len(metrics["headings"]) != 1:
+                if metrics["scripts"] != result["expected_script_count"] or metrics["main_landmarks"] != 1 or len(metrics["headings"]) != 1:
                     reasons.append("script or landmark mismatch")
                 if metrics["appearance"] != result["expected_appearance"]:
                     reasons.append("appearance preference mismatch")
@@ -238,6 +240,7 @@ def main():
                       "forced_colors": args.forced_colors,
                       "expanded_details": args.expand_details,
                       "viewport_only": args.viewport_only,
+                      "viewport_height": args.height,
                       "passed": not failures, "failures": failures,
                       "shell_checks": shell_results}
             (args.output / "capture.json").write_text(json.dumps(report, indent=2) + "\n")

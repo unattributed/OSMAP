@@ -772,7 +772,7 @@ fn validate_source_attachments(
 
 fn serialize_draft_metadata(record: &DraftRecord) -> String {
     let mut content = format!(
-        "version=8\n\
+        "version=9\n\
 revision={}\n\
 starred={}\n\
 draft_id={}\n\
@@ -785,6 +785,7 @@ cc_hex={}\n\
 bcc_hex={}\n\
 subject_hex={}\n\
 body_hex={}\n\
+body_format={}\n\
 attachment_count={}\n",
         record.revision.unwrap_or(0),
         u8::from(record.starred),
@@ -798,6 +799,7 @@ attachment_count={}\n",
         hex_lower(record.request.bcc_text.as_bytes()),
         hex_lower(record.request.subject.as_bytes()),
         hex_lower(record.request.body.as_bytes()),
+        record.request.body_format.as_str(),
         record.request.attachments.len()
     );
 
@@ -868,6 +870,7 @@ fn parse_draft_metadata(
     let mut bcc_recipients = None;
     let mut subject = None;
     let mut body = None;
+    let mut body_format = None;
     let mut attachment_count = None;
     let mut attachment_fields = Vec::<AttachmentMetadataFields>::new();
     let mut source_mailbox = None;
@@ -927,6 +930,13 @@ fn parse_draft_metadata(
             "bcc_hex" => bcc_recipients = Some(decode_hex_string(value)?),
             "subject_hex" => subject = Some(decode_hex_string(value)?),
             "body_hex" => body = Some(decode_hex_string(value)?),
+            "body_format" => {
+                body_format = Some(crate::compose_format::BodyFormat::parse(value).ok_or_else(
+                    || DraftError {
+                        reason: "unsupported draft body format".into(),
+                    },
+                )?)
+            }
             "reply_parent_hex" => reply_parent = Some(decode_hex_string(value)?),
             "reply_references_hex" => reply_references = Some(decode_hex_string(value)?),
             "reply_shortened" => {
@@ -983,6 +993,7 @@ fn parse_draft_metadata(
             | Some("6")
             | Some("7")
             | Some("8")
+            | Some("9")
     ) {
         return Err(DraftError {
             reason: "unsupported draft metadata version".to_string(),
@@ -991,7 +1002,7 @@ fn parse_draft_metadata(
 
     let draft_id = required_field("draft_id", draft_id)?;
     let revision = match (version.as_deref(), revision) {
-        (Some("5" | "6" | "7" | "8"), Some(value)) if value > 0 => value,
+        (Some("5" | "6" | "7" | "8" | "9"), Some(value)) if value > 0 => value,
         (Some("1" | "2" | "3" | "4"), None) => 0,
         _ => {
             return Err(DraftError {
@@ -1000,7 +1011,7 @@ fn parse_draft_metadata(
         }
     };
     let starred = match (version.as_deref(), starred) {
-        (Some("6" | "7" | "8"), Some(value)) => value,
+        (Some("6" | "7" | "8" | "9"), Some(value)) => value,
         (Some("1" | "2" | "3" | "4" | "5"), None) => false,
         _ => {
             return Err(DraftError {
@@ -1008,10 +1019,21 @@ fn parse_draft_metadata(
             })
         }
     };
+    let body_format = match (version.as_deref(), body_format) {
+        (Some("9"), Some(value)) => value,
+        (Some("1" | "2" | "3" | "4" | "5" | "6" | "7" | "8"), None) => {
+            crate::compose_format::BodyFormat::Plain
+        }
+        _ => {
+            return Err(DraftError {
+                reason: "missing or incompatible draft body format".into(),
+            })
+        }
+    };
     let reply_thread = match (reply_parent, reply_references, reply_shortened) {
         (None, None, None) => None,
         (Some(parent), Some(references), Some(shortened))
-            if matches!(version.as_deref(), Some("4" | "5" | "6" | "7" | "8")) =>
+            if matches!(version.as_deref(), Some("4" | "5" | "6" | "7" | "8" | "9")) =>
         {
             Some(
                 crate::reply_thread::ReplyThread::from_stored(
@@ -1066,7 +1088,7 @@ fn parse_draft_metadata(
         let size_bytes = required_field("attachment size", fields.size_bytes)?;
         let body_file = required_field("attachment body file", fields.body_file)?;
         let expected_body_file = attachment_body_file_name(index);
-        if if version.as_deref() == Some("8") {
+        if if matches!(version.as_deref(), Some("8" | "9")) {
             !atomic::is_blob_name(&body_file)
         } else {
             body_file != expected_body_file
@@ -1094,7 +1116,7 @@ fn parse_draft_metadata(
                 reason: "draft attachment body size did not match metadata".to_string(),
             });
         }
-        if version.as_deref() == Some("8") && atomic::blob_name(&body) != body_file {
+        if matches!(version.as_deref(), Some("8" | "9")) && atomic::blob_name(&body) != body_file {
             return Err(DraftError {
                 reason: "draft attachment content identity mismatch".into(),
             });
@@ -1121,7 +1143,8 @@ fn parse_draft_metadata(
         reason: error.reason,
     })?;
     request.reply_thread = reply_thread;
-    if !matches!(version.as_deref(), Some("5" | "6" | "7" | "8")) {
+    request.body_format = body_format;
+    if !matches!(version.as_deref(), Some("5" | "6" | "7" | "8" | "9")) {
         crate::send::ComposeRequest::new_with_routing(
             policy.compose_policy,
             &request.recipients_text,
@@ -1137,13 +1160,15 @@ fn parse_draft_metadata(
     }
     let source_version = match (source_mailbox_guid, source_message_guid) {
         (None, None) => None,
-        (Some(mailbox), Some(message)) if matches!(version.as_deref(), Some("7" | "8")) => Some(
-            crate::message_metadata::MessageVersion::new(mailbox, message).map_err(|_| {
-                DraftError {
-                    reason: "invalid stored source identity".into(),
-                }
-            })?,
-        ),
+        (Some(mailbox), Some(message)) if matches!(version.as_deref(), Some("7" | "8" | "9")) => {
+            Some(
+                crate::message_metadata::MessageVersion::new(mailbox, message).map_err(|_| {
+                    DraftError {
+                        reason: "invalid stored source identity".into(),
+                    }
+                })?,
+            )
+        }
         _ => {
             return Err(DraftError {
                 reason: "incomplete or incompatible stored source identity".into(),
@@ -1187,7 +1212,7 @@ fn parse_draft_metadata(
         }
     };
 
-    if matches!(version.as_deref(), Some("7" | "8")) {
+    if matches!(version.as_deref(), Some("7" | "8" | "9")) {
         validate_combined_attachment_count(policy, &request, source_attachments.as_ref())?;
     }
     Ok(Some(DraftRecord {
@@ -1539,6 +1564,112 @@ mod tests {
     }
 
     #[test]
+    fn formatted_draft_preserves_unfinished_notation_attachments_and_cas_star_edits() {
+        use crate::compose_format::BodyFormat;
+        let dir = temp_dir("osmap-draft-body-format");
+        let store = FileDraftStore::new(&dir, DraftPolicy::default());
+        let mut draft = record(&draft_id(29), "alice@example.com", 100);
+        let unfinished = "**Unfinished formatting\n[link not finished](https://example.test/";
+        draft.request.body = unfinished.into();
+        draft.request.body_format = BodyFormat::Formatted;
+        draft
+            .request
+            .attachments
+            .push(attachment(b"synthetic attachment"));
+        store.save(&draft, 100).unwrap();
+        let mut loaded = store
+            .load("alice@example.com", &draft.draft_id, 100)
+            .unwrap()
+            .unwrap();
+        assert_eq!(loaded.request, draft.request);
+        let stale = loaded.clone();
+        loaded.starred = true;
+        store.save(&loaded, 101).unwrap();
+        assert!(store.save(&stale, 102).is_err());
+        let mut updated = store
+            .load("alice@example.com", &draft.draft_id, 102)
+            .unwrap()
+            .unwrap();
+        assert!(updated.starred);
+        assert_eq!(updated.revision, Some(2));
+        assert_eq!(updated.request.body, unfinished);
+        assert_eq!(updated.request.body_format, BodyFormat::Formatted);
+        assert_eq!(updated.request.attachments, draft.request.attachments);
+
+        // V8 already used content-addressed attachment blobs, but no format mode.
+        let path = store.metadata_path("alice@example.com", &draft.draft_id);
+        let metadata = fs::read_to_string(&path).unwrap();
+        let legacy = metadata
+            .replace("version=9\n", "version=8\n")
+            .replace("body_format=formatted\n", "");
+        let v8 = parse_draft_metadata(DraftPolicy::default(), "alice@example.com", &path, &legacy)
+            .unwrap()
+            .unwrap();
+        assert_eq!(v8.request.body_format, BodyFormat::Plain);
+        assert_eq!(v8.request.body, unfinished);
+        assert_eq!(v8.request.attachments, updated.request.attachments);
+
+        updated.request.body_format = BodyFormat::Plain;
+        store.save(&updated, 103).unwrap();
+        let plain = store
+            .load("alice@example.com", &draft.draft_id, 103)
+            .unwrap()
+            .unwrap();
+        assert_eq!(plain.request.body_format, BodyFormat::Plain);
+        assert_eq!(plain.request.body, unfinished);
+        assert_eq!(plain.request.attachments, updated.request.attachments);
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn legacy_draft_versions_read_as_plain_and_body_format_metadata_is_strict() {
+        use crate::compose_format::BodyFormat;
+        let dir = temp_dir("osmap-draft-legacy-body-format");
+        let store = FileDraftStore::new(&dir, DraftPolicy::default());
+        let mut draft = record(&draft_id(30), "alice@example.com", 100);
+        draft.request.body = "**This remains literal legacy text [unfinished".into();
+        assert_eq!(draft.request.body_format, BodyFormat::Plain);
+        store.save(&draft, 100).unwrap();
+        let path = store.metadata_path("alice@example.com", &draft.draft_id);
+        let metadata = fs::read_to_string(&path).unwrap();
+        let parse = |value: &str| {
+            parse_draft_metadata(DraftPolicy::default(), "alice@example.com", &path, value)
+        };
+        assert!(metadata.starts_with("version=9\n"));
+        assert!(metadata.contains("\nbody_format=plain\n"));
+        for version in 1..=8 {
+            let mut legacy = metadata
+                .replace("version=9\n", &format!("version={version}\n"))
+                .replace("body_format=plain\n", "");
+            if version < 5 {
+                legacy = legacy.replace("revision=1\n", "");
+            }
+            if version < 6 {
+                legacy = legacy.replace("starred=0\n", "");
+            }
+            let loaded = parse(&legacy).unwrap().unwrap();
+            assert_eq!(
+                loaded.request.body_format,
+                BodyFormat::Plain,
+                "version {version}"
+            );
+            assert_eq!(loaded.request.body, draft.request.body, "version {version}");
+        }
+        for invalid in [
+            metadata.replace("body_format=plain\n", ""),
+            metadata.replace("body_format=plain", "body_format=unknown"),
+            metadata.replace("body_format=plain", "body_format=Formatted"),
+            metadata.replace("version=9\n", "version=8\n"),
+            metadata.replace("version=9\n", "version=10\n"),
+            format!("{metadata}body_format=plain\n"),
+        ] {
+            assert!(parse(&invalid).is_err());
+        }
+        assert_eq!(fs::read_to_string(&path).unwrap(), metadata);
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
     fn draft_reply_metadata_survives_storage_and_refuses_corrupt_or_downgraded_fields() {
         let dir = temp_dir("osmap-draft-reply-thread");
         let store = FileDraftStore::new(&dir, DraftPolicy::default());
@@ -1565,7 +1696,8 @@ mod tests {
         };
         assert!(parse(
             &metadata
-                .replace("version=8", "version=3")
+                .replace("version=9", "version=3")
+                .replace("body_format=plain\n", "")
                 .replace("starred=0\n", "")
                 .replace("revision=1\n", "")
         )
@@ -1585,7 +1717,8 @@ mod tests {
         .is_err());
         draft.request.reply_thread = None;
         let legacy = serialize_draft_metadata(&draft)
-            .replace("version=8", "version=3")
+            .replace("version=9", "version=3")
+            .replace("body_format=plain\n", "")
             .replace("starred=0\n", "")
             .replace("revision=1\n", "");
         draft.revision = Some(0);

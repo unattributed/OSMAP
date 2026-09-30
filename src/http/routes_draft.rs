@@ -335,7 +335,7 @@ where
                     }
                 }
                 HandledHttpResponse {
-                    response: html_response(
+                    response: super::compose_enhancement::response(
                         200,
                         "OK",
                         "Resume Draft",
@@ -353,6 +353,9 @@ where
                             bcc_value: &draft.request.bcc_text,
                             subject_value: &draft.request.subject,
                             body_value: &draft.request.body,
+                            body_format: draft.request.body_format,
+                            preview: request.query_params.get("preview").map(String::as_str)
+                                == Some("1"),
                             draft_id: Some(&draft.draft_id),
                             draft_revision: draft.revision,
                             draft_attachments: &draft.request.attachments,
@@ -424,7 +427,7 @@ where
         let parsed_form = match parse_compose_form(
             &request.body,
             request.headers.get("content-type").map(String::as_str),
-            self.policy.max_form_fields.saturating_add(7),
+            self.policy.max_form_fields.saturating_add(13),
             self.policy.max_upload_body_bytes,
             ComposePolicy::default(),
         ) {
@@ -477,7 +480,7 @@ where
         };
         if let Err(error) = self.add_selected_contact(&validated_session, &mut form) {
             return HandledHttpResponse {
-                response: html_response(409, "Conflict", "Choose a Contact", render_compose_page(&ComposePageModel {
+                response: super::compose_enhancement::response(409, "Conflict", "Choose a Contact", render_compose_page(&ComposePageModel {
                     contacts: self.contact_snapshot(&validated_session).ok().as_ref(),
                     reply_reference: reply_reference.as_ref(),
                     heading: "Compose",
@@ -491,6 +494,8 @@ where
                     bcc_value: form.get("bcc").map(String::as_str).unwrap_or_default(),
                     subject_value: form.get("subject").map(String::as_str).unwrap_or_default(),
                     body_value: form.get("body").map(String::as_str).unwrap_or_default(),
+                    body_format: super::compose_actions::body_format(&form).unwrap_or_default(),
+                    preview: false,
                     draft_id: form.get("draft_id").map(String::as_str),
                     draft_revision: super::routes_contacts::revision(form.get("draft_revision")),
                     draft_attachments: &[],
@@ -501,6 +506,28 @@ where
                     source_attachments: &[],
                     selected_source_part_paths: &super::routes_compose::selected_original_attachment_parts(&form).unwrap_or_default(),
                 })),
+                audit_events,
+            };
+        }
+        if let Some(message) = parsed_form.upload_error.as_deref() {
+            return HandledHttpResponse {
+                response: self.retained_compose_input_error(
+                    &validated_session,
+                    &form,
+                    reply_reference.as_ref(),
+                    message,
+                ),
+                audit_events,
+            };
+        }
+        if let Err(message) = super::compose_actions::apply_format(&mut form) {
+            return HandledHttpResponse {
+                response: self.retained_compose_input_error(
+                    &validated_session,
+                    &form,
+                    reply_reference.as_ref(),
+                    message,
+                ),
                 audit_events,
             };
         }
@@ -592,6 +619,7 @@ where
                 bcc_recipients: &bcc_recipients,
                 subject: &subject,
                 body: &body,
+                body_format: super::compose_actions::body_format(&form).unwrap_or_default(),
                 attachments: &parsed_form.attachments,
                 removed_attachment_indices: &removed_attachment_indices(&form).unwrap_or_default(),
                 source_attachments: source_attachments.as_ref(),
@@ -623,7 +651,17 @@ where
                     &if form.get("compose_action").map(String::as_str) == Some("minimize") {
                         "/drafts".into()
                     } else {
-                        format!("/draft?id={}", url_encode(&draft_id))
+                        format!(
+                            "/draft?id={}{}",
+                            url_encode(&draft_id),
+                            if form.get("compose_action").is_some_and(
+                                |action| action == "preview" || action.starts_with("format-")
+                            ) {
+                                "&preview=1"
+                            } else {
+                                ""
+                            }
+                        )
                     },
                 ),
                 audit_events,
@@ -637,7 +675,7 @@ where
                     (503, "Service Unavailable")
                 };
                 HandledHttpResponse {
-                    response: html_response(
+                    response: super::compose_enhancement::response(
                         status_code,
                         reason_phrase,
                         "Compose",
@@ -655,6 +693,8 @@ where
                             bcc_value: &bcc_recipients,
                             subject_value: &subject,
                             body_value: &body,
+                            body_format: super::compose_actions::body_format(&form).unwrap_or_default(),
+                            preview: false,
                             draft_id,
                             draft_revision: expected_revision,
                             draft_attachments: &[],

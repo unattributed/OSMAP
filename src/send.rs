@@ -16,6 +16,7 @@ use crate::auth::{
     AuthenticationContext, CommandExecutor, SystemCommandExecutor,
     DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS,
 };
+use crate::compose_format::{self, BodyFormat, FormattedBody};
 use crate::config::LogLevel;
 use crate::identity::MailboxIdentity;
 use crate::logging::{EventCategory, LogEvent};
@@ -169,6 +170,7 @@ pub struct ComposeRequest {
     pub bcc_recipients: Vec<String>,
     pub subject: String,
     pub body: String,
+    pub body_format: BodyFormat,
     pub attachments: Vec<UploadedAttachment>,
     pub reply_thread: Option<crate::reply_thread::ReplyThread>,
 }
@@ -229,9 +231,20 @@ impl ComposeRequest {
             bcc_recipients: recipient_fields.bcc,
             subject,
             body,
+            body_format: BodyFormat::Plain,
             attachments,
             reply_thread: None,
         })
+    }
+
+    /// Selects source notation explicitly and refuses invalid formatting before
+    /// submission. Plain mode preserves the existing body semantics.
+    pub fn with_body_format(mut self, body_format: BodyFormat) -> Result<Self, ComposeError> {
+        if body_format == BodyFormat::Formatted {
+            formatted_body(&self.body)?;
+        }
+        self.body_format = body_format;
+        Ok(self)
     }
 
     /// Returns every envelope recipient, including BCC.
@@ -457,7 +470,11 @@ where
                     reason: format!("invalid outbound mailbox identity: {}", error.as_str()),
                 }
             })?;
-        let submission_message = build_submission_message(mailbox_identity.as_str(), request);
+        let submission_message = build_submission_message(mailbox_identity.as_str(), request)
+            .map_err(|error| SubmissionBackendError {
+                backend: "sendmail-submission",
+                reason: error.reason,
+            })?;
         let execution = self
             .command_executor
             .run_with_stdin_bytes_timeout(
@@ -1005,12 +1022,72 @@ fn describe_attachment_for_forward(attachment: &AttachmentMetadata) -> String {
 pub(crate) fn build_submission_message(
     canonical_username: &str,
     request: &ComposeRequest,
-) -> Vec<u8> {
+) -> Result<Vec<u8>, ComposeError> {
+    if request.body_format == BodyFormat::Formatted {
+        let body = formatted_body(&request.body)?;
+        return Ok(
+            build_formatted_submission_message(canonical_username, request, &body).into_bytes(),
+        );
+    }
     if request.attachments.is_empty() {
-        return build_plain_text_submission_message(canonical_username, request).into_bytes();
+        return Ok(build_plain_text_submission_message(canonical_username, request).into_bytes());
     }
 
-    build_multipart_submission_message(canonical_username, request).into_bytes()
+    Ok(build_multipart_submission_message(canonical_username, request).into_bytes())
+}
+
+fn formatted_body(source: &str) -> Result<FormattedBody, ComposeError> {
+    compose_format::render(source).map_err(|error| ComposeError {
+        reason: error.to_string(),
+    })
+}
+
+/// Both alternatives use MIME base64: arbitrary source lines cannot become
+/// MIME boundaries, and long/Unicode lines have a portable transport encoding.
+fn build_formatted_submission_message(
+    canonical_username: &str,
+    request: &ComposeRequest,
+    body: &FormattedBody,
+) -> String {
+    let mixed = build_multipart_boundary(canonical_username, request);
+    let alternative = mixed.replacen("osmap-mixed-", "osmap-alternative-", 1);
+    let has_attachments = !request.attachments.is_empty();
+    let (content_type, outer) = if has_attachments {
+        ("mixed", &mixed)
+    } else {
+        ("alternative", &alternative)
+    };
+    let mut output = format!(
+        "From: {canonical_username}\r\nTo: {}\r\n{}{}Subject: {}\r\nMIME-Version: 1.0\r\nContent-Type: multipart/{content_type}; boundary=\"{outer}\"\r\n\r\n",
+        header_recipients(&request.recipients), cc_header(request),
+        request.reply_thread.as_ref().map(|thread| thread.header_lines()).unwrap_or_default(),
+        request.subject,
+    );
+    if has_attachments {
+        output.push_str(&format!(
+            "--{mixed}\r\nContent-Type: multipart/alternative; boundary=\"{alternative}\"\r\n\r\n"
+        ));
+    }
+    for (subtype, text) in [("plain", &body.plain), ("html", &body.html)] {
+        output.push_str(&format!(
+            "--{alternative}\r\nContent-Type: text/{subtype}; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n{}\r\n",
+            base64_encode_wrapped(normalize_body_line_endings(text).as_bytes()),
+        ));
+    }
+    output.push_str(&format!("--{alternative}--\r\n"));
+    if has_attachments {
+        for attachment in &request.attachments {
+            output.push_str(&format!(
+                "--{mixed}\r\nContent-Type: {}; name=\"{}\"\r\nContent-Disposition: attachment; filename=\"{}\"\r\nContent-Transfer-Encoding: base64\r\n\r\n{}\r\n",
+                attachment.content_type,
+                escape_mime_parameter_value(&attachment.filename),
+                escape_mime_parameter_value(&attachment.filename),
+                base64_encode_wrapped(&attachment.body),
+            ));
+        }
+        output.push_str(&format!("--{mixed}--\r\n"));
+    }
+    output
 }
 
 /// Builds the plain-text-only message handed to the local sendmail surface.
@@ -1435,7 +1512,8 @@ mod tests {
         );
         assert_eq!(request.total_recipient_count(), 3);
         let wire =
-            String::from_utf8(build_submission_message("alice@example.test", &request)).unwrap();
+            String::from_utf8(build_submission_message("alice@example.test", &request).unwrap())
+                .unwrap();
         assert!(
             wire.contains("To: bob@example.test\r\nCc: bob@example.test, carol@example.test\r\n")
         );
@@ -1832,6 +1910,125 @@ mod tests {
         assert!(stdin_text.contains("filename=\"report.bin\""));
         assert!(stdin_text.contains("Content-Transfer-Encoding: base64"));
         assert!(stdin_text.contains("AP8QQQ=="));
+    }
+
+    #[test]
+    fn formatted_submission_round_trips_alternatives_attachments_and_thread_headers() {
+        use crate::mime::{MimeAnalysisPolicy, MimeAnalyzer};
+        for with_attachment in [false, true] {
+            let attachments = if with_attachment {
+                vec![UploadedAttachment::new(
+                    ComposePolicy::default(),
+                    "report.bin",
+                    "application/octet-stream",
+                    vec![0, 255, 16, 65],
+                )
+                .unwrap()]
+            } else {
+                Vec::new()
+            };
+            let mut request = ComposeRequest::new_with_routing(
+                ComposePolicy::default(), "to@example.test", "cc@example.test", "secret@example.test",
+                "Formatted", "**Bold** café 🦊\n- __one__\n- [site](https://example.test/?a=1&b=2)\n<script>x</script>", attachments,
+            ).unwrap().with_body_format(BodyFormat::Formatted).unwrap();
+            request.reply_thread = crate::reply_thread::ReplyMetadata::from_original(
+                "From: other@example.test\r\nMessage-ID: <parent@example.test>\r\nReferences: <ancestor@example.test>\r\n",
+            ).unwrap().thread;
+            let bytes = build_submission_message("alice@example.test", &request).unwrap();
+            // Rebuilding a Sent copy must give exactly the submitted bytes.
+            assert_eq!(
+                bytes,
+                build_submission_message("alice@example.test", &request).unwrap()
+            );
+            let raw = String::from_utf8(bytes).unwrap();
+            let normalized = raw.replace("\r\n", "\n");
+            let (headers, body) = normalized.split_once("\n\n").unwrap();
+            assert!(!headers.contains("Bcc:"));
+            assert!(!raw.contains("secret@example.test"));
+            assert!(headers.contains("Cc: cc@example.test"));
+            assert!(headers.contains("In-Reply-To: <parent@example.test>"));
+            assert!(headers.contains("References: <ancestor@example.test> <parent@example.test>"));
+            let analysis = MimeAnalyzer::new(MimeAnalysisPolicy::default())
+                .analyze_message(&crate::mailbox::MessageView {
+                    metadata: None,
+                    mailbox_name: "Sent".into(),
+                    uid: 1,
+                    flags: Vec::new(),
+                    date_received: String::new(),
+                    size_virtual: raw.len() as u64,
+                    header_block: headers.into(),
+                    body_text: body.into(),
+                })
+                .unwrap();
+            let rendered = compose_format::render(&request.body).unwrap();
+            assert_eq!(
+                analysis.selected_plain_text_body,
+                Some(normalize_body_line_endings(&rendered.plain))
+            );
+            assert_eq!(
+                analysis.selected_html_body,
+                Some(normalize_body_line_endings(&rendered.html))
+            );
+            assert_eq!(
+                analysis.top_level_content_type,
+                if with_attachment {
+                    "multipart/mixed"
+                } else {
+                    "multipart/alternative"
+                }
+            );
+            assert_eq!(analysis.attachments.len(), usize::from(with_attachment));
+            if with_attachment {
+                assert_eq!(
+                    analysis.attachments[0].filename.as_deref(),
+                    Some("report.bin")
+                );
+                assert!(raw.contains("AP8QQQ=="));
+            }
+        }
+    }
+
+    #[test]
+    fn plain_mode_retains_original_body_bytes_and_does_not_interpret_notation() {
+        let request = ComposeRequest::new(
+            ComposePolicy::default(),
+            "bob@example.test",
+            "Plain",
+            "**literal**\n<script>x</script>\r\n[unsafe](javascript:x)",
+        )
+        .unwrap();
+        assert_eq!(request.body_format, BodyFormat::Plain);
+        assert_eq!(String::from_utf8(build_submission_message("alice@example.test", &request).unwrap()).unwrap(),
+            "From: alice@example.test\r\nTo: bob@example.test\r\nSubject: Plain\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n**literal**\r\n<script>x</script>\r\n[unsafe](javascript:x)");
+        assert!(request.with_body_format(BodyFormat::Formatted).is_err());
+    }
+
+    #[test]
+    fn invalid_formatted_source_never_reaches_sendmail_even_after_request_mutation() {
+        let executor = Rc::new(RefCell::new(StubCommandExecutor::success(
+            CommandExecution {
+                status_code: 0,
+                stdout: String::new(),
+                stderr: String::new(),
+            },
+        )));
+        let backend = SendmailSubmissionBackend::new(executor.clone(), "/usr/sbin/sendmail");
+        let mut request = ComposeRequest::new(
+            ComposePolicy::default(),
+            "bob@example.test",
+            "Invalid formatting",
+            "**valid**",
+        )
+        .unwrap()
+        .with_body_format(BodyFormat::Formatted)
+        .unwrap();
+        request.body = "[bad](javascript:x)".into();
+        assert!(build_submission_message("alice@example.test", &request).is_err());
+        assert!(backend
+            .submit_message("alice@example.test", &request)
+            .is_err());
+        assert!(executor.borrow().program.is_none());
+        assert!(executor.borrow().stdin_data.is_none());
     }
 
     #[test]

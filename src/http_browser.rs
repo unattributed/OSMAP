@@ -202,6 +202,7 @@ pub struct BrowserDraftSaveRequest<'a> {
     pub bcc_recipients: &'a str,
     pub subject: &'a str,
     pub body: &'a str,
+    pub body_format: crate::compose_format::BodyFormat,
     pub attachments: &'a [UploadedAttachment],
     pub removed_attachment_indices: &'a [usize],
     pub source_attachments: Option<&'a DraftSourceAttachments>,
@@ -216,6 +217,7 @@ pub struct BrowserSendRequest<'a> {
     pub bcc_recipients: &'a str,
     pub subject: &'a str,
     pub body: &'a str,
+    pub body_format: crate::compose_format::BodyFormat,
     pub attachments: &'a [UploadedAttachment],
     pub reply_thread: Option<&'a crate::reply_thread::ReplyThread>,
 }

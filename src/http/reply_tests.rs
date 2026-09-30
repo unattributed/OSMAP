@@ -129,7 +129,8 @@ fn reply_submission_derives_threading_from_one_authenticated_original_snapshot()
         let mut compose = submitted[0].clone();
         compose.attachments = attachments;
         let wire =
-            String::from_utf8(build_submission_message("alice@example.com", &compose)).unwrap();
+            String::from_utf8(build_submission_message("alice@example.com", &compose).unwrap())
+                .unwrap();
         assert_eq!(
             wire.matches("In-Reply-To: <fixture-9@example.test>\r\n")
                 .count(),
@@ -264,7 +265,13 @@ fn saved_reply_keeps_its_server_owned_thread_after_source_is_unavailable() {
             .reply_thread,
         expected
     );
-    let sent = perform(&app, "POST", "/send", &form.replace("draft_revision=1", "draft_revision=2"), "SourceUnavailable");
+    let sent = perform(
+        &app,
+        "POST",
+        "/send",
+        &form.replace("draft_revision=1", "draft_revision=2"),
+        "SourceUnavailable",
+    );
     assert_eq!(sent.response.status_code, 303);
     assert!(!sent
         .audit_events

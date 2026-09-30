@@ -30,6 +30,8 @@ pub struct FormParseError {
 pub struct ParsedComposeForm {
     pub fields: BTreeMap<String, String>,
     pub attachments: Vec<UploadedAttachment>,
+    /// A rejected local image; callers must stop submission and retain fields.
+    pub upload_error: Option<String>,
 }
 
 /// Parses a URL-encoded query string into a bounded key/value map.
@@ -81,10 +83,12 @@ pub fn parse_compose_form(
         None | Some("") => Ok(ParsedComposeForm {
             fields: parse_urlencoded_form(body, max_fields, max_bytes)?,
             attachments: Vec::new(),
+            upload_error: None,
         }),
         Some(value) if is_urlencoded_form_content_type(value) => Ok(ParsedComposeForm {
             fields: parse_urlencoded_form(body, max_fields, max_bytes)?,
             attachments: Vec::new(),
+            upload_error: None,
         }),
         Some(value) if is_multipart_form_data(value) => {
             parse_multipart_compose_form(body, value, max_fields, max_bytes, compose_policy)
@@ -209,6 +213,7 @@ fn parse_multipart_compose_form(
     let mut part_count = 0;
     let mut fields = BTreeMap::new();
     let mut attachments = Vec::new();
+    let mut upload_error = None;
 
     loop {
         if !body[cursor..].starts_with(part_boundary) {
@@ -297,7 +302,7 @@ fn parse_multipart_compose_form(
 
         match filename {
             Some(filename) => {
-                if field_name != "attachment" {
+                if field_name != "attachment" && field_name != "image_attachment" {
                     return Err(FormParseError {
                         reason: "unsupported file field name".to_string(),
                     });
@@ -307,19 +312,42 @@ fn parse_multipart_compose_form(
                     continue;
                 }
 
-                let attachment_content_type = part_headers
-                    .get("content-type")
-                    .map(String::as_str)
-                    .unwrap_or("application/octet-stream");
-                let attachment = UploadedAttachment::new(
+                let attachment_content_type = if field_name == "image_attachment" {
+                    match image_attachment_content_type(part_body) {
+                        Ok(content_type) => content_type,
+                        Err(error) => {
+                            upload_error.get_or_insert(error.reason);
+                            continue;
+                        }
+                    }
+                } else {
+                    part_headers
+                        .get("content-type")
+                        .map(String::as_str)
+                        .unwrap_or("application/octet-stream")
+                };
+                let attachment = match UploadedAttachment::new(
                     compose_policy,
                     filename,
                     attachment_content_type,
                     part_body.to_vec(),
-                )
-                .map_err(|error| FormParseError {
-                    reason: error.reason,
-                })?;
+                ) {
+                    Ok(attachment) => attachment,
+                    Err(error)
+                        if field_name == "image_attachment"
+                            && error.reason.starts_with("attachment filename") =>
+                    {
+                        upload_error.get_or_insert_with(|| {
+                            "image attachment filename is not supported".to_string()
+                        });
+                        continue;
+                    }
+                    Err(error) => {
+                        return Err(FormParseError {
+                            reason: error.reason,
+                        })
+                    }
+                };
                 attachments.push(attachment);
             }
             None => {
@@ -339,7 +367,29 @@ fn parse_multipart_compose_form(
     Ok(ParsedComposeForm {
         fields,
         attachments,
+        upload_error,
     })
+}
+
+/// Recognizes the allowed local image signatures, not a full image decoder.
+/// Declared MIME types and filename suffixes are not evidence of image format.
+fn image_attachment_content_type(body: &[u8]) -> Result<&'static str, FormParseError> {
+    if body.len() > 5 * 1024 * 1024 {
+        return Err(FormParseError {
+            reason: "image attachment exceeded 5 MiB maximum".to_string(),
+        });
+    }
+    if body.starts_with(b"\x89PNG\r\n\x1a\n") {
+        Ok("image/png")
+    } else if body.starts_with(b"\xff\xd8\xff") {
+        Ok("image/jpeg")
+    } else if body.starts_with(b"GIF87a") || body.starts_with(b"GIF89a") {
+        Ok("image/gif")
+    } else {
+        Err(FormParseError {
+            reason: "image attachment must have a PNG, JPEG or GIF signature".to_string(),
+        })
+    }
 }
 
 /// Parses a multipart boundary parameter from the content-type header.
@@ -529,6 +579,114 @@ mod tests {
         );
         assert_eq!(parsed.attachments.len(), 1);
         assert_eq!(parsed.attachments[0].filename, "report.txt");
+    }
+
+    fn parse_image_upload(bytes: &[u8]) -> Result<ParsedComposeForm, FormParseError> {
+        let mut body = b"--image-test\r\nContent-Disposition: form-data; name=\"image_attachment\"; filename=\"picture.png\"\r\nContent-Type: image/png\r\n\r\n".to_vec();
+        body.extend_from_slice(bytes);
+        body.extend_from_slice(b"\r\n--image-test--\r\n");
+        parse_compose_form(
+            &body,
+            Some("multipart/form-data; boundary=image-test"),
+            8,
+            6 * 1024 * 1024,
+            ComposePolicy::default(),
+        )
+    }
+
+    #[test]
+    fn image_upload_infers_format_from_signature_and_preserves_bytes() {
+        // A one-pixel GIF, deliberately sent with a PNG suffix and MIME header.
+        let gif = b"GIF89a\x01\0\x01\0\x80\0\0\0\0\0\xff\xff\xff!\xf9\x04\x01\0\0\0\0,\0\0\0\0\x01\0\x01\0\0\x02\x02D\x01\0;";
+        let parsed = parse_image_upload(gif).expect("valid GIF upload");
+        assert!(parsed.upload_error.is_none());
+        assert_eq!(parsed.attachments.len(), 1);
+        assert_eq!(parsed.attachments[0].filename, "picture.png");
+        assert_eq!(parsed.attachments[0].content_type, "image/gif");
+        assert_eq!(parsed.attachments[0].body, gif);
+        for (signature, expected) in [
+            (b"\x89PNG\r\n\x1a\n".as_slice(), "image/png"),
+            (b"\xff\xd8\xff".as_slice(), "image/jpeg"),
+            (b"GIF87a".as_slice(), "image/gif"),
+        ] {
+            assert_eq!(
+                parse_image_upload(signature).unwrap().attachments[0].content_type,
+                expected
+            );
+        }
+    }
+
+    #[test]
+    fn image_upload_rejects_disguised_and_incomplete_signatures() {
+        for bytes in [
+            b"<svg xmlns='http://www.w3.org/2000/svg'></svg>".as_slice(),
+            b"%PDF-1.7",
+            b"GIF89",
+            b"\xff\xd8",
+            b"\x89PNG\r\n",
+            b"",
+        ] {
+            let parsed = parse_image_upload(bytes).expect("retain fields after image refusal");
+            assert!(parsed.attachments.is_empty());
+            assert_eq!(
+                parsed.upload_error.as_deref(),
+                Some("image attachment must have a PNG, JPEG or GIF signature")
+            );
+        }
+    }
+
+    #[test]
+    fn image_upload_enforces_five_mib_boundary() {
+        let mut bytes = vec![0_u8; 5 * 1024 * 1024];
+        bytes[..8].copy_from_slice(b"\x89PNG\r\n\x1a\n");
+        assert_eq!(
+            parse_image_upload(&bytes).unwrap().attachments[0]
+                .body
+                .len(),
+            bytes.len()
+        );
+        bytes.push(0);
+        let parsed = parse_image_upload(&bytes).unwrap();
+        assert!(parsed.attachments.is_empty());
+        assert_eq!(
+            parsed.upload_error.as_deref(),
+            Some("image attachment exceeded 5 MiB maximum")
+        );
+    }
+
+    #[test]
+    fn image_upload_error_retains_surrounding_fields_and_first_reason() {
+        let body = concat!(
+            "--recover\r\nContent-Disposition: form-data; name=\"subject\"\r\n\r\nPublic subject\r\n",
+            "--recover\r\nContent-Disposition: form-data; name=\"image_attachment\"; filename=\"picture.png\"\r\n\r\nnot an image\r\n",
+            "--recover\r\nContent-Disposition: form-data; name=\"body\"\r\n\r\nPublic message retained\r\n",
+            "--recover\r\nContent-Disposition: form-data; name=\"image_attachment\"; filename=\"../image.gif\"\r\n\r\nGIF89a\r\n",
+            "--recover--\r\n"
+        );
+        let parse = |body: &str| {
+            parse_compose_form(
+                body.as_bytes(),
+                Some("multipart/form-data; boundary=recover"),
+                8,
+                4096,
+                ComposePolicy::default(),
+            )
+        };
+        let parsed = parse(body).unwrap();
+        assert_eq!(parsed.fields["subject"], "Public subject");
+        assert_eq!(parsed.fields["body"], "Public message retained");
+        assert!(parsed.attachments.is_empty());
+        assert_eq!(
+            parsed.upload_error.as_deref(),
+            Some("image attachment must have a PNG, JPEG or GIF signature")
+        );
+        let name_only = body.replace("not an image", "GIF89a");
+        assert_eq!(
+            parse(&name_only).unwrap().upload_error.as_deref(),
+            Some("image attachment filename is not supported")
+        );
+        assert!(parse(&body.replace("--recover--\r\n", "--recover--\r\ntrailing")).is_err());
+        assert!(parse(&name_only.replace("image_attachment", "attachment")).is_err());
     }
 
     #[test]

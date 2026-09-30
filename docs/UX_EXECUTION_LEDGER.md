@@ -1397,3 +1397,70 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   and the native signed-helper fixture; standard obsd1 state unchanged. Archive
   `0eaba19459df935687af78841a81cd136f77a3242d87ac4cf3d27136ad78f162`;
   log `fbf910dc64100985b3c4c75dbffda5ca23d868c620e42338d668bf64674a0707`.
+
+### S03-01C — local composer controls
+
+- R2 bounded interaction work order: one repository-owned, hash-pinned script
+  only on authenticated compose forms. Add cumulative file selection, individual
+  pending-file removal, attachment totals, unsaved-change warnings and Ctrl/Cmd+S
+  through native Save. No network API, browser storage, framework, inline event
+  handler or mail-reader script allowance. Existing native forms remain usable
+  without scripts or FileList support. Untrusted quoted text stays escaped.
+- Validate both browsers, unavailable-script/API fallback, exact CSP hash,
+  unauthorized script refusal, reader isolation, limits, actual multipart bytes,
+  saved/source files, unknown-save pause and keyboard/narrow/forced-colour views.
+  Autosave and rich-text formatting are separate, still-open controls.
+
+### Orchestrated resume — PAGE-04 first review round
+
+- Operator explicitly resumes development and authorizes delegated agents,
+  bounded token allowances, review and correction loops. This supersedes the
+  earlier no-subagent record and stop instruction. Approved images remain the
+  acceptance target; functional test counts do not establish page completion.
+- First round: Compose layout agent (8,000-token assignment limit), local
+  composer interaction agent (8,000), independent visual reviewer (4,000).
+  Parent owns integration, focused validation and one broad checkpoint gate run.
+  Correction rounds require concrete defects and a 3,000-token assignment limit.
+  These are instructed limits; the spawn interface has no hard token control.
+- Ownership: layout changes only compose rendering in `src/http_ui.rs` and
+  compose CSS in `src/http/approved.css`; interaction changes only
+  `src/http/compose_local.js`, `src/http/compose_enhancement.rs` and
+  `maint/ux/composer_controls_workflows.py`; reviewer is source-read-only.
+  Preserve existing dirty work. No agent commits, Git sync, host changes, broad
+  backend hardening, new dependencies or modifications to approved references.
+  Parent must inspect browser renders against page 04 before acceptance.
+
+### S03-01C / S03-03 — approved composer controls checkpoint
+
+- Implemented cumulative attachment selection/removal, recipient chips with
+  exact raw-address preservation, keyboard save, dirty navigation warning,
+  native fallback and explicit Discard review. Compose-only script bytes are
+  CSP-hash pinned; reader, authentication and other pages remain script-free.
+- Working native formatting actions now preserve selections, multiline Unicode,
+  blank lines, files and incomplete drafts. Preview and outgoing MIME share the
+  bounded formatter; HTML and plain alternatives agree, including attachments.
+  Local image uploads check PNG/JPEG/GIF signatures and the 5 MiB limit; image
+  refusal retains author text without saving or submitting a partial message.
+- Draft metadata v9 persists Plain/Formatted explicitly. Versions 1–8 remain
+  readable as Plain; older binaries refuse v9. No live state was migrated.
+- Independent corrections addressed recipient/button interception, narrow
+  attachment overlap, UTF-16/CRLF selection, list boundaries, multiline emphasis
+  and invalid-image text loss. Task-specific agent allowances ranged from
+  1,500 to 8,000 tokens; each handoff stayed inside named file ownership.
+- Edge/Firefox each pass 15 local-control checks and eight formatting workflow
+  groups, including JavaScript-disabled operation and zero external requests.
+  HTTP tests independently prove invalid formatting/images submit no message
+  and preserve saved revisions/files. MIME tests analyse both actual wire
+  alternatives. Evidence: `orchestration-r1/` within the existing S03 sprint
+  root, especially `format-final-{edge,firefox}`, `recipients-final-firefox`,
+  `final-captures`, and the retained gate logs.
+- Parent and independent reviewer inspected approved page 04 against actual
+  renders. Eight normal light/dark captures pass overflow/contrast checks;
+  narrow and forced-colour views remain readable. Ordinary desktop editor is
+  about 38 px below the reference and footer about 72 px below it. PAGE-04
+  remains OPEN: Attach shortcut, footer More/Send options, scheduling, runtime
+  OpenPGP controls and shared-shell differences still need completion.
+- Full acceptance and V14 gates passed before the final multiline/list action
+  refinements; focused regressions passed afterward. The signed checkpoint's
+  pre-commit security gate must pass on the final source. Native qualification
+  and later page completion are separate claims.

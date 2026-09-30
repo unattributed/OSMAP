@@ -95,6 +95,8 @@ body:has(.app-rail) {
 .page-intro { margin: 0 0 1.2rem; }
 .page-intro p { font-size: 1rem; }
 .compose-shell { max-width: none; }
+.compose-shell .page-intro { margin-bottom: .8rem; }
+.compose-shell .page-intro p { margin: .25rem 0 0; line-height: 1.4rem; }
 .compose-card { padding: 1rem; box-shadow: 0 2px 5px var(--shadow); }
 .compose-card form { margin: 0; }
 .compose-card-header { display: flex; align-items: center; justify-content: space-between; gap: .7rem; margin-bottom: 1rem; }
@@ -128,17 +130,122 @@ body:has(.app-rail) {
 .compose-attachments input[type=file] { max-width: none; margin: .4rem 0 0; border-color: var(--line); }
 .saved-attachment-list { list-style: none; padding: 0; margin: .7rem 0 1rem; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; }
 .saved-attachment { display: flex; align-items: center; justify-content: space-between; gap: .8rem; min-width: 0; padding: .7rem .8rem; border: 1px solid var(--line); border-radius: .55rem; }
-.saved-attachment > div { min-width: 0; }
+.saved-attachment > div { min-width: 0; flex: 1; }
 .saved-attachment strong { display: block; overflow-wrap: anywhere; }
 .saved-attachment .muted { display: block; font-size: .85rem; margin-top: .15rem; }
 .saved-attachment-remove { display: flex; flex-shrink: 0; align-items: center; gap: .4rem; padding: .45rem 0; margin: 0; font-size: .85rem; }
 .saved-attachment-remove input { width: auto; margin: 0; }
 .saved-attachment:has(input:checked) { border-style: dashed; }
 .compose-card button:disabled { background: var(--panel-soft); color: var(--muted); border-color: var(--line); cursor: not-allowed; }
+.compose-card [hidden] { display: none !important; }
+.compose-attachments { position: relative; }
+.compose-attachments > h2 { margin-right: 7rem; min-height: 2.5rem; align-content: center; }
+.compose-add-files { position: absolute; top: .8rem; right: 1rem; width: auto; font-size: .8rem; }
+.pending-attachment-remove { border: 0; background: transparent; width: 2.4rem; min-width: 2.4rem; flex: 0 0 2.4rem; padding: .4rem; font-size: 1.2rem; }
+.compose-save-bar { display: flex; justify-content: space-between; gap: .5rem 1rem; flex-wrap: wrap; font-size: .85rem; margin: .7rem 0; }
+.compose-save-bar p { margin: 0; }
+#compose-save-status[data-state=unsaved], #compose-save-status[data-state=unconfirmed] { color: var(--warn-ink); }
+#compose-save-status[data-state=saved] { color: var(--ok-ink); }
 .compose-footer { display: flex; justify-content: space-between; align-items: center; gap: .7rem; }
 .compose-footer .primary-button { min-width: 11rem; }
 .compose-footer button { font-size: .875rem; }
 .compose-card .openpgp-compose-controls { margin: .7rem 0; }
+.compose-card { border-radius: .85rem; }
+.compose-card-header { margin-bottom: .6rem; }
+.compose-field { margin-bottom: .75rem; }
+.compose-field > label { padding-top: 1rem; }
+.compose-field input { min-height: 3.4rem; }
+.compose-sender { display: flex; gap: .5rem; align-items: center; min-width: 0; border: 1px solid var(--line); border-radius: .55rem; padding: .4rem .7rem; }
+.compose-sender input { border: 0; padding: 0; min-height: 2.5rem; color: var(--muted); background: transparent; }
+.compose-sender-chip { padding: .25rem .65rem; border: 1px solid var(--line); border-radius: 2rem; background: var(--panel-soft); }
+.compose-subject-field input { min-height: 2.65rem; padding-top: .55rem; padding-bottom: .55rem; }
+.compose-subject-field > label { padding-top: .7rem; }
+.compose-recipient-tools { justify-content: flex-end; width: fit-content; max-width: calc(100% - 10rem); margin: -3.3rem .8rem 1.25rem auto; position: relative; }
+.compose-field:has(#compose-to) input { padding-right: 18rem; }
+.compose-recipient-tools:has(details[open]) { width: auto; max-width: none; margin: -.3rem 0 .75rem 10rem; justify-content: flex-start; }
+.compose-recipient-editor { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .5rem; min-width: 0; min-height: 3.4rem; padding: .45rem 17rem .45rem .7rem; border: 1px solid var(--line); border-radius: .55rem; background: var(--panel); }
+.compose-recipient-chips { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; max-width: 100%; min-width: 0; }
+.compose-recipient-chips:empty { display: none; }
+.compose-recipient-chip { display: inline-flex; align-items: center; gap: .15rem; min-width: 0; max-width: 100%; padding: .1rem .25rem .1rem .6rem; border: 1px solid var(--line); border-radius: 1.25rem; background: var(--panel-soft); }
+.compose-recipient-label { min-width: 0; overflow-wrap: anywhere; }
+.compose-card .compose-recipient-remove { width: 1.7rem; min-height: 1.7rem; flex: 0 0 1.7rem; padding: .1rem; border: 0; border-radius: 50%; background: transparent; color: var(--ink); font-size: 1rem; }
+.compose-field:has(#compose-to) .compose-recipient-editor input { flex: 1 1 10rem; width: 10rem; min-width: 0; min-height: 1.8rem; margin: 0; padding: .3rem; border: 0; background: transparent; }
+.compose-field:has(#compose-to) .compose-recipient-editor #compose-to { flex-basis: 100%; }
+.compose-card .compose-recipient-edit { width: auto; min-height: 1.8rem; padding: .25rem .4rem; border: 0; background: transparent; color: var(--link); font-size: .75rem; white-space: nowrap; }
+.compose-recipient-tools details > summary { list-style: none; }
+.compose-recipient-tools details > summary::-webkit-details-marker { display: none; }
+.compose-recipient-tools .compose-contacts > div { padding: .7rem; border: 1px solid var(--line); border-radius: .5rem; }
+.compose-more { position: relative; }
+.compose-more > summary { min-height: 2.15rem; padding: .4rem .8rem; border: 1px solid var(--line); border-radius: .45rem; font-size: .8rem; font-weight: 700; cursor: pointer; list-style: none; }
+.compose-more > div { position: absolute; right: 0; top: calc(100% + .4rem); width: 12rem; z-index: 25; padding: .4rem; border: 1px solid var(--line); border-radius: .6rem; background: var(--panel); box-shadow: 0 4px 12px var(--shadow); }
+.compose-more a { display: block; padding: .5rem; }
+.compose-policy-row { display: grid; grid-template-columns: .95fr 1.075fr 1.05fr 1.25fr 1.35fr .45fr; gap: .65rem; padding: .4rem .75rem; border: 1px solid var(--line); border-radius: .7rem; background: var(--panel); color: var(--ink); }
+.compose-card .compose-policy-row { margin: .45rem -.8rem 0; }
+.compose-policy-row > details { min-width: 0; position: relative; border: 1px solid var(--line); border-radius: .6rem; background: var(--panel); }
+.compose-policy-row > details > summary { display: block; padding: .45rem 1.8rem .45rem .7rem; list-style: none; min-height: 3.3rem; position: relative; }
+.compose-policy-row > details > summary::-webkit-details-marker { display: none; }
+.compose-policy-row > details > summary::after { content: '⌄'; position: absolute; right: .75rem; top: 1rem; }
+.compose-policy-row summary span { display: block; font-size: .75rem; font-weight: 400; color: var(--muted); }
+.compose-policy-row summary strong { display: block; font-size: .9rem; color: var(--ink); }
+.compose-policy-row > .compose-policy-attention { border-color: var(--warn-line); background: var(--warn-bg); }
+.compose-policy-row .compose-policy-attention strong { color: var(--warn-ink); }
+.compose-policy-detail { position: absolute; left: 0; top: calc(100% + .4rem); z-index: 22; width: 18rem; padding: .8rem; border: 1px solid var(--line); border-radius: .6rem; background: var(--panel); box-shadow: 0 4px 12px var(--shadow); }
+.compose-policy-row > details:last-child .compose-policy-detail { left: auto; right: 0; }
+.compose-policy-row .compose-policy-detail p { color: var(--ink); font-size: .85rem; }
+.compose-editor-toolbar { display: flex; justify-content: space-between; align-items: center; gap: .7rem; min-height: 2.4rem; margin-bottom: .75rem; padding: .2rem .7rem; border: 1px solid var(--line); border-radius: .65rem; font-size: .85rem; }
+.compose-format-tools { display: flex; position: relative; align-items: center; flex-wrap: wrap; gap: .15rem; }
+.compose-card .compose-format-tools button { min-height: 1.6rem; width: auto; padding: .1rem .2rem; border: 0; border-radius: .2rem; background: transparent; font-size: .875rem; }
+.compose-format-tools > select { width: auto; max-width: 10rem; min-height: 1.8rem; margin: 0 .25rem; padding: .15rem .3rem; font-size: .8rem; }
+.compose-format-tools > details { position: static; }
+.compose-format-tools > details > summary { cursor: pointer; padding: .2rem .3rem; font-size: .8rem; }
+.compose-format-tools > details > div { position: absolute; z-index: 12; top: calc(100% + .4rem); left: 0; width: min(26rem, calc(100vw - 5rem)); max-height: 65vh; overflow: auto; padding: 1rem; border: 1px solid var(--line); border-radius: .65rem; background: var(--panel); color: var(--ink); box-shadow: 0 .3rem 1rem #14295624; }
+.compose-format-tools .compose-format-options > div { left: 0; right: auto; }
+.compose-format-tools details p { font-size: .8rem; line-height: 1.5; }
+.compose-format-tools details label { display: block; margin-top: .5rem; }
+.compose-format-tools details input { width: 100%; min-width: 0; margin: .3rem 0; }
+.compose-card .compose-format-tools details button { padding: .45rem .7rem; border: 1px solid var(--line); }
+.compose-preview { margin: .8rem 0; padding: 1rem; border: 1px solid var(--line); border-radius: .65rem; background: var(--panel-soft); }
+.compose-preview h2 { font-size: 1.1rem; }
+.compose-preview h3 { font-size: .95rem; }
+.compose-preview pre, .compose-preview-html { overflow-wrap: anywhere; white-space: pre-wrap; }
+.compose-preview details { margin-top: 1rem; }
+.compose-format-status { margin-left: .45rem; font-size: .7rem; }
+.compose-inline-policy { color: var(--warn-ink); background: var(--warn-bg); border: 1px solid var(--warn-line); border-radius: .6rem; padding: .25rem .7rem; font-size: .75rem; }
+.compose-card textarea { min-height: 16.25rem; margin: 0; }
+.compose-attachments { margin: .75rem 0; padding-top: .75rem; padding-bottom: .75rem; border-radius: .8rem; }
+.compose-attachments .field-help { font-size: .75rem; margin: .5rem 0 0; }
+.compose-attachments .saved-attachment-list { margin: .5rem 0; }
+.compose-attachments .saved-attachment { padding: .5rem .75rem; }
+.compose-attachments .saved-attachment .muted { margin-top: 0; font-size: .75rem; }
+.compose-attachment-guidance { margin: .35rem 0 0; font-size: .75rem; }
+.compose-attachment-help { position: absolute; top: 1.1rem; right: 8rem; font-size: .75rem; }
+.compose-attachment-help > summary { cursor: pointer; padding: .25rem; }
+.compose-attachment-help > p { position: absolute; z-index: 15; right: 0; width: min(24rem, calc(100vw - 5rem)); padding: .8rem; border: 1px solid var(--line); border-radius: .6rem; background: var(--panel); color: var(--ink); line-height: 1.5; }
+.compose-footer-actions { display: flex; gap: .7rem; align-items: center; flex-wrap: wrap; }
+.compose-footer-actions > span { font-size: .75rem; }
+.compose-discard { position: relative; }
+.compose-discard > summary { padding: .55rem .9rem; border: 1px solid var(--line-strong); border-radius: .45rem; font-size: .875rem; font-weight: 700; cursor: pointer; list-style: none; }
+.compose-discard > summary::-webkit-details-marker { display: none; }
+.compose-discard > div { position: absolute; left: 0; bottom: calc(100% + .5rem); width: min(20rem, calc(100vw - 4rem)); padding: .8rem; border: 1px solid var(--line); border-radius: .6rem; background: var(--panel); box-shadow: 0 4px 12px var(--shadow); z-index: 25; }
+.compose-discard > div p { margin: 0 0 .7rem; }
+.compose-discard > div button { width: auto; }
+.compose-footer .primary-button { min-width: 15.25rem; }
+.compose-save-bar { font-size: .75rem; margin: .55rem 0; }
+@media (max-width: 900px) {
+  .compose-attachment-help { position: relative; top: auto; right: auto; margin-top: .5rem; }
+  .compose-attachment-help > p { position: static; width: auto; }
+  .compose-policy-row { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .compose-card .compose-policy-row { margin: .7rem 0; padding: .45rem; }
+  .compose-policy-row > details:last-child, .compose-policy-row > details[open] { grid-column: 1 / -1; }
+  .compose-policy-detail { position: static; width: auto; box-shadow: none; border-width: 1px 0 0; }
+  .compose-recipient-tools { margin: -.3rem 0 .75rem; max-width: 100%; justify-content: flex-start; }
+  .compose-recipient-editor { padding-right: .7rem; }
+  .compose-recipient-tools:has(details[open]) { margin-left: 0; }
+  .compose-field:has(#compose-to) input { padding-right: .75rem; }
+  .compose-editor-toolbar { flex-wrap: wrap; }
+  .compose-footer .primary-button { min-width: 8rem; }
+  .compose-window-actions { flex-wrap: wrap; }
+}
 .contact-list { padding: 0; margin: 1rem 0; list-style: none; }
 .contact-list li { display: flex; justify-content: space-between; gap: 1rem; padding: .8rem 0; border-bottom: 1px solid var(--line); }
 .contact-list p { margin: 0; }
@@ -331,9 +438,13 @@ body:has(.app-rail) {
   .compose-recipient-tools { margin-left: 0; }
   .compose-card textarea { min-height: 16rem; }
   .compose-attachments { padding: .7rem; }
+  .compose-add-files { top: .7rem; right: .7rem; }
   .saved-attachment-list { grid-template-columns: 1fr; }
   .compose-footer { flex-wrap: wrap; }
   .compose-footer button, .compose-footer .primary-button { flex: 1; min-width: 0; }
+  .compose-footer-actions { flex-basis: 100%; }
+  .compose-footer .compose-footer-actions button { flex: 0 0 auto; width: auto; min-width: max-content; }
+  .compose-footer-actions > span { flex-basis: 100%; }
   .contact-list li { flex-wrap: wrap; }
   .draft-list table, .draft-list tbody, .draft-list tr, .draft-list td { display: block; }
   .draft-list thead { display: none; }

@@ -34,7 +34,11 @@ impl<G: BrowserGateway> BrowserApp<G> {
         form: &mut BTreeMap<String, String>,
     ) -> Result<(), ContactError> {
         match form.get("compose_action").map(String::as_str) {
-            None | Some("minimize") => return Ok(()),
+            None
+            | Some(
+                "minimize" | "preview" | "format-bold" | "format-italic" | "format-underline"
+                | "format-bullets" | "format-numbers" | "format-link" | "format-emoji",
+            ) => return Ok(()),
             Some("add-contact") => {}
             _ => return Err(ContactError::Invalid),
         }

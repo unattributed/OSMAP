@@ -371,9 +371,16 @@ fn ux_synthetic_route_baselines() {
             .find(|(header, _)| header == "Content-Security-Policy")
             .map(|(_, value)| value.as_str())
             .expect("HTML has CSP");
-        assert_eq!(csp, crate::http_support::browser_csp());
         let html = redact_fixture_tokens(&body_text(&response));
-        assert!(!html.contains("<script"), "script-free fixture {name}");
+        let compose_enhanced = html.contains("id=\"compose-form\"");
+        if compose_enhanced {
+            assert_eq!(csp, super::super::compose_enhancement::csp());
+            assert!(html.contains(super::super::compose_enhancement::SCRIPT));
+            assert_eq!(html.matches("<script").count(), 1, "bounded script fixture {name}");
+        } else {
+            assert_eq!(csp, crate::http_support::browser_csp());
+            assert!(!html.contains("<script"), "script-free fixture {name}");
+        }
         if let Some(directory) = &output_dir {
             fs::write(directory.join(format!("{name}.html")), &html).expect("write fixture");
         }
@@ -383,6 +390,7 @@ fn ux_synthetic_route_baselines() {
             "html_sha256": format!("{:x}", Sha256::digest(html.as_bytes())),
             "csp": csp, "synthetic": true, "tokens_redacted": true,
             "appearance": appearance.as_str(),
+            "script_count": usize::from(compose_enhanced),
         }));
     }
     if let Some(directory) = &output_dir {

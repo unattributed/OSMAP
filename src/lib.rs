@@ -9,6 +9,7 @@ pub mod attachment;
 pub mod auth;
 pub mod bootstrap;
 mod charset;
+pub mod compose_format;
 pub mod config;
 pub mod contacts;
 pub mod draft;

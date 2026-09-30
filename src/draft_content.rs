@@ -32,6 +32,7 @@ pub struct DraftContent {
     pub bcc_text: String,
     pub subject: String,
     pub body: String,
+    pub body_format: crate::compose_format::BodyFormat,
     pub attachments: Vec<UploadedAttachment>,
     pub reply_thread: Option<crate::reply_thread::ReplyThread>,
 }
@@ -62,6 +63,7 @@ impl DraftContent {
             bcc_text,
             subject,
             body,
+            body_format: crate::compose_format::BodyFormat::Plain,
             attachments,
             reply_thread: None,
         };

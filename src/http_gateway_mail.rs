@@ -715,7 +715,9 @@ impl RuntimeBrowserGateway {
             send_request.subject,
             send_request.body,
             send_request.attachments.to_vec(),
-        ) {
+        )
+        .and_then(|request| request.with_body_format(send_request.body_format))
+        {
             Ok(request) => request,
             Err(error) => {
                 return BrowserSendOutcome {
@@ -772,11 +774,16 @@ impl RuntimeBrowserGateway {
 
         match decision {
             SubmissionDecision::Submitted { .. } => {
-                let raw_message = build_submission_message(
+                let append_request = build_submission_message(
                     &validated_session.record.canonical_username,
                     &request,
-                );
-                match MessageAppendRequest::new("Sent", raw_message) {
+                )
+                .map_err(|error| crate::mailbox::MailboxBackendError {
+                    backend: "sent-copy-formatter",
+                    reason: error.reason,
+                })
+                .and_then(|raw_message| MessageAppendRequest::new("Sent", raw_message));
+                match append_request {
                     Ok(append_request) => {
                         let message_bytes = append_request.message.len();
                         match self.build_message_append_backend().append_message(

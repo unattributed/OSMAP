@@ -52,7 +52,7 @@ fn atomic_storage_detects_changed_blob_bytes_and_preserves_legacy_files_until_pu
     assert!(store.load("alice@example.com", &first.draft_id, 100).unwrap_err().reason.contains("identity mismatch"));
     put(&directory.join(&blob), b"original file");
     fs::rename(directory.join(&blob), directory.join("attachment-0.body")).unwrap();
-    let metadata = fs::read_to_string(directory.join(DRAFT_METADATA_FILE)).unwrap().replace("version=8", "version=7").replace(&blob, "attachment-0.body");
+    let metadata = fs::read_to_string(directory.join(DRAFT_METADATA_FILE)).unwrap().replace("version=9", "version=7").replace("body_format=plain\n", "").replace(&blob, "attachment-0.body");
     put(&directory.join(DRAFT_METADATA_FILE), metadata.as_bytes());
     let legacy = store.load("alice@example.com", &first.draft_id, 100).unwrap().unwrap();
     let mut interrupted = store.clone(); interrupted.save_fault = Some(atomic::SaveFault::BeforePublish);
@@ -62,7 +62,7 @@ fn atomic_storage_detects_changed_blob_bytes_and_preserves_legacy_files_until_pu
     store.save(&legacy, 102).unwrap();
     assert!(directory.join(&blob).exists());
     assert!(!directory.join("attachment-0.body").exists());
-    assert!(fs::read_to_string(directory.join(DRAFT_METADATA_FILE)).unwrap().starts_with("version=8\n"));
+    assert!(fs::read_to_string(directory.join(DRAFT_METADATA_FILE)).unwrap().starts_with("version=9\n"));
     fs::remove_dir_all(root).unwrap();
 }
 

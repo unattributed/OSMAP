@@ -18,6 +18,7 @@ def main():
     parser.add_argument("output", type=Path)
     parser.add_argument("--browser", default="/usr/bin/microsoft-edge-stable")
     parser.add_argument("--engine", choices=["chromium", "firefox"], default="chromium")
+    parser.add_argument("--no-script", action="store_true", help="exercise the complete native form fallback")
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True, mode=0o700)
     checks, blocked = [], []
@@ -29,7 +30,8 @@ def main():
         browser = getattr(playwright, args.engine).launch(executable_path=args.browser, headless=True)
 
         def context(ua=None):
-            result = browser.new_context(viewport={"width": 1600, "height": 1100}, color_scheme="light", user_agent=ua)
+            result = browser.new_context(viewport={"width": 1600, "height": 1100}, color_scheme="light", user_agent=ua,
+                                         java_script_enabled=not args.no_script)
 
             def constrain(route):
                 if route.request.url.startswith(origin + "/"):

@@ -4,7 +4,9 @@ use crate::message_metadata::MessageVersion;
 use crate::reply_thread::{ReplyReference, ReplyThread};
 
 pub(super) fn compose_metadata_valid(form: &BTreeMap<String, String>, username: &str) -> bool {
-    if super::routes_draft::removed_attachment_indices(form).is_err() {
+    if super::routes_draft::removed_attachment_indices(form).is_err()
+        || super::compose_actions::body_format(form).is_none()
+    {
         return false;
     }
     let allowed = [
@@ -15,6 +17,11 @@ pub(super) fn compose_metadata_valid(form: &BTreeMap<String, String>, username: 
         "bcc",
         "subject",
         "body",
+        "body_format",
+        "format_start",
+        "format_end",
+        "format_url",
+        "format_label",
         "draft_id",
         "draft_revision",
         "source_mailbox",

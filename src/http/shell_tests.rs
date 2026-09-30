@@ -28,7 +28,12 @@ fn shell_has_real_named_navigation_and_main_follows_the_header() {
         assert!(body.contains("<details class=\"account-menu\" name=\"toolbar-menu\">"));
         assert!(body.contains("action=\"/logout\""));
         assert!(body.contains("name=\"csrf_token\""));
-        assert!(!body.contains("<script"));
+        if route == "/compose" {
+            assert_eq!(body.matches("<script").count(), 1);
+            assert!(body.contains("<script id=\"osmap-compose-local\">"));
+        } else {
+            assert!(!body.contains("<script"));
+        }
     }
 }
 

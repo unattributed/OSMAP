@@ -32,8 +32,8 @@ fn unconfirmed_save_retains_text_and_owned_comparison_without_retry_controls() {
     assert!(html.contains("Open saved version in a new tab"));
     assert!(html.contains("Save and Send are paused"));
     assert!(!html.contains("Nothing was saved") && !html.contains("attachments are unchanged"));
-    assert!(html.contains("<button type=\"submit\" disabled formaction=\"/drafts/save\">Save Draft"));
-    assert!(html.contains("<button class=\"primary-button\" type=\"submit\" disabled>Send Message"));
+    assert!(html.contains("<button id=\"compose-save\" type=\"submit\" disabled formaction=\"/drafts/save\""));
+    assert!(html.contains("<button class=\"primary-button\" type=\"submit\" disabled aria-label=\"Send Message\""));
     assert!(!html.contains("name=\"draft_revision\""));
     let drafts = store.list("alice@example.com", 100).unwrap();
     assert_eq!(drafts.len(), 1);
@@ -133,7 +133,7 @@ fn runtime_saved_attachment_removal_replacement_and_revision_checks_use_the_priv
     let context = AuthenticationContext::new(AuthenticationPolicy::default(), "attachment-fixture", "127.0.0.1", "OSMAP/UX").unwrap();
     let files = ["first.txt", "second.txt"].into_iter().map(|name|
         UploadedAttachment::new(ComposePolicy::default(), name, "text/plain", name.as_bytes().to_vec()).unwrap()).collect::<Vec<_>>();
-    let input = BrowserDraftSaveRequest { draft_id: None, expected_revision: None, recipients: "", cc_recipients: "", bcc_recipients: "", subject: "", body: "Stored draft", attachments: &files, removed_attachment_indices: &[], source_attachments: None, reply_thread: None };
+    let input = BrowserDraftSaveRequest { draft_id: None, expected_revision: None, recipients: "", cc_recipients: "", bcc_recipients: "", subject: "", body: "Stored draft", body_format: crate::compose_format::BodyFormat::Plain, attachments: &files, removed_attachment_indices: &[], source_attachments: None, reply_thread: None };
     let first = gateway.save_draft(&context, &session, input);
     let BrowserDraftSaveDecision::Saved { draft_id } = first.decision else { panic!("initial save"); };
     let replacement = [UploadedAttachment::new(ComposePolicy::default(), "third.txt", "text/plain", b"replacement".to_vec()).unwrap()];

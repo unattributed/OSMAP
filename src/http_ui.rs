@@ -40,6 +40,8 @@ pub(crate) struct ComposePageModel<'a> {
     pub bcc_value: &'a str,
     pub subject_value: &'a str,
     pub body_value: &'a str,
+    pub body_format: crate::compose_format::BodyFormat,
+    pub preview: bool,
     pub draft_id: Option<&'a str>,
     pub draft_revision: Option<u64>,
     pub draft_attachments: &'a [crate::send::UploadedAttachment],
@@ -1476,6 +1478,32 @@ pub(crate) fn render_sessions_page(
 /// Renders the compose page for the current user and CSRF-bound session.
 pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
     let confirmation_required = model.draft_id.is_some() && model.draft_revision.is_none();
+    let (save_state, save_status) = if confirmation_required {
+        (
+            "unconfirmed",
+            "Save not confirmed — compare with the stored version.",
+        )
+    } else if model.error_message.is_some()
+        || (model.draft_id.is_none()
+            && [
+                model.to_value,
+                model.cc_value,
+                model.bcc_value,
+                model.subject_value,
+                model.body_value,
+            ]
+            .iter()
+            .any(|value| !value.is_empty()))
+    {
+        (
+            "unsaved",
+            "Unsaved changes — Save Draft to keep this version.",
+        )
+    } else if model.draft_id.is_some() {
+        ("saved", "Saved draft.")
+    } else {
+        ("new", "Not saved yet.")
+    };
     let success_banner = match model.success_message {
         Some(success_message) => format!(
             "<div class=\"notice notice-success\" role=\"status\"><strong>Submission complete:</strong> {}</div>",
@@ -1521,6 +1549,7 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
         }
     }
     let draft_attachment_notice = render_saved_attachment_controls(model);
+    let (discard_control, discard_form) = crate::http::compose_actions::discard_controls(model);
     let source_attachment_controls = render_source_attachment_controls(
         model.source_mailbox_name,
         model.source_uid,
@@ -1528,44 +1557,41 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
         model.selected_source_part_paths,
     );
     let openpgp_compose_controls = concat!(
-        "<details class=\"openpgp-compose-controls panel\" aria-label=\"OpenPGP compose controls\" data-openpgp-compose-controls=\"ui-only\"><summary><strong>OpenPGP unavailable</strong><span>This message will be sent without OpenPGP protection.</span></summary>",
-        "<h2>OpenPGP compose controls</h2>",
-        "<p>No account OpenPGP capability is configured for compose. No encrypt, sign, key lookup, private-key access, passphrase handling, or message mutation was attempted.</p>",
-        "<fieldset class=\"openpgp-compose-option-list\" disabled aria-describedby=\"openpgp-compose-boundary\">",
-        "<legend>Future account-controlled actions</legend>",
-        "<label for=\"openpgp-compose-encrypt\"><input id=\"openpgp-compose-encrypt\" type=\"checkbox\" disabled>Encrypt when configured</label>",
-        "<label for=\"openpgp-compose-sign\"><input id=\"openpgp-compose-sign\" type=\"checkbox\" disabled>Sign when configured</label>",
-        "<label for=\"openpgp-compose-recipients\"><input id=\"openpgp-compose-recipients\" type=\"checkbox\" disabled>Require configured recipient keys</label>",
-        "</fieldset>",
-        "<p id=\"openpgp-compose-boundary\" class=\"muted openpgp-compose-boundary-note\">Signing and encryption controls are unavailable. Send Message and Save Draft use unencrypted message content.</p>",
-        "</details>"
+        "<section class=\"openpgp-compose-controls compose-policy-row\" aria-label=\"OpenPGP compose controls\" data-openpgp-compose-controls=\"ui-only\">",
+        "<details name=\"compose-policy\"><summary><span>Sign</span><strong>Unsigned</strong></summary><div class=\"compose-policy-detail\"><p>Signing is unavailable for this account.</p></div></details>",
+        "<details name=\"compose-policy\"><summary><span>Encrypt</span><strong>Not encrypted</strong></summary><div class=\"compose-policy-detail\"><p>Encryption is unavailable for this account.</p></div></details>",
+        "<details name=\"compose-policy\"><summary><span>Encrypt to self</span><strong>Off</strong></summary><div class=\"compose-policy-detail\"><p>No encrypted copy will be created for your account.</p></div></details>",
+        "<details name=\"compose-policy\"><summary><span>Recipient key status</span><strong>Unavailable</strong></summary><div class=\"compose-policy-detail\"><p>Recipient keys have not been checked. OpenPGP is unavailable for this account.</p></div></details>",
+        "<details name=\"compose-policy\" class=\"compose-policy-attention\"><summary><span>Security pre-flight</span><strong>Attention</strong></summary><div class=\"compose-policy-detail\"><p>This message will be sent without OpenPGP protection.</p><p class=\"openpgp-compose-boundary-note\">Send Message and Save Draft use unencrypted message content.</p></div></details>",
+        "</section>"
     );
 
     TrustedHtml::from_template(format!(
         concat!(
             "{}",
             "<main id=\"main-content\" class=\"page-shell compose-shell\" tabindex=\"-1\">",
-            "<div class=\"page-intro\"><h1>{}</h1><p>Create mail with drafts, attachments and delivery controls.</p></div>",
+            "<div class=\"page-intro\"><h1>{}</h1><p>Create mail with drafts, attachments, delivery controls and OpenPGP policy.</p></div>",
             "{}{}{}",
             "<section class=\"content-pane compose-card\">",
-            "<form id=\"compose-form\" method=\"post\" action=\"/send\" enctype=\"multipart/form-data\">",
-            "<div class=\"compose-card-header\"><h2>{}</h2><div class=\"compose-window-actions\"><button type=\"submit\"{disabled} formaction=\"/drafts/save\" name=\"compose_action\" value=\"minimize\" title=\"Save this draft and return to Drafts\">− Minimize</button><input class=\"sr-only compose-expand-state\" id=\"compose-expanded\" type=\"checkbox\"><label class=\"button-link\" for=\"compose-expanded\"><span class=\"expand-text\">↗ Expand</span><span class=\"collapse-text\">↙ Restore</span></label></div></div>",
+            "<form id=\"compose-form\" data-enhancement=\"local-v1\" data-save-state=\"{save_state}\" method=\"post\" action=\"/send\" enctype=\"multipart/form-data\">",
+            "<div class=\"compose-card-header\"><h2>{}</h2><div class=\"compose-window-actions\"><button type=\"submit\"{disabled} formaction=\"/drafts/save\" name=\"compose_action\" value=\"minimize\" title=\"Save this draft and return to Drafts\">− Minimize</button><input class=\"sr-only compose-expand-state\" id=\"compose-expanded\" type=\"checkbox\"><label class=\"button-link\" for=\"compose-expanded\"><span class=\"expand-text\">↗ Expand</span><span class=\"collapse-text\">↙ Restore</span></label><details class=\"compose-more\"><summary>⋮ More</summary><div><a href=\"/drafts\">Open Drafts</a><a href=\"/contacts\" target=\"_blank\" rel=\"noopener\">Manage contacts</a></div></details></div></div>",
             "<input type=\"hidden\" name=\"csrf_token\" value=\"{}\">",
             "{}",
             "{}",
             "{}",
-            "<div class=\"compose-field\"><label for=\"compose-from\">From</label><div><input id=\"compose-from\" name=\"from\" value=\"{}\" readonly aria-describedby=\"sender-policy\"><p id=\"sender-policy\" class=\"muted field-help\">Your authorized sender identity.</p></div></div>",
+            "<div class=\"compose-field\"><label for=\"compose-from\">From</label><div class=\"compose-sender\"><span class=\"compose-sender-chip\" aria-hidden=\"true\">{sender_initial}</span><input id=\"compose-from\" name=\"from\" value=\"{}\" readonly aria-describedby=\"sender-policy\"><span id=\"sender-policy\" class=\"sr-only\">Your authorized sender identity.</span></div></div>",
             "<div class=\"compose-field\"><label for=\"compose-to\">To</label><input id=\"compose-to\" type=\"text\" name=\"to\" value=\"{}\" autocomplete=\"off\"></div>",
             "<div class=\"compose-recipient-tools\"><details class=\"compose-cc\"{}><summary>+ Cc</summary><label for=\"compose-cc\">Cc</label><input id=\"compose-cc\" type=\"text\" name=\"cc\" value=\"{}\" autocomplete=\"off\"></details>",
             "<details class=\"compose-bcc\"{}><summary>+ Bcc</summary><label for=\"compose-bcc\">Bcc</label><input id=\"compose-bcc\" type=\"text\" name=\"bcc\" value=\"{}\" autocomplete=\"off\"></details>{}</div>",
-            "<div class=\"compose-field\"><label for=\"compose-subject\">Subject</label><input id=\"compose-subject\" type=\"text\" name=\"subject\" value=\"{}\"></div>",
+            "<div class=\"compose-field compose-subject-field\"><label for=\"compose-subject\">Subject</label><input id=\"compose-subject\" type=\"text\" name=\"subject\" value=\"{}\"></div>",
             "{}",
-            "<label class=\"compose-editor-label\" for=\"compose-body\">Body</label><textarea id=\"compose-body\" name=\"body\" placeholder=\"Write your message…\">{}</textarea>",
-            "<section class=\"compose-attachments\" aria-labelledby=\"compose-attachments-heading\"><h2 id=\"compose-attachments-heading\">Attachments</h2>{}{}<label for=\"compose-attachment\">Add attachments</label><input id=\"compose-attachment\" type=\"file\" name=\"attachment\" multiple><p class=\"muted field-help\">Up to 3 attachments, 10 MiB each and 30 MiB total, including saved and selected source files.</p></section>",
-            "<div class=\"compose-footer\"><button type=\"submit\"{disabled} formaction=\"/drafts/save\">Save Draft</button>",
-            "<button class=\"primary-button\" type=\"submit\"{disabled}>Send Message</button>",
+            "{formatting_controls}<label class=\"sr-only\" for=\"compose-body\">Body</label><textarea id=\"compose-body\" name=\"body\" placeholder=\"Write your message…\">{}</textarea>{preview}",
+            "<section class=\"compose-attachments\" aria-labelledby=\"compose-attachments-heading\"><h2 id=\"compose-attachments-heading\">Attachments</h2>{}{}<label for=\"compose-attachment\">Add attachments</label><input id=\"compose-attachment\" type=\"file\" name=\"attachment\" multiple><details class=\"compose-attachment-help\"><summary>Attachment help</summary><p>Up to 3 attachments, 10 MiB each and 30 MiB total, including saved and selected source files. Local images have a 5 MiB limit. Select Remove, then Save Draft or Send Message to apply removal. Other saved files stay attached.</p></details></section>",
+            "<div class=\"compose-save-bar\"><p id=\"compose-save-status\" role=\"status\" aria-live=\"polite\" data-state=\"{save_state}\">{save_status}</p><span class=\"muted\">Automatic saving is not available.</span></div>",
+            "<div class=\"compose-footer\"><div class=\"compose-footer-actions\">{discard_control}<button id=\"compose-save\" type=\"submit\"{disabled} formaction=\"/drafts/save\" aria-keyshortcuts=\"Control+S Meta+S\">Save Draft</button><button type=\"button\" disabled aria-describedby=\"compose-schedule-status\">Schedule</button><span id=\"compose-schedule-status\" class=\"muted\">Scheduling unavailable</span></div>",
+            "<button class=\"primary-button\" type=\"submit\"{disabled} aria-label=\"Send Message\">Send</button>",
             "</div>",
-            "</form>",
+            "</form>{discard_form}",
             "</section>",
             "</main>"
         ),
@@ -1591,6 +1617,13 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
         draft_attachment_notice,
         source_attachment_controls,
         disabled = if confirmation_required { " disabled" } else { "" },
+        save_state = save_state,
+        save_status = save_status,
+        discard_control = discard_control,
+        discard_form = discard_form,
+        formatting_controls = crate::http::compose_actions::formatting_controls(model),
+        preview = crate::http::compose_actions::preview(model),
+        sender_initial = escape_html(&model.canonical_username.chars().next().unwrap_or('?').to_uppercase().to_string()),
     ))
 }
 
@@ -1610,7 +1643,7 @@ fn render_saved_attachment_controls(model: &ComposePageModel<'_>) -> String {
     }
     let mut rows = String::new();
     for (index, attachment) in model.draft_attachments.iter().enumerate() {
-        rows.push_str(&format!("<li class=\"saved-attachment\"><div><strong dir=\"auto\">📄 {}</strong><span class=\"muted\">{} · saved file</span></div><label class=\"saved-attachment-remove\"><input type=\"checkbox\" name=\"remove_saved_attachment_{index}\" value=\"1\" aria-label=\"Remove {}\"{}><span>Remove</span></label></li>", escape_html(&attachment.filename), format_draft_bytes(attachment.body.len() as u64), escape_html(&attachment.filename), if model.removed_attachment_indices.contains(&index) { " checked" } else { "" }));
+        rows.push_str(&format!("<li class=\"saved-attachment\" data-bytes=\"{}\"><div><strong dir=\"auto\">📄 {}</strong><span class=\"muted\">{} · saved file</span></div><label class=\"saved-attachment-remove\"><input type=\"checkbox\" name=\"remove_saved_attachment_{index}\" value=\"1\" aria-label=\"Remove {}\"{}><span>Remove</span></label></li>", attachment.body.len(), escape_html(&attachment.filename), format_draft_bytes(attachment.body.len() as u64), escape_html(&attachment.filename), if model.removed_attachment_indices.contains(&index) { " checked" } else { "" }));
     }
     // A failed stale form must not borrow attachment names from a newer revision.
     // Retain its explicit indices, still bound to the submitted draft revision.
@@ -1624,7 +1657,7 @@ fn render_saved_attachment_controls(model: &ComposePageModel<'_>) -> String {
     } else {
         format!("{} stored attachment(s).", model.draft_attachments.len())
     };
-    format!("<div class=\"saved-attachments\"><p class=\"muted\">{count} Select Remove, then Save Draft or Send Message to apply. Other saved files stay attached.</p><ul class=\"saved-attachment-list\">{rows}</ul></div>")
+    format!("<div class=\"saved-attachments\"><ul class=\"saved-attachment-list\">{rows}</ul><p class=\"sr-only compose-attachment-guidance\">{count} Select Remove, then Save Draft or Send Message to apply. Other saved files stay attached.</p></div>")
 }
 
 fn render_reply_reference(reference: Option<&crate::reply_thread::ReplyReference>) -> String {
@@ -1653,10 +1686,10 @@ fn render_contact_selection(
     let manage =
         "<a href=\"/contacts\" target=\"_blank\" rel=\"noopener\">Manage contacts in a new tab</a>";
     let Some(book) = book else {
-        return format!("<p class=\"muted\">Contacts are unavailable. {manage}</p>");
+        return format!("<details class=\"compose-contacts\"><summary>Contacts</summary><div><p class=\"muted\">Contacts are unavailable. {manage}</p></div></details>");
     };
     if book.contacts.is_empty() {
-        return format!("<p class=\"muted\">No saved contacts. {manage}</p>");
+        return format!("<details class=\"compose-contacts\"><summary>Contacts</summary><div><p class=\"muted\">No saved contacts. {manage}</p></div></details>");
     }
     let options: String = book
         .contacts

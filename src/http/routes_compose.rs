@@ -173,7 +173,7 @@ where
         }
 
         HandledHttpResponse {
-            response: html_response(
+            response: super::compose_enhancement::response(
                 200,
                 "OK",
                 compose_heading,
@@ -191,6 +191,8 @@ where
                     bcc_value: &bcc_value,
                     subject_value: &subject_value,
                     body_value: &body_value,
+                    body_format: crate::compose_format::BodyFormat::Plain,
+                    preview: false,
                     draft_id: None,
                     draft_revision: None,
                     draft_attachments: &[],
@@ -220,7 +222,7 @@ where
         let parsed_form = match parse_compose_form(
             &request.body,
             request.headers.get("content-type").map(String::as_str),
-            self.policy.max_form_fields.saturating_add(7),
+            self.policy.max_form_fields.saturating_add(13),
             self.policy.max_upload_body_bytes,
             ComposePolicy::default(),
         ) {
@@ -277,6 +279,17 @@ where
                 }
             }
         };
+        if let Some(message) = parsed_form.upload_error.as_deref() {
+            return HandledHttpResponse {
+                response: self.retained_compose_input_error(
+                    &validated_session,
+                    &form,
+                    reply_reference.as_ref(),
+                    message,
+                ),
+                audit_events,
+            };
+        }
         let mut reply_thread = match reply_reference.as_ref() {
             Some(reference) => match self.resolve_reply_thread(
                 context,
@@ -491,6 +504,7 @@ where
                 bcc_recipients: &bcc_recipients,
                 subject: &subject,
                 body: &body,
+                body_format: super::compose_actions::body_format(&form).unwrap_or_default(),
                 attachments: &send_attachments,
             },
         );
@@ -520,7 +534,7 @@ where
                 } else {
                     (503, "Service Unavailable")
                 };
-                let mut response = html_response(
+                let mut response = super::compose_enhancement::response(
                     status_code,
                     reason_phrase,
                     "Compose",
@@ -538,6 +552,8 @@ where
                         bcc_value: &bcc_recipients,
                         subject_value: &subject,
                         body_value: &body,
+                        body_format: super::compose_actions::body_format(&form).unwrap_or_default(),
+                        preview: false,
                         draft_id: draft_id.as_deref(),
                         draft_revision,
                         draft_attachments: &persisted_draft_attachments,
@@ -576,7 +592,42 @@ where
         status: u16,
         reason: &'static str,
     ) -> HttpResponse {
-        html_response(
+        self.retained_compose_response(
+            session,
+            form,
+            reply_reference,
+            (public_reason, public_reason_message(public_reason)),
+            (status, reason),
+        )
+    }
+
+    pub(super) fn retained_compose_input_error(
+        &self,
+        session: &ValidatedSession,
+        form: &BTreeMap<String, String>,
+        reply_reference: Option<&crate::reply_thread::ReplyReference>,
+        message: &str,
+    ) -> HttpResponse {
+        self.retained_compose_response(
+            session,
+            form,
+            reply_reference,
+            ("invalid_request", message),
+            (400, "Bad Request"),
+        )
+    }
+
+    fn retained_compose_response(
+        &self,
+        session: &ValidatedSession,
+        form: &BTreeMap<String, String>,
+        reply_reference: Option<&crate::reply_thread::ReplyReference>,
+        failure: (&str, &str),
+        status: (u16, &'static str),
+    ) -> HttpResponse {
+        let (public_reason, message) = failure;
+        let (status, reason) = status;
+        super::compose_enhancement::response(
             status,
             reason,
             "Compose",
@@ -587,7 +638,7 @@ where
                 canonical_username: &session.record.canonical_username,
                 csrf_token: &session.record.csrf_token,
                 success_message: None,
-                error_message: Some(public_reason_message(public_reason)),
+                error_message: Some(message),
                 context_notice: Some(if public_reason == "draft_save_unconfirmed" {
                     "Your text remains in this tab. Save and Send are paused until you compare with the stored version."
                 } else {
@@ -598,6 +649,8 @@ where
                 bcc_value: form.get("bcc").map(String::as_str).unwrap_or_default(),
                 subject_value: form.get("subject").map(String::as_str).unwrap_or_default(),
                 body_value: form.get("body").map(String::as_str).unwrap_or_default(),
+                body_format: super::compose_actions::body_format(form).unwrap_or_default(),
+                preview: false,
                 draft_id: form.get("draft_id").map(String::as_str),
                 draft_revision: super::routes_draft::submitted_draft_revision(form)
                     .ok()
