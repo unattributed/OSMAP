@@ -229,10 +229,24 @@ impl RuntimeBrowserGateway {
                                         ));
                                         AppearanceSettings::default()
                                     });
+                                let reading =
+                                    crate::reading_preferences::ReadingPreferencesStore::new(
+                                        &self.settings_dir,
+                                    )
+                                    .load(&canonical_username)
+                                    .unwrap_or_else(|_| {
+                                        audit_events.push(build_http_warning_event(
+                                            "reading_preferences_load_failed",
+                                            "reading preferences unavailable at login",
+                                            context,
+                                        ));
+                                        crate::reading_preferences::ReadingPreferences::default()
+                                    });
                                 BrowserLoginOutcome {
                                     decision: BrowserLoginDecision::Authenticated {
                                         appearance: presentation.theme,
                                         presentation,
+                                        reading,
                                         canonical_username,
                                         session_token: issued_session.token,
                                     },

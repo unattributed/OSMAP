@@ -65,6 +65,29 @@ pub trait BrowserGateway {
         scope: BrowserSessionRevokeScope,
     ) -> BrowserSessionRevokeOutcome;
 
+    fn load_reading_preferences(
+        &self,
+        _context: &AuthenticationContext,
+        _session: &ValidatedSession,
+    ) -> std::io::Result<crate::reading_preferences::ReadingPreferences> {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "reading preferences unavailable",
+        ))
+    }
+
+    fn update_reading_preferences(
+        &self,
+        _context: &AuthenticationContext,
+        _session: &ValidatedSession,
+        _value: crate::reading_preferences::ReadingPreferences,
+    ) -> std::io::Result<()> {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "reading preferences unavailable",
+        ))
+    }
+
     fn load_composition_preferences(
         &self,
         _context: &AuthenticationContext,
@@ -283,6 +306,7 @@ pub enum BrowserLoginDecision {
         session_token: SessionToken,
         appearance: AppearancePreference,
         presentation: AppearanceSettings,
+        reading: crate::reading_preferences::ReadingPreferences,
     },
     Denied {
         public_reason: String,

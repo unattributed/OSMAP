@@ -3,7 +3,6 @@
 //! Keeping these rendering helpers separate from routing reduces the amount of
 //! browser-facing template code inside the request parser and route logic.
 
-use crate::appearance::AppearancePreference;
 #[path = "settings_ui.rs"]
 mod settings_ui;
 use crate::draft::DraftSummary;
@@ -21,7 +20,7 @@ use crate::mailbox::{
 use crate::message_metadata::{MessageFlag, MessageMetadata};
 use crate::mime::{AttachmentMetadata, DEFAULT_MIME_PARTS_MAX};
 use crate::rendering::{HtmlDisplayPreference, RenderedMessageView};
-pub(crate) use settings_ui::{render_appearance_page, render_general_page};
+pub(crate) use settings_ui::{render_appearance_page, render_general_page, render_reading_page};
 
 /// Defense-in-depth cap for attachment metadata rows rendered by one route.
 const DEFAULT_RENDERED_ATTACHMENT_METADATA_MAX: usize = DEFAULT_MIME_PARTS_MAX;
@@ -115,7 +114,6 @@ pub(crate) struct SettingsPageModel<'a> {
     pub csrf_token: &'a str,
     pub success_message: Option<&'a str>,
     pub error_message: Option<&'a str>,
-    pub appearance: AppearancePreference,
     pub html_display_preference: HtmlDisplayPreference,
     pub archive_mailbox_name: Option<&'a str>,
 }
@@ -291,6 +289,26 @@ pub(crate) fn render_settings_search_page(account: &str, csrf: &str, query: &str
             "HTML Message Display",
             "reading plain sanitized content",
             "/settings?section=reading#html-display-prefer-sanitized",
+        ),
+        (
+            "Default start page",
+            "reading mailbox inbox drafts sent login",
+            "/settings?section=reading#reading-start-page",
+        ),
+        (
+            "Message ordering",
+            "reading newest oldest date default",
+            "/settings?section=reading#reading-date-order",
+        ),
+        (
+            "Show source shortcut",
+            "reading reader source headers MIME",
+            "/settings?section=reading#reading-show-source",
+        ),
+        (
+            "Attachment details",
+            "reading reader file metadata",
+            "/settings?section=reading#reading-attachment-details",
         ),
         (
             "Archive Mailbox",
@@ -1380,7 +1398,7 @@ fn render_reader_fragment(
                 })
                 .unwrap_or_default();
             attachments.push_str(&format!(
-                "<li class=\"attachment-item\"><div class=\"attachment-description\"><strong>{}</strong><p class=\"muted\">{} bytes · isolated download</p><details><summary>File details</summary><p>Part {}. {}, {}{}</p></details></div><a class=\"button-link\" href=\"{}\">Download</a></li>",
+                "<li class=\"attachment-item\"><div class=\"attachment-description\"><strong>{}</strong><p class=\"muted\">{} bytes · isolated download</p><details class=\"reader-file-details\"><summary>File details</summary><p>Part {}. {}, {}{}</p></details></div><a class=\"button-link\" href=\"{}\">Download</a></li>",
                 escape_html(attachment.filename.as_deref().unwrap_or("<unnamed>")),
                 attachment.size_hint_bytes,
                 escape_html(&attachment.part_path),
@@ -1440,9 +1458,9 @@ fn render_reader_fragment(
         "not requested by selected body"
     };
     let source_link = rendered.metadata.as_ref().map(|metadata| format!(
-        "<a href=\"{}\">View source</a>", escape_html(&format!("/message?mailbox={}&uid={}&view=source&mailbox_guid={}&message_guid={}&return_to={}",
+        "<a class=\"reader-source-shortcut\" href=\"{}\">View source</a>", escape_html(&format!("/message?mailbox={}&uid={}&view=source&mailbox_guid={}&message_guid={}&return_to={}",
             url_encode(&rendered.mailbox_name), rendered.uid, url_encode(&metadata.version.mailbox_guid), url_encode(&metadata.version.message_guid), url_encode(return_to)))))
-        .unwrap_or_else(|| "<span class=\"muted\">Source view unavailable</span>".into());
+        .unwrap_or_else(|| "<span class=\"muted reader-source-shortcut\">Source view unavailable</span>".into());
     let compose_link = |mode: &str, label: &str| {
         let mut href = format!(
             "/compose?mode={mode}&mailbox={}&uid={}",
@@ -1954,105 +1972,6 @@ pub(crate) fn render_draft_selection_review(
 ) -> TrustedHtml {
     let rows: String = drafts.iter().map(|draft| format!("<li><strong dir=\"auto\">{}</strong><span class=\"muted\"> · {} attachment(s)</span><input type=\"hidden\" name=\"selected_{}\" value=\"{}\"></li>", escape_html(if draft.subject.is_empty() { "(No subject)" } else { &draft.subject }), draft.attachment_count, escape_html(&draft.draft_id), draft.revision)).collect();
     TrustedHtml::from_template(format!("{}<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Discard selected drafts?</h1><p>Review these {} saved drafts before discarding their text and saved attachments.</p></div><section class=\"content-pane\"><form method=\"post\" action=\"/drafts/discard\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\">{}<ul class=\"draft-discard-review\">{}</ul><p>Discard cannot be undone. If a draft changes, discard stops; any earlier completed deletions remain.</p><div class=\"inline-actions\"><a class=\"button-link\" href=\"{}\">Keep drafts</a><button type=\"submit\" name=\"stage\" value=\"confirm\">Discard {} drafts</button></div></form></section></main>", app_header(account, csrf, "drafts"), drafts.len(), escape_html(csrf), render_draft_list_state(view), rows, escape_html(&view.href()), drafts.len()))
-}
-
-/// Renders the first bounded end-user settings page.
-pub(crate) fn render_settings_page(model: &SettingsPageModel<'_>) -> TrustedHtml {
-    let success_banner = match model.success_message {
-        Some(success_message) => format!(
-            "<div class=\"notice notice-success\" role=\"status\"><strong>Update complete:</strong> {}</div>",
-            escape_html(success_message)
-        ),
-        None => String::new(),
-    };
-    let error_banner = match model.error_message {
-        Some(error_message) => format!(
-            "<div class=\"notice notice-error\" role=\"alert\"><strong>Request failed:</strong> {}</div>",
-            escape_html(error_message)
-        ),
-        None => String::new(),
-    };
-    let prefer_sanitized_html_checked =
-        if model.html_display_preference == HtmlDisplayPreference::PreferSanitizedHtml {
-            " checked"
-        } else {
-            ""
-        };
-    let prefer_plain_text_checked =
-        if model.html_display_preference == HtmlDisplayPreference::PreferPlainText {
-            " checked"
-        } else {
-            ""
-        };
-    let account_security_panel = concat!(
-        r#"<section class="panel account-security-panel" aria-labelledby="account-security-title">"#,
-        r#"<h2 id="account-security-title">Account Security</h2>"#,
-        r#"<p class="muted">Signing and encryption are currently unavailable for this account.</p>"#,
-        r#"<div class="openpgp-account-security" aria-label="OpenPGP account controls" data-openpgp-account-controls="ui-only">"#,
-        r#"<div class="badge-list openpgp-account-badges" aria-label="OpenPGP account status"><span class="badge badge-warn">OpenPGP not configured</span><span class="badge">Protected rendering</span></div>"#,
-        r#"<details class="security-disclosure"><summary>Details and unavailable controls</summary><dl class="openpgp-state-list"><dt>Account capability</dt><dd>not configured</dd><dt>Signing policy</dt><dd>not active</dd><dt>Encryption policy</dt><dd>not active</dd><dt>Private key access</dt><dd>not attempted</dd><dt>Passphrase handling</dt><dd>not present</dd></dl>"#,
-        r#"<fieldset class="openpgp-account-control-set" disabled>"#,
-        r#"<legend>Future configured-account controls</legend>"#,
-        r#"<label for="openpgp-account-enable"><input id="openpgp-account-enable" type="checkbox" disabled> Enable OpenPGP for this account</label>"#,
-        r#"<label for="openpgp-account-require-sign"><input id="openpgp-account-require-sign" type="checkbox" disabled> Require signing when configured</label>"#,
-        r#"<label for="openpgp-account-require-encrypt"><input id="openpgp-account-require-encrypt" type="checkbox" disabled> Require encryption when configured</label>"#,
-        r#"</fieldset>"#,
-        r#"<p class="muted openpgp-account-boundary-note">These controls remain unavailable. They submit no OpenPGP form fields and do not activate signing or encryption.</p>"#,
-        r#"</details></div>"#,
-        r#"</section>"#,
-    );
-
-    let mut appearance_choices = String::new();
-    for (value, label) in [
-        (AppearancePreference::Light, "Light"),
-        (AppearancePreference::Dark, "Dark"),
-        (AppearancePreference::System, "System"),
-    ] {
-        appearance_choices.push_str(&format!(
-            "<label class=\"appearance-choice\"><input type=\"radio\" name=\"appearance\" value=\"{}\"{}> {}</label>",
-            value.as_str(), if value == model.appearance { " checked" } else { "" }, label));
-    }
-    let appearance_panel = format!(
-        "<section class=\"panel appearance-panel\" aria-labelledby=\"appearance-title\"><h2 id=\"appearance-title\">Appearance</h2><p class=\"muted\">Choose a theme for your account. System follows this device’s light or dark setting.</p><form method=\"post\" action=\"/settings/appearance\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><fieldset><legend>Theme</legend><div class=\"appearance-choices\">{}</div></fieldset><button type=\"submit\">Save Appearance</button></form></section>",
-        escape_html(model.csrf_token), appearance_choices);
-    let archive_mailbox_name = model.archive_mailbox_name.unwrap_or("");
-
-    TrustedHtml::from_template(format!(
-        concat!(
-            "{}",
-            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
-            "<section class=\"content-pane settings-pane\">",
-            "<div class=\"page-intro\"><h1>Settings</h1><p>Manage your account appearance and mail preferences.</p></div>{}{}{}",
-            "{}",
-            "<div class=\"preferences-form-wrap\"><form method=\"post\" action=\"/settings\" class=\"action-stack\">",
-            "<input type=\"hidden\" name=\"csrf_token\" value=\"{}\">",
-            "<fieldset class=\"panel\">",
-            "<legend>HTML Message Display</legend>",
-            "<div><input id=\"html-display-prefer-sanitized\" type=\"radio\" name=\"html_display_preference\" value=\"prefer_sanitized_html\"{}><label for=\"html-display-prefer-sanitized\">Prefer sanitized HTML when available</label></div>",
-            "<div><input id=\"html-display-prefer-plain\" type=\"radio\" name=\"html_display_preference\" value=\"prefer_plain_text\"{}><label for=\"html-display-prefer-plain\">Prefer plain text when available</label></div>",
-            "</fieldset>",
-            "<fieldset class=\"panel\">",
-            "<legend>Archive Shortcut</legend>",
-            "<label for=\"archive-mailbox-name\">Archive Mailbox</label>",
-            "<input id=\"archive-mailbox-name\" type=\"text\" name=\"archive_mailbox_name\" value=\"{}\" autocomplete=\"off\">",
-            "<p class=\"muted\">Leave this blank to keep only the manual move flow.</p>",
-            "</fieldset>",
-            "<div><button type=\"submit\">Save Settings</button></div>",
-            "</form></div>",
-            "<footer class=\"principles-strip\" aria-label=\"Design principles\"><p><strong>Simple by design. Protected by default.</strong></p><div class=\"principles-list\"><span>Message scripts blocked</span><span>Remote content blocked</span><span>Explicit downloads</span><span>Protected session cookies</span></div></footer>",
-            "</section>",
-            "</main>"
-        ),
-        app_header(model.canonical_username, model.csrf_token, "settings"),
-        success_banner,
-        error_banner,
-        account_security_panel,
-        appearance_panel,
-        escape_html(model.csrf_token),
-        prefer_sanitized_html_checked,
-        prefer_plain_text_checked,
-        escape_html(archive_mailbox_name),
-    ))
 }
 
 #[cfg(test)]

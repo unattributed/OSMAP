@@ -36,6 +36,7 @@ pub mod mime;
 pub mod openbsd;
 pub mod openpgp_helper_client;
 mod private_account_file;
+pub mod reading_preferences;
 pub mod rendering;
 pub mod rendering_html;
 pub mod reply_thread;

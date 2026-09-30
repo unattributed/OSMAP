@@ -30,10 +30,11 @@
     {"method": "POST", "path": "/drafts/star", "query_fields": [], "form_fields": ["csrf_token", "draft_id", "draft_revision", "starred", "filter", "sort", "q"], "wstg_test_ids": ["OSMAP-WSTG-BUSL-002", "OSMAP-WSTG-ATHZ-001", "OSMAP-WSTG-SESS-004"]},
     {"method": "POST", "path": "/drafts/discard", "query_fields": [], "form_fields": ["csrf_token", "selected_*", "stage", "filter", "sort", "q"], "wstg_test_ids": ["OSMAP-WSTG-BUSL-002", "OSMAP-WSTG-ATHZ-001", "OSMAP-WSTG-SESS-004"]},
     {"method": "POST", "path": "/sessions/revoke", "query_fields": [], "form_fields": ["csrf_token", "scope", "session_id"], "wstg_test_ids": ["OSMAP-WSTG-SESS-006", "OSMAP-WSTG-BUSL-005"]},
-    {"method": "POST", "path": "/settings", "query_fields": [], "form_fields": ["csrf_token", "html_display_preference", "archive_mailbox_name"], "wstg_test_ids": ["OSMAP-WSTG-SESS-004", "OSMAP-WSTG-BUSL-005"]},
+    {"method": "POST", "path": "/settings", "query_fields": [], "form_fields": ["csrf_token", "html_display_preference", "archive_mailbox_name", "return_section"], "wstg_test_ids": ["OSMAP-WSTG-SESS-004", "OSMAP-WSTG-BUSL-005"]},
     {"method": "POST", "path": "/settings/appearance", "query_fields": [], "form_fields": ["csrf_token", "appearance", "return_to"], "wstg_test_ids": ["OSMAP-WSTG-SESS-004", "OSMAP-WSTG-BUSL-005"]},
     {"method": "POST", "path": "/settings/display", "query_fields": [], "form_fields": ["csrf_token", "appearance", "density", "font_size", "reader_layout", "show_avatars", "message_preview"], "wstg_test_ids": ["OSMAP-WSTG-SESS-004", "OSMAP-WSTG-BUSL-005"]},
     {"method": "POST", "path": "/settings/composition", "query_fields": [], "form_fields": ["csrf_token", "default_body_format"], "wstg_test_ids": ["OSMAP-WSTG-SESS-004", "OSMAP-WSTG-BUSL-005"]},
+    {"method": "POST", "path": "/settings/reading", "query_fields": [], "form_fields": ["csrf_token", "start_page", "date_order", "show_source_shortcut", "attachment_details"], "wstg_test_ids": ["OSMAP-WSTG-SESS-004", "OSMAP-WSTG-BUSL-005"]},
     {"method": "POST", "path": "/logout", "query_fields": [], "form_fields": ["csrf_token"], "wstg_test_ids": ["OSMAP-WSTG-SESS-003", "OSMAP-WSTG-SESS-006"]}
   ]
 }

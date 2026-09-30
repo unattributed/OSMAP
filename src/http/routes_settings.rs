@@ -108,7 +108,6 @@ where
                         csrf_token: &validated_session.record.csrf_token,
                         success_message,
                         error_message: appearance_error,
-                        appearance: presentation.theme,
                         html_display_preference: settings.html_display_preference,
                         archive_mailbox_name: settings.archive_mailbox_name.as_deref(),
                     };
@@ -123,7 +122,18 @@ where
                                 .ok(),
                         )
                     } else {
-                        render_settings_page(&model)
+                        let preferences = match self.gateway.load_reading_preferences(context, &validated_session) {
+                            Ok(value) => value,
+                            Err(_) => {
+                                audit_events.push(build_http_warning_event("reading_preferences_load_failed", "stored reading preferences could not be loaded", context));
+                                return HandledHttpResponse {
+                                    response: html_response(503, "Service Unavailable", "Reading Settings Unavailable", "<p>Your saved reading preferences could not be loaded. No defaults were saved. <a href=\"/settings?section=reading\">Try loading Reading settings again</a>.</p>"),
+                                    audit_events,
+                                };
+                            }
+                        };
+                        let mailboxes = self.reading_mailbox_choices(context, &validated_session, &mut audit_events);
+                        crate::http_ui::render_reading_page(&model, &preferences, mailboxes.as_deref())
                     }
                 })
                 .with_header(
@@ -212,6 +222,19 @@ where
             return response;
         }
 
+        let destination = match form.get("return_section").map(String::as_str) {
+            None | Some("general") => "/settings?updated=1",
+            Some("reading") => "/settings?section=reading&updated=1",
+            Some(_) => return HandledHttpResponse {
+                response: html_response(
+                    400,
+                    "Bad Request",
+                    "Invalid Settings Request",
+                    "<p>The settings return section was invalid. No preference was changed.</p>",
+                ),
+                audit_events,
+            },
+        };
         let Some(html_display_preference) = form.get("html_display_preference") else {
             return HandledHttpResponse {
                 response: html_response(
@@ -327,7 +350,7 @@ where
 
         match outcome.decision {
             BrowserSettingsUpdateDecision::Updated => HandledHttpResponse {
-                response: redirect_response(303, "See Other", "/settings?updated=1"),
+                response: redirect_response(303, "See Other", destination),
                 audit_events,
             },
             BrowserSettingsUpdateDecision::Denied { public_reason } => {

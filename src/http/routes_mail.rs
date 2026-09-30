@@ -25,7 +25,15 @@ fn mailbox_name_exists(mailboxes: &[MailboxEntry], mailbox_name: &str) -> bool {
 }
 
 fn list_view_state(request: &HttpRequest) -> Result<ListViewState, HttpResponse> {
-    ListViewState::from_query(&request.query_params).map_err(|message| {
+    let mut query = request.query_params.clone();
+    if !query.contains_key("sort") && !query.contains_key("dir") {
+        let preferences = crate::reading_preferences::ReadingPreferences::from_cookie_header(
+            request.headers.get("cookie").map(String::as_str),
+        );
+        query.insert("sort".into(), "received".into());
+        query.insert("dir".into(), preferences.date_order.sort_direction().into());
+    }
+    ListViewState::from_query(&query).map_err(|message| {
         html_response(
             400,
             "Bad Request",

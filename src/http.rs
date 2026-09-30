@@ -28,6 +28,7 @@ mod routes_draft_selection;
 mod routes_flags;
 mod routes_mail;
 mod routes_moves;
+mod routes_reading_preferences;
 mod routes_reply;
 mod routes_settings;
 mod routes_source_attachments;
@@ -65,9 +66,9 @@ use crate::http_support::{
 use crate::http_ui::{
     render_compose_page, render_draft_list_page, render_login_page, render_mailboxes_page,
     render_message_list_page, render_message_search_page, render_message_view_page,
-    render_navigation_notice, render_sessions_page, render_settings_page, ComposePageModel,
-    DraftListPageModel, MailReaderContext, MessageListBulkActions, MessageListSortLinks,
-    MessageSearchContext, SelectedMessagePane, SettingsPageModel,
+    render_navigation_notice, render_sessions_page, ComposePageModel, DraftListPageModel,
+    MailReaderContext, MessageListBulkActions, MessageListSortLinks, MessageSearchContext,
+    SelectedMessagePane, SettingsPageModel,
 };
 use crate::logging::LogEvent;
 #[cfg(test)]
@@ -818,6 +819,9 @@ mod tests {
     mod composition_preference_tests {
         include!("http/composition_preference_tests.rs");
     }
+    mod reading_preferences_tests {
+        include!("http/reading_preferences_tests.rs");
+    }
     mod ux_fixtures {
         include!("http/ux_fixtures.rs");
     }
@@ -897,6 +901,7 @@ mod tests {
         settings_store: Option<crate::settings::FileUserSettingsStore>,
         composition_preferences_store:
             Option<crate::composition_preferences::CompositionPreferencesStore>,
+        reading_preferences_store: Option<crate::reading_preferences::ReadingPreferencesStore>,
         browser_fixture_accounts: bool,
         fixture_sessions: Option<fixture_sessions::FixtureSessions>,
     }
@@ -914,6 +919,7 @@ mod tests {
                 appearance_store: None,
                 settings_store: None,
                 composition_preferences_store: None,
+                reading_preferences_store: None,
                 browser_fixture_accounts: false,
                 fixture_sessions: None,
             }
@@ -1039,16 +1045,27 @@ mod tests {
                 let mut outcome = sessions.login(context, username, presentation.theme);
                 if let BrowserLoginDecision::Authenticated {
                     presentation: saved,
+                    reading,
                     ..
                 } = &mut outcome.decision
                 {
                     *saved = presentation;
+                    *reading = self
+                        .reading_preferences_store
+                        .as_ref()
+                        .and_then(|store| store.load(username).ok())
+                        .unwrap_or_default();
                 }
                 return outcome;
             }
             BrowserLoginOutcome {
                 decision: BrowserLoginDecision::Authenticated {
                     canonical_username: username.to_string(),
+                    reading: self
+                        .reading_preferences_store
+                        .as_ref()
+                        .and_then(|store| store.load(username).ok())
+                        .unwrap_or_default(),
                     presentation: self
                         .appearance_store
                         .as_ref()
@@ -1342,6 +1359,36 @@ mod tests {
                 return store.save_settings(&session.record.canonical_username, preferences);
             }
             self.update_appearance(context, session, preferences.theme)
+        }
+
+        fn load_reading_preferences(
+            &self,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+        ) -> std::io::Result<crate::reading_preferences::ReadingPreferences> {
+            if context.user_agent.contains("ReadingUnavailable") {
+                return Err(std::io::Error::other(
+                    "synthetic reading preference load failure",
+                ));
+            }
+            self.reading_preferences_store.as_ref().map_or_else(
+                || Ok(crate::reading_preferences::ReadingPreferences::default()),
+                |store| store.load(&session.record.canonical_username),
+            )
+        }
+
+        fn update_reading_preferences(
+            &self,
+            _context: &AuthenticationContext,
+            session: &ValidatedSession,
+            value: crate::reading_preferences::ReadingPreferences,
+        ) -> std::io::Result<()> {
+            self.reading_preferences_store
+                .as_ref()
+                .ok_or_else(|| {
+                    std::io::Error::other("synthetic reading preference store unavailable")
+                })?
+                .save(&session.record.canonical_username, value)
         }
 
         fn load_composition_preferences(

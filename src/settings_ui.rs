@@ -4,6 +4,9 @@ use super::*;
 #[path = "settings_general_ui.rs"]
 mod settings_general_ui;
 pub(crate) use settings_general_ui::render_general_page;
+#[path = "settings_reading_ui.rs"]
+mod settings_reading_ui;
+pub(crate) use settings_reading_ui::render_reading_page;
 
 pub(crate) fn render_appearance_page(
     model: &SettingsPageModel<'_>,

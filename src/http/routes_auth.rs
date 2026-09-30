@@ -90,9 +90,10 @@ where
                 session_token,
                 appearance,
                 presentation,
+                reading,
                 ..
             } => HandledHttpResponse {
-                response: redirect_response(303, "See Other", "/mailboxes")
+                response: redirect_response(303, "See Other", reading.start_page.path())
                     .with_header(
                         "Set-Cookie",
                         build_session_cookie(
@@ -108,6 +109,10 @@ where
                     .with_header(
                         "Set-Cookie",
                         presentation.cookie(self.policy.secure_session_cookie),
+                    )
+                    .with_header(
+                        "Set-Cookie",
+                        reading.cookie(self.policy.secure_session_cookie),
                     ),
                 audit_events,
             },
@@ -132,9 +137,13 @@ where
         if let Some(session_token) = session_cookie_value(request, self.policy.session_cookie_name)
         {
             let outcome = self.gateway.validate_session(context, &session_token);
-            if matches!(outcome.decision, BrowserSessionDecision::Valid { .. }) {
+            if let BrowserSessionDecision::Valid { validated_session } = outcome.decision {
+                let preferences = self
+                    .gateway
+                    .load_reading_preferences(context, &validated_session)
+                    .unwrap_or_default();
                 return HandledHttpResponse {
-                    response: redirect_response(303, "See Other", "/mailboxes"),
+                    response: redirect_response(303, "See Other", preferences.start_page.path()),
                     audit_events: outcome.audit_events,
                 };
             }

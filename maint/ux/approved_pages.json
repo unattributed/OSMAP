@@ -1833,13 +1833,17 @@
         "S02-04",
         "S04-01"
       ],
-      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "visual_status": "PARTIAL_FINAL_REFERENCE_COMPARISON",
       "controls": [
         {
           "id": "R2-14-001",
           "label": "Default start page",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "maint/ux/reading_workflows.py",
+            "src/http/reading_preferences_tests.rs",
+            "docs/UX_EXECUTION_LEDGER.md"
+          ]
         },
         {
           "id": "R2-14-002",
@@ -1856,56 +1860,92 @@
         {
           "id": "R2-14-004",
           "label": "Conversation ordering",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "maint/ux/reading_workflows.py",
+            "src/http/reading_preferences_tests.rs",
+            "docs/UX_EXECUTION_LEDGER.md"
+          ]
         },
         {
           "id": "R2-14-005",
           "label": "Default content mode",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "maint/ux/reading_workflows.py",
+            "src/http/reading_preferences_tests.rs",
+            "docs/UX_EXECUTION_LEDGER.md"
+          ]
         },
         {
           "id": "R2-14-006",
           "label": "Show source shortcut",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "maint/ux/reading_workflows.py",
+            "src/http/reading_preferences_tests.rs",
+            "docs/UX_EXECUTION_LEDGER.md"
+          ]
         },
         {
           "id": "R2-14-007",
           "label": "Attachment details",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "maint/ux/reading_workflows.py",
+            "src/http/reading_preferences_tests.rs",
+            "docs/UX_EXECUTION_LEDGER.md"
+          ]
         },
         {
           "id": "R2-14-008",
           "label": "External-images policy",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "maint/ux/reading_workflows.py",
+            "src/http/reading_preferences_tests.rs",
+            "docs/UX_EXECUTION_LEDGER.md"
+          ]
         },
         {
           "id": "R2-14-009",
           "label": "Archive folder",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "maint/ux/reading_workflows.py",
+            "src/http/reading_preferences_tests.rs",
+            "docs/UX_EXECUTION_LEDGER.md"
+          ]
         },
         {
           "id": "R2-14-010",
           "label": "Bin folder",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "maint/ux/reading_workflows.py",
+            "src/http/reading_preferences_tests.rs",
+            "docs/UX_EXECUTION_LEDGER.md"
+          ]
         },
         {
           "id": "R2-14-011",
           "label": "Sent folder",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "maint/ux/reading_workflows.py",
+            "src/http/reading_preferences_tests.rs",
+            "docs/UX_EXECUTION_LEDGER.md"
+          ]
         },
         {
           "id": "R2-14-012",
           "label": "Drafts folder",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "maint/ux/reading_workflows.py",
+            "src/http/reading_preferences_tests.rs",
+            "docs/UX_EXECUTION_LEDGER.md"
+          ]
         }
       ]
     },

@@ -220,6 +220,25 @@ impl BrowserGateway for RuntimeBrowserGateway {
         self.revoke_sessions_impl(context, validated_session, scope)
     }
 
+    fn load_reading_preferences(
+        &self,
+        _context: &AuthenticationContext,
+        session: &ValidatedSession,
+    ) -> std::io::Result<crate::reading_preferences::ReadingPreferences> {
+        crate::reading_preferences::ReadingPreferencesStore::new(&self.settings_dir)
+            .load(&session.record.canonical_username)
+    }
+
+    fn update_reading_preferences(
+        &self,
+        _context: &AuthenticationContext,
+        session: &ValidatedSession,
+        value: crate::reading_preferences::ReadingPreferences,
+    ) -> std::io::Result<()> {
+        crate::reading_preferences::ReadingPreferencesStore::new(&self.settings_dir)
+            .save(&session.record.canonical_username, value)
+    }
+
     fn load_composition_preferences(
         &self,
         _context: &AuthenticationContext,

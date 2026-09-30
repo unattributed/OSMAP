@@ -197,6 +197,7 @@ fn ux_synthetic_route_baselines() {
         ("drafts-review", "/drafts/discard", true, 200),
         ("settings", "/settings", true, 200),
         ("settings-appearance", "/settings?section=appearance", true, 200),
+        ("settings-reading", "/settings?section=reading", true, 200),
         ("settings-long-identity", "/settings", true, 200),
         (
             "archive-shortcut",

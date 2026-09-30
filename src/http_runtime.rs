@@ -75,6 +75,10 @@ where
             request.headers.get("cookie").map(String::as_str),
         );
         super::header_theme::apply_context(&mut handled.response, request);
+        super::routes_reading_preferences::apply_presentation(
+            &mut handled.response,
+            request.headers.get("cookie").map(String::as_str),
+        );
         handled
     }
 
@@ -168,6 +172,9 @@ where
             }
             (HttpMethod::Post, "/settings/composition") => {
                 self.handle_composition_preferences_update(request, &context)
+            }
+            (HttpMethod::Post, "/settings/reading") => {
+                self.handle_reading_preferences_update(request, &context)
             }
             (HttpMethod::Post, "/settings/display") => {
                 self.handle_display_update(request, &context)

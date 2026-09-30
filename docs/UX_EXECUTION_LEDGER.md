@@ -1678,3 +1678,51 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   `header-v14-final.log`, `header-clippy-final.log`; earlier failures retained.
   This accepts the bounded header implementation locally, not whole-page or epic
   completion. Native checkpoint qualification follows after signing.
+
+### Reading & Mailbox — PAGE-14 native preferences, 2026-09-30
+
+- Header checkpoint `e47f152d6d06369ce5dee3d1958917f86741f8b1` passed isolated
+  obsd1 qualification (exit 0), with standard checkout/services unchanged and no
+  deployment. S04 `native-c` archive SHA-256
+  `fd6e7165abb17447946dd87b36d57fb7996917f687885526b13c5865692da88b`;
+  native log SHA-256 `a82976019b44d87d32a4db19641658046e52f667926c373b1835300b5d635d9e`.
+- PAGE-14 now uses the approved three-card hierarchy with actual native account
+  preferences for start page, message date ordering, source shortcut and file
+  detail visibility. The private bounded v1 sidecar uses strict finite values,
+  account locking and atomic publication; corrupt state refuses load/write.
+  Login/root destinations come from the account store, never a received cookie.
+  Finite HttpOnly presentation cookies control only list defaults and visibility.
+- Explicit list sorting takes priority. Source and attachment access remain
+  session-bound and protected body/download bytes are unchanged. Existing content
+  and Archive forms use their existing backend, return to Reading, and preserve
+  the other setting. Archive options come from a budgeted owned mailbox listing;
+  unavailable stored values remain visible and are not silently cleared.
+- Replaced the obsolete monolithic settings renderer. V14's account-control gate
+  now checks the actual General/Reading renderers and executes the existing
+  rendered-route no-undelivered-capabilities regression. It still refuses outgoing
+  cryptography fields/routes; disabled signing/encryption remain tested.
+- Independent Edge 154 and Firefox 155 workflows passed five groups each:
+  actual UID ordering, both reader layouts, native saves, exact-byte refusal and
+  corruption behaviour, login cookie spoof resistance, restart and account
+  isolation. Zero script/external requests. Final CSS recaptures corrected the
+  form boundary gap to about 10.4 px. Parent inspected actual/reference desktop
+  images; card bounds are within about 2 px of approved PAGE-14. Shortened the
+  native selected label to Protected HTML, with its full meaning in help text,
+  to avoid truncation. Six final light/dark 360/768/1600 captures had zero overflow,
+  text-contrast and UI-contrast failures.
+- Full local validation: 745 library tests passed, seven opt-in fixtures ignored;
+  acceptance/security/V10–13, updated V14, strict all-target/all-feature Clippy,
+  formatting and diff checks passed. First route-test assertions assumed Secure
+  cookies despite the fixture policy and rejection of existing permissive unknown
+  sort handling; corrected to the actual policy and an explicit valid sort proof.
+- Evidence: S04 `reading-{edge,firefox}`, `reading-finalcaptures-{edge,firefox}`,
+  `reading-final-label-edge`, `reading-final-contrast`, `reading-final-fixtures`,
+  `reading-acceptance.log`, `reading-v14.log`, `reading-clippy.log`; failures retained.
+- PAGE-14 remains partial: automatic marking, after-archive selection and
+  conversation grouping are unavailable. Bin/Sent/Drafts locations are accurate
+  fixed mappings, not configurable choices. Individual-message ordering does not
+  complete conversation ordering. Inventory changes only statuses/evidence;
+  frozen reference requirements and whole-page/human acceptance remain open.
+- The first signing hook rejected the new browser fixture variable `anonymous`
+  under the repository-wide TLS word guard. Renamed that signed-out browser
+  context without changing behaviour or weakening the guard; reran the hook.
