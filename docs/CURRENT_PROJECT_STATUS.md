@@ -71,7 +71,17 @@ navigation clears the action selection and reads fresh counts; caller-supplied
 success query parameters no longer produce completion claims. Old forms and
 incompatible helpers refuse the upgraded mutation protocol without fallback.
 Local checks and synthetic visual/browser evidence are recorded under S02
-checkpoint F; exact signed-source native qualification is still pending.
+checkpoint F. Exact signed F passed native qualification on obsd1: 607 library
+tests, two hostile-rendering checks and the signed-helper reversible move and
+flag test. Standard checkout and services unchanged.
+S02-04 adds authenticated escaped stored-source text, contextual return links,
+identity-bound attachment reads from one checked snapshot, sandboxed forced
+downloads, bounded To/Cc reader details and useful empty/error/read-only retry
+states. 611 library tests and five source/download journeys in each of Edge
+and Firefox pass. Source represents stored headers and MIME body text, not a
+byte-exact original wire export. Existing source/download size limits remain.
+Common acceptance, V14, strict Clippy and 108 visual captures pass locally.
+Exact checkpoint G native qualification follows its signed source delivery.
 Independent human accessibility acceptance
 and deployment remain separate.
 D01–D06 are recorded

@@ -199,6 +199,41 @@ pub(crate) fn render_navigation_notice(
         app_header(canonical_username, csrf_token, "archive"), escape_html(title), escape_html(message)))
 }
 
+pub(crate) fn render_content_notice(
+    username: &str,
+    csrf: &str,
+    title: &str,
+    message: &str,
+    return_to: &str,
+    retry: Option<&str>,
+) -> TrustedHtml {
+    let retry = retry
+        .map(|url| {
+            format!(
+                "<a class=\"button-link\" href=\"{}\">Retry loading</a>",
+                escape_html(url)
+            )
+        })
+        .unwrap_or_default();
+    TrustedHtml::from_template(format!("{}<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\"><section class=\"content-pane\"><h1>{}</h1><p>{}</p><nav class=\"toolbar\" aria-label=\"Content recovery\"><a class=\"button-link\" href=\"{}\">Back to message</a>{}<a href=\"/mailboxes\">All mailboxes</a></nav></section></main>",
+        app_header(username, csrf, "mailboxes"), escape_html(title), escape_html(message), escape_html(return_to), retry))
+}
+
+pub(crate) fn render_message_source_page(
+    username: &str,
+    csrf: &str,
+    message: &crate::mailbox::MessageView,
+    return_to: &str,
+) -> TrustedHtml {
+    TrustedHtml::from_template(format!(concat!(
+        "{}<main id=\"main-content\" class=\"page-shell source-page\" tabindex=\"-1\"><section class=\"content-pane\">",
+        "<nav class=\"toolbar\" aria-label=\"Source navigation\"><a class=\"button-link\" href=\"{}\">Back to message</a></nav>",
+        "<h1>Message source</h1><p class=\"muted\">Stored headers and MIME body text are shown as escaped text. Content is not rendered or fetched. Line endings and text decoding may differ from the original wire message.</p>",
+        "<p class=\"muted\">{} · Message {}</p><pre class=\"message-source\" aria-label=\"Stored message source\" tabindex=\"0\">{}\n\n{}</pre></section></main>"),
+        app_header(username, csrf, mailbox_nav_section(&message.mailbox_name, None)), escape_html(return_to), escape_html(&message.mailbox_name), message.uid,
+        escape_html(message.header_block.trim_end_matches(['\r', '\n'])), escape_html(&message.body_text)))
+}
+
 fn folder_pane(mailboxes: &[MailboxEntry], current_mailbox_name: Option<&str>) -> String {
     let mut items = String::new();
     for mailbox in mailboxes.iter().take(DEFAULT_RENDERED_MAILBOXES_MAX) {
@@ -865,7 +900,7 @@ pub(crate) fn render_message_list_page(
         ));
     }
     if messages.is_empty() {
-        rows.push_str(&format!("<li class=\"message-empty-state\"><strong>No messages shown.</strong><br><span class=\"muted\">{}</span></li>", if sort_links.view.filter == MessageFilter::All { "New messages will appear here." } else { "No messages match this filter. Choose All messages to see the mailbox." }));
+        rows.push_str(&format!("<li class=\"message-empty-state\"><strong>No messages shown.</strong><br><span class=\"muted\">{}</span><p><a class=\"button-link\" href=\"/compose\">Compose a message</a></p></li>", if sort_links.view.filter == MessageFilter::All { "New messages will appear here." } else { "No messages match this filter. Choose All messages to see the mailbox." }));
     }
 
     let bulk_move_form = if (bulk_actions_available || archive_actions_available)
@@ -1003,7 +1038,7 @@ pub(crate) fn render_message_search_page(
     ));
     let mut rows = String::new();
     if results.is_empty() {
-        rows.push_str("<li class=\"message-empty-state\">No messages matched this search.</li>");
+        rows.push_str("<li class=\"message-empty-state\">No messages matched this search. <a href=\"/mailboxes\">Browse mailboxes</a> or change the search above.</li>");
     } else {
         for result in results {
             let message_href = if result.metadata.is_some() {
@@ -1126,12 +1161,20 @@ fn render_reader_fragment(
         attachments.push_str("<li class=\"attachment-item\">No attachments.</li>");
     } else {
         for attachment in &displayed_attachments {
-            let download_href = format!(
+            let mut download_href = format!(
                 "/attachment?mailbox={}&uid={}&part={}",
                 url_encode(&rendered.mailbox_name),
                 rendered.uid,
                 url_encode(&attachment.part_path),
             );
+            if let Some(metadata) = &rendered.metadata {
+                download_href.push_str(&format!(
+                    "&mailbox_guid={}&message_guid={}&return_to={}",
+                    url_encode(&metadata.version.mailbox_guid),
+                    url_encode(&metadata.version.message_guid),
+                    url_encode(return_to)
+                ));
+            }
             let content_id_metadata = attachment
                 .content_id
                 .as_deref()
@@ -1202,6 +1245,10 @@ fn render_reader_fragment(
     } else {
         "not requested by selected body"
     };
+    let source_link = rendered.metadata.as_ref().map(|metadata| format!(
+        "<a href=\"{}\">View source</a>", escape_html(&format!("/message?mailbox={}&uid={}&view=source&mailbox_guid={}&message_guid={}&return_to={}",
+            url_encode(&rendered.mailbox_name), rendered.uid, url_encode(&metadata.version.mailbox_guid), url_encode(&metadata.version.message_guid), url_encode(return_to)))))
+        .unwrap_or_else(|| "<span class=\"muted\">Source view unavailable</span>".into());
     let protected_reader_strip = format!(
         concat!(
             "<details class=\"protected-trust-strip\" aria-label=\"Protected by Default reader trust strip\"><summary><strong>Protected by Default</strong><span>Remote content blocked</span></summary>",
@@ -1209,7 +1256,7 @@ fn render_reader_fragment(
             "<div class=\"trust-strip-badges\" aria-label=\"Reader protection states\">",
             "<span class=\"badge badge-ok\">Remote content blocked</span>",
             "<span class=\"badge\">{} rendering</span>",
-            "<span class=\"badge\">Source view unavailable</span>",
+            "<span class=\"badge\">Source is never active HTML</span>",
             "</div></details>"
         ),
         escape_html(rendered.rendering_mode.as_str()),
@@ -1224,7 +1271,7 @@ fn render_reader_fragment(
     format!(
         concat!(
             "<article id=\"reading-pane\" class=\"reading-pane protected-reading-pane\" tabindex=\"-1\" aria-labelledby=\"message-title\" data-reader-mode=\"Protected Reader\">",
-            "<nav class=\"reader-navigation\" aria-label=\"Reader navigation\"><a href=\"{}\">Back to list</a></nav>",
+            "<nav class=\"reader-navigation toolbar\" aria-label=\"Reader navigation\"><a href=\"{}\">Back to list</a>{}</nav>",
             "<header class=\"message-heading\"><p class=\"muted\">{} · {}</p><h2 id=\"message-title\" dir=\"auto\">{}</h2><p class=\"message-from\" dir=\"auto\">From: {}</p></header>",
             "<div class=\"toolbar reader-primary-actions\" aria-label=\"Message actions\"><a class=\"button-link\" href=\"/compose?mode=reply&mailbox={}&uid={}\">Reply</a><a class=\"button-link\" href=\"/compose?mode=forward&mailbox={}&uid={}\">Forward</a>{}</div>",
             "<details class=\"reader-more-actions\"><summary>Move, archive, bin or restore</summary><div class=\"action-stack\">{}</div></details>",
@@ -1232,10 +1279,11 @@ fn render_reader_fragment(
             "<span id=\"reading-title\" class=\"sr-only\">Reading Pane</span>",
             "<section class=\"body-panel\"><h2>Body</h2><div class=\"reader-section-heading\" data-protected-body-panel=\"true\"><span class=\"badge badge-ok\">Protected rendering</span></div><p class=\"muted reader-boundary-note\">Message content is displayed with active content and remote images removed.</p>{}</section>",
             "<section class=\"panel reader-attachments\"><h2>Attachments</h2><ul class=\"attachment-list\">{}</ul></section>",
-            "<details class=\"reader-details\"><summary>Message details</summary>{}{}{}<dl class=\"message-meta reader-meta\"><dt>Subject</dt><dd dir=\"auto\">{}</dd><dt>From</dt><dd dir=\"auto\">{}</dd><dt>Mailbox</dt><dd>{}</dd><dt>UID</dt><dd>{}</dd><dt>Received</dt><dd>{}</dd><dt>MIME Type</dt><dd>{}</dd><dt>Body Source</dt><dd>{}</dd><dt>Rendering Mode</dt><dd>{}</dd><dt>HTML Present</dt><dd>{}</dd><dt>Protection</dt><dd>Protected by Default</dd><dt>Remote Content</dt><dd>{}</dd></dl></details>",
+            "<details class=\"reader-details\"><summary>Message details</summary>{}{}{}<dl class=\"message-meta reader-meta\"><dt>Subject</dt><dd dir=\"auto\">{}</dd><dt>From</dt><dd dir=\"auto\">{}</dd><dt>To</dt><dd dir=\"auto\">{}</dd><dt>Cc</dt><dd dir=\"auto\">{}</dd><dt>Mailbox</dt><dd>{}</dd><dt>UID</dt><dd>{}</dd><dt>Received</dt><dd>{}</dd><dt>MIME Type</dt><dd>{}</dd><dt>Body Source</dt><dd>{}</dd><dt>Rendering Mode</dt><dd>{}</dd><dt>HTML Present</dt><dd>{}</dd><dt>Protection</dt><dd>Protected by Default</dd><dt>Remote Content</dt><dd>{}</dd></dl></details>",
             "</article>"
         ),
         escape_html(back_href),
+        source_link,
         escape_html(&rendered.mailbox_name), escape_html(&rendered.date_received),
         escape_html(rendered.subject.as_deref().unwrap_or("(No subject)")),
         escape_html(rendered.from.as_deref().unwrap_or("Sender unavailable")),
@@ -1247,6 +1295,7 @@ fn render_reader_fragment(
         rendered.body_html, attachments,
         html_state_badge, rendering_notice, inline_image_notice,
         escape_html(rendered.subject.as_deref().unwrap_or("(No subject)")), escape_html(rendered.from.as_deref().unwrap_or("Sender unavailable")),
+        escape_html(rendered.to.as_deref().unwrap_or("Not present")), escape_html(rendered.cc.as_deref().unwrap_or("Not present")),
         escape_html(&rendered.mailbox_name), rendered.uid, escape_html(&rendered.date_received),
         escape_html(&rendered.mime_top_level_content_type), escape_html(rendered.body_source.as_str()),
         escape_html(rendered.rendering_mode.as_str()), if rendered.contains_html_body { "yes" } else { "no" }, remote_content_state,
@@ -1718,6 +1767,8 @@ mod v7_rendering_regression_tests {
             uid: 42,
             subject: Some("Decoded café".to_string()),
             from: Some("Example Sender <sender@example.invalid>".to_string()),
+            to: Some("Reader <reader@example.invalid>".into()),
+            cc: None,
             date_received: "2026-06-20 00:00:00 +0000".to_string(),
             mime_top_level_content_type: "multipart/alternative".to_string(),
             body_source: MimeBodySource::MultipartHtmlSanitized,

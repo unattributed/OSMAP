@@ -276,6 +276,23 @@ fn isolated_openbsd_json_and_signed_flag_helper() {
         .expect("native structured view");
     assert_eq!(viewed.metadata, initial[1].metadata);
     assert!(viewed.header_block.contains("Attachment fixture"));
+    let source = source_through_helper(&root, view, initial[1].uid);
+    assert_eq!(
+        source, viewed,
+        "signed source transport preserves the complete bounded snapshot"
+    );
+    let attachment = crate::attachment::AttachmentDownloadService::new(
+        crate::attachment::AttachmentDownloadPolicy::default(),
+    )
+    .download_from_message(&source, "1.2")
+    .expect("attachment from checked native source");
+    assert_eq!(attachment.body, b"Synthetic fixture.");
+    assert_eq!(attachment.filename, "fixture.txt");
+    assert_eq!(
+        list.list_messages(FIXTURE_ACCOUNT, &query)
+            .expect("flags after source read"),
+        initial
+    );
     let backend = DoveadmMessageFlagBackend::new(executor.clone(), "/usr/local/bin/doveadm");
     let mut request = MessageFlagRequest::new(
         "INBOX".into(),
@@ -451,4 +468,62 @@ fn isolated_openbsd_json_and_signed_flag_helper() {
         restored
     );
     fs::remove_dir_all(&root).expect("remove only owned synthetic fixture tree");
+}
+
+fn source_through_helper(
+    root: &Path,
+    backend: DoveadmMessageViewBackend<IsolatedDoveadm>,
+    uid: u64,
+) -> MessageView {
+    let socket = root.join("source.sock");
+    let key_path = root.join("fixture-grant.key");
+    let socket_for_thread = socket.clone();
+    let server = thread::spawn(move || {
+        let unused = StaticHelperBackend {
+            mailbox_result: Arc::new(Ok(Vec::new())),
+            message_list_result: Arc::new(Ok(Vec::new())),
+            message_search_result: Arc::new(Ok(Vec::new())),
+            message_view_result: Arc::new(Err(MailboxBackendError {
+                backend: "fixture-unused",
+                reason: "unused".into(),
+            })),
+            message_move_result: Arc::new(Ok(())),
+        };
+        let listener = UnixListener::bind(socket_for_thread).expect("isolated source socket");
+        let (mut stream, _) = listener.accept().expect("source fixture connection");
+        handle_helper_client(
+            HelperBackends {
+                mailbox_backend: &unused,
+                message_list_backend: &unused,
+                message_search_backend: &unused,
+                message_view_backend: &backend,
+                message_move_backend: &unused,
+                message_append_backend: &unused,
+                message_flag_backend: &unused,
+            },
+            &Logger::new(crate::config::LogFormat::Text, LogLevel::Info),
+            &mut stream,
+            MailboxHelperPolicy::default(),
+            MailboxHelperTrustedCallerPolicy {
+                trusted_peer_uid: test_runtime_uid(),
+                grant_key: test_helper_grant_key(),
+            },
+            &Mutex::new(BTreeMap::new()),
+        );
+    });
+    wait_for_socket(&socket);
+    let result = MailboxHelperMessageViewBackend::new(
+        &socket,
+        &key_path,
+        MailboxHelperPolicy::default(),
+        MessageViewPolicy::default(),
+    )
+    .fetch_message(
+        FIXTURE_ACCOUNT,
+        &MessageViewRequest::new(MessageViewPolicy::default(), "INBOX", uid)
+            .expect("source selector"),
+    );
+    server.join().expect("source helper thread");
+    fs::remove_file(socket).expect("remove source socket");
+    result.expect("signed native source")
 }

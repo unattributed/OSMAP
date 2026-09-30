@@ -390,10 +390,14 @@ where
                     503,
                     "Service Unavailable",
                     "Message List Unavailable",
-                    TrustedHtml::from_template(format!(
-                        "<p>{}</p>",
-                        escape_html(public_reason_message(&public_reason))
-                    )),
+                    crate::http_ui::render_content_notice(
+                        &validated_session.record.canonical_username,
+                        &validated_session.record.csrf_token,
+                        "Message list unavailable",
+                        public_reason_message(&public_reason),
+                        "/mailboxes",
+                        Some(&format!("/mailbox?name={}", url_encode(&mailbox_name))),
+                    ),
                 ),
                 audit_events,
             },
@@ -628,6 +632,9 @@ where
         request: &HttpRequest,
         context: &AuthenticationContext,
     ) -> HandledHttpResponse {
+        if request.query_params.contains_key("view") {
+            return self.handle_stored_content(request, context, false);
+        }
         let mailbox_name = match request.query_params.get("mailbox") {
             Some(mailbox_name) if !mailbox_name.is_empty() => mailbox_name.clone(),
             _ => {
@@ -694,7 +701,10 @@ where
             BrowserMessageViewDecision::Rendered {
                 canonical_username,
                 rendered,
-            } => {
+            } if canonical_username == validated_session.record.canonical_username
+                && rendered.mailbox_name == mailbox_name
+                && rendered.uid == uid =>
+            {
                 let archive_mailbox_name = self.validated_archive_mailbox_name(
                     context,
                     &validated_session,
@@ -742,6 +752,22 @@ where
                     audit_events,
                 }
             }
+            BrowserMessageViewDecision::Rendered { .. } => HandledHttpResponse {
+                response: html_response(
+                    503,
+                    "Service Unavailable",
+                    "Message View Unavailable",
+                    crate::http_ui::render_content_notice(
+                        &validated_session.record.canonical_username,
+                        &validated_session.record.csrf_token,
+                        "Message unavailable",
+                        "The message identity could not be confirmed. Return to the mailbox.",
+                        &format!("/mailbox?name={}", url_encode(&mailbox_name)),
+                        None,
+                    ),
+                ),
+                audit_events,
+            },
             BrowserMessageViewDecision::Denied { public_reason } => HandledHttpResponse {
                 response: {
                     let (status_code, reason_phrase, title) = match public_reason.as_str() {
@@ -753,10 +779,19 @@ where
                         status_code,
                         reason_phrase,
                         title,
-                        TrustedHtml::from_template(format!(
-                            "<p>{}</p>",
-                            escape_html(public_reason_message(&public_reason))
-                        )),
+                        crate::http_ui::render_content_notice(
+                            &validated_session.record.canonical_username,
+                            &validated_session.record.csrf_token,
+                            title,
+                            public_reason_message(&public_reason),
+                            &format!("/mailbox?name={}", url_encode(&mailbox_name)),
+                            (status_code == 503)
+                                .then_some(format!(
+                                    "/message?mailbox={}&uid={uid}",
+                                    url_encode(&mailbox_name)
+                                ))
+                                .as_deref(),
+                        ),
                     )
                 },
                 audit_events,
@@ -777,6 +812,11 @@ where
         request: &HttpRequest,
         context: &AuthenticationContext,
     ) -> HandledHttpResponse {
+        if request.query_params.contains_key("mailbox_guid")
+            || request.query_params.contains_key("message_guid")
+        {
+            return self.handle_stored_content(request, context, true);
+        }
         let mailbox_name = match request.query_params.get("mailbox") {
             Some(mailbox_name) if !mailbox_name.is_empty() => mailbox_name.clone(),
             _ => {
@@ -863,12 +903,19 @@ where
         audit_events.extend(outcome.audit_events);
 
         let mut handled = match outcome.decision {
-            BrowserAttachmentDownloadDecision::Downloaded { attachment, .. } => {
+            BrowserAttachmentDownloadDecision::Downloaded { canonical_username, attachment }
+                if canonical_username == validated_session.record.canonical_username
+                    && attachment.mailbox_name == mailbox_name && attachment.uid == uid
+                    && attachment.part_path == part_path => {
                 HandledHttpResponse {
                     response: attachment_download_response(&attachment),
                     audit_events,
                 }
             }
+            BrowserAttachmentDownloadDecision::Downloaded { .. } => HandledHttpResponse {
+                response: html_response(503, "Service Unavailable", "Attachment Download Unavailable", "<p>The attachment identity could not be confirmed. Return to the message and try again.</p>"),
+                audit_events,
+            },
             BrowserAttachmentDownloadDecision::Denied { public_reason } => {
                 let (status_code, reason_phrase, title) = match public_reason.as_str() {
                     "invalid_request" => (400, "Bad Request", "Invalid Attachment Request"),
@@ -885,10 +932,10 @@ where
                         status_code,
                         reason_phrase,
                         title,
-                        TrustedHtml::from_template(format!(
-                            "<p>{}</p>",
-                            escape_html(public_reason_message(&public_reason))
-                        )),
+                        crate::http_ui::render_content_notice(&validated_session.record.canonical_username,
+                            &validated_session.record.csrf_token, title, public_reason_message(&public_reason),
+                            &format!("/message?mailbox={}&uid={uid}", url_encode(&mailbox_name)),
+                            (status_code == 503).then_some(format!("/attachment?mailbox={}&uid={uid}&part={}", url_encode(&mailbox_name), url_encode(&part_path))).as_deref()),
                     ),
                     audit_events,
                 }

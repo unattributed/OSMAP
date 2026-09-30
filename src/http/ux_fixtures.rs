@@ -96,6 +96,10 @@ fn ux_synthetic_route_baselines() {
             404,
         ),
         ("reader", "/message?mailbox=INBOX&uid=9", true, 200),
+        ("reader-unavailable", "/message?mailbox=INBOX&uid=900", true, 503),
+        ("source-long", "/message?mailbox=INBOX&uid=9&view=source", true, 200),
+        ("source-unavailable", "/message?mailbox=INBOX&uid=9&view=source", true, 503),
+        ("source-not-found", "/message?mailbox=INBOX&uid=999&view=source", true, 404),
         (
             "reader-state-controls",
             "/message?mailbox=INBOX&uid=10",
@@ -170,6 +174,8 @@ fn ux_synthetic_route_baselines() {
         }
         match name {
             "reader-legacy" => headers[0] = ("User-Agent", "OSMAP/LegacyMetadata"),
+            "source-long" => headers[0] = ("User-Agent", "OSMAP/SourceLong"),
+            "source-unavailable" => headers[0] = ("User-Agent", "OSMAP/SourceUnavailable"),
             "move-partial" => headers[0] = ("User-Agent", "OSMAP/ManyMessages;MoveUnknown"),
             "move-stale" | "move-invalid" => headers[0] = ("User-Agent", "OSMAP/ManyMessages"),
             "reader-stale-selection" => headers[0] = ("User-Agent", "OSMAP/ManyMessages;ReaderStale"),

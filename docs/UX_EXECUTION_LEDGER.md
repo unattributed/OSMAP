@@ -1000,3 +1000,67 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   qualification. They were not run and are not current UX qualification.
   No persistent state migration, deployment or synchronization occurred.
   Independent human and full release acceptance remain pending.
+
+### S02-03 delivery / S02-04 work order — 2026-09-30
+
+- Exact signed F `f2b2665fd0a93fb24f023e98986ace9fe5bcc7b5` passed
+  native OpenBSD qualification: 607 library tests, two hostile-rendering tests
+  and the isolated signed-helper flags plus reversible move test. Source archive
+  SHA-256 `9f9f621b828fa83a8f1c10ce112f42d02812bdab93783eba0c53af1a4ed5d7d7`;
+  qualification log `2e6b4689bca70ca009561cb83a81d6a1c2a41cf2d725a846d6f189aedc3cb931`.
+  Owned snapshot `/home/foo/osmap-ux-s02-20260930-UdhgLP7n`; standard checkout
+  and services unchanged, disposable Maildir removed. S02-03 engineering delivered.
+- S02-04 IN_PROGRESS under D01/D06. Allowed: bounded authenticated source
+  retrieval/rendering, reader links, attachment identity/response checks,
+  empty/error/read-only retry states, synthetic browser and native tests,
+  generated gate inventories and evidence records. Reuse the existing configured
+  message-view helper for raw text; never decode active source into browser HTML.
+  A source page represents stored headers and MIME body text, not a claim of
+  byte-exact original wire export. Preserve existing body/attachment/filename
+  bounds and no-store/CSP protections. Bind new source/download links to stored
+  identities where available; no extra native mutation or automatic POST retry.
+  Reply-all and full compose identity/draft work remain S03. Retain evidence
+  under the existing S02 owner-private root. No deployment or synchronization.
+
+### S02-04 checkpoint G — source and bounded content verified locally
+
+- `/message?view=source` now reads bounded stored headers/MIME body through the
+  configured message-view backend and renders escaped text in the authenticated
+  no-store/CSP shell. Account, session, mailbox, canonical u32 UID, body/header
+  bounds and supplied stored identities are checked before exposure. Source
+  navigation returns to the selected reader/filter/sort context. Unknown view
+  modes and unsafe return destinations refuse before reading. Source is not
+  byte-exact original wire export; existing native decoding/line-ending limits
+  are explicit, and the route never substitutes decrypted content.
+- Current-identity reader links bind source and attachment downloads to both
+  stored GUIDs. Bound downloads decode one checked snapshot with the existing
+  bounded MIME attachment service; no second read can change its identity.
+  Missing configured-helper credentials remain fail closed, with no fallback.
+  Attachment responses retain forced download/no-store/nosniff/same-origin
+  policy and add sandbox CSP. Unversioned compatibility reads retain current-
+  UID semantics and do not claim stale-identity protection. Legacy helper
+  metadata absence keeps the source control unavailable. Limits remain 64 KiB
+  headers, 512 KiB MIME body, 256 KiB decoded attachment and bounded filenames.
+- Reader details now include bounded decoded To/Cc text, escaped at rendering.
+  Standalone reader and legacy attachment responses also verify returned
+  account/mailbox/UID (and attachment part). Empty mailbox/search provide useful
+  navigation; reader/source/attachment failures provide contextual return and
+  explicit read-only retry where appropriate. Reply/forward open compose without
+  submission; reply-all and full compose work remain S03.
+- 611 library tests, strict all-target/all-feature clippy, full common
+  acceptance, V14, formatting/diff and frozen-plan checks PASS. Five content
+  journeys pass in each of Edge and Firefox; six reader journeys pass. 108
+  image hashes verify across responsive light/dark/system, saved preferences,
+  simulated 200% reflow, forced colours, expanded details and Firefox. Zero
+  recorded overflow/contrast/outside-request failures. Narrow dark long source,
+  medium light recovery and expanded narrow dark reader were visually reviewed.
+- The initial V11 run correctly rejected a runtime `expect`; the error path now
+  uses an explicit `Result`, and the unchanged gate passes. Initial component
+  tests were updated for actual source availability/contextual recovery while
+  preserving unknown-metadata and cryptography non-claims. Native fixture
+  extension covers signed-helper raw source, byte-exact decoded synthetic
+  attachment and unchanged flags; exact G execution follows signing.
+- Evidence: `checkpoint-g-summary.json`, SHA-256
+  `d2f8e7196989fe49c28527884b6a0d4d2e04d36ceaf0caafd7587b0a5a83e5a4`.
+  S02 acceptance rows are IMPLEMENTED_VERIFIED_LOCAL, not independent human
+  acceptance. No live account, external recipient, deployment or synchronization.

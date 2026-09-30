@@ -106,6 +106,8 @@ pub struct RenderedMessageView {
     pub uid: u64,
     pub subject: Option<String>,
     pub from: Option<String>,
+    pub to: Option<String>,
+    pub cc: Option<String>,
     pub date_received: String,
     pub mime_top_level_content_type: String,
     pub body_source: MimeBodySource,
@@ -196,6 +198,16 @@ impl PlainTextMessageRenderer {
             uid: message.uid,
             subject,
             from,
+            to: extract_header_value(
+                &unfolded_headers,
+                "To",
+                self.policy.rendered_header_value_max_len,
+            )?,
+            cc: extract_header_value(
+                &unfolded_headers,
+                "Cc",
+                self.policy.rendered_header_value_max_len,
+            )?,
             date_received: message.date_received.clone(),
             mime_top_level_content_type: analysis.top_level_content_type.clone(),
             body_source: rendered_body.body_source,
@@ -736,6 +748,28 @@ mod tests {
 
         assert_eq!(subject.as_deref(), Some("Test message"));
         assert_eq!(folded.as_deref(), Some("folded continuation line"));
+    }
+
+    #[test]
+    fn reader_recipient_headers_are_decoded_bounded_and_remain_untrusted_text() {
+        let mut message = plain_text_message_view_fixture();
+        message.header_block.push_str(
+            "\nTo: =?UTF-8?Q?Andr=C3=A9?= <reader@example.test>\nCc: <untrusted@example.test>\n",
+        );
+        let renderer = PlainTextMessageRenderer::new(RenderingPolicy::default());
+        let rendered = renderer
+            .render_for_validated_session(&test_context(), &validated_session_fixture(), &message)
+            .expect("bounded recipients")
+            .rendered;
+        assert_eq!(rendered.to.as_deref(), Some("André <reader@example.test>"));
+        assert_eq!(rendered.cc.as_deref(), Some("<untrusted@example.test>"));
+        message.header_block = format!(
+            "Content-Type: text/plain\nTo: {}\n",
+            "x".repeat(DEFAULT_RENDERED_HEADER_VALUE_MAX_LEN + 1)
+        );
+        assert!(renderer
+            .render_for_validated_session(&test_context(), &validated_session_fixture(), &message)
+            .is_err());
     }
 
     #[test]

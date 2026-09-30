@@ -1350,6 +1350,8 @@ mod tests {
             uid: 42,
             subject: Some("Quarterly report".to_string()),
             from: Some("Alice Example <alice@example.com>".to_string()),
+            to: Some("Bob <bob@example.com>".into()),
+            cc: None,
             date_received: "2026-03-27 12:00:00 +0000".to_string(),
             mime_top_level_content_type: "multipart/mixed".to_string(),
             body_source: MimeBodySource::MultipartPlainTextPart,

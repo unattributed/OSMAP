@@ -23,7 +23,14 @@ fn fragment_errors_have_one_main_heading_and_return_navigation_in_the_active_the
         assert_eq!(body.matches("<main ").count(), 1, "{path}");
         assert_eq!(body.matches("<h1").count(), 1, "{path}");
         assert!(body.contains(heading), "{path}");
-        assert!(body.contains("Return to mail"));
+        if path.starts_with("/attachment") {
+            assert!(
+                body.contains("Back to message")
+                    && body.contains("/message?mailbox=INBOX&amp;uid=9")
+            );
+        } else {
+            assert!(body.contains("Return to mail"));
+        }
         assert!(body.contains("data-appearance=\"dark\""));
     }
 }
@@ -31,7 +38,19 @@ fn fragment_errors_have_one_main_heading_and_return_navigation_in_the_active_the
 #[test]
 fn compact_security_states_do_not_claim_undelivered_capabilities() {
     let reader = body_text(&authenticated_get("/message?mailbox=INBOX&uid=9"));
-    assert!(reader.contains("Source view unavailable"));
+    assert!(reader.contains("View source") && reader.contains("view=source"));
+    let mut legacy = request(
+        "GET",
+        "/message?mailbox=INBOX&uid=9",
+        &authenticated_headers(),
+        "",
+    );
+    legacy
+        .headers
+        .insert("user-agent".into(), "OSMAP/LegacyMetadata".into());
+    assert!(
+        body_text(&app().handle_request(&legacy, "127.0.0.1")).contains("Source view unavailable")
+    );
     assert!(!reader.contains("Source view escaped"));
     assert!(reader.contains("Decrypted on mail host</dt><dd>not produced"));
     assert!(!reader.contains("Decrypted locally"));

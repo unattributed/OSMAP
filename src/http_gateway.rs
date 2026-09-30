@@ -289,6 +289,19 @@ impl BrowserGateway for RuntimeBrowserGateway {
         self.download_attachment_impl(context, validated_session, mailbox_name, uid, part_path)
     }
 
+    fn read_message_source(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        request: &MessageViewRequest,
+    ) -> crate::mailbox::MessageViewOutcome {
+        MessageViewService::new(self.build_message_view_backend()).fetch_for_validated_session(
+            context,
+            validated_session,
+            request,
+        )
+    }
+
     fn send_message(
         &self,
         context: &AuthenticationContext,

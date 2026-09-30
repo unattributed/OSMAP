@@ -120,6 +120,15 @@ pub trait BrowserGateway {
         part_path: &str,
     ) -> BrowserAttachmentDownloadOutcome;
 
+    /// Read bounded stored text through the configured mailbox boundary.
+    /// Callers must check account, mailbox, UID and any expected version.
+    fn read_message_source(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        request: &MessageViewRequest,
+    ) -> crate::mailbox::MessageViewOutcome;
+
     fn move_message(
         &self,
         context: &AuthenticationContext,

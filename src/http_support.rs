@@ -139,6 +139,10 @@ pub fn attachment_download_response(attachment: &DownloadedAttachment) -> HttpRe
         .with_header("Referrer-Policy", "no-referrer")
         .with_header("X-Content-Type-Options", "nosniff")
         .with_header("X-Frame-Options", "DENY")
+        .with_header(
+            "Content-Security-Policy",
+            "sandbox; default-src 'none'; base-uri 'none'; frame-ancestors 'none'",
+        )
 }
 
 /// Returns the current narrow content-security-policy for HTML responses.

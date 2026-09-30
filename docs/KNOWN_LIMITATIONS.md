@@ -14,8 +14,17 @@ route/browser and process-restart evidence. The synthetic 360/768/1440 matrix,
 constitute independent assistive-technology or WCAG conformance acceptance.
 Native host qualification and deployment remain separate. The protected-reader
 indicator is a truthful text badge; exact icon/picture fidelity remains in the
-later visual review. The legacy `view=source` query still renders the reader;
-actual original-source viewing remains S02-04.
+later visual review. S02-04 implements `view=source` as authenticated, escaped
+stored headers and MIME body text. It is not byte-exact wire-message export:
+native retrieval/text decoding can normalize line endings or replace bytes.
+Source remains bounded to the existing 64 KiB headers and 512 KiB MIME body;
+decoded attachment downloads remain limited to 256 KiB and bounded filenames.
+New source/download links carry stored identities and refuse stale replacements.
+Unversioned read URLs, including legacy-helper download links, retain
+session-scoped current-UID semantics;
+they do not promise that an old UID still refers to the originally viewed mail.
+No source or download operation changes flags, decrypts content, or permits
+active HTML/remote content in the source page. Reply-all remains S03.
 `UX_DECISIONS.md` selects isolated host-helper cryptography and script-free full
 navigation with preserved context. These decisions are not implemented crypto
 or visual acceptance, and do not weaken existing gates. Roundcube removal is operator-reported, not proof

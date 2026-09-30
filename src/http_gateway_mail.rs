@@ -1088,5 +1088,17 @@ mod tests {
                     field.key == "reason" && field.value == "mailbox_helper_grant_key_path_missing"
                 })
         }));
+        let source = gateway.read_message_source(
+            &test_context(),
+            &validated_session(),
+            &MessageViewRequest::new(MessageViewPolicy::default(), "INBOX", 1)
+                .expect("valid request"),
+        );
+        assert!(matches!(
+            source.decision,
+            MessageViewDecision::Denied {
+                public_reason: crate::mailbox::MailboxPublicFailureReason::TemporarilyUnavailable
+            }
+        ));
     }
 }

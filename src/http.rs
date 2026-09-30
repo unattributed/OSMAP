@@ -14,6 +14,7 @@ mod http_runtime;
 mod routes_appearance;
 mod routes_auth;
 mod routes_compose;
+mod routes_content;
 mod routes_draft;
 mod routes_flags;
 mod routes_mail;
@@ -815,6 +816,9 @@ mod tests {
     use move_fixtures::{move_form, SyntheticMessageMoves};
     mod move_tests {
         include!("http/move_tests.rs");
+    }
+    mod content_tests {
+        include!("http/content_tests.rs");
     }
     mod flag_fixtures {
         include!("http/flag_fixtures.rs");
@@ -1820,6 +1824,8 @@ mod tests {
                     },
                     rendered: Box::new(RenderedMessageView {
                         metadata,
+                        to: Some(validated_session.record.canonical_username.clone()),
+                        cc: None,
                         flags: self.fixture_message_flags(
                             &validated_session.record.canonical_username,
                             mailbox_name,
@@ -1933,6 +1939,15 @@ mod tests {
                     )],
                 }
             }
+        }
+
+        fn read_message_source(
+            &self,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+            request: &MessageViewRequest,
+        ) -> crate::mailbox::MessageViewOutcome {
+            content_tests::fixture_source(self, context, session, request)
         }
 
         fn download_attachment(

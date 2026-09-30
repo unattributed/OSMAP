@@ -1188,8 +1188,12 @@
       ],
       "baseline_observation": "Existing reader metadata",
       "test_design": "UX05",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S02-04 checkpoint G",
+        "/home/foo/Downloads/osmap-ux-s02/run-20260930/checkpoint-g-summary.json"
+      ],
+      "engineering_note": "Stored text, protected body, bounded downloads, reader details and recovery navigation verified locally. Independent human and full release acceptance remain pending."
     },
     {
       "id": "UX03-011",
@@ -1264,8 +1268,12 @@
       ],
       "baseline_observation": "Rendering policy metadata exists",
       "test_design": "UX05",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S02-04 checkpoint G",
+        "/home/foo/Downloads/osmap-ux-s02/run-20260930/checkpoint-g-summary.json"
+      ],
+      "engineering_note": "Stored text, protected body, bounded downloads, reader details and recovery navigation verified locally. Independent human and full release acceptance remain pending."
     },
     {
       "id": "UX05-003",
@@ -1276,8 +1284,12 @@
       ],
       "baseline_observation": "Absent despite source-escaped badge; no source route or details control",
       "test_design": "UX05",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S02-04 checkpoint G",
+        "/home/foo/Downloads/osmap-ux-s02/run-20260930/checkpoint-g-summary.json"
+      ],
+      "engineering_note": "Stored text, protected body, bounded downloads, reader details and recovery navigation verified locally. Independent human and full release acceptance remain pending."
     },
     {
       "id": "UX15-005",
@@ -1300,8 +1312,12 @@
       ],
       "baseline_observation": "`RenderedMessageView`, escaped/plain or sanitized HTML",
       "test_design": "UX05",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S02-04 checkpoint G",
+        "/home/foo/Downloads/osmap-ux-s02/run-20260930/checkpoint-g-summary.json"
+      ],
+      "engineering_note": "Stored text, protected body, bounded downloads, reader details and recovery navigation verified locally. Independent human and full release acceptance remain pending."
     },
     {
       "id": "UX05-005",
@@ -1312,8 +1328,12 @@
       ],
       "baseline_observation": "Authenticated part route, forced download and bounds",
       "test_design": "UX05",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S02-04 checkpoint G",
+        "/home/foo/Downloads/osmap-ux-s02/run-20260930/checkpoint-g-summary.json"
+      ],
+      "engineering_note": "Stored text, protected body, bounded downloads, reader details and recovery navigation verified locally. Independent human and full release acceptance remain pending."
     },
     {
       "id": "UX04-009",
@@ -1420,8 +1440,12 @@
       ],
       "baseline_observation": "UI empty state exists; add fixture and useful compose CTA",
       "test_design": "UX16",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S02-04 checkpoint G",
+        "/home/foo/Downloads/osmap-ux-s02/run-20260930/checkpoint-g-summary.json"
+      ],
+      "engineering_note": "Stored text, protected body, bounded downloads, reader details and recovery navigation verified locally. Independent human and full release acceptance remain pending."
     },
     {
       "id": "UX16-002",
@@ -1432,8 +1456,12 @@
       ],
       "baseline_observation": "503 safe error exists; contextual read-only retry missing",
       "test_design": "UX16",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S02-04 checkpoint G",
+        "/home/foo/Downloads/osmap-ux-s02/run-20260930/checkpoint-g-summary.json"
+      ],
+      "engineering_note": "Stored text, protected body, bounded downloads, reader details and recovery navigation verified locally. Independent human and full release acceptance remain pending."
     },
     {
       "id": "UX16-003",
@@ -1444,8 +1472,12 @@
       ],
       "baseline_observation": "Safe denied route; explicit return/retry affordance missing",
       "test_design": "UX16",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S02-04 checkpoint G",
+        "/home/foo/Downloads/osmap-ux-s02/run-20260930/checkpoint-g-summary.json"
+      ],
+      "engineering_note": "Stored text, protected body, bounded downloads, reader details and recovery navigation verified locally. Independent human and full release acceptance remain pending."
     },
     {
       "id": "UX16-004",
@@ -1492,8 +1524,12 @@
       ],
       "baseline_observation": "Existing rendering state",
       "test_design": "UX16",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S02-04 checkpoint G",
+        "/home/foo/Downloads/osmap-ux-s02/run-20260930/checkpoint-g-summary.json"
+      ],
+      "engineering_note": "Stored text, protected body, bounded downloads, reader details and recovery navigation verified locally. Independent human and full release acceptance remain pending."
     },
     {
       "id": "UX16-008",
@@ -1504,8 +1540,12 @@
       ],
       "baseline_observation": "Empty results renderer; add fixture and clear action",
       "test_design": "UX16",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S02-04 checkpoint G",
+        "/home/foo/Downloads/osmap-ux-s02/run-20260930/checkpoint-g-summary.json"
+      ],
+      "engineering_note": "Stored text, protected body, bounded downloads, reader details and recovery navigation verified locally. Independent human and full release acceptance remain pending."
     },
     {
       "id": "UX17-001",
