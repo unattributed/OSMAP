@@ -23,7 +23,7 @@ use crate::mime::{AttachmentMetadata, DEFAULT_MIME_PARTS_MAX};
 use crate::rendering::{HtmlDisplayPreference, RenderedMessageView};
 pub(crate) use settings_ui::{
     render_appearance_page, render_composition_page, render_copies_page, render_general_page,
-    render_privacy_page, render_reading_page,
+    render_privacy_page, render_reading_page, render_security_page,
 };
 
 /// Defense-in-depth cap for attachment metadata rows rendered by one route.
@@ -75,7 +75,8 @@ pub(crate) struct DraftListPageModel<'a> {
     pub drafts: &'a [DraftSummary],
     pub view: &'a DraftListView,
     pub total_count: usize,
-    pub total_bytes: u64,
+    pub states: &'a [crate::http::BrowserDraftState],
+    pub usage: &'a crate::http::BrowserDraftStorageUsage,
 }
 
 /// Small view model for mailbox message-list sort links.
@@ -294,6 +295,16 @@ pub(crate) fn render_settings_search_page(account: &str, csrf: &str, query: &str
             "Reply placement",
             "composition reply reply-all above below quoted text",
             "/settings?section=composition#composition-reply-placement",
+        ),
+        (
+            "Security",
+            "security authentication password totp sessions protection",
+            "/settings?section=security",
+        ),
+        (
+            "Authentication & Recovery",
+            "authentication recovery password totp sessions contact",
+            "/settings?section=authentication",
         ),
         (
             "Privacy & Security",
@@ -657,7 +668,7 @@ fn render_coordinated_reader(
     }
 }
 
-fn render_list_navigation(base: &str, view: &ListViewState) -> String {
+fn render_list_navigation(base: &str, view: &ListViewState, compact: bool) -> String {
     let mut filters = String::new();
     for filter in [
         MessageFilter::All,
@@ -700,6 +711,9 @@ fn render_list_navigation(base: &str, view: &ListViewState) -> String {
     filters.push_str(
         "</div><p class=\"muted\">Unknown means attachment metadata is unavailable.</p></details>",
     );
+    if compact {
+        filters = format!("<details class=\"sent-filter-menu\" name=\"list-tools\"><summary>{}</summary><div class=\"mail-tools-panel\"><nav aria-label=\"Sent filters\">{filters}</nav></div></details>", if view.attachment == AttachmentFilter::All { view.filter.label().to_string() } else { format!("{} · {}", view.filter.label(), view.attachment.label()) });
+    }
     let previous = if view.page > 1 {
         format!(
             "<a class=\"button-link\" rel=\"prev\" href=\"{}\">Previous page</a>",
@@ -824,6 +838,7 @@ fn render_search_field_select(active_field: MessageSearchField) -> String {
 }
 
 struct MessageCard<'a> {
+    recipient: bool,
     mailbox: &'a str,
     uid: u64,
     subject: Option<&'a str>,
@@ -843,6 +858,16 @@ fn render_message_card(
     actions: &str,
     selection: &str,
 ) -> String {
+    let party = message.sender.unwrap_or(if message.recipient {
+        "Recipient unavailable"
+    } else {
+        "Sender unavailable"
+    });
+    let visible_party = if message.recipient && message.sender.is_some() {
+        format!("To: {party}")
+    } else {
+        party.to_string()
+    };
     let (star, read_action) = match message.metadata {
         Some(metadata) => (
             render_message_flag_form(
@@ -872,18 +897,18 @@ fn render_message_card(
     format!(
         concat!(
             "<li class=\"message-row message-card{}\" data-selected=\"{}\">{selection}",
-            "<div class=\"message-card-main\"><span class=\"message-avatar\" aria-hidden=\"true\" title=\"Initials from the sender header\">{}</span><span class=\"message-sender\" title=\"{}\" dir=\"auto\">{}</span>",
+            "<div class=\"message-card-main\"><span class=\"message-avatar\" aria-hidden=\"true\" title=\"{initials_hint}\">{}</span><span class=\"message-sender\" title=\"{}\" dir=\"auto\">{}</span>",
             "<span class=\"message-date\" title=\"{}\">{}</span>",
             "<a class=\"message-subject-link\" href=\"{}\"{} dir=\"auto\">{}</a><span class=\"message-body-preview\" dir=\"auto\">{}</span></div>",
             "<div class=\"message-card-footer message-preview-meta\"><span class=\"message-mailbox\">{}</span><div class=\"message-star-cell\">{star}</div>{}<span class=\"message-security\" title=\"OpenPGP protection has not been assessed for this message. Open the message for available details.\">Not assessed</span>",
             "<details class=\"message-more\"><summary aria-label=\"More for message #{} in {}\"><span aria-hidden=\"true\">⋮</span><span class=\"sr-only\">More</span></summary>",
-            "<div class=\"message-more-content\"><p class=\"muted\">Message #{} · {} bytes</p><p><strong>From:</strong> {}</p><p><strong>Subject:</strong> {}</p>{read_action}{}</div></details></div></li>"
+            "<div class=\"message-more-content\"><p class=\"muted\">Message #{} · {} bytes</p><p><strong>{party_label}:</strong> {}</p><p><strong>Subject:</strong> {}</p>{read_action}{}</div></details></div></li>"
         ),
         if has_flag(message.flags, "\\Seen") { "" } else { " message-unread" },
         selected,
         escape_html(&sender_initials(message.sender)),
-        escape_html(message.sender.unwrap_or("Sender unavailable")),
-        escape_html(message.sender.unwrap_or("Sender unavailable")),
+        escape_html(party),
+        escape_html(&visible_party),
         escape_html(message.received),
         escape_html(message.received),
         escape_html(href),
@@ -893,16 +918,23 @@ fn render_message_card(
         escape_html(message.mailbox),
         render_attachment_count(message.metadata),
         message.uid, escape_html(message.mailbox), message.uid, message.size,
-        escape_html(message.sender.unwrap_or("Sender unavailable")),
+        escape_html(party),
         escape_html(message.subject.unwrap_or("(No subject)")), actions,
+        initials_hint = if message.recipient { "Initials from the recipient header" } else { "Initials from the sender header" },
+        party_label = if message.recipient { "To" } else { "From" },
         selection = selection,
         star = star,
         read_action = read_action,
     )
 }
 
-fn message_column_headings() -> &'static str {
-    "<div class=\"message-columns\" aria-hidden=\"true\"><span class=\"column-sender\">From</span><span class=\"column-subject\">Subject</span><span class=\"column-attachment\">Attachment</span><span class=\"column-security\">Security</span><span class=\"column-date\">Date</span></div>"
+fn message_column_headings(recipient: bool) -> String {
+    let heading = "<div class=\"message-columns\" aria-hidden=\"true\"><span class=\"column-sender\">From</span><span class=\"column-subject\">Subject</span><span class=\"column-attachment\">Attachment</span><span class=\"column-security\">Security</span><span class=\"column-date\">Date</span></div>";
+    if recipient {
+        heading.replace(">From<", ">Recipient<")
+    } else {
+        heading.to_string()
+    }
 }
 
 fn render_sort_control_group(links: &str, view: &ListViewState) -> String {
@@ -1083,7 +1115,12 @@ pub(crate) fn render_message_list_page(
                 mailbox: mailbox_name,
                 uid: message.uid,
                 subject: message.subject.as_deref(),
-                sender: message.from.as_deref(),
+                recipient: mailbox_name == "Sent",
+                sender: if mailbox_name == "Sent" {
+                    message.to.as_deref()
+                } else {
+                    message.from.as_deref()
+                },
                 received: &message.date_received,
                 flags: &message.flags,
                 metadata: message.metadata.as_ref(),
@@ -1170,7 +1207,7 @@ pub(crate) fn render_message_list_page(
     TrustedHtml::from_template(format!(
         concat!(
             "{}",
-            "<main id=\"main-content\" class=\"page-shell coordinated-mail{}\" tabindex=\"-1\"><div class=\"page-intro mail-page-intro\"><h1>{}</h1><p>Search, filter, sort and work with messages without losing context.</p></div>",
+            "<main id=\"main-content\" class=\"page-shell coordinated-mail{}\" tabindex=\"-1\"><div class=\"page-intro mail-page-intro\"><h1>{}</h1><p>{list_intro}</p></div>",
             "<section class=\"content-pane coordinated-list\" aria-labelledby=\"mailbox-title\">",
             "<div class=\"section-header sr-only\"><h2 id=\"mailbox-title\" class=\"section-title message-list-summary\">Mailbox: {}</h2></div>",
             "{}",
@@ -1185,13 +1222,14 @@ pub(crate) fn render_message_list_page(
         escape_html(mailbox_name),
         success_banner,
         render_bulk_selection_menu(&navigation_base, sort_links.view, bulk_actions_available, archive_actions_available),
-        render_list_navigation(&navigation_base, sort_links.view),
+        render_list_navigation(&navigation_base, sort_links.view, mailbox_name == "Sent"),
         sort_headers,
         search_controls,
         action_controls,
-        message_column_headings(),
+        message_column_headings(mailbox_name == "Sent"),
         rows,
         render_coordinated_reader(&navigation_base, sort_links.view, csrf_token, sort_links.reader),
+        list_intro = if mailbox_name == "Sent" { "Stored Sent copies. Their presence does not confirm delivery." } else { "Search, filter, sort and work with messages without losing context." },
     ))
 }
 
@@ -1255,6 +1293,7 @@ pub(crate) fn render_message_search_page(
                     mailbox: &result.mailbox_name,
                     uid: result.uid,
                     subject: result.subject.as_deref(),
+                    recipient: false,
                     sender: result.from.as_deref(),
                     received: &result.date_received,
                     flags: &result.flags,
@@ -1297,9 +1336,9 @@ pub(crate) fn render_message_search_page(
         escape_html(search_field.label()),
         escape_html(query),
         view.total_results,
-        render_list_navigation(&navigation_base, view),
+        render_list_navigation(&navigation_base, view, false),
         sort_headers,
-        message_column_headings(),
+        message_column_headings(false),
         rows,
         render_coordinated_reader(&navigation_base, view, csrf_token, context.reader),
     ))
@@ -1881,11 +1920,25 @@ pub(crate) fn render_draft_list_page(model: &DraftListPageModel<'_>) -> TrustedH
         None => String::new(),
     };
     let mut rows = String::new();
+    let mut editable_count = 0;
     for draft in model.drafts {
+        let mut matching = model
+            .states
+            .iter()
+            .filter(|state| state.draft_id == draft.draft_id && state.revision == draft.revision);
+        let state = matching
+            .next()
+            .filter(|_| matching.next().is_none())
+            .map(|value| &value.state);
+        if !matches!(state, Some(crate::http::BrowserDraftEditState::Editable)) {
+            rows.push_str(&render_locked_draft_row(draft, state));
+            continue;
+        }
+        editable_count += 1;
         let resume_href = format!("/draft?id={}", url_encode(&draft.draft_id));
         rows.push_str(&format!(
             concat!(
-                "<tr>",
+                "<tr data-draft-state=\"editable\">",
                 "<td class=\"draft-select\"><input type=\"checkbox\" form=\"draft-selection\" name=\"selected_{}\" value=\"{}\" aria-label=\"Select draft: {}\"></td>",
                 "<td class=\"draft-star\"><form method=\"post\" action=\"/drafts/star\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"draft_id\" value=\"{}\"><input type=\"hidden\" name=\"draft_revision\" value=\"{}\"><input type=\"hidden\" name=\"starred\" value=\"{}\">{}<button type=\"submit\" aria-label=\"{}\" aria-pressed=\"{}\" title=\"{}\">{}</button></form></td>",
                 "<td class=\"draft-recipient\" dir=\"auto\"><div class=\"draft-recipient-person\"><span class=\"sender-avatar\" aria-hidden=\"true\">{}</span><span>{}</span></div></td>",
@@ -1929,15 +1982,15 @@ pub(crate) fn render_draft_list_page(model: &DraftListPageModel<'_>) -> TrustedH
     TrustedHtml::from_template(format!(
         concat!(
             "{}",
-            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
+            "<main id=\"main-content\" class=\"page-shell drafts-page\" tabindex=\"-1\">",
             "<div class=\"page-intro\"><h1>Drafts</h1><p>Resume, organize and safely discard saved messages.</p></div>{}{}",
             "<div class=\"draft-list-toolbar\"><form method=\"get\" action=\"/drafts\"><label class=\"sr-only\" for=\"draft-filter\">Draft filter</label><select id=\"draft-filter\" name=\"filter\">{}</select><label class=\"sr-only\" for=\"draft-sort\">Draft order</label><select id=\"draft-sort\" name=\"sort\">{}</select><label class=\"sr-only\" for=\"draft-query\">Search drafts</label><input id=\"draft-query\" name=\"q\" value=\"{}\" maxlength=\"200\" placeholder=\"Search subjects or recipients\"><button type=\"submit\">Apply</button></form><a class=\"button-link primary-button\" href=\"/compose\">+ New Message</a></div>",
             "<div class=\"table-wrap draft-list\" role=\"region\" aria-label=\"Saved drafts\" tabindex=\"0\"><table>",
             "<thead><tr><th><span class=\"sr-only\">Select</span></th><th><span class=\"sr-only\">Star</span></th><th>Recipient</th><th>Subject</th><th>Attachment</th><th>Status</th><th>Saved</th><th>Actions</th></tr></thead>",
             "<tbody>{}</tbody>",
             "</table></div>",
-            "<p class=\"draft-list-status muted\" role=\"status\">Showing {} of {} saved drafts · Draft storage: {} of 50 MiB</p>",
-            "<form id=\"draft-selection\" class=\"draft-selection-actions\" method=\"post\" action=\"/drafts/discard\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\">{}<p class=\"muted\">Select up to 10 drafts to discard together.</p><button type=\"submit\" name=\"stage\" value=\"review\">Review discard</button></form>",
+            "<p class=\"draft-list-status muted\" role=\"status\">Showing {} of {} saved drafts</p><p class=\"draft-storage-status muted\">{}</p>",
+            "<form id=\"draft-selection\" class=\"draft-selection-actions\" method=\"post\" action=\"/drafts/discard\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\">{}<p class=\"muted\">Select up to 10 editable drafts to discard together.</p><button type=\"submit\" name=\"stage\" value=\"review\"{}>Review discard</button></form>",
             "</main>"
         ),
         app_header(model.canonical_username, model.csrf_token, "drafts"),
@@ -1949,9 +2002,65 @@ pub(crate) fn render_draft_list_page(model: &DraftListPageModel<'_>) -> TrustedH
         rows,
         model.drafts.len(),
         model.total_count,
-        if model.total_bytes < 1024 { format!("{} B", model.total_bytes) } else if model.total_bytes < 1024 * 1024 { format!("{} KiB", model.total_bytes.div_ceil(1024)) } else { format!("{:.1} MiB", model.total_bytes as f64 / (1024.0 * 1024.0)) },
+        render_draft_storage(model.usage),
         escape_html(model.csrf_token), render_draft_list_state(model.view),
+        if editable_count == 0 { " disabled" } else { "" },
     ))
+}
+
+fn render_locked_draft_row(
+    draft: &DraftSummary,
+    state: Option<&crate::http::BrowserDraftEditState>,
+) -> String {
+    use crate::http::BrowserDraftEditState as State;
+    let (kind, label, explanation, intent) = match state {
+        Some(State::Attempted { receipt_intent }) => (
+            "attempted",
+            "Attempt recorded",
+            "Review the receipt; this saved version is read-only.",
+            Some(receipt_intent),
+        ),
+        Some(State::Paused { receipt_intent }) => (
+            "paused",
+            "Paused",
+            "Submission state needs review. This saved version is read-only.",
+            Some(receipt_intent),
+        ),
+        _ => (
+            "unknown",
+            "Unavailable",
+            "Editing status could not be verified. Reload Drafts before making changes.",
+            None,
+        ),
+    };
+    let intent = intent.filter(|value| crate::send_journal::receipt_intent_valid(value));
+    let title = if draft.subject.is_empty() {
+        "(No subject)"
+    } else {
+        &draft.subject
+    };
+    let links = if let Some(intent) = intent {
+        format!("<a href=\"/compose?receipt={}\">View attempt</a><a href=\"/draft?id={}\">Saved version</a>", escape_html(&url_encode(intent)), escape_html(&url_encode(&draft.draft_id)))
+    } else {
+        "<a href=\"/drafts\">Reload Drafts</a>".into()
+    };
+    format!(concat!("<tr data-draft-state=\"{kind}\"><td class=\"draft-select\"><input type=\"checkbox\" disabled aria-label=\"Select draft: {title}\"></td><td class=\"draft-star\"><button disabled aria-label=\"Star unavailable\">{star}</button></td>",
+        "<td class=\"draft-recipient\"><div class=\"draft-recipient-person\"><span class=\"sender-avatar\" aria-hidden=\"true\">{initials}</span><span>{recipient}</span></div></td><td class=\"draft-subject\"><strong dir=\"auto\">{title}</strong><span class=\"muted\">{explanation}</span></td><td>{files}</td><td><span class=\"badge\">{label}</span></td><td><time datetime=\"{utc}\">{time}</time></td><td><details class=\"draft-discard\"><summary aria-label=\"Draft actions\">⋮</summary><div class=\"draft-action-menu\">{links}<button disabled>Delete unavailable</button></div></details></td></tr>"),kind=kind,title=escape_html(title),star=if draft.starred {"★"} else {"☆"},initials=escape_html(&sender_initials(draft.recipient_preview.as_deref())),recipient=escape_html(draft.recipient_preview.as_deref().unwrap_or("No visible recipients")),explanation=explanation,files=if draft.attachment_count>0 {format!("{} files",draft.attachment_count)} else {"—".into()},label=label,utc=crate::logging::format_unix_timestamp_utc(draft.updated_at),time=crate::logging::format_unix_timestamp_utc(draft.updated_at).replace('T'," ").replace('Z'," UTC"),links=links)
+}
+fn render_draft_storage(usage: &crate::http::BrowserDraftStorageUsage) -> String {
+    let size = |bytes: u64| {
+        if bytes < 1024 {
+            format!("{bytes} B")
+        } else if bytes < 1024 * 1024 {
+            format!("{} KiB", bytes.div_ceil(1024))
+        } else {
+            format!("{:.1} MiB", bytes as f64 / (1024.0 * 1024.0))
+        }
+    };
+    match usage {
+        crate::http::BrowserDraftStorageUsage::Verified { ordinary_count, ordinary_bytes, recovery_count, recovery_bytes, max_count, max_bytes } => format!("Saved drafts: {ordinary_count} ({}). Retained attempts: {recovery_count} ({}). Combined storage: {} of {}; {} of {max_count} items. This limit covers drafts and attempt recovery.",size(*ordinary_bytes),size(*recovery_bytes),size(ordinary_bytes.saturating_add(*recovery_bytes)),size(*max_bytes),ordinary_count.saturating_add(*recovery_count)),
+        crate::http::BrowserDraftStorageUsage::Unknown => "Combined storage usage could not be verified. Limits include saved drafts and retained attempts.".into(),
+    }
 }
 
 fn render_draft_list_state(view: &DraftListView) -> String {
@@ -2029,5 +2138,55 @@ mod v7_rendering_regression_tests {
         assert!(page.contains("<strong>Sanitized HTML:</strong>"));
         assert!(page.contains("Remote content blocked by policy"));
         assert!(page.contains("Safe rendered body"));
+    }
+}
+
+#[cfg(test)]
+#[test]
+fn draft_ui_unmatched_revision_and_duplicate_state_never_enable_editing() {
+    use crate::http::{BrowserDraftEditState, BrowserDraftState, BrowserDraftStorageUsage};
+    let drafts = vec![DraftSummary {
+        draft_id: "a".repeat(32),
+        created_at: 100,
+        updated_at: 100,
+        expires_at: 200,
+        revision: 2,
+        starred: false,
+        storage_bytes: 1,
+        recipient_count: 0,
+        recipient_preview: None,
+        subject: "Synthetic".into(),
+        subject_len: 9,
+        body_len: 1,
+        attachment_count: 0,
+        total_attachment_bytes: 0,
+    }];
+    let good = BrowserDraftState {
+        draft_id: drafts[0].draft_id.clone(),
+        revision: 2,
+        state: BrowserDraftEditState::Editable,
+    };
+    let mut stale = good.clone();
+    stale.revision = 1;
+    for states in [vec![], vec![stale], vec![good.clone(), good.clone()]] {
+        let view = DraftListView::default();
+        let html = render_draft_list_page(&DraftListPageModel {
+            canonical_username: "alice@example.test",
+            csrf_token: "synthetic",
+            success_message: None,
+            error_message: None,
+            drafts: &drafts,
+            view: &view,
+            total_count: 1,
+            states: &states,
+            usage: &BrowserDraftStorageUsage::Unknown,
+        });
+        let html = html.as_str();
+        assert!(html.contains("data-draft-state=\"unknown\""));
+        assert!(!html.contains("action=\"/drafts/star\""));
+        assert!(!html.contains("action=\"/drafts/delete\""));
+        assert!(!html.contains("continue editing"));
+        assert!(html.contains("Combined storage usage could not be verified"));
+        assert!(html.contains("value=\"review\" disabled"));
     }
 }

@@ -96,16 +96,24 @@ impl RuntimeBrowserGateway {
         let now = SystemTimeProvider.unix_timestamp();
         let result = (|| {
             let journal = self.send_journal();
-            let _guard = journal
+            let guard = journal
                 .account_guard(&validated_session.record.canonical_username, now)
                 .map_err(journal_draft_error)?;
-            store.list(&validated_session.record.canonical_username, now)
+            let drafts = store.list(&validated_session.record.canonical_username, now)?;
+            let recovery =
+                crate::send_recovery::SendRecovery::new(self.settings_dir.join("send-recovery"))
+                    .storage_usage(&validated_session.record.canonical_username, now);
+            let (states, usage) =
+                super::super::http_browser::project_drafts(&guard, &drafts, recovery);
+            Ok((drafts, states, usage))
         })();
         match result {
-            Ok(drafts) => BrowserDraftListOutcome {
+            Ok((drafts, states, usage)) => BrowserDraftListOutcome {
                 decision: BrowserDraftListDecision::Listed {
                     canonical_username: validated_session.record.canonical_username.clone(),
                     drafts,
+                    states,
+                    usage,
                 },
                 audit_events: vec![draft_info_event(
                     "drafts_listed",
@@ -585,5 +593,323 @@ fn paused_draft_save() -> BrowserDraftSaveOutcome {
             public_reason: "send_attempt_paused".into(),
         },
         audit_events: vec![],
+    }
+}
+
+#[cfg(test)]
+mod draft_state_tests {
+    use super::*;
+    use crate::draft::{DraftRecord, DraftRecordInput};
+    use crate::send_journal::{intent_for_draft, AttemptOutcome};
+    use std::sync::{Arc, Barrier};
+    struct Fixture {
+        root: std::path::PathBuf,
+        gateway: RuntimeBrowserGateway,
+        session: ValidatedSession,
+        context: AuthenticationContext,
+        now: u64,
+    }
+    impl Fixture {
+        fn new() -> Self {
+            let root = std::env::temp_dir().join(format!(
+                "osmap-draft-state-{}",
+                crate::draft::generate_draft_id().unwrap()
+            ));
+            let context = AuthenticationContext::new(
+                AuthenticationPolicy::default(),
+                "draft-state-test",
+                "127.0.0.1",
+                "Synthetic/Test",
+            )
+            .unwrap();
+            let session = ValidatedSession {
+                record: crate::session::SessionRecord {
+                    session_id: "synthetic-session".into(),
+                    csrf_token: "synthetic-csrf".into(),
+                    canonical_username: "alice@example.com".into(),
+                    issued_at: 1,
+                    expires_at: u64::MAX,
+                    last_seen_at: 1,
+                    revoked_at: None,
+                    remote_addr: "127.0.0.1".into(),
+                    user_agent: "Synthetic/Test".into(),
+                    factor: crate::auth::RequiredSecondFactor::Totp,
+                },
+                audit_event: LogEvent::new(
+                    LogLevel::Info,
+                    EventCategory::Session,
+                    "synthetic_session",
+                    "synthetic session",
+                ),
+            };
+            Self {
+                gateway: RuntimeBrowserGateway::for_test(&root),
+                root,
+                session,
+                context,
+                now: SystemTimeProvider.unix_timestamp(),
+            }
+        }
+        fn draft(&self) -> DraftRecord {
+            let store = self.gateway.build_draft_store();
+            let record = DraftRecord::new(
+                DraftPolicy::default(),
+                DraftRecordInput {
+                    draft_id: crate::draft::generate_draft_id().unwrap(),
+                    canonical_username: self.session.record.canonical_username.clone(),
+                    now: self.now,
+                    recipients_text: "bob@example.com".into(),
+                    cc_text: String::new(),
+                    bcc_text: String::new(),
+                    subject: "Synthetic draft".into(),
+                    body: "Exact draft source".into(),
+                    attachments: vec![],
+                    source_attachments: None,
+                },
+            )
+            .unwrap();
+            store.save(&record, self.now).unwrap();
+            store
+                .load(&record.canonical_username, &record.draft_id, self.now)
+                .unwrap()
+                .unwrap()
+        }
+        fn list(
+            &self,
+        ) -> (
+            Vec<DraftSummary>,
+            Vec<BrowserDraftState>,
+            BrowserDraftStorageUsage,
+        ) {
+            match self
+                .gateway
+                .list_drafts_impl(&self.context, &self.session)
+                .decision
+            {
+                BrowserDraftListDecision::Listed {
+                    drafts,
+                    states,
+                    usage,
+                    ..
+                } => (drafts, states, usage),
+                other => panic!("unexpected list: {other:?}"),
+            }
+        }
+        fn intent(&self, draft: &DraftRecord) -> String {
+            intent_for_draft(
+                &draft.canonical_username,
+                &draft.draft_id,
+                draft.revision.unwrap(),
+                draft.updated_at,
+            )
+            .unwrap()
+        }
+    }
+    impl Drop for Fixture {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.root);
+        }
+    }
+
+    #[test]
+    fn runtime_projection_reports_exact_revision_attempt_and_combined_usage_without_body_reload() {
+        let f = Fixture::new();
+        let draft = f.draft();
+        let intent = f.intent(&draft);
+        let (rows, states, usage) = f.list();
+        assert_eq!(states[0].state, BrowserDraftEditState::Editable);
+        assert_eq!(states[0].revision, draft.revision.unwrap());
+        assert!(matches!(
+            usage,
+            BrowserDraftStorageUsage::Verified {
+                ordinary_count: 1,
+                recovery_count: 0,
+                ..
+            }
+        ));
+        let request = crate::send::ComposeRequest::new(
+            ComposePolicy::default(),
+            "bob@example.com",
+            "Attempt subject",
+            "Prepared source differs",
+        )
+        .unwrap();
+        let journal = f.gateway.send_journal();
+        journal
+            .execute_prepared(
+                &draft.canonical_username,
+                &intent,
+                f.now,
+                |_| Ok::<_, ()>(request.clone()),
+                |prepared| {
+                    crate::send_recovery::SendRecovery::new(
+                        f.gateway.settings_dir.join("send-recovery"),
+                    )
+                    .capture(
+                        &journal,
+                        &f.gateway.build_draft_store(),
+                        &draft.canonical_username,
+                        &intent,
+                        prepared,
+                        f.now,
+                    )
+                    .unwrap();
+                    AttemptOutcome::Accepted {
+                        sent_copy_stored: false,
+                    }
+                },
+            )
+            .unwrap();
+        let (after, states, usage) = f.list();
+        assert_eq!(rows, after);
+        assert_eq!(
+            states[0].state,
+            BrowserDraftEditState::Attempted {
+                receipt_intent: intent.clone()
+            }
+        );
+        match usage {
+            BrowserDraftStorageUsage::Verified {
+                ordinary_count,
+                ordinary_bytes,
+                recovery_count,
+                recovery_bytes,
+                max_count,
+                max_bytes,
+            } => {
+                assert_eq!(
+                    (ordinary_count, recovery_count, max_count, max_bytes),
+                    (1, 1, 50, 50 * 1024 * 1024)
+                );
+                assert_eq!(ordinary_bytes, rows[0].storage_bytes);
+                assert!(recovery_bytes > 0);
+            }
+            _ => panic!("usage unknown"),
+        }
+        assert!(matches!(
+            f.gateway
+                .set_draft_star_impl(
+                    &f.context,
+                    &f.session,
+                    &draft.draft_id,
+                    draft.revision.unwrap(),
+                    true
+                )
+                .decision,
+            BrowserDraftSaveDecision::Denied { .. }
+        ));
+        let mut foreign = f.session.clone();
+        foreign.record.canonical_username = "bob@example.com".into();
+        assert!(
+            matches!(f.gateway.list_drafts_impl(&f.context,&foreign).decision,BrowserDraftListDecision::Listed{drafts,usage:BrowserDraftStorageUsage::Verified{ordinary_count:0,recovery_count:0,..},..} if drafts.is_empty())
+        );
+    }
+
+    #[test]
+    fn runtime_projection_serializes_with_attempt_and_rechecks_new_revision() {
+        let f = Fixture::new();
+        let mut draft = f.draft();
+        let old_intent = f.intent(&draft);
+        draft.request.body = "new revision".into();
+        f.gateway.build_draft_store().save(&draft, f.now).unwrap();
+        let current = f
+            .gateway
+            .build_draft_store()
+            .load(&draft.canonical_username, &draft.draft_id, f.now)
+            .unwrap()
+            .unwrap();
+        let request = crate::send::ComposeRequest::new(
+            ComposePolicy::default(),
+            "bob@example.com",
+            "Synthetic",
+            "Body",
+        )
+        .unwrap();
+        f.gateway
+            .send_journal()
+            .execute_prepared(
+                &draft.canonical_username,
+                &old_intent,
+                f.now,
+                |_| Ok::<_, ()>(request.clone()),
+                |_| AttemptOutcome::Unconfirmed,
+            )
+            .unwrap();
+        assert_eq!(f.list().1[0].state, BrowserDraftEditState::Editable);
+        assert_eq!(f.list().1[0].revision, current.revision.unwrap());
+        let entered = Arc::new(Barrier::new(2));
+        let finish = Arc::new(Barrier::new(2));
+        let j = f.gateway.send_journal();
+        let intent = f.intent(&current);
+        let now = f.now;
+        let e = entered.clone();
+        let end = finish.clone();
+        let thread = std::thread::spawn(move || {
+            j.execute_prepared(
+                "alice@example.com",
+                &intent,
+                now,
+                |_| Ok::<_, ()>(request),
+                |_| {
+                    e.wait();
+                    end.wait();
+                    AttemptOutcome::Unconfirmed
+                },
+            )
+        });
+        entered.wait();
+        let blocked = f.gateway.list_drafts_impl(&f.context, &f.session);
+        finish.wait();
+        thread.join().unwrap().unwrap();
+        assert!(matches!(
+            blocked.decision,
+            BrowserDraftListDecision::Denied { .. }
+        ));
+        assert_eq!(
+            f.list().1[0].state,
+            BrowserDraftEditState::Paused {
+                receipt_intent: f.intent(&current)
+            }
+        );
+    }
+
+    #[test]
+    fn runtime_projection_refuses_corrupt_recovery_usage_and_corrupt_journal() {
+        let f = Fixture::new();
+        f.draft();
+        let index = crate::private_account_file::PrivateAccountFile::new(
+            f.gateway.settings_dir.join("send-recovery/index"),
+            "send-recovery-v1",
+            1024 * 1024,
+        );
+        index
+            .lock("alice@example.com")
+            .unwrap()
+            .write(b"corrupt")
+            .unwrap();
+        let (_, states, usage) = f.list();
+        assert_eq!(usage, BrowserDraftStorageUsage::Unknown);
+        assert_eq!(states[0].state, BrowserDraftEditState::Unknown);
+        let j = f.gateway.send_journal();
+        let guard = j.account_guard("alice@example.com", f.now).unwrap();
+        assert!(matches!(
+            f.gateway.list_drafts_impl(&f.context, &f.session).decision,
+            BrowserDraftListDecision::Denied { .. }
+        ));
+        drop(guard);
+        let journal_file = crate::private_account_file::PrivateAccountFile::new(
+            f.gateway.settings_dir.join("send-journal"),
+            "osmap-send-journal-v1",
+            1024 * 1024,
+        );
+        journal_file
+            .lock("alice@example.com")
+            .unwrap()
+            .write(b"corrupt")
+            .unwrap();
+        assert!(matches!(
+            f.gateway.list_drafts_impl(&f.context, &f.session).decision,
+            BrowserDraftListDecision::Denied { .. }
+        ));
     }
 }

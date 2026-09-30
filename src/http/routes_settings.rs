@@ -67,7 +67,14 @@ where
             .unwrap_or("general");
         if !matches!(
             section,
-            "general" | "appearance" | "reading" | "composition" | "copies" | "privacy"
+            "general"
+                | "appearance"
+                | "reading"
+                | "composition"
+                | "copies"
+                | "privacy"
+                | "security"
+                | "authentication"
         ) {
             return HandledHttpResponse {
                 response: html_response(
@@ -75,6 +82,24 @@ where
                     "Bad Request",
                     "Unknown Settings Section",
                     "<p>Choose a section from Settings.</p>",
+                ),
+                audit_events,
+            };
+        }
+        if matches!(section, "security" | "authentication") {
+            let outcome = self.gateway.list_sessions(context, &validated_session);
+            audit_events.extend(outcome.audit_events);
+            return HandledHttpResponse {
+                response: html_response(
+                    200,
+                    "OK",
+                    "Settings",
+                    crate::http_ui::render_security_page(
+                        &validated_session.record.canonical_username,
+                        &validated_session.record.csrf_token,
+                        &outcome.decision,
+                        section == "authentication",
+                    ),
                 ),
                 audit_events,
             };
@@ -97,6 +122,19 @@ where
         audit_events.extend(outcome.audit_events);
 
         match outcome.decision {
+            BrowserSettingsDecision::Loaded { ref canonical_username, .. }
+                if canonical_username != &validated_session.record.canonical_username =>
+            {
+                HandledHttpResponse {
+                    response: html_response(
+                        503,
+                        "Service Unavailable",
+                        "Settings Unavailable",
+                        "<p>The saved settings could not be confirmed for this account. No preference was changed.</p>",
+                    ),
+                    audit_events,
+                }
+            }
             BrowserSettingsDecision::Loaded {
                 canonical_username,
                 settings,

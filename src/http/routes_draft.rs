@@ -62,11 +62,10 @@ where
             BrowserDraftListDecision::Listed {
                 canonical_username,
                 drafts,
+                states,
+                usage,
             } if canonical_username == validated_session.record.canonical_username => {
                 let total_count = drafts.len();
-                let total_bytes = drafts.iter().fold(0_u64, |total, draft| {
-                    total.saturating_add(draft.storage_bytes)
-                });
                 let drafts = view.select(&drafts);
                 HandledHttpResponse {
                     response: html_response(
@@ -81,7 +80,8 @@ where
                             drafts: &drafts,
                             view: &view,
                             total_count,
-                            total_bytes,
+                            states: &states,
+                            usage: &usage,
                         }),
                     ),
                     audit_events,

@@ -270,6 +270,7 @@ fn mailbox_entries() -> Vec<MailboxEntry> {
 fn message_summaries() -> Vec<MessageSummary> {
     vec![
         MessageSummary {
+            to: None,
             metadata: None,
             mailbox_name: "INBOX".to_string(),
             uid: 303,
@@ -280,6 +281,7 @@ fn message_summaries() -> Vec<MessageSummary> {
             from: Some("alice@example.com".to_string()),
         },
         MessageSummary {
+            to: None,
             metadata: None,
             mailbox_name: "INBOX".to_string(),
             uid: 101,
@@ -290,6 +292,7 @@ fn message_summaries() -> Vec<MessageSummary> {
             from: Some("bob@example.com".to_string()),
         },
         MessageSummary {
+            to: None,
             metadata: None,
             mailbox_name: "INBOX".to_string(),
             uid: 202,

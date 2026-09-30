@@ -1055,6 +1055,7 @@ mod tests {
         let service = MessageListService::new(StaticMessageListBackend {
             messages: vec![
                 MessageSummary {
+                    to: None,
                     metadata: None,
                     mailbox_name: "INBOX".to_string(),
                     uid: 4,
@@ -1065,6 +1066,7 @@ mod tests {
                     from: Some("Alice <alice@example.com>".to_string()),
                 },
                 MessageSummary {
+                    to: None,
                     metadata: None,
                     mailbox_name: "INBOX".to_string(),
                     uid: 5,
@@ -1443,6 +1445,7 @@ mod tests {
             .expect("request should be valid");
         let message_service = MessageListService::new(StaticMessageListBackend {
             messages: vec![MessageSummary {
+                to: None,
                 metadata: None,
                 mailbox_name: "INBOX".to_string(),
                 uid: 9,

@@ -87,6 +87,7 @@ fn synthetic_summaries(count: u64) -> Vec<MessageSummary> {
     (1..=count)
         .rev()
         .map(|uid| MessageSummary {
+            to: None,
             metadata: None,
             mailbox_name: "INBOX".to_string(),
             uid,

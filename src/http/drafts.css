@@ -1,0 +1,27 @@
+/* PAGE06 native controls and verified draft state. */
+.drafts-page .draft-list-toolbar { margin:.35rem 0 .75rem;padding:.45rem .75rem; }
+.drafts-page .draft-list { border-radius:.7rem;border:0;background:var(--panel); }
+.drafts-page .draft-list th { background:var(--bg);height:2.3rem; }
+.drafts-page .draft-list td { height:3.6rem;padding:.45rem .75rem;border-bottom:1px solid var(--line); }
+.drafts-page .draft-recipient { width:28%; }.drafts-page .draft-subject { width:29%; }
+.drafts-page .draft-subject strong { color:var(--ink);font-size:.875rem; }
+.drafts-page .draft-list td:last-child { width:2rem; }
+.drafts-page .draft-list .badge { white-space:normal; }
+.drafts-page .draft-action-menu a { display:block;padding:.3rem 0; }
+.drafts-page .draft-action-menu button:disabled,.drafts-page .draft-star button:disabled { color:var(--muted);cursor:not-allowed; }
+.draft-storage-status { font-size:.8rem;line-height:1.5;margin:.4rem 0 1rem; }
+@media(max-width:800px) {
+ .drafts-page .draft-list td { height:auto;width:auto; }
+ .drafts-page .draft-list tr { padding:.8rem;border-bottom:1px solid var(--line); }
+ .drafts-page .draft-list td { padding:.35rem 0;border:0; }
+ .drafts-page .draft-list td:last-child { width:auto; }
+ .drafts-page .draft-selection-actions { flex-wrap:wrap; }
+}
+@media(forced-colors:active) {
+ .drafts-page .draft-list .badge { color:CanvasText;background:Canvas;border:1px solid CanvasText; }
+ .drafts-page .draft-action-menu button:disabled,.drafts-page .draft-star button:disabled { color:GrayText; }
+}
+
+.drafts-page .draft-select input { margin:0; }
+
+.drafts-page .page-intro { margin-bottom:.6rem; }

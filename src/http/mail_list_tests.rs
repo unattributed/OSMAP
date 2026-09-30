@@ -31,10 +31,14 @@ fn mailbox_page(path: &str) -> HandledHttpResponse {
 
 #[test]
 fn coordinated_reader_binds_fresh_filtered_identity_and_releases_its_budget() {
-    let app = app_with_policy(HttpPolicy { mailbox_worker_budget: 1, ..HttpPolicy::default() });
+    let app = app_with_policy(HttpPolicy {
+        mailbox_worker_budget: 1,
+        ..HttpPolicy::default()
+    });
     let path = "/mailbox?name=INBOX&selected_mailbox=INBOX&selected_uid=7&filter=starred";
     let mut req = request("GET", path, &authenticated_headers(), "");
-    req.headers.insert("user-agent".into(), "OSMAP/ManyMessages".into());
+    req.headers
+        .insert("user-agent".into(), "OSMAP/ManyMessages".into());
     let response = app.handle_request(&req, "127.0.0.1");
     assert_eq!(response.response.status_code, 200);
     let body = body_text(&response);
@@ -42,16 +46,28 @@ fn coordinated_reader_binds_fresh_filtered_identity_and_releases_its_budget() {
     assert!(body.contains("data-selected=\"true\""));
     assert_eq!(body.matches("<main ").count(), 1);
     assert_eq!(app.request_budgets.mailbox_workers.active_count(), 0);
-    for fault in ["ReaderStale", "ReaderWrongAccount", "ReaderWrongMailbox", "ReaderWrongUid", "ReaderUnavailable"] {
-        req.headers.insert("user-agent".into(), format!("OSMAP/ManyMessages;{fault}"));
+    for fault in [
+        "ReaderStale",
+        "ReaderWrongAccount",
+        "ReaderWrongMailbox",
+        "ReaderWrongUid",
+        "ReaderUnavailable",
+    ] {
+        req.headers
+            .insert("user-agent".into(), format!("OSMAP/ManyMessages;{fault}"));
         let response = app.handle_request(&req, "127.0.0.1");
         let body = body_text(&response);
         assert!(body.contains("Message unavailable"), "{fault}");
         assert!(!body.contains("<pre>Synthetic message"), "{fault}");
         assert_eq!(app.request_budgets.mailbox_workers.active_count(), 0);
     }
-    req.headers.insert("user-agent".into(), "OSMAP/ManyMessages".into());
-    let occupied = app.request_budgets.mailbox_workers.try_acquire().expect("test budget");
+    req.headers
+        .insert("user-agent".into(), "OSMAP/ManyMessages".into());
+    let occupied = app
+        .request_budgets
+        .mailbox_workers
+        .try_acquire()
+        .expect("test budget");
     let response = app.handle_request(&req, "127.0.0.1");
     assert!(body_text(&response).contains("The reading pane is busy"));
     assert!(!body_text(&response).contains("<pre>Synthetic message"));
@@ -74,9 +90,14 @@ fn coordinated_reader_excludes_other_folders_and_filter_misses_but_keeps_off_pag
         let body = body_text(&response);
         assert!(body.contains("no longer in these results"));
         assert!(!body.contains("<pre>Synthetic message"));
-        assert!(!response.audit_events.iter().any(|event| event.action == "stub_message_view"));
+        assert!(!response
+            .audit_events
+            .iter()
+            .any(|event| event.action == "stub_message_view"));
     }
-    let body = body_text(&mailbox_page("/mailbox?name=INBOX&selected_mailbox=INBOX&selected_uid=7"));
+    let body = body_text(&mailbox_page(
+        "/mailbox?name=INBOX&selected_mailbox=INBOX&selected_uid=7",
+    ));
     assert!(body.contains("Synthetic message 7 in INBOX for alice@example.com."));
     assert!(body.contains("Locate selected message on page 3"));
     assert!(!body.contains("data-selected=\"true\""));
@@ -134,11 +155,16 @@ fn bulk_selection_is_bounded_to_the_current_page_and_one_action() {
         let response = mailbox_page(&format!("/mailbox?name=INBOX&page=2&select={action}"));
         assert_eq!(response.response.status_code, 200);
         let body = body_text(&response);
-        assert_eq!(body.matches(" checked").count(), crate::mail_list::MAX_BULK_SELECTION);
+        assert_eq!(
+            body.matches(" checked").count(),
+            crate::mail_list::MAX_BULK_SELECTION
+        );
         assert!(body.contains("Select first 10 on this page"));
         assert!(body.contains("Clear selection"));
     }
-    assert!(!body_text(&mailbox_page("/mailbox?name=INBOX&page=2&select=none")).contains(" checked"));
+    assert!(
+        !body_text(&mailbox_page("/mailbox?name=INBOX&page=2&select=none")).contains(" checked")
+    );
 }
 
 #[test]
@@ -177,5 +203,44 @@ fn attachment_filter_http_preserves_search_reader_and_rejects_bad_values() {
         let body=body_text(&response);assert!(body.contains("attachment=with"));assert!(body.contains("name=\"attachment\" value=\"with\""));assert!(body.contains("Back to list"));assert!(body.contains("Synthetic message 123"));
         if path.starts_with("/search") { assert!(body.contains("field=subject"));assert!(body.contains("scope=all")); }
     }
-    assert_eq!(mailbox_page("/mailbox?name=INBOX&attachment=invalid").response.status_code,400);
+    assert_eq!(
+        mailbox_page("/mailbox?name=INBOX&attachment=invalid")
+            .response
+            .status_code,
+        400
+    );
+}
+
+#[test]
+fn sent_recipient_rows_escape_headers_and_inbox_search_keep_sender() {
+    for (path, sent) in [
+        ("/mailbox?name=Sent", true),
+        ("/mailbox?name=INBOX", false),
+        ("/search?q=reader-fixture&scope=all", false),
+    ] {
+        let mut req = request("GET", path, &authenticated_headers(), "");
+        req.headers.insert(
+            "user-agent".into(),
+            "OSMAP/ManyMessages;SentRecipients".into(),
+        );
+        let result = app().handle_request(&req, "127.0.0.1");
+        assert_eq!(result.response.status_code, 200);
+        let html = body_text(&result);
+        if sent {
+            for text in [
+                ">Recipient</span>",
+                "To: &lt;img src=x&gt; &amp; recipient@example.test",
+                "Recipient unavailable",
+                "Initials from the recipient header",
+                "Their presence does not confirm delivery",
+            ] {
+                assert!(html.contains(text), "{text}");
+            }
+            assert!(!html.contains("<img src=x>"));
+        } else {
+            assert!(html.contains(">From</span>"));
+            assert!(html.contains("Initials from the sender header"));
+            assert!(!html.contains("To: &lt;img"));
+        }
+    }
 }

@@ -1415,6 +1415,7 @@ mod tests {
             mailbox_name: "INBOX".to_string(),
             messages: vec![
                 MessageSummary {
+                    to: None,
                     metadata: None,
                     mailbox_name: "INBOX".to_string(),
                     uid: 7,
@@ -1425,6 +1426,7 @@ mod tests {
                     from: Some("Alice <alice@example.com>".to_string()),
                 },
                 MessageSummary {
+                    to: None,
                     metadata: None,
                     mailbox_name: "INBOX".to_string(),
                     uid: 8,
@@ -1704,6 +1706,7 @@ mod tests {
             mailbox_result: Arc::new(Ok(Vec::new())),
             message_list_result: Arc::new(Ok(vec![
                 MessageSummary {
+                    to: None,
                     metadata: None,
                     mailbox_name: "INBOX".to_string(),
                     uid: 10,
@@ -1714,6 +1717,7 @@ mod tests {
                     from: Some("Alice <alice@example.com>".to_string()),
                 },
                 MessageSummary {
+                    to: None,
                     metadata: None,
                     mailbox_name: "INBOX".to_string(),
                     uid: 11,

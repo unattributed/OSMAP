@@ -182,11 +182,22 @@ fn runtime_saved_handoff_replays_without_backend_or_append_and_cleanup_is_qualif
             &append,
         );
         assert_eq!(first.decision, repeated.decision);
-        let BrowserSendRecoveryDecision::Available(snapshot) = gateway.read_send_recovery(&session, &intent) else { panic!("owned exact snapshot") };
-        assert_eq!(snapshot.expires_at - snapshot.created_at, crate::draft::DEFAULT_DRAFT_MAX_AGE_SECONDS);
+        let BrowserSendRecoveryDecision::Available(snapshot) =
+            gateway.read_send_recovery(&session, &intent)
+        else {
+            panic!("owned exact snapshot")
+        };
+        assert_eq!(
+            snapshot.expires_at - snapshot.created_at,
+            crate::draft::DEFAULT_DRAFT_MAX_AGE_SECONDS
+        );
         assert_eq!(*snapshot.request, submission.calls.lock().unwrap()[0]);
-        let mut foreign=session.clone(); foreign.record.canonical_username="foreign@example.test".into();
-        assert!(matches!(gateway.read_send_recovery(&foreign, &intent), BrowserSendRecoveryDecision::Missing));
+        let mut foreign = session.clone();
+        foreign.record.canonical_username = "foreign@example.test".into();
+        assert!(matches!(
+            gateway.read_send_recovery(&foreign, &intent),
+            BrowserSendRecoveryDecision::Missing
+        ));
 
         assert_eq!(submission.calls.lock().unwrap().len(), 1);
         assert_eq!(
@@ -512,6 +523,31 @@ fn runtime_combined_count_and_byte_limits_cover_capture_and_normal_save() {
                 .decision,
             BrowserSendDecision::Submitted { .. }
         ));
+        match gateway.list_drafts_impl(&test_context(), &session).decision {
+            BrowserDraftListDecision::Listed {
+                usage:
+                    BrowserDraftStorageUsage::Verified {
+                        ordinary_count,
+                        ordinary_bytes,
+                        recovery_count,
+                        recovery_bytes,
+                        max_count,
+                        max_bytes,
+                    },
+                ..
+            } => {
+                assert_eq!(
+                    (ordinary_count, recovery_count, max_count, max_bytes),
+                    (if count_limit { 49 } else { 1 }, 1, 50, 50 * 1024 * 1024)
+                );
+                assert!(ordinary_bytes > 0 && recovery_bytes > 0);
+                if !count_limit {
+                    assert!(ordinary_bytes + recovery_bytes > 49 * 1024 * 1024);
+                }
+                assert!(ordinary_bytes + recovery_bytes <= max_bytes);
+            }
+            other => panic!("verified combined projection required: {other:?}"),
+        }
         let extra = if count_limit {
             vec![]
         } else {

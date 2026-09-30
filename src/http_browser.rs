@@ -700,12 +700,98 @@ pub struct BrowserDraftListOutcome {
     pub audit_events: Vec<LogEvent>,
 }
 
+/// Account/revision-bound list state; an absent/mismatched row must remain unknown.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BrowserDraftState {
+    pub draft_id: String,
+    pub revision: u64,
+    pub state: BrowserDraftEditState,
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BrowserDraftEditState {
+    Editable,
+    Attempted { receipt_intent: String },
+    Paused { receipt_intent: String },
+    Unknown,
+}
+/// Logical stored bytes use the same metadata + attachment basis as the shared quota.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BrowserDraftStorageUsage {
+    Verified {
+        ordinary_count: usize,
+        ordinary_bytes: u64,
+        recovery_count: usize,
+        recovery_bytes: u64,
+        max_count: usize,
+        max_bytes: u64,
+    },
+    Unknown,
+}
+
+pub(crate) fn project_drafts(
+    guard: &crate::send_journal::AccountGuard,
+    drafts: &[DraftSummary],
+    recovery: Result<(usize, u64), crate::send_recovery::RecoveryError>,
+) -> (Vec<BrowserDraftState>, BrowserDraftStorageUsage) {
+    let policy = crate::draft::DraftPolicy::default();
+    let usage = match (
+        drafts
+            .iter()
+            .try_fold(0_u64, |total, row| total.checked_add(row.storage_bytes)),
+        recovery,
+    ) {
+        (Some(ordinary_bytes), Ok((recovery_count, recovery_bytes)))
+            if drafts
+                .len()
+                .checked_add(recovery_count)
+                .is_some_and(|n| n <= policy.max_drafts_per_user)
+                && ordinary_bytes
+                    .checked_add(recovery_bytes)
+                    .is_some_and(|n| n <= policy.storage_max_bytes) =>
+        {
+            BrowserDraftStorageUsage::Verified {
+                ordinary_count: drafts.len(),
+                ordinary_bytes,
+                recovery_count,
+                recovery_bytes,
+                max_count: policy.max_drafts_per_user,
+                max_bytes: policy.storage_max_bytes,
+            }
+        }
+        _ => BrowserDraftStorageUsage::Unknown,
+    };
+    let states = drafts
+        .iter()
+        .map(|draft| {
+            let state = match guard.draft_attempt(draft) {
+                Ok((_, None)) if usage != BrowserDraftStorageUsage::Unknown => {
+                    BrowserDraftEditState::Editable
+                }
+                Ok((
+                    receipt_intent,
+                    Some(crate::send_journal::AttemptOutcome::Accepted { .. }),
+                )) => BrowserDraftEditState::Attempted { receipt_intent },
+                Ok((receipt_intent, Some(_))) => BrowserDraftEditState::Paused { receipt_intent },
+                _ => BrowserDraftEditState::Unknown,
+            };
+            BrowserDraftState {
+                draft_id: draft.draft_id.clone(),
+                revision: draft.revision,
+                state,
+            }
+        })
+        .collect();
+    (states, usage)
+}
+
 /// Draft-list decisions visible to the browser layer.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BrowserDraftListDecision {
     Listed {
         canonical_username: String,
         drafts: Vec<DraftSummary>,
+        states: Vec<BrowserDraftState>,
+        usage: BrowserDraftStorageUsage,
     },
     Denied {
         public_reason: String,

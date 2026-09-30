@@ -227,6 +227,8 @@ fn isolated_openbsd_json_and_signed_flag_helper() {
     for message in [
         "From: Synthetic sender <sender@example.test>\r\nTo: fixture@example.test\r\nSubject: Plain fixture\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nPublic synthetic body.\r\n",
         "From: Synthetic sender <sender@example.test>\r\nReply-To: \"Reply, Desk\" <desk@example.test>\r\nTo: fixture@example.test, other@example.test\r\nCc: copied@example.test\r\nMessage-ID: <native-parent@example.test>\r\nReferences: <native-root@example.test>\r\nSubject: Attachment fixture\r\nMIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary=fixture\r\n\r\n--fixture\r\nContent-Type: text/plain\r\n\r\nPublic synthetic body.\r\n--fixture\r\nContent-Type: application/octet-stream; name=fixture.txt\r\nContent-Disposition: attachment; filename=fixture.txt\r\nContent-Transfer-Encoding: base64\r\n\r\nU3ludGhldGljIGZpeHR1cmUu\r\n--fixture--\r\n",
+        "From: Synthetic sender <sender@example.test>\r\nBcc: private-synthetic-sentinel@example.test\r\nSubject: Missing recipient fixture\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nPublic synthetic body.\r\n",
+        "From: Synthetic sender <sender@example.test>\r\nTo: \"Élodie, Desk\" <elodie@example.test>,\r\n \"Quoted \\\"Name\\\"\" <quoted@example.test>\r\nSubject: Unicode quoted recipient fixture\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nPublic synthetic body.\r\n",
     ] {
         assert_eq!(executor.run_with_stdin("/usr/local/bin/doveadm", &save, message).expect("save synthetic mail").status_code, 0);
     }
@@ -240,7 +242,40 @@ fn isolated_openbsd_json_and_signed_flag_helper() {
     let initial = list
         .list_messages(FIXTURE_ACCOUNT, &query)
         .expect("native structured list");
-    assert_eq!(initial.len(), 2);
+    assert_eq!(initial.len(), 4);
+    assert_eq!(initial[0].to.as_deref(), Some("fixture@example.test"));
+    assert_eq!(
+        initial[1].to.as_deref(),
+        Some("fixture@example.test, other@example.test")
+    );
+    assert_eq!(
+        initial[2].to, None,
+        "missing To must not fall back to From or Bcc"
+    );
+    assert_eq!(
+        initial[3].to.as_deref(),
+        Some(
+            "\"Élodie, Desk\" <elodie@example.test>, \"Quoted \\\"Name\\\"\" <quoted@example.test>"
+        )
+    );
+    let response = MailboxHelperResponse::MessageListOk {
+        mailbox_name: "INBOX".into(),
+        messages: initial.clone(),
+    };
+    let encoded = encode_response(&response);
+    assert!(!encoded.contains("message_bcc"));
+    assert!(!format!("{initial:?}").contains("private-synthetic-sentinel"));
+    assert_eq!(
+        parse_response(
+            MailboxListingPolicy::default(),
+            MessageListPolicy::default(),
+            MessageSearchPolicy::default(),
+            MessageViewPolicy::default(),
+            &encoded,
+        )
+        .expect("native To summary helper roundtrip"),
+        response
+    );
     assert!(initial.iter().all(|message| message
         .metadata
         .as_ref()
@@ -421,7 +456,7 @@ fn isolated_openbsd_json_and_signed_flag_helper() {
         "message-move-stale"
     );
     let inbox = list.list_messages(FIXTURE_ACCOUNT, &query).unwrap();
-    assert_eq!(inbox, vec![initial[1].clone()]);
+    assert_eq!(inbox, initial[1..].to_vec());
     let archive_query = MessageListRequest::new(MessageListPolicy::default(), "Archive").unwrap();
     let archive = list.list_messages(FIXTURE_ACCOUNT, &archive_query).unwrap();
     assert_eq!(archive.len(), 1);
@@ -460,7 +495,7 @@ fn isolated_openbsd_json_and_signed_flag_helper() {
         .unwrap()
         .is_empty());
     let restored = list.list_messages(FIXTURE_ACCOUNT, &query).unwrap();
-    assert_eq!(restored.len(), 2);
+    assert_eq!(restored.len(), initial.len());
     let restored_message = restored
         .iter()
         .find(|message| {
@@ -470,7 +505,9 @@ fn isolated_openbsd_json_and_signed_flag_helper() {
     assert_ne!(restored_message.uid, initial[0].uid);
     assert_eq!(restored_message.metadata, initial[0].metadata);
     assert_eq!(restored_message.flags, initial[0].flags);
-    assert!(restored.contains(&initial[1]));
+    assert!(initial[1..]
+        .iter()
+        .all(|message| restored.contains(message)));
     assert_eq!(
         move_through_helper(&root, mover, &original_request)
             .unwrap_err()

@@ -211,6 +211,12 @@ fn parse_message_summary_line(
     )?;
 
     Ok(MessageSummary {
+        to: optional_summary_header_field(
+            &fields,
+            "hdr.to",
+            policy.header_value_max_len,
+            "message-list-parser",
+        )?,
         metadata: None,
         mailbox_name,
         uid,

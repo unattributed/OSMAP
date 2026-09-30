@@ -77,6 +77,7 @@ fn verified_draft_count(account: &str, result: BrowserDraftListDecision) -> Opti
     let BrowserDraftListDecision::Listed {
         canonical_username,
         drafts,
+        ..
     } = result
     else {
         return None;

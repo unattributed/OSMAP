@@ -735,6 +735,9 @@ pub(super) fn encode_response(response: &MailboxHelperResponse) -> String {
                     message.from.as_deref().unwrap_or("").as_bytes(),
                 ));
                 output.push('\n');
+                output.push_str("message_to_b64=");
+                output.push_str(&encode_base64(message.to.as_deref().unwrap_or("").as_bytes()));
+                output.push('\n');
                 output.push_str(&encode_message_metadata(message.metadata.as_ref()));
                 output.push_str("message_end=1\n");
             }
@@ -1002,6 +1005,7 @@ pub(super) fn parse_response(
             | "message_mailbox_b64"
             | "message_subject_b64"
             | "message_from_b64"
+            | "message_to_b64"
             | "message_header_block_b64"
             | "message_mailbox_guid"
             | "message_guid_b64"
@@ -1507,7 +1511,23 @@ fn parse_message_summary_fields(
         })
         .transpose()?;
 
+    let to = fields
+        .get("message_to_b64")
+        .filter(|value| !value.is_empty())
+        .map(|value| {
+            let value = decode_base64_text(value, policy.header_value_max_len, "message to")?;
+            validate_helper_string(
+                "message to",
+                &value,
+                policy.header_value_max_len,
+                true,
+                false,
+            )?;
+            Ok::<String, String>(value)
+        })
+        .transpose()?;
     Ok(MessageSummary {
+        to,
         metadata: parse_message_metadata(fields)?,
         mailbox_name,
         uid,
@@ -1523,6 +1543,9 @@ fn parse_message_search_fields(
     policy: MessageSearchPolicy,
     fields: &BTreeMap<String, String>,
 ) -> Result<MessageSearchResult, String> {
+    if fields.contains_key("message_to_b64") {
+        return Err("recipient projection is only valid in list summaries".into());
+    }
     let mailbox_name = decode_base64_text(
         require_field(fields, "message_mailbox_b64")?,
         policy.mailbox_name_max_len,
@@ -1629,6 +1652,9 @@ fn parse_message_view_fields(
     policy: MessageViewPolicy,
     fields: &BTreeMap<String, String>,
 ) -> Result<MessageView, String> {
+    if fields.contains_key("message_to_b64") {
+        return Err("recipient projection is only valid in list summaries".into());
+    }
     let mailbox_name = decode_base64_text(
         require_field(fields, "message_mailbox_b64")?,
         policy.mailbox_name_max_len,

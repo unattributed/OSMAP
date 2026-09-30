@@ -155,6 +155,49 @@ impl SendRecovery {
         let bytes = serde_json::to_vec(index).map_err(|_| RecoveryError::Invalid)?;
         lock.write(&bytes).map_err(|_| RecoveryError::Unconfirmed)
     }
+    /// Verified live metadata usage; caller holds the journal account guard.
+    /// No message reconstruction or body fetch beyond the store's existing summary listing.
+    pub(crate) fn storage_usage(
+        &self,
+        account: &str,
+        now: u64,
+    ) -> Result<(usize, u64), RecoveryError> {
+        let lock = self
+            .index
+            .lock(account)
+            .map_err(|_| RecoveryError::Unavailable)?;
+        let index = Self::decode(lock.read().map_err(|_| RecoveryError::Unavailable)?)?;
+        if now < index.high_water {
+            return Err(RecoveryError::ClockRollback);
+        }
+        let rows = self
+            .store(DraftPolicy::default())
+            .list(account, now)
+            .map_err(|_| RecoveryError::Unavailable)?;
+        for row in &rows {
+            if !index.entries.iter().any(|entry| {
+                entry.id == row.draft_id
+                    && entry.created == row.created_at
+                    && entry.expires == row.expires_at
+                    && row.revision == 1
+            }) {
+                return Err(RecoveryError::Invalid);
+            }
+        }
+        if index.entries.iter().any(|entry| {
+            entry.confirmed
+                && entry.expires > now
+                && !rows.iter().any(|row| row.draft_id == entry.id)
+        }) {
+            return Err(RecoveryError::Unavailable);
+        }
+        let bytes = rows
+            .iter()
+            .try_fold(0_u64, |sum, row| sum.checked_add(row.storage_bytes))
+            .ok_or(RecoveryError::Capacity)?;
+        Ok((rows.len(), bytes))
+    }
+
     /// These records count against the same count and logical-byte allowance as drafts.
     pub(crate) fn draft_policy(
         &self,
@@ -732,6 +775,14 @@ mod tests {
         let token = crate::send_journal::mint_intent(100).unwrap();
         dispatch(&f, &token, &request(), None, &std::cell::Cell::new(0));
         let policy = f.recovery.draft_policy(ACCOUNT, 100).unwrap();
+        let guard = f.journal.account_guard(ACCOUNT, 100).unwrap();
+        let (count, bytes) = f.recovery.storage_usage(ACCOUNT, 100).unwrap();
+        assert_eq!(count, 1);
+        assert_eq!(
+            bytes,
+            crate::draft::DEFAULT_DRAFT_STORAGE_MAX_BYTES - policy.storage_max_bytes
+        );
+        drop(guard);
         assert_eq!(policy.max_drafts_per_user, 49);
         assert!(policy.storage_max_bytes < crate::draft::DEFAULT_DRAFT_STORAGE_MAX_BYTES);
     }

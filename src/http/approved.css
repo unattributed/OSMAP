@@ -504,3 +504,9 @@ body:has(.app-rail) {
 .attachment-filter summary { cursor:pointer; padding:.45rem .6rem; }
 .attachment-filter > div { display:flex; flex-wrap:wrap; gap:.35rem; }
 .attachment-filter p { max-width:22rem; margin:.4rem; }
+
+/* Sent groups native filters so chronological controls and paging stay visible. */
+.sent-filter-menu { margin:0; }
+.sent-filter-menu > summary { min-height:2.2rem;padding:.4rem .55rem;cursor:pointer;color:var(--ink);font-size:.8rem;border:1px solid var(--line);border-radius:.4rem; }
+.sent-filter-menu .mail-tools-panel > nav { display:flex;flex-wrap:wrap;gap:.5rem; }
+.sent-filter-menu .attachment-filter { flex-basis:100%; }

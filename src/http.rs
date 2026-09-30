@@ -788,9 +788,10 @@ fn request_budget_event(
 
 pub use self::http_browser::{
     BrowserAttachmentDownloadDecision, BrowserAttachmentDownloadOutcome,
-    BrowserDraftDeleteDecision, BrowserDraftDeleteOutcome, BrowserDraftListDecision,
-    BrowserDraftListOutcome, BrowserDraftLoadDecision, BrowserDraftLoadOutcome,
-    BrowserDraftSaveDecision, BrowserDraftSaveOutcome, BrowserDraftSaveRequest, BrowserGateway,
+    BrowserDraftDeleteDecision, BrowserDraftDeleteOutcome, BrowserDraftEditState,
+    BrowserDraftListDecision, BrowserDraftListOutcome, BrowserDraftLoadDecision,
+    BrowserDraftLoadOutcome, BrowserDraftSaveDecision, BrowserDraftSaveOutcome,
+    BrowserDraftSaveRequest, BrowserDraftState, BrowserDraftStorageUsage, BrowserGateway,
     BrowserLoginDecision, BrowserLoginOutcome, BrowserLogoutOutcome, BrowserMailboxDecision,
     BrowserMailboxOutcome, BrowserMessageFlagFailure, BrowserMessageFlagOutcome,
     BrowserMessageListDecision, BrowserMessageListOutcome, BrowserMessageMoveDecision,
@@ -829,6 +830,9 @@ mod tests {
     }
     mod send_result_tests {
         include!("http/send_result_tests.rs");
+    }
+    mod security_settings_tests {
+        include!("http/security_settings_tests.rs");
     }
     mod copies_tests {
         include!("http/copies_tests.rs");
@@ -1230,6 +1234,10 @@ mod tests {
                     validated_session.record.session_id = "b".repeat(64);
                     validated_session.record.csrf_token = "c".repeat(64);
                 }
+                if context.user_agent.contains("LongIdentity") {
+                    validated_session.record.canonical_username =
+                        format!("{}@example.test", "long-account-name-".repeat(16));
+                }
                 BrowserSessionValidationOutcome {
                     decision: BrowserSessionDecision::Valid {
                         validated_session: Box::new(validated_session),
@@ -1547,6 +1555,18 @@ mod tests {
             context: &AuthenticationContext,
             validated_session: &ValidatedSession,
         ) -> BrowserSettingsOutcome {
+            if context.user_agent == "SettingsWrongOwner" {
+                return BrowserSettingsOutcome {
+                    decision: BrowserSettingsDecision::Loaded {
+                        canonical_username: "foreign-settings-owner@example.test".into(),
+                        settings: BrowserVisibleSettings {
+                            html_display_preference: HtmlDisplayPreference::PreferSanitizedHtml,
+                            archive_mailbox_name: Some("foreign-private-archive".into()),
+                        },
+                    },
+                    audit_events: Vec::new(),
+                };
+            }
             if let Some(store) = &self.settings_store {
                 return BrowserSettingsOutcome {
                     decision: match crate::settings::UserSettingsStore::load(
@@ -1583,11 +1603,7 @@ mod tests {
             }
             BrowserSettingsOutcome {
                 decision: BrowserSettingsDecision::Loaded {
-                    canonical_username: if context.user_agent.contains("LongIdentity") {
-                        format!("{}@example.test", "long-account-name-".repeat(16))
-                    } else {
-                        validated_session.record.canonical_username.clone()
-                    },
+                    canonical_username: validated_session.record.canonical_username.clone(),
                     settings: BrowserVisibleSettings {
                         html_display_preference: HtmlDisplayPreference::PreferSanitizedHtml,
                         archive_mailbox_name: if context.user_agent.contains("NoArchiveTest") {
@@ -1849,6 +1865,7 @@ mod tests {
                 let marker = context.user_agent.strip_prefix("WelcomeData/").unwrap();
                 let mut rows: Vec<_> = (1..=8)
                     .map(|uid| MessageSummary {
+                        to: None,
                         metadata: None,
                         mailbox_name: "INBOX".into(),
                         uid,
@@ -1912,6 +1929,7 @@ mod tests {
                         } else if context.user_agent.starts_with("OSMAP/ManyMessages") {
                             (1..=125)
                                 .map(|uid| MessageSummary {
+                                    to: if context.user_agent.contains("SentRecipients") { match uid % 4 { 0 => None, 1 => Some("<img src=x> & recipient@example.test".into()), 2 => Some("Élodie <elodie@example.test>, Bob <bob@example.test>".into()), _ => Some(format!("Recipient {uid:03} <recipient{uid}@example.test>")) } } else { None },
                                     metadata: Self::fixture_attachment_metadata(
                                         context,
                                         &validated_session.record.canonical_username,
@@ -1951,6 +1969,7 @@ mod tests {
                         } else {
                             vec![
                                 MessageSummary {
+                                    to: None,
                                     metadata: (!context.user_agent.contains("LegacyMetadata"))
                                         .then(|| {
                                             Self::fixture_metadata(
@@ -1968,6 +1987,7 @@ mod tests {
                                     from: Some("Alice <alice@example.com>".to_string()),
                                 },
                                 MessageSummary {
+                                    to: None,
                                     metadata: (!context.user_agent.contains("LegacyMetadata"))
                                         .then(|| {
                                             Self::fixture_metadata(
@@ -2645,11 +2665,27 @@ mod tests {
                         BrowserDraftListDecision::Listed {
                             canonical_username: "foreign@example.test".into(),
                             drafts: vec![],
+                            states: vec![],
+                            usage: BrowserDraftStorageUsage::Unknown,
                         }
                     },
                     audit_events: vec![],
                 };
             }
+            let guard = match self.send_journal.account_guard(
+                &validated_session.record.canonical_username,
+                self.send_clock(),
+            ) {
+                Ok(guard) => guard,
+                Err(_) => {
+                    return BrowserDraftListOutcome {
+                        decision: BrowserDraftListDecision::Denied {
+                            public_reason: "temporarily_unavailable".into(),
+                        },
+                        audit_events: vec![],
+                    }
+                }
+            };
             let drafts = if let Some(store) = &self.draft_store {
                 match store.list(&validated_session.record.canonical_username, 100) {
                     Ok(drafts) => drafts,
@@ -2673,10 +2709,18 @@ mod tests {
                     .map(DraftRecord::summary)
                     .collect()
             };
+            let recovery = crate::send_recovery::SendRecovery::new(self.recovery_root.clone())
+                .storage_usage(
+                    &validated_session.record.canonical_username,
+                    self.send_clock(),
+                );
+            let (states, usage) = super::http_browser::project_drafts(&guard, &drafts, recovery);
             BrowserDraftListOutcome {
                 decision: BrowserDraftListDecision::Listed {
                     canonical_username: validated_session.record.canonical_username.clone(),
                     drafts,
+                    states,
+                    usage,
                 },
                 audit_events: vec![LogEvent::new(
                     LogLevel::Info,

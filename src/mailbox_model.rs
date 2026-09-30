@@ -186,6 +186,8 @@ impl MessageListRequest {
 /// A single summary row in a message list.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MessageSummary {
+    /// Bounded To header for display; never envelope or delivery authority.
+    pub to: Option<String>,
     pub metadata: Option<crate::message_metadata::MessageMetadata>,
     pub mailbox_name: String,
     pub uid: u64,

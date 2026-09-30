@@ -87,6 +87,7 @@ fn metadata_survives_read_responses_and_partial_identity_fails() {
         attachment_count: Some(2),
     };
     let summary = MessageSummary {
+        to: None,
         metadata: Some(metadata.clone()),
         mailbox_name: "INBOX".into(),
         uid: 7,
@@ -244,4 +245,56 @@ fn flag_confirmation_rejects_duplicate_and_unrelated_fields() {
         assert!(parse(&format!("{response}{extra}")).is_err());
     }
     assert!(parse(&response.replace("operation=message_flag", "operation=mailbox_list")).is_err());
+}
+
+#[test]
+fn sent_recipient_helper_roundtrip_is_optional_bounded_and_strict() {
+    let row = MessageSummary {
+        to: Some("Élodie <elodie@example.test>, <b>Literal</b>".into()),
+        metadata: None,
+        mailbox_name: "Sent".into(),
+        uid: 1,
+        flags: vec![],
+        date_received: "2026-09-30".into(),
+        size_virtual: 12,
+        subject: None,
+        from: Some("self@example.test".into()),
+    };
+    let response = MailboxHelperResponse::MessageListOk {
+        mailbox_name: "Sent".into(),
+        messages: vec![row.clone()],
+    };
+    let encoded = encode_response(&response);
+    assert!(!encoded.contains("bcc"));
+    assert_eq!(parse(&encoded).unwrap(), response);
+    let legacy = encoded
+        .lines()
+        .filter(|line| !line.starts_with("message_to_b64="))
+        .collect::<Vec<_>>()
+        .join("\n")
+        + "\n";
+    let MailboxHelperResponse::MessageListOk { messages, .. } = parse(&legacy).unwrap() else {
+        panic!("wrong response")
+    };
+    assert_eq!(messages[0].to, None);
+    let original = encoded
+        .lines()
+        .find(|line| line.starts_with("message_to_b64="))
+        .unwrap();
+    assert!(parse(&encoded.replace(original, "message_to_b64=%%%")).is_err());
+    for value in [
+        "bad\nheader".to_owned(),
+        "x".repeat(MessageListPolicy::default().header_value_max_len + 1),
+    ] {
+        let mut bad = row.clone();
+        bad.to = Some(value);
+        assert!(
+            parse(&encode_response(&MailboxHelperResponse::MessageListOk {
+                mailbox_name: "Sent".into(),
+                messages: vec![bad]
+            }))
+            .is_err()
+        );
+    }
+    assert!(parse(&encoded.replace(original, &format!("{original}\n{original}"))).is_err());
 }

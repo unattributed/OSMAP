@@ -7,7 +7,7 @@ use super::mailbox_parse::{normalize_header_summary_value, validate_bounded_stri
 use super::*;
 use crate::message_metadata::{attachment_count, message_preview, MessageMetadata, MessageVersion};
 
-pub(super) const SUMMARY_FIELDS: &str = "uid flags date.received size.virtual mailbox mailbox-guid guid hdr.subject hdr.from imap.bodystructure body.preview";
+pub(super) const SUMMARY_FIELDS: &str = "uid flags date.received size.virtual mailbox mailbox-guid guid hdr.subject hdr.from hdr.to imap.bodystructure body.preview";
 pub(super) const VIEW_FIELDS: &str =
     "uid flags date.received size.virtual mailbox mailbox-guid guid hdr body imap.bodystructure body.preview";
 const BACKEND: &str = "message-json-parser";
@@ -29,6 +29,8 @@ struct FetchRow {
     subject: Option<String>,
     #[serde(rename = "hdr.from")]
     from: Option<String>,
+    #[serde(rename = "hdr.to")]
+    to: Option<String>,
     hdr: Option<String>,
     body: Option<String>,
     #[serde(rename = "imap.bodystructure")]
@@ -132,6 +134,16 @@ impl FetchRow {
             policy.message_date_max_len,
             policy.message_flag_string_max_len,
         )?;
+        if let Some(to) = &self.to {
+            validate_bounded_string(
+                "hdr.to",
+                to,
+                policy.header_value_max_len,
+                BACKEND,
+                true,
+                true,
+            )?;
+        }
         let header = |value: Option<String>| -> Result<Option<String>, MailboxBackendError> {
             let value = value
                 .map(|value| normalize_header_summary_value(&value))
@@ -149,6 +161,7 @@ impl FetchRow {
             Ok(value)
         };
         Ok(MessageSummary {
+            to: header(self.to)?,
             metadata: Some(metadata),
             mailbox_name: self.mailbox,
             uid,
@@ -263,6 +276,40 @@ mod tests {
             "mailbox":"INBOX", "mailbox-guid":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "guid":"fixture.M1P2.obsd1,S=12,W=12",
             "hdr.subject":"Native fixture", "hdr.from":"fixture@example.test",
             "imap.bodystructure":"\"text\" \"plain\" NIL NIL NIL \"7bit\" 12 1 NIL NIL NIL NIL"})
+    }
+
+    #[test]
+    fn sent_recipient_projection_is_bounded_optional_and_never_requests_bcc() {
+        assert!(SUMMARY_FIELDS.split_whitespace().any(|v| v == "hdr.to"));
+        assert!(!SUMMARY_FIELDS.contains("bcc"));
+        let mut fixture = row();
+        fixture["hdr.to"] = "Alice <alice@example.test>,\r\n Bob <bob@example.test>".into();
+        let rows = parse_json_summaries(MessageListPolicy::default(), &execution(fixture.clone()))
+            .unwrap();
+        assert_eq!(
+            rows[0].to.as_deref(),
+            Some("Alice <alice@example.test>, Bob <bob@example.test>")
+        );
+        assert_eq!(rows[0].from.as_deref(), Some("fixture@example.test"));
+        for invalid in [
+            serde_json::json!(["wrong"]),
+            serde_json::json!("bad\u{0000}header"),
+            serde_json::json!(" ".repeat(MessageListPolicy::default().header_value_max_len + 1)),
+        ] {
+            fixture["hdr.to"] = invalid;
+            assert!(parse_json_summaries(
+                MessageListPolicy::default(),
+                &execution(fixture.clone())
+            )
+            .is_err());
+        }
+        let legacy = parse_json_summaries(MessageListPolicy::default(), &execution(row())).unwrap();
+        assert_eq!(legacy[0].to, None);
+        let mut unexpected = row();
+        unexpected["hdr.bcc"] = "private@example.test".into();
+        assert!(
+            parse_json_summaries(MessageListPolicy::default(), &execution(unexpected)).is_err()
+        );
     }
 
     #[test]

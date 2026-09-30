@@ -137,6 +137,7 @@ impl StubGateway {
                 new_uid,
             ),
             MessageSummary {
+                to: None,
                 metadata: Some(metadata),
                 mailbox_name: request.destination_mailbox_name.clone(),
                 uid: new_uid,

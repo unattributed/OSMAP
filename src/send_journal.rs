@@ -122,6 +122,28 @@ impl AccountGuard {
         }
         Ok(())
     }
+    /// Inspect the current summary revision while holding the account coordination lock.
+    pub(crate) fn draft_attempt(
+        &self,
+        summary: &crate::draft::DraftSummary,
+    ) -> Result<(String, Option<AttemptOutcome>), JournalError> {
+        let intent = intent_for_draft(
+            &self.account,
+            &summary.draft_id,
+            summary.revision,
+            summary.updated_at,
+        )?;
+        self.validate_intent(&intent)?;
+        Ok((
+            intent.clone(),
+            self.record
+                .attempts
+                .iter()
+                .find(|entry| entry.intent == intent)
+                .map(|entry| entry.state.outcome()),
+        ))
+    }
+
     /// Retire an unsaved intent before publishing the first draft revision.
     pub(crate) fn begin_draft_save(&mut self, intent: &str, id: &str) -> Result<(), JournalError> {
         self.require_unconsumed(intent)?;

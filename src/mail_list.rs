@@ -393,6 +393,7 @@ mod tests {
 
     fn row(uid: u64, flags: &[&str]) -> MessageSummary {
         MessageSummary {
+            to: None,
             metadata: None,
             mailbox_name: "INBOX".into(),
             uid,

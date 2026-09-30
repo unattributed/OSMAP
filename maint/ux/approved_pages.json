@@ -852,7 +852,7 @@
         "S03-04",
         "S07-04"
       ],
-      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "visual_status": "PARTIAL_FINAL_REFERENCE_COMPARISON",
       "controls": [
         {
           "id": "R2-05-001",
@@ -887,8 +887,15 @@
         {
           "id": "R2-05-006",
           "label": "Recipient identity",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/mailbox_json.rs",
+            "src/mailbox_helper_protocol.rs",
+            "src/http_ui.rs",
+            "maint/ux/sent_recipient_workflows.py",
+            "S04/sent-integrated-{edge,firefox}/report.json",
+            "Actual bounded To summary header; missing recipient remains unknown; Inbox/Search retain From. Native Dovecot fixture execution pending next signed checkpoint."
+          ]
         },
         {
           "id": "R2-05-007",
@@ -905,8 +912,12 @@
         {
           "id": "R2-05-009",
           "label": "Actual delivery/protection state",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "S04/sent-integrated-{edge,firefox}/report.json",
+            "Stored Sent presence does not confirm delivery. Protection remains not assessed."
+          ]
         },
         {
           "id": "R2-05-010",
@@ -943,25 +954,46 @@
         "S03-02",
         "S03-04"
       ],
-      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "visual_status": "PARTIAL_FINAL_REFERENCE_COMPARISON",
       "controls": [
         {
           "id": "R2-06-001",
           "label": "Selection",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http_gateway_draft.rs",
+            "src/send_recovery.rs",
+            "src/http_ui.rs",
+            "maint/ux/draft_state_workflows.py",
+            "S04/drafts-dense-integrated-{edge,firefox}/report.json",
+            "Eight native saved rows: six editable, one uncertain attempt, one accepted with unconfirmed Sent copy. Consumed/unknown revisions cannot select, star, discard or resume editing; exact attempted and saved versions remain read-only. Combined ordinary/recovery usage is scoped to the same 50-record/50-MiB quota."
+          ]
         },
         {
           "id": "R2-06-002",
           "label": "All drafts filter",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http_gateway_draft.rs",
+            "src/send_recovery.rs",
+            "src/http_ui.rs",
+            "maint/ux/draft_state_workflows.py",
+            "S04/drafts-dense-integrated-{edge,firefox}/report.json",
+            "Eight native saved rows: six editable, one uncertain attempt, one accepted with unconfirmed Sent copy. Consumed/unknown revisions cannot select, star, discard or resume editing; exact attempted and saved versions remain read-only. Combined ordinary/recovery usage is scoped to the same 50-record/50-MiB quota."
+          ]
         },
         {
           "id": "R2-06-003",
           "label": "Sort order",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http_gateway_draft.rs",
+            "src/send_recovery.rs",
+            "src/http_ui.rs",
+            "maint/ux/draft_state_workflows.py",
+            "S04/drafts-dense-integrated-{edge,firefox}/report.json",
+            "Eight native saved rows: six editable, one uncertain attempt, one accepted with unconfirmed Sent copy. Consumed/unknown revisions cannot select, star, discard or resume editing; exact attempted and saved versions remain read-only. Combined ordinary/recovery usage is scoped to the same 50-record/50-MiB quota."
+          ]
         },
         {
           "id": "R2-06-004",
@@ -972,8 +1004,15 @@
         {
           "id": "R2-06-005",
           "label": "Star/unstar draft",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http_gateway_draft.rs",
+            "src/send_recovery.rs",
+            "src/http_ui.rs",
+            "maint/ux/draft_state_workflows.py",
+            "S04/drafts-dense-integrated-{edge,firefox}/report.json",
+            "Eight native saved rows: six editable, one uncertain attempt, one accepted with unconfirmed Sent copy. Consumed/unknown revisions cannot select, star, discard or resume editing; exact attempted and saved versions remain read-only. Combined ordinary/recovery usage is scoped to the same 50-record/50-MiB quota."
+          ]
         },
         {
           "id": "R2-06-006",
@@ -996,8 +1035,15 @@
         {
           "id": "R2-06-009",
           "label": "Draft status",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http_gateway_draft.rs",
+            "src/send_recovery.rs",
+            "src/http_ui.rs",
+            "maint/ux/draft_state_workflows.py",
+            "S04/drafts-dense-integrated-{edge,firefox}/report.json",
+            "Eight native saved rows: six editable, one uncertain attempt, one accepted with unconfirmed Sent copy. Consumed/unknown revisions cannot select, star, discard or resume editing; exact attempted and saved versions remain read-only. Combined ordinary/recovery usage is scoped to the same 50-record/50-MiB quota."
+          ]
         },
         {
           "id": "R2-06-010",
@@ -1008,20 +1054,41 @@
         {
           "id": "R2-06-011",
           "label": "Finite row menu",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http_gateway_draft.rs",
+            "src/send_recovery.rs",
+            "src/http_ui.rs",
+            "maint/ux/draft_state_workflows.py",
+            "S04/drafts-dense-integrated-{edge,firefox}/report.json",
+            "Eight native saved rows: six editable, one uncertain attempt, one accepted with unconfirmed Sent copy. Consumed/unknown revisions cannot select, star, discard or resume editing; exact attempted and saved versions remain read-only. Combined ordinary/recovery usage is scoped to the same 50-record/50-MiB quota."
+          ]
         },
         {
           "id": "R2-06-012",
           "label": "Resume",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http_gateway_draft.rs",
+            "src/send_recovery.rs",
+            "src/http_ui.rs",
+            "maint/ux/draft_state_workflows.py",
+            "S04/drafts-dense-integrated-{edge,firefox}/report.json",
+            "Eight native saved rows: six editable, one uncertain attempt, one accepted with unconfirmed Sent copy. Consumed/unknown revisions cannot select, star, discard or resume editing; exact attempted and saved versions remain read-only. Combined ordinary/recovery usage is scoped to the same 50-record/50-MiB quota."
+          ]
         },
         {
           "id": "R2-06-013",
           "label": "Confirmed discard",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http_gateway_draft.rs",
+            "src/send_recovery.rs",
+            "src/http_ui.rs",
+            "maint/ux/draft_state_workflows.py",
+            "S04/drafts-dense-integrated-{edge,firefox}/report.json",
+            "Eight native saved rows: six editable, one uncertain attempt, one accepted with unconfirmed Sent copy. Consumed/unknown revisions cannot select, star, discard or resume editing; exact attempted and saved versions remain read-only. Combined ordinary/recovery usage is scoped to the same 50-record/50-MiB quota."
+          ]
         },
         {
           "id": "R2-06-014",
@@ -1407,19 +1474,31 @@
         "S05-02",
         "S08-04"
       ],
-      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "visual_status": "PARTIAL_FINAL_REFERENCE_COMPARISON",
       "controls": [
         {
           "id": "R2-10-001",
           "label": "Settings section selection",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/settings_security_ui.rs",
+            "src/http/routes_settings.rs",
+            "src/http/security_settings_tests.rs",
+            "maint/ux/security_settings_workflows.py",
+            "S04/security-integrated-{edge,firefox}/report.json"
+          ]
         },
         {
           "id": "R2-10-002",
           "label": "Security page role",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/settings_security_ui.rs",
+            "src/http/routes_settings.rs",
+            "src/http/security_settings_tests.rs",
+            "maint/ux/security_settings_workflows.py",
+            "S04/security-integrated-{edge,firefox}/report.json"
+          ]
         },
         {
           "id": "R2-10-003",
@@ -1472,14 +1551,27 @@
         {
           "id": "R2-10-011",
           "label": "Manage active sessions",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/settings_security_ui.rs",
+            "src/http/routes_settings.rs",
+            "src/http/security_settings_tests.rs",
+            "maint/ux/security_settings_workflows.py",
+            "S04/security-integrated-{edge,firefox}/report.json"
+          ]
         },
         {
           "id": "R2-10-012",
           "label": "Recent security events",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/settings_security_ui.rs",
+            "src/http/routes_settings.rs",
+            "src/http/security_settings_tests.rs",
+            "maint/ux/security_settings_workflows.py",
+            "S04/security-integrated-{edge,firefox}/report.json",
+            "Newest five retained sign-ins only; full security event history is unavailable. Owner mismatch, duplicate IDs and more than 256 records produce unknown count/events."
+          ]
         }
       ]
     },
@@ -2587,7 +2679,7 @@
         "S04-03",
         "S04-04"
       ],
-      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "visual_status": "PARTIAL_FINAL_REFERENCE_COMPARISON",
       "controls": [
         {
           "id": "R2-20-001",
@@ -2616,14 +2708,26 @@
         {
           "id": "R2-20-005",
           "label": "Active session count",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/settings_security_ui.rs",
+            "src/http/routes_settings.rs",
+            "src/http/security_settings_tests.rs",
+            "maint/ux/security_settings_workflows.py",
+            "S04/security-integrated-{edge,firefox}/report.json"
+          ]
         },
         {
           "id": "R2-20-006",
           "label": "Manage sessions",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/settings_security_ui.rs",
+            "src/http/routes_settings.rs",
+            "src/http/security_settings_tests.rs",
+            "maint/ux/security_settings_workflows.py",
+            "S04/security-integrated-{edge,firefox}/report.json"
+          ]
         },
         {
           "id": "R2-20-007",
@@ -2640,8 +2744,14 @@
         {
           "id": "R2-20-009",
           "label": "Recovery boundary explanation",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/settings_security_ui.rs",
+            "src/http/routes_settings.rs",
+            "src/http/security_settings_tests.rs",
+            "maint/ux/security_settings_workflows.py",
+            "S04/security-integrated-{edge,firefox}/report.json"
+          ]
         }
       ]
     },

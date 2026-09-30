@@ -1833,3 +1833,55 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   The signing hook repeats the security suite. Earlier failure logs are retained,
   including the gate-discovered legacy preference assertion, replaced with an
   explicit refusal path; no gate or scanner was weakened.
+
+### Draft state, Sent recipients and Security overview — 2026-09-30
+
+- Resumed after the operator's balance pause with the worktree and isolated
+  proposals preserved. Plan R2 anchor and reference hashes remain unchanged.
+  Signed `422f058e2fedf3768be4a6f1e7c115e640efbc40` passed isolated obsd1
+  qualification: S04 `native-f`, archive SHA-256
+  `7175b309950dee072bc3ea2c11008fd93d78148312ac4fe4b0c14e71fda2c0d3`,
+  log SHA-256 `aec0332e235aee9f73b44bc5ed56968b8422cf5ab9e51f1500227fa6c32809af`.
+  The standard checkout and services were unchanged; this was not deployment.
+- Draft rows now derive editable, attempted, paused or unknown state from the
+  account journal and the exact saved revision. Consumed and unknown rows cannot
+  select, star, discard or resume editing. Read-only links retain access to the
+  exact attempt and saved comparison. Storage reports ordinary drafts plus
+  retained recovery against their combined 50-record/50-MiB limit; corrupt
+  recovery metadata produces unknown usage and refuses unverified editing.
+- PAGE-06 native evidence uses eight actual saved drafts, six editable and two
+  consumed by synthetic uncertain/accepted-with-unconfirmed-Sent attempts.
+  Desktop table bounds are approximately y246–749 against approved y248–748.
+  Both engines cover literal recovery, account isolation, ordinary star/discard,
+  invalid recovery-index uncertainty and exact-byte restoration, with 16 captures
+  each. Exactly two intentional synthetic Send POSTs per engine; no real email.
+- Sent projects actual bounded To headers through the Dovecot JSON/helper model.
+  Missing To stays unknown; From is retained for Inbox/Search and explicit From
+  sorting. No Bcc projection or per-row body fetch is added. Grouped native
+  filters keep the toolbar approximately 60px high against the approved 58px.
+  Parent Edge/Firefox workflows passed eight captures each, with no sends,
+  scripts or external requests. The native Dovecot fixture was extended for
+  known, missing, folded and Unicode To values; its new OpenBSD run is pending
+  the next signed checkpoint.
+- PAGE-10 and PAGE-20 follow the approved Security and Authentication/Recovery
+  card hierarchy. Owned active-session counts and the newest five retained
+  sign-ins are real; full event history, enrollment, key capability, password
+  change time and recovery contacts remain unknown. Unsupported management
+  actions remain disabled. Sessions, Settings search and privacy navigation work.
+- Independent review required a non-Security settings owner-equality refusal
+  and a 256-record/unique-session-ID bound before Security projection. Both
+  corrections are covered. Parent integration also corrected the old long-name
+  fixture to use one consistent session/settings owner. No production guard was
+  relaxed. Native Edge/Firefox checks verify both signed-in accounts remain
+  isolated across both pages, with 16 captures each, zero external/script
+  requests, zero non-login POSTs and zero computed contrast/overflow failures.
+- Evidence: S04 `drafts-dense-integrated-{edge,firefox}`,
+  `sent-integrated-{edge,firefox}`, `security-integrated-{edge,firefox}`, and
+  `drafts-sent-security-*` logs. Validation: 816 library tests passed, seven
+  opt-in fixtures ignored; acceptance/security/V10–13, V14, strict all-target
+  Clippy, formatting and whitespace checks passed. The initial register refresh
+  used an old baseline during derivation; refreshing in dependency order fixed
+  the register consistency check without changing its assertions or policy.
+- These are bounded engineering completions, with page-level requirements and
+  independent acceptance still partial. Identity and Archive/Bin proposals are
+  isolated from this checkpoint. No GitHub synchronization or deployment.

@@ -1,5 +1,8 @@
 //! Native Settings presentation, separate from browser route handlers.
 use super::*;
+#[path = "settings_security_ui.rs"]
+mod settings_security_ui;
+pub(crate) use settings_security_ui::render_security_page;
 #[path = "settings_privacy_ui.rs"]
 mod settings_privacy_ui;
 pub(crate) use settings_privacy_ui::render_privacy_page;
@@ -117,8 +120,11 @@ fn settings_navigation(current_section: &str) -> String {
         ("Notifications", None),
         ("Privacy & Security", Some("privacy")),
         ("OpenPGP", None),
-        ("Authentication & Recovery", None),
+        ("Authentication & Recovery", Some("authentication")),
     ] {
+        if label == "OpenPGP" && current_section == "security" {
+            result.push_str("<li><a href=\"/settings?section=security\" aria-current=\"page\">Security</a></li>");
+        }
         if let Some(section) = section {
             result.push_str(&format!(
                 "<li><a href=\"/settings?section={section}\"{}>{}</a></li>",

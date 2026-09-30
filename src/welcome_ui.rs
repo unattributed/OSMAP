@@ -61,7 +61,12 @@ pub(crate) fn render_mailboxes_page(
             inbox.then_some("/mailbox?name=INBOX"),
         ),
         ("Documents", "Unavailable", "drafts", None),
-        ("Security", "Manage sessions", "shield", Some("/sessions")),
+        (
+            "Security",
+            "Account protection",
+            "shield",
+            Some("/settings?section=security"),
+        ),
         (
             "Settings",
             "Account & preferences",
