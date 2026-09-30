@@ -404,11 +404,16 @@ fn runtime_recovery_storage_failure_consumes_intent_without_submit_or_sent() {
     std::fs::write(recovery.join("index"), b"synthetic refusal").unwrap();
     let (submission, append) = probes(false, false);
     let service = SubmissionService::new(submission.clone());
-    for _ in 0..2 {
+    for changed in [false, true] {
+        let mut request = send_request(&intent, &draft);
+        if changed {
+            request.body = "Different attempted body";
+            request.recipients = "unfinished recipient <";
+        }
         let result = gateway.send_message_with_backends(
             &test_context(),
             &session,
-            send_request(&intent, &draft),
+            request,
             &service,
             &append,
         );
@@ -588,6 +593,133 @@ fn runtime_combined_count_and_byte_limits_cover_capture_and_normal_save() {
                 .decision,
             BrowserSendDecision::RecoveryRefused { capacity: true }
         );
+        assert_eq!(submission.calls.lock().unwrap().len(), 1);
+        assert_eq!(append.calls.lock().unwrap().len(), 1);
+    }
+}
+
+#[test]
+fn identity_capture_survives_profile_change_reopen_replay_and_sent_mime_is_identical() {
+    use crate::identity_preferences::{IdentityPreferences, IdentityPreferencesStore};
+    let f = Fixture::new();
+    let account = validated_session().record.canonical_username;
+    let profiles = IdentityPreferencesStore::new(&f.gateway.settings_dir);
+    let (_, legacy) = f.save();
+    let original =
+        IdentityPreferences::new("Zoë 🦊, \"Review\"", Some("reply@example.test")).unwrap();
+    profiles.save(&account, 0, &original).unwrap();
+    let (_, captured) = f.save();
+    assert_eq!(captured.request.sender_identity, original);
+    assert_eq!(
+        legacy.request.sender_identity,
+        IdentityPreferences::default()
+    );
+    let newer = IdentityPreferences::new("Different profile", Some("new@example.test")).unwrap();
+    profiles.save(&account, 1, &newer).unwrap();
+    let (_, fresh) = f.save();
+    assert_eq!(fresh.request.sender_identity, newer);
+    let resave = |record: &DraftRecord| {
+        let intent = crate::send_journal::intent_for_draft(
+            &account,
+            &record.draft_id,
+            record.revision.unwrap(),
+            record.updated_at,
+        )
+        .unwrap();
+        let result = f.gateway.save_draft_impl(
+            &test_context(),
+            &validated_session(),
+            save_request(&intent, Some(&record.draft_id), record.revision),
+        );
+        assert!(matches!(
+            result.decision,
+            BrowserDraftSaveDecision::Saved { .. }
+        ));
+        f.gateway
+            .build_draft_store()
+            .load(&account, &record.draft_id, f.gateway.send_clock())
+            .unwrap()
+            .unwrap()
+    };
+    let captured = resave(&captured);
+    let legacy = resave(&legacy);
+    assert_eq!(captured.request.sender_identity, original);
+    assert_eq!(
+        legacy.request.sender_identity,
+        IdentityPreferences::default()
+    );
+    let unsaved_intent = crate::send_journal::mint_intent(f.gateway.send_clock()).unwrap();
+    let mut unsaved = send_request(&unsaved_intent, &fresh);
+    unsaved.draft_id = None;
+    unsaved.draft_revision = None;
+    let (direct, append) = probes(false, false);
+    assert!(matches!(
+        f.gateway
+            .send_message_with_backends(
+                &test_context(),
+                &validated_session(),
+                unsaved,
+                &SubmissionService::new(direct.clone()),
+                &append
+            )
+            .decision,
+        BrowserSendDecision::Submitted { .. }
+    ));
+    assert_eq!(direct.calls.lock().unwrap()[0].sender_identity, newer);
+    for (draft, expected) in [
+        (&captured, original.clone()),
+        (&legacy, IdentityPreferences::default()),
+    ] {
+        let intent = crate::send_journal::intent_for_draft(
+            &account,
+            &draft.draft_id,
+            draft.revision.unwrap(),
+            draft.updated_at,
+        )
+        .unwrap();
+        let (submission, append) = probes(false, true);
+        let service = SubmissionService::new(submission.clone());
+        let result = f.gateway.send_message_with_backends(
+            &test_context(),
+            &validated_session(),
+            send_request(&intent, draft),
+            &service,
+            &append,
+        );
+        assert!(matches!(
+            result.decision,
+            BrowserSendDecision::Submitted {
+                sent_copy_stored: false,
+                receipt_persisted: true
+            }
+        ));
+        let sent = submission.calls.lock().unwrap()[0].clone();
+        assert_eq!(sent.sender_identity, expected);
+        let smtp = build_submission_message(&account, &sent).unwrap();
+        assert_eq!(append.calls.lock().unwrap()[0].message, smtp);
+        assert!(!String::from_utf8_lossy(&smtp).contains("Bcc:"));
+        let reopened = RuntimeBrowserGateway::for_test(&f.root);
+        let BrowserSendRecoveryDecision::Available(snapshot) =
+            reopened.read_send_recovery(&validated_session(), &intent)
+        else {
+            panic!("verified snapshot required")
+        };
+        assert_eq!(snapshot.request.sender_identity, expected);
+        assert_eq!(
+            build_submission_message(&account, &snapshot.request).unwrap(),
+            smtp
+        );
+        let retry = reopened.send_message_with_backends(
+            &test_context(),
+            &validated_session(),
+            send_request(&intent, draft),
+            &service,
+            &append,
+        );
+        assert!(matches!(
+            retry.decision,
+            BrowserSendDecision::Submitted { .. }
+        ));
         assert_eq!(submission.calls.lock().unwrap().len(), 1);
         assert_eq!(append.calls.lock().unwrap().len(), 1);
     }

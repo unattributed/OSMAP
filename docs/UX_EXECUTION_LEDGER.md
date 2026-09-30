@@ -1885,3 +1885,63 @@ with later outcomes. Correct errors using a new entry referencing the old one.
 - These are bounded engineering completions, with page-level requirements and
   independent acceptance still partial. Identity and Archive/Bin proposals are
   isolated from this checkpoint. No GitHub synchronization or deployment.
+
+
+### Identity capture, Archive/Bin and reader fidelity — 2026-09-30
+
+- Signed `86e50e2db1a87c35806b60373b5e75a488618bf9` passed isolated obsd1
+  qualification in S04 `native-g`: archive SHA-256
+  `a811f95bd31eee3d40c49443bf4c527d33c0232d7517ae9b7fb54a8fc94c3af0`,
+  log SHA-256 `8fbfb718aaaf4d4804a842204c15f35695e07da09f4dffe8652a764624aa6933`.
+  Native known/missing/folded Unicode Sent recipients passed. Standard checkout
+  and services remained unchanged; this was not deployment.
+- Identity now has actual owned revision-checked display-name/Reply-To storage,
+  with canonical sender authority unchanged. General projects those values and
+  links to Identity editing. Invalid, stale or uncertain saves retain entered
+  fields; corrupt storage refuses fresh capture. First save/direct submission
+  captures preferences; existing drafts, including legacy defaults, never inherit
+  a newer profile. Nondefault identities use strict v10 draft metadata; default
+  v9 bytes and old recovery digest remain compatible. Submission and Sent append
+  use identical prepared MIME, and immutable recovery restores that identity.
+- Compose, saved versions and receipts expose their appropriate sender source.
+  Parent Edge/Firefox each passed 20 captures including a maximum-length Unicode
+  name, actual profile/draft persistence and account isolation. Each made one
+  deliberate synthetic accepted-with-unconfirmed-Sent action; no real mail.
+  Independent MIME decoding recovers exact Unicode/long names. Retained evidence
+  records Python headerregistry's long-name spacing behaviour without claiming
+  universal client display parity. Source proof is in S04 `identity-source-proof`.
+- Archive/Bin uses the approved dense table, owned folder tabs and existing native
+  move/restore contracts. Inclusive UTC received-day filters apply to loaded
+  summaries; malformed ranges are refused. Tabs retain filters/sort/dates while
+  clearing page and selected identity. Parent combined Archive/date/reader/back/
+  move/restore workflows passed 19 captures per engine with zero sends, external
+  requests, scripts, measured contrast failures or overflow. Permanent deletion,
+  archive timestamps and retention management remain unavailable.
+- Standalone Reader now places source beside protection states, counts actual
+  attachments and follows the approved toolbar/header/body spacing. Parent runs
+  passed eight captures per engine, bounded source/PDF download, read/star and
+  reply/reply-all/forward. The fixture's second attachment lacks download bytes;
+  its download is not qualified. Coordinated-reader layout remains separate.
+- Shared navigation follows the approved destinations, including an accurately
+  unavailable Documents entry and combined Archive/Bin route. The approved Welcome
+  shield/tagline and compact diamond branding on other pages remain distinct. Actual UTC time is labelled as
+  updated on page load; 30 clock captures per engine include Compose normal/
+  expanded and intermediate-width General settings. Shell captures cover 1536,
+  1199, 768 and 360 pixels. Welcome now shows up to five owned retained sign-ins;
+  other event types remain unavailable. Its 11 captures per engine use PAGE01's
+  native 1536x1024 reference size and include narrow/dark/forced colours.
+- Evidence: S04 `identity-integrated-*`, `archive-dates-integrated-*`,
+  `date-integrated-*`, `reader-integrated-*`, `shell-brand-final-*`,
+  `clock-compose-integrated-*`, `welcome-activity-integrated-*` and
+  `identity-archive-reader-*` logs. Independent reviews found no remaining
+  blocking identity/context defect. 835 library tests, strict all-target Clippy
+  and V14 passed. Full acceptance/security/V10-13 passed; final header-specific
+  hostile-content checks and the refreshed V10 register also passed.
+  Earlier failures retained: obsolete Archive URL assertion, a needless borrow,
+  the new shield's attributes outside the existing geometry-only allowance, and
+  a missing Identity route inventory entry. These were corrected without
+  weakening assertions or scanner policies.
+- Inventory statuses remain bounded local implementation or partial behaviour;
+  this is not whole-page, epic, release or production qualification. Search,
+  standalone neighbour navigation and a loaded Sent metric are isolated proposals
+  for the next checkpoint. No GitHub synchronization or deployment.

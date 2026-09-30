@@ -142,8 +142,13 @@ fn receipt_page(
     html_response(status, if status == 200 { "OK" } else if status == 404 { "Not Found" } else { "Service Unavailable" }, title,
         TrustedHtml::from_template(format!("{}<main id=\"main-content\" class=\"page-shell submission-result-page\"><section class=\"panel\"><h1>{}</h1><p role=\"status\">{}</p>{}<p>This receipt is read-only. <a href=\"/drafts\">Open Drafts</a></p></section></main>", crate::http_ui::app_header(&session.record.canonical_username, &session.record.csrf_token, "compose-result"), escape_html(title), escape_html(message), recovery)))
 }
+fn sender_presentation(identity: &crate::identity_preferences::IdentityPreferences) -> String {
+    format!("<section class=\"retained-sender\" aria-label=\"Captured sender presentation\"><h3>Captured sender presentation</h3><p>Display name: <span data-sender-name>{}</span></p><p>Reply-to: <span data-sender-reply>{}</span></p><p>The canonical account address remains the authorized sender. These values come from this retained version, not the current profile.</p></section>", escape_html(if identity.display_name().is_empty() { "None (canonical address only)" } else { identity.display_name() }), escape_html(identity.reply_to().unwrap_or("Canonical account address")))
+}
+
 fn saved_version(draft: &DraftRecord) -> String {
     let mut html = String::from("<section aria-labelledby=\"saved-recovery-heading\"><h2 id=\"saved-recovery-heading\">Saved version for comparison</h2><p>This is the saved draft, not a backup of the attempted submission. Its text and attachments may differ from attempted edits and new uploads. Opening this view does not start another attempt. Drafts expire after 30 days.</p>");
+    html.push_str(&sender_presentation(&draft.request.sender_identity));
     for (id, label, text) in [
         ("to", "To", &draft.request.recipients_text),
         ("cc", "Cc", &draft.request.cc_text),
@@ -187,6 +192,7 @@ fn attempt_recovery(decision: &BrowserSendRecoveryDecision, intent: &str) -> Str
     };
     let request = &snapshot.request;
     let mut html=String::from("<section aria-labelledby=\"attempt-recovery-heading\"><h2 id=\"attempt-recovery-heading\">Exact prepared attempt</h2><p>This verified snapshot records what was prepared before submission. Its existence does not prove that submission was invoked, accepted, or delivered. The saved draft comparison may contain different text or files. This view cannot send or edit the attempt.</p>");
+    html.push_str(&sender_presentation(&request.sender_identity));
     for (label, time) in [
         ("Created", snapshot.created_at),
         ("Expires", snapshot.expires_at),
@@ -240,6 +246,11 @@ fn prepared_reply_metadata_and_formatted_source_are_literal() {
     .unwrap()
     .with_body_format(crate::compose_format::BodyFormat::Formatted)
     .unwrap();
+    request.sender_identity = crate::identity_preferences::IdentityPreferences::new(
+        "Zoë <literal>",
+        Some("reply@example.test"),
+    )
+    .unwrap();
     request.reply_thread = Some(
         crate::reply_thread::ReplyThread::from_original(
             "Message-ID: <parent@example.test>\nReferences: <root@example.test>\n",
@@ -256,6 +267,8 @@ fn prepared_reply_metadata_and_formatted_source_are_literal() {
     );
     for expected in [
         "Prepared message format: formatted",
+        "Zoë &lt;literal&gt;",
+        "reply@example.test",
         "**🦊**",
         "&lt;parent@example.test&gt;",
         "&lt;root@example.test&gt;",

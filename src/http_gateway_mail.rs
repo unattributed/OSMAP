@@ -822,6 +822,7 @@ impl RuntimeBrowserGateway {
             |consumed| {
                 // The journal account lock is already held. Recheck persisted
                 // revision here, after any concurrent save has completed.
+                let mut sender_identity = None;
                 if !consumed {
                     match (send_request.draft_id, send_request.draft_revision) {
                         (Some(id), Some(revision)) => {
@@ -833,6 +834,7 @@ impl RuntimeBrowserGateway {
                                 .ok_or_else(|| BrowserSendDecision::Unconfirmed {
                                     public_reason: "send_attempt_paused".into(),
                                 })?;
+                            sender_identity = Some(draft.request.sender_identity.clone());
                             let expected = crate::send_journal::intent_for_draft(
                                 account,
                                 id,
@@ -881,6 +883,30 @@ impl RuntimeBrowserGateway {
                         retry_after_seconds: None,
                     }
                 })?;
+                request.sender_identity = if consumed {
+                    match crate::send_recovery::SendRecovery::new(
+                        self.settings_dir.join("send-recovery"),
+                    )
+                    .lookup(&journal, account, send_request.send_intent, now)
+                    {
+                        Ok(crate::send_recovery::RecoveryRead::Available(snapshot)) => {
+                            snapshot.request.sender_identity.clone()
+                        }
+                        _ => {
+                            return Err(BrowserSendDecision::Unconfirmed {
+                                public_reason: "send_attempt_paused".into(),
+                            })
+                        }
+                    }
+                } else if let Some(identity) = sender_identity {
+                    identity
+                } else {
+                    self.load_identity_preferences(context, validated_session)
+                        .map_err(|_| BrowserSendDecision::Unconfirmed {
+                            public_reason: "send_attempt_paused".into(),
+                        })?
+                        .preferences
+                };
                 request.reply_thread = send_request.reply_thread.cloned();
                 // Replay skips current throttle state. For fresh attempts the check
                 // and its NotDispatched disposition are protected by the journal lock.

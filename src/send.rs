@@ -170,6 +170,7 @@ pub struct ComposeRequest {
     pub bcc_recipients: Vec<String>,
     pub subject: String,
     pub body: String,
+    pub sender_identity: crate::identity_preferences::IdentityPreferences,
     pub body_format: BodyFormat,
     pub attachments: Vec<UploadedAttachment>,
     pub reply_thread: Option<crate::reply_thread::ReplyThread>,
@@ -231,6 +232,7 @@ impl ComposeRequest {
             bcc_recipients: recipient_fields.bcc,
             subject,
             body,
+            sender_identity: crate::identity_preferences::IdentityPreferences::default(),
             body_format: BodyFormat::Plain,
             attachments,
             reply_thread: None,
@@ -1027,17 +1029,58 @@ pub(crate) fn build_submission_message(
     canonical_username: &str,
     request: &ComposeRequest,
 ) -> Result<Vec<u8>, ComposeError> {
-    if request.body_format == BodyFormat::Formatted {
-        let body = formatted_body(&request.body)?;
-        return Ok(
-            build_formatted_submission_message(canonical_username, request, &body).into_bytes(),
-        );
+    crate::identity::MailboxIdentity::parse(canonical_username).map_err(|_| ComposeError {
+        reason: "invalid authorized sender".into(),
+    })?;
+    let raw = if request.body_format == BodyFormat::Formatted {
+        build_formatted_submission_message(
+            canonical_username,
+            request,
+            &formatted_body(&request.body)?,
+        )
+    } else if request.attachments.is_empty() {
+        build_plain_text_submission_message(canonical_username, request)
+    } else {
+        build_multipart_submission_message(canonical_username, request)
+    };
+    let name = request.sender_identity.display_name();
+    if name.is_empty() && request.sender_identity.reply_to().is_none() {
+        return Ok(raw.into_bytes());
     }
-    if request.attachments.is_empty() {
-        return Ok(build_plain_text_submission_message(canonical_username, request).into_bytes());
-    }
-
-    Ok(build_multipart_submission_message(canonical_username, request).into_bytes())
+    let from = if name.is_empty() {
+        canonical_username.to_owned()
+    } else {
+        // RFC2047 B words: <=45 UTF-8 bytes, never split a code point; <=72 encoded bytes.
+        let mut words = Vec::new();
+        let mut chunk = String::new();
+        for c in name.chars() {
+            if chunk.len() + c.len_utf8() > 45 {
+                words.push(format!(
+                    "=?UTF-8?B?{}?=",
+                    base64_encode_wrapped(chunk.as_bytes())
+                ));
+                chunk.clear();
+            }
+            chunk.push(c);
+        }
+        if !chunk.is_empty() {
+            words.push(format!(
+                "=?UTF-8?B?{}?=",
+                base64_encode_wrapped(chunk.as_bytes())
+            ));
+        }
+        format!("{}\r\n <{canonical_username}>", words.join("\r\n "))
+    };
+    let reply = request
+        .sender_identity
+        .reply_to()
+        .map(|value| format!("Reply-To: {value}\r\n"))
+        .unwrap_or_default();
+    let prefix = format!("From: {canonical_username}\r\n");
+    let tail = raw.strip_prefix(&prefix).ok_or_else(|| ComposeError {
+        reason: "sender header assembly failed".into(),
+    })?;
+    Ok(format!("From: {from}\r\n{reply}{tail}").into_bytes())
 }
 
 fn formatted_body(source: &str) -> Result<FormattedBody, ComposeError> {
@@ -2152,5 +2195,62 @@ mod tests {
             assert!(executor.borrow().stdin_data.is_some());
             assert_eq!(outcome.audit_event.action, "message_submit_unconfirmed");
         }
+    }
+    #[test]
+    fn identity_headers_roundtrip_canonical_envelope_and_snapshot_digest() {
+        let mut request = ComposeRequest::new_with_routing(
+            ComposePolicy::default(),
+            "bob@example.test",
+            "",
+            "hidden@example.test",
+            "Identity proof",
+            "Synthetic body",
+            vec![],
+        )
+        .unwrap();
+        let before = crate::send_journal::snapshot_digest("alice@example.test", &request);
+        // Golden from the pre-identity v1 snapshot layout: old receipts stay readable.
+        assert_eq!(
+            before,
+            "492b826355f65f157f1ed49327f6c1e6c4c7270b8b4875fa660de6ad8cdc7753"
+        );
+        for name in ["Zoë 🦊, \"Review\"".to_owned(), "é".repeat(128)] {
+            request.sender_identity = crate::identity_preferences::IdentityPreferences::new(
+                &name,
+                Some("reply+desk@example.test"),
+            )
+            .unwrap();
+            let bytes = build_submission_message("alice@example.test", &request).unwrap();
+            let text = String::from_utf8(bytes.clone()).unwrap();
+            assert!(
+                text.contains("\r\n <alice@example.test>\r\nReply-To: reply+desk@example.test\r\n")
+            );
+            assert!(!text.contains("Bcc:"));
+            assert_ne!(
+                before,
+                crate::send_journal::snapshot_digest("alice@example.test", &request)
+            );
+            let args = sendmail_args("alice@example.test", &request);
+            assert!(args.windows(2).any(|a| a == ["-f", "alice@example.test"]));
+            assert!(!args.iter().any(|a| a == "reply+desk@example.test"));
+            if let Some(path) = std::env::var_os("OSMAP_IDENTITY_MIME_PROOF") {
+                let path = std::path::PathBuf::from(path);
+                std::fs::create_dir_all(&path).unwrap();
+                std::fs::write(
+                    path.join(if name.starts_with("Zoë") {
+                        "unicode.eml"
+                    } else {
+                        "maximum.eml"
+                    }),
+                    bytes,
+                )
+                .unwrap();
+            }
+        }
+        request.sender_identity = crate::identity_preferences::IdentityPreferences::default();
+        assert_eq!(
+            before,
+            crate::send_journal::snapshot_digest("alice@example.test", &request)
+        );
     }
 }

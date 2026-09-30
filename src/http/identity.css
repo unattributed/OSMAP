@@ -1,0 +1,28 @@
+/* PAGE13: two identity cards and the scoped sender-authority notice. */
+.settings-identity-page .settings-layout { align-items:start; }
+.settings-identity-page .page-intro { margin-bottom:.65rem; }
+.identity-content { min-width:0; }
+.identity-cards { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; }
+.identity-card { border:1px solid var(--line); border-radius:.85rem; background:var(--panel); padding:1rem; min-width:0; min-height:20rem; }
+.identity-card h2 { margin:.85rem 0 .85rem; font-size:1.35rem; text-transform:none; }
+.identity-form { margin:0; }
+.identity-field { display:grid; grid-template-columns:43% minmax(0,1fr); gap:.7rem; align-items:center; margin-bottom:.55rem; min-width:0; }
+.identity-field label { margin:0; font-size:.875rem; font-weight:400; }
+.identity-field input:not(.settings-switch), .identity-field select { width:100%; max-width:none; min-width:0; margin:0; min-height:2.45rem; padding:.5rem .65rem; font-size:.875rem; border-color:var(--line); }
+.identity-field input[readonly] { background:var(--panel-soft); }
+.identity-actions { margin-bottom:0; }
+.identity-actions > div { display:flex; justify-content:space-between; align-items:center; gap:.4rem; }
+.identity-card button { width:auto; padding:.45rem .65rem; font-size:.8rem; min-height:2.2rem; margin:0; }
+.identity-sender { display:flex; gap:.8rem; align-items:center; padding:.6rem 0 .8rem; border-bottom:1px solid var(--line); font-size:.875rem; }
+.identity-sender > div { flex:1; min-width:0; }
+.identity-sender strong { overflow-wrap:anywhere; }
+.identity-sender > div > span { display:block; font-size:.75rem; color:var(--muted); overflow-wrap:anywhere; }
+.identity-avatar { display:grid; place-items:center; flex:0 0 2.1rem; width:2.1rem; height:2.1rem; border-radius:50%; background:var(--selected); color:var(--link); font-weight:700; }
+.identity-primary { border-radius:1rem; border:1px solid var(--line); background:var(--panel-soft); padding:.2rem .5rem; font-size:.75rem; }
+.identity-unavailable { font-size:.8rem; color:var(--muted); margin:.85rem 0; }
+.identity-authority-note { margin-top:1rem; padding:.6rem .75rem; border:1px solid var(--line); border-radius:.6rem; background:var(--panel-soft); }
+.identity-authority-note p { font-size:.875rem; margin:0; line-height:1.35; }
+.identity-authority-note p + p { margin-top:.4rem; font-size:.75rem; color:var(--muted); }
+@media(max-width:75rem) { .identity-cards { grid-template-columns:1fr; } }
+@media(max-width:40rem) { .identity-card { padding:.85rem; min-height:0; } .identity-field { grid-template-columns:1fr; gap:.3rem; } .identity-actions { grid-template-columns:minmax(0,1fr) auto; } .identity-actions > div { flex-wrap:wrap; } .identity-sender { flex-wrap:wrap; } .identity-sender strong { overflow-wrap:anywhere; } }
+@media(forced-colors:active) { .identity-avatar,.identity-primary { background:Canvas; color:CanvasText; border:1px solid CanvasText; } }

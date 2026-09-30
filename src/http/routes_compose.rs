@@ -268,6 +268,12 @@ where
                 "OK",
                 compose_heading,
                 render_compose_page(&ComposePageModel {
+                    sender_identity: self
+                        .gateway
+                        .load_identity_preferences(context, &validated_session)
+                        .ok()
+                        .as_ref()
+                        .map(|profile| &profile.preferences),
                     send_intent: &send_intent,
                     contacts: self.contact_snapshot(&validated_session).ok().as_ref(),
                     reply_reference: reply_reference.as_ref(),
@@ -713,6 +719,7 @@ where
                     reason_phrase,
                     "Compose",
                     render_compose_page(&ComposePageModel {
+                    sender_identity: None,
                         send_intent: form.get("send_intent").map(String::as_str).unwrap_or_default(),
                         contacts: self.contact_snapshot(&validated_session).ok().as_ref(),
                         reply_reference: reply_reference.as_ref(),
@@ -808,6 +815,7 @@ where
             reason,
             "Compose",
             render_compose_page(&ComposePageModel {
+                sender_identity: None,
                 send_intent: form
                     .get("send_intent")
                     .map(String::as_str)

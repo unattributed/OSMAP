@@ -337,6 +337,20 @@ impl RuntimeBrowserGateway {
                 };
             }
         };
+        record.request.sender_identity = match existing.as_ref() {
+            Some(saved) => saved.request.sender_identity.clone(),
+            None => match self.load_identity_preferences(context, validated_session) {
+                Ok(profile) => profile.preferences,
+                Err(_) => {
+                    return BrowserDraftSaveOutcome {
+                        decision: BrowserDraftSaveDecision::Denied {
+                            public_reason: "temporarily_unavailable".into(),
+                        },
+                        audit_events: vec![],
+                    }
+                }
+            },
+        };
         record.request.body_format = request.body_format;
         record.request.reply_thread = request.reply_thread.cloned();
         if let Some(existing) = existing {

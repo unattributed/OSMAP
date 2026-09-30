@@ -7,6 +7,8 @@ fn shell_has_real_named_navigation_and_main_follows_the_header() {
         ("/compose", "Compose"),
         ("/drafts", "Drafts"),
         ("/sessions", "Settings"),
+        ("/settings?section=security", "Settings"),
+        ("/mailbox?name=Trash", "Archive / Bin"),
         ("/mailbox?name=INBOX", "Inbox"),
         ("/message?mailbox=INBOX&uid=9", "Inbox"),
     ] {
@@ -19,8 +21,8 @@ fn shell_has_real_named_navigation_and_main_follows_the_header() {
         for (label, href) in [
             ("Inbox", "/mailbox?name=INBOX"),
             ("Sent", "/mailbox?name=Sent"),
-            ("Archive", "/mailbox/shortcut?kind=archive"),
-            ("Bin", "/mailbox?name=Trash"),
+            ("Archive / Bin", "/mailbox/shortcut?kind=archive"),
+            ("Security", "/settings?section=security"),
         ] {
             assert!(body.contains(&format!("href=\"{href}\" aria-label=\"{label}\"")));
         }
@@ -34,6 +36,55 @@ fn shell_has_real_named_navigation_and_main_follows_the_header() {
         } else {
             assert!(!body.contains("<script"));
         }
+    }
+}
+
+#[test]
+fn shell_primary_order_single_selection_and_foreign_archive_refusal() {
+    for current in ["settings-security", "settings-privacy", "bin", "archive"] {
+        let body = crate::http_ui::app_header("alice@example.test", "synthetic", current);
+        let nav = body
+            .split("aria-label=\"Primary navigation\">")
+            .nth(1)
+            .unwrap()
+            .split("</nav>")
+            .next()
+            .unwrap();
+        assert_eq!(nav.matches("aria-current=\"page\"").count(), 1);
+        let mut tail = nav;
+        for label in [
+            "Mailbox",
+            "Compose",
+            "Inbox",
+            "Drafts",
+            "Sent",
+            "Documents",
+            "Archive / Bin",
+            "Security",
+            "Settings",
+            "Search",
+        ] {
+            tail = tail
+                .split_once(&format!("<span class=\"rail-label\">{label}</span>"))
+                .unwrap()
+                .1;
+        }
+        assert!(nav.contains(
+            "role=\"link\" aria-disabled=\"true\" aria-label=\"Documents, unavailable\""
+        ));
+        assert!(!nav.contains("href=\"\""));
+    }
+    for agent in ["SettingsWrongOwner", "CopiesWrongOwner"] {
+        let result = app().handle_request(&request("GET", "/mailbox/shortcut?kind=archive", &[("User-Agent", agent), ("Cookie", "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")], ""), "127.0.0.1");
+        assert_eq!(result.response.status_code, 503);
+        let body = body_text(&result);
+        assert!(!body.contains("foreign-private-archive"));
+        assert!(!body.contains("foreign@example"));
+        assert!(!result
+            .response
+            .headers
+            .iter()
+            .any(|(name, _)| name.eq_ignore_ascii_case("location")));
     }
 }
 

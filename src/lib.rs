@@ -25,6 +25,7 @@ pub mod http_parse;
 pub mod http_support;
 pub mod http_ui;
 pub mod identity;
+pub mod identity_preferences;
 pub mod logging;
 pub mod mail_address;
 pub mod mail_list;

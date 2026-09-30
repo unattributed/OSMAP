@@ -75,6 +75,7 @@ where
                 | "privacy"
                 | "security"
                 | "authentication"
+                | "identity"
         ) {
             return HandledHttpResponse {
                 response: html_response(
@@ -83,6 +84,34 @@ where
                     "Unknown Settings Section",
                     "<p>Choose a section from Settings.</p>",
                 ),
+                audit_events,
+            };
+        }
+        if section == "identity" {
+            let loaded = self
+                .gateway
+                .load_identity_preferences(context, &validated_session);
+            return HandledHttpResponse {
+                response: match loaded {
+                    Ok(record) => html_response(200, "OK", "Identity Settings", crate::http_ui::render_identity_page(&crate::http_ui::IdentityPageModel {
+                        canonical_username: &validated_session.record.canonical_username,
+                        csrf_token: &validated_session.record.csrf_token,
+                        revision: record.revision,
+                        display_name: record.preferences.display_name(),
+                        reply_to: record.preferences.reply_to().unwrap_or(""),
+                        error_message: None,
+                        available: true,
+                    })),
+                    Err(_) => html_response(503, "Service Unavailable", "Identity Settings Unavailable", crate::http_ui::render_identity_page(&crate::http_ui::IdentityPageModel {
+                        canonical_username: &validated_session.record.canonical_username,
+                        csrf_token: &validated_session.record.csrf_token,
+                        revision: 0,
+                        display_name: "",
+                        reply_to: "",
+                        error_message: Some("Your saved identity preferences could not be loaded. No preference was changed. Reload this page before editing."),
+                        available: false,
+                    })),
+                },
                 audit_events,
             };
         }
@@ -166,6 +195,9 @@ where
                             &presentation,
                             self.gateway
                                 .load_composition_preferences(context, &validated_session)
+                                .ok(),
+                            self.gateway
+                                .load_identity_preferences(context, &validated_session)
                                 .ok(),
                         )
                     } else {

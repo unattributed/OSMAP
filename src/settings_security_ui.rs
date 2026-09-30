@@ -4,31 +4,14 @@ use crate::http::BrowserSessionListDecision;
 
 // Bound this overview's validation/sort work. An oversized result is unknown,
 // rather than a truncated list presented as an exact active-session count.
+#[cfg(test)]
 const MAX_SECURITY_SESSION_RECORDS: usize = 256;
 
 fn verified_security_sessions<'a>(
     account: &str,
     decision: &'a BrowserSessionListDecision,
 ) -> Option<&'a [BrowserVisibleSession]> {
-    let BrowserSessionListDecision::Listed {
-        canonical_username,
-        sessions,
-        ..
-    } = decision
-    else {
-        return None;
-    };
-    if canonical_username != account || sessions.len() > MAX_SECURITY_SESSION_RECORDS {
-        return None;
-    }
-    let mut seen = std::collections::BTreeSet::new();
-    if sessions
-        .iter()
-        .any(|session| !seen.insert(session.session_id.as_str()))
-    {
-        return None;
-    }
-    Some(sessions)
+    decision.verified_sessions(account)
 }
 
 pub(crate) fn render_security_page(

@@ -7,6 +7,7 @@ pub(crate) fn render_mailboxes_page(
     mailboxes: &[MailboxEntry],
     summaries: Option<&[MessageSummary]>,
     draft_count: Option<usize>,
+    activity: &crate::http::BrowserSessionListDecision,
 ) -> TrustedHtml {
     let has = |name: &str| mailboxes.iter().any(|mailbox| mailbox.name == name);
     let inbox = has("INBOX");
@@ -124,12 +125,12 @@ pub(crate) fn render_mailboxes_page(
         "<div class=\"welcome-primary-grid\"><section class=\"welcome-panel welcome-messages\" aria-labelledby=\"welcome-messages-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-messages-title\">Recent Messages</h2>{view_all}</div>{recent}<details class=\"welcome-browse\"><summary id=\"welcome-mailboxes\">Browse your mailboxes</summary><div class=\"welcome-folder-scroll\" tabindex=\"0\" role=\"region\" aria-labelledby=\"welcome-mailboxes\"><ul>{folders}</ul></div>{limit}</details></section>",
         "<section class=\"welcome-panel welcome-account-security\" aria-labelledby=\"welcome-security-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-security-title\">Account Security</h2></div><div class=\"welcome-protection\">{shield}<div><strong>Protected by Default</strong><p>Remote images and active content are blocked.</p></div></div><div class=\"welcome-security-detail\"><h3>Authenticated session</h3><p>Password and TOTP were required at sign-in.</p><a href=\"/sessions\">Manage sessions <span aria-hidden=\"true\">→</span></a></div></section>",
         "<section class=\"welcome-panel welcome-openpgp\" aria-labelledby=\"welcome-openpgp-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-openpgp-title\">OpenPGP Status</h2></div><div class=\"welcome-key-state\">{shield}<div><strong>Unknown</strong><p>Account key status is unavailable here.</p></div></div><dl class=\"welcome-key-details\"><div><dt>Key fingerprint</dt><dd>Unavailable</dd></div><div><dt>Signing</dt><dd>Unknown</dd></div><div><dt>Encryption</dt><dd>Unknown</dd></div><div><dt>Encrypt-to-self</dt><dd>Unknown</dd></div></dl><button type=\"button\" disabled title=\"Key management is unavailable\">Manage Keys — unavailable</button></section></div>",
-        "<div class=\"welcome-secondary-grid\"><section class=\"welcome-panel welcome-activity\" aria-labelledby=\"welcome-activity-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-activity-title\">Recent Activity</h2></div><div class=\"welcome-activity-empty\">{history}<h3>Activity history unavailable</h3><p>Sign-in history, key changes and account-recovery events are not available on this page.</p><a href=\"/sessions\">Review active sessions <span aria-hidden=\"true\">→</span></a></div></section>",
+        "<div class=\"welcome-secondary-grid\"><section class=\"welcome-panel welcome-activity\" aria-labelledby=\"welcome-activity-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-activity-title\">Recent Activity</h2></div>{activity_rows}</section>",
         "<div class=\"welcome-middle-stack\"><section class=\"welcome-panel welcome-actions\" aria-labelledby=\"welcome-actions-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-actions-title\">Quick Actions</h2></div><div class=\"welcome-action-grid\"><a href=\"/search\">{search_icon}<strong>Search</strong><span>Find messages</span></a><a href=\"{filter_target}\">{filter_icon}<strong>Filters</strong><span>{filter_description}</span></a><span aria-disabled=\"true\">{label_icon}<strong>Labels</strong><span>Unavailable</span></span><details><summary>{more_icon}<strong>More</strong><span>Available tools</span></summary><div><a href=\"/contacts\">Contacts</a><a href=\"/sessions\">Sessions</a><a href=\"/drafts\">Saved drafts</a></div></details></div>{search}</section>",
         "<section class=\"welcome-panel welcome-storage\" aria-labelledby=\"welcome-storage-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-storage-title\">Storage Usage</h2></div><div class=\"welcome-storage-body\"><div><strong>Usage and quota unknown</strong><p>Mailbox, document and other storage totals are unavailable.</p></div><button type=\"button\" disabled>Manage Storage</button></div></section></div>",
         "<section class=\"welcome-panel welcome-system\" aria-labelledby=\"welcome-system-title\"><div class=\"welcome-panel-heading\"><h2 id=\"welcome-system-title\">System Status</h2></div><ul>{system}</ul><p class=\"welcome-note\">Service health and backup results are unavailable here.</p></section></div>",
         "<footer class=\"welcome-footer\"><span>OSMAP · Secure by Design. Private by Default.</span><span>System health unavailable</span><span aria-disabled=\"true\">Help unavailable</span><span aria-disabled=\"true\">Feedback unavailable</span></footer></main>"
-    ), header=app_header(canonical_username,csrf_token,"mailboxes"), account=escape_html(canonical_username), metrics=metrics, recent=recent, shortcuts=shortcuts, view_all=view_all, folders=folders, limit=limit, shield=shell_icon("shield"), history=shell_icon("folders"), search_icon=shell_icon("search"), filter_icon=shell_icon("inbox"), label_icon=shell_icon("drafts"), more_icon=shell_icon("menu"), filter_target=if inbox { "/mailbox?name=INBOX&filter=unread" } else { "/search" }, filter_description=if inbox { "Unread in Inbox" } else { "Search mail" }, search=search, system=system))
+    ), header=app_header(canonical_username,csrf_token,"mailboxes"), account=escape_html(canonical_username), metrics=metrics, recent=recent, shortcuts=shortcuts, view_all=view_all, folders=folders, limit=limit, shield=shell_icon("shield"), activity_rows=activity_rows(canonical_username, activity), search_icon=shell_icon("search"), filter_icon=shell_icon("inbox"), label_icon=shell_icon("drafts"), more_icon=shell_icon("menu"), filter_target=if inbox { "/mailbox?name=INBOX&filter=unread" } else { "/search" }, filter_description=if inbox { "Unread in Inbox" } else { "Search mail" }, search=search, system=system))
 }
 
 fn recent_rows(summaries: Option<&[MessageSummary]>, inbox: bool) -> String {
@@ -167,4 +168,99 @@ fn recent_rows(summaries: Option<&[MessageSummary]>, inbox: bool) -> String {
     }
     html.push_str("</ul>");
     html
+}
+
+fn activity_rows(account: &str, decision: &crate::http::BrowserSessionListDecision) -> String {
+    let mut content = String::from("<p class=\"welcome-activity-scope\">Sign-ins from retained sessions only. Key and recovery events are unavailable.</p><ul class=\"welcome-activity-rows\">");
+    match decision.verified_sessions(account) {
+        None => content.push_str("<li>Retained sign-ins are unavailable.</li>"),
+        Some([]) => content.push_str("<li>No retained sign-ins are available.</li>"),
+        Some(sessions) => {
+            let mut ordered: Vec<_> = sessions.iter().collect();
+            ordered.sort_by_key(|s| (std::cmp::Reverse(s.issued_at), &s.session_id));
+            for session in ordered.into_iter().take(5) {
+                let date = crate::logging::format_unix_timestamp_utc(session.issued_at);
+                let device = if session.device_label.trim().is_empty() {
+                    "Unknown device"
+                } else {
+                    &session.device_label
+                };
+                content.push_str(&format!("<li><span class=\"welcome-activity-dot\" aria-hidden=\"true\">•</span><div><strong>Sign-in</strong><span class=\"welcome-activity-device\">{}</span></div><time datetime=\"{}\">{} UTC</time></li>", escape_html(device), escape_html(&date), escape_html(date.replace('T', " ").trim_end_matches('Z'))));
+            }
+        }
+    }
+    content.push_str(
+        "</ul><a class=\"welcome-activity-link\" href=\"/sessions\">Review retained sessions →</a>",
+    );
+    content
+}
+
+#[cfg(test)]
+mod activity_tests {
+    use super::*;
+    use crate::http::{BrowserSessionListDecision as Decision, BrowserVisibleSession};
+    fn decision(count: usize) -> Decision {
+        Decision::Listed {
+            canonical_username: "alice".into(),
+            session_lifetime_seconds: 100,
+            session_idle_timeout_seconds: 100,
+            sessions: (0..count)
+                .map(|i| BrowserVisibleSession {
+                    session_id: format!("id-{i}"),
+                    issued_at: 1_700_000_000 + i as u64,
+                    expires_at: 1_800_000_000,
+                    last_seen_at: 1_700_000_000,
+                    revoked_at: Some(1_700_000_010),
+                    device_label: format!("Device {i} <literal>"),
+                    remote_addr: "private address".into(),
+                    user_agent: "private user agent".into(),
+                    factor: crate::auth::RequiredSecondFactor::Totp,
+                })
+                .collect(),
+        }
+    }
+    #[test]
+    fn welcome_activity_uses_newest_five_owned_retained_signins_without_private_metadata() {
+        let html = activity_rows("alice", &decision(7));
+        assert_eq!(html.matches("<time ").count(), 5);
+        assert!(html.find("Device 6").unwrap() < html.find("Device 5").unwrap());
+        assert!(!html.contains("Device 1"));
+        assert!(html.contains("&lt;literal&gt;"));
+        assert!(html.contains("UTC</time>"));
+        assert!(html.contains("retained sessions only"));
+        for private in ["private address", "private user agent", "id-", "<literal>"] {
+            assert!(!html.contains(private));
+        }
+        assert!(activity_rows("alice", &decision(0)).contains("No retained sign-ins"));
+    }
+    #[test]
+    fn welcome_activity_refuses_foreign_duplicate_denied_and_excess_results() {
+        let mut duplicate = decision(2);
+        if let Decision::Listed { sessions, .. } = &mut duplicate {
+            sessions[1].session_id = sessions[0].session_id.clone();
+        }
+        for (account, result) in [
+            ("bob", decision(1)),
+            ("alice", duplicate),
+            ("alice", decision(257)),
+            (
+                "alice",
+                Decision::Denied {
+                    public_reason: "private diagnostic".into(),
+                },
+            ),
+        ] {
+            let html = activity_rows(account, &result);
+            assert!(html.contains("Retained sign-ins are unavailable"));
+            assert!(!html.contains("<time "));
+            assert!(!html.contains("Device "));
+            assert!(!html.contains("private diagnostic"));
+        }
+        assert_eq!(
+            activity_rows("alice", &decision(256))
+                .matches("<time ")
+                .count(),
+            5
+        );
+    }
 }

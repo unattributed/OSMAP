@@ -306,6 +306,34 @@ impl BrowserGateway for RuntimeBrowserGateway {
             .save(&session.record.canonical_username, value)
     }
 
+    fn load_identity_preferences(
+        &self,
+        _context: &AuthenticationContext,
+        session: &ValidatedSession,
+    ) -> Result<
+        crate::identity_preferences::IdentityPreferencesRecord,
+        crate::identity_preferences::IdentityPreferencesError,
+    > {
+        crate::identity_preferences::IdentityPreferencesStore::new(&self.settings_dir)
+            .load(&session.record.canonical_username)
+    }
+    fn update_identity_preferences(
+        &self,
+        _context: &AuthenticationContext,
+        session: &ValidatedSession,
+        expected_revision: u64,
+        value: &crate::identity_preferences::IdentityPreferences,
+    ) -> Result<
+        crate::identity_preferences::IdentityPreferencesRecord,
+        crate::identity_preferences::IdentityPreferencesError,
+    > {
+        crate::identity_preferences::IdentityPreferencesStore::new(&self.settings_dir).save(
+            &session.record.canonical_username,
+            expected_revision,
+            value,
+        )
+    }
+
     fn load_composition_preferences(
         &self,
         _context: &AuthenticationContext,

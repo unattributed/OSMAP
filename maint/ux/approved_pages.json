@@ -92,8 +92,13 @@
         {
           "id": "R2-01-006",
           "label": "Actual date time and timezone",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "maint/ux/request_clock_workflows.py",
+            "S04/clock-compose-integrated-{edge,firefox}/report.json",
+            "UTC page-load time; timezone selection and ticking clock are unavailable."
+          ]
         },
         {
           "id": "R2-01-007",
@@ -140,8 +145,8 @@
           "status": "PARTIAL_FUNCTIONAL",
           "evidence": [
             "src/welcome_ui.rs",
-            "S04/welcome-{edge,firefox}/report.json",
-            "Approved hierarchy present; session link, scoped protection and real mailbox/filter links only. Security settings and recent-message projection remain incomplete."
+            "S04/welcome-activity-integrated-{edge,firefox}/report.json",
+            "Security shortcut opens the approved account overview; session sign-in facts only, broader key/recovery status remains unknown."
           ]
         },
         {
@@ -172,8 +177,8 @@
           "status": "PARTIAL_FUNCTIONAL",
           "evidence": [
             "src/welcome_ui.rs",
-            "S04/welcome-{edge,firefox}/report.json",
-            "Approved hierarchy present; session link, scoped protection and real mailbox/filter links only. Security settings and recent-message projection remain incomplete."
+            "S04/welcome-activity-integrated-{edge,firefox}/report.json",
+            "Security shortcut opens the approved account overview; session sign-in facts only, broader key/recovery status remains unknown."
           ]
         },
         {
@@ -215,8 +220,13 @@
         {
           "id": "R2-01-021",
           "label": "Recent activity and View all",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/welcome_ui.rs",
+            "src/http_browser.rs",
+            "S04/welcome-activity-integrated-{edge,firefox}/report.json",
+            "Newest five owned retained sign-ins, UTC/device only; key and recovery-event history unavailable."
+          ]
         },
         {
           "id": "R2-01-022",
@@ -442,37 +452,62 @@
         "S08-02",
         "S08-03"
       ],
-      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "visual_status": "PARTIAL_FINAL_REFERENCE_COMPARISON",
       "controls": [
         {
           "id": "R2-03-001",
           "label": "Back to list",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "maint/ux/standalone_reader_workflows.py",
+            "S04/reader-integrated-{edge,firefox}/report.json",
+            "Standalone approved hierarchy; exact source and native PDF bytes, read/star and replies verified. Standalone Back currently uses default mailbox list; coordinated reader retains context."
+          ]
         },
         {
           "id": "R2-03-002",
           "label": "Reply toolbar",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "maint/ux/standalone_reader_workflows.py",
+            "S04/reader-integrated-{edge,firefox}/report.json",
+            "Actual move controls and truthful rendering/capability states; this reader harness opens move controls without executing a move. Runtime OpenPGP and full pictured toolbar behaviour remain incomplete."
+          ]
         },
         {
           "id": "R2-03-003",
           "label": "Archive",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "maint/ux/standalone_reader_workflows.py",
+            "S04/reader-integrated-{edge,firefox}/report.json",
+            "Actual move controls and truthful rendering/capability states; this reader harness opens move controls without executing a move. Runtime OpenPGP and full pictured toolbar behaviour remain incomplete."
+          ]
         },
         {
           "id": "R2-03-004",
           "label": "Bin",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "maint/ux/standalone_reader_workflows.py",
+            "S04/reader-integrated-{edge,firefox}/report.json",
+            "Actual move controls and truthful rendering/capability states; this reader harness opens move controls without executing a move. Runtime OpenPGP and full pictured toolbar behaviour remain incomplete."
+          ]
         },
         {
           "id": "R2-03-005",
           "label": "Mark state",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "maint/ux/standalone_reader_workflows.py",
+            "S04/reader-integrated-{edge,firefox}/report.json",
+            "Standalone approved hierarchy; exact source and native PDF bytes, read/star and replies verified. Standalone Back currently uses default mailbox list; coordinated reader retains context."
+          ]
         },
         {
           "id": "R2-03-006",
@@ -501,116 +536,211 @@
         {
           "id": "R2-03-010",
           "label": "Finite More menu",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "maint/ux/standalone_reader_workflows.py",
+            "S04/reader-integrated-{edge,firefox}/report.json",
+            "Actual move controls and truthful rendering/capability states; this reader harness opens move controls without executing a move. Runtime OpenPGP and full pictured toolbar behaviour remain incomplete."
+          ]
         },
         {
           "id": "R2-03-011",
           "label": "Subject",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "maint/ux/standalone_reader_workflows.py",
+            "S04/reader-integrated-{edge,firefox}/report.json",
+            "Standalone approved hierarchy; exact source and native PDF bytes, read/star and replies verified. Standalone Back currently uses default mailbox list; coordinated reader retains context."
+          ]
         },
         {
           "id": "R2-03-012",
           "label": "Sender identity",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "maint/ux/standalone_reader_workflows.py",
+            "S04/reader-integrated-{edge,firefox}/report.json",
+            "Standalone approved hierarchy; exact source and native PDF bytes, read/star and replies verified. Standalone Back currently uses default mailbox list; coordinated reader retains context."
+          ]
         },
         {
           "id": "R2-03-013",
           "label": "To and expanded header context",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "maint/ux/standalone_reader_workflows.py",
+            "S04/reader-integrated-{edge,firefox}/report.json",
+            "Standalone approved hierarchy; exact source and native PDF bytes, read/star and replies verified. Standalone Back currently uses default mailbox list; coordinated reader retains context."
+          ]
         },
         {
           "id": "R2-03-014",
           "label": "Received time",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "maint/ux/standalone_reader_workflows.py",
+            "S04/reader-integrated-{edge,firefox}/report.json",
+            "Standalone approved hierarchy; exact source and native PDF bytes, read/star and replies verified. Standalone Back currently uses default mailbox list; coordinated reader retains context."
+          ]
         },
         {
           "id": "R2-03-015",
           "label": "Star/unstar",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "maint/ux/standalone_reader_workflows.py",
+            "S04/reader-integrated-{edge,firefox}/report.json",
+            "Standalone approved hierarchy; exact source and native PDF bytes, read/star and replies verified. Standalone Back currently uses default mailbox list; coordinated reader retains context."
+          ]
         },
         {
           "id": "R2-03-016",
           "label": "Encrypted state",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "maint/ux/standalone_reader_workflows.py",
+            "S04/reader-integrated-{edge,firefox}/report.json",
+            "Actual move controls and truthful rendering/capability states; this reader harness opens move controls without executing a move. Runtime OpenPGP and full pictured toolbar behaviour remain incomplete."
+          ]
         },
         {
           "id": "R2-03-017",
           "label": "Actual decryption location/status",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "maint/ux/standalone_reader_workflows.py",
+            "S04/reader-integrated-{edge,firefox}/report.json",
+            "Actual move controls and truthful rendering/capability states; this reader harness opens move controls without executing a move. Runtime OpenPGP and full pictured toolbar behaviour remain incomplete."
+          ]
         },
         {
           "id": "R2-03-018",
           "label": "Signature state",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "maint/ux/standalone_reader_workflows.py",
+            "S04/reader-integrated-{edge,firefox}/report.json",
+            "Actual move controls and truthful rendering/capability states; this reader harness opens move controls without executing a move. Runtime OpenPGP and full pictured toolbar behaviour remain incomplete."
+          ]
         },
         {
           "id": "R2-03-019",
           "label": "Remote-content state",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "maint/ux/standalone_reader_workflows.py",
+            "S04/reader-integrated-{edge,firefox}/report.json",
+            "Standalone approved hierarchy; exact source and native PDF bytes, read/star and replies verified. Standalone Back currently uses default mailbox list; coordinated reader retains context."
+          ]
         },
         {
           "id": "R2-03-020",
           "label": "View Source",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "maint/ux/standalone_reader_workflows.py",
+            "S04/reader-integrated-{edge,firefox}/report.json",
+            "Standalone approved hierarchy; exact source and native PDF bytes, read/star and replies verified. Standalone Back currently uses default mailbox list; coordinated reader retains context."
+          ]
         },
         {
           "id": "R2-03-021",
           "label": "Post-decrypt sanitization state",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "maint/ux/standalone_reader_workflows.py",
+            "S04/reader-integrated-{edge,firefox}/report.json",
+            "Actual move controls and truthful rendering/capability states; this reader harness opens move controls without executing a move. Runtime OpenPGP and full pictured toolbar behaviour remain incomplete."
+          ]
         },
         {
           "id": "R2-03-022",
           "label": "Protected body",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "maint/ux/standalone_reader_workflows.py",
+            "S04/reader-integrated-{edge,firefox}/report.json",
+            "Standalone approved hierarchy; exact source and native PDF bytes, read/star and replies verified. Standalone Back currently uses default mailbox list; coordinated reader retains context."
+          ]
         },
         {
           "id": "R2-03-023",
           "label": "Attachment count",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "maint/ux/standalone_reader_workflows.py",
+            "S04/reader-integrated-{edge,firefox}/report.json",
+            "Standalone approved hierarchy; exact source and native PDF bytes, read/star and replies verified. Standalone Back currently uses default mailbox list; coordinated reader retains context."
+          ]
         },
         {
           "id": "R2-03-024",
           "label": "Attachment metadata",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "maint/ux/standalone_reader_workflows.py",
+            "S04/reader-integrated-{edge,firefox}/report.json",
+            "Standalone approved hierarchy; exact source and native PDF bytes, read/star and replies verified. Standalone Back currently uses default mailbox list; coordinated reader retains context."
+          ]
         },
         {
           "id": "R2-03-025",
           "label": "Isolated Download",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "maint/ux/standalone_reader_workflows.py",
+            "S04/reader-integrated-{edge,firefox}/report.json",
+            "Standalone approved hierarchy; exact source and native PDF bytes, read/star and replies verified. Standalone Back currently uses default mailbox list; coordinated reader retains context."
+          ]
         },
         {
           "id": "R2-03-026",
           "label": "Reply",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "maint/ux/standalone_reader_workflows.py",
+            "S04/reader-integrated-{edge,firefox}/report.json",
+            "Standalone approved hierarchy; exact source and native PDF bytes, read/star and replies verified. Standalone Back currently uses default mailbox list; coordinated reader retains context."
+          ]
         },
         {
           "id": "R2-03-027",
           "label": "Reply all",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "maint/ux/standalone_reader_workflows.py",
+            "S04/reader-integrated-{edge,firefox}/report.json",
+            "Standalone approved hierarchy; exact source and native PDF bytes, read/star and replies verified. Standalone Back currently uses default mailbox list; coordinated reader retains context."
+          ]
         },
         {
           "id": "R2-03-028",
           "label": "Forward",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "maint/ux/standalone_reader_workflows.py",
+            "S04/reader-integrated-{edge,firefox}/report.json",
+            "Standalone approved hierarchy; exact source and native PDF bytes, read/star and replies verified. Standalone Back currently uses default mailbox list; coordinated reader retains context."
+          ]
         }
       ]
     },
@@ -869,8 +999,14 @@
         {
           "id": "R2-05-003",
           "label": "Date filter",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/mail_list.rs",
+            "src/mail_navigation.rs",
+            "maint/ux/date_filter_workflows.py",
+            "S04/date-integrated-{edge,firefox}/report.json",
+            "Inclusive UTC received-day range over loaded summaries; invalid or missing dates excluded only while range is active."
+          ]
         },
         {
           "id": "R2-05-004",
@@ -1233,97 +1369,172 @@
         "S02-01",
         "S02-03"
       ],
-      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "visual_status": "PARTIAL_FINAL_REFERENCE_COMPARISON",
       "controls": [
         {
           "id": "R2-08-001",
           "label": "Archive tab and actual count",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/http/archive_ui.rs",
+            "maint/ux/archive_workflows.py",
+            "S04/archive-dates-integrated-{edge,firefox}/report.json",
+            "Actual owned configured Archive/Bin tabs; current loaded-match count, no full cross-folder total. Tabs retain filters/sort/dates and clear selected identity/page."
+          ]
         },
         {
           "id": "R2-08-002",
           "label": "Bin tab and actual count",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/http/archive_ui.rs",
+            "maint/ux/archive_workflows.py",
+            "S04/archive-dates-integrated-{edge,firefox}/report.json",
+            "Actual owned configured Archive/Bin tabs; current loaded-match count, no full cross-folder total. Tabs retain filters/sort/dates and clear selected identity/page."
+          ]
         },
         {
           "id": "R2-08-003",
           "label": "Selection",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http/archive_ui.rs",
+            "maint/ux/archive_workflows.py",
+            "S04/archive-dates-integrated-{edge,firefox}/report.json",
+            "Native bounded selection/search/filter/sort/paging, received dates, move to Inbox and restore verified."
+          ]
         },
         {
           "id": "R2-08-004",
           "label": "Search",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http/archive_ui.rs",
+            "maint/ux/archive_workflows.py",
+            "S04/archive-dates-integrated-{edge,firefox}/report.json",
+            "Native bounded selection/search/filter/sort/paging, received dates, move to Inbox and restore verified."
+          ]
         },
         {
           "id": "R2-08-005",
           "label": "Date filter",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http/archive_ui.rs",
+            "maint/ux/archive_workflows.py",
+            "S04/archive-dates-integrated-{edge,firefox}/report.json",
+            "Native bounded selection/search/filter/sort/paging, received dates, move to Inbox and restore verified."
+          ]
         },
         {
           "id": "R2-08-006",
           "label": "Sort",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http/archive_ui.rs",
+            "maint/ux/archive_workflows.py",
+            "S04/archive-dates-integrated-{edge,firefox}/report.json",
+            "Native bounded selection/search/filter/sort/paging, received dates, move to Inbox and restore verified."
+          ]
         },
         {
           "id": "R2-08-007",
           "label": "Bounded count and pagination",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http/archive_ui.rs",
+            "maint/ux/archive_workflows.py",
+            "S04/archive-dates-integrated-{edge,firefox}/report.json",
+            "Native bounded selection/search/filter/sort/paging, received dates, move to Inbox and restore verified."
+          ]
         },
         {
           "id": "R2-08-008",
           "label": "Sender",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http/archive_ui.rs",
+            "maint/ux/archive_workflows.py",
+            "S04/archive-dates-integrated-{edge,firefox}/report.json",
+            "Native bounded selection/search/filter/sort/paging, received dates, move to Inbox and restore verified."
+          ]
         },
         {
           "id": "R2-08-009",
           "label": "Subject",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http/archive_ui.rs",
+            "maint/ux/archive_workflows.py",
+            "S04/archive-dates-integrated-{edge,firefox}/report.json",
+            "Native bounded selection/search/filter/sort/paging, received dates, move to Inbox and restore verified."
+          ]
         },
         {
           "id": "R2-08-010",
           "label": "Current folder",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http/archive_ui.rs",
+            "maint/ux/archive_workflows.py",
+            "S04/archive-dates-integrated-{edge,firefox}/report.json",
+            "Native bounded selection/search/filter/sort/paging, received dates, move to Inbox and restore verified."
+          ]
         },
         {
           "id": "R2-08-011",
           "label": "Archive date when known",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/http/archive_ui.rs",
+            "maint/ux/archive_workflows.py",
+            "S04/archive-dates-integrated-{edge,firefox}/report.json",
+            "Received timestamp explicitly labelled; archive date and retention management unknown. Permanent deletion unavailable."
+          ]
         },
         {
           "id": "R2-08-012",
           "label": "Size",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http/archive_ui.rs",
+            "maint/ux/archive_workflows.py",
+            "S04/archive-dates-integrated-{edge,firefox}/report.json",
+            "Native bounded selection/search/filter/sort/paging, received dates, move to Inbox and restore verified."
+          ]
         },
         {
           "id": "R2-08-013",
           "label": "Finite row menu",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http/archive_ui.rs",
+            "maint/ux/archive_workflows.py",
+            "S04/archive-dates-integrated-{edge,firefox}/report.json",
+            "Native bounded selection/search/filter/sort/paging, received dates, move to Inbox and restore verified."
+          ]
         },
         {
           "id": "R2-08-014",
           "label": "Restore",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http/archive_ui.rs",
+            "maint/ux/archive_workflows.py",
+            "S04/archive-dates-integrated-{edge,firefox}/report.json",
+            "Native bounded selection/search/filter/sort/paging, received dates, move to Inbox and restore verified."
+          ]
         },
         {
           "id": "R2-08-015",
           "label": "Move to",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http/archive_ui.rs",
+            "maint/ux/archive_workflows.py",
+            "S04/archive-dates-integrated-{edge,firefox}/report.json",
+            "Native bounded selection/search/filter/sort/paging, received dates, move to Inbox and restore verified."
+          ]
         },
         {
           "id": "R2-08-016",
@@ -1334,8 +1545,13 @@
         {
           "id": "R2-08-017",
           "label": "Retention-policy refusal",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/http/archive_ui.rs",
+            "maint/ux/archive_workflows.py",
+            "S04/archive-dates-integrated-{edge,firefox}/report.json",
+            "Received timestamp explicitly labelled; archive date and retention management unknown. Permanent deletion unavailable."
+          ]
         }
       ]
     },
@@ -1592,8 +1808,12 @@
         {
           "id": "R2-11-001",
           "label": "Display name",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/settings_general_ui.rs",
+            "S04/identity-integrated-{edge,firefox}/report.json",
+            "General projects actual owned profile readonly and links to Identity editing; unconfirmed profile displays Unknown."
+          ]
         },
         {
           "id": "R2-11-002",
@@ -1604,8 +1824,12 @@
         {
           "id": "R2-11-003",
           "label": "Reply-to address",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/settings_general_ui.rs",
+            "S04/identity-integrated-{edge,firefox}/report.json",
+            "General projects actual owned profile readonly and links to Identity editing; unconfirmed profile displays Unknown."
+          ]
         },
         {
           "id": "R2-11-004",
@@ -1933,25 +2157,52 @@
         "S03-01",
         "S04-01"
       ],
-      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "visual_status": "PARTIAL_FINAL_REFERENCE_COMPARISON",
       "controls": [
         {
           "id": "R2-13-001",
           "label": "Display name",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/identity_preferences.rs",
+            "src/http/routes_identity_preferences.rs",
+            "src/settings_identity_ui.rs",
+            "src/http_gateway_draft.rs",
+            "src/http_gateway_mail.rs",
+            "src/send.rs",
+            "S04/identity-integrated-{edge,firefox}/report.json",
+            "Owned revision-checked profile, captured on first save/direct submit; legacy/saved drafts and immutable receipts preserve original identity. Canonical sender authority unchanged; shared SMTP/Sent MIME bytes."
+          ]
         },
         {
           "id": "R2-13-002",
           "label": "Server-authorized email address",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/identity_preferences.rs",
+            "src/http/routes_identity_preferences.rs",
+            "src/settings_identity_ui.rs",
+            "src/http_gateway_draft.rs",
+            "src/http_gateway_mail.rs",
+            "src/send.rs",
+            "S04/identity-integrated-{edge,firefox}/report.json",
+            "Owned revision-checked profile, captured on first save/direct submit; legacy/saved drafts and immutable receipts preserve original identity. Canonical sender authority unchanged; shared SMTP/Sent MIME bytes."
+          ]
         },
         {
           "id": "R2-13-003",
           "label": "Reply-to",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/identity_preferences.rs",
+            "src/http/routes_identity_preferences.rs",
+            "src/settings_identity_ui.rs",
+            "src/http_gateway_draft.rs",
+            "src/http_gateway_mail.rs",
+            "src/send.rs",
+            "S04/identity-integrated-{edge,firefox}/report.json",
+            "Owned revision-checked profile, captured on first save/direct submit; legacy/saved drafts and immutable receipts preserve original identity. Canonical sender authority unchanged; shared SMTP/Sent MIME bytes."
+          ]
         },
         {
           "id": "R2-13-004",
@@ -1962,20 +2213,47 @@
         {
           "id": "R2-13-005",
           "label": "Use for new mail",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/identity_preferences.rs",
+            "src/http/routes_identity_preferences.rs",
+            "src/settings_identity_ui.rs",
+            "src/http_gateway_draft.rs",
+            "src/http_gateway_mail.rs",
+            "src/send.rs",
+            "S04/identity-integrated-{edge,firefox}/report.json",
+            "Primary canonical identity only; use-for-new-mail is fixed enabled, cannot be toggled. Additional authorized identities and signatures unavailable."
+          ]
         },
         {
           "id": "R2-13-006",
           "label": "Authorized identities list",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/identity_preferences.rs",
+            "src/http/routes_identity_preferences.rs",
+            "src/settings_identity_ui.rs",
+            "src/http_gateway_draft.rs",
+            "src/http_gateway_mail.rs",
+            "src/send.rs",
+            "S04/identity-integrated-{edge,firefox}/report.json",
+            "Primary canonical identity only; use-for-new-mail is fixed enabled, cannot be toggled. Additional authorized identities and signatures unavailable."
+          ]
         },
         {
           "id": "R2-13-007",
           "label": "Primary identity",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/identity_preferences.rs",
+            "src/http/routes_identity_preferences.rs",
+            "src/settings_identity_ui.rs",
+            "src/http_gateway_draft.rs",
+            "src/http_gateway_mail.rs",
+            "src/send.rs",
+            "S04/identity-integrated-{edge,firefox}/report.json",
+            "Owned revision-checked profile, captured on first save/direct submit; legacy/saved drafts and immutable receipts preserve original identity. Canonical sender authority unchanged; shared SMTP/Sent MIME bytes."
+          ]
         },
         {
           "id": "R2-13-008",
@@ -1992,8 +2270,17 @@
         {
           "id": "R2-13-010",
           "label": "No arbitrary From enforcement",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/identity_preferences.rs",
+            "src/http/routes_identity_preferences.rs",
+            "src/settings_identity_ui.rs",
+            "src/http_gateway_draft.rs",
+            "src/http_gateway_mail.rs",
+            "src/send.rs",
+            "S04/identity-integrated-{edge,firefox}/report.json",
+            "Owned revision-checked profile, captured on first save/direct submit; legacy/saved drafts and immutable receipts preserve original identity. Canonical sender authority unchanged; shared SMTP/Sent MIME bytes."
+          ]
         }
       ]
     },

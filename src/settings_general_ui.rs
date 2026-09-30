@@ -5,14 +5,21 @@ pub(crate) fn render_general_page(
     model: &SettingsPageModel<'_>,
     preferences: &crate::appearance::AppearanceSettings,
     composition: Option<crate::composition_preferences::CompositionPreferences>,
+    identity: Option<crate::identity_preferences::IdentityPreferencesRecord>,
 ) -> TrustedHtml {
+    let profile_input = |id: &str, label: &str, value: Option<&str>| {
+        match value {
+        Some(value) => format!("<div class=\"general-field\"><label for=\"{id}\">{label}</label><input id=\"{id}\" value=\"{}\" readonly></div>", escape_html(value)),
+        None => unavailable_input(id, label, "Unknown"),
+    }
+    };
     let profile = format!(concat!(
         "<section class=\"general-card\" aria-labelledby=\"general-profile-title\"><h2 id=\"general-profile-title\">Account Profile</h2>",
         "{}<div class=\"general-field\"><label for=\"general-email\">Email address</label><input id=\"general-email\" value=\"{}\" readonly></div>{}{}{}",
-        "<p class=\"general-help\">Profile editing is unavailable. UTC and English are fixed.</p></section>"
-    ), unavailable_input("general-display-name", "Display name", "Unknown"), escape_html(model.canonical_username),
-        unavailable_input("general-reply-to", "Reply-to address", "Unknown"),
-        unavailable_select("general-timezone", "Timezone", "UTC"), unavailable_select("general-language", "Language", "English"));
+        "<p class=\"general-help\">{}<a href=\"/settings?section=identity\">Edit in Identity</a>. UTC and English are fixed.</p></section>"
+    ), profile_input("general-display-name", "Display name", identity.as_ref().map(|record| record.preferences.display_name())), escape_html(model.canonical_username),
+        profile_input("general-reply-to", "Reply-to address", identity.as_ref().map(|record| record.preferences.reply_to().unwrap_or(model.canonical_username))),
+        unavailable_select("general-timezone", "Timezone", "UTC"), unavailable_select("general-language", "Language", "English"), if identity.is_none() { "Saved profile unavailable. " } else { "" });
 
     let appearance = format!(concat!(
         "<section class=\"general-card\" aria-labelledby=\"general-appearance-title\"><h2 id=\"general-appearance-title\">Appearance</h2>",

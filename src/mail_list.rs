@@ -118,6 +118,49 @@ pub fn has_flag(flags: &[String], flag: &str) -> bool {
     flags.iter().any(|value| value.eq_ignore_ascii_case(flag))
 }
 
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct ReceivedDateRange {
+    pub after: Option<String>,
+    pub before: Option<String>,
+    start: Option<i64>,
+    end: Option<i64>,
+}
+impl ReceivedDateRange {
+    fn parse(query: &BTreeMap<String, String>) -> Result<Self, &'static str> {
+        let bound = |key: &str| -> Result<_, &'static str> {
+            match query.get(key).filter(|value| !value.is_empty()) {
+                None => Ok((None, None)),
+                Some(value) => crate::mailbox::parse_calendar_date(value)
+                    .map(|timestamp| (Some(value.clone()), Some(timestamp)))
+                    .ok_or("Choose a valid received date in YYYY-MM-DD format."),
+            }
+        };
+        let (after, start) = bound("after")?;
+        let (before, end) = bound("before")?;
+        if start.zip(end).is_some_and(|(start, end)| start > end) {
+            return Err("From date must be on or before Through date.");
+        }
+        Ok(Self {
+            after,
+            before,
+            start,
+            end,
+        })
+    }
+    pub fn active(&self) -> bool {
+        self.start.is_some() || self.end.is_some()
+    }
+    fn matches(&self, value: &str) -> bool {
+        if !self.active() {
+            return true;
+        }
+        crate::mailbox::parse_received_timestamp(value).is_some_and(|time| {
+            self.start.is_none_or(|start| time >= start)
+                && self.end.is_none_or(|end| time < end + 86_400)
+        })
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ListSelection {
     pub mailbox: String,
@@ -126,6 +169,7 @@ pub struct ListSelection {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ListViewState {
+    pub dates: ReceivedDateRange,
     pub bulk_selection: BulkSelection,
     pub sort: MessageSort,
     pub filter: MessageFilter,
@@ -197,6 +241,7 @@ impl ListViewState {
             _ => return Err("The selected message requires both its mailbox and UID."),
         };
         Ok(Self {
+            dates: ReceivedDateRange::parse(query)?,
             bulk_selection,
             sort: MessageSort::from_query_values(
                 query.get("sort").map(String::as_str),
@@ -224,7 +269,8 @@ impl ListViewState {
         self.backend_truncated = messages.len() > self.backend_limit;
         messages.truncate(self.backend_limit);
         messages.retain(|message| {
-            self.filter.matches(&message.flags)
+            self.dates.matches(&message.date_received)
+                && self.filter.matches(&message.flags)
                 && self
                     .attachment
                     .matches(message.metadata.as_ref().and_then(|m| m.attachment_count))
@@ -249,7 +295,8 @@ impl ListViewState {
         self.backend_truncated = results.len() > self.backend_limit;
         results.truncate(self.backend_limit);
         results.retain(|message| {
-            self.filter.matches(&message.flags)
+            self.dates.matches(&message.date_received)
+                && self.filter.matches(&message.flags)
                 && self
                     .attachment
                     .matches(message.metadata.as_ref().and_then(|m| m.attachment_count))
@@ -309,6 +356,92 @@ impl ListViewState {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn received_dates_are_strict_inclusive_utc_and_bounded() {
+        use crate::mailbox::{parse_calendar_date as day, parse_received_timestamp as time};
+        for good in ["0001-01-01", "2000-02-29", "2024-02-29", "9999-12-31"] {
+            assert!(day(good).is_some());
+        }
+        for bad in [
+            "0000-01-01",
+            "1900-02-29",
+            "2026-02-29",
+            "2026-04-31",
+            "2026-1-01",
+            "+2026-01-01",
+            "２０２６-01-01",
+            "999999999999999999-01-01",
+            "2026-01-01x",
+        ] {
+            assert_eq!(day(bad), None, "{bad}");
+        }
+        for bad in [
+            "2026-01-01 00:00:00 +é00",
+            "2026-01-01 00:00:00 +0000 extra",
+            "2026-01-01 24:00:00",
+            "2026-01-01 00:00:60",
+            "2026-01-01 00:00:00 +2400",
+            "2026-01-01 00:00:00 +0060",
+        ] {
+            assert_eq!(time(bad), None, "{bad}");
+        }
+        let range = ReceivedDateRange::parse(&BTreeMap::from([
+            ("after".into(), "2026-03-28".into()),
+            ("before".into(), "2026-03-28".into()),
+        ]))
+        .unwrap();
+        for good in [
+            "2026-03-28 00:00:00 +0000",
+            "2026-03-28 23:59:59",
+            "2026-03-29 00:30:00 +0100",
+            "2026-03-27 23:30:00 -0100",
+        ] {
+            assert!(range.matches(good), "{good}");
+        }
+        for bad in [
+            "",
+            "unknown",
+            "2026-03-28 00:30:00 +0100",
+            "2026-03-28 23:30:00 -0100",
+        ] {
+            assert!(!range.matches(bad), "{bad}");
+        }
+        assert!(ReceivedDateRange::default().matches("unknown"));
+        assert!(ReceivedDateRange::parse(&BTreeMap::from([
+            ("after".into(), "2026-03-29".into()),
+            ("before".into(), "2026-03-28".into())
+        ]))
+        .is_err());
+    }
+
+    #[test]
+    fn received_dates_compose_with_unread_before_paging_and_selection() {
+        let mut state = ListViewState::from_query(&BTreeMap::from([
+            ("after".into(), "2026-03-28".into()),
+            ("filter".into(), "unread".into()),
+            ("page".into(), "2".into()),
+            ("selected_mailbox".into(), "INBOX".into()),
+            ("selected_uid".into(), "1".into()),
+        ]))
+        .unwrap();
+        let mut rows: Vec<_> = (1..=240)
+            .map(|uid| {
+                let mut r = row(uid, if uid % 2 == 0 { &["\\Seen"] } else { &[] });
+                r.date_received = if uid <= 120 {
+                    "2026-03-28 00:00:00 +0000"
+                } else {
+                    "unknown"
+                }
+                .into();
+                r
+            })
+            .collect();
+        state.apply_messages(&mut rows);
+        assert_eq!(state.total_results, 60);
+        assert_eq!(rows.len(), 10);
+        assert_eq!(state.selection_page, Some(2));
+    }
 
     #[test]
     fn attachment_filter_distinguishes_unknown_and_composes_before_paging() {

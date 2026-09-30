@@ -11,7 +11,7 @@ pub fn mail_return_after_move(value: &str, source: &str) -> Option<String> {
     if path == "/message" {
         return Some(format!("/mailbox?name={}", url_encode(source)));
     }
-    let mut fields = parse_urlencoded_form(query.as_bytes(), 12, 2048).ok()?;
+    let mut fields = parse_urlencoded_form(query.as_bytes(), 16, 2048).ok()?;
     for key in ["select", "selected_mailbox", "selected_uid"] {
         fields.remove(key);
     }
@@ -30,7 +30,7 @@ pub fn safe_mail_return(value: &str) -> Option<String> {
         return None;
     }
     let (path, query) = value.split_once('?')?;
-    let fields = parse_urlencoded_form(query.as_bytes(), 12, 2048).ok()?;
+    let fields = parse_urlencoded_form(query.as_bytes(), 16, 2048).ok()?;
     let mailbox_valid =
         |name: &str| MailboxEntry::new(MailboxListingPolicy::default(), name).is_ok();
     let allowed: &[&str] = match path {
@@ -45,6 +45,8 @@ pub fn safe_mail_return(value: &str) -> Option<String> {
                 "dir",
                 "filter",
                 "attachment",
+                "after",
+                "before",
                 "page",
                 "q",
                 "scope",
@@ -75,6 +77,8 @@ pub fn safe_mail_return(value: &str) -> Option<String> {
                 "dir",
                 "filter",
                 "attachment",
+                "after",
+                "before",
                 "page",
                 "selected_mailbox",
                 "selected_uid",

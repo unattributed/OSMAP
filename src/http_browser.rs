@@ -128,6 +128,35 @@ pub trait BrowserGateway {
         ))
     }
 
+    fn load_identity_preferences(
+        &self,
+        _context: &AuthenticationContext,
+        session: &ValidatedSession,
+    ) -> Result<
+        crate::identity_preferences::IdentityPreferencesRecord,
+        crate::identity_preferences::IdentityPreferencesError,
+    > {
+        {
+            let _ = session;
+            Err(crate::identity_preferences::IdentityPreferencesError::Unavailable)
+        }
+    }
+    fn update_identity_preferences(
+        &self,
+        _context: &AuthenticationContext,
+        session: &ValidatedSession,
+        expected_revision: u64,
+        value: &crate::identity_preferences::IdentityPreferences,
+    ) -> Result<
+        crate::identity_preferences::IdentityPreferencesRecord,
+        crate::identity_preferences::IdentityPreferencesError,
+    > {
+        {
+            let _ = (session, expected_revision, value);
+            Err(crate::identity_preferences::IdentityPreferencesError::Unavailable)
+        }
+    }
+
     fn load_composition_preferences(
         &self,
         _context: &AuthenticationContext,
@@ -460,6 +489,31 @@ pub enum BrowserSessionListDecision {
     Denied {
         public_reason: String,
     },
+}
+
+impl BrowserSessionListDecision {
+    /// Verified retained metadata for an authenticated account overview.
+    pub(crate) fn verified_sessions(&self, account: &str) -> Option<&[BrowserVisibleSession]> {
+        let Self::Listed {
+            canonical_username,
+            sessions,
+            ..
+        } = self
+        else {
+            return None;
+        };
+        if canonical_username != account || sessions.len() > 256 {
+            return None;
+        }
+        let mut seen = std::collections::BTreeSet::new();
+        if sessions
+            .iter()
+            .any(|session| !seen.insert(session.session_id.as_str()))
+        {
+            return None;
+        }
+        Some(sessions)
+    }
 }
 
 /// The result of a browser-driven session revocation.

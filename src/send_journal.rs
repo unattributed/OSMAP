@@ -289,6 +289,14 @@ pub(crate) fn snapshot_digest(account: &str, request: &ComposeRequest) -> String
         field(&mut hash, attachment.content_type.as_bytes());
         field(&mut hash, &attachment.body);
     }
+    if request.sender_identity != crate::identity_preferences::IdentityPreferences::default() {
+        field(&mut hash, b"sender-presentation-v1");
+        field(&mut hash, request.sender_identity.display_name().as_bytes());
+        field(
+            &mut hash,
+            request.sender_identity.reply_to().unwrap_or("").as_bytes(),
+        );
+    }
     hex(&hash.finalize())
 }
 
@@ -570,7 +578,9 @@ impl SendJournal {
         if let Some(entry) = existing {
             if matches!(
                 entry.state,
-                State::SaveReserved { .. } | State::DraftSaved { .. }
+                State::SaveReserved { .. }
+                    | State::DraftSaved { .. }
+                    | State::RecoveryRefused { .. }
             ) {
                 return Ok(PreparedResult::Outcome(JournalResult {
                     outcome: entry.state.outcome(),
@@ -747,6 +757,45 @@ mod tests {
                 assert!(!text.contains(private));
             }
         }
+    }
+
+    #[test]
+    fn recovery_refused_replay_never_prepares_changed_input_or_dispatches() {
+        let root = Scratch::new();
+        let token = intent(100, 1);
+        root.store()
+            .execute(ACCOUNT, &token, 100, &request(), || {
+                AttemptOutcome::RecoveryRefused { capacity: false }
+            })
+            .unwrap();
+        let prepare_calls = AtomicUsize::new(0);
+        let dispatch_calls = AtomicUsize::new(0);
+        let result = root
+            .store()
+            .execute_prepared(
+                ACCOUNT,
+                &token,
+                101,
+                |_| {
+                    prepare_calls.fetch_add(1, Ordering::SeqCst);
+                    Err::<ComposeRequest, _>("changed malformed input")
+                },
+                |_| {
+                    dispatch_calls.fetch_add(1, Ordering::SeqCst);
+                    ACCEPTED
+                },
+            )
+            .unwrap();
+        assert_eq!(
+            result,
+            PreparedResult::Outcome(JournalResult {
+                outcome: AttemptOutcome::RecoveryRefused { capacity: false },
+                replayed: true,
+                receipt_persisted: true,
+            })
+        );
+        assert_eq!(prepare_calls.load(Ordering::SeqCst), 0);
+        assert_eq!(dispatch_calls.load(Ordering::SeqCst), 0);
     }
 
     #[test]

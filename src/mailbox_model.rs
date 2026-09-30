@@ -563,51 +563,75 @@ fn apply_sort_direction(ordering: Ordering, direction: MessageSortDirection) -> 
     }
 }
 
-fn parse_received_timestamp(value: &str) -> Option<i64> {
-    let mut fields = value.split_whitespace();
-    let date = fields.next()?;
-    let time = fields.next()?;
-    let offset = fields.next().unwrap_or("+0000");
-
-    let mut date_parts = date.split('-');
-    let year = date_parts.next()?.parse::<i64>().ok()?;
-    let month = date_parts.next()?.parse::<u32>().ok()?;
-    let day = date_parts.next()?.parse::<u32>().ok()?;
-    if date_parts.next().is_some() || !valid_month_day(year, month, day) {
-        return None;
-    }
-
-    let mut time_parts = time.split(':');
-    let hour = time_parts.next()?.parse::<i64>().ok()?;
-    let minute = time_parts.next()?.parse::<i64>().ok()?;
-    let second = time_parts.next()?.parse::<i64>().ok()?;
-    if time_parts.next().is_some()
-        || !(0..=23).contains(&hour)
-        || !(0..=59).contains(&minute)
-        || !(0..=60).contains(&second)
+/// Strict ASCII UTC calendar day, bounded to the four-digit civil year range.
+pub(crate) fn parse_calendar_date(value: &str) -> Option<i64> {
+    let b = value.as_bytes();
+    if b.len() != 10
+        || b[4] != b'-'
+        || b[7] != b'-'
+        || !b
+            .iter()
+            .enumerate()
+            .all(|(i, b)| i == 4 || i == 7 || b.is_ascii_digit())
     {
         return None;
     }
+    let year = value[..4].parse::<i64>().ok()?;
+    let month = value[5..7].parse::<u32>().ok()?;
+    let day = value[8..].parse::<u32>().ok()?;
+    if year == 0 || !valid_month_day(year, month, day) {
+        return None;
+    }
+    Some(days_from_civil(year, month, day) * 86_400)
+}
 
-    let offset_seconds = parse_timezone_offset_seconds(offset)?;
-    let day_seconds = hour * 3600 + minute * 60 + second;
-
-    Some(days_from_civil(year, month, day) * 86_400 + day_seconds - offset_seconds)
+/// Dovecot received time; missing offset retains the existing UTC convention.
+pub(crate) fn parse_received_timestamp(value: &str) -> Option<i64> {
+    let b = value.as_bytes();
+    if !matches!(b.len(), 19 | 25)
+        || !value.is_ascii()
+        || b[10] != b' '
+        || b[13] != b':'
+        || b[16] != b':'
+    {
+        return None;
+    }
+    let day = parse_calendar_date(&value[..10])?;
+    if !b[11..19]
+        .iter()
+        .enumerate()
+        .all(|(i, b)| i == 2 || i == 5 || b.is_ascii_digit())
+    {
+        return None;
+    }
+    let hour = value[11..13].parse::<i64>().ok()?;
+    let minute = value[14..16].parse::<i64>().ok()?;
+    let second = value[17..19].parse::<i64>().ok()?;
+    if hour > 23 || minute > 59 || second > 59 {
+        return None;
+    }
+    let offset = if b.len() == 25 {
+        if b[19] != b' ' {
+            return None;
+        }
+        parse_timezone_offset_seconds(&value[20..])?
+    } else {
+        0
+    };
+    Some(day + hour * 3600 + minute * 60 + second - offset)
 }
 
 fn parse_timezone_offset_seconds(value: &str) -> Option<i64> {
-    let bytes = value.as_bytes();
-    if bytes.len() != 5 || (bytes[0] != b'+' && bytes[0] != b'-') {
+    let b = value.as_bytes();
+    if b.len() != 5 || !matches!(b[0], b'+' | b'-') || !b[1..].iter().all(u8::is_ascii_digit) {
         return None;
     }
-    let sign = if bytes[0] == b'+' { 1 } else { -1 };
     let hours = value[1..3].parse::<i64>().ok()?;
     let minutes = value[3..5].parse::<i64>().ok()?;
-    if !(0..=23).contains(&hours) || !(0..=59).contains(&minutes) {
+    if hours > 23 || minutes > 59 {
         return None;
     }
-
-    Some(sign * (hours * 3600 + minutes * 60))
+    Some((if b[0] == b'+' { 1 } else { -1 }) * (hours * 3600 + minutes * 60))
 }
 
 fn valid_month_day(year: i64, month: u32, day: u32) -> bool {

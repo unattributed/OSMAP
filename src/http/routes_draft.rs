@@ -372,6 +372,7 @@ where
                         "OK",
                         "Resume Draft",
                         render_compose_page(&ComposePageModel {
+                    sender_identity: Some(&draft.request.sender_identity),
                             send_intent: &send_intent,
                             contacts: self.contact_snapshot(&validated_session).ok().as_ref(),
                             reply_reference: None,
@@ -532,6 +533,7 @@ where
         if let Err(error) = contact_result {
             return HandledHttpResponse {
                 response: super::compose_enhancement::response(409, "Conflict", "Choose a Contact", render_compose_page(&ComposePageModel {
+                    sender_identity: None,
                         send_intent: form.get("send_intent").map(String::as_str).unwrap_or_default(),
                     contacts: self.contact_snapshot(&validated_session).ok().as_ref(),
                     reply_reference: reply_reference.as_ref(),
@@ -805,6 +807,7 @@ where
                         reason_phrase,
                         "Compose",
                         render_compose_page(&ComposePageModel {
+                    sender_identity: None,
                         send_intent: form.get("send_intent").map(String::as_str).unwrap_or_default(),
                             contacts: self.contact_snapshot(&validated_session).ok().as_ref(),
                             reply_reference: reply_reference.as_ref(),

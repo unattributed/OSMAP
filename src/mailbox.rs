@@ -29,7 +29,9 @@ pub use self::mailbox_backend::{
 pub use self::mailbox_flags::{
     DoveadmMessageFlagBackend, MessageFlagBackend, MessageFlagRequest, MessageFlagResult,
 };
-pub(crate) use self::mailbox_model::validate_message_search_query;
+pub(crate) use self::mailbox_model::{
+    parse_calendar_date, parse_received_timestamp, validate_message_search_query,
+};
 pub use self::mailbox_model::{
     sort_message_search_results, sort_message_summaries, MailboxAuditFailureReason, MailboxBackend,
     MailboxBackendError, MailboxEntry, MailboxListingDecision, MailboxListingOutcome,

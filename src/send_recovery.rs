@@ -322,6 +322,7 @@ impl SendRecovery {
             },
         )
         .map_err(|_| RecoveryError::Invalid)?;
+        record.request.sender_identity = request.sender_identity.clone();
         record.request.body_format = request.body_format;
         record.request.reply_thread = request.reply_thread.clone();
         if restore(&record)? != *request {
@@ -464,6 +465,7 @@ fn restore(record: &DraftRecord) -> Result<ComposeRequest, RecoveryError> {
     .and_then(|value| value.with_body_format(content.body_format))
     .map_err(|_| RecoveryError::Invalid)?;
     request.reply_thread = content.reply_thread.clone();
+    request.sender_identity = content.sender_identity.clone();
     Ok(request)
 }
 #[cfg(test)]

@@ -136,6 +136,18 @@ where
         let outcome = self.gateway.load_settings(context, &validated_session);
         audit_events.extend(outcome.audit_events);
         let archive = match outcome.decision {
+            BrowserSettingsDecision::Loaded {
+                ref canonical_username,
+                ..
+            } if canonical_username != &validated_session.record.canonical_username => {
+                return notice(
+                    503,
+                    "Service Unavailable",
+                    "Archive Temporarily Unavailable",
+                    "Your archive setting could not be confirmed for this account.",
+                    audit_events,
+                );
+            }
             BrowserSettingsDecision::Loaded { settings, .. } => match settings.archive_mailbox_name
             {
                 Some(name) => name,
@@ -162,6 +174,7 @@ where
         let outcome = self.gateway.list_mailboxes(context, &validated_session);
         audit_events.extend(outcome.audit_events);
         match outcome.decision {
+            BrowserMailboxDecision::Listed { ref canonical_username, .. } if canonical_username != &validated_session.record.canonical_username => notice(503, "Service Unavailable", "Archive Temporarily Unavailable", "Your mailbox list could not be confirmed for this account.", audit_events),
             BrowserMailboxDecision::Listed { mailboxes, .. } if mailbox_name_exists(&mailboxes, &archive) => HandledHttpResponse {
                 response: redirect_response(303, "See Other", &format!("/mailbox?name={}", url_encode(&archive))),
                 audit_events,
@@ -260,6 +273,8 @@ where
                 }
                 let (recent, draft_count) =
                     self.welcome_data(context, &validated_session, &mailboxes, &mut audit_events);
+                let activity = self.gateway.list_sessions(context, &validated_session);
+                audit_events.extend(activity.audit_events);
                 let visible_mailboxes = filter_user_visible_mailboxes(&mailboxes);
                 HandledHttpResponse {
                     response: html_response(
@@ -272,6 +287,7 @@ where
                             &visible_mailboxes,
                             recent.as_deref(),
                             draft_count,
+                            &activity.decision,
                         ),
                     ),
                     audit_events,

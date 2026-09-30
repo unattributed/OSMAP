@@ -1,5 +1,8 @@
 //! Native Settings presentation, separate from browser route handlers.
 use super::*;
+#[path = "settings_identity_ui.rs"]
+mod settings_identity_ui;
+pub(crate) use settings_identity_ui::{render_identity_page, IdentityPageModel};
 #[path = "settings_security_ui.rs"]
 mod settings_security_ui;
 pub(crate) use settings_security_ui::render_security_page;
@@ -113,7 +116,7 @@ fn settings_navigation(current_section: &str) -> String {
     for (label, section) in [
         ("General", Some("general")),
         ("Appearance", Some("appearance")),
-        ("Identity", None),
+        ("Identity", Some("identity")),
         ("Reading & Mailbox", Some("reading")),
         ("Composition", Some("composition")),
         ("Copies & Folders", Some("copies")),

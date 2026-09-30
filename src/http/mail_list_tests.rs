@@ -244,3 +244,36 @@ fn sent_recipient_rows_escape_headers_and_inbox_search_keep_sender() {
         }
     }
 }
+
+#[test]
+fn received_dates_http_refuses_invalid_and_preserves_all_navigation_fields() {
+    assert!(crate::http_form::parse_query_string("after=2026-03-28&after=2026-03-29", 16).is_err());
+    for query in [
+        "after=2026-02-29",
+        "before=2026-01-01&after=2026-03-28",
+    ] {
+        assert_eq!(
+            mailbox_page(&format!("/mailbox?name=INBOX&{query}"))
+                .response
+                .status_code,
+            400
+        );
+    }
+    let target="/search?q=reader-fixture&field=subject&scope=all&filter=unread&attachment=unknown&sort=received&dir=desc&page=2&selected_mailbox=INBOX&selected_uid=1&select=move&after=2026-09-30&before=2026-09-30";
+    let safe = crate::mail_navigation::safe_mail_return(target).unwrap();
+    assert!(super::super::header_theme::safe_return(target).is_some());
+    let moved = crate::mail_navigation::mail_return_after_move(target, "INBOX").unwrap();
+    for value in [
+        "after=2026-09-30",
+        "before=2026-09-30",
+        "field=subject",
+        "attachment=unknown",
+    ] {
+        assert!(safe.contains(value));
+        assert!(moved.contains(value));
+    }
+    assert!(!moved.contains("selected_"));
+    let result = mailbox_page("/mailbox?name=INBOX&after=2026-10-01");
+    assert_eq!(result.response.status_code, 200);
+    assert!(body_text(&result).contains("Showing 0–0 of 0 messages"));
+}

@@ -29,6 +29,7 @@ fn ux_synthetic_browser_server() {
         draft_store: Some(crate::draft::FileDraftStore::new(root.join("drafts"), DraftPolicy::default())),
         appearance_store: Some(AppearanceStore::new(root.join("settings"))),
         settings_store: Some(crate::settings::FileUserSettingsStore::new(root.join("settings"))),
+        identity_preferences_store: Some(crate::identity_preferences::IdentityPreferencesStore::new(root.join("settings"))),
         composition_preferences_store: Some(crate::composition_preferences::CompositionPreferencesStore::new(root.join("settings"))),
         reading_preferences_store: Some(crate::reading_preferences::ReadingPreferencesStore::new(root.join("settings"))),
         browser_fixture_accounts: true,

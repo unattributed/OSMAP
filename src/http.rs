@@ -26,6 +26,7 @@ mod routes_display;
 mod routes_draft;
 mod routes_draft_selection;
 mod routes_flags;
+mod routes_identity_preferences;
 mod routes_mail;
 mod routes_moves;
 mod routes_reading_preferences;
@@ -834,6 +835,9 @@ mod tests {
     mod security_settings_tests {
         include!("http/security_settings_tests.rs");
     }
+    mod identity_preference_tests {
+        include!("http/identity_preference_tests.rs");
+    }
     mod copies_tests {
         include!("http/copies_tests.rs");
     }
@@ -923,6 +927,7 @@ mod tests {
         message_moves: Arc<Mutex<SyntheticMessageMoves>>,
         appearance_store: Option<AppearanceStore>,
         settings_store: Option<crate::settings::FileUserSettingsStore>,
+        identity_preferences_store: Option<crate::identity_preferences::IdentityPreferencesStore>,
         composition_preferences_store:
             Option<crate::composition_preferences::CompositionPreferencesStore>,
         reading_preferences_store: Option<crate::reading_preferences::ReadingPreferencesStore>,
@@ -948,6 +953,7 @@ mod tests {
                 message_moves: Arc::new(Mutex::new(SyntheticMessageMoves::default())),
                 appearance_store: None,
                 settings_store: None,
+                identity_preferences_store: None,
                 composition_preferences_store: None,
                 reading_preferences_store: None,
                 browser_fixture_accounts: false,
@@ -1510,6 +1516,35 @@ mod tests {
                     std::io::Error::other("synthetic reading preference store unavailable")
                 })?
                 .save(&session.record.canonical_username, value)
+        }
+
+        fn load_identity_preferences(
+            &self,
+            _context: &AuthenticationContext,
+            session: &ValidatedSession,
+        ) -> Result<
+            crate::identity_preferences::IdentityPreferencesRecord,
+            crate::identity_preferences::IdentityPreferencesError,
+        > {
+            self.identity_preferences_store
+                .as_ref()
+                .ok_or(crate::identity_preferences::IdentityPreferencesError::Unavailable)?
+                .load(&session.record.canonical_username)
+        }
+        fn update_identity_preferences(
+            &self,
+            _context: &AuthenticationContext,
+            session: &ValidatedSession,
+            expected_revision: u64,
+            value: &crate::identity_preferences::IdentityPreferences,
+        ) -> Result<
+            crate::identity_preferences::IdentityPreferencesRecord,
+            crate::identity_preferences::IdentityPreferencesError,
+        > {
+            self.identity_preferences_store
+                .as_ref()
+                .ok_or(crate::identity_preferences::IdentityPreferencesError::Unavailable)?
+                .save(&session.record.canonical_username, expected_revision, value)
         }
 
         fn load_composition_preferences(
@@ -2535,6 +2570,47 @@ mod tests {
                         public_reason: "invalid_request".into(),
                         retry_after_seconds: None,
                     })?;
+                    parsed.sender_identity = if consumed {
+                        match crate::send_recovery::SendRecovery::new(self.recovery_root.clone())
+                            .lookup(
+                                &self.send_journal,
+                                &_validated_session.record.canonical_username,
+                                request.send_intent,
+                                100,
+                            ) {
+                            Ok(crate::send_recovery::RecoveryRead::Available(snapshot)) => {
+                                snapshot.request.sender_identity.clone()
+                            }
+                            _ => {
+                                return Err(BrowserSendDecision::Unconfirmed {
+                                    public_reason: "send_attempt_paused".into(),
+                                })
+                            }
+                        }
+                    } else if let Some(id) = request.draft_id {
+                        let record = if let Some(store) = &self.draft_store {
+                            store
+                                .load(&_validated_session.record.canonical_username, id, 100)
+                                .ok()
+                                .flatten()
+                        } else {
+                            self.drafts.lock().unwrap().get(id).cloned()
+                        };
+                        record
+                            .ok_or_else(|| BrowserSendDecision::Unconfirmed {
+                                public_reason: "send_attempt_paused".into(),
+                            })?
+                            .request
+                            .sender_identity
+                    } else if self.identity_preferences_store.is_some() {
+                        self.load_identity_preferences(context, _validated_session)
+                            .map_err(|_| BrowserSendDecision::Unconfirmed {
+                                public_reason: "send_attempt_paused".into(),
+                            })?
+                            .preferences
+                    } else {
+                        crate::identity_preferences::IdentityPreferences::default()
+                    };
                     parsed.reply_thread = request.reply_thread.cloned();
                     Ok(parsed)
                 },
@@ -2914,6 +2990,16 @@ mod tests {
                         )],
                     }
                 }
+            };
+            record.request.sender_identity = if let Some(saved) = existing.as_ref() {
+                saved.request.sender_identity.clone()
+            } else if let Some(store) = &self.identity_preferences_store {
+                match store.load(&validated_session.record.canonical_username) {
+                    Ok(value) => value.preferences,
+                    Err(_) => return fixture_paused_save(),
+                }
+            } else {
+                crate::identity_preferences::IdentityPreferences::default()
             };
             record.request.body_format = request.body_format;
             record.request.reply_thread = request.reply_thread.cloned();
@@ -5129,7 +5215,9 @@ mod tests {
 
         assert_eq!(response.response.status_code, 200);
         let body = body_text(&response);
-        assert!(body.contains("matches your configured archive destination"));
+        assert!(body.contains("<h1>Archive / Bin</h1>"));
+        assert!(body
+            .contains("href=\"/mailbox?name=Archive%2F2026&amp;sort=received&amp;dir=desc\" aria-current=\"page\">Archive</a>"));
         assert!(!body.contains(">Archive</button>"));
     }
 
