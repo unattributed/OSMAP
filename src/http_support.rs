@@ -437,6 +437,7 @@ pub(crate) fn public_reason_message(reason: &str) -> &'static str {
         "invalid_message_reference" => "The selected message was not found in that mailbox.",
         "invalid_request" => "The submitted request was not valid.",
         "draft_conflict" => "This draft changed in another tab or was deleted. Your changes have not overwritten the saved version. Open the saved version separately to compare your text.",
+        "draft_save_unconfirmed" => "The save could not be confirmed. It may already be stored. Keep this text and open the saved version in a new tab to compare before continuing. Do not repeat this save or send from this form.",
         "source_attachment_invalid" => "The selected source attachments were not valid or exceeded the attachment limits. Nothing was saved or sent. Clear those selections or choose them again from the original message.",
         "source_attachment_count" => "The selected files exceeded the attachment count limit. Keep up to 3 files in total, including saved files, uploads and source selections. Nothing was saved or sent.",
         "source_attachment_missing_mailbox" => "The selected attachments are missing a source mailbox. Nothing was saved or sent. Clear the source selections or choose the files again from the original message.",

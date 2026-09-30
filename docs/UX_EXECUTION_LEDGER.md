@@ -1373,3 +1373,27 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   and the native signed-helper fixture; standard obsd1 state unchanged. Archive
   `976df717c2cc52bd84722df810115202f55ceec24222aa60831600dedb178144`;
   log `28ff81b0ced765743990eba167669433e3108c4182e2b73b14611d5f4f431d01`.
+
+### S03-02E — interrupted-save recovery
+
+- Replace the directory-swap gap with immutable attachment blobs and one atomic
+  metadata publication, retaining legacy readability. Sync before acknowledging
+  success; expose unconfirmed saves truthfully and preserve the comparison path.
+  Recover only unambiguous owned legacy backups. Validate interruption stages,
+  stale revisions, unchanged attachments and browser recovery without live data.
+- Implemented metadata v8 and content-addressed attachments with atomic manifest
+  publication, durable save acknowledgement, bounded cleanup and unambiguous
+  legacy-backup recovery. Existing versions remain readable. Unconfirmed saves
+  retain text and an owned comparison link; Save/Send pause rather than retry.
+- Validation: 669 library tests PASS (six existing ignored), including controlled
+  pre/post-publication failures and process reopen; these are not power-loss
+  tests. Strict Clippy and formatting PASS. Edge and Firefox each PASS fifteen
+  real-storage workflows. Final twelve normal/eight forced-colour captures have
+  no overflow or audited contrast failures; wide/narrow recovery inspected.
+  Artifacts: S03 run-20260930 atomic-e-*, fixtures-g-final, visual-g-*-final and
+  gates/*-g-final.log. Discard durability and autosave remain separate work.
+- Full acceptance, V14 and diff checks PASS on the final implementation.
+- S03-02D native qualification PASS: 662 library tests, two hostile-content tests
+  and the native signed-helper fixture; standard obsd1 state unchanged. Archive
+  `0eaba19459df935687af78841a81cd136f77a3242d87ac4cf3d27136ad78f162`;
+  log `fbf910dc64100985b3c4c75dbffda5ca23d868c620e42338d668bf64674a0707`.

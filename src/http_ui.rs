@@ -1475,6 +1475,7 @@ pub(crate) fn render_sessions_page(
 
 /// Renders the compose page for the current user and CSRF-bound session.
 pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
+    let confirmation_required = model.draft_id.is_some() && model.draft_revision.is_none();
     let success_banner = match model.success_message {
         Some(success_message) => format!(
             "<div class=\"notice notice-success\" role=\"status\"><strong>Submission complete:</strong> {}</div>",
@@ -1482,13 +1483,17 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
         ),
         None => String::new(),
     };
-    let error_banner = match model.error_message {
-        Some(error_message) => format!(
-            "<div class=\"notice notice-error\" role=\"alert\"><strong>Request failed:</strong> {}</div>",
+    let error_banner =
+        match model.error_message {
+            Some(error_message) => {
+                format!(
+            "<div class=\"notice notice-error\" role=\"alert\"><strong>{}</strong> {}</div>",
+            if confirmation_required { "Save not confirmed:" } else { "Request failed:" },
             escape_html(error_message)
-        ),
-        None => String::new(),
-    };
+        )
+            }
+            None => String::new(),
+        };
     let context_banner = match model.context_notice {
         Some(context_notice) => format!(
             "<div class=\"notice\"><strong>Context:</strong> {}</div>",
@@ -1544,7 +1549,7 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
             "{}{}{}",
             "<section class=\"content-pane compose-card\">",
             "<form id=\"compose-form\" method=\"post\" action=\"/send\" enctype=\"multipart/form-data\">",
-            "<div class=\"compose-card-header\"><h2>{}</h2><div class=\"compose-window-actions\"><button type=\"submit\" formaction=\"/drafts/save\" name=\"compose_action\" value=\"minimize\" title=\"Save this draft and return to Drafts\">− Minimize</button><input class=\"sr-only compose-expand-state\" id=\"compose-expanded\" type=\"checkbox\"><label class=\"button-link\" for=\"compose-expanded\"><span class=\"expand-text\">↗ Expand</span><span class=\"collapse-text\">↙ Restore</span></label></div></div>",
+            "<div class=\"compose-card-header\"><h2>{}</h2><div class=\"compose-window-actions\"><button type=\"submit\"{disabled} formaction=\"/drafts/save\" name=\"compose_action\" value=\"minimize\" title=\"Save this draft and return to Drafts\">− Minimize</button><input class=\"sr-only compose-expand-state\" id=\"compose-expanded\" type=\"checkbox\"><label class=\"button-link\" for=\"compose-expanded\"><span class=\"expand-text\">↗ Expand</span><span class=\"collapse-text\">↙ Restore</span></label></div></div>",
             "<input type=\"hidden\" name=\"csrf_token\" value=\"{}\">",
             "{}",
             "{}",
@@ -1557,8 +1562,8 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
             "{}",
             "<label class=\"compose-editor-label\" for=\"compose-body\">Body</label><textarea id=\"compose-body\" name=\"body\" placeholder=\"Write your message…\">{}</textarea>",
             "<section class=\"compose-attachments\" aria-labelledby=\"compose-attachments-heading\"><h2 id=\"compose-attachments-heading\">Attachments</h2>{}{}<label for=\"compose-attachment\">Add attachments</label><input id=\"compose-attachment\" type=\"file\" name=\"attachment\" multiple><p class=\"muted field-help\">Up to 3 attachments, 10 MiB each and 30 MiB total, including saved and selected source files.</p></section>",
-            "<div class=\"compose-footer\"><button type=\"submit\" formaction=\"/drafts/save\">Save Draft</button>",
-            "<button class=\"primary-button\" type=\"submit\">Send Message</button>",
+            "<div class=\"compose-footer\"><button type=\"submit\"{disabled} formaction=\"/drafts/save\">Save Draft</button>",
+            "<button class=\"primary-button\" type=\"submit\"{disabled}>Send Message</button>",
             "</div>",
             "</form>",
             "</section>",
@@ -1569,7 +1574,7 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
         success_banner,
         error_banner,
         context_banner,
-        if model.draft_id.is_some() { "Saved Draft" } else { "New Message" },
+        if confirmation_required { "Save not confirmed" } else if model.draft_id.is_some() { "Saved Draft" } else { "New Message" },
         escape_html(model.csrf_token),
         draft_id_field,
         render_source_attachment_hidden_fields(model.source_mailbox_name, model.source_uid, model.source_version),
@@ -1579,12 +1584,13 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
         escape_html(model.cc_value),
         if model.bcc_value.is_empty() { "" } else { " open" },
         escape_html(model.bcc_value),
-        render_contact_selection(model.contacts),
+        render_contact_selection(model.contacts, confirmation_required),
         escape_html(model.subject_value),
         openpgp_compose_controls,
         escape_html(model.body_value),
         draft_attachment_notice,
         source_attachment_controls,
+        disabled = if confirmation_required { " disabled" } else { "" },
     ))
 }
 
@@ -1640,7 +1646,10 @@ fn render_reply_reference(reference: Option<&crate::reply_thread::ReplyReference
         .unwrap_or_default()
 }
 
-fn render_contact_selection(book: Option<&crate::contacts::ContactBook>) -> String {
+fn render_contact_selection(
+    book: Option<&crate::contacts::ContactBook>,
+    confirmation_required: bool,
+) -> String {
     let manage =
         "<a href=\"/contacts\" target=\"_blank\" rel=\"noopener\">Manage contacts in a new tab</a>";
     let Some(book) = book else {
@@ -1667,8 +1676,8 @@ fn render_contact_selection(book: Option<&crate::contacts::ContactBook>) -> Stri
         "<input type=\"hidden\" name=\"contact_revision\" value=\"{}\">",
         "<label for=\"compose-contact\">Saved contact</label><select id=\"compose-contact\" name=\"contact_id\"><option value=\"\">Choose a saved contact</option>{}</select>",
         "<label for=\"compose-contact-target\">Add contact to</label><select id=\"compose-contact-target\" name=\"contact_target\"><option value=\"to\">To</option><option value=\"cc\">Cc</option><option value=\"bcc\">Bcc</option></select>",
-        "<button type=\"submit\" formaction=\"/drafts/save\" name=\"compose_action\" value=\"add-contact\">Add contact and save draft</button><p>{}</p></details>"
-    ), book.revision, options, manage)
+        "<button type=\"submit\" formaction=\"/drafts/save\" name=\"compose_action\" value=\"add-contact\"{}>Add contact and save draft</button><p>{}</p></details>"
+    ), book.revision, options, if confirmation_required { " disabled" } else { "" }, manage)
 }
 
 fn render_source_attachment_hidden_fields(

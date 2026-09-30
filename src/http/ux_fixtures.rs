@@ -172,6 +172,7 @@ fn ux_synthetic_route_baselines() {
         ("compose-source-changed", "/draft?id=00000000000000000000000000000001", true, 200),
         ("compose-source-unverified", "/draft?id=00000000000000000000000000000001", true, 200),
         ("compose-source-unavailable", "/draft?id=00000000000000000000000000000001", true, 200),
+        ("draft-save-unconfirmed", "/drafts/save", true, 503),
         (
             "reply-all",
             "/compose?mode=reply-all&mailbox=INBOX&uid=9",
@@ -271,14 +272,18 @@ fn ux_synthetic_route_baselines() {
             "archive-unconfigured" => headers[0] = ("User-Agent", "OSMAP/NoArchiveTest"),
             "archive-missing" => headers[0] = ("User-Agent", "OSMAP/InvalidArchiveTest"),
             "archive-unavailable" => headers[0] = ("User-Agent", "OSMAP/SettingsUnavailable"),
+            "draft-save-unconfirmed" => headers[0] = ("User-Agent", "OSMAP/DraftSaveUnconfirmed"),
             _ => {}
         }
-        let method = if name == "login-error" || name.starts_with("move-") || name == "drafts-review" {
+        let method = if name == "login-error" || name.starts_with("move-") || matches!(name, "drafts-review" | "draft-save-unconfirmed") {
             "POST"
         } else {
             "GET"
         };
-        let body = if name == "drafts-review" {
+        let body = if name == "draft-save-unconfirmed" {
+            headers.push(("Origin", "https://localhost"));
+            format!("csrf_token={}&to=still%20choosing&subject=Public%20project%20notes&body=Unconfirmed%20save%20-%20public%20synthetic%20text", StubGateway::validated_session().record.csrf_token)
+        } else if name == "drafts-review" {
             headers.push(("Origin", "https://localhost"));
             format!("csrf_token={}&stage=review&filter=all&sort=newest&q=&selected_{:032x}=1&selected_{:032x}=1", StubGateway::validated_session().record.csrf_token, 1, 2)
         } else if name.starts_with("move-") {

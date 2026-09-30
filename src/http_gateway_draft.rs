@@ -39,6 +39,17 @@ impl RuntimeBrowserGateway {
                     session,
                 )],
             },
+            Err(error) if error.save_unconfirmed() => BrowserDraftSaveOutcome {
+                decision: BrowserDraftSaveDecision::Unconfirmed {
+                    draft_id: draft_id.into(),
+                },
+                audit_events: vec![draft_warn_event(
+                    "draft_star_unconfirmed",
+                    "draft star outcome unconfirmed",
+                    context,
+                    session,
+                )],
+            },
             Err(error) => BrowserDraftSaveOutcome {
                 decision: BrowserDraftSaveDecision::Denied {
                     public_reason: draft_public_reason(&error).into(),
@@ -289,6 +300,17 @@ impl RuntimeBrowserGateway {
                 .with_field(
                     "attachment_count",
                     record.request.attachments.len().to_string(),
+                )],
+            },
+            Err(error) if error.save_unconfirmed() => BrowserDraftSaveOutcome {
+                decision: BrowserDraftSaveDecision::Unconfirmed {
+                    draft_id: record.draft_id.clone(),
+                },
+                audit_events: vec![draft_warn_event(
+                    "draft_save_unconfirmed",
+                    "draft save outcome unconfirmed",
+                    context,
+                    validated_session,
                 )],
             },
             Err(error) => BrowserDraftSaveOutcome {

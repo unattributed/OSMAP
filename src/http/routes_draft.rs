@@ -214,6 +214,7 @@ where
         audit_events.extend(outcome.audit_events);
         let response = match outcome.decision {
             BrowserDraftSaveDecision::Saved { .. } => redirect_response(303, "See Other", &destination),
+            BrowserDraftSaveDecision::Unconfirmed { .. } => html_response(503, "Service Unavailable", "Draft Update Not Confirmed", TrustedHtml::from_template(format!("<p>The star change could not be confirmed. It may already be saved. Reload the list before making another change.</p><p><a href=\"{}\">Reload Drafts</a></p>", escape_html(&destination)))),
             BrowserDraftSaveDecision::Denied { public_reason } => html_response(
                 if public_reason == "draft_conflict" { 409 } else { 503 },
                 if public_reason == "draft_conflict" { "Conflict" } else { "Service Unavailable" },
@@ -599,6 +600,22 @@ where
         audit_events.extend(outcome.audit_events);
 
         match outcome.decision {
+            BrowserDraftSaveDecision::Unconfirmed { draft_id } => {
+                let mut retained = form;
+                retained.insert("draft_id".into(), draft_id);
+                retained.remove("draft_revision");
+                HandledHttpResponse {
+                    response: self.retained_compose_failure(
+                        &validated_session,
+                        &retained,
+                        reply_reference.as_ref(),
+                        "draft_save_unconfirmed",
+                        503,
+                        "Service Unavailable",
+                    ),
+                    audit_events,
+                }
+            }
             BrowserDraftSaveDecision::Saved { draft_id } => HandledHttpResponse {
                 response: redirect_response(
                     303,

@@ -134,6 +134,7 @@ body:has(.app-rail) {
 .saved-attachment-remove { display: flex; flex-shrink: 0; align-items: center; gap: .4rem; padding: .45rem 0; margin: 0; font-size: .85rem; }
 .saved-attachment-remove input { width: auto; margin: 0; }
 .saved-attachment:has(input:checked) { border-style: dashed; }
+.compose-card button:disabled { background: var(--panel-soft); color: var(--muted); border-color: var(--line); cursor: not-allowed; }
 .compose-footer { display: flex; justify-content: space-between; align-items: center; gap: .7rem; }
 .compose-footer .primary-button { min-width: 11rem; }
 .compose-footer button { font-size: .875rem; }

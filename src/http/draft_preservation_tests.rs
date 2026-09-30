@@ -18,6 +18,31 @@ fn save_new(app: &BrowserApp<StubGateway>, fields: &str) -> String {
     location_header(&saved).trim_start_matches("/draft?id=").into()
 }
 
+#[test]
+fn unconfirmed_save_retains_text_and_owned_comparison_without_retry_controls() {
+    let (app, root, store) = fixture(DraftPolicy::default());
+    let form = format!("csrf_token={}&to=unfinished%40&body=Text%20with%20an%20unconfirmed%20save", StubGateway::validated_session().record.csrf_token);
+    let mut request = request("POST", "/drafts/save", &authenticated_same_origin_headers(), &form);
+    request.headers.insert("user-agent".into(), "OSMAP/DraftSaveUnconfirmed".into());
+    let result = app.handle_request(&request, "127.0.0.1");
+    assert_eq!(result.response.status_code, 503);
+    let html = body_text(&result);
+    assert!(html.contains("Save not confirmed:"));
+    assert!(html.contains("Text with an unconfirmed save"));
+    assert!(html.contains("Open saved version in a new tab"));
+    assert!(html.contains("Save and Send are paused"));
+    assert!(!html.contains("Nothing was saved") && !html.contains("attachments are unchanged"));
+    assert!(html.contains("<button type=\"submit\" disabled formaction=\"/drafts/save\">Save Draft"));
+    assert!(html.contains("<button class=\"primary-button\" type=\"submit\" disabled>Send Message"));
+    assert!(!html.contains("name=\"draft_revision\""));
+    let drafts = store.list("alice@example.com", 100).unwrap();
+    assert_eq!(drafts.len(), 1);
+    let saved = store.load("alice@example.com", &drafts[0].draft_id, 100).unwrap().unwrap();
+    assert_eq!(saved.request.body, "Text with an unconfirmed save");
+    assert!(app.gateway.submitted.lock().unwrap().is_empty());
+    fs::remove_dir_all(root).unwrap();
+}
+
 fn saved_files(app: &BrowserApp<StubGateway>, store: &crate::draft::FileDraftStore) -> String {
     let id = save_new(app, "to=desk%40example.test&body=Public%20attachment%20notes");
     let mut draft = store.load("alice@example.com", &id, 100).unwrap().unwrap();

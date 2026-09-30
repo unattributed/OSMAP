@@ -80,15 +80,15 @@ fn source_identity_round_trips_rejects_partial_metadata_and_preserves_legacy_ref
     store.save(&draft, 100).unwrap();
     let path = store.metadata_path("alice@example.com", &draft.draft_id);
     let current = fs::read_to_string(&path).unwrap();
-    assert!(current.starts_with("version=7\n"));
+    assert!(current.starts_with("version=8\n"));
     assert_eq!(store.load("alice@example.com", &draft.draft_id, 100).unwrap().unwrap().source_attachments, draft.source_attachments);
     let without_message = current.lines().filter(|line| !line.starts_with("source_message_guid_hex=")).collect::<Vec<_>>().join("\n") + "\n";
-    for invalid in [without_message.clone(), current.replace("version=7", "version=6"), current.replace("source_message_guid_hex=", "source_message_guid_hex=00")] {
+    for invalid in [without_message.clone(), current.replace("version=8", "version=6"), current.replace("source_message_guid_hex=", "source_message_guid_hex=00")] {
         fs::write(&path, &invalid).unwrap();
         assert!(store.load("alice@example.com", &draft.draft_id, 100).is_err());
         assert_eq!(fs::read_to_string(&path).unwrap(), invalid);
     }
-    let legacy = without_message.lines().filter(|line| !line.starts_with("source_mailbox_guid_hex=")).collect::<Vec<_>>().join("\n").replace("version=7", "version=6") + "\n";
+    let legacy = without_message.lines().filter(|line| !line.starts_with("source_mailbox_guid_hex=")).collect::<Vec<_>>().join("\n").replace("version=8", "version=6") + "\n";
     fs::write(&path, &legacy).unwrap();
     let loaded = store.load("alice@example.com", &draft.draft_id, 100).unwrap().unwrap();
     assert!(loaded.source_attachments.as_ref().unwrap().version.is_none());
@@ -137,7 +137,7 @@ fn legacy_record_migrates_only_after_a_revision_zero_save() {
     let path = store.metadata_path("alice@example.com", &draft.draft_id);
     let current = fs::read_to_string(&path).unwrap();
     for version in ["1", "2", "3", "4"] {
-        let legacy = current.replace("version=7", &format!("version={version}")).replace("revision=1\n", "").replace("starred=0\n", "");
+        let legacy = current.replace("version=8", &format!("version={version}")).replace("revision=1\n", "").replace("starred=0\n", "");
         fs::write(&path, &legacy).unwrap();
         let mut loaded = store.load("alice@example.com", &draft.draft_id, 100).unwrap().unwrap();
         assert_eq!(loaded.revision, Some(0));
@@ -148,7 +148,7 @@ fn legacy_record_migrates_only_after_a_revision_zero_save() {
         assert_eq!(saved.revision, Some(1));
         assert!(saved.request.recipients_text.is_empty());
     }
-    let v5 = fs::read_to_string(&path).unwrap().replace("version=7", "version=5").replace("starred=0\n", "");
+    let v5 = fs::read_to_string(&path).unwrap().replace("version=8", "version=5").replace("starred=0\n", "");
     fs::write(&path, &v5).unwrap();
     let mut restored = store.load("alice@example.com", &draft.draft_id, 101).unwrap().unwrap();
     assert!(restored.request.recipients_text.is_empty());

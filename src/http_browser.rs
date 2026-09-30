@@ -571,6 +571,7 @@ pub struct BrowserDraftSaveOutcome {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BrowserDraftSaveDecision {
     Saved { draft_id: String },
+    Unconfirmed { draft_id: String },
     Denied { public_reason: String },
 }
 

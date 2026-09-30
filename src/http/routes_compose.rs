@@ -576,30 +576,46 @@ where
         status: u16,
         reason: &'static str,
     ) -> HttpResponse {
-        html_response(status, reason, "Compose", render_compose_page(&ComposePageModel {
-            contacts: self.contact_snapshot(session).ok().as_ref(),
-            reply_reference,
-            heading: "Compose",
-            canonical_username: &session.record.canonical_username,
-            csrf_token: &session.record.csrf_token,
-            success_message: None,
-            error_message: Some(public_reason_message(public_reason)),
-            context_notice: Some("Nothing was sent. Your text is retained. Re-select any new uploads before saving; existing saved-draft attachments are unchanged."),
-            to_value: form.get("to").map(String::as_str).unwrap_or_default(),
-            cc_value: form.get("cc").map(String::as_str).unwrap_or_default(),
-            bcc_value: form.get("bcc").map(String::as_str).unwrap_or_default(),
-            subject_value: form.get("subject").map(String::as_str).unwrap_or_default(),
-            body_value: form.get("body").map(String::as_str).unwrap_or_default(),
-            draft_id: form.get("draft_id").map(String::as_str),
-            draft_revision: super::routes_draft::submitted_draft_revision(form).ok().flatten(),
-            draft_attachments: &[],
-            removed_attachment_indices: &super::routes_draft::removed_attachment_indices(form).unwrap_or_default(),
-            source_mailbox_name: form.get("source_mailbox").map(String::as_str),
-            source_uid: form.get("source_uid").and_then(|value| value.parse().ok()),
-            source_version: super::routes_source_attachments::source_version(form).ok().flatten().as_ref(),
-            source_attachments: &[],
-            selected_source_part_paths: &selected_original_attachment_parts(form).unwrap_or_default(),
-        }))
+        html_response(
+            status,
+            reason,
+            "Compose",
+            render_compose_page(&ComposePageModel {
+                contacts: self.contact_snapshot(session).ok().as_ref(),
+                reply_reference,
+                heading: "Compose",
+                canonical_username: &session.record.canonical_username,
+                csrf_token: &session.record.csrf_token,
+                success_message: None,
+                error_message: Some(public_reason_message(public_reason)),
+                context_notice: Some(if public_reason == "draft_save_unconfirmed" {
+                    "Your text remains in this tab. Save and Send are paused until you compare with the stored version."
+                } else {
+                    "Nothing was sent. Your text is retained. Re-select any new uploads before saving; existing saved-draft attachments are unchanged."
+                }),
+                to_value: form.get("to").map(String::as_str).unwrap_or_default(),
+                cc_value: form.get("cc").map(String::as_str).unwrap_or_default(),
+                bcc_value: form.get("bcc").map(String::as_str).unwrap_or_default(),
+                subject_value: form.get("subject").map(String::as_str).unwrap_or_default(),
+                body_value: form.get("body").map(String::as_str).unwrap_or_default(),
+                draft_id: form.get("draft_id").map(String::as_str),
+                draft_revision: super::routes_draft::submitted_draft_revision(form)
+                    .ok()
+                    .flatten(),
+                draft_attachments: &[],
+                removed_attachment_indices: &super::routes_draft::removed_attachment_indices(form)
+                    .unwrap_or_default(),
+                source_mailbox_name: form.get("source_mailbox").map(String::as_str),
+                source_uid: form.get("source_uid").and_then(|value| value.parse().ok()),
+                source_version: super::routes_source_attachments::source_version(form)
+                    .ok()
+                    .flatten()
+                    .as_ref(),
+                source_attachments: &[],
+                selected_source_part_paths: &selected_original_attachment_parts(form)
+                    .unwrap_or_default(),
+            }),
+        )
     }
 }
 

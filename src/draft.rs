@@ -13,6 +13,9 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use sha2::{Digest, Sha256};
 
 use crate::draft_content::DraftContent;
+
+#[path = "draft_atomic.rs"]
+mod atomic;
 use crate::send::{ComposePolicy, UploadedAttachment};
 
 /// Maximum persisted source mailbox length.
@@ -69,6 +72,12 @@ impl Default for DraftPolicy {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DraftError {
     pub reason: String,
+}
+
+impl DraftError {
+    pub(crate) fn save_unconfirmed(&self) -> bool {
+        self.reason == atomic::SAVE_UNCONFIRMED
+    }
 }
 
 /// One persisted draft record.
@@ -265,6 +274,8 @@ pub trait DraftStore {
 pub struct FileDraftStore {
     draft_root: PathBuf,
     policy: DraftPolicy,
+    #[cfg(test)]
+    save_fault: Option<atomic::SaveFault>,
 }
 
 impl FileDraftStore {
@@ -273,6 +284,8 @@ impl FileDraftStore {
         Self {
             draft_root: draft_root.into(),
             policy,
+            #[cfg(test)]
+            save_fault: None,
         }
     }
 
@@ -300,83 +313,27 @@ impl FileDraftStore {
         &self,
         account: &str,
     ) -> Result<crate::private_account_file::LockedAccountFile, DraftError> {
-        crate::private_account_file::PrivateAccountFile::new(self.draft_root.clone(), "draft-v5", 0)
-            .lock(account)
-            .map_err(|error| DraftError {
-                reason: if error.kind() == std::io::ErrorKind::WouldBlock {
-                    "draft store busy".into()
-                } else {
-                    "draft store lock unavailable".into()
-                },
-            })
+        let guard = crate::private_account_file::PrivateAccountFile::new(
+            self.draft_root.clone(),
+            "draft-v5",
+            0,
+        )
+        .lock(account)
+        .map_err(|error| DraftError {
+            reason: if error.kind() == std::io::ErrorKind::WouldBlock {
+                "draft store busy".into()
+            } else {
+                "draft store lock unavailable".into()
+            },
+        })?;
+        self.recover_legacy_backups(account)?;
+        Ok(guard)
     }
 
     fn ensure_owner_dir(&self, canonical_username: &str) -> Result<PathBuf, DraftError> {
         let owner_dir = self.owner_dir_for_username(canonical_username);
         create_private_directory(&owner_dir)?;
         Ok(owner_dir)
-    }
-
-    fn write_staged_record(
-        &self,
-        record: &DraftRecord,
-        staging_dir: &Path,
-    ) -> Result<(), DraftError> {
-        create_private_directory(staging_dir)?;
-
-        for (index, attachment) in record.request.attachments.iter().enumerate() {
-            let final_path = staging_dir.join(attachment_body_file_name(index));
-            let tmp_path = staging_dir.join(format!(
-                ".{}.{}.{}.tmp",
-                attachment_body_file_name(index),
-                std::process::id(),
-                NEXT_DRAFT_TEMP_FILE_ID.fetch_add(1, Ordering::Relaxed)
-            ));
-            write_file_atomic(&tmp_path, &final_path, &attachment.body)?;
-        }
-
-        let metadata_path = staging_dir.join(DRAFT_METADATA_FILE);
-        let tmp_metadata_path = staging_dir.join(format!(
-            ".metadata.{}.{}.tmp",
-            std::process::id(),
-            NEXT_DRAFT_TEMP_FILE_ID.fetch_add(1, Ordering::Relaxed)
-        ));
-        write_file_atomic(
-            &tmp_metadata_path,
-            &metadata_path,
-            serialize_draft_metadata(record).as_bytes(),
-        )
-    }
-
-    fn replace_with_staged_record(
-        &self,
-        final_dir: &Path,
-        staging_dir: &Path,
-        backup_dir: &Path,
-    ) -> Result<(), DraftError> {
-        if !final_dir.exists() {
-            return fs::rename(staging_dir, final_dir).map_err(|error| DraftError {
-                reason: format!("failed to finalize new draft directory {final_dir:?}: {error}"),
-            });
-        }
-
-        fs::rename(final_dir, backup_dir).map_err(|error| DraftError {
-            reason: format!("failed to stage existing draft directory {final_dir:?}: {error}"),
-        })?;
-        if let Err(error) = fs::rename(staging_dir, final_dir) {
-            let restore_result = fs::rename(backup_dir, final_dir);
-            return Err(DraftError {
-                reason: match restore_result {
-                    Ok(()) => {
-                        format!("failed to finalize replacement draft {final_dir:?}: {error}")
-                    }
-                    Err(restore_error) => format!(
-                        "failed to finalize replacement draft {final_dir:?}: {error}; failed to restore prior draft: {restore_error}"
-                    ),
-                },
-            });
-        }
-        remove_draft_dir(backup_dir)
     }
 
     fn cleanup_expired_unlocked(
@@ -536,13 +493,11 @@ impl DraftStore for FileDraftStore {
 
         self.cleanup_expired_unlocked(&record.canonical_username, now)?;
 
-        let draft_dir =
-            self.draft_dir_for_username_and_id(&record.canonical_username, &record.draft_id);
-        let is_new = !draft_dir.exists();
         let existing = self.read_record_from_metadata(
             &record.canonical_username,
             &self.metadata_path(&record.canonical_username, &record.draft_id),
         )?;
+        let is_new = existing.is_none();
         if existing.as_ref().and_then(|current| current.revision) != record.revision
             || is_new != record.revision.is_none()
         {
@@ -598,30 +553,17 @@ impl DraftStore for FileDraftStore {
             });
         }
 
-        let owner_dir = self.ensure_owner_dir(&record.canonical_username)?;
-        let transaction_id = NEXT_DRAFT_TEMP_FILE_ID.fetch_add(1, Ordering::Relaxed);
-        let staging_dir = owner_dir.join(format!(
-            ".{}.{}.{}.staging",
-            record.draft_id,
-            std::process::id(),
-            transaction_id
-        ));
-        let backup_dir = owner_dir.join(format!(
-            ".{}.{}.{}.backup",
-            record.draft_id,
-            std::process::id(),
-            transaction_id
-        ));
-        if let Err(error) = self.write_staged_record(&updated, &staging_dir) {
-            let _ = remove_draft_dir(&staging_dir);
-            return Err(error);
+        let result = self.publish_atomic_record(&updated, existing.as_ref());
+        if is_new
+            && result
+                .as_ref()
+                .is_err_and(|error| error.reason != atomic::SAVE_UNCONFIRMED)
+        {
+            let _ = remove_draft_dir(
+                self.draft_dir_for_username_and_id(&record.canonical_username, &record.draft_id),
+            );
         }
-        if let Err(error) = self.replace_with_staged_record(&draft_dir, &staging_dir, &backup_dir) {
-            let _ = remove_draft_dir(&staging_dir);
-            return Err(error);
-        }
-
-        Ok(())
+        result
     }
 
     fn load(
@@ -830,7 +772,7 @@ fn validate_source_attachments(
 
 fn serialize_draft_metadata(record: &DraftRecord) -> String {
     let mut content = format!(
-        "version=7\n\
+        "version=8\n\
 revision={}\n\
 starred={}\n\
 draft_id={}\n\
@@ -876,7 +818,7 @@ attachment_{index}_body_file={}\n",
             hex_lower(attachment.filename.as_bytes()),
             hex_lower(attachment.content_type.as_bytes()),
             attachment.size_bytes(),
-            attachment_body_file_name(index)
+            atomic::blob_name(&attachment.body)
         ));
     }
 
@@ -1033,7 +975,14 @@ fn parse_draft_metadata(
     }
     if !matches!(
         version.as_deref(),
-        Some("1") | Some("2") | Some("3") | Some("4") | Some("5") | Some("6") | Some("7")
+        Some("1")
+            | Some("2")
+            | Some("3")
+            | Some("4")
+            | Some("5")
+            | Some("6")
+            | Some("7")
+            | Some("8")
     ) {
         return Err(DraftError {
             reason: "unsupported draft metadata version".to_string(),
@@ -1042,7 +991,7 @@ fn parse_draft_metadata(
 
     let draft_id = required_field("draft_id", draft_id)?;
     let revision = match (version.as_deref(), revision) {
-        (Some("5" | "6" | "7"), Some(value)) if value > 0 => value,
+        (Some("5" | "6" | "7" | "8"), Some(value)) if value > 0 => value,
         (Some("1" | "2" | "3" | "4"), None) => 0,
         _ => {
             return Err(DraftError {
@@ -1051,7 +1000,7 @@ fn parse_draft_metadata(
         }
     };
     let starred = match (version.as_deref(), starred) {
-        (Some("6" | "7"), Some(value)) => value,
+        (Some("6" | "7" | "8"), Some(value)) => value,
         (Some("1" | "2" | "3" | "4" | "5"), None) => false,
         _ => {
             return Err(DraftError {
@@ -1062,7 +1011,7 @@ fn parse_draft_metadata(
     let reply_thread = match (reply_parent, reply_references, reply_shortened) {
         (None, None, None) => None,
         (Some(parent), Some(references), Some(shortened))
-            if matches!(version.as_deref(), Some("4" | "5" | "6" | "7")) =>
+            if matches!(version.as_deref(), Some("4" | "5" | "6" | "7" | "8")) =>
         {
             Some(
                 crate::reply_thread::ReplyThread::from_stored(
@@ -1099,7 +1048,13 @@ fn parse_draft_metadata(
     let draft_dir = metadata_path.parent().ok_or_else(|| DraftError {
         reason: "draft metadata path did not have a parent directory".to_string(),
     })?;
-    if draft_dir.file_name().and_then(|name| name.to_str()) != Some(draft_id.as_str()) {
+    let directory_name = draft_dir
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or_default();
+    if directory_name != draft_id
+        && atomic::legacy_backup_id(directory_name) != Some(draft_id.as_str())
+    {
         return Err(DraftError {
             reason: "draft metadata identity does not match its directory".into(),
         });
@@ -1111,13 +1066,17 @@ fn parse_draft_metadata(
         let size_bytes = required_field("attachment size", fields.size_bytes)?;
         let body_file = required_field("attachment body file", fields.body_file)?;
         let expected_body_file = attachment_body_file_name(index);
-        if body_file != expected_body_file {
+        if if version.as_deref() == Some("8") {
+            !atomic::is_blob_name(&body_file)
+        } else {
+            body_file != expected_body_file
+        } {
             return Err(DraftError {
                 reason: "draft attachment body file name was not generated".to_string(),
             });
         }
 
-        let body_path = draft_dir.join(body_file);
+        let body_path = draft_dir.join(&body_file);
         if size_bytes > policy.compose_policy.attachment_max_bytes {
             return Err(DraftError {
                 reason: "draft attachment exceeded maximum size".into(),
@@ -1133,6 +1092,11 @@ fn parse_draft_metadata(
         if body.len() != size_bytes {
             return Err(DraftError {
                 reason: "draft attachment body size did not match metadata".to_string(),
+            });
+        }
+        if version.as_deref() == Some("8") && atomic::blob_name(&body) != body_file {
+            return Err(DraftError {
+                reason: "draft attachment content identity mismatch".into(),
             });
         }
         attachments.push(
@@ -1157,7 +1121,7 @@ fn parse_draft_metadata(
         reason: error.reason,
     })?;
     request.reply_thread = reply_thread;
-    if !matches!(version.as_deref(), Some("5" | "6" | "7")) {
+    if !matches!(version.as_deref(), Some("5" | "6" | "7" | "8")) {
         crate::send::ComposeRequest::new_with_routing(
             policy.compose_policy,
             &request.recipients_text,
@@ -1173,7 +1137,7 @@ fn parse_draft_metadata(
     }
     let source_version = match (source_mailbox_guid, source_message_guid) {
         (None, None) => None,
-        (Some(mailbox), Some(message)) if version.as_deref() == Some("7") => Some(
+        (Some(mailbox), Some(message)) if matches!(version.as_deref(), Some("7" | "8")) => Some(
             crate::message_metadata::MessageVersion::new(mailbox, message).map_err(|_| {
                 DraftError {
                     reason: "invalid stored source identity".into(),
@@ -1223,7 +1187,7 @@ fn parse_draft_metadata(
         }
     };
 
-    if version.as_deref() == Some("7") {
+    if matches!(version.as_deref(), Some("7" | "8")) {
         validate_combined_attachment_count(policy, &request, source_attachments.as_ref())?;
     }
     Ok(Some(DraftRecord {
@@ -1378,10 +1342,10 @@ fn write_file_atomic(tmp_path: &Path, final_path: &Path, bytes: &[u8]) -> Result
     file.write_all(bytes).map_err(|error| DraftError {
         reason: format!("failed to write draft temp file {:?}: {error}", tmp_path),
     })?;
+    set_file_permissions(tmp_path)?;
     file.sync_all().map_err(|error| DraftError {
         reason: format!("failed to sync draft temp file {:?}: {error}", tmp_path),
     })?;
-    set_file_permissions(tmp_path)?;
     fs::rename(tmp_path, final_path).map_err(|error| DraftError {
         reason: format!("failed to finalize draft file {:?}: {error}", final_path),
     })
@@ -1480,6 +1444,9 @@ mod tests {
     use super::*;
     mod preservation {
         include!("draft_preservation_tests.rs");
+    }
+    mod atomic_tests {
+        include!("draft_atomic_tests.rs");
     }
 
     fn temp_dir(label: &str) -> PathBuf {
@@ -1598,7 +1565,7 @@ mod tests {
         };
         assert!(parse(
             &metadata
-                .replace("version=7", "version=3")
+                .replace("version=8", "version=3")
                 .replace("starred=0\n", "")
                 .replace("revision=1\n", "")
         )
@@ -1618,7 +1585,7 @@ mod tests {
         .is_err());
         draft.request.reply_thread = None;
         let legacy = serialize_draft_metadata(&draft)
-            .replace("version=7", "version=3")
+            .replace("version=8", "version=3")
             .replace("starred=0\n", "")
             .replace("revision=1\n", "");
         draft.revision = Some(0);
@@ -1915,38 +1882,6 @@ mod tests {
         assert_eq!(listed.len(), 1);
     }
 
-    #[cfg(unix)]
-    #[test]
-    fn failed_directory_swap_restores_the_previous_draft() {
-        let dir = temp_dir("osmap-draft-swap-rollback");
-        let store = FileDraftStore::new(&dir, DraftPolicy::default());
-        let draft = record(&draft_id(22), "alice@example.com", 100);
-        store
-            .save(&draft, 100)
-            .expect("initial save should succeed");
-
-        let final_dir = store.draft_dir_for_username_and_id("alice@example.com", &draft.draft_id);
-        let owner_dir = store.owner_dir_for_username("alice@example.com");
-        let missing_staging_dir = owner_dir.join(".missing-staging");
-        let backup_dir = owner_dir.join(".rollback-backup");
-        let error = store
-            .replace_with_staged_record(&final_dir, &missing_staging_dir, &backup_dir)
-            .expect_err("missing staged replacement should fail");
-
-        assert!(error.reason.contains("failed to finalize replacement"));
-        assert!(final_dir.exists());
-        assert!(!backup_dir.exists());
-        assert_eq!(
-            store
-                .load("alice@example.com", &draft.draft_id, 100)
-                .expect("restored draft should load"),
-            Some(DraftRecord {
-                revision: Some(1),
-                ..draft
-            })
-        );
-    }
-
     #[test]
     fn metadata_rejects_non_generated_attachment_body_file() {
         let dir = temp_dir("osmap-draft-bad-body-file");
@@ -1968,7 +1903,7 @@ mod tests {
         let metadata_path = store.metadata_path("alice@example.com", &draft.draft_id);
         let mut metadata = fs::read_to_string(&metadata_path).expect("metadata should be readable");
         metadata = metadata.replace(
-            "attachment_0_body_file=attachment-0.body",
+            &format!("attachment_0_body_file={}", atomic::blob_name(b"body")),
             "attachment_0_body_file=../attachment-0.body",
         );
         fs::write(&metadata_path, metadata).expect("metadata fixture should be writable");

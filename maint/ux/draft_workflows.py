@@ -28,8 +28,8 @@ def main():
         process, origin = start_server(root, repo, log)
         browser = getattr(playwright, args.engine).launch(executable_path=args.browser, headless=True)
 
-        def context():
-            result = browser.new_context(viewport={"width": 1600, "height": 1100}, color_scheme="light")
+        def context(ua=None):
+            result = browser.new_context(viewport={"width": 1600, "height": 1100}, color_scheme="light", user_agent=ua)
 
             def constrain(route):
                 if route.request.url.startswith(origin + "/"):
@@ -266,6 +266,49 @@ def main():
             click(page, "Delete")
             assert "No saved drafts" in page.locator(".draft-list").inner_text()
             checks.append("new draft after restart has a distinct identity; current explicit Discard removes one draft")
+            owned.close()
+            uncertain = context("OSMAP/DraftSaveUnconfirmed")
+            page = uncertain.new_page()
+            login(page, "alice")
+            visit(page, "/compose")
+            page.get_by_label("To", exact=True).fill("still choosing")
+            page.get_by_label("Body", exact=True).fill("Public notes from an unconfirmed save")
+            upload(page, "uncertain.txt")
+            click(page, "Save Draft", 503)
+            assert "Save not confirmed" in page.get_by_role("alert").inner_text()
+            assert page.get_by_label("Body", exact=True).input_value() == "Public notes from an unconfirmed save"
+            for name in ["Save Draft", "Send Message", "− Minimize"]:
+                assert page.get_by_role("button", name=name, exact=True).is_disabled()
+            with page.expect_popup() as popup:
+                page.get_by_role("link", name="Open saved version in a new tab", exact=True).click()
+            recovered = popup.value
+            recovered.wait_for_load_state("networkidle")
+            assert recovered.get_by_label("Body", exact=True).input_value() == "Public notes from an unconfirmed save"
+            assert recovered.get_by_label("Remove uncertain.txt", exact=True).is_visible()
+            assert recovered.get_by_role("button", name="Save Draft", exact=True).is_enabled()
+            recovered_path = recovered.url.removeprefix(origin)
+            recovered.close()
+            checks.append("unconfirmed Save preserves text, pauses all submission controls and opens the stored text and file in a separate comparison tab")
+            for scheme in ["light", "dark"]:
+                page.emulate_media(color_scheme=scheme)
+                for width in [360, 768, 1600]:
+                    page.set_viewport_size({"width": width, "height": 1100})
+                    page.screenshot(path=str(args.output / f"save-unconfirmed-{scheme}-{width}.png"), full_page=True)
+                    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
+            uncertain.close()
+            stop_server(process, root)
+            process, origin = start_server(root, repo, log)
+            owned = context()
+            page = owned.new_page()
+            login(page, "alice")
+            visit(page, recovered_path)
+            assert page.get_by_label("Remove uncertain.txt", exact=True).is_visible()
+            page.get_by_label("Body", exact=True).fill("Reviewed after restart")
+            click(page, "Save Draft")
+            assert page.get_by_label("Body", exact=True).input_value() == "Reviewed after restart"
+            visit(page, "/drafts")
+            assert page.locator(".draft-list tbody tr").count() == 1
+            checks.append("a later process reopens the unconfirmed save; editing its current revision succeeds without duplicating the draft")
             owned.close()
             assert not blocked
             report = {"passed": True, "synthetic_only": True, "real_draft_store": True, "engine": args.engine,

@@ -2162,7 +2162,7 @@ mod tests {
 
         fn save_draft(
             &self,
-            _context: &AuthenticationContext,
+            context: &AuthenticationContext,
             validated_session: &ValidatedSession,
             request: BrowserDraftSaveRequest<'_>,
         ) -> BrowserDraftSaveOutcome {
@@ -2265,8 +2265,12 @@ mod tests {
             if let Some(store) = &self.draft_store {
                 if let Err(error) = store.save(&record, 100) {
                     return BrowserDraftSaveOutcome {
-                        decision: BrowserDraftSaveDecision::Denied {
-                            public_reason: fixture_draft_error(&error),
+                        decision: if error.save_unconfirmed() {
+                            BrowserDraftSaveDecision::Unconfirmed { draft_id }
+                        } else {
+                            BrowserDraftSaveDecision::Denied {
+                                public_reason: fixture_draft_error(&error),
+                            }
                         },
                         audit_events: vec![],
                     };
@@ -2276,7 +2280,11 @@ mod tests {
                 drafts.insert(draft_id.clone(), record);
             }
             BrowserDraftSaveOutcome {
-                decision: BrowserDraftSaveDecision::Saved { draft_id },
+                decision: if context.user_agent.contains("DraftSaveUnconfirmed") {
+                    BrowserDraftSaveDecision::Unconfirmed { draft_id }
+                } else {
+                    BrowserDraftSaveDecision::Saved { draft_id }
+                },
                 audit_events: vec![LogEvent::new(
                     LogLevel::Info,
                     EventCategory::Http,
@@ -2388,6 +2396,11 @@ mod tests {
                     Ok(()) => BrowserDraftSaveDecision::Saved {
                         draft_id: draft_id.into(),
                     },
+                    Err(error) if error.save_unconfirmed() => {
+                        BrowserDraftSaveDecision::Unconfirmed {
+                            draft_id: draft_id.into(),
+                        }
+                    }
                     Err(error) => BrowserDraftSaveDecision::Denied {
                         public_reason: fixture_draft_error(&error),
                     },
