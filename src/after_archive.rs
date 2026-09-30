@@ -139,7 +139,18 @@ mod tests {
             Preference::default()
         );
         assert_eq!(store.save(a, 0, Choice::List), Err(Error::Stale));
-        for bytes in [b"bad".as_slice(),br#"{"version":2,"account":"alice@example.test","preference":{"revision":1,"choice":"next"}}"#,br#"{"version":1,"account":"bob@example.test","preference":{"revision":1,"choice":"next"}}"#,br#"{"version":1,"account":"alice@example.test","preference":{"revision":1,"choice":"invalid"}}"#,br#"{"version":1,"version":1}"#]{store.file.lock(a).unwrap().write(bytes).unwrap();assert_eq!(store.load(a),Err(Error::Unavailable));assert_eq!(store.save(a,1,Choice::List),Err(Error::Unavailable));assert_eq!(store.file.read(a).unwrap().unwrap(),bytes);}
+        for bytes in [b"bad".as_slice(),br#"{"version":2,"account":"alice@example.test","preference":{"revision":1,"choice":"next"}}"#,br#"{"version":1,"account":"bob@example.test","preference":{"revision":1,"choice":"next"}}"#,br#"{"version":1,"account":"alice@example.test","preference":{"revision":1,"choice":"invalid"}}"#,br#"{"version":1,"version":1}"#]{{
+                let deadline = Instant::now() + Duration::from_millis(500);
+                let lock = loop {
+                    match store.file.lock(a) {
+                        Ok(lock) => break lock,
+                        Err(error) if error.kind() == io::ErrorKind::WouldBlock && Instant::now() < deadline => std::thread::sleep(Duration::from_millis(5)),
+                        Err(error) => panic!("fixture lock unavailable: {error}"),
+                    }
+                };
+                lock.write(bytes).unwrap();
+            }
+            assert_eq!(store.load(a),Err(Error::Unavailable));assert_eq!(store.save(a,1,Choice::List),Err(Error::Unavailable));assert_eq!(store.file.read(a).unwrap().unwrap(),bytes);}
         std::fs::remove_dir_all(root).unwrap();
     }
 }

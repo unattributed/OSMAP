@@ -630,6 +630,36 @@ impl BrowserGateway for RuntimeBrowserGateway {
         )
     }
 
+    fn create_folder(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        request: &crate::folder_create::CreateFolderRequest,
+    ) -> BrowserFolderCreateOutcome {
+        let outcome = if request.account() != session.record.canonical_username {
+            crate::folder_create::Outcome::Refused(crate::folder_create::Refusal::Invalid)
+        } else {
+            crate::mailbox::MailboxBackend::create_folder(
+                &self.build_mailbox_list_backend(),
+                request,
+            )
+        };
+        let event = LogEvent::new(
+            LogLevel::Info,
+            crate::logging::EventCategory::Mailbox,
+            "folder_create_result",
+            "folder create completed with bounded result",
+        )
+        .with_field("request_id", context.request_id.clone())
+        .with_field(
+            "confirmed",
+            matches!(outcome, crate::folder_create::Outcome::Created { .. }).to_string(),
+        );
+        BrowserFolderCreateOutcome {
+            outcome,
+            audit_events: vec![event],
+        }
+    }
     fn folder_metadata(
         &self,
         context: &AuthenticationContext,

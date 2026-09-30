@@ -169,6 +169,12 @@ where
             (HttpMethod::Get, "/drafts") => self.handle_draft_list(request, &context),
             (HttpMethod::Get, "/draft") => self.handle_draft_resume(request, &context),
             (HttpMethod::Get, "/sessions") => self.handle_sessions_page(request, &context),
+            (HttpMethod::Get, "/settings/folders/create") => {
+                self.handle_folder_create(request, &context)
+            }
+            (HttpMethod::Post, "/settings/folders/create") => {
+                self.handle_folder_create(request, &context)
+            }
             (HttpMethod::Get, "/settings") => self.handle_settings_page(request, &context),
             (HttpMethod::Post, "/message/move") => self.handle_message_move(request, &context),
             (HttpMethod::Post, "/message/flag") => self.handle_message_flag(request, &context),

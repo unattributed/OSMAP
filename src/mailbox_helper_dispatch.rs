@@ -43,6 +43,12 @@ where
     MFB: MessageFlagBackend,
 {
     match request {
+        MailboxHelperRequest::FolderCreate { request, .. } => {
+            MailboxHelperResponse::FolderCreateOk {
+                request: request.clone(),
+                outcome: backends.mailbox_backend.create_folder(request),
+            }
+        }
         MailboxHelperRequest::FolderMetadata {
             canonical_username, ..
         } => match backends.mailbox_backend.folder_metadata(canonical_username) {
@@ -474,6 +480,7 @@ pub(super) fn log_helper_response(
 fn helper_operation_label(request: &MailboxHelperRequest) -> &'static str {
     match request {
         MailboxHelperRequest::MessageFlag { .. } => "message_flag",
+        MailboxHelperRequest::FolderCreate { .. } => "folder_create",
         MailboxHelperRequest::FolderMetadata { .. } => "folder_metadata",
         MailboxHelperRequest::MailboxStatus { .. } => "mailbox_status",
         MailboxHelperRequest::MailboxList { .. } => "mailbox_list",

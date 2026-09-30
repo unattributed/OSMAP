@@ -237,7 +237,8 @@ where
                         let counts = chosen.and_then(|name| self.folder_counts(context, &validated_session, name, &mut audit_events));
                         {
                             let status=chosen.and_then(|folder| self.folder_status(context,&validated_session,folder,&mut audit_events));
-                            crate::http_ui::render_copies_page(&model, mailboxes.as_deref(), chosen, counts,status.as_ref(),hierarchy.as_ref())
+                            let creation = chosen.zip(status.as_ref()).zip(hierarchy.as_ref()).is_some_and(|((name, status), tree)| tree.can_create(&canonical_username, name, status));
+                            crate::http_ui::render_copies_page(&model, mailboxes.as_deref(), chosen, counts,status.as_ref(),hierarchy.as_ref(),creation)
                         }
                     } else if section == "appearance" {
                         crate::http_ui::render_appearance_page(&model, &presentation)

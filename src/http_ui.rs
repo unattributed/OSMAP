@@ -3,6 +3,10 @@
 //! Keeping these rendering helpers separate from routing reduces the amount of
 //! browser-facing template code inside the request parser and route logic.
 
+#[path = "folder_create_ui.rs"]
+mod folder_create_ui;
+pub(crate) use folder_create_ui::render_folder_create;
+
 #[path = "snooze_ui.rs"]
 mod snooze_ui;
 pub(crate) use snooze_ui::{render_snooze_page, render_snoozed_page, SnoozePageModel};

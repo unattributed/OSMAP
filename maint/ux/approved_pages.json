@@ -2827,8 +2827,15 @@
         {
           "id": "R2-16-009",
           "label": "New subfolder",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/folder_create.rs",
+            "src/folder_create_backend.rs",
+            "src/http/routes_folder_create.rs",
+            "maint/ux/folder_create_workflows.py",
+            "S04/folder-create-final-{edge,firefox}/report.json",
+            "Explicit account-bound review and confirmation for one private dot-delimited INBOX child. Native helper qualification pending. External IMAP races are detected by reconciliation where possible; create is not atomic with parent GUID validation."
+          ]
         },
         {
           "id": "R2-16-010",

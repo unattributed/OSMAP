@@ -268,6 +268,18 @@ pub(super) enum MailboxListRuntimeBackend {
 }
 
 impl crate::mailbox::MailboxBackend for MailboxListRuntimeBackend {
+    fn create_folder(
+        &self,
+        r: &crate::folder_create::CreateFolderRequest,
+    ) -> crate::folder_create::Outcome {
+        match self {
+            Self::Direct(b) => b.create_folder(r),
+            Self::Helper(b) => b.create_folder(r),
+            Self::Unavailable(_) => {
+                crate::folder_create::Outcome::Refused(crate::folder_create::Refusal::Unavailable)
+            }
+        }
+    }
     fn folder_metadata(
         &self,
         account: &str,

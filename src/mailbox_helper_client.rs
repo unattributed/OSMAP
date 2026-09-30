@@ -27,6 +27,70 @@ impl MailboxHelperMailboxListBackend {
 }
 
 impl MailboxBackend for MailboxHelperMailboxListBackend {
+    fn create_folder(
+        &self,
+        value: &crate::folder_create::CreateFolderRequest,
+    ) -> crate::folder_create::Outcome {
+        let execute = || -> Result<crate::folder_create::Outcome, MailboxBackendError> {
+            value
+                .validate()
+                .map_err(|_| crate::folder_metadata_backend::unavailable())?;
+            let mut request = MailboxHelperRequest::FolderCreate {
+                request: value.clone(),
+                grant: MailboxHelperGrant::unsigned(),
+            };
+            let bytes = encode_authorized_request(&self.grant_key_path, &mut request)
+                .map_err(|_| crate::folder_metadata_backend::unavailable())?;
+            #[cfg(not(unix))]
+            {
+                let _ = bytes;
+                Err(crate::folder_metadata_backend::unavailable())
+            }
+            #[cfg(unix)]
+            {
+                let mut stream = UnixStream::connect(&self.socket_path)
+                    .map_err(|_| crate::folder_metadata_backend::unavailable())?;
+                stream
+                    .set_read_timeout(Some(Duration::from_secs(
+                        self.policy.read_timeout_secs.max(1),
+                    )))
+                    .map_err(|_| crate::folder_metadata_backend::unavailable())?;
+                stream
+                    .set_write_timeout(Some(Duration::from_secs(
+                        self.policy.write_timeout_secs.max(1),
+                    )))
+                    .map_err(|_| crate::folder_metadata_backend::unavailable())?;
+                stream
+                    .write_all(&bytes)
+                    .map_err(|_| crate::folder_metadata_backend::unavailable())?;
+                stream
+                    .shutdown(Shutdown::Write)
+                    .map_err(|_| crate::folder_metadata_backend::unavailable())?;
+                let bytes =
+                    read_bounded_from_stream(&mut stream, self.policy.max_response_bytes.min(4096))
+                        .map_err(|_| crate::folder_metadata_backend::unavailable())?;
+                let response = parse_response(
+                    MailboxListingPolicy::default(),
+                    MessageListPolicy::default(),
+                    MessageSearchPolicy::default(),
+                    MessageViewPolicy::default(),
+                    std::str::from_utf8(&bytes)
+                        .map_err(|_| crate::folder_metadata_backend::unavailable())?,
+                )
+                .map_err(|_| crate::folder_metadata_backend::unavailable())?;
+                match response {
+                    MailboxHelperResponse::FolderCreateOk { request, outcome }
+                        if value.accepts_response(&request, &outcome) =>
+                    {
+                        Ok(outcome)
+                    }
+                    _ => Err(crate::folder_metadata_backend::unavailable()),
+                }
+            }
+        };
+        execute().unwrap_or(crate::folder_create::Outcome::Unknown)
+    }
+
     fn folder_metadata(
         &self,
         account: &str,
@@ -219,7 +283,8 @@ impl MailboxBackend for MailboxHelperMailboxListBackend {
             })?;
 
             match response {
-                MailboxHelperResponse::FolderMetadataOk { .. }
+                MailboxHelperResponse::FolderCreateOk { .. }
+                | MailboxHelperResponse::FolderMetadataOk { .. }
                 | MailboxHelperResponse::MailboxStatusOk { .. }
                 | MailboxHelperResponse::MessageFlagOk { .. } => Err(MailboxBackendError {
                     backend: "mailbox-helper-client",
@@ -366,7 +431,8 @@ impl MessageListBackend for MailboxHelperMessageListBackend {
             })?;
 
             match response {
-                MailboxHelperResponse::FolderMetadataOk { .. }
+                MailboxHelperResponse::FolderCreateOk { .. }
+                | MailboxHelperResponse::FolderMetadataOk { .. }
                 | MailboxHelperResponse::MailboxStatusOk { .. }
                 | MailboxHelperResponse::MessageFlagOk { .. } => Err(MailboxBackendError {
                     backend: "mailbox-helper-client",
@@ -529,7 +595,8 @@ impl MessageSearchBackend for MailboxHelperMessageSearchBackend {
             })?;
 
             match response {
-                MailboxHelperResponse::FolderMetadataOk { .. }
+                MailboxHelperResponse::FolderCreateOk { .. }
+                | MailboxHelperResponse::FolderMetadataOk { .. }
                 | MailboxHelperResponse::MailboxStatusOk { .. }
                 | MailboxHelperResponse::MessageFlagOk { .. } => Err(MailboxBackendError {
                     backend: "mailbox-helper-client",
@@ -712,7 +779,8 @@ impl MessageViewBackend for MailboxHelperMessageViewBackend {
             })?;
 
             match response {
-                MailboxHelperResponse::FolderMetadataOk { .. }
+                MailboxHelperResponse::FolderCreateOk { .. }
+                | MailboxHelperResponse::FolderMetadataOk { .. }
                 | MailboxHelperResponse::MailboxStatusOk { .. }
                 | MailboxHelperResponse::MessageFlagOk { .. } => Err(MailboxBackendError {
                     backend: "mailbox-helper-client",
@@ -860,7 +928,8 @@ impl MailboxHelperAttachmentDownloadBackend {
             .map_err(transport_error)?;
 
             match response {
-                MailboxHelperResponse::FolderMetadataOk { .. }
+                MailboxHelperResponse::FolderCreateOk { .. }
+                | MailboxHelperResponse::FolderMetadataOk { .. }
                 | MailboxHelperResponse::MailboxStatusOk { .. }
                 | MailboxHelperResponse::MessageFlagOk { .. } => Err(transport_error(
                     "helper returned a flag response for a different operation",
@@ -1154,7 +1223,8 @@ impl MessageAppendBackend for MailboxHelperMessageAppendBackend {
             })?;
 
             match response {
-                MailboxHelperResponse::FolderMetadataOk { .. }
+                MailboxHelperResponse::FolderCreateOk { .. }
+                | MailboxHelperResponse::FolderMetadataOk { .. }
                 | MailboxHelperResponse::MailboxStatusOk { .. }
                 | MailboxHelperResponse::MessageFlagOk { .. } => Err(MailboxBackendError {
                     backend: "mailbox-helper-client",

@@ -409,6 +409,19 @@ pub trait BrowserGateway {
         archive_mailbox_name: Option<&str>,
     ) -> BrowserSettingsUpdateOutcome;
 
+    fn create_folder(
+        &self,
+        _: &AuthenticationContext,
+        _: &ValidatedSession,
+        _: &crate::folder_create::CreateFolderRequest,
+    ) -> BrowserFolderCreateOutcome {
+        BrowserFolderCreateOutcome {
+            outcome: crate::folder_create::Outcome::Refused(
+                crate::folder_create::Refusal::Unavailable,
+            ),
+            audit_events: vec![],
+        }
+    }
     fn folder_metadata(
         &self,
         _context: &AuthenticationContext,
@@ -1076,5 +1089,11 @@ pub struct BrowserMailboxStatusOutcome {
 pub struct BrowserFolderMetadataOutcome {
     pub canonical_username: String,
     pub snapshot: Option<crate::folder_metadata::FolderSnapshot>,
+    pub audit_events: Vec<LogEvent>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BrowserFolderCreateOutcome {
+    pub outcome: crate::folder_create::Outcome,
     pub audit_events: Vec<LogEvent>,
 }

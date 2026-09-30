@@ -643,6 +643,14 @@ mod tests {
         include!("mailbox_helper_native_metadata_tests.rs");
     }
     #[cfg(unix)]
+    mod native_create_tests {
+        include!("mailbox_helper_native_create_tests.rs");
+    }
+    #[cfg(unix)]
+    mod create_tests {
+        include!("mailbox_helper_create_tests.rs");
+    }
+    #[cfg(unix)]
     mod metadata_tests {
         include!("mailbox_helper_metadata_tests.rs");
     }

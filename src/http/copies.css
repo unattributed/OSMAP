@@ -12,6 +12,8 @@
 .copies-management-heading p { color:var(--muted);margin:.3rem 0 .5rem;font-size:.875rem; }
 .copies-management-actions { display:flex;gap:.5rem;flex-wrap:wrap; }
 .copies-management-actions button { font-size:.75rem;min-height:2.4rem; }
+.copies-management-actions .button-link { font-size:.75rem;min-height:2.4rem;min-width:9.5rem;background:var(--accent);border-color:var(--accent);color:var(--on-accent); }
+@media(forced-colors:active) { .copies-management-actions .button-link { color:ButtonText;background:ButtonFace;border-color:ButtonText; } }
 .copies-browser { display:grid;grid-template-columns:46% minmax(0,1fr);gap:1.2rem; }
 .copies-tree,.copies-details { border:1px solid var(--line);border-radius:.65rem;padding:1.2rem;min-width:0;min-height:23.5rem; }
 .copies-tree { background:var(--bg); }

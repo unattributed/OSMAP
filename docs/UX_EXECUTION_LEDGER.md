@@ -2322,3 +2322,51 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   Ordinary regression fixtures and production gateway behavior are unchanged.
   Folder creation/rename/move/delete, full page and epic acceptance remain open;
   no production deployment or synchronization.
+
+### Explicit private subfolder creation — 2026-09-30
+
+- Signed `9c83d47ba72d1be60681828ddff4012d5626f1fc` verified locally with
+  a clean tree, 42 ahead of the recorded origin/main. Isolated `native-o`
+  passed 905 library tests, hostile-content and existing signed helper tests.
+  Its new metadata test stopped before mailbox operations because a directory
+  inherited group wheel; it incorrectly equated GID zero with root execution.
+  Actual process identity was UID/GID 1000. The empty fixture was removed;
+  standard checkout/services were unchanged. Both new native fixtures now use
+  bounded `id -g`, require nonroot ownership/0700, and install cleanup immediately.
+  This failed native run is retained and does not qualify the metadata chain.
+- PAGE16 New subfolder now offers name entry, read-only review and explicit
+  CSRF-protected confirmation. Account, private dot namespace, parent GUID,
+  selectable parent, bounded name and capacity are revalidated before exactly
+  one create command. Parent and child must both remain in the private namespace;
+  a child matching a shared/public namespace root refuses before mutation.
+  Return grants/responses bind the exact account, parent, GUID and leaf.
+- Preflight, mutation and reconciliation share one ten-second deadline. Exit 65
+  alone is not duplicate proof; current exact child and parent evidence is required.
+  Unknown outcomes keep the requested name, explain that the folder may exist
+  and remove retry controls. Other clients can still race the name-based operation;
+  reconciliation is not atomic parent-GUID CAS or durable exactly-once intent.
+  Rename, move, delete and subscriptions remain unavailable.
+- Parent reviewed frozen backend/UI proposals and independent namespace/capacity
+  tests, retained under S04 `folder-create-proposals`. Additional parent tests
+  cover child namespace roots and Unicode/quoted synthetic names. The manual
+  preview preserves hierarchy and created folders with distinct GUIDs and empty
+  message lists. Creation-button eligibility reuses already verified page facts;
+  review/apply retain fresh authoritative reads.
+- Parent `folder-create-confirmation-{edge,firefox}-b` passed review, creation,
+  duplicate refusal, uncertain outcome and owner separation, with eight captures
+  per engine. `folder-create-hierarchy-{edge,firefox}-b` passed eight captures each,
+  keyboard navigation and unchanged Archive selection; card bottoms y960.6/961.3.
+  Root inspected actual PAGE16 against the approved image. The primary action
+  now uses theme-aware contrast; the initial dark-colour failure is retained.
+- Final local acceptance/security/V10–13 passed: 909 library tests, nine explicit
+  ignores and both hostile-content tests (`folder-create-acceptance-d.log`).
+  Strict Clippy passed (`folder-create-clippy-d.log`); V14 passed (`*-v14-c.log`).
+  Earlier gate failures exposed the duplicate status lookup, combined router
+  syntax absent from the existing inventory scanner, and an unnecessary unsafe
+  fixture call. Source was corrected; no gate was weakened. Native metadata and
+  creation execution remain pending the next signed export. Whole-page, sprint
+  and epic acceptance remain open; no deployment or GitHub synchronization.
+- The first signing hook exposed intermittent WouldBlock in an older After
+  Archive test's direct corruption-fixture lock. Its setup now waits at most
+  500 ms, matching production lock acquisition; CAS, corruption and preservation
+  assertions are unchanged. The failed hook and focused rerun are retained.

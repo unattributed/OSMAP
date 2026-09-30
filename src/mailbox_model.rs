@@ -973,6 +973,12 @@ pub struct MailboxBackendError {
 
 /// A backend capable of listing mailboxes for a canonical user.
 pub trait MailboxBackend {
+    fn create_folder(
+        &self,
+        _: &crate::folder_create::CreateFolderRequest,
+    ) -> crate::folder_create::Outcome {
+        crate::folder_create::Outcome::Refused(crate::folder_create::Refusal::Unavailable)
+    }
     fn folder_metadata(
         &self,
         account: &str,

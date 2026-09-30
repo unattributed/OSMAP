@@ -36,6 +36,7 @@ mod routes_label_selection;
 mod routes_labels;
 mod routes_mail;
 pub(crate) use folder_tree::FolderTree;
+mod routes_folder_create;
 mod routes_moves;
 mod routes_notifications;
 #[path = "http/routes_people.rs"]
@@ -45,6 +46,7 @@ mod routes_reply;
 #[path = "http/routes_send_receipt.rs"]
 mod routes_send_receipt;
 mod routes_settings;
+
 mod routes_signature;
 mod routes_snooze;
 mod routes_source_attachments;
@@ -807,8 +809,8 @@ pub use self::http_browser::{
     BrowserDraftListDecision, BrowserDraftListOutcome, BrowserDraftLoadDecision,
     BrowserDraftLoadOutcome, BrowserDraftSaveDecision, BrowserDraftSaveOutcome,
     BrowserDraftSaveRequest, BrowserDraftState, BrowserDraftStorageUsage,
-    BrowserFolderMetadataOutcome, BrowserGateway, BrowserLoginDecision, BrowserLoginOutcome,
-    BrowserLogoutOutcome, BrowserMailboxDecision, BrowserMailboxOutcome,
+    BrowserFolderCreateOutcome, BrowserFolderMetadataOutcome, BrowserGateway, BrowserLoginDecision,
+    BrowserLoginOutcome, BrowserLogoutOutcome, BrowserMailboxDecision, BrowserMailboxOutcome,
     BrowserMailboxStatusOutcome, BrowserMessageFlagFailure, BrowserMessageFlagOutcome,
     BrowserMessageListDecision, BrowserMessageListOutcome, BrowserMessageMoveDecision,
     BrowserMessageMoveOutcome, BrowserMessageSearchDecision, BrowserMessageSearchOutcome,
@@ -825,6 +827,12 @@ pub use self::http_runtime::run_http_server;
 
 #[cfg(test)]
 mod tests {
+    mod folder_create_fixture {
+        include!("http/folder_create_fixture.rs");
+    }
+    mod folder_create_tests {
+        include!("http/folder_create_tests.rs");
+    }
     use super::*;
     mod welcome_data_tests {
         include!("http/welcome_data_tests.rs");
@@ -958,6 +966,7 @@ mod tests {
 
     #[derive(Debug, Clone)]
     struct StubGateway {
+        created_folders: Arc<Mutex<BTreeMap<String, Vec<String>>>>,
         send_journal: crate::send_journal::SendJournal,
         recovery_root: PathBuf,
         recovery_now: Option<u64>,
@@ -989,6 +998,7 @@ mod tests {
     impl Default for StubGateway {
         fn default() -> Self {
             Self {
+                created_folders: Arc::new(Mutex::new(BTreeMap::new())),
                 labels_store: None,
                 signature_store: None,
                 autosave_store: None,
@@ -1022,6 +1032,19 @@ mod tests {
     }
 
     impl StubGateway {
+        fn created_folder_guid(&self, account: &str, name: &str) -> Option<String> {
+            use sha2::Digest;
+            self.created_folders
+                .lock()
+                .unwrap()
+                .get(account)
+                .filter(|folders| folders.iter().any(|folder| folder == name))
+                .map(|_| {
+                    format!("{:x}", sha2::Sha256::digest(format!("{account}\0{name}")))[..32]
+                        .to_owned()
+                })
+        }
+
         fn validated_session() -> ValidatedSession {
             ValidatedSession {
                 record: SessionRecord {
@@ -2080,6 +2103,45 @@ mod tests {
             }
         }
 
+        fn create_folder(
+            &self,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+            request: &crate::folder_create::CreateFolderRequest,
+        ) -> BrowserFolderCreateOutcome {
+            use crate::folder_create::{Outcome, Refusal};
+            let metadata = self.folder_metadata(context, session);
+            let status = self.mailbox_status(context, session, request.parent());
+            let outcome = if request.account() != session.record.canonical_username {
+                Outcome::Refused(Refusal::Invalid)
+            } else if let (Some(snapshot), Some(status)) = (metadata.snapshot, status.status) {
+                if let Err(e) = request.validate_parent(&snapshot, &status) {
+                    Outcome::Refused(e)
+                } else if snapshot.folder(request.account(), &request.child()).is_ok() {
+                    Outcome::Conflict
+                } else if context.user_agent.contains("CreateUnknown") {
+                    Outcome::Unknown
+                } else {
+                    self.created_folders
+                        .lock()
+                        .unwrap()
+                        .entry(request.account().into())
+                        .or_default()
+                        .push(request.child());
+                    Outcome::Created {
+                        guid: self
+                            .created_folder_guid(request.account(), &request.child())
+                            .unwrap(),
+                    }
+                }
+            } else {
+                Outcome::Refused(Refusal::Unavailable)
+            };
+            BrowserFolderCreateOutcome {
+                outcome,
+                audit_events: vec![],
+            }
+        }
         fn folder_metadata(
             &self,
             context: &AuthenticationContext,
@@ -2096,7 +2158,26 @@ mod tests {
                 snapshot: if context.user_agent == "FolderTreeMalformed" {
                     None
                 } else {
-                    crate::folder_metadata::FolderSnapshot::parse(account, bytes).ok()
+                    {
+                        let mut text = String::from_utf8(bytes.to_vec()).unwrap();
+                        let extra = self
+                            .created_folders
+                            .lock()
+                            .unwrap()
+                            .get(account)
+                            .cloned()
+                            .unwrap_or_default()
+                            .iter()
+                            .map(|name| {
+                                format!(
+                                    "* LIST () \".\" {}\r\n",
+                                    folder_create_fixture::wire_name(name)
+                                )
+                            })
+                            .collect::<String>();
+                        text = text.replace("L1 OK done", &(extra + "L1 OK done"));
+                        crate::folder_metadata::FolderSnapshot::parse(account, text.as_bytes()).ok()
+                    }
                 },
                 audit_events: vec![],
             }
@@ -2107,7 +2188,23 @@ mod tests {
             session: &ValidatedSession,
             folder: &str,
         ) -> BrowserMailboxStatusOutcome {
-            let native=crate::auth::CommandExecution {status_code:0,stdout:format!("[{{\"mailbox\":{},\"guid\":\"1234567890abcdef1234567890abcdef\",\"messages\":\"42\",\"vsize\":\"8192\"}}]",serde_json::to_string(folder).unwrap()),stderr:String::new()};
+            let created_guid = self.created_folder_guid(&session.record.canonical_username, folder);
+            let native = crate::auth::CommandExecution {
+                status_code: 0,
+                stdout: format!(
+                    "[{{\"mailbox\":{},\"guid\":{},\"messages\":\"{}\",\"vsize\":\"{}\"}}]",
+                    serde_json::to_string(folder).unwrap(),
+                    serde_json::to_string(
+                        created_guid
+                            .as_deref()
+                            .unwrap_or("1234567890abcdef1234567890abcdef")
+                    )
+                    .unwrap(),
+                    if created_guid.is_some() { 0 } else { 42 },
+                    if created_guid.is_some() { 0 } else { 8192 }
+                ),
+                stderr: String::new(),
+            };
             BrowserMailboxStatusOutcome {
                 canonical_username: if context.user_agent.contains("StatusWrongOwner") {
                     "other@example.test".into()
@@ -2162,6 +2259,27 @@ mod tests {
                     audit_events: vec![],
                 };
             }
+            if context.user_agent.starts_with("FolderCreate") {
+                let mut names = vec!["INBOX".to_owned(), "INBOX.Projects".to_owned()];
+                names.extend(
+                    self.created_folders
+                        .lock()
+                        .unwrap()
+                        .get(&validated_session.record.canonical_username)
+                        .cloned()
+                        .unwrap_or_default(),
+                );
+                return BrowserMailboxOutcome {
+                    decision: BrowserMailboxDecision::Listed {
+                        canonical_username: validated_session.record.canonical_username.clone(),
+                        mailboxes: names
+                            .into_iter()
+                            .map(|name| MailboxEntry { name })
+                            .collect(),
+                    },
+                    audit_events: vec![],
+                };
+            }
             if context.user_agent.starts_with("FolderTree") || self.preview_mailbox_tree {
                 return BrowserMailboxOutcome {
                     decision: BrowserMailboxDecision::Listed {
@@ -2178,6 +2296,16 @@ mod tests {
                         ]
                         .iter()
                         .map(|n| MailboxEntry { name: (*n).into() })
+                        .chain(
+                            self.created_folders
+                                .lock()
+                                .unwrap()
+                                .get(&validated_session.record.canonical_username)
+                                .cloned()
+                                .unwrap_or_default()
+                                .into_iter()
+                                .map(|name| MailboxEntry { name }),
+                        )
                         .collect(),
                     },
                     audit_events: vec![],
@@ -2276,6 +2404,19 @@ mod tests {
             validated_session: &ValidatedSession,
             mailbox_name: &str,
         ) -> BrowserMessageListOutcome {
+            if self
+                .created_folder_guid(&validated_session.record.canonical_username, mailbox_name)
+                .is_some()
+            {
+                return BrowserMessageListOutcome {
+                    decision: BrowserMessageListDecision::Listed {
+                        canonical_username: validated_session.record.canonical_username.clone(),
+                        mailbox_name: mailbox_name.into(),
+                        messages: vec![],
+                    },
+                    audit_events: vec![],
+                };
+            }
             if (mailbox_name == "INBOX" && context.user_agent.starts_with("WelcomeData/"))
                 || (mailbox_name == "Sent" && context.user_agent.starts_with("WelcomeSent/"))
             {

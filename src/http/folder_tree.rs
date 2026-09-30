@@ -12,6 +12,7 @@ pub(crate) struct FolderNode {
 }
 pub(crate) struct FolderTree {
     pub nodes: Vec<FolderNode>,
+    snapshot: FolderSnapshot,
 }
 impl FolderTree {
     pub(crate) fn build(
@@ -111,7 +112,20 @@ impl FolderTree {
                 parent = Some(index);
             }
         }
-        Some(Self { nodes })
+        Some(Self {
+            nodes,
+            snapshot: snapshot.clone(),
+        })
+    }
+    pub(crate) fn can_create(
+        &self,
+        account: &str,
+        name: &str,
+        status: &crate::mailbox_status::MailboxStatus,
+    ) -> bool {
+        self.selectable(name)
+            && crate::folder_create::validate_creation_parent(account, name, &self.snapshot, status)
+                .is_ok()
     }
     pub(crate) fn selectable(&self, name: &str) -> bool {
         self.nodes.iter().any(|n| n.name == name && n.selectable)

@@ -28,6 +28,10 @@ use crate::mailbox::{
 /// Supported helper requests for the first mailbox-read slice.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) enum MailboxHelperRequest {
+    FolderCreate {
+        request: crate::folder_create::CreateFolderRequest,
+        grant: MailboxHelperGrant,
+    },
     FolderMetadata {
         canonical_username: String,
         grant: MailboxHelperGrant,
@@ -110,6 +114,10 @@ impl MailboxHelperGrant {
 /// Supported helper responses for the first mailbox-read slice.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) enum MailboxHelperResponse {
+    FolderCreateOk {
+        request: crate::folder_create::CreateFolderRequest,
+        outcome: crate::folder_create::Outcome,
+    },
     FolderMetadataOk {
         snapshot: crate::folder_metadata::FolderSnapshot,
     },
@@ -157,6 +165,7 @@ pub(super) enum MailboxHelperResponse {
 
 pub(super) fn encode_request(request: &MailboxHelperRequest) -> String {
     match request {
+        MailboxHelperRequest::FolderCreate {request,grant} => format!("operation=folder_create\ncanonical_username_b64={}\ncreate_request_b64={}\n{}",encode_base64(request.account().as_bytes()),encode_base64(serde_json::to_string(request).unwrap_or_default().as_bytes()),encode_grant_fields(grant)),
         MailboxHelperRequest::FolderMetadata {canonical_username,grant} => format!("operation=folder_metadata\ncanonical_username_b64={}\n{}",encode_base64(canonical_username.as_bytes()),encode_grant_fields(grant)),
         MailboxHelperRequest::MailboxStatus {canonical_username,mailbox_name,grant} => format!("operation=mailbox_status\ncanonical_username_b64={}\nmailbox_name_b64={}\n{}",encode_base64(canonical_username.as_bytes()),encode_base64(mailbox_name.as_bytes()),encode_grant_fields(grant)),
         MailboxHelperRequest::MessageFlag { canonical_username, request, grant } => format!(
@@ -261,6 +270,20 @@ pub(super) fn parse_request(input: &str) -> Result<MailboxHelperRequest, String>
     let grant = parse_grant_fields(&fields)?;
 
     match operation {
+        "folder_create" => {
+            let bytes = decode_base64_bytes(
+                require_field(&fields, "create_request_b64")?,
+                2048,
+                "create_request",
+            )?;
+            let request: crate::folder_create::CreateFolderRequest =
+                serde_json::from_slice(&bytes).map_err(|_| "invalid create request")?;
+            request.validate().map_err(|_| "invalid create request")?;
+            if request.account() != canonical_username {
+                return Err("create account mismatch".into());
+            }
+            Ok(MailboxHelperRequest::FolderCreate { request, grant })
+        }
         "folder_metadata" => {
             crate::mailbox_status::validate_account(&canonical_username).map_err(|e| e.reason)?;
             Ok(MailboxHelperRequest::FolderMetadata {
@@ -533,7 +556,8 @@ pub(super) fn verify_request_grant(
 pub(super) fn request_grant(request: &MailboxHelperRequest) -> &MailboxHelperGrant {
     match request {
         MailboxHelperRequest::MessageFlag { grant, .. } => grant,
-        MailboxHelperRequest::FolderMetadata { grant, .. }
+        MailboxHelperRequest::FolderCreate { grant, .. }
+        | MailboxHelperRequest::FolderMetadata { grant, .. }
         | MailboxHelperRequest::MailboxStatus { grant, .. }
         | MailboxHelperRequest::MailboxList { grant, .. }
         | MailboxHelperRequest::MessageList { grant, .. }
@@ -548,7 +572,8 @@ pub(super) fn request_grant(request: &MailboxHelperRequest) -> &MailboxHelperGra
 fn set_request_grant(request: &mut MailboxHelperRequest, new_grant: MailboxHelperGrant) {
     match request {
         MailboxHelperRequest::MessageFlag { grant, .. } => *grant = new_grant,
-        MailboxHelperRequest::FolderMetadata { grant, .. }
+        MailboxHelperRequest::FolderCreate { grant, .. }
+        | MailboxHelperRequest::FolderMetadata { grant, .. }
         | MailboxHelperRequest::MailboxStatus { grant, .. }
         | MailboxHelperRequest::MailboxList { grant, .. }
         | MailboxHelperRequest::MessageList { grant, .. }
@@ -563,6 +588,7 @@ fn set_request_grant(request: &mut MailboxHelperRequest, new_grant: MailboxHelpe
 pub(super) fn helper_operation_label(request: &MailboxHelperRequest) -> &'static str {
     match request {
         MailboxHelperRequest::MessageFlag { .. } => "message_flag",
+        MailboxHelperRequest::FolderCreate { .. } => "folder_create",
         MailboxHelperRequest::FolderMetadata { .. } => "folder_metadata",
         MailboxHelperRequest::MailboxStatus { .. } => "mailbox_status",
         MailboxHelperRequest::MailboxList { .. } => "mailbox_list",
@@ -596,6 +622,12 @@ fn canonical_grant_payload(request: &MailboxHelperRequest, grant: &MailboxHelper
         grant.nonce.clone(),
     ];
     match request {
+        MailboxHelperRequest::FolderCreate { request, .. } => fields.extend([
+            request.account().into(),
+            request.parent().into(),
+            request.parent_guid().into(),
+            request.leaf().into(),
+        ]),
         MailboxHelperRequest::MessageFlag {
             canonical_username,
             request,
@@ -737,6 +769,7 @@ fn parse_grant_fields(fields: &BTreeMap<String, String>) -> Result<MailboxHelper
 
 pub(super) fn encode_response(response: &MailboxHelperResponse) -> String {
     match response {
+        MailboxHelperResponse::FolderCreateOk {request,outcome}=>format!("status=ok\noperation=folder_create\ncreate_request_b64={}\ncreate_outcome_b64={}\n",encode_base64(serde_json::to_string(request).unwrap_or_default().as_bytes()),encode_base64(serde_json::to_string(outcome).unwrap_or_default().as_bytes())),
         MailboxHelperResponse::FolderMetadataOk {snapshot} => format!("status=ok\noperation=folder_metadata\ncanonical_username_b64={}\ntranscript_b64={}\n",encode_base64(snapshot.account().as_bytes()),encode_base64(snapshot.transcript())),
         MailboxHelperResponse::MailboxStatusOk {status} => format!("status=ok\noperation=mailbox_status\nmailbox_name_b64={}\nstatus_guid={}\nstatus_messages={}\nstatus_vsize={}\n",encode_base64(status.mailbox().as_bytes()),status.guid(),status.messages(),status.virtual_bytes()),
         MailboxHelperResponse::MessageFlagOk { request, result } => format!(
@@ -894,6 +927,29 @@ pub(super) fn parse_response(
     message_view_policy: MessageViewPolicy,
     input: &str,
 ) -> Result<MailboxHelperResponse, String> {
+    if input.lines().any(|line| line == "operation=folder_create") {
+        if input.len() > 4096 {
+            return Err("create response too large".into());
+        }
+        let f = parse_kv_lines(input)?;
+        if f.len() != 4 || require_field(&f, "status")? != "ok" {
+            return Err("invalid create response".into());
+        }
+        let request: crate::folder_create::CreateFolderRequest = serde_json::from_slice(
+            &decode_base64_bytes(require_field(&f, "create_request_b64")?, 2048, "request")?,
+        )
+        .map_err(|_| "invalid create request")?;
+        let outcome: crate::folder_create::Outcome = serde_json::from_slice(&decode_base64_bytes(
+            require_field(&f, "create_outcome_b64")?,
+            256,
+            "outcome",
+        )?)
+        .map_err(|_| "invalid create outcome")?;
+        request
+            .validate_outcome(&outcome)
+            .map_err(|_| "invalid create response")?;
+        return Ok(MailboxHelperResponse::FolderCreateOk { request, outcome });
+    }
     if input
         .lines()
         .any(|line| line == "operation=folder_metadata")
@@ -1302,6 +1358,15 @@ fn reject_unknown_request_fields(
             "flag_message_guid_b64",
             "flag_name",
             "flag_enabled",
+            "grant_issued_at",
+            "grant_expires_at",
+            "grant_nonce",
+            "grant_signature",
+        ],
+        "folder_create" => &[
+            "operation",
+            "canonical_username_b64",
+            "create_request_b64",
             "grant_issued_at",
             "grant_expires_at",
             "grant_nonce",

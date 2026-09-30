@@ -60,6 +60,17 @@ impl<E> MailboxBackend for DoveadmMailboxListBackend<E>
 where
     E: CommandExecutor,
 {
+    fn create_folder(
+        &self,
+        request: &crate::folder_create::CreateFolderRequest,
+    ) -> crate::folder_create::Outcome {
+        crate::folder_create_backend::create(
+            &self.command_executor,
+            &self.doveadm_path,
+            self.userdb_socket_path.as_deref(),
+            request,
+        )
+    }
     fn folder_metadata(
         &self,
         account: &str,

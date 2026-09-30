@@ -27,21 +27,17 @@ impl CommandExecutor for FixtureExecutor {
         limit: usize,
     ) -> Result<CommandExecution, CommandExecutionError> {
         assert_eq!(p, "/usr/local/bin/doveadm");
-        assert_eq!(input, crate::folder_metadata_backend::TRANSCRIPT);
-        assert_eq!(a.len(), 8);
-        assert_eq!(&a[..4], ["exec", "imap", "-o", "stats_writer_socket_path="]);
-        assert_eq!(a[4], "-o");
-        assert!(a[5].starts_with("auth_socket_path="));
-        assert_eq!(a[6], "-u");
-        assert!([
-            "alice@fixture.test",
-            "bob@fixture.test",
-            "unknown@fixture.test"
-        ]
-        .contains(&a[7].as_str()));
         assert!(timeout <= Duration::from_secs(10));
-        assert_eq!(limit, 512 * 1024);
-        self.calls.lock().unwrap().push(a[7].clone());
+        assert!(limit <= 512 * 1024);
+        let index = a.iter().position(|v| v == "-u").expect("mandatory account");
+        assert!(["alice@fixture.test", "bob@fixture.test"].contains(&a[index + 1].as_str()));
+        assert!(!a.iter().any(|v| matches!(v.as_str(), "-A" | "-F" | "-s")));
+        if a[0] == "exec" {
+            assert_eq!(input, crate::folder_metadata_backend::TRANSCRIPT);
+        } else {
+            assert!(input.is_empty());
+        }
+        self.calls.lock().unwrap().push(a.join(" "));
         // Only prepend fixture config. Preserve exact canonical -u; never set USER.
         let mut args = vec!["-c".into(), self.config.to_string_lossy().into_owned()];
         args.extend_from_slice(a);
@@ -80,7 +76,7 @@ fn standard_metadata() -> Vec<StandardMetadata> {
 }
 #[test]
 #[ignore = "explicit OpenBSD two-account userdb and signed helper qualification"]
-fn isolated_openbsd_folder_metadata_signed_helper() {
+fn isolated_openbsd_folder_create_signed_helper() {
     assert_eq!(std::env::consts::OS, "openbsd");
     let host = SystemCommandExecutor
         .run_with_stdin_timeout("/bin/hostname", &[], "", Duration::from_secs(1))
@@ -218,45 +214,58 @@ fn isolated_openbsd_folder_metadata_signed_helper() {
             socket.clone()
         }))
     };
-    let alice =
-        super::metadata_tests::metadata_through_helper(&root, backend(false), "alice@fixture.test")
-            .unwrap();
-    let bob =
-        super::metadata_tests::metadata_through_helper(&root, backend(false), "bob@fixture.test")
-            .unwrap();
-    assert!(alice.folder("alice@fixture.test", "AliceOnly").is_ok());
-    assert!(alice.folder("alice@fixture.test", "BobOnly").is_err());
-    assert!(alice.validate_for("bob@fixture.test").is_err());
-    assert!(bob.folder("bob@fixture.test", "BobOnly").is_ok());
-    assert!(bob.folder("bob@fixture.test", "AliceOnly").is_err());
-    assert!(super::metadata_tests::metadata_through_helper(
-        &root,
-        backend(false),
-        "unknown@fixture.test"
+    let initial = backend(false)
+        .mailbox_status("alice@fixture.test", "INBOX")
+        .unwrap();
+    let request = crate::folder_create::CreateFolderRequest::new(
+        "alice@fixture.test",
+        "INBOX",
+        initial.guid(),
+        "NativeChild",
     )
-    .is_err());
-    assert!(super::metadata_tests::metadata_through_helper(
-        &root,
-        backend(true),
-        "alice@fixture.test"
-    )
-    .is_err());
+    .unwrap();
+    let result = super::create_tests::create_through_helper(&root, backend(false), &request);
+    assert!(matches!(
+        result,
+        crate::folder_create::Outcome::Created { .. }
+    ));
     assert_eq!(
-        *queries.lock().unwrap(),
-        [
-            "alice@fixture.test",
-            "bob@fixture.test",
-            "unknown@fixture.test"
-        ]
+        super::create_tests::create_through_helper(&root, backend(false), &request),
+        crate::folder_create::Outcome::Conflict
+    );
+    let child = backend(false)
+        .mailbox_status("alice@fixture.test", "INBOX.NativeChild")
+        .unwrap();
+    if let crate::folder_create::Outcome::Created { guid } = result {
+        assert_eq!(guid, child.guid());
+    }
+    assert_eq!(child.messages(), 0);
+    let bob = backend(false).folder_metadata("bob@fixture.test").unwrap();
+    assert!(bob.folder("bob@fixture.test", "INBOX.NativeChild").is_err());
+    let mut missing = request.clone();
+    assert!(matches!(
+        super::create_tests::create_through_helper(&root, backend(true), &missing),
+        crate::folder_create::Outcome::Refused(crate::folder_create::Refusal::Unavailable)
+    ));
+    missing = crate::folder_create::CreateFolderRequest::new(
+        "alice@fixture.test",
+        "INBOX",
+        &"a".repeat(32),
+        "StaleChild",
+    )
+    .unwrap();
+    assert_eq!(
+        super::create_tests::create_through_helper(&root, backend(false), &missing),
+        crate::folder_create::Outcome::Refused(crate::folder_create::Refusal::Stale)
     );
     assert_eq!(
-        *calls.lock().unwrap(),
-        [
-            "alice@fixture.test",
-            "bob@fixture.test",
-            "unknown@fixture.test",
-            "alice@fixture.test"
-        ]
+        calls
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|v| v.contains("mailbox create"))
+            .count(),
+        1
     );
     fixture.stop.store(true, Ordering::SeqCst);
     fixture.server.take().unwrap().join().unwrap();
