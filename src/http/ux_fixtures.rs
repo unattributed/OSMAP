@@ -55,6 +55,7 @@ fn ux_synthetic_route_baselines() {
             200,
         ),
         ("inbox-many", "/mailbox?name=INBOX", true, 200),
+        ("inbox-long-headers", "/mailbox?name=INBOX", true, 200),
         ("inbox-page-two", "/mailbox?name=INBOX&page=2", true, 200),
         (
             "inbox-selected",
@@ -157,6 +158,7 @@ fn ux_synthetic_route_baselines() {
             headers[0] = ("User-Agent", "OSMAP/ManyMessages");
         }
         match name {
+            "inbox-long-headers" => headers[0] = ("User-Agent", "OSMAP/ManyMessages;LongHeaders"),
             "settings-long-identity" => headers[0] = ("User-Agent", "OSMAP/LongIdentity"),
             "archive-unconfigured" => headers[0] = ("User-Agent", "OSMAP/NoArchiveTest"),
             "archive-missing" => headers[0] = ("User-Agent", "OSMAP/InvalidArchiveTest"),

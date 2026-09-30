@@ -29,6 +29,7 @@ def main():
     parser.add_argument("--forced-colors", choices=["none", "active"], default="none")
     parser.add_argument("--contrast", action="store_true", help="audit computed flat text and meaningful UI colours")
     parser.add_argument("--expand-details", action="store_true", help="audit disclosed main-content states")
+    parser.add_argument("--viewport-only", action="store_true", help="capture the visible viewport for review; DOM audits still cover the full page")
     parser.add_argument("--schemes", nargs="+", choices=["light", "dark"], default=["light"])
     parser.add_argument("--widths", nargs="+", type=int, default=[360, 768, 1440])
     parser.add_argument("--names", nargs="+", help="capture only these manifest fixture names")
@@ -171,7 +172,7 @@ def main():
                         })""")
                         name = f"{item['name']}-{scheme}-{width}.png"
                         screenshot = args.output / name
-                        page.screenshot(path=str(screenshot), full_page=True)
+                        page.screenshot(path=str(screenshot), full_page=not args.viewport_only)
                         contrast = page.evaluate(TEXT_AUDIT) if args.contrast else None
                         results.append({"file": name, "route": item["route"], "scheme": scheme,
                                         "width": width, "physical_width": physical_width,
@@ -211,6 +212,7 @@ def main():
                       "engine": args.engine, "reflow_simulation_scale": args.zoom,
                       "forced_colors": args.forced_colors,
                       "expanded_details": args.expand_details,
+                      "viewport_only": args.viewport_only,
                       "passed": not failures, "failures": failures,
                       "shell_checks": shell_results}
             (args.output / "capture.json").write_text(json.dumps(report, indent=2) + "\n")

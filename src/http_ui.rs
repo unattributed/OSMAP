@@ -306,14 +306,14 @@ fn next_message_sort_direction(
     }
 }
 
-fn render_mailbox_sort_headers(
+fn render_mailbox_sort_controls(
     mailbox_name: &str,
     view: &ListViewState,
     search_query: Option<&str>,
     search_scope: Option<&str>,
 ) -> String {
     let active_sort = Some(view.sort);
-    MESSAGE_SORT_COLUMNS
+    let links = MESSAGE_SORT_COLUMNS
         .iter()
         .map(|column| {
             let direction = next_message_sort_direction(*column, active_sort);
@@ -333,18 +333,25 @@ fn render_mailbox_sort_headers(
             append_list_filter_selection(&mut href, view);
 
             format!(
-                "<th aria-sort=\"{}\"><a href=\"{}\">{}{}</a></th>",
-                sort_aria_value(*column, view),
+                "<a href=\"{}\" aria-label=\"Sort by {} {}\"{}>{}{}</a>",
                 escape_html(&href),
+                column.label(),
+                sort_direction_label(direction),
+                if view.sort.column == *column {
+                    " aria-current=\"true\""
+                } else {
+                    ""
+                },
                 column.label(),
                 message_sort_indicator(*column, active_sort),
             )
         })
         .collect::<Vec<_>>()
-        .join("")
+        .join("");
+    render_sort_control_group(&links, view)
 }
 
-fn render_search_sort_headers(
+fn render_search_sort_controls(
     mailbox_name: Option<&str>,
     query: &str,
     view: &ListViewState,
@@ -373,27 +380,20 @@ fn render_search_sort_headers(
         append_list_filter_selection(&mut href, view);
 
         headers.push_str(&format!(
-            "<th aria-sort=\"{}\"><a href=\"{}\">{}{}</a></th>",
-            sort_aria_value(column, view),
+            "<a href=\"{}\" aria-label=\"Sort by {} {}\"{}>{}{}</a>",
             escape_html(&href),
+            column.label(),
+            sort_direction_label(direction),
+            if view.sort.column == column {
+                " aria-current=\"true\""
+            } else {
+                ""
+            },
             column.label(),
             message_sort_indicator(column, active_sort),
         ));
-        if column == MessageSortColumn::Uid {
-            headers.push_str("<th>Mailbox</th>");
-        }
     }
-    headers
-}
-
-fn sort_aria_value(column: MessageSortColumn, view: &ListViewState) -> &'static str {
-    if view.sort.column != column {
-        "none"
-    } else if view.sort.direction == MessageSortDirection::Asc {
-        "ascending"
-    } else {
-        "descending"
-    }
+    render_sort_control_group(&headers, view)
 }
 
 fn append_list_filter_selection(href: &mut String, view: &ListViewState) {
@@ -529,7 +529,7 @@ fn render_message_state_controls(
         Some(count) => format!("<span class=\"badge attachment-count\" data-attachment-count=\"{count}\">{count} {}</span>", if count == 1 { "attachment" } else { "attachments" }),
         None => "<span class=\"muted attachment-count\" aria-label=\"Attachment metadata unavailable\" title=\"Attachment metadata unavailable\">–</span>".into(),
     };
-    format!("<div class=\"message-state-controls\" role=\"group\" aria-label=\"Message state\">{indicators}{controls}{attachments}</div>")
+    format!("<div class=\"message-state-controls\" role=\"group\" aria-label=\"Message state\">{controls}{attachments}</div>")
 }
 
 fn render_search_field_select(active_field: MessageSearchField) -> String {
@@ -552,6 +552,67 @@ fn render_search_field_select(active_field: MessageSearchField) -> String {
         "<label for=\"search-field\">Search field<select id=\"search-field\" name=\"field\">{}</select></label>",
         options
     )
+}
+
+struct MessageCard<'a> {
+    mailbox: &'a str,
+    uid: u64,
+    subject: Option<&'a str>,
+    sender: Option<&'a str>,
+    received: &'a str,
+    flags: &'a [String],
+    metadata: Option<&'a MessageMetadata>,
+    size: u64,
+}
+
+fn render_message_card(
+    message: MessageCard<'_>,
+    csrf: &str,
+    href: &str,
+    selected: bool,
+    return_to: &str,
+    actions: &str,
+) -> String {
+    format!(
+        concat!(
+            "<li class=\"message-row message-card{}\" data-selected=\"{}\">",
+            "<div class=\"message-card-main\"><span class=\"message-sender\" title=\"{}\">{}</span>",
+            "<span class=\"message-date\">{}</span>",
+            "<a class=\"message-subject-link\" href=\"{}\"{}>{}</a></div>",
+            "<div class=\"message-card-footer message-preview-meta\"><span class=\"message-mailbox\">{}</span>{}",
+            "<details class=\"message-more\"><summary aria-label=\"More for message #{} in {}\">More</summary>",
+            "<div class=\"message-more-content\"><p class=\"muted\">Message #{} · {} bytes</p><p><strong>From:</strong> {}</p><p><strong>Subject:</strong> {}</p>{}</div></details></div></li>"
+        ),
+        if has_flag(message.flags, "\\Seen") { "" } else { " message-unread" },
+        selected,
+        escape_html(message.sender.unwrap_or("Sender unavailable")),
+        escape_html(message.sender.unwrap_or("Sender unavailable")),
+        escape_html(message.received),
+        escape_html(href),
+        if selected { " aria-current=\"true\"" } else { "" },
+        escape_html(message.subject.unwrap_or("(No subject)")),
+        escape_html(message.mailbox),
+        render_message_state_controls(csrf, message.mailbox, message.uid, message.flags, message.metadata, return_to),
+        message.uid, escape_html(message.mailbox), message.uid, message.size,
+        escape_html(message.sender.unwrap_or("Sender unavailable")),
+        escape_html(message.subject.unwrap_or("(No subject)")), actions,
+    )
+}
+
+fn render_sort_control_group(links: &str, view: &ListViewState) -> String {
+    format!(
+        "<details class=\"message-sort\"><summary>Sorted by {} {}</summary><nav aria-label=\"Sort messages\">{links}</nav></details>",
+        view.sort.column.label(),
+        sort_direction_label(view.sort.direction),
+    )
+}
+
+fn sort_direction_label(direction: MessageSortDirection) -> &'static str {
+    if direction == MessageSortDirection::Asc {
+        "ascending"
+    } else {
+        "descending"
+    }
 }
 
 /// Renders the message-list page for one mailbox.
@@ -606,46 +667,40 @@ pub(crate) fn render_message_list_page(
         };
         let selection_cells = match (bulk_actions_available, archive_actions_available) {
             (true, true) => format!(
-                "<td><input form=\"bulk-move-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\" aria-label=\"Select message #{} for bulk move\"></td><td><input form=\"bulk-archive-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\" aria-label=\"Select message #{} for bulk archive\"></td>",
+                "<label class=\"bulk-row-choice\"><input form=\"bulk-move-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\" aria-label=\"Select message #{} for bulk move\">Move selection</label><label class=\"bulk-row-choice\"><input form=\"bulk-archive-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\" aria-label=\"Select message #{} for bulk archive\">Archive selection</label>",
                 message.uid, message.uid, message.uid, message.uid, message.uid, message.uid
             ),
             (true, false) => format!(
-                "<td><input form=\"bulk-move-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\" aria-label=\"Select message #{} for bulk move\"></td>",
+                "<label class=\"bulk-row-choice\"><input form=\"bulk-move-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\" aria-label=\"Select message #{} for bulk move\">Move selection</label>",
                 message.uid, message.uid, message.uid
             ),
             (false, true) => format!(
-                "<td><input form=\"bulk-archive-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\" aria-label=\"Select message #{} for bulk archive\"></td>",
+                "<label class=\"bulk-row-choice\"><input form=\"bulk-archive-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\" aria-label=\"Select message #{} for bulk archive\">Archive selection</label>",
                 message.uid, message.uid, message.uid
             ),
             (false, false) => String::new(),
         };
-        let subject_label = message.subject.as_deref().unwrap_or("<none>");
-        let from_label = message.from.as_deref().unwrap_or("<none>");
-        rows.push_str(&format!(
-            "<tr class=\"message-row{}\" data-selected=\"{}\">{}<td class=\"message-uid-cell\"><a class=\"message-uid-link\" href=\"{}\">#{}</a></td><td class=\"message-subject-cell\"><a class=\"message-subject-link\" href=\"{}\"{}>{}</a><div class=\"message-preview-meta\"><span>from {}</span><span>{}</span></div></td><td class=\"message-from-cell\">{}</td><td class=\"message-date-cell\">{}</td><td class=\"message-flags-cell\">{}</td><td class=\"message-size-cell\">{} bytes</td>{}</tr>",
-            if has_flag(&message.flags, "\\Seen") { "" } else { " message-unread" },
-            sort_links.view.is_selected(mailbox_name, message.uid),
-            selection_cells,
-            escape_html(&message_href),
-            message.uid,
-            escape_html(&message_href),
-            if sort_links.view.is_selected(mailbox_name, message.uid) { " aria-current=\"true\"" } else { "" },
-            escape_html(subject_label),
-            escape_html(from_label),
-            escape_html(&message.date_received),
-            escape_html(from_label),
-            escape_html(&message.date_received),
-            render_message_state_controls(csrf_token, mailbox_name, message.uid, &message.flags, message.metadata.as_ref(), &list_navigation_href(&navigation_base, sort_links.view, sort_links.view.page)),
-            message.size_virtual,
-            if archive_actions_available {
-                format!("<td class=\"message-action-cell\">{archive_action}</td>")
-            } else {
-                String::new()
+        let actions = format!("{selection_cells}{archive_action}");
+        rows.push_str(&render_message_card(
+            MessageCard {
+                mailbox: mailbox_name,
+                uid: message.uid,
+                subject: message.subject.as_deref(),
+                sender: message.from.as_deref(),
+                received: &message.date_received,
+                flags: &message.flags,
+                metadata: message.metadata.as_ref(),
+                size: message.size_virtual,
             },
+            csrf_token,
+            &message_href,
+            sort_links.view.is_selected(mailbox_name, message.uid),
+            &list_navigation_href(&navigation_base, sort_links.view, sort_links.view.page),
+            &actions,
         ));
     }
     if messages.is_empty() {
-        rows.push_str(&format!("<tr class=\"message-empty-row\"><td colspan=\"9\"><div class=\"message-empty-state\"><strong>No messages shown.</strong><br><span class=\"muted\">{}</span></div></td></tr>", if sort_links.view.filter == MessageFilter::All { "New messages will appear here." } else { "No messages match this filter. Choose All messages to see the mailbox." }));
+        rows.push_str(&format!("<li class=\"message-empty-state\"><strong>No messages shown.</strong><br><span class=\"muted\">{}</span></li>", if sort_links.view.filter == MessageFilter::All { "New messages will appear here." } else { "No messages match this filter. Choose All messages to see the mailbox." }));
     }
 
     let bulk_move_form = if bulk_actions_available && !messages.is_empty() {
@@ -689,7 +744,7 @@ pub(crate) fn render_message_list_page(
         Some(_) => "<p class=\"muted\">This mailbox matches your configured archive destination, so archive shortcuts are hidden here.</p>".to_string(),
         None => "<p class=\"muted\">Set an archive mailbox in Settings to add one-click archive actions on list and message pages.</p>".to_string(),
     };
-    let sort_headers = render_mailbox_sort_headers(
+    let sort_headers = render_mailbox_sort_controls(
         mailbox_name,
         sort_links.view,
         sort_links.search_query,
@@ -701,44 +756,27 @@ pub(crate) fn render_message_list_page(
             "{}",
             "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
             "<section class=\"content-pane\" aria-labelledby=\"mailbox-title\">",
-            "<div class=\"section-header\"><div><h1 id=\"mailbox-title\" class=\"section-title\">Mailbox: {}</h1><p class=\"muted\">Signed in as <strong>{}</strong>. </p></div>",
-            "<div class=\"badge-list message-list-summary\" aria-label=\"Message list status\"><span class=\"badge\">Remote content blocked</span></div></div>",
-            "{}{}",
-            "<form class=\"search-row\" method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\">{}<label for=\"mailbox-search\">Search query<input id=\"mailbox-search\" type=\"text\" name=\"q\" value=\"{}\" autocomplete=\"off\"></label>{}<button type=\"submit\">Search</button><label><input type=\"checkbox\" name=\"scope\" value=\"all\"> Search all mailboxes</label></form>",
-            "<div class=\"toolbar\" aria-label=\"Mailbox actions\">{}{}</div>",
+            "<div class=\"section-header\"><h1 id=\"mailbox-title\" class=\"section-title message-list-summary\">Mailbox: {}</h1></div>",
             "{}",
-            "<div class=\"table-wrap\" role=\"region\" aria-label=\"Mailbox message list\" tabindex=\"0\"><table class=\"message-list-table\" aria-label=\"Mailbox message list\"><thead><tr>{}{}{}{}</tr></thead><tbody>{}</tbody></table></div>",
+            "<form class=\"search-row compact-search\" method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\">{}<label for=\"mailbox-search\">Search query<input id=\"mailbox-search\" type=\"text\" name=\"q\" value=\"{}\" autocomplete=\"off\"></label><button type=\"submit\">Search</button><details class=\"search-options\"><summary>Search options</summary><div>{}<label><input type=\"checkbox\" name=\"scope\" value=\"all\"> Search all mailboxes</label></div></details></form>",
+            "<details class=\"bulk-actions\"><summary>Bulk actions</summary>{}<p class=\"muted\">Open More on a message to select it for move or archive.</p><div class=\"toolbar\" aria-label=\"Mailbox actions\">{}{}</div></details>",
+            "{}",
+            "{}<ul role=\"list\" class=\"message-cards\" aria-label=\"Mailbox message list\">{}</ul>",
             "</section>",
             "</main>"
         ),
         app_header(canonical_username, csrf_token, mailbox_nav_section(mailbox_name, bulk_actions.archive_mailbox_name)),
         escape_html(mailbox_name),
-        escape_html(canonical_username),
         success_banner,
-        archive_notice,
         escape_html(mailbox_name),
         list_form_state(sort_links.view),
         escape_html(sort_links.search_query.unwrap_or("")),
         render_search_field_select(MessageSearchField::All),
+        archive_notice,
         bulk_move_form,
         bulk_archive_form,
         render_list_navigation(&navigation_base, sort_links.view),
-        if bulk_actions_available {
-            "<th>Move</th>"
-        } else {
-            ""
-        },
-        if archive_actions_available {
-            "<th>Archive</th>"
-        } else {
-            ""
-        },
         sort_headers,
-        if archive_actions_available {
-            "<th>Action</th>"
-        } else {
-            ""
-        },
         rows,
     ))
 }
@@ -773,7 +811,7 @@ pub(crate) fn render_message_search_page(
         ""
     };
     let search_field_select = render_search_field_select(search_field);
-    let sort_headers = render_search_sort_headers(mailbox_name, query, view, search_field);
+    let sort_headers = render_search_sort_controls(mailbox_name, query, view, search_field);
     let mut navigation_base = match mailbox_name {
         Some(name) => format!("/search?mailbox={}", url_encode(name)),
         None => "/search?scope=all".to_string(),
@@ -785,7 +823,7 @@ pub(crate) fn render_message_search_page(
     ));
     let mut rows = String::new();
     if results.is_empty() {
-        rows.push_str("<tr><td colspan=\"7\">No messages matched this search.</td></tr>");
+        rows.push_str("<li class=\"message-empty-state\">No messages matched this search.</li>");
     } else {
         for result in results {
             let message_href = format!(
@@ -793,20 +831,22 @@ pub(crate) fn render_message_search_page(
                 url_encode(&result.mailbox_name),
                 result.uid
             );
-            rows.push_str(&format!(
-                "<tr class=\"message-row{}\" data-selected=\"{}\"><td><a href=\"{}\">{}</a></td><td>{}</td><td class=\"message-subject-cell\"><a class=\"message-subject-link\" href=\"{}\"{}>{}</a></td><td>{}</td><td>{}</td><td class=\"message-flags-cell\">{}</td><td>{}</td></tr>",
-                if has_flag(&result.flags, "\\Seen") { "" } else { " message-unread" },
+            rows.push_str(&render_message_card(
+                MessageCard {
+                    mailbox: &result.mailbox_name,
+                    uid: result.uid,
+                    subject: result.subject.as_deref(),
+                    sender: result.from.as_deref(),
+                    received: &result.date_received,
+                    flags: &result.flags,
+                    metadata: result.metadata.as_ref(),
+                    size: result.size_virtual,
+                },
+                csrf_token,
+                &message_href,
                 view.is_selected(&result.mailbox_name, result.uid),
-                escape_html(&message_href),
-                result.uid,
-                escape_html(&result.mailbox_name),
-                escape_html(&message_href),
-                if view.is_selected(&result.mailbox_name, result.uid) { " aria-current=\"true\"" } else { "" },
-                escape_html(result.subject.as_deref().unwrap_or("<none>")),
-                escape_html(result.from.as_deref().unwrap_or("<none>")),
-                escape_html(&result.date_received),
-                render_message_state_controls(csrf_token, &result.mailbox_name, result.uid, &result.flags, result.metadata.as_ref(), &list_navigation_href(&navigation_base, view, view.page)),
-                result.size_virtual,
+                &list_navigation_href(&navigation_base, view, view.page),
+                "",
             ));
         }
     }
@@ -817,12 +857,11 @@ pub(crate) fn render_message_search_page(
             "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
             "<section class=\"content-pane\">",
             "<p>{}<a href=\"/mailboxes\">All mailboxes</a></p>",
-            "<h1>Search Results</h1>",
-            "<p class=\"muted\">Search within a mailbox or across all your mailboxes.</p>",
-            "<form class=\"search-row\" method=\"get\" action=\"/search\">{}{}<label for=\"search-query\">Search query<input id=\"search-query\" type=\"text\" name=\"q\" value=\"{}\" autocomplete=\"off\"></label>{}<button type=\"submit\">Search</button><label><input type=\"checkbox\" name=\"scope\" value=\"all\"{}> Search all mailboxes</label></form>",
-            "<p><strong>Scope:</strong> {}<br><strong>Field:</strong> {}<br><strong>Query:</strong> {}<br><strong>Results:</strong> {}</p>",
+            "<h1 class=\"section-title\">Search Results</h1>",
+            "<form class=\"search-row compact-search\" method=\"get\" action=\"/search\">{}{}<label for=\"search-query\">Search query<input id=\"search-query\" type=\"text\" name=\"q\" value=\"{}\" autocomplete=\"off\"></label><button type=\"submit\">Search</button><details class=\"search-options\"><summary>Search options</summary><div>{}<label><input type=\"checkbox\" name=\"scope\" value=\"all\"{}> Search all mailboxes</label></div></details></form>",
+            "<p class=\"search-context\"><span><strong>Scope:</strong> {}</span><span><strong>Field:</strong> {}</span><span><strong>Query:</strong> {}</span><span><strong>Results:</strong> {}</span></p>",
             "{}",
-            "<div class=\"table-wrap\" role=\"region\" aria-label=\"Search results\" tabindex=\"0\"><table><thead><tr>{}</tr></thead><tbody>{}</tbody></table></div>",
+            "{}<ul role=\"list\" class=\"message-cards\" aria-label=\"Search results\">{}</ul>",
             "</section>",
             "</main>"
         ),

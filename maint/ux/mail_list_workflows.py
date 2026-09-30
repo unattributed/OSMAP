@@ -86,7 +86,8 @@ def main():
             click("Starred")
             assert len(subjects()) == 17
             assert page.get_by_role("link", name="Next page", exact=True).count() == 0
-            page.get_by_role("columnheader").filter(has_text="Subject").get_by_role("link").click()
+            page.locator(".message-sort summary").click()
+            page.get_by_role("link", name="Sort by Subject ascending", exact=True).click()
             page.wait_for_load_state("networkidle")
             state(filter="starred", sort="subject", dir="asc")
             assert subjects()[0] == "Message 007"
@@ -112,6 +113,18 @@ def main():
             state(q="manyresults", page="3")
             assert len(subjects()) == 50
             checks.append("search results paginate within the existing 250-result backend limit")
+            visit("/mailbox?name=INBOX&sort=subject&dir=asc")
+            more = page.locator('summary[aria-label="More for message #7 in INBOX"]')
+            more.focus()
+            page.keyboard.press("Space")
+            choice = page.get_by_label("Select message #7 for bulk move", exact=True)
+            assert choice.is_visible()
+            choice.check()
+            assert page.locator("#bulk-move-form").evaluate("e => new FormData(e).get('uid_7') === '7'")
+            assert page.locator("#bulk-archive-form").evaluate("e => new FormData(e).get('uid_7') === null")
+            assert page.locator("form form").count() == 0
+            assert page.get_by_role("list", name="Mailbox message list", exact=True).get_by_role("listitem").count() == 50
+            checks.append("keyboard disclosures expose the existing selections and preserve their distinct native form associations")
             assert not blocked, "fixture attempted outside requests"
             report = {"synthetic": True, "authentication": "test fixture; not live Dovecot/TOTP",
                       "mail": "deterministic in-memory gateway; no mailbox mutation",

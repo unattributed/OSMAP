@@ -1352,8 +1352,23 @@ mod tests {
                                 ),
                                 date_received: "2026-09-30 00:00:00 +0000".to_string(),
                                 size_virtual: 1024,
-                                subject: Some(format!("Message {uid:03}")),
-                                from: Some("Synthetic Sender <sender@example.test>".to_string()),
+                                subject: Some(
+                                    if context.user_agent.contains("LongHeaders") && uid == 125 {
+                                        format!("<b>Synthetic header</b> {}", "W".repeat(256))
+                                    } else {
+                                        format!("Message {uid:03}")
+                                    },
+                                ),
+                                from: Some(
+                                    if context.user_agent.contains("LongHeaders") && uid == 125 {
+                                        format!(
+                                            "Synthetic long sender {} <sender@example.test>",
+                                            "Y".repeat(256)
+                                        )
+                                    } else {
+                                        "Synthetic Sender <sender@example.test>".to_string()
+                                    },
+                                ),
                             })
                             .collect()
                     } else {
@@ -2831,8 +2846,8 @@ mod tests {
         assert!(body.contains("Archive shortcut sends messages"));
         assert!(body.contains("name=\"destination_mailbox\" value=\"Archive/2026\""));
         assert!(body.contains(">Archive</button>"));
-        assert!(body.contains(">Subject</a></th>"));
-        assert!(body.contains(">From</a></th>"));
+        assert!(body.contains("aria-label=\"Sort by Subject ascending\""));
+        assert!(body.contains("aria-label=\"Sort by From ascending\""));
         assert!(body.contains("Quarterly report"));
         assert!(body.contains("Alice &lt;alice@example.com&gt;"));
     }
@@ -3091,7 +3106,7 @@ mod tests {
 
         assert_eq!(response.response.status_code, 200);
         let body = body_text(&response);
-        assert!(body.contains("<h1>Search Results</h1>"));
+        assert!(body.contains("<h1 class=\"section-title\">Search Results</h1>"));
         assert!(body.contains("Quarterly report"));
         assert!(body.contains("Alice &lt;alice@example.com&gt;"));
         assert!(body.contains("/message?mailbox=INBOX&amp;uid=17"));

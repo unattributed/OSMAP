@@ -691,3 +691,74 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   native state controls. Exact B native qualification may run independently in
   its owned source tree. C remains source-only until its own signed checkpoint;
   S02-02 coordinated reader work follows S02-01 verification.
+
+### S02-01 checkpoint C — compact rows and native fixture correction
+
+- B signed as `8d3211a33d062b88364acb7ea9eaa11f848ed565`, Shopkeeper verified,
+  clean checkpoint, eleven ahead/zero behind recorded origin/main. No sync.
+  Archive SHA-256 `210f6e305f81f543f63ead329663908871986d6f86dc62bad2bc970155fb9e3a`;
+  native source `/home/foo/osmap-ux-s02-20260930-t9Ay09V1`. Native library 587
+  passed/six ignored; V4 hostile rendering two passed. Standard checkout and
+  OSMAP services unchanged. The dedicated native mail fixture failed before
+  its first save; this is not a native helper feature PASS.
+- Diagnosis: the production executor intentionally clears inherited environment;
+  standalone no-userdb doveadm requires USER. Read-only reproduction returned
+  status 64. Supplying only the fixture OS username then exposed inherited
+  directory GID 0, whereas the actual process UID/GID is 1000/1000. Test adapter
+  now obtains current OS identity through fixed `id` options, sets only USER
+  through fixed `/usr/bin/env`, and uses process GID in its standalone config.
+  Production executor restrictions remain intact. Failed owner-private scratch
+  removed after its configuration/diagnosis were retained under `native-b`.
+- Mailbox/search tables are now semantic compact lists with actual sender,
+  subject, received timestamp, unread/selected state, read/star controls and
+  attachment metadata. Headers are escaped; long sender/subject previews are
+  bounded visually with full text in More. No body preview or avatar identity
+  is invented. Unavailable legacy metadata remains explicit. Sort, search
+  options and secondary actions use keyboard-operable native disclosures.
+- Existing bulk form associations are preserved and tested; consolidation and
+  strengthened move semantics remain S02-03. Six navigation and six state-control
+  browser journeys pass, including keyboard disclosure, distinct selection
+  forms, sort/filter/page state, CSRF/stale/account isolation and unknown outcome.
+- Library 588 passed/zero failed/six ignored; strict all-target clippy passes.
+  Current visual evidence: 74 full-page captures (30 system, eight saved-theme,
+  12 simulated 200% reflow, eight expanded, eight forced-colour, eight Firefox)
+  plus 12 viewport review captures. No detected overflow or computed contrast
+  failure; all image hashes checked. Selected desktop and long-header narrow
+  states visually inspected. Earlier C captures are superseded by the verified
+  set after reducing repeated status text and bounding header previews.
+- Evidence: `checkpoint-c-summary.json`, SHA-256
+  `1071f6b891ad9cdf3f40f17bf111bcb2b35e6b28ccb6d7fe6e06f7ecb738f54d`.
+  Full common acceptance, V14, formatting, diff and frozen-plan checks PASS.
+  Corrected native fixture qualification must use the next signed exact source.
+  S02-01 remains pending that result and the remaining per-control inventory.
+  Retry the recorded native work order with a new private source directory,
+  unchanged standard checkout/services and the same owned target cache.
+
+### S02-01 checkpoint D work order — finish the control inventory
+
+- Reconcile all thirteen S02-01 acceptance rows before claiming the slice.
+  The remaining items are actual bounded body previews, safe sender initials,
+  a bounded select-all/none menu, and a finite global search/shortcut menu.
+  No invented preview, cryptographic state, sender trust or arbitrary command
+  interpreter. Initials derive from the displayed untrusted sender header;
+  they are decorative text and never a verified avatar or profile photo.
+- Allowed: native fetch/JSON and helper read metadata, message metadata bounds,
+  list view state, shared shell/UI/CSS, mail routes, fixtures/browser/native
+  tests, route inventory if needed, generated evidence and current UX records.
+  Native Dovecot's tagged fetch implementation supports `body.preview` and
+  `body.snippet`; qualify preview behaviour only on the retained synthetic
+  standalone Maildir before using it. Keep preview content out of diagnostics.
+- Preview text is bounded, escaped and hidden for encrypted-body indicators;
+  no body fetch per row, external resources or new crypto authority. Preserve
+  the existing native/helper byte, row and time limits; no full-mailbox scale
+  claim beyond those limits. Add native preview proof to the exact signed test.
+- Selection is presentation state over the current bounded page. Native GET
+  selection controls do not authorize a mutation; existing POST action and
+  ownership checks still apply. Move/archive consolidation and stale-safe
+  mutation semantics remain S02-03. A search menu exposes only reviewed existing
+  navigation destinations and the existing search route. Settings omits search.
+- Verify global-header impact across authenticated pages, keyboard disclosures,
+  theme/reflow/contrast, unknown/encrypted/long previews, no active content,
+  current-page selection bounds and helper/native metadata interoperability.
+  S02-02 coordinated reader work follows these S02-01 checks, rather than
+  treating a partial control inventory as slice completion.

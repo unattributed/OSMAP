@@ -37,10 +37,17 @@ obsd1. S02-01 checkpoint A adds real unread/starred filters, stable ordering,
 synthetic browser journeys and 92 visual/reflow/forced-colour captures pass.
 Checkpoint B adds strict structured native message identity and attachment
 metadata, explicit read/star forms and identity-bound idempotent helper writes.
-587 library tests, six synthetic state-control journeys and five list journeys
-pass; the native command substrate has been checked in a disposable Maildir.
-Exact signed Rust/helper native qualification and the compact coordinated
-list/reader layout remain pending; this is not acceptance of the full slice.
+Checkpoint C replaces wide tables with compact accessible message rows,
+bounded header previews and native disclosures for sorting and secondary
+actions. 588 library tests, six state-control and six navigation journeys pass.
+74 full-page theme/reflow/expanded/forced-colour/Firefox checks pass. The exact
+checkpoint B source passed native library and hostile-rendering tests; its
+disposable mail test required corrections for the intentionally cleared command
+environment and OpenBSD directory group inheritance. Corrected exact-source
+native helper qualification and S02-02 coordinated list/reader work follow.
+S02-01 remains in progress for corrected native qualification and the remaining
+control inventory: bounded body previews, sender initials, the selection menu
+and the finite search/shortcut menu.
 Independent human accessibility acceptance
 and deployment remain separate.
 D01–D06 are recorded

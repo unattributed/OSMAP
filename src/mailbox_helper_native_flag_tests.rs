@@ -10,6 +10,7 @@ const FIXTURE_ACCOUNT: &str = "osmap-native-fixture@example.test";
 #[derive(Clone)]
 struct IsolatedDoveadm {
     config: PathBuf,
+    os_username: String,
 }
 
 impl CommandExecutor for IsolatedDoveadm {
@@ -30,7 +31,14 @@ impl CommandExecutor for IsolatedDoveadm {
         timeout: Duration,
     ) -> Result<CommandExecution, CommandExecutionError> {
         assert_eq!(program, "/usr/local/bin/doveadm");
-        let mut isolated = vec!["-c".into(), self.config.to_string_lossy().into_owned()];
+        // The production executor clears inherited environment. Standalone
+        // doveadm needs only the verified current OS username, not live userdb.
+        let mut isolated = vec![
+            format!("USER={}", self.os_username),
+            program.into(),
+            "-c".into(),
+            self.config.to_string_lossy().into_owned(),
+        ];
         let mut index = 0;
         while index < args.len() {
             if args[index] == "-u" {
@@ -45,7 +53,12 @@ impl CommandExecutor for IsolatedDoveadm {
                 index += 1;
             }
         }
-        SystemCommandExecutor.run_with_stdin_bytes_timeout(program, &isolated, input, timeout)
+        SystemCommandExecutor.run_with_stdin_bytes_timeout(
+            "/usr/bin/env",
+            &isolated,
+            input,
+            timeout,
+        )
     }
 }
 
@@ -121,6 +134,29 @@ fn isolated_openbsd_json_and_signed_flag_helper() {
         .expect("new private fixture root");
     let owner = fs::metadata(&root).expect("fixture owner");
     assert_ne!(owner.uid(), 0, "run as a nonprivileged operator");
+    let os_identity = |option: &str| {
+        let result = SystemCommandExecutor
+            .run_with_stdin_timeout("/usr/bin/id", &[option.into()], "", Duration::from_secs(1))
+            .expect("current OS identity");
+        assert_eq!(result.status_code, 0);
+        result.stdout.trim().to_string()
+    };
+    let os_username = os_identity("-un");
+    let os_group = os_identity("-g").parse::<u32>().expect("OS group");
+    assert_eq!(
+        os_identity("-u").parse::<u32>().expect("OS uid"),
+        owner.uid()
+    );
+    assert_ne!(
+        os_group, 0,
+        "qualification requires a non-root process group"
+    );
+    assert!(
+        !os_username.is_empty()
+            && os_username
+                .bytes()
+                .all(|byte| byte.is_ascii_alphanumeric() || b"_-".contains(&byte))
+    );
     for directory in ["run", "state", "home", "mail"] {
         fs::DirBuilder::new()
             .mode(0o700)
@@ -128,12 +164,15 @@ fn isolated_openbsd_json_and_signed_flag_helper() {
             .expect("fixture directory");
     }
     let config = root.join("dovecot.conf");
-    fs::write(&config, format!("base_dir = {0}/run\nstate_dir = {0}/state\nmail_home = {0}/home\nmail_location = maildir:{0}/mail\nmail_uid = {1}\nmail_gid = {2}\nfirst_valid_uid = {1}\nprotocols =\nlisten = 127.0.0.1\nssl = no\nmail_plugins =\nstats_writer_socket_path =\nauth_socket_path = {0}/run/no-auth-socket\nlog_path = {0}/native.log\ninfo_log_path = {0}/native.log\n", root.display(), owner.uid(), owner.gid())).expect("standalone configuration");
+    fs::write(&config, format!("base_dir = {0}/run\nstate_dir = {0}/state\nmail_home = {0}/home\nmail_location = maildir:{0}/mail\nmail_uid = {1}\nmail_gid = {2}\nfirst_valid_uid = {1}\nprotocols =\nlisten = 127.0.0.1\nssl = no\nmail_plugins =\nstats_writer_socket_path =\nauth_socket_path = {0}/run/no-auth-socket\nlog_path = {0}/native.log\ninfo_log_path = {0}/native.log\n", root.display(), owner.uid(), os_group)).expect("standalone configuration");
     fs::set_permissions(&config, fs::Permissions::from_mode(0o600)).expect("private config");
     let key = root.join("fixture-grant.key");
     fs::write(&key, test_helper_grant_key()).expect("public synthetic signing fixture");
     fs::set_permissions(&key, fs::Permissions::from_mode(0o600)).expect("private fixture key");
-    let executor = IsolatedDoveadm { config };
+    let executor = IsolatedDoveadm {
+        config,
+        os_username,
+    };
     let save = vec!["save".into(), "-m".into(), "INBOX".into()];
     for message in [
         "From: Synthetic sender <sender@example.test>\r\nTo: fixture@example.test\r\nSubject: Plain fixture\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nPublic synthetic body.\r\n",
