@@ -513,16 +513,16 @@ mod tests {
         let barrier = Barrier::new(2);
         std::thread::scope(|scope| {
             scope.spawn(|| {
+                barrier.wait();
                 for _ in 0..32 {
-                    barrier.wait();
                     appearance
                         .save("alice@example.test", AppearancePreference::Light)
                         .expect("concurrent appearance write");
                 }
             });
             scope.spawn(|| {
+                barrier.wait();
                 for _ in 0..32 {
-                    barrier.wait();
                     legacy
                         .save("alice@example.test", &updated)
                         .expect("concurrent legacy write");
@@ -539,7 +539,8 @@ mod tests {
                 .expect("appearance reload"),
             AppearancePreference::Light
         );
-        assert_eq!(fs::read_dir(&root).expect("owned records").count(), 3);
+        // Two records and their separate account locks; no temporary files.
+        assert_eq!(fs::read_dir(&root).expect("owned records").count(), 4);
         fs::remove_dir_all(root).expect("cleanup owned fixture");
     }
 

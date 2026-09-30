@@ -11,7 +11,8 @@ use crate::html::TrustedHtml;
 use crate::http::BrowserVisibleSession;
 use crate::http_support::{escape_html, url_encode};
 use crate::mail_list::{
-    has_flag, sender_initials, BulkSelection, ListViewState, MessageFilter, MAX_BULK_SELECTION,
+    has_flag, sender_initials, AttachmentFilter, BulkSelection, ListViewState, MessageFilter,
+    MAX_BULK_SELECTION,
 };
 use crate::mailbox::{
     MailboxEntry, MessageSearchField, MessageSearchResult, MessageSort, MessageSortColumn,
@@ -21,7 +22,8 @@ use crate::message_metadata::{MessageFlag, MessageMetadata};
 use crate::mime::{AttachmentMetadata, DEFAULT_MIME_PARTS_MAX};
 use crate::rendering::{HtmlDisplayPreference, RenderedMessageView};
 pub(crate) use settings_ui::{
-    render_appearance_page, render_composition_page, render_general_page, render_reading_page,
+    render_appearance_page, render_composition_page, render_copies_page, render_general_page,
+    render_privacy_page, render_reading_page,
 };
 
 /// Defense-in-depth cap for attachment metadata rows rendered by one route.
@@ -36,6 +38,7 @@ pub(crate) use sessions_ui::render_sessions_page;
 
 /// Small view model for the current server-rendered compose page.
 pub(crate) struct ComposePageModel<'a> {
+    pub send_intent: &'a str,
     pub contacts: Option<&'a crate::contacts::ContactBook>,
     pub heading: &'a str,
     pub canonical_username: &'a str,
@@ -293,6 +296,11 @@ pub(crate) fn render_settings_search_page(account: &str, csrf: &str, query: &str
             "/settings?section=composition#composition-reply-placement",
         ),
         (
+            "Privacy & Security",
+            "privacy security protected rendering remote images source attachments content plain html",
+            "/settings?section=privacy",
+        ),
+        (
             "HTML Message Display",
             "reading plain sanitized content",
             "/settings?section=reading#html-display-prefer-sanitized",
@@ -320,7 +328,7 @@ pub(crate) fn render_settings_search_page(account: &str, csrf: &str, query: &str
         (
             "Archive Mailbox",
             "reading shortcut folder",
-            "/settings?section=reading#archive-mailbox-name",
+            "/settings?section=copies#copies-archive",
         ),
         (
             "Active Sessions",
@@ -578,6 +586,10 @@ fn append_list_filter_selection(href: &mut String, view: &ListViewState) {
         href.push_str("&filter=");
         href.push_str(view.filter.value());
     }
+    if view.attachment != AttachmentFilter::All {
+        href.push_str("&attachment=");
+        href.push_str(view.attachment.value());
+    }
     if let Some(selected) = &view.selection {
         href.push_str("&selected_mailbox=");
         href.push_str(&url_encode(&selected.mailbox));
@@ -601,6 +613,10 @@ fn list_navigation_href(base: &str, view: &ListViewState, page: usize) -> String
 
 fn list_form_state(view: &ListViewState) -> String {
     let mut fields = format!("<input type=\"hidden\" name=\"filter\" value=\"{}\"><input type=\"hidden\" name=\"sort\" value=\"{}\"><input type=\"hidden\" name=\"dir\" value=\"{}\">", view.filter.value(), view.sort.column.query_value(), view.sort.direction.query_value());
+    fields.push_str(&format!(
+        "<input type=\"hidden\" name=\"attachment\" value=\"{}\">",
+        view.attachment.value()
+    ));
     if let Some(selected) = &view.selection {
         fields.push_str(&format!("<input type=\"hidden\" name=\"selected_mailbox\" value=\"{}\"><input type=\"hidden\" name=\"selected_uid\" value=\"{}\">", escape_html(&selected.mailbox), selected.uid));
     }
@@ -661,6 +677,29 @@ fn render_list_navigation(base: &str, view: &ListViewState) -> String {
             filter.label()
         ));
     }
+    filters.push_str(&format!("<details class=\"attachment-filter\"><summary>Attachments: {}</summary><div role=\"group\" aria-label=\"Attachment filter\">", view.attachment.label()));
+    for attachment in [
+        AttachmentFilter::All,
+        AttachmentFilter::With,
+        AttachmentFilter::Without,
+        AttachmentFilter::Unknown,
+    ] {
+        let mut target = view.clone();
+        target.attachment = attachment;
+        filters.push_str(&format!(
+            "<a class=\"filter-link\" href=\"{}\"{}>{}</a>",
+            escape_html(&list_navigation_href(base, &target, 1)),
+            if attachment == view.attachment {
+                " aria-current=\"page\""
+            } else {
+                ""
+            },
+            attachment.label()
+        ));
+    }
+    filters.push_str(
+        "</div><p class=\"muted\">Unknown means attachment metadata is unavailable.</p></details>",
+    );
     let previous = if view.page > 1 {
         format!(
             "<a class=\"button-link\" rel=\"prev\" href=\"{}\">Previous page</a>",
@@ -1059,7 +1098,7 @@ pub(crate) fn render_message_list_page(
         ));
     }
     if messages.is_empty() {
-        rows.push_str(&format!("<li class=\"message-empty-state\"><strong>No messages shown.</strong><br><span class=\"muted\">{}</span><p><a class=\"button-link\" href=\"/compose\">Compose a message</a></p></li>", if sort_links.view.filter == MessageFilter::All { "New messages will appear here." } else { "No messages match this filter. Choose All messages to see the mailbox." }));
+        rows.push_str(&format!("<li class=\"message-empty-state\"><strong>No messages shown.</strong><br><span class=\"muted\">{}</span><p><a class=\"button-link\" href=\"/compose\">Compose a message</a></p></li>", if sort_links.view.filter == MessageFilter::All && sort_links.view.attachment == AttachmentFilter::All { "New messages will appear here." } else { "No messages match these filters. Choose All messages and All attachment states to see the mailbox." }));
     }
 
     let bulk_move_form = if (bulk_actions_available || archive_actions_available)
@@ -1537,6 +1576,10 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
         ),
         None => String::new(),
     };
+    let intent_field = format!(
+        "<input type=\"hidden\" name=\"send_intent\" value=\"{}\">",
+        escape_html(model.send_intent)
+    );
     let mut draft_id_field = model
         .draft_id
         .map(|draft_id| {
@@ -1546,6 +1589,7 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
             )
         })
         .unwrap_or_default();
+    draft_id_field.push_str(&intent_field);
     if let Some(revision) = model.draft_revision {
         draft_id_field.push_str(&format!(
             "<input type=\"hidden\" name=\"draft_revision\" value=\"{revision}\">"
@@ -1593,7 +1637,7 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
             "<details class=\"compose-bcc\"{}><summary>+ Bcc</summary><label for=\"compose-bcc\">Bcc</label><input id=\"compose-bcc\" type=\"text\" name=\"bcc\" value=\"{}\" autocomplete=\"off\"></details>{}</div>",
             "<div class=\"compose-field compose-subject-field\"><label for=\"compose-subject\">Subject</label><input id=\"compose-subject\" type=\"text\" name=\"subject\" value=\"{}\"></div>",
             "{}",
-            "{formatting_controls}<label class=\"sr-only\" for=\"compose-body\">Body</label><textarea id=\"compose-body\" name=\"body\" placeholder=\"Write your message…\">{}</textarea>{preview}{preflight}",
+            "{formatting_controls}<label class=\"sr-only\" for=\"compose-body\">Body</label><textarea id=\"compose-body\" name=\"body\" placeholder=\"Write your message…\">\n{}</textarea>{preview}{preflight}",
             "<section class=\"compose-attachments\" aria-labelledby=\"compose-attachments-heading\"><h2 id=\"compose-attachments-heading\">Attachments</h2>{}{}<label for=\"compose-attachment\">Add attachments</label><input id=\"compose-attachment\" type=\"file\" name=\"attachment\" multiple><details class=\"compose-attachment-help\"><summary>Attachment help</summary><p>Up to 3 attachments, 10 MiB each and 30 MiB total, including saved and selected source files. Local images have a 5 MiB limit. Select Remove, then Save Draft or Send Message to apply removal. Other saved files stay attached.</p></details></section>",
             "<div class=\"compose-save-bar\"><p id=\"compose-save-status\" role=\"status\" aria-live=\"polite\" data-state=\"{save_state}\">{save_status}</p><span class=\"muted\">Automatic saving is not available.</span></div>",
             "<div class=\"compose-footer\"><div class=\"compose-footer-actions\">{discard_control}<button id=\"compose-save\" type=\"submit\"{disabled} formaction=\"/drafts/save\" aria-keyshortcuts=\"Control+S Meta+S\">Save Draft</button><button type=\"button\" disabled aria-describedby=\"compose-schedule-status\">Schedule</button><span id=\"compose-schedule-status\" class=\"muted\">Scheduling unavailable</span>{footer_more}</div>",

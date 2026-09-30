@@ -42,16 +42,15 @@ pub(crate) fn render_reading_page(
     );
     let reader = format!(concat!(
         "<div class=\"reading-card-column\"><section class=\"general-card\" aria-labelledby=\"reading-reader-title\"><h2 id=\"reading-reader-title\">Reader</h2>",
-        "<form id=\"reading-content-form\" method=\"post\" action=\"/settings\"><input type=\"hidden\" name=\"return_section\" value=\"reading\"><input type=\"hidden\" name=\"csrf_token\" value=\"{csrf}\"><input type=\"hidden\" name=\"archive_mailbox_name\" value=\"{archive}\">",
+        "<form id=\"reading-content-form\" method=\"post\" action=\"/settings\"><input type=\"hidden\" name=\"return_section\" value=\"reading\"><input type=\"hidden\" name=\"csrf_token\" value=\"{csrf}\"><input type=\"hidden\" name=\"settings_action\" value=\"content\">",
         "<div class=\"general-field\"><label for=\"html-display-prefer-sanitized\">Default content</label><select id=\"html-display-prefer-sanitized\" name=\"html_display_preference\">{content}</select></div></form>{source}{attachments}",
         "<div class=\"general-field reading-policy\"><span>External images</span><span class=\"general-enforced\">Blocked by policy</span></div></section>",
-        "<div class=\"reading-card-actions\"><button type=\"submit\" form=\"reading-content-form\"{disabled}>Save content preference</button></div>",
+        "<div class=\"reading-card-actions\"><button type=\"submit\" form=\"reading-content-form\">Save content preference</button></div>",
         "<p class=\"reading-help\">{help}</p></div>"
-    ), csrf=csrf, archive=escape_html(model.archive_mailbox_name.unwrap_or("")), content=content,
+    ), csrf=csrf, content=content,
         source=reading_switch("reading-show-source", "Show source shortcut", "show_source_shortcut", preferences.show_source_shortcut),
         attachments=reading_switch("reading-attachment-details", "Attachment details", "attachment_details", preferences.attachment_details),
-        disabled=if archive_missing { " disabled" } else { "" },
-        help=if archive_missing { "Save an available Archive folder first. Your stored Archive is preserved until you change it." } else { "Protected HTML uses sanitized content when available. Source and attachment switches use Save reading preferences." });
+        help="Protected HTML uses sanitized content when available. This save preserves Archive. Source and attachment switches use Save reading preferences.");
     let (archive, archive_save) = if let Some(mailboxes) = mailboxes {
         let mut options = format!(
             "<option value=\"\"{}>Not configured</option>",
@@ -154,8 +153,8 @@ mod tests {
         let html = html.as_str();
         assert!(html.contains("<option value=\"Old &amp; &lt;missing&gt;\" selected>Old &amp; &lt;missing&gt; (unavailable)</option>"));
         assert!(!html.contains("value=\"\" selected"));
-        assert!(html.contains("name=\"archive_mailbox_name\" value=\"Old &amp; &lt;missing&gt;\""));
-        assert!(html.contains("form=\"reading-content-form\" disabled"));
+        assert!(html.contains("name=\"settings_action\" value=\"content\""));
+        assert!(!html.contains("form=\"reading-content-form\" disabled"));
         assert!(html.contains("Select an available folder or Not configured before saving."));
     }
 

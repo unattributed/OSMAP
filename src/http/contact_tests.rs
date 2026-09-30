@@ -31,10 +31,11 @@ fn perform(
     path: &str,
     form: &str,
 ) -> HandledHttpResponse {
-    app.handle_request(
-        &request(method, path, &authenticated_same_origin_headers(), form),
-        "127.0.0.1",
-    )
+    let mut req = request(method, path, &authenticated_same_origin_headers(), form);
+    if method == "POST" && matches!(path, "/send" | "/drafts/save") {
+        add_native_compose_intent(app, &mut req);
+    }
+    app.handle_request(&req, "127.0.0.1")
 }
 
 fn add(store: &ContactStore) -> crate::contacts::ContactBook {
@@ -191,8 +192,12 @@ fn selected_contact_saves_explicit_roles_and_keeps_original_thread_without_sendi
             "cc" => &draft.request.cc_text,
             _ => &draft.request.bcc_text,
         };
-        assert!(crate::mail_address::parse_address_list(ComposePolicy::default(), addresses)
-            .unwrap().iter().any(|a| a == "desk@example.test"));
+        assert!(
+            crate::mail_address::parse_address_list(ComposePolicy::default(), addresses)
+                .unwrap()
+                .iter()
+                .any(|a| a == "desk@example.test")
+        );
         assert!(draft.request.reply_thread.is_some());
         assert!(app.gateway.submitted.lock().unwrap().is_empty());
         assert_eq!(

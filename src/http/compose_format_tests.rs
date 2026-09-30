@@ -51,6 +51,9 @@ impl Fixture {
             "content-type".into(),
             "multipart/form-data; boundary=format-test".into(),
         );
+        if req.method == HttpMethod::Post && matches!(req.path.as_str(), "/send" | "/drafts/save") {
+            add_native_compose_intent(&self.app, &mut req);
+        }
         self.app.handle_request(&req, "127.0.0.1")
     }
 
@@ -179,7 +182,7 @@ fn invalid_formatted_send_retains_exact_source_and_mode_without_submission() {
     assert_eq!(response.response.status_code, 400);
     let html = body_text(&response);
     assert!(html.contains(&format!(
-        ">{}</textarea>",
+        ">\n{}</textarea>",
         crate::http_support::escape_html(source)
     )));
     assert!(html.contains("<option value=\"formatted\" selected>"));
@@ -220,7 +223,7 @@ fn utf16_selection_inside_surrogate_pair_refuses_without_saving_or_losing_source
     );
     assert_eq!(response.response.status_code, 400);
     assert!(body_text(&response).contains(&format!(
-        ">{}</textarea>",
+        ">\n{}</textarea>",
         crate::http_support::escape_html(source)
     )));
     fixture.assert_no_mutation();
@@ -276,6 +279,7 @@ fn invalid_image_retains_surrounding_fields_and_never_partially_saves_sibling_fi
                 "content-type".into(),
                 "multipart/form-data; boundary=image-refusal".into(),
             );
+            add_native_compose_intent(&fixture.app, &mut req);
             let response = fixture.app.handle_request(&req, "127.0.0.1");
             assert_eq!(
                 response.response.status_code, 400,
@@ -283,7 +287,7 @@ fn invalid_image_retains_surrounding_fields_and_never_partially_saves_sibling_fi
             );
             let html = body_text(&response);
             assert!(html.contains(&format!(
-                ">{}</textarea>",
+                ">\n{}</textarea>",
                 crate::http_support::escape_html(source)
             )));
             assert!(html.contains("<option value=\"formatted\" selected>"));

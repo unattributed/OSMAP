@@ -1,0 +1,35 @@
+/* PAGE16 only. */
+.copies-content { min-width:0; }
+.copies-top-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem; }
+.settings-copies-page .general-card { min-height:16.7rem;box-shadow:none; }
+.settings-copies-page .general-field { min-height:2rem;margin-bottom:.65rem;font-size:.875rem; }
+.settings-copies-page .general-field span { overflow-wrap:anywhere; }
+.copies-links { display:flex;align-items:center;justify-content:space-between;gap:.5rem;font-size:.75rem; }
+.copies-links button { font-size:.75rem; }
+.copies-management { margin-top:.65rem;padding:1.2rem;border:1px solid var(--line);border-radius:.8rem;background:var(--panel);min-height:31.5rem; }
+.copies-management-heading { display:flex;justify-content:space-between;align-items:start;gap:.7rem;flex-wrap:wrap; }
+.copies-management h2 { margin:0;font-size:1.5rem; }
+.copies-management-heading p { color:var(--muted);margin:.3rem 0 .5rem;font-size:.875rem; }
+.copies-management-actions { display:flex;gap:.5rem;flex-wrap:wrap; }
+.copies-management-actions button { font-size:.75rem;min-height:2.4rem; }
+.copies-browser { display:grid;grid-template-columns:46% minmax(0,1fr);gap:1.2rem; }
+.copies-tree,.copies-details { border:1px solid var(--line);border-radius:.65rem;padding:1.2rem;min-width:0;min-height:23.5rem; }
+.copies-tree { background:var(--bg); }
+.copies-browser h3 { margin:.1rem 0 .6rem;font-size:1.05rem;overflow-wrap:anywhere; }
+.copies-tree ul { list-style:none;padding:0;margin:0;max-height:20rem;overflow:auto; }
+.copies-tree a { display:flex;align-items:center;gap:.5rem;padding:.35rem 0;font-size:.875rem;overflow-wrap:anywhere; }
+.copies-tree a span { min-width:0; }
+.copies-details dl { display:grid;grid-template-columns:32% minmax(0,1fr);gap:1.1rem;font-size:.8rem;margin:1.5rem 0; }
+.copies-details dt { color:var(--muted); }.copies-details dd { margin:0;font-weight:600;overflow-wrap:anywhere; }
+.copies-safety { background:var(--bg);border:1px solid var(--line);border-radius:.65rem;padding:.8rem;margin-top:1.2rem;font-size:.75rem;color:var(--muted); }
+.copies-safety h4 { margin:0;color:var(--ink); }.copies-safety p { margin:.35rem 0; }
+.copies-help { font-size:.75rem;color:var(--muted);line-height:1.5; }
+@media(max-width:75rem) { .copies-top-grid,.copies-browser { grid-template-columns:minmax(0,1fr); }.copies-management { padding:1rem; } }
+@media(max-width:40rem) { .settings-copies-page .general-card,.copies-tree,.copies-details { min-height:0; }.copies-links { flex-wrap:wrap; } }
+@media(forced-colors:active) { .copies-management-actions button:disabled { color:GrayText;border-color:GrayText; }.copies-safety { color:CanvasText;background:Canvas; } }
+.settings-copies-page .settings-layout { align-items:start; }
+.settings-copies-page .settings-navigation { min-height:24.25rem; }
+.settings-copies-page .general-card h2 { margin:.65rem 0 .8rem; }
+.settings-copies-page .general-field { min-height:1.5rem;margin-bottom:.4rem; }
+.copies-links button { min-height:1.8rem;padding:.25rem .5rem; }
+@media(max-width:40rem) { .settings-copies-page .settings-navigation { min-height:0; } }

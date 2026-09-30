@@ -78,3 +78,19 @@
   .settings-page input.settings-switch { appearance: auto; width: 1.3rem; height: 1.3rem; }
   .settings-switch::before { display: none; }
 }
+/* PAGE18: policy summaries are read-only; content preference is native. */
+.settings-privacy-page .settings-layout { align-items:start; }
+.privacy-content { min-width:0;display:grid;gap:.9rem; }
+.privacy-cards { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.9rem; }
+.settings-privacy-page .general-card { box-shadow:none;min-width:0;min-height:0; }
+.privacy-cards .general-card { min-height:13.25rem; }
+.privacy-policy { display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);align-items:center;gap:.5rem;margin:.6rem 0;font-size:.875rem;line-height:1.2; }
+.privacy-policy .general-enforced { padding:.3rem .6rem;border-radius:2rem;font-size:.75rem;overflow-wrap:anywhere; }
+.privacy-policy input { justify-self:start; }
+.privacy-help { color:var(--muted);font-size:.8rem;line-height:1.5; }
+.privacy-note { padding:.8rem;border:1px solid var(--line);background:var(--panel-soft);border-radius:.55rem;margin:0;font-size:.875rem; }
+
+@media(max-width:1200px) { .privacy-cards { grid-template-columns:1fr; }.privacy-cards .general-card { min-height:0; } }
+@media(forced-colors:active) { .privacy-policy .general-enforced { border:1px solid CanvasText; } }
+.privacy-note { line-height:1.35; }
+.privacy-notes .privacy-help { margin:.35rem 0 0; }

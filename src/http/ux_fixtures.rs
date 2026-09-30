@@ -168,10 +168,30 @@ fn ux_synthetic_route_baselines() {
             200,
         ),
         ("compose", "/compose", true, 200),
-        ("compose-saved-attachments", "/draft?id=00000000000000000000000000000001", true, 200),
-        ("compose-source-changed", "/draft?id=00000000000000000000000000000001", true, 200),
-        ("compose-source-unverified", "/draft?id=00000000000000000000000000000001", true, 200),
-        ("compose-source-unavailable", "/draft?id=00000000000000000000000000000001", true, 200),
+        (
+            "compose-saved-attachments",
+            "/draft?id=00000000000000000000000000000001",
+            true,
+            200,
+        ),
+        (
+            "compose-source-changed",
+            "/draft?id=00000000000000000000000000000001",
+            true,
+            200,
+        ),
+        (
+            "compose-source-unverified",
+            "/draft?id=00000000000000000000000000000001",
+            true,
+            200,
+        ),
+        (
+            "compose-source-unavailable",
+            "/draft?id=00000000000000000000000000000001",
+            true,
+            200,
+        ),
         ("draft-save-unconfirmed", "/drafts/save", true, 503),
         (
             "reply-all",
@@ -277,7 +297,10 @@ fn ux_synthetic_route_baselines() {
             "draft-save-unconfirmed" => headers[0] = ("User-Agent", "OSMAP/DraftSaveUnconfirmed"),
             _ => {}
         }
-        let method = if name == "login-error" || name.starts_with("move-") || matches!(name, "drafts-review" | "draft-save-unconfirmed") {
+        let method = if name == "login-error"
+            || name.starts_with("move-")
+            || matches!(name, "drafts-review" | "draft-save-unconfirmed")
+        {
             "POST"
         } else {
             "GET"
@@ -337,32 +360,101 @@ fn ux_synthetic_route_baselines() {
                 .insert("host".to_string(), "unaccepted.example.test".to_string());
         }
         let fixture_app = app();
-        if matches!(name, "drafts-populated" | "drafts-filtered-empty" | "drafts-review" | "compose-saved-attachments" | "compose-source-changed" | "compose-source-unverified" | "compose-source-unavailable") {
+        if matches!(
+            name,
+            "drafts-populated"
+                | "drafts-filtered-empty"
+                | "drafts-review"
+                | "compose-saved-attachments"
+                | "compose-source-changed"
+                | "compose-source-unverified"
+                | "compose-source-unavailable"
+        ) {
             let mut drafts = fixture_app.gateway.drafts.lock().unwrap();
-            for (index, subject) in ["Project notes", "Security outline", "Meeting notes", "Vendor assessment", "Policy draft", "Quarterly update", "Personal notes", "Release checklist"].iter().enumerate() {
+            for (index, subject) in [
+                "Project notes",
+                "Security outline",
+                "Meeting notes",
+                "Vendor assessment",
+                "Policy draft",
+                "Quarterly update",
+                "Personal notes",
+                "Release checklist",
+            ]
+            .iter()
+            .enumerate()
+            {
                 let id = format!("{:032x}", index + 1);
-                let mut draft = DraftRecord::new(DraftPolicy::default(), DraftRecordInput {
-                    draft_id: id.clone(), canonical_username: "alice@example.com".into(), now: 1_790_000_000 - index as u64 * 86_400,
-                    recipients_text: format!("Synthetic Recipient {} <recipient{}@example.test>", index + 1, index + 1),
-                    cc_text: String::new(), bcc_text: String::new(), subject: subject.to_string(), body: "Public synthetic fixture text".into(),
-                    attachments: if index % 3 == 0 { vec![UploadedAttachment::new(ComposePolicy::default(), "synthetic.txt", "text/plain", b"public synthetic file".to_vec()).unwrap()] } else { vec![] },
-                    source_attachments: None,
-                }).unwrap();
+                let mut draft = DraftRecord::new(
+                    DraftPolicy::default(),
+                    DraftRecordInput {
+                        draft_id: id.clone(),
+                        canonical_username: "alice@example.com".into(),
+                        now: 1_790_000_000 - index as u64 * 86_400,
+                        recipients_text: format!(
+                            "Synthetic Recipient {} <recipient{}@example.test>",
+                            index + 1,
+                            index + 1
+                        ),
+                        cc_text: String::new(),
+                        bcc_text: String::new(),
+                        subject: subject.to_string(),
+                        body: "Public synthetic fixture text".into(),
+                        attachments: if index % 3 == 0 {
+                            vec![UploadedAttachment::new(
+                                ComposePolicy::default(),
+                                "synthetic.txt",
+                                "text/plain",
+                                b"public synthetic file".to_vec(),
+                            )
+                            .unwrap()]
+                        } else {
+                            vec![]
+                        },
+                        source_attachments: None,
+                    },
+                )
+                .unwrap();
                 draft.revision = Some(1);
                 if name.starts_with("compose-source-") && index == 0 {
-                    let mut version = StubGateway::fixture_metadata("alice@example.com", "INBOX", 9).version;
-                    if name == "compose-source-changed" { version.message_guid = "old-original".into(); }
+                    let mut version =
+                        StubGateway::fixture_metadata("alice@example.com", "INBOX", 9).version;
+                    if name == "compose-source-changed" {
+                        version.message_guid = "old-original".into();
+                    }
                     draft.source_attachments = Some(DraftSourceAttachments {
-                        mailbox_name: "INBOX".into(), uid: if name == "compose-source-unavailable" { 900 } else { 9 },
-                        version: (name != "compose-source-unverified").then_some(version), part_paths: vec!["1.2".into()],
+                        mailbox_name: "INBOX".into(),
+                        uid: if name == "compose-source-unavailable" {
+                            900
+                        } else {
+                            9
+                        },
+                        version: (name != "compose-source-unverified").then_some(version),
+                        part_paths: vec!["1.2".into()],
                     });
                 }
                 if name == "compose-saved-attachments" && index == 0 {
-                    draft.request.attachments = ["Project_review_notes.txt", "Risk_assessment.pdf"].into_iter().map(|filename| UploadedAttachment::new(ComposePolicy::default(), filename, "application/octet-stream", b"public synthetic fixture".to_vec()).unwrap()).collect();
+                    draft.request.attachments = ["Project_review_notes.txt", "Risk_assessment.pdf"]
+                        .into_iter()
+                        .map(|filename| {
+                            UploadedAttachment::new(
+                                ComposePolicy::default(),
+                                filename,
+                                "application/octet-stream",
+                                b"public synthetic fixture".to_vec(),
+                            )
+                            .unwrap()
+                        })
+                        .collect();
                 }
                 draft.starred = index == 1;
                 drafts.insert(id, draft);
             }
+        }
+        if fixture_request.method == HttpMethod::Post
+            && matches!(fixture_request.path.as_str(), "/send" | "/drafts/save")
+        {
+            add_native_compose_intent(&fixture_app, &mut fixture_request);
         }
         let response = fixture_app.handle_request(&fixture_request, "127.0.0.1");
         assert_eq!(response.response.status_code, expected_status, "{name}");
@@ -378,7 +470,11 @@ fn ux_synthetic_route_baselines() {
         if compose_enhanced {
             assert_eq!(csp, super::super::compose_enhancement::csp());
             assert!(html.contains(super::super::compose_enhancement::SCRIPT));
-            assert_eq!(html.matches("<script").count(), 1, "bounded script fixture {name}");
+            assert_eq!(
+                html.matches("<script").count(),
+                1,
+                "bounded script fixture {name}"
+            );
         } else {
             assert_eq!(csp, crate::http_support::browser_csp());
             assert!(!html.contains("<script"), "script-free fixture {name}");

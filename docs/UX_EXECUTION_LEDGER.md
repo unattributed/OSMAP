@@ -1765,3 +1765,71 @@ with later outcomes. Correct errors using a new entry referencing the old one.
 - These are bounded local control completions. PAGE-01 and PAGE-15 remain
   partial against their full frozen requirements. Durable send recovery and
   real Welcome summary projections remain separate, unaccepted proposals.
+
+### Durable attempt recovery, Welcome data and native Settings — 2026-09-30
+
+- Signed Welcome/Composition checkpoint `bb80e168a030c04a82ecc78fa073b808d5c7704f`
+  passed isolated obsd1 qualification without deployment or standard-service
+  changes. S04 `native-e` archive SHA-256
+  `7902b2b27f2ed51057c6740dee7cb3be7147cdc8b8adb7c7403aa9bb940e4d30`;
+  native log SHA-256 `c48d4b7b83184e76734e4d06f40f255193ebd870df1cff16f0114eebe3c428fe`.
+- Send uses an account-bound durable intent and journal guard covering fresh
+  revision validation, reservation, exact prepared recovery capture and dispatch.
+  Replayed or changed consumed attempts cannot dispatch again. Saved-draft
+  handoff retires the original unsaved form before publishing its new draft.
+  Forged success query flags are rejected. A receipt records acceptance and
+  Sent-copy storage separately; uncertain outcomes never invite automatic retry.
+- Recovery stores the prepared To/Cc/Bcc, source format/body, thread metadata and
+  resolved attachment bytes before invoking submission. Capture failure records
+  that submission was not invoked. Verified owned recovery remains readable when
+  the separate outcome receipt is missing or corrupt. Native read-only views and
+  exact-byte body/file downloads preserve recovery without creating another send
+  intent. Reopened consumed drafts link to their exact attempted version.
+- Independent review corrected the first-newline loss imposed by HTML textarea
+  parsing, misleading empty-upload wording and a missing recovery navigation
+  link. Textareas preserve leading blank lines; source downloads preserve actual
+  retained LF/CRLF/Unicode bytes because browser text fields normalize line ends.
+  Retained attempts and ordinary drafts share a 50-record / 50-MiB bound and
+  30-day retention. Successful snapshots currently also consume this budget;
+  release-level retention/reclamation and quota presentation remain incomplete.
+- Welcome now projects real owned Inbox summaries and saved-draft count. Recent
+  rows are the newest five from the bounded loaded set, with literal sender,
+  subject, date and read/star metadata. Unread/flagged counts explicitly cover
+  that loaded set, not an unproven complete mailbox. Secondary failure or wrong
+  ownership yields unknown values; no body fetch, mailbox mutation or crypto
+  assessment is inferred. Sent count and service/storage status remain unknown.
+- PAGE-16 follows the approved Copies/Folder Management hierarchy. Native Archive
+  selection and mailbox opening use actual owned choices; a missing saved choice
+  remains visible. Archive-only updates merge the latest content preference under
+  the account writer lock. Fixed Sent/draft/Bin mappings are identified; folder
+  hierarchy editing, creation/rename/move/delete and counts remain incomplete.
+- PAGE-18 has the approved policy-card hierarchy and a native Reading link.
+  Content-only saves preserve a newer Archive value. The extra preference card
+  was removed after parent reference comparison; the control remains in Reading.
+  Final top-card bottoms are approximately y393 against the approved y391.
+  Existing renderer policies are scoped accurately: remote tracking images are
+  blocked; no general tracking or cryptographic-verification promise is made.
+  Per-message exceptions remain unavailable. Independent review restored partial
+  settings success/failure audit events with account/request/session correlation
+  and changed-field name, without submitted preference values.
+- Attachment filters distinguish known files, confirmed zero files and unknown
+  metadata; they compose with read/star/search/sort/paging and reader navigation.
+  Inbox/Search grid alignment no longer stretches an empty band above the toolbar.
+- Parent integration exposed obsolete General/textarea assertions and a transient
+  busy settings lock. The writer now waits at most 500 ms, like Appearance, before
+  refusing; the concurrency test cannot deadlock its peer after a failed writer.
+  Existing source registers were refreshed without changing audit policy.
+- Evidence is retained under S04 `welcome-data-{edge,firefox}`,
+  `lists-spacing-{edge,firefox}`, `attachment-filter-{edge,firefox}`,
+  `privacy-final-{edge,firefox}`, `privacy-fidelity-{edge,firefox}`,
+  `recovery-final-{edge,firefox}`, and
+  `recovery-settings-*` gate logs. All data and submissions are synthetic; no
+  real email, production deployment, GitHub synchronization or outgoing
+  cryptography qualification is claimed. Page statuses remain bounded local
+  evidence and partial whole-page conformity.
+- Validation: 805 library tests passed, seven opt-in fixtures ignored; complete
+  acceptance/security/V10–13, V14 and strict Clippy passed. Final policy-card
+  fidelity changes were rechecked with five route tests, V14 and strict Clippy.
+  The signing hook repeats the security suite. Earlier failure logs are retained,
+  including the gate-discovered legacy preference assertion, replaced with an
+  explicit refusal path; no gate or scanner was weakened.

@@ -37,6 +37,11 @@ fn perform(
 ) -> HandledHttpResponse {
     let mut request = request(method, path, &authenticated_same_origin_headers(), body);
     request.headers.insert("user-agent".into(), ua.into());
+    if request.method == HttpMethod::Post
+        && matches!(request.path.as_str(), "/send" | "/drafts/save")
+    {
+        add_native_compose_intent(app, &mut request);
+    }
     app.handle_request(&request, "127.0.0.1")
 }
 

@@ -86,6 +86,9 @@ impl Fixture {
             "multipart/form-data; boundary=theme-test".into(),
         );
         req.headers.insert("user-agent".into(), ua.into());
+        if req.method == HttpMethod::Post && matches!(req.path.as_str(), "/send" | "/drafts/save") {
+            add_native_compose_intent(&self.app, &mut req);
+        }
         self.app.handle_request(&req, "127.0.0.1")
     }
     fn appearance_record(&self) -> PathBuf {
@@ -277,9 +280,10 @@ fn header_theme_settings_and_recovery_are_disabled_but_compose_posts_its_form() 
     let mut req = req;
     req.headers
         .insert("user-agent".into(), "OSMAP/SendUnconfirmed".into());
+    add_native_compose_intent(&f.app, &mut req);
     let result = f.app.handle_request(&req, "127.0.0.1");
     let html = body_text(&result);
     assert!(!html.contains("data-compose-theme"));
-    assert!(html.contains("Keep this result page open"));
+    assert!(html.contains("Keep this page open"));
     assert!(html.contains("title=\"Compose\" aria-current=\"page\""));
 }

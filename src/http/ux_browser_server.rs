@@ -24,6 +24,7 @@ fn ux_synthetic_browser_server() {
         ..HttpPolicy::default()
     };
     let gateway = StubGateway {
+        recovery_root: root.join("send-recovery"),
         contacts_store: Some(crate::contacts::ContactStore::new(root.join("settings/contacts-v1"))),
         draft_store: Some(crate::draft::FileDraftStore::new(root.join("drafts"), DraftPolicy::default())),
         appearance_store: Some(AppearanceStore::new(root.join("settings"))),

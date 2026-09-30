@@ -1,5 +1,11 @@
 //! Native Settings presentation, separate from browser route handlers.
 use super::*;
+#[path = "settings_privacy_ui.rs"]
+mod settings_privacy_ui;
+pub(crate) use settings_privacy_ui::render_privacy_page;
+#[path = "settings_copies_ui.rs"]
+mod settings_copies_ui;
+pub(crate) use settings_copies_ui::render_copies_page;
 
 #[path = "settings_general_ui.rs"]
 mod settings_general_ui;
@@ -107,9 +113,9 @@ fn settings_navigation(current_section: &str) -> String {
         ("Identity", None),
         ("Reading & Mailbox", Some("reading")),
         ("Composition", Some("composition")),
-        ("Copies & Folders", None),
+        ("Copies & Folders", Some("copies")),
         ("Notifications", None),
-        ("Privacy & Security", None),
+        ("Privacy & Security", Some("privacy")),
         ("OpenPGP", None),
         ("Authentication & Recovery", None),
     ] {

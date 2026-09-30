@@ -46,3 +46,6 @@ pub mod settings;
 pub mod state;
 pub mod throttle;
 pub mod totp;
+
+mod send_journal;
+mod send_recovery;

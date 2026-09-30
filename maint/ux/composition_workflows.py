@@ -143,9 +143,9 @@ def main():
                 expect(p.locator('#compose-body-format')).to_have_value('plain')
                 body = p.locator('#compose-body').input_value()
                 assert '[x](unsupported:target)' in body and '**literal**' in body
-                # HTML textarea parsing strips the first leading LF from Above.
-                assert above.startswith('\n') and not above.startswith('\n\n')
-                assert body == (forward if mode == 'forward' else above[1:]+'\n\n')
+                # The renderer preserves the builder's two leading blank lines.
+                assert above.startswith('\n\n')
+                assert body == (forward if mode == 'forward' else above[2:]+'\n\n')
             report['checks'].append('New blank format applies; opposite-default saved drafts retain format/source; reply/reply-all move only blank lines and preserve literal notation; forward unchanged')
             visit(p, '/settings?section=general')
             p.get_by_label('Default format', exact=True).select_option('plain')

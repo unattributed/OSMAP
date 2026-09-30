@@ -167,3 +167,15 @@ fn stale_page_is_adjusted_and_search_filter_uses_actual_flags() {
     ));
     assert!(body.contains("aria-label=\"Starred\""));
 }
+
+#[test]
+fn attachment_filter_http_preserves_search_reader_and_rejects_bad_values() {
+    for path in ["/mailbox?name=INBOX&attachment=with&filter=unread&selected_mailbox=INBOX&selected_uid=123", "/search?q=reader-fixture&scope=all&field=subject&attachment=with&filter=unread&selected_mailbox=INBOX&selected_uid=123"] {
+        let mut req=request("GET",path,&authenticated_headers(),"");
+        req.headers.insert("user-agent".into(),"OSMAP/ManyMessages;AttachmentFilter".into());
+        let response=app().handle_request(&req,"127.0.0.1");assert_eq!(response.response.status_code,200);
+        let body=body_text(&response);assert!(body.contains("attachment=with"));assert!(body.contains("name=\"attachment\" value=\"with\""));assert!(body.contains("Back to list"));assert!(body.contains("Synthetic message 123"));
+        if path.starts_with("/search") { assert!(body.contains("field=subject"));assert!(body.contains("scope=all")); }
+    }
+    assert_eq!(mailbox_page("/mailbox?name=INBOX&attachment=invalid").response.status_code,400);
+}

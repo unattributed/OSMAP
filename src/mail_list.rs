@@ -79,6 +79,41 @@ impl MessageFilter {
     }
 }
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum AttachmentFilter {
+    #[default]
+    All,
+    With,
+    Without,
+    Unknown,
+}
+impl AttachmentFilter {
+    pub fn value(self) -> &'static str {
+        match self {
+            Self::All => "all",
+            Self::With => "with",
+            Self::Without => "without",
+            Self::Unknown => "unknown",
+        }
+    }
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::All => "All attachment states",
+            Self::With => "Has attachment",
+            Self::Without => "No attachments",
+            Self::Unknown => "Attachment status unknown",
+        }
+    }
+    pub fn matches(self, count: Option<usize>) -> bool {
+        match self {
+            Self::All => true,
+            Self::With => count.is_some_and(|n| n > 0),
+            Self::Without => count == Some(0),
+            Self::Unknown => count.is_none(),
+        }
+    }
+}
+
 pub fn has_flag(flags: &[String], flag: &str) -> bool {
     flags.iter().any(|value| value.eq_ignore_ascii_case(flag))
 }
@@ -94,6 +129,7 @@ pub struct ListViewState {
     pub bulk_selection: BulkSelection,
     pub sort: MessageSort,
     pub filter: MessageFilter,
+    pub attachment: AttachmentFilter,
     pub requested_page: usize,
     pub page: usize,
     pub total_results: usize,
@@ -124,6 +160,13 @@ impl ListViewState {
             Some("unread") => MessageFilter::Unread,
             Some("starred") => MessageFilter::Starred,
             Some(_) => return Err("Choose All messages, Unread or Starred."),
+        };
+        let attachment = match query.get("attachment").map(String::as_str) {
+            None | Some("all") => AttachmentFilter::All,
+            Some("with") => AttachmentFilter::With,
+            Some("without") => AttachmentFilter::Without,
+            Some("unknown") => AttachmentFilter::Unknown,
+            Some(_) => return Err("Choose a supported attachment filter."),
         };
         let page = match query.get("page") {
             None => 1,
@@ -164,6 +207,7 @@ impl ListViewState {
                 direction: MessageSortDirection::Desc,
             }),
             filter,
+            attachment,
             requested_page: page,
             page,
             total_results: 0,
@@ -179,7 +223,12 @@ impl ListViewState {
         self.backend_limit = DEFAULT_MAX_MESSAGES;
         self.backend_truncated = messages.len() > self.backend_limit;
         messages.truncate(self.backend_limit);
-        messages.retain(|message| self.filter.matches(&message.flags));
+        messages.retain(|message| {
+            self.filter.matches(&message.flags)
+                && self
+                    .attachment
+                    .matches(message.metadata.as_ref().and_then(|m| m.attachment_count))
+        });
         sort_message_summaries(messages, Some(self.sort));
         let selected = messages
             .iter()
@@ -199,7 +248,12 @@ impl ListViewState {
         self.backend_limit = DEFAULT_MAX_SEARCH_RESULTS;
         self.backend_truncated = results.len() > self.backend_limit;
         results.truncate(self.backend_limit);
-        results.retain(|message| self.filter.matches(&message.flags));
+        results.retain(|message| {
+            self.filter.matches(&message.flags)
+                && self
+                    .attachment
+                    .matches(message.metadata.as_ref().and_then(|m| m.attachment_count))
+        });
         sort_message_search_results(results, Some(self.sort));
         let selected = results
             .iter()
@@ -255,6 +309,59 @@ impl ListViewState {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn attachment_filter_distinguishes_unknown_and_composes_before_paging() {
+        let metadata = |count| crate::message_metadata::MessageMetadata {
+            version: MessageVersion::new("a".repeat(32), "synthetic".into()).unwrap(),
+            attachment_count: count,
+            preview: None,
+        };
+        let rows = (1..=240)
+            .map(|uid| {
+                let mut r = row(uid, if uid % 2 == 0 { &["\\Seen"] } else { &[] });
+                r.metadata = match uid % 4 {
+                    0 => None,
+                    1 => Some(metadata(None)),
+                    2 => Some(metadata(Some(0))),
+                    _ => Some(metadata(Some(2))),
+                };
+                r
+            })
+            .collect::<Vec<_>>();
+        for (value, count) in [
+            ("all", 240),
+            ("with", 60),
+            ("without", 60),
+            ("unknown", 120),
+        ] {
+            let mut state = ListViewState::from_query(&BTreeMap::from([
+                ("attachment".into(), value.into()),
+                ("page".into(), "2".into()),
+            ]))
+            .unwrap();
+            let mut selected = rows.clone();
+            state.apply_messages(&mut selected);
+            assert_eq!(state.total_results, count);
+            assert_eq!(selected.len(), (count - 50).min(50));
+        }
+        let mut state = ListViewState::from_query(&BTreeMap::from([
+            ("attachment".into(), "unknown".into()),
+            ("filter".into(), "unread".into()),
+            ("selected_mailbox".into(), "INBOX".into()),
+            ("selected_uid".into(), "1".into()),
+        ]))
+        .unwrap();
+        let mut selected = rows;
+        state.apply_messages(&mut selected);
+        assert_eq!(state.total_results, 60);
+        assert_eq!(state.selection_page, Some(2));
+        assert!(ListViewState::from_query(&BTreeMap::from([(
+            "attachment".into(),
+            "invalid".into()
+        )]))
+        .is_err());
+    }
 
     #[test]
     fn selection_menu_is_closed_and_bounded_to_the_current_page() {

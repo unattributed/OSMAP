@@ -175,7 +175,7 @@ def main():
             page.get_by_label("Default content", exact=True).select_option("prefer_plain_text")
             submit(page, "Save content preference")
             assert parse_qs(urlsplit(page.url).query)["section"] == ["reading"]
-            assert post_shapes[-1] == dict(path="/settings", keys=["archive_mailbox_name","csrf_token","html_display_preference","return_section"], return_section=["reading"])
+            assert post_shapes[-1] == dict(path="/settings", keys=["csrf_token","html_display_preference","return_section","settings_action"], return_section=["reading"])
             archive = page.get_by_label("Archive folder", exact=True)
             assert "Archive/2026" in archive.locator("option").evaluate_all("els=>els.map(e=>e.value)")
             archive.select_option("Archive/2026")

@@ -4,6 +4,15 @@ use crate::message_metadata::{MessageMetadata, MessageVersion};
 use sha2::{Digest, Sha256};
 
 impl StubGateway {
+    pub(super) fn fixture_attachment_metadata(context: &AuthenticationContext, username: &str, mailbox: &str, uid: u64) -> Option<MessageMetadata> {
+        let mut metadata=Self::fixture_metadata(username,mailbox,uid);
+        if context.user_agent.contains("AttachmentFilter") {
+            if uid % 4 == 0 { return None; }
+            metadata.attachment_count=match uid % 4 { 1=>None, 2=>Some(0), _=>Some(2) };
+        }
+        Some(metadata)
+    }
+
     pub(super) fn fixture_metadata(username: &str, mailbox: &str, uid: u64) -> MessageMetadata {
         let hash = format!(
             "{:x}",

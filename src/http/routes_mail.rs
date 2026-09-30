@@ -12,7 +12,7 @@ pub(super) fn mailbox_is_user_visible(mailbox_name: &str) -> bool {
         || mailbox_name.starts_with("INBOX.")
 }
 
-fn filter_user_visible_mailboxes(mailboxes: &[MailboxEntry]) -> Vec<MailboxEntry> {
+pub(super) fn filter_user_visible_mailboxes(mailboxes: &[MailboxEntry]) -> Vec<MailboxEntry> {
     mailboxes
         .iter()
         .filter(|mailbox| mailbox_is_user_visible(&mailbox.name))
@@ -247,6 +247,19 @@ where
                 canonical_username,
                 mailboxes,
             } => {
+                if canonical_username != validated_session.record.canonical_username {
+                    return HandledHttpResponse {
+                        response: html_response(
+                            503,
+                            "Service Unavailable",
+                            "Mailbox Access Unavailable",
+                            "<p>The mailbox list could not be verified.</p>",
+                        ),
+                        audit_events,
+                    };
+                }
+                let (recent, draft_count) =
+                    self.welcome_data(context, &validated_session, &mailboxes, &mut audit_events);
                 let visible_mailboxes = filter_user_visible_mailboxes(&mailboxes);
                 HandledHttpResponse {
                     response: html_response(
@@ -257,6 +270,8 @@ where
                             &canonical_username,
                             &validated_session.record.csrf_token,
                             &visible_mailboxes,
+                            recent.as_deref(),
+                            draft_count,
                         ),
                     ),
                     audit_events,

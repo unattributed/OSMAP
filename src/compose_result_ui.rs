@@ -5,17 +5,24 @@ use crate::send::UploadedAttachment;
 
 #[derive(Clone, Copy)]
 pub(crate) enum SubmissionResult {
+    AlreadyRecorded,
+    RecoveryRefused {
+        capacity: bool,
+    },
     Accepted {
         sent_copy_stored: bool,
         draft_cleanup_confirmed: bool,
+        receipt_persisted: bool,
     },
     Unconfirmed,
+    Paused,
 }
 
 pub(crate) struct ComposeResultModel<'a> {
     pub account: &'a str,
     pub csrf: &'a str,
     pub result: SubmissionResult,
+    pub send_intent: Option<&'a str>,
     pub draft_id: Option<&'a str>,
     pub to: &'a str,
     pub cc: &'a str,
@@ -28,21 +35,38 @@ pub(crate) struct ComposeResultModel<'a> {
 
 pub(crate) fn render(model: &ComposeResultModel<'_>) -> TrustedHtml {
     let (heading, explanation) = match model.result {
+        SubmissionResult::AlreadyRecorded => ("This intent already has a recorded action", "No new save or submission was started. The current form text and files shown below may differ from the recorded action. Inspect the existing receipt in a new tab to compare; do not retry this form."),
+        SubmissionResult::RecoveryRefused { capacity } => ("Submission was not invoked", if capacity { "The combined draft and attempt-recovery storage limit was reached. Submission was not invoked. This intent remains paused; do not retry or recreate this message automatically." } else { "The exact attempt recovery copy could not be confirmed. Submission was not invoked. This intent remains paused; do not retry or recreate this message automatically." }),
         SubmissionResult::Accepted { .. } => (
             "Message accepted for submission",
             "The mail system accepted this message for submission. This does not confirm delivery. Do not send this message again to repair its Sent copy or remove its draft.",
+        ),
+        SubmissionResult::Paused => (
+            "This form is paused",
+            "The attempt state could not be confirmed. Another save or submission may already be in progress or recorded. Do not retry this form. Keep this page open while checking the recorded outcome.",
         ),
         SubmissionResult::Unconfirmed => (
             "Submission could not be confirmed",
             "The mail system may have accepted this message. Ask the mail operator to confirm acceptance before sending it again. An empty Sent folder does not prove that submission failed.",
         ),
     };
-    let mut details = String::new();
+    let mut details = if let Some(intent) = model
+        .send_intent
+        .filter(|value| crate::send_journal::receipt_intent_valid(value))
+    {
+        format!("<p><a href=\"/compose?receipt={}\" target=\"_blank\" rel=\"noopener noreferrer\">Check this attempt’s receipt (opens in a new tab)</a>. Keep this tab open to preserve the text shown below. The receipt may also provide a separately retained, verified attempt snapshot. Either may be unavailable; opening it does not submit a message.</p>", escape_html(&url_encode(intent)))
+    } else {
+        "<p>This form’s tracking value is missing or invalid, so no receipt link is available. Keep this page open to copy your text and ask the mail operator to reconcile the outcome. Do not retry submission.</p>".into()
+    };
     if let SubmissionResult::Accepted {
         sent_copy_stored,
         draft_cleanup_confirmed,
+        receipt_persisted,
     } = model.result
     {
+        if !receipt_persisted {
+            details.push_str("<p>Submission acceptance is known, but receipt persistence could not be confirmed. Do not retry.</p>");
+        }
         details.push_str(if sent_copy_stored {
             "<p>A copy was stored in Sent.</p>"
         } else {
@@ -50,7 +74,7 @@ pub(crate) fn render(model: &ComposeResultModel<'_>) -> TrustedHtml {
         });
         if model.draft_id.is_some() {
             details.push_str(if !sent_copy_stored {
-                "<p>Your saved draft was kept for recovery. It may differ from the text or attachments used in this attempt.</p>"
+                "<p>The saved draft was not removed by this response. Drafts expire after 30 days and may differ from the text or attachments used in this attempt.</p>"
             } else if !draft_cleanup_confirmed {
                 "<p>Removal of the saved draft could not be confirmed. It may still appear in Drafts. Do not send it again.</p>"
             } else {
@@ -58,7 +82,7 @@ pub(crate) fn render(model: &ComposeResultModel<'_>) -> TrustedHtml {
             });
         }
     } else if model.draft_id.is_some() {
-        details.push_str("<p>Your saved draft was kept for recovery. It may differ from the text or attachments used in this attempt.</p>");
+        details.push_str("<p>The saved draft was not removed by this response. Drafts expire after 30 days and may differ from the text or attachments used in this attempt.</p>");
     }
     if let Some(id) = model.draft_id {
         details.push_str(&format!(
@@ -75,7 +99,7 @@ pub(crate) fn render(model: &ComposeResultModel<'_>) -> TrustedHtml {
         ("body", "Message source", model.body, 12),
     ] {
         retained.push_str(&format!(
-            "<label for=\"result-{id}\">{label}</label><textarea id=\"result-{id}\" rows=\"{rows}\" readonly>{}</textarea>",
+            "<label for=\"result-{id}\">{label}</label><textarea id=\"result-{id}\" rows=\"{rows}\" readonly>\n{}</textarea>",
             escape_html(value),
         ));
     }
@@ -88,9 +112,9 @@ pub(crate) fn render(model: &ComposeResultModel<'_>) -> TrustedHtml {
         ));
     }
     let attachment_summary = if attachments.is_empty() {
-        "<p>No attachments were included in this attempt.</p>".to_string()
+        "<p>No files were listed with this form response. Check the verified attempt snapshot for the prepared attachments.</p>".to_string()
     } else {
-        format!("<h3>Attachments included in this attempt</h3><ul>{attachments}</ul><p>This list is not an attachment backup. New uploads are not saved by this result page; existing saved-draft files remain available unless draft removal was confirmed.</p>")
+        format!("<h3>Files supplied with this form</h3><ul>{attachments}</ul><p>This list is not an attachment backup. New uploads are not saved by this result page; saved-draft files are subject to the 30-day draft expiry and may have been removed. This page does not establish their present availability.</p>")
     };
     TrustedHtml::from_template(format!(
         concat!(
@@ -123,20 +147,32 @@ mod tests {
     fn recovery_retains_exact_escaped_text_without_a_send_action() {
         let text = "</textarea><script>private & synthetic</script>\n🦊";
         for result in [
+            SubmissionResult::AlreadyRecorded,
+            SubmissionResult::RecoveryRefused { capacity: false },
+            SubmissionResult::RecoveryRefused { capacity: true },
+            SubmissionResult::Paused,
             SubmissionResult::Unconfirmed,
+            SubmissionResult::Accepted {
+                sent_copy_stored: true,
+                draft_cleanup_confirmed: false,
+                receipt_persisted: false,
+            },
             SubmissionResult::Accepted {
                 sent_copy_stored: false,
                 draft_cleanup_confirmed: false,
+                receipt_persisted: true,
             },
             SubmissionResult::Accepted {
                 sent_copy_stored: true,
                 draft_cleanup_confirmed: false,
+                receipt_persisted: true,
             },
         ] {
             let html = render(&ComposeResultModel {
                 account: "alice@example.test",
                 csrf: "synthetic-token",
                 result,
+                send_intent: None,
                 draft_id: Some("draft&\"id"),
                 to: text,
                 cc: "",
@@ -156,6 +192,64 @@ mod tests {
             assert!(!html.contains("Send Message"));
             assert!(!html.contains("Nothing was sent"));
             assert!(html.contains("Do not reload or resubmit"));
+        }
+    }
+}
+
+#[cfg(test)]
+#[test]
+fn readonly_receipt_navigation_uses_only_existing_valid_tracking() {
+    let valid = "100.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+    for result in [
+        SubmissionResult::Paused,
+        SubmissionResult::Unconfirmed,
+        SubmissionResult::Accepted {
+            sent_copy_stored: true,
+            draft_cleanup_confirmed: false,
+            receipt_persisted: false,
+        },
+    ] {
+        for intent in [
+            None,
+            Some(""),
+            Some("0.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
+            Some("100.\"><script>x</script>"),
+            Some(valid),
+        ] {
+            let html = render(&ComposeResultModel {
+                account: "alice@example.com",
+                csrf: "synthetic",
+                result,
+                send_intent: intent,
+                draft_id: None,
+                to: "bob@example.com",
+                cc: "",
+                bcc: "",
+                subject: "Synthetic",
+                body: "Keep exact 🦊 & source",
+                body_format: crate::compose_format::BodyFormat::Plain,
+                attachments: &[],
+            });
+            let html = html.as_str();
+            assert!(html.contains("Keep exact 🦊 &amp; source"));
+            if intent == Some(valid) {
+                assert_eq!(html.matches("/compose?receipt=").count(), 1);
+                assert!(html.contains(&format!("href=\"/compose?receipt={valid}\" target=\"_blank\" rel=\"noopener noreferrer\"")));
+                assert!(html.contains("Keep this tab open"));
+            } else {
+                assert!(!html.contains("/compose?receipt="));
+                assert!(html.contains("tracking value is missing or invalid"));
+            }
+            for absent in [
+                "action=\"/send\"",
+                "action=\"/drafts/save\"",
+                "name=\"send_intent\"",
+                "<script",
+                "http-equiv=\"refresh\"",
+                "onload=",
+            ] {
+                assert!(!html.contains(absent));
+            }
         }
     }
 }

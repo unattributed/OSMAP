@@ -29,10 +29,10 @@ pub(crate) fn render_general_page(
 
     let mailbox = format!(concat!(
         "<section class=\"general-card\" aria-labelledby=\"general-mailbox-title\"><h2 id=\"general-mailbox-title\">Mailbox Defaults</h2>",
-        "<form method=\"post\" action=\"/settings\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"html_display_preference\" value=\"{}\">{}",
+        "<form method=\"post\" action=\"/settings\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"settings_action\" value=\"archive\">{}",
         "<div class=\"general-field\"><label for=\"general-archive\">Archive folder</label><input id=\"general-archive\" name=\"archive_mailbox_name\" value=\"{}\" autocomplete=\"off\"></div>{}{}",
         "<p class=\"general-help\">Only Archive folder can be changed here. Leave it blank to use manual moves.</p><div class=\"general-card-actions\"><button type=\"submit\">Save archive folder</button></div></form></section>"
-    ), escape_html(model.csrf_token), model.html_display_preference.as_str(),
+    ), escape_html(model.csrf_token),
         unavailable_select("general-start-page", "Default start page", "Unavailable"), escape_html(model.archive_mailbox_name.unwrap_or("")),
         unavailable_select("general-delete-behaviour", "Delete behaviour", "Unavailable"),
         unavailable_select("general-mark-read", "Mark read", "Unavailable"));

@@ -44,6 +44,7 @@ pub fn safe_mail_return(value: &str) -> Option<String> {
                 "sort",
                 "dir",
                 "filter",
+                "attachment",
                 "page",
                 "q",
                 "scope",
@@ -73,6 +74,7 @@ pub fn safe_mail_return(value: &str) -> Option<String> {
                 "sort",
                 "dir",
                 "filter",
+                "attachment",
                 "page",
                 "selected_mailbox",
                 "selected_uid",
@@ -110,6 +112,19 @@ pub fn safe_mail_return(value: &str) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn attachment_return_preserves_search_scope_and_clears_only_moved_selection() {
+        let target="/search?q=report&field=subject&scope=all&filter=unread&attachment=unknown&sort=received&dir=asc&page=2&selected_mailbox=INBOX&selected_uid=7&select=move";
+        let safe = safe_mail_return(target).unwrap();
+        assert!(safe.contains("attachment=unknown"));
+        assert!(safe.contains("field=subject"));
+        let moved = mail_return_after_move(target, "INBOX").unwrap();
+        assert!(moved.contains("attachment=unknown"));
+        assert!(moved.contains("page=2"));
+        assert!(!moved.contains("selected_"));
+        assert!(safe_mail_return("/mailbox?name=INBOX&attachment=invalid").is_none());
+    }
 
     #[test]
     fn only_bounded_mail_get_context_is_reconstructed() {

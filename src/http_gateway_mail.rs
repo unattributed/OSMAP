@@ -1,5 +1,6 @@
 use super::*;
 use crate::logging::audit_session_ref;
+use crate::totp::TimeProvider;
 
 use crate::config::LogLevel;
 use crate::logging::EventCategory;
@@ -62,6 +63,39 @@ fn store_sent_copy(
             .with_field("mailbox_name", "Sent")
             .with_field("request_id", context.request_id.clone()),
     )
+}
+
+pub(super) fn journal_send_decision(
+    result: Result<crate::send_journal::JournalResult, crate::send_journal::JournalError>,
+) -> BrowserSendDecision {
+    match result {
+        Ok(crate::send_journal::JournalResult {
+            outcome: crate::send_journal::AttemptOutcome::RecoveryRefused { capacity },
+            ..
+        }) => BrowserSendDecision::RecoveryRefused { capacity },
+        Ok(crate::send_journal::JournalResult {
+            outcome: crate::send_journal::AttemptOutcome::Accepted { sent_copy_stored },
+            receipt_persisted,
+            ..
+        }) => BrowserSendDecision::Submitted {
+            sent_copy_stored,
+            receipt_persisted,
+        },
+        Ok(crate::send_journal::JournalResult {
+            outcome:
+                crate::send_journal::AttemptOutcome::DraftSaved {
+                    draft_id,
+                    save_confirmed,
+                },
+            ..
+        }) => BrowserSendDecision::DraftSaved {
+            draft_id: crate::send_journal::draft_id_text(&draft_id),
+            save_confirmed,
+        },
+        _ => BrowserSendDecision::Unconfirmed {
+            public_reason: "send_attempt_unconfirmed".into(),
+        },
+    }
 }
 
 impl RuntimeBrowserGateway {
@@ -751,118 +785,205 @@ impl RuntimeBrowserGateway {
     pub(super) fn send_message_impl(
         &self,
         context: &AuthenticationContext,
+        session: &ValidatedSession,
+        request: BrowserSendRequest<'_>,
+    ) -> BrowserSendOutcome {
+        self.send_message_with_backends(
+            context,
+            session,
+            request,
+            &self.build_submission_service(),
+            &self.build_message_append_backend(),
+        )
+    }
+
+    pub(super) fn send_message_with_backends<
+        S: crate::send::SubmissionBackend,
+        A: MessageAppendBackend,
+    >(
+        &self,
+        context: &AuthenticationContext,
         validated_session: &ValidatedSession,
         send_request: BrowserSendRequest<'_>,
+        submission: &SubmissionService<S>,
+        append: &A,
     ) -> BrowserSendOutcome {
+        use crate::send_journal::PreparedResult;
         let throttle_service = self.build_submission_throttle_service();
-        let mut audit_events = Vec::new();
-        let mut request = match ComposeRequest::new_with_routing(
-            ComposePolicy::default(),
-            send_request.recipients,
-            send_request.cc_recipients,
-            send_request.bcc_recipients,
-            send_request.subject,
-            send_request.body,
-            send_request.attachments.to_vec(),
-        )
-        .and_then(|request| request.with_body_format(send_request.body_format))
-        {
-            Ok(request) => request,
-            Err(error) => {
-                return BrowserSendOutcome {
-                    decision: BrowserSendDecision::Denied {
-                        public_reason: SubmissionPublicFailureReason::InvalidRequest
-                            .as_str()
-                            .to_string(),
-                        retry_after_seconds: None,
-                    },
-                    audit_events: vec![build_http_warning_event(
-                        "compose_request_rejected",
-                        "compose request validation failed",
-                        context,
-                    )
-                    .with_field("reason", error.reason)],
-                };
-            }
-        };
-
-        request.reply_thread = send_request.reply_thread.cloned();
-        match throttle_service.check(context, &validated_session.record.canonical_username) {
-            Ok(check) => {
-                audit_events.extend(check.audit_events);
-
-                if let SubmissionThrottleDecision::Throttled {
-                    retry_after_seconds,
-                } = check.decision
-                {
-                    return BrowserSendOutcome {
-                        decision: BrowserSendDecision::Denied {
-                            public_reason: TOO_MANY_SUBMISSIONS_PUBLIC_REASON.to_string(),
-                            retry_after_seconds: Some(retry_after_seconds),
-                        },
-                        audit_events,
-                    };
-                }
-            }
-            Err(error) => audit_events.push(self.build_submission_throttle_store_error_event(
-                "submission_throttle_check_failed",
-                "submission throttle check failed",
-                context,
-                &error,
-            )),
-        }
-
-        let outcome = self
-            .build_submission_service()
-            .submit_for_validated_session(context, validated_session, &request);
-        let SubmissionOutcome {
-            decision,
-            audit_event,
-        } = outcome;
-        audit_events.push(audit_event);
-
-        match decision {
-            SubmissionDecision::Submitted { .. } => {
-                let (sent_copy_stored, sent_copy_event) = store_sent_copy(
-                    context,
-                    &validated_session.record.canonical_username,
-                    &request,
-                    &self.build_message_append_backend(),
-                );
-                audit_events.push(sent_copy_event);
-
-                match throttle_service
-                    .record_submission(context, &validated_session.record.canonical_username)
-                {
-                    Ok(record) => audit_events.extend(record.audit_events),
-                    Err(error) => {
-                        audit_events.push(self.build_submission_throttle_store_error_event(
-                            "submission_throttle_record_failed",
-                            "submission throttle recording failed",
-                            context,
-                            &error,
-                        ))
+        let account = &validated_session.record.canonical_username;
+        let now = SystemTimeProvider.unix_timestamp();
+        let journal = crate::send_journal::SendJournal::new(self.settings_dir.join("send-journal"));
+        let mut preparation_events = Vec::new();
+        let mut dispatch_events = Vec::new();
+        let result = journal.execute_prepared(
+            account,
+            send_request.send_intent,
+            now,
+            |consumed| {
+                // The journal account lock is already held. Recheck persisted
+                // revision here, after any concurrent save has completed.
+                if !consumed {
+                    match (send_request.draft_id, send_request.draft_revision) {
+                        (Some(id), Some(revision)) => {
+                            let draft = self
+                                .build_draft_store()
+                                .load(account, id, now)
+                                .ok()
+                                .flatten()
+                                .ok_or_else(|| BrowserSendDecision::Unconfirmed {
+                                    public_reason: "send_attempt_paused".into(),
+                                })?;
+                            let expected = crate::send_journal::intent_for_draft(
+                                account,
+                                id,
+                                revision,
+                                draft.updated_at,
+                            );
+                            if draft.revision != Some(revision)
+                                || expected.as_deref() != Ok(send_request.send_intent)
+                            {
+                                return Err(BrowserSendDecision::Unconfirmed {
+                                    public_reason: "send_attempt_paused".into(),
+                                });
+                            }
+                        }
+                        (None, None) => {}
+                        _ => {
+                            return Err(BrowserSendDecision::Unconfirmed {
+                                public_reason: "send_attempt_paused".into(),
+                            })
+                        }
                     }
                 }
-
-                BrowserSendOutcome {
-                    decision: BrowserSendDecision::Submitted { sent_copy_stored },
-                    audit_events,
+                let mut request = ComposeRequest::new_with_routing(
+                    ComposePolicy::default(),
+                    send_request.recipients,
+                    send_request.cc_recipients,
+                    send_request.bcc_recipients,
+                    send_request.subject,
+                    send_request.body,
+                    send_request.attachments.to_vec(),
+                )
+                .and_then(|request| request.with_body_format(send_request.body_format))
+                .map_err(|error| {
+                    preparation_events.push(
+                        build_http_warning_event(
+                            "compose_request_rejected",
+                            "compose request validation failed",
+                            context,
+                        )
+                        .with_field("reason", error.reason),
+                    );
+                    BrowserSendDecision::Denied {
+                        public_reason: SubmissionPublicFailureReason::InvalidRequest
+                            .as_str()
+                            .into(),
+                        retry_after_seconds: None,
+                    }
+                })?;
+                request.reply_thread = send_request.reply_thread.cloned();
+                // Replay skips current throttle state. For fresh attempts the check
+                // and its NotDispatched disposition are protected by the journal lock.
+                if !consumed {
+                    match throttle_service.check(context, account) {
+                        Ok(check) => {
+                            preparation_events.extend(check.audit_events);
+                            if let SubmissionThrottleDecision::Throttled {
+                                retry_after_seconds,
+                            } = check.decision
+                            {
+                                return Err(BrowserSendDecision::Denied {
+                                    public_reason: TOO_MANY_SUBMISSIONS_PUBLIC_REASON.into(),
+                                    retry_after_seconds: Some(retry_after_seconds),
+                                });
+                            }
+                        }
+                        Err(error) => preparation_events.push(
+                            self.build_submission_throttle_store_error_event(
+                                "submission_throttle_check_failed",
+                                "submission throttle check failed",
+                                context,
+                                &error,
+                            ),
+                        ),
+                    }
                 }
-            }
-            SubmissionDecision::Unconfirmed { public_reason } => BrowserSendOutcome {
-                decision: BrowserSendDecision::Unconfirmed {
-                    public_reason: public_reason.as_str().to_string(),
-                },
-                audit_events,
+                Ok(request)
             },
-            SubmissionDecision::Denied { public_reason } => BrowserSendOutcome {
-                decision: BrowserSendDecision::Denied {
-                    public_reason: public_reason.as_str().to_string(),
-                    retry_after_seconds: None,
-                },
-                audit_events,
+            |request| {
+                let recovery = crate::send_recovery::SendRecovery::new(
+                    self.settings_dir.join("send-recovery"),
+                );
+                let request = match recovery.capture(
+                    &journal,
+                    &self.build_draft_store(),
+                    account,
+                    send_request.send_intent,
+                    request,
+                    now,
+                ) {
+                    Ok(prepared) => prepared,
+                    Err(error) => {
+                        dispatch_events.push(build_http_warning_event(
+                            "send_recovery_unconfirmed",
+                            "attempt recovery was not confirmed; submission was not invoked",
+                            context,
+                        ));
+                        return crate::send_journal::AttemptOutcome::RecoveryRefused {
+                            capacity: error == crate::send_recovery::RecoveryError::Capacity,
+                        };
+                    }
+                };
+                let outcome =
+                    submission.submit_for_validated_session(context, validated_session, &request);
+                let SubmissionOutcome {
+                    decision,
+                    audit_event,
+                } = outcome;
+                dispatch_events.push(audit_event);
+
+                match decision {
+                    SubmissionDecision::Submitted { .. } => {
+                        let (sent_copy_stored, sent_copy_event) = store_sent_copy(
+                            context,
+                            &validated_session.record.canonical_username,
+                            &request,
+                            append,
+                        );
+                        dispatch_events.push(sent_copy_event);
+
+                        match throttle_service.record_submission(
+                            context,
+                            &validated_session.record.canonical_username,
+                        ) {
+                            Ok(record) => dispatch_events.extend(record.audit_events),
+                            Err(error) => dispatch_events.push(
+                                self.build_submission_throttle_store_error_event(
+                                    "submission_throttle_record_failed",
+                                    "submission throttle recording failed",
+                                    context,
+                                    &error,
+                                ),
+                            ),
+                        }
+
+                        crate::send_journal::AttemptOutcome::Accepted { sent_copy_stored }
+                    }
+                    SubmissionDecision::Unconfirmed { .. } | SubmissionDecision::Denied { .. } => {
+                        crate::send_journal::AttemptOutcome::Unconfirmed
+                    }
+                }
             },
+        );
+        preparation_events.extend(dispatch_events);
+        let decision = match result {
+            Ok(PreparedResult::NotDispatched(decision)) => decision,
+            Ok(PreparedResult::Outcome(recorded)) => journal_send_decision(Ok(recorded)),
+            Err(error) => journal_send_decision(Err(error)),
+        };
+        BrowserSendOutcome {
+            decision,
+            audit_events: preparation_events,
         }
     }
 
@@ -977,6 +1098,10 @@ impl RuntimeBrowserGateway {
 #[cfg(test)]
 mod tests {
     use super::*;
+    mod journal_integration {
+        use super::*;
+        include!("http/send_gateway_journal_tests.rs");
+    }
 
     #[derive(Default)]
     struct StubSentAppendBackend {

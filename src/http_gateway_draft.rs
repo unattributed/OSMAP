@@ -11,9 +11,19 @@ impl RuntimeBrowserGateway {
         expected_revision: u64,
         starred: bool,
     ) -> BrowserDraftSaveOutcome {
-        let store = self.build_draft_store();
         let now = SystemTimeProvider.unix_timestamp();
         let result = (|| {
+            let journal = self.send_journal();
+            let guard = journal
+                .account_guard(&session.record.canonical_username, now)
+                .map_err(journal_draft_error)?;
+            let policy =
+                crate::send_recovery::SendRecovery::new(self.settings_dir.join("send-recovery"))
+                    .draft_policy(&session.record.canonical_username, now)
+                    .map_err(|_| crate::draft::DraftError {
+                        reason: "send_attempt_paused".into(),
+                    })?;
+            let store = FileDraftStore::new(self.draft_dir.clone(), policy);
             let mut draft = store
                 .load(&session.record.canonical_username, draft_id, now)?
                 .ok_or_else(|| crate::draft::DraftError {
@@ -24,6 +34,10 @@ impl RuntimeBrowserGateway {
                     reason: "draft revision is stale".into(),
                 });
             }
+            let intent = guard.draft_intent(&draft).map_err(journal_draft_error)?;
+            guard
+                .require_unconsumed(&intent)
+                .map_err(journal_draft_error)?;
             draft.starred = starred;
             store.save(&draft, now)
         })();
@@ -65,6 +79,10 @@ impl RuntimeBrowserGateway {
         }
     }
 
+    pub(super) fn send_journal(&self) -> crate::send_journal::SendJournal {
+        crate::send_journal::SendJournal::new(self.settings_dir.join("send-journal"))
+    }
+
     pub(super) fn build_draft_store(&self) -> FileDraftStore {
         FileDraftStore::new(self.draft_dir.clone(), DraftPolicy::default())
     }
@@ -76,7 +94,14 @@ impl RuntimeBrowserGateway {
     ) -> BrowserDraftListOutcome {
         let store = self.build_draft_store();
         let now = SystemTimeProvider.unix_timestamp();
-        match store.list(&validated_session.record.canonical_username, now) {
+        let result = (|| {
+            let journal = self.send_journal();
+            let _guard = journal
+                .account_guard(&validated_session.record.canonical_username, now)
+                .map_err(journal_draft_error)?;
+            store.list(&validated_session.record.canonical_username, now)
+        })();
+        match result {
             Ok(drafts) => BrowserDraftListOutcome {
                 decision: BrowserDraftListDecision::Listed {
                     canonical_username: validated_session.record.canonical_username.clone(),
@@ -112,7 +137,14 @@ impl RuntimeBrowserGateway {
     ) -> BrowserDraftLoadOutcome {
         let store = self.build_draft_store();
         let now = SystemTimeProvider.unix_timestamp();
-        match store.load(&validated_session.record.canonical_username, draft_id, now) {
+        let result = (|| {
+            let journal = self.send_journal();
+            let _guard = journal
+                .account_guard(&validated_session.record.canonical_username, now)
+                .map_err(journal_draft_error)?;
+            store.load(&validated_session.record.canonical_username, draft_id, now)
+        })();
+        match result {
             Ok(Some(draft)) => BrowserDraftLoadOutcome {
                 decision: BrowserDraftLoadDecision::Loaded {
                     canonical_username: validated_session.record.canonical_username.clone(),
@@ -160,7 +192,6 @@ impl RuntimeBrowserGateway {
         validated_session: &ValidatedSession,
         request: BrowserDraftSaveRequest<'_>,
     ) -> BrowserDraftSaveOutcome {
-        let store = self.build_draft_store();
         let now = SystemTimeProvider.unix_timestamp();
         let canonical_username = validated_session.record.canonical_username.clone();
         let draft_id = match request.draft_id {
@@ -184,6 +215,22 @@ impl RuntimeBrowserGateway {
             },
         };
 
+        let journal = self.send_journal();
+        let mut guard = match journal.account_guard(&canonical_username, now) {
+            Ok(guard) => guard,
+            Err(_) => return paused_draft_save(),
+        };
+        if guard.require_unconsumed(request.send_intent).is_err() {
+            return paused_draft_save();
+        }
+        let policy =
+            match crate::send_recovery::SendRecovery::new(self.settings_dir.join("send-recovery"))
+                .draft_policy(&validated_session.record.canonical_username, now)
+            {
+                Ok(value) => value,
+                Err(_) => return paused_draft_save(),
+            };
+        let store = FileDraftStore::new(self.draft_dir.clone(), policy);
         let existing = match store.load(&canonical_username, &draft_id, now) {
             Ok(existing) => existing,
             Err(error) => {
@@ -201,6 +248,15 @@ impl RuntimeBrowserGateway {
                 };
             }
         };
+
+        if let Some(draft) = &existing {
+            let Ok(intent) = guard.draft_intent(draft) else {
+                return paused_draft_save();
+            };
+            if intent != request.send_intent || guard.require_unconsumed(&intent).is_err() {
+                return paused_draft_save();
+            }
+        }
 
         if existing.as_ref().and_then(|draft| draft.revision) != request.expected_revision
             || request.draft_id.is_some() != existing.is_some()
@@ -282,7 +338,32 @@ impl RuntimeBrowserGateway {
             record.request.reply_thread = existing.request.reply_thread;
         }
 
-        match store.save(&record, now) {
+        let new_draft = request.draft_id.is_none();
+        if new_draft
+            && guard
+                .begin_draft_save(request.send_intent, &draft_id)
+                .is_err()
+        {
+            return paused_draft_save();
+        }
+        let save_result = store.save(&record, now);
+        if new_draft
+            && (save_result.is_err()
+                || guard
+                    .finish_draft_save(request.send_intent, &draft_id)
+                    .is_err())
+        {
+            return BrowserDraftSaveOutcome {
+                decision: BrowserDraftSaveDecision::Unconfirmed { draft_id },
+                audit_events: vec![draft_warn_event(
+                    "draft_handoff_unconfirmed",
+                    "draft handoff save unconfirmed; no submission performed",
+                    context,
+                    validated_session,
+                )],
+            };
+        }
+        match save_result {
             Ok(()) => BrowserDraftSaveOutcome {
                 decision: BrowserDraftSaveDecision::Saved {
                     draft_id: record.draft_id.clone(),
@@ -337,11 +418,28 @@ impl RuntimeBrowserGateway {
         expected_revision: u64,
     ) -> BrowserDraftDeleteOutcome {
         let store = self.build_draft_store();
-        match store.delete(
-            &validated_session.record.canonical_username,
-            draft_id,
-            expected_revision,
-        ) {
+        let now = SystemTimeProvider.unix_timestamp();
+        let result = (|| {
+            let journal = self.send_journal();
+            let guard = journal
+                .account_guard(&validated_session.record.canonical_username, now)
+                .map_err(journal_draft_error)?;
+            let Some(draft) =
+                store.load(&validated_session.record.canonical_username, draft_id, now)?
+            else {
+                return Ok(false);
+            };
+            let intent = guard.draft_intent(&draft).map_err(journal_draft_error)?;
+            guard
+                .require_unconsumed(&intent)
+                .map_err(journal_draft_error)?;
+            store.delete(
+                &validated_session.record.canonical_username,
+                draft_id,
+                expected_revision,
+            )
+        })();
+        match result {
             Ok(true) => BrowserDraftDeleteOutcome {
                 decision: BrowserDraftDeleteDecision::Deleted,
                 audit_events: vec![draft_info_event(
@@ -374,6 +472,35 @@ impl RuntimeBrowserGateway {
                 .with_field("reason", draft_error_label(&error))],
             },
         }
+    }
+    /// Internal receipt-qualified cleanup; never exposed as public discard.
+    pub(super) fn cleanup_submitted_draft_impl(
+        &self,
+        account: &str,
+        draft_id: &str,
+        revision: u64,
+        intent: &str,
+        now: u64,
+    ) -> Result<bool, crate::draft::DraftError> {
+        let journal = self.send_journal();
+        let guard = journal
+            .account_guard(account, now)
+            .map_err(journal_draft_error)?;
+        guard
+            .require_accepted_with_sent(intent)
+            .map_err(journal_draft_error)?;
+        let store = self.build_draft_store();
+        let Some(draft) = store.load(account, draft_id, now)? else {
+            return Ok(false);
+        };
+        if draft.revision != Some(revision)
+            || guard.draft_intent(&draft).map_err(journal_draft_error)? != intent
+        {
+            return Err(crate::draft::DraftError {
+                reason: "draft revision is stale".into(),
+            });
+        }
+        store.delete(account, draft_id, revision)
     }
 }
 
@@ -412,7 +539,9 @@ fn draft_warn_event(
 }
 
 fn draft_public_reason(error: &crate::draft::DraftError) -> &'static str {
-    if error.reason.contains("revision") {
+    if error.reason == "send_attempt_paused" {
+        "send_attempt_paused"
+    } else if error.reason.contains("revision") {
         "draft_conflict"
     } else if error.reason.contains("quota") {
         "draft_quota_exceeded"
@@ -430,7 +559,9 @@ fn draft_public_reason(error: &crate::draft::DraftError) -> &'static str {
 }
 
 fn draft_error_label(error: &crate::draft::DraftError) -> &'static str {
-    if error.reason.contains("revision") {
+    if error.reason == "send_attempt_paused" {
+        "send_attempt_paused"
+    } else if error.reason.contains("revision") {
         "stale_revision"
     } else if error.reason.contains("quota") {
         "quota_exceeded"
@@ -440,5 +571,19 @@ fn draft_error_label(error: &crate::draft::DraftError) -> &'static str {
         "invalid_request"
     } else {
         "store_failure"
+    }
+}
+
+fn journal_draft_error(_: crate::send_journal::JournalError) -> crate::draft::DraftError {
+    crate::draft::DraftError {
+        reason: "send_attempt_paused".into(),
+    }
+}
+fn paused_draft_save() -> BrowserDraftSaveOutcome {
+    BrowserDraftSaveOutcome {
+        decision: BrowserDraftSaveDecision::Denied {
+            public_reason: "send_attempt_paused".into(),
+        },
+        audit_events: vec![],
     }
 }

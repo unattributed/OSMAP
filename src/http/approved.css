@@ -285,6 +285,7 @@ body:has(.app-rail) {
 .draft-attachment-count { white-space: nowrap; }
 .draft-discard form { margin: 0; }
 .draft-list .badge { padding: .1rem .4rem; font-size: .75rem; color: var(--link); background: var(--selected); border: 0; }
+.coordinated-mail { align-content: start; }
 .coordinated-mail:not(.has-selection) { grid-template-columns: minmax(0,1fr); }
 .coordinated-mail:not(.has-selection)>.reader-empty { display: none; }
 .mail-page-intro { grid-column: 1/-1; margin-bottom: 0; }
@@ -498,3 +499,8 @@ body:has(.app-rail) {
   .topbar .header-theme button[aria-pressed=true] { background: Highlight; color: HighlightText; box-shadow: none; outline: 1px solid Highlight; }
   .topbar .header-theme button:focus-visible { outline: 3px solid CanvasText; outline-offset: 3px; }
 }
+/* Native attachment metadata filtering; details remain in document flow. */
+.attachment-filter { max-width:100%; margin:0; }
+.attachment-filter summary { cursor:pointer; padding:.45rem .6rem; }
+.attachment-filter > div { display:flex; flex-wrap:wrap; gap:.35rem; }
+.attachment-filter p { max-width:22rem; margin:.4rem; }

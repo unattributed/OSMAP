@@ -89,6 +89,140 @@ impl FileUserSettingsStore {
             unique_suffix
         ))
     }
+    fn writer_lock(
+        &self,
+        account: &str,
+    ) -> Result<crate::private_account_file::LockedAccountFile, UserSettingsError> {
+        let check = || -> std::io::Result<()> {
+            let metadata = fs::symlink_metadata(&self.settings_dir)?;
+            if metadata.file_type().is_symlink() || !metadata.is_dir() {
+                return Err(std::io::Error::other("unsafe settings directory"));
+            }
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::MetadataExt as _;
+                if metadata.uid() != crate::openbsd::effective_uid() {
+                    return Err(std::io::Error::other("settings directory owner mismatch"));
+                }
+            }
+            Ok(())
+        };
+        let prepare = || -> std::io::Result<()> {
+            match check() {
+                Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                    fs::create_dir_all(&self.settings_dir)?
+                }
+                value => value?,
+            }
+            check()?;
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::{
+                    MetadataExt as _, OpenOptionsExt as _, PermissionsExt as _,
+                };
+                let directory = fs::OpenOptions::new()
+                    .read(true)
+                    .custom_flags(libc::O_DIRECTORY | libc::O_NOFOLLOW)
+                    .open(&self.settings_dir)?;
+                if directory.metadata()?.uid() != crate::openbsd::effective_uid() {
+                    return Err(std::io::Error::other("settings directory owner mismatch"));
+                }
+                directory.set_permissions(fs::Permissions::from_mode(0o700))?;
+            }
+            Ok(())
+        };
+        prepare().map_err(|error| UserSettingsError {
+            reason: format!("settings directory unavailable: {error}"),
+        })?;
+        // Reuse the shared lock primitive only. The existing .settings path and
+        // text schema remain authoritative; no JSON record is created.
+        let record = crate::private_account_file::PrivateAccountFile::new(
+            self.settings_dir.clone(),
+            "osmap-user-settings-v1",
+            4096,
+        );
+        let deadline = std::time::Instant::now() + std::time::Duration::from_millis(500);
+        loop {
+            match record.lock(account) {
+                Ok(guard) => return Ok(guard),
+                Err(error)
+                    if error.kind() == std::io::ErrorKind::WouldBlock
+                        && std::time::Instant::now() < deadline =>
+                {
+                    std::thread::sleep(std::time::Duration::from_millis(5));
+                }
+                Err(error) => {
+                    return Err(UserSettingsError {
+                        reason: format!("settings writer lock unavailable: {error}"),
+                    });
+                }
+            }
+        }
+    }
+
+    /// Merge Archive under the same account lock used by ordinary full saves.
+    pub fn save_archive(
+        &self,
+        account: &str,
+        archive: Option<&str>,
+    ) -> Result<UserSettings, UserSettingsError> {
+        let archive = parse_archive_mailbox_name(archive)?;
+        let _guard = self.writer_lock(account)?;
+        let mut settings = self.load(account)?.unwrap_or_default();
+        settings.archive_mailbox_name = archive;
+        self.save_locked(account, &settings)?;
+        Ok(settings)
+    }
+
+    /// Merge content preference with the latest Archive value under the writer lock.
+    pub fn save_content(
+        &self,
+        account: &str,
+        content: HtmlDisplayPreference,
+    ) -> Result<UserSettings, UserSettingsError> {
+        let _guard = self.writer_lock(account)?;
+        let mut settings = self.load(account)?.unwrap_or_default();
+        settings.html_display_preference = content;
+        self.save_locked(account, &settings)?;
+        Ok(settings)
+    }
+
+    fn save_locked(
+        &self,
+        canonical_username: &str,
+        settings: &UserSettings,
+    ) -> Result<(), UserSettingsError> {
+        let path = self.settings_path_for_username(canonical_username);
+        let tmp_path = self.temporary_settings_path(&path);
+        let content = serialize_user_settings(settings);
+
+        let mut options = fs::OpenOptions::new();
+        options.write(true).create_new(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt as _;
+            options.mode(0o600);
+        }
+        let mut file = options.open(&tmp_path).map_err(|error| UserSettingsError {
+            reason: format!(
+                "failed to create user settings temp file {:?}: {error}",
+                tmp_path
+            ),
+        })?;
+        let result = (|| -> std::io::Result<()> {
+            file.write_all(content.as_bytes())?;
+            file.sync_all()?;
+            drop(file);
+            fs::rename(&tmp_path, &path)?;
+            fs::File::open(&self.settings_dir)?.sync_all()
+        })();
+        if result.is_err() {
+            let _ = fs::remove_file(&tmp_path);
+        }
+        result.map_err(|error| UserSettingsError {
+            reason: format!("user settings publication unconfirmed: {error}"),
+        })
+    }
 }
 
 impl UserSettingsStore for FileUserSettingsStore {
@@ -111,76 +245,13 @@ impl UserSettingsStore for FileUserSettingsStore {
         canonical_username: &str,
         settings: &UserSettings,
     ) -> Result<(), UserSettingsError> {
-        fs::create_dir_all(&self.settings_dir).map_err(|error| UserSettingsError {
-            reason: format!(
-                "failed to create user settings directory {:?}: {error}",
-                self.settings_dir
-            ),
-        })?;
-        set_settings_dir_permissions(&self.settings_dir)?;
-
-        let path = self.settings_path_for_username(canonical_username);
-        let tmp_path = self.temporary_settings_path(&path);
-        let content = serialize_user_settings(settings);
-
-        let mut options = fs::OpenOptions::new();
-        options.write(true).create_new(true);
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::OpenOptionsExt as _;
-            options.mode(0o600);
-        }
-        let mut file = options.open(&tmp_path).map_err(|error| UserSettingsError {
-            reason: format!(
-                "failed to create user settings temp file {:?}: {error}",
-                tmp_path
-            ),
-        })?;
-        file.write_all(content.as_bytes())
-            .map_err(|error| UserSettingsError {
-                reason: format!(
-                    "failed to write user settings temp file {:?}: {error}",
-                    tmp_path
-                ),
-            })?;
-
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
-            fs::set_permissions(&tmp_path, fs::Permissions::from_mode(0o600)).map_err(|error| {
-                UserSettingsError {
-                    reason: format!(
-                        "failed to set user settings temp permissions {:?}: {error}",
-                        tmp_path
-                    ),
-                }
-            })?;
-        }
-
-        fs::rename(&tmp_path, &path).map_err(|error| UserSettingsError {
-            reason: format!("failed to finalize user settings file {:?}: {error}", path),
-        })?;
-
-        Ok(())
+        let _guard = self.writer_lock(canonical_username)?;
+        self.load(canonical_username)?;
+        self.save_locked(canonical_username, settings)
     }
 }
 
 static NEXT_SETTINGS_TEMP_FILE_ID: AtomicU64 = AtomicU64::new(0);
-
-fn set_settings_dir_permissions(path: &std::path::Path) -> Result<(), UserSettingsError> {
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt as _;
-        fs::set_permissions(path, fs::Permissions::from_mode(0o700)).map_err(|error| {
-            UserSettingsError {
-                reason: format!(
-                    "failed to set user settings directory permissions {path:?}: {error}"
-                ),
-            }
-        })?;
-    }
-    Ok(())
-}
 
 /// Loaded settings plus the emitted audit event.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -588,5 +659,118 @@ mod tests {
         let error = parse_archive_mailbox_name(Some("Archive\n2026"))
             .expect_err("control characters should be rejected");
         assert!(error.reason.contains("control characters"));
+    }
+}
+
+#[cfg(test)]
+mod archive_merge_tests {
+    use super::*;
+    #[test]
+    fn ordinary_and_archive_writers_share_account_lock_and_merge_latest_record() {
+        let root = std::env::temp_dir().join(format!(
+            "osmap-settings-merge-{}",
+            crate::draft::generate_draft_id().unwrap()
+        ));
+        let store = FileUserSettingsStore::new(&root);
+        let plain = UserSettings {
+            html_display_preference: HtmlDisplayPreference::PreferPlainText,
+            archive_mailbox_name: None,
+        };
+        store.save("alice@example.com", &plain).unwrap();
+        let path = store.settings_path_for_username("alice@example.com");
+        let before = fs::read(&path).unwrap();
+        let lock = store.writer_lock("alice@example.com").unwrap();
+        assert!(store
+            .save("alice@example.com", &UserSettings::default())
+            .is_err());
+        assert!(store
+            .save_archive("alice@example.com", Some("INBOX.Projects"))
+            .is_err());
+        assert!(store
+            .save_content(
+                "alice@example.com",
+                HtmlDisplayPreference::PreferSanitizedHtml
+            )
+            .is_err());
+        assert_eq!(fs::read(&path).unwrap(), before);
+        store.save_archive("bob@example.com", None).unwrap();
+        drop(lock);
+        store
+            .save("alice@example.com", &UserSettings::default())
+            .unwrap();
+        store
+            .save_archive("alice@example.com", Some("INBOX.Projects"))
+            .unwrap();
+        assert_eq!(
+            FileUserSettingsStore::new(&root)
+                .load("alice@example.com")
+                .unwrap()
+                .unwrap()
+                .html_display_preference,
+            HtmlDisplayPreference::PreferSanitizedHtml
+        );
+        assert!(!fs::read_dir(&root).unwrap().any(|p| p
+            .unwrap()
+            .path()
+            .extension()
+            .is_some_and(|x| x == "json")));
+        fs::remove_dir_all(root).unwrap();
+    }
+}
+
+#[cfg(all(test, unix))]
+mod archive_directory_tests {
+    use super::*;
+    use std::os::unix::fs::{symlink, PermissionsExt as _};
+    #[test]
+    fn settings_symlink_refusal_never_changes_target_permissions_and_owned_legacy_dir_upgrades() {
+        let root = std::env::temp_dir().join(format!(
+            "osmap-dir-check-{}",
+            crate::draft::generate_draft_id().unwrap()
+        ));
+        fs::create_dir_all(root.join("target")).unwrap();
+        fs::set_permissions(root.join("target"), fs::Permissions::from_mode(0o755)).unwrap();
+        symlink(root.join("target"), root.join("link")).unwrap();
+        let store = FileUserSettingsStore::new(root.join("link"));
+        assert!(store.save_archive("alice@example.com", None).is_err());
+        assert!(store
+            .save("alice@example.com", &UserSettings::default())
+            .is_err());
+        assert_eq!(
+            fs::metadata(root.join("target"))
+                .unwrap()
+                .permissions()
+                .mode()
+                & 0o777,
+            0o755
+        );
+        assert_eq!(fs::read_dir(root.join("target")).unwrap().count(), 0);
+        let owned = FileUserSettingsStore::new(root.join("target"));
+        owned
+            .save_archive("alice@example.com", Some("INBOX.Projects"))
+            .unwrap();
+        assert_eq!(
+            fs::metadata(root.join("target"))
+                .unwrap()
+                .permissions()
+                .mode()
+                & 0o777,
+            0o700
+        );
+        assert_eq!(
+            owned
+                .load("alice@example.com")
+                .unwrap()
+                .unwrap()
+                .archive_mailbox_name
+                .as_deref(),
+            Some("INBOX.Projects")
+        );
+        assert!(!fs::read_dir(root.join("target")).unwrap().any(|e| e
+            .unwrap()
+            .path()
+            .extension()
+            .is_some_and(|e| e == "tmp")));
+        fs::remove_dir_all(root).unwrap();
     }
 }

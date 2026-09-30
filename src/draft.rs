@@ -304,6 +304,17 @@ impl FileDraftStore {
             .join(draft_id)
     }
 
+    /// Non-mutating immutable recovery read. Caller owns publication coordination;
+    /// this does not run expiry cleanup, legacy recovery, or create a record.
+    pub(crate) fn read_immutable(
+        &self,
+        account: &str,
+        id: &str,
+    ) -> Result<Option<DraftRecord>, DraftError> {
+        validate_canonical_username(account)?;
+        validate_draft_id(id)?;
+        self.read_record_from_metadata(account, &self.metadata_path(account, id))
+    }
     fn metadata_path(&self, canonical_username: &str, draft_id: &str) -> PathBuf {
         self.draft_dir_for_username_and_id(canonical_username, draft_id)
             .join(DRAFT_METADATA_FILE)

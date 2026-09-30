@@ -138,6 +138,73 @@ impl RuntimeBrowserGateway {
 }
 
 impl BrowserGateway for RuntimeBrowserGateway {
+    fn read_send_recovery(
+        &self,
+        session: &ValidatedSession,
+        intent: &str,
+    ) -> BrowserSendRecoveryDecision {
+        use crate::send_recovery::{RecoveryRead, SendRecovery};
+        match SendRecovery::new(self.settings_dir.join("send-recovery")).lookup(
+            &self.send_journal(),
+            &session.record.canonical_username,
+            intent,
+            self.send_clock(),
+        ) {
+            Ok(RecoveryRead::Available(value)) => {
+                BrowserSendRecoveryDecision::Available(BrowserSendRecoverySnapshot {
+                    request: value.request,
+                    created_at: value.created_at,
+                    expires_at: value.expires_at,
+                })
+            }
+            Ok(RecoveryRead::Missing) => BrowserSendRecoveryDecision::Missing,
+            Ok(RecoveryRead::Expired) => BrowserSendRecoveryDecision::Expired,
+            Ok(RecoveryRead::Unconfirmed) => BrowserSendRecoveryDecision::Unconfirmed,
+            Err(_) => BrowserSendRecoveryDecision::Unavailable,
+        }
+    }
+
+    fn send_receipt(
+        &self,
+        session: &ValidatedSession,
+        intent: &str,
+    ) -> Result<Option<BrowserSendDecision>, String> {
+        self.send_journal()
+            .receipt(
+                &session.record.canonical_username,
+                intent,
+                self.send_clock(),
+            )
+            .map(|value| {
+                value.map(|outcome| {
+                    http_gateway_mail::journal_send_decision(Ok(
+                        crate::send_journal::JournalResult {
+                            outcome,
+                            replayed: true,
+                            receipt_persisted: true,
+                        },
+                    ))
+                })
+            })
+            .map_err(|_| "send_attempt_paused".into())
+    }
+    fn cleanup_sent_draft(
+        &self,
+        session: &ValidatedSession,
+        id: &str,
+        revision: u64,
+        intent: &str,
+    ) -> Result<bool, String> {
+        self.cleanup_submitted_draft_impl(
+            &session.record.canonical_username,
+            id,
+            revision,
+            intent,
+            self.send_clock(),
+        )
+        .map_err(|_| "send_attempt_paused".into())
+    }
+
     fn load_contacts(
         &self,
         session: &ValidatedSession,
@@ -310,6 +377,28 @@ impl BrowserGateway for RuntimeBrowserGateway {
         validated_session: &ValidatedSession,
     ) -> BrowserSettingsOutcome {
         self.load_settings_impl(context, validated_session)
+    }
+
+    fn update_content_setting(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        content: HtmlDisplayPreference,
+    ) -> BrowserSettingsUpdateOutcome {
+        let result = crate::settings::FileUserSettingsStore::new(&self.settings_dir)
+            .save_content(&session.record.canonical_username, content);
+        self.partial_settings_outcome(context, session, "content", result)
+    }
+
+    fn update_archive_setting(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        archive: Option<&str>,
+    ) -> BrowserSettingsUpdateOutcome {
+        let result = crate::settings::FileUserSettingsStore::new(&self.settings_dir)
+            .save_archive(&session.record.canonical_username, archive);
+        self.partial_settings_outcome(context, session, "archive", result)
     }
 
     fn update_settings(

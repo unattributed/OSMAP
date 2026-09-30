@@ -30,8 +30,12 @@ mod routes_mail;
 mod routes_moves;
 mod routes_reading_preferences;
 mod routes_reply;
+#[path = "http/routes_send_receipt.rs"]
+mod routes_send_receipt;
 mod routes_settings;
 mod routes_source_attachments;
+#[path = "http/welcome_data.rs"]
+mod welcome_data;
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -792,11 +796,12 @@ pub use self::http_browser::{
     BrowserMessageListDecision, BrowserMessageListOutcome, BrowserMessageMoveDecision,
     BrowserMessageMoveOutcome, BrowserMessageSearchDecision, BrowserMessageSearchOutcome,
     BrowserMessageViewDecision, BrowserMessageViewOutcome, BrowserSendDecision, BrowserSendOutcome,
-    BrowserSendRequest, BrowserSessionDecision, BrowserSessionListDecision,
-    BrowserSessionListOutcome, BrowserSessionRevokeDecision, BrowserSessionRevokeOutcome,
-    BrowserSessionRevokeScope, BrowserSessionValidationOutcome, BrowserSettingsDecision,
-    BrowserSettingsOutcome, BrowserSettingsUpdateDecision, BrowserSettingsUpdateOutcome,
-    BrowserVisibleSession, BrowserVisibleSettings,
+    BrowserSendRecoveryDecision, BrowserSendRecoverySnapshot, BrowserSendRequest,
+    BrowserSessionDecision, BrowserSessionListDecision, BrowserSessionListOutcome,
+    BrowserSessionRevokeDecision, BrowserSessionRevokeOutcome, BrowserSessionRevokeScope,
+    BrowserSessionValidationOutcome, BrowserSettingsDecision, BrowserSettingsOutcome,
+    BrowserSettingsUpdateDecision, BrowserSettingsUpdateOutcome, BrowserVisibleSession,
+    BrowserVisibleSettings,
 };
 pub use self::http_gateway::RuntimeBrowserGateway;
 pub use self::http_runtime::run_http_server;
@@ -804,6 +809,9 @@ pub use self::http_runtime::run_http_server;
 #[cfg(test)]
 mod tests {
     use super::*;
+    mod welcome_data_tests {
+        include!("http/welcome_data_tests.rs");
+    }
     mod compose_enhancement_tests {
         include!("http/compose_enhancement_tests.rs");
     }
@@ -813,8 +821,17 @@ mod tests {
     mod compose_format_tests {
         include!("http/compose_format_tests.rs");
     }
+    mod send_recovery_ui_tests {
+        include!("http/send_recovery_ui_tests.rs");
+    }
+    mod send_journal_routes_tests {
+        include!("http/send_journal_routes_tests.rs");
+    }
     mod send_result_tests {
         include!("http/send_result_tests.rs");
+    }
+    mod copies_tests {
+        include!("http/copies_tests.rs");
     }
     mod composition_preference_tests {
         include!("http/composition_preference_tests.rs");
@@ -890,6 +907,9 @@ mod tests {
 
     #[derive(Debug, Clone)]
     struct StubGateway {
+        send_journal: crate::send_journal::SendJournal,
+        recovery_root: PathBuf,
+        recovery_now: Option<u64>,
         contacts_store: Option<crate::contacts::ContactStore>,
         draft_store: Option<crate::draft::FileDraftStore>,
         fail_draft_delete: Option<String>,
@@ -911,6 +931,12 @@ mod tests {
             Self {
                 contacts_store: None,
                 draft_store: None,
+                send_journal: fixture_send_journal(),
+                recovery_now: None,
+                recovery_root: temp_dir(&format!(
+                    "recovery-fixture-{}",
+                    crate::draft::generate_draft_id().unwrap()
+                )),
                 fail_draft_delete: None,
                 drafts: Arc::new(Mutex::new(BTreeMap::new())),
                 submitted: Arc::new(Mutex::new(Vec::new())),
@@ -962,6 +988,93 @@ mod tests {
     }
 
     impl BrowserGateway for StubGateway {
+        fn read_send_recovery(
+            &self,
+            session: &ValidatedSession,
+            intent: &str,
+        ) -> BrowserSendRecoveryDecision {
+            use crate::send_recovery::{RecoveryRead, SendRecovery};
+            match SendRecovery::new(self.recovery_root.clone()).lookup(
+                &self.send_journal,
+                &session.record.canonical_username,
+                intent,
+                self.recovery_now.unwrap_or(100),
+            ) {
+                Ok(RecoveryRead::Available(value)) => {
+                    BrowserSendRecoveryDecision::Available(BrowserSendRecoverySnapshot {
+                        request: value.request,
+                        created_at: value.created_at,
+                        expires_at: value.expires_at,
+                    })
+                }
+                Ok(RecoveryRead::Missing) => BrowserSendRecoveryDecision::Missing,
+                Ok(RecoveryRead::Expired) => BrowserSendRecoveryDecision::Expired,
+                Ok(RecoveryRead::Unconfirmed) => BrowserSendRecoveryDecision::Unconfirmed,
+                Err(_) => BrowserSendRecoveryDecision::Unavailable,
+            }
+        }
+        fn send_clock(&self) -> u64 {
+            100
+        }
+        fn send_receipt(
+            &self,
+            session: &ValidatedSession,
+            intent: &str,
+        ) -> Result<Option<BrowserSendDecision>, String> {
+            self.send_journal
+                .receipt(&session.record.canonical_username, intent, 100)
+                .map(|value| {
+                    value.map(|outcome| {
+                        fixture_send_decision(Ok(crate::send_journal::JournalResult {
+                            outcome,
+                            replayed: true,
+                            receipt_persisted: true,
+                        }))
+                    })
+                })
+                .map_err(|_| "send_attempt_paused".into())
+        }
+        fn cleanup_sent_draft(
+            &self,
+            session: &ValidatedSession,
+            id: &str,
+            revision: u64,
+            intent: &str,
+        ) -> Result<bool, String> {
+            if self.fail_draft_delete.as_deref() == Some(id) {
+                return Err("cleanup_unconfirmed".into());
+            }
+            let guard = self
+                .send_journal
+                .account_guard(&session.record.canonical_username, 100)
+                .map_err(|_| "paused")?;
+            guard
+                .require_accepted_with_sent(intent)
+                .map_err(|_| "paused")?;
+            let mut drafts = self.drafts.lock().map_err(|_| "paused")?;
+            if let Some(store) = &self.draft_store {
+                let draft = store
+                    .load(&session.record.canonical_username, id, 100)
+                    .map_err(|_| "paused")?
+                    .ok_or("missing")?;
+                if draft.revision != Some(revision)
+                    || guard.draft_intent(&draft).map_err(|_| "paused")? != intent
+                {
+                    return Err("paused".into());
+                }
+                return store
+                    .delete(&session.record.canonical_username, id, revision)
+                    .map_err(|_| "paused".into());
+            }
+            let draft = drafts.get(id).ok_or("missing")?;
+            if draft.revision != Some(revision)
+                || guard.draft_intent(draft).map_err(|_| "paused")? != intent
+            {
+                return Err("paused".into());
+            }
+            Ok(drafts.remove(id).is_some())
+        }
+
         fn load_contacts(
             &self,
             session: &ValidatedSession,
@@ -1500,6 +1613,74 @@ mod tests {
             }
         }
 
+        fn update_content_setting(
+            &self,
+            _context: &AuthenticationContext,
+            session: &ValidatedSession,
+            content: HtmlDisplayPreference,
+        ) -> BrowserSettingsUpdateOutcome {
+            let Some(store) = &self.settings_store else {
+                return BrowserSettingsUpdateOutcome {
+                    decision: BrowserSettingsUpdateDecision::Denied {
+                        public_reason: "temporarily_unavailable".into(),
+                    },
+                    audit_events: vec![],
+                };
+            };
+            let result = store.save_content(&session.record.canonical_username, content);
+            BrowserSettingsUpdateOutcome {
+                decision: if result.is_ok() {
+                    BrowserSettingsUpdateDecision::Updated
+                } else {
+                    BrowserSettingsUpdateDecision::Denied {
+                        public_reason: "temporarily_unavailable".into(),
+                    }
+                },
+                audit_events: vec![],
+            }
+        }
+
+        fn update_archive_setting(
+            &self,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+            archive: Option<&str>,
+        ) -> BrowserSettingsUpdateOutcome {
+            if self.settings_store.is_none() {
+                return BrowserSettingsUpdateOutcome {
+                    decision: BrowserSettingsUpdateDecision::Denied {
+                        public_reason: "temporarily_unavailable".into(),
+                    },
+                    audit_events: vec![],
+                };
+            }
+            let result = self
+                .settings_store
+                .as_ref()
+                .expect("store checked above")
+                .save_archive(&session.record.canonical_username, archive);
+            BrowserSettingsUpdateOutcome {
+                decision: if result.is_ok() {
+                    BrowserSettingsUpdateDecision::Updated
+                } else {
+                    BrowserSettingsUpdateDecision::Denied {
+                        public_reason: "temporarily_unavailable".into(),
+                    }
+                },
+                audit_events: vec![LogEvent::new(
+                    if result.is_ok() {
+                        LogLevel::Info
+                    } else {
+                        LogLevel::Warn
+                    },
+                    EventCategory::Session,
+                    "archive_settings_update",
+                    "archive preference update processed",
+                )
+                .with_field("request_id", context.request_id.clone())],
+            }
+        }
+
         fn update_settings(
             &self,
             _context: &AuthenticationContext,
@@ -1559,6 +1740,28 @@ mod tests {
             context: &AuthenticationContext,
             validated_session: &ValidatedSession,
         ) -> BrowserMailboxOutcome {
+            if context.user_agent == "CopiesWrongOwner" {
+                return BrowserMailboxOutcome {
+                    decision: BrowserMailboxDecision::Listed {
+                        canonical_username: "bob@example.com".into(),
+                        mailboxes: vec![MailboxEntry {
+                            name: "Archive/2026".into(),
+                        }],
+                    },
+                    audit_events: vec![],
+                };
+            }
+            if context.user_agent == "WelcomeWrongAccount" {
+                return BrowserMailboxOutcome {
+                    decision: BrowserMailboxDecision::Listed {
+                        canonical_username: "foreign@example.test".into(),
+                        mailboxes: vec![MailboxEntry {
+                            name: "INBOX".into(),
+                        }],
+                    },
+                    audit_events: vec![],
+                };
+            }
             if context.user_agent == "WelcomeMissing" {
                 return BrowserMailboxOutcome {
                     decision: BrowserMailboxDecision::Listed {
@@ -1642,6 +1845,61 @@ mod tests {
             validated_session: &ValidatedSession,
             mailbox_name: &str,
         ) -> BrowserMessageListOutcome {
+            if context.user_agent.starts_with("WelcomeData/") {
+                let marker = context.user_agent.strip_prefix("WelcomeData/").unwrap();
+                let mut rows: Vec<_> = (1..=8)
+                    .map(|uid| MessageSummary {
+                        metadata: None,
+                        mailbox_name: "INBOX".into(),
+                        uid,
+                        flags: if uid % 2 == 0 {
+                            vec!["\\Seen".into(), "\\Flagged".into()]
+                        } else {
+                            vec![]
+                        },
+                        date_received: format!("2026-09-{:02} 00:00:00 +0000", uid),
+                        size_virtual: 1,
+                        subject: Some(format!("Actual {uid} <inert>")),
+                        from: Some("Sender & <sender@example.test>".into()),
+                    })
+                    .collect();
+                if marker == "wrong-row" {
+                    rows[0].mailbox_name = "Foreign".into();
+                }
+                if marker == "duplicate" {
+                    rows[0].uid = rows[1].uid;
+                }
+                if marker == "empty" {
+                    rows.clear();
+                }
+                return BrowserMessageListOutcome {
+                    decision: if marker == "failure" {
+                        BrowserMessageListDecision::Denied {
+                            public_reason: "unavailable".into(),
+                        }
+                    } else {
+                        BrowserMessageListDecision::Listed {
+                            canonical_username: if marker == "wrong-owner" {
+                                "foreign@example.test".into()
+                            } else {
+                                validated_session.record.canonical_username.clone()
+                            },
+                            mailbox_name: if marker == "wrong-mailbox" {
+                                "Sent".into()
+                            } else {
+                                mailbox_name.into()
+                            },
+                            messages: rows,
+                        }
+                    },
+                    audit_events: vec![LogEvent::new(
+                        LogLevel::Info,
+                        EventCategory::Mailbox,
+                        "welcome_fixture_summary_list",
+                        "one summary lookup",
+                    )],
+                };
+            }
             BrowserMessageListOutcome {
                 decision: BrowserMessageListDecision::Listed {
                     canonical_username: validated_session.record.canonical_username.clone(),
@@ -1654,11 +1912,12 @@ mod tests {
                         } else if context.user_agent.starts_with("OSMAP/ManyMessages") {
                             (1..=125)
                                 .map(|uid| MessageSummary {
-                                    metadata: Some(Self::fixture_metadata(
+                                    metadata: Self::fixture_attachment_metadata(
+                                        context,
                                         &validated_session.record.canonical_username,
                                         mailbox_name,
                                         uid,
-                                    )),
+                                    ),
                                     mailbox_name: mailbox_name.to_string(),
                                     uid,
                                     flags: self.fixture_message_flags(
@@ -1766,11 +2025,12 @@ mod tests {
                                 continue;
                             }
                             results.push(MessageSearchResult {
-                                metadata: Some(Self::fixture_metadata(
+                                metadata: Self::fixture_attachment_metadata(
+                                    context,
                                     &validated_session.record.canonical_username,
                                     name,
                                     uid,
-                                )),
+                                ),
                                 mailbox_name: name.into(),
                                 uid,
                                 flags: self.fixture_message_flags(
@@ -2031,6 +2291,35 @@ mod tests {
                     audit_events: Vec::new(),
                 };
             }
+            if context.user_agent == "PrivacyBrowser" {
+                let content = self
+                    .settings_store
+                    .as_ref()
+                    .and_then(|store| {
+                        crate::settings::UserSettingsStore::load(
+                            store,
+                            &validated_session.record.canonical_username,
+                        )
+                        .ok()
+                        .flatten()
+                    })
+                    .unwrap_or_default()
+                    .html_display_preference;
+                let message = MessageView { metadata: None, mailbox_name: mailbox_name.into(), uid, flags: vec![], date_received: "2026-09-30 00:00:00 +0000".into(), size_virtual: 512, header_block: "Subject: Privacy sample\nContent-Type: multipart/alternative; boundary=privacy\n".into(), body_text: "--privacy\nContent-Type: text/plain; charset=utf-8\n\nSynthetic plain part\n--privacy\nContent-Type: text/html; charset=utf-8\n\n<p>Synthetic <strong>protected part</strong></p><img src=\"https://external.invalid/pixel\"><script>unsafe()</script>\n--privacy--\n".into() };
+                let rendered = PlainTextMessageRenderer::new(RenderingPolicy {
+                    html_display_preference: content,
+                    ..RenderingPolicy::default()
+                })
+                .render_for_validated_session(context, validated_session, &message)
+                .unwrap();
+                return BrowserMessageViewOutcome {
+                    decision: BrowserMessageViewDecision::Rendered {
+                        canonical_username: validated_session.record.canonical_username.clone(),
+                        rendered: Box::new(rendered.rendered),
+                    },
+                    audit_events: vec![rendered.audit_event],
+                };
+            }
             let moved_fixture = self.fixture_added_message(
                 &validated_session.record.canonical_username,
                 mailbox_name,
@@ -2200,65 +2489,80 @@ mod tests {
             _validated_session: &ValidatedSession,
             request: BrowserSendRequest<'_>,
         ) -> BrowserSendOutcome {
-            let parsed = ComposeRequest::new_with_routing(
-                ComposePolicy::default(),
-                request.recipients,
-                request.cc_recipients,
-                request.bcc_recipients,
-                request.subject,
-                request.body,
-                request.attachments.to_vec(),
-            )
-            .and_then(|compose| compose.with_body_format(request.body_format));
-            if request.recipients == "locked@example.com" {
-                BrowserSendOutcome {
-                    decision: BrowserSendDecision::Denied {
-                        public_reason: TOO_MANY_SUBMISSIONS_PUBLIC_REASON.to_string(),
-                        retry_after_seconds: Some(120),
-                    },
-                    audit_events: vec![LogEvent::new(
-                        LogLevel::Warn,
-                        EventCategory::Submission,
-                        "stub_send_throttled",
-                        "stub submission throttled",
-                    )],
-                }
-            } else if let Ok(mut compose) = parsed {
-                compose.reply_thread = request.reply_thread.cloned();
-                self.submitted
-                    .lock()
-                    .expect("synthetic submissions should lock")
-                    .push(compose);
-                BrowserSendOutcome {
-                    decision: if context.user_agent.contains("SendUnconfirmed") {
-                        BrowserSendDecision::Unconfirmed {
-                            public_reason: "submission_unavailable".into(),
-                        }
+            use crate::send_journal::{AttemptOutcome, PreparedResult};
+            let result = self.send_journal.execute_prepared(
+                &_validated_session.record.canonical_username,
+                request.send_intent,
+                100,
+                |consumed| {
+                    if !consumed && request.recipients == "locked@example.com" {
+                        return Err(BrowserSendDecision::Denied {
+                            public_reason: TOO_MANY_SUBMISSIONS_PUBLIC_REASON.into(),
+                            retry_after_seconds: Some(120),
+                        });
+                    }
+                    let mut parsed = ComposeRequest::new_with_routing(
+                        ComposePolicy::default(),
+                        request.recipients,
+                        request.cc_recipients,
+                        request.bcc_recipients,
+                        request.subject,
+                        request.body,
+                        request.attachments.to_vec(),
+                    )
+                    .and_then(|value| value.with_body_format(request.body_format))
+                    .map_err(|_| BrowserSendDecision::Denied {
+                        public_reason: "invalid_request".into(),
+                        retry_after_seconds: None,
+                    })?;
+                    parsed.reply_thread = request.reply_thread.cloned();
+                    Ok(parsed)
+                },
+                |compose| {
+                    let normal = self.draft_store.clone().unwrap_or_else(|| {
+                        FileDraftStore::new(
+                            self.recovery_root.join("ordinary-fixture"),
+                            DraftPolicy::default(),
+                        )
+                    });
+                    let compose =
+                        match crate::send_recovery::SendRecovery::new(self.recovery_root.clone())
+                            .capture(
+                                &self.send_journal,
+                                &normal,
+                                &_validated_session.record.canonical_username,
+                                request.send_intent,
+                                compose,
+                                100,
+                            ) {
+                            Ok(value) => value,
+                            Err(error) => {
+                                return AttemptOutcome::RecoveryRefused {
+                                    capacity: error
+                                        == crate::send_recovery::RecoveryError::Capacity,
+                                }
+                            }
+                        };
+                    self.submitted
+                        .lock()
+                        .expect("synthetic submissions")
+                        .push(compose.clone());
+                    if context.user_agent.contains("SendUnconfirmed") {
+                        AttemptOutcome::Unconfirmed
                     } else {
-                        BrowserSendDecision::Submitted {
+                        AttemptOutcome::Accepted {
                             sent_copy_stored: !context.user_agent.contains("SentCopyUnconfirmed"),
                         }
-                    },
-                    audit_events: vec![LogEvent::new(
-                        LogLevel::Info,
-                        EventCategory::Submission,
-                        "stub_send_ok",
-                        "stub submission accepted",
-                    )],
-                }
-            } else {
-                BrowserSendOutcome {
-                    decision: BrowserSendDecision::Denied {
-                        public_reason: "invalid_request".to_string(),
-                        retry_after_seconds: None,
-                    },
-                    audit_events: vec![LogEvent::new(
-                        LogLevel::Warn,
-                        EventCategory::Submission,
-                        "stub_send_denied",
-                        "stub submission denied",
-                    )],
-                }
+                    }
+                },
+            );
+            BrowserSendOutcome {
+                decision: match result {
+                    Ok(PreparedResult::Outcome(recorded)) => fixture_send_decision(Ok(recorded)),
+                    Ok(PreparedResult::NotDispatched(decision)) => decision,
+                    Err(error) => fixture_send_decision(Err(error)),
+                },
+                audit_events: vec![],
             }
         }
 
@@ -2328,6 +2632,24 @@ mod tests {
             _context: &AuthenticationContext,
             validated_session: &ValidatedSession,
         ) -> BrowserDraftListOutcome {
+            if matches!(
+                _context.user_agent.as_str(),
+                "WelcomeDraftFailure" | "WelcomeDraftWrongOwner"
+            ) {
+                return BrowserDraftListOutcome {
+                    decision: if _context.user_agent == "WelcomeDraftFailure" {
+                        BrowserDraftListDecision::Denied {
+                            public_reason: "unavailable".into(),
+                        }
+                    } else {
+                        BrowserDraftListDecision::Listed {
+                            canonical_username: "foreign@example.test".into(),
+                            drafts: vec![],
+                        }
+                    },
+                    audit_events: vec![],
+                };
+            }
             let drafts = if let Some(store) = &self.draft_store {
                 match store.list(&validated_session.record.canonical_username, 100) {
                     Ok(drafts) => drafts,
@@ -2371,6 +2693,20 @@ mod tests {
             validated_session: &ValidatedSession,
             draft_id: &str,
         ) -> BrowserDraftLoadOutcome {
+            let _guard = match self
+                .send_journal
+                .account_guard(&validated_session.record.canonical_username, 100)
+            {
+                Ok(guard) => guard,
+                Err(_) => {
+                    return BrowserDraftLoadOutcome {
+                        decision: BrowserDraftLoadDecision::Denied {
+                            public_reason: "send_attempt_paused".into(),
+                        },
+                        audit_events: vec![],
+                    }
+                }
+            };
             let draft = if let Some(store) = &self.draft_store {
                 match store.load(&validated_session.record.canonical_username, draft_id, 100) {
                     Ok(draft) => draft,
@@ -2424,6 +2760,16 @@ mod tests {
             validated_session: &ValidatedSession,
             request: BrowserDraftSaveRequest<'_>,
         ) -> BrowserDraftSaveOutcome {
+            let mut guard = match self
+                .send_journal
+                .account_guard(&validated_session.record.canonical_username, 100)
+            {
+                Ok(value) => value,
+                Err(_) => return fixture_paused_save(),
+            };
+            if guard.require_unconsumed(request.send_intent).is_err() {
+                return fixture_paused_save();
+            }
             let draft_id = request
                 .draft_id
                 .filter(|value| !value.trim().is_empty())
@@ -2483,6 +2829,18 @@ mod tests {
                 }
             };
             attachments.extend_from_slice(request.attachments);
+            if let Some(existing) = &existing {
+                if guard.draft_intent(existing).ok().as_deref() != Some(request.send_intent) {
+                    return fixture_paused_save();
+                }
+            }
+            if request.draft_id.is_none()
+                && guard
+                    .begin_draft_save(request.send_intent, &draft_id)
+                    .is_err()
+            {
+                return fixture_paused_save();
+            }
             let mut record = match DraftRecord::new(
                 DraftPolicy::default(),
                 DraftRecordInput {
@@ -2537,6 +2895,13 @@ mod tests {
             } else {
                 record.revision = Some(request.expected_revision.unwrap_or(0) + 1);
                 drafts.insert(draft_id.clone(), record);
+            }
+            if request.draft_id.is_none()
+                && guard
+                    .finish_draft_save(request.send_intent, &draft_id)
+                    .is_err()
+            {
+                return fixture_paused_save();
             }
             BrowserDraftSaveOutcome {
                 decision: if context.user_agent.contains("DraftSaveUnconfirmed") {
@@ -2673,6 +3038,53 @@ mod tests {
         BrowserApp::new(HttpPolicy::default(), StubGateway::default())
     }
 
+    fn fixture_send_journal() -> crate::send_journal::SendJournal {
+        static NEXT: AtomicUsize = AtomicUsize::new(0);
+        let serial = NEXT.fetch_add(1, Ordering::Relaxed);
+        crate::send_journal::SendJournal::new(
+            temp_dir(&format!("send-journal-fixture-{serial}")).join("records"),
+        )
+    }
+    fn fixture_paused_save() -> BrowserDraftSaveOutcome {
+        BrowserDraftSaveOutcome {
+            decision: BrowserDraftSaveDecision::Denied {
+                public_reason: "send_attempt_paused".into(),
+            },
+            audit_events: vec![],
+        }
+    }
+    fn fixture_send_decision(
+        result: Result<crate::send_journal::JournalResult, crate::send_journal::JournalError>,
+    ) -> BrowserSendDecision {
+        match result {
+            Ok(crate::send_journal::JournalResult {
+                outcome: crate::send_journal::AttemptOutcome::RecoveryRefused { capacity },
+                ..
+            }) => BrowserSendDecision::RecoveryRefused { capacity },
+            Ok(crate::send_journal::JournalResult {
+                outcome: crate::send_journal::AttemptOutcome::Accepted { sent_copy_stored },
+                receipt_persisted,
+                ..
+            }) => BrowserSendDecision::Submitted {
+                sent_copy_stored,
+                receipt_persisted,
+            },
+            Ok(crate::send_journal::JournalResult {
+                outcome:
+                    crate::send_journal::AttemptOutcome::DraftSaved {
+                        draft_id,
+                        save_confirmed,
+                    },
+                ..
+            }) => BrowserSendDecision::DraftSaved {
+                draft_id: crate::send_journal::draft_id_text(&draft_id),
+                save_confirmed,
+            },
+            _ => BrowserSendDecision::Unconfirmed {
+                public_reason: "send_attempt_paused".into(),
+            },
+        }
+    }
     fn fixture_draft_error(error: &crate::draft::DraftError) -> String {
         if error.reason.contains("revision") {
             "draft_conflict"
@@ -2688,6 +3100,80 @@ mod tests {
 
     fn app_with_policy(policy: HttpPolicy) -> BrowserApp<StubGateway> {
         BrowserApp::new(policy, StubGateway::default())
+    }
+
+    // Explicit opt-in for existing valid compose fixtures. Generic request()
+    // deliberately stays raw, so missing-intent and duplicate tests stay real.
+    fn native_compose_request_bytes(
+        app: &BrowserApp<StubGateway>,
+        method: &str,
+        path: &str,
+        headers: &[(&str, &str)],
+        body: &[u8],
+    ) -> HttpRequest {
+        let mut req = request_bytes(method, path, headers, body);
+        add_native_compose_intent(app, &mut req);
+        req
+    }
+    fn native_compose_request(
+        app: &BrowserApp<StubGateway>,
+        method: &str,
+        path: &str,
+        headers: &[(&str, &str)],
+        body: &str,
+    ) -> HttpRequest {
+        let mut req = request(method, path, headers, body);
+        add_native_compose_intent(app, &mut req);
+        req
+    }
+    fn add_native_compose_intent(app: &BrowserApp<StubGateway>, req: &mut HttpRequest) {
+        assert_eq!(req.method, HttpMethod::Post);
+        assert!(matches!(req.path.as_str(), "/send" | "/drafts/save"));
+        let kind = req.headers.get("content-type").cloned();
+        let Ok(parsed) = parse_compose_form(
+            &req.body,
+            kind.as_deref(),
+            128,
+            32 * 1024 * 1024,
+            ComposePolicy::default(),
+        ) else {
+            return;
+        };
+        if parsed.fields.contains_key("send_intent") {
+            return;
+        }
+        let account = "alice@example.com";
+        let draft = parsed.fields.get("draft_id").and_then(|id| {
+            if let Some(store) = &app.gateway.draft_store {
+                store.load(account, id, 100).ok().flatten()
+            } else {
+                app.gateway.drafts.lock().unwrap().get(id).cloned()
+            }
+        });
+        let intent = if let Some(draft) = draft {
+            crate::send_journal::intent_for_draft(
+                account,
+                &draft.draft_id,
+                draft.revision.unwrap_or(0),
+                draft.updated_at,
+            )
+            .unwrap()
+        } else {
+            crate::send_journal::mint_intent(app.gateway.send_clock()).unwrap()
+        };
+        if let Some(boundary) = kind
+            .as_deref()
+            .and_then(|value| value.split("boundary=").nth(1))
+        {
+            let mut body = format!("--{boundary}\r\nContent-Disposition: form-data; name=\"send_intent\"\r\n\r\n{intent}\r\n").into_bytes();
+            body.extend_from_slice(&req.body);
+            req.body = body;
+        } else {
+            req.body
+                .extend_from_slice(format!("&send_intent={intent}").as_bytes());
+        }
+        req.headers
+            .insert("content-length".into(), req.body.len().to_string());
     }
 
     fn request(method: &str, path: &str, headers: &[(&str, &str)], body: &str) -> HttpRequest {
@@ -3294,6 +3780,9 @@ mod tests {
             &context,
             &validated_session,
             BrowserSendRequest {
+                send_intent: &crate::send_journal::mint_intent(gateway.send_clock()).unwrap(),
+                draft_id: None,
+                draft_revision: None,
                 reply_thread: None,
                 recipients: "bob@example.com",
                 cc_recipients: "",
@@ -4179,7 +4668,7 @@ mod tests {
             .expect("test should hold the only send slot");
 
         let response = app.handle_request(
-            &request(
+            &native_compose_request(&app,
                 "POST",
                 "/send",
                 &authenticated_same_origin_headers(),
@@ -4207,7 +4696,7 @@ mod tests {
 
         drop(held_budget);
         let response_after_release = app.handle_request(
-            &request(
+            &native_compose_request(&app,
                 "POST",
                 "/send",
                 &authenticated_same_origin_headers(),
@@ -4959,7 +5448,7 @@ mod tests {
     fn draft_save_resume_and_list_are_authenticated_and_redacted() {
         let app = app();
         let save_response = app.handle_request(
-            &request(
+            &native_compose_request(&app,
                 "POST",
                 "/drafts/save",
                 &authenticated_same_origin_headers(),
@@ -5013,7 +5502,7 @@ mod tests {
     fn draft_save_resume_and_send_revalidate_explicit_source_attachment_references() {
         let app = app();
         let save_response = app.handle_request(
-            &request(
+            &native_compose_request(&app,
                 "POST",
                 "/drafts/save",
                 &authenticated_same_origin_headers(),
@@ -5047,7 +5536,7 @@ mod tests {
         assert!(!resume_body.contains("value=\"1.3\" checked"));
 
         let send_response = app.handle_request(
-            &request(
+            &native_compose_request(&app,
                 "POST",
                 "/send",
                 &authenticated_same_origin_headers(),
@@ -5067,7 +5556,7 @@ mod tests {
     #[test]
     fn draft_save_rejects_unsurfaced_source_attachment_reference() {
         let response = app().handle_request(
-            &request(
+            &native_compose_request(&app(),
                 "POST",
                 "/drafts/save",
                 &authenticated_same_origin_headers(),
@@ -5093,7 +5582,7 @@ mod tests {
     fn draft_delete_removes_saved_draft() {
         let app = app();
         let save_response = app.handle_request(
-            &request(
+            &native_compose_request(&app,
                 "POST",
                 "/drafts/save",
                 &authenticated_same_origin_headers(),
@@ -5128,7 +5617,7 @@ mod tests {
     fn send_success_deletes_draft_after_accepted_handoff() {
         let app = app();
         let save_response = app.handle_request(
-            &request(
+            &native_compose_request(&app,
                 "POST",
                 "/drafts/save",
                 &authenticated_same_origin_headers(),
@@ -5140,7 +5629,7 @@ mod tests {
         let draft_id = location.trim_start_matches("/draft?id=");
 
         let send_response = app.handle_request(
-            &request(
+            &native_compose_request(&app,
                 "POST",
                 "/send",
                 &authenticated_same_origin_headers(),
@@ -5151,7 +5640,7 @@ mod tests {
             "127.0.0.1",
         );
         assert_eq!(send_response.response.status_code, 303);
-        assert_eq!(location_header(&send_response), "/compose?sent=1");
+        assert!(location_header(&send_response).starts_with("/compose?receipt="));
 
         let resume_response = app.handle_request(
             &request("GET", &location, &authenticated_headers(), ""),
@@ -5164,7 +5653,7 @@ mod tests {
     fn send_failure_preserves_draft() {
         let app = app();
         let save_response = app.handle_request(
-            &request(
+            &native_compose_request(&app,
                 "POST",
                 "/drafts/save",
                 &authenticated_same_origin_headers(),
@@ -5176,7 +5665,7 @@ mod tests {
         let draft_id = location.trim_start_matches("/draft?id=");
 
         let send_response = app.handle_request(
-            &request(
+            &native_compose_request(&app,
                 "POST",
                 "/send",
                 &authenticated_same_origin_headers(),
@@ -5222,7 +5711,7 @@ mod tests {
         multipart_body.push_str("--draft-boundary--\r\n");
 
         let save_response = app.handle_request(
-            &request(
+            &native_compose_request(&app,
                 "POST",
                 "/drafts/save",
                 &[
@@ -5249,7 +5738,7 @@ mod tests {
         assert!(body_text(&resume_response).contains("1 stored attachment"));
 
         let send_response = app.handle_request(
-            &request(
+            &native_compose_request(&app,
                 "POST",
                 "/send",
                 &authenticated_same_origin_headers(),
@@ -5265,7 +5754,8 @@ mod tests {
     #[test]
     fn draft_save_requires_valid_csrf_token() {
         let response = app().handle_request(
-            &request(
+            &native_compose_request(
+                &app(),
                 "POST",
                 "/drafts/save",
                 &authenticated_same_origin_headers(),
@@ -5346,9 +5836,9 @@ mod tests {
         assert_eq!(response.response.status_code, 200);
         let body = body_text(&response);
         assert!(body.contains("<h1>Settings</h1>"));
-        assert!(body.contains("prefer_sanitized_html"));
         assert!(body.contains("<h2 id=\"general-profile-title\">Account Profile</h2>"));
-        assert!(body.contains("name=\"html_display_preference\" value=\"prefer_sanitized_html\""));
+        assert!(body.contains("name=\"settings_action\" value=\"archive\""));
+        assert!(!body.contains("name=\"html_display_preference\""));
         assert!(body.contains("name=\"archive_mailbox_name\""));
         assert!(body.contains("id=\"general-archive\""));
         assert!(body.contains("for=\"general-archive\""));
@@ -5451,7 +5941,7 @@ mod tests {
         );
 
         let response = app().handle_request(
-            &request_bytes(
+            &native_compose_request_bytes(&app(),
                 "POST",
                 "/send",
                 &[
@@ -5512,7 +6002,7 @@ mod tests {
         );
 
         let response = app().handle_request(
-            &request_bytes(
+            &native_compose_request_bytes(&app(),
                 "POST",
                 "/send",
                 &[
@@ -5571,7 +6061,7 @@ mod tests {
         );
 
         let response = app().handle_request(
-            &request_bytes(
+            &native_compose_request_bytes(&app(),
                 "POST",
                 "/send",
                 &[
@@ -5630,7 +6120,7 @@ mod tests {
         );
 
         let response = app().handle_request(
-            &request_bytes(
+            &native_compose_request_bytes(&app(),
                 "POST",
                 "/send",
                 &[
@@ -5708,7 +6198,7 @@ mod tests {
         let body = format!("{body_prefix}{uploads}");
 
         let response = app().handle_request(
-            &request_bytes(
+            &native_compose_request_bytes(&app(),
                 "POST",
                 "/send",
                 &[
@@ -5774,7 +6264,8 @@ mod tests {
     #[test]
     fn send_route_requires_valid_csrf_token() {
         let response = app().handle_request(
-            &request(
+            &native_compose_request(
+                &app(),
                 "POST",
                 "/send",
                 &authenticated_headers(),
@@ -5790,7 +6281,7 @@ mod tests {
     #[test]
     fn send_route_redirects_after_successful_submission() {
         let response = app().handle_request(
-            &request(
+            &native_compose_request(&app(),
                 "POST",
                 "/send",
                 &authenticated_same_origin_headers(),
@@ -5804,13 +6295,13 @@ mod tests {
             .response
             .headers
             .iter()
-            .any(|(name, value)| name == "Location" && value == "/compose?sent=1"));
+            .any(|(name, value)| name == "Location" && value.starts_with("/compose?receipt=")));
     }
 
     #[test]
     fn send_route_returns_retry_after_when_submission_is_throttled() {
         let response = app().handle_request(
-            &request(
+            &native_compose_request(&app(),
                 "POST",
                 "/send",
                 &authenticated_same_origin_headers(),
@@ -6120,7 +6611,7 @@ mod tests {
         multipart_body.extend_from_slice(b"\r\n--test-boundary--\r\n");
 
         let response = app().handle_request(
-            &request_bytes(
+            &native_compose_request_bytes(&app(),
                 "POST",
                 "/send",
                 &[
@@ -6142,7 +6633,7 @@ mod tests {
             .response
             .headers
             .iter()
-            .any(|(name, value)| name == "Location" && value == "/compose?sent=1"));
+            .any(|(name, value)| name == "Location" && value.starts_with("/compose?receipt=")));
     }
 
     #[test]
@@ -6169,7 +6660,7 @@ mod tests {
         multipart_body.extend_from_slice(b"\r\n--test-boundary--\r\n");
 
         let response = app().handle_request(
-            &request_bytes(
+            &native_compose_request_bytes(&app(),
                 "POST",
                 "/send",
                 &[
@@ -6217,7 +6708,7 @@ mod tests {
         multipart_body.extend_from_slice(b"\r\n--test-boundary--\r\n");
 
         let response = app().handle_request(
-            &request_bytes(
+            &native_compose_request_bytes(&app(),
                 "POST",
                 "/send",
                 &[
@@ -6330,7 +6821,7 @@ mod tests {
     #[test]
     fn send_route_accepts_opaque_origin_when_same_origin_referer_is_present() {
         let response = app().handle_request(
-            &request(
+            &native_compose_request(&app(),
                 "POST",
                 "/send",
                 &[
@@ -6352,13 +6843,13 @@ mod tests {
             .response
             .headers
             .iter()
-            .any(|(name, value)| name == "Location" && value == "/compose?sent=1"));
+            .any(|(name, value)| name == "Location" && value.starts_with("/compose?receipt=")));
     }
 
     #[test]
     fn send_route_accepts_same_origin_fetch_metadata_when_origin_is_opaque() {
         let response = app().handle_request(
-            &request(
+            &native_compose_request(&app(),
                 "POST",
                 "/send",
                 &[
@@ -6380,7 +6871,7 @@ mod tests {
             .response
             .headers
             .iter()
-            .any(|(name, value)| name == "Location" && value == "/compose?sent=1"));
+            .any(|(name, value)| name == "Location" && value.starts_with("/compose?receipt=")));
     }
 
     #[test]

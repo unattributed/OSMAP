@@ -45,7 +45,13 @@ fn retained_author_text_cannot_escape_into_the_allowed_script() {
         url_encode(text)
     );
     let result = app().handle_request(
-        &request("POST", "/send", &authenticated_same_origin_headers(), &form),
+        &native_compose_request(
+            &app(),
+            "POST",
+            "/send",
+            &authenticated_same_origin_headers(),
+            &form,
+        ),
         "127.0.0.1",
     );
     assert_eq!(result.response.status_code, 400);

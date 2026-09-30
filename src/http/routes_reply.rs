@@ -14,6 +14,7 @@ pub(super) fn compose_metadata_valid(form: &BTreeMap<String, String>, username: 
     }
     let allowed = [
         "csrf_token",
+        "send_intent",
         "from",
         "to",
         "cc",

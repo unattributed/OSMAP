@@ -1,7 +1,47 @@
 use super::*;
 
 /// A runtime-facing gateway for browser operations.
+/// Verified exact attempted content and finite retention; no editable draft id.
+pub struct BrowserSendRecoverySnapshot {
+    pub request: Box<ComposeRequest>,
+    pub created_at: u64,
+    pub expires_at: u64,
+}
+
+pub enum BrowserSendRecoveryDecision {
+    Available(BrowserSendRecoverySnapshot),
+    Missing,
+    Expired,
+    Unconfirmed,
+    Unavailable,
+}
+
 pub trait BrowserGateway {
+    /// Authenticated read-only exact snapshot; never grants a mutation or retry.
+    fn read_send_recovery(
+        &self,
+        _session: &ValidatedSession,
+        _intent: &str,
+    ) -> BrowserSendRecoveryDecision {
+        BrowserSendRecoveryDecision::Unavailable
+    }
+
+    fn send_clock(&self) -> u64 {
+        crate::totp::TimeProvider::unix_timestamp(&crate::totp::SystemTimeProvider)
+    }
+    fn send_receipt(
+        &self,
+        session: &ValidatedSession,
+        intent: &str,
+    ) -> Result<Option<BrowserSendDecision>, String>;
+    fn cleanup_sent_draft(
+        &self,
+        session: &ValidatedSession,
+        id: &str,
+        revision: u64,
+        intent: &str,
+    ) -> Result<bool, String>;
+
     fn load_contacts(
         &self,
         session: &ValidatedSession,
@@ -165,6 +205,34 @@ pub trait BrowserGateway {
         validated_session: &ValidatedSession,
     ) -> BrowserSettingsOutcome;
 
+    fn update_content_setting(
+        &self,
+        _context: &AuthenticationContext,
+        _session: &ValidatedSession,
+        _content: HtmlDisplayPreference,
+    ) -> BrowserSettingsUpdateOutcome {
+        BrowserSettingsUpdateOutcome {
+            decision: BrowserSettingsUpdateDecision::Denied {
+                public_reason: "temporarily_unavailable".into(),
+            },
+            audit_events: vec![],
+        }
+    }
+
+    fn update_archive_setting(
+        &self,
+        _context: &AuthenticationContext,
+        _session: &ValidatedSession,
+        _archive: Option<&str>,
+    ) -> BrowserSettingsUpdateOutcome {
+        BrowserSettingsUpdateOutcome {
+            decision: BrowserSettingsUpdateDecision::Denied {
+                public_reason: "temporarily_unavailable".into(),
+            },
+            audit_events: vec![],
+        }
+    }
+
     fn update_settings(
         &self,
         context: &AuthenticationContext,
@@ -276,6 +344,7 @@ pub trait BrowserGateway {
 /// Draft save fields parsed by the browser route layer.
 #[derive(Debug, Clone, Copy)]
 pub struct BrowserDraftSaveRequest<'a> {
+    pub send_intent: &'a str,
     pub draft_id: Option<&'a str>,
     pub expected_revision: Option<u64>,
     pub recipients: &'a str,
@@ -293,6 +362,9 @@ pub struct BrowserDraftSaveRequest<'a> {
 /// Send fields parsed by the browser route layer.
 #[derive(Debug, Clone, Copy)]
 pub struct BrowserSendRequest<'a> {
+    pub send_intent: &'a str,
+    pub draft_id: Option<&'a str>,
+    pub draft_revision: Option<u64>,
     pub recipients: &'a str,
     pub cc_recipients: &'a str,
     pub bcc_recipients: &'a str,
@@ -599,10 +671,22 @@ pub struct BrowserSendOutcome {
 /// Send decisions visible to the browser layer.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BrowserSendDecision {
+    RecoveryRefused {
+        capacity: bool,
+    },
+    DraftSaved {
+        draft_id: String,
+        save_confirmed: bool,
+    },
     /// Accepted by the submission backend; this does not confirm delivery.
-    Submitted { sent_copy_stored: bool },
+    Submitted {
+        sent_copy_stored: bool,
+        receipt_persisted: bool,
+    },
     /// Dispatch may have occurred; this outcome must not trigger a retry.
-    Unconfirmed { public_reason: String },
+    Unconfirmed {
+        public_reason: String,
+    },
     Denied {
         public_reason: String,
         retry_after_seconds: Option<u64>,

@@ -42,6 +42,9 @@ impl Fixture {
             req.headers
                 .insert("cookie".into(), format!("osmap_session={}", "b".repeat(64)));
         }
+        if req.method == HttpMethod::Post && matches!(req.path.as_str(), "/send" | "/drafts/save") {
+            add_native_compose_intent(&self.app, &mut req);
+        }
         self.app.handle_request(&req, "127.0.0.1")
     }
     fn preference(&self, mode: BodyFormat) {
@@ -95,6 +98,8 @@ fn textarea(response: &HandledHttpResponse) -> String {
         .split("</textarea>")
         .next()
         .unwrap()
+        .strip_prefix('\n')
+        .expect("HTML-consumed leading newline")
         .replace("&lt;", "<")
         .replace("&gt;", ">")
         .replace("&quot;", "\"")

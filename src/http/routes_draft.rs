@@ -151,6 +151,7 @@ where
                     "csrf_token"
                         | "draft_id"
                         | "draft_revision"
+                        | "send_intent"
                         | "starred"
                         | "filter"
                         | "sort"
@@ -266,6 +267,37 @@ where
                 && draft.canonical_username == validated_session.record.canonical_username
                 && draft.draft_id == draft_id =>
             {
+                let send_intent = match draft.revision.and_then(|revision| {
+                    crate::send_journal::intent_for_draft(
+                        &canonical_username,
+                        &draft.draft_id,
+                        revision,
+                        draft.updated_at,
+                    )
+                    .ok()
+                }) {
+                    Some(value) => value,
+                    None => {
+                        return HandledHttpResponse {
+                            response: html_response(
+                                409,
+                                "Conflict",
+                                "Draft intent unavailable",
+                                "<p>The saved revision cannot be resumed safely.</p>",
+                            ),
+                            audit_events,
+                        }
+                    }
+                };
+                if !matches!(
+                    self.gateway.send_receipt(&validated_session, &send_intent),
+                    Ok(None)
+                ) {
+                    return HandledHttpResponse {
+                        response: self.saved_draft_receipt_response(&validated_session, &send_intent, &draft),
+                        audit_events,
+                    };
+                }
                 let mut source_attachments = Vec::new();
                 let mut source_notice = None;
                 if let Some(source) = &draft.source_attachments {
@@ -340,6 +372,7 @@ where
                         "OK",
                         "Resume Draft",
                         render_compose_page(&ComposePageModel {
+                            send_intent: &send_intent,
                             contacts: self.contact_snapshot(&validated_session).ok().as_ref(),
                             reply_reference: None,
                             heading: "Resume Draft",
@@ -396,7 +429,7 @@ where
                     404,
                     "Not Found",
                     "Draft Not Found",
-                    "<p>The requested draft was not found.</p>",
+                    "<p>The saved draft is absent. It may have expired after 30 days, been discarded, or been removed after confirmed submission.</p>",
                 ),
                 audit_events,
             },
@@ -462,6 +495,14 @@ where
             return response;
         }
 
+        if let Some(response) =
+            self.intent_guard_response(context, &validated_session, &form, &parsed_form.attachments)
+        {
+            return HandledHttpResponse {
+                response,
+                audit_events,
+            };
+        }
         if !super::routes_reply::compose_metadata_valid(
             &form,
             &validated_session.record.canonical_username,
@@ -491,6 +532,7 @@ where
         if let Err(error) = contact_result {
             return HandledHttpResponse {
                 response: super::compose_enhancement::response(409, "Conflict", "Choose a Contact", render_compose_page(&ComposePageModel {
+                        send_intent: form.get("send_intent").map(String::as_str).unwrap_or_default(),
                     contacts: self.contact_snapshot(&validated_session).ok().as_ref(),
                     reply_reference: reply_reference.as_ref(),
                     heading: "Compose",
@@ -630,6 +672,10 @@ where
             context,
             &validated_session,
             BrowserDraftSaveRequest {
+                send_intent: form
+                    .get("send_intent")
+                    .map(String::as_str)
+                    .unwrap_or_default(),
                 reply_thread: reply_thread.as_ref(),
                 draft_id,
                 expected_revision,
@@ -732,6 +778,19 @@ where
                 ),
                 audit_events,
             },
+            BrowserDraftSaveDecision::Denied { public_reason }
+                if public_reason == "send_attempt_paused" =>
+            {
+                HandledHttpResponse {
+                    response: super::routes_compose::submission_result_response(
+                        &validated_session,
+                        &form,
+                        &parsed_form.attachments,
+                        crate::compose_result_ui::SubmissionResult::Paused,
+                    ),
+                    audit_events,
+                }
+            }
             BrowserDraftSaveDecision::Denied { public_reason } => {
                 let (status_code, reason_phrase) = if public_reason == "draft_conflict" {
                     (409, "Conflict")
@@ -746,6 +805,7 @@ where
                         reason_phrase,
                         "Compose",
                         render_compose_page(&ComposePageModel {
+                        send_intent: form.get("send_intent").map(String::as_str).unwrap_or_default(),
                             contacts: self.contact_snapshot(&validated_session).ok().as_ref(),
                             reply_reference: reply_reference.as_ref(),
                             heading: "Compose",
@@ -846,6 +906,7 @@ where
                     "csrf_token"
                         | "draft_id"
                         | "draft_revision"
+                        | "send_intent"
                         | "confirm"
                         | "filter"
                         | "sort"

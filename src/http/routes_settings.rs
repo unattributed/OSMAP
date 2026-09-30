@@ -51,15 +51,11 @@ where
                 audit_events,
             };
         }
-        let success_message = if request
-            .query_params
-            .get("appearance_updated")
-            .map(String::as_str)
-            == Some("1")
+        let success_message = if ["appearance_updated", "updated"]
+            .iter()
+            .any(|key| request.query_params.get(*key).map(String::as_str) == Some("1"))
         {
-            Some("Appearance was updated.")
-        } else if request.query_params.get("updated").map(String::as_str) == Some("1") {
-            Some("Settings were updated.")
+            Some("Current saved settings are shown below. Review your values.")
         } else {
             None
         };
@@ -71,7 +67,7 @@ where
             .unwrap_or("general");
         if !matches!(
             section,
-            "general" | "appearance" | "reading" | "composition"
+            "general" | "appearance" | "reading" | "composition" | "copies" | "privacy"
         ) {
             return HandledHttpResponse {
                 response: html_response(
@@ -114,7 +110,12 @@ where
                         html_display_preference: settings.html_display_preference,
                         archive_mailbox_name: settings.archive_mailbox_name.as_deref(),
                     };
-                    if section == "appearance" {
+                    if section == "privacy" {
+                        crate::http_ui::render_privacy_page(&model)
+                    } else if section == "copies" {
+                        let mailboxes = self.reading_mailbox_choices(context, &validated_session, &mut audit_events).map(|entries| super::routes_mail::filter_user_visible_mailboxes(&entries));
+                        crate::http_ui::render_copies_page(&model, mailboxes.as_deref())
+                    } else if section == "appearance" {
                         crate::http_ui::render_appearance_page(&model, &presentation)
                     } else if section == "composition" {
                         crate::http_ui::render_composition_page(
@@ -233,6 +234,8 @@ where
         let destination = match form.get("return_section").map(String::as_str) {
             None | Some("general") => "/settings?updated=1",
             Some("reading") => "/settings?section=reading&updated=1",
+            Some("copies") => "/settings?section=copies&updated=1",
+            Some("privacy") => "/settings?section=privacy&updated=1",
             Some(_) => return HandledHttpResponse {
                 response: html_response(
                     400,
@@ -243,40 +246,84 @@ where
                 audit_events,
             },
         };
-        let Some(html_display_preference) = form.get("html_display_preference") else {
+        let content_only = form.get("settings_action").map(String::as_str) == Some("content");
+        let archive_only = form.get("settings_action").map(String::as_str) == Some("archive");
+        if form
+            .get("settings_action")
+            .is_some_and(|value| value != "archive" && value != "content")
+            || content_only
+                && (!form.contains_key("html_display_preference")
+                    || form.keys().any(|key| {
+                        ![
+                            "csrf_token",
+                            "settings_action",
+                            "html_display_preference",
+                            "return_section",
+                        ]
+                        .contains(&key.as_str())
+                    }))
+            || archive_only
+                && (!form.contains_key("archive_mailbox_name")
+                    || form.keys().any(|key| {
+                        ![
+                            "csrf_token",
+                            "settings_action",
+                            "archive_mailbox_name",
+                            "return_section",
+                        ]
+                        .contains(&key.as_str())
+                    }))
+        {
             return HandledHttpResponse {
                 response: html_response(
                     400,
                     "Bad Request",
                     "Invalid Settings Request",
-                    "<p>An HTML display preference is required.</p>",
+                    "<p>The settings action was invalid. No preference was changed.</p>",
                 ),
-                audit_events: vec![build_http_warning_event(
-                    "http_settings_missing_preference",
-                    "settings update missing html display preference",
-                    context,
-                )],
+                audit_events,
             };
-        };
-
-        let html_display_preference = match HtmlDisplayPreference::parse(html_display_preference) {
-            Ok(html_display_preference) => html_display_preference,
-            Err(error) => {
+        }
+        let html_display_preference = if archive_only {
+            None
+        } else {
+            let Some(html_display_preference) = form.get("html_display_preference") else {
                 return HandledHttpResponse {
                     response: html_response(
                         400,
                         "Bad Request",
                         "Invalid Settings Request",
-                        "<p>The submitted HTML display preference was not valid.</p>",
+                        "<p>An HTML display preference is required.</p>",
                     ),
                     audit_events: vec![build_http_warning_event(
-                        "http_settings_preference_rejected",
-                        "settings update preference validation failed",
+                        "http_settings_missing_preference",
+                        "settings update missing html display preference",
                         context,
-                    )
-                    .with_field("reason", error.reason)],
+                    )],
                 };
-            }
+            };
+
+            let html_display_preference =
+                match HtmlDisplayPreference::parse(html_display_preference) {
+                    Ok(html_display_preference) => html_display_preference,
+                    Err(error) => {
+                        return HandledHttpResponse {
+                            response: html_response(
+                                400,
+                                "Bad Request",
+                                "Invalid Settings Request",
+                                "<p>The submitted HTML display preference was not valid.</p>",
+                            ),
+                            audit_events: vec![build_http_warning_event(
+                                "http_settings_preference_rejected",
+                                "settings update preference validation failed",
+                                context,
+                            )
+                            .with_field("reason", error.reason)],
+                        };
+                    }
+                };
+            Some(html_display_preference)
         };
         let archive_mailbox_name = match parse_archive_mailbox_name(
             form.get("archive_mailbox_name").map(String::as_str),
@@ -305,7 +352,19 @@ where
             audit_events.extend(mailbox_outcome.audit_events);
 
             match mailbox_outcome.decision {
-                BrowserMailboxDecision::Listed { mailboxes, .. } => {
+                BrowserMailboxDecision::Listed {
+                    canonical_username,
+                    mailboxes,
+                } => {
+                    if canonical_username != validated_session.record.canonical_username {
+                        return HandledHttpResponse { response: html_response(503,"Service Unavailable","Settings Update Failed","<p>The mailbox list could not be confirmed for this account. No preference was changed.</p>"), audit_events };
+                    }
+                    let mailboxes =
+                        if form.get("return_section").map(String::as_str) == Some("copies") {
+                            super::routes_mail::filter_user_visible_mailboxes(&mailboxes)
+                        } else {
+                            mailboxes
+                        };
                     if !mailbox_name_exists(&mailboxes, archive_mailbox_name) {
                         return HandledHttpResponse {
                             response: html_response(
@@ -348,12 +407,36 @@ where
             }
         }
 
-        let outcome = self.gateway.update_settings(
-            context,
-            &validated_session,
-            html_display_preference,
-            archive_mailbox_name.as_deref(),
-        );
+        let outcome = if archive_only {
+            self.gateway.update_archive_setting(
+                context,
+                &validated_session,
+                archive_mailbox_name.as_deref(),
+            )
+        } else {
+            let Some(content) = html_display_preference else {
+                return HandledHttpResponse {
+                    response: html_response(
+                        400,
+                        "Bad Request",
+                        "Invalid Settings Request",
+                        "<p>A content preference is required.</p>",
+                    ),
+                    audit_events,
+                };
+            };
+            if content_only {
+                self.gateway
+                    .update_content_setting(context, &validated_session, content)
+            } else {
+                self.gateway.update_settings(
+                    context,
+                    &validated_session,
+                    content,
+                    archive_mailbox_name.as_deref(),
+                )
+            }
+        };
         audit_events.extend(outcome.audit_events);
 
         match outcome.decision {
@@ -374,7 +457,11 @@ where
                         title,
                         TrustedHtml::from_template(format!(
                             "<p>{}</p>",
-                            escape_html(public_reason_message(&public_reason))
+                            escape_html(if public_reason == "invalid_request" {
+                                public_reason_message(&public_reason)
+                            } else {
+                                "The settings save could not be confirmed. Review your saved values before retrying."
+                            })
                         )),
                     ),
                     audit_events,

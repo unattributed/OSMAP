@@ -22,11 +22,78 @@ where
                 Err(response) => return response,
             };
 
-        let success_message = if request.query_params.get("sent").map(String::as_str) == Some("1") {
-            Some("Message accepted for submission. A copy was stored in Sent. Delivery is not confirmed.")
-        } else {
-            None
+        if let Some(intent) = request.query_params.get("receipt") {
+            let response = if !crate::send_journal::receipt_intent_valid(intent)
+                || request.query_params.keys().any(|key| {
+                    !matches!(
+                        key.as_str(),
+                        "receipt" | "recovery_attachment" | "recovery_body"
+                    )
+                })
+                || request
+                    .query_params
+                    .get("recovery_body")
+                    .is_some_and(|value| value != "1")
+                || request.query_params.contains_key("recovery_body")
+                    && request.query_params.contains_key("recovery_attachment")
+            {
+                html_response(
+                    400,
+                    "Bad Request",
+                    "Invalid recovery request",
+                    "<p>Use the existing attempt receipt link.</p>",
+                )
+            } else if request.query_params.contains_key("recovery_body") {
+                self.recovery_body_response(&validated_session, intent)
+            } else if let Some(index) = request.query_params.get("recovery_attachment") {
+                self.recovery_attachment_response(&validated_session, intent, index)
+            } else {
+                self.send_receipt_response(context, &validated_session, intent)
+            };
+            return HandledHttpResponse {
+                response,
+                audit_events,
+            };
+        }
+        if request.query_params.contains_key("recovery_attachment")
+            || request.query_params.contains_key("recovery_body")
+        {
+            return HandledHttpResponse {
+                response: html_response(
+                    400,
+                    "Bad Request",
+                    "Receipt required",
+                    "<p>An owned attempt receipt is required.</p>",
+                ),
+                audit_events,
+            };
+        }
+        if request.query_params.contains_key("sent") {
+            return HandledHttpResponse {
+                response: html_response(
+                    400,
+                    "Bad Request",
+                    "Receipt required",
+                    "<p>A query flag is not a submission receipt.</p>",
+                ),
+                audit_events,
+            };
+        }
+        let send_intent = match crate::send_journal::mint_intent(self.gateway.send_clock()) {
+            Ok(value) => value,
+            Err(_) => {
+                return HandledHttpResponse {
+                    response: html_response(
+                        503,
+                        "Service Unavailable",
+                        "Compose unavailable",
+                        "<p>A send intent could not be created.</p>",
+                    ),
+                    audit_events,
+                }
+            }
         };
+        let success_message = None;
         let mut compose_heading = "Compose";
         let mut context_notice: Option<String> = None;
         let mut to_value = String::new();
@@ -201,6 +268,7 @@ where
                 "OK",
                 compose_heading,
                 render_compose_page(&ComposePageModel {
+                    send_intent: &send_intent,
                     contacts: self.contact_snapshot(&validated_session).ok().as_ref(),
                     reply_reference: reply_reference.as_ref(),
                     heading: compose_heading,
@@ -282,6 +350,14 @@ where
             return response;
         }
 
+        if let Some(response) =
+            self.intent_guard_response(context, &validated_session, &form, &attachments)
+        {
+            return HandledHttpResponse {
+                response,
+                audit_events,
+            };
+        }
         let recipients = form.get("to").cloned().unwrap_or_default();
         if form.contains_key("compose_action")
             || !super::routes_reply::compose_metadata_valid(
@@ -522,6 +598,12 @@ where
             context,
             &validated_session,
             BrowserSendRequest {
+                send_intent: form
+                    .get("send_intent")
+                    .map(String::as_str)
+                    .unwrap_or_default(),
+                draft_id: draft_id.as_deref(),
+                draft_revision,
                 reply_thread: reply_thread.as_ref(),
                 recipients: &recipients,
                 cc_recipients: &cc_recipients,
@@ -535,28 +617,41 @@ where
         audit_events.extend(outcome.audit_events);
 
         let mut handled = match outcome.decision {
-            BrowserSendDecision::Submitted { sent_copy_stored } => {
+            BrowserSendDecision::Submitted {
+                sent_copy_stored,
+                receipt_persisted,
+            } => {
                 let mut draft_cleanup_confirmed = draft_id.is_none();
                 // Keep the saved recovery copy if Sent storage is unconfirmed.
-                if sent_copy_stored {
+                if sent_copy_stored && receipt_persisted {
                     if let (Some(draft_id), Some(revision)) = (draft_id.as_deref(), draft_revision)
                     {
-                        let delete_outcome = self.gateway.delete_draft(
-                            context,
-                            &validated_session,
-                            draft_id,
-                            revision,
-                        );
-                        audit_events.extend(delete_outcome.audit_events);
-                        draft_cleanup_confirmed = matches!(
-                            delete_outcome.decision,
-                            BrowserDraftDeleteDecision::Deleted
-                                | BrowserDraftDeleteDecision::NotFound
-                        );
+                        draft_cleanup_confirmed = self
+                            .gateway
+                            .cleanup_sent_draft(
+                                &validated_session,
+                                draft_id,
+                                revision,
+                                form.get("send_intent")
+                                    .map(String::as_str)
+                                    .unwrap_or_default(),
+                            )
+                            .is_ok();
                     }
                 }
-                let response = if sent_copy_stored && draft_cleanup_confirmed {
-                    redirect_response(303, "See Other", "/compose?sent=1")
+                let response = if sent_copy_stored && receipt_persisted && draft_cleanup_confirmed {
+                    redirect_response(
+                        303,
+                        "See Other",
+                        &format!(
+                            "/compose?receipt={}",
+                            url_encode(
+                                form.get("send_intent")
+                                    .map(String::as_str)
+                                    .unwrap_or_default()
+                            )
+                        ),
+                    )
                 } else {
                     submission_result_response(
                         &validated_session,
@@ -565,6 +660,7 @@ where
                         crate::compose_result_ui::SubmissionResult::Accepted {
                             sent_copy_stored,
                             draft_cleanup_confirmed,
+                            receipt_persisted,
                         },
                     )
                 };
@@ -573,6 +669,25 @@ where
                     audit_events,
                 }
             }
+            BrowserSendDecision::DraftSaved { .. } => HandledHttpResponse {
+                response: self.send_receipt_response(
+                    context,
+                    &validated_session,
+                    form.get("send_intent")
+                        .map(String::as_str)
+                        .unwrap_or_default(),
+                ),
+                audit_events,
+            },
+            BrowserSendDecision::RecoveryRefused { capacity } => HandledHttpResponse {
+                response: submission_result_response(
+                    &validated_session,
+                    &form,
+                    &send_attachments,
+                    crate::compose_result_ui::SubmissionResult::RecoveryRefused { capacity },
+                ),
+                audit_events,
+            },
             BrowserSendDecision::Unconfirmed { .. } => HandledHttpResponse {
                 response: submission_result_response(
                     &validated_session,
@@ -598,6 +713,7 @@ where
                     reason_phrase,
                     "Compose",
                     render_compose_page(&ComposePageModel {
+                        send_intent: form.get("send_intent").map(String::as_str).unwrap_or_default(),
                         contacts: self.contact_snapshot(&validated_session).ok().as_ref(),
                         reply_reference: reply_reference.as_ref(),
                         heading: "Compose",
@@ -692,6 +808,10 @@ where
             reason,
             "Compose",
             render_compose_page(&ComposePageModel {
+                send_intent: form
+                    .get("send_intent")
+                    .map(String::as_str)
+                    .unwrap_or_default(),
                 contacts: self.contact_snapshot(session).ok().as_ref(),
                 reply_reference,
                 heading: "Compose",
@@ -782,7 +902,7 @@ pub(super) fn selected_original_attachment_parts(
 
 // A read-only result has no Send form or local compose script. It preserves
 // the submitted text without converting an uncertain outcome into a retry.
-fn submission_result_response(
+pub(super) fn submission_result_response(
     session: &ValidatedSession,
     form: &BTreeMap<String, String>,
     attachments: &[UploadedAttachment],
@@ -790,7 +910,14 @@ fn submission_result_response(
 ) -> HttpResponse {
     use crate::compose_result_ui::{ComposeResultModel, SubmissionResult};
     let (status, reason, title) = match result {
+        SubmissionResult::AlreadyRecorded => {
+            (200, "OK", "This intent already has a recorded action")
+        }
         SubmissionResult::Accepted { .. } => (200, "OK", "Message accepted for submission"),
+        SubmissionResult::RecoveryRefused { .. } => {
+            (503, "Service Unavailable", "Submission was not invoked")
+        }
+        SubmissionResult::Paused => (503, "Service Unavailable", "This form is paused"),
         SubmissionResult::Unconfirmed => (
             503,
             "Service Unavailable",
@@ -805,6 +932,7 @@ fn submission_result_response(
             account: &session.record.canonical_username,
             csrf: &session.record.csrf_token,
             result,
+            send_intent: form.get("send_intent").map(String::as_str),
             draft_id: form
                 .get("draft_id")
                 .filter(|id| !id.trim().is_empty())
