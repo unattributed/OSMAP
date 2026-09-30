@@ -60,7 +60,12 @@ impl<G: BrowserGateway> BrowserApp<G> {
             .update_appearance(context, &validated_session, appearance)
             .is_err()
         {
-            return failure(503, "Service Unavailable", "<p>Your appearance preference could not be saved. Your previous preference is unchanged. Try again from Settings.</p>");
+            audit_events.push(build_http_warning_event(
+                "http_appearance_save_unconfirmed",
+                "appearance preference save could not be confirmed",
+                context,
+            ));
+            return HandledHttpResponse { response: html_response(503, "Service Unavailable", "Appearance Save Unconfirmed", "<p>Your appearance preference could not be confirmed. <a href=\"/settings?section=appearance\">Review your saved preference</a> before trying again.</p>"), audit_events };
         }
         audit_events.push(build_http_info_event(
             "http_appearance_updated",

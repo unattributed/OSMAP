@@ -238,6 +238,25 @@ impl BrowserGateway for RuntimeBrowserGateway {
             .save(&validated_session.record.canonical_username, appearance)
     }
 
+    fn load_display(
+        &self,
+        _context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+    ) -> std::io::Result<AppearanceSettings> {
+        AppearanceStore::new(&self.settings_dir)
+            .load_settings(&validated_session.record.canonical_username)
+    }
+
+    fn update_display(
+        &self,
+        _context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        preferences: AppearanceSettings,
+    ) -> std::io::Result<()> {
+        AppearanceStore::new(&self.settings_dir)
+            .save_settings(&validated_session.record.canonical_username, preferences)
+    }
+
     fn load_settings(
         &self,
         context: &AuthenticationContext,

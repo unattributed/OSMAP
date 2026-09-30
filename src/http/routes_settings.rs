@@ -25,6 +25,32 @@ where
                 Ok(result) => result,
                 Err(response) => return response,
             };
+        if let Some(query) = request.query_params.get("q") {
+            if query.chars().count() > 128 || query.chars().any(char::is_control) {
+                return HandledHttpResponse {
+                    response: html_response(
+                        400,
+                        "Bad Request",
+                        "Invalid Settings Search",
+                        "<p>Use at most 128 characters to search Settings.</p>",
+                    ),
+                    audit_events,
+                };
+            }
+            return HandledHttpResponse {
+                response: html_response(
+                    200,
+                    "OK",
+                    "Search Settings",
+                    crate::http_ui::render_settings_search_page(
+                        &validated_session.record.canonical_username,
+                        &validated_session.record.csrf_token,
+                        query.trim(),
+                    ),
+                ),
+                audit_events,
+            };
+        }
         let success_message = if request
             .query_params
             .get("appearance_updated")
@@ -38,9 +64,25 @@ where
             None
         };
 
-        let (appearance, appearance_error) = match self
+        let section = request
+            .query_params
+            .get("section")
+            .map(String::as_str)
+            .unwrap_or("general");
+        if !matches!(section, "general" | "appearance" | "reading") {
+            return HandledHttpResponse {
+                response: html_response(
+                    400,
+                    "Bad Request",
+                    "Unknown Settings Section",
+                    "<p>Choose a section from Settings.</p>",
+                ),
+                audit_events,
+            };
+        }
+        let (presentation, appearance_error) = match self
             .gateway
-            .load_appearance(context, &validated_session)
+            .load_display(context, &validated_session)
         {
             Ok(value) => (value, None),
             Err(_) => {
@@ -49,7 +91,7 @@ where
                     "appearance preference unavailable",
                     context,
                 ));
-                (AppearancePreference::System, Some("Your saved appearance could not be loaded. System colours are being used; you can save a new preference below."))
+                (AppearanceSettings::default(), Some("Your saved appearance could not be loaded. System colours are being used. If this continues, ask your administrator to check preference storage."))
             }
         };
         let outcome = self.gateway.load_settings(context, &validated_session);
@@ -60,23 +102,29 @@ where
                 canonical_username,
                 settings,
             } => HandledHttpResponse {
-                response: html_response(
-                    200,
-                    "OK",
-                    "Settings",
-                    render_settings_page(&SettingsPageModel {
+                response: html_response(200, "OK", "Settings", {
+                    let model = SettingsPageModel {
                         canonical_username: &canonical_username,
                         csrf_token: &validated_session.record.csrf_token,
                         success_message,
                         error_message: appearance_error,
-                        appearance,
+                        appearance: presentation.theme,
                         html_display_preference: settings.html_display_preference,
                         archive_mailbox_name: settings.archive_mailbox_name.as_deref(),
-                    }),
+                    };
+                    if section == "appearance" {
+                        crate::http_ui::render_appearance_page(&model, &presentation)
+                    } else {
+                        render_settings_page(&model)
+                    }
+                })
+                .with_header(
+                    "Set-Cookie",
+                    presentation.theme.cookie(self.policy.secure_session_cookie),
                 )
                 .with_header(
                     "Set-Cookie",
-                    appearance.cookie(self.policy.secure_session_cookie),
+                    presentation.cookie(self.policy.secure_session_cookie),
                 ),
                 audit_events,
             },

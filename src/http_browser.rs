@@ -78,6 +78,30 @@ pub trait BrowserGateway {
         appearance: AppearancePreference,
     ) -> std::io::Result<()>;
 
+    fn load_display(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+    ) -> std::io::Result<AppearanceSettings> {
+        self.load_appearance(context, validated_session)
+            .map(|theme| AppearanceSettings {
+                theme,
+                ..AppearanceSettings::default()
+            })
+    }
+
+    fn update_display(
+        &self,
+        _context: &AuthenticationContext,
+        _validated_session: &ValidatedSession,
+        _preferences: AppearanceSettings,
+    ) -> std::io::Result<()> {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "display preferences unavailable",
+        ))
+    }
+
     fn load_settings(
         &self,
         context: &AuthenticationContext,
@@ -236,6 +260,7 @@ pub enum BrowserLoginDecision {
         canonical_username: String,
         session_token: SessionToken,
         appearance: AppearancePreference,
+        presentation: AppearanceSettings,
     },
     Denied {
         public_reason: String,

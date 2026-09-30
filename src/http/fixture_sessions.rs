@@ -40,6 +40,7 @@ impl FixtureSessions {
                 decision: BrowserLoginDecision::Authenticated {
                     canonical_username: issued.record.canonical_username,
                     appearance,
+                    presentation: AppearanceSettings { theme: appearance, ..AppearanceSettings::default() },
                     session_token: issued.token,
                 },
                 audit_events: vec![issued.audit_event],

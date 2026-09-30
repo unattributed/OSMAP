@@ -4,6 +4,8 @@
 //! browser-facing template code inside the request parser and route logic.
 
 use crate::appearance::AppearancePreference;
+#[path = "settings_ui.rs"]
+mod settings_ui;
 use crate::draft::DraftSummary;
 use crate::draft_list::{DraftFilter, DraftListView, DraftSort};
 use crate::html::TrustedHtml;
@@ -19,6 +21,7 @@ use crate::mailbox::{
 use crate::message_metadata::{MessageFlag, MessageMetadata};
 use crate::mime::{AttachmentMetadata, DEFAULT_MIME_PARTS_MAX};
 use crate::rendering::{HtmlDisplayPreference, RenderedMessageView};
+pub(crate) use settings_ui::render_appearance_page;
 
 /// Defense-in-depth cap for attachment metadata rows rendered by one route.
 const DEFAULT_RENDERED_ATTACHMENT_METADATA_MAX: usize = DEFAULT_MIME_PARTS_MAX;
@@ -165,11 +168,14 @@ pub(crate) fn app_header(canonical_username: &str, csrf_token: &str, current: &s
             "<a class=\"rail-link{}\" href=\"{}\" aria-label=\"{}\" title=\"{}\"{}>{}<span class=\"rail-label\">{}</span></a>",
             if name == "compose" { " rail-compose" } else { "" },
             escape_html(href), label, label,
-            if name == current || name == "settings" && current == "sessions" { " aria-current=\"page\"" } else { "" },
+            if name == current || name == "settings" && (current == "sessions" || current.starts_with("settings-")) { " aria-current=\"page\"" } else { "" },
             shell_icon(icon), label));
     }
-    let search_menu = if current == "settings" {
-        ""
+    let search_menu = if current == "settings" || current.starts_with("settings-") {
+        concat!(
+            "<div class=\"header-search\"><form role=\"search\" method=\"get\" action=\"/settings\"><label class=\"sr-only\" for=\"settings-query\">Search settings</label>",
+            "<input id=\"settings-query\" name=\"q\" type=\"search\" placeholder=\"Search settings…\" maxlength=\"128\" autocomplete=\"off\" accesskey=\"s\"><button type=\"submit\" aria-label=\"Search settings\">Search</button></form></div>"
+        )
     } else {
         concat!(
         "<div class=\"header-search\"><form role=\"search\" method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"scope\" value=\"all\"><label class=\"sr-only\" for=\"global-mail-query\">Search all mail</label><input id=\"global-mail-query\" name=\"q\" type=\"search\" placeholder=\"Search mail…\" maxlength=\"256\" autocomplete=\"off\" accesskey=\"s\" required><button type=\"submit\" aria-label=\"Search mail\">Search</button></form>",
@@ -189,10 +195,75 @@ pub(crate) fn app_header(canonical_username: &str, csrf_token: &str, current: &s
         "<div class=\"status-row auth-status\" aria-label=\"Session status and identity\">",
         "<details class=\"protection-menu\" name=\"toolbar-menu\"><summary>Protected by Default</summary><div class=\"account-menu-panel\"><p>Remote images and active content are blocked. These protections do not encrypt a message or verify its sender.</p><p class=\"shell-session-chip\">Your browser session was authenticated with two factors.</p></div></details>",
         "<details class=\"account-menu\" name=\"toolbar-menu\"><summary class=\"identity-chip\"><span class=\"account-avatar\" aria-hidden=\"true\">{}</span><span class=\"account-name\" title=\"{}\">{}</span>{}</summary>",
-        "<div class=\"account-menu-panel\"><p class=\"muted\">Signed in as <strong>{}</strong></p><a href=\"/settings\">Account settings</a><a href=\"/settings#appearance-title\">Appearance</a><a href=\"/contacts\">Contacts</a><a href=\"/sessions\">Manage sessions</a>{}</div>",
+        "<div class=\"account-menu-panel\"><p class=\"muted\">Signed in as <strong>{}</strong></p><a href=\"/settings\">Account settings</a><a href=\"/settings?section=appearance\">Appearance</a><a href=\"/contacts\">Contacts</a><a href=\"/sessions\">Manage sessions</a>{}</div>",
         "</details></div></header>"
     ), shell_icon("menu"), links, shell_icon("shield"), search_menu, escape_html(&sender_initials(Some(canonical_username))), escape_html(canonical_username),
         escape_html(canonical_username), shell_icon("chevron"), escape_html(canonical_username), logout_form(csrf_token))
+}
+
+pub(crate) fn render_settings_search_page(account: &str, csrf: &str, query: &str) -> TrustedHtml {
+    let query_lower = query.to_lowercase();
+    let mut results = String::new();
+    for (label, terms, href) in [
+        (
+            "Theme",
+            "appearance light dark system colours",
+            "/settings?section=appearance#settings-appearance-title",
+        ),
+        (
+            "Density",
+            "appearance comfortable compact spacing",
+            "/settings?section=appearance#settings-density",
+        ),
+        (
+            "Font size",
+            "appearance typography text small medium large",
+            "/settings?section=appearance#settings-font-size",
+        ),
+        (
+            "Reader layout",
+            "appearance split stacked reader",
+            "/settings?section=appearance#settings-reader-layout",
+        ),
+        (
+            "Show avatars",
+            "appearance sender initials pictures",
+            "/settings?section=appearance#settings-show-avatars",
+        ),
+        (
+            "Message preview",
+            "appearance snippet mail summary",
+            "/settings?section=appearance#settings-message-preview",
+        ),
+        (
+            "HTML Message Display",
+            "reading plain sanitized content",
+            "/settings?section=reading#html-display-prefer-sanitized",
+        ),
+        (
+            "Archive Mailbox",
+            "reading shortcut folder",
+            "/settings?section=reading#archive-mailbox-name",
+        ),
+        (
+            "Active Sessions",
+            "security browser revoke sign out",
+            "/sessions",
+        ),
+    ] {
+        if query_lower
+            .split_whitespace()
+            .all(|word| format!("{label} {terms}").to_lowercase().contains(word))
+        {
+            results.push_str(&format!("<li><a href=\"{href}\">{label}</a></li>"));
+        }
+    }
+    let content = if results.is_empty() {
+        "<p>No available settings match this search.</p>".into()
+    } else {
+        format!("<ul class=\"settings-search-results\">{results}</ul>")
+    };
+    TrustedHtml::from_template(format!("{}<main id=\"main-content\" class=\"page-shell settings-page\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Search settings</h1><p>Available settings matching <strong>{}</strong>.</p></div><section class=\"content-pane\">{}<a class=\"button-link\" href=\"/settings?section=appearance\">Appearance settings</a></section></main>", app_header(account, csrf, "settings-search"), escape_html(query), content))
 }
 
 fn mailbox_nav_section(mailbox_name: &str, archive_mailbox_name: Option<&str>) -> &'static str {
@@ -1916,7 +1987,7 @@ pub(crate) fn render_settings_page(model: &SettingsPageModel<'_>) -> TrustedHtml
             "</fieldset>",
             "<div><button type=\"submit\">Save Settings</button></div>",
             "</form></div>",
-            "<footer class=\"principles-strip\" aria-label=\"Design principles\"><p><strong>Simple by design. Protected by default.</strong></p><div class=\"principles-list\"><span>No browser scripts</span><span>Remote content blocked</span><span>Explicit downloads</span><span>Protected session cookies</span></div></footer>",
+            "<footer class=\"principles-strip\" aria-label=\"Design principles\"><p><strong>Simple by design. Protected by default.</strong></p><div class=\"principles-list\"><span>Message scripts blocked</span><span>Remote content blocked</span><span>Explicit downloads</span><span>Protected session cookies</span></div></footer>",
             "</section>",
             "</main>"
         ),

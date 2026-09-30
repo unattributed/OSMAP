@@ -2,6 +2,56 @@ use super::*;
 
 const CSRF: &str = "fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210";
 
+#[test]
+fn display_route_persists_one_snapshot_and_rejects_invalid_changes() {
+    use crate::appearance::{AppearanceSettings, Density, FontSize, ReaderLayout};
+    let root = temp_dir("display-preferences-route");
+    let store = AppearanceStore::new(root.join("appearance"));
+    let browser = BrowserApp::new(HttpPolicy::default(), StubGateway { appearance_store: Some(store.clone()), ..StubGateway::default() });
+    let fields = format!("csrf_token={CSRF}&appearance=dark&density=compact&font_size=large&reader_layout=stacked");
+    let post = |body: &str| request("POST", "/settings/display", &authenticated_same_origin_headers(), body);
+    let result = browser.handle_request(&post(&fields), "127.0.0.1");
+    assert_eq!(result.response.status_code, 303);
+    let expected = AppearanceSettings { theme: AppearancePreference::Dark, density: Density::Compact, font_size: FontSize::Large, reader_layout: ReaderLayout::Stacked, show_avatars: false, message_preview: false };
+    assert_eq!(store.load_settings("alice@example.com").expect("saved presentation"), expected);
+    assert!(body_text(&result).contains("data-density=\"compact\""));
+    assert!(body_text(&result).contains("data-show-avatars=\"false\""));
+    for malformed in [
+        fields.replace("compact", "enormous"),
+        fields.replace("font_size=large&", ""),
+        format!("{fields}&font_size=small"),
+        format!("{fields}&unexpected=1"),
+        format!("{fields}&show_avatars=true"),
+        fields.replace(CSRF, "wrong"),
+    ] {
+        let result = browser.handle_request(&post(&malformed), "127.0.0.1");
+        assert!(matches!(result.response.status_code, 400 | 403));
+        assert_eq!(store.load_settings("alice@example.com").expect("unchanged"), expected);
+        assert!(!result.response.headers.iter().any(|(name, _)| name == "Set-Cookie"));
+    }
+    let themed = browser.handle_request(&theme_request("light"), "127.0.0.1");
+    assert_eq!(themed.response.status_code, 303);
+    assert_eq!(store.load_settings("alice@example.com").expect("merged theme"), AppearanceSettings { theme: AppearancePreference::Light, ..expected });
+    assert_eq!(store.load_settings("bob@example.com").expect("other account"), AppearanceSettings::default());
+    let mut download = crate::http_support::plain_text_response(200, "OK", "<!doctype html><html lang=\"en\" data-appearance=\"system\">synthetic source");
+    let bytes = download.body.clone();
+    crate::http_support::apply_appearance(&mut download, Some("osmap_presentation=v1.compact.large.stacked.0.0"));
+    assert_eq!(download.body, bytes);
+    fs::remove_dir_all(root).expect("remove owned fixture");
+}
+
+#[test]
+fn display_runtime_preferences_survive_reopen() {
+    use crate::appearance::{AppearanceSettings, Density};
+    let root = temp_dir("display-runtime");
+    let context = AuthenticationContext::new(AuthenticationPolicy::default(), "display-test", "127.0.0.1", "Synthetic/Test").expect("context");
+    let session = StubGateway::validated_session();
+    let preferences = AppearanceSettings { density: Density::Compact, show_avatars: false, ..AppearanceSettings::default() };
+    RuntimeBrowserGateway::for_test(&root).update_display(&context, &session, preferences).expect("persist preferences");
+    assert_eq!(RuntimeBrowserGateway::for_test(&root).load_display(&context, &session).expect("reopen preferences"), preferences);
+    fs::remove_dir_all(root).expect("owned fixture cleanup");
+}
+
 fn theme_request(value: &str) -> HttpRequest {
     request(
         "POST",
@@ -9,6 +59,31 @@ fn theme_request(value: &str) -> HttpRequest {
         &authenticated_same_origin_headers(),
         &format!("csrf_token={CSRF}&appearance={value}"),
     )
+}
+
+#[test]
+fn settings_search_is_bounded_escaped_and_never_searches_mail() {
+    let result = app().handle_request(&request("GET", "/settings?q=font", &authenticated_headers(), ""), "127.0.0.1");
+    assert_eq!(result.response.status_code, 200);
+    assert!(body_text(&result).contains("/settings?section=appearance#settings-font-size"));
+    assert!(body_text(&result).contains("action=\"/settings\""));
+    assert!(!body_text(&result).contains("action=\"/search\""));
+    let result = app().handle_request(&request("GET", "/settings?q=%3Cscript%3E", &authenticated_headers(), ""), "127.0.0.1");
+    assert!(body_text(&result).contains("&lt;script&gt;"));
+    assert!(!body_text(&result).contains("<script>"));
+    let result = app().handle_request(&request("GET", &format!("/settings?q={}", "x".repeat(129)), &authenticated_headers(), ""), "127.0.0.1");
+    assert_eq!(result.response.status_code, 400);
+}
+
+#[test]
+fn display_storage_failure_reports_unconfirmed_save_without_setting_cookies() {
+    let mut req = request("POST", "/settings/display", &authenticated_same_origin_headers(), &format!("csrf_token={CSRF}&appearance=dark&density=compact&font_size=large&reader_layout=stacked"));
+    req.headers.insert("user-agent".into(), "OSMAP/AppearanceUnavailable".into());
+    let result = app().handle_request(&req, "127.0.0.1");
+    assert_eq!(result.response.status_code, 503);
+    assert!(body_text(&result).contains("save could not be confirmed"));
+    assert!(result.audit_events.iter().any(|event| event.action == "http_display_save_unconfirmed"));
+    assert!(!result.response.headers.iter().any(|(name, _)| name == "Set-Cookie"));
 }
 
 fn has_theme_cookie(response: &HandledHttpResponse, choice: &str) -> bool {
@@ -104,7 +179,7 @@ fn appearance_cookie_covers_navigation_errors_logout_and_login_precedence() {
         let result = app().handle_request(&req, "127.0.0.1");
         assert!(
             body_text(&result)
-                .starts_with("<!doctype html><html lang=\"en\" data-appearance=\"dark\">"),
+                .starts_with("<!doctype html><html lang=\"en\" data-appearance=\"dark\" "),
             "{path}"
         );
     }
@@ -162,7 +237,7 @@ fn appearance_settings_restore_saved_account_choice_and_explain_store_failure() 
     let result = app().handle_request(&req, "127.0.0.1");
     assert_eq!(result.response.status_code, 503);
     assert!(!has_theme_cookie(&result, "dark"));
-    assert!(body_text(&result).contains("could not be saved"));
+    assert!(body_text(&result).contains("could not be confirmed"));
 }
 
 #[test]

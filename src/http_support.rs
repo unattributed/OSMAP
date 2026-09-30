@@ -4,7 +4,7 @@
 //! easier to review without mixing protocol utilities and route behavior in one
 //! file.
 
-use crate::appearance::AppearancePreference;
+use crate::appearance::{AppearancePreference, AppearanceSettings};
 use crate::attachment::DownloadedAttachment;
 use crate::auth::AuthenticationContext;
 use crate::config::LogLevel;
@@ -102,9 +102,22 @@ pub(crate) fn apply_appearance(response: &mut HttpResponse, cookie: Option<&str>
                 .and_then(AppearancePreference::parse)
         })
         .unwrap_or_else(|| AppearancePreference::from_cookie_header(cookie));
+    let presentation = response
+        .headers
+        .iter()
+        .filter(|(name, _)| name.eq_ignore_ascii_case("Set-Cookie"))
+        .find_map(|(_, value)| {
+            value
+                .starts_with("osmap_presentation=")
+                .then(|| AppearanceSettings::from_cookie_header(Some(value)))
+        })
+        .unwrap_or_else(|| AppearanceSettings::from_cookie_header(cookie));
+    let attributes = format!("{}\" data-density=\"{}\" data-font-size=\"{}\" data-reader-layout=\"{}\" data-show-avatars=\"{}\" data-message-preview=\"{}\">",
+        appearance.as_str(), presentation.density.as_str(), presentation.font_size.as_str(),
+        presentation.reader_layout.as_str(), presentation.show_avatars, presentation.message_preview);
     response.body.splice(
-        PREFIX.len()..PREFIX.len() + b"system".len(),
-        appearance.as_str().bytes(),
+        PREFIX.len()..PREFIX.len() + b"system\">".len(),
+        attributes.bytes(),
     );
 }
 
@@ -367,7 +380,7 @@ fn browser_css() -> &'static str {
         ".protected-reading-pane{gap:.6rem}.reading-pane .message-heading h2{text-transform:none;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}.reading-pane .message-from{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}.reader-navigation{margin-bottom:0}.reader-primary-actions{flex-direction:row;align-items:center;flex-wrap:wrap;margin:.3rem 0}.reader-primary-actions>.button-link{width:auto;min-height:40px}.reader-primary-actions .flag-control{width:auto}.reader-primary-actions .message-state-controls{min-width:0}.reader-more-actions{margin:0}.reading-pane .reader-status{margin:0}",
         "@media(forced-colors:active){.message-card[data-selected=true]{border-inline-start-color:Highlight;outline:1px solid Highlight}.message-card[data-selected=true] .message-subject-link{color:LinkText}}",
         "@media(max-width:20rem){:root,body:has(.rail-disclosure[open]){--rail-width:0rem}.app-rail,.app-rail:has(.rail-disclosure[open]){position:relative;inset:auto;width:100%;padding:.4rem;gap:.4rem;border-right:0;border-bottom:1px solid var(--line);box-shadow:none;overflow:visible}.rail-links{display:none}.rail-disclosure[open]~.rail-links{display:grid}.topbar{flex-direction:column;align-items:stretch;padding:.6rem;gap:.5rem}.auth-status{align-items:stretch;flex-direction:column}.account-menu summary{justify-content:space-between}.account-name{max-width:calc(100vw - 4rem)}.account-menu-panel{right:.5rem;width:calc(100vw - 1rem)}.page-shell{padding:.5rem}.mail-shell>*{min-width:0}.content-pane,.reading-pane,.message-summary-pane,.folder-pane,.panel{padding:.65rem}h1,h2,h3,legend,.badge{overflow-wrap:anywhere}.button-link,button{min-width:0;overflow-wrap:anywhere}fieldset{min-width:0;padding:.5rem}legend{max-width:100%}.login-page{padding:1rem .5rem}.login-card{padding:.75rem}.login-brand{flex-direction:column;gap:.65rem}.login-title{font-size:2rem}.login-shield{width:3rem;height:3rem}.standalone-notice{padding:.65rem}}"
-        , include_str!("http/approved.css"), include_str!("http/compose_delivery.css"), include_str!("http/sessions_approved.css")
+        , include_str!("http/approved.css"), include_str!("http/compose_delivery.css"), include_str!("http/sessions_approved.css"), include_str!("http/settings.css"), include_str!("http/display.css")
     )
 }
 

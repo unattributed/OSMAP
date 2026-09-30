@@ -165,6 +165,9 @@ where
             (HttpMethod::Post, "/settings/appearance") => {
                 self.handle_appearance_update(request, &context)
             }
+            (HttpMethod::Post, "/settings/display") => {
+                self.handle_display_update(request, &context)
+            }
             (HttpMethod::Post, "/settings") => self.handle_settings_update(request, &context),
             (HttpMethod::Post, "/logout") => self.handle_logout(request, &context),
             _ => HandledHttpResponse {

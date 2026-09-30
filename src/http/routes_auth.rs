@@ -89,6 +89,7 @@ where
             BrowserLoginDecision::Authenticated {
                 session_token,
                 appearance,
+                presentation,
                 ..
             } => HandledHttpResponse {
                 response: redirect_response(303, "See Other", "/mailboxes")
@@ -103,6 +104,10 @@ where
                     .with_header(
                         "Set-Cookie",
                         appearance.cookie(self.policy.secure_session_cookie),
+                    )
+                    .with_header(
+                        "Set-Cookie",
+                        presentation.cookie(self.policy.secure_session_cookie),
                     ),
                 audit_events,
             },

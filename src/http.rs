@@ -20,6 +20,7 @@ mod routes_auth;
 mod routes_compose;
 mod routes_contacts;
 mod routes_content;
+mod routes_display;
 mod routes_draft;
 mod routes_draft_selection;
 mod routes_flags;
@@ -33,7 +34,7 @@ use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-use crate::appearance::{AppearancePreference, AppearanceStore};
+use crate::appearance::{AppearancePreference, AppearanceSettings, AppearanceStore};
 use crate::attachment::{
     AttachmentDownloadDecision, AttachmentDownloadPolicy, AttachmentDownloadPublicFailureReason,
     AttachmentDownloadService, DownloadedAttachment,
@@ -1010,16 +1011,37 @@ mod tests {
             }
 
             if let Some(sessions) = &self.fixture_sessions {
-                let appearance = self
+                let presentation = self
                     .appearance_store
                     .as_ref()
-                    .map(|store| store.load(username).expect("synthetic preference store"))
+                    .map(|store| {
+                        store
+                            .load_settings(username)
+                            .expect("synthetic preference store")
+                    })
                     .unwrap_or_default();
-                return sessions.login(context, username, appearance);
+                let mut outcome = sessions.login(context, username, presentation.theme);
+                if let BrowserLoginDecision::Authenticated {
+                    presentation: saved,
+                    ..
+                } = &mut outcome.decision
+                {
+                    *saved = presentation;
+                }
+                return outcome;
             }
             BrowserLoginOutcome {
                 decision: BrowserLoginDecision::Authenticated {
                     canonical_username: username.to_string(),
+                    presentation: self
+                        .appearance_store
+                        .as_ref()
+                        .map(|store| {
+                            store
+                                .load_settings(username)
+                                .expect("synthetic preference store")
+                        })
+                        .unwrap_or_default(),
                     appearance: self
                         .appearance_store
                         .as_ref()
@@ -1277,6 +1299,33 @@ mod tests {
             } else {
                 Ok(())
             }
+        }
+
+        fn load_display(
+            &self,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+        ) -> std::io::Result<AppearanceSettings> {
+            if let Some(store) = &self.appearance_store {
+                return store.load_settings(&session.record.canonical_username);
+            }
+            self.load_appearance(context, session)
+                .map(|theme| AppearanceSettings {
+                    theme,
+                    ..AppearanceSettings::default()
+                })
+        }
+
+        fn update_display(
+            &self,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+            preferences: AppearanceSettings,
+        ) -> std::io::Result<()> {
+            if let Some(store) = &self.appearance_store {
+                return store.save_settings(&session.record.canonical_username, preferences);
+            }
+            self.update_appearance(context, session, preferences.theme)
         }
 
         fn load_settings(

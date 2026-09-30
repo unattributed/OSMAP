@@ -1526,3 +1526,38 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   settings renderer and synthetic tests. Preserve security settings and retained
   authentication layout; presentation cookies grant no authority. No dependency,
   live account, Git synchronization or service deployment changes.
+
+### Approved Appearance page — construction and review
+
+- Prior composer/Sessions checkpoint `a96db6313f0247c65aeaed947f2ba7ad3a021382`
+  has a verified Shopkeeper signature; its final pre-commit gate passed.
+- PAGE-12 now has the approved section column, three theme tiles, real density,
+  font-size and reader-layout choices, avatar/snippet switches, saved preview and
+  Save changes. All six preferences change real rendered mailbox/draft/reader
+  behaviour. Settings search resolves only bounded available settings.
+- One strict v2 appearance record persists the full snapshot; normal v1 records
+  load with defaults for new fields. Bounded account locks serialize full/theme
+  writes; theme-only saves preserve other fields. Private record checks reject
+  loose/foreign/hard-linked state; older binaries refuse v2. No live migration.
+- Edge and Firefox native workflows passed with JavaScript disabled, no script
+  requests and no external requests. They inspect computed padding/fonts,
+  avatars/snippets and reader placement, fresh login, account isolation and
+  invalid/duplicate/CSRF refusal. Root HTTP tests independently exercise storage
+  and strict route rejection. Storage tests exercise interrupted publication and
+  cross-process contention, including the explicitly invoked child-test entry.
+- Independent review required unconfirmed-save wording for post-rename sync
+  errors; both full/theme response and audit paths now preserve that uncertainty.
+  Parent visually compared the final approved image with actual desktop/narrow
+  renders, corrected section spacing and Light-tile colours, and inspected the
+  refined page. Six final captures pass overflow and contrast checks.
+- Evidence is under S04 `appearance-{edge,firefox}`, `appearance-refined-captures`
+  and the named appearance gate/test logs. Initial checks using a stale test
+  executable were superseded by named new HTTP tests and regenerated fixtures;
+  isolated agent tests are not counted as integrated-source evidence.
+- PAGE-12/PAGE-24 control statuses are IMPLEMENTED_VERIFIED_LOCAL; whole-page
+  visual status remains partial because shared shell controls and independent
+  human acceptance remain open. Unavailable Settings sections are labelled and
+  are not counted as constructed or functional.
+- Final full acceptance and V14 gates passed after updating the route inventory
+  and using the existing bounded command executor for the lock test. Strict
+  Clippy, formatting and diff checks passed. Signing's pre-commit gate follows.

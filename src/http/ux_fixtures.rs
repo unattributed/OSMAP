@@ -196,6 +196,7 @@ fn ux_synthetic_route_baselines() {
         ("drafts-filtered-empty", "/drafts?filter=starred&q=NoMatch", true, 200),
         ("drafts-review", "/drafts/discard", true, 200),
         ("settings", "/settings", true, 200),
+        ("settings-appearance", "/settings?section=appearance", true, 200),
         ("settings-long-identity", "/settings", true, 200),
         (
             "archive-shortcut",

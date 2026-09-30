@@ -1618,73 +1618,106 @@
         "S04-01",
         "S09-01"
       ],
-      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "visual_status": "PARTIAL_FINAL_REFERENCE_COMPARISON",
       "controls": [
         {
           "id": "R2-12-001",
           "label": "Light option",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "maint/ux/appearance_workflows.py",
+            "docs/UX_EXECUTION_LEDGER.md"
+          ]
         },
         {
           "id": "R2-12-002",
           "label": "Dark option",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "maint/ux/appearance_workflows.py",
+            "docs/UX_EXECUTION_LEDGER.md"
+          ]
         },
         {
           "id": "R2-12-003",
           "label": "System option",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "maint/ux/appearance_workflows.py",
+            "docs/UX_EXECUTION_LEDGER.md"
+          ]
         },
         {
           "id": "R2-12-004",
           "label": "Selected appearance state",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "maint/ux/appearance_workflows.py",
+            "docs/UX_EXECUTION_LEDGER.md"
+          ]
         },
         {
           "id": "R2-12-005",
           "label": "Density",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "maint/ux/appearance_workflows.py",
+            "docs/UX_EXECUTION_LEDGER.md"
+          ]
         },
         {
           "id": "R2-12-006",
           "label": "Font size",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "maint/ux/appearance_workflows.py",
+            "docs/UX_EXECUTION_LEDGER.md"
+          ]
         },
         {
           "id": "R2-12-007",
           "label": "Reader layout",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "maint/ux/appearance_workflows.py",
+            "docs/UX_EXECUTION_LEDGER.md"
+          ]
         },
         {
           "id": "R2-12-008",
           "label": "Show avatars",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "maint/ux/appearance_workflows.py",
+            "docs/UX_EXECUTION_LEDGER.md"
+          ]
         },
         {
           "id": "R2-12-009",
           "label": "Message preview",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "maint/ux/appearance_workflows.py",
+            "docs/UX_EXECUTION_LEDGER.md"
+          ]
         },
         {
           "id": "R2-12-010",
           "label": "Actual selected-state preview",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "maint/ux/appearance_workflows.py",
+            "docs/UX_EXECUTION_LEDGER.md"
+          ]
         },
         {
           "id": "R2-12-011",
           "label": "Save changes",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "maint/ux/appearance_workflows.py",
+            "docs/UX_EXECUTION_LEDGER.md"
+          ]
         }
       ]
     },
@@ -2652,55 +2685,79 @@
       "owning_slices": [
         "S04-01"
       ],
-      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "visual_status": "PARTIAL_FINAL_REFERENCE_COMPARISON",
       "controls": [
         {
           "id": "R2-24-001",
           "label": "Sign out all other sessions",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "maint/ux/session_workflows.py",
+            "docs/UX_EXECUTION_LEDGER.md"
+          ]
         },
         {
           "id": "R2-24-002",
           "label": "Actual device metadata",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "maint/ux/session_workflows.py",
+            "docs/UX_EXECUTION_LEDGER.md"
+          ]
         },
         {
           "id": "R2-24-003",
           "label": "Actual browser metadata",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "maint/ux/session_workflows.py",
+            "docs/UX_EXECUTION_LEDGER.md"
+          ]
         },
         {
           "id": "R2-24-004",
           "label": "Known location or unknown",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "maint/ux/session_workflows.py",
+            "docs/UX_EXECUTION_LEDGER.md"
+          ]
         },
         {
           "id": "R2-24-005",
           "label": "Last activity",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "maint/ux/session_workflows.py",
+            "docs/UX_EXECUTION_LEDGER.md"
+          ]
         },
         {
           "id": "R2-24-006",
           "label": "Current/active state",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "maint/ux/session_workflows.py",
+            "docs/UX_EXECUTION_LEDGER.md"
+          ]
         },
         {
           "id": "R2-24-007",
           "label": "Revoke selected session",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "maint/ux/session_workflows.py",
+            "docs/UX_EXECUTION_LEDGER.md"
+          ]
         },
         {
           "id": "R2-24-008",
           "label": "Browser versus IMAP/SMTP revocation scope",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "maint/ux/session_workflows.py",
+            "docs/UX_EXECUTION_LEDGER.md"
+          ]
         }
       ]
     },
