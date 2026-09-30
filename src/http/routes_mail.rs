@@ -5,6 +5,7 @@
 //! `http.rs` without changing the route surface.
 
 use super::*;
+use crate::mail_list::ListViewState;
 
 fn mailbox_is_user_visible(mailbox_name: &str) -> bool {
     matches!(mailbox_name, "INBOX" | "Drafts" | "Junk" | "Sent" | "Trash")
@@ -24,6 +25,17 @@ fn mailbox_name_exists(mailboxes: &[MailboxEntry], mailbox_name: &str) -> bool {
 }
 
 const MAX_BULK_ARCHIVE_MESSAGES: usize = 10;
+
+fn list_view_state(request: &HttpRequest) -> Result<ListViewState, HttpResponse> {
+    ListViewState::from_query(&request.query_params).map_err(|message| {
+        html_response(
+            400,
+            "Bad Request",
+            "Invalid Message List Request",
+            TrustedHtml::from_template(format!("<p>{}</p>", escape_html(message))),
+        )
+    })
+}
 
 impl<G> BrowserApp<G>
 where
@@ -254,6 +266,15 @@ where
             }
         });
 
+        let mut view = match list_view_state(request) {
+            Ok(view) => view,
+            Err(response) => {
+                return HandledHttpResponse {
+                    response,
+                    audit_events,
+                }
+            }
+        };
         let outcome = self
             .gateway
             .list_messages(context, &validated_session, &mailbox_name);
@@ -277,11 +298,7 @@ where
                     &mailbox_name,
                     archive_mailbox_name.as_deref(),
                 );
-                let sort = MessageSort::from_query_values(
-                    request.query_params.get("sort").map(String::as_str),
-                    request.query_params.get("dir").map(String::as_str),
-                );
-                sort_message_summaries(&mut messages, sort);
+                view.apply_messages(&mut messages);
                 let search_query = request
                     .query_params
                     .get("q")
@@ -309,7 +326,7 @@ where
                                 move_destinations: &bulk_move_destinations,
                             },
                             MessageListSortLinks {
-                                active_sort: sort,
+                                view: &view,
                                 search_query,
                                 search_scope,
                             },
@@ -1048,6 +1065,15 @@ where
                 Ok(result) => result,
                 Err(response) => return response,
             };
+        let mut view = match list_view_state(request) {
+            Ok(view) => view,
+            Err(response) => {
+                return HandledHttpResponse {
+                    response,
+                    audit_events,
+                }
+            }
+        };
         let (budget_guard, budget_event) =
             match self.acquire_search_budget(context, &validated_session) {
                 Ok(result) => result,
@@ -1075,11 +1101,7 @@ where
                 query,
                 mut results,
             } => {
-                let sort = MessageSort::from_query_values(
-                    request.query_params.get("sort").map(String::as_str),
-                    request.query_params.get("dir").map(String::as_str),
-                );
-                sort_message_search_results(&mut results, sort);
+                view.apply_search(&mut results);
 
                 HandledHttpResponse {
                     response: html_response(
@@ -1092,7 +1114,7 @@ where
                             mailbox_name.as_deref(),
                             &query,
                             &results,
-                            sort,
+                            &view,
                             search_field,
                         ),
                     ),

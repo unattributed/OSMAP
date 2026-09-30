@@ -30,13 +30,20 @@ S01-03 adds compact disclosures, clearer errors, settings cards, truthful
 capability labels and reader/draft reflow; local acceptance gates pass.
 S01-04 verifies current HTML route states, all appearance modes, responsive
 reflow, keyboard controls, computed contrast, forced colours, Firefox and
-synthetic account persistence through process restart. Native qualification,
-independent human accessibility acceptance and deployment remain separate.
+synthetic account persistence through process restart. The exact S01 source
+`eb0277d` passes isolated native OpenBSD library and hostile-rendering tests on
+obsd1. S02-01 checkpoint A adds real unread/starred filters, stable ordering,
+50-row result windows, query preservation and mailbox/UID selection. Five
+synthetic browser journeys and 92 visual/reflow/forced-colour captures pass.
+Trusted metadata and actual read/star mutations remain in progress; this is
+not acceptance of the full slice. Independent human accessibility acceptance
+and deployment remain separate.
 D01–D06 are recorded
 as delegated engineering decisions in `UX_DECISIONS.md`. Independent human
 identity/accessibility and final release acceptance remain separate.
 See `UX_AGENT_EXECUTION_CONTRACT.md` and `UX_EXECUTION_LEDGER.md`.
-These local UI deliveries do not establish native-host or deployment qualification.
+Native qualification is limited to the exact S01 snapshot and checks above;
+no UX deployment or full live-mail workflow qualification is claimed.
 The operator reports Roundcube completely removed; the UX epic does not include
 Roundcube migration, coexistence or restoration.
 

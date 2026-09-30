@@ -58,15 +58,15 @@ use crate::logging::LogEvent;
 #[cfg(test)]
 use crate::logging::{EventCategory, Logger};
 use crate::mailbox::{
-    sort_message_search_results, sort_message_summaries, DoveadmMailboxListBackend,
-    DoveadmMessageAppendBackend, DoveadmMessageListBackend, DoveadmMessageMoveBackend,
-    DoveadmMessageSearchBackend, DoveadmMessageViewBackend, MailboxEntry, MailboxListingDecision,
-    MailboxListingPolicy, MailboxListingService, MessageAppendBackend, MessageAppendRequest,
-    MessageListDecision, MessageListPolicy, MessageListRequest, MessageListService,
-    MessageMoveDecision, MessageMoveOutcome, MessageMovePolicy, MessageMoveRequest,
-    MessageMoveService, MessageSearchDecision, MessageSearchField, MessageSearchPolicy,
-    MessageSearchRequest, MessageSearchResult, MessageSearchService, MessageSort, MessageSummary,
-    MessageViewDecision, MessageViewPolicy, MessageViewRequest, MessageViewService,
+    DoveadmMailboxListBackend, DoveadmMessageAppendBackend, DoveadmMessageListBackend,
+    DoveadmMessageMoveBackend, DoveadmMessageSearchBackend, DoveadmMessageViewBackend,
+    MailboxEntry, MailboxListingDecision, MailboxListingPolicy, MailboxListingService,
+    MessageAppendBackend, MessageAppendRequest, MessageListDecision, MessageListPolicy,
+    MessageListRequest, MessageListService, MessageMoveDecision, MessageMoveOutcome,
+    MessageMovePolicy, MessageMoveRequest, MessageMoveService, MessageSearchDecision,
+    MessageSearchField, MessageSearchPolicy, MessageSearchRequest, MessageSearchResult,
+    MessageSearchService, MessageSummary, MessageViewDecision, MessageViewPolicy,
+    MessageViewRequest, MessageViewService,
 };
 use crate::mailbox_helper::{
     MailboxHelperAttachmentDownloadBackend, MailboxHelperMailboxListBackend,
@@ -803,6 +803,9 @@ mod tests {
     mod ux_browser_server {
         include!("http/ux_browser_server.rs");
     }
+    mod mail_list_tests {
+        include!("http/mail_list_tests.rs");
+    }
     use crate::auth::RequiredSecondFactor;
     use crate::mailbox::MessageView;
     use crate::mime::{AttachmentDisposition, MimeBodySource};
@@ -1312,6 +1315,29 @@ mod tests {
                     mailbox_name: mailbox_name.to_string(),
                     messages: if context.user_agent.starts_with("OSMAP/EmptyMailbox") {
                         Vec::new()
+                    } else if context.user_agent.starts_with("OSMAP/ManyMessages") {
+                        (1..=125)
+                            .map(|uid| MessageSummary {
+                                mailbox_name: mailbox_name.to_string(),
+                                uid,
+                                flags: [
+                                    if uid % 2 == 0 { Some("\\Seen") } else { None },
+                                    if uid % 7 == 0 {
+                                        Some("\\Flagged")
+                                    } else {
+                                        None
+                                    },
+                                ]
+                                .into_iter()
+                                .flatten()
+                                .map(str::to_string)
+                                .collect(),
+                                date_received: "2026-09-30 00:00:00 +0000".to_string(),
+                                size_virtual: 1024,
+                                subject: Some(format!("Message {uid:03}")),
+                                from: Some("Synthetic Sender <sender@example.test>".to_string()),
+                            })
+                            .collect()
                     } else {
                         vec![
                             MessageSummary {
@@ -2755,10 +2781,10 @@ mod tests {
     }
 
     #[test]
-    fn mailbox_message_list_preserves_default_order_without_sort() {
+    fn mailbox_message_list_defaults_to_newest_received_first() {
         let response = authenticated_get("/mailbox?name=INBOX");
         assert_eq!(response.response.status_code, 200);
-        assert_body_order(&body_text(&response), "Quarterly report", "Follow-up");
+        assert_body_order(&body_text(&response), "Follow-up", "Quarterly report");
     }
 
     #[test]
@@ -2832,11 +2858,11 @@ mod tests {
         let response = authenticated_get("/mailbox?name=INBOX&sort=mailbox_name&dir=desc");
         assert_eq!(response.response.status_code, 200);
         let body = body_text(&response);
-        assert_body_order(&body, "Quarterly report", "Follow-up");
+        assert_body_order(&body, "Follow-up", "Quarterly report");
         assert!(!body.contains("UID ↓"));
         assert!(!body.contains("Subject ↓"));
         assert!(!body.contains("From ↓"));
-        assert!(!body.contains("Received ↓"));
+        assert!(body.contains("Received ↓"));
         assert!(!body.contains("Flags ↓"));
         assert!(!body.contains("Size ↓"));
     }
@@ -2940,9 +2966,9 @@ mod tests {
         let invalid_sort = authenticated_get("/search?q=searchsort&sort=mailbox_name&dir=desc");
         assert_eq!(invalid_sort.response.status_code, 200);
         let invalid_sort_body = body_text(&invalid_sort);
-        assert_body_order(&invalid_sort_body, "Search Middle", "Search Alpha");
-        assert_body_order(&invalid_sort_body, "Search Alpha", "Search Zulu");
-        assert!(!invalid_sort_body.contains(" ↓"));
+        assert_body_order(&invalid_sort_body, "Search Middle", "Search Zulu");
+        assert_body_order(&invalid_sort_body, "Search Zulu", "Search Alpha");
+        assert!(invalid_sort_body.contains("Received ↓"));
 
         let invalid_dir = authenticated_get("/search?q=searchsort&sort=subject&dir=sideways");
         assert_eq!(invalid_dir.response.status_code, 200);
@@ -3627,9 +3653,8 @@ mod tests {
         let body = body_text(&response);
         assert!(body.contains("Result limit reached."));
         assert!(body.contains(&format!(
-            "Displaying the first {} of {} backend results.",
+            "Showing up to {} backend results.",
             crate::mailbox::DEFAULT_MAX_SEARCH_RESULTS,
-            crate::mailbox::DEFAULT_MAX_SEARCH_RESULTS + 25
         )));
         assert!(body.contains(&format!(
             "<strong>Results:</strong> {}",
@@ -3637,6 +3662,8 @@ mod tests {
         )));
         assert!(body.contains("Result 249"));
         assert!(!body.contains("Result 250"));
+        assert_eq!(body.matches("class=\"message-row").count(), 50);
+        assert!(body.contains("Page 1 of 5"));
     }
 
     #[test]

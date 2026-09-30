@@ -492,3 +492,78 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   it contains no credentials or real mail. Cleanup is limited to owned scratch
   when safe; no shared caches or unrelated checkout are deleted. If native
   failures occur, diagnose/fix locally and sign the correction before retry.
+
+### S01 delivery and native result / S02-01 work order — 2026-09-30 UTC
+
+- Signed source `eb0277d75ce8af24f60d6d46cfa149b7363df10a`; Shopkeeper
+  signature verified, clean checkpoint, nine commits ahead of recorded
+  origin/main and zero behind. No GitHub synchronization or deployment.
+- Native locked/offline qualification PASS on verified obsd1/OpenBSD 7.9:
+  library 562 passed/five explicitly ignored, hostile-rendering corpus two
+  passed. Source archive SHA-256
+  `4e62e302d10fd987e8200e942847d2bf6480e0c7def5f44563ddbc5332c9497f`.
+  Qualification directory `/home/foo/osmap-ux-s01-20260930-9xFTBZoA` retained
+  with source and its own target cache. Standard `~/OSMAP` remains clean at
+  `2a6993fe7df42a57f0cbb5fe3e33e331b400fef9`; both OSMAP services healthy
+  before/after. No live mail, account or service mutation. S01 `native/result.json`
+  and `qualification.log` record evidence; log SHA-256
+  `7cfd011eaac84c99314fb5c847cc3c070ff0bf454bab5fb1d50a9094854d4883`.
+- S02-01: IN_PROGRESS; base `eb0277d`. Allowed: mailbox models/parsers/backends
+  and helper protocol/client/dispatch; HTTP gateway/routes/UI/shared CSS;
+  rendering metadata; bounded list-state/metadata modules; test fixtures and
+  browser harness; route inventory, generated assumption registers and current
+  UX status/evidence. Existing auth/CSRF/CSP/helper privilege gates stay intact.
+- First implementation checkpoint: typed unread/star filters, explicit stable
+  sorting, 50-row pagination within existing fetch limits, selected-row state,
+  preserved bounded list/search parameters and compact truthful row indicators.
+  Filter/sort/page controls must have actual server effects, including empty
+  and invalid states. Existing 2,000-message/250-search-result caps stay explicit.
+- Remaining required S02-01 work: trustworthy mailbox/message version metadata,
+  bounded attachment metadata, real read/unread/star updates, signed helper
+  grants binding every mutation field, stale/duplicate/concurrent refusal and
+  native disposable qualification. Checkpoints do not count as slice acceptance.
+- Dovecot 2.3.21.1 installed on obsd1. Its official tagged source
+  `src/lib-storage/mail-search-register-human.c` registers both GUID and
+  MAILBOX-GUID search keys (the local man page omits GUID). Use exact mailbox
+  and message identity plus UID for mutations, not a read-then-write UID-only
+  check. Source reference:
+  https://github.com/dovecot/core/blob/2.3.21.1/src/lib-storage/mail-search-register-human.c
+  Native behavior must still be qualified with disposable content before use.
+- S02 retained evidence root: `/home/foo/Downloads/osmap-ux-s02/run-20260930/`.
+  No host mutation for the initial source checkpoint. A separate exact
+  disposable-native fixture work order precedes any new host action. No real
+  recipient, account password/factor, cryptography, package/service/firewall
+  change or deployment. Source rollback; no persistent list preference migration.
+- Verify focused positive/negative state tests, route/browser fixtures, common
+  gates, hostile-content containment and signed reviewable checkpoints. Continue
+  through required S02-01 backend/native work before claiming its completion.
+
+### S02-01 checkpoint A — list navigation and presentation
+
+- Real All/Unread/Starred filtering, explicit default received-descending
+  ordering, deterministic mailbox/UID ties, 50-row pages and bounded query
+  state. Sort/filter/search/page links preserve appropriate context; new
+  filters/searches reset the page. Selection requires mailbox plus UID.
+  Out-of-range current pages adjust visibly; invalid page/filter/partial
+  selections fail with 400. Actual IMAP flags drive read/star indicators.
+- Existing backend bounds remain 2,000 messages/250 search results. Pagination
+  windows already bounded successful responses; a real backend exceeding its
+  configured cap still refuses. This is not full mailbox server-side pagination.
+  Legacy wide tables and independent bulk controls remain pending S02-02/03.
+- Library: 568 passed, zero failed, five explicitly ignored. Strict clippy
+  passed. Five real-router synthetic Edge journeys verify non-overlapping
+  pages, history, filters, sort/reload, selected identity and search context.
+  No real account/mail authentication or mutation backend is involved.
+- 92 captures: 60 normal, 20 simulated 200% reflow, 12 actual forced-colour
+  palette. No detected document overflow, computed text/UI contrast failure
+  or script content. All 92 image hashes verified. Desktop selected, narrow
+  search and forced-colour selected states inspected visually. Human screen
+  reader acceptance and reference layout fidelity remain separate.
+- Evidence: S02 `checkpoint-a-summary.json`, SHA-256
+  `93991cc7d5ca7826da94bf2bfe0d455aeabc0070aa282a9e3abc5ef3a0b66642`.
+  Initial library failures were four obsolete default-order/page-size test
+  expectations; first browser failure was the harness using `date` instead
+  of the documented `received` key. Corrected reruns are retained separately.
+- Common acceptance, V14, formatting, diff and frozen-plan checks pass.
+  Mandatory signed checkpoint follows. S02-01 remains IN_PROGRESS for trusted
+  metadata, actual flag writes, stale identity and native qualification.

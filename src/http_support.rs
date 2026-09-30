@@ -251,6 +251,8 @@ fn browser_css() -> &'static str {
         ".message-list-summary{justify-content:flex-end}",
         ".message-row{background:var(--panel)}",
         ".message-row:hover{background:var(--panel-soft)}",
+        ".message-row[data-selected=true]{background:var(--selected)}.message-row[data-selected=true] .message-subject-link{outline:2px solid var(--focus);outline-offset:2px}.message-row .message-subject-link{font-weight:500}.message-unread .message-subject-link{font-weight:800}.message-unread .message-subject-link::before{content:\"\";display:inline-block;width:.45rem;height:.45rem;margin-right:.5rem;border-radius:50%;background:var(--link)}",
+        ".message-filters,.list-pagination{display:flex;gap:.65rem;align-items:center;flex-wrap:wrap}.list-navigation{margin:1rem 0;display:flex;align-items:center;justify-content:space-between;gap:.6rem 1rem;flex-wrap:wrap}.list-window{margin:0;font-size:.86rem}.filter-link{padding:.45rem .75rem;border:1px solid var(--line-strong);border-radius:.5rem;color:var(--ink)}.filter-link[aria-current=page]{background:var(--selected);color:var(--link);font-weight:750}.list-pagination{font-size:.86rem}.message-star{font-size:1.15rem;color:var(--muted);margin-right:.45rem}.message-star[aria-label=Starred]{color:var(--warn)}",
         ".message-uid-cell,.message-size-cell,.message-action-cell{white-space:nowrap}",
         ".message-subject-cell{min-width:18rem;white-space:normal}",
         ".message-subject-link{display:inline-block;font-weight:800;color:var(--link);overflow-wrap:anywhere}",

@@ -20,6 +20,7 @@ pub mod http_support;
 pub mod http_ui;
 pub mod identity;
 pub mod logging;
+pub mod mail_list;
 pub mod mailbox;
 pub mod mailbox_helper;
 pub mod mime;

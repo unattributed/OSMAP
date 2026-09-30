@@ -305,7 +305,11 @@ pub fn sort_message_summaries(messages: &mut [MessageSummary], sort: Option<Mess
         return;
     };
 
-    messages.sort_by(|left, right| compare_message_summary(left, right, sort));
+    messages.sort_by(|left, right| {
+        compare_message_summary(left, right, sort)
+            .then_with(|| left.mailbox_name.cmp(&right.mailbox_name))
+            .then_with(|| right.uid.cmp(&left.uid))
+    });
 }
 
 pub(crate) fn validate_message_search_query(
@@ -443,7 +447,11 @@ pub fn sort_message_search_results(results: &mut [MessageSearchResult], sort: Op
         return;
     };
 
-    results.sort_by(|left, right| compare_message_search_result(left, right, sort));
+    results.sort_by(|left, right| {
+        compare_message_search_result(left, right, sort)
+            .then_with(|| left.mailbox_name.cmp(&right.mailbox_name))
+            .then_with(|| right.uid.cmp(&left.uid))
+    });
 }
 
 fn compare_message_summary(

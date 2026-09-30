@@ -8,9 +8,10 @@ use crate::draft::DraftSummary;
 use crate::html::TrustedHtml;
 use crate::http::BrowserVisibleSession;
 use crate::http_support::{escape_html, url_encode};
+use crate::mail_list::{has_flag, ListViewState, MessageFilter};
 use crate::mailbox::{
     MailboxEntry, MessageSearchField, MessageSearchResult, MessageSort, MessageSortColumn,
-    MessageSortDirection, MessageSummary, DEFAULT_MAX_MAILBOXES, DEFAULT_MAX_SEARCH_RESULTS,
+    MessageSortDirection, MessageSummary, DEFAULT_MAX_MAILBOXES,
 };
 use crate::mime::{AttachmentMetadata, DEFAULT_MIME_PARTS_MAX};
 use crate::rendering::{HtmlDisplayPreference, RenderedMessageView};
@@ -53,7 +54,7 @@ pub(crate) struct DraftListPageModel<'a> {
 
 /// Small view model for mailbox message-list sort links.
 pub(crate) struct MessageListSortLinks<'a> {
-    pub active_sort: Option<MessageSort>,
+    pub view: &'a ListViewState,
     pub search_query: Option<&'a str>,
     pub search_scope: Option<&'a str>,
 }
@@ -306,10 +307,11 @@ fn next_message_sort_direction(
 
 fn render_mailbox_sort_headers(
     mailbox_name: &str,
-    active_sort: Option<MessageSort>,
+    view: &ListViewState,
     search_query: Option<&str>,
     search_scope: Option<&str>,
 ) -> String {
+    let active_sort = Some(view.sort);
     MESSAGE_SORT_COLUMNS
         .iter()
         .map(|column| {
@@ -327,9 +329,11 @@ fn render_mailbox_sort_headers(
             href.push_str(column.query_value());
             href.push_str("&dir=");
             href.push_str(direction.query_value());
+            append_list_filter_selection(&mut href, view);
 
             format!(
-                "<th><a href=\"{}\">{}{}</a></th>",
+                "<th aria-sort=\"{}\"><a href=\"{}\">{}{}</a></th>",
+                sort_aria_value(*column, view),
                 escape_html(&href),
                 column.label(),
                 message_sort_indicator(*column, active_sort),
@@ -342,9 +346,10 @@ fn render_mailbox_sort_headers(
 fn render_search_sort_headers(
     mailbox_name: Option<&str>,
     query: &str,
-    active_sort: Option<MessageSort>,
+    view: &ListViewState,
     search_field: MessageSearchField,
 ) -> String {
+    let active_sort = Some(view.sort);
     let mut headers = String::new();
     for column in MESSAGE_SORT_COLUMNS {
         let direction = next_message_sort_direction(column, active_sort);
@@ -364,9 +369,11 @@ fn render_search_sort_headers(
         href.push_str(column.query_value());
         href.push_str("&dir=");
         href.push_str(direction.query_value());
+        append_list_filter_selection(&mut href, view);
 
         headers.push_str(&format!(
-            "<th><a href=\"{}\">{}{}</a></th>",
+            "<th aria-sort=\"{}\"><a href=\"{}\">{}{}</a></th>",
+            sort_aria_value(column, view),
             escape_html(&href),
             column.label(),
             message_sort_indicator(column, active_sort),
@@ -376,6 +383,112 @@ fn render_search_sort_headers(
         }
     }
     headers
+}
+
+fn sort_aria_value(column: MessageSortColumn, view: &ListViewState) -> &'static str {
+    if view.sort.column != column {
+        "none"
+    } else if view.sort.direction == MessageSortDirection::Asc {
+        "ascending"
+    } else {
+        "descending"
+    }
+}
+
+fn append_list_filter_selection(href: &mut String, view: &ListViewState) {
+    if view.filter != MessageFilter::All {
+        href.push_str("&filter=");
+        href.push_str(view.filter.value());
+    }
+    if let Some(selected) = &view.selection {
+        href.push_str("&selected_mailbox=");
+        href.push_str(&url_encode(&selected.mailbox));
+        href.push_str("&selected_uid=");
+        href.push_str(&selected.uid.to_string());
+    }
+}
+
+fn list_navigation_href(base: &str, view: &ListViewState, page: usize) -> String {
+    let mut href = format!(
+        "{base}&sort={}&dir={}",
+        view.sort.column.query_value(),
+        view.sort.direction.query_value()
+    );
+    append_list_filter_selection(&mut href, view);
+    if page > 1 {
+        href.push_str(&format!("&page={page}"));
+    }
+    href
+}
+
+fn list_form_state(view: &ListViewState) -> String {
+    format!("<input type=\"hidden\" name=\"filter\" value=\"{}\"><input type=\"hidden\" name=\"sort\" value=\"{}\"><input type=\"hidden\" name=\"dir\" value=\"{}\">", view.filter.value(), view.sort.column.query_value(), view.sort.direction.query_value())
+}
+
+fn render_list_navigation(base: &str, view: &ListViewState) -> String {
+    let mut filters = String::new();
+    for filter in [
+        MessageFilter::All,
+        MessageFilter::Unread,
+        MessageFilter::Starred,
+    ] {
+        let mut target = view.clone();
+        target.filter = filter;
+        if filter != view.filter {
+            target.selection = None;
+        }
+        filters.push_str(&format!(
+            "<a class=\"filter-link\" href=\"{}\"{}>{}</a>",
+            escape_html(&list_navigation_href(base, &target, 1)),
+            if filter == view.filter {
+                " aria-current=\"page\""
+            } else {
+                ""
+            },
+            filter.label()
+        ));
+    }
+    let previous = if view.page > 1 {
+        format!(
+            "<a class=\"button-link\" rel=\"prev\" href=\"{}\">Previous page</a>",
+            escape_html(&list_navigation_href(base, view, view.page - 1))
+        )
+    } else {
+        "<span class=\"muted\" aria-disabled=\"true\">Previous page</span>".to_string()
+    };
+    let next = if view.page < view.pages() {
+        format!(
+            "<a class=\"button-link\" rel=\"next\" href=\"{}\">Next page</a>",
+            escape_html(&list_navigation_href(base, view, view.page + 1))
+        )
+    } else {
+        "<span class=\"muted\" aria-disabled=\"true\">Next page</span>".to_string()
+    };
+    let adjustment = if view.page != view.requested_page {
+        "<p class=\"notice\" role=\"status\">The requested page is outside the current results. Showing the last available page.</p>"
+    } else {
+        ""
+    };
+    let limit = if view.backend_truncated {
+        format!("<p class=\"notice\" role=\"status\"><strong>Result limit reached.</strong> Showing up to {} backend results. Narrow your search for more specific results.</p>", view.backend_limit)
+    } else {
+        String::new()
+    };
+    format!("<div class=\"list-navigation\"><nav class=\"message-filters\" aria-label=\"Message filters\">{filters}</nav><p class=\"list-window muted\">Showing {}–{} of {} messages · Page {} of {}</p><nav class=\"list-pagination\" aria-label=\"Result pages\">{previous}{next}</nav></div>{adjustment}{limit}", view.first_result(), view.last_result(), view.total_results, view.page, view.pages())
+}
+
+fn render_message_flags(flags: &[String]) -> String {
+    let read = if has_flag(flags, "\\Seen") {
+        "Read"
+    } else {
+        "Unread"
+    };
+    let (star, label) = if has_flag(flags, "\\Flagged") {
+        ("★", "Starred")
+    } else {
+        ("☆", "Not starred")
+    };
+    format!("<span class=\"message-star\" role=\"img\" aria-label=\"{label}\">{star}</span><span class=\"message-flags\" title=\"{}\">{read}</span>", escape_html(&flags.join(" ")))
 }
 
 fn render_search_field_select(active_field: MessageSearchField) -> String {
@@ -460,23 +573,21 @@ pub(crate) fn render_message_list_page(
         };
         let subject_label = message.subject.as_deref().unwrap_or("<none>");
         let from_label = message.from.as_deref().unwrap_or("<none>");
-        let flags_label = if message.flags.is_empty() {
-            "<none>".to_string()
-        } else {
-            message.flags.join(" ")
-        };
         rows.push_str(&format!(
-            "<tr class=\"message-row\">{}<td class=\"message-uid-cell\"><a class=\"message-uid-link\" href=\"{}\">#{}</a></td><td class=\"message-subject-cell\"><a class=\"message-subject-link\" href=\"{}\">{}</a><div class=\"message-preview-meta\"><span>from {}</span><span>{}</span></div></td><td class=\"message-from-cell\">{}</td><td class=\"message-date-cell\">{}</td><td class=\"message-flags-cell\"><span class=\"message-flags\">{}</span></td><td class=\"message-size-cell\">{} bytes</td>{}</tr>",
+            "<tr class=\"message-row{}\" data-selected=\"{}\">{}<td class=\"message-uid-cell\"><a class=\"message-uid-link\" href=\"{}\">#{}</a></td><td class=\"message-subject-cell\"><a class=\"message-subject-link\" href=\"{}\"{}>{}</a><div class=\"message-preview-meta\"><span>from {}</span><span>{}</span></div></td><td class=\"message-from-cell\">{}</td><td class=\"message-date-cell\">{}</td><td class=\"message-flags-cell\">{}</td><td class=\"message-size-cell\">{} bytes</td>{}</tr>",
+            if has_flag(&message.flags, "\\Seen") { "" } else { " message-unread" },
+            sort_links.view.is_selected(mailbox_name, message.uid),
             selection_cells,
             escape_html(&message_href),
             message.uid,
             escape_html(&message_href),
+            if sort_links.view.is_selected(mailbox_name, message.uid) { " aria-current=\"true\"" } else { "" },
             escape_html(subject_label),
             escape_html(from_label),
             escape_html(&message.date_received),
             escape_html(from_label),
             escape_html(&message.date_received),
-            escape_html(&flags_label),
+            render_message_flags(&message.flags),
             message.size_virtual,
             if archive_actions_available {
                 format!("<td class=\"message-action-cell\">{archive_action}</td>")
@@ -486,7 +597,7 @@ pub(crate) fn render_message_list_page(
         ));
     }
     if messages.is_empty() {
-        rows.push_str("<tr class=\"message-empty-row\"><td colspan=\"9\"><div class=\"message-empty-state\"><strong>No messages shown.</strong><br><span class=\"muted\">New messages will appear here.</span></div></td></tr>");
+        rows.push_str(&format!("<tr class=\"message-empty-row\"><td colspan=\"9\"><div class=\"message-empty-state\"><strong>No messages shown.</strong><br><span class=\"muted\">{}</span></div></td></tr>", if sort_links.view.filter == MessageFilter::All { "New messages will appear here." } else { "No messages match this filter. Choose All messages to see the mailbox." }));
     }
 
     let bulk_move_form = if bulk_actions_available && !messages.is_empty() {
@@ -532,10 +643,17 @@ pub(crate) fn render_message_list_page(
     };
     let sort_headers = render_mailbox_sort_headers(
         mailbox_name,
-        sort_links.active_sort,
+        sort_links.view,
         sort_links.search_query,
         sort_links.search_scope,
     );
+    let mut navigation_base = format!("/mailbox?name={}", url_encode(mailbox_name));
+    if let Some(query) = sort_links.search_query {
+        navigation_base.push_str(&format!("&q={}", url_encode(query)));
+    }
+    if let Some(scope) = sort_links.search_scope {
+        navigation_base.push_str(&format!("&scope={}", url_encode(scope)));
+    }
 
     TrustedHtml::from_template(format!(
         concat!(
@@ -545,8 +663,9 @@ pub(crate) fn render_message_list_page(
             "<div class=\"section-header\"><div><h1 id=\"mailbox-title\" class=\"section-title\">Mailbox: {}</h1><p class=\"muted\">Signed in as <strong>{}</strong>. </p></div>",
             "<div class=\"badge-list message-list-summary\" aria-label=\"Message list status\"><span class=\"badge\">Remote content blocked</span></div></div>",
             "{}{}",
-            "<form class=\"search-row\" method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><label for=\"mailbox-search\">Search query<input id=\"mailbox-search\" type=\"text\" name=\"q\" autocomplete=\"off\"></label>{}<button type=\"submit\">Search</button><label><input type=\"checkbox\" name=\"scope\" value=\"all\"> Search all mailboxes</label></form>",
+            "<form class=\"search-row\" method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\">{}<label for=\"mailbox-search\">Search query<input id=\"mailbox-search\" type=\"text\" name=\"q\" value=\"{}\" autocomplete=\"off\"></label>{}<button type=\"submit\">Search</button><label><input type=\"checkbox\" name=\"scope\" value=\"all\"> Search all mailboxes</label></form>",
             "<div class=\"toolbar\" aria-label=\"Mailbox actions\">{}{}</div>",
+            "{}",
             "<div class=\"table-wrap\" role=\"region\" aria-label=\"Mailbox message list\" tabindex=\"0\"><table class=\"message-list-table\" aria-label=\"Mailbox message list\"><thead><tr>{}{}{}{}</tr></thead><tbody>{}</tbody></table></div>",
             "</section>",
             "</main>"
@@ -557,9 +676,12 @@ pub(crate) fn render_message_list_page(
         success_banner,
         archive_notice,
         escape_html(mailbox_name),
+        list_form_state(sort_links.view),
+        escape_html(sort_links.search_query.unwrap_or("")),
         render_search_field_select(MessageSearchField::All),
         bulk_move_form,
         bulk_archive_form,
+        render_list_navigation(&navigation_base, sort_links.view),
         if bulk_actions_available {
             "<th>Move</th>"
         } else {
@@ -587,22 +709,9 @@ pub(crate) fn render_message_search_page(
     mailbox_name: Option<&str>,
     query: &str,
     results: &[MessageSearchResult],
-    active_sort: Option<MessageSort>,
+    view: &ListViewState,
     search_field: MessageSearchField,
 ) -> TrustedHtml {
-    let displayed_results = results
-        .iter()
-        .take(DEFAULT_MAX_SEARCH_RESULTS)
-        .collect::<Vec<_>>();
-    let truncation_notice = if results.len() > displayed_results.len() {
-        format!(
-            "<div class=\"notice notice-error\" role=\"status\"><strong>Result limit reached.</strong> Displaying the first {} of {} backend results.</div>",
-            displayed_results.len(),
-            results.len(),
-        )
-    } else {
-        String::new()
-    };
     let back_link = match mailbox_name {
         Some(mailbox_name) => format!(
             "<a href=\"/mailbox?name={}\">Back to mailbox</a> | ",
@@ -623,26 +732,39 @@ pub(crate) fn render_message_search_page(
         ""
     };
     let search_field_select = render_search_field_select(search_field);
-    let sort_headers = render_search_sort_headers(mailbox_name, query, active_sort, search_field);
+    let sort_headers = render_search_sort_headers(mailbox_name, query, view, search_field);
+    let mut navigation_base = match mailbox_name {
+        Some(name) => format!("/search?mailbox={}", url_encode(name)),
+        None => "/search?scope=all".to_string(),
+    };
+    navigation_base.push_str(&format!(
+        "&q={}&field={}",
+        url_encode(query),
+        search_field.query_value()
+    ));
     let mut rows = String::new();
     if results.is_empty() {
         rows.push_str("<tr><td colspan=\"7\">No messages matched this search.</td></tr>");
     } else {
-        for result in &displayed_results {
+        for result in results {
             let message_href = format!(
                 "/message?mailbox={}&uid={}",
                 url_encode(&result.mailbox_name),
                 result.uid
             );
             rows.push_str(&format!(
-                "<tr><td><a href=\"{}\">{}</a></td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>",
+                "<tr class=\"message-row{}\" data-selected=\"{}\"><td><a href=\"{}\">{}</a></td><td>{}</td><td class=\"message-subject-cell\"><a class=\"message-subject-link\" href=\"{}\"{}>{}</a></td><td>{}</td><td>{}</td><td class=\"message-flags-cell\">{}</td><td>{}</td></tr>",
+                if has_flag(&result.flags, "\\Seen") { "" } else { " message-unread" },
+                view.is_selected(&result.mailbox_name, result.uid),
                 escape_html(&message_href),
                 result.uid,
                 escape_html(&result.mailbox_name),
+                escape_html(&message_href),
+                if view.is_selected(&result.mailbox_name, result.uid) { " aria-current=\"true\"" } else { "" },
                 escape_html(result.subject.as_deref().unwrap_or("<none>")),
                 escape_html(result.from.as_deref().unwrap_or("<none>")),
                 escape_html(&result.date_received),
-                escape_html(&result.flags.join(" ")),
+                render_message_flags(&result.flags),
                 result.size_virtual,
             ));
         }
@@ -656,24 +778,25 @@ pub(crate) fn render_message_search_page(
             "<p>{}<a href=\"/mailboxes\">All mailboxes</a></p>",
             "<h1>Search Results</h1>",
             "<p class=\"muted\">Search within a mailbox or across all your mailboxes.</p>",
-            "{}",
-            "<form class=\"search-row\" method=\"get\" action=\"/search\">{}<label for=\"search-query\">Search query<input id=\"search-query\" type=\"text\" name=\"q\" value=\"{}\" autocomplete=\"off\"></label>{}<button type=\"submit\">Search</button><label><input type=\"checkbox\" name=\"scope\" value=\"all\"{}> Search all mailboxes</label></form>",
+            "<form class=\"search-row\" method=\"get\" action=\"/search\">{}{}<label for=\"search-query\">Search query<input id=\"search-query\" type=\"text\" name=\"q\" value=\"{}\" autocomplete=\"off\"></label>{}<button type=\"submit\">Search</button><label><input type=\"checkbox\" name=\"scope\" value=\"all\"{}> Search all mailboxes</label></form>",
             "<p><strong>Scope:</strong> {}<br><strong>Field:</strong> {}<br><strong>Query:</strong> {}<br><strong>Results:</strong> {}</p>",
+            "{}",
             "<div class=\"table-wrap\" role=\"region\" aria-label=\"Search results\" tabindex=\"0\"><table><thead><tr>{}</tr></thead><tbody>{}</tbody></table></div>",
             "</section>",
             "</main>"
         ),
         app_header(canonical_username, csrf_token, "mailboxes"),
         back_link,
-        truncation_notice,
         mailbox_hidden_input,
+        list_form_state(view),
         escape_html(query),
         search_field_select,
         search_all_checked,
         escape_html(search_scope),
         escape_html(search_field.label()),
         escape_html(query),
-        displayed_results.len(),
+        view.total_results,
+        render_list_navigation(&navigation_base, view),
         sort_headers,
         rows,
     ))
