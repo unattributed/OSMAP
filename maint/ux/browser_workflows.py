@@ -97,12 +97,12 @@ def main():
 
         try:
             login("alice", "system")
-            visit("/settings")
+            visit("/settings?section=appearance")
             page.get_by_label("Dark", exact=True).check()
-            page.get_by_role("button", name="Save Appearance", exact=True).click()
-            page.wait_for_url(origin + "/settings?appearance_updated=1")
+            page.get_by_role("button", name="Save changes", exact=True).click()
+            page.wait_for_url(origin + "/settings?section=appearance&appearance_updated=1")
             appearance("dark")
-            for path in ["/compose", "/drafts", "/sessions", "/settings"]:
+            for path in ["/compose", "/drafts", "/sessions", "/settings?section=appearance"]:
                 visit(path)
                 appearance("dark")
             page.reload(wait_until="networkidle")
@@ -117,15 +117,15 @@ def main():
             checks.append("login restores saved account choice over stale browser preference")
             logout()
             login("bob", "system")
-            visit("/settings")
+            visit("/settings?section=appearance")
             page.emulate_media(color_scheme="dark")
             assert page.evaluate("getComputedStyle(document.body).backgroundColor") == "rgb(13, 21, 38)"
             page.emulate_media(color_scheme="light")
             assert page.evaluate("getComputedStyle(document.body).backgroundColor") == "rgb(245, 248, 254)"
             checks.append("system appearance follows OS change without a reload")
             page.get_by_label("Light", exact=True).check()
-            page.get_by_role("button", name="Save Appearance", exact=True).click()
-            page.wait_for_url(origin + "/settings?appearance_updated=1")
+            page.get_by_role("button", name="Save changes", exact=True).click()
+            page.wait_for_url(origin + "/settings?section=appearance&appearance_updated=1")
             appearance("light")
             page.emulate_media(color_scheme="dark")
             assert page.evaluate("getComputedStyle(document.body).backgroundColor") == "rgb(245, 248, 254)"

@@ -21,7 +21,7 @@ use crate::mailbox::{
 use crate::message_metadata::{MessageFlag, MessageMetadata};
 use crate::mime::{AttachmentMetadata, DEFAULT_MIME_PARTS_MAX};
 use crate::rendering::{HtmlDisplayPreference, RenderedMessageView};
-pub(crate) use settings_ui::render_appearance_page;
+pub(crate) use settings_ui::{render_appearance_page, render_general_page};
 
 /// Defense-in-depth cap for attachment metadata rows rendered by one route.
 const DEFAULT_RENDERED_ATTACHMENT_METADATA_MAX: usize = DEFAULT_MIME_PARTS_MAX;
@@ -234,6 +234,11 @@ pub(crate) fn render_settings_search_page(account: &str, csrf: &str, query: &str
             "Message preview",
             "appearance snippet mail summary",
             "/settings?section=appearance#settings-message-preview",
+        ),
+        (
+            "Default format",
+            "composition compose new blank message plain formatted",
+            "/settings?section=general#general-default-format",
         ),
         (
             "HTML Message Display",

@@ -1,6 +1,10 @@
 //! Native Settings presentation, separate from browser route handlers.
 use super::*;
 
+#[path = "settings_general_ui.rs"]
+mod settings_general_ui;
+pub(crate) use settings_general_ui::render_general_page;
+
 pub(crate) fn render_appearance_page(
     model: &SettingsPageModel<'_>,
     preferences: &crate::appearance::AppearanceSettings,
@@ -67,7 +71,7 @@ pub(crate) fn render_appearance_page(
         "<div class=\"settings-save-row\"><button class=\"primary-button\" type=\"submit\">Save changes</button></div></form></section></div></main>"
     ), header=app_header(model.canonical_username, model.csrf_token, "settings-appearance"),
         success=success, error=error, themes=themes, density=density, font=font, layout=layout,
-        navigation=settings_navigation(), csrf=escape_html(model.csrf_token),
+        navigation=settings_navigation("appearance"), csrf=escape_html(model.csrf_token),
         avatars_checked=if preferences.show_avatars { " checked" } else { "" }, preview_checked=if preferences.message_preview { " checked" } else { "" },
         theme=preferences.theme.as_str(), saved_density=preferences.density.as_str(), saved_font=preferences.font_size.as_str(),
         avatars=preferences.show_avatars, snippet=preferences.message_preview, saved_layout=preferences.reader_layout.as_str(),
@@ -88,7 +92,7 @@ fn select_options(selected: &str, options: &[(&str, &str)]) -> String {
         .collect()
 }
 
-fn settings_navigation() -> String {
+fn settings_navigation(current_section: &str) -> String {
     let mut result =
         String::from("<nav class=\"settings-navigation\" aria-label=\"Settings sections\"><ul>");
     for (label, section) in [
@@ -106,7 +110,7 @@ fn settings_navigation() -> String {
         if let Some(section) = section {
             result.push_str(&format!(
                 "<li><a href=\"/settings?section={section}\"{}>{}</a></li>",
-                if section == "appearance" {
+                if section == current_section {
                     " aria-current=page"
                 } else {
                     ""

@@ -1561,3 +1561,70 @@ with later outcomes. Correct errors using a new entry referencing the old one.
 - Final full acceptance and V14 gates passed after updating the route inventory
   and using the existing bounded command executor for the lock test. Strict
   Clippy, formatting and diff checks passed. Signing's pre-commit gate follows.
+
+### General controls and truthful send outcomes — next construction
+
+- Appearance checkpoint `f5fa3debaa420adc9ec5e06f755c48848f0360fc` is signed
+  and independently qualified on obsd1 in an isolated export. Source archive
+  SHA-256 `3c6701a276c26afcd34e2d0e4b480164f3e749906e751d0fdd8a19a288465a60`;
+  native log SHA-256 `f6ffc81ffeb038c95e696108ee0977cf57c9344caeb9f323f5b7ed25dc069999`.
+  Exit 0; normal checkout and services unchanged; no deployment. Evidence:
+  S04 `native-a/result.json` and retained log.
+- S04-01 PAGE-11 construction owns the General renderer/CSS, settings wiring
+  and real-store synthetic browser proof. Existing appearance/archive controls
+  must persist and affect their workflows; unavailable controls are not counted.
+  Follow-on default composition format uses a separate private versioned record,
+  affects new blank messages and preserves resumed draft formats. Source review
+  found no compatible literal encoding in the existing formatter: replies and
+  forwards therefore remain explicitly Plain so quoted notation is unchanged.
+- S03-04 first outcome correction owns send decisions, gateway, compose receipt
+  renderer/routes and tests: accepted submission, Sent storage and uncertain
+  dispatch remain distinct; no silent retry or false delivery claim. Durable
+  duplicate suppression and Sent reconciliation remain required follow-on work.
+- Advisory agent allowances: outcomes 6,500 tokens, composition preference 6,500,
+  General browser proof 5,000. Parent reviews and corrects returned work; these
+  allowances are instructions, not enforced runtime limits. No remote Git,
+  live email, service mutation, new dependencies or live account migration.
+
+### General controls and truthful send outcomes — reviewed checkpoint
+
+- PAGE-11 now follows the approved three-column card hierarchy. Appearance and
+  archive saves preserve the other stored preferences. A private finite v1
+  composition sidecar makes Plain/Formatted default selection affect new blank
+  messages. Source-backed replies/forwards remain Plain with explicit context;
+  existing drafts retain their recorded format. No account/header identity or
+  cryptographic authority changed. Settings search reaches the new control.
+- Independent Edge/Firefox workflows each passed eight General groups, including
+  real store restart, account isolation, invalid/duplicate/CSRF refusal,
+  keyboard saves/search/disclosure and hidden-field preservation. Five focused
+  HTTP tests additionally preserve literal quoted notation and both draft modes.
+  Six integrated store tests cover bounded private storage and contention.
+- Visual review corrected two excessive-height causes. Final Storage starts at
+  909.6px in Edge and 900.8px in Firefox versus about 899px in the reference.
+  Parent inspected the approved/native render. Twelve final light/dark captures
+  at 360/768/1600, including long account identities, have no overflow or text/UI
+  contrast failures. Some footer content requires scrolling; whole-page approval
+  and unavailable profile/security/storage/reset controls remain open.
+- Submission decisions now distinguish backend acceptance, confirmed Sent
+  storage and uncertain dispatch. Sent-copy uncertainty preserves the saved
+  draft; cleanup refusal is visible. Read-only recovery shows escaped attempted
+  text and attachment metadata, explicitly distinguishing the older saved draft
+  and unsaved upload bytes. It provides no enabled Send action or Compose script.
+  Normal success expressly does not confirm delivery.
+- Edge/Firefox each passed three synthetic send-result cases with one submission
+  request per case, retained original draft/file bytes on uncertain outcomes,
+  and normal accepted cleanup. Parent HTTP tests cover cleanup denial; injected
+  backend/append tests verify no retry, exact MIME and Bcc privacy. Result field
+  sizing and recovery-copy wording were corrected after independent review.
+- Evidence: S04 `general-final-{edge,firefox}`, `general-final-captures`,
+  `send-results-final-{edge,firefox}` and named HTTP/store/gate logs. Scripts are
+  `maint/ux/general_workflows.py` and `maint/ux/send_result_workflows.py`.
+  These tests use synthetic accounts/backends and send no external email.
+- Full corrected acceptance passed: 724 library tests, seven intentional ignored
+  entries, security and V10/V11/V12/V13 gates. V14, strict all-target Clippy,
+  formatting and diff checks passed. The first broad run failed one obsolete
+  Settings markup assertion; its replacement checks actual policy copy and
+  unavailable signing/encryption controls. No gate was weakened.
+- S03-04 remains partial: durable replay suppression, real journal-backed receipts
+  and exact recovery snapshots are prepared follow-on work, not delivered by this
+  checkpoint. Signing's mandatory pre-commit security check follows.

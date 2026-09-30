@@ -27,6 +27,8 @@ fn ux_synthetic_browser_server() {
         contacts_store: Some(crate::contacts::ContactStore::new(root.join("settings/contacts-v1"))),
         draft_store: Some(crate::draft::FileDraftStore::new(root.join("drafts"), DraftPolicy::default())),
         appearance_store: Some(AppearanceStore::new(root.join("settings"))),
+        settings_store: Some(crate::settings::FileUserSettingsStore::new(root.join("settings"))),
+        composition_preferences_store: Some(crate::composition_preferences::CompositionPreferencesStore::new(root.join("settings"))),
         browser_fixture_accounts: true,
         fixture_sessions: Some(fixture_sessions::FixtureSessions::new(root.join("sessions"))),
         ..StubGateway::default()

@@ -214,7 +214,7 @@ fn appearance_cookie_covers_navigation_errors_logout_and_login_precedence() {
 
 #[test]
 fn appearance_settings_restore_saved_account_choice_and_explain_store_failure() {
-    let mut req = request("GET", "/settings", &authenticated_headers(), "");
+    let mut req = request("GET", "/settings?section=appearance", &authenticated_headers(), "");
     req.headers
         .get_mut("cookie")
         .expect("fixture cookie")
@@ -223,8 +223,8 @@ fn appearance_settings_restore_saved_account_choice_and_explain_store_failure() 
         .insert("user-agent".into(), "OSMAP/AppearanceDark".into());
     let result = app().handle_request(&req, "127.0.0.1");
     assert!(has_theme_cookie(&result, "dark"));
-    assert!(body_text(&result).contains("value=\"dark\" checked"));
-    assert!(body_text(&result).contains("action=\"/settings/appearance\""));
+    assert!(body_text(&result).contains("value=\"dark\" aria-label=\"Dark\" checked"));
+    assert!(body_text(&result).contains("action=\"/settings/display\""));
     req.headers
         .insert("user-agent".into(), "OSMAP/AppearanceUnavailable".into());
     let result = app().handle_request(&req, "127.0.0.1");

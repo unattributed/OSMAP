@@ -18,6 +18,7 @@ mod http_runtime;
 mod routes_appearance;
 mod routes_auth;
 mod routes_compose;
+mod routes_composition_preferences;
 mod routes_contacts;
 mod routes_content;
 mod routes_display;
@@ -810,6 +811,12 @@ mod tests {
     mod compose_format_tests {
         include!("http/compose_format_tests.rs");
     }
+    mod send_result_tests {
+        include!("http/send_result_tests.rs");
+    }
+    mod composition_preference_tests {
+        include!("http/composition_preference_tests.rs");
+    }
     mod ux_fixtures {
         include!("http/ux_fixtures.rs");
     }
@@ -883,6 +890,9 @@ mod tests {
         message_flags: Arc<Mutex<SyntheticFlagStates>>,
         message_moves: Arc<Mutex<SyntheticMessageMoves>>,
         appearance_store: Option<AppearanceStore>,
+        settings_store: Option<crate::settings::FileUserSettingsStore>,
+        composition_preferences_store:
+            Option<crate::composition_preferences::CompositionPreferencesStore>,
         browser_fixture_accounts: bool,
         fixture_sessions: Option<fixture_sessions::FixtureSessions>,
     }
@@ -898,6 +908,8 @@ mod tests {
                 message_flags: Arc::new(Mutex::new(BTreeMap::new())),
                 message_moves: Arc::new(Mutex::new(SyntheticMessageMoves::default())),
                 appearance_store: None,
+                settings_store: None,
+                composition_preferences_store: None,
                 browser_fixture_accounts: false,
                 fixture_sessions: None,
             }
@@ -1328,11 +1340,63 @@ mod tests {
             self.update_appearance(context, session, preferences.theme)
         }
 
+        fn load_composition_preferences(
+            &self,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+        ) -> std::io::Result<crate::composition_preferences::CompositionPreferences> {
+            if context.user_agent.contains("CompositionUnavailable") {
+                return Err(std::io::Error::other("synthetic preference load failure"));
+            }
+            self.composition_preferences_store.as_ref().map_or_else(
+                || Ok(crate::composition_preferences::CompositionPreferences::default()),
+                |store| store.load(&session.record.canonical_username),
+            )
+        }
+
+        fn update_composition_preferences(
+            &self,
+            _context: &AuthenticationContext,
+            session: &ValidatedSession,
+            value: crate::composition_preferences::CompositionPreferences,
+        ) -> std::io::Result<()> {
+            self.composition_preferences_store
+                .as_ref()
+                .ok_or_else(|| std::io::Error::other("synthetic preference store unavailable"))?
+                .save(&session.record.canonical_username, value)
+        }
+
         fn load_settings(
             &self,
             context: &AuthenticationContext,
             validated_session: &ValidatedSession,
         ) -> BrowserSettingsOutcome {
+            if let Some(store) = &self.settings_store {
+                return BrowserSettingsOutcome {
+                    decision: match crate::settings::UserSettingsStore::load(
+                        store,
+                        &validated_session.record.canonical_username,
+                    ) {
+                        Ok(settings) => {
+                            let settings = settings.unwrap_or_default();
+                            BrowserSettingsDecision::Loaded {
+                                canonical_username: validated_session
+                                    .record
+                                    .canonical_username
+                                    .clone(),
+                                settings: BrowserVisibleSettings {
+                                    html_display_preference: settings.html_display_preference,
+                                    archive_mailbox_name: settings.archive_mailbox_name,
+                                },
+                            }
+                        }
+                        Err(_) => BrowserSettingsDecision::Denied {
+                            public_reason: "temporarily_unavailable".into(),
+                        },
+                    },
+                    audit_events: vec![],
+                };
+            }
             if context.user_agent.contains("SettingsUnavailable") {
                 return BrowserSettingsOutcome {
                     decision: BrowserSettingsDecision::Denied {
@@ -1376,10 +1440,29 @@ mod tests {
         fn update_settings(
             &self,
             _context: &AuthenticationContext,
-            _validated_session: &ValidatedSession,
+            validated_session: &ValidatedSession,
             html_display_preference: HtmlDisplayPreference,
             archive_mailbox_name: Option<&str>,
         ) -> BrowserSettingsUpdateOutcome {
+            if let Some(store) = &self.settings_store {
+                let settings = crate::settings::UserSettings {
+                    html_display_preference,
+                    archive_mailbox_name: archive_mailbox_name.map(str::to_owned),
+                };
+                return BrowserSettingsUpdateOutcome {
+                    decision: match crate::settings::UserSettingsStore::save(
+                        store,
+                        &validated_session.record.canonical_username,
+                        &settings,
+                    ) {
+                        Ok(()) => BrowserSettingsUpdateDecision::Updated,
+                        Err(_) => BrowserSettingsUpdateDecision::Denied {
+                            public_reason: "temporarily_unavailable".into(),
+                        },
+                    },
+                    audit_events: vec![],
+                };
+            }
             match (html_display_preference, archive_mailbox_name) {
                 (
                     HtmlDisplayPreference::PreferSanitizedHtml
@@ -1932,7 +2015,9 @@ mod tests {
             };
 
             let many = context.user_agent.starts_with("OSMAP/ManyMessages");
-            let body_text = if many {
+            let body_text = if context.user_agent.contains("CompositionLiteralSource") {
+                composition_preference_tests::LITERAL_SOURCE.into()
+            } else if many {
                 format!(
                     "Synthetic message {uid} in {mailbox_name} for {}.",
                     validated_session.record.canonical_username
@@ -2034,7 +2119,7 @@ mod tests {
 
         fn send_message(
             &self,
-            _context: &AuthenticationContext,
+            context: &AuthenticationContext,
             _validated_session: &ValidatedSession,
             request: BrowserSendRequest<'_>,
         ) -> BrowserSendOutcome {
@@ -2068,7 +2153,15 @@ mod tests {
                     .expect("synthetic submissions should lock")
                     .push(compose);
                 BrowserSendOutcome {
-                    decision: BrowserSendDecision::Submitted,
+                    decision: if context.user_agent.contains("SendUnconfirmed") {
+                        BrowserSendDecision::Unconfirmed {
+                            public_reason: "submission_unavailable".into(),
+                        }
+                    } else {
+                        BrowserSendDecision::Submitted {
+                            sent_copy_stored: !context.user_agent.contains("SentCopyUnconfirmed"),
+                        }
+                    },
                     audit_events: vec![LogEvent::new(
                         LogLevel::Info,
                         EventCategory::Submission,
@@ -5173,13 +5266,16 @@ mod tests {
         let body = body_text(&response);
         assert!(body.contains("<h1>Settings</h1>"));
         assert!(body.contains("prefer_sanitized_html"));
-        assert!(body.contains("id=\"html-display-prefer-sanitized\""));
-        assert!(body.contains("for=\"html-display-prefer-sanitized\""));
+        assert!(body.contains("<h2 id=\"general-profile-title\">Account Profile</h2>"));
+        assert!(body.contains("name=\"html_display_preference\" value=\"prefer_sanitized_html\""));
         assert!(body.contains("name=\"archive_mailbox_name\""));
-        assert!(body.contains("id=\"archive-mailbox-name\""));
-        assert!(body.contains("class=\"action-stack\""));
+        assert!(body.contains("id=\"general-archive\""));
+        assert!(body.contains("for=\"general-archive\""));
         assert!(body.contains("value=\"Archive/2026\""));
-        assert!(body.contains("Save Settings"));
+        assert!(body.contains("Save archive folder"));
+        assert!(body.contains("Save appearance"));
+        assert!(body.contains("action=\"/settings/display\""));
+        assert!(body.contains("href=\"/settings?section=reading\""));
     }
 
     #[test]

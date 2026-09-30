@@ -65,6 +65,28 @@ pub trait BrowserGateway {
         scope: BrowserSessionRevokeScope,
     ) -> BrowserSessionRevokeOutcome;
 
+    fn load_composition_preferences(
+        &self,
+        _context: &AuthenticationContext,
+        _session: &ValidatedSession,
+    ) -> std::io::Result<crate::composition_preferences::CompositionPreferences> {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "composition preferences unavailable",
+        ))
+    }
+    fn update_composition_preferences(
+        &self,
+        _context: &AuthenticationContext,
+        _session: &ValidatedSession,
+        _value: crate::composition_preferences::CompositionPreferences,
+    ) -> std::io::Result<()> {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "composition preferences unavailable",
+        ))
+    }
+
     fn load_appearance(
         &self,
         context: &AuthenticationContext,
@@ -541,7 +563,10 @@ pub struct BrowserSendOutcome {
 /// Send decisions visible to the browser layer.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BrowserSendDecision {
-    Submitted,
+    /// Accepted by the submission backend; this does not confirm delivery.
+    Submitted { sent_copy_stored: bool },
+    /// Dispatch may have occurred; this outcome must not trigger a retry.
+    Unconfirmed { public_reason: String },
     Denied {
         public_reason: String,
         retry_after_seconds: Option<u64>,

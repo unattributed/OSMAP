@@ -1,4 +1,6 @@
 /* Compose-only native delivery menus and attachment shortcut. */
+.submission-result-page textarea { min-height: 0; }
+.submission-result-page #result-body { min-height: 14rem; }
 .compose-format-tools .compose-toolbar-attach {
   display: inline-flex;
   align-items: center;

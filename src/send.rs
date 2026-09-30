@@ -396,6 +396,10 @@ pub enum SubmissionDecision {
         canonical_username: String,
         recipients: Vec<String>,
     },
+    /// The backend could not confirm acceptance; dispatch may have occurred.
+    Unconfirmed {
+        public_reason: SubmissionPublicFailureReason,
+    },
     Denied {
         public_reason: SubmissionPublicFailureReason,
     },
@@ -537,7 +541,7 @@ where
                     LogLevel::Info,
                     EventCategory::Submission,
                     "message_submitted",
-                    "outbound message submission completed",
+                    "outbound message accepted for submission",
                 )
                 .with_field(
                     "canonical_username",
@@ -569,14 +573,14 @@ where
                 .with_field("user_agent", context.user_agent.clone()),
             },
             Err(error) => SubmissionOutcome {
-                decision: SubmissionDecision::Denied {
+                decision: SubmissionDecision::Unconfirmed {
                     public_reason: SubmissionPublicFailureReason::TemporarilyUnavailable,
                 },
                 audit_event: LogEvent::new(
                     LogLevel::Warn,
                     EventCategory::Submission,
-                    "message_submit_failed",
-                    "outbound message submission failed",
+                    "message_submit_unconfirmed",
+                    "outbound message submission acceptance could not be confirmed",
                 )
                 .with_field(
                     "canonical_username",
@@ -1341,7 +1345,9 @@ mod tests {
     }
 
     #[derive(Debug, Clone)]
-    struct FailingSubmissionBackend;
+    struct FailingSubmissionBackend {
+        calls: std::cell::Cell<usize>,
+    }
 
     impl SubmissionBackend for FailingSubmissionBackend {
         fn submit_message(
@@ -1349,6 +1355,7 @@ mod tests {
             _canonical_username: &str,
             _request: &ComposeRequest,
         ) -> Result<(), SubmissionBackendError> {
+            self.calls.set(self.calls.get() + 1);
             Err(SubmissionBackendError {
                 backend: "test-submission-backend",
                 reason: "submission unavailable".to_string(),
@@ -2065,13 +2072,15 @@ mod tests {
         let rendered = logger.render_with_timestamp(&outcome.audit_event, 8080);
         assert_eq!(
             rendered,
-            "ts=\"1970-01-01T02:14:40Z\" ts_unix=8080 level=info category=submission action=message_submitted msg=\"outbound message submission completed\" canonical_username=\"alice@example.com\" session_ref=\"asr-cc77477e59365048c995e4c7b47f5654\" recipient_count=\"1\" attachment_count=\"0\" attachment_bytes_total=\"0\" has_subject=\"true\" request_id=\"req-send\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\""
+            "ts=\"1970-01-01T02:14:40Z\" ts_unix=8080 level=info category=submission action=message_submitted msg=\"outbound message accepted for submission\" canonical_username=\"alice@example.com\" session_ref=\"asr-cc77477e59365048c995e4c7b47f5654\" recipient_count=\"1\" attachment_count=\"0\" attachment_bytes_total=\"0\" has_subject=\"true\" request_id=\"req-send\" remote_addr=\"127.0.0.1\" user_agent=\"Firefox/Test\""
         );
     }
 
     #[test]
-    fn submission_service_translates_backend_failures() {
-        let service = SubmissionService::new(FailingSubmissionBackend);
+    fn submission_service_preserves_uncertainty_without_retrying() {
+        let service = SubmissionService::new(FailingSubmissionBackend {
+            calls: std::cell::Cell::new(0),
+        });
         let request = ComposeRequest::new(
             ComposePolicy::default(),
             "bob@example.com",
@@ -2088,10 +2097,60 @@ mod tests {
 
         assert_eq!(
             outcome.decision,
-            SubmissionDecision::Denied {
+            SubmissionDecision::Unconfirmed {
                 public_reason: SubmissionPublicFailureReason::TemporarilyUnavailable,
             }
         );
-        assert_eq!(outcome.audit_event.action, "message_submit_failed");
+        assert_eq!(service.backend.calls.get(), 1);
+        assert_eq!(outcome.audit_event.action, "message_submit_unconfirmed");
+        let rendered = Logger::new(LogFormat::Text, LogLevel::Debug)
+            .render_with_timestamp(&outcome.audit_event, 8080);
+        assert!(!rendered.contains("Hello world"));
+        assert!(!rendered.contains("Test message"));
+        assert!(!rendered.contains("submission unavailable"));
+    }
+
+    #[test]
+    fn sendmail_exit_and_executor_errors_remain_unconfirmed() {
+        let request = ComposeRequest::new(
+            ComposePolicy::default(),
+            "bob@example.com",
+            "Synthetic subject",
+            "Synthetic body",
+        )
+        .unwrap();
+        for execution in [
+            Ok(CommandExecution {
+                status_code: 75,
+                stdout: String::new(),
+                stderr: "synthetic status failure".into(),
+            }),
+            Err(CommandExecutionError {
+                reason: "synthetic timeout after input write".into(),
+            }),
+        ] {
+            let executor = Rc::new(RefCell::new(StubCommandExecutor {
+                execution,
+                program: None,
+                args: None,
+                stdin_data: None,
+                timeout_secs: None,
+            }));
+            let service = SubmissionService::new(SendmailSubmissionBackend::new(
+                executor.clone(),
+                "/synthetic/not-executed/sendmail",
+            ));
+            let outcome = service.submit_for_validated_session(
+                &test_context(),
+                &validated_session_fixture(),
+                &request,
+            );
+            assert!(matches!(
+                outcome.decision,
+                SubmissionDecision::Unconfirmed { .. }
+            ));
+            assert!(executor.borrow().stdin_data.is_some());
+            assert_eq!(outcome.audit_event.action, "message_submit_unconfirmed");
+        }
     }
 }

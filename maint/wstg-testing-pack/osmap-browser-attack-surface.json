@@ -33,6 +33,7 @@
     {"method": "POST", "path": "/settings", "query_fields": [], "form_fields": ["csrf_token", "html_display_preference", "archive_mailbox_name"], "wstg_test_ids": ["OSMAP-WSTG-SESS-004", "OSMAP-WSTG-BUSL-005"]},
     {"method": "POST", "path": "/settings/appearance", "query_fields": [], "form_fields": ["csrf_token", "appearance"], "wstg_test_ids": ["OSMAP-WSTG-SESS-004", "OSMAP-WSTG-BUSL-005"]},
     {"method": "POST", "path": "/settings/display", "query_fields": [], "form_fields": ["csrf_token", "appearance", "density", "font_size", "reader_layout", "show_avatars", "message_preview"], "wstg_test_ids": ["OSMAP-WSTG-SESS-004", "OSMAP-WSTG-BUSL-005"]},
+    {"method": "POST", "path": "/settings/composition", "query_fields": [], "form_fields": ["csrf_token", "default_body_format"], "wstg_test_ids": ["OSMAP-WSTG-SESS-004", "OSMAP-WSTG-BUSL-005"]},
     {"method": "POST", "path": "/logout", "query_fields": [], "form_fields": ["csrf_token"], "wstg_test_ids": ["OSMAP-WSTG-SESS-003", "OSMAP-WSTG-SESS-006"]}
   ]
 }

@@ -62,8 +62,11 @@ fn compact_security_states_do_not_claim_undelivered_capabilities() {
     assert!(compose.contains("Send Message and Save Draft use unencrypted message content"));
     let settings = body_text(&authenticated_get("/settings"));
     assert!(!settings.contains("action=\"/search\""));
-    assert!(settings.contains("aria-label=\"Design principles\""));
+    assert!(settings.contains("aria-labelledby=\"general-privacy-title\""));
+    assert!(settings.contains("Blocked by message rendering policy"));
+    assert!(settings.contains("Source is never active HTML"));
     assert!(!settings.to_ascii_lowercase().contains("zero-knowledge"));
     assert!(!settings.contains("name=\"openpgp"));
-    assert!(settings.contains("Signing and encryption are currently unavailable"));
+    assert!(settings.contains("disabled aria-label=\"OpenPGP signing, unavailable\""));
+    assert!(settings.contains("disabled aria-label=\"Encryption, unavailable\""));
 }

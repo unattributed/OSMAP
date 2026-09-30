@@ -10,6 +10,8 @@ pub mod auth;
 pub mod bootstrap;
 mod charset;
 pub mod compose_format;
+mod compose_result_ui;
+pub mod composition_preferences;
 pub mod config;
 pub mod contacts;
 pub mod draft;

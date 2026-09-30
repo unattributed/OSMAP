@@ -1,0 +1,50 @@
+/* PAGE-11 General overview; include after settings.css. */
+.settings-general-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .9rem; align-items: stretch; min-width: 0; }
+.general-card { padding: 1rem; min-width: 0; min-height: 21.6rem; border: 1px solid var(--line); border-radius: .85rem; background: var(--panel); }
+.general-card h2 { margin: .9rem 0 1rem; font-size: 1.4rem; line-height: 1.25; text-transform: none; }
+.general-card form { margin: 0; }
+.general-field { display: grid; grid-template-columns: 43% minmax(0,1fr); align-items: center; gap: .55rem; margin-bottom: .6rem; }
+.general-field label { margin: 0; font-size: .875rem; font-weight: 400; }
+.general-field input, .general-field select { width: 100%; min-width: 0; max-width: none; margin: 0; padding: .45rem .65rem; font-size: .875rem; border-color: var(--line); }
+.general-card :disabled { opacity: 1; color: var(--muted); background: var(--panel-soft); border-color: var(--line); cursor: not-allowed; }
+.general-help { margin: .55rem 0 0; color: var(--muted); font-size: .75rem; line-height: 1.5; }
+.general-card-actions { display: flex; flex-wrap: wrap; gap: .55rem; align-items: center; margin-top: .65rem; }
+.general-composition-actions > details { flex: 1 1 8rem; min-width: 0; font-size: .75rem; }
+.general-composition-actions > details[open] { flex-basis: 100%; }
+.general-composition-actions summary { cursor: pointer; }
+.general-card button, .general-card .button-link { width: auto; min-height: 2.2rem; padding: .45rem .75rem; font-size: .8rem; }
+.general-status-list { list-style: none; padding: 0; margin: 0; }
+.general-status-list li { display: grid; grid-template-columns: 2.3rem minmax(0,1fr) auto; align-items: center; gap: .65rem; padding: .5rem 0; min-height: 3.1rem; border-bottom: 1px solid var(--line); }
+.general-status-list li:last-child { border-bottom: 0; }
+.general-status-list li > div { min-width: 0; }
+.general-status-list strong { display: block; font-size: .875rem; overflow-wrap: anywhere; }
+.general-status-list li > div > span { display: block; font-size: .75rem; color: var(--muted); }
+.general-row-icon { color: var(--link); }
+.general-enforced { border: 1px solid transparent; border-radius: 1rem; padding: .25rem .5rem; font-size: .75rem; font-weight: 700; color: var(--ok-ink); background: var(--ok-bg); }
+.general-card.general-storage { grid-column: 1 / -1; min-height: 9.4rem; }
+.general-storage h2 { margin-bottom: 1rem; }
+.general-storage-columns { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 1rem; }
+.general-storage h3 { margin: 0 0 .35rem; font-size: .875rem; }
+.general-storage p { margin: 0 0 .35rem; color: var(--muted); }
+.general-storage span { color: var(--muted); font-size: .75rem; }
+.general-overview-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; align-items: center; flex-wrap: wrap; gap: .65rem; color: var(--muted); font-size: .75rem; }
+.general-overview-actions button { width: auto; font-size: .8rem; color: var(--muted); cursor: not-allowed; }
+@media (max-width: 85rem) {
+  .settings-general-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+@media (max-width: 60rem) {
+  .settings-general-grid { grid-template-columns: minmax(0,1fr); }
+  .general-card { min-height: 0; }
+  .general-storage-columns { grid-template-columns: minmax(0,1fr); }
+}
+@media (max-width: 40rem) {
+  .general-card { padding: .8rem; }
+  .general-card h2 { margin-top: .4rem; font-size: 1.3rem; }
+  .general-field { grid-template-columns: 1fr; gap: .35rem; }
+  .general-status-list li { grid-template-columns: 1.3rem minmax(0,1fr) auto; gap: .4rem; }
+  .general-card-actions { align-items: stretch; }
+}
+@media (forced-colors: active) {
+  .general-card :disabled { color: GrayText; background: Canvas; border-color: GrayText; }
+  .general-enforced { border-color: CanvasText; }
+}

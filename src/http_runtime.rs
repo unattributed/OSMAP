@@ -165,6 +165,9 @@ where
             (HttpMethod::Post, "/settings/appearance") => {
                 self.handle_appearance_update(request, &context)
             }
+            (HttpMethod::Post, "/settings/composition") => {
+                self.handle_composition_preferences_update(request, &context)
+            }
             (HttpMethod::Post, "/settings/display") => {
                 self.handle_display_update(request, &context)
             }

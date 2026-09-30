@@ -114,6 +114,14 @@ where
                     };
                     if section == "appearance" {
                         crate::http_ui::render_appearance_page(&model, &presentation)
+                    } else if section == "general" {
+                        crate::http_ui::render_general_page(
+                            &model,
+                            &presentation,
+                            self.gateway
+                                .load_composition_preferences(context, &validated_session)
+                                .ok(),
+                        )
                     } else {
                         render_settings_page(&model)
                     }

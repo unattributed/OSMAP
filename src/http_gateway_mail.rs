@@ -15,6 +15,55 @@ fn mailbox_list_contains(mailboxes: &[MailboxEntry], mailbox_name: &str) -> bool
     mailboxes.iter().any(|mailbox| mailbox.name == mailbox_name)
 }
 
+// Called only after submission acceptance. An append error cannot establish
+// whether the backend stored the copy, and must never cause another dispatch.
+fn store_sent_copy(
+    context: &AuthenticationContext,
+    canonical_username: &str,
+    request: &ComposeRequest,
+    backend: &impl MessageAppendBackend,
+) -> (bool, LogEvent) {
+    let append_result = build_submission_message(canonical_username, request)
+        .map_err(|error| crate::mailbox::MailboxBackendError {
+            backend: "sent-copy-formatter",
+            reason: error.reason,
+        })
+        .and_then(|raw_message| MessageAppendRequest::new("Sent", raw_message))
+        .and_then(|append_request| {
+            backend.append_message(canonical_username, &append_request)?;
+            Ok(append_request.message.len())
+        });
+    let (stored, event) = match append_result {
+        Ok(message_bytes) => (
+            true,
+            LogEvent::new(
+                LogLevel::Info,
+                EventCategory::Submission,
+                "sent_copy_stored",
+                "outbound message accepted for submission; copy stored in Sent",
+            )
+            .with_field("message_bytes", message_bytes.to_string()),
+        ),
+        Err(error) => (
+            false,
+            LogEvent::new(
+                LogLevel::Warn,
+                EventCategory::Submission,
+                "sent_copy_store_failed",
+                "outbound message accepted for submission; Sent copy storage not confirmed",
+            )
+            .with_field("backend", error.backend),
+        ),
+    };
+    (
+        stored,
+        event
+            .with_field("canonical_username", canonical_username)
+            .with_field("mailbox_name", "Sent")
+            .with_field("request_id", context.request_id.clone()),
+    )
+}
+
 impl RuntimeBrowserGateway {
     fn expensive_route_deadline(&self) -> Instant {
         Instant::now() + Duration::from_secs(self.expensive_request_timeout_secs)
@@ -774,72 +823,13 @@ impl RuntimeBrowserGateway {
 
         match decision {
             SubmissionDecision::Submitted { .. } => {
-                let append_request = build_submission_message(
+                let (sent_copy_stored, sent_copy_event) = store_sent_copy(
+                    context,
                     &validated_session.record.canonical_username,
                     &request,
-                )
-                .map_err(|error| crate::mailbox::MailboxBackendError {
-                    backend: "sent-copy-formatter",
-                    reason: error.reason,
-                })
-                .and_then(|raw_message| MessageAppendRequest::new("Sent", raw_message));
-                match append_request {
-                    Ok(append_request) => {
-                        let message_bytes = append_request.message.len();
-                        match self.build_message_append_backend().append_message(
-                            &validated_session.record.canonical_username,
-                            &append_request,
-                        ) {
-                            Ok(()) => audit_events.push(
-                                LogEvent::new(
-                                    LogLevel::Info,
-                                    EventCategory::Submission,
-                                    "sent_copy_stored",
-                                    "outbound message copy stored in Sent",
-                                )
-                                .with_field(
-                                    "canonical_username",
-                                    validated_session.record.canonical_username.clone(),
-                                )
-                                .with_field("mailbox_name", "Sent")
-                                .with_field("message_bytes", message_bytes.to_string())
-                                .with_field("request_id", context.request_id.clone()),
-                            ),
-                            Err(error) => audit_events.push(
-                                LogEvent::new(
-                                    LogLevel::Warn,
-                                    EventCategory::Submission,
-                                    "sent_copy_store_failed",
-                                    "outbound delivery succeeded but Sent copy storage failed",
-                                )
-                                .with_field(
-                                    "canonical_username",
-                                    validated_session.record.canonical_username.clone(),
-                                )
-                                .with_field("mailbox_name", "Sent")
-                                .with_field("backend", error.backend)
-                                .with_field("reason", error.reason)
-                                .with_field("request_id", context.request_id.clone()),
-                            ),
-                        }
-                    }
-                    Err(error) => audit_events.push(
-                        LogEvent::new(
-                            LogLevel::Warn,
-                            EventCategory::Submission,
-                            "sent_copy_store_failed",
-                            "outbound delivery succeeded but Sent copy validation failed",
-                        )
-                        .with_field(
-                            "canonical_username",
-                            validated_session.record.canonical_username.clone(),
-                        )
-                        .with_field("mailbox_name", "Sent")
-                        .with_field("backend", error.backend)
-                        .with_field("reason", error.reason)
-                        .with_field("request_id", context.request_id.clone()),
-                    ),
-                }
+                    &self.build_message_append_backend(),
+                );
+                audit_events.push(sent_copy_event);
 
                 match throttle_service
                     .record_submission(context, &validated_session.record.canonical_username)
@@ -856,10 +846,16 @@ impl RuntimeBrowserGateway {
                 }
 
                 BrowserSendOutcome {
-                    decision: BrowserSendDecision::Submitted,
+                    decision: BrowserSendDecision::Submitted { sent_copy_stored },
                     audit_events,
                 }
             }
+            SubmissionDecision::Unconfirmed { public_reason } => BrowserSendOutcome {
+                decision: BrowserSendDecision::Unconfirmed {
+                    public_reason: public_reason.as_str().to_string(),
+                },
+                audit_events,
+            },
             SubmissionDecision::Denied { public_reason } => BrowserSendOutcome {
                 decision: BrowserSendDecision::Denied {
                     public_reason: public_reason.as_str().to_string(),
@@ -981,6 +977,108 @@ impl RuntimeBrowserGateway {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[derive(Default)]
+    struct StubSentAppendBackend {
+        fail: bool,
+        calls: std::cell::RefCell<Vec<(String, MessageAppendRequest)>>,
+    }
+
+    impl MessageAppendBackend for StubSentAppendBackend {
+        fn append_message(
+            &self,
+            canonical_username: &str,
+            request: &MessageAppendRequest,
+        ) -> Result<(), crate::mailbox::MailboxBackendError> {
+            self.calls
+                .borrow_mut()
+                .push((canonical_username.into(), request.clone()));
+            if self.fail {
+                Err(crate::mailbox::MailboxBackendError {
+                    backend: "synthetic-append",
+                    reason: "private backend error detail".into(),
+                })
+            } else {
+                Ok(())
+            }
+        }
+    }
+
+    #[test]
+    fn sent_copy_reports_confirmation_and_never_retries_append() {
+        let request = ComposeRequest::new_with_routing(
+            ComposePolicy::default(),
+            "bob@example.com",
+            "",
+            "hidden@example.com",
+            "Synthetic subject",
+            "Synthetic body",
+            vec![],
+        )
+        .unwrap();
+        for fail in [false, true] {
+            let backend = StubSentAppendBackend {
+                fail,
+                ..Default::default()
+            };
+            let (stored, event) =
+                store_sent_copy(&test_context(), "alice@example.com", &request, &backend);
+            assert_eq!(stored, !fail);
+            let calls = backend.calls.borrow();
+            assert_eq!(calls.len(), 1);
+            assert_eq!(calls[0].0, "alice@example.com");
+            assert_eq!(calls[0].1.mailbox_name, "Sent");
+            assert_eq!(
+                calls[0].1.message,
+                build_submission_message("alice@example.com", &request).unwrap()
+            );
+            assert!(!String::from_utf8_lossy(&calls[0].1.message).contains("Bcc:"));
+            assert_eq!(
+                event.action,
+                if fail {
+                    "sent_copy_store_failed"
+                } else {
+                    "sent_copy_stored"
+                }
+            );
+            let rendered =
+                crate::logging::Logger::new(crate::config::LogFormat::Text, LogLevel::Debug)
+                    .render_with_timestamp(&event, 8080);
+            assert!(rendered.contains("accepted for submission"));
+            for private in [
+                "private backend error detail",
+                "Synthetic subject",
+                "Synthetic body",
+                "hidden@example.com",
+            ] {
+                assert!(!rendered.contains(private));
+            }
+        }
+    }
+
+    #[test]
+    fn sent_copy_format_failure_does_not_append_or_claim_storage() {
+        let mut request = ComposeRequest::new(
+            ComposePolicy::default(),
+            "bob@example.com",
+            "Synthetic subject",
+            "**valid**",
+        )
+        .unwrap()
+        .with_body_format(crate::compose_format::BodyFormat::Formatted)
+        .unwrap();
+        request.body = "[bad](javascript:x)".into();
+        let backend = StubSentAppendBackend::default();
+        let (stored, event) =
+            store_sent_copy(&test_context(), "alice@example.com", &request, &backend);
+        assert!(!stored);
+        assert!(backend.calls.borrow().is_empty());
+        assert_eq!(event.action, "sent_copy_store_failed");
+        assert!(event
+            .fields
+            .iter()
+            .any(|field| field.key == "backend" && field.value == "sent-copy-formatter"));
+    }
 
     fn test_context() -> AuthenticationContext {
         AuthenticationContext::new(

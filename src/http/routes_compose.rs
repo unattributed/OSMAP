@@ -23,7 +23,7 @@ where
             };
 
         let success_message = if request.query_params.get("sent").map(String::as_str) == Some("1") {
-            Some("Message submission completed.")
+            Some("Message accepted for submission. A copy was stored in Sent. Delivery is not confirmed.")
         } else {
             None
         };
@@ -34,6 +34,7 @@ where
         let bcc_value = String::new();
         let mut subject_value = String::new();
         let mut body_value = String::new();
+        let mut body_format = crate::compose_format::BodyFormat::Plain;
         let mut source_mailbox_name: Option<String> = None;
         let mut source_uid: Option<u64> = None;
         let mut source_version = None;
@@ -118,7 +119,10 @@ where
                             ComposeIntent::ReplyAll => "Reply all",
                             ComposeIntent::Forward => "Forward",
                         };
-                        context_notice = draft.context_notice;
+                        context_notice = Some(match draft.context_notice {
+                            Some(notice) if !notice.is_empty() => format!("{notice} Replies and forwards start in Plain text to preserve quoted message text. Choosing Formatted text can interpret formatting marks in the quote."),
+                            _ => "Replies and forwards start in Plain text to preserve quoted message text. Choosing Formatted text can interpret formatting marks in the quote.".to_owned(),
+                        });
                         to_value = draft.to;
                         cc_value = draft.cc;
                         subject_value = draft.subject;
@@ -153,7 +157,12 @@ where
                     }
                 }
             }
-            Ok(None) => {}
+            Ok(None) => {
+                body_format = match self.gateway.load_composition_preferences(context, &validated_session) {
+                    Ok(value) => value.default_body_format,
+                    Err(_) => return HandledHttpResponse { response: html_response(503, "Service Unavailable", "Composition Preferences Unavailable", "<p>Your default composition format could not be loaded. No draft was changed.</p>"), audit_events },
+                };
+            }
             Err(reason) => {
                 return HandledHttpResponse {
                     response: html_response(
@@ -191,7 +200,7 @@ where
                     bcc_value: &bcc_value,
                     subject_value: &subject_value,
                     body_value: &body_value,
-                    body_format: crate::compose_format::BodyFormat::Plain,
+                    body_format,
                     preview: false,
                     preflight: false,
                     draft_id: None,
@@ -512,18 +521,53 @@ where
         audit_events.extend(outcome.audit_events);
 
         let mut handled = match outcome.decision {
-            BrowserSendDecision::Submitted => {
-                if let (Some(draft_id), Some(revision)) = (draft_id.as_deref(), draft_revision) {
-                    let delete_outcome =
-                        self.gateway
-                            .delete_draft(context, &validated_session, draft_id, revision);
-                    audit_events.extend(delete_outcome.audit_events);
+            BrowserSendDecision::Submitted { sent_copy_stored } => {
+                let mut draft_cleanup_confirmed = draft_id.is_none();
+                // Keep the saved recovery copy if Sent storage is unconfirmed.
+                if sent_copy_stored {
+                    if let (Some(draft_id), Some(revision)) = (draft_id.as_deref(), draft_revision)
+                    {
+                        let delete_outcome = self.gateway.delete_draft(
+                            context,
+                            &validated_session,
+                            draft_id,
+                            revision,
+                        );
+                        audit_events.extend(delete_outcome.audit_events);
+                        draft_cleanup_confirmed = matches!(
+                            delete_outcome.decision,
+                            BrowserDraftDeleteDecision::Deleted
+                                | BrowserDraftDeleteDecision::NotFound
+                        );
+                    }
                 }
+                let response = if sent_copy_stored && draft_cleanup_confirmed {
+                    redirect_response(303, "See Other", "/compose?sent=1")
+                } else {
+                    submission_result_response(
+                        &validated_session,
+                        &form,
+                        &send_attachments,
+                        crate::compose_result_ui::SubmissionResult::Accepted {
+                            sent_copy_stored,
+                            draft_cleanup_confirmed,
+                        },
+                    )
+                };
                 HandledHttpResponse {
-                    response: redirect_response(303, "See Other", "/compose?sent=1"),
+                    response,
                     audit_events,
                 }
             }
+            BrowserSendDecision::Unconfirmed { .. } => HandledHttpResponse {
+                response: submission_result_response(
+                    &validated_session,
+                    &form,
+                    &send_attachments,
+                    crate::compose_result_ui::SubmissionResult::Unconfirmed,
+                ),
+                audit_events,
+            },
             BrowserSendDecision::Denied {
                 public_reason,
                 retry_after_seconds,
@@ -720,4 +764,44 @@ pub(super) fn selected_original_attachment_parts(
         parts.push(value.clone());
     }
     Ok(parts)
+}
+
+// A read-only result has no Send form or local compose script. It preserves
+// the submitted text without converting an uncertain outcome into a retry.
+fn submission_result_response(
+    session: &ValidatedSession,
+    form: &BTreeMap<String, String>,
+    attachments: &[UploadedAttachment],
+    result: crate::compose_result_ui::SubmissionResult,
+) -> HttpResponse {
+    use crate::compose_result_ui::{ComposeResultModel, SubmissionResult};
+    let (status, reason, title) = match result {
+        SubmissionResult::Accepted { .. } => (200, "OK", "Message accepted for submission"),
+        SubmissionResult::Unconfirmed => (
+            503,
+            "Service Unavailable",
+            "Submission could not be confirmed",
+        ),
+    };
+    html_response(
+        status,
+        reason,
+        title,
+        crate::compose_result_ui::render(&ComposeResultModel {
+            account: &session.record.canonical_username,
+            csrf: &session.record.csrf_token,
+            result,
+            draft_id: form
+                .get("draft_id")
+                .filter(|id| !id.trim().is_empty())
+                .map(String::as_str),
+            to: form.get("to").map(String::as_str).unwrap_or_default(),
+            cc: form.get("cc").map(String::as_str).unwrap_or_default(),
+            bcc: form.get("bcc").map(String::as_str).unwrap_or_default(),
+            subject: form.get("subject").map(String::as_str).unwrap_or_default(),
+            body: form.get("body").map(String::as_str).unwrap_or_default(),
+            body_format: super::compose_actions::body_format(form).unwrap_or_default(),
+            attachments,
+        }),
+    )
 }
