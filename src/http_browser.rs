@@ -181,6 +181,15 @@ pub trait BrowserGateway {
         draft_id: &str,
         expected_revision: u64,
     ) -> BrowserDraftDeleteOutcome;
+
+    fn set_draft_star(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        draft_id: &str,
+        expected_revision: u64,
+        starred: bool,
+    ) -> BrowserDraftSaveOutcome;
 }
 
 /// Draft save fields parsed by the browser route layer.

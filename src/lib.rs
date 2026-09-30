@@ -13,6 +13,7 @@ pub mod config;
 pub mod contacts;
 pub mod draft;
 pub mod draft_content;
+mod draft_list;
 pub mod error;
 pub mod html;
 pub mod http;

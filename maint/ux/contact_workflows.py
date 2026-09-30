@@ -114,6 +114,7 @@ def main():
             assert "Synthetic contact draft" in page.locator("main").inner_text()
             assert "private@example.test" not in page.locator("main").inner_text()
             page.screenshot(path=str(args.output / "drafts-light-1600.png"), full_page=True)
+            page.locator(".draft-discard summary").click()
             page.get_by_role("link", name="Resume", exact=True).click()
             page.wait_for_load_state("networkidle")
             assert page.get_by_label("Body", exact=True).input_value() == "Public synthetic authoring text"

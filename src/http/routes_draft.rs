@@ -1,6 +1,7 @@
 //! Draft route handlers for the bounded browser runtime.
 
 use super::*;
+use crate::draft_list::DraftListView;
 
 impl<G> BrowserApp<G>
 where
@@ -17,7 +18,23 @@ where
                 Ok(result) => result,
                 Err(response) => return response,
             };
-
+        let view = match DraftListView::parse(&request.query_params) {
+            Ok(view) => view,
+            Err(message) => {
+                return HandledHttpResponse {
+                    response: html_response(
+                        400,
+                        "Bad Request",
+                        "Drafts",
+                        TrustedHtml::from_template(format!(
+                            "<p>{}</p><p><a href=\"/drafts\">Return to Drafts</a></p>",
+                            escape_html(message)
+                        )),
+                    ),
+                    audit_events,
+                }
+            }
+        };
         let outcome = self.gateway.list_drafts(context, &validated_session);
         audit_events.extend(outcome.audit_events);
 
@@ -26,6 +43,11 @@ where
                 canonical_username,
                 drafts,
             } if canonical_username == validated_session.record.canonical_username => {
+                let total_count = drafts.len();
+                let total_bytes = drafts.iter().fold(0_u64, |total, draft| {
+                    total.saturating_add(draft.storage_bytes)
+                });
+                let drafts = view.select(&drafts);
                 HandledHttpResponse {
                     response: html_response(
                         200,
@@ -37,6 +59,9 @@ where
                             success_message: None,
                             error_message: None,
                             drafts: &drafts,
+                            view: &view,
+                            total_count,
+                            total_bytes,
                         }),
                     ),
                     audit_events,
@@ -63,6 +88,120 @@ where
                 ),
                 audit_events,
             },
+        }
+    }
+
+    pub(super) fn handle_draft_star(
+        &self,
+        request: &HttpRequest,
+        context: &AuthenticationContext,
+    ) -> HandledHttpResponse {
+        let (session, mut audit_events) = match self.require_validated_session(request, context) {
+            Ok(value) => value,
+            Err(response) => return response,
+        };
+        if !allows_urlencoded_request_body(request.headers.get("content-type").map(String::as_str))
+        {
+            return HandledHttpResponse {
+                response: invalid_draft_star(),
+                audit_events,
+            };
+        }
+        let form = match parse_urlencoded_form(&request.body, 7, self.policy.max_body_bytes) {
+            Ok(form) => form,
+            Err(_) => {
+                return HandledHttpResponse {
+                    response: invalid_draft_star(),
+                    audit_events,
+                }
+            }
+        };
+        if let Some(response) = self.require_valid_csrf(
+            request,
+            form.get("csrf_token").map(String::as_str),
+            &session,
+            context,
+        ) {
+            return response;
+        }
+        if form.len() != 7
+            || form.keys().any(|key| {
+                !matches!(
+                    key.as_str(),
+                    "csrf_token"
+                        | "draft_id"
+                        | "draft_revision"
+                        | "starred"
+                        | "filter"
+                        | "sort"
+                        | "q"
+                )
+            })
+        {
+            return HandledHttpResponse {
+                response: invalid_draft_star(),
+                audit_events,
+            };
+        }
+        let Some(id) = form.get("draft_id") else {
+            return HandledHttpResponse {
+                response: invalid_draft_star(),
+                audit_events,
+            };
+        };
+        let revision = match submitted_draft_revision(&form) {
+            Ok(Some(value)) => value,
+            _ => {
+                return HandledHttpResponse {
+                    response: invalid_draft_star(),
+                    audit_events,
+                }
+            }
+        };
+        let starred = match form.get("starred").map(String::as_str) {
+            Some("1") => true,
+            Some("0") => false,
+            _ => {
+                return HandledHttpResponse {
+                    response: invalid_draft_star(),
+                    audit_events,
+                }
+            }
+        };
+        let query = form
+            .iter()
+            .filter(|(key, _)| matches!(key.as_str(), "filter" | "sort" | "q"))
+            .map(|(key, value)| (key.clone(), value.clone()))
+            .collect();
+        let view = match DraftListView::parse(&query) {
+            Ok(view) => view,
+            Err(_) => {
+                return HandledHttpResponse {
+                    response: invalid_draft_star(),
+                    audit_events,
+                }
+            }
+        };
+        let destination = format!(
+            "/drafts?filter={}&sort={}&q={}",
+            view.filter.value(),
+            view.sort.value(),
+            url_encode(&view.query)
+        );
+        let outcome = self
+            .gateway
+            .set_draft_star(context, &session, id, revision, starred);
+        audit_events.extend(outcome.audit_events);
+        let response = match outcome.decision {
+            BrowserDraftSaveDecision::Saved { .. } => redirect_response(303, "See Other", &destination),
+            BrowserDraftSaveDecision::Denied { public_reason } => html_response(
+                if public_reason == "draft_conflict" { 409 } else { 503 },
+                if public_reason == "draft_conflict" { "Conflict" } else { "Service Unavailable" },
+                "Draft Update Unavailable", TrustedHtml::from_template(format!("<p>The draft could not be updated. Reload the list to check its saved state before trying again.</p><p><a href=\"{}\">Reload Drafts</a></p>", escape_html(&destination)))),
+        };
+        HandledHttpResponse {
+            response,
+            audit_events,
         }
     }
 
@@ -574,7 +713,21 @@ where
         ) {
             return response;
         }
-        if form.len() != 4 || form.get("confirm").map(String::as_str) != Some("1") {
+        if !matches!(form.len(), 4 | 7)
+            || form.get("confirm").map(String::as_str) != Some("1")
+            || form.keys().any(|key| {
+                !matches!(
+                    key.as_str(),
+                    "csrf_token"
+                        | "draft_id"
+                        | "draft_revision"
+                        | "confirm"
+                        | "filter"
+                        | "sort"
+                        | "q"
+                )
+            })
+        {
             return HandledHttpResponse {
                 response: invalid_draft_delete(),
                 audit_events,
@@ -588,6 +741,24 @@ where
                     audit_events,
                 }
             }
+        };
+        let destination = if form.len() == 7 {
+            let query = form
+                .iter()
+                .filter(|(key, _)| matches!(key.as_str(), "filter" | "sort" | "q"))
+                .map(|(key, value)| (key.clone(), value.clone()))
+                .collect();
+            match DraftListView::parse(&query) {
+                Ok(view) => view.href(),
+                Err(_) => {
+                    return HandledHttpResponse {
+                        response: invalid_draft_delete(),
+                        audit_events,
+                    }
+                }
+            }
+        } else {
+            "/drafts".into()
         };
         let Some(draft_id) = form.get("draft_id").map(String::as_str) else {
             return HandledHttpResponse {
@@ -613,7 +784,7 @@ where
         match outcome.decision {
             BrowserDraftDeleteDecision::Deleted | BrowserDraftDeleteDecision::NotFound => {
                 HandledHttpResponse {
-                    response: redirect_response(303, "See Other", "/drafts"),
+                    response: redirect_response(303, "See Other", &destination),
                     audit_events,
                 }
             }
@@ -664,4 +835,8 @@ fn invalid_draft_delete() -> HttpResponse {
         "Invalid Draft Request",
         "<p>Use the current draft's Delete confirmation. Nothing was deleted.</p>",
     )
+}
+
+fn invalid_draft_star() -> HttpResponse {
+    html_response(400, "Bad Request", "Invalid Draft Request", "<p>Use the current draft's Star control. No draft was changed.</p><p><a href=\"/drafts\">Return to Drafts</a></p>")
 }

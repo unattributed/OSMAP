@@ -159,6 +159,8 @@ where
             (HttpMethod::Post, "/send") => self.handle_send(request, &context),
             (HttpMethod::Post, "/drafts/save") => self.handle_draft_save(request, &context),
             (HttpMethod::Post, "/drafts/delete") => self.handle_draft_delete(request, &context),
+            (HttpMethod::Post, "/drafts/star") => self.handle_draft_star(request, &context),
+            (HttpMethod::Post, "/drafts/discard") => self.handle_draft_selection(request, &context),
             (HttpMethod::Post, "/sessions/revoke") => self.handle_session_revoke(request, &context),
             (HttpMethod::Post, "/settings/appearance") => {
                 self.handle_appearance_update(request, &context)

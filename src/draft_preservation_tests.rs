@@ -89,9 +89,9 @@ fn legacy_record_migrates_only_after_a_revision_zero_save() {
     let draft = record(&draft_id(35), "alice@example.com", 100);
     store.save(&draft, 100).unwrap();
     let path = store.metadata_path("alice@example.com", &draft.draft_id);
-    let v5 = fs::read_to_string(&path).unwrap();
+    let current = fs::read_to_string(&path).unwrap();
     for version in ["1", "2", "3", "4"] {
-        let legacy = v5.replace("version=5", &format!("version={version}")).replace("revision=1\n", "");
+        let legacy = current.replace("version=6", &format!("version={version}")).replace("revision=1\n", "").replace("starred=0\n", "");
         fs::write(&path, &legacy).unwrap();
         let mut loaded = store.load("alice@example.com", &draft.draft_id, 100).unwrap().unwrap();
         assert_eq!(loaded.revision, Some(0));
@@ -102,6 +102,15 @@ fn legacy_record_migrates_only_after_a_revision_zero_save() {
         assert_eq!(saved.revision, Some(1));
         assert!(saved.request.recipients_text.is_empty());
     }
+    let v5 = fs::read_to_string(&path).unwrap().replace("version=6", "version=5").replace("starred=0\n", "");
+    fs::write(&path, &v5).unwrap();
+    let mut restored = store.load("alice@example.com", &draft.draft_id, 101).unwrap().unwrap();
+    assert!(restored.request.recipients_text.is_empty());
+    assert!(!restored.starred);
+    assert_eq!(restored.revision, Some(1));
+    restored.starred = true;
+    store.save(&restored, 102).unwrap();
+    assert!(store.load("alice@example.com", &draft.draft_id, 102).unwrap().unwrap().starred);
     fs::remove_dir_all(directory).unwrap();
 }
 

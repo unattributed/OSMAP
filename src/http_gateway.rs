@@ -376,4 +376,21 @@ impl BrowserGateway for RuntimeBrowserGateway {
     ) -> BrowserDraftDeleteOutcome {
         self.delete_draft_impl(context, validated_session, draft_id, expected_revision)
     }
+
+    fn set_draft_star(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        draft_id: &str,
+        expected_revision: u64,
+        starred: bool,
+    ) -> BrowserDraftSaveOutcome {
+        self.set_draft_star_impl(
+            context,
+            validated_session,
+            draft_id,
+            expected_revision,
+            starred,
+        )
+    }
 }

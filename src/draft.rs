@@ -81,6 +81,7 @@ pub struct DraftRecord {
     pub expires_at: u64,
     /// None denotes a new draft; Some(0) denotes a legacy persisted record.
     pub revision: Option<u64>,
+    pub starred: bool,
     pub request: DraftContent,
     pub source_attachments: Option<DraftSourceAttachments>,
 }
@@ -165,6 +166,7 @@ impl DraftRecord {
             updated_at: input.now,
             expires_at: input.now.saturating_add(policy.max_age_seconds),
             revision: None,
+            starred: false,
             request,
             source_attachments,
         })
@@ -178,6 +180,7 @@ impl DraftRecord {
             updated_at: self.updated_at,
             expires_at: self.expires_at,
             revision: self.revision.unwrap_or(0),
+            starred: self.starred,
             storage_bytes: serialize_draft_metadata(self).len() as u64
                 + self
                     .request
@@ -190,7 +193,12 @@ impl DraftRecord {
             subject: self.request.subject.clone(),
             subject_len: self.request.subject.len(),
             body_len: self.request.body.len(),
-            attachment_count: self.request.attachments.len(),
+            attachment_count: self.request.attachments.len()
+                + self
+                    .source_attachments
+                    .as_ref()
+                    .map(|source| source.part_paths.len())
+                    .unwrap_or_default(),
             total_attachment_bytes: self
                 .request
                 .attachments
@@ -209,6 +217,7 @@ pub struct DraftSummary {
     pub updated_at: u64,
     pub expires_at: u64,
     pub revision: u64,
+    pub starred: bool,
     pub storage_bytes: u64,
     pub recipient_count: usize,
     pub recipient_preview: Option<String>,
@@ -785,8 +794,9 @@ fn validate_source_attachments(
 
 fn serialize_draft_metadata(record: &DraftRecord) -> String {
     let mut content = format!(
-        "version=5\n\
+        "version=6\n\
 revision={}\n\
+starred={}\n\
 draft_id={}\n\
 canonical_username_hex={}\n\
 created_at={}\n\
@@ -799,6 +809,7 @@ subject_hex={}\n\
 body_hex={}\n\
 attachment_count={}\n",
         record.revision.unwrap_or(0),
+        u8::from(record.starred),
         record.draft_id,
         hex_lower(record.canonical_username.as_bytes()),
         record.created_at,
@@ -861,6 +872,7 @@ fn parse_draft_metadata(
 ) -> Result<Option<DraftRecord>, DraftError> {
     let mut version = None;
     let mut revision = None;
+    let mut starred = None;
     let mut draft_id = None;
     let mut canonical_username = None;
     let mut created_at = None;
@@ -906,6 +918,17 @@ fn parse_draft_metadata(
         match key {
             "version" => version = Some(value.to_string()),
             "revision" => revision = Some(parse_u64_field("revision", value)?),
+            "starred" => {
+                starred = Some(match value {
+                    "0" => false,
+                    "1" => true,
+                    _ => {
+                        return Err(DraftError {
+                            reason: "invalid draft star state".into(),
+                        })
+                    }
+                })
+            }
             "draft_id" => draft_id = Some(value.to_string()),
             "canonical_username_hex" => canonical_username = Some(decode_hex_string(value)?),
             "created_at" => created_at = Some(parse_u64_field("created_at", value)?),
@@ -963,7 +986,7 @@ fn parse_draft_metadata(
     }
     if !matches!(
         version.as_deref(),
-        Some("1") | Some("2") | Some("3") | Some("4") | Some("5")
+        Some("1") | Some("2") | Some("3") | Some("4") | Some("5") | Some("6")
     ) {
         return Err(DraftError {
             reason: "unsupported draft metadata version".to_string(),
@@ -972,7 +995,7 @@ fn parse_draft_metadata(
 
     let draft_id = required_field("draft_id", draft_id)?;
     let revision = match (version.as_deref(), revision) {
-        (Some("5"), Some(value)) if value > 0 => value,
+        (Some("5" | "6"), Some(value)) if value > 0 => value,
         (Some("1" | "2" | "3" | "4"), None) => 0,
         _ => {
             return Err(DraftError {
@@ -980,10 +1003,19 @@ fn parse_draft_metadata(
             })
         }
     };
+    let starred = match (version.as_deref(), starred) {
+        (Some("6"), Some(value)) => value,
+        (Some("1" | "2" | "3" | "4" | "5"), None) => false,
+        _ => {
+            return Err(DraftError {
+                reason: "invalid or incompatible draft star state".into(),
+            })
+        }
+    };
     let reply_thread = match (reply_parent, reply_references, reply_shortened) {
         (None, None, None) => None,
         (Some(parent), Some(references), Some(shortened))
-            if matches!(version.as_deref(), Some("4" | "5")) =>
+            if matches!(version.as_deref(), Some("4" | "5" | "6")) =>
         {
             Some(
                 crate::reply_thread::ReplyThread::from_stored(
@@ -1078,7 +1110,7 @@ fn parse_draft_metadata(
         reason: error.reason,
     })?;
     request.reply_thread = reply_thread;
-    if version.as_deref() != Some("5") {
+    if !matches!(version.as_deref(), Some("5" | "6")) {
         crate::send::ComposeRequest::new_with_routing(
             policy.compose_policy,
             &request.recipients_text,
@@ -1131,6 +1163,7 @@ fn parse_draft_metadata(
         updated_at: required_field("updated_at", updated_at)?,
         expires_at: required_field("expires_at", expires_at)?,
         revision: Some(revision),
+        starred,
         request,
         source_attachments,
     }))
@@ -1495,7 +1528,8 @@ mod tests {
         };
         assert!(parse(
             &metadata
-                .replace("version=5", "version=3")
+                .replace("version=6", "version=3")
+                .replace("starred=0\n", "")
                 .replace("revision=1\n", "")
         )
         .is_err());
@@ -1514,7 +1548,8 @@ mod tests {
         .is_err());
         draft.request.reply_thread = None;
         let legacy = serialize_draft_metadata(&draft)
-            .replace("version=5", "version=3")
+            .replace("version=6", "version=3")
+            .replace("starred=0\n", "")
             .replace("revision=1\n", "");
         draft.revision = Some(0);
         assert_eq!(parse(&legacy).unwrap().unwrap(), draft);
@@ -1586,6 +1621,7 @@ mod tests {
                 .expect("metadata should be readable");
 
         assert_eq!(loaded.source_attachments, draft.source_attachments);
+        assert_eq!(loaded.summary().attachment_count, 1);
         assert!(metadata.contains("source_attachment_count=1"));
         assert!(!metadata.contains("attachment bytes"));
         assert!(!metadata.contains("%PDF"));

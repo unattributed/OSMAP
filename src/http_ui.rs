@@ -5,6 +5,7 @@
 
 use crate::appearance::AppearancePreference;
 use crate::draft::DraftSummary;
+use crate::draft_list::{DraftFilter, DraftListView, DraftSort};
 use crate::html::TrustedHtml;
 use crate::http::BrowserVisibleSession;
 use crate::http_support::{escape_html, url_encode};
@@ -56,6 +57,9 @@ pub(crate) struct DraftListPageModel<'a> {
     pub success_message: Option<&'a str>,
     pub error_message: Option<&'a str>,
     pub drafts: &'a [DraftSummary],
+    pub view: &'a DraftListView,
+    pub total_count: usize,
+    pub total_bytes: u64,
 }
 
 /// Small view model for mailbox message-list sort links.
@@ -1755,36 +1759,44 @@ pub(crate) fn render_draft_list_page(model: &DraftListPageModel<'_>) -> TrustedH
         rows.push_str(&format!(
             concat!(
                 "<tr>",
-                "<td class=\"draft-recipient\" dir=\"auto\">{}</td>",
+                "<td class=\"draft-select\"><input type=\"checkbox\" form=\"draft-selection\" name=\"selected_{}\" value=\"{}\" aria-label=\"Select draft: {}\"></td>",
+                "<td class=\"draft-star\"><form method=\"post\" action=\"/drafts/star\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"draft_id\" value=\"{}\"><input type=\"hidden\" name=\"draft_revision\" value=\"{}\"><input type=\"hidden\" name=\"starred\" value=\"{}\">{}<button type=\"submit\" aria-label=\"{}\" aria-pressed=\"{}\" title=\"{}\">{}</button></form></td>",
+                "<td class=\"draft-recipient\" dir=\"auto\"><div class=\"draft-recipient-person\"><span class=\"sender-avatar\" aria-hidden=\"true\">{}</span><span>{}</span></div></td>",
                 "<td class=\"draft-subject\"><a href=\"{}\" dir=\"auto\">{}</a><span class=\"muted\">Draft saved, continue editing.</span></td>",
                 "<td>{}</td>",
                 "<td><span class=\"badge\">Draft</span></td>",
                 "<td><time datetime=\"{}\">{}</time></td>",
                 "<td>",
-                "<a class=\"draft-resume\" href=\"{}\">Resume</a><details class=\"draft-discard\"><summary>Discard</summary><p>Discard this saved draft?</p>",
+                "<details class=\"draft-discard\" name=\"draft-actions\"><summary aria-label=\"Draft actions\" title=\"Draft actions\">⋮</summary><div class=\"draft-action-menu\"><a class=\"draft-resume\" href=\"{}\">Resume</a><p>Discard this saved draft?</p>",
                 "<form method=\"post\" action=\"/drafts/delete\">",
                 "<input type=\"hidden\" name=\"csrf_token\" value=\"{}\">",
                 "<input type=\"hidden\" name=\"draft_id\" value=\"{}\">",
                 "<input type=\"hidden\" name=\"draft_revision\" value=\"{}\">",
+                "{}",
                 "<button type=\"submit\" name=\"confirm\" value=\"1\">Delete</button>",
-                "</form></details>",
+                "</form></div></details>",
                 "</td>",
                 "</tr>"
             ),
+            escape_html(&draft.draft_id), draft.revision, escape_html(if draft.subject.is_empty() { "(No subject)" } else { &draft.subject }),
+            escape_html(model.csrf_token), escape_html(&draft.draft_id), draft.revision, u8::from(!draft.starred), render_draft_list_state(model.view),
+            if draft.starred { "Unstar draft" } else { "Star draft" }, draft.starred, if draft.starred { "Unstar draft" } else { "Star draft" }, if draft.starred { "★" } else { "☆" },
+            escape_html(&sender_initials(draft.recipient_preview.as_deref())),
             escape_html(draft.recipient_preview.as_deref().unwrap_or(if draft.recipient_count == 0 { "No recipients yet" } else { "Undisclosed recipients" })),
             escape_html(&resume_href),
             escape_html(if draft.subject.is_empty() { "(No subject)" } else { &draft.subject }),
-            draft.attachment_count,
+            if draft.attachment_count > 0 { format!("<span class=\"draft-attachment-count\" aria-label=\"{} attachments\">📎 {}</span>", draft.attachment_count, draft.attachment_count) } else { "<span class=\"muted\" aria-label=\"No attachments\">—</span>".into() },
             crate::logging::format_unix_timestamp_utc(draft.updated_at),
             crate::logging::format_unix_timestamp_utc(draft.updated_at).replace('T', " ").replace('Z', " UTC"),
             escape_html(&resume_href),
             escape_html(model.csrf_token),
             escape_html(&draft.draft_id),
             draft.revision,
+            render_draft_list_state(model.view),
         ));
     }
     if rows.is_empty() {
-        rows.push_str("<tr><td colspan=\"6\" class=\"muted\">No saved drafts.</td></tr>");
+        rows.push_str(if model.total_count == 0 { "<tr><td colspan=\"8\" class=\"muted\">No saved drafts.</td></tr>" } else { "<tr><td colspan=\"8\" class=\"muted\">No drafts match these filters. <a href=\"/drafts\">Show all drafts</a>.</td></tr>" });
     }
 
     TrustedHtml::from_template(format!(
@@ -1792,19 +1804,41 @@ pub(crate) fn render_draft_list_page(model: &DraftListPageModel<'_>) -> TrustedH
             "{}",
             "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
             "<div class=\"page-intro\"><h1>Drafts</h1><p>Resume, organize and safely discard saved messages.</p></div>{}{}",
-            "<div class=\"draft-list-toolbar\"><span>Saved drafts ({})</span><a class=\"button-link primary-button\" href=\"/compose\">+ New Message</a></div>",
+            "<div class=\"draft-list-toolbar\"><form method=\"get\" action=\"/drafts\"><label class=\"sr-only\" for=\"draft-filter\">Draft filter</label><select id=\"draft-filter\" name=\"filter\">{}</select><label class=\"sr-only\" for=\"draft-sort\">Draft order</label><select id=\"draft-sort\" name=\"sort\">{}</select><label class=\"sr-only\" for=\"draft-query\">Search drafts</label><input id=\"draft-query\" name=\"q\" value=\"{}\" maxlength=\"200\" placeholder=\"Search subjects or recipients\"><button type=\"submit\">Apply</button></form><a class=\"button-link primary-button\" href=\"/compose\">+ New Message</a></div>",
             "<div class=\"table-wrap draft-list\" role=\"region\" aria-label=\"Saved drafts\" tabindex=\"0\"><table>",
-            "<thead><tr><th>Recipient</th><th>Subject</th><th>Attachment</th><th>Status</th><th>Saved</th><th>Actions</th></tr></thead>",
+            "<thead><tr><th><span class=\"sr-only\">Select</span></th><th><span class=\"sr-only\">Star</span></th><th>Recipient</th><th>Subject</th><th>Attachment</th><th>Status</th><th>Saved</th><th>Actions</th></tr></thead>",
             "<tbody>{}</tbody>",
             "</table></div>",
+            "<p class=\"draft-list-status muted\" role=\"status\">Showing {} of {} saved drafts · Draft storage: {} of 50 MiB</p>",
+            "<form id=\"draft-selection\" class=\"draft-selection-actions\" method=\"post\" action=\"/drafts/discard\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\">{}<p class=\"muted\">Select up to 10 drafts to discard together.</p><button type=\"submit\" name=\"stage\" value=\"review\">Review discard</button></form>",
             "</main>"
         ),
         app_header(model.canonical_username, model.csrf_token, "drafts"),
         success_banner,
         error_banner,
-        model.drafts.len(),
+        DraftFilter::ALL.iter().map(|filter| format!("<option value=\"{}\"{}>{}</option>", filter.value(), if *filter == model.view.filter { " selected" } else { "" }, filter.label())).collect::<String>(),
+        DraftSort::ALL.iter().map(|sort| format!("<option value=\"{}\"{}>{}</option>", sort.value(), if *sort == model.view.sort { " selected" } else { "" }, sort.label())).collect::<String>(),
+        escape_html(&model.view.query),
         rows,
+        model.drafts.len(),
+        model.total_count,
+        if model.total_bytes < 1024 { format!("{} B", model.total_bytes) } else if model.total_bytes < 1024 * 1024 { format!("{} KiB", model.total_bytes.div_ceil(1024)) } else { format!("{:.1} MiB", model.total_bytes as f64 / (1024.0 * 1024.0)) },
+        escape_html(model.csrf_token), render_draft_list_state(model.view),
     ))
+}
+
+fn render_draft_list_state(view: &DraftListView) -> String {
+    format!("<input type=\"hidden\" name=\"filter\" value=\"{}\"><input type=\"hidden\" name=\"sort\" value=\"{}\"><input type=\"hidden\" name=\"q\" value=\"{}\">", view.filter.value(), view.sort.value(), escape_html(&view.query))
+}
+
+pub(crate) fn render_draft_selection_review(
+    account: &str,
+    csrf: &str,
+    drafts: &[DraftSummary],
+    view: &DraftListView,
+) -> TrustedHtml {
+    let rows: String = drafts.iter().map(|draft| format!("<li><strong dir=\"auto\">{}</strong><span class=\"muted\"> · {} attachment(s)</span><input type=\"hidden\" name=\"selected_{}\" value=\"{}\"></li>", escape_html(if draft.subject.is_empty() { "(No subject)" } else { &draft.subject }), draft.attachment_count, escape_html(&draft.draft_id), draft.revision)).collect();
+    TrustedHtml::from_template(format!("{}<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Discard selected drafts?</h1><p>Review these {} saved drafts before discarding their text and saved attachments.</p></div><section class=\"content-pane\"><form method=\"post\" action=\"/drafts/discard\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\">{}<ul class=\"draft-discard-review\">{}</ul><p>Discard cannot be undone. If a draft changes, discard stops; any earlier completed deletions remain.</p><div class=\"inline-actions\"><a class=\"button-link\" href=\"{}\">Keep drafts</a><button type=\"submit\" name=\"stage\" value=\"confirm\">Discard {} drafts</button></div></form></section></main>", app_header(account, csrf, "drafts"), drafts.len(), escape_html(csrf), render_draft_list_state(view), rows, escape_html(&view.href()), drafts.len()))
 }
 
 /// Renders the first bounded end-user settings page.

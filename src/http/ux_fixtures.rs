@@ -187,6 +187,9 @@ fn ux_synthetic_route_baselines() {
             200,
         ),
         ("drafts-empty", "/drafts", true, 200),
+        ("drafts-populated", "/drafts", true, 200),
+        ("drafts-filtered-empty", "/drafts?filter=starred&q=NoMatch", true, 200),
+        ("drafts-review", "/drafts/discard", true, 200),
         ("settings", "/settings", true, 200),
         ("settings-long-identity", "/settings", true, 200),
         (
@@ -266,12 +269,15 @@ fn ux_synthetic_route_baselines() {
             "archive-unavailable" => headers[0] = ("User-Agent", "OSMAP/SettingsUnavailable"),
             _ => {}
         }
-        let method = if name == "login-error" || name.starts_with("move-") {
+        let method = if name == "login-error" || name.starts_with("move-") || name == "drafts-review" {
             "POST"
         } else {
             "GET"
         };
-        let body = if name.starts_with("move-") {
+        let body = if name == "drafts-review" {
+            headers.push(("Origin", "https://localhost"));
+            format!("csrf_token={}&stage=review&filter=all&sort=newest&q=&selected_{:032x}=1&selected_{:032x}=1", StubGateway::validated_session().record.csrf_token, 1, 2)
+        } else if name.starts_with("move-") {
             headers.push(("Origin", "https://localhost"));
             let selection = if name == "move-partial" {
                 "uid_9=9&uid_10=10&uid_11=11"
@@ -319,7 +325,24 @@ fn ux_synthetic_route_baselines() {
                 .headers
                 .insert("host".to_string(), "unaccepted.example.test".to_string());
         }
-        let response = app().handle_request(&fixture_request, "127.0.0.1");
+        let fixture_app = app();
+        if matches!(name, "drafts-populated" | "drafts-filtered-empty" | "drafts-review") {
+            let mut drafts = fixture_app.gateway.drafts.lock().unwrap();
+            for (index, subject) in ["Project notes", "Security outline", "Meeting notes", "Vendor assessment", "Policy draft", "Quarterly update", "Personal notes", "Release checklist"].iter().enumerate() {
+                let id = format!("{:032x}", index + 1);
+                let mut draft = DraftRecord::new(DraftPolicy::default(), DraftRecordInput {
+                    draft_id: id.clone(), canonical_username: "alice@example.com".into(), now: 1_790_000_000 - index as u64 * 86_400,
+                    recipients_text: format!("Synthetic Recipient {} <recipient{}@example.test>", index + 1, index + 1),
+                    cc_text: String::new(), bcc_text: String::new(), subject: subject.to_string(), body: "Public synthetic fixture text".into(),
+                    attachments: if index % 3 == 0 { vec![UploadedAttachment::new(ComposePolicy::default(), "synthetic.txt", "text/plain", b"public synthetic file".to_vec()).unwrap()] } else { vec![] },
+                    source_attachments: None,
+                }).unwrap();
+                draft.revision = Some(1);
+                draft.starred = index == 1;
+                drafts.insert(id, draft);
+            }
+        }
+        let response = fixture_app.handle_request(&fixture_request, "127.0.0.1");
         assert_eq!(response.response.status_code, expected_status, "{name}");
         let csp = response
             .response

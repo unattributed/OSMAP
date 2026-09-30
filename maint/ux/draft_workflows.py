@@ -147,14 +147,96 @@ def main():
             page.screenshot(path=str(args.output / "drafts-restarted-light-1600.png"), full_page=True)
             checks.append("process restart retains draft text and both files; incomplete Send refuses without deleting it")
             visit(page, "/compose")
+            page.get_by_label("Subject", exact=True).fill("Alpha review")
             page.get_by_label("Body", exact=True).fill("Second draft after restart")
             click(page, "Save Draft")
             assert page.url != origin + saved_path
+            alpha_path = page.url.removeprefix(origin)
             visit(page, "/drafts")
             assert page.locator(".draft-list tbody tr").count() == 2
+
+            visit(page, "/compose")
+            page.get_by_label("Subject", exact=True).fill("Zulu review")
+            page.get_by_label("To", exact=True).fill("zulu@example.test")
+            page.get_by_label("Body", exact=True).fill("Third public synthetic draft")
+            click(page, "Save Draft")
+            visit(page, "/drafts")
+
+            def apply_view(filter_value="all", sort="subject", query=""):
+                page.get_by_label("Draft filter", exact=True).select_option(filter_value)
+                page.get_by_label("Draft order", exact=True).select_option(sort)
+                page.get_by_label("Search drafts", exact=True).fill(query)
+                click(page, "Apply")
+
+            apply_view("attachments")
+            assert page.locator(".draft-list tbody tr").count() == 1
+            assert "(No subject)" in page.locator(".draft-list").inner_text()
+            apply_view("no-attachments")
+            assert page.locator(".draft-list tbody tr").count() == 2
+            assert page.locator(".draft-subject>a").all_text_contents() == ["Alpha review", "Zulu review"]
+            apply_view(query="ALPHA")
+            assert page.locator(".draft-list tbody tr").count() == 1
+            click(page, "Star draft")
+            assert page.get_by_label("Search drafts", exact=True).input_value() == "ALPHA"
+            assert page.get_by_role("button", name="Unstar draft", exact=True).get_attribute("aria-pressed") == "true"
+            apply_view("starred")
+            assert page.locator(".draft-subject>a").all_text_contents() == ["Alpha review"]
+            apply_view(query="nothing matches this")
+            assert "No drafts match these filters" in page.locator(".draft-list").inner_text()
+            apply_view()
+            assert "Showing 3 of 3 saved drafts" in page.locator(".draft-list-status").inner_text()
+            checks.append("attachment/star filters, case-insensitive search, subject order, empty results and view-preserving Star use real saved state")
+            for scheme in ["light", "dark"]:
+                page.emulate_media(color_scheme=scheme)
+                for width in [360, 768, 1600]:
+                    page.set_viewport_size({"width": width, "height": 1100})
+                    page.screenshot(path=str(args.output / f"draft-list-{scheme}-{width}.png"), full_page=True)
+                    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
+            checks.append("populated draft controls, stars and selection reflow at 360/768/1600 in light and dark")
+
+            owned.close()
+            stop_server(process, root)
+            process, origin = start_server(root, repo, log)
+            owned = context()
+            page = owned.new_page()
+            login(page, "alice")
+            visit(page, "/drafts?filter=starred&sort=subject&q=")
+            assert page.locator(".draft-subject>a").all_text_contents() == ["Alpha review"]
+            assert page.get_by_role("button", name="Unstar draft", exact=True).get_attribute("aria-pressed") == "true"
+            checks.append("draft stars survive process restart with their saved content")
+            apply_view()
+            for subject in ["Alpha review", "Zulu review"]:
+                page.get_by_label("Select draft: " + subject, exact=True).check()
+            click(page, "Review discard")
+            assert page.get_by_role("heading", name="Discard selected drafts?", exact=True).is_visible()
+            assert page.locator(".draft-discard-review li").count() == 2
+            page.get_by_role("link", name="Keep drafts", exact=True).click()
+            page.wait_for_load_state("networkidle")
+            assert page.locator(".draft-list tbody tr").count() == 3
+            for subject in ["Alpha review", "Zulu review"]:
+                page.get_by_label("Select draft: " + subject, exact=True).check()
+            click(page, "Review discard")
+            page.screenshot(path=str(args.output / "draft-discard-review-light-1600.png"), full_page=True)
+            editor = owned.new_page()
+            visit(editor, alpha_path)
+            editor.get_by_label("Body", exact=True).fill("Changed while discard was being reviewed")
+            click(editor, "Save Draft")
+            editor.close()
+            click(page, "Discard 2 drafts", 409)
+            assert "0 of 2 selected drafts discarded" in page.locator("body").inner_text()
+            page.get_by_role("link", name="Reload Drafts", exact=True).click()
+            page.wait_for_load_state("networkidle")
+            assert page.locator(".draft-list tbody tr").count() == 3
+            for subject in ["Alpha review", "Zulu review"]:
+                page.get_by_label("Select draft: " + subject, exact=True).check()
+            click(page, "Review discard")
+            click(page, "Discard 2 drafts")
+            assert page.locator(".draft-list tbody tr").count() == 1
+            assert "(No subject)" in page.locator(".draft-list").inner_text()
+            checks.append("selection review is read-only, Cancel preserves drafts, stale confirmation discards none, fresh confirmation removes only the chosen pair")
             page.locator(".draft-discard summary").first.click()
             click(page, "Delete")
-            assert page.locator(".draft-list tbody tr").count() == 1
+            assert "No saved drafts" in page.locator(".draft-list").inner_text()
             checks.append("new draft after restart has a distinct identity; current explicit Discard removes one draft")
             owned.close()
             assert not blocked

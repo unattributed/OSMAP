@@ -1303,3 +1303,28 @@ with later outcomes. Correct errors using a new entry referencing the old one.
 - Still open: interrupted-write recovery, autosave, attachment removal/failed-
   upload persistence, draft filters/sort/selection and stable source-message
   attachment references. No deployment, external email or Git synchronization.
+
+### S03-02B — Drafts controls from the approved page
+
+- Implement bounded list filtering/order/search, persistent stars and explicit
+  selection actions using the existing private draft store and revision checks.
+  Preserve unfinished content, uploads, owner isolation and query state. Validate
+  the actual controls in both browsers and compare with approved page 06.
+- S03-02A signed checkpoint `0985f26a6092c355529dcb2fdcc16a8634345036`
+  qualified on obsd1: 644 library tests, two hostile-content tests and the native
+  signed-helper fixture PASS. Standard checkout/services unchanged. Archive SHA
+  `2a6a2161727de48cc0f9fcd3b5bd590c1465cb0374ed47c6ae533e467d366f66`;
+  log `a003cd1e6a3ca463dd3d61255b9f34d6cd809ca25a309a7f089aebec3e00480b`.
+- Implemented compact approved-page rows, persistent stars, attachment indicators,
+  filter/search/order controls, scoped action menus and reviewed multi-discard.
+  Stale selections delete nothing; later delete failures report the completed
+  count and stop. Metadata v6 retains v1-v5 readability and preserves stars on edit.
+- Validation: 652 library tests PASS (six existing ignored), strict Clippy,
+  formatting, full acceptance and V14 PASS. Edge and Firefox each PASS eleven
+  real-storage draft journeys, including restart, and contact regression PASS
+  eight. Final visual audit: 24 light/dark and eight forced-colour views PASS
+  without overflow or audited contrast failures; final desktop/narrow/review
+  rendering inspected. Artifacts: S03 run-20260930 drafts-b-verified-*,
+  drafts-b-contact-edge, visual-d-final*, fixtures-d and gates/*-d.log.
+- Attachment removal, interrupted-write recovery, autosave and stable source
+  references remain open. No whole-page, authenticated WSTG or release claim.

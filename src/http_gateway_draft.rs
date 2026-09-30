@@ -3,6 +3,57 @@ use crate::logging::audit_session_ref;
 use crate::totp::TimeProvider;
 
 impl RuntimeBrowserGateway {
+    pub(super) fn set_draft_star_impl(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        draft_id: &str,
+        expected_revision: u64,
+        starred: bool,
+    ) -> BrowserDraftSaveOutcome {
+        let store = self.build_draft_store();
+        let now = SystemTimeProvider.unix_timestamp();
+        let result = (|| {
+            let mut draft = store
+                .load(&session.record.canonical_username, draft_id, now)?
+                .ok_or_else(|| crate::draft::DraftError {
+                    reason: "draft revision is stale".into(),
+                })?;
+            if draft.revision != Some(expected_revision) {
+                return Err(crate::draft::DraftError {
+                    reason: "draft revision is stale".into(),
+                });
+            }
+            draft.starred = starred;
+            store.save(&draft, now)
+        })();
+        match result {
+            Ok(()) => BrowserDraftSaveOutcome {
+                decision: BrowserDraftSaveDecision::Saved {
+                    draft_id: draft_id.into(),
+                },
+                audit_events: vec![draft_info_event(
+                    "draft_star_updated",
+                    "draft star updated",
+                    context,
+                    session,
+                )],
+            },
+            Err(error) => BrowserDraftSaveOutcome {
+                decision: BrowserDraftSaveDecision::Denied {
+                    public_reason: draft_public_reason(&error).into(),
+                },
+                audit_events: vec![draft_warn_event(
+                    "draft_star_refused",
+                    "draft star change refused",
+                    context,
+                    session,
+                )
+                .with_field("reason", draft_error_label(&error))],
+            },
+        }
+    }
+
     pub(super) fn build_draft_store(&self) -> FileDraftStore {
         FileDraftStore::new(self.draft_dir.clone(), DraftPolicy::default())
     }
@@ -197,6 +248,7 @@ impl RuntimeBrowserGateway {
         if let Some(existing) = existing {
             record.created_at = existing.created_at;
             record.revision = existing.revision;
+            record.starred = existing.starred;
             record.request.reply_thread = existing.request.reply_thread;
         }
 

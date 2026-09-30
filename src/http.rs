@@ -17,6 +17,7 @@ mod routes_compose;
 mod routes_contacts;
 mod routes_content;
 mod routes_draft;
+mod routes_draft_selection;
 mod routes_flags;
 mod routes_mail;
 mod routes_moves;
@@ -858,6 +859,7 @@ mod tests {
     struct StubGateway {
         contacts_store: Option<crate::contacts::ContactStore>,
         draft_store: Option<crate::draft::FileDraftStore>,
+        fail_draft_delete: Option<String>,
         drafts: Arc<Mutex<BTreeMap<String, DraftRecord>>>,
         submitted: Arc<Mutex<Vec<ComposeRequest>>>,
         message_flags: Arc<Mutex<SyntheticFlagStates>>,
@@ -871,6 +873,7 @@ mod tests {
             Self {
                 contacts_store: None,
                 draft_store: None,
+                fail_draft_delete: None,
                 drafts: Arc::new(Mutex::new(BTreeMap::new())),
                 submitted: Arc::new(Mutex::new(Vec::new())),
                 message_flags: Arc::new(Mutex::new(BTreeMap::new())),
@@ -2239,6 +2242,7 @@ mod tests {
             record.revision = request.expected_revision;
             if let Some(existing) = existing {
                 record.created_at = existing.created_at;
+                record.starred = existing.starred;
                 record.request.reply_thread = existing.request.reply_thread;
             }
             if let Some(store) = &self.draft_store {
@@ -2272,6 +2276,14 @@ mod tests {
             draft_id: &str,
             expected_revision: u64,
         ) -> BrowserDraftDeleteOutcome {
+            if self.fail_draft_delete.as_deref() == Some(draft_id) {
+                return BrowserDraftDeleteOutcome {
+                    decision: BrowserDraftDeleteDecision::Denied {
+                        public_reason: "temporarily_unavailable".into(),
+                    },
+                    audit_events: vec![],
+                };
+            }
             if let Some(store) = &self.draft_store {
                 return BrowserDraftDeleteOutcome {
                     decision: match store.delete(
@@ -2314,6 +2326,56 @@ mod tests {
                     "stub_draft_delete",
                     "stub draft delete completed",
                 )],
+            }
+        }
+
+        fn set_draft_star(
+            &self,
+            _context: &AuthenticationContext,
+            session: &ValidatedSession,
+            draft_id: &str,
+            expected_revision: u64,
+            starred: bool,
+        ) -> BrowserDraftSaveOutcome {
+            let mut drafts = self.drafts.lock().unwrap();
+            let result = (|| {
+                let draft = if let Some(store) = &self.draft_store {
+                    store.load(&session.record.canonical_username, draft_id, 100)?
+                } else {
+                    drafts
+                        .get(draft_id)
+                        .filter(|draft| {
+                            draft.canonical_username == session.record.canonical_username
+                        })
+                        .cloned()
+                };
+                let mut draft = draft.ok_or_else(|| crate::draft::DraftError {
+                    reason: "draft revision is stale".into(),
+                })?;
+                if draft.revision != Some(expected_revision) {
+                    return Err(crate::draft::DraftError {
+                        reason: "draft revision is stale".into(),
+                    });
+                }
+                draft.starred = starred;
+                if let Some(store) = &self.draft_store {
+                    store.save(&draft, 100)?;
+                } else {
+                    draft.revision = Some(expected_revision + 1);
+                    drafts.insert(draft_id.into(), draft);
+                }
+                Ok(())
+            })();
+            BrowserDraftSaveOutcome {
+                decision: match result {
+                    Ok(()) => BrowserDraftSaveDecision::Saved {
+                        draft_id: draft_id.into(),
+                    },
+                    Err(error) => BrowserDraftSaveDecision::Denied {
+                        public_reason: fixture_draft_error(&error),
+                    },
+                },
+                audit_events: vec![],
             }
         }
     }
@@ -6089,6 +6151,14 @@ mod tests {
             (
                 "/drafts/delete",
                 "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&draft_id=00000000000000000000000000000001",
+            ),
+            (
+                "/drafts/star",
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210",
+            ),
+            (
+                "/drafts/discard",
+                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210",
             ),
             (
                 "/sessions/revoke",
