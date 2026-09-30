@@ -283,7 +283,7 @@ where
                         audit_events,
                     };
                 }
-                let (recent, draft_count, sent_count) =
+                let (recent, draft_count, sent_count, snooze_notice) =
                     self.welcome_data(context, &validated_session, &mailboxes, &mut audit_events);
                 let activity = self.gateway.list_sessions(context, &validated_session);
                 audit_events.extend(activity.audit_events);
@@ -297,7 +297,7 @@ where
                             &canonical_username,
                             &validated_session.record.csrf_token,
                             &visible_mailboxes,
-                            recent.as_deref(),
+                            (recent.as_deref(), snooze_notice.as_deref()),
                             draft_count,
                             sent_count,
                             &activity.decision,
@@ -352,7 +352,6 @@ where
                 Err(response) => return response,
             };
         // A query parameter is not evidence that a mutation completed.
-        let success_message: Option<String> = None;
 
         let mut view = match list_view_state(request) {
             Ok(view) => view,
@@ -374,6 +373,19 @@ where
                 mailbox_name,
                 mut messages,
             } => {
+                if canonical_username != validated_session.record.canonical_username
+                    || request.query_params.get("name") != Some(&mailbox_name)
+                {
+                    return HandledHttpResponse {
+                        response: html_response(
+                            503,
+                            "Service Unavailable",
+                            "Mailbox unavailable",
+                            "<p>The returned mailbox summaries could not be verified.</p>",
+                        ),
+                        audit_events,
+                    };
+                }
                 let archive_mailbox_name = self.validated_archive_mailbox_name(
                     context,
                     &validated_session,
@@ -385,6 +397,12 @@ where
                     &mut audit_events,
                     &mailbox_name,
                     archive_mailbox_name.as_deref(),
+                );
+                let snooze_notice = self.apply_snooze(
+                    &validated_session,
+                    &canonical_username,
+                    &mailbox_name,
+                    &mut messages,
                 );
                 view.apply_messages(&mut messages);
                 let reader = MailReaderContext {
@@ -421,7 +439,7 @@ where
                             &validated_session.record.csrf_token,
                             &mailbox_name,
                             &messages,
-                            success_message.as_deref(),
+                            (!snooze_notice.is_empty()).then_some(snooze_notice.as_str()),
                             MessageListBulkActions {
                                 archive_mailbox_name: archive_mailbox_name.as_deref(),
                                 move_destinations: &bulk_move_destinations,

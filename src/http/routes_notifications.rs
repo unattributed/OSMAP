@@ -39,6 +39,8 @@ impl<G: BrowserGateway> BrowserApp<G> {
             Err(response) => return response,
         };
         let inbox = self.gateway.notification_inbox(&session);
+        request.notification_context.borrow_mut().count =
+            Some(super::notification_badge::unread(inbox.as_ref().ok()));
         HandledHttpResponse {
             response: html_response(
                 if inbox.is_ok() { 200 } else { 503 },
@@ -130,6 +132,8 @@ impl<G: BrowserGateway> BrowserApp<G> {
                     context,
                 ));
                 let inbox = self.gateway.notification_inbox(&session).ok();
+                request.notification_context.borrow_mut().count =
+                    Some(super::notification_badge::unread(inbox.as_ref()));
                 HandledHttpResponse {
                     response: html_response(
                         status,

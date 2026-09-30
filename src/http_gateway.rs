@@ -138,6 +138,54 @@ impl RuntimeBrowserGateway {
 }
 
 impl BrowserGateway for RuntimeBrowserGateway {
+    fn snooze_load(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::snooze::SnoozeRecord, crate::snooze::SnoozeError> {
+        crate::snooze::SnoozeStore::new(&self.settings_dir)
+            .load(&session.record.canonical_username, self.snooze_clock())
+    }
+    fn snooze_change(
+        &self,
+        session: &ValidatedSession,
+        identity: &crate::snooze::MessageIdentity,
+        revision: u64,
+        until: Option<u64>,
+    ) -> Result<crate::snooze::SnoozeRecord, crate::snooze::SnoozeError> {
+        let store = crate::snooze::SnoozeStore::new(&self.settings_dir);
+        match until {
+            Some(until) => store.set(
+                &session.record.canonical_username,
+                identity,
+                revision,
+                until,
+                self.snooze_clock(),
+            ),
+            None => store.cancel(
+                &session.record.canonical_username,
+                identity,
+                revision,
+                self.snooze_clock(),
+            ),
+        }
+    }
+    fn snooze_project(
+        &self,
+        session: &ValidatedSession,
+        owner: &str,
+        folder: &str,
+        rows: &[MessageSummary],
+    ) -> crate::snooze::SnoozeProjection {
+        let store = crate::snooze::SnoozeStore::new(&self.settings_dir);
+        store.project(
+            &session.record.canonical_username,
+            owner,
+            folder,
+            rows,
+            self.snooze_clock(),
+        )
+    }
+
     fn read_send_recovery(
         &self,
         session: &ValidatedSession,

@@ -44,6 +44,7 @@ pub mod reply_thread;
 pub mod send;
 pub mod session;
 pub mod settings;
+pub mod snooze;
 pub mod state;
 pub mod throttle;
 pub mod totp;

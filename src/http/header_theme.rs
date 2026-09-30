@@ -12,7 +12,7 @@ pub(super) fn safe_return(value: &str) -> Option<String> {
     let mut fields = parse_urlencoded_form(query.as_bytes(), 16, 2048).ok()?;
     let allowed: &[&str] = match path {
         "/settings" => &["section", "q"],
-        "/sessions" | "/mailboxes" | "/contacts" => &[],
+        "/sessions" | "/mailboxes" | "/contacts" | "/snoozed" => &[],
         "/drafts" => {
             crate::draft_list::DraftListView::parse(&fields).ok()?;
             &["filter", "sort", "q", "saved", "deleted"]

@@ -214,6 +214,7 @@ pub fn parse_http_request_bytes(
     }
 
     Ok(HttpRequest {
+        notification_context: Default::default(),
         method,
         path,
         query_params,

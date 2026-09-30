@@ -3,6 +3,9 @@
 //! Keeping these rendering helpers separate from routing reduces the amount of
 //! browser-facing template code inside the request parser and route logic.
 
+#[path = "snooze_ui.rs"]
+mod snooze_ui;
+pub(crate) use snooze_ui::{render_snooze_page, render_snoozed_page, SnoozePageModel};
 #[path = "notifications_ui.rs"]
 mod notifications_ui;
 pub(crate) use notifications_ui::render_notification_inbox;
@@ -164,13 +167,23 @@ fn shell_icon(name: &str) -> String {
     format!("<svg class=\"shell-icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\">{path}</svg>")
 }
 
+pub(crate) fn notification_header_link(account: &str, unread: Option<usize>) -> String {
+    let (label, badge, state) = match unread {
+        Some(0) => ("Notifications: no unread notices".into(), String::new(), "0".into()),
+        Some(count) => (format!("Notifications: {count} unread"), format!("<span class=\"notification-badge\" aria-hidden=\"true\">{count}</span>"), count.to_string()),
+        None => ("Notifications: unread count unavailable".into(), "<span class=\"notification-badge notification-badge-unknown\" aria-hidden=\"true\">?</span>".into(), "unknown".into()),
+    };
+    format!("<a class=\"header-notifications\" href=\"/notifications\" aria-label=\"{label}\" title=\"{label}\" data-notification-account=\"{}\" data-unread=\"{state}\">{}{badge}</a>", escape_html(account), shell_icon("bell"))
+}
+
 fn header_theme_controls(csrf: &str, current: &str) -> String {
     let compose = current == "compose";
     let disabled = current == "compose-result"
         || current == "settings"
         || (current.starts_with("settings-") && current != "settings-search")
         || current == "contacts"
-        || current == "labels";
+        || current == "labels"
+        || current == "snooze";
     let explanation = if current == "compose-result" {
         "Theme switching is unavailable here. Keep this result page open to retain the text from this submission attempt."
     } else if compose {
@@ -276,12 +289,12 @@ pub(crate) fn app_header(canonical_username: &str, csrf_token: &str, current: &s
         "{}",
         "<div class=\"status-row auth-status\" aria-label=\"Session status and identity\">",
         "<details class=\"protection-menu\" name=\"toolbar-menu\"><summary>Protected by Default</summary><div class=\"account-menu-panel\"><p>Remote images and active content are blocked. These protections do not encrypt a message or verify its sender.</p><p class=\"shell-session-chip\">Your browser session was authenticated with two factors.</p></div></details>",
-        "<a class=\"header-notifications\" href=\"/notifications\" aria-label=\"Notifications\" title=\"Notifications\">{notification_icon}</a>",
+        "{notification_link}",
         "<details class=\"account-menu\" name=\"toolbar-menu\"><summary class=\"identity-chip\"><span class=\"account-avatar\" aria-hidden=\"true\">{}</span><span class=\"account-name\" title=\"{}\">{}</span>{}</summary>",
         "<div class=\"account-menu-panel\"><p class=\"muted\">Signed in as <strong>{}</strong></p><a href=\"/settings\">Account settings</a><a href=\"/settings?section=appearance\">Appearance</a><a href=\"/contacts\">Contacts</a><a href=\"/sessions\">Manage sessions</a>{}</div>",
         "</details>{theme_controls}</div></header>{clock}"
     ), shell_icon("menu"), links, brand_mark, search_menu, escape_html(&sender_initials(Some(canonical_username))), escape_html(canonical_username),
-        escape_html(canonical_username), shell_icon("chevron"), escape_html(canonical_username), logout_form(csrf_token), theme_controls = theme_controls, clock = clock, brand_copy = brand_copy, notification_icon = shell_icon("bell"), brand_variant = if welcome { " topbar-welcome" } else { "" })
+        escape_html(canonical_username), shell_icon("chevron"), escape_html(canonical_username), logout_form(csrf_token), theme_controls = theme_controls, clock = clock, brand_copy = brand_copy, notification_link = notification_header_link(canonical_username, None), brand_variant = if welcome { " topbar-welcome" } else { "" })
 }
 
 fn request_clock(timestamp: u64) -> String {
@@ -1192,17 +1205,17 @@ pub(crate) fn render_message_list_page(
     csrf_token: &str,
     mailbox_name: &str,
     messages: &[MessageSummary],
-    success_message: Option<&str>,
+    list_notice: Option<&str>,
     bulk_actions: MessageListBulkActions<'_>,
     sort_links: MessageListSortLinks<'_>,
 ) -> TrustedHtml {
     let archive_page = mailbox_name == "Trash"
         || (Some(mailbox_name) == bulk_actions.archive_mailbox_name
             && !matches!(mailbox_name, "INBOX" | "Sent"));
-    let success_banner = match success_message {
-        Some(success_message) => format!(
-            "<div class=\"notice notice-success\" role=\"status\"><strong>Update complete:</strong> {}</div>",
-            escape_html(success_message)
+    let list_notice_banner = match list_notice {
+        Some(list_notice) => format!(
+            "<div class=\"notice\" role=\"status\">{}</div>",
+            escape_html(list_notice)
         ),
         None => String::new(),
     };
@@ -1337,7 +1350,7 @@ pub(crate) fn render_message_list_page(
             links: &sort_links,
             base: &navigation_base,
             rows: &rows,
-            banner: &success_banner,
+            banner: &list_notice_banner,
             bulk_form: &bulk_move_form,
         });
     }
@@ -1380,7 +1393,7 @@ pub(crate) fn render_message_list_page(
         if sort_links.view.selection.is_some() { " has-selection" } else { "" },
         escape_html(if mailbox_name == "INBOX" { "Inbox" } else { mailbox_name }),
         escape_html(mailbox_name),
-        success_banner,
+        list_notice_banner,
         render_bulk_selection_menu(&navigation_base, sort_links.view, bulk_actions_available, archive_actions_available),
         render_list_navigation(&navigation_base, sort_links.view, mailbox_name == "Sent"),
         sort_headers,
@@ -1558,6 +1571,7 @@ fn render_reader_fragment(
 ) -> String {
     let standalone = neighbours.is_some();
     let navigation = neighbours.map(|value| value.html()).unwrap_or_default();
+    let snooze_control=rendered.metadata.as_ref().map(|m|format!("<a class=\"reader-snooze\" aria-label=\"Snooze message\" title=\"Snooze message\" href=\"/snooze?mailbox={}&amp;uid={}&amp;mailbox_guid={}&amp;message_guid={}&amp;return_to={}\"><span aria-hidden=\"true\">◷</span></a>",escape_html(&url_encode(&rendered.mailbox_name)),rendered.uid,escape_html(&url_encode(&m.version.mailbox_guid)),escape_html(&url_encode(&m.version.message_guid)),escape_html(&url_encode(return_to)))).unwrap_or_else(||"<button class=\"reader-snooze\" aria-label=\"Snooze unavailable\" disabled><span aria-hidden=\"true\">◷</span></button>".into());
     let label_control = rendered.metadata.as_ref().map(|metadata| format!("<details class=\"reader-labels\"><summary>Labels</summary><div><p>Manage private labels for this message. Its current identity is checked before changes.</p><a class=\"button-link secondary\" href=\"/labels?mailbox={}&amp;uid={}&amp;mailbox_guid={}&amp;message_guid={}\">Edit message labels</a></div></details>", escape_html(&url_encode(&rendered.mailbox_name)), rendered.uid, escape_html(&url_encode(&metadata.version.mailbox_guid)), escape_html(&url_encode(&metadata.version.message_guid)))).unwrap_or_else(|| "<span class=\"muted\" aria-disabled=\"true\">Labels unavailable</span>".into());
     let displayed_attachments = rendered
         .attachments
@@ -1716,7 +1730,7 @@ fn render_reader_fragment(
     format!(
         concat!(
             "<article id=\"reading-pane\" class=\"reading-pane protected-reading-pane\" tabindex=\"-1\" aria-labelledby=\"message-title\" data-reader-mode=\"Protected Reader\">",
-            "<div class=\"reader-toolbar\"><nav class=\"reader-navigation toolbar\" aria-label=\"Reader navigation\"><a href=\"{}\">Back to list</a>{}</nav><div class=\"reader-quick-actions\">{}{label_control}</div>",
+            "<div class=\"reader-toolbar\"><nav class=\"reader-navigation toolbar\" aria-label=\"Reader navigation\"><a href=\"{}\">Back to list</a>{}</nav><div class=\"reader-quick-actions\">{}{label_control}{snooze_control}</div>",
             "{navigation}<details class=\"reader-more-actions\"><summary>Move, archive, bin or restore</summary><div class=\"action-stack\">{}</div></details></div>",
             "<header class=\"message-heading\"><div class=\"reader-message-top\"><h2 id=\"message-title\" dir=\"auto\">{}</h2><p class=\"muted reader-date\">{} · {}</p></div><div class=\"reader-message-person\"><span class=\"message-avatar\" aria-hidden=\"true\">{}</span><div><p class=\"message-from\" dir=\"auto\">From: {}</p><p class=\"muted reader-to\" dir=\"auto\">To: {}</p></div></div></header>",
             "<div class=\"reader-status\">{}{}{}</div>",
@@ -1747,6 +1761,7 @@ fn render_reader_fragment(
         escape_html(rendered.rendering_mode.as_str()), if rendered.contains_html_body { "yes" } else { "no" }, remote_content_state,
         navigation = navigation,
         label_control = label_control,
+        snooze_control = snooze_control,
     )
 }
 

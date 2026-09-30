@@ -5,11 +5,12 @@ pub(crate) fn render_mailboxes_page(
     canonical_username: &str,
     csrf_token: &str,
     mailboxes: &[MailboxEntry],
-    summaries: Option<&[MessageSummary]>,
+    summaries: (Option<&[MessageSummary]>, Option<&str>),
     draft_count: Option<usize>,
     sent_count: Option<usize>,
     activity: &crate::http::BrowserSessionListDecision,
 ) -> TrustedHtml {
+    let (summaries, snooze_notice) = summaries;
     let has = |name: &str| mailboxes.iter().any(|mailbox| mailbox.name == name);
     let inbox = has("INBOX");
     let sent = has("Sent");
@@ -53,7 +54,17 @@ pub(crate) fn render_mailboxes_page(
             format!("<a class=\"welcome-metric\" href=\"{}\" aria-label=\"{label}: {value}; open list\">{contents}</a>", escape_html(href))
         } else { format!("<div class=\"welcome-metric\">{contents}</div>") });
     }
-    let recent = recent_rows(summaries, inbox);
+    let recent = format!(
+        "{}{}",
+        snooze_notice
+            .filter(|text| !text.is_empty())
+            .map(|text| format!(
+                "<p class=welcome-note role=status>{}</p>",
+                escape_html(text)
+            ))
+            .unwrap_or_default(),
+        recent_rows(summaries, inbox)
+    );
     let mut shortcuts = String::new();
     for (label, description, icon, href) in [
         ("Compose", "New message", "compose", Some("/compose")),

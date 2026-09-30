@@ -36,3 +36,7 @@
 .notification-inbox-scope { max-width:75rem;font-size:.8rem;line-height:1.5; }
 @media(max-width:600px) { .notification-event { grid-template-columns:minmax(0,1fr) auto;gap:.6rem; }.notification-event > div { grid-column:1 / -1; }.notification-event form { grid-column:2; }.notification-event button { width:auto; } }
 @media(forced-colors:active) { .notification-event[data-read=false] { border-left-color:Highlight; }.header-notifications { color:LinkText; } }
+.header-notifications { position:relative; }
+.notification-badge { position:absolute;top:-2px;right:-3px;min-width:15px;height:15px;display:flex;align-items:center;justify-content:center;padding:0 3px;border-radius:9px;background:var(--accent-strong);color:var(--on-accent);font-size:10px;line-height:1;font-weight:700; }
+.notification-badge-unknown { background:var(--panel);color:var(--muted);border:1px solid var(--line-strong); }
+@media(forced-colors:active) { .notification-badge { color:CanvasText;background:Canvas;border:1px solid Highlight; } }

@@ -2035,3 +2035,43 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   strict all-target/all-feature Clippy and V14 passed. Earlier failure logs are
   retained. This is bounded local implementation, not whole-page approval,
   release qualification, production deployment or GitHub synchronization.
+
+### Native Snooze and actual notification badge — 2026-09-30
+
+- Signed `8f91944f9b1ac0d85c5156beea8566997713e532` passed isolated obsd1
+  qualification in S04 `native-j`: archive SHA-256
+  `d3d098a2e8db60d4a6ed23689ecdec102d0c8db8afb000a824be1a71ba61c98f`,
+  log SHA-256 `fb7df1a0d4444e5f3c44a9d1344ca7e9ba58beb8c3463a532e7f6f325b310064`.
+  The standard checkout and services remained unchanged.
+- Snooze now has native current-message UTC set/edit, retained-marker list and
+  cancellation. Private CAS storage holds at most 100 markers for 30 days;
+  identity uses the verified native mailbox/message GUIDs and UID. Exact owned
+  mailbox-list and Welcome Inbox rows are hidden before filtering/pagination.
+  Search/direct Reader remain available. Expiry restores visibility on the next
+  page load; no worker, mail move or automatic browser refresh is involved.
+  Invalid/corrupt/uncertain state hides nothing and reports the uncertainty.
+- Review corrections preserve submitted revision/time on stale or uncertain
+  writes, disable mutation until reload, clear selected-message return fields,
+  refuse foreign mailbox projections and avoid a zero-hidden status banner.
+  Parent integration fixed the stale reload link's lost return context and
+  omitted empty return fields, then exercised an actual successful save after
+  reload. Snooze status no longer inherits a misleading success prefix.
+- The bell now projects actual retained unread notifications from the route's
+  validated session, once per ordinary shell response. Notifications pages reuse
+  their existing read. Unknown state shows an explicit question mark, not zero.
+  A scope guard clears transient rendering context on entry, return and unwind;
+  no request/upload body clone is needed. The private `HttpRequest` context
+  changes external struct-literal construction; all repository targets compile.
+- Parent `snooze-integrated-{edge,firefox}` each passed 24 captures and native
+  set/hide/cancel/account/stale/reload workflows. Controlled expiry and corrupt
+  storage are covered by nine focused tests. Parent
+  `notification_badge-integrated-{edge,firefox}` each passed 16 captures with
+  keyboard navigation, read-state updates, owner isolation and unknown-store
+  behaviour. Eleven notification tests include rendering-context cleanup.
+- The first broad build ran out of temporary build space. Only completed,
+  reproducible isolated Cargo caches were removed; source and evidence remain.
+  Subsequent validation caught the misleading notice and one nonreproducing
+  composition-test lock-contention failure. Its focused rerun passed without a
+  source change; the corrected full run passed all 872 library tests. Final
+  acceptance/security/V10–13, V14 and strict Clippy evidence is retained as S04
+  `snooze-badge-*`. Page/epic acceptance remains partial; no production change.

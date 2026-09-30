@@ -69,7 +69,9 @@ where
 {
     /// Handles one parsed HTTP request from the supplied remote address.
     pub fn handle_request(&self, request: &HttpRequest, remote_addr: &str) -> HandledHttpResponse {
+        let _notification_scope = super::notification_badge::RenderScope::new(request);
         let mut handled = self.handle_request_inner(request, remote_addr);
+        self.apply_notification_badge(&mut handled.response, request);
         crate::http_support::apply_appearance(
             &mut handled.response,
             request.headers.get("cookie").map(String::as_str),
@@ -172,6 +174,9 @@ where
             (HttpMethod::Post, "/settings/appearance") => {
                 self.handle_appearance_update(request, &context)
             }
+            (HttpMethod::Get, "/snoozed") => self.handle_snoozed(request, &context),
+            (HttpMethod::Get, "/snooze") => self.handle_snooze(request, &context),
+            (HttpMethod::Post, "/snooze/change") => self.handle_snooze_change(request, &context),
             (HttpMethod::Get, "/notifications") => self.handle_notifications(request, &context),
             (HttpMethod::Post, "/notifications/read") => {
                 self.handle_notification_read(request, &context)

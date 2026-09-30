@@ -7,8 +7,14 @@ impl<G: BrowserGateway> BrowserApp<G> {
         session: &ValidatedSession,
         mailboxes: &[MailboxEntry],
         audit: &mut Vec<LogEvent>,
-    ) -> (Option<Vec<MessageSummary>>, Option<usize>, Option<usize>) {
+    ) -> (
+        Option<Vec<MessageSummary>>,
+        Option<usize>,
+        Option<usize>,
+        Option<String>,
+    ) {
         let mut recent = None;
+        let mut snooze_notice = None;
         let mut sent_count = None;
         for (mailbox, operation) in [("INBOX", "welcome_inbox"), ("Sent", "welcome_sent")] {
             if !mailboxes.iter().any(|entry| entry.name == mailbox) {
@@ -25,7 +31,15 @@ impl<G: BrowserGateway> BrowserApp<G> {
                         result.decision,
                     );
                     if mailbox == "INBOX" {
-                        recent = rows;
+                        recent = rows.map(|mut rows| {
+                            snooze_notice = Some(self.apply_snooze(
+                                session,
+                                &session.record.canonical_username,
+                                mailbox,
+                                &mut rows,
+                            ));
+                            rows
+                        });
                     } else {
                         sent_count = rows.map(|rows| rows.len());
                     }
@@ -37,7 +51,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
         let result = self.gateway.list_drafts(context, session);
         audit.extend(result.audit_events);
         let count = verified_draft_count(&session.record.canonical_username, result.decision);
-        (recent, count, sent_count)
+        (recent, count, sent_count, snooze_notice)
     }
 }
 

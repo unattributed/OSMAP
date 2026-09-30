@@ -515,6 +515,8 @@ where
         let outcome = self.gateway.validate_session(context, &session_token);
         match outcome.decision {
             BrowserSessionDecision::Valid { validated_session } => {
+                request.notification_context.borrow_mut().session =
+                    Some((*validated_session).clone());
                 Ok((*validated_session, outcome.audit_events))
             }
             BrowserSessionDecision::Invalid => Err(HandledHttpResponse {

@@ -16,6 +16,7 @@ mod http_browser;
 mod http_gateway;
 #[path = "http_runtime.rs"]
 mod http_runtime;
+mod notification_badge;
 mod routes_appearance;
 mod routes_auth;
 mod routes_compose;
@@ -36,6 +37,7 @@ mod routes_reply;
 #[path = "http/routes_send_receipt.rs"]
 mod routes_send_receipt;
 mod routes_settings;
+mod routes_snooze;
 mod routes_source_attachments;
 #[path = "http/welcome_data.rs"]
 mod welcome_data;
@@ -301,6 +303,7 @@ impl HttpMethod {
 /// A small parsed HTTP request.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HttpRequest {
+    pub(crate) notification_context: std::cell::RefCell<notification_badge::RenderContext>,
     pub method: HttpMethod,
     pub path: String,
     pub query_params: BTreeMap<String, String>,
@@ -837,6 +840,9 @@ mod tests {
     mod security_settings_tests {
         include!("http/security_settings_tests.rs");
     }
+    mod snooze_tests {
+        include!("http/snooze_tests.rs");
+    }
     mod notification_tests {
         include!("http/notification_tests.rs");
     }
@@ -937,6 +943,8 @@ mod tests {
         appearance_store: Option<AppearanceStore>,
         settings_store: Option<crate::settings::FileUserSettingsStore>,
         notification_store: Option<crate::notifications::NotificationStore>,
+        notification_loads: std::sync::Arc<std::sync::atomic::AtomicUsize>,
+        snooze_store: Option<crate::snooze::SnoozeStore>,
         identity_preferences_store: Option<crate::identity_preferences::IdentityPreferencesStore>,
         composition_preferences_store:
             Option<crate::composition_preferences::CompositionPreferencesStore>,
@@ -966,6 +974,8 @@ mod tests {
                 settings_store: None,
                 identity_preferences_store: None,
                 notification_store: None,
+                notification_loads: Default::default(),
+                snooze_store: None,
                 composition_preferences_store: None,
                 reading_preferences_store: None,
                 browser_fixture_accounts: false,
@@ -1010,6 +1020,68 @@ mod tests {
     }
 
     impl BrowserGateway for StubGateway {
+        fn snooze_load(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<crate::snooze::SnoozeRecord, crate::snooze::SnoozeError> {
+            self.snooze_store
+                .as_ref()
+                .ok_or(crate::snooze::SnoozeError::Unavailable)?
+                .load(&session.record.canonical_username, self.snooze_clock())
+        }
+        fn snooze_change(
+            &self,
+            session: &ValidatedSession,
+            identity: &crate::snooze::MessageIdentity,
+            revision: u64,
+            until: Option<u64>,
+        ) -> Result<crate::snooze::SnoozeRecord, crate::snooze::SnoozeError> {
+            let store = self
+                .snooze_store
+                .as_ref()
+                .ok_or(crate::snooze::SnoozeError::Unavailable)?;
+            match until {
+                Some(until) => store.set(
+                    &session.record.canonical_username,
+                    identity,
+                    revision,
+                    until,
+                    self.snooze_clock(),
+                ),
+                None => store.cancel(
+                    &session.record.canonical_username,
+                    identity,
+                    revision,
+                    self.snooze_clock(),
+                ),
+            }
+        }
+        fn snooze_project(
+            &self,
+            session: &ValidatedSession,
+            owner: &str,
+            folder: &str,
+            rows: &[MessageSummary],
+        ) -> crate::snooze::SnoozeProjection {
+            let store = match self.snooze_store.as_ref() {
+                Some(store) => store,
+                None => {
+                    return crate::snooze::SnoozeProjection {
+                        hidden: vec![],
+                        revision: None,
+                        unavailable: Some(crate::snooze::SnoozeError::Unavailable),
+                    }
+                }
+            };
+            store.project(
+                &session.record.canonical_username,
+                owner,
+                folder,
+                rows,
+                self.snooze_clock(),
+            )
+        }
+
         fn read_send_recovery(
             &self,
             session: &ValidatedSession,
@@ -1585,6 +1657,8 @@ mod tests {
             session: &ValidatedSession,
         ) -> Result<crate::notifications::NotificationInbox, crate::notifications::NotificationError>
         {
+            self.notification_loads
+                .fetch_add(1, std::sync::atomic::Ordering::SeqCst);
             self.notification_store
                 .as_ref()
                 .ok_or(crate::notifications::NotificationError::Unavailable)?

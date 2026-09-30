@@ -17,6 +17,38 @@ pub enum BrowserSendRecoveryDecision {
 }
 
 pub trait BrowserGateway {
+    fn snooze_clock(&self) -> u64 {
+        crate::totp::TimeProvider::unix_timestamp(&crate::totp::SystemTimeProvider)
+    }
+    fn snooze_load(
+        &self,
+        _session: &ValidatedSession,
+    ) -> Result<crate::snooze::SnoozeRecord, crate::snooze::SnoozeError> {
+        Err(crate::snooze::SnoozeError::Unavailable)
+    }
+    fn snooze_change(
+        &self,
+        _session: &ValidatedSession,
+        _identity: &crate::snooze::MessageIdentity,
+        _revision: u64,
+        _until: Option<u64>,
+    ) -> Result<crate::snooze::SnoozeRecord, crate::snooze::SnoozeError> {
+        Err(crate::snooze::SnoozeError::Unavailable)
+    }
+    fn snooze_project(
+        &self,
+        _session: &ValidatedSession,
+        _owner: &str,
+        _folder: &str,
+        _rows: &[MessageSummary],
+    ) -> crate::snooze::SnoozeProjection {
+        crate::snooze::SnoozeProjection {
+            hidden: vec![],
+            revision: None,
+            unavailable: Some(crate::snooze::SnoozeError::Unavailable),
+        }
+    }
+
     /// Authenticated read-only exact snapshot; never grants a mutation or retry.
     fn read_send_recovery(
         &self,

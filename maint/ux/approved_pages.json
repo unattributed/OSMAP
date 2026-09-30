@@ -528,8 +528,16 @@
         {
           "id": "R2-03-006",
           "label": "Snooze",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/snooze.rs",
+            "src/snooze_ui.rs",
+            "src/http/routes_snooze.rs",
+            "src/http/snooze_tests.rs",
+            "maint/ux/snooze_workflows.py",
+            "S04/snooze-integrated-{edge,firefox}/report.json"
+          ],
+          "engineering_note": "Verified current-message private UTC marker, native set/cancel, CAS and expiry restore on reload. Hides mailbox lists and Welcome Inbox only; Search/direct Reader remain accessible. No worker or automatic refresh. Whole-page acceptance remains pending."
         },
         {
           "id": "R2-03-007",
@@ -2813,7 +2821,10 @@
             "src/settings_notifications_ui.rs",
             "maint/ux/notifications_workflows.py",
             "S04/notifications-notifications-integrated-{edge,firefox}/report.json",
-            "Only recorded successful browser starts and settings revocations; logout, expiry, recovery/key/password/policy/job events and external delivery remain unavailable. Store failure does not undo or misreport a successful session action."
+            "Only recorded successful browser starts and settings revocations; logout, expiry, recovery/key/password/policy/job events and external delivery remain unavailable. Store failure does not undo or misreport a successful session action.",
+            "src/http/notification_badge.rs",
+            "maint/ux/notification_badge_workflows.py",
+            "S04/notification_badge-integrated-{edge,firefox}/report.json"
           ]
         },
         {
@@ -2856,7 +2867,10 @@
             "src/settings_notifications_ui.rs",
             "maint/ux/notifications_workflows.py",
             "S04/notifications-notifications-integrated-{edge,firefox}/report.json",
-            "Only recorded successful browser starts and settings revocations; logout, expiry, recovery/key/password/policy/job events and external delivery remain unavailable. Store failure does not undo or misreport a successful session action."
+            "Only recorded successful browser starts and settings revocations; logout, expiry, recovery/key/password/policy/job events and external delivery remain unavailable. Store failure does not undo or misreport a successful session action.",
+            "src/http/notification_badge.rs",
+            "maint/ux/notification_badge_workflows.py",
+            "S04/notification_badge-integrated-{edge,firefox}/report.json"
           ]
         },
         {
