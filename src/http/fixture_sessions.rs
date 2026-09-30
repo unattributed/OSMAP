@@ -199,29 +199,7 @@ impl FixtureSessions {
 }
 
 fn visible_session(record: crate::session::SessionRecord) -> BrowserVisibleSession {
-    let agent = record.user_agent.as_str();
-    let label = if agent.contains("Edg/") {
-        "Edge"
-    } else if agent.contains("Firefox/") {
-        "Firefox"
-    } else if agent.contains("Chrome/") {
-        "Chrome"
-    } else if agent.contains("Safari/") {
-        "Safari"
-    } else {
-        "Unknown browser"
-    };
-    BrowserVisibleSession {
-        session_id: record.session_id,
-        issued_at: record.issued_at,
-        expires_at: record.expires_at,
-        last_seen_at: record.last_seen_at,
-        revoked_at: record.revoked_at,
-        device_label: label.into(),
-        remote_addr: record.remote_addr,
-        user_agent: record.user_agent,
-        factor: record.factor,
-    }
+    RuntimeBrowserGateway::visible_session(record)
 }
 
 #[test]

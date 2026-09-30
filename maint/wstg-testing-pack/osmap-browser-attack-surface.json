@@ -98,6 +98,7 @@
       "path": "/search",
       "query_fields": [
         "q",
+        "category",
         "mailbox",
         "scope",
         "field",
@@ -797,6 +798,13 @@
         "OSMAP-WSTG-BUSL-002",
         "OSMAP-WSTG-INPV-004"
       ]
+    },
+    {
+      "method": "POST",
+      "path": "/settings/after-archive",
+      "query_fields": [],
+      "form_fields": ["csrf_token", "revision", "choice"],
+      "wstg_test_ids": ["OSMAP-WSTG-BUSL-002", "OSMAP-WSTG-INPV-004"]
     }
   ]
 }

@@ -1057,6 +1057,7 @@ class Runner:
             REPO_ROOT / "src" / "http" / "routes_auth.rs",
             REPO_ROOT / "src" / "http" / "routes_compose.rs",
             REPO_ROOT / "src" / "http" / "routes_mail.rs",
+            REPO_ROOT / "src" / "http" / "routes_people.rs",
             REPO_ROOT / "maint" / "openbsd" / "mail.blackbagsecurity.com" / "nginx" / "sites-enabled" / "main-ssl.conf",
             REPO_ROOT / "maint" / "openbsd" / "mail.blackbagsecurity.com" / "nginx" / "templates" / "osmap-root.tmpl",
         ]
@@ -2212,6 +2213,7 @@ class Runner:
             REPO_ROOT / "src" / "http.rs",
             REPO_ROOT / "src" / "http" / "routes_auth.rs",
             REPO_ROOT / "src" / "http" / "routes_mail.rs",
+            REPO_ROOT / "src" / "http" / "routes_people.rs",
             REPO_ROOT / "src" / "http" / "routes_compose.rs",
             REPO_ROOT / "src" / "http" / "routes_draft.rs",
             REPO_ROOT / "src" / "http" / "routes_settings.rs",
@@ -3310,6 +3312,7 @@ class Runner:
             REPO_ROOT / "src" / "http" / "routes_auth.rs",
             REPO_ROOT / "src" / "http" / "routes_compose.rs",
             REPO_ROOT / "src" / "http" / "routes_mail.rs",
+            REPO_ROOT / "src" / "http" / "routes_people.rs",
             REPO_ROOT / "docs" / "V3_HTTP_INPUT_TAMPERING_EVIDENCE.md",
         ]
         text = "\n".join(path.read_text(encoding="utf-8", errors="replace") for path in files if path.exists())
@@ -3735,6 +3738,7 @@ class Runner:
         files = [
             REPO_ROOT / "src" / "http_runtime.rs",
             REPO_ROOT / "src" / "http" / "routes_mail.rs",
+            REPO_ROOT / "src" / "http" / "routes_people.rs",
             REPO_ROOT / "src" / "http_ui.rs",
             REPO_ROOT / "src" / "http.rs",
             REPO_ROOT / "docs" / "V3_ACCEPTANCE_CRITERIA.md",
@@ -4163,6 +4167,7 @@ printf 'secret_review=No password, password hash, TOTP material, session cookie,
     def write_authorization_account_isolation_static_evidence(self) -> bool:
         files = [
             REPO_ROOT / "src" / "http" / "routes_mail.rs",
+            REPO_ROOT / "src" / "http" / "routes_people.rs",
             REPO_ROOT / "src" / "http" / "routes_compose.rs",
             REPO_ROOT / "src" / "http_gateway_mail.rs",
             REPO_ROOT / "src" / "http_gateway_draft.rs",
@@ -4796,6 +4801,7 @@ printf 'secret_review=No password, password hash, TOTP material, session cookie,
             REPO_ROOT / "src" / "http" / "routes_compose.rs",
             REPO_ROOT / "src" / "http" / "routes_draft.rs",
             REPO_ROOT / "src" / "http" / "routes_mail.rs",
+            REPO_ROOT / "src" / "http" / "routes_people.rs",
             REPO_ROOT / "src" / "http" / "routes_settings.rs",
             REPO_ROOT / "docs" / "V3_FORM_ROUTE_STATE_TRANSITIONS.md",
         ]
@@ -4860,6 +4866,7 @@ printf 'secret_review=No password, password hash, TOTP material, session cookie,
             REPO_ROOT / "src" / "http" / "routes_compose.rs",
             REPO_ROOT / "src" / "http" / "routes_draft.rs",
             REPO_ROOT / "src" / "http" / "routes_mail.rs",
+            REPO_ROOT / "src" / "http" / "routes_people.rs",
             REPO_ROOT / "src" / "http" / "routes_settings.rs",
             REPO_ROOT / "docs" / "V3_FORM_ROUTE_STATE_TRANSITIONS.md",
         ]

@@ -792,3 +792,21 @@ body:has(.app-rail) {
  .approved-mail-table:not(.has-selection) .message-subject-link:hover{text-decoration:underline}
 }
 @media(max-width:40rem){.approved-mail-table .list-window{white-space:normal}.approved-mail-table .mail-list-toolbar .list-window{margin-left:0}.approved-mail-table .mail-list-toolbar>details>summary{width:auto}}
+
+/* Unknown account usage: text only, with no numeric meter or quota claim. */
+.app-rail > .rail-links { flex-shrink:0; }
+.rail-storage { margin-top:auto; flex-shrink:0; border-top:1px solid var(--line); padding:.85rem .5rem .1rem; color:var(--muted); font-size:.875rem; }
+.rail-storage p { margin:.25rem 0 0; font-size:.75rem; line-height:1.4; }
+@media(max-width:56rem) { .rail-storage { display:none; } .rail-disclosure[open]~.rail-storage { display:block; } }
+@media(max-width:22.5rem) { .rail-storage { margin-top:.5rem; } }
+
+.search-results .search-result-tabs > a {padding:7px 12px;border:1px solid var(--line);border-radius:6px;background:var(--panel);font-weight:700;text-decoration:none}
+.people-search .search-query-panel {display:block!important;min-height:126px}
+.people-search .search-query-panel form {display:flex;gap:.6rem;margin:0}
+.people-search .search-query-panel input[type=search] {flex:1;min-width:0;max-width:none;margin:0;height:48px}
+.people-search .search-query-panel button {flex:0 0 auto;width:auto}
+.people-search .search-query-panel p {margin:.75rem 0 0;color:var(--muted);font-size:.8rem}
+.people-search .search-result-list {list-style:none;padding:0}
+.people-search .people-type,.people-search .people-edit {font-size:.75rem}
+.people-search .search-result-footer {justify-content:space-between}
+@media(max-width:700px){.people-search .search-result-row {grid-template-columns:44px minmax(0,1fr) 40px}.people-search .people-edit {grid-column:3;grid-row:1}.people-search .search-query-panel {min-height:0}.people-search .search-result-date::before {content:"Modified: "}}

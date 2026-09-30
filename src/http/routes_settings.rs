@@ -271,7 +271,7 @@ where
                             }
                         };
                         let mailboxes = self.reading_mailbox_choices(context, &validated_session, &mut audit_events);
-                        crate::http_ui::render_reading_page(&model, &preferences, mailboxes.as_deref())
+                        crate::http_ui::render_reading_page_with_after_archive(&model, &preferences, mailboxes.as_deref(),self.gateway.load_after_archive(&validated_session).ok().as_ref())
                     }
                 })
                 .with_header(

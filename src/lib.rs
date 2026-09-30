@@ -4,6 +4,7 @@
 //! goal is to prove a maintainable starting point before any mail-specific or
 //! browser-facing complexity is added.
 
+pub mod after_archive;
 pub mod appearance;
 pub mod attachment;
 pub mod auth;

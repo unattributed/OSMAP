@@ -460,13 +460,16 @@ where
                     503,
                     "Service Unavailable",
                     "Message List Unavailable",
-                    crate::http_ui::render_content_notice(
+                    crate::http_ui::render_mail_load_failure(
                         &validated_session.record.canonical_username,
                         &validated_session.record.csrf_token,
-                        "Message list unavailable",
+                        crate::http_ui::mailbox_nav_section(&mailbox_name, None),
                         public_reason_message(&public_reason),
-                        "/mailboxes",
-                        Some(&format!("/mailbox?name={}", url_encode(&mailbox_name))),
+                        &crate::http_ui::list_navigation_href(
+                            &format!("/mailbox?name={}", url_encode(&mailbox_name)),
+                            &view,
+                            view.requested_page,
+                        ),
                     ),
                 ),
                 audit_events,
@@ -699,10 +702,32 @@ where
                         status_code,
                         reason_phrase,
                         title,
-                        TrustedHtml::from_template(format!(
-                            "<p>{}</p>",
-                            escape_html(public_reason_message(&public_reason))
-                        )),
+                        if status_code == 503 {
+                            let base = match &mailbox_name {
+                                Some(name) => format!("/search?mailbox={}", url_encode(name)),
+                                None => "/search?scope=all".into(),
+                            };
+                            crate::http_ui::render_mail_load_failure(
+                                &validated_session.record.canonical_username,
+                                &validated_session.record.csrf_token,
+                                "search",
+                                public_reason_message(&public_reason),
+                                &crate::http_ui::list_navigation_href(
+                                    &format!(
+                                        "{base}&q={}&field={}",
+                                        url_encode(&query),
+                                        search_field.query_value()
+                                    ),
+                                    &view,
+                                    view.requested_page,
+                                ),
+                            )
+                        } else {
+                            TrustedHtml::from_template(format!(
+                                "<p>{}</p>",
+                                escape_html(public_reason_message(&public_reason))
+                            ))
+                        },
                     ),
                     audit_events,
                 }

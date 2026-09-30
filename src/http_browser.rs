@@ -17,6 +17,21 @@ pub enum BrowserSendRecoveryDecision {
 }
 
 pub trait BrowserGateway {
+    fn load_after_archive(
+        &self,
+        _session: &ValidatedSession,
+    ) -> Result<crate::after_archive::Preference, crate::after_archive::Error> {
+        Err(crate::after_archive::Error::Unavailable)
+    }
+    fn save_after_archive(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+        _choice: crate::after_archive::Choice,
+    ) -> Result<crate::after_archive::Preference, crate::after_archive::Error> {
+        Err(crate::after_archive::Error::Unavailable)
+    }
+
     fn load_autosave(
         &self,
         _session: &ValidatedSession,

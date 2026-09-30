@@ -23,7 +23,7 @@ mod settings_general_ui;
 pub(crate) use settings_general_ui::render_general_page;
 #[path = "settings_reading_ui.rs"]
 mod settings_reading_ui;
-pub(crate) use settings_reading_ui::render_reading_page;
+pub(crate) use settings_reading_ui::render_reading_page_with_after_archive;
 #[path = "settings_composition_ui.rs"]
 mod settings_composition_ui;
 pub(crate) use settings_composition_ui::render_composition_page_with_signature;

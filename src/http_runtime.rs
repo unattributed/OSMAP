@@ -144,6 +144,9 @@ where
                 self.handle_mailbox_shortcut(request, &context)
             }
             (HttpMethod::Get, "/mailbox") => self.handle_mailbox_messages(request, &context),
+            (HttpMethod::Get, "/search") if request.query_params.contains_key("category") => {
+                self.handle_people_search(request, &context)
+            }
             (HttpMethod::Get, "/search") => self.handle_message_search(request, &context),
             (HttpMethod::Get, "/message") => self.handle_message_view(request, &context),
             (HttpMethod::Get, "/attachment") => self.handle_attachment_download(request, &context),
@@ -191,6 +194,9 @@ where
                 self.handle_autosave_config(request, &context)
             }
             (HttpMethod::Post, "/drafts/autosave") => self.handle_draft_save(request, &context),
+            (HttpMethod::Post, "/settings/after-archive") => {
+                self.handle_after_archive_settings(request, &context)
+            }
             (HttpMethod::Post, "/settings/autosave") => {
                 self.handle_autosave_settings(request, &context)
             }

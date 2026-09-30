@@ -78,12 +78,17 @@ def main():
             p.get_by_role('navigation',name='Archive and Bin').get_by_role('link',name='Archive',exact=True).press('Enter')
             p.wait_for_url('**/mailbox?name=INBOX.Projects**')
             for scheme in ('light', 'dark'):
-                for width in (1536, 1199, 768, 360):
+                for width in (1600, 1536, 1199, 768, 360):
                     for forced in ('none', 'active'):
                         p.set_viewport_size(dict(width=width, height=1100))
                         p.emulate_media(color_scheme=scheme, forced_colors=forced)
                         visit('/settings?section=security')
-                        if width == 360: p.locator('.rail-disclosure summary').press('Enter')
+                        if width <= 768:
+                            expect(p.locator('.rail-storage')).to_be_hidden()
+                            p.locator('.rail-disclosure summary').press('Enter')
+                        expect(p.locator('.rail-storage')).to_be_visible()
+                        expect(p.locator('.rail-storage')).to_have_text('StorageUsage unavailable')
+                        assert p.locator('.rail-storage [role=progressbar],.rail-storage meter,.rail-storage progress').count() == 0
                         nav=p.get_by_role('navigation',name='Primary navigation')
                         expect(p.locator('.brand')).to_have_text('OSMAP')
                         assert p.locator('.brand-copy').count() == 0
@@ -98,6 +103,21 @@ def main():
                         p.screenshot(path=str(args.output/file),full_page=True)
                         report['captures'].append(dict(file=file,overflow=overflow,contrast=audit))
                         assert not overflow and not audit['failures'] and not audit['ui_failures'],file
+            for scheme in ('light','dark'):
+                for width in (1600,768,360):
+                    p.set_viewport_size(dict(width=width,height=420))
+                    p.emulate_media(color_scheme=scheme,forced_colors='active')
+                    visit('/sessions')
+                    if width <= 768: p.locator('.rail-disclosure summary').press('Enter')
+                    p.locator('.rail-links').get_by_role('link',name='Search',exact=True).focus()
+                    p.locator('.rail-storage').scroll_into_view_if_needed()
+                    box=p.locator('.rail-storage').bounding_box()
+                    assert box['y'] >= 0 and box['y']+box['height'] <= 420
+                    assert p.evaluate('document.documentElement.scrollWidth <= innerWidth')
+                    filename=f'shell-storage-short-{scheme}-{width}.png'
+                    p.screenshot(path=str(args.output/filename))
+                    report['captures'].append(dict(file=filename,overflow=False,contrast=p.evaluate(TEXT_AUDIT)))
+            assert all(not c['contrast']['failures'] and not c['contrast']['ui_failures'] for c in report['captures'])
             assert report['external_requests'] == report['post_requests'] == report['script_requests'] == 0
             report['result'] = 'PASS'
         finally:

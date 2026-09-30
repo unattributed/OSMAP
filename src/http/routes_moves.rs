@@ -230,6 +230,25 @@ impl<G: BrowserGateway> BrowserApp<G> {
         {
             return invalid(audit_events);
         }
+        let next_after_archive = if !bulk
+            && action == "archive"
+            && std::time::Instant::now() < deadline
+            && self
+                .gateway
+                .load_after_archive(&session)
+                .is_ok_and(|v| v.choice == crate::after_archive::Choice::Next)
+        {
+            self.archive_navigation_rows(
+                context,
+                &session,
+                &selected[0],
+                &return_to,
+                &mut audit_events,
+            )
+            .and_then(|rows| super::routes_after_archive::next_candidate(&rows, &selected[0]))
+        } else {
+            None
+        };
         let total = selected.len();
         let mut label_uncertain = false;
         for (confirmed, selected) in selected.iter().enumerate() {
@@ -308,12 +327,25 @@ impl<G: BrowserGateway> BrowserApp<G> {
                 }
             }
         }
-        drop(guard);
         if label_uncertain {
             return notice(200,"OK","Messages Moved","All selected mail moves were confirmed. Label continuity could not be confirmed; labels may remain attached to old identities. Do not repeat the mail move to repair labels.",audit_events);
         }
+        let next = next_after_archive.and_then(|candidate| {
+            if std::time::Instant::now() >= deadline {
+                return None;
+            }
+            let rows = self.archive_navigation_rows(
+                context,
+                &session,
+                &selected[0],
+                &return_to,
+                &mut audit_events,
+            )?;
+            super::routes_after_archive::candidate_link(&rows, &candidate, &return_to)
+        });
+        drop(guard);
         HandledHttpResponse {
-            response: redirect_response(303, "See Other", &return_to),
+            response: redirect_response(303, "See Other", next.as_deref().unwrap_or(&return_to)),
             audit_events,
         }
     }

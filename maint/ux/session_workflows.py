@@ -12,6 +12,7 @@ from urllib.parse import urlparse
 
 from playwright.sync_api import sync_playwright, expect
 from browser_workflows import start_server, stop_server
+from contrast_audit import TEXT_AUDIT
 
 
 def main():
@@ -101,18 +102,21 @@ def main():
             locations = primary.locator('td[data-label="Location"]').all_text_contents()
             assert locations and all(text.strip() == "Unknown" for text in locations)
             checks.append("session location truthfully Unknown; independent authenticated contexts create separate real stored sessions")
+            report["captures"] = []
             for theme in ["light", "dark"]:
-                for width in [1600, 360]:
-                    primary.set_viewport_size({"width": width, "height": 1100})
-                    primary.emulate_media(color_scheme=theme, forced_colors="none")
-                    assert primary.evaluate("document.documentElement.scrollWidth <= innerWidth")
-                    primary.screenshot(path=str(args.output / f"sessions-{theme}-{width}.png"), full_page=True)
-            for width in [1600, 360]:
-                primary.set_viewport_size({"width": width, "height": 1100})
-                primary.emulate_media(forced_colors="active")
-                assert primary.evaluate("document.documentElement.scrollWidth <= innerWidth")
-                primary.screenshot(path=str(args.output / f"sessions-forced-colors-{width}.png"), full_page=True)
-            checks.append("light, dark and forced-colour sessions views at 1600/360 have no horizontal overflow; screenshots retained")
+                for width in [1600, 1440, 768, 360]:
+                    for forced in ["none", "active"]:
+                        primary.set_viewport_size({"width": width, "height": 1100})
+                        primary.emulate_media(color_scheme=theme, forced_colors=forced)
+                        overflow = primary.evaluate("document.documentElement.scrollWidth > innerWidth")
+                        audit = primary.evaluate(TEXT_AUDIT)
+                        boxes = primary.locator(".sessions-card,.sessions-card-header,.sessions-table thead,.sessions-table tbody tr,.sessions-scope-note").evaluate_all("nodes => nodes.map(n => {const b=n.getBoundingClientRect();return {element:n.tagName, class:n.className, x:b.x,y:b.y,width:b.width,height:b.height}})")
+                        filename = f"sessions-{theme}-{width}-{forced}.png"
+                        primary.screenshot(path=str(args.output / filename), full_page=True)
+                        report["captures"].append(dict(file=filename, overflow=overflow, contrast=audit, boxes=boxes))
+                        assert not overflow
+                        assert not audit["failures"] and not audit["ui_failures"]
+            checks.append("light/dark and both forced-colour palettes at 1600/1440/768/360: no overflow or detected text/UI contrast failures")
 
             primary.emulate_media(forced_colors="none", color_scheme="light")
             primary.set_viewport_size({"width": 1600, "height": 1100})

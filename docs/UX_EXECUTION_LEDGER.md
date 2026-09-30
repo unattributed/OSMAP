@@ -2226,3 +2226,48 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   both hostile-content tests, strict all-target/all-feature Clippy and V14 passed.
   Evidence uses S04 `autosave-status-*`. Whole-page/epic acceptance remains open;
   no production deployment or GitHub synchronization occurred.
+
+### People search, Archive navigation and approved state layouts — 2026-09-30
+
+- Signed `02b9653485fcaddf69db8ea694209d18589e10fa` passed isolated obsd1
+  qualification in S04 `native-m`: 888 library tests, hostile-content tests and
+  disposable signed-helper status/flag/move checks. Archive SHA-256
+  `2da77d9264ca2f86008aae6c767ddc7116ad9d4f8976722209b008fad568e238`;
+  log `6a98f8469e9734a2e048a51918689be9ef48d78dbaeb2368ba959601f01f273f`.
+  Standard checkout/services remained unchanged; no deployment occurred.
+- PAGE09 People searches the authenticated private contact book, with bounded
+  name/address matching, stable twenty-row pages and native Contact edit links.
+  Unknown ownership/store state differs from no matches. Root preserved the
+  People query/page across Header theme changes and failed-load Retry. Documents,
+  combined category totals and contact modification times remain unavailable.
+  Parent `people-final-{edge,firefox}` passed native create/search/page/edit,
+  owner separation, malformed input, corruption/restart and eight captures each.
+- PAGE14 saves an independent versioned After Archive preference. Only a
+  confirmed single Archive can open the next verified identity from the same
+  bounded source page. Unknown/partial moves retain their existing result;
+  missing/stale metadata, Search and final-row cases return safely to the list.
+  Parent `after-archive-final-*` passed persistence, Archive-to-next and final-row
+  return, eight captures each. Focused tests cover ownership, CSRF, stale CAS,
+  order/filter/context, malformed UID/flags and changed candidate identity.
+- PAGE24 card and row geometry now follows the approved reference. Runtime and
+  fixture use the same reported user-agent device labels; iOS and Android are
+  recognized before compatibility OS tokens. Location remains Unknown. Parent
+  `sessions-device-final-*` passed eight real revocation/isolation journeys and
+  sixteen captures each, including no-script keyboard and forced colours.
+- The sidebar now includes the approved Storage footer with Usage unavailable.
+  No quota amount or meter is fabricated. Parent `storage-footer-integrated-*`
+  passed twenty-six captures each, desktop/narrow/short-height navigation.
+- PAGE27 no-messages, failed-load and empty-search cards use the approved state
+  composition and native Compose, read-only Retry and Clear filters actions.
+  Retry retains validated view state; Clear filters preserves only mailbox
+  scope. Parent `state-integrated-*` passed five journeys and fifteen captures
+  each. Empty Archive's separate browser journey remains unqualified.
+- Root inspected actual captures against PAGE09/PAGE14/PAGE24/PAGE27. Production
+  and focused checks passed. Independent source review found no blocking issue
+  in People ownership/bounds or confirmed Archive navigation. Combined acceptance
+  and security/V10–13 passed with 894 library tests, seven explicit ignores and
+  both hostile-content tests. Strict all-target/all-feature Clippy and V14 passed.
+  S04 `navigation-states-*-b.log` retains the final results; initial failures for
+  a Clippy test initializer and a hostile fixture in the runtime template file
+  are retained. The fixture moved to a dedicated test module; gates are unchanged.
+  Whole-page, sprint and epic acceptance stay open.

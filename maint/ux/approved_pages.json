@@ -1771,7 +1771,7 @@
             "src/http/routes_mail.rs",
             "maint/ux/search_workflows.py",
             "S04/search-final-{edge,firefox}/report.json",
-            "Messages only; Documents, People and combined All category remain unavailable."
+            "Messages and saved People categories work independently; Documents and combined All category remain unavailable."
           ]
         },
         {
@@ -1783,8 +1783,14 @@
         {
           "id": "R2-09-012",
           "label": "People category",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http/routes_people.rs",
+            "src/http/people_tests.rs",
+            "maint/ux/people_search_workflows.py",
+            "S04/people-final-{edge,firefox}/report.json",
+            "Private saved contacts only, twenty per page; modified time unavailable. Header theme retains category, query and page."
+          ]
         },
         {
           "id": "R2-09-013",
@@ -1806,7 +1812,11 @@
             "src/http/routes_mail.rs",
             "maint/ux/search_workflows.py",
             "S04/search-final-{edge,firefox}/report.json",
-            "Owned mail subject, sender and validated bounded preview when available; no document or people results."
+            "Owned mail subject/sender/validated preview and saved-contact name/address; Documents results remain unavailable.",
+            "src/http/routes_people.rs",
+            "src/http/people_tests.rs",
+            "maint/ux/people_search_workflows.py",
+            "S04/people-final-{edge,firefox}/report.json"
           ]
         },
         {
@@ -2504,8 +2514,15 @@
         {
           "id": "R2-14-003",
           "label": "After-archive selection",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/after_archive.rs",
+            "src/http/routes_after_archive.rs",
+            "src/http/after_archive_tests.rs",
+            "maint/ux/after_archive_workflows.py",
+            "S04/after-archive-final-{edge,firefox}/report.json",
+            "Confirmed single Archive may select the next exact identity in the current bounded mailbox page; unavailable, uncertain, Search or last-row cases retain safe list/result navigation."
+          ]
         },
         {
           "id": "R2-14-004",
@@ -3602,7 +3619,9 @@
           "status": "IMPLEMENTED_VERIFIED_LOCAL",
           "evidence": [
             "maint/ux/session_workflows.py",
-            "docs/UX_EXECUTION_LEDGER.md"
+            "docs/UX_EXECUTION_LEDGER.md",
+            "src/http/sessions_approved.css",
+            "S04/sessions-device-final-{edge,firefox}/workflows.json"
           ]
         },
         {
@@ -3611,7 +3630,9 @@
           "status": "IMPLEMENTED_VERIFIED_LOCAL",
           "evidence": [
             "maint/ux/session_workflows.py",
-            "docs/UX_EXECUTION_LEDGER.md"
+            "docs/UX_EXECUTION_LEDGER.md",
+            "src/http/sessions_approved.css",
+            "S04/sessions-device-final-{edge,firefox}/workflows.json"
           ]
         },
         {
@@ -3620,7 +3641,9 @@
           "status": "IMPLEMENTED_VERIFIED_LOCAL",
           "evidence": [
             "maint/ux/session_workflows.py",
-            "docs/UX_EXECUTION_LEDGER.md"
+            "docs/UX_EXECUTION_LEDGER.md",
+            "src/http/sessions_approved.css",
+            "S04/sessions-device-final-{edge,firefox}/workflows.json"
           ]
         },
         {
@@ -3629,7 +3652,9 @@
           "status": "IMPLEMENTED_VERIFIED_LOCAL",
           "evidence": [
             "maint/ux/session_workflows.py",
-            "docs/UX_EXECUTION_LEDGER.md"
+            "docs/UX_EXECUTION_LEDGER.md",
+            "src/http/sessions_approved.css",
+            "S04/sessions-device-final-{edge,firefox}/workflows.json"
           ]
         },
         {
@@ -3638,7 +3663,9 @@
           "status": "IMPLEMENTED_VERIFIED_LOCAL",
           "evidence": [
             "maint/ux/session_workflows.py",
-            "docs/UX_EXECUTION_LEDGER.md"
+            "docs/UX_EXECUTION_LEDGER.md",
+            "src/http/sessions_approved.css",
+            "S04/sessions-device-final-{edge,firefox}/workflows.json"
           ]
         },
         {
@@ -3647,7 +3674,9 @@
           "status": "IMPLEMENTED_VERIFIED_LOCAL",
           "evidence": [
             "maint/ux/session_workflows.py",
-            "docs/UX_EXECUTION_LEDGER.md"
+            "docs/UX_EXECUTION_LEDGER.md",
+            "src/http/sessions_approved.css",
+            "S04/sessions-device-final-{edge,firefox}/workflows.json"
           ]
         },
         {
@@ -3656,7 +3685,9 @@
           "status": "IMPLEMENTED_VERIFIED_LOCAL",
           "evidence": [
             "maint/ux/session_workflows.py",
-            "docs/UX_EXECUTION_LEDGER.md"
+            "docs/UX_EXECUTION_LEDGER.md",
+            "src/http/sessions_approved.css",
+            "S04/sessions-device-final-{edge,firefox}/workflows.json"
           ]
         },
         {
@@ -3665,7 +3696,9 @@
           "status": "IMPLEMENTED_VERIFIED_LOCAL",
           "evidence": [
             "maint/ux/session_workflows.py",
-            "docs/UX_EXECUTION_LEDGER.md"
+            "docs/UX_EXECUTION_LEDGER.md",
+            "src/http/sessions_approved.css",
+            "S04/sessions-device-final-{edge,firefox}/workflows.json"
           ]
         }
       ]
@@ -3743,19 +3776,33 @@
         "S07-01",
         "S09-02"
       ],
-      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "visual_status": "PARTIAL_FINAL_REFERENCE_COMPARISON",
       "controls": [
         {
           "id": "R2-27-001",
           "label": "No messages with Compose",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http/mail_states.css",
+            "src/http_ui.rs",
+            "src/http/routes_mail.rs",
+            "maint/ux/state_workflows.py",
+            "S04/state-integrated-{edge,firefox}/report.json",
+            "Native no-messages, read-only Retry and Clear filters workflows; separate empty Archive browser journey remains unqualified."
+          ]
         },
         {
           "id": "R2-27-002",
           "label": "Failed load with read-only Retry",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http/mail_states.css",
+            "src/http_ui.rs",
+            "src/http/routes_mail.rs",
+            "maint/ux/state_workflows.py",
+            "S04/state-integrated-{edge,firefox}/report.json",
+            "Native no-messages, read-only Retry and Clear filters workflows; separate empty Archive browser journey remains unqualified."
+          ]
         },
         {
           "id": "R2-27-003",
@@ -3790,8 +3837,15 @@
         {
           "id": "R2-27-008",
           "label": "Empty search with Clear filters",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http/mail_states.css",
+            "src/http_ui.rs",
+            "src/http/routes_mail.rs",
+            "maint/ux/state_workflows.py",
+            "S04/state-integrated-{edge,firefox}/report.json",
+            "Native no-messages, read-only Retry and Clear filters workflows; separate empty Archive browser journey remains unqualified."
+          ]
         }
       ]
     }

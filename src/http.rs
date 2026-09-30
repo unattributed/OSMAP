@@ -17,6 +17,7 @@ mod http_gateway;
 #[path = "http_runtime.rs"]
 mod http_runtime;
 mod notification_badge;
+mod routes_after_archive;
 mod routes_appearance;
 mod routes_auth;
 mod routes_autosave;
@@ -34,6 +35,8 @@ mod routes_labels;
 mod routes_mail;
 mod routes_moves;
 mod routes_notifications;
+#[path = "http/routes_people.rs"]
+mod routes_people;
 mod routes_reading_preferences;
 mod routes_reply;
 #[path = "http/routes_send_receipt.rs"]
@@ -852,6 +855,9 @@ mod tests {
     mod identity_preference_tests {
         include!("http/identity_preference_tests.rs");
     }
+    mod after_archive_tests {
+        include!("http/after_archive_tests.rs");
+    }
     mod copies_tests {
         include!("http/copies_tests.rs");
     }
@@ -907,6 +913,9 @@ mod tests {
     mod label_tests {
         include!("http/label_tests.rs");
     }
+    mod people_tests {
+        include!("http/people_tests.rs");
+    }
     mod contact_tests {
         include!("http/contact_tests.rs");
     }
@@ -947,6 +956,7 @@ mod tests {
         labels_store: Option<crate::labels::LabelStore>,
         signature_store: Option<crate::signature::SignatureStore>,
         autosave_store: Option<crate::autosave::Store>,
+        after_archive_store: Option<crate::after_archive::Store>,
         contacts_store: Option<crate::contacts::ContactStore>,
         draft_store: Option<crate::draft::FileDraftStore>,
         fail_draft_delete: Option<String>,
@@ -973,6 +983,7 @@ mod tests {
                 labels_store: None,
                 signature_store: None,
                 autosave_store: None,
+                after_archive_store: None,
                 contacts_store: None,
                 draft_store: None,
                 send_journal: fixture_send_journal(),
@@ -1036,6 +1047,26 @@ mod tests {
     }
 
     impl BrowserGateway for StubGateway {
+        fn load_after_archive(
+            &self,
+            s: &ValidatedSession,
+        ) -> Result<crate::after_archive::Preference, crate::after_archive::Error> {
+            self.after_archive_store
+                .as_ref()
+                .ok_or(crate::after_archive::Error::Unavailable)?
+                .load(&s.record.canonical_username)
+        }
+        fn save_after_archive(
+            &self,
+            s: &ValidatedSession,
+            revision: u64,
+            choice: crate::after_archive::Choice,
+        ) -> Result<crate::after_archive::Preference, crate::after_archive::Error> {
+            self.after_archive_store
+                .as_ref()
+                .ok_or(crate::after_archive::Error::Unavailable)?
+                .save(&s.record.canonical_username, revision, choice)
+        }
         fn load_autosave(
             &self,
             session: &ValidatedSession,
@@ -2350,6 +2381,14 @@ mod tests {
             query: &str,
             field: MessageSearchField,
         ) -> BrowserMessageSearchOutcome {
+            if context.user_agent == "OSMAP/StateFailure" {
+                return BrowserMessageSearchOutcome {
+                    decision: BrowserMessageSearchDecision::Denied {
+                        public_reason: "unavailable".into(),
+                    },
+                    audit_events: Vec::new(),
+                };
+            }
             if context.user_agent == "OSMAP/SearchWrongOwner" {
                 return BrowserMessageSearchOutcome {
                     decision: BrowserMessageSearchDecision::Listed {

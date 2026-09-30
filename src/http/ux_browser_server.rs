@@ -42,6 +42,7 @@ fn ux_synthetic_browser_server() {
         ..HttpPolicy::default()
     };
     let gateway = StubGateway {
+        after_archive_store: Some(crate::after_archive::Store::new(root.join("settings"))),
         autosave_store: Some(crate::autosave::Store::new(root.join("settings"))),
         signature_store: Some(crate::signature::SignatureStore::new(root.join("settings"))),
         labels_store: Some(crate::labels::LabelStore::new(

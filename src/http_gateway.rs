@@ -138,6 +138,25 @@ impl RuntimeBrowserGateway {
 }
 
 impl BrowserGateway for RuntimeBrowserGateway {
+    fn load_after_archive(
+        &self,
+        s: &ValidatedSession,
+    ) -> Result<crate::after_archive::Preference, crate::after_archive::Error> {
+        crate::after_archive::Store::new(&self.settings_dir).load(&s.record.canonical_username)
+    }
+    fn save_after_archive(
+        &self,
+        s: &ValidatedSession,
+        revision: u64,
+        choice: crate::after_archive::Choice,
+    ) -> Result<crate::after_archive::Preference, crate::after_archive::Error> {
+        crate::after_archive::Store::new(&self.settings_dir).save(
+            &s.record.canonical_username,
+            revision,
+            choice,
+        )
+    }
+
     fn load_autosave(
         &self,
         session: &ValidatedSession,

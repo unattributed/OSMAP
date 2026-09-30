@@ -61,7 +61,9 @@ impl RuntimeBrowserGateway {
     }
 
     /// Projects persisted session metadata into a browser-safe summary.
-    pub(super) fn visible_session(record: crate::session::SessionRecord) -> BrowserVisibleSession {
+    pub(in crate::http) fn visible_session(
+        record: crate::session::SessionRecord,
+    ) -> BrowserVisibleSession {
         BrowserVisibleSession {
             session_id: record.session_id,
             issued_at: record.issued_at,
@@ -602,7 +604,11 @@ fn session_device_label(user_agent: &str) -> String {
         "Other browser"
     };
 
-    let platform = if user_agent.contains("OpenBSD") {
+    let platform = if user_agent.contains("iPhone") || user_agent.contains("iPad") {
+        Some("iOS")
+    } else if user_agent.contains("Android") {
+        Some("Android")
+    } else if user_agent.contains("OpenBSD") {
         Some("OpenBSD")
     } else if user_agent.contains("FreeBSD") {
         Some("FreeBSD")
@@ -610,10 +616,6 @@ fn session_device_label(user_agent: &str) -> String {
         Some("Windows")
     } else if user_agent.contains("Mac OS X") || user_agent.contains("Macintosh") {
         Some("macOS")
-    } else if user_agent.contains("Android") {
-        Some("Android")
-    } else if user_agent.contains("iPhone") || user_agent.contains("iPad") {
-        Some("iOS")
     } else if user_agent.contains("Linux") || user_agent.contains("X11") {
         Some("Linux")
     } else {
@@ -689,5 +691,19 @@ mod tests {
             "OSMAP validation client"
         );
         assert_eq!(session_device_label("   "), "Unknown device");
+        assert_eq!(
+            session_device_label("Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) Version/18.0 Mobile/15E148 Safari/604.1"),
+            "Safari on iOS"
+        );
+        assert_eq!(
+            session_device_label("Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X) FxiOS/140.0 Mobile/15E148 Safari/605.1.15"),
+            "Firefox on iOS"
+        );
+        assert_eq!(
+            session_device_label(
+                "Mozilla/5.0 (Linux; Android 15) Chrome/140.0 Mobile Safari/537.36"
+            ),
+            "Chrome on Android"
+        );
     }
 }

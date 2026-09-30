@@ -59,6 +59,19 @@ pub fn safe_mail_return(value: &str) -> Option<String> {
                 "select",
             ]
         }
+        "/search" if fields.get("category").map(String::as_str) == Some("people") => {
+            let query = fields.get("q").map(String::as_str).unwrap_or("");
+            if query.len() > 256 || query.chars().any(char::is_control) {
+                return None;
+            }
+            if let Some(page) = fields.get("page") {
+                let number = page.parse::<usize>().ok()?;
+                if !(1..=10).contains(&number) || number.to_string() != *page {
+                    return None;
+                }
+            }
+            &["category", "q", "page"]
+        }
         "/search" => {
             if fields.get("q")?.trim().is_empty() {
                 return None;
@@ -140,6 +153,30 @@ pub fn safe_mail_return(value: &str) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn people_theme_return_retains_query_page_and_refuses_other_route_fields() {
+        assert_eq!(
+            safe_mail_return("/search?category=people&q=Alice+%26+Bob&page=2"),
+            Some("/search?category=people&page=2&q=Alice+%26+Bob".into())
+        );
+        assert_eq!(
+            safe_mail_return("/search?category=people"),
+            Some("/search?category=people".into())
+        );
+        for value in [
+            "/search?category=people&page=0",
+            "/search?category=people&page=11",
+            "/search?category=people&page=01",
+            "/search?category=people&mailbox=INBOX",
+            "/search?category=people&selected_uid=9",
+            "/search?category=people&q=%00",
+            "/search?category=other&q=Alice",
+            "https://example.test/search?category=people",
+        ] {
+            assert!(safe_mail_return(value).is_none(), "{value}");
+        }
+    }
 
     #[test]
     fn attachment_return_preserves_search_scope_and_clears_only_moved_selection() {

@@ -31,8 +31,8 @@ use crate::rendering::{HtmlDisplayPreference, RenderedMessageView};
 pub(crate) use settings_ui::{
     render_appearance_page, render_composition_page_with_signature, render_copies_page,
     render_general_page, render_identity_page, render_identity_page_with_signature,
-    render_notifications_page, render_privacy_page, render_reading_page, render_security_page,
-    IdentityPageModel,
+    render_notifications_page, render_privacy_page, render_reading_page_with_after_archive,
+    render_security_page, IdentityPageModel,
 };
 
 /// Defense-in-depth cap for attachment metadata rows rendered by one route.
@@ -293,7 +293,7 @@ pub(crate) fn app_header(canonical_username: &str, csrf_token: &str, current: &s
         "<a class=\"skip-link\" href=\"#main-content\">Skip to content</a>",
         "<aside class=\"app-rail\" aria-label=\"Application navigation\">",
         "<details class=\"rail-disclosure\"><summary title=\"Navigation labels\">{}<span class=\"sr-only rail-expand-label\">Expand navigation</span><span class=\"sr-only rail-collapse-label\">Collapse navigation</span></summary><p class=\"sr-only\">Navigation labels are expanded.</p></details>",
-        "<nav class=\"rail-links\" aria-label=\"Primary navigation\">{}</nav></aside>",
+        "<nav class=\"rail-links\" aria-label=\"Primary navigation\">{}</nav><section class=\"rail-storage\" aria-label=\"Storage\"><strong>Storage</strong><p>Usage unavailable</p></section></aside>",
         "<header class=\"topbar{brand_variant}\" role=\"banner\" aria-label=\"Authenticated OSMAP shell\">",
         "<a class=\"brand\" href=\"/mailboxes\" aria-label=\"OSMAP mailboxes\"><span class=\"brand-mark\" aria-hidden=\"true\"><span class=\"ui-icon brand-icon\">{}</span></span>{brand_copy}</a>",
         "{}",
@@ -453,7 +453,10 @@ pub(crate) fn render_settings_search_page(account: &str, csrf: &str, query: &str
     TrustedHtml::from_template(format!("{}<main id=\"main-content\" class=\"page-shell settings-page\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Search settings</h1><p>Available settings matching <strong>{}</strong>.</p></div><section class=\"content-pane\">{}<a class=\"button-link\" href=\"/settings?section=appearance\">Appearance settings</a></section></main>", app_header(account, csrf, "settings-search"), escape_html(query), content))
 }
 
-fn mailbox_nav_section(mailbox_name: &str, archive_mailbox_name: Option<&str>) -> &'static str {
+pub(crate) fn mailbox_nav_section(
+    mailbox_name: &str,
+    archive_mailbox_name: Option<&str>,
+) -> &'static str {
     match mailbox_name {
         "INBOX" => "inbox",
         "Sent" => "sent",
@@ -472,6 +475,27 @@ pub(crate) fn render_navigation_notice(
     TrustedHtml::from_template(format!(
         "{}<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\"><section class=\"content-pane\"><h1>{}</h1><p>{}</p><div class=\"toolbar\"><a class=\"button-link\" href=\"/mailboxes\">All mailboxes</a><a class=\"button-link\" href=\"/settings\">Settings</a></div></section></main>",
         app_header(canonical_username, csrf_token, "archive"), escape_html(title), escape_html(message)))
+}
+
+// PAGE27 states use native links only; callers supply bounded, constructed routes.
+pub(crate) fn mail_state_card(
+    title: &str,
+    detail: &str,
+    href: &str,
+    action: &str,
+    failed: bool,
+) -> String {
+    format!("<section class=\"mail-state-card{}\"><h2>{}</h2><p>{}</p><a class=\"button-link\" href=\"{}\">{}</a></section>", if failed { " mail-state-failed" } else { "" }, escape_html(title), escape_html(detail), escape_html(href), escape_html(action))
+}
+
+pub(crate) fn render_mail_load_failure(
+    account: &str,
+    csrf: &str,
+    current: &str,
+    detail: &str,
+    retry: &str,
+) -> TrustedHtml {
+    TrustedHtml::from_template(format!("{}<main id=\"main-content\" class=\"page-shell mail-state-page\" tabindex=\"-1\"><h1>Mail unavailable</h1>{}</main>", app_header(account, csrf, current), mail_state_card("Failed load", detail, retry, "Retry", true)))
 }
 
 pub(crate) fn render_content_notice(
@@ -706,7 +730,7 @@ fn append_list_filter_selection(href: &mut String, view: &ListViewState) {
     }
 }
 
-fn list_navigation_href(base: &str, view: &ListViewState, page: usize) -> String {
+pub(crate) fn list_navigation_href(base: &str, view: &ListViewState, page: usize) -> String {
     let mut href = format!(
         "{base}&sort={}&dir={}",
         view.sort.column.query_value(),
@@ -1305,7 +1329,7 @@ pub(crate) fn render_message_list_page(
         ));
     }
     if messages.is_empty() && !archive_page {
-        rows.push_str(&format!("<li class=\"message-empty-state\"><strong>No messages shown.</strong><br><span class=\"muted\">{}</span><p><a class=\"button-link\" href=\"/compose\">Compose a message</a></p></li>", if sort_links.view.filter == MessageFilter::All && sort_links.view.attachment == AttachmentFilter::All { "New messages will appear here." } else { "No messages match these filters. Choose All messages and All attachment states to see the mailbox." }));
+        rows.push_str(&format!("<li class=\"message-empty-state\">{}</li>", mail_state_card("No messages", "No messages are shown in this mailbox view. Active filters and snoozed messages may limit the loaded results.", "/compose", "Compose", false)));
     }
 
     let bulk_move_form = if messages.iter().any(|m| m.metadata.is_some()) {
@@ -1501,7 +1525,20 @@ pub(crate) fn render_message_search_page(
     ));
     let mut rows = String::new();
     if results.is_empty() {
-        rows.push_str(&format!("<li class=\"message-empty-state\"><strong>No messages matched this search.</strong><p>Try fewer filters or different keywords.</p><p><a class=\"button-link\" href=\"{}\">Clear filters</a> <a href=\"/mailboxes\">Browse mailboxes</a></p></li>", escape_html(&navigation_base)));
+        let clear = match mailbox_name {
+            Some(name) => format!("/search?mailbox={}", url_encode(name)),
+            None => "/search?scope=all".into(),
+        };
+        rows.push_str(&format!(
+            "<li class=\"message-empty-state\">{}</li>",
+            mail_state_card(
+                "Empty search",
+                "No results match the current search and filters.",
+                &clear,
+                "Clear filters",
+                false
+            )
+        ));
     } else {
         for result in results {
             let message_href = if result.metadata.is_some() {
@@ -1536,9 +1573,9 @@ pub(crate) fn render_message_search_page(
             "{}<main id=\"main-content\" class=\"page-shell coordinated-mail search-results{}\" tabindex=\"-1\"><div class=\"page-intro mail-page-intro\"><h1>Search</h1><p>Find messages across your mailboxes.</p></div>",
             "<section class=\"content-pane coordinated-list\"><h2 class=\"section-title sr-only\">Search Results</h2>",
             "<div class=\"search-query-panel\"><form class=\"search-row compact-search\" method=\"get\" action=\"/search\">{}<label class=\"search-query-label\" for=\"search-query\"><span class=\"sr-only\">Search query</span><input id=\"search-query\" type=\"search\" name=\"q\" value=\"{}\" placeholder=\"Search mail…\" autocomplete=\"off\"></label><button type=\"submit\">Search</button><details class=\"search-options\"><summary>Search options</summary><div>{}{}<label><input type=\"checkbox\" name=\"scope\" value=\"all\"{}> Search all mailboxes</label></div></details></form>{}</div>",
-            "<div class=\"search-result-tabs\" aria-label=\"Search types\"><span aria-current=\"true\">Messages{}</span><span aria-disabled=\"true\">Documents</span><span aria-disabled=\"true\">People</span><span class=\"search-scope\">{}</span>{}</div>",
+            "<div class=\"search-result-tabs\" aria-label=\"Search types\"><span aria-current=\"true\">Messages{}</span><span aria-disabled=\"true\">Documents</span><a href=\"/search?category=people&amp;q={people_query}\">People</a><span class=\"search-scope\">{}</span>{}</div>",
             "<div class=\"search-result-headings\" aria-hidden=\"true\"><span>Type</span><span>Result</span><span>Location</span><span>Received</span><span></span></div><ul role=\"list\" class=\"message-cards search-result-list\" aria-label=\"Search results\">{}</ul>",
-            "<div class=\"search-result-footer\">{}{}</div>{}<p class=\"search-capability-note muted\">Search covers accessible messages. Documents, people and protection-status filters are unavailable. Message protection is assessed when opened.</p></section>{}</main>"
+            "<div class=\"search-result-footer\">{}{}</div>{}<p class=\"search-capability-note muted\">Search covers accessible messages. Documents and protection-status filters are unavailable. People search covers your saved contacts. Message protection is assessed when opened.</p></section>{}</main>"
         ),
         app_header(canonical_username, csrf_token, "search"),
         if view.selection.is_some() { " has-selection" } else { "" },
@@ -1546,6 +1583,7 @@ pub(crate) fn render_message_search_page(
         if landing { String::new() } else { format!(" ({})", view.total_results) }, escape_html(search_scope),
         sort_headers, rows, pages, back_link, notices,
         render_coordinated_reader(&navigation_base, view, csrf_token, context.reader),
+        people_query = escape_html(&url_encode(query)),
     ))
 }
 
@@ -2512,3 +2550,7 @@ fn draft_ui_unmatched_revision_and_duplicate_state_never_enable_editing() {
     assert!(!render_draft_list_state(&view).contains("select="));
     assert!(DraftListView::parse(&[("select".into(), "all".into())].into()).is_err());
 }
+
+#[cfg(test)]
+#[path = "http_ui_state_tests.rs"]
+mod mail_state_tests;

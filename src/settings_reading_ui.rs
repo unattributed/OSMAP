@@ -2,10 +2,20 @@
 use super::*;
 use crate::reading_preferences::ReadingPreferences;
 
+#[cfg(test)]
 pub(crate) fn render_reading_page(
     model: &SettingsPageModel<'_>,
     preferences: &ReadingPreferences,
     mailboxes: Option<&[MailboxEntry]>,
+) -> TrustedHtml {
+    render_reading_page_with_after_archive(model, preferences, mailboxes, None)
+}
+
+pub(crate) fn render_reading_page_with_after_archive(
+    model: &SettingsPageModel<'_>,
+    preferences: &ReadingPreferences,
+    mailboxes: Option<&[MailboxEntry]>,
+    after_archive: Option<&crate::after_archive::Preference>,
 ) -> TrustedHtml {
     let csrf = escape_html(model.csrf_token);
     let start = select_options(
@@ -21,15 +31,29 @@ pub(crate) fn render_reading_page(
         preferences.date_order.as_str(),
         &[("newest", "Newest first"), ("oldest", "Oldest first")],
     );
+    let after_options = after_archive
+        .map(|v| {
+            select_options(
+                v.choice.as_str(),
+                &[("list", "Return to list"), ("next", "Select next message")],
+            )
+        })
+        .unwrap_or_else(|| "<option>Unavailable</option>".into());
+    let after_disabled = if after_archive.is_some() {
+        ""
+    } else {
+        " disabled"
+    };
+    let after_revision = after_archive.map_or(0, |v| v.revision);
     let behaviour = format!(concat!(
         "<div class=\"reading-card-column\"><section class=\"general-card\" aria-labelledby=\"reading-behaviour-title\"><h2 id=\"reading-behaviour-title\">Mailbox Behavior</h2>",
         "<div class=\"general-field\"><label for=\"reading-start-page\">Default start page</label><select id=\"reading-start-page\" form=\"reading-preferences-form\" name=\"start_page\">{start}</select></div>",
         "<div class=\"general-field\"><label for=\"reading-mark-read\">Mark read</label><select id=\"reading-mark-read\" disabled aria-describedby=\"reading-behaviour-help\"><option>Manual controls</option></select></div>",
-        "<div class=\"general-field\"><label for=\"reading-after-archive\">After archive</label><select id=\"reading-after-archive\" disabled aria-describedby=\"reading-behaviour-help\"><option>Unavailable</option></select></div>",
+        "<div class=\"general-field\"><label for=\"reading-after-archive\">After archive</label><select id=\"reading-after-archive\" form=\"after-archive-form\" name=\"choice\"{after_disabled} aria-describedby=\"after-archive-help\">{after_options}</select></div>",
         "<div class=\"general-field\"><label for=\"reading-date-order\">Message ordering</label><select id=\"reading-date-order\" form=\"reading-preferences-form\" name=\"date_order\">{order}</select></div></section>",
-        "<div class=\"reading-card-actions\"><button class=\"primary-button\" type=\"submit\" form=\"reading-preferences-form\">Save reading preferences</button></div>",
-        "<details class=\"reading-help\"><summary>Reading preference details</summary><p id=\"reading-behaviour-help\">Start page applies after sign-in. Ordering applies to individual messages; explicit list choices take priority. Automatic marking, next-message selection after archive and conversation grouping are unavailable.</p><p>This save also updates Show source shortcut and Attachment details in the Reader card.</p></details></div>"
-    ), start=start, order=order);
+        "<form id=\"after-archive-form\" method=\"post\" action=\"/settings/after-archive\"><input type=\"hidden\" name=\"csrf_token\" value=\"{csrf}\"><input type=\"hidden\" name=\"revision\" value=\"{after_revision}\"></form><div class=\"reading-card-actions\"><button type=\"submit\" form=\"after-archive-form\"{after_disabled}>Save after-archive choice</button><button class=\"primary-button\" type=\"submit\" form=\"reading-preferences-form\">Save reading preferences</button></div>",
+        "<details class=\"reading-help\"><summary>Reading preference details</summary><p id=\"reading-behaviour-help\">Start page applies after sign-in. Ordering applies to individual messages; explicit list choices take priority. Automatic marking and conversation grouping are unavailable.</p><p id=\"after-archive-help\">After archive applies only to a confirmed single-message Archive. Next uses verified loaded mailbox order and supported list filters; Search, last-row or unavailable context returns to the list. Save this choice separately.</p><p>This save also updates Show source shortcut and Attachment details in the Reader card.</p></details></div>"
+    ), start=start, order=order,after_options=after_options,after_disabled=after_disabled,after_revision=after_revision,csrf=csrf);
     let archive_missing = model.archive_mailbox_name.is_some_and(|stored| {
         mailboxes.is_some_and(|entries| !entries.iter().any(|entry| entry.name == stored))
     });
