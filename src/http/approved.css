@@ -475,3 +475,26 @@ body:has(.app-rail) {
   .account-avatar, .brand-mark { border: 1px solid ButtonText; }
   .compose-expand-state:focus-visible + label { outline-color: Highlight; }
 }
+
+/* Authenticated header only; retained Login/TOTP is unaffected. */
+.topbar .brand-mark { background: linear-gradient(#176cff, #0842c2); }
+.topbar .brand-mark .shell-icon { display: block; width: 1.4rem; height: 1.4rem; }
+.topbar .header-theme { display: flex; margin: 0; flex: 0 0 auto; }
+.topbar .header-theme button { display: inline-flex; align-items: center; justify-content: center; width: 2.5rem; min-height: 2.5rem; padding: .45rem; margin: 0; border: 1px solid var(--line); border-radius: .7rem 0 0 .7rem; background: var(--panel-soft); color: var(--ink); }
+.topbar .header-theme button + button { border-radius: 0 .7rem .7rem 0; border-left: 0; }
+.topbar .header-theme .shell-icon { width: 1.2rem; height: 1.2rem; }
+.topbar .header-theme button[aria-pressed=true] { color: var(--accent); background: var(--selected); box-shadow: inset 0 -2px currentColor; }
+.topbar .header-theme button:focus-visible { position: relative; outline: 3px solid var(--focus); outline-offset: 2px; z-index: 1; }
+@media(max-width:40rem) {
+  body:has(.app-rail) { --topbar-height: 10.1rem; }
+  .topbar .brand { margin-right: auto; }
+  .topbar .auth-status { flex-basis: 100%; justify-content: flex-end; }
+  .topbar .header-theme button { width: 2.75rem; min-height: 2.75rem; }
+  .topbar .header-search { order: 3; }
+}
+@media(forced-colors:active) {
+  .topbar .brand-mark { background: Canvas; color: CanvasText; border: 1px solid CanvasText; }
+  .topbar .header-theme button { background: ButtonFace; color: ButtonText; border-color: ButtonText; forced-color-adjust: none; }
+  .topbar .header-theme button[aria-pressed=true] { background: Highlight; color: HighlightText; box-shadow: none; outline: 1px solid Highlight; }
+  .topbar .header-theme button:focus-visible { outline: 3px solid CanvasText; outline-offset: 3px; }
+}

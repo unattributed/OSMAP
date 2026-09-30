@@ -105,7 +105,7 @@ pub(crate) fn render(model: &ComposeResultModel<'_>) -> TrustedHtml {
             "<p><a href=\"/mailbox?name=Sent\">Open Sent</a> · <a href=\"/drafts\">Open Drafts</a></p>",
             "</section></main>"
         ),
-        crate::http_ui::app_header(model.account, model.csrf, "compose"),
+        crate::http_ui::app_header(model.account, model.csrf, "compose-result"),
         model.body_format.as_str(),
         heading = heading,
         explanation = explanation,

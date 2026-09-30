@@ -480,7 +480,15 @@ where
                 }
             }
         };
-        if let Err(error) = self.add_selected_contact(&validated_session, &mut form) {
+        let contact_result = if matches!(
+            form.get("compose_action").map(String::as_str),
+            Some("theme-light" | "theme-dark")
+        ) {
+            Ok(())
+        } else {
+            self.add_selected_contact(&validated_session, &mut form)
+        };
+        if let Err(error) = contact_result {
             return HandledHttpResponse {
                 response: super::compose_enhancement::response(409, "Conflict", "Choose a Contact", render_compose_page(&ComposePageModel {
                     contacts: self.contact_snapshot(&validated_session).ok().as_ref(),
@@ -544,10 +552,18 @@ where
             ) {
                 Ok(thread) => thread,
                 Err(response) => {
+                    let response = if matches!(
+                        form.get("compose_action").map(String::as_str),
+                        Some("theme-light" | "theme-dark")
+                    ) {
+                        self.retained_compose_input_error(&validated_session, &form, reply_reference.as_ref(), "The original reply context could not be confirmed. Your draft and theme were not changed. Re-select any new uploads before retrying.")
+                    } else {
+                        response
+                    };
                     return HandledHttpResponse {
                         response,
                         audit_events,
-                    }
+                    };
                 }
             },
             None => None,
@@ -643,6 +659,49 @@ where
                         "draft_save_unconfirmed",
                         503,
                         "Service Unavailable",
+                    ),
+                    audit_events,
+                }
+            }
+            BrowserDraftSaveDecision::Saved { draft_id }
+                if matches!(
+                    form.get("compose_action").map(String::as_str),
+                    Some("theme-light" | "theme-dark")
+                ) =>
+            {
+                let appearance =
+                    if form.get("compose_action").map(String::as_str) == Some("theme-dark") {
+                        AppearancePreference::Dark
+                    } else {
+                        AppearancePreference::Light
+                    };
+                let destination = format!("/draft?id={}", url_encode(&draft_id));
+                // Draft confirmation is the ordering boundary. A refused,
+                // conflicted or unconfirmed save never writes appearance.
+                if self
+                    .gateway
+                    .update_appearance(context, &validated_session, appearance)
+                    .is_err()
+                {
+                    audit_events.push(build_http_warning_event(
+                        "http_draft_theme_unconfirmed",
+                        "draft saved but appearance save could not be confirmed",
+                        context,
+                    ));
+                    return HandledHttpResponse {
+                        response: html_response(503, "Service Unavailable", "Draft Saved; Appearance Unconfirmed", TrustedHtml::from_template(format!("<p>Your draft was saved, including accepted attachments. The appearance change could not be confirmed.</p><p><a href=\"{}\">Return to your saved draft</a> or <a href=\"/settings?section=appearance\">review your saved appearance</a> before trying again.</p>", escape_html(&destination)))),
+                        audit_events,
+                    };
+                }
+                audit_events.push(build_http_info_event(
+                    "http_draft_theme_updated",
+                    "draft saved and appearance preference updated",
+                    context,
+                ));
+                HandledHttpResponse {
+                    response: redirect_response(303, "See Other", &destination).with_header(
+                        "Set-Cookie",
+                        appearance.cookie(self.policy.secure_session_cookie),
                     ),
                     audit_events,
                 }

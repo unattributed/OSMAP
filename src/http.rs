@@ -9,6 +9,7 @@ pub(crate) mod compose_actions;
 pub(crate) mod compose_delivery_ui;
 mod compose_enhancement;
 pub(crate) mod compose_preflight;
+mod header_theme;
 #[path = "http_browser.rs"]
 mod http_browser;
 #[path = "http_gateway.rs"]
@@ -819,6 +820,9 @@ mod tests {
     }
     mod ux_fixtures {
         include!("http/ux_fixtures.rs");
+    }
+    mod header_theme_tests {
+        include!("http/header_theme_tests.rs");
     }
     mod appearance_tests {
         include!("http/appearance_tests.rs");

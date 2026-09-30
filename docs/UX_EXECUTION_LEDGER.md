@@ -1628,3 +1628,53 @@ with later outcomes. Correct errors using a new entry referencing the old one.
 - S03-04 remains partial: durable replay suppression, real journal-backed receipts
   and exact recovery snapshots are prepared follow-on work, not delivered by this
   checkpoint. Signing's mandatory pre-commit security check follows.
+
+### Shared header and remaining native preference work
+
+- Checkpoint `70ad25123695021695d0ac945f163e838ef8a407` has a verified Shopkeeper
+  signature and passed isolated obsd1 qualification. Source archive SHA-256
+  `18ce4c927c3cbe8d6b2252839b83868e4cd005005f6fd262c4fb1241ebbc75f8`;
+  native log SHA-256 `b29a3cf21d0cd8fa3772e1ef11f75a63cc71b17755c95900662b87f5f03f6f6c`.
+  Exit 0; checkout/services unchanged; no deployment; S04 `native-b` evidence.
+- S01 header correction owns authenticated header/SVG/CSS, finite return-target
+  handling and existing theme/draft-save routes. Native Light/Dark choices must
+  persist, preserve readonly navigation context and save Compose content before
+  changing appearance. Editable Settings and recovery pages must not discard
+  unsaved content through the shortcut. No new JS/CSP authority or auth redesign.
+- Advisory agent allowances: header implementation/correction 6,500 tokens;
+  journal/draft coordination 7,000; scratch Reading preferences 4,500. Parent
+  validates returned source and both-browser evidence. Journal and Reading
+  proposals remain separate, unaccepted work until integrated and qualified.
+- Future PAGE-14 preferences are finite start page, default message date order,
+  source-link visibility and attachment-detail visibility. They must affect
+  login/list/reader behaviour and never change sanitization or mail flags.
+  Use a private versioned sidecar; missing records default without live migration.
+
+### Shared header — native theme completion, 2026-09-30
+
+- Authenticated brand now follows the approved diamond mark. Native Light/Dark
+  controls save the account preference and preserve validated local list/reader
+  queries; System remains available through Appearance. Compose submits its
+  existing multipart save form first, preserving current text, uploads, saved
+  attachment removals and reply context. Only confirmed draft saves write theme.
+- Conflicted/unconfirmed saves leave appearance unchanged. A failed appearance
+  write after a confirmed save reports both outcomes and links the saved draft.
+  Settings, Contacts and submission-result pages disable quick theme changes to
+  preserve editable or recovery content. No new script or CSP authority.
+- Independent Edge 154 and Firefox 155 qualification passed six groups each,
+  JavaScript off/on, actual preference/draft stores, fresh login/account isolation,
+  native keyboard use and 1600/768/360 captures including forced colours. Theme
+  workflows issued zero sends; a separately counted synthetic unconfirmed-send
+  setup checked the recovery header. External requests were zero. Parent inspected
+  final desktop and narrow forced-colour captures. Desktop header/sidebar retain
+  approximately 72/220 px dimensions from approved PAGE-11/12.
+- Full gates: 729 library tests passed, seven explicit fixtures ignored;
+  acceptance/security/V10–13, V14, strict all-target/all-feature Clippy, formatting
+  and diff checks passed. Initial hostile-content gate correctly rejected new SVG
+  wrappers outside its narrow geometry exception. Production now reuses the
+  existing shell-icon helper; the assurance gate was not weakened. A formatting
+  failure was corrected before the final passing run.
+- Evidence: S04 `header-final-{edge,firefox}`, `header-acceptance-final.log`,
+  `header-v14-final.log`, `header-clippy-final.log`; earlier failures retained.
+  This accepts the bounded header implementation locally, not whole-page or epic
+  completion. Native checkpoint qualification follows after signing.

@@ -29,7 +29,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
                 "<p>The appearance form content type was not supported.</p>",
             );
         }
-        let form = match parse_urlencoded_form(&request.body, 2, 512) {
+        let form = match parse_urlencoded_form(&request.body, 3, 8192) {
             Ok(form) => form,
             Err(_) => return failure(
                 400,
@@ -37,6 +37,20 @@ impl<G: BrowserGateway> BrowserApp<G> {
                 "<p>The appearance form could not be read. Return to Settings and try again.</p>",
             ),
         };
+        // The larger envelope is only for the bounded return URL. Preserve
+        // the original small preference form limit when no URL is supplied.
+        if (!form.contains_key("return_to") && request.body.len() > 512)
+            || form
+                .get("csrf_token")
+                .is_some_and(|value| value.len() > 128)
+            || form.get("appearance").is_some_and(|value| value.len() > 16)
+        {
+            return failure(
+                400,
+                "Bad Request",
+                "<p>The appearance form exceeded its field limits.</p>",
+            );
+        }
         if let Some(response) = self.require_valid_csrf(
             request,
             form.get("csrf_token").map(String::as_str),
@@ -45,6 +59,23 @@ impl<G: BrowserGateway> BrowserApp<G> {
         ) {
             return response;
         }
+        if form
+            .keys()
+            .any(|key| !["csrf_token", "appearance", "return_to"].contains(&key.as_str()))
+        {
+            return failure(
+                400,
+                "Bad Request",
+                "<p>The appearance form contained an unsupported field.</p>",
+            );
+        }
+        let destination = match form.get("return_to") {
+            Some(value) => match super::header_theme::safe_return(value) {
+                Some(value) => value,
+                None => return failure(400, "Bad Request", "<p>The appearance return destination was invalid. No preference was changed.</p>"),
+            },
+            None => "/settings?appearance_updated=1".to_owned(),
+        };
         let Some(appearance) = form
             .get("appearance")
             .and_then(|value| AppearancePreference::parse(value))
@@ -73,11 +104,10 @@ impl<G: BrowserGateway> BrowserApp<G> {
             context,
         ));
         HandledHttpResponse {
-            response: redirect_response(303, "See Other", "/settings?appearance_updated=1")
-                .with_header(
-                    "Set-Cookie",
-                    appearance.cookie(self.policy.secure_session_cookie),
-                ),
+            response: redirect_response(303, "See Other", &destination).with_header(
+                "Set-Cookie",
+                appearance.cookie(self.policy.secure_session_cookie),
+            ),
             audit_events,
         }
     }

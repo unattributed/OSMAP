@@ -74,6 +74,7 @@ where
             &mut handled.response,
             request.headers.get("cookie").map(String::as_str),
         );
+        super::header_theme::apply_context(&mut handled.response, request);
         handled
     }
 

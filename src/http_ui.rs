@@ -130,6 +130,9 @@ fn logout_form(csrf_token: &str) -> String {
 /// Repository-owned vector paths; decorative, never fetched from a network.
 fn shell_icon(name: &str) -> String {
     let path = match name {
+        "brand" => "<path d=\"m12 3 8 9-8 9-8-9z\"/><path d=\"m12 6 5.4 6-5.4 6-5.4-6z\"/>",
+        "light" => "<circle cx=\"12\" cy=\"12\" r=\"4\"/><path d=\"M12 1v3m0 16v3M1 12h3m16 0h3M4 4l2 2m12 12 2 2M4 20l2-2M18 6l2-2\"/>",
+        "dark" => "<path d=\"M16 3a9 9 0 1 0 0 18 10 10 0 0 1 0-18z\"/>",
         "shield" => "<path d=\"M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6z\"/><path d=\"m8 12 3 3 5-6\"/>",
         "inbox" => "<path d=\"M4 4h16l2 10v6H2v-6zM2 14h6l2 3h4l2-3h6\"/>",
         "sent" => "<path d=\"m3 3 18 9-18 9 4-9zM7 12h14\"/>",
@@ -146,7 +149,51 @@ fn shell_icon(name: &str) -> String {
     format!("<svg class=\"shell-icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\">{path}</svg>")
 }
 
+fn header_theme_controls(csrf: &str, current: &str) -> String {
+    let compose = current == "compose";
+    let disabled = current == "compose-result"
+        || current == "settings"
+        || (current.starts_with("settings-") && current != "settings-search")
+        || current == "contacts";
+    let explanation = if current == "compose-result" {
+        "Theme switching is unavailable here. Keep this result page open to retain the text from this submission attempt."
+    } else if compose {
+        "Changing theme saves this draft first, including selected attachments. If saving fails, the theme stays unchanged; reselect any unsaved uploads before retrying."
+    } else if disabled {
+        "Quick theme changes are unavailable while editing settings or contacts. Save your changes and use Appearance settings."
+    } else {
+        "Saves your account theme. System theme is available in Appearance settings."
+    };
+    let mut controls = if compose || disabled {
+        "<div class=\"header-theme\" role=\"group\" aria-label=\"Quick theme\" aria-describedby=\"header-theme-help\">".to_owned()
+    } else {
+        format!("<form class=\"header-theme\" method=\"post\" action=\"/settings/appearance\" aria-label=\"Quick theme\" aria-describedby=\"header-theme-help\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"return_to\" value=\"/settings?section=appearance\" data-header-return>", escape_html(csrf))
+    };
+    for (theme, label) in [("light", "Light"), ("dark", "Dark")] {
+        let action = if compose {
+            format!(" form=\"compose-form\" formaction=\"/drafts/save\" formmethod=\"post\" formenctype=\"multipart/form-data\" name=\"compose_action\" value=\"theme-{theme}\" data-compose-theme")
+        } else if disabled {
+            " disabled".to_owned()
+        } else {
+            format!(" name=\"appearance\" value=\"{theme}\"")
+        };
+        controls.push_str(&format!("<button type=\"submit\"{action} data-header-theme=\"{theme}\" aria-pressed=\"false\" aria-label=\"Use {label} theme\" title=\"{}\">{}</button>", escape_html(explanation), shell_icon(theme)));
+    }
+    controls.push_str(&format!(
+        "<span id=\"header-theme-help\" class=\"sr-only\">{}</span>{}",
+        escape_html(explanation),
+        if compose || disabled {
+            "</div>"
+        } else {
+            "</form>"
+        }
+    ));
+    controls
+}
+
 pub(crate) fn app_header(canonical_username: &str, csrf_token: &str, current: &str) -> String {
+    let brand_mark = shell_icon("brand");
+    let theme_controls = header_theme_controls(csrf_token, current);
     let mut links = String::new();
     for (name, label, href, icon) in [
         ("mailboxes", "Mailbox", "/mailboxes", "folders"),
@@ -168,7 +215,7 @@ pub(crate) fn app_header(canonical_username: &str, csrf_token: &str, current: &s
             "<a class=\"rail-link{}\" href=\"{}\" aria-label=\"{}\" title=\"{}\"{}>{}<span class=\"rail-label\">{}</span></a>",
             if name == "compose" { " rail-compose" } else { "" },
             escape_html(href), label, label,
-            if name == current || name == "settings" && (current == "sessions" || current.starts_with("settings-")) { " aria-current=\"page\"" } else { "" },
+            if name == current || name == "compose" && current == "compose-result" || name == "settings" && (current == "sessions" || current.starts_with("settings-")) { " aria-current=\"page\"" } else { "" },
             shell_icon(icon), label));
     }
     let search_menu = if current == "settings" || current.starts_with("settings-") {
@@ -196,9 +243,9 @@ pub(crate) fn app_header(canonical_username: &str, csrf_token: &str, current: &s
         "<details class=\"protection-menu\" name=\"toolbar-menu\"><summary>Protected by Default</summary><div class=\"account-menu-panel\"><p>Remote images and active content are blocked. These protections do not encrypt a message or verify its sender.</p><p class=\"shell-session-chip\">Your browser session was authenticated with two factors.</p></div></details>",
         "<details class=\"account-menu\" name=\"toolbar-menu\"><summary class=\"identity-chip\"><span class=\"account-avatar\" aria-hidden=\"true\">{}</span><span class=\"account-name\" title=\"{}\">{}</span>{}</summary>",
         "<div class=\"account-menu-panel\"><p class=\"muted\">Signed in as <strong>{}</strong></p><a href=\"/settings\">Account settings</a><a href=\"/settings?section=appearance\">Appearance</a><a href=\"/contacts\">Contacts</a><a href=\"/sessions\">Manage sessions</a>{}</div>",
-        "</details></div></header>"
-    ), shell_icon("menu"), links, shell_icon("shield"), search_menu, escape_html(&sender_initials(Some(canonical_username))), escape_html(canonical_username),
-        escape_html(canonical_username), shell_icon("chevron"), escape_html(canonical_username), logout_form(csrf_token))
+        "</details>{theme_controls}</div></header>"
+    ), shell_icon("menu"), links, brand_mark, search_menu, escape_html(&sender_initials(Some(canonical_username))), escape_html(canonical_username),
+        escape_html(canonical_username), shell_icon("chevron"), escape_html(canonical_username), logout_form(csrf_token), theme_controls = theme_controls)
 }
 
 pub(crate) fn render_settings_search_page(account: &str, csrf: &str, query: &str) -> TrustedHtml {
@@ -1588,7 +1635,7 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
             "</section>",
             "</main>"
         ),
-        app_header(model.canonical_username, model.csrf_token, "compose"),
+        app_header(model.canonical_username, model.csrf_token, "compose").replace(" data-compose-theme", if confirmation_required { " disabled data-compose-theme" } else { " data-compose-theme" }),
         escape_html(model.heading),
         success_banner,
         error_banner,

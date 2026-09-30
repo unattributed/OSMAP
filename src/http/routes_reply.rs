@@ -6,6 +6,9 @@ use crate::reply_thread::{ReplyReference, ReplyThread};
 pub(super) fn compose_metadata_valid(form: &BTreeMap<String, String>, username: &str) -> bool {
     if super::routes_draft::removed_attachment_indices(form).is_err()
         || super::compose_actions::body_format(form).is_none()
+        || form.get("compose_action").is_some_and(|action| {
+            action.starts_with("theme-") && !matches!(action.as_str(), "theme-light" | "theme-dark")
+        })
     {
         return false;
     }
