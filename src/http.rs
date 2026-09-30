@@ -28,6 +28,7 @@ mod routes_draft;
 mod routes_draft_selection;
 mod routes_flags;
 mod routes_identity_preferences;
+mod routes_label_selection;
 mod routes_labels;
 mod routes_mail;
 mod routes_moves;
@@ -37,6 +38,7 @@ mod routes_reply;
 #[path = "http/routes_send_receipt.rs"]
 mod routes_send_receipt;
 mod routes_settings;
+mod routes_signature;
 mod routes_snooze;
 mod routes_source_attachments;
 #[path = "http/welcome_data.rs"]
@@ -892,6 +894,12 @@ mod tests {
     mod reply_tests {
         include!("http/reply_tests.rs");
     }
+    mod signature_tests {
+        include!("http/signature_tests.rs");
+    }
+    mod label_selection_tests {
+        include!("http/label_selection_tests.rs");
+    }
     mod label_tests {
         include!("http/label_tests.rs");
     }
@@ -933,6 +941,7 @@ mod tests {
         recovery_root: PathBuf,
         recovery_now: Option<u64>,
         labels_store: Option<crate::labels::LabelStore>,
+        signature_store: Option<crate::signature::SignatureStore>,
         contacts_store: Option<crate::contacts::ContactStore>,
         draft_store: Option<crate::draft::FileDraftStore>,
         fail_draft_delete: Option<String>,
@@ -957,6 +966,7 @@ mod tests {
         fn default() -> Self {
             Self {
                 labels_store: None,
+                signature_store: None,
                 contacts_store: None,
                 draft_store: None,
                 send_journal: fixture_send_journal(),
@@ -1020,6 +1030,27 @@ mod tests {
     }
 
     impl BrowserGateway for StubGateway {
+        fn load_signature(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<crate::signature::SignatureRecord, crate::signature::SignatureError> {
+            self.signature_store
+                .as_ref()
+                .ok_or(crate::signature::SignatureError::Unavailable)?
+                .load(&session.record.canonical_username)
+        }
+        fn change_signature(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+            change: crate::signature::SignatureChange<'_>,
+        ) -> Result<crate::signature::SignatureRecord, crate::signature::SignatureError> {
+            self.signature_store
+                .as_ref()
+                .ok_or(crate::signature::SignatureError::Unavailable)?
+                .change(&session.record.canonical_username, revision, change)
+        }
+
         fn snooze_load(
             &self,
             session: &ValidatedSession,

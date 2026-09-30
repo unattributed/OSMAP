@@ -17,6 +17,21 @@ pub enum BrowserSendRecoveryDecision {
 }
 
 pub trait BrowserGateway {
+    fn load_signature(
+        &self,
+        _session: &ValidatedSession,
+    ) -> Result<crate::signature::SignatureRecord, crate::signature::SignatureError> {
+        Err(crate::signature::SignatureError::Unavailable)
+    }
+    fn change_signature(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+        _change: crate::signature::SignatureChange<'_>,
+    ) -> Result<crate::signature::SignatureRecord, crate::signature::SignatureError> {
+        Err(crate::signature::SignatureError::Unavailable)
+    }
+
     fn snooze_clock(&self) -> u64 {
         crate::totp::TimeProvider::unix_timestamp(&crate::totp::SystemTimeProvider)
     }

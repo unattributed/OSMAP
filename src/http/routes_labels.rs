@@ -77,7 +77,7 @@ fn owned_rows(
     Ok(out)
 }
 impl<G: BrowserGateway> BrowserApp<G> {
-    fn label_rows(
+    pub(super) fn label_rows(
         &self,
         context: &AuthenticationContext,
         session: &ValidatedSession,

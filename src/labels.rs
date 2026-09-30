@@ -208,6 +208,12 @@ fn valid_name(name: &str) -> bool {
         })
 }
 pub enum LabelChange<'a> {
+    /// One atomic update of at most ten freshly verified identities.
+    Selection {
+        id: &'a str,
+        messages: &'a [MessageIdentity],
+        attach: bool,
+    },
     Create(&'a str),
     Rename {
         id: &'a str,
@@ -281,6 +287,33 @@ impl LabelStore {
     ) -> Result<LabelRecord, LabelError> {
         self.update(account, revision, |r| {
             match change {
+                LabelChange::Selection {
+                    id,
+                    messages,
+                    attach,
+                } => {
+                    if messages.is_empty() || messages.len() > crate::mail_list::MAX_BULK_SELECTION
+                    {
+                        return Err(LabelError::Invalid);
+                    }
+                    let mut uids = BTreeSet::new();
+                    let mut guids = BTreeSet::new();
+                    let first = messages.first().ok_or(LabelError::Invalid)?;
+                    for message in messages {
+                        if message.owner != account
+                            || !message.key.valid()
+                            || message.key.folder != first.key.folder
+                            || message.key.mailbox_guid != first.key.mailbox_guid
+                            || !uids.insert(message.key.uid)
+                            || !guids.insert(&message.key.message_guid)
+                        {
+                            return Err(LabelError::Invalid);
+                        }
+                    }
+                    for message in messages {
+                        assign_label(r, id, message, attach)?;
+                    }
+                }
                 LabelChange::Create(name) => {
                     if !valid_name(name) || r.labels.iter().any(|l| l.name == name) {
                         return Err(LabelError::Invalid);
@@ -324,29 +357,7 @@ impl LabelStore {
                     if message.owner != account {
                         return Err(LabelError::Invalid);
                     }
-                    if !r.labels.iter().any(|l| l.id == id) {
-                        return Err(LabelError::Missing);
-                    }
-                    let attaching = matches!(change, LabelChange::Attach { .. });
-                    if let Some(a) = r.assignments.iter_mut().find(|a| a.key == message.key) {
-                        if attaching && !a.labels.iter().any(|v| v == id) {
-                            if a.labels.len() == MAX_LABELS_PER_MESSAGE {
-                                return Err(LabelError::Capacity);
-                            }
-                            a.labels.push(id.into())
-                        } else if !attaching {
-                            a.labels.retain(|v| v != id)
-                        }
-                    } else if attaching {
-                        if r.assignments.len() == MAX_ASSIGNED_MESSAGES {
-                            return Err(LabelError::Capacity);
-                        }
-                        r.assignments.push(Assignment {
-                            key: message.key.clone(),
-                            labels: vec![id.into()],
-                        })
-                    }
-                    r.assignments.retain(|a| !a.labels.is_empty());
+                    assign_label(r, id, message, matches!(change, LabelChange::Attach { .. }))?;
                 }
             }
             Ok(())
@@ -410,6 +421,36 @@ impl LabelStore {
         })
     }
 }
+fn assign_label(
+    r: &mut LabelRecord,
+    id: &str,
+    message: &MessageIdentity,
+    attaching: bool,
+) -> Result<(), LabelError> {
+    if !r.labels.iter().any(|l| l.id == id) {
+        return Err(LabelError::Missing);
+    }
+    if let Some(a) = r.assignments.iter_mut().find(|a| a.key == message.key) {
+        if attaching && !a.labels.iter().any(|v| v == id) {
+            if a.labels.len() == MAX_LABELS_PER_MESSAGE {
+                return Err(LabelError::Capacity);
+            }
+            a.labels.push(id.into());
+        } else if !attaching {
+            a.labels.retain(|v| v != id);
+        }
+    } else if attaching {
+        if r.assignments.len() == MAX_ASSIGNED_MESSAGES {
+            return Err(LabelError::Capacity);
+        }
+        r.assignments.push(Assignment {
+            key: message.key.clone(),
+            labels: vec![id.into()],
+        });
+    }
+    r.assignments.retain(|a| !a.labels.is_empty());
+    Ok(())
+}
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -432,6 +473,158 @@ mod tests {
                 message_guid: format!("message-{uid}"),
             },
         }
+    }
+    #[test]
+    fn selection_atomic_caps_and_rejected_inputs_preserve_exact_record() {
+        let (p, s) = store();
+        let mut r = LabelRecord::empty(ALICE);
+        r.revision = 1;
+        for n in 0..9 {
+            r.labels.push(Label {
+                id: format!("{n:032x}"),
+                name: format!("Label {n}"),
+            });
+        }
+        r.assignments.push(Assignment {
+            key: message(2).key,
+            labels: r.labels[..8].iter().map(|l| l.id.clone()).collect(),
+        });
+        let bytes = serde_json::to_vec(&r).unwrap();
+        s.file.lock(ALICE).unwrap().write(&bytes).unwrap();
+        let id = r.labels[8].id.clone();
+        assert_eq!(
+            s.change(
+                ALICE,
+                1,
+                LabelChange::Selection {
+                    id: &id,
+                    messages: &[message(1), message(2)],
+                    attach: true
+                }
+            ),
+            Err(LabelError::Capacity)
+        );
+        assert_eq!(s.file.read(ALICE).unwrap().unwrap(), bytes);
+        let mut foreign = message(3);
+        foreign.owner = BOB.into();
+        for messages in [
+            vec![],
+            vec![message(1), message(1)],
+            vec![message(1), foreign],
+            (1..=11).map(message).collect(),
+        ] {
+            assert_eq!(
+                s.change(
+                    ALICE,
+                    1,
+                    LabelChange::Selection {
+                        id: &id,
+                        messages: &messages,
+                        attach: true
+                    }
+                ),
+                Err(LabelError::Invalid)
+            );
+            assert_eq!(s.file.read(ALICE).unwrap().unwrap(), bytes);
+        }
+        assert_eq!(
+            s.change(
+                ALICE,
+                0,
+                LabelChange::Selection {
+                    id: &id,
+                    messages: &[message(1)],
+                    attach: true
+                }
+            ),
+            Err(LabelError::Stale)
+        );
+        assert_eq!(s.file.read(ALICE).unwrap().unwrap(), bytes);
+        r.assignments = (1..MAX_ASSIGNED_MESSAGES)
+            .map(|uid| Assignment {
+                key: message(uid as u64).key,
+                labels: vec![id.clone()],
+            })
+            .collect();
+        let bytes = serde_json::to_vec(&r).unwrap();
+        s.file.lock(ALICE).unwrap().write(&bytes).unwrap();
+        assert_eq!(
+            s.change(
+                ALICE,
+                1,
+                LabelChange::Selection {
+                    id: &id,
+                    messages: &[message(2000), message(2001)],
+                    attach: true
+                }
+            ),
+            Err(LabelError::Capacity)
+        );
+        assert_eq!(s.file.read(ALICE).unwrap().unwrap(), bytes);
+        std::fs::remove_dir_all(p).unwrap();
+    }
+    #[test]
+    fn selection_single_revision_attach_detach_and_competing_cas() {
+        let (p, s) = store();
+        let r = s.change(ALICE, 0, LabelChange::Create("Review")).unwrap();
+        let id = r.labels()[0].id().to_owned();
+        let barrier = std::sync::Arc::new(std::sync::Barrier::new(2));
+        let jobs = (0..2)
+            .map(|n| {
+                let s = s.clone();
+                let id = id.clone();
+                let b = barrier.clone();
+                std::thread::spawn(move || {
+                    b.wait();
+                    s.change(
+                        ALICE,
+                        1,
+                        LabelChange::Selection {
+                            id: &id,
+                            messages: &[message(1 + n * 2), message(2 + n * 2)],
+                            attach: true,
+                        },
+                    )
+                })
+            })
+            .collect::<Vec<_>>();
+        let results = jobs
+            .into_iter()
+            .map(|j| j.join().unwrap())
+            .collect::<Vec<_>>();
+        assert_eq!(results.iter().filter(|r| r.is_ok()).count(), 1);
+        assert_eq!(
+            results
+                .iter()
+                .filter(|r| **r == Err(LabelError::Stale))
+                .count(),
+            1
+        );
+        let r = s.load(ALICE).unwrap();
+        assert_eq!(r.revision(), 2);
+        assert_eq!(r.assigned_messages(), 2);
+        let messages = r
+            .assignments
+            .iter()
+            .map(|a| MessageIdentity {
+                owner: ALICE.into(),
+                key: a.key.clone(),
+            })
+            .collect::<Vec<_>>();
+        let r = s
+            .change(
+                ALICE,
+                2,
+                LabelChange::Selection {
+                    id: &id,
+                    messages: &messages,
+                    attach: false,
+                },
+            )
+            .unwrap();
+        assert_eq!(r.revision(), 3);
+        assert_eq!(r.assigned_messages(), 0);
+        std::fs::remove_dir_all(p).unwrap();
     }
     #[test]
     fn private_roundtrip_cas_names_and_account_binding() {

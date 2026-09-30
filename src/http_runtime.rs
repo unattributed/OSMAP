@@ -148,6 +148,12 @@ where
             (HttpMethod::Get, "/message") => self.handle_message_view(request, &context),
             (HttpMethod::Get, "/attachment") => self.handle_attachment_download(request, &context),
             (HttpMethod::Get, "/compose") => self.handle_compose_form(request, &context),
+            (HttpMethod::Post, "/messages/labels/review") => {
+                self.handle_label_selection(request, &context, false)
+            }
+            (HttpMethod::Post, "/messages/labels/apply") => {
+                self.handle_label_selection(request, &context, true)
+            }
             (HttpMethod::Get, "/labels") => self.handle_labels(request, &context, false),
             (HttpMethod::Post, "/labels/change") => self.handle_labels(request, &context, true),
             (HttpMethod::Get, "/contacts") => self.handle_contacts(request, &context),
@@ -180,6 +186,9 @@ where
             (HttpMethod::Get, "/notifications") => self.handle_notifications(request, &context),
             (HttpMethod::Post, "/notifications/read") => {
                 self.handle_notification_read(request, &context)
+            }
+            (HttpMethod::Post, "/settings/signature") => {
+                self.handle_signature_update(request, &context)
             }
             (HttpMethod::Post, "/settings/identity") => {
                 self.handle_identity_preferences_update(request, &context)

@@ -2075,3 +2075,108 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   source change; the corrected full run passed all 872 library tests. Final
   acceptance/security/V10–13, V14 and strict Clippy evidence is retained as S04
   `snooze-badge-*`. Page/epic acceptance remains partial; no production change.
+
+### S03-02 / PAGE15 automatic draft saving — bounded interaction work order
+
+- The resumed autonomous UX mandate covers the remaining approved Auto-save
+  drafts and interval controls. Implement in an isolated export, after the
+  signature checkpoint: private versioned preference, finite 30/60/120-second
+  interval (default Off), native settings save, and compose-only enhancement.
+  Allowed boundaries are composition/autosave preferences, compose/draft
+  gateway and routes, compose rendering/script/CSP hash, focused tests and UX
+  browser harnesses. Existing draft CAS, intent ownership and uncertain-save
+  reconciliation remain authoritative. No mail sending or external requests.
+- First-party same-origin saving may use the existing native save route or a
+  narrowly validated autosave response adapter. Never execute returned HTML,
+  write browser storage, log bodies, add a dependency or permit scripts in
+  Reader/authentication pages. At most one save is in flight; no unchanged
+  timer writes, hidden-page dispatch or automatic replay after uncertain results.
+  New-draft creation must retain existing intent/idempotency safeguards.
+- Preserve edits made while saving. A confirmed response updates only the exact
+  saved baseline and verified draft revision. A conflict, expired session,
+  malformed response or uncertain publication pauses automatic saves, retains
+  local text and offers explicit reconciliation. Manual save, send, discard,
+  formatting and navigation must not race an in-flight save. Pending files may
+  pause autosave with an explicit manual-save instruction; never claim they
+  were saved. Native no-script Save remains usable.
+- Advisory assignment budget: 10,000 tokens, with a concrete checkpoint before
+  any extension. Require owner/CAS/restart/failure tests, both native browser
+  engines with delayed responses and concurrent edits, exact CSP/isolation and
+  disabled-script fallback, plus approved PAGE15 geometry. Root reviews frozen
+  patches and runs combined gates. No live authority, deployment or Git sync;
+  rollback disables the optional enhancement and preserves ordinary drafts.
+
+### Reader controls, selected Labels, mail tables and signatures — 2026-09-30
+
+- Signed `ab090312bf6fbdbccd4dcd687d70f26b4ff9ddf9` passed the native library
+  and hostile-content checks in S04 `native-k`, but its first disposable Maildir
+  move returned an unconfirmed result. The retained fixture was reconciled
+  read-only: all four synthetic messages remained in INBOX. No move was replayed.
+  The same frozen export then passed the helper test using a fresh disposable
+  Maildir. Original failure and reconciliation remain retained, not overwritten.
+  Archive SHA-256: `32190a3198df2f95cc98b0ace5c65e866cf06ab6952749785fe8684c5f2aca1d`;
+  fresh-check log: `931a86c3106243c03ec00e6fd18238f3e069ee72cac6ced85a1565afab01a1a1`.
+  Standard obsd1 checkout and services remained unchanged; no deployment.
+- Standalone Reader now uses the approved icon action row with accessible
+  names: Back, Reply, Archive, Bin/Restore, read state, Snooze and Labels;
+  bounded Previous/Next and the finite More disclosure remain separate. Native
+  action authority and bottom Reply/Reply all/Forward are preserved. Parent
+  `standalone_reader-toolbar-selection-{edge,firefox}` passed eight captures
+  each; the fixture's unavailable second attachment download remains unqualified.
+- Selected-message Labels uses explicit native review and confirmation for
+  at most ten freshly verified owned messages. One private CAS transaction
+  applies the whole label change or none. Stale/unconfirmed responses retain
+  submitted revisions/choices, disable changes and offer a non-mutating reload.
+  Capacity refusal, owner separation and both-row attach/detach passed parent
+  `label_selection-toolbar-selection-{edge,firefox}` with eight captures each.
+  Independent review found no remaining blocking selection defect.
+- Inbox and Sent table geometry now follows PAGE02/PAGE05: toolbar y177.4,
+  header y248.6 and 58-pixel rows at 1600 pixels. Actual bounded counts,
+  recipients/senders, timestamps and unassessed protection remain factual.
+  Parent `mailtables-integrated-{edge,firefox}` each passed 16 captures plus
+  keyboard filtering, sorting, paging, Reader/Back and Labels-review journeys.
+- PAGE13 Signature and PAGE15 Include signature share one private versioned
+  None/Default footer preference, independent of identity/composition records.
+  Limits are 2,000 Unicode characters/8,000 bytes with revision-checked writes.
+  Insertion happens once during new blank/reply/reply-all/forward construction;
+  saved drafts, manually submitted bodies and recovery snapshots remain exact.
+  Formatted insertion requires proven literal rendering; otherwise the prepared
+  body stays intact with explicit Plain/manual guidance. This is ordinary text,
+  not OpenPGP signing. Parent `signature-integrated-{edge,firefox}` each passed
+  12 captures and native owner/stale/restart/corruption/draft-preservation tests.
+- Root inspected actual desktop and narrow forced-colour captures against the
+  approved images. Relevant parent production/focused checks passed. Preview
+  duration now permits explicit opt-in up to 1,440 minutes; ordinary fixtures
+  keep their short bounds. Full combined gates and signing follow this entry.
+  This is bounded engineering progress; whole-page/epic acceptance stays open.
+- The broad run caught an unavailable-identity Reader move form despite disabled
+  buttons. Root removed the form authority entirely for that state; the existing
+  regression and both parent neighbour workflows then passed. The initial
+  `reader-selection-signature-acceptance.log` failure is retained.
+- PAGE16 now selects owned folders within Settings and loads verified bounded
+  message/unread counts, independently of the Archive preference. Unknown owner,
+  folder, UID, flags or backend state displays Unknown. Root added the native
+  UID upper bound and case-insensitive Seen handling. Native keyboard selection,
+  Archive preservation and Open folder passed in `folder-details-final-*` with
+  eight captures per engine. Counts are loaded summaries, not folder totals;
+  delimiter, hierarchy and protected folder operations remain unimplemented.
+- Drafts PAGE06 now matches the approved column/row geometry and has a native
+  Select drafts disclosure for up to ten currently editable rows. The first
+  proposal's ambiguous square discard action was rejected. The corrected UI
+  keeps labelled discard review and never carries selection into a new set
+  after Keep/star/discard/theme navigation. Parent `draft-fidelity-final-*`
+  passed eight captures per engine, actual saved files/resume/filter/sort/star,
+  non-mutating review and confirmed selected-revision deletion. The focused
+  renderer test covers the ten-row bound and stale/missing/duplicate states.
+- A second broad run passed all 881 library tests and exposed the new Reader
+  SVGs inside the main landmark, outside the existing hostile-content guard's
+  shell-only exception. Toolbar icons now use inert CSS line geometry. The
+  guard and its allowed surfaces remain unchanged. Isolated hostile tests and
+  both eight-capture Reader workflows passed; the earlier failure is retained.
+- Final parent `reader-css-final-{edge,firefox}` each passed eight captures.
+  Combined `reader-selection-signature-acceptance-c.log` passed security and
+  V10–13, including 881 library tests and both hostile-content tests. Strict
+  all-target/all-feature Clippy, V14, formatting and whitespace checks passed.
+  No whole-page acceptance, runtime OpenPGP, production deployment or GitHub
+  synchronization is claimed. Autosave and authoritative folder status remain
+  isolated next-batch proposals outside this checkpoint.

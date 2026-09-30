@@ -29,8 +29,9 @@ def main():
    link=p.get_by_role('link',name='Next message',exact=True);assert 'message_guid=' in link.get_attribute('href');link.press('Enter');p.wait_for_load_state('networkidle');assert uid()=='9'
    expect(p.get_by_role('button',name='Next message',exact=True)).to_be_disabled()
    p.get_by_role('link',name='Previous message',exact=True).click();p.wait_for_load_state('networkidle');assert uid()=='10'
-   p.locator('.reader-quick-actions form:has(input[name=flag][value=seen]) button').click();p.wait_for_load_state('networkidle');assert 'return_to=' in p.url and 'message_guid=' in p.url
-   p.locator('.reader-quick-actions form:has(input[name=flag][value=flagged]) button').click();p.wait_for_load_state('networkidle');assert 'return_to=' in p.url
+   p.locator('.reader-icon-toolbar form:has(input[name=flag][value=seen]) button').click();p.wait_for_load_state('networkidle');assert 'return_to=' in p.url and 'message_guid=' in p.url
+   p.locator('.reader-more-actions > summary').click()
+   p.locator('.reader-icon-toolbar form:has(input[name=flag][value=flagged]) button').click();p.wait_for_load_state('networkidle');assert 'return_to=' in p.url
    p.get_by_role('button',name='Use Dark theme',exact=True).click();p.wait_for_load_state('networkidle');assert 'return_to=' in p.url and 'message_guid=' in p.url
    p.get_by_role('link',name='Back to list',exact=True).click();p.wait_for_load_state('networkidle');assert parse_qs(urlsplit(p.url).query)['filter']==['unread']
    report['checks'].append('Newest-first native next/back preserves validated return filter; first and last boundaries disabled; links include verified versions')
@@ -47,11 +48,11 @@ def main():
       name=f'reader-neighbours-{scheme}-{width}-{forced}.png';p.screenshot(path=str(args.output/name),full_page=True)
       overflow=p.evaluate('document.documentElement.scrollWidth>innerWidth');audit=p.evaluate(TEXT_AUDIT);assert not overflow and not audit['failures'] and not audit['ui_failures']
       report['captures'].append(dict(file=name,overflow=overflow,contrast=audit))
-   p.get_by_text('Loaded mailbox order',exact=True).click();expect(p.locator('.reader-neighbours')).to_contain_text('do not follow list filters or search results')
+   p.locator('.reader-more-actions > summary').click();p.get_by_text('Loaded mailbox order',exact=True).click();expect(p.locator('.reader-order-scope')).to_contain_text('do not follow list filters or search results')
    assert visit('/message?mailbox=INBOX&uid=10&mailbox_guid=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa&message_guid=changed').status==503
    assert p.locator('#reading-pane').count()==0
    context.set_extra_http_headers({'User-Agent':'OSMAP/LegacyMetadata'});assert visit('/message?mailbox=INBOX&uid=10').status==200
-   expect(p.get_by_role('button',name='Previous message',exact=True)).to_be_disabled();expect(p.get_by_role('button',name='Next message',exact=True)).to_be_disabled();p.get_by_text('Loaded mailbox order',exact=True).click();expect(p.locator('.reader-neighbours')).to_contain_text('Navigation unavailable')
+   expect(p.get_by_role('button',name='Previous message',exact=True)).to_be_disabled();expect(p.get_by_role('button',name='Next message',exact=True)).to_be_disabled();p.locator('.reader-more-actions > summary').click();p.get_by_text('Loaded mailbox order',exact=True).click();expect(p.locator('.reader-order-scope')).to_contain_text('Navigation unavailable')
    report['checks'].append('Changed link version refuses body; absent summary metadata disables both neighbours with truthful scope')
    assert report['external']==report['sends']==0;report['result']='PASS'
   finally:

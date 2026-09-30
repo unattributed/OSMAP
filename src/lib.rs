@@ -44,6 +44,7 @@ pub mod reply_thread;
 pub mod send;
 pub mod session;
 pub mod settings;
+pub mod signature;
 pub mod snooze;
 pub mod state;
 pub mod throttle;
@@ -55,6 +56,8 @@ mod send_recovery;
 mod reader_neighbours;
 
 mod notifications;
+mod signature_ui;
 
+mod label_selection_ui;
 pub mod labels;
 mod labels_ui;

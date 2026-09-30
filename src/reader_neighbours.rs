@@ -130,7 +130,7 @@ impl ReaderNeighbours {
         };
         Self { previous:index.checked_sub(1).and_then(|i| sorted.get(i)).and_then(link),next:sorted.get(index+1).and_then(link),scope:Some(format!("Loaded {} messages only, {} first (up to {}). Previous and Next do not follow list filters or search results. Mailbox contents can change between requests.",mailbox_name,preferences.date_order.as_str(),DEFAULT_MAX_MESSAGES)),back }
     }
-    pub(crate) fn html(&self) -> String {
+    pub(crate) fn controls_html(&self) -> String {
         let control = |href: &Option<String>, label: &str, symbol: &str| match href {
             Some(href) => format!(
                 "<a class=\"button-link\" aria-label=\"{label} message\" href=\"{}\">{symbol}</a>",
@@ -140,6 +140,16 @@ impl ReaderNeighbours {
                 "<button type=\"button\" aria-label=\"{label} message\" disabled>{symbol}</button>"
             ),
         };
-        format!("<nav class=\"reader-neighbours\" aria-label=\"Previous and next messages\">{}{}<details><summary>Loaded mailbox order</summary><p>{}</p></details></nav>",control(&self.previous,"Previous","←"),control(&self.next,"Next","→"),escape_html(self.scope.as_deref().unwrap_or("Navigation unavailable: mailbox identities, received dates or the saved Reading order could not be verified. Return to the list.")))
+        format!(
+            "<nav class=\"reader-neighbours\" aria-label=\"Previous and next messages\">{}{}</nav>",
+            control(&self.previous, "Previous", "←"),
+            control(&self.next, "Next", "→")
+        )
+    }
+    pub(crate) fn scope_html(&self) -> String {
+        format!("<details class=\"reader-order-scope\"><summary>Loaded mailbox order</summary><p>{}</p></details>", escape_html(self.scope.as_deref().unwrap_or("Navigation unavailable: mailbox identities, received dates or the saved Reading order could not be verified. Return to the list.")))
+    }
+    pub(crate) fn html(&self) -> String {
+        format!("{}{}", self.controls_html(), self.scope_html())
     }
 }

@@ -25,3 +25,26 @@
 .drafts-page .draft-select input { margin:0; }
 
 .drafts-page .page-intro { margin-bottom:.6rem; }
+/* PAGE06 column proportions and native toolbar review action. */
+.drafts-page .draft-list-toolbar{min-height:3.65rem;padding:.55rem .75rem;gap:.65rem}
+.drafts-page .draft-list-toolbar select{width:8.15rem;min-height:2.25rem;padding:.4rem .6rem}
+.drafts-page .draft-list-toolbar>a{font-size:.8rem;min-height:2.2rem;padding:.5rem .8rem}
+.drafts-page .draft-recipient-person>span:last-child{font-weight:700}
+.drafts-page .draft-subject>a{text-decoration:none}
+.drafts-page .draft-subject>a:hover{text-decoration:underline}
+@media(min-width:801px){
+ .drafts-page .draft-list table{table-layout:fixed;width:100%}
+ .drafts-page .draft-list th:nth-child(1){width:3.75%}.drafts-page .draft-list th:nth-child(2){width:5%}.drafts-page .draft-list th:nth-child(3){width:28.6%}.drafts-page .draft-list th:nth-child(4){width:26.9%}.drafts-page .draft-list th:nth-child(5){width:11.6%}.drafts-page .draft-list th:nth-child(6){width:8.7%}.drafts-page .draft-list th:nth-child(7){width:10.45%}.drafts-page .draft-list th:nth-child(8){width:5%}
+ .drafts-page .draft-list th{padding:.5rem .75rem;height:2.3rem}
+ .drafts-page .draft-list td{height:3.625rem;padding:.4rem .75rem}
+ .drafts-page .draft-recipient,.drafts-page .draft-subject{width:auto}
+ .drafts-page .draft-recipient-person>span:last-child,.drafts-page .draft-subject>a,.drafts-page .draft-subject>strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+ .drafts-page .draft-list time{font-size:.8rem;line-height:1.35;overflow-wrap:anywhere}
+ .drafts-page .draft-star button{font-size:1rem}
+}
+
+.drafts-page .draft-selection-menu{position:relative;flex-shrink:0;margin:0}
+.drafts-page .draft-selection-menu>summary{cursor:pointer;min-height:2.25rem;padding:.4rem .65rem;border:1px solid var(--line);border-radius:.4rem;color:var(--link);font-size:.875rem}
+.drafts-page .draft-selection-menu>nav{position:absolute;z-index:8;top:calc(100% + .35rem);left:0;width:min(23rem,calc(100vw - 3.5rem));padding:.75rem;background:var(--panel);border:1px solid var(--line);border-radius:.5rem;box-shadow:0 3px 10px var(--shadow)}
+.drafts-page .draft-selection-menu a{display:block;padding:.45rem 0;font-size:.875rem}
+.drafts-page .draft-selection-menu p{margin:.4rem 0;font-size:.8rem;color:var(--muted)}

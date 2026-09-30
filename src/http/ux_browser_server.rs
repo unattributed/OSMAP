@@ -12,7 +12,7 @@ fn ux_synthetic_browser_server() {
     // verification keeps its existing three-minute / 200-connection bounds.
     let preview_minutes = std::env::var("OSMAP_UX_PREVIEW_MINUTES").ok().map(|value| {
         let minutes = value.parse::<u64>().expect("preview duration is an integer");
-        assert!((1..=480).contains(&minutes));
+        assert!((1..=1440).contains(&minutes));
         minutes
     });
     let duration_seconds = preview_minutes.map(|minutes| minutes * 60).unwrap_or(180);
@@ -33,6 +33,7 @@ fn ux_synthetic_browser_server() {
         ..HttpPolicy::default()
     };
     let gateway = StubGateway {
+        signature_store: Some(crate::signature::SignatureStore::new(root.join("settings"))),
         labels_store: Some(crate::labels::LabelStore::new(root.join("settings/labels-v1"))),
         recovery_root: root.join("send-recovery"),
         contacts_store: Some(crate::contacts::ContactStore::new(root.join("settings/contacts-v1"))),

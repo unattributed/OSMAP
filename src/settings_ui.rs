@@ -5,7 +5,9 @@ mod settings_notifications_ui;
 pub(crate) use settings_notifications_ui::render_notifications_page;
 #[path = "settings_identity_ui.rs"]
 mod settings_identity_ui;
-pub(crate) use settings_identity_ui::{render_identity_page, IdentityPageModel};
+pub(crate) use settings_identity_ui::{
+    render_identity_page, render_identity_page_with_signature, IdentityPageModel,
+};
 #[path = "settings_security_ui.rs"]
 mod settings_security_ui;
 pub(crate) use settings_security_ui::render_security_page;
@@ -24,7 +26,7 @@ mod settings_reading_ui;
 pub(crate) use settings_reading_ui::render_reading_page;
 #[path = "settings_composition_ui.rs"]
 mod settings_composition_ui;
-pub(crate) use settings_composition_ui::render_composition_page;
+pub(crate) use settings_composition_ui::render_composition_page_with_signature;
 
 pub(crate) fn render_appearance_page(
     model: &SettingsPageModel<'_>,

@@ -28,3 +28,17 @@
 .reader-labels p { margin:0 0 .6rem;line-height:1.4; }
 @media(max-width:700px) { .labels-create fieldset,.label-item,.labels-message-context { align-items:stretch;flex-direction:column; }.labels-create label{width:100%;}.label-item-controls { justify-content:flex-start; }.label-editor[open] { max-width:100%;width:100%; } }
 @media(max-width:700px) { .reader-labels > div { position:static;width:auto;max-width:100%; }.reader-labels[open] { min-width:0;max-width:100%; } }
+
+.label-selection-page { max-width:68rem; }
+.label-selected-messages { list-style:none;padding:0;margin:0; }
+.label-selected-messages li { display:flex;align-items:baseline;justify-content:space-between;gap:1rem;padding:.6rem 0;border-top:1px solid var(--line); }
+.label-selected-messages strong { overflow-wrap:anywhere;min-width:0; }
+.label-selected-messages span { white-space:nowrap;font-size:.85rem; }
+.label-selection-page fieldset { display:grid;gap:1rem;max-width:40rem; }
+.label-selection-page fieldset label { margin:0; }
+.label-selection-page select { margin:.3rem 0 0; }
+.label-selection-page .label-confirm { align-items:center;font-size:.9rem; }
+.label-selection-page button { justify-self:start; }
+.label-selection-reload { display:flex;align-items:center;flex-wrap:wrap;gap:1rem; }
+.label-selection-reload p { font-size:.85rem;margin:0; }
+@media(max-width:700px) { .label-selected-messages li { align-items:start;flex-direction:column;gap:.25rem; } }

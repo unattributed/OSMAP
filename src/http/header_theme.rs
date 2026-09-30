@@ -11,10 +11,11 @@ pub(super) fn safe_return(value: &str) -> Option<String> {
     let (path, query) = value.split_once('?').unwrap_or((value, ""));
     let mut fields = parse_urlencoded_form(query.as_bytes(), 16, 2048).ok()?;
     let allowed: &[&str] = match path {
-        "/settings" => &["section", "q"],
+        "/settings" => &["section", "q", "folder"],
         "/sessions" | "/mailboxes" | "/contacts" | "/snoozed" => &[],
         "/drafts" => {
             crate::draft_list::DraftListView::parse(&fields).ok()?;
+            fields.remove("select");
             &["filter", "sort", "q", "saved", "deleted"]
         }
         "/draft" => &["id", "preview", "preflight"],
@@ -41,6 +42,19 @@ pub(super) fn safe_return(value: &str) -> Option<String> {
             return None;
         }
         *value = crate::mail_navigation::safe_mail_return(value)?;
+    }
+    if let Some(folder) = fields.get("folder") {
+        if path != "/settings"
+            || fields.get("section").map(String::as_str) != Some("copies")
+            || fields.contains_key("q")
+            || MailboxEntry::new(
+                crate::mailbox::MailboxListingPolicy::default(),
+                folder.clone(),
+            )
+            .is_err()
+        {
+            return None;
+        }
     }
     // Destination GET handlers validate their own identifiers and permissions.
     // Reconstructing each query value prevents it becoming URL structure.

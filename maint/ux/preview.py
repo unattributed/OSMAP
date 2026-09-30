@@ -19,10 +19,10 @@ import time
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--minutes', type=int, default=30,
-                        help='Preview duration, 1 to 480 minutes (default: 30)')
+                        help='Preview duration, 1 to 1440 minutes (default: 30)')
     args = parser.parse_args()
-    if not 1 <= args.minutes <= 480:
-        parser.error('--minutes must be between 1 and 480')
+    if not 1 <= args.minutes <= 1440:
+        parser.error('--minutes must be between 1 and 1440')
     repo = Path(__file__).resolve().parents[2]
     if not (repo / 'Cargo.toml').is_file():
         parser.error('Run the checked-in maint/ux/preview.py from an OSMAP checkout')

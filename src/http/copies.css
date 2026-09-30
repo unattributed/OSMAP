@@ -33,3 +33,12 @@
 .settings-copies-page .general-field { min-height:1.5rem;margin-bottom:.4rem; }
 .copies-links button { min-height:1.8rem;padding:.25rem .5rem; }
 @media(max-width:40rem) { .settings-copies-page .settings-navigation { min-height:0; } }
+
+.copies-tree a { padding:.4rem .5rem;border-radius:.4rem; }
+.copies-tree a[aria-current="true"] { background:var(--selected);color:var(--link);font-weight:700;box-shadow:inset 3px 0 var(--accent); }
+.copies-count-scope { font-size:.75rem;color:var(--muted);line-height:1.5; }
+@media(forced-colors:active) { .copies-tree a[aria-current="true"] { outline:2px solid Highlight;color:LinkText; } }
+
+.copies-details dl { margin:1rem 0;gap:.75rem; }
+.copies-count-scope { margin:.6rem 0; }
+.copies-details .copies-safety { margin-top:.8rem;padding:.6rem; }

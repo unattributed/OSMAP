@@ -25,6 +25,17 @@ where
                 Ok(result) => result,
                 Err(response) => return response,
             };
+        if request.query_params.contains_key("folder") && request.query_params.contains_key("q") {
+            return HandledHttpResponse {
+                response: html_response(
+                    400,
+                    "Bad Request",
+                    "Invalid Folder Selection",
+                    "<p>Select a folder from Copies &amp; Folders.</p>",
+                ),
+                audit_events,
+            };
+        }
         if let Some(query) = request.query_params.get("q") {
             if query.chars().count() > 128 || query.chars().any(char::is_control) {
                 return HandledHttpResponse {
@@ -88,6 +99,24 @@ where
                 audit_events,
             };
         }
+        if request.query_params.get("folder").is_some_and(|name| {
+            section != "copies"
+                || MailboxEntry::new(
+                    crate::mailbox::MailboxListingPolicy::default(),
+                    name.clone(),
+                )
+                .is_err()
+        }) {
+            return HandledHttpResponse {
+                response: html_response(
+                    400,
+                    "Bad Request",
+                    "Invalid Folder Selection",
+                    "<p>Select a folder from Copies &amp; Folders.</p>",
+                ),
+                audit_events,
+            };
+        }
         if section == "notifications" {
             return HandledHttpResponse {
                 response: html_response(
@@ -103,12 +132,13 @@ where
             };
         }
         if section == "identity" {
+            let signature = self.gateway.load_signature(&validated_session).ok();
             let loaded = self
                 .gateway
                 .load_identity_preferences(context, &validated_session);
             return HandledHttpResponse {
                 response: match loaded {
-                    Ok(record) => html_response(200, "OK", "Identity Settings", crate::http_ui::render_identity_page(&crate::http_ui::IdentityPageModel {
+                    Ok(record) => html_response(200, "OK", "Identity Settings", crate::http_ui::render_identity_page_with_signature(&crate::http_ui::IdentityPageModel {
                         canonical_username: &validated_session.record.canonical_username,
                         csrf_token: &validated_session.record.csrf_token,
                         revision: record.revision,
@@ -116,8 +146,8 @@ where
                         reply_to: record.preferences.reply_to().unwrap_or(""),
                         error_message: None,
                         available: true,
-                    })),
-                    Err(_) => html_response(503, "Service Unavailable", "Identity Settings Unavailable", crate::http_ui::render_identity_page(&crate::http_ui::IdentityPageModel {
+                    },signature.as_ref())),
+                    Err(_) => html_response(503, "Service Unavailable", "Identity Settings Unavailable", crate::http_ui::render_identity_page_with_signature(&crate::http_ui::IdentityPageModel {
                         canonical_username: &validated_session.record.canonical_username,
                         csrf_token: &validated_session.record.csrf_token,
                         revision: 0,
@@ -125,7 +155,7 @@ where
                         reply_to: "",
                         error_message: Some("Your saved identity preferences could not be loaded. No preference was changed. Reload this page before editing."),
                         available: false,
-                    })),
+                    },signature.as_ref())),
                 },
                 audit_events,
             };
@@ -195,14 +225,24 @@ where
                     if section == "privacy" {
                         crate::http_ui::render_privacy_page(&model)
                     } else if section == "copies" {
-                        let mailboxes = self.reading_mailbox_choices(context, &validated_session, &mut audit_events).map(|entries| super::routes_mail::filter_user_visible_mailboxes(&entries));
-                        crate::http_ui::render_copies_page(&model, mailboxes.as_deref())
+                        let mailboxes = self.reading_mailbox_choices(context, &validated_session, &mut audit_events)
+                            .filter(|entries| valid_folder_listing(entries))
+                            .map(|entries| super::routes_mail::filter_user_visible_mailboxes(&entries));
+                        let chosen = request.query_params.get("folder").map(String::as_str)
+                            .or(model.archive_mailbox_name).filter(|name| mailboxes.as_ref().is_some_and(|entries| entries.iter().any(|v| v.name == *name)))
+                            .or_else(|| if request.query_params.contains_key("folder") { None } else { mailboxes.as_ref().and_then(|v| v.first()).map(|v| v.name.as_str()) });
+                        if request.query_params.contains_key("folder") && mailboxes.is_some() && chosen.is_none() {
+                            return HandledHttpResponse { response: html_response(400, "Bad Request", "Folder Unavailable", "<p>Select a folder from Copies &amp; Folders.</p>"), audit_events };
+                        }
+                        let counts = chosen.and_then(|name| self.folder_counts(context, &validated_session, name, &mut audit_events));
+                        crate::http_ui::render_copies_page(&model, mailboxes.as_deref(), chosen, counts)
                     } else if section == "appearance" {
                         crate::http_ui::render_appearance_page(&model, &presentation)
                     } else if section == "composition" {
-                        crate::http_ui::render_composition_page(
+                        crate::http_ui::render_composition_page_with_signature(
                             &model,
                             self.gateway.load_composition_preferences(context, &validated_session).ok(),
+                            self.gateway.load_signature(&validated_session).ok().as_ref(),
                         )
                     } else if section == "general" {
                         crate::http_ui::render_general_page(
@@ -553,5 +593,143 @@ where
                 }
             }
         }
+    }
+}
+
+fn valid_folder_listing(entries: &[MailboxEntry]) -> bool {
+    let mut names = std::collections::BTreeSet::new();
+    entries.len() <= crate::mailbox::DEFAULT_MAX_MAILBOXES
+        && entries.iter().all(|v| {
+            MailboxEntry::new(
+                crate::mailbox::MailboxListingPolicy::default(),
+                v.name.clone(),
+            )
+            .is_ok()
+                && names.insert(v.name.as_str())
+        })
+}
+
+fn verified_folder_counts(
+    account: &str,
+    folder: &str,
+    decision: BrowserMessageListDecision,
+) -> Option<(usize, usize)> {
+    let BrowserMessageListDecision::Listed {
+        canonical_username,
+        mailbox_name,
+        messages,
+    } = decision
+    else {
+        return None;
+    };
+    let mut uids = std::collections::BTreeSet::new();
+    if canonical_username != account
+        || mailbox_name != folder
+        || messages.len() > crate::mailbox::DEFAULT_MAX_MESSAGES
+        || messages.iter().any(|row| {
+            row.mailbox_name != folder
+                || row.uid == 0
+                || row.uid > u64::from(u32::MAX)
+                || !uids.insert(row.uid)
+                || row.flags.len() > 256
+                || row.flags.iter().map(String::len).sum::<usize>() > 256
+                || row.flags.iter().any(|flag| {
+                    flag.is_empty() || flag.chars().any(|ch| ch.is_control() || ch.is_whitespace())
+                })
+        })
+    {
+        return None;
+    }
+    Some((
+        messages.len(),
+        messages
+            .iter()
+            .filter(|row| {
+                !row.flags
+                    .iter()
+                    .any(|flag| flag.eq_ignore_ascii_case("\\Seen"))
+            })
+            .count(),
+    ))
+}
+
+impl<G: BrowserGateway> BrowserApp<G> {
+    fn folder_counts(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        folder: &str,
+        audit: &mut Vec<LogEvent>,
+    ) -> Option<(usize, usize)> {
+        let (guard, event) =
+            match self.acquire_mailbox_budget(context, session, "settings_folder_summaries") {
+                Ok(value) => value,
+                Err(response) => {
+                    audit.extend(response.audit_events);
+                    return None;
+                }
+            };
+        audit.push(event);
+        let outcome = self.gateway.list_messages(context, session, folder);
+        audit.extend(outcome.audit_events);
+        audit.push(self.release_request_budget(
+            guard,
+            "settings_folder_summaries",
+            context,
+            session,
+        ));
+        verified_folder_counts(&session.record.canonical_username, folder, outcome.decision)
+    }
+}
+
+#[cfg(test)]
+mod folder_count_tests {
+    use super::*;
+    #[test]
+    fn counts_refuse_overbound_malformed_flags_and_ambiguous_folders() {
+        let row = MessageSummary {
+            to: None,
+            metadata: None,
+            mailbox_name: "INBOX".into(),
+            uid: 1,
+            flags: vec![],
+            date_received: String::new(),
+            size_virtual: 0,
+            subject: None,
+            from: None,
+        };
+        let project = |rows| {
+            verified_folder_counts(
+                "a@example.test",
+                "INBOX",
+                BrowserMessageListDecision::Listed {
+                    canonical_username: "a@example.test".into(),
+                    mailbox_name: "INBOX".into(),
+                    messages: rows,
+                },
+            )
+        };
+        assert_eq!(project(vec![row.clone()]), Some((1, 1)));
+        let mut read = row.clone();
+        read.flags = vec!["\\seen".into()];
+        assert_eq!(project(vec![read]), Some((1, 0)));
+        let mut oversized_uid = row.clone();
+        oversized_uid.uid = u64::from(u32::MAX) + 1;
+        assert_eq!(project(vec![oversized_uid]), None);
+        assert_eq!(project(vec![row.clone(); 2001]), None);
+        let mut bad = row;
+        bad.flags = vec!["\\Seen\n".into()];
+        assert_eq!(project(vec![bad]), None);
+        assert!(!valid_folder_listing(&[
+            MailboxEntry {
+                name: "INBOX".into()
+            },
+            MailboxEntry {
+                name: "INBOX".into()
+            }
+        ]));
+        assert!(!valid_folder_listing(&[MailboxEntry {
+            name: "bad\n".into()
+        }]));
     }
 }

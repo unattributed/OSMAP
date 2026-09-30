@@ -91,7 +91,7 @@ def main():
                         report['captures'].append(dict(file=file,overflow=overflow,contrast=audit))
                         assert not overflow and not audit['failures'] and not audit['ui_failures']
             p.get_by_role('link',name='Back to message',exact=True).click();p.wait_for_load_state('networkidle')
-            p.locator('.reader-more-actions summary').click();p.get_by_role('button',name='Move to Bin',exact=True).click();p.wait_for_load_state('networkidle')
+            p.locator('.reader-more-actions > summary').click();p.get_by_role('button',name='Move to Bin',exact=True).click();p.wait_for_load_state('networkidle')
             visit('/mailbox?name=INBOX')
             assert p.locator('.message-subject-link').filter(has_text='Message 123').count() == 0
             visit('/mailbox?name=Trash')

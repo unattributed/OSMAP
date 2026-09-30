@@ -101,6 +101,7 @@ where
         let bcc_value = String::new();
         let mut subject_value = String::new();
         let mut body_value = String::new();
+        let mut signature_placement = crate::signature::InitialPlacement::Blank;
         let mut body_format = crate::compose_format::BodyFormat::Plain;
         let mut source_mailbox_name: Option<String> = None;
         let mut source_uid: Option<u64> = None;
@@ -194,6 +195,7 @@ where
                         cc_value = draft.cc;
                         subject_value = draft.subject;
                         body_value = draft.body;
+                        signature_placement = crate::signature::InitialPlacement::AboveQuote;
                         if intent != ComposeIntent::Forward {
                             match self.gateway.load_composition_preferences(context, &validated_session) {
                                 Ok(preferences) => {
@@ -202,6 +204,7 @@ where
                                     };
                                     body_value = placed;
                                     if preferences.reply_placement == crate::composition_preferences::ReplyPlacement::Below {
+                                        signature_placement = crate::signature::InitialPlacement::BelowQuote;
                                         context_notice.get_or_insert_with(String::new).push_str(" Reply space is below the quoted text. Move to the end of the message before typing; the cursor is not moved automatically.");
                                     }
                                 }
@@ -262,6 +265,15 @@ where
             }
         }
 
+        let signature_notice = match self.gateway.load_signature(&validated_session) {
+            Ok(record) => match crate::signature::initial_body(&record,&body_value,body_format,signature_placement) { Ok(Some(body)) => {body_value=body;None},Ok(None)=>None,Err(notice)=>Some(notice) },
+            Err(_) => Some("Your saved signature is unavailable. No signature was inserted; the prepared message text is unchanged."),
+        };
+        if let Some(notice) = signature_notice {
+            context_notice
+                .get_or_insert_with(String::new)
+                .push_str(&format!(" {notice}"));
+        }
         HandledHttpResponse {
             response: super::compose_enhancement::response(
                 200,

@@ -26,3 +26,19 @@
 @media(max-width:75rem) { .identity-cards { grid-template-columns:1fr; } }
 @media(max-width:40rem) { .identity-card { padding:.85rem; min-height:0; } .identity-field { grid-template-columns:1fr; gap:.3rem; } .identity-actions { grid-template-columns:minmax(0,1fr) auto; } .identity-actions > div { flex-wrap:wrap; } .identity-sender { flex-wrap:wrap; } .identity-sender strong { overflow-wrap:anywhere; } }
 @media(forced-colors:active) { .identity-avatar,.identity-primary { background:Canvas; color:CanvasText; border:1px solid CanvasText; } }
+
+.signature-settings { display:flex;flex-wrap:wrap;align-items:start;gap:.8rem 1rem;margin-top:.8rem; }
+.signature-settings form { margin:0; }
+.signature-settings button { font-size:.85rem;width:auto; }
+.signature-editor { flex:1;min-width:0;font-size:.85rem; }
+.signature-editor summary { cursor:pointer;min-height:2.3rem;align-content:center; }
+.signature-editor form { padding:.8rem;border:1px solid var(--line);border-radius:.6rem;background:var(--panel); }
+.signature-editor textarea,.signature-error-page textarea { min-height:8rem;max-width:100%; }
+.signature-editor p,.signature-settings > p,.signature-unavailable { font-size:.75rem;line-height:1.5;color:var(--muted);margin:0; }
+.signature-editor p { margin:.5rem 0; }
+.signature-settings > p { flex-basis:100%; }
+.signature-error-page { max-width:65rem; }
+.signature-error-page fieldset { min-width:0; }
+.signature-error-page input { max-width:100%; }
+.settings-composition-page #composition-signature:enabled { cursor:pointer; }
+@media(max-width:40rem) { .signature-settings { flex-direction:column; }.signature-editor { width:100%; } }

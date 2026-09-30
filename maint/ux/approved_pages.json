@@ -351,8 +351,11 @@
         {
           "id": "R2-02-003",
           "label": "Unread filter",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "maint/ux/mail_table_workflows.py",
+            "S04/mailtables-integrated-{edge,firefox}/report.json"
+          ]
         },
         {
           "id": "R2-02-004",
@@ -380,26 +383,38 @@
         {
           "id": "R2-02-007",
           "label": "Sort direction",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "maint/ux/mail_table_workflows.py",
+            "S04/mailtables-integrated-{edge,firefox}/report.json"
+          ]
         },
         {
           "id": "R2-02-008",
           "label": "Sort key",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "maint/ux/mail_table_workflows.py",
+            "S04/mailtables-integrated-{edge,firefox}/report.json"
+          ]
         },
         {
           "id": "R2-02-009",
           "label": "Bounded count and previous/next page",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "maint/ux/mail_table_workflows.py",
+            "S04/mailtables-integrated-{edge,firefox}/report.json"
+          ]
         },
         {
           "id": "R2-02-010",
           "label": "Select row",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "maint/ux/mail_table_workflows.py",
+            "S04/mailtables-integrated-{edge,firefox}/report.json"
+          ]
         },
         {
           "id": "R2-02-011",
@@ -446,8 +461,11 @@
         {
           "id": "R2-02-018",
           "label": "Open selected message preserving context",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "maint/ux/mail_table_workflows.py",
+            "S04/mailtables-integrated-{edge,firefox}/report.json"
+          ]
         }
       ]
     },
@@ -478,7 +496,9 @@
             "Standalone approved hierarchy; exact source and native PDF bytes, read/star and replies verified. Standalone Back currently uses default mailbox list; coordinated reader retains context.",
             "src/mail_navigation.rs",
             "S04/reader-neighbours-final-{edge,firefox}/report.json",
-            "Read/star/theme preserve one validated list return context; moves clear stale selected-message fields."
+            "Read/star/theme preserve one validated list return context; moves clear stale selected-message fields.",
+            "src/http/reader_toolbar.rs",
+            "S04/standalone_reader-toolbar-selection-{edge,firefox}/report.json"
           ]
         },
         {
@@ -489,7 +509,9 @@
             "src/http_ui.rs",
             "maint/ux/standalone_reader_workflows.py",
             "S04/reader-integrated-{edge,firefox}/report.json",
-            "Actual move controls and truthful rendering/capability states; this reader harness opens move controls without executing a move. Runtime OpenPGP and full pictured toolbar behaviour remain incomplete."
+            "Actual move controls and truthful rendering/capability states; this reader harness opens move controls without executing a move. Runtime OpenPGP and full pictured toolbar behaviour remain incomplete.",
+            "src/http/reader_toolbar.rs",
+            "S04/standalone_reader-toolbar-selection-{edge,firefox}/report.json"
           ]
         },
         {
@@ -500,7 +522,9 @@
             "src/http_ui.rs",
             "maint/ux/standalone_reader_workflows.py",
             "S04/reader-integrated-{edge,firefox}/report.json",
-            "Actual move controls and truthful rendering/capability states; this reader harness opens move controls without executing a move. Runtime OpenPGP and full pictured toolbar behaviour remain incomplete."
+            "Actual move controls and truthful rendering/capability states; this reader harness opens move controls without executing a move. Runtime OpenPGP and full pictured toolbar behaviour remain incomplete.",
+            "src/http/reader_toolbar.rs",
+            "S04/standalone_reader-toolbar-selection-{edge,firefox}/report.json"
           ]
         },
         {
@@ -511,7 +535,9 @@
             "src/http_ui.rs",
             "maint/ux/standalone_reader_workflows.py",
             "S04/reader-integrated-{edge,firefox}/report.json",
-            "Actual move controls and truthful rendering/capability states; this reader harness opens move controls without executing a move. Runtime OpenPGP and full pictured toolbar behaviour remain incomplete."
+            "Actual move controls and truthful rendering/capability states; this reader harness opens move controls without executing a move. Runtime OpenPGP and full pictured toolbar behaviour remain incomplete.",
+            "src/http/reader_toolbar.rs",
+            "S04/standalone_reader-toolbar-selection-{edge,firefox}/report.json"
           ]
         },
         {
@@ -522,7 +548,9 @@
             "src/http_ui.rs",
             "maint/ux/standalone_reader_workflows.py",
             "S04/reader-integrated-{edge,firefox}/report.json",
-            "Standalone approved hierarchy; exact source and native PDF bytes, read/star and replies verified. Standalone Back currently uses default mailbox list; coordinated reader retains context."
+            "Standalone approved hierarchy; exact source and native PDF bytes, read/star and replies verified. Standalone Back currently uses default mailbox list; coordinated reader retains context.",
+            "src/http/reader_toolbar.rs",
+            "S04/standalone_reader-toolbar-selection-{edge,firefox}/report.json"
           ]
         },
         {
@@ -549,7 +577,12 @@
             "src/http/routes_labels.rs",
             "src/http/label_tests.rs",
             "maint/ux/labels_workflows.py",
-            "S04/labels-integrated-{edge,firefox}/report.json"
+            "S04/labels-integrated-{edge,firefox}/report.json",
+            "src/http/routes_label_selection.rs",
+            "src/label_selection_ui.rs",
+            "maint/ux/label_selection_workflows.py",
+            "S04/label_selection-toolbar-selection-{edge,firefox}/report.json",
+            "Native confirmed selection assignment is atomic for up to ten freshly verified messages. Folder lifecycle remains separate."
           ],
           "engineering_note": "Native private label management and verified single-message assignment; CAS, account isolation, restart persistence and confirmed-move continuity qualified locally. Bulk label assignment and final whole-page approval remain pending."
         },
@@ -583,7 +616,9 @@
             "src/http_ui.rs",
             "maint/ux/standalone_reader_workflows.py",
             "S04/reader-integrated-{edge,firefox}/report.json",
-            "Actual move controls and truthful rendering/capability states; this reader harness opens move controls without executing a move. Runtime OpenPGP and full pictured toolbar behaviour remain incomplete."
+            "Actual move controls and truthful rendering/capability states; this reader harness opens move controls without executing a move. Runtime OpenPGP and full pictured toolbar behaviour remain incomplete.",
+            "src/http/reader_toolbar.rs",
+            "S04/standalone_reader-toolbar-selection-{edge,firefox}/report.json"
           ]
         },
         {
@@ -1029,14 +1064,20 @@
         {
           "id": "R2-05-001",
           "label": "Selection",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "maint/ux/mail_table_workflows.py",
+            "S04/mailtables-integrated-{edge,firefox}/report.json"
+          ]
         },
         {
           "id": "R2-05-002",
           "label": "All filter",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "maint/ux/mail_table_workflows.py",
+            "S04/mailtables-integrated-{edge,firefox}/report.json"
+          ]
         },
         {
           "id": "R2-05-003",
@@ -1053,8 +1094,11 @@
         {
           "id": "R2-05-004",
           "label": "Previous/next and bounded count",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "maint/ux/mail_table_workflows.py",
+            "S04/mailtables-integrated-{edge,firefox}/report.json"
+          ]
         },
         {
           "id": "R2-05-005",
@@ -1072,7 +1116,9 @@
             "src/http_ui.rs",
             "maint/ux/sent_recipient_workflows.py",
             "S04/sent-integrated-{edge,firefox}/report.json",
-            "Actual bounded To summary header; missing recipient remains unknown; Inbox/Search retain From. Native Dovecot fixture execution pending next signed checkpoint."
+            "Actual bounded To summary header; missing recipient remains unknown; Inbox/Search retain From. Native Dovecot fixture execution pending next signed checkpoint.",
+            "maint/ux/mail_table_workflows.py",
+            "S04/mailtables-integrated-{edge,firefox}/report.json"
           ]
         },
         {
@@ -1112,8 +1158,11 @@
         {
           "id": "R2-05-012",
           "label": "Open message",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "maint/ux/mail_table_workflows.py",
+            "S04/mailtables-integrated-{edge,firefox}/report.json"
+          ]
         },
         {
           "id": "R2-05-013",
@@ -1144,7 +1193,9 @@
             "src/http_ui.rs",
             "maint/ux/draft_state_workflows.py",
             "S04/drafts-dense-integrated-{edge,firefox}/report.json",
-            "Eight native saved rows: six editable, one uncertain attempt, one accepted with unconfirmed Sent copy. Consumed/unknown revisions cannot select, star, discard or resume editing; exact attempted and saved versions remain read-only. Combined ordinary/recovery usage is scoped to the same 50-record/50-MiB quota."
+            "Eight native saved rows: six editable, one uncertain attempt, one accepted with unconfirmed Sent copy. Consumed/unknown revisions cannot select, star, discard or resume editing; exact attempted and saved versions remain read-only. Combined ordinary/recovery usage is scoped to the same 50-record/50-MiB quota.",
+            "maint/ux/draft_fidelity_workflows.py",
+            "S04/draft-fidelity-final-{edge,firefox}/report.json"
           ]
         },
         {
@@ -1157,7 +1208,9 @@
             "src/http_ui.rs",
             "maint/ux/draft_state_workflows.py",
             "S04/drafts-dense-integrated-{edge,firefox}/report.json",
-            "Eight native saved rows: six editable, one uncertain attempt, one accepted with unconfirmed Sent copy. Consumed/unknown revisions cannot select, star, discard or resume editing; exact attempted and saved versions remain read-only. Combined ordinary/recovery usage is scoped to the same 50-record/50-MiB quota."
+            "Eight native saved rows: six editable, one uncertain attempt, one accepted with unconfirmed Sent copy. Consumed/unknown revisions cannot select, star, discard or resume editing; exact attempted and saved versions remain read-only. Combined ordinary/recovery usage is scoped to the same 50-record/50-MiB quota.",
+            "maint/ux/draft_fidelity_workflows.py",
+            "S04/draft-fidelity-final-{edge,firefox}/report.json"
           ]
         },
         {
@@ -1170,7 +1223,9 @@
             "src/http_ui.rs",
             "maint/ux/draft_state_workflows.py",
             "S04/drafts-dense-integrated-{edge,firefox}/report.json",
-            "Eight native saved rows: six editable, one uncertain attempt, one accepted with unconfirmed Sent copy. Consumed/unknown revisions cannot select, star, discard or resume editing; exact attempted and saved versions remain read-only. Combined ordinary/recovery usage is scoped to the same 50-record/50-MiB quota."
+            "Eight native saved rows: six editable, one uncertain attempt, one accepted with unconfirmed Sent copy. Consumed/unknown revisions cannot select, star, discard or resume editing; exact attempted and saved versions remain read-only. Combined ordinary/recovery usage is scoped to the same 50-record/50-MiB quota.",
+            "maint/ux/draft_fidelity_workflows.py",
+            "S04/draft-fidelity-final-{edge,firefox}/report.json"
           ]
         },
         {
@@ -1189,7 +1244,9 @@
             "src/http_ui.rs",
             "maint/ux/draft_state_workflows.py",
             "S04/drafts-dense-integrated-{edge,firefox}/report.json",
-            "Eight native saved rows: six editable, one uncertain attempt, one accepted with unconfirmed Sent copy. Consumed/unknown revisions cannot select, star, discard or resume editing; exact attempted and saved versions remain read-only. Combined ordinary/recovery usage is scoped to the same 50-record/50-MiB quota."
+            "Eight native saved rows: six editable, one uncertain attempt, one accepted with unconfirmed Sent copy. Consumed/unknown revisions cannot select, star, discard or resume editing; exact attempted and saved versions remain read-only. Combined ordinary/recovery usage is scoped to the same 50-record/50-MiB quota.",
+            "maint/ux/draft_fidelity_workflows.py",
+            "S04/draft-fidelity-final-{edge,firefox}/report.json"
           ]
         },
         {
@@ -1207,8 +1264,11 @@
         {
           "id": "R2-06-008",
           "label": "Attachment metadata",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "maint/ux/draft_fidelity_workflows.py",
+            "S04/draft-fidelity-final-{edge,firefox}/report.json"
+          ]
         },
         {
           "id": "R2-06-009",
@@ -1239,7 +1299,9 @@
             "src/http_ui.rs",
             "maint/ux/draft_state_workflows.py",
             "S04/drafts-dense-integrated-{edge,firefox}/report.json",
-            "Eight native saved rows: six editable, one uncertain attempt, one accepted with unconfirmed Sent copy. Consumed/unknown revisions cannot select, star, discard or resume editing; exact attempted and saved versions remain read-only. Combined ordinary/recovery usage is scoped to the same 50-record/50-MiB quota."
+            "Eight native saved rows: six editable, one uncertain attempt, one accepted with unconfirmed Sent copy. Consumed/unknown revisions cannot select, star, discard or resume editing; exact attempted and saved versions remain read-only. Combined ordinary/recovery usage is scoped to the same 50-record/50-MiB quota.",
+            "maint/ux/draft_fidelity_workflows.py",
+            "S04/draft-fidelity-final-{edge,firefox}/report.json"
           ]
         },
         {
@@ -1252,7 +1314,9 @@
             "src/http_ui.rs",
             "maint/ux/draft_state_workflows.py",
             "S04/drafts-dense-integrated-{edge,firefox}/report.json",
-            "Eight native saved rows: six editable, one uncertain attempt, one accepted with unconfirmed Sent copy. Consumed/unknown revisions cannot select, star, discard or resume editing; exact attempted and saved versions remain read-only. Combined ordinary/recovery usage is scoped to the same 50-record/50-MiB quota."
+            "Eight native saved rows: six editable, one uncertain attempt, one accepted with unconfirmed Sent copy. Consumed/unknown revisions cannot select, star, discard or resume editing; exact attempted and saved versions remain read-only. Combined ordinary/recovery usage is scoped to the same 50-record/50-MiB quota.",
+            "maint/ux/draft_fidelity_workflows.py",
+            "S04/draft-fidelity-final-{edge,firefox}/report.json"
           ]
         },
         {
@@ -1265,7 +1329,9 @@
             "src/http_ui.rs",
             "maint/ux/draft_state_workflows.py",
             "S04/drafts-dense-integrated-{edge,firefox}/report.json",
-            "Eight native saved rows: six editable, one uncertain attempt, one accepted with unconfirmed Sent copy. Consumed/unknown revisions cannot select, star, discard or resume editing; exact attempted and saved versions remain read-only. Combined ordinary/recovery usage is scoped to the same 50-record/50-MiB quota."
+            "Eight native saved rows: six editable, one uncertain attempt, one accepted with unconfirmed Sent copy. Consumed/unknown revisions cannot select, star, discard or resume editing; exact attempted and saved versions remain read-only. Combined ordinary/recovery usage is scoped to the same 50-record/50-MiB quota.",
+            "maint/ux/draft_fidelity_workflows.py",
+            "S04/draft-fidelity-final-{edge,firefox}/report.json"
           ]
         },
         {
@@ -2320,8 +2386,16 @@
         {
           "id": "R2-13-004",
           "label": "Signature selection",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/signature.rs",
+            "src/signature_ui.rs",
+            "src/http/routes_signature.rs",
+            "src/http/signature_tests.rs",
+            "maint/ux/signature_workflows.py",
+            "S04/signature-integrated-{edge,firefox}/report.json",
+            "One ordinary Default footer with mirrored None/Default selection; inserted once in new composers, existing drafts unchanged. Formatted insertion is limited to proven literal output; unsupported notation gives explicit manual/Plain guidance."
+          ]
         },
         {
           "id": "R2-13-005",
@@ -2566,8 +2640,16 @@
         {
           "id": "R2-15-003",
           "label": "Include signature",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/signature.rs",
+            "src/signature_ui.rs",
+            "src/http/routes_signature.rs",
+            "src/http/signature_tests.rs",
+            "maint/ux/signature_workflows.py",
+            "S04/signature-integrated-{edge,firefox}/report.json",
+            "One ordinary Default footer with mirrored None/Default selection; inserted once in new composers, existing drafts unchanged. Formatted insertion is limited to proven literal output; unsupported notation gives explicit manual/Plain guidance."
+          ]
         },
         {
           "id": "R2-15-004",
@@ -2725,7 +2807,11 @@
             "src/settings_copies_ui.rs",
             "src/settings.rs",
             "S04/privacy-final-{edge,firefox}/report.json",
-            "Archive-only save merges latest record. Native owned flat folder listing opens real mailboxes; hierarchy selection and folder mutation remain incomplete."
+            "Archive-only save merges latest record. Native owned flat folder listing opens real mailboxes; hierarchy selection and folder mutation remain incomplete.",
+            "src/http/routes_settings.rs",
+            "maint/ux/folder_details_workflows.py",
+            "S04/folder-details-final-{edge,firefox}/report.json",
+            "Folder selection remains within Settings; counts cover verified loaded summaries, not total mailbox size or inferred hierarchy."
           ]
         },
         {
@@ -2742,7 +2828,11 @@
             "src/settings_copies_ui.rs",
             "src/settings.rs",
             "S04/privacy-final-{edge,firefox}/report.json",
-            "Archive-only save merges latest record. Native owned flat folder listing opens real mailboxes; hierarchy selection and folder mutation remain incomplete."
+            "Archive-only save merges latest record. Native owned flat folder listing opens real mailboxes; hierarchy selection and folder mutation remain incomplete.",
+            "src/http/routes_settings.rs",
+            "maint/ux/folder_details_workflows.py",
+            "S04/folder-details-final-{edge,firefox}/report.json",
+            "Folder selection remains within Settings; counts cover verified loaded summaries, not total mailbox size or inferred hierarchy."
           ]
         },
         {
@@ -2754,8 +2844,13 @@
         {
           "id": "R2-16-017",
           "label": "Message count",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/http/routes_settings.rs",
+            "maint/ux/folder_details_workflows.py",
+            "S04/folder-details-final-{edge,firefox}/report.json",
+            "Folder selection remains within Settings; counts cover verified loaded summaries, not total mailbox size or inferred hierarchy."
+          ]
         },
         {
           "id": "R2-16-018",
@@ -2771,7 +2866,11 @@
             "src/settings_copies_ui.rs",
             "src/settings.rs",
             "S04/privacy-final-{edge,firefox}/report.json",
-            "Archive-only save merges latest record. Native owned flat folder listing opens real mailboxes; hierarchy selection and folder mutation remain incomplete."
+            "Archive-only save merges latest record. Native owned flat folder listing opens real mailboxes; hierarchy selection and folder mutation remain incomplete.",
+            "src/http/routes_settings.rs",
+            "maint/ux/folder_details_workflows.py",
+            "S04/folder-details-final-{edge,firefox}/report.json",
+            "Folder selection remains within Settings; counts cover verified loaded summaries, not total mailbox size or inferred hierarchy."
           ]
         },
         {

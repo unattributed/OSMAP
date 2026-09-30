@@ -74,9 +74,11 @@ pub(crate) struct DraftListView {
     pub(crate) filter: DraftFilter,
     pub(crate) sort: DraftSort,
     pub(crate) query: String,
+    pub(crate) select_editable: bool,
 }
 
 impl DraftListView {
+    // Returning from an action never selects a new set of current drafts.
     pub(crate) fn href(&self) -> String {
         format!(
             "/drafts?filter={}&sort={}&q={}",
@@ -86,10 +88,12 @@ impl DraftListView {
         )
     }
     pub(crate) fn parse(query: &BTreeMap<String, String>) -> Result<Self, &'static str> {
-        if query
-            .keys()
-            .any(|key| !matches!(key.as_str(), "q" | "filter" | "sort" | "saved" | "deleted"))
-        {
+        if query.keys().any(|key| {
+            !matches!(
+                key.as_str(),
+                "q" | "filter" | "sort" | "saved" | "deleted" | "select"
+            )
+        }) {
             return Err("Use the draft list's filter and sort controls.");
         }
         let filter = match query.get("filter").map(String::as_str) {
@@ -106,6 +110,11 @@ impl DraftListView {
             Some("recipient") => DraftSort::Recipient,
             _ => return Err("Choose a valid draft order."),
         };
+        let select_editable = match query.get("select").map(String::as_str) {
+            None | Some("clear") => false,
+            Some("editable") => true,
+            _ => return Err("Choose a valid draft selection."),
+        };
         let query = query.get("q").cloned().unwrap_or_default();
         if query.len() > 800 || query.chars().count() > 200 || query.chars().any(char::is_control) {
             return Err("Search draft subjects and recipients with up to 200 characters.");
@@ -114,6 +123,7 @@ impl DraftListView {
             filter,
             sort,
             query,
+            select_editable,
         })
     }
 

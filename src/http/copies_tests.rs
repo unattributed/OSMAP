@@ -248,3 +248,32 @@ fn privacy_content_merge_preserves_newer_archive_and_refuses_invalid_or_corrupt_
     assert_eq!(fs::read(path).unwrap(),b"corrupt\n");
     fs::remove_dir_all(root).unwrap();
 }
+
+#[test]
+fn copies_selection_uses_one_owned_summary_read_and_retains_archive() {
+    let root = temp_dir("copies-folder-selection");
+    let store = crate::settings::FileUserSettingsStore::new(&root);
+    let app = BrowserApp::new(HttpPolicy::default(), StubGateway { settings_store: Some(store.clone()), ..StubGateway::default() });
+    let post = format!("csrf_token={}&return_section=copies&settings_action=archive&archive_mailbox_name=INBOX.Projects", StubGateway::validated_session().record.csrf_token);
+    assert_eq!(app.handle_request(&request("POST", "/settings", &authenticated_same_origin_headers(), &post), "127.0.0.1").response.status_code, 303);
+    let before = store.load("alice@example.com").unwrap();
+    for marker in ["valid", "empty", "wrong-owner", "wrong-mailbox", "wrong-row", "zero", "duplicate", "failure"] {
+        let mut req = request("GET", "/settings?section=copies&folder=INBOX", &authenticated_same_origin_headers(), "");
+        req.headers.insert("user-agent".into(), format!("WelcomeData/{marker}"));
+        let result = app.handle_request(&req, "127.0.0.1");
+        assert_eq!(result.response.status_code, 200);
+        assert_eq!(result.audit_events.iter().filter(|v| v.action == "welcome_fixture_summary_list").count(), 1);
+        let body = body_text(&result);
+        let expected = match marker { "valid" => "8", "empty" => "0", _ => "Unknown" };
+        assert!(body.contains(&format!("data-folder-messages>{expected}</dd>")), "{marker}");
+        assert!(body.contains("folder=INBOX\" aria-current=\"true\""));
+        assert!(body.contains("Counts cover loaded summaries") || body.contains("Verified summary counts are unavailable"));
+        assert_eq!(store.load("alice@example.com").unwrap(), before);
+    }
+    for query in ["section=copies&folder=Foreign", "section=copies&folder=", "section=copies&folder=%0aINBOX", "section=general&folder=INBOX", "section=copies&q=x&folder=INBOX"] {
+        assert_eq!(app.handle_request(&request("GET", &format!("/settings?{query}"), &authenticated_same_origin_headers(), ""), "127.0.0.1").response.status_code, 400);
+    }
+    assert!(super::super::header_theme::safe_return("/settings?section=copies&folder=INBOX.Projects").unwrap().contains("folder=INBOX.Projects"));
+    assert!(super::super::header_theme::safe_return("/settings?section=general&folder=INBOX").is_none());
+    fs::remove_dir_all(root).unwrap();
+}

@@ -12,6 +12,15 @@ pub(crate) struct IdentityPageModel<'a> {
 }
 
 pub(crate) fn render_identity_page(model: &IdentityPageModel<'_>) -> TrustedHtml {
+    render_identity_page_with_signature(model, None)
+}
+
+pub(crate) fn render_identity_page_with_signature(
+    model: &IdentityPageModel<'_>,
+    signature: Option<&crate::signature::SignatureRecord>,
+) -> TrustedHtml {
+    let signature_selection = crate::signature_ui::selection(signature, false);
+    let signature_editor = crate::signature_ui::editor(model.csrf_token, signature, "identity");
     let notice = model
         .error_message
         .map(|message| {
@@ -33,11 +42,11 @@ pub(crate) fn render_identity_page(model: &IdentityPageModel<'_>) -> TrustedHtml
         "<div class=\"identity-field\"><label for=\"identity-display-name\">Display name</label><input id=\"identity-display-name\" name=\"display_name\" value=\"{name}\" autocomplete=\"name\"{unavailable}></div>",
         "<div class=\"identity-field\"><label for=\"identity-email\">Email address</label><input id=\"identity-email\" value=\"{email}\" readonly></div>",
         "<div class=\"identity-field\"><label for=\"identity-reply-to\">Reply-to</label><input id=\"identity-reply-to\" name=\"reply_to\" value=\"{reply_to}\" autocomplete=\"email\" aria-describedby=\"identity-help\"{unavailable}></div>",
-        "<div class=\"identity-field\"><label for=\"identity-signature\">Signature</label><select id=\"identity-signature\" disabled><option>Unavailable</option></select></div>",
+        "<div class=\"identity-field\"><label for=\"identity-signature\">Signature</label>{signature_selection}</div>",
         "<div class=\"identity-field identity-actions\"><label for=\"identity-use-new\">Use for new mail</label><div><input id=\"identity-use-new\" class=\"settings-switch\" type=\"checkbox\" role=\"switch\" checked disabled aria-describedby=\"identity-help\"><button type=\"submit\"{unavailable}>Save identity</button></div></div></form></section>",
         "<section class=\"identity-card\"><h2>Authorized Sender Identities</h2><div class=\"identity-sender\"><span class=\"identity-avatar\" aria-hidden=\"true\">{initials}</span><div><strong>{profile_label}</strong><span>{email}</span></div><span class=\"identity-primary\">Primary</span></div><p class=\"identity-unavailable\">Additional sender identities are unavailable.</p><button type=\"button\" disabled>+ Add identity</button></section></div>",
-        "<div class=\"identity-authority-note\"><p>Only the canonical account address can be used as the sender. OSMAP does not permit arbitrary From addresses.</p><p id=\"identity-help\">New messages capture these preferences when first saved or submitted. Saved drafts keep their captured identity after profile changes. This fixed behaviour cannot be toggled. Blank Reply-to uses the account address. Signatures are unavailable.</p></div></div></div></main>"
-    ), header=app_header(model.canonical_username,model.csrf_token,"settings-identity"), nav=settings_navigation("identity"), csrf=escape_html(model.csrf_token), revision=model.revision, name=escape_html(model.display_name), email=escape_html(model.canonical_username), reply_to=escape_html(model.reply_to), profile_label=escape_html(profile_label), initials=escape_html(&sender_initials(Some(profile_label))), notice=notice, unavailable=unavailable))
+        "<div class=\"identity-authority-note\"><p>Only the canonical account address can be used as the sender. OSMAP does not permit arbitrary From addresses.</p><p id=\"identity-help\">New messages capture these preferences when first saved or submitted. Saved drafts keep their captured identity after profile changes. This fixed behaviour cannot be toggled. Blank Reply-to uses the account address.</p></div>{signature_editor}</div></div></main>"
+    ), signature_selection=signature_selection, signature_editor=signature_editor, header=app_header(model.canonical_username,model.csrf_token,"settings-identity"), nav=settings_navigation("identity"), csrf=escape_html(model.csrf_token), revision=model.revision, name=escape_html(model.display_name), email=escape_html(model.canonical_username), reply_to=escape_html(model.reply_to), profile_label=escape_html(profile_label), initials=escape_html(&sender_initials(Some(profile_label))), notice=notice, unavailable=unavailable))
 }
 
 #[cfg(test)]

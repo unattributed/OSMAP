@@ -138,6 +138,26 @@ impl RuntimeBrowserGateway {
 }
 
 impl BrowserGateway for RuntimeBrowserGateway {
+    fn load_signature(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::signature::SignatureRecord, crate::signature::SignatureError> {
+        crate::signature::SignatureStore::new(&self.settings_dir)
+            .load(&session.record.canonical_username)
+    }
+    fn change_signature(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        change: crate::signature::SignatureChange<'_>,
+    ) -> Result<crate::signature::SignatureRecord, crate::signature::SignatureError> {
+        crate::signature::SignatureStore::new(&self.settings_dir).change(
+            &session.record.canonical_username,
+            revision,
+            change,
+        )
+    }
+
     fn snooze_load(
         &self,
         session: &ValidatedSession,

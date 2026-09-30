@@ -4,7 +4,7 @@ import argparse
 import json
 from pathlib import Path
 import tempfile
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, parse_qs, urlencode
 from playwright.sync_api import sync_playwright, expect
 from browser_workflows import start_server, stop_server
 from contrast_audit import TEXT_AUDIT
@@ -28,7 +28,7 @@ def main():
             if not req.url.startswith(origin+'/'):
                 report['external_requests'] += 1
                 route.abort()
-            elif req.method == 'POST' and urlsplit(req.url).path not in ('/login', '/message/flag'):
+            elif req.method == 'POST' and urlsplit(req.url).path not in ('/login', '/message/flag', '/message/move', '/settings'):
                 report['post_requests'] += 1
                 route.abort()
             else:
@@ -63,15 +63,16 @@ def main():
                 assert Path(download.value.path()).read_bytes()==response.body()
             for name in ('Read message #9 in INBOX','Star message #9 in INBOX'):
                 button=p.get_by_role('button',name=name,exact=True)
+                if name.startswith('Star'): p.locator('.reader-more-actions > summary').click()
                 previous=button.get_attribute('aria-pressed')
                 button.press('Enter')
                 p.wait_for_load_state('networkidle')
-                expect(p.get_by_role('button',name=name,exact=True)).to_have_attribute('aria-pressed','false' if previous=='true' else 'true')
-            p.locator('.reader-more-actions summary').press('Enter')
+                expect(p.get_by_role('button',name=name,exact=True,include_hidden=True)).to_have_attribute('aria-pressed','false' if previous=='true' else 'true')
+            p.locator('.reader-more-actions > summary').press('Enter')
             expect(p.get_by_role('button',name='Move to Bin',exact=True)).to_be_visible()
             assert p.get_by_label('Destination Mailbox').locator('option').count()>0
-            p.locator('.reader-more-actions summary').press('Enter')
-            for name in ('Reply','Reply all','Forward'):
+            p.locator('.reader-more-actions > summary').press('Enter')
+            for name in ('Reply to message','Reply','Reply all','Forward'):
                 p.get_by_role('link',name=name,exact=True).click()
                 p.wait_for_load_state('networkidle')
                 expect(p.locator('#compose-body')).to_contain_text('Hello world')
@@ -88,7 +89,27 @@ def main():
                         p.screenshot(path=str(args.output/file),full_page=True)
                         report['captures'].append(dict(file=file,overflow=overflow,contrast=audit,boxes=p.locator('.reader-toolbar,.message-heading,.reader-status,.reader-boundary-note,.body-panel,.reader-attachments,.reader-primary-actions').evaluate_all('els=>els.map(e=>({class:e.className,top:e.getBoundingClientRect().top,bottom:e.getBoundingClientRect().bottom}))')))
                         assert not overflow and not audit['failures'] and not audit['ui_failures'],file
-            report['functional_checks']=['Bounded source view','Native PDF download matches returned bytes; second surfaced file lacks a downloadable fixture','Read/star persist after native POST','Move chooser and Bin control available','Reply/reply-all/forward quote source; no sends']
+            p.set_viewport_size(dict(width=1600,height=1100))
+            visit('/settings?section=copies')
+            p.locator('#copies-archive').select_option('INBOX.Projects')
+            p.get_by_role('button',name='Save archive folder',exact=True).click();p.wait_for_load_state('networkidle')
+            visit('/message?mailbox=INBOX&uid=123')
+            p.get_by_role('button',name='Archive message',exact=True).click();p.wait_for_load_state('networkidle')
+            visit('/mailbox?name=INBOX.Projects')
+            p.locator('.message-subject-link, .archive-subject').filter(has_text='Message 123').first.click();p.wait_for_load_state('networkidle')
+            if urlsplit(p.url).path != '/message':
+                selected=parse_qs(urlsplit(p.url).query)
+                visit('/message?'+urlencode(dict(mailbox=selected['selected_mailbox'][0],uid=selected['selected_uid'][0])))
+            p.get_by_role('button',name='Move message to Bin',exact=True).click();p.wait_for_load_state('networkidle')
+            visit('/mailbox?name=Trash')
+            p.locator('.message-subject-link, .archive-subject').filter(has_text='Message 123').first.click();p.wait_for_load_state('networkidle')
+            if urlsplit(p.url).path != '/message':
+                selected=parse_qs(urlsplit(p.url).query)
+                visit('/message?'+urlencode(dict(mailbox=selected['selected_mailbox'][0],uid=selected['selected_uid'][0])))
+            p.get_by_role('button',name='Restore message to Inbox',exact=True).click();p.wait_for_load_state('networkidle')
+            visit('/mailbox?name=INBOX')
+            expect(p.locator('.message-subject-link').filter(has_text='Message 123')).to_be_visible()
+            report['functional_checks']=['Bounded source view','Native PDF download matches returned bytes; second surfaced file lacks a downloadable fixture','Read/star persist after native POST','Native top Archive, Bin and Restore return owned message to Inbox','Reply/reply-all/forward quote source; no sends']
             assert report['external_requests'] == report['post_requests'] == report['script_requests'] == 0
             report['result'] = 'PASS'
         finally:
