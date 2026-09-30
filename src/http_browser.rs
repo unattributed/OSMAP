@@ -245,6 +245,16 @@ pub trait BrowserGateway {
         ))
     }
 
+    fn update_reading_start_page(
+        &self,
+        _context: &AuthenticationContext,
+        session: &ValidatedSession,
+        start_page: crate::reading_preferences::StartPage,
+    ) -> std::io::Result<crate::reading_preferences::ReadingPreferences> {
+        let _ = (session, start_page);
+        Err(std::io::Error::other("reading preferences unavailable"))
+    }
+
     fn update_reading_preferences(
         &self,
         _context: &AuthenticationContext,
@@ -399,6 +409,17 @@ pub trait BrowserGateway {
         archive_mailbox_name: Option<&str>,
     ) -> BrowserSettingsUpdateOutcome;
 
+    fn folder_metadata(
+        &self,
+        _context: &AuthenticationContext,
+        session: &ValidatedSession,
+    ) -> BrowserFolderMetadataOutcome {
+        BrowserFolderMetadataOutcome {
+            canonical_username: session.record.canonical_username.clone(),
+            snapshot: None,
+            audit_events: vec![],
+        }
+    }
     fn mailbox_status(
         &self,
         _context: &AuthenticationContext,
@@ -1048,5 +1069,12 @@ pub enum BrowserDraftDeleteDecision {
 pub struct BrowserMailboxStatusOutcome {
     pub canonical_username: String,
     pub status: Option<crate::mailbox_status::MailboxStatus>,
+    pub audit_events: Vec<LogEvent>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BrowserFolderMetadataOutcome {
+    pub canonical_username: String,
+    pub snapshot: Option<crate::folder_metadata::FolderSnapshot>,
     pub audit_events: Vec<LogEvent>,
 }

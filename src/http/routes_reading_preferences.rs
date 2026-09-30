@@ -73,6 +73,26 @@ impl<G: BrowserGateway> BrowserApp<G> {
         ) {
             return response;
         }
+        if form.contains_key("reading_action") {
+            if form.get("reading_action").map(String::as_str) != Some("start_page")
+                || form
+                    .keys()
+                    .any(|k| !matches!(k.as_str(), "csrf_token" | "reading_action" | "start_page"))
+            {
+                return rejected(400, "Bad Request", "<p>The start-page form contained unsupported fields. No preference was changed.</p>");
+            }
+            let Some(start_page) = form.get("start_page").and_then(|v| StartPage::parse(v)) else {
+                return rejected(
+                    400,
+                    "Bad Request",
+                    "<p>Choose a supported start page. No preference was changed.</p>",
+                );
+            };
+            return match self.gateway.update_reading_start_page(context, &session, start_page) {
+                Ok(value) => { audit_events.push(build_http_info_event("reading_start_page_saved", "account start page saved", context)); HandledHttpResponse { response: redirect_response(303, "See Other", "/settings?section=general").with_header("Set-Cookie", value.cookie(self.policy.secure_session_cookie)), audit_events } },
+                Err(_) => rejected(503, "Service Unavailable", "<p>The start-page save could not be confirmed. <a href=\"/settings?section=general\">Load saved General settings</a> before another change.</p>"),
+            };
+        }
         if form.keys().any(|key| {
             ![
                 "csrf_token",

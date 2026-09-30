@@ -6,6 +6,8 @@ pub(crate) fn render_general_page(
     preferences: &crate::appearance::AppearanceSettings,
     composition: Option<crate::composition_preferences::CompositionPreferences>,
     identity: Option<crate::identity_preferences::IdentityPreferencesRecord>,
+    reading: Option<crate::reading_preferences::ReadingPreferences>,
+    signature: Option<&crate::signature::SignatureRecord>,
 ) -> TrustedHtml {
     let profile_input = |id: &str, label: &str, value: Option<&str>| {
         match value {
@@ -34,15 +36,21 @@ pub(crate) fn render_general_page(
         select_options(preferences.density.as_str(), &[("comfortable", "Comfortable"), ("compact", "Compact")]),
         select_options(preferences.reader_layout.as_str(), &[("split", "Split view"), ("stacked", "Stacked view")]));
 
+    let start_control = reading.map(|v| format!("<div class=\"general-field\"><label for=\"general-start-page\">Default start page</label><select id=\"general-start-page\" name=\"start_page\" form=\"general-start-form\">{}</select></div>", select_options(v.start_page.as_str(), &[("mailbox","Mailbox"),("inbox","Inbox"),("drafts","Drafts"),("sent","Sent")]))).unwrap_or_else(||unavailable_select("general-start-page","Default start page","Unavailable"));
+    let start_form = if reading.is_some() {
+        format!("<form id=\"general-start-form\" method=\"post\" action=\"/settings/reading\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"reading_action\" value=\"start_page\"></form>",escape_html(model.csrf_token))
+    } else {
+        String::new()
+    };
     let mailbox = format!(concat!(
-        "<section class=\"general-card\" aria-labelledby=\"general-mailbox-title\"><h2 id=\"general-mailbox-title\">Mailbox Defaults</h2>",
+        "<section class=\"general-card\" aria-labelledby=\"general-mailbox-title\"><h2 id=\"general-mailbox-title\">Mailbox Defaults</h2>{start_form}",
         "<form method=\"post\" action=\"/settings\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"settings_action\" value=\"archive\">{}",
         "<div class=\"general-field\"><label for=\"general-archive\">Archive folder</label><input id=\"general-archive\" name=\"archive_mailbox_name\" value=\"{}\" autocomplete=\"off\"></div>{}{}",
-        "<p class=\"general-help\">Only Archive folder can be changed here. Leave it blank to use manual moves.</p><div class=\"general-card-actions\"><button type=\"submit\">Save archive folder</button></div></form></section>"
+        "<p class=\"general-help\">Save each choice separately. Blank Archive uses manual moves.</p><div class=\"general-card-actions\"><button type=\"submit\">Save archive folder</button>{start_button}</div></form></section>"
     ), escape_html(model.csrf_token),
-        unavailable_select("general-start-page", "Default start page", "Unavailable"), escape_html(model.archive_mailbox_name.unwrap_or("")),
+        start_control, escape_html(model.archive_mailbox_name.unwrap_or("")),
         unavailable_select("general-delete-behaviour", "Delete behaviour", "Unavailable"),
-        unavailable_select("general-mark-read", "Mark read", "Unavailable"));
+        unavailable_select("general-mark-read", "Mark read", "Unavailable"), start_form=start_form, start_button=if reading.is_some(){"<button type=\"submit\" form=\"general-start-form\">Save start page</button>"}else{"<span>Saved Reading preferences unavailable.</span>"});
 
     let format_control = match composition {
         Some(value) => format!("<form id=\"general-composition-form\" method=\"post\" action=\"/settings/composition\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><div class=\"general-field\"><label for=\"general-default-format\">Default format</label><select id=\"general-default-format\" name=\"default_body_format\">{}</select></div></form>", escape_html(model.csrf_token), select_options(value.default_body_format.as_str(), &[("plain", "Plain text"), ("formatted", "Formatted text")])),
@@ -52,13 +60,14 @@ pub(crate) fn render_general_page(
         Some(value) => format!("<div class=\"general-field\"><label for=\"general-reply-placement\">Reply placement</label><select id=\"general-reply-placement\" name=\"reply_placement\" form=\"general-composition-form\">{}</select></div>", select_options(value.reply_placement.as_str(), &[("above", "Above quoted text"), ("below", "Below quoted text")])),
         None => unavailable_select("general-reply-placement", "Reply placement", "Unavailable"),
     };
+    let signature_control = signature.map(|r| format!("<form id=\"general-signature-form\" method=\"post\" action=\"/settings/signature\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"signature_revision\" value=\"{}\"><input type=\"hidden\" name=\"operation\" value=\"selection\"><input type=\"hidden\" name=\"return_section\" value=\"general\"><div class=\"general-field\"><label for=\"general-signature\">Signature</label><select id=\"general-signature\" name=\"selection\">{}</select></div></form>",escape_html(model.csrf_token),r.revision,select_options(r.selection.as_str(), &[("none","None"),("default","Default signature")]))).unwrap_or_else(|| unavailable_select("general-signature","Signature","Unavailable"));
     let composition = format!(concat!(
         "<section class=\"general-card\" aria-labelledby=\"general-composition-title\"><h2 id=\"general-composition-title\">Composition Defaults</h2>{}{}{}{}{}",
-        "<div class=\"general-card-actions general-composition-actions\">{}<details><summary>About composition defaults</summary><p class=\"general-help\">Format applies to new blank messages. Replies and forwards use Plain text to preserve quoted message text. Reply placement applies to new replies and reply-all; move the cursor to the blank reply space before typing. Saved drafts remain unchanged. Signature and protected delivery preferences are unavailable.</p></details></div></section>"
+        "<div class=\"general-card-actions general-composition-actions\">{}{signature_save}<details><summary>About composition defaults</summary><p class=\"general-help\">Format applies to new blank messages. Replies and forwards use Plain text to preserve quoted message text. Reply placement applies to new replies and reply-all; move the cursor to the blank reply space before typing. Saved drafts remain unchanged. Signature is ordinary footer text for newly opened composers; existing drafts stay unchanged. <a href=\"/settings?section=identity\">Edit the footer in Identity</a>. OpenPGP signing and encryption are unavailable.</p></details></div></section>"
     ), format_control,
-        unavailable_select("general-signature", "Signature", "Unavailable"), placement_control,
+        signature_control, placement_control,
         unavailable_select("general-signing", "OpenPGP signing", "Unavailable"), unavailable_select("general-encryption", "Encryption", "Unavailable"),
-        if composition.is_some() { "<button type=\"submit\" form=\"general-composition-form\">Save composition defaults</button>" } else { "" });
+        if composition.is_some() { "<button type=\"submit\" form=\"general-composition-form\" aria-label=\"Save composition defaults\">Save composition</button>" } else { "" }, signature_save=if signature.is_some(){"<button type=\"submit\" form=\"general-signature-form\" aria-label=\"Save signature choice\">Save signature</button>"}else{"<span>Saved signature unavailable.</span>"});
 
     let privacy = concat!(
         "<section class=\"general-card\" aria-labelledby=\"general-privacy-title\"><h2 id=\"general-privacy-title\">Privacy &amp; Security</h2><ul class=\"general-status-list\">",
@@ -74,7 +83,16 @@ pub(crate) fn render_general_page(
         ("TOTP", "◉"),
         ("Recovery contact", "♧"),
     ] {
-        security_rows.push_str(&format!("<li><span class=\"general-row-icon\" aria-hidden=\"true\">{icon}</span><div><strong>{label}</strong><span>Status unknown</span></div><button type=\"button\" disabled aria-label=\"Manage {label} unavailable\">Manage</button></li>"));
+        let (destination, link_label, visible) = if label == "OpenPGP keys" {
+            ("security", "View security settings", "View security")
+        } else {
+            (
+                "authentication",
+                "View authentication settings",
+                "View authentication",
+            )
+        };
+        security_rows.push_str(&format!("<li><span class=\"general-row-icon\" aria-hidden=\"true\">{icon}</span><div><strong>{label}</strong><span>Status unknown</span></div><a class=\"button-link\" href=\"/settings?section={destination}\" aria-label=\"{link_label}\">{visible}</a></li>"));
     }
     let security = format!(concat!(
         "<section class=\"general-card\" aria-labelledby=\"general-security-title\"><h2 id=\"general-security-title\">Account Security</h2><ul class=\"general-status-list\">{}</ul>",

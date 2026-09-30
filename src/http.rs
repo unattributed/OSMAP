@@ -9,6 +9,8 @@ pub(crate) mod compose_actions;
 pub(crate) mod compose_delivery_ui;
 mod compose_enhancement;
 pub(crate) mod compose_preflight;
+#[path = "http/folder_tree.rs"]
+mod folder_tree;
 mod header_theme;
 #[path = "http_browser.rs"]
 mod http_browser;
@@ -33,6 +35,7 @@ mod routes_identity_preferences;
 mod routes_label_selection;
 mod routes_labels;
 mod routes_mail;
+pub(crate) use folder_tree::FolderTree;
 mod routes_moves;
 mod routes_notifications;
 #[path = "http/routes_people.rs"]
@@ -803,18 +806,19 @@ pub use self::http_browser::{
     BrowserDraftDeleteDecision, BrowserDraftDeleteOutcome, BrowserDraftEditState,
     BrowserDraftListDecision, BrowserDraftListOutcome, BrowserDraftLoadDecision,
     BrowserDraftLoadOutcome, BrowserDraftSaveDecision, BrowserDraftSaveOutcome,
-    BrowserDraftSaveRequest, BrowserDraftState, BrowserDraftStorageUsage, BrowserGateway,
-    BrowserLoginDecision, BrowserLoginOutcome, BrowserLogoutOutcome, BrowserMailboxDecision,
-    BrowserMailboxOutcome, BrowserMailboxStatusOutcome, BrowserMessageFlagFailure,
-    BrowserMessageFlagOutcome, BrowserMessageListDecision, BrowserMessageListOutcome,
-    BrowserMessageMoveDecision, BrowserMessageMoveOutcome, BrowserMessageSearchDecision,
-    BrowserMessageSearchOutcome, BrowserMessageViewDecision, BrowserMessageViewOutcome,
-    BrowserSendDecision, BrowserSendOutcome, BrowserSendRecoveryDecision,
-    BrowserSendRecoverySnapshot, BrowserSendRequest, BrowserSessionDecision,
-    BrowserSessionListDecision, BrowserSessionListOutcome, BrowserSessionRevokeDecision,
-    BrowserSessionRevokeOutcome, BrowserSessionRevokeScope, BrowserSessionValidationOutcome,
-    BrowserSettingsDecision, BrowserSettingsOutcome, BrowserSettingsUpdateDecision,
-    BrowserSettingsUpdateOutcome, BrowserVisibleSession, BrowserVisibleSettings,
+    BrowserDraftSaveRequest, BrowserDraftState, BrowserDraftStorageUsage,
+    BrowserFolderMetadataOutcome, BrowserGateway, BrowserLoginDecision, BrowserLoginOutcome,
+    BrowserLogoutOutcome, BrowserMailboxDecision, BrowserMailboxOutcome,
+    BrowserMailboxStatusOutcome, BrowserMessageFlagFailure, BrowserMessageFlagOutcome,
+    BrowserMessageListDecision, BrowserMessageListOutcome, BrowserMessageMoveDecision,
+    BrowserMessageMoveOutcome, BrowserMessageSearchDecision, BrowserMessageSearchOutcome,
+    BrowserMessageViewDecision, BrowserMessageViewOutcome, BrowserSendDecision, BrowserSendOutcome,
+    BrowserSendRecoveryDecision, BrowserSendRecoverySnapshot, BrowserSendRequest,
+    BrowserSessionDecision, BrowserSessionListDecision, BrowserSessionListOutcome,
+    BrowserSessionRevokeDecision, BrowserSessionRevokeOutcome, BrowserSessionRevokeScope,
+    BrowserSessionValidationOutcome, BrowserSettingsDecision, BrowserSettingsOutcome,
+    BrowserSettingsUpdateDecision, BrowserSettingsUpdateOutcome, BrowserVisibleSession,
+    BrowserVisibleSettings,
 };
 pub use self::http_gateway::RuntimeBrowserGateway;
 pub use self::http_runtime::run_http_server;
@@ -904,6 +908,10 @@ mod tests {
     mod autosave_tests {
         include!("http/autosave_tests.rs");
     }
+    mod general_preferences_tests {
+        include!("http/general_preferences_tests.rs");
+    }
+
     mod signature_tests {
         include!("http/signature_tests.rs");
     }
@@ -974,6 +982,7 @@ mod tests {
             Option<crate::composition_preferences::CompositionPreferencesStore>,
         reading_preferences_store: Option<crate::reading_preferences::ReadingPreferencesStore>,
         browser_fixture_accounts: bool,
+        preview_mailbox_tree: bool,
         fixture_sessions: Option<fixture_sessions::FixtureSessions>,
     }
 
@@ -1006,6 +1015,7 @@ mod tests {
                 composition_preferences_store: None,
                 reading_preferences_store: None,
                 browser_fixture_accounts: false,
+                preview_mailbox_tree: false,
                 fixture_sessions: None,
             }
         }
@@ -1719,6 +1729,18 @@ mod tests {
             )
         }
 
+        fn update_reading_start_page(
+            &self,
+            _context: &AuthenticationContext,
+            session: &ValidatedSession,
+            start_page: crate::reading_preferences::StartPage,
+        ) -> std::io::Result<crate::reading_preferences::ReadingPreferences> {
+            self.reading_preferences_store
+                .as_ref()
+                .ok_or_else(|| std::io::Error::other("reading preferences unavailable"))?
+                .save_start_page(&session.record.canonical_username, start_page)
+        }
+
         fn update_reading_preferences(
             &self,
             _context: &AuthenticationContext,
@@ -2058,6 +2080,27 @@ mod tests {
             }
         }
 
+        fn folder_metadata(
+            &self,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+        ) -> BrowserFolderMetadataOutcome {
+            let account = if context.user_agent == "FolderTreeWrongOwner" {
+                "bob@example.com"
+            } else {
+                &session.record.canonical_username
+            };
+            let bytes=b"* PREAUTH fixture\r\n* NAMESPACE ((\"\" \".\")) ((\"Shared/\" \"/\")) ((\"Public/\" \"/\"))\r\nN1 OK done\r\n* LIST (\\HasChildren) \".\" \"INBOX\"\r\n* LIST (\\HasNoChildren) \".\" \"INBOX.Projects\"\r\n* LIST (\\Drafts) \".\" \"Drafts\"\r\n* LIST (\\Junk) \".\" \"Junk\"\r\n* LIST (\\Trash) \".\" \"Trash\"\r\n* LIST (\\Sent) \".\" \"Sent\"\r\n* LIST (\\Noselect) \"/\" \"Shared/Team\"\r\n* LIST () \"/\" \"Shared/Team/Review\"\r\n* LIST (\\NonExistent) \"/\" \"Public/Old\"\r\n* LIST () \"/\" \"Public/Old/News\"\r\nL1 OK done\r\n* BYE done\r\nZ1 OK done\r\n";
+            BrowserFolderMetadataOutcome {
+                canonical_username: account.into(),
+                snapshot: if context.user_agent == "FolderTreeMalformed" {
+                    None
+                } else {
+                    crate::folder_metadata::FolderSnapshot::parse(account, bytes).ok()
+                },
+                audit_events: vec![],
+            }
+        }
         fn mailbox_status(
             &self,
             context: &AuthenticationContext,
@@ -2115,6 +2158,27 @@ mod tests {
                             }
                             .into(),
                         }],
+                    },
+                    audit_events: vec![],
+                };
+            }
+            if context.user_agent.starts_with("FolderTree") || self.preview_mailbox_tree {
+                return BrowserMailboxOutcome {
+                    decision: BrowserMailboxDecision::Listed {
+                        canonical_username: validated_session.record.canonical_username.clone(),
+                        mailboxes: [
+                            "INBOX",
+                            "INBOX.Projects",
+                            "Drafts",
+                            "Junk",
+                            "Trash",
+                            "Sent",
+                            "Shared/Team/Review",
+                            "Public/Old/News",
+                        ]
+                        .iter()
+                        .map(|n| MailboxEntry { name: (*n).into() })
+                        .collect(),
                     },
                     audit_events: vec![],
                 };

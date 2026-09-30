@@ -668,6 +668,7 @@
       "query_fields": [],
       "form_fields": [
         "csrf_token",
+        "reading_action",
         "start_page",
         "date_order",
         "show_source_shortcut",

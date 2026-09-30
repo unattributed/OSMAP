@@ -2271,3 +2271,54 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   a Clippy test initializer and a hostile fixture in the runtime template file
   are retained. The fixture moved to a dedicated test module; gates are unchanged.
   Whole-page, sprint and epic acceptance stay open.
+
+### Verified folder hierarchy and General preference controls — 2026-09-30
+
+- Signed `7485aceac1495740d95d194f46c37922d4acc285` passed isolated obsd1
+  qualification (`native-n`): 894 library tests, hostile-content and signed
+  helper checks. Archive SHA-256
+  `0d2c37359b83bbd19f086ca66737dfea5dd75c50fc0b9666e90542415e81938e`;
+  log `a01fc665a4d563f0832f4e6dca07480083abfebeee413ddeb06e44a3db029d6c`.
+  Standard checkout/services are unchanged. Its Alice loopback preview passed
+  twelve read-only page checks in `qa-preview-navigation-smoke/report.json`.
+- PAGE16 hierarchy now uses a finite grant-bound namespace/LIST exchange with
+  strict quoted/literal/modified-UTF7 decoding, canonical ownership and complete
+  successful response validation. Limits: 512 KiB transcript, 1,024 folders,
+  32 namespaces, 255-byte decoded names, 256-byte flags; projection additionally
+  bounds depth to 32 and nodes to 2,048. Invalid metadata keeps the owned flat list.
+  Selection/Open still requires the existing owned mailbox navigation allowlist;
+  other namespace rows and structural/nonselectable parents are display-only.
+- The fixed Dovecot IMAP child receives its configured userdb override after
+  `exec imap`; a native disposable two-account probe caught that global options
+  do not propagate. Alice/Bob isolation, unknown account and missing socket
+  refusal passed. Pure parser and signed transport tests passed separately.
+  An ignored Rust native test now joins the actual signed helper/executor/userdb
+  path; its end-to-end execution remains pending the next signed native export.
+  Grant expiry is an admission window; execution has a separate ten-second cap,
+  not a guarantee of completion before grant expiry. No configured-helper fallback.
+- Independent source review found no blocking owner/action/transport issue.
+  Root retained protocol CRLF fixtures through narrowly scoped Git attributes
+  and restored the pre-existing Unix-only status-test annotation during merge.
+  Roles are reported facts, not protection policy or mutation permission.
+- Root rejected the first hierarchy layout at y1160 versus approved y960.
+  Corrected primary facts match the reference order; secondary facts use a
+  native Folder details disclosure. Parent `folder-tree-final-{edge,firefox}`
+  passed eight captures each and keyboard select/open/disclosure, Archive
+  preservation and invalid-metadata fallback. Card bottom is y960.6/y961.3.
+- PAGE11 General now saves start page through an atomic single-field merge and
+  signature choice through existing CAS, preserving unrelated Reading fields
+  and footer text. Native forms remain separate; unavailable stores disable
+  authoring. View links reach existing settings without claiming management.
+  Parent `general-final-*` passed five captures each, interleaved saves, stale
+  refusal, fresh-login persistence, owner separation and keyboard navigation.
+  Second-row cards remain about 37 pixels taller for explicit save controls.
+- Parent production/focused checks and actual image inspection passed. Combined
+  acceptance/security/V10–13 passed with 905 library tests, eight explicit ignores
+  and both hostile-content tests. Strict all-target/all-feature Clippy and V14
+  passed (`folders-general-*-b.log`). Initial failure was an old literal button
+  assertion; the updated assertion checks the same form and full accessible name.
+  Manual preview mode now supplies consistent synthetic mailbox/metadata facts;
+  normal Alice browser hierarchy rendering passed `preview-hierarchy-check.json`.
+  Ordinary regression fixtures and production gateway behavior are unchanged.
+  Folder creation/rename/move/delete, full page and epic acceptance remain open;
+  no production deployment or synchronization.

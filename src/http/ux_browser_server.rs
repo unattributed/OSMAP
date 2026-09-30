@@ -74,6 +74,7 @@ fn ux_synthetic_browser_server() {
             root.join("settings"),
         )),
         browser_fixture_accounts: true,
+        preview_mailbox_tree: preview_minutes.is_some(),
         fixture_sessions: Some(fixture_sessions::FixtureSessions::new(
             root.join("sessions"),
         )),

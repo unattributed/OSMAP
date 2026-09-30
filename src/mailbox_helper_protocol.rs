@@ -28,6 +28,10 @@ use crate::mailbox::{
 /// Supported helper requests for the first mailbox-read slice.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) enum MailboxHelperRequest {
+    FolderMetadata {
+        canonical_username: String,
+        grant: MailboxHelperGrant,
+    },
     MailboxStatus {
         canonical_username: String,
         mailbox_name: String,
@@ -106,6 +110,9 @@ impl MailboxHelperGrant {
 /// Supported helper responses for the first mailbox-read slice.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) enum MailboxHelperResponse {
+    FolderMetadataOk {
+        snapshot: crate::folder_metadata::FolderSnapshot,
+    },
     MailboxStatusOk {
         status: crate::mailbox_status::MailboxStatus,
     },
@@ -150,6 +157,7 @@ pub(super) enum MailboxHelperResponse {
 
 pub(super) fn encode_request(request: &MailboxHelperRequest) -> String {
     match request {
+        MailboxHelperRequest::FolderMetadata {canonical_username,grant} => format!("operation=folder_metadata\ncanonical_username_b64={}\n{}",encode_base64(canonical_username.as_bytes()),encode_grant_fields(grant)),
         MailboxHelperRequest::MailboxStatus {canonical_username,mailbox_name,grant} => format!("operation=mailbox_status\ncanonical_username_b64={}\nmailbox_name_b64={}\n{}",encode_base64(canonical_username.as_bytes()),encode_base64(mailbox_name.as_bytes()),encode_grant_fields(grant)),
         MailboxHelperRequest::MessageFlag { canonical_username, request, grant } => format!(
             "operation=message_flag\ncanonical_username_b64={}\n{}{}",
@@ -253,6 +261,13 @@ pub(super) fn parse_request(input: &str) -> Result<MailboxHelperRequest, String>
     let grant = parse_grant_fields(&fields)?;
 
     match operation {
+        "folder_metadata" => {
+            crate::mailbox_status::validate_account(&canonical_username).map_err(|e| e.reason)?;
+            Ok(MailboxHelperRequest::FolderMetadata {
+                canonical_username,
+                grant,
+            })
+        }
         "mailbox_status" => {
             crate::mailbox_status::validate_account(&canonical_username).map_err(|e| e.reason)?;
             let mailbox_name = decode_base64_text(
@@ -518,7 +533,8 @@ pub(super) fn verify_request_grant(
 pub(super) fn request_grant(request: &MailboxHelperRequest) -> &MailboxHelperGrant {
     match request {
         MailboxHelperRequest::MessageFlag { grant, .. } => grant,
-        MailboxHelperRequest::MailboxStatus { grant, .. }
+        MailboxHelperRequest::FolderMetadata { grant, .. }
+        | MailboxHelperRequest::MailboxStatus { grant, .. }
         | MailboxHelperRequest::MailboxList { grant, .. }
         | MailboxHelperRequest::MessageList { grant, .. }
         | MailboxHelperRequest::MessageSearch { grant, .. }
@@ -532,7 +548,8 @@ pub(super) fn request_grant(request: &MailboxHelperRequest) -> &MailboxHelperGra
 fn set_request_grant(request: &mut MailboxHelperRequest, new_grant: MailboxHelperGrant) {
     match request {
         MailboxHelperRequest::MessageFlag { grant, .. } => *grant = new_grant,
-        MailboxHelperRequest::MailboxStatus { grant, .. }
+        MailboxHelperRequest::FolderMetadata { grant, .. }
+        | MailboxHelperRequest::MailboxStatus { grant, .. }
         | MailboxHelperRequest::MailboxList { grant, .. }
         | MailboxHelperRequest::MessageList { grant, .. }
         | MailboxHelperRequest::MessageSearch { grant, .. }
@@ -546,6 +563,7 @@ fn set_request_grant(request: &mut MailboxHelperRequest, new_grant: MailboxHelpe
 pub(super) fn helper_operation_label(request: &MailboxHelperRequest) -> &'static str {
     match request {
         MailboxHelperRequest::MessageFlag { .. } => "message_flag",
+        MailboxHelperRequest::FolderMetadata { .. } => "folder_metadata",
         MailboxHelperRequest::MailboxStatus { .. } => "mailbox_status",
         MailboxHelperRequest::MailboxList { .. } => "mailbox_list",
         MailboxHelperRequest::MessageList { .. } => "message_list",
@@ -597,7 +615,10 @@ fn canonical_grant_payload(request: &MailboxHelperRequest, grant: &MailboxHelper
                 },
             ]);
         }
-        MailboxHelperRequest::MailboxList {
+        MailboxHelperRequest::FolderMetadata {
+            canonical_username, ..
+        }
+        | MailboxHelperRequest::MailboxList {
             canonical_username, ..
         } => fields.push(canonical_username.clone()),
         MailboxHelperRequest::MailboxStatus {
@@ -716,6 +737,7 @@ fn parse_grant_fields(fields: &BTreeMap<String, String>) -> Result<MailboxHelper
 
 pub(super) fn encode_response(response: &MailboxHelperResponse) -> String {
     match response {
+        MailboxHelperResponse::FolderMetadataOk {snapshot} => format!("status=ok\noperation=folder_metadata\ncanonical_username_b64={}\ntranscript_b64={}\n",encode_base64(snapshot.account().as_bytes()),encode_base64(snapshot.transcript())),
         MailboxHelperResponse::MailboxStatusOk {status} => format!("status=ok\noperation=mailbox_status\nmailbox_name_b64={}\nstatus_guid={}\nstatus_messages={}\nstatus_vsize={}\n",encode_base64(status.mailbox().as_bytes()),status.guid(),status.messages(),status.virtual_bytes()),
         MailboxHelperResponse::MessageFlagOk { request, result } => format!(
             "status=ok\noperation=message_flag\n{}flag_result={}\n", encode_flag_fields(request),
@@ -872,6 +894,31 @@ pub(super) fn parse_response(
     message_view_policy: MessageViewPolicy,
     input: &str,
 ) -> Result<MailboxHelperResponse, String> {
+    if input
+        .lines()
+        .any(|line| line == "operation=folder_metadata")
+    {
+        if input.len() > 704 * 1024 {
+            return Err("folder metadata response too large".into());
+        }
+        let fields = parse_kv_lines(input)?;
+        if fields.len() != 4 || require_field(&fields, "status")? != "ok" {
+            return Err("invalid folder metadata response".into());
+        }
+        let account = decode_base64_text(
+            require_field(&fields, "canonical_username_b64")?,
+            320,
+            "account",
+        )?;
+        let transcript = decode_base64_bytes(
+            require_field(&fields, "transcript_b64")?,
+            512 * 1024,
+            "transcript",
+        )?;
+        let snapshot = crate::folder_metadata::FolderSnapshot::parse(&account, &transcript)
+            .map_err(|_| "invalid folder metadata".to_string())?;
+        return Ok(MailboxHelperResponse::FolderMetadataOk { snapshot });
+    }
     if input.lines().any(|line| line == "operation=mailbox_status") {
         let fields = parse_kv_lines(input)?;
         if fields.len() != 6 || require_field(&fields, "status")? != "ok" {
@@ -1260,7 +1307,7 @@ fn reject_unknown_request_fields(
             "grant_nonce",
             "grant_signature",
         ],
-        "mailbox_list" => &[
+        "folder_metadata" | "mailbox_list" => &[
             "operation",
             "canonical_username_b64",
             "grant_issued_at",

@@ -64,3 +64,6 @@ mod signature_ui;
 mod label_selection_ui;
 pub mod labels;
 mod labels_ui;
+
+pub mod folder_metadata;
+mod folder_metadata_backend;

@@ -1,0 +1,2 @@
+# IMAP transcript fixtures preserve protocol-required CRLF bytes.
+maint/ux/fixtures/folder-metadata-*.imap -text whitespace=cr-at-eol

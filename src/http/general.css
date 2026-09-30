@@ -48,3 +48,7 @@
   .general-card :disabled { color: GrayText; background: Canvas; border-color: GrayText; }
   .general-enforced { border-color: CanvasText; }
 }
+
+/* Keep descriptive navigation labels from squeezing account-security names. */
+.settings-general-page .general-status-list:has(.button-link) li { grid-template-columns:1.3rem minmax(6.2rem,1fr) minmax(0,8.5rem); gap:.4rem; }
+.settings-general-page .general-status-list .button-link { white-space:normal; text-align:center; line-height:1.25; }

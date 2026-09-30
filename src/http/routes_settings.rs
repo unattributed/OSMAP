@@ -225,19 +225,19 @@ where
                     if section == "privacy" {
                         crate::http_ui::render_privacy_page(&model)
                     } else if section == "copies" {
-                        let mailboxes = self.reading_mailbox_choices(context, &validated_session, &mut audit_events)
-                            .filter(|entries| valid_folder_listing(entries))
-                            .map(|entries| super::routes_mail::filter_user_visible_mailboxes(&entries));
+                        let owned_mailboxes = self.reading_mailbox_choices(context, &validated_session, &mut audit_events).filter(|entries| valid_folder_listing(entries));
+                        let mailboxes = owned_mailboxes.as_ref().map(|entries| super::routes_mail::filter_user_visible_mailboxes(entries));
+                        let hierarchy = owned_mailboxes.as_ref().and_then(|entries| self.folder_hierarchy(context, &validated_session, entries, &mut audit_events));
                         let chosen = request.query_params.get("folder").map(String::as_str)
-                            .or(model.archive_mailbox_name).filter(|name| mailboxes.as_ref().is_some_and(|entries| entries.iter().any(|v| v.name == *name)))
-                            .or_else(|| if request.query_params.contains_key("folder") { None } else { mailboxes.as_ref().and_then(|v| v.first()).map(|v| v.name.as_str()) });
+                            .or(model.archive_mailbox_name).filter(|name| hierarchy.as_ref().is_none_or(|tree| tree.selectable(name))).filter(|name| mailboxes.as_ref().is_some_and(|entries| entries.iter().any(|v| v.name == *name)))
+                            .or_else(|| if request.query_params.contains_key("folder") { None } else { mailboxes.as_ref().and_then(|v| v.iter().find(|m| hierarchy.as_ref().is_none_or(|tree| tree.selectable(&m.name)))).map(|v| v.name.as_str()) });
                         if request.query_params.contains_key("folder") && mailboxes.is_some() && chosen.is_none() {
                             return HandledHttpResponse { response: html_response(400, "Bad Request", "Folder Unavailable", "<p>Select a folder from Copies &amp; Folders.</p>"), audit_events };
                         }
                         let counts = chosen.and_then(|name| self.folder_counts(context, &validated_session, name, &mut audit_events));
                         {
                             let status=chosen.and_then(|folder| self.folder_status(context,&validated_session,folder,&mut audit_events));
-                            crate::http_ui::render_copies_page(&model, mailboxes.as_deref(), chosen, counts,status.as_ref())
+                            crate::http_ui::render_copies_page(&model, mailboxes.as_deref(), chosen, counts,status.as_ref(),hierarchy.as_ref())
                         }
                     } else if section == "appearance" {
                         crate::http_ui::render_appearance_page(&model, &presentation)
@@ -258,6 +258,8 @@ where
                             self.gateway
                                 .load_identity_preferences(context, &validated_session)
                                 .ok(),
+                            self.gateway.load_reading_preferences(context, &validated_session).ok(),
+                            self.gateway.load_signature(&validated_session).ok().as_ref(),
                         )
                     } else {
                         let preferences = match self.gateway.load_reading_preferences(context, &validated_session) {
@@ -658,6 +660,39 @@ fn verified_folder_counts(
 }
 
 impl<G: BrowserGateway> BrowserApp<G> {
+    fn folder_hierarchy(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        entries: &[MailboxEntry],
+        audit: &mut Vec<LogEvent>,
+    ) -> Option<crate::http::FolderTree> {
+        let (guard, event) =
+            match self.acquire_mailbox_budget(context, session, "settings_folder_hierarchy") {
+                Ok(v) => v,
+                Err(r) => {
+                    audit.extend(r.audit_events);
+                    return None;
+                }
+            };
+        audit.push(event);
+        let outcome = self.gateway.folder_metadata(context, session);
+        audit.extend(outcome.audit_events);
+        audit.push(self.release_request_budget(
+            guard,
+            "settings_folder_hierarchy",
+            context,
+            session,
+        ));
+        if outcome.canonical_username != session.record.canonical_username {
+            return None;
+        }
+        crate::http::FolderTree::build(
+            &session.record.canonical_username,
+            outcome.snapshot.as_ref()?,
+            entries,
+        )
+    }
     fn folder_status(
         &self,
         context: &AuthenticationContext,

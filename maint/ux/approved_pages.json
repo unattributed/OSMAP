@@ -2075,8 +2075,15 @@
         {
           "id": "R2-11-010",
           "label": "Default start page",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/settings_general_ui.rs",
+            "src/reading_preferences.rs",
+            "src/http/general_preferences_tests.rs",
+            "maint/ux/general_preferences_workflows.py",
+            "S04/general-final-{edge,firefox}/report.json",
+            "Start-page-only save merges latest Reading preferences under the existing account lock."
+          ]
         },
         {
           "id": "R2-11-011",
@@ -2113,8 +2120,15 @@
         {
           "id": "R2-11-015",
           "label": "Signature preference",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/settings_general_ui.rs",
+            "src/reading_preferences.rs",
+            "src/http/general_preferences_tests.rs",
+            "maint/ux/general_preferences_workflows.py",
+            "S04/general-final-{edge,firefox}/report.json",
+            "None/Default ordinary signature choice uses existing CAS and preserves footer text; separate Identity editor."
+          ]
         },
         {
           "id": "R2-11-016",
@@ -2839,42 +2853,56 @@
           "label": "Hierarchy navigation",
           "status": "PARTIAL_FUNCTIONAL",
           "evidence": [
+            "src/folder_metadata.rs",
+            "src/folder_metadata_backend.rs",
+            "src/http/folder_tree.rs",
             "src/settings_copies_ui.rs",
-            "src/settings.rs",
-            "S04/privacy-final-{edge,firefox}/report.json",
-            "Archive-only save merges latest record. Native owned flat folder listing opens real mailboxes; hierarchy selection and folder mutation remain incomplete.",
-            "src/http/routes_settings.rs",
-            "maint/ux/folder_details_workflows.py",
-            "S04/folder-details-final-{edge,firefox}/report.json",
-            "Folder selection remains within Settings; counts cover verified loaded summaries, not total mailbox size or inferred hierarchy."
+            "maint/ux/folder_hierarchy_workflows.py",
+            "S04/folder-tree-final-{edge,firefox}/report.json",
+            "Hierarchy uses verified namespaces/delimiters. Select/Open remains within the existing owned navigation allowlist; other verified namespaces display only."
           ]
         },
         {
           "id": "R2-16-014",
           "label": "System-folder identification",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/folder_metadata.rs",
+            "src/folder_metadata_backend.rs",
+            "src/http/folder_tree.rs",
+            "src/settings_copies_ui.rs",
+            "maint/ux/folder_hierarchy_workflows.py",
+            "S04/folder-tree-final-{edge,firefox}/report.json",
+            "Reported special-use roles and nonselectable/nonexistent states are factual; they do not establish a folder protection or mutation policy."
+          ]
         },
         {
           "id": "R2-16-015",
           "label": "Selected-folder name",
           "status": "IMPLEMENTED_VERIFIED_LOCAL",
           "evidence": [
+            "src/folder_metadata.rs",
+            "src/folder_metadata_backend.rs",
+            "src/http/folder_tree.rs",
             "src/settings_copies_ui.rs",
-            "src/settings.rs",
-            "S04/privacy-final-{edge,firefox}/report.json",
-            "Archive-only save merges latest record. Native owned flat folder listing opens real mailboxes; hierarchy selection and folder mutation remain incomplete.",
-            "src/http/routes_settings.rs",
-            "maint/ux/folder_details_workflows.py",
-            "S04/folder-details-final-{edge,firefox}/report.json",
-            "Folder selection remains within Settings; counts cover verified loaded summaries, not total mailbox size or inferred hierarchy."
+            "maint/ux/folder_hierarchy_workflows.py",
+            "S04/folder-tree-final-{edge,firefox}/report.json",
+            "Exact selected owned identity and account; malformed/wrong-owner metadata keeps verified flat fallback."
           ]
         },
         {
           "id": "R2-16-016",
           "label": "Parent",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/folder_metadata.rs",
+            "src/folder_metadata_backend.rs",
+            "src/http/folder_tree.rs",
+            "src/settings_copies_ui.rs",
+            "maint/ux/folder_hierarchy_workflows.py",
+            "S04/folder-tree-final-{edge,firefox}/report.json",
+            "Exact structural parent or reported namespace at root; no guessed delimiter."
+          ]
         },
         {
           "id": "R2-16-017",
@@ -2888,28 +2916,38 @@
             "src/mailbox_status.rs",
             "src/mailbox_helper_status_tests.rs",
             "S04/folder-status-integrated-{edge,firefox}/report.json",
-            "Separate authoritative total and virtual message size, plus bounded loaded unread. Virtual size is not quota or disk use. Native helper qualification follows signed export."
+            "Separate authoritative total and virtual message size, plus bounded loaded unread. Virtual size is not quota or disk use. Native helper qualification follows signed export.",
+            "S04/native-m/result.json",
+            "S04/native-n/result.json",
+            "Authoritative total and virtual-size helper qualified on isolated obsd1; virtual bytes are not quota/disk use."
           ]
         },
         {
           "id": "R2-16-018",
           "label": "Subfolder count",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/folder_metadata.rs",
+            "src/folder_metadata_backend.rs",
+            "src/http/folder_tree.rs",
+            "src/settings_copies_ui.rs",
+            "maint/ux/folder_hierarchy_workflows.py",
+            "S04/folder-tree-final-{edge,firefox}/report.json",
+            "Visible direct subfolders counts immediate displayed nodes, not all server descendants."
+          ]
         },
         {
           "id": "R2-16-019",
           "label": "Mailbox owner",
           "status": "IMPLEMENTED_VERIFIED_LOCAL",
           "evidence": [
+            "src/folder_metadata.rs",
+            "src/folder_metadata_backend.rs",
+            "src/http/folder_tree.rs",
             "src/settings_copies_ui.rs",
-            "src/settings.rs",
-            "S04/privacy-final-{edge,firefox}/report.json",
-            "Archive-only save merges latest record. Native owned flat folder listing opens real mailboxes; hierarchy selection and folder mutation remain incomplete.",
-            "src/http/routes_settings.rs",
-            "maint/ux/folder_details_workflows.py",
-            "S04/folder-details-final-{edge,firefox}/report.json",
-            "Folder selection remains within Settings; counts cover verified loaded summaries, not total mailbox size or inferred hierarchy."
+            "maint/ux/folder_hierarchy_workflows.py",
+            "S04/folder-tree-final-{edge,firefox}/report.json",
+            "Exact selected owned identity and account; malformed/wrong-owner metadata keeps verified flat fallback."
           ]
         },
         {

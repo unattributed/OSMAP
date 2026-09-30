@@ -42,3 +42,15 @@
 .copies-details dl { margin:1rem 0;gap:.75rem; }
 .copies-count-scope { margin:.6rem 0; }
 .copies-details .copies-safety { margin-top:.8rem;padding:.6rem; }
+
+.copies-tree > ul {max-height:26rem}.copies-tree ul ul {max-height:none;overflow:visible;margin-left:1rem;border-left:1px solid var(--line);padding-left:.45rem}
+.copies-tree details {margin:0}.copies-tree summary {font-size:.75rem;color:var(--muted);padding:.2rem .5rem;overflow-wrap:anywhere;cursor:pointer}
+.folder-display-only {display:block;padding:.4rem .5rem;overflow-wrap:anywhere}.folder-display-only small,.folder-namespace {display:block;font-size:.7rem;color:var(--muted);padding-left:.5rem}
+.folder-line-icon {display:inline-block;flex:none;width:14px;height:11px;border:1px solid currentColor;position:relative}.folder-line-icon::before {content:"";position:absolute;top:-4px;left:-1px;width:6px;height:3px;border:1px solid currentColor;border-bottom:0}
+.copies-details .folder-hierarchy-facts {border-top:1px solid var(--line);padding-top:.6rem;gap:.4rem}
+
+.copies-tree > ul {max-height:19rem}.copies-tree .folder-namespace {padding:.4rem .5rem .15rem;font-weight:700}
+.copies-secondary {margin-top:.4rem;font-size:.8rem}.copies-secondary > summary {padding:.4rem 0;cursor:pointer}
+.copies-details .copies-safety {line-height:1.4}.copies-details .copies-safety p {margin:.35rem 0}
+.copies-details > dl { margin:.6rem 0;gap:.5rem; }
+.copies-details > .button-link { min-height:2rem;padding:.35rem .65rem;font-size:.8rem; }

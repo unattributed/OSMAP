@@ -43,6 +43,17 @@ where
     MFB: MessageFlagBackend,
 {
     match request {
+        MailboxHelperRequest::FolderMetadata {
+            canonical_username, ..
+        } => match backends.mailbox_backend.folder_metadata(canonical_username) {
+            Ok(snapshot) if snapshot.validate_for(canonical_username).is_ok() => {
+                MailboxHelperResponse::FolderMetadataOk { snapshot }
+            }
+            _ => MailboxHelperResponse::Error {
+                backend: "folder-metadata".into(),
+                reason: "folder metadata unavailable".into(),
+            },
+        },
         MailboxHelperRequest::MailboxStatus {
             canonical_username,
             mailbox_name,
@@ -463,6 +474,7 @@ pub(super) fn log_helper_response(
 fn helper_operation_label(request: &MailboxHelperRequest) -> &'static str {
     match request {
         MailboxHelperRequest::MessageFlag { .. } => "message_flag",
+        MailboxHelperRequest::FolderMetadata { .. } => "folder_metadata",
         MailboxHelperRequest::MailboxStatus { .. } => "mailbox_status",
         MailboxHelperRequest::MailboxList { .. } => "mailbox_list",
         MailboxHelperRequest::MessageList { .. } => "message_list",

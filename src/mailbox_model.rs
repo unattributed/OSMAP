@@ -973,6 +973,14 @@ pub struct MailboxBackendError {
 
 /// A backend capable of listing mailboxes for a canonical user.
 pub trait MailboxBackend {
+    fn folder_metadata(
+        &self,
+        account: &str,
+    ) -> Result<crate::folder_metadata::FolderSnapshot, MailboxBackendError> {
+        let _ = account;
+        Err(crate::folder_metadata_backend::unavailable())
+    }
+
     fn mailbox_status(
         &self,
         _canonical_username: &str,

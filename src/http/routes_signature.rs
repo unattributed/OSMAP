@@ -54,7 +54,8 @@ impl<G: BrowserGateway> BrowserApp<G> {
                     "return_section",
                 ]
                 .contains(&k.as_str())
-            }) || !matches!(section, "identity" | "composition")
+            }) || !matches!(section, "identity" | "composition" | "general")
+                || (section == "general" && operation != "selection")
             {
                 return Err(SignatureError::Invalid);
             }
@@ -92,7 +93,9 @@ impl<G: BrowserGateway> BrowserApp<G> {
                 response: redirect_response(
                     303,
                     "See Other",
-                    if section == "composition" {
+                    if section == "general" {
+                        "/settings?section=general"
+                    } else if section == "composition" {
                         "/settings?section=composition"
                     } else {
                         "/settings?section=identity"
@@ -115,7 +118,9 @@ impl<G: BrowserGateway> BrowserApp<G> {
                                 selection,
                                 text,
                                 operation,
-                                return_section: if section == "composition" {
+                                return_section: if section == "general" {
+                                    "general"
+                                } else if section == "composition" {
                                     "composition"
                                 } else {
                                     "identity"

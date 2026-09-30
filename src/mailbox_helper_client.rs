@@ -27,6 +27,68 @@ impl MailboxHelperMailboxListBackend {
 }
 
 impl MailboxBackend for MailboxHelperMailboxListBackend {
+    fn folder_metadata(
+        &self,
+        account: &str,
+    ) -> Result<crate::folder_metadata::FolderSnapshot, MailboxBackendError> {
+        crate::mailbox_status::validate_account(account)?;
+        let mut request = MailboxHelperRequest::FolderMetadata {
+            canonical_username: account.into(),
+            grant: MailboxHelperGrant::unsigned(),
+        };
+        let bytes = encode_authorized_request(&self.grant_key_path, &mut request)
+            .map_err(|_| crate::folder_metadata_backend::unavailable())?;
+        #[cfg(not(unix))]
+        {
+            let _ = bytes;
+            Err(crate::folder_metadata_backend::unavailable())
+        }
+        #[cfg(unix)]
+        {
+            let mut stream = UnixStream::connect(&self.socket_path)
+                .map_err(|_| crate::folder_metadata_backend::unavailable())?;
+            stream
+                .set_read_timeout(Some(Duration::from_secs(
+                    self.policy.read_timeout_secs.max(1),
+                )))
+                .map_err(|_| crate::folder_metadata_backend::unavailable())?;
+            stream
+                .set_write_timeout(Some(Duration::from_secs(
+                    self.policy.write_timeout_secs.max(1),
+                )))
+                .map_err(|_| crate::folder_metadata_backend::unavailable())?;
+            stream
+                .write_all(&bytes)
+                .map_err(|_| crate::folder_metadata_backend::unavailable())?;
+            stream
+                .shutdown(Shutdown::Write)
+                .map_err(|_| crate::folder_metadata_backend::unavailable())?;
+            let bytes = read_bounded_from_stream(
+                &mut stream,
+                self.policy.max_response_bytes.min(704 * 1024),
+            )
+            .map_err(|_| crate::folder_metadata_backend::unavailable())?;
+            let response = parse_response(
+                MailboxListingPolicy::default(),
+                MessageListPolicy::default(),
+                MessageSearchPolicy::default(),
+                MessageViewPolicy::default(),
+                std::str::from_utf8(&bytes)
+                    .map_err(|_| crate::folder_metadata_backend::unavailable())?,
+            )
+            .map_err(|_| crate::folder_metadata_backend::unavailable())?;
+            match response {
+                MailboxHelperResponse::FolderMetadataOk { snapshot } => {
+                    snapshot
+                        .validate_for(account)
+                        .map_err(|_| crate::folder_metadata_backend::unavailable())?;
+                    Ok(snapshot)
+                }
+                _ => Err(crate::folder_metadata_backend::unavailable()),
+            }
+        }
+    }
+
     fn mailbox_status(
         &self,
         account: &str,
@@ -157,7 +219,8 @@ impl MailboxBackend for MailboxHelperMailboxListBackend {
             })?;
 
             match response {
-                MailboxHelperResponse::MailboxStatusOk { .. }
+                MailboxHelperResponse::FolderMetadataOk { .. }
+                | MailboxHelperResponse::MailboxStatusOk { .. }
                 | MailboxHelperResponse::MessageFlagOk { .. } => Err(MailboxBackendError {
                     backend: "mailbox-helper-client",
                     reason: "helper returned a flag response for a different operation".into(),
@@ -303,7 +366,8 @@ impl MessageListBackend for MailboxHelperMessageListBackend {
             })?;
 
             match response {
-                MailboxHelperResponse::MailboxStatusOk { .. }
+                MailboxHelperResponse::FolderMetadataOk { .. }
+                | MailboxHelperResponse::MailboxStatusOk { .. }
                 | MailboxHelperResponse::MessageFlagOk { .. } => Err(MailboxBackendError {
                     backend: "mailbox-helper-client",
                     reason: "helper returned a flag response for a different operation".into(),
@@ -465,7 +529,8 @@ impl MessageSearchBackend for MailboxHelperMessageSearchBackend {
             })?;
 
             match response {
-                MailboxHelperResponse::MailboxStatusOk { .. }
+                MailboxHelperResponse::FolderMetadataOk { .. }
+                | MailboxHelperResponse::MailboxStatusOk { .. }
                 | MailboxHelperResponse::MessageFlagOk { .. } => Err(MailboxBackendError {
                     backend: "mailbox-helper-client",
                     reason: "helper returned a flag response for a different operation".into(),
@@ -647,7 +712,8 @@ impl MessageViewBackend for MailboxHelperMessageViewBackend {
             })?;
 
             match response {
-                MailboxHelperResponse::MailboxStatusOk { .. }
+                MailboxHelperResponse::FolderMetadataOk { .. }
+                | MailboxHelperResponse::MailboxStatusOk { .. }
                 | MailboxHelperResponse::MessageFlagOk { .. } => Err(MailboxBackendError {
                     backend: "mailbox-helper-client",
                     reason: "helper returned a flag response for a different operation".into(),
@@ -794,7 +860,8 @@ impl MailboxHelperAttachmentDownloadBackend {
             .map_err(transport_error)?;
 
             match response {
-                MailboxHelperResponse::MailboxStatusOk { .. }
+                MailboxHelperResponse::FolderMetadataOk { .. }
+                | MailboxHelperResponse::MailboxStatusOk { .. }
                 | MailboxHelperResponse::MessageFlagOk { .. } => Err(transport_error(
                     "helper returned a flag response for a different operation",
                 )),
@@ -1087,7 +1154,8 @@ impl MessageAppendBackend for MailboxHelperMessageAppendBackend {
             })?;
 
             match response {
-                MailboxHelperResponse::MailboxStatusOk { .. }
+                MailboxHelperResponse::FolderMetadataOk { .. }
+                | MailboxHelperResponse::MailboxStatusOk { .. }
                 | MailboxHelperResponse::MessageFlagOk { .. } => Err(MailboxBackendError {
                     backend: "mailbox-helper-client",
                     reason: "helper returned a flag response for a different operation".into(),

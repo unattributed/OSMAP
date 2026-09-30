@@ -268,6 +268,17 @@ pub(super) enum MailboxListRuntimeBackend {
 }
 
 impl crate::mailbox::MailboxBackend for MailboxListRuntimeBackend {
+    fn folder_metadata(
+        &self,
+        account: &str,
+    ) -> Result<crate::folder_metadata::FolderSnapshot, crate::mailbox::MailboxBackendError> {
+        match self {
+            Self::Direct(v) => v.folder_metadata(account),
+            Self::Helper(v) => v.folder_metadata(account),
+            Self::Unavailable(e) => Err(e.clone()),
+        }
+    }
+
     fn mailbox_status(
         &self,
         account: &str,

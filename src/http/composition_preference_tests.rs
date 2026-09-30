@@ -350,7 +350,7 @@ fn composition_page_and_general_native_form_project_saved_defaults() {
         if section == "general" {
             assert!(body.contains("name=\"reply_placement\" form=\"general-composition-form\""));
             assert!(body
-                .contains("form=\"general-composition-form\">Save composition defaults</button>"));
+                .contains("form=\"general-composition-form\" aria-label=\"Save composition defaults\">Save composition</button>"));
         } else {
             assert!(body.contains("name=\"return_section\" value=\"composition\""));
             assert!(body.contains("id=\"composition-signing\" disabled"));

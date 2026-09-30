@@ -30,7 +30,9 @@ pub(crate) fn editor(csrf: &str, record: Option<&SignatureRecord>, section: &str
     format!("<div class=\"signature-settings\"><form id=\"signature-selection-form\" method=\"post\" action=\"/settings/signature\">{}<button type=\"submit\">Save signature choice</button></form><details class=\"signature-editor\"><summary>Edit Default signature text</summary><form method=\"post\" action=\"/settings/signature\">{}<input type=\"hidden\" name=\"selection\" value=\"{}\"><label for=\"signature-text\">Default signature text</label><textarea id=\"signature-text\" name=\"text\" rows=\"5\" aria-describedby=\"signature-scope signature-limit\">\n{}</textarea><p id=\"signature-limit\">Up to 2,000 characters and 8,000 bytes. Save the text, then select Default or enable Include signature.</p><button type=\"submit\">Save signature text</button></form></details><p id=\"signature-scope\">Ordinary footer text, not an OpenPGP signature. When enabled, it is inserted visibly into newly opened composers only. Existing drafts keep their text. Formatted insertion requires exact literal rendering; otherwise the composer explains how to add it manually.</p></div>",fields(csrf,r.revision,section,"selection"),fields(csrf,r.revision,section,"definition"),r.selection.as_str(),escape_html(&r.text))
 }
 pub(crate) fn render_signature_error(m: &SignatureEditorModel<'_>) -> TrustedHtml {
-    let section = if m.return_section == "composition" {
+    let section = if m.return_section == "general" {
+        "general"
+    } else if m.return_section == "composition" {
         "composition"
     } else {
         "identity"

@@ -60,6 +60,17 @@ impl<E> MailboxBackend for DoveadmMailboxListBackend<E>
 where
     E: CommandExecutor,
 {
+    fn folder_metadata(
+        &self,
+        account: &str,
+    ) -> Result<crate::folder_metadata::FolderSnapshot, MailboxBackendError> {
+        crate::folder_metadata_backend::read(
+            &self.command_executor,
+            &self.doveadm_path,
+            self.userdb_socket_path.as_deref(),
+            account,
+        )
+    }
     fn mailbox_status(
         &self,
         canonical_username: &str,

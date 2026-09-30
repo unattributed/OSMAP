@@ -472,6 +472,16 @@ impl BrowserGateway for RuntimeBrowserGateway {
             .load(&session.record.canonical_username)
     }
 
+    fn update_reading_start_page(
+        &self,
+        _context: &AuthenticationContext,
+        session: &ValidatedSession,
+        start_page: crate::reading_preferences::StartPage,
+    ) -> std::io::Result<crate::reading_preferences::ReadingPreferences> {
+        crate::reading_preferences::ReadingPreferencesStore::new(&self.settings_dir)
+            .save_start_page(&session.record.canonical_username, start_page)
+    }
+
     fn update_reading_preferences(
         &self,
         _context: &AuthenticationContext,
@@ -620,6 +630,36 @@ impl BrowserGateway for RuntimeBrowserGateway {
         )
     }
 
+    fn folder_metadata(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+    ) -> BrowserFolderMetadataOutcome {
+        let account = &session.record.canonical_username;
+        let snapshot = crate::mailbox::MailboxBackend::folder_metadata(
+            &self.build_mailbox_list_backend(),
+            account,
+        )
+        .ok()
+        .filter(|v| v.validate_for(account).is_ok());
+        let event = LogEvent::new(
+            if snapshot.is_some() {
+                LogLevel::Info
+            } else {
+                LogLevel::Warn
+            },
+            crate::logging::EventCategory::Mailbox,
+            "folder_metadata_read",
+            "folder metadata lookup completed",
+        )
+        .with_field("request_id", context.request_id.clone())
+        .with_field("available", snapshot.is_some().to_string());
+        BrowserFolderMetadataOutcome {
+            canonical_username: account.clone(),
+            snapshot,
+            audit_events: vec![event],
+        }
+    }
     fn mailbox_status(
         &self,
         context: &AuthenticationContext,

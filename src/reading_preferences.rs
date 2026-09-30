@@ -220,6 +220,22 @@ impl ReadingPreferencesStore {
         )
     }
 
+    /// Updates only the start page under the same lock as complete saves.
+    pub fn save_start_page(
+        &self,
+        account: &str,
+        start_page: StartPage,
+    ) -> io::Result<ReadingPreferences> {
+        let locked = self.file.lock(account)?;
+        let mut value = locked.read()?.map_or_else(
+            || Ok(ReadingPreferences::default()),
+            |bytes| ReadingPreferences::parse_record(&bytes),
+        )?;
+        value.start_page = start_page;
+        locked.write(value.record().as_bytes())?;
+        Ok(value)
+    }
+
     /// Saves a complete typed snapshot under an account lock. Existing corrupt
     /// state is never replaced. Errors, including post-rename directory sync,
     /// mean unconfirmed publication; callers must not claim state is unchanged.
