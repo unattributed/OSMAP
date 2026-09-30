@@ -1053,6 +1053,26 @@ where
     S: LoginThrottleStore,
     T: TimeProvider,
 {
+    /// Atomically reserves a mailbox mutation attempt before any external write.
+    /// A store error refuses the operation; the attempt remains counted if a
+    /// later backend fails or its result is uncertain.
+    pub fn reserve_mail_action(
+        &self,
+        context: &AuthenticationContext,
+        canonical_username: &str,
+    ) -> Result<MessageMoveThrottleCheck, LoginThrottleError> {
+        self.store.with_exclusive_lock(|| {
+            let mut check = self.check_unlocked(context, canonical_username)?;
+            if matches!(check.decision, MessageMoveThrottleDecision::Allowed) {
+                check.audit_events.extend(
+                    self.record_move_unlocked(context, canonical_username)?
+                        .audit_events,
+                );
+            }
+            Ok(check)
+        })
+    }
+
     /// Checks whether one authenticated message-move request may proceed.
     pub fn check(
         &self,
@@ -2095,6 +2115,42 @@ mod tests {
                 .action,
             "message_move_throttled"
         );
+    }
+
+    #[test]
+    fn concurrent_mail_action_reservations_cannot_exceed_the_shared_limit() {
+        let dir = temp_dir("osmap-mail-action-reservations");
+        let start = std::sync::Arc::new(std::sync::Barrier::new(12));
+        let handles: Vec<_> = (0..12)
+            .map(|_| {
+                let dir = dir.clone();
+                let start = start.clone();
+                std::thread::spawn(move || {
+                    let service = MessageMoveThrottleService::new(
+                        FileLoginThrottleStore::new(dir),
+                        FixedTimeProvider::new(200),
+                        MessageMoveThrottlePolicy {
+                            canonical_user_max_moves: 3,
+                            remote_addr_max_moves: 10,
+                            move_window_seconds: 300,
+                            lockout_seconds: 60,
+                        },
+                    );
+                    start.wait();
+                    service
+                        .reserve_mail_action(&test_context(), "alice@example.com")
+                        .expect("reservation")
+                        .decision
+                })
+            })
+            .collect();
+        let allowed = handles
+            .into_iter()
+            .map(|handle| handle.join().expect("worker"))
+            .filter(|decision| matches!(decision, MessageMoveThrottleDecision::Allowed))
+            .count();
+        assert_eq!(allowed, 3);
+        fs::remove_dir_all(dir).expect("remove fixture");
     }
 
     #[test]

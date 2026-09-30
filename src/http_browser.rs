@@ -2,6 +2,18 @@ use super::*;
 
 /// A runtime-facing gateway for browser operations.
 pub trait BrowserGateway {
+    fn set_message_flag(
+        &self,
+        _context: &AuthenticationContext,
+        _validated_session: &ValidatedSession,
+        _request: &crate::mailbox::MessageFlagRequest,
+    ) -> BrowserMessageFlagOutcome {
+        BrowserMessageFlagOutcome {
+            result: Err(BrowserMessageFlagFailure::Unavailable),
+            audit_events: Vec::new(),
+        }
+    }
+
     fn login(
         &self,
         context: &AuthenticationContext,
@@ -420,6 +432,23 @@ pub enum BrowserAttachmentDownloadDecision {
     Denied {
         public_reason: String,
     },
+}
+
+/// The result of a browser message-move operation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BrowserMessageFlagOutcome {
+    pub result: Result<crate::mailbox::MessageFlagResult, BrowserMessageFlagFailure>,
+    pub audit_events: Vec<LogEvent>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BrowserMessageFlagFailure {
+    Invalid,
+    Stale,
+    Busy,
+    RateLimited { retry_after_seconds: u64 },
+    Unavailable,
+    Unknown,
 }
 
 /// The result of a browser message-move operation.

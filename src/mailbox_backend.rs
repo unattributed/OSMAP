@@ -3,14 +3,17 @@ use std::time::Duration;
 
 use crate::auth::{CommandExecutor, SystemCommandExecutor, DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS};
 
+use super::mailbox_json::{
+    parse_json_search, parse_json_summaries, parse_json_view, SUMMARY_FIELDS, VIEW_FIELDS,
+};
+
 use super::{
-    concise_command_diagnostics, parse_doveadm_mailbox_list_output,
-    parse_doveadm_message_list_output, parse_doveadm_message_search_output,
-    parse_doveadm_message_view_output, MailboxBackend, MailboxBackendError, MailboxEntry,
-    MailboxListingPolicy, MessageAppendBackend, MessageAppendRequest, MessageListBackend,
-    MessageListPolicy, MessageListRequest, MessageMoveBackend, MessageMoveRequest,
-    MessageSearchBackend, MessageSearchPolicy, MessageSearchRequest, MessageSearchResult,
-    MessageSummary, MessageView, MessageViewBackend, MessageViewPolicy, MessageViewRequest,
+    concise_command_diagnostics, parse_doveadm_mailbox_list_output, MailboxBackend,
+    MailboxBackendError, MailboxEntry, MailboxListingPolicy, MessageAppendBackend,
+    MessageAppendRequest, MessageListBackend, MessageListPolicy, MessageListRequest,
+    MessageMoveBackend, MessageMoveRequest, MessageSearchBackend, MessageSearchPolicy,
+    MessageSearchRequest, MessageSearchResult, MessageSummary, MessageView, MessageViewBackend,
+    MessageViewPolicy, MessageViewRequest,
 };
 
 /// Lists mailboxes through `doveadm mailbox list`.
@@ -144,11 +147,11 @@ where
         append_doveadm_auth_socket_override(&mut args, self.userdb_socket_path.as_ref());
         args.extend([
             "-f".to_string(),
-            "flow".to_string(),
+            "json".to_string(),
             "fetch".to_string(),
             "-u".to_string(),
             canonical_username.to_string(),
-            "uid flags date.received size.virtual mailbox hdr.subject hdr.from".to_string(),
+            SUMMARY_FIELDS.to_string(),
             "mailbox".to_string(),
             request.mailbox_name.clone(),
             "all".to_string(),
@@ -167,7 +170,17 @@ where
                 reason: error.reason,
             })?;
 
-        parse_doveadm_message_list_output(self.policy, &execution)
+        let messages = parse_json_summaries(self.policy, &execution)?;
+        if messages
+            .iter()
+            .any(|message| message.mailbox_name != request.mailbox_name)
+        {
+            return Err(MailboxBackendError {
+                backend: "message-json-parser",
+                reason: "native list returned a different mailbox".into(),
+            });
+        }
+        Ok(messages)
     }
 }
 
@@ -234,11 +247,11 @@ where
         append_doveadm_auth_socket_override(&mut args, self.userdb_socket_path.as_ref());
         args.extend([
             "-f".to_string(),
-            "flow".to_string(),
+            "json".to_string(),
             "fetch".to_string(),
             "-u".to_string(),
             canonical_username.to_string(),
-            "uid flags date.received size.virtual mailbox hdr body".to_string(),
+            VIEW_FIELDS.to_string(),
             "mailbox".to_string(),
             request.mailbox_name.clone(),
             "uid".to_string(),
@@ -258,7 +271,14 @@ where
                 reason: error.reason,
             })?;
 
-        parse_doveadm_message_view_output(self.policy, &execution)
+        let message = parse_json_view(self.policy, &execution)?;
+        if message.mailbox_name != request.mailbox_name || message.uid != request.uid {
+            return Err(MailboxBackendError {
+                backend: "message-json-parser",
+                reason: "native view returned a different message".into(),
+            });
+        }
+        Ok(message)
     }
 }
 
@@ -326,11 +346,11 @@ where
         append_doveadm_auth_socket_override(&mut args, self.userdb_socket_path.as_ref());
         args.extend([
             "-f".to_string(),
-            "flow".to_string(),
+            "json".to_string(),
             "fetch".to_string(),
             "-u".to_string(),
             canonical_username.to_string(),
-            "uid flags date.received size.virtual mailbox hdr.subject hdr.from".to_string(),
+            SUMMARY_FIELDS.to_string(),
             "mailbox".to_string(),
             request.mailbox_name.clone(),
             request.field.doveadm_search_key().to_string(),
@@ -350,7 +370,17 @@ where
                 reason: error.reason,
             })?;
 
-        parse_doveadm_message_search_output(self.policy, &execution)
+        let results = parse_json_search(self.policy, &execution)?;
+        if results
+            .iter()
+            .any(|message| message.mailbox_name != request.mailbox_name)
+        {
+            return Err(MailboxBackendError {
+                backend: "message-json-parser",
+                reason: "native search returned a different mailbox".into(),
+            });
+        }
+        Ok(results)
     }
 }
 

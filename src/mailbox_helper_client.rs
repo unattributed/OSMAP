@@ -98,6 +98,10 @@ impl MailboxBackend for MailboxHelperMailboxListBackend {
             })?;
 
             match response {
+                MailboxHelperResponse::MessageFlagOk { .. } => Err(MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: "helper returned a flag response for a different operation".into(),
+                }),
                 MailboxHelperResponse::MailboxListOk { mailboxes } => Ok(mailboxes),
                 MailboxHelperResponse::Error { backend, reason } => Err(MailboxBackendError {
                     backend: "mailbox-helper-client",
@@ -239,6 +243,10 @@ impl MessageListBackend for MailboxHelperMessageListBackend {
             })?;
 
             match response {
+                MailboxHelperResponse::MessageFlagOk { .. } => Err(MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: "helper returned a flag response for a different operation".into(),
+                }),
                 MailboxHelperResponse::MessageListOk {
                     mailbox_name,
                     messages,
@@ -396,6 +404,10 @@ impl MessageSearchBackend for MailboxHelperMessageSearchBackend {
             })?;
 
             match response {
+                MailboxHelperResponse::MessageFlagOk { .. } => Err(MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: "helper returned a flag response for a different operation".into(),
+                }),
                 MailboxHelperResponse::MessageSearchOk {
                     mailbox_name,
                     query,
@@ -573,6 +585,10 @@ impl MessageViewBackend for MailboxHelperMessageViewBackend {
             })?;
 
             match response {
+                MailboxHelperResponse::MessageFlagOk { .. } => Err(MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: "helper returned a flag response for a different operation".into(),
+                }),
                 MailboxHelperResponse::MessageViewOk { message } => {
                     if message.mailbox_name != request.mailbox_name {
                         return Err(MailboxBackendError {
@@ -715,6 +731,9 @@ impl MailboxHelperAttachmentDownloadBackend {
             .map_err(transport_error)?;
 
             match response {
+                MailboxHelperResponse::MessageFlagOk { .. } => Err(transport_error(
+                    "helper returned a flag response for a different operation",
+                )),
                 MailboxHelperResponse::AttachmentDownloadOk { attachment } => {
                     if attachment.mailbox_name != mailbox_name {
                         return Err(transport_error(format!(
@@ -867,6 +886,10 @@ impl MessageMoveBackend for MailboxHelperMessageMoveBackend {
             })?;
 
             match response {
+                MailboxHelperResponse::MessageFlagOk { .. } => Err(MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: "helper returned a flag response for a different operation".into(),
+                }),
                 MailboxHelperResponse::MessageMoveOk {
                     source_mailbox_name,
                     destination_mailbox_name,
@@ -1038,6 +1061,10 @@ impl MessageAppendBackend for MailboxHelperMessageAppendBackend {
             })?;
 
             match response {
+                MailboxHelperResponse::MessageFlagOk { .. } => Err(MailboxBackendError {
+                    backend: "mailbox-helper-client",
+                    reason: "helper returned a flag response for a different operation".into(),
+                }),
                 MailboxHelperResponse::MessageAppendOk {
                     mailbox_name,
                     message_bytes,
@@ -1074,7 +1101,7 @@ fn transport_error(reason: impl Into<String>) -> AttachmentDownloadError {
     AttachmentDownloadError::new(AttachmentDownloadFailureKind::OutputRejected, reason)
 }
 
-fn encode_authorized_request(
+pub(super) fn encode_authorized_request(
     grant_key_path: &Path,
     request: &mut MailboxHelperRequest,
 ) -> Result<Vec<u8>, String> {

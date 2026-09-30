@@ -15,6 +15,7 @@ mod routes_appearance;
 mod routes_auth;
 mod routes_compose;
 mod routes_draft;
+mod routes_flags;
 mod routes_mail;
 mod routes_settings;
 
@@ -773,14 +774,15 @@ pub use self::http_browser::{
     BrowserDraftListOutcome, BrowserDraftLoadDecision, BrowserDraftLoadOutcome,
     BrowserDraftSaveDecision, BrowserDraftSaveOutcome, BrowserDraftSaveRequest, BrowserGateway,
     BrowserLoginDecision, BrowserLoginOutcome, BrowserLogoutOutcome, BrowserMailboxDecision,
-    BrowserMailboxOutcome, BrowserMessageListDecision, BrowserMessageListOutcome,
-    BrowserMessageMoveDecision, BrowserMessageMoveOutcome, BrowserMessageSearchDecision,
-    BrowserMessageSearchOutcome, BrowserMessageViewDecision, BrowserMessageViewOutcome,
-    BrowserSendDecision, BrowserSendOutcome, BrowserSendRequest, BrowserSessionDecision,
-    BrowserSessionListDecision, BrowserSessionListOutcome, BrowserSessionRevokeDecision,
-    BrowserSessionRevokeOutcome, BrowserSessionRevokeScope, BrowserSessionValidationOutcome,
-    BrowserSettingsDecision, BrowserSettingsOutcome, BrowserSettingsUpdateDecision,
-    BrowserSettingsUpdateOutcome, BrowserVisibleSession, BrowserVisibleSettings,
+    BrowserMailboxOutcome, BrowserMessageFlagFailure, BrowserMessageFlagOutcome,
+    BrowserMessageListDecision, BrowserMessageListOutcome, BrowserMessageMoveDecision,
+    BrowserMessageMoveOutcome, BrowserMessageSearchDecision, BrowserMessageSearchOutcome,
+    BrowserMessageViewDecision, BrowserMessageViewOutcome, BrowserSendDecision, BrowserSendOutcome,
+    BrowserSendRequest, BrowserSessionDecision, BrowserSessionListDecision,
+    BrowserSessionListOutcome, BrowserSessionRevokeDecision, BrowserSessionRevokeOutcome,
+    BrowserSessionRevokeScope, BrowserSessionValidationOutcome, BrowserSettingsDecision,
+    BrowserSettingsOutcome, BrowserSettingsUpdateDecision, BrowserSettingsUpdateOutcome,
+    BrowserVisibleSession, BrowserVisibleSettings,
 };
 pub use self::http_gateway::RuntimeBrowserGateway;
 pub use self::http_runtime::run_http_server;
@@ -806,6 +808,12 @@ mod tests {
     mod mail_list_tests {
         include!("http/mail_list_tests.rs");
     }
+    mod flag_fixtures {
+        include!("http/flag_fixtures.rs");
+    }
+    mod flag_tests {
+        include!("http/flag_tests.rs");
+    }
     use crate::auth::RequiredSecondFactor;
     use crate::mailbox::MessageView;
     use crate::mime::{AttachmentDisposition, MimeBodySource};
@@ -821,9 +829,12 @@ mod tests {
     use std::thread;
     use std::time::Duration;
 
+    type SyntheticFlagStates = BTreeMap<(String, String, u64), Vec<String>>;
+
     #[derive(Debug, Clone)]
     struct StubGateway {
         drafts: Arc<Mutex<BTreeMap<String, DraftRecord>>>,
+        message_flags: Arc<Mutex<SyntheticFlagStates>>,
         appearance_store: Option<AppearanceStore>,
         browser_fixture_accounts: bool,
     }
@@ -832,6 +843,7 @@ mod tests {
         fn default() -> Self {
             Self {
                 drafts: Arc::new(Mutex::new(BTreeMap::new())),
+                message_flags: Arc::new(Mutex::new(BTreeMap::new())),
                 appearance_store: None,
                 browser_fixture_accounts: false,
             }
@@ -871,6 +883,14 @@ mod tests {
     }
 
     impl BrowserGateway for StubGateway {
+        fn set_message_flag(
+            &self,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+            request: &crate::mailbox::MessageFlagRequest,
+        ) -> BrowserMessageFlagOutcome {
+            self.set_fixture_message_flag(context, session, request)
+        }
         fn login(
             &self,
             _context: &AuthenticationContext,
@@ -1318,20 +1338,18 @@ mod tests {
                     } else if context.user_agent.starts_with("OSMAP/ManyMessages") {
                         (1..=125)
                             .map(|uid| MessageSummary {
+                                metadata: Some(Self::fixture_metadata(
+                                    &validated_session.record.canonical_username,
+                                    mailbox_name,
+                                    uid,
+                                )),
                                 mailbox_name: mailbox_name.to_string(),
                                 uid,
-                                flags: [
-                                    if uid % 2 == 0 { Some("\\Seen") } else { None },
-                                    if uid % 7 == 0 {
-                                        Some("\\Flagged")
-                                    } else {
-                                        None
-                                    },
-                                ]
-                                .into_iter()
-                                .flatten()
-                                .map(str::to_string)
-                                .collect(),
+                                flags: self.fixture_message_flags(
+                                    &validated_session.record.canonical_username,
+                                    mailbox_name,
+                                    uid,
+                                ),
                                 date_received: "2026-09-30 00:00:00 +0000".to_string(),
                                 size_virtual: 1024,
                                 subject: Some(format!("Message {uid:03}")),
@@ -1341,6 +1359,7 @@ mod tests {
                     } else {
                         vec![
                             MessageSummary {
+                                metadata: None,
                                 mailbox_name: mailbox_name.to_string(),
                                 uid: 9,
                                 flags: vec!["\\Seen".to_string()],
@@ -1350,6 +1369,7 @@ mod tests {
                                 from: Some("Alice <alice@example.com>".to_string()),
                             },
                             MessageSummary {
+                                metadata: None,
                                 mailbox_name: mailbox_name.to_string(),
                                 uid: 10,
                                 flags: Vec::new(),
@@ -1406,6 +1426,7 @@ mod tests {
             if query.trim() == "manyresults" {
                 let results = (0..crate::mailbox::DEFAULT_MAX_SEARCH_RESULTS + 25)
                     .map(|index| MessageSearchResult {
+                        metadata: None,
                         mailbox_name: "INBOX".to_string(),
                         uid: 10_000 + index as u64,
                         flags: Vec::new(),
@@ -1434,6 +1455,7 @@ mod tests {
             if query.trim() == "searchsort" {
                 let results = vec![
                     MessageSearchResult {
+                        metadata: None,
                         mailbox_name: "INBOX".to_string(),
                         uid: 30,
                         flags: vec!["\\Seen".to_string()],
@@ -1443,6 +1465,7 @@ mod tests {
                         from: Some("Carol <carol@example.com>".to_string()),
                     },
                     MessageSearchResult {
+                        metadata: None,
                         mailbox_name: "Archive/2026".to_string(),
                         uid: 10,
                         flags: vec!["\\Answered".to_string()],
@@ -1452,6 +1475,7 @@ mod tests {
                         from: Some("Bob <bob@example.com>".to_string()),
                     },
                     MessageSearchResult {
+                        metadata: None,
                         mailbox_name: "Sent".to_string(),
                         uid: 20,
                         flags: vec!["\\Flagged".to_string()],
@@ -1490,6 +1514,7 @@ mod tests {
                         mailbox_name,
                         query: query.trim().to_string(),
                         results: vec![MessageSearchResult {
+                            metadata: None,
                             mailbox_name: "INBOX".to_string(),
                             uid: 19,
                             flags: Vec::new(),
@@ -1509,6 +1534,7 @@ mod tests {
             }
             let results = match mailbox_name.as_deref() {
                 Some(mailbox_name) => vec![MessageSearchResult {
+                    metadata: None,
                     mailbox_name: mailbox_name.to_string(),
                     uid: 17,
                     flags: vec!["\\Seen".to_string()],
@@ -1519,6 +1545,7 @@ mod tests {
                 }],
                 None => vec![
                     MessageSearchResult {
+                        metadata: None,
                         mailbox_name: "INBOX".to_string(),
                         uid: 17,
                         flags: vec!["\\Seen".to_string()],
@@ -1528,6 +1555,7 @@ mod tests {
                         from: Some("Alice <alice@example.com>".to_string()),
                     },
                     MessageSearchResult {
+                        metadata: None,
                         mailbox_name: "Archive/2026".to_string(),
                         uid: 23,
                         flags: Vec::new(),
@@ -1557,7 +1585,7 @@ mod tests {
 
         fn view_message(
             &self,
-            _context: &AuthenticationContext,
+            context: &AuthenticationContext,
             validated_session: &ValidatedSession,
             mailbox_name: &str,
             uid: u64,
@@ -1577,6 +1605,7 @@ mod tests {
             }
 
             let _unused_fixture = MessageView {
+                metadata: None,
                 mailbox_name: mailbox_name.to_string(),
                 uid,
                 flags: vec!["\\Seen".to_string()],
@@ -1585,7 +1614,20 @@ mod tests {
                 header_block: "Subject: Example\n".to_string(),
                 body_text: "Hello world\n".to_string(),
             };
-            let attachments = if uid == 901 {
+            let attachments = if context.user_agent.starts_with("OSMAP/ManyMessages") {
+                if uid % 5 == 0 {
+                    vec![crate::mime::AttachmentMetadata {
+                        part_path: "1.2".into(),
+                        filename: Some("fixture.txt".into()),
+                        content_type: "application/octet-stream".into(),
+                        disposition: AttachmentDisposition::Attachment,
+                        content_id: None,
+                        size_hint_bytes: 24,
+                    }]
+                } else {
+                    Vec::new()
+                }
+            } else if uid == 901 {
                 (0..crate::mime::DEFAULT_MIME_PARTS_MAX + 12)
                     .map(|index| crate::mime::AttachmentMetadata {
                         part_path: format!("1.{}", index + 2),
@@ -1621,6 +1663,21 @@ mod tests {
                 decision: BrowserMessageViewDecision::Rendered {
                     canonical_username: validated_session.record.canonical_username.clone(),
                     rendered: Box::new(RenderedMessageView {
+                        metadata: context
+                            .user_agent
+                            .starts_with("OSMAP/ManyMessages")
+                            .then(|| {
+                                Self::fixture_metadata(
+                                    &validated_session.record.canonical_username,
+                                    mailbox_name,
+                                    uid,
+                                )
+                            }),
+                        flags: self.fixture_message_flags(
+                            &validated_session.record.canonical_username,
+                            mailbox_name,
+                            uid,
+                        ),
                         mailbox_name: mailbox_name.to_string(),
                         uid,
                         subject: Some("Example".to_string()),

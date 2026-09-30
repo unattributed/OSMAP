@@ -100,6 +100,8 @@ impl HtmlDisplayPreference {
 /// A browser-safe rendered message projection.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RenderedMessageView {
+    pub metadata: Option<crate::message_metadata::MessageMetadata>,
+    pub flags: Vec<String>,
     pub mailbox_name: String,
     pub uid: u64,
     pub subject: Option<String>,
@@ -188,6 +190,8 @@ impl PlainTextMessageRenderer {
         };
 
         let rendered = RenderedMessageView {
+            metadata: message.metadata.clone(),
+            flags: message.flags.clone(),
             mailbox_name: message.mailbox_name.clone(),
             uid: message.uid,
             subject,
@@ -629,6 +633,7 @@ mod tests {
 
     fn plain_text_message_view_fixture() -> MessageView {
         MessageView {
+            metadata: None,
             mailbox_name: "INBOX".to_string(),
             uid: 9,
             flags: vec!["\\Seen".to_string()],
@@ -648,6 +653,7 @@ mod tests {
 
     fn html_only_message_view_fixture() -> MessageView {
         MessageView {
+            metadata: None,
             mailbox_name: "INBOX".to_string(),
             uid: 10,
             flags: vec!["\\Seen".to_string()],
@@ -665,6 +671,7 @@ mod tests {
 
     fn multipart_message_view_fixture() -> MessageView {
         MessageView {
+            metadata: None,
             mailbox_name: "INBOX".to_string(),
             uid: 11,
             flags: vec!["\\Seen".to_string()],
@@ -706,6 +713,7 @@ mod tests {
             .split_once("\n\n")
             .expect("fixture should contain a header/body separator");
         MessageView {
+            metadata: None,
             mailbox_name: "INBOX".to_string(),
             uid: 99,
             flags: vec!["\\Seen".to_string()],

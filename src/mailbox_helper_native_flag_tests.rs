@@ -1,0 +1,258 @@
+// Explicit native qualification with a new owner-private disposable Maildir.
+// No live configuration, daemon, userdb, real account or external delivery.
+use super::*;
+use crate::auth::{CommandExecution, CommandExecutionError, CommandExecutor};
+use crate::message_metadata::MessageFlag;
+use std::os::unix::fs::DirBuilderExt as _;
+
+const FIXTURE_ACCOUNT: &str = "osmap-native-fixture@example.test";
+
+#[derive(Clone)]
+struct IsolatedDoveadm {
+    config: PathBuf,
+}
+
+impl CommandExecutor for IsolatedDoveadm {
+    fn run_with_stdin_bytes(
+        &self,
+        program: &str,
+        args: &[String],
+        input: &[u8],
+    ) -> Result<CommandExecution, CommandExecutionError> {
+        self.run_with_stdin_bytes_timeout(program, args, input, Duration::from_secs(3))
+    }
+
+    fn run_with_stdin_bytes_timeout(
+        &self,
+        program: &str,
+        args: &[String],
+        input: &[u8],
+        timeout: Duration,
+    ) -> Result<CommandExecution, CommandExecutionError> {
+        assert_eq!(program, "/usr/local/bin/doveadm");
+        let mut isolated = vec!["-c".into(), self.config.to_string_lossy().into_owned()];
+        let mut index = 0;
+        while index < args.len() {
+            if args[index] == "-u" {
+                assert_eq!(
+                    args.get(index + 1).map(String::as_str),
+                    Some(FIXTURE_ACCOUNT)
+                );
+                index += 2; // Only this fixture account maps to the current OS user.
+            } else {
+                assert!(!matches!(args[index].as_str(), "-c" | "-A" | "-F"));
+                isolated.push(args[index].clone());
+                index += 1;
+            }
+        }
+        SystemCommandExecutor.run_with_stdin_bytes_timeout(program, &isolated, input, timeout)
+    }
+}
+
+fn through_helper(
+    root: &Path,
+    backend: DoveadmMessageFlagBackend<IsolatedDoveadm>,
+    request: &MessageFlagRequest,
+) -> Result<MessageFlagResult, MailboxBackendError> {
+    let socket = root.join("flag.sock");
+    let key_path = root.join("fixture-grant.key");
+    let socket_for_thread = socket.clone();
+    let server = thread::spawn(move || {
+        let unused = StaticHelperBackend {
+            mailbox_result: Arc::new(Ok(Vec::new())),
+            message_list_result: Arc::new(Ok(Vec::new())),
+            message_search_result: Arc::new(Ok(Vec::new())),
+            message_view_result: Arc::new(Err(MailboxBackendError {
+                backend: "fixture-unused",
+                reason: "unused".into(),
+            })),
+            message_move_result: Arc::new(Ok(())),
+        };
+        let listener = UnixListener::bind(socket_for_thread).expect("isolated socket");
+        let (mut stream, _) = listener.accept().expect("accept fixture connection");
+        handle_helper_client(
+            HelperBackends {
+                mailbox_backend: &unused,
+                message_list_backend: &unused,
+                message_search_backend: &unused,
+                message_view_backend: &unused,
+                message_move_backend: &unused,
+                message_append_backend: &unused,
+                message_flag_backend: &backend,
+            },
+            &Logger::new(crate::config::LogFormat::Text, LogLevel::Info),
+            &mut stream,
+            MailboxHelperPolicy::default(),
+            MailboxHelperTrustedCallerPolicy {
+                trusted_peer_uid: test_runtime_uid(),
+                grant_key: test_helper_grant_key(),
+            },
+            &Mutex::new(BTreeMap::new()),
+        );
+    });
+    wait_for_socket(&socket);
+    let result =
+        MailboxHelperMessageFlagBackend::new(&socket, &key_path, MailboxHelperPolicy::default())
+            .set_message_flag(FIXTURE_ACCOUNT, request);
+    server.join().expect("native helper thread");
+    fs::remove_file(socket).expect("remove fixture socket");
+    result
+}
+
+#[test]
+#[ignore = "explicit OpenBSD qualification; creates and removes only a new standalone synthetic Maildir"]
+fn isolated_openbsd_json_and_signed_flag_helper() {
+    assert_eq!(
+        std::env::consts::OS,
+        "openbsd",
+        "native qualification requires OpenBSD"
+    );
+    let root = env::temp_dir().join(format!(
+        "osmap-ux-native-{}-{}",
+        std::process::id(),
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("clock")
+            .as_nanos()
+    ));
+    fs::DirBuilder::new()
+        .mode(0o700)
+        .create(&root)
+        .expect("new private fixture root");
+    let owner = fs::metadata(&root).expect("fixture owner");
+    assert_ne!(owner.uid(), 0, "run as a nonprivileged operator");
+    for directory in ["run", "state", "home", "mail"] {
+        fs::DirBuilder::new()
+            .mode(0o700)
+            .create(root.join(directory))
+            .expect("fixture directory");
+    }
+    let config = root.join("dovecot.conf");
+    fs::write(&config, format!("base_dir = {0}/run\nstate_dir = {0}/state\nmail_home = {0}/home\nmail_location = maildir:{0}/mail\nmail_uid = {1}\nmail_gid = {2}\nfirst_valid_uid = {1}\nprotocols =\nlisten = 127.0.0.1\nssl = no\nmail_plugins =\nstats_writer_socket_path =\nauth_socket_path = {0}/run/no-auth-socket\nlog_path = {0}/native.log\ninfo_log_path = {0}/native.log\n", root.display(), owner.uid(), owner.gid())).expect("standalone configuration");
+    fs::set_permissions(&config, fs::Permissions::from_mode(0o600)).expect("private config");
+    let key = root.join("fixture-grant.key");
+    fs::write(&key, test_helper_grant_key()).expect("public synthetic signing fixture");
+    fs::set_permissions(&key, fs::Permissions::from_mode(0o600)).expect("private fixture key");
+    let executor = IsolatedDoveadm { config };
+    let save = vec!["save".into(), "-m".into(), "INBOX".into()];
+    for message in [
+        "From: Synthetic sender <sender@example.test>\r\nTo: fixture@example.test\r\nSubject: Plain fixture\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nPublic synthetic body.\r\n",
+        "From: Synthetic sender <sender@example.test>\r\nTo: fixture@example.test\r\nSubject: Attachment fixture\r\nMIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary=fixture\r\n\r\n--fixture\r\nContent-Type: text/plain\r\n\r\nPublic synthetic body.\r\n--fixture\r\nContent-Type: application/octet-stream; name=fixture.txt\r\nContent-Disposition: attachment; filename=fixture.txt\r\nContent-Transfer-Encoding: base64\r\n\r\nU3ludGhldGljIGZpeHR1cmUu\r\n--fixture--\r\n",
+    ] {
+        assert_eq!(executor.run_with_stdin("/usr/local/bin/doveadm", &save, message).expect("save synthetic mail").status_code, 0);
+    }
+    let list = DoveadmMessageListBackend::new(
+        MessageListPolicy::default(),
+        executor.clone(),
+        "/usr/local/bin/doveadm",
+    );
+    let query =
+        MessageListRequest::new(MessageListPolicy::default(), "INBOX").expect("list request");
+    let initial = list
+        .list_messages(FIXTURE_ACCOUNT, &query)
+        .expect("native structured list");
+    assert_eq!(initial.len(), 2);
+    assert_eq!(
+        initial[0]
+            .metadata
+            .as_ref()
+            .expect("identity")
+            .attachment_count,
+        Some(0)
+    );
+    assert_eq!(
+        initial[1]
+            .metadata
+            .as_ref()
+            .expect("identity")
+            .attachment_count,
+        Some(1)
+    );
+    let view = DoveadmMessageViewBackend::new(
+        MessageViewPolicy::default(),
+        executor.clone(),
+        "/usr/local/bin/doveadm",
+    );
+    let viewed = view
+        .fetch_message(
+            FIXTURE_ACCOUNT,
+            &MessageViewRequest::new(MessageViewPolicy::default(), "INBOX", initial[1].uid)
+                .expect("view request"),
+        )
+        .expect("native structured view");
+    assert_eq!(viewed.metadata, initial[1].metadata);
+    assert!(viewed.header_block.contains("Attachment fixture"));
+    let backend = DoveadmMessageFlagBackend::new(executor, "/usr/local/bin/doveadm");
+    let mut request = MessageFlagRequest::new(
+        "INBOX".into(),
+        initial[0].uid,
+        initial[0]
+            .metadata
+            .as_ref()
+            .expect("identity")
+            .version
+            .clone(),
+        MessageFlag::Seen,
+        true,
+    )
+    .expect("flag request");
+    assert_eq!(
+        through_helper(&root, backend.clone(), &request),
+        Ok(MessageFlagResult::Updated)
+    );
+    assert_eq!(
+        through_helper(&root, backend.clone(), &request),
+        Ok(MessageFlagResult::AlreadySet)
+    );
+    request.flag = MessageFlag::Flagged;
+    assert_eq!(
+        through_helper(&root, backend.clone(), &request),
+        Ok(MessageFlagResult::Updated)
+    );
+    let flagged = list
+        .list_messages(FIXTURE_ACCOUNT, &query)
+        .expect("confirmed flags");
+    assert!(crate::mail_list::has_flag(&flagged[0].flags, "\\Seen"));
+    assert!(crate::mail_list::has_flag(&flagged[0].flags, "\\Flagged"));
+    assert_eq!(flagged[1].flags, initial[1].flags);
+    request.enabled = false;
+    let mut stale = request.clone();
+    stale.version.message_guid = "nonexistent-synthetic-guid".into();
+    assert_eq!(
+        through_helper(&root, backend.clone(), &stale)
+            .expect_err("stale message")
+            .backend,
+        "message-flag-stale"
+    );
+    stale = request.clone();
+    stale.uid = initial[1].uid;
+    assert_eq!(
+        through_helper(&root, backend.clone(), &stale)
+            .expect_err("wrong UID")
+            .backend,
+        "message-flag-stale"
+    );
+    stale = request.clone();
+    stale.version.mailbox_guid = "0".repeat(32);
+    assert!(through_helper(&root, backend.clone(), &stale).is_err());
+    assert_eq!(
+        list.list_messages(FIXTURE_ACCOUNT, &query)
+            .expect("unchanged after stale"),
+        flagged
+    );
+    assert_eq!(
+        through_helper(&root, backend.clone(), &request),
+        Ok(MessageFlagResult::Updated)
+    );
+    request.flag = MessageFlag::Seen;
+    assert_eq!(
+        through_helper(&root, backend, &request),
+        Ok(MessageFlagResult::Updated)
+    );
+    assert_eq!(
+        list.list_messages(FIXTURE_ACCOUNT, &query)
+            .expect("restored flags"),
+        initial
+    );
+    fs::remove_dir_all(&root).expect("remove only owned synthetic fixture tree");
+}

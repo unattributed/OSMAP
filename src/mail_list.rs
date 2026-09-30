@@ -182,6 +182,7 @@ mod tests {
 
     fn row(uid: u64, flags: &[&str]) -> MessageSummary {
         MessageSummary {
+            metadata: None,
             mailbox_name: "INBOX".into(),
             uid,
             flags: flags.iter().map(|value| value.to_string()).collect(),

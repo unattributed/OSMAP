@@ -1,10 +1,45 @@
 use super::*;
+use crate::mailbox::{
+    DoveadmMessageFlagBackend, MessageFlagBackend, MessageFlagRequest, MessageFlagResult,
+};
+use crate::mailbox_helper::MailboxHelperMessageFlagBackend;
 use std::path::Path;
 
 const MISSING_HELPER_GRANT_BACKEND: &str = "mailbox-helper-config";
 const MISSING_HELPER_GRANT_REASON: &str = "mailbox helper socket configured without grant key path";
 
 impl RuntimeBrowserGateway {
+    pub(super) fn build_message_flag_backend(&self) -> MessageFlagRuntimeBackend {
+        match &self.mailbox_helper_socket_path {
+            Some(socket_path) => match self.helper_grant_key_path() {
+                Some(key) => {
+                    MessageFlagRuntimeBackend::Helper(MailboxHelperMessageFlagBackend::new(
+                        socket_path,
+                        key,
+                        self.expensive_route_helper_policy(),
+                    ))
+                }
+                None => MessageFlagRuntimeBackend::Unavailable(missing_helper_grant_error()),
+            },
+            None => {
+                static DIRECT_FLAG_GATE: std::sync::OnceLock<std::sync::Arc<std::sync::Mutex<()>>> =
+                    std::sync::OnceLock::new();
+                let gate = DIRECT_FLAG_GATE
+                    .get_or_init(|| std::sync::Arc::new(std::sync::Mutex::new(())))
+                    .clone();
+                MessageFlagRuntimeBackend::Direct(
+                    DoveadmMessageFlagBackend::new(
+                        SystemCommandExecutor,
+                        self.doveadm_path.clone(),
+                    )
+                    .with_userdb_socket_path(self.doveadm_userdb_socket_path.clone())
+                    .with_operation_gate(gate)
+                    .with_command_timeout_secs(self.expensive_request_timeout_secs),
+                )
+            }
+        }
+    }
+
     /// Caps helper-backed expensive route work to the browser route deadline.
     pub(super) fn expensive_route_helper_policy(&self) -> MailboxHelperPolicy {
         self.expensive_route_helper_policy_with_timeout(self.expensive_request_timeout_secs)
@@ -197,6 +232,26 @@ fn missing_helper_grant_error() -> crate::mailbox::MailboxBackendError {
     crate::mailbox::MailboxBackendError {
         backend: MISSING_HELPER_GRANT_BACKEND,
         reason: MISSING_HELPER_GRANT_REASON.to_string(),
+    }
+}
+
+pub(super) enum MessageFlagRuntimeBackend {
+    Direct(DoveadmMessageFlagBackend<SystemCommandExecutor>),
+    Helper(MailboxHelperMessageFlagBackend),
+    Unavailable(crate::mailbox::MailboxBackendError),
+}
+
+impl MessageFlagBackend for MessageFlagRuntimeBackend {
+    fn set_message_flag(
+        &self,
+        username: &str,
+        request: &MessageFlagRequest,
+    ) -> Result<MessageFlagResult, crate::mailbox::MailboxBackendError> {
+        match self {
+            Self::Direct(backend) => backend.set_message_flag(username, request),
+            Self::Helper(backend) => backend.set_message_flag(username, request),
+            Self::Unavailable(error) => Err(error.clone()),
+        }
     }
 }
 
@@ -395,6 +450,24 @@ mod tests {
             MessageAppendRequest::new("Sent", b"Subject: saved\r\n\r\nbody".to_vec()).unwrap();
 
         let errors = [
+            gateway
+                .build_message_flag_backend()
+                .set_message_flag(
+                    "alice@example.com",
+                    &MessageFlagRequest::new(
+                        "INBOX".into(),
+                        1,
+                        crate::message_metadata::MessageVersion::new(
+                            "a".repeat(32),
+                            "fixture".into(),
+                        )
+                        .unwrap(),
+                        crate::message_metadata::MessageFlag::Seen,
+                        true,
+                    )
+                    .unwrap(),
+                )
+                .unwrap_err(),
             gateway
                 .build_mailbox_list_backend()
                 .list_mailboxes("alice@example.com")

@@ -1344,6 +1344,8 @@ mod tests {
 
     fn rendered_message_fixture() -> RenderedMessageView {
         RenderedMessageView {
+            metadata: None,
+            flags: Vec::new(),
             mailbox_name: "INBOX".to_string(),
             uid: 42,
             subject: Some("Quarterly report".to_string()),

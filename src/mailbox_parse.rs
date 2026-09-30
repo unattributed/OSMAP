@@ -3,6 +3,7 @@
 //! Keeping the parser cluster separate from service and backend wiring makes
 //! mailbox behavior easier to audit without changing the mailbox interfaces.
 
+#[cfg(test)]
 use std::collections::BTreeMap;
 
 use super::*;
@@ -44,6 +45,7 @@ pub(super) fn parse_doveadm_mailbox_list_output(
     Ok(mailboxes)
 }
 
+#[cfg(test)]
 pub(super) fn parse_doveadm_message_list_output(
     policy: MessageListPolicy,
     execution: &CommandExecution,
@@ -77,6 +79,7 @@ pub(super) fn parse_doveadm_message_list_output(
     Ok(messages)
 }
 
+#[cfg(test)]
 pub(super) fn parse_doveadm_message_view_output(
     policy: MessageViewPolicy,
     execution: &CommandExecution,
@@ -103,6 +106,7 @@ pub(super) fn parse_doveadm_message_view_output(
     parse_message_view_record(policy, execution.stdout.trim_end())
 }
 
+#[cfg(test)]
 pub(super) fn parse_doveadm_message_search_output(
     policy: MessageSearchPolicy,
     execution: &CommandExecution,
@@ -136,6 +140,7 @@ pub(super) fn parse_doveadm_message_search_output(
     Ok(results)
 }
 
+#[cfg(test)]
 fn parse_message_summary_line(
     policy: MessageListPolicy,
     line: &str,
@@ -206,6 +211,7 @@ fn parse_message_summary_line(
     )?;
 
     Ok(MessageSummary {
+        metadata: None,
         mailbox_name,
         uid,
         flags,
@@ -216,6 +222,7 @@ fn parse_message_summary_line(
     })
 }
 
+#[cfg(test)]
 fn parse_message_view_line(
     policy: MessageViewPolicy,
     line: &str,
@@ -296,6 +303,7 @@ fn parse_message_view_line(
     )?;
 
     Ok(MessageView {
+        metadata: None,
         mailbox_name,
         uid,
         flags,
@@ -306,6 +314,7 @@ fn parse_message_view_line(
     })
 }
 
+#[cfg(test)]
 fn parse_message_search_result_line(
     policy: MessageSearchPolicy,
     line: &str,
@@ -383,6 +392,7 @@ fn parse_message_search_result_line(
     )?;
 
     Ok(MessageSearchResult {
+        metadata: None,
         mailbox_name,
         uid,
         flags,
@@ -393,6 +403,7 @@ fn parse_message_search_result_line(
     })
 }
 
+#[cfg(test)]
 fn parse_message_view_record(
     policy: MessageViewPolicy,
     record: &str,
@@ -429,6 +440,7 @@ fn parse_message_view_record(
     }
 }
 
+#[cfg(test)]
 fn parse_flow_fields(
     line: &str,
     backend: &'static str,
@@ -514,6 +526,7 @@ fn parse_flow_fields(
     Ok(fields)
 }
 
+#[cfg(test)]
 fn parse_uid_started_flow_records(
     output: &str,
     backend: &'static str,
@@ -552,6 +565,7 @@ fn parse_uid_started_flow_records(
     Ok(records)
 }
 
+#[cfg(test)]
 fn optional_summary_header_field(
     fields: &BTreeMap<String, String>,
     field: &'static str,
@@ -568,7 +582,7 @@ fn optional_summary_header_field(
         .transpose()
 }
 
-fn normalize_header_summary_value(value: &str) -> String {
+pub(super) fn normalize_header_summary_value(value: &str) -> String {
     let mut normalized = String::new();
     let mut pending_space = false;
 
@@ -588,6 +602,7 @@ fn normalize_header_summary_value(value: &str) -> String {
     normalized
 }
 
+#[cfg(test)]
 fn escape_flow_quoted_value(value: &str) -> String {
     let mut escaped = String::new();
     for ch in value.chars() {
@@ -603,6 +618,7 @@ fn escape_flow_quoted_value(value: &str) -> String {
     escaped
 }
 
+#[cfg(test)]
 fn is_flow_field_boundary(chars: &[char], whitespace_index: usize) -> bool {
     let mut probe = whitespace_index;
     while probe < chars.len() && chars[probe].is_whitespace() {
@@ -620,6 +636,7 @@ fn is_flow_field_boundary(chars: &[char], whitespace_index: usize) -> bool {
     probe > key_start && probe < chars.len() && chars[probe] == '='
 }
 
+#[cfg(test)]
 fn required_flow_field<'a>(
     fields: &'a BTreeMap<String, String>,
     field: &'static str,
@@ -635,6 +652,7 @@ fn required_flow_field<'a>(
         })
 }
 
+#[cfg(test)]
 fn optional_flow_field<'a>(
     fields: &'a BTreeMap<String, String>,
     field: &'static str,
@@ -642,6 +660,7 @@ fn optional_flow_field<'a>(
     fields.get(field).map(String::as_str)
 }
 
+#[cfg(test)]
 fn parse_u64_value(
     field: &'static str,
     value: &str,
@@ -653,7 +672,7 @@ fn parse_u64_value(
     })
 }
 
-fn validate_bounded_string(
+pub(super) fn validate_bounded_string(
     field: &'static str,
     value: &str,
     max_len: usize,
@@ -687,6 +706,7 @@ fn validate_bounded_string(
     Ok(())
 }
 
+#[cfg(test)]
 fn parse_flags(flags_text: &str) -> Vec<String> {
     if flags_text.is_empty() {
         return Vec::new();

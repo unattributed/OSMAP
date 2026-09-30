@@ -35,8 +35,13 @@ synthetic account persistence through process restart. The exact S01 source
 obsd1. S02-01 checkpoint A adds real unread/starred filters, stable ordering,
 50-row result windows, query preservation and mailbox/UID selection. Five
 synthetic browser journeys and 92 visual/reflow/forced-colour captures pass.
-Trusted metadata and actual read/star mutations remain in progress; this is
-not acceptance of the full slice. Independent human accessibility acceptance
+Checkpoint B adds strict structured native message identity and attachment
+metadata, explicit read/star forms and identity-bound idempotent helper writes.
+587 library tests, six synthetic state-control journeys and five list journeys
+pass; the native command substrate has been checked in a disposable Maildir.
+Exact signed Rust/helper native qualification and the compact coordinated
+list/reader layout remain pending; this is not acceptance of the full slice.
+Independent human accessibility acceptance
 and deployment remain separate.
 D01–D06 are recorded
 as delegated engineering decisions in `UX_DECISIONS.md`. Independent human

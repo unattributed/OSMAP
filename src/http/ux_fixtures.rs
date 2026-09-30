@@ -42,13 +42,33 @@ fn ux_synthetic_route_baselines() {
         ("mailboxes", "/mailboxes", true, 200),
         ("inbox", "/mailbox?name=INBOX", true, 200),
         ("mailbox-empty", "/mailbox?name=INBOX", true, 200),
-        ("inbox-unread", "/mailbox?name=INBOX&filter=unread", true, 200),
-        ("inbox-starred-empty", "/mailbox?name=INBOX&filter=starred", true, 200),
+        (
+            "inbox-unread",
+            "/mailbox?name=INBOX&filter=unread",
+            true,
+            200,
+        ),
+        (
+            "inbox-starred-empty",
+            "/mailbox?name=INBOX&filter=starred",
+            true,
+            200,
+        ),
         ("inbox-many", "/mailbox?name=INBOX", true, 200),
         ("inbox-page-two", "/mailbox?name=INBOX&page=2", true, 200),
-        ("inbox-selected", "/mailbox?name=INBOX&selected_mailbox=INBOX&selected_uid=10", true, 200),
+        (
+            "inbox-selected",
+            "/mailbox?name=INBOX&selected_mailbox=INBOX&selected_uid=125",
+            true,
+            200,
+        ),
         ("search", "/search?mailbox=INBOX&q=report", true, 200),
-        ("search-starred", "/search?q=searchsort&filter=starred", true, 200),
+        (
+            "search-starred",
+            "/search?q=searchsort&filter=starred",
+            true,
+            200,
+        ),
         ("search-page-two", "/search?q=manyresults&page=2", true, 200),
         ("invalid-list-page", "/mailbox?name=INBOX&page=0", true, 400),
         (
@@ -64,6 +84,12 @@ fn ux_synthetic_route_baselines() {
             404,
         ),
         ("reader", "/message?mailbox=INBOX&uid=9", true, 200),
+        (
+            "reader-state-controls",
+            "/message?mailbox=INBOX&uid=10",
+            true,
+            200,
+        ),
         (
             "source",
             "/message?mailbox=INBOX&uid=9&view=source",
@@ -124,7 +150,10 @@ fn ux_synthetic_route_baselines() {
         if name == "mailbox-empty" {
             headers[0] = ("User-Agent", "OSMAP/EmptyMailbox");
         }
-        if matches!(name, "inbox-many" | "inbox-page-two") {
+        if matches!(
+            name,
+            "inbox-many" | "inbox-page-two" | "inbox-selected" | "reader-state-controls"
+        ) {
             headers[0] = ("User-Agent", "OSMAP/ManyMessages");
         }
         match name {

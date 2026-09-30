@@ -24,6 +24,9 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 #[path = "mailbox_helper_client.rs"]
 mod mailbox_helper_client;
+#[path = "mailbox_helper_flags.rs"]
+mod mailbox_helper_flags;
+pub use self::mailbox_helper_flags::MailboxHelperMessageFlagBackend;
 #[path = "mailbox_helper_dispatch.rs"]
 mod mailbox_helper_dispatch;
 #[path = "mailbox_helper_protocol.rs"]
@@ -55,6 +58,9 @@ use crate::mailbox::{
     MessageSearchRequest, MessageSearchResult, MessageSummary, MessageView, MessageViewBackend,
     MessageViewPolicy, MessageViewRequest, DEFAULT_MESSAGE_APPEND_MAX_BYTES,
 };
+use crate::mailbox::{DoveadmMessageFlagBackend, MessageFlagBackend};
+#[cfg(test)]
+use crate::mailbox::{MessageFlagRequest, MessageFlagResult};
 #[cfg(test)]
 use crate::mailbox::{MessageMovePolicy, MessageSearchField};
 use crate::openbsd::{apply_runtime_confinement, unix_stream_peer_uid};
@@ -178,6 +184,10 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
             DoveadmMessageMoveBackend::new(SystemCommandExecutor, "/usr/local/bin/doveadm")
                 .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone()),
         );
+        let message_flag_backend = Arc::new(
+            DoveadmMessageFlagBackend::new(SystemCommandExecutor, "/usr/local/bin/doveadm")
+                .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone()),
+        );
         let message_append_backend = Arc::new(
             DoveadmMessageAppendBackend::new(SystemCommandExecutor, "/usr/local/bin/doveadm")
                 .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone()),
@@ -232,6 +242,7 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
                     let message_view_backend = Arc::clone(&message_view_backend);
                     let message_move_backend = Arc::clone(&message_move_backend);
                     let message_append_backend = Arc::clone(&message_append_backend);
+                    let message_flag_backend = Arc::clone(&message_flag_backend);
                     let replay_cache = Arc::clone(&replay_cache);
                     let trusted_caller_policy = trusted_caller_policy.clone();
                     let worker_logger = logger.clone();
@@ -247,6 +258,7 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
                                     message_view_backend: message_view_backend.as_ref(),
                                     message_move_backend: message_move_backend.as_ref(),
                                     message_append_backend: message_append_backend.as_ref(),
+                                    message_flag_backend: message_flag_backend.as_ref(),
                                 },
                                 &worker_logger,
                                 &mut stream,
@@ -284,8 +296,8 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
 }
 
 #[cfg(unix)]
-fn handle_helper_client<MB, MLB, MSB, MVB, MMB, MAB>(
-    backends: HelperBackends<'_, MB, MLB, MSB, MVB, MMB, MAB>,
+fn handle_helper_client<MB, MLB, MSB, MVB, MMB, MAB, MFB>(
+    backends: HelperBackends<'_, MB, MLB, MSB, MVB, MMB, MAB, MFB>,
     logger: &Logger,
     stream: &mut UnixStream,
     policy: MailboxHelperPolicy,
@@ -298,6 +310,7 @@ fn handle_helper_client<MB, MLB, MSB, MVB, MMB, MAB>(
     MVB: MessageViewBackend,
     MMB: MessageMoveBackend,
     MAB: MessageAppendBackend,
+    MFB: MessageFlagBackend,
 {
     configure_stream_timeouts(stream, policy);
 
@@ -622,6 +635,13 @@ fn remove_stale_socket_if_needed(socket_path: &Path) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
+    mod flag_tests {
+        include!("mailbox_helper_flag_tests.rs");
+    }
+    #[cfg(unix)]
+    mod native_flag_tests {
+        include!("mailbox_helper_native_flag_tests.rs");
+    }
     use super::*;
     use crate::mailbox::MailboxBackendError;
     use std::env;
@@ -687,6 +707,19 @@ mod tests {
             _request: &MessageViewRequest,
         ) -> Result<MessageView, MailboxBackendError> {
             (*self.message_view_result).clone()
+        }
+    }
+
+    impl MessageFlagBackend for StaticHelperBackend {
+        fn set_message_flag(
+            &self,
+            _username: &str,
+            _request: &MessageFlagRequest,
+        ) -> Result<MessageFlagResult, MailboxBackendError> {
+            self.message_move_result
+                .as_ref()
+                .clone()
+                .map(|()| MessageFlagResult::Updated)
         }
     }
 
@@ -913,6 +946,7 @@ mod tests {
             message_list_result: Arc::new(Ok(Vec::new())),
             message_search_result: Arc::new(Ok(Vec::new())),
             message_view_result: Arc::new(Ok(MessageView {
+                metadata: None,
                 mailbox_name: "INBOX".to_string(),
                 uid: 1,
                 flags: Vec::new(),
@@ -1365,6 +1399,7 @@ mod tests {
             mailbox_name: "INBOX".to_string(),
             messages: vec![
                 MessageSummary {
+                    metadata: None,
                     mailbox_name: "INBOX".to_string(),
                     uid: 7,
                     flags: vec!["\\Seen".to_string()],
@@ -1374,6 +1409,7 @@ mod tests {
                     from: Some("Alice <alice@example.com>".to_string()),
                 },
                 MessageSummary {
+                    metadata: None,
                     mailbox_name: "INBOX".to_string(),
                     uid: 8,
                     flags: Vec::new(),
@@ -1404,6 +1440,7 @@ mod tests {
             query: "quarterly report".to_string(),
             field: MessageSearchField::Subject,
             results: vec![MessageSearchResult {
+                metadata: None,
                 mailbox_name: "INBOX".to_string(),
                 uid: 9,
                 flags: vec!["\\Seen".to_string()],
@@ -1453,6 +1490,7 @@ mod tests {
     fn parses_message_view_response() {
         let expected = MailboxHelperResponse::MessageViewOk {
             message: Box::new(MessageView {
+                metadata: None,
                 mailbox_name: "INBOX".to_string(),
                 uid: 9,
                 flags: vec!["\\Seen".to_string()],
@@ -1645,6 +1683,7 @@ mod tests {
             mailbox_result: Arc::new(Ok(Vec::new())),
             message_list_result: Arc::new(Ok(vec![
                 MessageSummary {
+                    metadata: None,
                     mailbox_name: "INBOX".to_string(),
                     uid: 10,
                     flags: vec!["\\Seen".to_string()],
@@ -1654,6 +1693,7 @@ mod tests {
                     from: Some("Alice <alice@example.com>".to_string()),
                 },
                 MessageSummary {
+                    metadata: None,
                     mailbox_name: "INBOX".to_string(),
                     uid: 11,
                     flags: Vec::new(),
@@ -1709,6 +1749,7 @@ mod tests {
             mailbox_result: Arc::new(Ok(Vec::new())),
             message_list_result: Arc::new(Ok(Vec::new())),
             message_search_result: Arc::new(Ok(vec![MessageSearchResult {
+                metadata: None,
                 mailbox_name: "INBOX".to_string(),
                 uid: 18,
                 flags: vec!["\\Seen".to_string()],
@@ -1795,6 +1836,7 @@ mod tests {
             message_list_result: Arc::new(Ok(Vec::new())),
             message_search_result: Arc::new(Ok(Vec::new())),
             message_view_result: Arc::new(Ok(MessageView {
+                metadata: None,
                 mailbox_name: "INBOX".to_string(),
                 uid: 12,
                 flags: vec!["\\Seen".to_string()],
@@ -1839,6 +1881,7 @@ mod tests {
             message_list_result: Arc::new(Ok(Vec::new())),
             message_search_result: Arc::new(Ok(Vec::new())),
             message_view_result: Arc::new(Ok(MessageView {
+                metadata: None,
                 mailbox_name: "INBOX".to_string(),
                 uid: 12,
                 flags: Vec::new(),
@@ -1921,6 +1964,7 @@ mod tests {
             message_list_result: Arc::new(Ok(Vec::new())),
             message_search_result: Arc::new(Ok(Vec::new())),
             message_view_result: Arc::new(Ok(MessageView {
+                metadata: None,
                 mailbox_name: "INBOX".to_string(),
                 uid: 12,
                 flags: vec!["\\Seen".to_string()],
@@ -2085,6 +2129,7 @@ mod tests {
             + MessageViewBackend
             + MessageMoveBackend
             + MessageAppendBackend
+            + MessageFlagBackend
             + Send
             + 'static,
     {
@@ -2104,6 +2149,7 @@ mod tests {
             + MessageViewBackend
             + MessageMoveBackend
             + MessageAppendBackend
+            + MessageFlagBackend
             + Send
             + 'static,
     {
@@ -2121,6 +2167,7 @@ mod tests {
                     message_view_backend: &backend,
                     message_move_backend: &backend,
                     message_append_backend: &backend,
+                    message_flag_backend: &backend,
                 },
                 &logger,
                 &mut stream,

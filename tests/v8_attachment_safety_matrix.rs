@@ -31,6 +31,7 @@ fn message_view_from_fixture(raw_message: &str) -> MessageView {
         .split_once("\n\n")
         .expect("fixture should contain a header/body separator");
     MessageView {
+        metadata: None,
         mailbox_name: "INBOX".to_string(),
         uid: 808,
         flags: vec!["\\Seen".to_string()],

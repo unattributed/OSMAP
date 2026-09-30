@@ -270,6 +270,7 @@ fn mailbox_entries() -> Vec<MailboxEntry> {
 fn message_summaries() -> Vec<MessageSummary> {
     vec![
         MessageSummary {
+            metadata: None,
             mailbox_name: "INBOX".to_string(),
             uid: 303,
             flags: vec!["\\Seen".to_string()],
@@ -279,6 +280,7 @@ fn message_summaries() -> Vec<MessageSummary> {
             from: Some("alice@example.com".to_string()),
         },
         MessageSummary {
+            metadata: None,
             mailbox_name: "INBOX".to_string(),
             uid: 101,
             flags: vec!["\\Answered".to_string()],
@@ -288,6 +290,7 @@ fn message_summaries() -> Vec<MessageSummary> {
             from: Some("bob@example.com".to_string()),
         },
         MessageSummary {
+            metadata: None,
             mailbox_name: "INBOX".to_string(),
             uid: 202,
             flags: vec!["\\Flagged".to_string(), "\\Seen".to_string()],
@@ -302,6 +305,7 @@ fn message_summaries() -> Vec<MessageSummary> {
 fn search_results() -> Vec<MessageSearchResult> {
     vec![
         MessageSearchResult {
+            metadata: None,
             mailbox_name: "Archive".to_string(),
             uid: 77,
             flags: vec!["\\Seen".to_string()],
@@ -311,6 +315,7 @@ fn search_results() -> Vec<MessageSearchResult> {
             from: Some("archive@example.com".to_string()),
         },
         MessageSearchResult {
+            metadata: None,
             mailbox_name: "INBOX".to_string(),
             uid: 88,
             flags: vec!["\\Flagged".to_string()],
@@ -320,6 +325,7 @@ fn search_results() -> Vec<MessageSearchResult> {
             from: Some("current@example.com".to_string()),
         },
         MessageSearchResult {
+            metadata: None,
             mailbox_name: "Projects/OSMAP".to_string(),
             uid: 99,
             flags: vec!["\\Answered".to_string()],
@@ -337,6 +343,7 @@ fn message_view_fixture() -> MessageView {
         .split_once("\n\n")
         .expect("message view fixture should contain a header/body separator");
     MessageView {
+        metadata: None,
         mailbox_name: "INBOX".to_string(),
         uid: 303,
         flags: vec!["\\Seen".to_string()],

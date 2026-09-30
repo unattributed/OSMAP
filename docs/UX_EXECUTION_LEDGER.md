@@ -567,3 +567,127 @@ with later outcomes. Correct errors using a new entry referencing the old one.
 - Common acceptance, V14, formatting, diff and frozen-plan checks pass.
   Mandatory signed checkpoint follows. S02-01 remains IN_PROGRESS for trusted
   metadata, actual flag writes, stale identity and native qualification.
+
+### S02-01 checkpoint B / disposable native-format qualification work order
+
+- Checkpoint A signed as `c1a9f9e`; Shopkeeper signature and clean tree verified.
+  Ten commits ahead of recorded origin/main, zero behind; no synchronization.
+- Continue trusted metadata and flag work. Dovecot's unquoted flow formatter
+  mixes message-supplied text with structural fields; it must not become an
+  authority source for a new mutation. Use bounded strict JSON decoding for
+  native fetch responses before accepting mailbox/message GUIDs. Duplicate
+  fields, inconsistent IDs, malformed metadata and unknown states fail closed.
+  Keep raw fetch content out of diagnostics. Native GUID+mailbox-GUID+UID
+  predicates bind the mutation itself. Only Seen and Flagged desired states
+  are in scope; preserve other flags and refuse stale identities.
+- Before implementation depends on the native format, create one new
+  owner-private `~/osmap-ux-s02-native-*` directory on verified obsd1. Run only
+  nonprivileged `foo` commands with an explicit standalone `-c` configuration,
+  owned mail_home/mail_location/base_dir/state_dir and no includes, plugins,
+  network listeners, SQL userdb/passdb or existing Dovecot sockets. Do not use
+  `-u`, `-A`, `-F`, a live account, root, system configuration or daemon startup.
+- Inside that directory, create a disposable Maildir and synthetic RFC 5322
+  messages, then use native doveadm fetch/save/flags/search only against that
+  Maildir. Verify JSON values/escaping, GUID identity, BODYSTRUCTURE, add/remove
+  Seen/Flagged, exact wrong-GUID refusal/no other-message changes, duplicate
+  desired-state behavior and bounded output. No external delivery. Retain
+  synthetic fixtures, commands, sanitized results and hashes under the S02
+  evidence root. If standalone isolation cannot be proven, stop that approach
+  and select another isolated method before running mail operations.
+- Inspect explicit configuration and runtime paths before the first write.
+  Check standard checkout and OSMAP service health before/after. Only the new
+  owned fixture directory may be removed after results are retained. This
+  research qualifies the native command substrate, not the later Rust/helper
+  implementation or production deployment; those require separate exact-SHA
+  native regression checks after signed source delivery.
+- Implementation also includes atomic quota reservation in the existing
+  throttle service, a narrow flag route/gateway, bounded internal return URLs,
+  helper/client dispatch and dedicated synthetic tests. A shared native flag
+  gate refuses overlapping operations; one three-second deadline covers read,
+  write and confirmation. Existing mail-action quotas are reserved atomically
+  before external writes and store errors refuse the action. An unconfirmed
+  result is explicit and never triggers an automatic retry.
+- Native substrate PASS in `/home/foo/osmap-ux-s02-native-fVcDLRfM` with two
+  synthetic messages and restored initial flags. Structured fetch values are
+  strings; GUID is a Maildir filename; BODYSTRUCTURE omits outer parentheses.
+  Wrong message GUID matched no message; missing mailbox GUID returned 255
+  without a change. Native body fetch normalizes line endings to LF. Host UTC
+  agrees with workstation; its display timezone is +07, not clock skew.
+  Services and standard checkout unchanged. `native-substrate/result.json`
+  SHA-256 `35a3e87b7c5eb16aab65455f98da24fdefcb6f1d5df869d34db076d91426ce67`.
+  Standalone config required a nonempty loopback `listen` value; no daemon was
+  started. Initial configuration and nonexistent-GUID expectation failures are
+  retained, with the actual safe refusal recorded. Rust/helper proof remains
+  required separately; these command checks are not full feature acceptance.
+
+### S02-01 checkpoint B — trusted state controls
+
+- Strict bounded JSON replaces ambiguous flow output for native list/search/
+  reader fetches. Mailbox GUID, opaque message GUID and UID are checked against
+  the requested account/mailbox/message. Attachment counts come from bounded
+  BODYSTRUCTURE; unsupported or malformed metadata remains unknown, not zero.
+- Read/unread and star/unstar use explicit desired states through POST-only
+  forms with CSRF and same-origin checks. The helper grant binds account,
+  mailbox, UID, both GUIDs, flag and desired value. Only Seen and Flagged are
+  accepted; native add/remove preserves other flags. Duplicate requests return
+  already-set; stale identities and concurrent operations refuse. Post-write
+  uncertainty is explicit, with no automatic retry. Redirect context is rebuilt
+  from a bounded internal GET allowlist. Helper replies reject duplicate control
+  fields, cross-operation fields and mismatched confirmations.
+- Existing shared mail-action quotas are reserved atomically before writes.
+  Locked quotas, unavailable stores and missing configured helper authority
+  refuse without a direct fallback. One native three-second deadline covers
+  read, write and confirmation; helper transport deadlines are checked.
+- Library 587 passed, zero failed, six explicitly ignored (including the new
+  opt-in native fixture). Strict all-target clippy passes. Six browser state
+  journeys and five navigation journeys pass against the real router and
+  synthetic gateway. These cover duplicates, stale identity, account separation,
+  CSRF, origin, list/filter context and keyboard star activation.
+- 32 current captures: 12 normal, four simulated 200% reflow, eight forced
+  colours and eight Firefox. No detected overflow or computed contrast failure;
+  all image hashes checked. Desktop light and narrow dark reader inspected.
+  The first normal set is superseded because its selected fixture fell outside
+  the visible page; corrected fixture uses visible UID 125. Legacy tables and
+  metadata-heavy reader remain pending, so S02-01 is still IN_PROGRESS.
+- Evidence: S02 `checkpoint-b-summary.json`, SHA-256
+  `1e1109b48e89ef6a5e066d0dd26683af75e1e5612dcc1519f0f23dd0e0752ae5`.
+  Full common acceptance, V14, formatting, diff and frozen-plan checks PASS.
+  Initial test/build/clippy and stale generated-register failures
+  are retained alongside corrected reruns. No production claim or deployment.
+
+### Exact checkpoint B native work order
+
+- After a signed clean B checkpoint, archive its exact full SHA, hash the archive
+  and transfer only to a new owner-private `~/osmap-ux-s02-*` source directory on
+  hostname-verified obsd1. Preserve standard `~/OSMAP`, accounts and services.
+  Use the prior owned S01 target cache solely to reduce compilation time; two
+  jobs, reduced process priority, locked/offline dependencies.
+- Run all native library tests, V4 hostile rendering and the explicit ignored
+  `isolated_openbsd_json_and_signed_flag_helper` test. That test creates only a
+  new 0700 `/tmp/osmap-ux-native-*` root with 0600 standalone configuration and
+  public synthetic grant material, owned runtime/state/home/Maildir paths, no
+  includes/plugins/daemon/real credentials, and no live SQL/userdb socket.
+- The test-only executor prepends that standalone configuration and removes
+  `-u` only for the fixed synthetic account, using the current unprivileged OS
+  user. Production fetch/flag argv and GUID predicates otherwise remain intact.
+  Exercise structured list/view, attachment counts, signed local helper writes,
+  duplicates, incorrect GUIDs/UID, other-message isolation and restored flags.
+  Remove only the test-owned fixture tree; retain exact-source logs and hashes
+  under S02. Verify standard checkout and OSMAP service health before/after.
+
+### S02-01 checkpoint C work order — compact message rows
+
+- Following signed checkpoint B, finish S02-01 presentation in `src/http_ui.rs`,
+  shared CSS, mail-list helpers, route/fixture tests and browser harnesses. Keep
+  actual backend identity, filtering, pagination and state writes from A/B.
+- Replace the wide diagnostic table presentation with compact sender/subject/
+  date/state rows aligned with the supplied inbox reference. Use actual metadata,
+  explicit unknown values, accessible names and visible selected/unread states.
+  Avoid invented body previews, avatar identities or cryptographic assurance.
+  Preserve all existing authorized actions; bulk workflow consolidation remains
+  S02-03. Local no-script native forms and keyboard interaction remain D01.
+- Verify empty, single and many rows, long/hostile values, selected identity,
+  filter/sort/page behaviour, narrow layouts, contrast, forced colours and
+  native state controls. Exact B native qualification may run independently in
+  its owned source tree. C remains source-only until its own signed checkpoint;
+  S02-02 coordinated reader work follows S02-01 verification.

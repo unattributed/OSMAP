@@ -9,6 +9,10 @@
 
 #[path = "mailbox_backend.rs"]
 mod mailbox_backend;
+#[path = "mailbox_flags.rs"]
+mod mailbox_flags;
+#[path = "mailbox_json.rs"]
+mod mailbox_json;
 #[path = "mailbox_model.rs"]
 mod mailbox_model;
 #[path = "mailbox_parse.rs"]
@@ -19,6 +23,9 @@ mod mailbox_service;
 pub use self::mailbox_backend::{
     DoveadmMailboxListBackend, DoveadmMessageAppendBackend, DoveadmMessageListBackend,
     DoveadmMessageMoveBackend, DoveadmMessageSearchBackend, DoveadmMessageViewBackend,
+};
+pub use self::mailbox_flags::{
+    DoveadmMessageFlagBackend, MessageFlagBackend, MessageFlagRequest, MessageFlagResult,
 };
 pub(crate) use self::mailbox_model::validate_message_search_query;
 pub use self::mailbox_model::{
@@ -37,9 +44,11 @@ pub use self::mailbox_model::{
     DEFAULT_MESSAGE_HEADER_MAX_LEN, DEFAULT_SEARCH_HEADER_VALUE_MAX_LEN,
     DEFAULT_SEARCH_QUERY_MAX_LEN,
 };
+use self::mailbox_parse::parse_doveadm_mailbox_list_output;
+#[cfg(test)]
 use self::mailbox_parse::{
-    parse_doveadm_mailbox_list_output, parse_doveadm_message_list_output,
-    parse_doveadm_message_search_output, parse_doveadm_message_view_output,
+    parse_doveadm_message_list_output, parse_doveadm_message_search_output,
+    parse_doveadm_message_view_output,
 };
 pub use self::mailbox_service::{
     MailboxListingService, MessageListService, MessageMoveService, MessageSearchService,
@@ -365,15 +374,14 @@ mod tests {
     }
 
     #[test]
-    fn parses_message_summaries_from_doveadm_flow_output() {
+    fn parses_message_summaries_from_doveadm_json_output() {
         let executor = Rc::new(std::cell::RefCell::new(StubCommandExecutor::success(
             CommandExecution {
                 status_code: 0,
-                stdout: concat!(
-                    "uid=4 flags=\"\\\\Seen\" date.received=2026-03-27 09:00:00 +0000 size.virtual=2048 mailbox=INBOX hdr.subject=\"Quarterly report\" hdr.from=\"Alice <alice@example.com>\"\n",
-                    "uid=5 flags=\"\\\\Seen \\\\Answered\" date.received=2026-03-27 10:15:00 +0000 size.virtual=4096 mailbox=INBOX hdr.subject=\"Follow-up\" hdr.from=\"Bob <bob@example.com>\"\n"
-                )
-                .to_string(),
+                stdout: serde_json::json!([
+                    {"uid":"4", "flags":"\\Seen", "date.received":"2026-03-27 09:00:00 +0000", "size.virtual":"2048", "mailbox":"INBOX", "mailbox-guid":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "guid":"fixture-4", "hdr.subject":"Quarterly report", "hdr.from":"Alice <alice@example.com>"},
+                    {"uid":"5", "flags":"\\Seen \\Answered", "date.received":"2026-03-27 10:15:00 +0000", "size.virtual":"4096", "mailbox":"INBOX", "mailbox-guid":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "guid":"fixture-5", "hdr.subject":"Follow-up", "hdr.from":"Bob <bob@example.com>"}
+                ]).to_string(),
                 stderr: String::new(),
             },
         )));
@@ -412,11 +420,11 @@ mod tests {
                 "-o".to_string(),
                 "stats_writer_socket_path=".to_string(),
                 "-f".to_string(),
-                "flow".to_string(),
+                "json".to_string(),
                 "fetch".to_string(),
                 "-u".to_string(),
                 "alice@example.com".to_string(),
-                "uid flags date.received size.virtual mailbox hdr.subject hdr.from".to_string(),
+                mailbox_json::SUMMARY_FIELDS.to_string(),
                 "mailbox".to_string(),
                 "INBOX".to_string(),
                 "all".to_string(),
@@ -426,8 +434,7 @@ mod tests {
 
     #[test]
     fn parses_message_summaries_with_folded_header_fields_from_live_flow_output() {
-        let executor = Rc::new(std::cell::RefCell::new(StubCommandExecutor::success(
-            CommandExecution {
+        let execution = CommandExecution {
                 status_code: 0,
                 stdout: concat!(
                     "uid=158 flags=\\Seen date.received=2026-04-18 23:39:14 size.virtual=40908 mailbox=INBOX hdr.subject=Your SecOps Engineer Application is Moving Forward - Complete Your\n",
@@ -435,19 +442,9 @@ mod tests {
                 )
                 .to_string(),
                 stderr: String::new(),
-            },
-        )));
-        let backend = DoveadmMessageListBackend::new(
-            MessageListPolicy::default(),
-            executor,
-            "/usr/local/bin/doveadm",
-        );
-        let request = MessageListRequest::new(MessageListPolicy::default(), "INBOX")
-            .expect("request should be valid");
-
-        let messages = backend
-            .list_messages("alice@example.com", &request)
-            .expect("folded header message list should succeed");
+        };
+        let messages = parse_doveadm_message_list_output(MessageListPolicy::default(), &execution)
+            .expect("historical flow parser fixture");
 
         assert_eq!(messages.len(), 1);
         assert_eq!(messages[0].uid, 158);
@@ -464,8 +461,7 @@ mod tests {
 
     #[test]
     fn parses_message_summaries_from_live_audit_quoted_display_names() {
-        let executor = Rc::new(std::cell::RefCell::new(StubCommandExecutor::success(
-            CommandExecution {
+        let execution = CommandExecution {
                 status_code: 0,
                 stdout: [
                     "uid=4 flags=\\Seen date.received=2025-12-17 11:49:08 size.virtual=4095 mailbox=Sent hdr.subject=3 things hdr.from=\"Pilot Primary\" <pilot-primary@example.invalid>",
@@ -477,19 +473,9 @@ mod tests {
                 .join("\n")
                     + "\n",
                 stderr: String::new(),
-            },
-        )));
-        let backend = DoveadmMessageListBackend::new(
-            MessageListPolicy::default(),
-            executor,
-            "/usr/local/bin/doveadm",
-        );
-        let request = MessageListRequest::new(MessageListPolicy::default(), "Sent")
-            .expect("request should be valid");
-
-        let messages = backend
-            .list_messages("pilot-primary@example.invalid", &request)
-            .expect("live-style message lists should parse quoted display names");
+        };
+        let messages = parse_doveadm_message_list_output(MessageListPolicy::default(), &execution)
+            .expect("historical flow parser fixture");
 
         assert_eq!(messages.len(), 5);
         assert_eq!(messages[0].uid, 4);
@@ -536,11 +522,11 @@ mod tests {
     }
 
     #[test]
-    fn parses_message_view_from_doveadm_flow_output() {
+    fn parses_message_view_from_doveadm_json_output() {
         let executor = Rc::new(std::cell::RefCell::new(StubCommandExecutor::success(
             CommandExecution {
                 status_code: 0,
-                stdout: "uid=9 flags=\"\\\\Seen\" date.received=2026-03-27 11:00:00 +0000 size.virtual=512 mailbox=INBOX hdr=\"Subject: Test message\\nFrom: Alice <alice@example.com>\\n\" body=\"Hello world\\nSecond line\\n\"\n".to_string(),
+                stdout: serde_json::json!([{"uid":"9", "flags":"\\Seen", "date.received":"2026-03-27 11:00:00 +0000", "size.virtual":"512", "mailbox":"INBOX", "mailbox-guid":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "guid":"fixture-9", "hdr":"Subject: Test message\nFrom: Alice <alice@example.com>\n", "body":"Hello world\nSecond line\n"}]).to_string(),
                 stderr: String::new(),
             },
         )));
@@ -573,11 +559,11 @@ mod tests {
                 "-o".to_string(),
                 "stats_writer_socket_path=".to_string(),
                 "-f".to_string(),
-                "flow".to_string(),
+                "json".to_string(),
                 "fetch".to_string(),
                 "-u".to_string(),
                 "alice@example.com".to_string(),
-                "uid flags date.received size.virtual mailbox hdr body".to_string(),
+                mailbox_json::VIEW_FIELDS.to_string(),
                 "mailbox".to_string(),
                 "INBOX".to_string(),
                 "uid".to_string(),
@@ -588,15 +574,14 @@ mod tests {
     }
 
     #[test]
-    fn parses_message_search_results_from_doveadm_flow_output() {
+    fn parses_message_search_results_from_doveadm_json_output() {
         let executor = Rc::new(std::cell::RefCell::new(StubCommandExecutor::success(
             CommandExecution {
                 status_code: 0,
-                stdout: concat!(
-                    "uid=14 flags=\"\\\\Seen\" date.received=2026-03-27 15:00:00 +0000 size.virtual=2048 mailbox=INBOX hdr.subject=\"Quarterly report\" hdr.from=\"Alice <alice@example.com>\"\n",
-                    "uid=15 flags=\"\" date.received=2026-03-27 16:00:00 +0000 size.virtual=1024 mailbox=INBOX hdr.subject=\"Follow-up\" hdr.from=\"Bob <bob@example.com>\"\n"
-                )
-                .to_string(),
+                stdout: serde_json::json!([
+                    {"uid":"14", "flags":"\\Seen", "date.received":"2026-03-27 15:00:00 +0000", "size.virtual":"2048", "mailbox":"INBOX", "mailbox-guid":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "guid":"fixture-14", "hdr.subject":"Quarterly report", "hdr.from":"Alice <alice@example.com>"},
+                    {"uid":"15", "flags":"", "date.received":"2026-03-27 16:00:00 +0000", "size.virtual":"1024", "mailbox":"INBOX", "mailbox-guid":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "guid":"fixture-15", "hdr.subject":"Follow-up", "hdr.from":"Bob <bob@example.com>"}
+                ]).to_string(),
                 stderr: String::new(),
             },
         )));
@@ -630,11 +615,11 @@ mod tests {
                 "-o".to_string(),
                 "stats_writer_socket_path=".to_string(),
                 "-f".to_string(),
-                "flow".to_string(),
+                "json".to_string(),
                 "fetch".to_string(),
                 "-u".to_string(),
                 "alice@example.com".to_string(),
-                "uid flags date.received size.virtual mailbox hdr.subject hdr.from".to_string(),
+                mailbox_json::SUMMARY_FIELDS.to_string(),
                 "mailbox".to_string(),
                 "INBOX".to_string(),
                 "TEXT".to_string(),
@@ -649,7 +634,7 @@ mod tests {
         let executor = Rc::new(std::cell::RefCell::new(StubCommandExecutor::success(
             CommandExecution {
                 status_code: 0,
-                stdout: String::new(),
+                stdout: "[]".to_string(),
                 stderr: String::new(),
             },
         )));
@@ -682,7 +667,7 @@ mod tests {
         let executor = Rc::new(std::cell::RefCell::new(StubCommandExecutor::success(
             CommandExecution {
                 status_code: 0,
-                stdout: String::new(),
+                stdout: "[]".to_string(),
                 stderr: String::new(),
             },
         )));
@@ -1008,6 +993,7 @@ mod tests {
     fn message_view_service_emits_audit_quality_success_events() {
         let service = MessageViewService::new(StaticMessageViewBackend {
             message: MessageView {
+                metadata: None,
                 mailbox_name: "INBOX".to_string(),
                 uid: 9,
                 flags: vec!["\\Seen".to_string()],
@@ -1123,6 +1109,7 @@ mod tests {
         let service = MessageListService::new(StaticMessageListBackend {
             messages: vec![
                 MessageSummary {
+                    metadata: None,
                     mailbox_name: "INBOX".to_string(),
                     uid: 4,
                     flags: vec!["\\Seen".to_string()],
@@ -1132,6 +1119,7 @@ mod tests {
                     from: Some("Alice <alice@example.com>".to_string()),
                 },
                 MessageSummary {
+                    metadata: None,
                     mailbox_name: "INBOX".to_string(),
                     uid: 5,
                     flags: vec![],
@@ -1187,6 +1175,7 @@ mod tests {
         let service = MessageSearchService::new(StaticMessageSearchBackend {
             results: vec![
                 MessageSearchResult {
+                    metadata: None,
                     mailbox_name: "INBOX".to_string(),
                     uid: 14,
                     flags: vec!["\\Seen".to_string()],
@@ -1196,6 +1185,7 @@ mod tests {
                     from: Some("Alice <alice@example.com>".to_string()),
                 },
                 MessageSearchResult {
+                    metadata: None,
                     mailbox_name: "INBOX".to_string(),
                     uid: 15,
                     flags: Vec::new(),
@@ -1495,6 +1485,7 @@ mod tests {
             .expect("request should be valid");
         let message_service = MessageListService::new(StaticMessageListBackend {
             messages: vec![MessageSummary {
+                metadata: None,
                 mailbox_name: "INBOX".to_string(),
                 uid: 9,
                 flags: vec!["\\Seen".to_string()],
@@ -1605,6 +1596,7 @@ mod tests {
             .expect("request should be valid");
         let service = MessageViewService::new(StaticMessageViewBackend {
             message: MessageView {
+                metadata: None,
                 mailbox_name: "INBOX".to_string(),
                 uid: 9,
                 flags: vec!["\\Seen".to_string()],

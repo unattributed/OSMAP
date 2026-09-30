@@ -18,6 +18,7 @@
     {"method": "GET", "path": "/sessions", "query_fields": ["revoked"], "form_fields": [], "wstg_test_ids": ["OSMAP-WSTG-SESS-006"]},
     {"method": "GET", "path": "/settings", "query_fields": ["updated", "appearance_updated"], "form_fields": [], "wstg_test_ids": ["OSMAP-WSTG-SESS-004", "OSMAP-WSTG-BUSL-005"]},
     {"method": "POST", "path": "/message/move", "query_fields": [], "form_fields": ["csrf_token", "mailbox", "destination_mailbox", "uid"], "wstg_test_ids": ["OSMAP-WSTG-ATHZ-001", "OSMAP-WSTG-BUSL-005"]},
+    {"method": "POST", "path": "/message/flag", "query_fields": [], "form_fields": ["csrf_token", "mailbox", "uid", "mailbox_guid", "message_guid", "flag", "enabled", "return_to"], "wstg_test_ids": ["OSMAP-WSTG-ATHZ-001", "OSMAP-WSTG-SESS-004", "OSMAP-WSTG-BUSL-005"]},
     {"method": "POST", "path": "/messages/move", "query_fields": [], "form_fields": ["csrf_token", "mailbox", "destination_mailbox", "uid_*"], "wstg_test_ids": ["OSMAP-WSTG-BUSL-004", "OSMAP-WSTG-BUSL-005"]},
     {"method": "POST", "path": "/messages/archive", "query_fields": [], "form_fields": ["csrf_token", "mailbox", "destination_mailbox", "uid_*"], "wstg_test_ids": ["OSMAP-WSTG-BUSL-004", "OSMAP-WSTG-BUSL-005"]},
     {"method": "POST", "path": "/send", "query_fields": [], "form_fields": ["csrf_token", "to", "cc", "bcc", "subject", "body", "draft_id", "source_mailbox", "source_uid", "include_original_attachment_*", "attachment"], "wstg_test_ids": ["OSMAP-WSTG-INPV-003", "OSMAP-WSTG-INPV-004", "OSMAP-WSTG-BUSL-003"]},

@@ -13,6 +13,7 @@ use crate::mailbox::{
     MailboxEntry, MessageSearchField, MessageSearchResult, MessageSort, MessageSortColumn,
     MessageSortDirection, MessageSummary, DEFAULT_MAX_MAILBOXES,
 };
+use crate::message_metadata::{MessageFlag, MessageMetadata};
 use crate::mime::{AttachmentMetadata, DEFAULT_MIME_PARTS_MAX};
 use crate::rendering::{HtmlDisplayPreference, RenderedMessageView};
 
@@ -491,6 +492,46 @@ fn render_message_flags(flags: &[String]) -> String {
     format!("<span class=\"message-star\" role=\"img\" aria-label=\"{label}\">{star}</span><span class=\"message-flags\" title=\"{}\">{read}</span>", escape_html(&flags.join(" ")))
 }
 
+fn render_message_state_controls(
+    csrf: &str,
+    mailbox: &str,
+    uid: u64,
+    flags: &[String],
+    metadata: Option<&MessageMetadata>,
+    return_to: &str,
+) -> String {
+    let indicators = render_message_flags(flags);
+    let Some(metadata) = metadata else {
+        return format!("{indicators}<span class=\"state-unavailable muted\" title=\"Message state controls are unavailable. Refresh the list to check again.\">State controls unavailable</span>");
+    };
+    let mut controls = String::new();
+    for flag in [MessageFlag::Seen, MessageFlag::Flagged] {
+        let current = has_flag(flags, flag.imap());
+        let state_label = if flag == MessageFlag::Seen {
+            "Read"
+        } else {
+            "Star"
+        };
+        let (label, text) = match (flag, current) {
+            (MessageFlag::Seen, false) => ("Mark read", "Mark read"),
+            (MessageFlag::Seen, true) => ("Mark unread", "Mark unread"),
+            (MessageFlag::Flagged, false) => ("Star", "☆"),
+            (MessageFlag::Flagged, true) => ("Remove star from", "★"),
+        };
+        controls.push_str(&format!(
+            "<form class=\"message-state-form\" method=\"post\" action=\"/message/flag\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"uid\" value=\"{uid}\"><input type=\"hidden\" name=\"mailbox_guid\" value=\"{}\"><input type=\"hidden\" name=\"message_guid\" value=\"{}\"><input type=\"hidden\" name=\"flag\" value=\"{}\"><input type=\"hidden\" name=\"enabled\" value=\"{}\"><input type=\"hidden\" name=\"return_to\" value=\"{}\"><button class=\"flag-control\" type=\"submit\" aria-label=\"{state_label} message #{uid} in {}\" aria-pressed=\"{current}\" title=\"{label}\">{text}</button></form>",
+            escape_html(csrf), escape_html(mailbox), escape_html(&metadata.version.mailbox_guid), escape_html(&metadata.version.message_guid), flag.value(),
+            if current { "0" } else { "1" }, escape_html(return_to), escape_html(mailbox),
+        ));
+    }
+    let attachments = match metadata.attachment_count {
+        Some(0) => String::new(),
+        Some(count) => format!("<span class=\"badge attachment-count\" data-attachment-count=\"{count}\">{count} {}</span>", if count == 1 { "attachment" } else { "attachments" }),
+        None => "<span class=\"muted attachment-count\" aria-label=\"Attachment metadata unavailable\" title=\"Attachment metadata unavailable\">–</span>".into(),
+    };
+    format!("<div class=\"message-state-controls\" role=\"group\" aria-label=\"Message state\">{indicators}{controls}{attachments}</div>")
+}
+
 fn render_search_field_select(active_field: MessageSearchField) -> String {
     let mut options = String::new();
     for field in MESSAGE_SEARCH_FIELDS {
@@ -530,6 +571,13 @@ pub(crate) fn render_message_list_page(
         ),
         None => String::new(),
     };
+    let mut navigation_base = format!("/mailbox?name={}", url_encode(mailbox_name));
+    if let Some(query) = sort_links.search_query {
+        navigation_base.push_str(&format!("&q={}", url_encode(query)));
+    }
+    if let Some(scope) = sort_links.search_scope {
+        navigation_base.push_str(&format!("&scope={}", url_encode(scope)));
+    }
     let mut rows = String::new();
     let archive_actions_available = bulk_actions
         .archive_mailbox_name
@@ -587,7 +635,7 @@ pub(crate) fn render_message_list_page(
             escape_html(&message.date_received),
             escape_html(from_label),
             escape_html(&message.date_received),
-            render_message_flags(&message.flags),
+            render_message_state_controls(csrf_token, mailbox_name, message.uid, &message.flags, message.metadata.as_ref(), &list_navigation_href(&navigation_base, sort_links.view, sort_links.view.page)),
             message.size_virtual,
             if archive_actions_available {
                 format!("<td class=\"message-action-cell\">{archive_action}</td>")
@@ -647,13 +695,6 @@ pub(crate) fn render_message_list_page(
         sort_links.search_query,
         sort_links.search_scope,
     );
-    let mut navigation_base = format!("/mailbox?name={}", url_encode(mailbox_name));
-    if let Some(query) = sort_links.search_query {
-        navigation_base.push_str(&format!("&q={}", url_encode(query)));
-    }
-    if let Some(scope) = sort_links.search_scope {
-        navigation_base.push_str(&format!("&scope={}", url_encode(scope)));
-    }
 
     TrustedHtml::from_template(format!(
         concat!(
@@ -764,7 +805,7 @@ pub(crate) fn render_message_search_page(
                 escape_html(result.subject.as_deref().unwrap_or("<none>")),
                 escape_html(result.from.as_deref().unwrap_or("<none>")),
                 escape_html(&result.date_received),
-                render_message_flags(&result.flags),
+                render_message_state_controls(csrf_token, &result.mailbox_name, result.uid, &result.flags, result.metadata.as_ref(), &list_navigation_href(&navigation_base, view, view.page)),
                 result.size_virtual,
             ));
         }
@@ -988,7 +1029,7 @@ pub fn render_message_view_page(
             "<div class=\"badge-list reader-badge-list\" aria-label=\"Reader status\"><span class=\"badge badge-ok\">2FA session</span><span class=\"badge badge-ok\">Protected by Default</span>{}<span class=\"badge\">{}</span></div>",
             "<dl class=\"message-meta reader-meta\"><dt>Mailbox</dt><dd>{}</dd><dt>UID</dt><dd>{}</dd><dt>Received</dt><dd>{}</dd><dt>MIME Type</dt><dd>{}</dd><dt>Body Source</dt><dd>{}</dd><dt>Rendering Mode</dt><dd>{}</dd><dt>HTML Present</dt><dd>{}</dd><dt>Protection</dt><dd>Protected by Default</dd><dt>Remote Content</dt><dd>{}</dd></dl>",
             "<div class=\"toolbar\" aria-label=\"Message actions\"><a class=\"button-link\" href=\"/compose?mode=reply&mailbox={}&uid={}\">Reply</a><a class=\"button-link\" href=\"/compose?mode=forward&mailbox={}&uid={}\">Forward</a></div>",
-            "<div class=\"action-stack\">{}{}{}</div>",
+            "{}<div class=\"action-stack\">{}{}{}</div>",
             "</section>",
             "<article class=\"reading-pane protected-reading-pane\" aria-labelledby=\"reading-title\" data-reader-mode=\"Protected Reader\">",
             "<h2 id=\"reading-title\">Reading Pane</h2>",
@@ -1024,6 +1065,7 @@ pub fn render_message_view_page(
         rendered.uid,
         escape_html(&url_encode(&rendered.mailbox_name)),
         rendered.uid,
+        render_message_state_controls(csrf_token, &rendered.mailbox_name, rendered.uid, &rendered.flags, rendered.metadata.as_ref(), &format!("/message?mailbox={}&uid={}", url_encode(&rendered.mailbox_name), rendered.uid)),
         archive_form,
         delete_form,
         move_form,
@@ -1493,6 +1535,8 @@ mod v7_rendering_regression_tests {
     #[test]
     fn ui_message_view_surfaces_truthful_rendering_labels() {
         let rendered = RenderedMessageView {
+            metadata: None,
+            flags: Vec::new(),
             mailbox_name: "INBOX".to_string(),
             uid: 42,
             subject: Some("Decoded café".to_string()),

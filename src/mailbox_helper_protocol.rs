@@ -6,6 +6,9 @@
 
 use std::collections::BTreeMap;
 
+use crate::mailbox::{MessageFlagRequest, MessageFlagResult};
+use crate::message_metadata::MessageFlag;
+use crate::message_metadata::{MessageMetadata, MessageVersion, MAX_MESSAGE_GUID_BYTES};
 use hmac::{Hmac, Mac};
 use sha2::{Digest, Sha256};
 
@@ -22,6 +25,11 @@ use crate::mailbox::{
 /// Supported helper requests for the first mailbox-read slice.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) enum MailboxHelperRequest {
+    MessageFlag {
+        canonical_username: String,
+        request: MessageFlagRequest,
+        grant: MailboxHelperGrant,
+    },
     MailboxList {
         canonical_username: String,
         grant: MailboxHelperGrant,
@@ -89,6 +97,10 @@ impl MailboxHelperGrant {
 /// Supported helper responses for the first mailbox-read slice.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) enum MailboxHelperResponse {
+    MessageFlagOk {
+        request: MessageFlagRequest,
+        result: MessageFlagResult,
+    },
     MailboxListOk {
         mailboxes: Vec<MailboxEntry>,
     },
@@ -125,6 +137,9 @@ pub(super) enum MailboxHelperResponse {
 
 pub(super) fn encode_request(request: &MailboxHelperRequest) -> String {
     match request {
+        MailboxHelperRequest::MessageFlag { canonical_username, request, grant } => format!(
+            "operation=message_flag\ncanonical_username_b64={}\n{}{}",
+            encode_base64(canonical_username.as_bytes()), encode_flag_fields(request), encode_grant_fields(grant)),
         MailboxHelperRequest::MailboxList {
             canonical_username,
             grant,
@@ -222,6 +237,11 @@ pub(super) fn parse_request(input: &str) -> Result<MailboxHelperRequest, String>
     let grant = parse_grant_fields(&fields)?;
 
     match operation {
+        "message_flag" => Ok(MailboxHelperRequest::MessageFlag {
+            canonical_username,
+            request: parse_flag_fields(&fields)?,
+            grant,
+        }),
         "mailbox_list" => Ok(MailboxHelperRequest::MailboxList {
             canonical_username,
             grant,
@@ -462,6 +482,7 @@ pub(super) fn verify_request_grant(
 
 pub(super) fn request_grant(request: &MailboxHelperRequest) -> &MailboxHelperGrant {
     match request {
+        MailboxHelperRequest::MessageFlag { grant, .. } => grant,
         MailboxHelperRequest::MailboxList { grant, .. }
         | MailboxHelperRequest::MessageList { grant, .. }
         | MailboxHelperRequest::MessageSearch { grant, .. }
@@ -474,6 +495,7 @@ pub(super) fn request_grant(request: &MailboxHelperRequest) -> &MailboxHelperGra
 
 fn set_request_grant(request: &mut MailboxHelperRequest, new_grant: MailboxHelperGrant) {
     match request {
+        MailboxHelperRequest::MessageFlag { grant, .. } => *grant = new_grant,
         MailboxHelperRequest::MailboxList { grant, .. }
         | MailboxHelperRequest::MessageList { grant, .. }
         | MailboxHelperRequest::MessageSearch { grant, .. }
@@ -486,6 +508,7 @@ fn set_request_grant(request: &mut MailboxHelperRequest, new_grant: MailboxHelpe
 
 pub(super) fn helper_operation_label(request: &MailboxHelperRequest) -> &'static str {
     match request {
+        MailboxHelperRequest::MessageFlag { .. } => "message_flag",
         MailboxHelperRequest::MailboxList { .. } => "mailbox_list",
         MailboxHelperRequest::MessageList { .. } => "message_list",
         MailboxHelperRequest::MessageSearch { .. } => "message_search",
@@ -517,6 +540,25 @@ fn canonical_grant_payload(request: &MailboxHelperRequest, grant: &MailboxHelper
         grant.nonce.clone(),
     ];
     match request {
+        MailboxHelperRequest::MessageFlag {
+            canonical_username,
+            request,
+            ..
+        } => {
+            fields.extend([
+                canonical_username.clone(),
+                request.mailbox_name.clone(),
+                request.uid.to_string(),
+                request.version.mailbox_guid.clone(),
+                request.version.message_guid.clone(),
+                request.flag.value().into(),
+                if request.enabled {
+                    "1".into()
+                } else {
+                    "0".into()
+                },
+            ]);
+        }
         MailboxHelperRequest::MailboxList {
             canonical_username, ..
         } => fields.push(canonical_username.clone()),
@@ -628,6 +670,9 @@ fn parse_grant_fields(fields: &BTreeMap<String, String>) -> Result<MailboxHelper
 
 pub(super) fn encode_response(response: &MailboxHelperResponse) -> String {
     match response {
+        MailboxHelperResponse::MessageFlagOk { request, result } => format!(
+            "status=ok\noperation=message_flag\n{}flag_result={}\n", encode_flag_fields(request),
+            match result { MessageFlagResult::Updated => "updated", MessageFlagResult::AlreadySet => "already_set" }),
         MailboxHelperResponse::MailboxListOk { mailboxes } => {
             let mut output = format!(
                 "status=ok\noperation=mailbox_list\nmailbox_count={}\n",
@@ -675,6 +720,7 @@ pub(super) fn encode_response(response: &MailboxHelperResponse) -> String {
                     message.from.as_deref().unwrap_or("").as_bytes(),
                 ));
                 output.push('\n');
+                output.push_str(&encode_message_metadata(message.metadata.as_ref()));
                 output.push_str("message_end=1\n");
             }
             output
@@ -716,12 +762,13 @@ pub(super) fn encode_response(response: &MailboxHelperResponse) -> String {
                 output.push_str("message_from_b64=");
                 output.push_str(&encode_base64(result.from.as_deref().unwrap_or("").as_bytes()));
                 output.push('\n');
+                output.push_str(&encode_message_metadata(result.metadata.as_ref()));
                 output.push_str("message_end=1\n");
             }
             output
         }
         MailboxHelperResponse::MessageViewOk { message } => format!(
-            "status=ok\noperation=message_view\nmessage_uid={}\nmessage_flags_b64={}\nmessage_date_received_b64={}\nmessage_size_virtual={}\nmessage_mailbox_b64={}\nmessage_header_block_b64={}\nmessage_body_text_b64={}\n",
+            "status=ok\noperation=message_view\nmessage_uid={}\nmessage_flags_b64={}\nmessage_date_received_b64={}\nmessage_size_virtual={}\nmessage_mailbox_b64={}\nmessage_header_block_b64={}\nmessage_body_text_b64={}\n{}",
             message.uid,
             encode_base64(message.flags.join(",").as_bytes()),
             encode_base64(message.date_received.as_bytes()),
@@ -729,6 +776,7 @@ pub(super) fn encode_response(response: &MailboxHelperResponse) -> String {
             encode_base64(message.mailbox_name.as_bytes()),
             encode_base64(message.header_block.as_bytes()),
             encode_base64(message.body_text.as_bytes()),
+            encode_message_metadata(message.metadata.as_ref()),
         ),
         MailboxHelperResponse::AttachmentDownloadOk { attachment } => format!(
             "status=ok\noperation=attachment_download\nattachment_mailbox_name_b64={}\nattachment_uid={}\nattachment_part_path_b64={}\nattachment_filename_b64={}\nattachment_content_type_b64={}\nattachment_body_b64={}\n",
@@ -784,10 +832,13 @@ pub(super) fn parse_response(
     let mut search_results = Vec::<MessageSearchResult>::new();
     let mut current_message_fields = BTreeMap::<String, String>::new();
     let mut attachment_fields = BTreeMap::<String, String>::new();
+    let mut flag_fields = BTreeMap::<String, String>::new();
     let mut source_mailbox_name = None::<String>;
     let mut destination_mailbox_name = None::<String>;
     let mut moved_uid = None::<u64>;
     let mut message_bytes = None::<usize>;
+    let mut singleton_fields = BTreeMap::<String, ()>::new();
+    let mut response_field_names = Vec::new();
 
     for raw_line in input.lines() {
         if raw_line.is_empty() {
@@ -795,8 +846,45 @@ pub(super) fn parse_response(
         }
         let (key, value) = raw_line
             .split_once('=')
-            .ok_or_else(|| format!("malformed helper response line: {raw_line:?}"))?;
+            .ok_or_else(|| "malformed helper response line".to_string())?;
+        if key.chars().any(char::is_control) || value.chars().any(char::is_control) {
+            return Err("helper response contains control characters".into());
+        }
+        response_field_names.push(key);
+        if matches!(
+            key,
+            "status"
+                | "operation"
+                | "backend_b64"
+                | "reason_b64"
+                | "mailbox_name_b64"
+                | "query_b64"
+                | "search_field"
+                | "source_mailbox_name_b64"
+                | "destination_mailbox_name_b64"
+                | "uid"
+                | "message_bytes"
+                | "mailbox_count"
+                | "message_count"
+        ) && singleton_fields.insert(key.to_string(), ()).is_some()
+        {
+            return Err("duplicate helper response control field".into());
+        }
         match key {
+            "flag_mailbox_b64"
+            | "flag_uid"
+            | "flag_mailbox_guid"
+            | "flag_message_guid_b64"
+            | "flag_name"
+            | "flag_enabled"
+            | "flag_result" => {
+                if flag_fields
+                    .insert(key.to_string(), value.to_string())
+                    .is_some()
+                {
+                    return Err("duplicate flag response field".into());
+                }
+            }
             "status" => status = Some(value.to_string()),
             "operation" => operation = Some(value.to_string()),
             "backend_b64" => {
@@ -886,6 +974,9 @@ pub(super) fn parse_response(
             | "message_subject_b64"
             | "message_from_b64"
             | "message_header_block_b64"
+            | "message_mailbox_guid"
+            | "message_guid_b64"
+            | "message_attachment_count"
             | "message_body_text_b64" => {
                 if current_message_fields
                     .insert(key.to_string(), value.to_string())
@@ -920,6 +1011,29 @@ pub(super) fn parse_response(
         }
     }
 
+    if operation.as_deref() == Some("message_flag") {
+        if status.as_deref() != Some("ok")
+            || response_field_names.iter().any(|key| {
+                !matches!(
+                    *key,
+                    "status"
+                        | "operation"
+                        | "flag_mailbox_b64"
+                        | "flag_uid"
+                        | "flag_mailbox_guid"
+                        | "flag_message_guid_b64"
+                        | "flag_name"
+                        | "flag_enabled"
+                        | "flag_result"
+                )
+            })
+        {
+            return Err("unexpected fields in flag confirmation".into());
+        }
+    } else if !flag_fields.is_empty() {
+        return Err("flag fields on another helper response operation".into());
+    }
+
     if matches!(
         operation.as_deref(),
         Some("message_list" | "message_search")
@@ -930,6 +1044,14 @@ pub(super) fn parse_response(
 
     match status.as_deref() {
         Some("ok") => match operation.as_deref() {
+            Some("message_flag") => Ok(MailboxHelperResponse::MessageFlagOk {
+                request: parse_flag_fields(&flag_fields)?,
+                result: match require_field(&flag_fields, "flag_result")? {
+                    "updated" => MessageFlagResult::Updated,
+                    "already_set" => MessageFlagResult::AlreadySet,
+                    _ => return Err("invalid helper flag result".into()),
+                },
+            }),
             Some("mailbox_list") => Ok(MailboxHelperResponse::MailboxListOk { mailboxes }),
             Some("message_list") => Ok(MailboxHelperResponse::MessageListOk {
                 mailbox_name: mailbox_name.unwrap_or_else(|| "unknown".to_string()),
@@ -1007,6 +1129,20 @@ fn reject_unknown_request_fields(
     operation: &str,
 ) -> Result<(), String> {
     let allowed: &[&str] = match operation {
+        "message_flag" => &[
+            "operation",
+            "canonical_username_b64",
+            "flag_mailbox_b64",
+            "flag_uid",
+            "flag_mailbox_guid",
+            "flag_message_guid_b64",
+            "flag_name",
+            "flag_enabled",
+            "grant_issued_at",
+            "grant_expires_at",
+            "grant_nonce",
+            "grant_signature",
+        ],
         "mailbox_list" => &[
             "operation",
             "canonical_username_b64",
@@ -1112,6 +1248,95 @@ fn validate_canonical_username(value: &str) -> Result<(), String> {
     Ok(())
 }
 
+fn encode_flag_fields(request: &MessageFlagRequest) -> String {
+    format!("flag_mailbox_b64={}\nflag_uid={}\nflag_mailbox_guid={}\nflag_message_guid_b64={}\nflag_name={}\nflag_enabled={}\n",
+        encode_base64(request.mailbox_name.as_bytes()), request.uid, request.version.mailbox_guid,
+        encode_base64(request.version.message_guid.as_bytes()), request.flag.value(), if request.enabled { "1" } else { "0" })
+}
+
+fn parse_flag_fields(fields: &BTreeMap<String, String>) -> Result<MessageFlagRequest, String> {
+    let mailbox = decode_base64_text(
+        require_field(fields, "flag_mailbox_b64")?,
+        crate::mailbox::DEFAULT_MAILBOX_NAME_MAX_LEN,
+        "flag mailbox",
+    )?;
+    let uid_text = require_field(fields, "flag_uid")?;
+    let uid = uid_text
+        .parse::<u64>()
+        .map_err(|_| "invalid flag UID".to_string())?;
+    if uid.to_string() != uid_text {
+        return Err("noncanonical flag UID".into());
+    }
+    let version = MessageVersion::new(
+        require_field(fields, "flag_mailbox_guid")?.into(),
+        decode_base64_text(
+            require_field(fields, "flag_message_guid_b64")?,
+            MAX_MESSAGE_GUID_BYTES,
+            "flag message GUID",
+        )?,
+    )
+    .map_err(|error| error.reason)?;
+    let flag = MessageFlag::parse(require_field(fields, "flag_name")?)
+        .ok_or_else(|| "unsupported flag".to_string())?;
+    let enabled = match require_field(fields, "flag_enabled")? {
+        "1" => true,
+        "0" => false,
+        _ => return Err("invalid flag state".into()),
+    };
+    MessageFlagRequest::new(mailbox, uid, version, flag, enabled).map_err(|error| error.reason)
+}
+
+fn encode_message_metadata(metadata: Option<&MessageMetadata>) -> String {
+    let Some(metadata) = metadata else {
+        return String::new();
+    };
+    format!(
+        "message_mailbox_guid={}\nmessage_guid_b64={}\nmessage_attachment_count={}\n",
+        metadata.version.mailbox_guid,
+        encode_base64(metadata.version.message_guid.as_bytes()),
+        metadata
+            .attachment_count
+            .map(|count| count.to_string())
+            .unwrap_or_else(|| "unknown".into())
+    )
+}
+
+fn parse_message_metadata(
+    fields: &BTreeMap<String, String>,
+) -> Result<Option<MessageMetadata>, String> {
+    let mailbox_guid = fields.get("message_mailbox_guid");
+    let message_guid = fields.get("message_guid_b64");
+    let count = fields.get("message_attachment_count");
+    if mailbox_guid.is_none() && message_guid.is_none() && count.is_none() {
+        // Old helper responses can still be read, but cannot authorize flag writes.
+        return Ok(None);
+    }
+    let (Some(mailbox_guid), Some(message_guid), Some(count)) = (mailbox_guid, message_guid, count)
+    else {
+        return Err("helper message metadata was incomplete".into());
+    };
+    let message_guid = decode_base64_text(message_guid, MAX_MESSAGE_GUID_BYTES, "message GUID")?;
+    let version =
+        MessageVersion::new(mailbox_guid.clone(), message_guid).map_err(|error| error.reason)?;
+    let attachment_count = if count == "unknown" {
+        None
+    } else {
+        Some(
+            count
+                .parse::<usize>()
+                .ok()
+                .filter(|value| *value <= 1024 && count == &value.to_string())
+                .ok_or_else(|| {
+                    "helper attachment count was invalid or outside its bound".to_string()
+                })?,
+        )
+    };
+    Ok(Some(MessageMetadata {
+        version,
+        attachment_count,
+    }))
+}
+
 fn parse_message_summary_fields(
     policy: MessageListPolicy,
     fields: &BTreeMap<String, String>,
@@ -1213,6 +1438,7 @@ fn parse_message_summary_fields(
         .transpose()?;
 
     Ok(MessageSummary {
+        metadata: parse_message_metadata(fields)?,
         mailbox_name,
         uid,
         flags,
@@ -1318,6 +1544,7 @@ fn parse_message_search_fields(
         .transpose()?;
 
     Ok(MessageSearchResult {
+        metadata: parse_message_metadata(fields)?,
         mailbox_name,
         uid,
         flags,
@@ -1418,6 +1645,7 @@ fn parse_message_view_fields(
     )?;
 
     Ok(MessageView {
+        metadata: parse_message_metadata(fields)?,
         mailbox_name,
         uid,
         flags,

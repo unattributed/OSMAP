@@ -4,6 +4,8 @@ use super::*;
 mod http_gateway_auth;
 #[path = "http_gateway_draft.rs"]
 mod http_gateway_draft;
+#[path = "http_gateway_flags.rs"]
+mod http_gateway_flags;
 #[path = "http_gateway_mail.rs"]
 mod http_gateway_mail;
 #[path = "http_gateway_settings.rs"]
@@ -136,6 +138,15 @@ impl RuntimeBrowserGateway {
 }
 
 impl BrowserGateway for RuntimeBrowserGateway {
+    fn set_message_flag(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        request: &crate::mailbox::MessageFlagRequest,
+    ) -> BrowserMessageFlagOutcome {
+        self.set_message_flag_impl(context, validated_session, request)
+    }
+
     fn login(
         &self,
         context: &AuthenticationContext,

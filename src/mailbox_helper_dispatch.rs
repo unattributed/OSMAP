@@ -14,20 +14,23 @@ use crate::mailbox::{
 
 #[cfg(unix)]
 use super::{MailboxHelperRequest, MailboxHelperResponse};
+#[cfg(unix)]
+use crate::mailbox::MessageFlagBackend;
 
 #[cfg(unix)]
-pub(super) struct HelperBackends<'a, MB, MLB, MSB, MVB, MMB, MAB> {
+pub(super) struct HelperBackends<'a, MB, MLB, MSB, MVB, MMB, MAB, MFB> {
     pub(super) mailbox_backend: &'a MB,
     pub(super) message_list_backend: &'a MLB,
     pub(super) message_search_backend: &'a MSB,
     pub(super) message_view_backend: &'a MVB,
     pub(super) message_move_backend: &'a MMB,
     pub(super) message_append_backend: &'a MAB,
+    pub(super) message_flag_backend: &'a MFB,
 }
 
 #[cfg(unix)]
-pub(super) fn dispatch_helper_request<MB, MLB, MSB, MVB, MMB, MAB>(
-    backends: HelperBackends<'_, MB, MLB, MSB, MVB, MMB, MAB>,
+pub(super) fn dispatch_helper_request<MB, MLB, MSB, MVB, MMB, MAB, MFB>(
+    backends: HelperBackends<'_, MB, MLB, MSB, MVB, MMB, MAB, MFB>,
     request: &MailboxHelperRequest,
 ) -> MailboxHelperResponse
 where
@@ -37,8 +40,26 @@ where
     MVB: MessageViewBackend,
     MMB: MessageMoveBackend,
     MAB: MessageAppendBackend,
+    MFB: MessageFlagBackend,
 {
     match request {
+        MailboxHelperRequest::MessageFlag {
+            canonical_username,
+            request,
+            ..
+        } => match backends
+            .message_flag_backend
+            .set_message_flag(canonical_username, request)
+        {
+            Ok(result) => MailboxHelperResponse::MessageFlagOk {
+                request: request.clone(),
+                result,
+            },
+            Err(error) => MailboxHelperResponse::Error {
+                backend: error.backend.into(),
+                reason: error.reason,
+            },
+        },
         MailboxHelperRequest::MailboxList {
             canonical_username, ..
         } => match backends.mailbox_backend.list_mailboxes(canonical_username) {
@@ -243,6 +264,26 @@ pub(super) fn log_helper_response(
 ) {
     match (response, request) {
         (
+            MailboxHelperResponse::MessageFlagOk { request, result },
+            Some(MailboxHelperRequest::MessageFlag { .. }),
+        ) => logger.emit(
+            &LogEvent::new(
+                LogLevel::Info,
+                EventCategory::Mailbox,
+                "mailbox_helper_message_flagged",
+                "mailbox helper confirmed message flag state",
+            )
+            .with_field("flag", request.flag.value())
+            .with_field("enabled", request.enabled.to_string())
+            .with_field(
+                "result",
+                match result {
+                    crate::mailbox::MessageFlagResult::Updated => "updated",
+                    crate::mailbox::MessageFlagResult::AlreadySet => "already_set",
+                },
+            ),
+        ),
+        (
             MailboxHelperResponse::MailboxListOk { mailboxes },
             Some(MailboxHelperRequest::MailboxList {
                 canonical_username, ..
@@ -401,6 +442,7 @@ pub(super) fn log_helper_response(
 #[cfg(unix)]
 fn helper_operation_label(request: &MailboxHelperRequest) -> &'static str {
     match request {
+        MailboxHelperRequest::MessageFlag { .. } => "message_flag",
         MailboxHelperRequest::MailboxList { .. } => "mailbox_list",
         MailboxHelperRequest::MessageList { .. } => "message_list",
         MailboxHelperRequest::MessageSearch { .. } => "message_search",

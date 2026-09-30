@@ -158,7 +158,7 @@ where
                 decision: MessageViewDecision::Retrieved {
                     canonical_username: canonical_username.clone(),
                     session_id: session_id.clone(),
-                    message: message.clone(),
+                    message: Box::new(message.clone()),
                 },
                 audit_event: LogEvent::new(
                     LogLevel::Info,

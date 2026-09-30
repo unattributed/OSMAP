@@ -186,6 +186,7 @@ impl MessageListRequest {
 /// A single summary row in a message list.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MessageSummary {
+    pub metadata: Option<crate::message_metadata::MessageMetadata>,
     pub mailbox_name: String,
     pub uid: u64,
     pub flags: Vec<String>,
@@ -433,6 +434,7 @@ impl MessageSearchField {
 /// A single summary row returned from a mailbox-scoped search.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MessageSearchResult {
+    pub metadata: Option<crate::message_metadata::MessageMetadata>,
     pub mailbox_name: String,
     pub uid: u64,
     pub flags: Vec<String>,
@@ -777,6 +779,7 @@ impl MessageMoveRequest {
 /// A bounded per-message payload for the first message-view slice.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MessageView {
+    pub metadata: Option<crate::message_metadata::MessageMetadata>,
     pub mailbox_name: String,
     pub uid: u64,
     pub flags: Vec<String>,
@@ -858,7 +861,7 @@ pub enum MessageViewDecision {
     Retrieved {
         canonical_username: String,
         session_id: String,
-        message: MessageView,
+        message: Box<MessageView>,
     },
 }
 

@@ -734,6 +734,7 @@ mod tests {
 
     fn multipart_message_view(body_text: &str) -> MessageView {
         MessageView {
+            metadata: None,
             mailbox_name: "INBOX".to_string(),
             uid: 9,
             flags: vec!["\\Seen".to_string()],
@@ -751,6 +752,7 @@ mod tests {
             .split_once("\n\n")
             .expect("fixture should contain a header/body separator");
         MessageView {
+            metadata: None,
             mailbox_name: "INBOX".to_string(),
             uid: 99,
             flags: vec!["\\Seen".to_string()],

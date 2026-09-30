@@ -865,6 +865,7 @@ fn message_view_from_fixture(raw_message: &str) -> MessageView {
 
 fn message_view(header_block: &str, body_text: &str) -> MessageView {
     MessageView {
+        metadata: None,
         mailbox_name: "INBOX".to_string(),
         uid: 9901,
         flags: vec!["\\Seen".to_string()],
