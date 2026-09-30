@@ -397,3 +397,98 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   acceptance and native-host qualification remain pending. No deployment.
 - S01-03: IMPLEMENTED_VERIFIED_LOCAL; mandatory signed pre-commit checkpoint
   follows. Continue S01-04 under delegated engineering authority.
+
+### S01-03 delivery / S01-04 work order — 2026-09-30 UTC
+
+- S01-03 signed checkpoint `99cf86b`; Shopkeeper signature verified, clean
+  worktree, locally eight commits ahead of the recorded origin/main. No sync.
+- S01-04: IN_PROGRESS; base `99cf86b`. Allowed: shared CSS/HTML templates,
+  appearance tests, test-only HTTP gateway/loopback server, fixture and browser
+  audit harnesses, generated V10 registers and current UX evidence/status files.
+- Audit all 25 synthetic HTML states at 360/768/1440 CSS pixels, all three
+  saved preferences and both OS schemes. Add 200% reflow simulation (half CSS
+  viewport with doubled device scale, explicitly distinct from native browser
+  zoom), forced-colours and Firefox checks. Fix demonstrated layout/contrast
+  defects without script/runtime dependencies or changes to message authority.
+- Add a bounded opt-in loopback fixture server (180 seconds, 200 connections,
+  two fixed synthetic accounts, real appearance store, no runtime gateway) for
+  native form/redirect/cookie, logout/login, account isolation and process
+  restart checks. No browser storage or filled login forms retained.
+- Prove concurrent appearance and legacy settings writes preserve independent
+  records. Add computed text/meaningful UI contrast checks and inspect captures;
+  distinguish automation from independent assistive-technology acceptance.
+- Evidence remains in the S01 root. No live mail, host/service changes or
+  deployment in this slice. Source-only rollback. Run focused tests, common
+  acceptance/security gates and signed checkpoint; native OpenBSD qualification
+  gets a separately recorded isolated-host work order after signed source.
+
+### S01-04 verification — 2026-09-30 UTC
+
+- Library suite: 562 passed, zero failed, five ignored. Four ignored tests
+  pre-existed; the fifth is the new explicitly launched loopback fixture server.
+  Its real router/form/cookie and AppearanceStore workflow passes six journeys:
+  navigation/reload, logout presentation, account preference precedence on
+  login, changing OS preference, account isolation and process restart.
+  Authentication is a fixed test gateway, not live password/TOTP evidence.
+- Concurrent legacy settings/appearance writes pass 32 synchronized rounds;
+  legacy bytes remain unchanged on appearance-only saves and both final records
+  reload independently. No old settings-format migration is required.
+- Final application-source matrix: 450 standard captures and 450 at simulated
+  200% reflow, covering 25 current HTML states, three preferences, two OS schemes
+  and 360/768/1440 physical widths. Standard widths are CSS pixels; the reflow
+  simulation halves the CSS width and doubles device scale. It is not native
+  browser zoom. No page overflow, script, landmark, preference, colour or
+  measured flat-text/meaningful UI contrast failures remain.
+- Added 54 verified forced-colour captures, 54 Firefox captures and 24 expanded
+  disclosure captures. Across the retained passing reports: 1,032 route-state
+  captures and 108 native keyboard cases, with 1,248 image hashes verified
+  including menu/expanded-navigation captures. Edge 154.0.4258.37 and Firefox
+  155.0; external Playwright 1.58.0 remains test-only.
+- Fixed demonstrated 180-CSS-pixel layout faults: collapsed navigation moves
+  above the page, the identity menu retains usable width, reader attachment
+  tracks no longer force the page wider, and labels wrap. Scrollable mailbox,
+  search and session tables now have named keyboard-focusable regions and
+  visible focus. Arrow-key horizontal scrolling is verified.
+- Inspected contact sheets for all 25 light/dark desktop states plus individual
+  narrow settings/reader, forced-colour settings and Firefox reader captures.
+  This is engineering visual review, not independent human accessibility or
+  exact final-picture acceptance. The protected indicator remains a text badge;
+  icon fidelity remains explicit in the acceptance matrix.
+- Retained diagnostic failures: initial very-narrow overflow (14 then two),
+  an expanding-details locator that changed its own index, and Edge retaining
+  the forced-colour media query while losing its actual palette after later
+  navigation. The harness now reapplies that emulation and asserts actual
+  black/white system palette, media queries and focus; verified forced-colour
+  screenshots were inspected. Earlier forced-colour reports are superseded.
+- `make acceptance-check`, strict clippy, formatting, V10, V14, diff and frozen
+  plan hashes pass. Public-send wrapper regression output is from configured
+  fake curl/MariaDB/doveadm executables; no live account or message was changed.
+- Evidence index: S01 `audit/summary-final.json`, SHA-256
+  `1f11907dcc3f2b4da6c5dd953caf4626e04bcb8c8ec6e98a644765026d273db6`.
+  Per-report hashes, source hashes, image hashes and explicit limitations are
+  retained. The legacy `view=source` fixture still records a reader response;
+  actual original-source functionality belongs to S02-04.
+- S01-04: IMPLEMENTED_VERIFIED_LOCAL. Independent human acceptance, native
+  qualification and deployment remain separate. Mandatory signed checkpoint
+  follows before isolated native qualification and continued S02 engineering.
+
+### S01 native qualification work order — approved delegated scope
+
+- After the S01-04 signed checkpoint, archive that exact committed tree and
+  record its full SHA and archive SHA-256. Verify target hostname through the
+  existing strict-host-key SSH connection to foo@192.168.1.44:
+  `obsd1.blackbagsecurity.com`. Production Vultr is excluded.
+- Create only a new owner-private `~/osmap-ux-s01-20260930-*` qualification
+  directory. Upload/extract the checked source archive there, preserving
+  `~/OSMAP`, live configurations, accounts, factors, services and mail stores.
+  Account: nonprivileged `foo`; no real mailbox credential or host-private key.
+- Run locked/offline native library and hostile-rendering tests with a target
+  directory inside that qualification root, two build jobs and reduced process
+  priority. The existing native Cargo registry may be read, not replaced.
+  Confirm host/tool versions, matching archive bytes and service health before
+  and after. No install, service restart, firewall change or deployment.
+- Retain sanitized logs and hashes beneath the S01 evidence root. Leave the
+  explicitly named source/build directory for subsequent epic qualification;
+  it contains no credentials or real mail. Cleanup is limited to owned scratch
+  when safe; no shared caches or unrelated checkout are deleted. If native
+  failures occur, diagnose/fix locally and sign the correction before retry.

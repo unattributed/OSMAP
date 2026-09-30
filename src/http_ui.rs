@@ -547,7 +547,7 @@ pub(crate) fn render_message_list_page(
             "{}{}",
             "<form class=\"search-row\" method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><label for=\"mailbox-search\">Search query<input id=\"mailbox-search\" type=\"text\" name=\"q\" autocomplete=\"off\"></label>{}<button type=\"submit\">Search</button><label><input type=\"checkbox\" name=\"scope\" value=\"all\"> Search all mailboxes</label></form>",
             "<div class=\"toolbar\" aria-label=\"Mailbox actions\">{}{}</div>",
-            "<div class=\"table-wrap\"><table class=\"message-list-table\" aria-label=\"Mailbox message list\"><thead><tr>{}{}{}{}</tr></thead><tbody>{}</tbody></table></div>",
+            "<div class=\"table-wrap\" role=\"region\" aria-label=\"Mailbox message list\" tabindex=\"0\"><table class=\"message-list-table\" aria-label=\"Mailbox message list\"><thead><tr>{}{}{}{}</tr></thead><tbody>{}</tbody></table></div>",
             "</section>",
             "</main>"
         ),
@@ -659,7 +659,7 @@ pub(crate) fn render_message_search_page(
             "{}",
             "<form class=\"search-row\" method=\"get\" action=\"/search\">{}<label for=\"search-query\">Search query<input id=\"search-query\" type=\"text\" name=\"q\" value=\"{}\" autocomplete=\"off\"></label>{}<button type=\"submit\">Search</button><label><input type=\"checkbox\" name=\"scope\" value=\"all\"{}> Search all mailboxes</label></form>",
             "<p><strong>Scope:</strong> {}<br><strong>Field:</strong> {}<br><strong>Query:</strong> {}<br><strong>Results:</strong> {}</p>",
-            "<div class=\"table-wrap\"><table><thead><tr>{}</tr></thead><tbody>{}</tbody></table></div>",
+            "<div class=\"table-wrap\" role=\"region\" aria-label=\"Search results\" tabindex=\"0\"><table><thead><tr>{}</tr></thead><tbody>{}</tbody></table></div>",
             "</section>",
             "</main>"
         ),
@@ -988,7 +988,7 @@ pub(crate) fn render_sessions_page(
             "<h1>Sessions</h1>",
             "<p class=\"muted\">Concurrent browser sessions are allowed. Use the device label, remote address, and last-seen time to identify sessions before revoking one, other sessions, or all sessions.</p>",
             "{}{}",
-            "<div class=\"table-wrap\"><table><thead><tr><th>Session ID</th><th>Status</th><th>Device</th><th>Issued</th><th>Last Seen</th><th>Expires</th><th>Revoked</th><th>Remote Address</th><th>User Agent</th><th>Action</th></tr></thead><tbody>{}</tbody></table></div>",
+            "<div class=\"table-wrap\" role=\"region\" aria-label=\"Browser sessions\" tabindex=\"0\"><table><thead><tr><th>Session ID</th><th>Status</th><th>Device</th><th>Issued</th><th>Last Seen</th><th>Expires</th><th>Revoked</th><th>Remote Address</th><th>User Agent</th><th>Action</th></tr></thead><tbody>{}</tbody></table></div>",
             "</section>",
             "</main>"
         ),

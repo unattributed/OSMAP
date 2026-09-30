@@ -28,7 +28,10 @@ persistent light/dark/system preferences and has passed local gate verification.
 S01-02 adds the native icon rail, account menu and validated archive shortcut.
 S01-03 adds compact disclosures, clearer errors, settings cards, truthful
 capability labels and reader/draft reflow; local acceptance gates pass.
-The full responsive, theme and workflow audit continues in S01-04.
+S01-04 verifies current HTML route states, all appearance modes, responsive
+reflow, keyboard controls, computed contrast, forced colours, Firefox and
+synthetic account persistence through process restart. Native qualification,
+independent human accessibility acceptance and deployment remain separate.
 D01–D06 are recorded
 as delegated engineering decisions in `UX_DECISIONS.md`. Independent human
 identity/accessibility and final release acceptance remain separate.

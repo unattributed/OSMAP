@@ -2,6 +2,13 @@
 
 This directory holds the public-safe documentation set for OSMAP.
 
+The 2026-09-29/30 UX engineering stream has completed intake and implemented
+the S01 appearance and shared-shell work locally. `UX_EXECUTION_LEDGER.md`
+records signed checkpoints, synthetic browser/persistence evidence, remaining
+human acceptance and the separate native-host/deployment boundary. The frozen
+epic remains the complete scope; current source progress does not imply that
+all account, mail, ancillary or cryptographic functions are delivered.
+
 `docs/` is the source-of-truth location for project, architecture, security,
 operational, and implementation documents unless a file needs to live
 elsewhere for repository-platform reasons.

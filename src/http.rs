@@ -800,6 +800,9 @@ mod tests {
     mod component_tests {
         include!("http_component_tests.rs");
     }
+    mod ux_browser_server {
+        include!("http/ux_browser_server.rs");
+    }
     use crate::auth::RequiredSecondFactor;
     use crate::mailbox::MessageView;
     use crate::mime::{AttachmentDisposition, MimeBodySource};
@@ -818,12 +821,16 @@ mod tests {
     #[derive(Debug, Clone)]
     struct StubGateway {
         drafts: Arc<Mutex<BTreeMap<String, DraftRecord>>>,
+        appearance_store: Option<AppearanceStore>,
+        browser_fixture_accounts: bool,
     }
 
     impl Default for StubGateway {
         fn default() -> Self {
             Self {
                 drafts: Arc::new(Mutex::new(BTreeMap::new())),
+                appearance_store: None,
+                browser_fixture_accounts: false,
             }
         }
     }
@@ -868,7 +875,9 @@ mod tests {
             password: &str,
             totp_code: &str,
         ) -> BrowserLoginOutcome {
-            if username != "alice@example.com" || password != "correct horse battery staple" {
+            let account_allowed = username == "alice@example.com"
+                || self.browser_fixture_accounts && username == "bob@example.com";
+            if !account_allowed || password != "correct horse battery staple" {
                 return BrowserLoginOutcome {
                     decision: BrowserLoginDecision::Denied {
                         public_reason: "invalid_credentials".to_string(),
@@ -899,10 +908,16 @@ mod tests {
             BrowserLoginOutcome {
                 decision: BrowserLoginDecision::Authenticated {
                     canonical_username: username.to_string(),
-                    appearance: AppearancePreference::System,
-                    session_token: SessionToken::new(
-                        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-                    )
+                    appearance: self
+                        .appearance_store
+                        .as_ref()
+                        .map(|store| store.load(username).expect("synthetic preference store"))
+                        .unwrap_or_default(),
+                    session_token: SessionToken::new(if username == "bob@example.com" {
+                        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+                    } else {
+                        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                    })
                     .expect("token should be valid"),
                 },
                 audit_events: vec![LogEvent::new(
@@ -919,11 +934,22 @@ mod tests {
             _context: &AuthenticationContext,
             presented_token: &str,
         ) -> BrowserSessionValidationOutcome {
-            if presented_token == "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            let bob = self.browser_fixture_accounts
+                && presented_token
+                    == "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+            if bob
+                || presented_token
+                    == "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
             {
+                let mut validated_session = Self::validated_session();
+                if bob {
+                    validated_session.record.canonical_username = "bob@example.com".to_string();
+                    validated_session.record.session_id = "b".repeat(64);
+                    validated_session.record.csrf_token = "c".repeat(64);
+                }
                 BrowserSessionValidationOutcome {
                     decision: BrowserSessionDecision::Valid {
-                        validated_session: Box::new(Self::validated_session()),
+                        validated_session: Box::new(validated_session),
                     },
                     audit_events: vec![LogEvent::new(
                         LogLevel::Info,
@@ -1093,8 +1119,11 @@ mod tests {
         fn load_appearance(
             &self,
             context: &AuthenticationContext,
-            _session: &ValidatedSession,
+            session: &ValidatedSession,
         ) -> std::io::Result<AppearancePreference> {
+            if let Some(store) = &self.appearance_store {
+                return store.load(&session.record.canonical_username);
+            }
             if context.user_agent.contains("AppearanceUnavailable") {
                 return Err(std::io::Error::other("synthetic store unavailable"));
             }
@@ -1110,9 +1139,12 @@ mod tests {
         fn update_appearance(
             &self,
             context: &AuthenticationContext,
-            _session: &ValidatedSession,
-            _appearance: AppearancePreference,
+            session: &ValidatedSession,
+            appearance: AppearancePreference,
         ) -> std::io::Result<()> {
+            if let Some(store) = &self.appearance_store {
+                return store.save(&session.record.canonical_username, appearance);
+            }
             if context.user_agent.contains("AppearanceUnavailable") {
                 Err(std::io::Error::other("synthetic store unavailable"))
             } else {

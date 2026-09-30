@@ -61,9 +61,14 @@ approved mockups, every-page light/dark mode, missing account/mail capabilities,
 and runtime OpenPGP. The [epic](docs/UX_FULL_FUNCTIONAL_EPIC.md) defines 12
 sprints and 48 slices with decision and security gates. Autonomous engineering
 started on 2026-09-29: intake now records the exact reference controls, real
-route baselines, architecture decisions and acceptance cases. Follow the
+route baselines, architecture decisions and acceptance cases. S01 now implements
+persistent light/dark/system appearance, a native navigation rail and account
+menu, compact settings/security disclosures and responsive shared components.
+Local route, browser, persistence and accessibility-oriented checks are recorded;
+native-host qualification, independent human acceptance and deployment remain
+separate. Follow the
 [execution ledger](docs/UX_EXECUTION_LEDGER.md) for signed slice deliveries.
-Intake adds no runtime UX or cryptographic capability.
+Runtime cryptographic capability remains unavailable.
 The operator reports Roundcube removed; this epic is not a retirement project.
 
 The earlier TOTP lifecycle sprint is administratively closed with controlled

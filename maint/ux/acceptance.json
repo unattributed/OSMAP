@@ -3,7 +3,7 @@
   "epic": "OSMAP-UX",
   "plan_anchor": "74522e5f99024720a3c47a3744207ff453de5731",
   "runtime_baseline": "2a6993fe7df42a57f0cbb5fe3e33e331b400fef9",
-  "classification": "acceptance design, not passing runtime evidence",
+  "classification": "evidence-linked engineering progress; independent human and release acceptance remain pending",
   "common_visual_matrix": {
     "widths_css_px": [
       360,
@@ -119,8 +119,12 @@
       ],
       "baseline_observation": "`app_header`: working link; no icon rail",
       "test_design": "UX01",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S01-01 through S01-04",
+        "/home/foo/Downloads/osmap-ux-s01/run-20260929/audit/summary-final.json"
+      ],
+      "engineering_note": "Synthetic local engineering evidence; independent human and release acceptance remain pending."
     },
     {
       "id": "UX01-002",
@@ -131,8 +135,12 @@
       ],
       "baseline_observation": "Mailboxes link; no direct rail Inbox",
       "test_design": "UX01",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S01-01 through S01-04",
+        "/home/foo/Downloads/osmap-ux-s01/run-20260929/audit/summary-final.json"
+      ],
+      "engineering_note": "Synthetic local engineering evidence; independent human and release acceptance remain pending."
     },
     {
       "id": "UX01-003",
@@ -143,8 +151,12 @@
       ],
       "baseline_observation": "Folder list only, no primary Sent shortcut",
       "test_design": "UX01",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S01-01 through S01-04",
+        "/home/foo/Downloads/osmap-ux-s01/run-20260929/audit/summary-final.json"
+      ],
+      "engineering_note": "Synthetic local engineering evidence; independent human and release acceptance remain pending."
     },
     {
       "id": "UX14-001",
@@ -168,8 +180,12 @@
       ],
       "baseline_observation": "Folder and configured archive route; no rail shortcut",
       "test_design": "UX04",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S01-01 through S01-04",
+        "/home/foo/Downloads/osmap-ux-s01/run-20260929/audit/summary-final.json"
+      ],
+      "engineering_note": "Configured archive navigation verified; mutation and reconciliation work continues in S02-03."
     },
     {
       "id": "UX04-002",
@@ -204,8 +220,12 @@
       ],
       "baseline_observation": "Current-page text link; reference gear rail missing",
       "test_design": "UX01",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S01-01 through S01-04",
+        "/home/foo/Downloads/osmap-ux-s01/run-20260929/audit/summary-final.json"
+      ],
+      "engineering_note": "Synthetic local engineering evidence; independent human and release acceptance remain pending."
     },
     {
       "id": "UX01-005",
@@ -216,8 +236,12 @@
       ],
       "baseline_observation": "Absent",
       "test_design": "UX01",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S01-01 through S01-04",
+        "/home/foo/Downloads/osmap-ux-s01/run-20260929/audit/summary-final.json"
+      ],
+      "engineering_note": "Synthetic local engineering evidence; independent human and release acceptance remain pending."
     },
     {
       "id": "UX01-006",
@@ -228,8 +252,12 @@
       ],
       "baseline_observation": "Text/OS monogram in topbar; local shield alignment needed",
       "test_design": "UX01",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S01-01 through S01-04",
+        "/home/foo/Downloads/osmap-ux-s01/run-20260929/audit/summary-final.json"
+      ],
+      "engineering_note": "Synthetic local engineering evidence; independent human and release acceptance remain pending."
     },
     {
       "id": "UX01-007",
@@ -252,8 +280,12 @@
       ],
       "baseline_observation": "Identity chip and Log Out form, no bounded menu",
       "test_design": "UX01",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S01-01 through S01-04",
+        "/home/foo/Downloads/osmap-ux-s01/run-20260929/audit/summary-final.json"
+      ],
+      "engineering_note": "Synthetic local engineering evidence; independent human and release acceptance remain pending."
     },
     {
       "id": "UX09-002",
@@ -276,8 +308,12 @@
       ],
       "baseline_observation": "Settings currently has no search",
       "test_design": "UX09",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S01-01 through S01-04",
+        "/home/foo/Downloads/osmap-ux-s01/run-20260929/audit/summary-final.json"
+      ],
+      "engineering_note": "Synthetic local engineering evidence; independent human and release acceptance remain pending."
     },
     {
       "id": "UX09-004",
@@ -432,8 +468,12 @@
       ],
       "baseline_observation": "Absent; never copy reference zero-knowledge claim",
       "test_design": "UX13",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S01-01 through S01-04",
+        "/home/foo/Downloads/osmap-ux-s01/run-20260929/audit/summary-final.json"
+      ],
+      "engineering_note": "Synthetic local engineering evidence; independent human and release acceptance remain pending."
     },
     {
       "id": "UX03-001",
@@ -468,8 +508,12 @@
       ],
       "baseline_observation": "Session chip and reader trust strip; shared compact details needed",
       "test_design": "UX01",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S01-01 through S01-04",
+        "/home/foo/Downloads/osmap-ux-s01/run-20260929/audit/summary-final.json"
+      ],
+      "engineering_note": "Synthetic local engineering evidence; independent human and release acceptance remain pending."
     },
     {
       "id": "UX06-001",
@@ -1276,8 +1320,12 @@
       ],
       "baseline_observation": "Must distinguish renderer policy from cryptographic result",
       "test_design": "UX03",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S01-01 through S01-04",
+        "/home/foo/Downloads/osmap-ux-s01/run-20260929/audit/summary-final.json"
+      ],
+      "engineering_note": "Truthful protected-renderer text indicator and disclosure implemented; exact pictured icon fidelity remains for visual review."
     },
     {
       "id": "UX03-014",
@@ -1421,8 +1469,12 @@
       ],
       "baseline_observation": "Visible focus and labels exist; browser audit required",
       "test_design": "UX17",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "PARTIALLY_VERIFIED",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S01-01 through S01-04",
+        "/home/foo/Downloads/osmap-ux-s01/run-20260929/audit/summary-final.json"
+      ],
+      "engineering_note": "Automated keyboard, focus, scroll-region and forced-colour checks pass; independent human accessibility acceptance remains S09-04."
     },
     {
       "id": "UX02-001",
@@ -1434,8 +1486,12 @@
       ],
       "baseline_observation": "Light-only CSS; persistence absent",
       "test_design": "UX02",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S01-01 through S01-04",
+        "/home/foo/Downloads/osmap-ux-s01/run-20260929/audit/summary-final.json"
+      ],
+      "engineering_note": "Synthetic local engineering evidence; independent human and release acceptance remain pending."
     }
   ]
 }

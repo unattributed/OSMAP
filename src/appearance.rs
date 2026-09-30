@@ -258,6 +258,69 @@ mod tests {
     }
 
     #[test]
+    fn concurrent_legacy_settings_and_appearance_remain_independent() {
+        use crate::rendering::HtmlDisplayPreference;
+        use crate::settings::{FileUserSettingsStore, UserSettings, UserSettingsStore};
+        use std::sync::Barrier;
+
+        let root = scratch();
+        let appearance = AppearanceStore::new(&root);
+        let legacy = FileUserSettingsStore::new(&root);
+        let original = UserSettings {
+            html_display_preference: HtmlDisplayPreference::PreferPlainText,
+            archive_mailbox_name: Some("Archive/Before".to_string()),
+        };
+        legacy
+            .save("alice@example.test", &original)
+            .expect("old format");
+        let original_bytes = fs::read(legacy.settings_path_for_username("alice@example.test"))
+            .expect("legacy bytes");
+        appearance
+            .save("alice@example.test", AppearancePreference::Dark)
+            .expect("sidecar");
+        assert_eq!(
+            fs::read(legacy.settings_path_for_username("alice@example.test"))
+                .expect("unchanged old format"),
+            original_bytes
+        );
+        let updated = UserSettings {
+            html_display_preference: HtmlDisplayPreference::PreferSanitizedHtml,
+            archive_mailbox_name: Some("Archive/After".to_string()),
+        };
+        let barrier = Barrier::new(2);
+        std::thread::scope(|scope| {
+            scope.spawn(|| {
+                for _ in 0..32 {
+                    barrier.wait();
+                    appearance
+                        .save("alice@example.test", AppearancePreference::Light)
+                        .expect("concurrent appearance write");
+                }
+            });
+            scope.spawn(|| {
+                for _ in 0..32 {
+                    barrier.wait();
+                    legacy
+                        .save("alice@example.test", &updated)
+                        .expect("concurrent legacy write");
+                }
+            });
+        });
+        assert_eq!(
+            legacy.load("alice@example.test").expect("legacy reload"),
+            Some(updated)
+        );
+        assert_eq!(
+            appearance
+                .load("alice@example.test")
+                .expect("appearance reload"),
+            AppearancePreference::Light
+        );
+        assert_eq!(fs::read_dir(&root).expect("owned records").count(), 2);
+        fs::remove_dir_all(root).expect("cleanup owned fixture");
+    }
+
+    #[test]
     fn concurrent_writes_leave_one_complete_record_and_no_scratch() {
         let root = scratch();
         let store = AppearanceStore::new(&root);

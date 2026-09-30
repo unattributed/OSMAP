@@ -4,12 +4,18 @@
 
 The operator-requested `UX_FULL_FUNCTIONAL_EPIC.md` is a plan, not a
 functional-completion claim. S00 engineering intake is complete as of
-2026-09-29; S01 adds account-persisted light/dark/system appearance. See
+2026-09-29; S01 adds account-persisted light/dark/system appearance, the native
+navigation/account shell and shared responsive components. See
 `UX_EXECUTION_LEDGER.md` for verified signed progress. Runtime OpenPGP,
 new account workflows and ancillary mockup functions remain unqualified until
 their implementation and acceptance evidence exists. Appearance has local
-route/browser evidence; the full responsive/accessibility matrix and native
-host qualification are separate remaining gates.
+route/browser and process-restart evidence. The synthetic 360/768/1440 matrix,
+200% reflow simulation, keyboard, contrast and forced-colour checks do not
+constitute independent assistive-technology or WCAG conformance acceptance.
+Native host qualification and deployment remain separate. The protected-reader
+indicator is a truthful text badge; exact icon/picture fidelity remains in the
+later visual review. The legacy `view=source` query still renders the reader;
+actual original-source viewing remains S02-04.
 `UX_DECISIONS.md` selects isolated host-helper cryptography and script-free full
 navigation with preserved context. These decisions are not implemented crypto
 or visual acceptance, and do not weaken existing gates. Roundcube removal is operator-reported, not proof
