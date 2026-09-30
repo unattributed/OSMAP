@@ -103,6 +103,7 @@ def main():
             body()
             checks.append("paging keeps an off-page reader with a locate link; Back and reload restore current context")
 
+            page.locator(".mail-search-disclosure > summary").click()
             page.get_by_label("Search query", exact=True).fill("reader-fixture")
             page.get_by_role("button", name="Search", exact=True).click()
             page.wait_for_load_state("networkidle")

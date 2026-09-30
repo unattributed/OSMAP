@@ -3299,7 +3299,8 @@ mod tests {
 
         assert_eq!(response.response.status_code, 200);
         let body = body_text(&response);
-        assert!(body.contains("<h2 class=\"section-title\">Search Results</h2>"));
+        assert!(body.contains("<h1>Search</h1>"));
+        assert!(body.contains("<h2 class=\"section-title sr-only\">Search Results</h2>"));
         assert_eq!(body.matches("<h1").count(), 1);
         assert!(body.contains("Quarterly report"));
         assert!(body.contains("Alice &lt;alice@example.com&gt;"));

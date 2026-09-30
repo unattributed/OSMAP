@@ -1244,3 +1244,30 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   attachment removal and preserved failed uploads, authoring tools, protection
   controls and full approved page comparisons. No runtime crypto, live contact
   data, external delivery, deployment or Git synchronization claimed.
+
+### S01/S02 final-reference layout reconciliation — in progress
+
+- S03-01B signed delivery `dfe6ba8ffb92b6a31f9bf316d6a06732f2f48673`
+  verified; clean checkpoint, 19 ahead/0 behind recorded origin/main. Native
+  qualification uses its isolated source archive; no deployment or sync.
+- Continue the revision-2 ordered reconciliation in existing UI/CSS, view models
+  and browser/route fixtures: full-width aligned mailbox rows, approved reader
+  hierarchy and shared header. Preserve all bound mail actions, account isolation,
+  query/selection state, retained authentication and truthful unknown statuses.
+  Verify real navigation, narrow layout, contrast and existing gates before signing.
+- Implemented aligned full-width desktop message rows, sender/subject/preview/
+  attachment/security/date columns, native action menus and compact list toolbar.
+  Reader now follows the approved header/status/body/attachments/reply hierarchy;
+  existing account-bound navigation, filters, selection and mutations are retained.
+- Validation: full acceptance, V14, strict Clippy, formatting and diff checks PASS.
+  The hostile-content corpus body selector was updated for the accessible hidden
+  heading; its unchanged inert-content assertions pass. Edge list/move journeys
+  PASS 9/5; Edge and Firefox reader journeys PASS six each. Visual evidence under
+  S02 run-20260930 final-reference-* includes 36 light/dark captures, 12 forced-
+  colour, 12 reflow-simulation and eight final reader views; zero overflow,
+  sidebar overlap or audited contrast failures. No whole-page acceptance claim:
+  Documents/notices/theme shortcuts, extra filters and runtime crypto remain open.
+- S03-01B native result: 632 library tests plus two hostile-rendering tests and
+  the native signed-helper fixture PASS; standard obsd1 checkout/services unchanged.
+  Archive `2b8818fd8d885d41ae5d5da3f60d216b763662649fd57e8101786f54022b6032`;
+  log `98123411214df03a48a4a24459227dfd73ea7cd6004f2ab98a530541d91dc687`.

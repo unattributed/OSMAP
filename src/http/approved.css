@@ -143,6 +143,118 @@ body:has(.app-rail) {
 .draft-discard>summary { cursor: pointer; color: var(--danger); padding: .3rem 0; }
 .draft-discard form { margin: 0; }
 .draft-list .badge { padding: .1rem .4rem; font-size: .75rem; color: var(--link); background: var(--selected); border: 0; }
+.coordinated-mail:not(.has-selection) { grid-template-columns: minmax(0,1fr); }
+.coordinated-mail:not(.has-selection)>.reader-empty { display: none; }
+.mail-page-intro { grid-column: 1/-1; margin-bottom: 0; }
+.coordinated-mail:not(.has-selection)>.coordinated-list { padding: 0; border: 0; background: transparent; box-shadow: none; }
+.message-columns { display: none; }
+.message-star-cell { display: flex; align-items: center; }
+.message-star-cell form { margin: 0; }
+.message-more>summary { display: flex; align-items: center; justify-content: center; min-width: 2rem; font-size: 1.2rem; list-style: none; }
+.message-more>summary::-webkit-details-marker { display: none; }
+.message-security { color: var(--muted); font-size: .75rem; padding: .15rem .45rem; border-radius: 1rem; background: var(--panel-soft); }
+.message-card-footer { flex-wrap: wrap; }
+.message-more-content .message-state-form { display: block; }
+.mail-list-toolbar { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; padding: .7rem; margin-bottom: .75rem; background: var(--panel); border: 1px solid var(--line); border-radius: .7rem; }
+.mail-list-toolbar .list-navigation { display: contents; }
+.mail-list-toolbar .message-filters { order: 1; }
+.mail-list-toolbar .list-window { order: 5; margin-left: auto; font-size: .75rem; }
+.mail-list-toolbar .list-pagination { order: 6; }
+.mail-list-toolbar .message-sort { order: 4; margin: 0; }
+.mail-list-toolbar>.bulk-actions, .mail-search-disclosure { order: 3; margin: 0; }
+.mail-list-toolbar>.bulk-selection-menu { order: 0; margin: 0; }
+.mail-list-toolbar>details>summary { min-height: 2.2rem; padding: .4rem .55rem; cursor: pointer; color: var(--ink); font-size: .8rem; border: 1px solid var(--line); border-radius: .4rem; }
+.mail-list-toolbar .filter-link { min-height: 2.2rem; padding: .4rem .55rem; border-color: var(--line); }
+.mail-list-toolbar .mail-tools-panel,
+.mail-list-toolbar>.bulk-selection-menu[open]>nav,
+.mail-list-toolbar>.message-sort[open]>nav {
+  position: absolute; z-index: 8; top: calc(100% - .4rem); left: .7rem; width: min(34rem,calc(100% - 1.4rem));
+  padding: 1rem; background: var(--panel); border: 1px solid var(--line-strong); border-radius: .5rem; box-shadow: 0 8px 24px var(--shadow);
+}
+.mail-list-toolbar>.bulk-selection-menu[open]>p { flex-basis: 100%; font-size: .75rem; }
+.mail-list-toolbar>.bulk-selection-menu[open]>nav a { display: block; padding: .6rem; }
+.mail-list-toolbar .list-pagination .button-link { min-height: 2.2rem; font-size: .75rem; }
+.mail-list-toolbar .list-pagination span { font-size: .75rem; }
+.standalone-reader { max-width: none; margin: 0 0 0 var(--rail-width); }
+.protected-reading-pane { border: 0; border-radius: 0; padding: 0; gap: .8rem; background: transparent; box-shadow: none; }
+.reader-toolbar { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: .65rem 1rem; padding: .65rem; margin: 0; background: var(--panel); border: 1px solid var(--line); border-radius: .7rem; }
+.reader-toolbar .reader-navigation { margin: 0; gap: 1rem; flex-direction: row; }
+.reader-quick-actions .message-state-controls { display: flex; flex-wrap: wrap; gap: .45rem; }
+.reader-quick-actions .message-state-form { margin: 0; }
+.reader-toolbar .reader-more-actions { margin: 0 0 0 auto; }
+.reader-toolbar .reader-more-actions .action-stack { position: absolute; z-index: 8; right: .5rem; top: calc(100% - .3rem); width: min(30rem,calc(100% - 1rem)); background: var(--panel); border: 1px solid var(--line-strong); padding: 1rem; border-radius: .5rem; box-shadow: 0 8px 24px var(--shadow); }
+.reading-pane .message-heading { background: var(--panel); border: 1px solid var(--line); border-radius: .7rem; padding: 1rem; }
+.reader-message-top { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; }
+.reader-message-top h2 { font-size: 1.7rem; margin: 0 0 .7rem; }
+.reader-message-top .reader-date { flex: 0 0 auto; font-size: .85rem; color: var(--muted); }
+.reader-message-person { display: flex; align-items: center; gap: .75rem; min-width: 0; }
+.reader-message-person>div { min-width: 0; }
+.reader-message-person .message-avatar { grid-column: auto; flex: 0 0 auto; }
+.reader-message-person .message-from { font-weight: 700; font-size: .9rem; margin: 0; }
+.reader-message-person .reader-to { font-size: .75rem; margin: .2rem 0 0; }
+.reading-pane .reader-status { display: flex; align-items: flex-start; flex-wrap: wrap; gap: .6rem; margin: 0; }
+.reading-pane .reader-status details { margin: 0; min-width: 0; max-width: 100%; }
+.reading-pane .reader-status details:not([open]) { padding: 0; border: 0; background: transparent; }
+.reading-pane .reader-status details:not([open])>summary { padding: .55rem .75rem; border-radius: 1.5rem; border: 1px solid var(--line); background: var(--panel); font-size: .75rem; gap: .7rem; }
+.reading-pane .reader-status details[open] { flex-basis: 100%; }
+.reading-pane .reader-boundary-note { padding: .6rem .75rem; margin: 0; font-size: .8rem; }
+.reading-pane .body-panel { min-height: 18.5rem; padding: 1.3rem; background: var(--panel); border: 1px solid var(--line); border-radius: .7rem; }
+.reading-pane .body-panel pre { font-family: inherit; font-size: .875rem; line-height: 1.7; }
+.reading-pane .reader-attachments { margin: 0; padding: 1rem; border-color: var(--line); border-radius: .7rem; box-shadow: 0 2px 5px var(--shadow); }
+.reading-pane .reader-attachments h2 { font-size: 1.15rem; margin: 0 0 .7rem; text-transform: none; }
+.reader-attachments .attachment-item { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: .7rem; border: 1px solid var(--line); border-radius: .6rem; background: var(--panel); }
+.attachment-description { min-width: 0; overflow-wrap: anywhere; }
+.attachment-description p { margin: .15rem 0; font-size: .75rem; }
+.attachment-description summary { font-size: .75rem; color: var(--muted); cursor: pointer; }
+.reader-attachments .attachment-item .button-link { width: auto; margin: 0; flex: 0 0 auto; }
+.reading-pane .reader-primary-actions { display: flex; gap: 1rem; margin: .8rem 0; }
+.reading-pane .reader-primary-actions a { flex: 1; justify-content: center; text-align: center; padding: .5rem; border-color: var(--line); min-height: 2.2rem; }
+@media(max-width:75rem) {
+  .reader-message-top { display: block; }
+  .reader-message-top .reader-date { margin: 0 0 .7rem; }
+}
+@media(min-width:72rem) {
+  .coordinated-mail:not(.has-selection) .message-columns,
+  .coordinated-mail:not(.has-selection) .message-card {
+    display: grid;
+    grid-template-columns: 1.5rem 1.6rem minmax(10rem,1.1fr) minmax(14rem,1.65fr) 5.5rem 6.4rem 7.5rem 2.6rem;
+    gap: .6rem;
+    align-items: center;
+  }
+  .coordinated-mail:not(.has-selection) .message-columns {
+    padding: .75rem; border: 1px solid var(--line); border-radius: .65rem .65rem 0 0;
+    background: var(--panel-soft); color: var(--muted); font-size: .75rem; font-weight: 700;
+  }
+  .column-sender { grid-column: 3; }
+  .column-subject { grid-column: 4; }
+  .column-attachment { grid-column: 5; }
+  .column-security { grid-column: 6; }
+  .column-date { grid-column: 7; }
+  .coordinated-mail:not(.has-selection) .message-cards { margin: 0; gap: 0; }
+  .coordinated-mail:not(.has-selection) .message-card {
+    min-height: 3.6rem; padding: .65rem .75rem; border: 0; border-bottom: 1px solid var(--line);
+    border-radius: 0; background: var(--panel); position: relative;
+  }
+  .coordinated-mail:not(.has-selection) .message-card:last-child { border-radius: 0 0 .65rem .65rem; }
+  .coordinated-mail:not(.has-selection) .message-card-main,
+  .coordinated-mail:not(.has-selection) .message-card-footer { display: contents; }
+  .coordinated-mail:not(.has-selection) .bulk-row-choice { grid-column: 1; grid-row: 1/3; align-self: center; }
+  .coordinated-mail:not(.has-selection) .bulk-row-choice input { width: 1rem; height: 1rem; }
+  .coordinated-mail:not(.has-selection) .message-star-cell { grid-column: 2; grid-row: 1/3; }
+  .coordinated-mail:not(.has-selection) .message-star-cell button { padding: .2rem; min-width: 1.6rem; min-height: 2rem; border-color: transparent; }
+  .coordinated-mail:not(.has-selection) .message-avatar { grid-column: 3; grid-row: 1/3; width: 2.1rem; height: 2.1rem; align-self: center; }
+  .coordinated-mail:not(.has-selection) .message-sender { grid-column: 3; grid-row: 1/3; padding-left: 2.8rem; font-size: .875rem; }
+  .coordinated-mail:not(.has-selection) .message-card .message-subject-link { grid-column: 4; grid-row: 1; min-height: 0; padding: 0; line-height: 1.25; -webkit-line-clamp: 1; }
+  .coordinated-mail:not(.has-selection) .message-body-preview { grid-column: 4; grid-row: 2; margin-top: -.35rem; font-size: .75rem; }
+  .coordinated-mail:not(.has-selection) .attachment-count { grid-column: 5; grid-row: 1/3; font-size: .75rem; }
+  .coordinated-mail:not(.has-selection) .message-security { grid-column: 6; grid-row: 1/3; justify-self: start; }
+  .coordinated-mail:not(.has-selection) .message-date { grid-column: 7; grid-row: 1/3; font-size: .75rem; line-height: 1.4; }
+  .coordinated-mail:not(.has-selection) .message-more { grid-column: 8; grid-row: 1/3; }
+  .coordinated-mail:not(.has-selection) .message-more-content { position: absolute; z-index: 5; right: .6rem; top: calc(100% - .4rem); width: min(22rem,80%); box-shadow: 0 6px 20px var(--shadow); overflow-wrap: anywhere; }
+  .coordinated-mail:not(.has-selection) .message-mailbox { display: none; }
+  .coordinated-mail.search-results:not(.has-selection) .message-sender { grid-row: 1; }
+  .coordinated-mail.search-results:not(.has-selection) .message-mailbox { display: block; grid-column: 3; grid-row: 2; padding-left: 2.8rem; font-size: .7rem; color: var(--muted); margin-top: -.35rem; }
+}
 @media(max-width:75rem) {
   .topbar .brand { flex-basis: auto; font-size: 1.4rem; }
   .account-name { max-width: 8rem; }
@@ -192,6 +304,14 @@ body:has(.app-rail) {
   .draft-list tr { padding: .75rem; border-bottom: 1px solid var(--line); }
   .draft-list td { border: 0; padding: .25rem 0; overflow-wrap: anywhere; }
   .draft-list .draft-subject { font-size: 1rem; }
+  .coordinated-mail.has-selection .mail-page-intro p { display: none; }
+  .reading-pane .reader-status { gap: .4rem; }
+  .reading-pane .reader-status details:not([open]) { flex: 1; }
+  .reading-pane .reader-status details:not([open])>summary { padding: .5rem; font-size: .72rem; border-radius: .7rem; }
+  .reader-message-top h2 { font-size: 1.35rem; }
+  .reading-pane .message-heading { padding: .8rem; }
+  .reader-attachments .attachment-item { flex-wrap: wrap; }
+  .reader-primary-actions { gap: .5rem; }
 }
 @media(max-width:22.5rem) {
   body:has(.app-rail) { --rail-width: 0rem; }

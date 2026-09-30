@@ -182,6 +182,8 @@ def main():
                             foreground: getComputedStyle(document.body).color,
                             appearance: document.documentElement.dataset.appearance,
                             authenticated_shell: !!document.querySelector('.app-rail'),
+                            main_left: document.querySelector('main').getBoundingClientRect().left,
+                            navigation_width: parseFloat(getComputedStyle(document.body).getPropertyValue('--rail-width')) * parseFloat(getComputedStyle(document.documentElement).fontSize),
                             forced_colors_active: matchMedia('(forced-colors:active)').matches,
                             system_dark: matchMedia('(prefers-color-scheme:dark)').matches,
                             device_pixel_ratio: window.devicePixelRatio,
@@ -207,6 +209,8 @@ def main():
                 reasons = []
                 if metrics["document_width"] > result["width"]:
                     reasons.append("horizontal page overflow")
+                if metrics["authenticated_shell"] and metrics["main_left"] + 1 < metrics["navigation_width"]:
+                    reasons.append("main content overlaps the fixed navigation")
                 if metrics["scripts"] or metrics["main_landmarks"] != 1 or len(metrics["headings"]) != 1:
                     reasons.append("script or landmark mismatch")
                 if metrics["appearance"] != result["expected_appearance"]:

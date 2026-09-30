@@ -576,7 +576,7 @@ fn assert_forced_download_route(
 }
 
 fn message_body_panel(route_html: &str) -> &str {
-    let marker = "<section class=\"body-panel\"><h2>Body</h2>";
+    let marker = "<section class=\"body-panel\"><h2 class=\"sr-only\">Body</h2>";
     let start = route_html
         .find(marker)
         .expect("route-backed message page should contain the body panel")

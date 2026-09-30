@@ -614,29 +614,47 @@ fn render_message_state_controls(
     let mut controls = String::new();
     for flag in [MessageFlag::Seen, MessageFlag::Flagged] {
         let current = has_flag(flags, flag.imap());
-        let state_label = if flag == MessageFlag::Seen {
-            "Read"
-        } else {
-            "Star"
-        };
-        let (label, text) = match (flag, current) {
-            (MessageFlag::Seen, false) => ("Mark read", "Mark read"),
-            (MessageFlag::Seen, true) => ("Mark unread", "Mark unread"),
-            (MessageFlag::Flagged, false) => ("Star", "☆"),
-            (MessageFlag::Flagged, true) => ("Remove star from", "★"),
-        };
-        controls.push_str(&format!(
+        controls.push_str(&render_message_flag_form(
+            csrf, mailbox, uid, metadata, flag, current, return_to,
+        ));
+    }
+    let attachments = render_attachment_count(Some(metadata));
+    format!("<div class=\"message-state-controls\" role=\"group\" aria-label=\"Message state\">{controls}{attachments}</div>")
+}
+
+fn render_message_flag_form(
+    csrf: &str,
+    mailbox: &str,
+    uid: u64,
+    metadata: &MessageMetadata,
+    flag: MessageFlag,
+    current: bool,
+    return_to: &str,
+) -> String {
+    let state_label = if flag == MessageFlag::Seen {
+        "Read"
+    } else {
+        "Star"
+    };
+    let (label, text) = match (flag, current) {
+        (MessageFlag::Seen, false) => ("Mark read", "Mark read"),
+        (MessageFlag::Seen, true) => ("Mark unread", "Mark unread"),
+        (MessageFlag::Flagged, false) => ("Star", "☆"),
+        (MessageFlag::Flagged, true) => ("Remove star from", "★"),
+    };
+    format!(
             "<form class=\"message-state-form\" method=\"post\" action=\"/message/flag\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"uid\" value=\"{uid}\"><input type=\"hidden\" name=\"mailbox_guid\" value=\"{}\"><input type=\"hidden\" name=\"message_guid\" value=\"{}\"><input type=\"hidden\" name=\"flag\" value=\"{}\"><input type=\"hidden\" name=\"enabled\" value=\"{}\"><input type=\"hidden\" name=\"return_to\" value=\"{}\"><button class=\"flag-control\" type=\"submit\" aria-label=\"{state_label} message #{uid} in {}\" aria-pressed=\"{current}\" title=\"{label}\">{text}</button></form>",
             escape_html(csrf), escape_html(mailbox), escape_html(&metadata.version.mailbox_guid), escape_html(&metadata.version.message_guid), flag.value(),
             if current { "0" } else { "1" }, escape_html(return_to), escape_html(mailbox),
-        ));
-    }
-    let attachments = match metadata.attachment_count {
+        )
+}
+
+fn render_attachment_count(metadata: Option<&MessageMetadata>) -> String {
+    match metadata.and_then(|metadata| metadata.attachment_count) {
         Some(0) => String::new(),
         Some(count) => format!("<span class=\"badge attachment-count\" data-attachment-count=\"{count}\">{count} {}</span>", if count == 1 { "attachment" } else { "attachments" }),
         None => "<span class=\"muted attachment-count\" aria-label=\"Attachment metadata unavailable\" title=\"Attachment metadata unavailable\">–</span>".into(),
-    };
-    format!("<div class=\"message-state-controls\" role=\"group\" aria-label=\"Message state\">{controls}{attachments}</div>")
+    }
 }
 
 fn render_search_field_select(active_field: MessageSearchField) -> String {
@@ -681,15 +699,41 @@ fn render_message_card(
     actions: &str,
     selection: &str,
 ) -> String {
+    let (star, read_action) = match message.metadata {
+        Some(metadata) => (
+            render_message_flag_form(
+                csrf,
+                message.mailbox,
+                message.uid,
+                metadata,
+                MessageFlag::Flagged,
+                has_flag(message.flags, "\\Flagged"),
+                return_to,
+            ),
+            render_message_flag_form(
+                csrf,
+                message.mailbox,
+                message.uid,
+                metadata,
+                MessageFlag::Seen,
+                has_flag(message.flags, "\\Seen"),
+                return_to,
+            ),
+        ),
+        None => (
+            render_message_flags(message.flags),
+            "<span class=\"state-unavailable muted\">State controls unavailable</span>".into(),
+        ),
+    };
     format!(
         concat!(
             "<li class=\"message-row message-card{}\" data-selected=\"{}\">{selection}",
             "<div class=\"message-card-main\"><span class=\"message-avatar\" aria-hidden=\"true\" title=\"Initials from the sender header\">{}</span><span class=\"message-sender\" title=\"{}\" dir=\"auto\">{}</span>",
-            "<span class=\"message-date\">{}</span>",
+            "<span class=\"message-date\" title=\"{}\">{}</span>",
             "<a class=\"message-subject-link\" href=\"{}\"{} dir=\"auto\">{}</a><span class=\"message-body-preview\" dir=\"auto\">{}</span></div>",
-            "<div class=\"message-card-footer message-preview-meta\"><span class=\"message-mailbox\">{}</span>{}",
-            "<details class=\"message-more\"><summary aria-label=\"More for message #{} in {}\">More</summary>",
-            "<div class=\"message-more-content\"><p class=\"muted\">Message #{} · {} bytes</p><p><strong>From:</strong> {}</p><p><strong>Subject:</strong> {}</p>{}</div></details></div></li>"
+            "<div class=\"message-card-footer message-preview-meta\"><span class=\"message-mailbox\">{}</span><div class=\"message-star-cell\">{star}</div>{}<span class=\"message-security\" title=\"OpenPGP protection has not been assessed for this message. Open the message for available details.\">Not assessed</span>",
+            "<details class=\"message-more\"><summary aria-label=\"More for message #{} in {}\"><span aria-hidden=\"true\">⋮</span><span class=\"sr-only\">More</span></summary>",
+            "<div class=\"message-more-content\"><p class=\"muted\">Message #{} · {} bytes</p><p><strong>From:</strong> {}</p><p><strong>Subject:</strong> {}</p>{read_action}{}</div></details></div></li>"
         ),
         if has_flag(message.flags, "\\Seen") { "" } else { " message-unread" },
         selected,
@@ -697,17 +741,24 @@ fn render_message_card(
         escape_html(message.sender.unwrap_or("Sender unavailable")),
         escape_html(message.sender.unwrap_or("Sender unavailable")),
         escape_html(message.received),
+        escape_html(message.received),
         escape_html(href),
         if selected { " aria-current=\"true\"" } else { "" },
         escape_html(message.subject.unwrap_or("(No subject)")),
         escape_html(message.metadata.and_then(|metadata| metadata.preview.as_deref()).filter(|preview| crate::message_metadata::valid_message_preview(preview)).unwrap_or("No preview available")),
         escape_html(message.mailbox),
-        render_message_state_controls(csrf, message.mailbox, message.uid, message.flags, message.metadata, return_to),
+        render_attachment_count(message.metadata),
         message.uid, escape_html(message.mailbox), message.uid, message.size,
         escape_html(message.sender.unwrap_or("Sender unavailable")),
         escape_html(message.subject.unwrap_or("(No subject)")), actions,
         selection = selection,
+        star = star,
+        read_action = read_action,
     )
+}
+
+fn message_column_headings() -> &'static str {
+    "<div class=\"message-columns\" aria-hidden=\"true\"><span class=\"column-sender\">From</span><span class=\"column-subject\">Subject</span><span class=\"column-attachment\">Attachment</span><span class=\"column-security\">Security</span><span class=\"column-date\">Date</span></div>"
 }
 
 fn render_sort_control_group(links: &str, view: &ListViewState) -> String {
@@ -964,35 +1015,37 @@ pub(crate) fn render_message_list_page(
         sort_links.search_query,
         sort_links.search_scope,
     );
+    let search_controls = format!(concat!(
+        "<details class=\"mail-search-disclosure\" name=\"list-tools\"><summary>Search this mailbox</summary><div class=\"mail-tools-panel\">",
+        "<form class=\"search-row compact-search\" method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\">{}<label for=\"mailbox-search\">Search query<input id=\"mailbox-search\" type=\"text\" name=\"q\" value=\"{}\" autocomplete=\"off\"></label><button type=\"submit\">Search</button><details class=\"search-options\"><summary>Search options</summary><div>{}<label><input type=\"checkbox\" name=\"scope\" value=\"all\"> Search all mailboxes</label></div></details></form></div></details>"
+    ), escape_html(mailbox_name), list_form_state(sort_links.view), escape_html(sort_links.search_query.unwrap_or("")), render_search_field_select(MessageSearchField::All));
+    let action_controls = format!(concat!(
+        "<details class=\"bulk-actions\" name=\"list-tools\"><summary>Bulk actions</summary><div class=\"mail-tools-panel\">{}<p class=\"muted\">Use the row checkboxes to select messages for an action.</p><div class=\"toolbar\" aria-label=\"Mailbox actions\">{}{}</div></div></details>"
+    ), archive_notice, bulk_move_form, bulk_archive_form);
 
     TrustedHtml::from_template(format!(
         concat!(
             "{}",
-            "<main id=\"main-content\" class=\"page-shell coordinated-mail{}\" tabindex=\"-1\"><h1 class=\"sr-only\">Mail</h1>",
+            "<main id=\"main-content\" class=\"page-shell coordinated-mail{}\" tabindex=\"-1\"><div class=\"page-intro mail-page-intro\"><h1>{}</h1><p>Search, filter, sort and work with messages without losing context.</p></div>",
             "<section class=\"content-pane coordinated-list\" aria-labelledby=\"mailbox-title\">",
-            "<div class=\"section-header\"><h2 id=\"mailbox-title\" class=\"section-title message-list-summary\">Mailbox: {}</h2></div>",
+            "<div class=\"section-header sr-only\"><h2 id=\"mailbox-title\" class=\"section-title message-list-summary\">Mailbox: {}</h2></div>",
             "{}",
-            "<form class=\"search-row compact-search\" method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\">{}<label for=\"mailbox-search\">Search query<input id=\"mailbox-search\" type=\"text\" name=\"q\" value=\"{}\" autocomplete=\"off\"></label><button type=\"submit\">Search</button><details class=\"search-options\"><summary>Search options</summary><div>{}<label><input type=\"checkbox\" name=\"scope\" value=\"all\"> Search all mailboxes</label></div></details></form>",
-            "{}<details class=\"bulk-actions\"><summary>Bulk actions</summary>{}<p class=\"muted\">Open More on a message to select it for move or archive.</p><div class=\"toolbar\" aria-label=\"Mailbox actions\">{}{}</div></details>",
-            "{}",
+            "<div class=\"mail-list-toolbar\">{}{}{}{}{}</div>",
             "{}<ul role=\"list\" class=\"message-cards\" aria-label=\"Mailbox message list\">{}</ul>",
             "</section>{}",
             "</main>"
         ),
         app_header(canonical_username, csrf_token, mailbox_nav_section(mailbox_name, bulk_actions.archive_mailbox_name)),
         if sort_links.view.selection.is_some() { " has-selection" } else { "" },
+        escape_html(if mailbox_name == "INBOX" { "Inbox" } else { mailbox_name }),
         escape_html(mailbox_name),
         success_banner,
-        escape_html(mailbox_name),
-        list_form_state(sort_links.view),
-        escape_html(sort_links.search_query.unwrap_or("")),
-        render_search_field_select(MessageSearchField::All),
         render_bulk_selection_menu(&navigation_base, sort_links.view, bulk_actions_available, archive_actions_available),
-        archive_notice,
-        bulk_move_form,
-        bulk_archive_form,
         render_list_navigation(&navigation_base, sort_links.view),
         sort_headers,
+        search_controls,
+        action_controls,
+        message_column_headings(),
         rows,
         render_coordinated_reader(&navigation_base, sort_links.view, csrf_token, sort_links.reader),
     ))
@@ -1077,18 +1130,18 @@ pub(crate) fn render_message_search_page(
     TrustedHtml::from_template(format!(
         concat!(
             "{}",
-            "<main id=\"main-content\" class=\"page-shell coordinated-mail{}\" tabindex=\"-1\"><h1 class=\"sr-only\">Search mail</h1>",
+            "<main id=\"main-content\" class=\"page-shell coordinated-mail search-results{}\" tabindex=\"-1\"><div class=\"page-intro mail-page-intro\"><h1>Search</h1><p>Find messages across your mailboxes.</p></div>",
             "<section class=\"content-pane coordinated-list\">",
             "<p>{}<a href=\"/mailboxes\">All mailboxes</a></p>",
-            "<h2 class=\"section-title\">Search Results</h2>",
+            "<h2 class=\"section-title sr-only\">Search Results</h2>",
             "<form class=\"search-row compact-search\" method=\"get\" action=\"/search\">{}{}<label for=\"search-query\">Search query<input id=\"search-query\" type=\"text\" name=\"q\" value=\"{}\" autocomplete=\"off\"></label><button type=\"submit\">Search</button><details class=\"search-options\"><summary>Search options</summary><div>{}<label><input type=\"checkbox\" name=\"scope\" value=\"all\"{}> Search all mailboxes</label></div></details></form>",
             "<p class=\"search-context\"><span><strong>Scope:</strong> {}</span><span><strong>Field:</strong> {}</span><span><strong>Query:</strong> {}</span><span><strong>Results:</strong> {}</span></p>",
             "{}",
-            "{}<ul role=\"list\" class=\"message-cards\" aria-label=\"Search results\">{}</ul>",
+            "{}{}<ul role=\"list\" class=\"message-cards\" aria-label=\"Search results\">{}</ul>",
             "</section>{}",
             "</main>"
         ),
-        app_header(canonical_username, csrf_token, "mailboxes"),
+        app_header(canonical_username, csrf_token, "search"),
         if view.selection.is_some() { " has-selection" } else { "" },
         back_link,
         mailbox_hidden_input,
@@ -1102,6 +1155,7 @@ pub(crate) fn render_message_search_page(
         view.total_results,
         render_list_navigation(&navigation_base, view),
         sort_headers,
+        message_column_headings(),
         rows,
         render_coordinated_reader(&navigation_base, view, csrf_token, context.reader),
     ))
@@ -1122,7 +1176,7 @@ pub fn render_message_view_page(
         rendered.uid
     );
     TrustedHtml::from_template(format!(
-        "{}<main id=\"main-content\" class=\"page-shell standalone-reader\" tabindex=\"-1\"><h1 class=\"sr-only\">Message view</h1>{}</main>",
+        "{}<main id=\"main-content\" class=\"page-shell standalone-reader\" tabindex=\"-1\"><div class=\"page-intro\"><h1>Message Reader</h1><p>Protected reading with message details, isolated attachments and source view.</p></div>{}</main>",
         app_header(canonical_username, csrf_token, mailbox_nav_section(&rendered.mailbox_name, archive_mailbox_name)),
         render_reader_fragment(csrf_token, rendered, archive_mailbox_name, user_visible_mailboxes, &back, &current)))
 }
@@ -1189,12 +1243,12 @@ fn render_reader_fragment(
                 })
                 .unwrap_or_default();
             attachments.push_str(&format!(
-                "<li class=\"attachment-item\"><strong>{}</strong><br>Part {}. {}, {}, {} bytes{}<br><a class=\"button-link\" href=\"{}\">Download</a></li>",
+                "<li class=\"attachment-item\"><div class=\"attachment-description\"><strong>{}</strong><p class=\"muted\">{} bytes · isolated download</p><details><summary>File details</summary><p>Part {}. {}, {}{}</p></details></div><a class=\"button-link\" href=\"{}\">Download</a></li>",
                 escape_html(attachment.filename.as_deref().unwrap_or("<unnamed>")),
+                attachment.size_hint_bytes,
                 escape_html(&attachment.part_path),
                 escape_html(&attachment.content_type),
                 escape_html(attachment.disposition.as_str()),
-                attachment.size_hint_bytes,
                 content_id_metadata,
                 escape_html(&download_href),
             ));
@@ -1292,27 +1346,29 @@ fn render_reader_fragment(
     format!(
         concat!(
             "<article id=\"reading-pane\" class=\"reading-pane protected-reading-pane\" tabindex=\"-1\" aria-labelledby=\"message-title\" data-reader-mode=\"Protected Reader\">",
-            "<nav class=\"reader-navigation toolbar\" aria-label=\"Reader navigation\"><a href=\"{}\">Back to list</a>{}</nav>",
-            "<header class=\"message-heading\"><p class=\"muted\">{} · {}</p><h2 id=\"message-title\" dir=\"auto\">{}</h2><p class=\"message-from\" dir=\"auto\">From: {}</p></header>",
-            "<div class=\"toolbar reader-primary-actions\" aria-label=\"Message actions\">{}{}{}{}</div>",
-            "<details class=\"reader-more-actions\"><summary>Move, archive, bin or restore</summary><div class=\"action-stack\">{}</div></details>",
+            "<div class=\"reader-toolbar\"><nav class=\"reader-navigation toolbar\" aria-label=\"Reader navigation\"><a href=\"{}\">Back to list</a>{}</nav><div class=\"reader-quick-actions\">{}</div>",
+            "<details class=\"reader-more-actions\"><summary>Move, archive, bin or restore</summary><div class=\"action-stack\">{}</div></details></div>",
+            "<header class=\"message-heading\"><div class=\"reader-message-top\"><h2 id=\"message-title\" dir=\"auto\">{}</h2><p class=\"muted reader-date\">{} · {}</p></div><div class=\"reader-message-person\"><span class=\"message-avatar\" aria-hidden=\"true\">{}</span><div><p class=\"message-from\" dir=\"auto\">From: {}</p><p class=\"muted reader-to\" dir=\"auto\">To: {}</p></div></div></header>",
             "<div class=\"reader-status\">{}{}</div>",
             "<span id=\"reading-title\" class=\"sr-only\">Reading Pane</span>",
-            "<section class=\"body-panel\"><h2>Body</h2><div class=\"reader-section-heading\" data-protected-body-panel=\"true\"><span class=\"badge badge-ok\">Protected rendering</span></div><p class=\"muted reader-boundary-note\">Message content is displayed with active content and remote images removed.</p>{}</section>",
+            "<div class=\"reader-section-heading sr-only\" data-protected-body-panel=\"true\"><span class=\"badge badge-ok\">Protected rendering</span></div><p class=\"notice reader-boundary-note\">Message content is displayed with active content and remote images removed.</p><section class=\"body-panel\"><h2 class=\"sr-only\">Body</h2>{}</section>",
             "<section class=\"panel reader-attachments\"><h2>Attachments</h2><ul class=\"attachment-list\">{}</ul></section>",
+            "<div class=\"toolbar reader-primary-actions\" aria-label=\"Message actions\">{}{}{}</div>",
             "<details class=\"reader-details\"><summary>Message details</summary>{}{}{}<dl class=\"message-meta reader-meta\"><dt>Subject</dt><dd dir=\"auto\">{}</dd><dt>From</dt><dd dir=\"auto\">{}</dd><dt>To</dt><dd dir=\"auto\">{}</dd><dt>Cc</dt><dd dir=\"auto\">{}</dd><dt>Mailbox</dt><dd>{}</dd><dt>UID</dt><dd>{}</dd><dt>Received</dt><dd>{}</dd><dt>MIME Type</dt><dd>{}</dd><dt>Body Source</dt><dd>{}</dd><dt>Rendering Mode</dt><dd>{}</dd><dt>HTML Present</dt><dd>{}</dd><dt>Protection</dt><dd>Protected by Default</dd><dt>Remote Content</dt><dd>{}</dd></dl></details>",
             "</article>"
         ),
         escape_html(back_href),
         source_link,
-        escape_html(&rendered.mailbox_name), escape_html(&rendered.date_received),
-        escape_html(rendered.subject.as_deref().unwrap_or("(No subject)")),
-        escape_html(rendered.from.as_deref().unwrap_or("Sender unavailable")),
-        compose_link("reply", "Reply"), compose_link("reply-all", "Reply all"), compose_link("forward", "Forward"),
         render_message_state_controls(csrf_token, &rendered.mailbox_name, rendered.uid, &rendered.flags, rendered.metadata.as_ref(), return_to),
         move_form,
+        escape_html(rendered.subject.as_deref().unwrap_or("(No subject)")),
+        escape_html(&rendered.mailbox_name), escape_html(&rendered.date_received),
+        escape_html(&sender_initials(rendered.from.as_deref())),
+        escape_html(rendered.from.as_deref().unwrap_or("Sender unavailable")),
+        escape_html(rendered.to.as_deref().unwrap_or("Not present")),
         protected_reader_strip, openpgp_reader_states,
         rendered.body_html, attachments,
+        compose_link("reply", "Reply"), compose_link("reply-all", "Reply all"), compose_link("forward", "Forward"),
         html_state_badge, rendering_notice, inline_image_notice,
         escape_html(rendered.subject.as_deref().unwrap_or("(No subject)")), escape_html(rendered.from.as_deref().unwrap_or("Sender unavailable")),
         escape_html(rendered.to.as_deref().unwrap_or("Not present")), escape_html(rendered.cc.as_deref().unwrap_or("Not present")),
