@@ -124,9 +124,7 @@ pub trait BrowserGateway {
         &self,
         context: &AuthenticationContext,
         validated_session: &ValidatedSession,
-        source_mailbox_name: &str,
-        uid: u64,
-        destination_mailbox_name: &str,
+        request: &MessageMoveRequest,
     ) -> BrowserMessageMoveOutcome;
 
     fn send_message(

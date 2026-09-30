@@ -176,7 +176,7 @@ fn verified_rows_offer_native_state_controls_and_legacy_rows_do_not() {
     assert!(body.contains("data-attachment-count=\"1\""));
     request
         .headers
-        .insert("user-agent".into(), "OSMAP/LegacyFixture".into());
+        .insert("user-agent".into(), "OSMAP/LegacyMetadata".into());
     let body = body_text(&app.handle_request(&request, "127.0.0.1"));
     assert!(!body.contains("action=\"/message/flag\""));
     assert!(body.contains("State controls unavailable"));

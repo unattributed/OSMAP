@@ -180,12 +180,12 @@
       ],
       "baseline_observation": "Folder and configured archive route; no rail shortcut",
       "test_design": "UX04",
-      "status": "PARTIALLY_IMPLEMENTED",
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
       "evidence": [
-        "docs/UX_EXECUTION_LEDGER.md S01-01 through S01-04",
-        "/home/foo/Downloads/osmap-ux-s01/run-20260929/audit/summary-final.json"
+        "docs/UX_EXECUTION_LEDGER.md S02-03 checkpoint F",
+        "/home/foo/Downloads/osmap-ux-s02/run-20260930/checkpoint-f-summary.json"
       ],
-      "engineering_note": "Configured archive navigation verified; mutation and reconciliation work continues in S02-03."
+      "engineering_note": "Identity-bound archive/move/bin/restore with one bounded native selection form, confirmed destination, replay refusal and explicit partial/unknown outcomes; five browser journeys pass in Edge and Firefox. Exact signed-source native qualification and independent human/release acceptance remain pending."
     },
     {
       "id": "UX04-002",
@@ -196,8 +196,12 @@
       ],
       "baseline_observation": "Trash move on reader; no dedicated rail entry/restore affordance",
       "test_design": "UX04",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S02-03 checkpoint F",
+        "/home/foo/Downloads/osmap-ux-s02/run-20260930/checkpoint-f-summary.json"
+      ],
+      "engineering_note": "Identity-bound archive/move/bin/restore with one bounded native selection form, confirmed destination, replay refusal and explicit partial/unknown outcomes; five browser journeys pass in Edge and Firefox. Exact signed-source native qualification and independent human/release acceptance remain pending."
     },
     {
       "id": "UX09-001",
@@ -969,10 +973,10 @@
       "test_design": "UX03",
       "status": "IMPLEMENTED_VERIFIED_LOCAL",
       "evidence": [
-        "docs/UX_EXECUTION_LEDGER.md S02-01 checkpoints A through D",
-        "/home/foo/Downloads/osmap-ux-s02/run-20260930/checkpoint-d-summary.json"
+        "docs/UX_EXECUTION_LEDGER.md S02-03 checkpoint F",
+        "/home/foo/Downloads/osmap-ux-s02/run-20260930/checkpoint-f-summary.json"
       ],
-      "engineering_note": "Existing native row checkboxes preserve separate action forms; stronger move reconciliation remains S02-03. Independent human and release acceptance remain pending."
+      "engineering_note": "Identity-bound archive/move/bin/restore with one bounded native selection form, confirmed destination, replay refusal and explicit partial/unknown outcomes; five browser journeys pass in Edge and Firefox. Exact signed-source native qualification and independent human/release acceptance remain pending."
     },
     {
       "id": "UX03-004",
@@ -1095,8 +1099,12 @@
       ],
       "baseline_observation": "CSRF-bound move to configured archive exists",
       "test_design": "UX04",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S02-03 checkpoint F",
+        "/home/foo/Downloads/osmap-ux-s02/run-20260930/checkpoint-f-summary.json"
+      ],
+      "engineering_note": "Identity-bound archive/move/bin/restore with one bounded native selection form, confirmed destination, replay refusal and explicit partial/unknown outcomes; five browser journeys pass in Edge and Firefox. Exact signed-source native qualification and independent human/release acceptance remain pending."
     },
     {
       "id": "UX04-004",
@@ -1107,8 +1115,12 @@
       ],
       "baseline_observation": "CSRF-bound move to Trash exists",
       "test_design": "UX04",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S02-03 checkpoint F",
+        "/home/foo/Downloads/osmap-ux-s02/run-20260930/checkpoint-f-summary.json"
+      ],
+      "engineering_note": "Identity-bound archive/move/bin/restore with one bounded native selection form, confirmed destination, replay refusal and explicit partial/unknown outcomes; five browser journeys pass in Edge and Firefox. Exact signed-source native qualification and independent human/release acceptance remain pending."
     },
     {
       "id": "UX04-005",

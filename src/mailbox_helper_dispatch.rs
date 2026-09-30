@@ -197,6 +197,7 @@ where
             source_mailbox_name,
             destination_mailbox_name,
             uid,
+            version,
             ..
         } => {
             match MessageMoveRequest::new(
@@ -204,6 +205,7 @@ where
                 source_mailbox_name.clone(),
                 destination_mailbox_name.clone(),
                 *uid,
+                version.clone(),
             )
             .map_err(|error| MailboxHelperResponse::Error {
                 backend: error.backend.to_string(),
@@ -222,6 +224,7 @@ where
                     source_mailbox_name: source_mailbox_name.clone(),
                     destination_mailbox_name: destination_mailbox_name.clone(),
                     uid: *uid,
+                    version: version.clone(),
                 },
                 Err(error_response) => error_response,
             }
@@ -361,6 +364,7 @@ pub(super) fn log_helper_response(
                 source_mailbox_name,
                 destination_mailbox_name,
                 uid,
+                ..
             },
             Some(MailboxHelperRequest::MessageMove {
                 canonical_username, ..

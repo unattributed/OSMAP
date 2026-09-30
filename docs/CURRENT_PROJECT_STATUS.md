@@ -58,7 +58,20 @@ S02-02 now coordinates list/search and reader with fresh stored-identity checks,
 preserved query/filter/sort/page context, off-page locate links and body-first
 narrow views. 596 library tests, six reader journeys in each of Edge/Firefox,
 nine list journeys, six state-control journeys and 86 final visual checks pass.
-Exact E native qualification follows the next signed clean checkpoint.
+Exact E native qualification passes on signed `da16175`: 596 library tests,
+two hostile-rendering checks and the isolated signed-helper native test;
+standard checkout and services unchanged.
+S02-03 strengthens all browser move actions with mandatory stored mailbox and
+message identity, atomic fail-closed mail-action quotas, one shared native
+mutation gate and bounded pre-read/write/confirmation. Archive, move, Bin and
+Restore to Inbox share one form contract; bulk selections contain at most ten
+identities, stop on failure and distinguish confirmed/uncertain/unattempted
+work. Bin is a reversible move to an existing Trash mailbox. Successful
+navigation clears the action selection and reads fresh counts; caller-supplied
+success query parameters no longer produce completion claims. Old forms and
+incompatible helpers refuse the upgraded mutation protocol without fallback.
+Local checks and synthetic visual/browser evidence are recorded under S02
+checkpoint F; exact signed-source native qualification is still pending.
 Independent human accessibility acceptance
 and deployment remain separate.
 D01–D06 are recorded

@@ -114,34 +114,30 @@ def main():
             assert len(subjects()) == 50
             checks.append("search results paginate within the existing 250-result backend limit")
             visit("/mailbox?name=INBOX&sort=subject&dir=asc")
-            more = page.locator('summary[aria-label="More for message #7 in INBOX"]')
-            more.focus()
-            page.keyboard.press("Space")
-            choice = page.get_by_label("Select message #7 for bulk move", exact=True)
+            choice = page.get_by_label("Select message #7", exact=True)
             assert choice.is_visible()
-            choice.check()
-            assert page.locator("#bulk-move-form").evaluate("e => new FormData(e).get('uid_7') === '7'")
-            assert page.locator("#bulk-archive-form").evaluate("e => new FormData(e).get('uid_7') === null")
+            choice.focus()
+            page.keyboard.press("Space")
+            assert page.locator("#bulk-move-form").evaluate("e => new FormData(e).get('message_7').startsWith('7|')")
+            assert page.locator("#bulk-archive-form").count() == 0
             assert page.locator("form form").count() == 0
             assert page.get_by_role("list", name="Mailbox message list", exact=True).get_by_role("listitem").count() == 50
-            checks.append("keyboard disclosures expose the existing selections and preserve their distinct native form associations")
+            checks.append("visible keyboard checkboxes associate one identity-bound selection with the shared native action form")
             visit("/mailbox?name=INBOX&page=2")
-            for action in ["move", "archive"]:
-                page.locator(".bulk-selection-menu summary").click()
-                click(f"Select first 10 on this page for {action}")
-                selected = page.locator(f'input[form="bulk-{action}-form"]:checked')
-                assert selected.evaluate_all("es => es.map(e => e.value)") == [str(uid) for uid in range(75, 65, -1)]
-                other = "archive" if action == "move" else "move"
-                assert page.locator(f'input[form="bulk-{other}-form"]:checked').count() == 0
-                state(page="2", select=action)
+            page.locator(".bulk-selection-menu summary").click()
+            click("Select first 10 on this page")
+            selected = page.locator('input[form="bulk-move-form"]:checked')
+            assert selected.evaluate_all("es => es.map(e => e.value.split('|')[0])") == [str(uid) for uid in range(75, 65, -1)]
+            assert page.locator('input[type="checkbox"]:checked').count() == 10
+            state(page="2", select="move")
             page.locator(".bulk-selection-menu summary").click()
             click("Clear selection")
             assert page.locator('input[type="checkbox"]:checked').count() == 0
             page.locator(".bulk-selection-menu summary").click()
-            click("Select first 10 on this page for move")
+            click("Select first 10 on this page")
             click("Next page")
             assert page.locator('input[type="checkbox"]:checked').count() == 0
-            checks.append("select menu checks only ten current-page rows for one action; clear and page changes remove selection")
+            checks.append("select menu checks only ten current-page identities for the shared action form; clear and page changes remove selection")
             visit("/mailbox?name=INBOX")
             previews = page.locator(".message-body-preview").all_text_contents()
             assert previews[0].startswith("<b>Untrusted synthetic preview</b>")

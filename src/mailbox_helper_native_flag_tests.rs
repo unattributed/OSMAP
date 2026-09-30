@@ -112,6 +112,56 @@ fn through_helper(
     result
 }
 
+fn move_through_helper(
+    root: &Path,
+    backend: DoveadmMessageMoveBackend<IsolatedDoveadm>,
+    request: &MessageMoveRequest,
+) -> Result<(), MailboxBackendError> {
+    let socket = root.join("move.sock");
+    let key_path = root.join("fixture-grant.key");
+    let socket_for_thread = socket.clone();
+    let server = thread::spawn(move || {
+        let unused = StaticHelperBackend {
+            mailbox_result: Arc::new(Ok(Vec::new())),
+            message_list_result: Arc::new(Ok(Vec::new())),
+            message_search_result: Arc::new(Ok(Vec::new())),
+            message_view_result: Arc::new(Err(MailboxBackendError {
+                backend: "fixture-unused",
+                reason: "unused".into(),
+            })),
+            message_move_result: Arc::new(Ok(())),
+        };
+        let listener = UnixListener::bind(socket_for_thread).expect("isolated socket");
+        let (mut stream, _) = listener.accept().expect("accept fixture connection");
+        handle_helper_client(
+            HelperBackends {
+                mailbox_backend: &unused,
+                message_list_backend: &unused,
+                message_search_backend: &unused,
+                message_view_backend: &unused,
+                message_move_backend: &backend,
+                message_append_backend: &unused,
+                message_flag_backend: &unused,
+            },
+            &Logger::new(crate::config::LogFormat::Text, LogLevel::Info),
+            &mut stream,
+            MailboxHelperPolicy::default(),
+            MailboxHelperTrustedCallerPolicy {
+                trusted_peer_uid: test_runtime_uid(),
+                grant_key: test_helper_grant_key(),
+            },
+            &Mutex::new(BTreeMap::new()),
+        );
+    });
+    wait_for_socket(&socket);
+    let result =
+        MailboxHelperMessageMoveBackend::new(&socket, &key_path, MailboxHelperPolicy::default())
+            .move_message(FIXTURE_ACCOUNT, request);
+    server.join().expect("native helper thread");
+    fs::remove_file(socket).expect("remove fixture socket");
+    result
+}
+
 #[test]
 #[ignore = "explicit OpenBSD qualification; creates and removes only a new standalone synthetic Maildir"]
 fn isolated_openbsd_json_and_signed_flag_helper() {
@@ -226,7 +276,7 @@ fn isolated_openbsd_json_and_signed_flag_helper() {
         .expect("native structured view");
     assert_eq!(viewed.metadata, initial[1].metadata);
     assert!(viewed.header_block.contains("Attachment fixture"));
-    let backend = DoveadmMessageFlagBackend::new(executor, "/usr/local/bin/doveadm");
+    let backend = DoveadmMessageFlagBackend::new(executor.clone(), "/usr/local/bin/doveadm");
     let mut request = MessageFlagRequest::new(
         "INBOX".into(),
         initial[0].uid,
@@ -297,6 +347,108 @@ fn isolated_openbsd_json_and_signed_flag_helper() {
         list.list_messages(FIXTURE_ACCOUNT, &query)
             .expect("restored flags"),
         initial
+    );
+    let create = vec![
+        "mailbox".into(),
+        "create".into(),
+        "Archive".into(),
+        "Trash".into(),
+    ];
+    assert_eq!(
+        executor
+            .run_with_stdin("/usr/local/bin/doveadm", &create, "")
+            .unwrap()
+            .status_code,
+        0
+    );
+    let mover = DoveadmMessageMoveBackend::new(executor, "/usr/local/bin/doveadm");
+    let original_version = initial[0].metadata.as_ref().unwrap().version.clone();
+    let original_request = MessageMoveRequest::new(
+        MessageMovePolicy::default(),
+        "INBOX",
+        "Archive",
+        initial[0].uid,
+        original_version.clone(),
+    )
+    .unwrap();
+    let mut stale = original_request.clone();
+    stale.version.message_guid = "absent-synthetic-guid".into();
+    assert_eq!(
+        move_through_helper(&root, mover.clone(), &stale)
+            .unwrap_err()
+            .backend,
+        "message-move-stale"
+    );
+    assert_eq!(
+        move_through_helper(&root, mover.clone(), &original_request),
+        Ok(())
+    );
+    assert_eq!(
+        move_through_helper(&root, mover.clone(), &original_request)
+            .unwrap_err()
+            .backend,
+        "message-move-stale"
+    );
+    let inbox = list.list_messages(FIXTURE_ACCOUNT, &query).unwrap();
+    assert_eq!(inbox, vec![initial[1].clone()]);
+    let archive_query = MessageListRequest::new(MessageListPolicy::default(), "Archive").unwrap();
+    let archive = list.list_messages(FIXTURE_ACCOUNT, &archive_query).unwrap();
+    assert_eq!(archive.len(), 1);
+    assert_eq!(
+        archive[0].metadata.as_ref().unwrap().version.message_guid,
+        original_version.message_guid
+    );
+    assert_eq!(archive[0].flags, initial[0].flags);
+    let bin = MessageMoveRequest::new(
+        MessageMovePolicy::default(),
+        "Archive",
+        "Trash",
+        archive[0].uid,
+        archive[0].metadata.as_ref().unwrap().version.clone(),
+    )
+    .unwrap();
+    assert_eq!(move_through_helper(&root, mover.clone(), &bin), Ok(()));
+    assert!(list
+        .list_messages(FIXTURE_ACCOUNT, &archive_query)
+        .unwrap()
+        .is_empty());
+    let trash_query = MessageListRequest::new(MessageListPolicy::default(), "Trash").unwrap();
+    let trash = list.list_messages(FIXTURE_ACCOUNT, &trash_query).unwrap();
+    assert_eq!(trash.len(), 1);
+    let restore = MessageMoveRequest::new(
+        MessageMovePolicy::default(),
+        "Trash",
+        "INBOX",
+        trash[0].uid,
+        trash[0].metadata.as_ref().unwrap().version.clone(),
+    )
+    .unwrap();
+    assert_eq!(move_through_helper(&root, mover.clone(), &restore), Ok(()));
+    assert!(list
+        .list_messages(FIXTURE_ACCOUNT, &trash_query)
+        .unwrap()
+        .is_empty());
+    let restored = list.list_messages(FIXTURE_ACCOUNT, &query).unwrap();
+    assert_eq!(restored.len(), 2);
+    let restored_message = restored
+        .iter()
+        .find(|message| {
+            message.metadata.as_ref().unwrap().version.message_guid == original_version.message_guid
+        })
+        .unwrap();
+    assert_ne!(restored_message.uid, initial[0].uid);
+    assert_eq!(restored_message.metadata, initial[0].metadata);
+    assert_eq!(restored_message.flags, initial[0].flags);
+    assert!(restored.contains(&initial[1]));
+    assert_eq!(
+        move_through_helper(&root, mover, &original_request)
+            .unwrap_err()
+            .backend,
+        "message-move-stale"
+    );
+    assert_eq!(
+        list.list_messages(FIXTURE_ACCOUNT, &query).unwrap(),
+        restored
     );
     fs::remove_dir_all(&root).expect("remove only owned synthetic fixture tree");
 }

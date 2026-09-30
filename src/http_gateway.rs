@@ -302,17 +302,9 @@ impl BrowserGateway for RuntimeBrowserGateway {
         &self,
         context: &AuthenticationContext,
         validated_session: &ValidatedSession,
-        source_mailbox_name: &str,
-        uid: u64,
-        destination_mailbox_name: &str,
+        request: &MessageMoveRequest,
     ) -> BrowserMessageMoveOutcome {
-        self.move_message_impl(
-            context,
-            validated_session,
-            source_mailbox_name,
-            uid,
-            destination_mailbox_name,
-        )
+        self.move_message_impl(context, validated_session, request)
     }
 
     fn list_drafts(

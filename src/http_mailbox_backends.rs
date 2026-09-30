@@ -22,11 +22,7 @@ impl RuntimeBrowserGateway {
                 None => MessageFlagRuntimeBackend::Unavailable(missing_helper_grant_error()),
             },
             None => {
-                static DIRECT_FLAG_GATE: std::sync::OnceLock<std::sync::Arc<std::sync::Mutex<()>>> =
-                    std::sync::OnceLock::new();
-                let gate = DIRECT_FLAG_GATE
-                    .get_or_init(|| std::sync::Arc::new(std::sync::Mutex::new(())))
-                    .clone();
+                let gate = direct_mail_mutation_gate();
                 MessageFlagRuntimeBackend::Direct(
                     DoveadmMessageFlagBackend::new(
                         SystemCommandExecutor,
@@ -196,6 +192,7 @@ impl RuntimeBrowserGateway {
             },
             None => MessageMoveRuntimeBackend::Direct(
                 DoveadmMessageMoveBackend::new(SystemCommandExecutor, self.doveadm_path.clone())
+                    .with_operation_gate(direct_mail_mutation_gate())
                     .with_userdb_socket_path(self.doveadm_userdb_socket_path.clone())
                     .with_command_timeout_secs(self.expensive_route_command_timeout_secs()),
             ),
@@ -253,6 +250,13 @@ impl MessageFlagBackend for MessageFlagRuntimeBackend {
             Self::Unavailable(error) => Err(error.clone()),
         }
     }
+}
+
+fn direct_mail_mutation_gate() -> std::sync::Arc<std::sync::Mutex<()>> {
+    static GATE: std::sync::OnceLock<std::sync::Arc<std::sync::Mutex<()>>> =
+        std::sync::OnceLock::new();
+    GATE.get_or_init(|| std::sync::Arc::new(std::sync::Mutex::new(())))
+        .clone()
 }
 
 /// Selects the current mailbox-list backend without widening the browser
@@ -444,8 +448,15 @@ mod tests {
             MessageSearchRequest::new(MessageSearchPolicy::default(), "INBOX", "needle").unwrap();
         let message_view_request =
             MessageViewRequest::new(MessageViewPolicy::default(), "INBOX", 1).unwrap();
-        let message_move_request =
-            MessageMoveRequest::new(MessageMovePolicy::default(), "INBOX", "Archive", 1).unwrap();
+        let message_move_request = MessageMoveRequest::new(
+            MessageMovePolicy::default(),
+            "INBOX",
+            "Archive",
+            1,
+            crate::message_metadata::MessageVersion::new("a".repeat(32), "fixture-9".into())
+                .unwrap(),
+        )
+        .unwrap();
         let message_append_request =
             MessageAppendRequest::new("Sent", b"Subject: saved\r\n\r\nbody".to_vec()).unwrap();
 

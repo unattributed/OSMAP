@@ -179,7 +179,15 @@ fn v8_resource_robustness_matrix_rejects_bounded_invalid_inputs() {
     );
 
     assert!(
-        MessageMoveRequest::new(MessageMovePolicy::default(), "INBOX", "INBOX", 42).is_err(),
+        MessageMoveRequest::new(
+            MessageMovePolicy::default(),
+            "INBOX",
+            "INBOX",
+            42,
+            osmap::message_metadata::MessageVersion::new("a".repeat(32), "fixture-42".into())
+                .unwrap()
+        )
+        .is_err(),
         "same-mailbox move requests must be rejected"
     );
 }

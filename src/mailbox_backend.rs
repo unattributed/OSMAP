@@ -11,9 +11,8 @@ use super::{
     concise_command_diagnostics, parse_doveadm_mailbox_list_output, MailboxBackend,
     MailboxBackendError, MailboxEntry, MailboxListingPolicy, MessageAppendBackend,
     MessageAppendRequest, MessageListBackend, MessageListPolicy, MessageListRequest,
-    MessageMoveBackend, MessageMoveRequest, MessageSearchBackend, MessageSearchPolicy,
-    MessageSearchRequest, MessageSearchResult, MessageSummary, MessageView, MessageViewBackend,
-    MessageViewPolicy, MessageViewRequest,
+    MessageSearchBackend, MessageSearchPolicy, MessageSearchRequest, MessageSearchResult,
+    MessageSummary, MessageView, MessageViewBackend, MessageViewPolicy, MessageViewRequest,
 };
 
 /// Lists mailboxes through `doveadm mailbox list`.
@@ -381,97 +380,6 @@ where
             });
         }
         Ok(results)
-    }
-}
-
-/// Moves one message through `doveadm move`.
-#[derive(Debug, Clone)]
-pub struct DoveadmMessageMoveBackend<E> {
-    command_executor: E,
-    doveadm_path: PathBuf,
-    userdb_socket_path: Option<PathBuf>,
-    command_timeout_secs: u64,
-}
-
-impl<E> DoveadmMessageMoveBackend<E> {
-    /// Builds a backend using the supplied command executor and `doveadm` path.
-    pub fn new(command_executor: E, doveadm_path: impl Into<PathBuf>) -> Self {
-        Self {
-            command_executor,
-            doveadm_path: doveadm_path.into(),
-            userdb_socket_path: None,
-            command_timeout_secs: DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS,
-        }
-    }
-
-    /// Points message-move operations at an explicit Dovecot userdb-capable
-    /// socket.
-    pub fn with_userdb_socket_path(mut self, userdb_socket_path: Option<PathBuf>) -> Self {
-        self.userdb_socket_path = userdb_socket_path;
-        self
-    }
-
-    /// Caps the external `doveadm move` execution for one move request.
-    pub fn with_command_timeout_secs(mut self, timeout_secs: u64) -> Self {
-        self.command_timeout_secs = timeout_secs.max(1);
-        self
-    }
-}
-
-impl Default for DoveadmMessageMoveBackend<SystemCommandExecutor> {
-    fn default() -> Self {
-        Self::new(SystemCommandExecutor, "/usr/local/bin/doveadm")
-    }
-}
-
-impl<E> MessageMoveBackend for DoveadmMessageMoveBackend<E>
-where
-    E: CommandExecutor,
-{
-    fn move_message(
-        &self,
-        canonical_username: &str,
-        request: &MessageMoveRequest,
-    ) -> Result<(), MailboxBackendError> {
-        let args = vec!["-o".to_string(), "stats_writer_socket_path=".to_string()];
-        let mut args = args;
-        append_doveadm_auth_socket_override(&mut args, self.userdb_socket_path.as_ref());
-        args.extend([
-            "move".to_string(),
-            "-u".to_string(),
-            canonical_username.to_string(),
-            request.destination_mailbox_name.clone(),
-            "mailbox".to_string(),
-            request.source_mailbox_name.clone(),
-            "uid".to_string(),
-            request.uid.to_string(),
-        ]);
-
-        let execution = self
-            .command_executor
-            .run_with_stdin_timeout(
-                self.doveadm_path.to_string_lossy().as_ref(),
-                &args,
-                "",
-                Duration::from_secs(self.command_timeout_secs),
-            )
-            .map_err(|error| MailboxBackendError {
-                backend: "doveadm-message-move",
-                reason: error.reason,
-            })?;
-
-        if execution.status_code != 0 {
-            return Err(MailboxBackendError {
-                backend: "doveadm-message-move",
-                reason: format!(
-                    "command exited with status {}: {}",
-                    execution.status_code,
-                    concise_command_diagnostics(&execution.stdout, &execution.stderr),
-                ),
-            });
-        }
-
-        Ok(())
     }
 }
 

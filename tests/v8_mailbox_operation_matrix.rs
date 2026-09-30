@@ -446,8 +446,22 @@ fn v8_mailbox_operation_matrix_validates_requests_and_sort_controls() {
         MessageSearchRequest::new(MessageSearchPolicy::default(), "INBOX", "bad\nquery").is_err()
     );
     assert!(MessageViewRequest::new(MessageViewPolicy::default(), "INBOX", 0).is_err());
-    assert!(MessageMoveRequest::new(MessageMovePolicy::default(), "INBOX", "INBOX", 303).is_err());
-    assert!(MessageMoveRequest::new(MessageMovePolicy::default(), "INBOX", "Archive", 0).is_err());
+    assert!(MessageMoveRequest::new(
+        MessageMovePolicy::default(),
+        "INBOX",
+        "INBOX",
+        303,
+        osmap::message_metadata::MessageVersion::new("a".repeat(32), "fixture-9".into()).unwrap()
+    )
+    .is_err());
+    assert!(MessageMoveRequest::new(
+        MessageMovePolicy::default(),
+        "INBOX",
+        "Archive",
+        0,
+        osmap::message_metadata::MessageVersion::new("a".repeat(32), "fixture-9".into()).unwrap()
+    )
+    .is_err());
 }
 
 #[test]
@@ -604,9 +618,14 @@ fn v8_mailbox_operation_matrix_exercises_success_paths_and_audit_redaction() {
     assert_eq!(view_outcome.audit_event.action, "message_viewed");
     assert_audit_redacts_raw_session_id(&view_outcome.audit_event);
 
-    let move_request =
-        MessageMoveRequest::new(MessageMovePolicy::default(), "INBOX", "Archive", 303)
-            .expect("valid move request");
+    let move_request = MessageMoveRequest::new(
+        MessageMovePolicy::default(),
+        "INBOX",
+        "Archive",
+        303,
+        osmap::message_metadata::MessageVersion::new("a".repeat(32), "fixture-9".into()).unwrap(),
+    )
+    .expect("valid move request");
     let move_outcome = MessageMoveService::new(StaticMessageMoveBackend)
         .move_for_validated_session(&context, &session, &move_request);
     match move_outcome.decision {
@@ -720,9 +739,14 @@ fn v8_mailbox_operation_matrix_exercises_fail_closed_paths() {
     );
     assert_audit_redacts_raw_session_id(&view_not_found.audit_event);
 
-    let move_request =
-        MessageMoveRequest::new(MessageMovePolicy::default(), "INBOX", "Archive", 303)
-            .expect("valid move request");
+    let move_request = MessageMoveRequest::new(
+        MessageMovePolicy::default(),
+        "INBOX",
+        "Archive",
+        303,
+        osmap::message_metadata::MessageVersion::new("a".repeat(32), "fixture-9".into()).unwrap(),
+    )
+    .expect("valid move request");
     let move_failure = MessageMoveService::new(FailingMessageMoveBackend {
         backend: "message-move-helper",
         reason: "move backend unavailable",

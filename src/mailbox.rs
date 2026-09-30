@@ -15,6 +15,8 @@ mod mailbox_flags;
 mod mailbox_json;
 #[path = "mailbox_model.rs"]
 mod mailbox_model;
+#[path = "mailbox_move.rs"]
+mod mailbox_move;
 #[path = "mailbox_parse.rs"]
 mod mailbox_parse;
 #[path = "mailbox_service.rs"]
@@ -22,7 +24,7 @@ mod mailbox_service;
 
 pub use self::mailbox_backend::{
     DoveadmMailboxListBackend, DoveadmMessageAppendBackend, DoveadmMessageListBackend,
-    DoveadmMessageMoveBackend, DoveadmMessageSearchBackend, DoveadmMessageViewBackend,
+    DoveadmMessageSearchBackend, DoveadmMessageViewBackend,
 };
 pub use self::mailbox_flags::{
     DoveadmMessageFlagBackend, MessageFlagBackend, MessageFlagRequest, MessageFlagResult,
@@ -44,6 +46,7 @@ pub use self::mailbox_model::{
     DEFAULT_MESSAGE_HEADER_MAX_LEN, DEFAULT_SEARCH_HEADER_VALUE_MAX_LEN,
     DEFAULT_SEARCH_QUERY_MAX_LEN,
 };
+pub use self::mailbox_move::DoveadmMessageMoveBackend;
 use self::mailbox_parse::parse_doveadm_mailbox_list_output;
 #[cfg(test)]
 use self::mailbox_parse::{
@@ -706,43 +709,7 @@ mod tests {
 
     #[test]
     fn message_move_uses_doveadm_move_command_shape() {
-        let executor = Rc::new(std::cell::RefCell::new(StubCommandExecutor::success(
-            CommandExecution {
-                status_code: 0,
-                stdout: String::new(),
-                stderr: String::new(),
-            },
-        )));
-        let backend = DoveadmMessageMoveBackend::new(executor.clone(), "/usr/local/bin/doveadm")
-            .with_userdb_socket_path(Some(PathBuf::from("/var/run/osmap-userdb")))
-            .with_command_timeout_secs(3);
-        let request =
-            MessageMoveRequest::new(MessageMovePolicy::default(), "INBOX", "Archive/2026", 9)
-                .expect("request should be valid");
-
-        backend
-            .move_message("alice@example.com", &request)
-            .expect("message move should succeed");
-
-        let recorded = executor.borrow();
-        assert_eq!(
-            recorded.args.as_ref().expect("args should be captured"),
-            &vec![
-                "-o".to_string(),
-                "stats_writer_socket_path=".to_string(),
-                "-o".to_string(),
-                "auth_socket_path=/var/run/osmap-userdb".to_string(),
-                "move".to_string(),
-                "-u".to_string(),
-                "alice@example.com".to_string(),
-                "Archive/2026".to_string(),
-                "mailbox".to_string(),
-                "INBOX".to_string(),
-                "uid".to_string(),
-                "9".to_string(),
-            ]
-        );
-        assert_eq!(recorded.timeout_secs, Some(3));
+        super::mailbox_move::tests::assert_identity_bound_move(false);
     }
 
     #[test]
@@ -786,35 +753,7 @@ mod tests {
 
     #[test]
     fn doveadm_move_keeps_shell_shaped_mailboxes_as_single_arguments() {
-        let executor = Rc::new(std::cell::RefCell::new(StubCommandExecutor::success(
-            CommandExecution {
-                status_code: 0,
-                stdout: String::new(),
-                stderr: String::new(),
-            },
-        )));
-        let backend = DoveadmMessageMoveBackend::new(executor.clone(), "/usr/local/bin/doveadm");
-        let source_mailbox = "INBOX; id";
-        let destination_mailbox = "Archive$(id) 2>&1";
-        let request = MessageMoveRequest::new(
-            MessageMovePolicy::default(),
-            source_mailbox,
-            destination_mailbox,
-            9,
-        )
-        .expect("shell-shaped mailbox names should remain valid inert mailbox text");
-
-        backend
-            .move_message("alice@example.com", &request)
-            .expect("message move should reach captured executor");
-
-        let recorded = executor.borrow();
-        let args = recorded.args.as_ref().expect("args should be captured");
-        assert_eq!(args[5], destination_mailbox);
-        assert_eq!(args[7], source_mailbox);
-        assert!(!args.iter().any(|arg| arg == "id"));
-        assert!(!args.iter().any(|arg| arg == "$(id)"));
-        assert!(!args.iter().any(|arg| arg == "2>&1"));
+        super::mailbox_move::tests::assert_identity_bound_move(true);
     }
 
     #[test]
@@ -963,8 +902,15 @@ mod tests {
 
     #[test]
     fn rejects_message_move_with_same_source_and_destination() {
-        let error = MessageMoveRequest::new(MessageMovePolicy::default(), "INBOX", "INBOX", 9)
-            .expect_err("identical source and destination must fail");
+        let error = MessageMoveRequest::new(
+            MessageMovePolicy::default(),
+            "INBOX",
+            "INBOX",
+            9,
+            crate::message_metadata::MessageVersion::new("a".repeat(32), "fixture-9".into())
+                .unwrap(),
+        )
+        .expect_err("identical source and destination must fail");
 
         assert_eq!(error.backend, "message-move-parser");
         assert_eq!(
@@ -1242,9 +1188,15 @@ mod tests {
     fn message_move_service_emits_audit_quality_success_events() {
         let service = MessageMoveService::new(StaticMessageMoveBackend);
         let validated_session = validated_session_fixture();
-        let request =
-            MessageMoveRequest::new(MessageMovePolicy::default(), "INBOX", "Archive/2026", 9)
-                .expect("request should be valid");
+        let request = MessageMoveRequest::new(
+            MessageMovePolicy::default(),
+            "INBOX",
+            "Archive/2026",
+            9,
+            crate::message_metadata::MessageVersion::new("a".repeat(32), "fixture-9".into())
+                .unwrap(),
+        )
+        .expect("request should be valid");
 
         let outcome =
             service.move_for_validated_session(&test_context(), &validated_session, &request);
@@ -1266,9 +1218,15 @@ mod tests {
     fn message_move_service_translates_backend_failures_into_bounded_events() {
         let service = MessageMoveService::new(FailingMessageMoveBackend);
         let validated_session = validated_session_fixture();
-        let request =
-            MessageMoveRequest::new(MessageMovePolicy::default(), "INBOX", "Archive/2026", 9)
-                .expect("request should be valid");
+        let request = MessageMoveRequest::new(
+            MessageMovePolicy::default(),
+            "INBOX",
+            "Archive/2026",
+            9,
+            crate::message_metadata::MessageVersion::new("a".repeat(32), "fixture-9".into())
+                .unwrap(),
+        )
+        .expect("request should be valid");
 
         let outcome =
             service.move_for_validated_session(&test_context(), &validated_session, &request);

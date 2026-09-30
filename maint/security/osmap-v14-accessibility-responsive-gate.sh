@@ -30,8 +30,10 @@ require_pattern "src/http_ui.rs" 'class=\"skip-link\" href=\"#main-content\"' "s
 require_pattern "src/http_ui.rs" 'id=\"main-content\" class=\"page-shell\" tabindex=\"-1\"' "focusable main content target"
 require_pattern "src/http_ui.rs" 'aria-label=\"Primary navigation\"' "primary navigation accessible name"
 require_pattern "src/http_ui.rs" 'aria-label=\"Session status and identity\"' "session status accessible name"
-require_pattern "src/http_ui.rs" 'aria-label=\"Select message #{} for bulk move\"' "bulk move checkbox accessible name"
-require_pattern "src/http_ui.rs" 'aria-label=\"Select message #{} for bulk archive\"' "bulk archive checkbox accessible name"
+# The shared S02-03 selection is named independently of its subsequent action.
+require_pattern "src/http_ui.rs" 'aria-label=\"Select message #{}\"' "shared bulk checkbox accessible name"
+require_pattern "src/http_ui.rs" 'form=\"bulk-move-form\" type=\"checkbox\"' "native bulk checkbox form association"
+require_pattern "maint/ux/mail_list_workflows.py" 'choice.focus()' "keyboard selection journey"
 require_pattern "src/http_support.rs" "a:focus-visible,button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible" "visible focus rule"
 require_pattern "src/http_support.rs" "@media (prefers-reduced-motion:reduce)" "reduced motion media query"
 require_pattern "src/http_support.rs" "@media (max-width:40rem)" "small-screen responsive rule"

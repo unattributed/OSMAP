@@ -690,6 +690,7 @@ pub struct MessageMoveRequest {
     pub source_mailbox_name: String,
     pub destination_mailbox_name: String,
     pub uid: u64,
+    pub version: crate::message_metadata::MessageVersion,
 }
 
 /// Conservative maximum raw RFC 5322 message size accepted for one append.
@@ -744,6 +745,7 @@ impl MessageMoveRequest {
         source_mailbox_name: impl Into<String>,
         destination_mailbox_name: impl Into<String>,
         uid: u64,
+        version: crate::message_metadata::MessageVersion,
     ) -> Result<Self, MailboxBackendError> {
         let mailbox_policy = MailboxListingPolicy {
             mailbox_name_max_len: policy.mailbox_name_max_len,
@@ -761,17 +763,23 @@ impl MessageMoveRequest {
             });
         }
 
-        if uid == 0 {
+        if uid == 0 || uid > u64::from(u32::MAX) {
             return Err(MailboxBackendError {
                 backend: "message-move-parser",
-                reason: "uid must be greater than zero".to_string(),
+                reason: "uid is outside its bound".to_string(),
             });
         }
+
+        let version = crate::message_metadata::MessageVersion::new(
+            version.mailbox_guid,
+            version.message_guid,
+        )?;
 
         Ok(Self {
             source_mailbox_name,
             destination_mailbox_name,
             uid,
+            version,
         })
     }
 }

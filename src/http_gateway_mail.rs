@@ -109,22 +109,6 @@ impl RuntimeBrowserGateway {
             .with_field("user_agent", context.user_agent.clone())
     }
 
-    /// Records a non-fatal throttle-store failure so operators can diagnose
-    /// missing mailbox-mutation abuse resistance without crashing the move path.
-    pub(super) fn build_message_move_throttle_store_error_event(
-        &self,
-        action: &'static str,
-        message: &'static str,
-        context: &AuthenticationContext,
-        error: &LoginThrottleError,
-    ) -> LogEvent {
-        LogEvent::new(LogLevel::Warn, EventCategory::Mailbox, action, message)
-            .with_field("reason", throttle_store_error_label(error))
-            .with_field("request_id", context.request_id.clone())
-            .with_field("remote_addr", context.remote_addr.clone())
-            .with_field("user_agent", context.user_agent.clone())
-    }
-
     pub(super) fn list_mailboxes_impl(
         &self,
         context: &AuthenticationContext,
@@ -881,205 +865,107 @@ impl RuntimeBrowserGateway {
     pub(super) fn move_message_impl(
         &self,
         context: &AuthenticationContext,
-        validated_session: &ValidatedSession,
-        source_mailbox_name: &str,
-        uid: u64,
-        destination_mailbox_name: &str,
+        session: &ValidatedSession,
+        request: &MessageMoveRequest,
     ) -> BrowserMessageMoveOutcome {
-        let throttle_service = self.build_message_move_throttle_service();
-        let request = match MessageMoveRequest::new(
-            MessageMovePolicy::default(),
-            source_mailbox_name,
-            destination_mailbox_name,
-            uid,
-        ) {
-            Ok(request) => request,
-            Err(error) => {
-                return BrowserMessageMoveOutcome {
-                    decision: BrowserMessageMoveDecision::Denied {
-                        public_reason: "invalid_request".to_string(),
-                        retry_after_seconds: None,
-                    },
-                    audit_events: vec![build_http_warning_event(
-                        "message_move_request_rejected",
-                        "message move request validation failed",
-                        context,
-                    )
-                    .with_field("reason", error.reason)],
-                };
-            }
-        };
+        use crate::mailbox::MessageMoveBackend;
         let mut audit_events = Vec::new();
-
-        match throttle_service.check(context, &validated_session.record.canonical_username) {
+        let denied = |reason: &str, retry_after_seconds, audit_events| BrowserMessageMoveOutcome {
+            decision: BrowserMessageMoveDecision::Denied {
+                public_reason: reason.into(),
+                retry_after_seconds,
+            },
+            audit_events,
+        };
+        if MessageMoveRequest::new(
+            MessageMovePolicy::default(),
+            request.source_mailbox_name.clone(),
+            request.destination_mailbox_name.clone(),
+            request.uid,
+            request.version.clone(),
+        )
+        .is_err()
+        {
+            return denied("invalid_request", None, audit_events);
+        }
+        match self
+            .build_message_move_throttle_service()
+            .reserve_mail_action(context, &session.record.canonical_username)
+        {
             Ok(check) => {
                 audit_events.extend(check.audit_events);
-
                 if let MessageMoveThrottleDecision::Throttled {
                     retry_after_seconds,
                 } = check.decision
                 {
-                    return BrowserMessageMoveOutcome {
-                        decision: BrowserMessageMoveDecision::Denied {
-                            public_reason: TOO_MANY_MESSAGE_MOVES_PUBLIC_REASON.to_string(),
-                            retry_after_seconds: Some(retry_after_seconds),
-                        },
+                    return denied(
+                        TOO_MANY_MESSAGE_MOVES_PUBLIC_REASON,
+                        Some(retry_after_seconds),
                         audit_events,
-                    };
+                    );
                 }
             }
-            Err(error) => audit_events.push(self.build_message_move_throttle_store_error_event(
-                "message_move_throttle_check_failed",
-                "message move throttle check failed",
-                context,
-                &error,
-            )),
-        }
-
-        let mailbox_outcome = MailboxListingService::new(self.build_mailbox_list_backend())
-            .list_for_validated_session(context, validated_session);
-        audit_events.push(mailbox_outcome.audit_event);
-        let mailboxes = match mailbox_outcome.decision {
-            MailboxListingDecision::Listed { mailboxes, .. } => mailboxes,
-            MailboxListingDecision::Denied { public_reason } => {
-                return BrowserMessageMoveOutcome {
-                    decision: BrowserMessageMoveDecision::Denied {
-                        public_reason: public_reason.as_str().to_string(),
-                        retry_after_seconds: None,
-                    },
-                    audit_events,
-                };
+            Err(_) => {
+                audit_events.push(build_http_warning_event(
+                    "message_move_quota_unavailable",
+                    "move refused because its quota could not be reserved",
+                    context,
+                ));
+                return denied("message_move_unavailable", None, audit_events);
             }
+        }
+        let listing = MailboxListingService::new(self.build_mailbox_list_backend())
+            .list_for_validated_session(context, session);
+        audit_events.push(listing.audit_event);
+        let MailboxListingDecision::Listed { mailboxes, .. } = listing.decision else {
+            return denied("message_move_unavailable", None, audit_events);
         };
-
         if !mailbox_list_contains(&mailboxes, &request.source_mailbox_name)
             || !mailbox_list_contains(&mailboxes, &request.destination_mailbox_name)
         {
-            audit_events.push(
-                build_http_warning_event(
-                    "message_move_mailbox_rejected",
-                    "message move mailbox did not match mailbox listing",
-                    context,
-                )
-                .with_field("source_mailbox_name", request.source_mailbox_name.clone())
-                .with_field(
-                    "destination_mailbox_name",
-                    request.destination_mailbox_name.clone(),
-                ),
-            );
-            return BrowserMessageMoveOutcome {
-                decision: BrowserMessageMoveDecision::Denied {
-                    public_reason: "invalid_mailbox".to_string(),
-                    retry_after_seconds: None,
+            return denied("invalid_mailbox", None, audit_events);
+        }
+        let result = self
+            .build_message_move_backend()
+            .move_message(&session.record.canonical_username, request);
+        audit_events.push(
+            build_http_info_event(
+                "message_move_result",
+                "bounded identity-bound move completed",
+                context,
+            )
+            .with_field(
+                "session_ref",
+                crate::logging::audit_session_ref(&session.record.session_id),
+            )
+            .with_field(
+                "outcome",
+                match &result {
+                    Ok(()) => "confirmed",
+                    Err(error) => error.backend,
                 },
-                audit_events,
-            };
-        }
-
-        let view_request = match MessageViewRequest::new(
-            MessageViewPolicy::default(),
-            &request.source_mailbox_name,
-            request.uid,
-        ) {
-            Ok(view_request) => view_request,
-            Err(error) => {
-                audit_events.push(
-                    build_http_warning_event(
-                        "message_move_reference_rejected",
-                        "message move reference validation failed",
-                        context,
-                    )
-                    .with_field("reason", error.reason),
-                );
-                return BrowserMessageMoveOutcome {
-                    decision: BrowserMessageMoveDecision::Denied {
-                        public_reason: "invalid_request".to_string(),
-                        retry_after_seconds: None,
-                    },
-                    audit_events,
-                };
-            }
-        };
-        let view_outcome = MessageViewService::new(self.build_message_view_backend())
-            .fetch_for_validated_session(context, validated_session, &view_request);
-        audit_events.push(view_outcome.audit_event);
-        match view_outcome.decision {
-            MessageViewDecision::Retrieved { message, .. } => {
-                if message.mailbox_name != request.source_mailbox_name || message.uid != request.uid
-                {
-                    audit_events.push(
-                        build_http_warning_event(
-                            "message_move_reference_rejected",
-                            "message move reference did not match fetched message",
-                            context,
-                        )
-                        .with_field("source_mailbox_name", request.source_mailbox_name.clone())
-                        .with_field("uid", request.uid.to_string()),
-                    );
-                    return BrowserMessageMoveOutcome {
-                        decision: BrowserMessageMoveDecision::Denied {
-                            public_reason: "invalid_message_reference".to_string(),
-                            retry_after_seconds: None,
-                        },
-                        audit_events,
-                    };
-                }
-            }
-            MessageViewDecision::Denied { .. } => {
-                return BrowserMessageMoveOutcome {
-                    decision: BrowserMessageMoveDecision::Denied {
-                        public_reason: "invalid_message_reference".to_string(),
-                        retry_after_seconds: None,
-                    },
-                    audit_events,
-                };
-            }
-        }
-
-        let outcome = MessageMoveService::new(self.build_message_move_backend())
-            .move_for_validated_session(context, validated_session, &request);
-        let MessageMoveOutcome {
-            decision,
-            audit_event,
-        } = outcome;
-        audit_events.push(audit_event);
-
-        match decision {
-            MessageMoveDecision::Moved {
-                source_mailbox_name,
-                destination_mailbox_name,
-                uid,
-                ..
-            } => BrowserMessageMoveOutcome {
+            ),
+        );
+        match result {
+            Ok(()) => BrowserMessageMoveOutcome {
                 decision: BrowserMessageMoveDecision::Moved {
-                    source_mailbox_name,
-                    destination_mailbox_name,
-                    uid,
-                },
-                audit_events: {
-                    match throttle_service
-                        .record_move(context, &validated_session.record.canonical_username)
-                    {
-                        Ok(record) => audit_events.extend(record.audit_events),
-                        Err(error) => {
-                            audit_events.push(self.build_message_move_throttle_store_error_event(
-                                "message_move_throttle_record_failed",
-                                "message move throttle recording failed",
-                                context,
-                                &error,
-                            ))
-                        }
-                    }
-                    audit_events
-                },
-            },
-            MessageMoveDecision::Denied { public_reason } => BrowserMessageMoveOutcome {
-                decision: BrowserMessageMoveDecision::Denied {
-                    public_reason: public_reason.as_str().to_string(),
-                    retry_after_seconds: None,
+                    source_mailbox_name: request.source_mailbox_name.clone(),
+                    destination_mailbox_name: request.destination_mailbox_name.clone(),
+                    uid: request.uid,
                 },
                 audit_events,
             },
+            Err(error) => denied(
+                match error.backend {
+                    "message-move-stale" => "message_move_stale",
+                    "message-move-busy" => "message_move_busy",
+                    "message-move-unknown" => "message_move_unknown",
+                    "message-move-parser" | "message-metadata" => "invalid_request",
+                    _ => "message_move_unavailable",
+                },
+                None,
+                audit_events,
+            ),
         }
     }
 }

@@ -17,6 +17,7 @@ mod routes_compose;
 mod routes_draft;
 mod routes_flags;
 mod routes_mail;
+mod routes_moves;
 mod routes_settings;
 
 use std::collections::BTreeMap;
@@ -64,11 +65,10 @@ use crate::mailbox::{
     DoveadmMessageMoveBackend, DoveadmMessageSearchBackend, DoveadmMessageViewBackend,
     MailboxEntry, MailboxListingDecision, MailboxListingPolicy, MailboxListingService,
     MessageAppendBackend, MessageAppendRequest, MessageListDecision, MessageListPolicy,
-    MessageListRequest, MessageListService, MessageMoveDecision, MessageMoveOutcome,
-    MessageMovePolicy, MessageMoveRequest, MessageMoveService, MessageSearchDecision,
-    MessageSearchField, MessageSearchPolicy, MessageSearchRequest, MessageSearchResult,
-    MessageSearchService, MessageSummary, MessageViewDecision, MessageViewPolicy,
-    MessageViewRequest, MessageViewService,
+    MessageListRequest, MessageListService, MessageMovePolicy, MessageMoveRequest,
+    MessageSearchDecision, MessageSearchField, MessageSearchPolicy, MessageSearchRequest,
+    MessageSearchResult, MessageSearchService, MessageSummary, MessageViewDecision,
+    MessageViewPolicy, MessageViewRequest, MessageViewService,
 };
 use crate::mailbox_helper::{
     MailboxHelperAttachmentDownloadBackend, MailboxHelperMailboxListBackend,
@@ -809,6 +809,13 @@ mod tests {
     mod mail_list_tests {
         include!("http/mail_list_tests.rs");
     }
+    mod move_fixtures {
+        include!("http/move_fixtures.rs");
+    }
+    use move_fixtures::{move_form, SyntheticMessageMoves};
+    mod move_tests {
+        include!("http/move_tests.rs");
+    }
     mod flag_fixtures {
         include!("http/flag_fixtures.rs");
     }
@@ -836,6 +843,7 @@ mod tests {
     struct StubGateway {
         drafts: Arc<Mutex<BTreeMap<String, DraftRecord>>>,
         message_flags: Arc<Mutex<SyntheticFlagStates>>,
+        message_moves: Arc<Mutex<SyntheticMessageMoves>>,
         appearance_store: Option<AppearanceStore>,
         browser_fixture_accounts: bool,
     }
@@ -845,6 +853,7 @@ mod tests {
             Self {
                 drafts: Arc::new(Mutex::new(BTreeMap::new())),
                 message_flags: Arc::new(Mutex::new(BTreeMap::new())),
+                message_moves: Arc::new(Mutex::new(SyntheticMessageMoves::default())),
                 appearance_store: None,
                 browser_fixture_accounts: false,
             }
@@ -1334,68 +1343,88 @@ mod tests {
                 decision: BrowserMessageListDecision::Listed {
                     canonical_username: validated_session.record.canonical_username.clone(),
                     mailbox_name: mailbox_name.to_string(),
-                    messages: if context.user_agent.starts_with("OSMAP/EmptyMailbox") {
-                        Vec::new()
-                    } else if context.user_agent.starts_with("OSMAP/ManyMessages") {
-                        (1..=125)
-                            .map(|uid| MessageSummary {
-                                metadata: Some(Self::fixture_metadata(
-                                    &validated_session.record.canonical_username,
-                                    mailbox_name,
+                    messages: self.fixture_reconcile_messages(
+                        &validated_session.record.canonical_username,
+                        mailbox_name,
+                        if context.user_agent.starts_with("OSMAP/EmptyMailbox") {
+                            Vec::new()
+                        } else if context.user_agent.starts_with("OSMAP/ManyMessages") {
+                            (1..=125)
+                                .map(|uid| MessageSummary {
+                                    metadata: Some(Self::fixture_metadata(
+                                        &validated_session.record.canonical_username,
+                                        mailbox_name,
+                                        uid,
+                                    )),
+                                    mailbox_name: mailbox_name.to_string(),
                                     uid,
-                                )),
-                                mailbox_name: mailbox_name.to_string(),
-                                uid,
-                                flags: self.fixture_message_flags(
-                                    &validated_session.record.canonical_username,
-                                    mailbox_name,
-                                    uid,
-                                ),
-                                date_received: "2026-09-30 00:00:00 +0000".to_string(),
-                                size_virtual: 1024,
-                                subject: Some(
-                                    if context.user_agent.contains("LongHeaders") && uid == 125 {
-                                        format!("<b>Synthetic header</b> {}", "W".repeat(256))
-                                    } else {
-                                        format!("Message {uid:03}")
-                                    },
-                                ),
-                                from: Some(
-                                    if context.user_agent.contains("LongHeaders") && uid == 125 {
-                                        format!(
-                                            "Synthetic long sender {} <sender@example.test>",
-                                            "Y".repeat(256)
-                                        )
-                                    } else {
-                                        "Synthetic Sender <sender@example.test>".to_string()
-                                    },
-                                ),
-                            })
-                            .collect()
-                    } else {
-                        vec![
-                            MessageSummary {
-                                metadata: None,
-                                mailbox_name: mailbox_name.to_string(),
-                                uid: 9,
-                                flags: vec!["\\Seen".to_string()],
-                                date_received: "2026-03-27 11:00:00 +0000".to_string(),
-                                size_virtual: 512,
-                                subject: Some("Quarterly report".to_string()),
-                                from: Some("Alice <alice@example.com>".to_string()),
-                            },
-                            MessageSummary {
-                                metadata: None,
-                                mailbox_name: mailbox_name.to_string(),
-                                uid: 10,
-                                flags: Vec::new(),
-                                date_received: "2026-03-28 12:00:00 +0000".to_string(),
-                                size_virtual: 768,
-                                subject: Some("Follow-up".to_string()),
-                                from: Some("Bob <bob@example.com>".to_string()),
-                            },
-                        ]
-                    },
+                                    flags: self.fixture_message_flags(
+                                        &validated_session.record.canonical_username,
+                                        mailbox_name,
+                                        uid,
+                                    ),
+                                    date_received: "2026-09-30 00:00:00 +0000".to_string(),
+                                    size_virtual: 1024,
+                                    subject: Some(
+                                        if context.user_agent.contains("LongHeaders") && uid == 125
+                                        {
+                                            format!("<b>Synthetic header</b> {}", "W".repeat(256))
+                                        } else {
+                                            format!("Message {uid:03}")
+                                        },
+                                    ),
+                                    from: Some(
+                                        if context.user_agent.contains("LongHeaders") && uid == 125
+                                        {
+                                            format!(
+                                                "Synthetic long sender {} <sender@example.test>",
+                                                "Y".repeat(256)
+                                            )
+                                        } else {
+                                            "Synthetic Sender <sender@example.test>".to_string()
+                                        },
+                                    ),
+                                })
+                                .collect()
+                        } else {
+                            vec![
+                                MessageSummary {
+                                    metadata: (!context.user_agent.contains("LegacyMetadata"))
+                                        .then(|| {
+                                            Self::fixture_metadata(
+                                                &validated_session.record.canonical_username,
+                                                mailbox_name,
+                                                9,
+                                            )
+                                        }),
+                                    mailbox_name: mailbox_name.to_string(),
+                                    uid: 9,
+                                    flags: vec!["\\Seen".to_string()],
+                                    date_received: "2026-03-27 11:00:00 +0000".to_string(),
+                                    size_virtual: 512,
+                                    subject: Some("Quarterly report".to_string()),
+                                    from: Some("Alice <alice@example.com>".to_string()),
+                                },
+                                MessageSummary {
+                                    metadata: (!context.user_agent.contains("LegacyMetadata"))
+                                        .then(|| {
+                                            Self::fixture_metadata(
+                                                &validated_session.record.canonical_username,
+                                                mailbox_name,
+                                                10,
+                                            )
+                                        }),
+                                    mailbox_name: mailbox_name.to_string(),
+                                    uid: 10,
+                                    flags: Vec::new(),
+                                    date_received: "2026-03-28 12:00:00 +0000".to_string(),
+                                    size_virtual: 768,
+                                    subject: Some("Follow-up".to_string()),
+                                    from: Some("Bob <bob@example.com>".to_string()),
+                                },
+                            ]
+                        },
+                    ),
                 },
                 audit_events: vec![LogEvent::new(
                     LogLevel::Info,
@@ -1426,6 +1455,13 @@ mod tests {
                         .unwrap_or_else(|| vec!["INBOX", "Sent"]);
                     for name in names {
                         for uid in 1..=125 {
+                            if self.fixture_message_removed(
+                                &validated_session.record.canonical_username,
+                                name,
+                                uid,
+                            ) {
+                                continue;
+                            }
                             results.push(MessageSearchResult {
                                 metadata: Some(Self::fixture_metadata(
                                     &validated_session.record.canonical_username,
@@ -1445,6 +1481,24 @@ mod tests {
                                 from: Some("Synthetic Sender <sender@example.test>".into()),
                             });
                         }
+                        results.extend(
+                            self.fixture_reconcile_messages(
+                                &validated_session.record.canonical_username,
+                                name,
+                                Vec::new(),
+                            )
+                            .into_iter()
+                            .map(|message| MessageSearchResult {
+                                metadata: message.metadata,
+                                mailbox_name: message.mailbox_name,
+                                uid: message.uid,
+                                flags: message.flags,
+                                date_received: message.date_received,
+                                size_virtual: message.size_virtual,
+                                subject: message.subject,
+                                from: message.from,
+                            }),
+                        );
                     }
                 }
                 return BrowserMessageSearchOutcome {
@@ -1662,6 +1716,23 @@ mod tests {
                 };
             }
 
+            if self.fixture_message_removed(
+                &validated_session.record.canonical_username,
+                mailbox_name,
+                uid,
+            ) {
+                return BrowserMessageViewOutcome {
+                    decision: BrowserMessageViewDecision::Denied {
+                        public_reason: "not_found".into(),
+                    },
+                    audit_events: Vec::new(),
+                };
+            }
+            let moved_fixture = self.fixture_added_message(
+                &validated_session.record.canonical_username,
+                mailbox_name,
+                uid,
+            );
             let _unused_fixture = MessageView {
                 metadata: None,
                 mailbox_name: mailbox_name.to_string(),
@@ -1726,13 +1797,15 @@ mod tests {
             } else {
                 "Hello world".into()
             };
-            let mut metadata = many.then(|| {
-                Self::fixture_metadata(
+            let mut metadata = if context.user_agent.contains("LegacyMetadata") {
+                None
+            } else {
+                self.fixture_current_metadata(
                     &validated_session.record.canonical_username,
                     mailbox_name,
                     uid,
                 )
-            });
+            };
             if context.user_agent.contains("ReaderStale") {
                 if let Some(metadata) = &mut metadata {
                     metadata.version.message_guid = "changed-synthetic-message".into();
@@ -1763,7 +1836,15 @@ mod tests {
                             uid
                         },
                         subject: Some(
-                            if many && context.user_agent.contains("LongHeaders") && uid == 125 {
+                            if let Some(subject) = moved_fixture
+                                .as_ref()
+                                .and_then(|message| message.subject.as_ref())
+                            {
+                                subject.clone()
+                            } else if many
+                                && context.user_agent.contains("LongHeaders")
+                                && uid == 125
+                            {
                                 format!("<b>Synthetic header</b> {}", "W".repeat(256))
                             } else if many {
                                 format!("Message {uid:03}")
@@ -1899,73 +1980,11 @@ mod tests {
 
         fn move_message(
             &self,
-            _context: &AuthenticationContext,
-            _validated_session: &ValidatedSession,
-            source_mailbox_name: &str,
-            uid: u64,
-            destination_mailbox_name: &str,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+            request: &MessageMoveRequest,
         ) -> BrowserMessageMoveOutcome {
-            if (source_mailbox_name == "INBOX" && uid == 100156)
-                || (source_mailbox_name == "Junk" && uid == 9)
-            {
-                return BrowserMessageMoveOutcome {
-                    decision: BrowserMessageMoveDecision::Denied {
-                        public_reason: "invalid_message_reference".to_string(),
-                        retry_after_seconds: None,
-                    },
-                    audit_events: vec![LogEvent::new(
-                        LogLevel::Warn,
-                        EventCategory::Mailbox,
-                        "stub_message_move_reference_denied",
-                        "stub message move reference denied",
-                    )],
-                };
-            }
-            if destination_mailbox_name == "Locked" {
-                return BrowserMessageMoveOutcome {
-                    decision: BrowserMessageMoveDecision::Denied {
-                        public_reason: TOO_MANY_MESSAGE_MOVES_PUBLIC_REASON.to_string(),
-                        retry_after_seconds: Some(180),
-                    },
-                    audit_events: vec![LogEvent::new(
-                        LogLevel::Warn,
-                        EventCategory::Mailbox,
-                        "stub_message_move_throttled",
-                        "stub message move throttled",
-                    )],
-                };
-            }
-            if source_mailbox_name == "INBOX"
-                && matches!(uid, 9 | 10)
-                && !destination_mailbox_name.is_empty()
-            {
-                BrowserMessageMoveOutcome {
-                    decision: BrowserMessageMoveDecision::Moved {
-                        source_mailbox_name: source_mailbox_name.to_string(),
-                        destination_mailbox_name: destination_mailbox_name.to_string(),
-                        uid,
-                    },
-                    audit_events: vec![LogEvent::new(
-                        LogLevel::Info,
-                        EventCategory::Mailbox,
-                        "stub_message_move",
-                        "stub message move completed",
-                    )],
-                }
-            } else {
-                BrowserMessageMoveOutcome {
-                    decision: BrowserMessageMoveDecision::Denied {
-                        public_reason: "invalid_request".to_string(),
-                        retry_after_seconds: None,
-                    },
-                    audit_events: vec![LogEvent::new(
-                        LogLevel::Warn,
-                        EventCategory::Mailbox,
-                        "stub_message_move_denied",
-                        "stub message move denied",
-                    )],
-                }
-            }
+            self.set_fixture_message_move(context, session, request)
         }
 
         fn list_drafts(
@@ -2826,7 +2845,19 @@ mod tests {
             ),
         };
 
-        let outcome = gateway.move_message(&context, &validated_session, "INBOX", 9, "Archive");
+        let outcome = gateway.move_message(
+            &context,
+            &validated_session,
+            &MessageMoveRequest::new(
+                MessageMovePolicy::default(),
+                "INBOX",
+                "Archive",
+                9,
+                crate::message_metadata::MessageVersion::new("a".repeat(32), "fixture-9".into())
+                    .unwrap(),
+            )
+            .unwrap(),
+        );
         match outcome.decision {
             BrowserMessageMoveDecision::Denied {
                 public_reason,
@@ -2930,7 +2961,7 @@ mod tests {
         assert!(body.contains("name=\"mailbox\" value=\"INBOX\""));
         assert!(body.contains("name=\"scope\" value=\"all\""));
         assert!(body.contains("Archive shortcut sends messages"));
-        assert!(body.contains("name=\"destination_mailbox\" value=\"Archive/2026\""));
+        assert!(body.contains("name=\"action\" value=\"archive\""));
         assert!(body.contains(">Archive</button>"));
         assert!(body.contains("aria-label=\"Sort by Subject ascending\""));
         assert!(body.contains("aria-label=\"Sort by From ascending\""));
@@ -3371,7 +3402,7 @@ mod tests {
                 "POST",
                 "/message/move",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=9&destination_mailbox=Archive%2F2026",
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=9&destination_mailbox=Archive%2F2026", "move"),
             ),
             "127.0.0.1",
         );
@@ -3395,7 +3426,7 @@ mod tests {
                 "POST",
                 "/message/move",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=9&destination_mailbox=Archive%2F2026",
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=9&destination_mailbox=Archive%2F2026", "move"),
             ),
             "127.0.0.1",
         );
@@ -3420,7 +3451,7 @@ mod tests {
                 "POST",
                 "/messages/move",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=INBOX.Projects&uid_9=9",
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=INBOX.Projects&uid_9=9", "move"),
             ),
             "127.0.0.1",
         );
@@ -3444,7 +3475,7 @@ mod tests {
                 "POST",
                 "/messages/move",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=INBOX.Projects&uid_9=9",
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=INBOX.Projects&uid_9=9", "move"),
             ),
             "127.0.0.1",
         );
@@ -3469,7 +3500,7 @@ mod tests {
                 "POST",
                 "/messages/archive",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=Archive%2F2026&uid_9=9",
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=Archive%2F2026&uid_9=9", "archive"),
             ),
             "127.0.0.1",
         );
@@ -3492,7 +3523,7 @@ mod tests {
                 "POST",
                 "/messages/archive",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=Archive%2F2026&uid_9=9",
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=Archive%2F2026&uid_9=9", "archive"),
             ),
             "127.0.0.1",
         );
@@ -3890,9 +3921,9 @@ mod tests {
         assert!(body.contains("mode=reply"));
         assert!(body.contains("mode=forward"));
         assert!(body.contains("Archive Message"));
-        assert!(body.contains("name=\"destination_mailbox\" value=\"Archive/2026\""));
-        assert!(body.contains("Delete to Trash"));
-        assert!(body.contains("name=\"destination_mailbox\" value=\"Trash\""));
+        assert!(body.contains("name=\"action\" value=\"archive\""));
+        assert!(body.contains("Move to Bin"));
+        assert!(body.contains("name=\"action\" value=\"bin\""));
         assert!(body.contains("action=\"/message/move\""));
         assert!(body.contains("<select name=\"destination_mailbox\">"));
         assert!(body.contains("<option value=\"Trash\">Trash</option>"));
@@ -4059,15 +4090,22 @@ mod tests {
         let body = body_text(&response);
         assert!(body.contains("id=\"bulk-move-form\""));
         assert!(body.contains("action=\"/messages/move\""));
-        assert!(body.contains("id=\"bulk-archive-form\""));
-        assert!(body.contains("action=\"/messages/archive\""));
-        assert!(body.contains("name=\"destination_mailbox\" value=\"Archive/2026\""));
+        assert!(!body.contains("id=\"bulk-archive-form\""));
+        assert!(body.contains("name=\"action\" value=\"archive\""));
+        assert!(body.contains("name=\"action\" value=\"archive\""));
         assert!(body.contains("<option value=\"Archive/2026\">Archive/2026</option>"));
         assert!(body.contains("<option value=\"INBOX.Projects\">INBOX.Projects</option>"));
-        assert!(body.contains("form=\"bulk-move-form\" type=\"checkbox\" name=\"uid_9\""));
-        assert!(body.contains("form=\"bulk-move-form\" type=\"checkbox\" name=\"uid_10\""));
-        assert!(body.contains("form=\"bulk-archive-form\" type=\"checkbox\" name=\"uid_9\""));
-        assert!(body.contains("form=\"bulk-archive-form\" type=\"checkbox\" name=\"uid_10\""));
+        assert!(body.contains("form=\"bulk-move-form\" type=\"checkbox\" name=\"message_9\""));
+        assert!(body.contains("form=\"bulk-move-form\" type=\"checkbox\" name=\"message_10\""));
+        assert_eq!(
+            body.matches("type=\"checkbox\" name=\"message_9\"").count(),
+            1
+        );
+        assert_eq!(
+            body.matches("type=\"checkbox\" name=\"message_10\"")
+                .count(),
+            1
+        );
         assert!(body.contains(">Move Selected</button>"));
         assert!(body.contains(">Archive Selected</button>"));
     }
@@ -4079,15 +4117,17 @@ mod tests {
                 "POST",
                 "/message/move",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=9&destination_mailbox=Archive%2F2026",
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=9&destination_mailbox=Archive%2F2026", "move"),
             ),
             "127.0.0.1",
         );
 
         assert_eq!(response.response.status_code, 303);
-        assert!(response.response.headers.iter().any(|(name, value)| {
-            name == "Location" && value == "/mailbox?name=INBOX&moved_to=Archive%2F2026"
-        }));
+        assert!(response
+            .response
+            .headers
+            .iter()
+            .any(|(name, value)| { name == "Location" && value == "/mailbox?name=INBOX" }));
     }
 
     #[test]
@@ -4097,13 +4137,13 @@ mod tests {
                 "POST",
                 "/message/move",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=100156&destination_mailbox=Junk",
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=100156&destination_mailbox=Junk", "move"),
             ),
             "127.0.0.1",
         );
 
-        assert_eq!(response.response.status_code, 404);
-        assert!(body_text(&response).contains("selected message was not found"));
+        assert_eq!(response.response.status_code, 409);
+        assert!(body_text(&response).contains("current message was moved, removed or replaced"));
         assert!(!response
             .response
             .headers
@@ -4118,13 +4158,13 @@ mod tests {
                 "POST",
                 "/message/move",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=Junk&uid=9&destination_mailbox=INBOX",
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=Junk&uid=9&destination_mailbox=INBOX", "move"),
             ),
             "127.0.0.1",
         );
 
-        assert_eq!(response.response.status_code, 404);
-        assert!(body_text(&response).contains("selected message was not found"));
+        assert_eq!(response.response.status_code, 409);
+        assert!(body_text(&response).contains("current message was moved, removed or replaced"));
     }
 
     #[test]
@@ -4134,13 +4174,15 @@ mod tests {
                 "POST",
                 "/message/move",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=abc&destination_mailbox=Junk",
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=abc&destination_mailbox=Junk", "move"),
             ),
             "127.0.0.1",
         );
 
         assert_eq!(response.response.status_code, 400);
-        assert!(body_text(&response).contains("A positive IMAP UID is required."));
+        assert!(
+            body_text(&response).contains("Select current messages and an available destination")
+        );
     }
 
     #[test]
@@ -4150,13 +4192,15 @@ mod tests {
                 "POST",
                 "/message/move",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=9&destination_mailbox=",
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=9&destination_mailbox=", "move"),
             ),
             "127.0.0.1",
         );
 
         assert_eq!(response.response.status_code, 400);
-        assert!(body_text(&response).contains("submitted request was not valid"));
+        assert!(
+            body_text(&response).contains("Select current messages and an available destination")
+        );
     }
 
     #[test]
@@ -4166,16 +4210,17 @@ mod tests {
                 "POST",
                 "/messages/archive",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=Archive%2F2026&uid_9=9&uid_10=10",
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=Archive%2F2026&uid_9=9&uid_10=10", "archive"),
             ),
             "127.0.0.1",
         );
 
         assert_eq!(response.response.status_code, 303);
-        assert!(response.response.headers.iter().any(|(name, value)| {
-            name == "Location"
-                && value == "/mailbox?name=INBOX&moved_to=Archive%2F2026&moved_count=2"
-        }));
+        assert!(response
+            .response
+            .headers
+            .iter()
+            .any(|(name, value)| { name == "Location" && value == "/mailbox?name=INBOX" }));
     }
 
     #[test]
@@ -4185,16 +4230,17 @@ mod tests {
                 "POST",
                 "/messages/move",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=INBOX.Projects&uid_9=9&uid_10=10",
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=INBOX.Projects&uid_9=9&uid_10=10", "move"),
             ),
             "127.0.0.1",
         );
 
         assert_eq!(response.response.status_code, 303);
-        assert!(response.response.headers.iter().any(|(name, value)| {
-            name == "Location"
-                && value == "/mailbox?name=INBOX&moved_to=INBOX.Projects&moved_count=2"
-        }));
+        assert!(response
+            .response
+            .headers
+            .iter()
+            .any(|(name, value)| { name == "Location" && value == "/mailbox?name=INBOX" }));
     }
 
     #[test]
@@ -4204,13 +4250,15 @@ mod tests {
                 "POST",
                 "/messages/archive",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=Archive%2F2026",
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=Archive%2F2026", "archive"),
             ),
             "127.0.0.1",
         );
 
         assert_eq!(response.response.status_code, 400);
-        assert!(body_text(&response).contains("Select at least one message to archive."));
+        assert!(
+            body_text(&response).contains("Select current messages and an available destination")
+        );
     }
 
     #[test]
@@ -4220,13 +4268,15 @@ mod tests {
                 "POST",
                 "/messages/move",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=INBOX.Projects",
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=INBOX.Projects", "move"),
             ),
             "127.0.0.1",
         );
 
         assert_eq!(response.response.status_code, 400);
-        assert!(body_text(&response).contains("Select at least one message to move."));
+        assert!(
+            body_text(&response).contains("Select current messages and an available destination")
+        );
     }
 
     #[test]
@@ -4236,13 +4286,15 @@ mod tests {
                 "POST",
                 "/messages/archive",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=Archive%2F2026&uid_1=1&uid_2=2&uid_3=3&uid_4=4&uid_5=5&uid_6=6&uid_7=7&uid_8=8&uid_9=9&uid_10=10&uid_11=11",
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=Archive%2F2026&uid_1=1&uid_2=2&uid_3=3&uid_4=4&uid_5=5&uid_6=6&uid_7=7&uid_8=8&uid_9=9&uid_10=10&uid_11=11", "archive"),
             ),
             "127.0.0.1",
         );
 
         assert_eq!(response.response.status_code, 400);
-        assert!(body_text(&response).contains("The archive selection was not valid."));
+        assert!(
+            body_text(&response).contains("Select current messages and an available destination")
+        );
     }
 
     #[test]
@@ -4252,13 +4304,15 @@ mod tests {
                 "POST",
                 "/messages/move",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=INBOX.Projects&uid_1=1&uid_2=2&uid_3=3&uid_4=4&uid_5=5&uid_6=6&uid_7=7&uid_8=8&uid_9=9&uid_10=10&uid_11=11",
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=INBOX.Projects&uid_1=1&uid_2=2&uid_3=3&uid_4=4&uid_5=5&uid_6=6&uid_7=7&uid_8=8&uid_9=9&uid_10=10&uid_11=11", "move"),
             ),
             "127.0.0.1",
         );
 
         assert_eq!(response.response.status_code, 400);
-        assert!(body_text(&response).contains("The move selection was not valid."));
+        assert!(
+            body_text(&response).contains("Select current messages and an available destination")
+        );
     }
 
     #[test]
@@ -4268,14 +4322,15 @@ mod tests {
                 "POST",
                 "/messages/move",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=dovecot&uid_9=9",
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=dovecot&uid_9=9", "move"),
             ),
             "127.0.0.1",
         );
 
         assert_eq!(response.response.status_code, 400);
-        assert!(body_text(&response)
-            .contains("The selected destination mailbox is not available for bulk move."));
+        assert!(
+            body_text(&response).contains("Select current messages and an available destination")
+        );
     }
 
     #[test]
@@ -4285,19 +4340,18 @@ mod tests {
                 "POST",
                 "/messages/move",
                 &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=INBOX.Projects&uid_9=9&uid_100156=100156",
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&destination_mailbox=INBOX.Projects&uid_9=9&uid_100156=100156", "move"),
             ),
             "127.0.0.1",
         );
 
-        assert_eq!(response.response.status_code, 404);
-        assert!(
-            body_text(&response).contains("1 message(s) were moved before this request stopped.")
-        );
+        assert_eq!(response.response.status_code, 409);
+        assert!(body_text(&response)
+            .contains("1 confirmed moved; 0 uncertain; 0 remaining messages were not attempted."));
     }
 
     #[test]
-    fn mailbox_page_renders_move_success_notice() {
+    fn mailbox_page_does_not_trust_caller_supplied_move_success() {
         let response = app().handle_request(
             &request(
                 "GET",
@@ -4315,11 +4369,11 @@ mod tests {
         );
 
         assert_eq!(response.response.status_code, 200);
-        assert!(body_text(&response).contains("Message moved to Archive/2026."));
+        assert!(!body_text(&response).contains("Update complete:"));
     }
 
     #[test]
-    fn mailbox_page_renders_bulk_move_success_notice() {
+    fn mailbox_page_does_not_trust_caller_supplied_bulk_count() {
         let response = app().handle_request(
             &request(
                 "GET",
@@ -4337,7 +4391,7 @@ mod tests {
         );
 
         assert_eq!(response.response.status_code, 200);
-        assert!(body_text(&response).contains("2 messages moved to Archive/2026."));
+        assert!(!body_text(&response).contains("Update complete:"));
     }
 
     #[test]
@@ -5199,18 +5253,21 @@ mod tests {
 
     #[test]
     fn message_move_route_returns_retry_after_when_throttled() {
+        let mut headers = authenticated_same_origin_headers().to_vec();
+        headers.retain(|(name, _)| !name.eq_ignore_ascii_case("user-agent"));
+        headers.push(("User-Agent", "OSMAP/ManyMessages;MoveThrottled"));
         let response = app().handle_request(
             &request(
                 "POST",
                 "/message/move",
-                &authenticated_same_origin_headers(),
-                "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=9&destination_mailbox=Locked",
+                &headers,
+                &move_form("csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&mailbox=INBOX&uid=9&destination_mailbox=Junk", "move"),
             ),
             "127.0.0.1",
         );
 
         assert_eq!(response.response.status_code, 429);
-        assert!(body_text(&response).contains("Too many mailbox move requests were observed."));
+        assert!(body_text(&response).contains("mail action limit has been reached"));
         assert!(response
             .response
             .headers

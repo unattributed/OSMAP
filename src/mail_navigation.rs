@@ -4,6 +4,27 @@ use crate::http_support::url_encode;
 use crate::mail_list::ListViewState;
 use crate::mailbox::{MailboxEntry, MailboxListingPolicy, MessageSearchField};
 
+/// Clear action selection after a move; the next GET recomputes counts/pages.
+pub fn mail_return_after_move(value: &str, source: &str) -> Option<String> {
+    let safe = safe_mail_return(value)?;
+    let (path, query) = safe.split_once('?')?;
+    if path == "/message" {
+        return Some(format!("/mailbox?name={}", url_encode(source)));
+    }
+    let mut fields = parse_urlencoded_form(query.as_bytes(), 12, 2048).ok()?;
+    for key in ["select", "selected_mailbox", "selected_uid"] {
+        fields.remove(key);
+    }
+    Some(format!(
+        "{path}?{}",
+        fields
+            .iter()
+            .map(|(key, value)| format!("{}={}", url_encode(key), url_encode(value)))
+            .collect::<Vec<_>>()
+            .join("&")
+    ))
+}
+
 pub fn safe_mail_return(value: &str) -> Option<String> {
     if value.len() > 2048 || value.contains('#') || value.chars().any(char::is_control) {
         return None;

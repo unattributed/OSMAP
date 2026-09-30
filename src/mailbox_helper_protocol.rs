@@ -67,6 +67,7 @@ pub(super) enum MailboxHelperRequest {
         source_mailbox_name: String,
         destination_mailbox_name: String,
         uid: u64,
+        version: MessageVersion,
         grant: MailboxHelperGrant,
     },
     MessageAppend {
@@ -127,6 +128,7 @@ pub(super) enum MailboxHelperResponse {
         source_mailbox_name: String,
         destination_mailbox_name: String,
         uid: u64,
+        version: MessageVersion,
     },
     MessageAppendOk {
         mailbox_name: String,
@@ -204,12 +206,14 @@ pub(super) fn encode_request(request: &MailboxHelperRequest) -> String {
             source_mailbox_name,
             destination_mailbox_name,
             uid,
+            version,
             grant,
         } => format!(
-            "operation=message_move\ncanonical_username_b64={}\nsource_mailbox_name_b64={}\ndestination_mailbox_name_b64={}\nuid={uid}\n{}",
+            "operation=message_move\ncanonical_username_b64={}\nsource_mailbox_name_b64={}\ndestination_mailbox_name_b64={}\nuid={uid}\n{}{}",
             encode_base64(canonical_username.as_bytes()),
             encode_base64(source_mailbox_name.as_bytes()),
             encode_base64(destination_mailbox_name.as_bytes()),
+            encode_move_version(version),
             encode_grant_fields(grant),
         ),
         MailboxHelperRequest::MessageAppend {
@@ -356,11 +360,15 @@ pub(super) fn parse_request(input: &str) -> Result<MailboxHelperRequest, String>
             let uid = require_field(&fields, "uid")?
                 .parse::<u64>()
                 .map_err(|error| format!("invalid helper uid: {error}"))?;
+            if uid.to_string() != require_field(&fields, "uid")? {
+                return Err("noncanonical move UID".into());
+            }
             let request = MessageMoveRequest::new(
                 MessageMovePolicy::default(),
                 source_mailbox_name,
                 destination_mailbox_name,
                 uid,
+                parse_move_version(&fields)?,
             )
             .map_err(|error| error.reason)?;
             Ok(MailboxHelperRequest::MessageMove {
@@ -368,6 +376,7 @@ pub(super) fn parse_request(input: &str) -> Result<MailboxHelperRequest, String>
                 source_mailbox_name: request.source_mailbox_name,
                 destination_mailbox_name: request.destination_mailbox_name,
                 uid: request.uid,
+                version: request.version,
                 grant,
             })
         }
@@ -612,12 +621,15 @@ fn canonical_grant_payload(request: &MailboxHelperRequest, grant: &MailboxHelper
             source_mailbox_name,
             destination_mailbox_name,
             uid,
+            version,
             ..
         } => {
             fields.push(canonical_username.clone());
             fields.push(source_mailbox_name.clone());
             fields.push(destination_mailbox_name.clone());
             fields.push(uid.to_string());
+            fields.push(version.mailbox_guid.clone());
+            fields.push(version.message_guid.clone());
         }
         MailboxHelperRequest::MessageAppend {
             canonical_username,
@@ -794,10 +806,12 @@ pub(super) fn encode_response(response: &MailboxHelperResponse) -> String {
             source_mailbox_name,
             destination_mailbox_name,
             uid,
+            version,
         } => format!(
-            "status=ok\noperation=message_move\nsource_mailbox_name_b64={}\ndestination_mailbox_name_b64={}\nuid={uid}\n",
+            "status=ok\noperation=message_move\nsource_mailbox_name_b64={}\ndestination_mailbox_name_b64={}\nuid={uid}\n{}",
             encode_base64(source_mailbox_name.as_bytes()),
             encode_base64(destination_mailbox_name.as_bytes()),
+            encode_move_version(version),
         ),
         MailboxHelperResponse::MessageAppendOk {
             mailbox_name,
@@ -836,6 +850,7 @@ pub(super) fn parse_response(
     let mut current_message_fields = BTreeMap::<String, String>::new();
     let mut attachment_fields = BTreeMap::<String, String>::new();
     let mut flag_fields = BTreeMap::<String, String>::new();
+    let mut move_fields = BTreeMap::<String, String>::new();
     let mut source_mailbox_name = None::<String>;
     let mut destination_mailbox_name = None::<String>;
     let mut moved_uid = None::<u64>;
@@ -874,6 +889,14 @@ pub(super) fn parse_response(
             return Err("duplicate helper response control field".into());
         }
         match key {
+            "move_mailbox_guid" | "move_message_guid_b64" => {
+                if move_fields
+                    .insert(key.to_string(), value.to_string())
+                    .is_some()
+                {
+                    return Err("duplicate move confirmation field".into());
+                }
+            }
             "flag_mailbox_b64"
             | "flag_uid"
             | "flag_mailbox_guid"
@@ -946,7 +969,10 @@ pub(super) fn parse_response(
                     value
                         .parse::<u64>()
                         .map_err(|error| format!("invalid helper move uid: {error}"))?,
-                )
+                );
+                if moved_uid.map(|uid| uid.to_string()).as_deref() != Some(value) {
+                    return Err("noncanonical move confirmation UID".into());
+                }
             }
             "message_bytes" => {
                 message_bytes = Some(
@@ -1015,6 +1041,26 @@ pub(super) fn parse_response(
         }
     }
 
+    if operation.as_deref() == Some("message_move") {
+        if status.as_deref() != Some("ok")
+            || response_field_names.iter().any(|key| {
+                !matches!(
+                    *key,
+                    "status"
+                        | "operation"
+                        | "source_mailbox_name_b64"
+                        | "destination_mailbox_name_b64"
+                        | "uid"
+                        | "move_mailbox_guid"
+                        | "move_message_guid_b64"
+                )
+            })
+        {
+            return Err("unexpected fields in move confirmation".into());
+        }
+    } else if !move_fields.is_empty() {
+        return Err("move identity on another response operation".into());
+    }
     if operation.as_deref() == Some("message_flag") {
         if status.as_deref() != Some("ok")
             || response_field_names.iter().any(|key| {
@@ -1084,6 +1130,7 @@ pub(super) fn parse_response(
                     "helper response did not include destination_mailbox_name".to_string()
                 })?,
                 uid: moved_uid.ok_or_else(|| "helper response did not include uid".to_string())?,
+                version: parse_move_version(&move_fields)?,
             }),
             Some("message_append") => Ok(MailboxHelperResponse::MessageAppendOk {
                 mailbox_name: mailbox_name.ok_or_else(|| {
@@ -1202,6 +1249,8 @@ fn reject_unknown_request_fields(
             "source_mailbox_name_b64",
             "destination_mailbox_name_b64",
             "uid",
+            "move_mailbox_guid",
+            "move_message_guid_b64",
             "grant_issued_at",
             "grant_expires_at",
             "grant_nonce",
@@ -1915,4 +1964,23 @@ fn decode_base64_bytes(input: &str, max_len: usize, field: &str) -> Result<Vec<u
     }
 
     Ok(output)
+}
+
+fn encode_move_version(version: &MessageVersion) -> String {
+    format!(
+        "move_mailbox_guid={}\nmove_message_guid_b64={}\n",
+        version.mailbox_guid,
+        encode_base64(version.message_guid.as_bytes())
+    )
+}
+fn parse_move_version(fields: &BTreeMap<String, String>) -> Result<MessageVersion, String> {
+    MessageVersion::new(
+        require_field(fields, "move_mailbox_guid")?.into(),
+        decode_base64_text(
+            require_field(fields, "move_message_guid_b64")?,
+            MAX_MESSAGE_GUID_BYTES,
+            "move message GUID",
+        )?,
+    )
+    .map_err(|error| error.reason)
 }

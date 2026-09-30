@@ -810,6 +810,15 @@ impl MailboxHelperMessageMoveBackend {
     }
 }
 
+fn move_unknown() -> MailboxBackendError {
+    MailboxBackendError {
+        backend: "message-move-unknown",
+        reason:
+            "move update response could not be confirmed; refresh before choosing another action"
+                .into(),
+    }
+}
+
 impl MessageMoveBackend for MailboxHelperMessageMoveBackend {
     fn move_message(
         &self,
@@ -817,147 +826,100 @@ impl MessageMoveBackend for MailboxHelperMessageMoveBackend {
         request: &MessageMoveRequest,
     ) -> Result<(), MailboxBackendError> {
         let mut helper_request = MailboxHelperRequest::MessageMove {
-            canonical_username: canonical_username.to_string(),
+            canonical_username: canonical_username.into(),
             source_mailbox_name: request.source_mailbox_name.clone(),
             destination_mailbox_name: request.destination_mailbox_name.clone(),
             uid: request.uid,
+            version: request.version.clone(),
             grant: MailboxHelperGrant::unsigned(),
         };
-        let request_bytes = encode_authorized_request(&self.grant_key_path, &mut helper_request);
-
+        let bytes =
+            encode_authorized_request(&self.grant_key_path, &mut helper_request).map_err(|_| {
+                MailboxBackendError {
+                    backend: "message-move-unavailable",
+                    reason: "move helper authority is unavailable".into(),
+                }
+            })?;
         #[cfg(not(unix))]
         {
-            let _ = request_bytes;
-            return Err(MailboxBackendError {
-                backend: "mailbox-helper-client",
-                reason: "mailbox helper requires a Unix-domain socket platform".to_string(),
-            });
+            let _ = bytes;
+            Err(MailboxBackendError {
+                backend: "message-move-unavailable",
+                reason: "move helper requires Unix-domain sockets".into(),
+            })
         }
-
         #[cfg(unix)]
         {
-            let request_bytes = request_bytes.map_err(|reason| MailboxBackendError {
-                backend: "mailbox-helper-client",
-                reason,
-            })?;
             let mut stream =
-                UnixStream::connect(&self.socket_path).map_err(|error| MailboxBackendError {
-                    backend: "mailbox-helper-client",
-                    reason: format!(
-                        "failed to connect to mailbox helper {}: {error}",
-                        self.socket_path.display()
-                    ),
+                UnixStream::connect(&self.socket_path).map_err(|_| MailboxBackendError {
+                    backend: "message-move-unavailable",
+                    reason: "move helper is unavailable".into(),
                 })?;
-
-            configure_stream_timeouts(&stream, self.policy);
+            let unavailable = |_| MailboxBackendError {
+                backend: "message-move-unavailable",
+                reason: "move helper transport deadline is unavailable".into(),
+            };
             stream
-                .write_all(&request_bytes)
-                .map_err(|error| MailboxBackendError {
-                    backend: "mailbox-helper-client",
-                    reason: format!("failed to write helper request: {error}"),
-                })?;
+                .set_read_timeout(Some(Duration::from_secs(
+                    self.policy.read_timeout_secs.max(1),
+                )))
+                .map_err(unavailable)?;
+            stream
+                .set_write_timeout(Some(Duration::from_secs(
+                    self.policy.write_timeout_secs.max(1),
+                )))
+                .map_err(unavailable)?;
+            stream.write_all(&bytes).map_err(|_| move_unknown())?;
             stream
                 .shutdown(Shutdown::Write)
-                .map_err(|error| MailboxBackendError {
-                    backend: "mailbox-helper-client",
-                    reason: format!("failed to finish helper request: {error}"),
-                })?;
-
-            let response_bytes =
-                read_bounded_from_stream(&mut stream, self.policy.max_response_bytes).map_err(
-                    |reason| MailboxBackendError {
-                        backend: "mailbox-helper-client",
-                        reason,
-                    },
-                )?;
+                .map_err(|_| move_unknown())?;
+            // The move response contains only identity, state and outcome.
+            let bytes =
+                read_bounded_from_stream(&mut stream, self.policy.max_response_bytes.min(4096))
+                    .map_err(|_| move_unknown())?;
             let response = parse_response(
                 MailboxListingPolicy::default(),
                 MessageListPolicy::default(),
                 MessageSearchPolicy::default(),
                 MessageViewPolicy::default(),
-                std::str::from_utf8(&response_bytes).map_err(|error| MailboxBackendError {
-                    backend: "mailbox-helper-client",
-                    reason: format!("helper response was not valid UTF-8: {error}"),
-                })?,
+                std::str::from_utf8(&bytes).map_err(|_| move_unknown())?,
             )
-            .map_err(|reason| MailboxBackendError {
-                backend: "mailbox-helper-client",
-                reason,
-            })?;
-
+            .map_err(|_| move_unknown())?;
             match response {
-                MailboxHelperResponse::MessageFlagOk { .. } => Err(MailboxBackendError {
-                    backend: "mailbox-helper-client",
-                    reason: "helper returned a flag response for a different operation".into(),
-                }),
                 MailboxHelperResponse::MessageMoveOk {
                     source_mailbox_name,
                     destination_mailbox_name,
                     uid,
-                } => {
-                    if source_mailbox_name != request.source_mailbox_name {
-                        return Err(MailboxBackendError {
-                            backend: "mailbox-helper-client",
-                            reason: format!(
-                                "helper response source mailbox mismatch: expected {:?}, got {:?}",
-                                request.source_mailbox_name, source_mailbox_name
-                            ),
-                        });
-                    }
-                    if destination_mailbox_name != request.destination_mailbox_name {
-                        return Err(MailboxBackendError {
-                            backend: "mailbox-helper-client",
-                            reason: format!(
-                                "helper response destination mailbox mismatch: expected {:?}, got {:?}",
-                                request.destination_mailbox_name, destination_mailbox_name
-                            ),
-                        });
-                    }
-                    if uid != request.uid {
-                        return Err(MailboxBackendError {
-                            backend: "mailbox-helper-client",
-                            reason: format!(
-                                "helper response uid mismatch: expected {}, got {}",
-                                request.uid, uid
-                            ),
-                        });
-                    }
+                    version,
+                } if source_mailbox_name == request.source_mailbox_name
+                    && destination_mailbox_name == request.destination_mailbox_name
+                    && uid == request.uid
+                    && version == request.version =>
+                {
                     Ok(())
                 }
-                MailboxHelperResponse::Error { backend, reason } => Err(MailboxBackendError {
-                    backend: "mailbox-helper-client",
-                    reason: format!("{backend}: {reason}"),
-                }),
-                MailboxHelperResponse::MailboxListOk { .. } => Err(MailboxBackendError {
-                    backend: "mailbox-helper-client",
-                    reason: "helper returned mailbox-list response for message-move request"
-                        .to_string(),
-                }),
-                MailboxHelperResponse::MessageListOk { .. } => Err(MailboxBackendError {
-                    backend: "mailbox-helper-client",
-                    reason: "helper returned message-list response for message-move request"
-                        .to_string(),
-                }),
-                MailboxHelperResponse::MessageSearchOk { .. } => Err(MailboxBackendError {
-                    backend: "mailbox-helper-client",
-                    reason: "helper returned message-search response for message-move request"
-                        .to_string(),
-                }),
-                MailboxHelperResponse::MessageViewOk { .. } => Err(MailboxBackendError {
-                    backend: "mailbox-helper-client",
-                    reason: "helper returned message-view response for message-move request"
-                        .to_string(),
-                }),
-                MailboxHelperResponse::AttachmentDownloadOk { .. } => Err(MailboxBackendError {
-                    backend: "mailbox-helper-client",
-                    reason: "helper returned attachment-download response for message-move request"
-                        .to_string(),
-                }),
-                MailboxHelperResponse::MessageAppendOk { .. } => Err(MailboxBackendError {
-                    backend: "mailbox-helper-client",
-                    reason: "helper returned message-append response for message-move request"
-                        .to_string(),
-                }),
+                MailboxHelperResponse::Error { backend, .. } => match backend.as_str() {
+                    "message-move-stale" => Err(MailboxBackendError {
+                        backend: "message-move-stale",
+                        reason: "message identity is no longer current".into(),
+                    }),
+                    "message-move-busy" => Err(MailboxBackendError {
+                        backend: "message-move-busy",
+                        reason: "another move update is active".into(),
+                    }),
+                    "message-move-parser" => Err(MailboxBackendError {
+                        backend: "message-move-parser",
+                        reason: "move update was invalid".into(),
+                    }),
+                    "message-move-unavailable" | "message-json-parser" => {
+                        Err(MailboxBackendError {
+                            backend: "message-move-unavailable",
+                            reason: "move state could not be read".into(),
+                        })
+                    }
+                    _ => Err(move_unknown()),
+                },
+                _ => Err(move_unknown()),
             }
         }
     }

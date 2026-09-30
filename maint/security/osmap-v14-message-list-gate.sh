@@ -48,7 +48,11 @@ require_pattern "message-preview-meta" "src/http_ui.rs"
 require_pattern "message-flags" "src/http_ui.rs"
 require_pattern "message-empty-state" "src/http_ui.rs"
 require_pattern "bulk-move-form" "src/http_ui.rs"
-require_pattern "bulk-archive-form" "src/http_ui.rs"
+# S02-03 consolidates move/archive/bin/restore into one native selection form.
+require_pattern "Archive Selected" "src/http_ui.rs"
+require_pattern "MAX_BULK_SELECTION" "src/http_ui.rs"
+require_pattern "message_guid" "src/http_ui.rs"
+require_pattern "bulk_identity_key_limit_and_legacy_metadata_controls_are_enforced" "src/http/move_tests.rs"
 require_pattern "csrf_token" "src/http_ui.rs"
 
 require_pattern "message-list-summary" "src/http_support.rs"

@@ -899,3 +899,104 @@ with later outcomes. Correct errors using a new entry referencing the old one.
 - Final common acceptance, V14, formatting, diff and frozen-plan checks PASS.
   Existing V10 inventories/hashes were refreshed from the final Rust source;
   the earlier common-gate attempts are superseded by the final passing run.
+
+### S02-02 delivery / S02-03 work order — 2026-09-30
+
+- E signed as `da16175e84dabbeaa9b091343d05665d199a06c7`, Shopkeeper
+  verified; clean checkpoint; fourteen ahead/zero behind recorded origin/main.
+  Exact archive SHA-256
+  `05104b36fe6da6383b799b33fe3539279a14f22df8bb91bd398654b6931e9f21`;
+  native source `/home/foo/osmap-ux-s02-20260930-kSg9jZTl`. Native library,
+  hostile-rendering and explicit isolated signed-helper checks pass. Standard
+  checkout and services unchanged; temporary native mail fixture removed.
+  Native log SHA-256
+  `b15b5c00650f8a281f45db684e2764d7d314908ccc3b0088c7e0f49e706edc34`.
+  Human acceptance, sync and deployment remain separate and pending.
+- S02-03 IN_PROGRESS under D01/D05/D06 and the operator's day-long engineering
+  mandate. Allowed: mailbox move model/backend/helper protocol and clients;
+  browser gateway, move/bulk routes, list/reader forms, navigation and CSS;
+  synthetic/native/browser tests, generated evidence and current progress docs.
+  Strengthen existing move operations with mandatory stored mailbox/message
+  identity. Old forms/helpers must refuse unsupported identities; no fallback.
+- Confirm native move semantics first in a new owner-private standalone
+  synthetic Maildir on obsd1. Use only its explicit temporary configuration,
+  current OS identity and no `-u`/SQL/daemon; move synthetic messages between
+  fixture folders and restore/remove the fixture. Never touch live account
+  mail, services, firewall, packages, host configuration or standard checkout.
+- Bind pre-read, native mutation query and confirmation to stored identity;
+  bounded shared mutation gate/deadline; reserve mail-action quota atomically
+  and fail closed. Missing/stale/duplicate identity does not issue a write.
+  An unconfirmed write is explicitly unknown, with no automatic retry.
+- Consolidate bounded selection (maximum ten) into native forms, with explicit
+  existing destination, Archive, Bin and Restore to Inbox semantics. Bin means
+  a reversible move to an existing Trash mailbox; no permanent delete command.
+  Validate CSRF, account ownership, names and every selected identity before
+  acting. Sequential bulk work stops on failure; show confirmed, uncertain and
+  unattempted counts, and provide read-only reconciliation navigation.
+- Preserve bounded mailbox/search context where possible, clear moved selection
+  and recalculate rows/counts from fresh reads. Unknown metadata disables action
+  controls honestly. Proof includes stale/replay/mismatch/limits/partial failure,
+  signed-helper field binding and fail-closed responses, native move/restore and
+  neighbour preservation, keyboard/mobile/browser/theming regressions and the
+  common gates. No new dependency, script permission, cryptography or deployment.
+  Native exact-source qualification follows each clean signed checkpoint.
+
+### S02-03 checkpoint F — reversible identity-bound moves verified locally
+
+- Replaced the old exit-code-only move backend with stored mailbox/message
+  generation checks before mutation, exact account/folder/UID/GUID predicates
+  on `doveadm move`, and confirmation that the source identity disappeared and
+  one matching identity reached the destination. Existing destination copies,
+  stale/duplicate/mismatched identity and a busy gate refuse before writing.
+  One three-second native deadline covers all five operations. Flags and moves
+  share a nonblocking mutation gate in both direct and helper runtimes.
+- Mandatory identities are bound into the signed helper request and echoed in
+  a strict bounded confirmation. Old forms/helpers refuse without fallback.
+  The browser gateway now reserves the shared action quota atomically; storage
+  failure refuses. Failed or uncertain writes consume their reservation and
+  are never retried automatically. Native diagnostics cannot leak body output.
+- One visible checkbox group supports move, configured Archive, Bin to existing
+  Trash and Restore to Inbox. Maximum ten source-mailbox identities; canonical
+  UID/key matching, explicit allowed fields and a 16 KiB form bound. Sequential
+  bulk processing stops at the first failure or before starting another item
+  after the configured deadline; an active bounded gateway operation can finish
+  or return unknown. Failure UI states confirmed, uncertain and unattempted
+  work and offers read-only source/destination reconciliation. No permanent
+  delete operation. Metadata-unavailable rows/readers do not offer moves.
+- Successful full navigation clears selection and obtains fresh rows/counts
+  while preserving bounded query/filter/sort/page context. Caller-controlled
+  `moved_to`/`moved_count` query values no longer assert mutation success.
+  The synthetic gateway now preserves moved identities/flags and creates new
+  destination UIDs; browser account isolation and stale form tests use that
+  state rather than a success-only stub.
+- Actual Dovecot semantics were measured first in a new standalone obsd1
+  fixture: GUID preservation through Archive/Trash/Inbox, changed restored UID,
+  stale original identity no-op and unchanged neighbour. Fixture removed;
+  no live account, userdb, daemon or host configuration touched. Probe SHA-256
+  `ae2e480246f40c3a75be5fabe52f351e1585b4b42a33143c5ad92d5bdd56cd35`.
+  The ignored signed-helper native test now covers the same reversible path;
+  its exact F run remains pending until signing.
+- Library 607 passed/zero failed/six ignored; strict all-target/all-feature
+  clippy, full common acceptance, final V14, formatting, diff and frozen-plan
+  checks PASS. V10 generated inventories were refreshed from current Rust.
+  Two V14 static layout checks were adapted from separate archive checkboxes
+  to the shared named native selection, archive action and bound/keyboard
+  checks. CSP, no-script, sanitization, body and mutation assertions remain.
+  The generic Rust method name `fetch` triggered the browser execution-sink
+  guard; naming it `read_summary` resolves that false positive without changing
+  the guard. Initial failures are retained with the passing corrected runs.
+- Five complete move browser journeys pass in each of Edge/Firefox; nine list,
+  six reader and six read/star journeys pass. 94 visual captures pass across
+  light/dark/system, saved preferences, responsive widths, simulated 200%
+  reflow, forced colours and Firefox; eight expanded full-page captures included.
+  All image hashes verified. Selected list, narrow partial-result page and
+  expanded narrow dark Bin reader were visually inspected. The first move
+  harness's logout/cleanup mistakes were corrected; its owned residual fixture
+  process was terminated, and both passing runs cleanly removed their state.
+- Evidence: S02 `checkpoint-f-summary.json`, SHA-256
+  `60454a3b67ced64cc42c1499f619ec8eef1a76bd6bb882e8a0b76740825fba4c`.
+  Historical live archive/move/throttle/resource validators still encode the
+  previous form contract; adapt them in S10 before credential-backed live
+  qualification. They were not run and are not current UX qualification.
+  No persistent state migration, deployment or synchronization occurred.
+  Independent human and full release acceptance remain pending.

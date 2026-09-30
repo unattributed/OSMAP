@@ -126,7 +126,7 @@ fn shell_icon(name: &str) -> String {
     format!("<svg class=\"shell-icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\">{path}</svg>")
 }
 
-fn app_header(canonical_username: &str, csrf_token: &str, current: &str) -> String {
+pub(crate) fn app_header(canonical_username: &str, csrf_token: &str, current: &str) -> String {
     let mut links = String::new();
     for (name, label, href, icon) in [
         ("compose", "Compose", "/compose", "compose"),
@@ -641,10 +641,11 @@ fn render_message_card(
     selected: bool,
     return_to: &str,
     actions: &str,
+    selection: &str,
 ) -> String {
     format!(
         concat!(
-            "<li class=\"message-row message-card{}\" data-selected=\"{}\">",
+            "<li class=\"message-row message-card{}\" data-selected=\"{}\">{selection}",
             "<div class=\"message-card-main\"><span class=\"message-avatar\" aria-hidden=\"true\" title=\"Initials from the sender header\">{}</span><span class=\"message-sender\" title=\"{}\" dir=\"auto\">{}</span>",
             "<span class=\"message-date\">{}</span>",
             "<a class=\"message-subject-link\" href=\"{}\"{} dir=\"auto\">{}</a><span class=\"message-body-preview\" dir=\"auto\">{}</span></div>",
@@ -667,6 +668,7 @@ fn render_message_card(
         message.uid, escape_html(message.mailbox), message.uid, message.size,
         escape_html(message.sender.unwrap_or("Sender unavailable")),
         escape_html(message.subject.unwrap_or("(No subject)")), actions,
+        selection = selection,
     )
 }
 
@@ -676,6 +678,71 @@ fn render_sort_control_group(links: &str, view: &ListViewState) -> String {
         view.sort.column.label(),
         sort_direction_label(view.sort.direction),
     )
+}
+
+fn move_identity_fields(
+    csrf: &str,
+    mailbox: &str,
+    uid: u64,
+    metadata: Option<&MessageMetadata>,
+    return_to: &str,
+) -> Option<String> {
+    let version = &metadata?.version;
+    Some(format!("<input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"uid\" value=\"{uid}\"><input type=\"hidden\" name=\"mailbox_guid\" value=\"{}\"><input type=\"hidden\" name=\"message_guid\" value=\"{}\"><input type=\"hidden\" name=\"return_to\" value=\"{}\">",
+        escape_html(csrf), escape_html(mailbox), escape_html(&version.mailbox_guid), escape_html(&version.message_guid), escape_html(return_to)))
+}
+
+fn render_reader_move_controls(
+    csrf: &str,
+    rendered: &RenderedMessageView,
+    archive: Option<&str>,
+    mailboxes: &[MailboxEntry],
+    return_to: &str,
+) -> String {
+    let Some(fields) = move_identity_fields(
+        csrf,
+        &rendered.mailbox_name,
+        rendered.uid,
+        rendered.metadata.as_ref(),
+        return_to,
+    ) else {
+        return "<p class=\"muted\">Move actions unavailable: current stored message identity could not be confirmed. Refresh the message before choosing an action.</p>".into();
+    };
+    let options: String = mailboxes
+        .iter()
+        .filter(|m| m.name != rendered.mailbox_name)
+        .map(|m| {
+            format!(
+                "<option value=\"{}\">{}</option>",
+                escape_html(&m.name),
+                escape_html(&m.name)
+            )
+        })
+        .collect();
+    let mut buttons = String::new();
+    if archive.is_some_and(|name| name != rendered.mailbox_name) {
+        buttons.push_str(
+            "<button type=\"submit\" name=\"action\" value=\"archive\">Archive Message</button>",
+        );
+    }
+    if archive.is_none() {
+        buttons.push_str("<p class=\"muted\">Set an archive mailbox in Settings to enable the archive shortcut.</p>");
+    }
+    if rendered.mailbox_name != "Trash" && mailboxes.iter().any(|m| m.name == "Trash") {
+        buttons
+            .push_str("<button type=\"submit\" name=\"action\" value=\"bin\">Move to Bin</button>");
+    }
+    if rendered.mailbox_name == "Trash" && mailboxes.iter().any(|m| m.name == "INBOX") {
+        buttons.push_str(
+            "<button type=\"submit\" name=\"action\" value=\"restore\">Restore to Inbox</button>",
+        );
+    }
+    let chooser = if options.is_empty() {
+        String::new()
+    } else {
+        format!("<label>Destination Mailbox<select name=\"destination_mailbox\">{options}</select></label><button type=\"submit\" name=\"action\" value=\"move\">Move Message</button>")
+    };
+    format!("<form class=\"message-move-controls\" method=\"post\" action=\"/message/move\">{fields}<div class=\"toolbar\">{buttons}</div>{chooser}<p class=\"muted\">Bin moves mail to Trash. Restore returns it to Inbox. These controls never permanently delete mail.</p></form>")
 }
 
 fn render_bulk_selection_menu(
@@ -690,29 +757,24 @@ fn render_bulk_selection_menu(
     let visible = view.last_result() - view.first_result() + 1;
     let count = visible.min(MAX_BULK_SELECTION);
     let base = list_navigation_href(base, view, view.page);
-    let mut links = String::new();
-    for (action, available) in [("move", move_available), ("archive", archive_available)] {
-        if !available {
-            continue;
-        }
-        let label = if visible <= MAX_BULK_SELECTION {
-            format!("Select all {count} on this page for {action}")
-        } else {
-            format!("Select first {count} on this page for {action}")
-        };
-        links.push_str(&format!(
-            "<a href=\"{}\">{}</a>",
-            escape_html(&format!("{base}&select={action}")),
-            label
-        ));
-    }
+    let label = if visible <= MAX_BULK_SELECTION {
+        format!("Select all {count} on this page")
+    } else {
+        format!("Select first {count} on this page")
+    };
+    let mut links = format!(
+        "<a href=\"{}\">{}</a>",
+        escape_html(&format!("{base}&select=move")),
+        label
+    );
     links.push_str(&format!(
         "<a href=\"{}\">Clear selection</a>",
         escape_html(&base)
     ));
     let selected = match view.bulk_selection {
-        BulkSelection::Move if move_available => format!("{count} selected for move."),
-        BulkSelection::Archive if archive_available => format!("{count} selected for archive."),
+        BulkSelection::Move | BulkSelection::Archive => {
+            format!("{count} selected for the next action.")
+        }
         _ => "No automatic selection.".into(),
     };
     format!("<details class=\"bulk-selection-menu\"><summary>Select messages</summary><nav aria-label=\"Select messages on this page\">{links}</nav><p class=\"muted\">Actions accept at most {MAX_BULK_SELECTION} messages. A selection applies only to the current page. {selected}</p></details>")
@@ -765,38 +827,24 @@ pub(crate) fn render_message_list_page(
                 message.uid
             )
         };
-        let archive_action = if let Some(archive_mailbox_name) = bulk_actions.archive_mailbox_name {
-            if archive_mailbox_name != mailbox_name {
-                format!(
-                    "<form method=\"post\" action=\"/message/move\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"uid\" value=\"{}\"><input type=\"hidden\" name=\"destination_mailbox\" value=\"{}\"><button type=\"submit\">Archive</button></form>",
-                    escape_html(csrf_token),
-                    escape_html(mailbox_name),
-                    message.uid,
-                    escape_html(archive_mailbox_name),
-                )
-            } else {
-                String::new()
-            }
+        let return_to =
+            list_navigation_href(&navigation_base, sort_links.view, sort_links.view.page);
+        let archive_action = if archive_actions_available {
+            move_identity_fields(csrf_token, mailbox_name, message.uid, message.metadata.as_ref(), &return_to)
+                .map(|fields| format!("<form method=\"post\" action=\"/message/move\">{fields}<button type=\"submit\" name=\"action\" value=\"archive\">Archive</button></form>"))
+                .unwrap_or_default()
         } else {
             String::new()
         };
-        let selection_cells = match (bulk_actions_available, archive_actions_available) {
-            (true, true) => format!(
-                "<label class=\"bulk-row-choice\"><input form=\"bulk-move-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\" aria-label=\"Select message #{} for bulk move\"{}>Move selection</label><label class=\"bulk-row-choice\"><input form=\"bulk-archive-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\" aria-label=\"Select message #{} for bulk archive\"{}>Archive selection</label>",
-                message.uid, message.uid, message.uid, if sort_links.view.is_bulk_selected(BulkSelection::Move, index) { " checked" } else { "" },
-                message.uid, message.uid, message.uid, if sort_links.view.is_bulk_selected(BulkSelection::Archive, index) { " checked" } else { "" },
-            ),
-            (true, false) => format!(
-                "<label class=\"bulk-row-choice\"><input form=\"bulk-move-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\" aria-label=\"Select message #{} for bulk move\"{}>Move selection</label>",
-                message.uid, message.uid, message.uid, if sort_links.view.is_bulk_selected(BulkSelection::Move, index) { " checked" } else { "" },
-            ),
-            (false, true) => format!(
-                "<label class=\"bulk-row-choice\"><input form=\"bulk-archive-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\" aria-label=\"Select message #{} for bulk archive\"{}>Archive selection</label>",
-                message.uid, message.uid, message.uid, if sort_links.view.is_bulk_selected(BulkSelection::Archive, index) { " checked" } else { "" },
-            ),
-            (false, false) => String::new(),
+        let selection_cells = if bulk_actions_available || archive_actions_available {
+            message.metadata.as_ref().map(|metadata| format!(
+                "<label class=\"bulk-row-choice\"><input form=\"bulk-move-form\" type=\"checkbox\" name=\"message_{}\" value=\"{}|{}|{}\" aria-label=\"Select message #{}\"{}><span class=\"sr-only\">Select message</span></label>",
+                message.uid, message.uid, escape_html(&metadata.version.mailbox_guid), escape_html(&metadata.version.message_guid), message.uid,
+                if index < MAX_BULK_SELECTION && sort_links.view.bulk_selection != BulkSelection::None { " checked" } else { "" })).unwrap_or_default()
+        } else {
+            String::new()
         };
-        let actions = format!("{selection_cells}{archive_action}");
+        let actions = archive_action;
         rows.push_str(&render_message_card(
             MessageCard {
                 mailbox: mailbox_name,
@@ -813,45 +861,57 @@ pub(crate) fn render_message_list_page(
             sort_links.view.is_selected(mailbox_name, message.uid),
             &list_navigation_href(&navigation_base, sort_links.view, sort_links.view.page),
             &actions,
+            &selection_cells,
         ));
     }
     if messages.is_empty() {
         rows.push_str(&format!("<li class=\"message-empty-state\"><strong>No messages shown.</strong><br><span class=\"muted\">{}</span></li>", if sort_links.view.filter == MessageFilter::All { "New messages will appear here." } else { "No messages match this filter. Choose All messages to see the mailbox." }));
     }
 
-    let bulk_move_form = if bulk_actions_available && !messages.is_empty() {
-        let destination_options = bulk_actions
+    let bulk_move_form = if (bulk_actions_available || archive_actions_available)
+        && messages.iter().any(|m| m.metadata.is_some())
+    {
+        let options: String = bulk_actions
             .move_destinations
             .iter()
-            .map(|destination| {
+            .map(|name| {
                 format!(
                     "<option value=\"{}\">{}</option>",
-                    escape_html(destination),
-                    escape_html(destination)
+                    escape_html(name),
+                    escape_html(name)
                 )
             })
-            .collect::<Vec<_>>()
-            .join("");
-        format!(
-            "<form id=\"bulk-move-form\" method=\"post\" action=\"/messages/move\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><label for=\"bulk-destination-mailbox\">Move selected to<select id=\"bulk-destination-mailbox\" name=\"destination_mailbox\">{}</select></label><button type=\"submit\">Move Selected</button></form>",
-            escape_html(csrf_token),
-            escape_html(mailbox_name),
-            destination_options,
-        )
+            .collect();
+        let chooser = if options.is_empty() {
+            String::new()
+        } else {
+            format!("<label for=\"bulk-destination-mailbox\">Move selected to<select id=\"bulk-destination-mailbox\" name=\"destination_mailbox\">{options}</select></label><button type=\"submit\" name=\"action\" value=\"move\">Move Selected</button>")
+        };
+        let mut buttons = String::new();
+        if archive_actions_available {
+            buttons.push_str("<button type=\"submit\" name=\"action\" value=\"archive\">Archive Selected</button>");
+        }
+        if mailbox_name != "Trash"
+            && bulk_actions
+                .move_destinations
+                .iter()
+                .any(|name| name == "Trash")
+        {
+            buttons.push_str("<button type=\"submit\" name=\"action\" value=\"bin\">Move Selected to Bin</button>");
+        }
+        if mailbox_name == "Trash"
+            && bulk_actions
+                .move_destinations
+                .iter()
+                .any(|name| name == "INBOX")
+        {
+            buttons.push_str("<button type=\"submit\" name=\"action\" value=\"restore\">Restore Selected to Inbox</button>");
+        }
+        format!("<form id=\"bulk-move-form\" class=\"bulk-move-controls\" method=\"post\" action=\"/messages/move\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"return_to\" value=\"{}\"><div class=\"toolbar\">{buttons}</div>{chooser}<p class=\"muted\">Select up to ten messages. Bin moves to Trash; restore returns to Inbox.</p></form>", escape_html(csrf_token), escape_html(mailbox_name), escape_html(&list_navigation_href(&navigation_base, sort_links.view, sort_links.view.page)))
     } else {
         String::new()
     };
-    let bulk_archive_form = if archive_actions_available && !messages.is_empty() {
-        let archive_mailbox_name = bulk_actions.archive_mailbox_name.unwrap_or_default();
-        format!(
-            "<form id=\"bulk-archive-form\" method=\"post\" action=\"/messages/archive\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"destination_mailbox\" value=\"{}\"><button type=\"submit\">Archive Selected</button></form>",
-            escape_html(csrf_token),
-            escape_html(mailbox_name),
-            escape_html(archive_mailbox_name),
-        )
-    } else {
-        String::new()
-    };
+    let bulk_archive_form = String::new();
     let archive_notice = match bulk_actions.archive_mailbox_name {
         Some(archive_mailbox_name) if archive_mailbox_name != mailbox_name => format!(
             "<p class=\"muted\">Archive shortcut sends messages from this mailbox to <strong>{}</strong>.</p>",
@@ -970,6 +1030,7 @@ pub(crate) fn render_message_search_page(
                 &message_href,
                 view.is_selected(&result.mailbox_name, result.uid),
                 &list_navigation_href(&navigation_base, view, view.page),
+                "",
                 "",
             ));
         }
@@ -1101,53 +1162,13 @@ fn render_reader_fragment(
         }
     }
 
-    let archive_form = match archive_mailbox_name {
-        Some(archive_mailbox_name) if archive_mailbox_name != rendered.mailbox_name => format!(
-            "<section class=\"panel\"><h2>Archive Message</h2><p class=\"muted\">Move this message to your archive mailbox.</p><form method=\"post\" action=\"/message/move\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"uid\" value=\"{}\"><input type=\"hidden\" name=\"destination_mailbox\" value=\"{}\"><button type=\"submit\">Archive Message</button></form></section>",
-            escape_html(csrf_token),
-            escape_html(&rendered.mailbox_name),
-            rendered.uid,
-            escape_html(archive_mailbox_name),
-        ),
-        Some(_) => "<section class=\"panel\"><p class=\"muted\">This message is already in your configured archive mailbox.</p></section>".to_string(),
-        None => "<section class=\"panel\"><p class=\"muted\">Set an archive mailbox in Settings to add a one-click archive shortcut here.</p></section>".to_string(),
-    };
-    let trash_mailbox_available = user_visible_mailboxes
-        .iter()
-        .any(|mailbox| mailbox.name == "Trash" && mailbox.name != rendered.mailbox_name);
-    let delete_form = if trash_mailbox_available {
-        format!(
-            "<section class=\"panel\"><h2>Delete Message</h2><p class=\"muted\">Move this message to <strong>Trash</strong>.</p><form method=\"post\" action=\"/message/move\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"uid\" value=\"{}\"><input type=\"hidden\" name=\"destination_mailbox\" value=\"Trash\"><button type=\"submit\">Delete to Trash</button></form></section>",
-            escape_html(csrf_token),
-            escape_html(&rendered.mailbox_name),
-            rendered.uid,
-        )
-    } else {
-        String::new()
-    };
-    let move_destination_options = user_visible_mailboxes
-        .iter()
-        .filter(|mailbox| mailbox.name != rendered.mailbox_name)
-        .map(|mailbox| {
-            format!(
-                "<option value=\"{}\">{}</option>",
-                escape_html(&mailbox.name),
-                escape_html(&mailbox.name)
-            )
-        })
-        .collect::<Vec<_>>()
-        .join("");
-    let move_form = if move_destination_options.is_empty() {
-        "<section class=\"panel\"><h2>Move Message</h2><p class=\"muted\">No other mailbox is currently available.</p></section>".to_string()
-    } else {
-        format!(
-            "<section class=\"panel\"><h2>Move Message</h2><p class=\"muted\">Choose an existing destination mailbox.</p><form method=\"post\" action=\"/message/move\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"uid\" value=\"{}\"><label>Destination Mailbox<select name=\"destination_mailbox\">{}</select></label><button type=\"submit\">Move Message</button></form></section>",
-            escape_html(csrf_token),
-            escape_html(&rendered.mailbox_name),
-            rendered.uid,
-            move_destination_options,
-        )
-    };
+    let move_form = render_reader_move_controls(
+        csrf_token,
+        rendered,
+        archive_mailbox_name,
+        user_visible_mailboxes,
+        return_to,
+    );
     let rendering_notice = match rendered.rendering_mode.as_str() {
         "sanitized_html" => "<div class=\"notice\"><strong>Sanitized HTML:</strong> HTML content is shown through the current allowlist sanitization policy. Active content, external fetches, and unsafe URLs are removed.</div>",
         _ => "",
@@ -1206,7 +1227,7 @@ fn render_reader_fragment(
             "<nav class=\"reader-navigation\" aria-label=\"Reader navigation\"><a href=\"{}\">Back to list</a></nav>",
             "<header class=\"message-heading\"><p class=\"muted\">{} · {}</p><h2 id=\"message-title\" dir=\"auto\">{}</h2><p class=\"message-from\" dir=\"auto\">From: {}</p></header>",
             "<div class=\"toolbar reader-primary-actions\" aria-label=\"Message actions\"><a class=\"button-link\" href=\"/compose?mode=reply&mailbox={}&uid={}\">Reply</a><a class=\"button-link\" href=\"/compose?mode=forward&mailbox={}&uid={}\">Forward</a>{}</div>",
-            "<details class=\"reader-more-actions\"><summary>Move, archive or delete</summary><div class=\"action-stack\">{}{}{}</div></details>",
+            "<details class=\"reader-more-actions\"><summary>Move, archive, bin or restore</summary><div class=\"action-stack\">{}</div></details>",
             "<div class=\"reader-status\">{}{}</div>",
             "<span id=\"reading-title\" class=\"sr-only\">Reading Pane</span>",
             "<section class=\"body-panel\"><h2>Body</h2><div class=\"reader-section-heading\" data-protected-body-panel=\"true\"><span class=\"badge badge-ok\">Protected rendering</span></div><p class=\"muted reader-boundary-note\">Message content is displayed with active content and remote images removed.</p>{}</section>",
@@ -1221,7 +1242,7 @@ fn render_reader_fragment(
         escape_html(&url_encode(&rendered.mailbox_name)), rendered.uid,
         escape_html(&url_encode(&rendered.mailbox_name)), rendered.uid,
         render_message_state_controls(csrf_token, &rendered.mailbox_name, rendered.uid, &rendered.flags, rendered.metadata.as_ref(), return_to),
-        archive_form, delete_form, move_form,
+        move_form,
         protected_reader_strip, openpgp_reader_states,
         rendered.body_html, attachments,
         html_state_badge, rendering_notice, inline_image_notice,

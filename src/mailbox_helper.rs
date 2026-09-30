@@ -180,12 +180,15 @@ pub fn run_mailbox_helper_server(config: &AppConfig, logger: &Logger) -> Result<
             )
             .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone()),
         );
+        let mutation_gate = Arc::new(Mutex::new(()));
         let message_move_backend = Arc::new(
             DoveadmMessageMoveBackend::new(SystemCommandExecutor, "/usr/local/bin/doveadm")
+                .with_operation_gate(Arc::clone(&mutation_gate))
                 .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone()),
         );
         let message_flag_backend = Arc::new(
             DoveadmMessageFlagBackend::new(SystemCommandExecutor, "/usr/local/bin/doveadm")
+                .with_operation_gate(mutation_gate)
                 .with_userdb_socket_path(config.doveadm_userdb_socket_path.clone()),
         );
         let message_append_backend = Arc::new(
@@ -642,6 +645,9 @@ mod tests {
     mod native_flag_tests {
         include!("mailbox_helper_native_flag_tests.rs");
     }
+    mod move_tests {
+        include!("mailbox_helper_move_tests.rs");
+    }
     use super::*;
     use crate::mailbox::MailboxBackendError;
     use std::env;
@@ -930,6 +936,11 @@ mod tests {
             source_mailbox_name: "INBOX".to_string(),
             destination_mailbox_name: "Archive/2026".to_string(),
             uid: 9,
+            version: crate::message_metadata::MessageVersion::new(
+                "a".repeat(32),
+                "fixture-9".into(),
+            )
+            .unwrap(),
             grant: MailboxHelperGrant::unsigned(),
         };
         let text = sign_test_request(&mut expected);
@@ -1154,6 +1165,11 @@ mod tests {
             source_mailbox_name: "INBOX".to_string(),
             destination_mailbox_name: "Archive".to_string(),
             uid: 9,
+            version: crate::message_metadata::MessageVersion::new(
+                "a".repeat(32),
+                "fixture-9".into(),
+            )
+            .unwrap(),
             grant: read_grant,
         };
         let response = run_helper_round_trip(current_uid, &encode_request(&move_request));
@@ -1544,6 +1560,11 @@ mod tests {
             source_mailbox_name: "INBOX".to_string(),
             destination_mailbox_name: "Archive/2026".to_string(),
             uid: 9,
+            version: crate::message_metadata::MessageVersion::new(
+                "a".repeat(32),
+                "fixture-9".into(),
+            )
+            .unwrap(),
         };
         let text = encode_response(&expected);
         let response = parse_response(
@@ -2071,9 +2092,15 @@ mod tests {
             &grant_key_path,
             MailboxHelperPolicy::default(),
         );
-        let request =
-            MessageMoveRequest::new(MessageMovePolicy::default(), "INBOX", "Archive/2026", 9)
-                .expect("request should parse");
+        let request = MessageMoveRequest::new(
+            MessageMovePolicy::default(),
+            "INBOX",
+            "Archive/2026",
+            9,
+            crate::message_metadata::MessageVersion::new("a".repeat(32), "fixture-9".into())
+                .unwrap(),
+        )
+        .expect("request should parse");
 
         client
             .move_message("alice@example.com", &request)

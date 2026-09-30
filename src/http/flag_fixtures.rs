@@ -17,7 +17,7 @@ impl StubGateway {
             } else {
                 Some(format!("Public synthetic preview for message {uid}."))
             },
-            version: MessageVersion::new(hash[..32].into(), format!("synthetic-message-{uid}"))
+            version: MessageVersion::new(hash[..32].into(), format!("synthetic-{}-{uid}", &hash[..8]))
                 .expect("synthetic version"),
             attachment_count: Some(usize::from(uid % 5 == 0)),
         }
@@ -60,13 +60,11 @@ impl StubGateway {
         let result = if context.user_agent.contains("FlagUnknown") {
             Err(BrowserMessageFlagFailure::Unknown)
         } else if request.uid == 0
-            || request.uid > 125
             || !matches!(
                 request.mailbox_name.as_str(),
                 "INBOX" | "Sent" | "Trash" | "Archive/2026"
             )
-            || request.version
-                != Self::fixture_metadata(username, &request.mailbox_name, request.uid).version
+            || self.fixture_current_metadata(username, &request.mailbox_name, request.uid).map(|metadata| metadata.version) != Some(request.version.clone())
         {
             Err(BrowserMessageFlagFailure::Stale)
         } else {
