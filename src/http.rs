@@ -1405,6 +1405,18 @@ mod tests {
             )
         }
 
+        fn update_composition_format(
+            &self,
+            _context: &AuthenticationContext,
+            session: &ValidatedSession,
+            value: crate::compose_format::BodyFormat,
+        ) -> std::io::Result<()> {
+            self.composition_preferences_store
+                .as_ref()
+                .ok_or_else(|| std::io::Error::other("synthetic preference store unavailable"))?
+                .save_format(&session.record.canonical_username, value)
+        }
+
         fn update_composition_preferences(
             &self,
             _context: &AuthenticationContext,
@@ -1547,6 +1559,20 @@ mod tests {
             context: &AuthenticationContext,
             validated_session: &ValidatedSession,
         ) -> BrowserMailboxOutcome {
+            if context.user_agent == "WelcomeMissing" {
+                return BrowserMailboxOutcome {
+                    decision: BrowserMailboxDecision::Listed {
+                        canonical_username: validated_session.record.canonical_username.clone(),
+                        mailboxes: vec![MailboxEntry {
+                            name: format!(
+                                "INBOX.{}<img src=x> & synthetic",
+                                "long-folder-".repeat(16)
+                            ),
+                        }],
+                    },
+                    audit_events: vec![],
+                };
+            }
             if context.user_agent == "Firefox/ManyMailboxes" {
                 let mut mailboxes = vec![MailboxEntry {
                     name: "INBOX".to_string(),
@@ -3430,11 +3456,15 @@ mod tests {
         assert_eq!(response.response.status_code, 200);
         let body = body_text(&response);
         assert!(body.contains("alice@example.com"));
-        assert!(body.contains(">INBOX</a>"));
-        assert!(body.contains(">INBOX.Projects</a>"));
-        assert!(body.contains(">Drafts</a>"));
-        assert!(!body.contains(">dovecot</a>"));
-        assert!(!body.contains(">dovecot.sieve</a>"));
+        for name in ["INBOX", "INBOX.Projects", "Drafts"] {
+            assert!(body.contains(&format!("<strong>{name}</strong>")));
+            assert!(body.contains(&format!("href=\"/mailbox?name={name}\"")));
+        }
+        for name in ["dovecot", "dovecot.sieve"] {
+            assert!(!body.contains(&format!("href=\"/mailbox?name={name}\"")));
+            assert!(!body.contains(&format!("<strong>{name}</strong>")));
+            assert!(!body.contains(&format!("value=\"{name}\"")));
+        }
     }
 
     #[test]

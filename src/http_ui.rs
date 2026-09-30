@@ -20,7 +20,9 @@ use crate::mailbox::{
 use crate::message_metadata::{MessageFlag, MessageMetadata};
 use crate::mime::{AttachmentMetadata, DEFAULT_MIME_PARTS_MAX};
 use crate::rendering::{HtmlDisplayPreference, RenderedMessageView};
-pub(crate) use settings_ui::{render_appearance_page, render_general_page, render_reading_page};
+pub(crate) use settings_ui::{
+    render_appearance_page, render_composition_page, render_general_page, render_reading_page,
+};
 
 /// Defense-in-depth cap for attachment metadata rows rendered by one route.
 const DEFAULT_RENDERED_ATTACHMENT_METADATA_MAX: usize = DEFAULT_MIME_PARTS_MAX;
@@ -283,7 +285,12 @@ pub(crate) fn render_settings_search_page(account: &str, csrf: &str, query: &str
         (
             "Default format",
             "composition compose new blank message plain formatted",
-            "/settings?section=general#general-default-format",
+            "/settings?section=composition#composition-format",
+        ),
+        (
+            "Reply placement",
+            "composition reply reply-all above below quoted text",
+            "/settings?section=composition#composition-reply-placement",
         ),
         (
             "HTML Message Display",
@@ -392,36 +399,6 @@ pub(crate) fn render_message_source_page(
         escape_html(message.header_block.trim_end_matches(['\r', '\n'])), escape_html(&message.body_text)))
 }
 
-fn folder_pane(mailboxes: &[MailboxEntry], current_mailbox_name: Option<&str>) -> String {
-    let mut items = String::new();
-    for mailbox in mailboxes.iter().take(DEFAULT_RENDERED_MAILBOXES_MAX) {
-        let mailbox_href = format!("/mailbox?name={}", url_encode(&mailbox.name));
-        let current = if current_mailbox_name == Some(mailbox.name.as_str()) {
-            " aria-current=\"page\""
-        } else {
-            ""
-        };
-        items.push_str(&format!(
-            "<li><a href=\"{}\"{}>{}</a></li>",
-            escape_html(&mailbox_href),
-            current,
-            escape_html(&mailbox.name),
-        ));
-    }
-    if mailboxes.len() > DEFAULT_RENDERED_MAILBOXES_MAX {
-        items.push_str(&format!(
-            "<li class=\"muted\">Mailbox list display limit reached: showing first {} of {} visible mailboxes.</li>",
-            DEFAULT_RENDERED_MAILBOXES_MAX,
-            mailboxes.len(),
-        ));
-    }
-
-    format!(
-        "<aside class=\"folder-pane\" aria-label=\"Mail folders\"><h2>Folders</h2><ul class=\"folder-list\">{}</ul></aside>",
-        items,
-    )
-}
-
 /// Renders the current login page with an optional operator-safe error banner.
 pub(crate) fn render_login_page(error_message: Option<&str>) -> TrustedHtml {
     let banner = match error_message {
@@ -466,36 +443,9 @@ pub(crate) fn render_login_page(error_message: Option<&str>) -> TrustedHtml {
     ))
 }
 
-/// Renders the mailbox home page for the validated user.
-pub(crate) fn render_mailboxes_page(
-    canonical_username: &str,
-    csrf_token: &str,
-    mailboxes: &[MailboxEntry],
-) -> TrustedHtml {
-    TrustedHtml::from_template(format!(
-        concat!(
-            "{}",
-            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
-            "<div class=\"mail-shell\">",
-            "{}",
-            "<section class=\"content-pane\" aria-labelledby=\"mailboxes-title\">",
-            "<div class=\"section-header\"><div><h1 id=\"mailboxes-title\" class=\"section-title\">Mailboxes</h1><p class=\"muted\">Choose a mailbox or search your messages.</p></div>",
-            "<div class=\"badge-list\"><span class=\"badge badge-ok\">2FA active</span><span class=\"badge\">Account mailboxes</span></div></div>",
-            "<form class=\"search-row\" method=\"get\" action=\"/search\">",
-            "<label for=\"mailbox-global-search\">Search all mailboxes<input id=\"mailbox-global-search\" type=\"text\" name=\"q\" autocomplete=\"off\"></label>",
-            "{}",
-            "<button type=\"submit\">Search</button>",
-            "</form>",
-            "<div class=\"notice\"><strong>Security posture:</strong> Remote images and active content are blocked. Downloads open only when you choose them.</div>",
-            "</section>",
-            "</div>",
-            "</main>"
-        ),
-        app_header(canonical_username, csrf_token, "mailboxes"),
-        folder_pane(mailboxes, None),
-        render_search_field_select(MessageSearchField::All),
-    ))
-}
+#[path = "welcome_ui.rs"]
+mod welcome_ui;
+pub(crate) use welcome_ui::render_mailboxes_page;
 
 const MESSAGE_SORT_COLUMNS: [MessageSortColumn; 6] = [
     MessageSortColumn::Uid,

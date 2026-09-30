@@ -98,6 +98,18 @@ pub trait BrowserGateway {
             "composition preferences unavailable",
         ))
     }
+    fn update_composition_format(
+        &self,
+        _context: &AuthenticationContext,
+        _session: &ValidatedSession,
+        _value: crate::compose_format::BodyFormat,
+    ) -> std::io::Result<()> {
+        Err(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "composition preferences unavailable",
+        ))
+    }
+
     fn update_composition_preferences(
         &self,
         _context: &AuthenticationContext,

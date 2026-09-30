@@ -1726,3 +1726,42 @@ with later outcomes. Correct errors using a new entry referencing the old one.
 - The first signing hook rejected the new browser fixture variable `anonymous`
   under the repository-wide TLS word guard. Renamed that signed-out browser
   context without changing behaviour or weakening the guard; reran the hook.
+
+### Welcome and Composition — approved PAGE-01 / PAGE-15, 2026-09-30
+
+- Reading checkpoint `e16c0dbb0fef0e0155d187bcfac36e4d712fb489` passed isolated
+  obsd1 qualification, exit 0, with standard checkout/services unchanged and no
+  deployment. S04 `native-d` archive SHA-256
+  `6ee1b03bf2bcaaff3c6d686de470aedec6c5c21c4e4ab0ea0026fc8dfc37240b`;
+  native log SHA-256 `100e4f38c85e31dadf414b1c1ee288c7cee023df4d25af61e88a02ad8f9439fc`.
+- Welcome follows the approved dashboard hierarchy. Real native mailbox,
+  Compose, Archive/Bin, Settings, Sessions, filter, search and finite More links
+  are present. Missing Inbox/Bin do not create enabled Welcome links. Mailboxes
+  remain capped at 1024; escaped long names remain literal. Counts, recent
+  message previews, service health, key policy and storage remain unavailable.
+- Composition has native format and reply-placement preferences. Version-1
+  records load as Above without rewriting; saves use strict version 2. Older
+  format-only forms preserve placement under the account lock. New replies and
+  reply-all move only their blank reply space; quoted bytes remain literal and
+  replies remain Plain. Existing drafts and forwards are unchanged. General
+  exposes both real preferences through its native form. Signature, autosave,
+  scheduling and outgoing cryptography remain unavailable.
+- Edge and Firefox native workflows passed for both pages, including keyboard
+  navigation, actual private stores, restart, account isolation, corrupted-save
+  uncertainty, missing mailboxes and bounded listing. Zero external or send
+  requests. Composition's existing inline Compose enhancement was inert with
+  JavaScript disabled. Welcome produced no script requests.
+- Independent visual review found Firefox forced-colour selected navigation
+  below the text contrast threshold. Corrected it to system Canvas/CanvasText
+  with Highlight selection/focus markers. Both Composition reruns passed all
+  24 captures with zero computed text/UI contrast failures or overflow. Card
+  bottoms are y492.58/492.60 against approved y492. Welcome's six additional
+  light/dark captures also had zero computed contrast or overflow failures.
+- Local validation: 750 library tests passed, seven opt-in fixtures ignored;
+  acceptance/security/V10-13, V14, strict all-target/all-feature Clippy,
+  formatting and diff checks passed. V14 repeated after final CSS corrections.
+  Evidence: S04 `welcome-{edge,firefox}`, `welcome-contrast`,
+  `composition-{edge,firefox}`, and `welcome-composition-*` gate logs.
+- These are bounded local control completions. PAGE-01 and PAGE-15 remain
+  partial against their full frozen requirements. Durable send recovery and
+  real Welcome summary projections remain separate, unaccepted proposals.

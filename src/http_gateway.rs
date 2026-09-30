@@ -247,6 +247,16 @@ impl BrowserGateway for RuntimeBrowserGateway {
         crate::composition_preferences::CompositionPreferencesStore::new(&self.settings_dir)
             .load(&session.record.canonical_username)
     }
+    fn update_composition_format(
+        &self,
+        _context: &AuthenticationContext,
+        session: &ValidatedSession,
+        value: crate::compose_format::BodyFormat,
+    ) -> std::io::Result<()> {
+        crate::composition_preferences::CompositionPreferencesStore::new(&self.settings_dir)
+            .save_format(&session.record.canonical_username, value)
+    }
+
     fn update_composition_preferences(
         &self,
         _context: &AuthenticationContext,

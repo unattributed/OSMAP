@@ -244,3 +244,124 @@ fn preference_http_existing_drafts_keep_their_stored_formats() {
         assert_eq!(textarea(&resumed), source);
     }
 }
+
+#[test]
+fn placement_http_native_save_moves_only_new_reply_blank_space_and_preserves_legacy_format_save() {
+    let f = Fixture::new();
+    let forward_before = textarea(&f.perform(
+        "GET",
+        "/compose?mode=forward&mailbox=INBOX&uid=9",
+        "",
+        false,
+    ));
+    let above = textarea(&f.perform("GET", "/compose?mode=reply&mailbox=INBOX&uid=9", "", false));
+    let form=format!("csrf_token={}&default_body_format=formatted&reply_placement=below&return_section=composition",StubGateway::validated_session().record.csrf_token);
+    let saved = f.perform("POST", "/settings/composition", &form, false);
+    assert_eq!(saved.response.status_code, 303);
+    assert_eq!(
+        location_header(&saved),
+        "/settings?section=composition&updated=1"
+    );
+    for mode in ["reply", "reply-all"] {
+        let response = f.perform(
+            "GET",
+            &format!("/compose?mode={mode}&mailbox=INBOX&uid=9"),
+            "",
+            false,
+        );
+        assert_mode(&response, BodyFormat::Plain);
+        assert_eq!(
+            textarea(&response),
+            format!("{}\n\n", above.strip_prefix("\n\n").unwrap())
+        );
+        assert!(body_text(&response).contains("cursor is not moved automatically"));
+    }
+    assert_eq!(
+        textarea(&f.perform(
+            "GET",
+            "/compose?mode=forward&mailbox=INBOX&uid=9",
+            "",
+            false
+        )),
+        forward_before
+    );
+    f.preference(BodyFormat::Plain);
+    assert_eq!(
+        f.store.load("alice@example.com").unwrap().reply_placement,
+        crate::composition_preferences::ReplyPlacement::Below
+    );
+    let before = f.record_bytes();
+    for invalid in [
+        form.replace("below", "bottom"),
+        format!("{form}&reply_placement=above"),
+        form.replace(
+            "return_section=composition",
+            "return_section=https%3A%2F%2Fexample.test",
+        ),
+    ] {
+        assert_eq!(
+            f.perform("POST", "/settings/composition", &invalid, false)
+                .response
+                .status_code,
+            400
+        );
+        assert_eq!(f.record_bytes(), before);
+    }
+}
+
+#[test]
+fn composition_page_and_general_native_form_project_saved_defaults() {
+    let f = Fixture::new();
+    let form = format!(
+        "csrf_token={}&default_body_format=formatted&reply_placement=below",
+        StubGateway::validated_session().record.csrf_token
+    );
+    assert_eq!(
+        f.perform("POST", "/settings/composition", &form, false)
+            .response
+            .status_code,
+        303
+    );
+    for (section, format_id, placement_id) in [
+        (
+            "general",
+            "general-default-format",
+            "general-reply-placement",
+        ),
+        (
+            "composition",
+            "composition-format",
+            "composition-reply-placement",
+        ),
+    ] {
+        let response = f.perform("GET", &format!("/settings?section={section}"), "", false);
+        assert_eq!(response.response.status_code, 200);
+        let body = body_text(&response);
+        assert!(body.contains(&format!("id=\"{format_id}\" name=\"default_body_format\"")));
+        assert!(body.contains(&format!("id=\"{placement_id}\" name=\"reply_placement\"")));
+        assert!(body.contains("<option value=\"formatted\" selected>"));
+        assert!(body.contains("<option value=\"below\" selected>"));
+        assert!(body.contains("href=\"/settings?section=composition\""));
+        if section == "general" {
+            assert!(body.contains("name=\"reply_placement\" form=\"general-composition-form\""));
+            assert!(body
+                .contains("form=\"general-composition-form\">Save composition defaults</button>"));
+        } else {
+            assert!(body.contains("name=\"return_section\" value=\"composition\""));
+            assert!(body.contains("id=\"composition-signing\" disabled"));
+            assert!(body.contains("Below does not move the cursor automatically"));
+        }
+    }
+    let search = f.perform("GET", "/settings?q=placement", "", false);
+    assert!(
+        body_text(&search).contains("/settings?section=composition#composition-reply-placement")
+    );
+    let mut unavailable = Fixture::new();
+    unavailable.app.gateway.composition_preferences_store = Some(CompositionPreferencesStore::new(
+        unavailable.root.join("bad"),
+    ));
+    fs::write(unavailable.root.join("bad"), b"not a directory").unwrap();
+    let response = unavailable.perform("GET", "/settings?section=composition", "", false);
+    assert_eq!(response.response.status_code, 200);
+    assert!(body_text(&response).contains("name=\"reply_placement\" disabled"));
+}

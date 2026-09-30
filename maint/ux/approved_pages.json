@@ -37,13 +37,18 @@
         "S05-02",
         "S08-04"
       ],
-      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "visual_status": "PARTIAL_FINAL_REFERENCE_COMPARISON",
       "controls": [
         {
           "id": "R2-01-001",
           "label": "Greeting and current identity",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/welcome_ui.rs",
+            "maint/ux/welcome_workflows.py",
+            "S04/welcome-{edge,firefox}/report.json",
+            "S04/welcome-contrast/capture.json"
+          ]
         },
         {
           "id": "R2-01-002",
@@ -78,14 +83,24 @@
         {
           "id": "R2-01-007",
           "label": "Compose quick link",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/welcome_ui.rs",
+            "maint/ux/welcome_workflows.py",
+            "S04/welcome-{edge,firefox}/report.json",
+            "S04/welcome-contrast/capture.json"
+          ]
         },
         {
           "id": "R2-01-008",
           "label": "Inbox quick link",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/welcome_ui.rs",
+            "maint/ux/welcome_workflows.py",
+            "S04/welcome-{edge,firefox}/report.json",
+            "S04/welcome-contrast/capture.json"
+          ]
         },
         {
           "id": "R2-01-009",
@@ -96,32 +111,54 @@
         {
           "id": "R2-01-010",
           "label": "Archive / Bin quick link",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/welcome_ui.rs",
+            "maint/ux/welcome_workflows.py",
+            "S04/welcome-{edge,firefox}/report.json",
+            "S04/welcome-contrast/capture.json"
+          ]
         },
         {
           "id": "R2-01-011",
           "label": "Settings > Security quick link",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/welcome_ui.rs",
+            "S04/welcome-{edge,firefox}/report.json",
+            "Approved hierarchy present; session link, scoped protection and real mailbox/filter links only. Security settings and recent-message projection remain incomplete."
+          ]
         },
         {
           "id": "R2-01-012",
           "label": "Settings quick link",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/welcome_ui.rs",
+            "maint/ux/welcome_workflows.py",
+            "S04/welcome-{edge,firefox}/report.json",
+            "S04/welcome-contrast/capture.json"
+          ]
         },
         {
           "id": "R2-01-013",
           "label": "Recent messages and View all",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/welcome_ui.rs",
+            "S04/welcome-{edge,firefox}/report.json",
+            "Approved hierarchy present; session link, scoped protection and real mailbox/filter links only. Security settings and recent-message projection remain incomplete."
+          ]
         },
         {
           "id": "R2-01-014",
           "label": "Account security status",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/welcome_ui.rs",
+            "S04/welcome-{edge,firefox}/report.json",
+            "Approved hierarchy present; session link, scoped protection and real mailbox/filter links only. Security settings and recent-message projection remain incomplete."
+          ]
         },
         {
           "id": "R2-01-015",
@@ -168,14 +205,23 @@
         {
           "id": "R2-01-022",
           "label": "Quick Search",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/welcome_ui.rs",
+            "maint/ux/welcome_workflows.py",
+            "S04/welcome-{edge,firefox}/report.json",
+            "S04/welcome-contrast/capture.json"
+          ]
         },
         {
           "id": "R2-01-023",
           "label": "Quick Filters",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/welcome_ui.rs",
+            "S04/welcome-{edge,firefox}/report.json",
+            "Approved hierarchy present; session link, scoped protection and real mailbox/filter links only. Security settings and recent-message projection remain incomplete."
+          ]
         },
         {
           "id": "R2-01-024",
@@ -186,8 +232,13 @@
         {
           "id": "R2-01-025",
           "label": "Finite More menu",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/welcome_ui.rs",
+            "maint/ux/welcome_workflows.py",
+            "S04/welcome-{edge,firefox}/report.json",
+            "S04/welcome-contrast/capture.json"
+          ]
         },
         {
           "id": "R2-01-026",
@@ -1536,8 +1587,14 @@
         {
           "id": "R2-11-016",
           "label": "Reply placement",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/composition_preferences.rs",
+            "src/settings_composition_ui.rs",
+            "src/http/composition_preference_tests.rs",
+            "maint/ux/composition_workflows.py",
+            "S04/composition-{edge,firefox}/workflows.json"
+          ]
         },
         {
           "id": "R2-11-017",
@@ -1961,19 +2018,31 @@
         "S07-01",
         "S08-03"
       ],
-      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "visual_status": "PARTIAL_FINAL_REFERENCE_COMPARISON",
       "controls": [
         {
           "id": "R2-15-001",
           "label": "Message format",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/composition_preferences.rs",
+            "src/settings_composition_ui.rs",
+            "src/http/composition_preference_tests.rs",
+            "maint/ux/composition_workflows.py",
+            "S04/composition-{edge,firefox}/workflows.json"
+          ]
         },
         {
           "id": "R2-15-002",
           "label": "Reply placement",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/composition_preferences.rs",
+            "src/settings_composition_ui.rs",
+            "src/http/composition_preference_tests.rs",
+            "maint/ux/composition_workflows.py",
+            "S04/composition-{edge,firefox}/workflows.json"
+          ]
         },
         {
           "id": "R2-15-003",
@@ -2026,8 +2095,11 @@
         {
           "id": "R2-15-011",
           "label": "No downgrade or unknown-send retry",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/settings_composition_ui.rs",
+            "Outgoing cryptography unavailable. Policy text is truthful; durable send journal/recovery integration remains pending."
+          ]
         }
       ]
     },

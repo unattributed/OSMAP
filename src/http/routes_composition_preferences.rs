@@ -25,7 +25,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
                 "<p>The form content type was not supported.</p>",
             );
         }
-        let form = match parse_urlencoded_form(&request.body, 2, 512) {
+        let form = match parse_urlencoded_form(&request.body, 4, 512) {
             Ok(value) => value,
             Err(_) => {
                 return rejected(
@@ -43,17 +43,22 @@ impl<G: BrowserGateway> BrowserApp<G> {
         ) {
             return response;
         }
-        if form
-            .keys()
-            .any(|key| !["csrf_token", "default_body_format"].contains(&key.as_str()))
-        {
+        if form.keys().any(|key| {
+            ![
+                "csrf_token",
+                "default_body_format",
+                "reply_placement",
+                "return_section",
+            ]
+            .contains(&key.as_str())
+        }) {
             return rejected(
                 400,
                 "Bad Request",
                 "<p>The preference form contained an unsupported field.</p>",
             );
         }
-        let Some(value) = form.get("default_body_format").and_then(|value| {
+        let Some(mut value) = form.get("default_body_format").and_then(|value| {
             crate::composition_preferences::CompositionPreferences::parse_default_format(value)
         }) else {
             return rejected(
@@ -62,11 +67,34 @@ impl<G: BrowserGateway> BrowserApp<G> {
                 "<p>Choose Plain text or Formatted text.</p>",
             );
         };
-        if self
-            .gateway
-            .update_composition_preferences(context, &session, value)
-            .is_err()
-        {
+        let destination = match form.get("return_section").map(String::as_str) {
+            None | Some("general") => "/settings?section=general&updated=1",
+            Some("composition") => "/settings?section=composition&updated=1",
+            _ => {
+                return rejected(
+                    400,
+                    "Bad Request",
+                    "<p>The settings destination was invalid.</p>",
+                )
+            }
+        };
+        let saved = if let Some(placement) = form.get("reply_placement") {
+            let Some(placement) = crate::composition_preferences::ReplyPlacement::parse(placement)
+            else {
+                return rejected(
+                    400,
+                    "Bad Request",
+                    "<p>Choose Above quoted text or Below quoted text.</p>",
+                );
+            };
+            value.reply_placement = placement;
+            self.gateway
+                .update_composition_preferences(context, &session, value)
+        } else {
+            self.gateway
+                .update_composition_format(context, &session, value.default_body_format)
+        };
+        if saved.is_err() {
             return rejected(503, "Service Unavailable", "<p>The preference save could not be confirmed. Review your saved setting before retrying.</p>");
         }
         audit_events.push(build_http_info_event(
@@ -75,7 +103,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
             context,
         ));
         HandledHttpResponse {
-            response: redirect_response(303, "See Other", "/settings?section=general&updated=1"),
+            response: redirect_response(303, "See Other", destination),
             audit_events,
         }
     }

@@ -7,6 +7,9 @@ pub(crate) use settings_general_ui::render_general_page;
 #[path = "settings_reading_ui.rs"]
 mod settings_reading_ui;
 pub(crate) use settings_reading_ui::render_reading_page;
+#[path = "settings_composition_ui.rs"]
+mod settings_composition_ui;
+pub(crate) use settings_composition_ui::render_composition_page;
 
 pub(crate) fn render_appearance_page(
     model: &SettingsPageModel<'_>,
@@ -103,7 +106,7 @@ fn settings_navigation(current_section: &str) -> String {
         ("Appearance", Some("appearance")),
         ("Identity", None),
         ("Reading & Mailbox", Some("reading")),
-        ("Composition", None),
+        ("Composition", Some("composition")),
         ("Copies & Folders", None),
         ("Notifications", None),
         ("Privacy & Security", None),

@@ -1,0 +1,30 @@
+/* PAGE-15 only, after settings.css and general.css. */
+.settings-composition-page .settings-layout { align-items: start; }
+.settings-composition-page .settings-navigation { min-height: 24.25rem; }
+.composition-settings-content { min-width: 0; }
+.composition-settings-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1rem; }
+.settings-composition-page .general-card { min-height: 19.6rem; box-shadow: none; }
+.settings-composition-page .general-field { margin-bottom: .65rem; min-height: 2.3rem; }
+.settings-composition-page .general-field:last-child { margin-bottom: 0; }
+.settings-composition-page .general-card > .general-field:last-child { min-height: 1.5rem; }
+.settings-composition-page .composition-toggle { min-height: 1.5rem; }
+.composition-toggle > span { display: flex; align-items: center; gap: .65rem; min-width: 0; color: var(--muted); font-size: .75rem; }
+.composition-toggle input.settings-switch { flex: 0 0 auto; cursor: not-allowed; }
+.composition-unavailable-state { font-size: .8rem; color: var(--muted); }
+.composition-policy-note { padding: .65rem .8rem; border: 1px solid var(--line); border-radius: .6rem; font-size: .875rem; line-height: 1.5; margin-top: 1rem; }
+.composition-save-row { display: flex; align-items: start; justify-content: space-between; gap: 1.2rem; margin-top: .8rem; }
+.composition-save-row details { flex: 1; min-width: 0; color: var(--muted); font-size: .8rem; line-height: 1.5; }
+.composition-save-row summary { cursor: pointer; }
+.composition-save-row button { width: auto; max-width: 100%; font-size: .85rem; }
+.settings-composition-page :is(input,select,button,summary):focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+@media(max-width:75rem) { .composition-settings-grid { grid-template-columns: minmax(0,1fr); } }
+@media(max-width:40rem) {
+  .settings-composition-page .settings-navigation { min-height: 0; }
+  .settings-composition-page .general-card { min-height: 0; }
+  .settings-composition-page .composition-toggle { grid-template-columns: minmax(0,1fr) auto; }
+  .composition-save-row { flex-direction: column; }
+}
+@media(forced-colors:active) {
+  .composition-unavailable-state, .composition-toggle > span { color: GrayText; }
+  .settings-composition-page :is(input,select,button,summary):focus-visible { outline-color: Highlight; }
+}

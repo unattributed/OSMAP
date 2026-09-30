@@ -128,6 +128,20 @@ where
                         subject_value = draft.subject;
                         body_value = draft.body;
                         if intent != ComposeIntent::Forward {
+                            match self.gateway.load_composition_preferences(context, &validated_session) {
+                                Ok(preferences) => {
+                                    let Some(placed) = preferences.reply_placement.initial_reply_body(&body_value) else {
+                                        return HandledHttpResponse { response: html_response(503, "Service Unavailable", "Reply Placement Unavailable", "<p>The reply layout could not be prepared safely.</p>"), audit_events };
+                                    };
+                                    body_value = placed;
+                                    if preferences.reply_placement == crate::composition_preferences::ReplyPlacement::Below {
+                                        context_notice.get_or_insert_with(String::new).push_str(" Reply space is below the quoted text. Move to the end of the message before typing; the cursor is not moved automatically.");
+                                    }
+                                }
+                                Err(_) => context_notice.get_or_insert_with(String::new).push_str(" Your saved reply placement could not be loaded. Reply space is above the quoted text."),
+                            }
+                        }
+                        if intent != ComposeIntent::Forward {
                             reply_reference = rendered.metadata.as_ref().and_then(|metadata|
                                 crate::reply_thread::ReplyReference::new(mailbox_name.clone(), uid, metadata.version.clone()).ok());
                         }

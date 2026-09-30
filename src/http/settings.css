@@ -73,7 +73,8 @@
   .settings-theme-light .settings-theme-icon, .settings-theme-dark .settings-theme-icon { color: CanvasText; }
   .settings-theme:has(input:checked) { border: 2px solid Highlight; }
   .settings-theme-selected { border: 1px solid CanvasText; }
-  .settings-navigation a[aria-current=page] { forced-color-adjust: none; color: HighlightText; background: Highlight; border-left-color: Highlight; }
+  .settings-navigation a[aria-current=page] { forced-color-adjust: none; color: CanvasText; background: Canvas; border-left-color: Highlight; outline: 1px solid Highlight; outline-offset: -1px; }
+  .settings-navigation a[aria-current=page]:focus-visible { outline: 3px solid Highlight; outline-offset: 2px; }
   .settings-page input.settings-switch { appearance: auto; width: 1.3rem; height: 1.3rem; }
   .settings-switch::before { display: none; }
 }

@@ -69,7 +69,10 @@ where
             .get("section")
             .map(String::as_str)
             .unwrap_or("general");
-        if !matches!(section, "general" | "appearance" | "reading") {
+        if !matches!(
+            section,
+            "general" | "appearance" | "reading" | "composition"
+        ) {
             return HandledHttpResponse {
                 response: html_response(
                     400,
@@ -113,6 +116,11 @@ where
                     };
                     if section == "appearance" {
                         crate::http_ui::render_appearance_page(&model, &presentation)
+                    } else if section == "composition" {
+                        crate::http_ui::render_composition_page(
+                            &model,
+                            self.gateway.load_composition_preferences(context, &validated_session).ok(),
+                        )
                     } else if section == "general" {
                         crate::http_ui::render_general_page(
                             &model,

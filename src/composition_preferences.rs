@@ -1,4 +1,4 @@
-//! One account default, separate from drafts and security/appearance settings.
+//! Account composition defaults, separate from drafts and security/appearance settings.
 use std::io;
 use std::path::PathBuf;
 
@@ -9,33 +9,80 @@ const MAX_RECORD_BYTES: usize = 96;
 const NAMESPACE: &str = "osmap-composition-preferences-v1";
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum ReplyPlacement {
+    #[default]
+    Above,
+    Below,
+}
+impl ReplyPlacement {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Above => "above",
+            Self::Below => "below",
+        }
+    }
+    pub fn parse(value: &str) -> Option<Self> {
+        match value {
+            "above" => Some(Self::Above),
+            "below" => Some(Self::Below),
+            _ => None,
+        }
+    }
+    /// Move only the builder's two leading blank lines. Quoted bytes and body
+    /// length stay unchanged, including its existing truncation notice.
+    pub fn initial_reply_body(self, body: &str) -> Option<String> {
+        match self {
+            Self::Above => Some(body.to_owned()),
+            Self::Below => body
+                .strip_prefix("\n\n")
+                .map(|quote| format!("{quote}\n\n")),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct CompositionPreferences {
     pub default_body_format: BodyFormat,
+    pub reply_placement: ReplyPlacement,
 }
 
 impl CompositionPreferences {
     pub fn parse_default_format(value: &str) -> Option<Self> {
         BodyFormat::parse(value).map(|default_body_format| Self {
             default_body_format,
+            reply_placement: ReplyPlacement::Above,
         })
     }
 
-    fn record(self) -> &'static [u8] {
-        match self.default_body_format {
-            BodyFormat::Plain => b"{\"version\":1,\"default_body_format\":\"plain\"}\n",
-            BodyFormat::Formatted => b"{\"version\":1,\"default_body_format\":\"formatted\"}\n",
-        }
+    fn record(self) -> Vec<u8> {
+        format!(
+            "{{\"version\":2,\"default_body_format\":\"{}\",\"reply_placement\":\"{}\"}}\n",
+            self.default_body_format.as_str(),
+            self.reply_placement.as_str()
+        )
+        .into_bytes()
     }
 
-    // Exactly two canonical records: unknown versions/fields, duplicate fields,
-    // partial records and noncanonical encodings fail instead of resetting.
     fn parse_record(bytes: &[u8]) -> io::Result<Self> {
         for default_body_format in [BodyFormat::Plain, BodyFormat::Formatted] {
-            let value = Self {
-                default_body_format,
-            };
-            if bytes == value.record() {
-                return Ok(value);
+            let legacy = format!(
+                "{{\"version\":1,\"default_body_format\":\"{}\"}}\n",
+                default_body_format.as_str()
+            );
+            if bytes == legacy.as_bytes() {
+                return Ok(Self {
+                    default_body_format,
+                    reply_placement: ReplyPlacement::Above,
+                });
+            }
+            for reply_placement in [ReplyPlacement::Above, ReplyPlacement::Below] {
+                let value = Self {
+                    default_body_format,
+                    reply_placement,
+                };
+                if bytes == value.record() {
+                    return Ok(value);
+                }
             }
         }
         Err(io::Error::new(
@@ -68,6 +115,22 @@ impl CompositionPreferencesStore {
         )
     }
 
+    /// Older format-only forms preserve reply placement under
+    /// the same account lock; no read/merge/write race between separate calls.
+    pub fn save_format(&self, account: &str, format: BodyFormat) -> io::Result<()> {
+        let locked = self.file.lock(account)?;
+        let mut value = locked.read()?.map_or_else(
+            || Ok(CompositionPreferences::default()),
+            |bytes| CompositionPreferences::parse_record(&bytes),
+        )?;
+        value.default_body_format = format;
+        #[cfg(test)]
+        if self.fail_before_publish {
+            return Err(io::Error::other("injected pre-publication failure"));
+        }
+        locked.write(&value.record())
+    }
+
     /// A busy account refuses immediately. Callers must not claim success on
     /// any error, including a directory-sync failure after atomic publication.
     pub fn save(&self, canonical_account: &str, value: CompositionPreferences) -> io::Result<()> {
@@ -79,7 +142,7 @@ impl CompositionPreferencesStore {
         if self.fail_before_publish {
             return Err(io::Error::other("injected pre-publication failure"));
         }
-        locked.write(value.record())
+        locked.write(&value.record())
     }
 }
 
@@ -113,6 +176,7 @@ mod tests {
     fn formatted() -> CompositionPreferences {
         CompositionPreferences {
             default_body_format: BodyFormat::Formatted,
+            reply_placement: ReplyPlacement::Above,
         }
     }
 
@@ -154,7 +218,7 @@ mod tests {
         for value in ["plain", "formatted"] {
             let parsed = CompositionPreferences::parse_default_format(value).unwrap();
             assert_eq!(
-                CompositionPreferences::parse_record(parsed.record()).unwrap(),
+                CompositionPreferences::parse_record(&parsed.record()).unwrap(),
                 parsed
             );
         }
@@ -291,5 +355,99 @@ mod tests {
         assert!(store.load("alice").is_err());
         assert!(store.save("alice", formatted()).is_err());
         assert_eq!(fs::read(&target).unwrap(), b"preserved");
+    }
+}
+
+#[cfg(test)]
+mod placement_tests {
+    use super::*;
+    #[test]
+    fn v1_reads_above_without_migration_and_format_only_save_preserves_below() {
+        let root = std::env::temp_dir().join(format!(
+            "osmap-placement-{}",
+            crate::draft::generate_draft_id().unwrap()
+        ));
+        let store = CompositionPreferencesStore::new(&root);
+        let legacy = b"{\"version\":1,\"default_body_format\":\"formatted\"}\n";
+        {
+            let locked = store.file.lock("alice").unwrap();
+            locked.write(legacy).unwrap();
+        }
+        assert_eq!(
+            store.load("alice").unwrap().reply_placement,
+            ReplyPlacement::Above
+        );
+        assert_eq!(store.file.read("alice").unwrap().unwrap(), legacy);
+        let below = CompositionPreferences {
+            default_body_format: BodyFormat::Formatted,
+            reply_placement: ReplyPlacement::Below,
+        };
+        store.save("alice", below).unwrap();
+        assert_eq!(
+            CompositionPreferencesStore::new(&root)
+                .load("alice")
+                .unwrap(),
+            below
+        );
+        assert_eq!(
+            store.load("bob").unwrap(),
+            CompositionPreferences::default()
+        );
+        store.save_format("alice", BodyFormat::Plain).unwrap();
+        assert_eq!(
+            store.load("alice").unwrap(),
+            CompositionPreferences {
+                default_body_format: BodyFormat::Plain,
+                ..below
+            }
+        );
+        assert!(store
+            .file
+            .read("alice")
+            .unwrap()
+            .unwrap()
+            .starts_with(b"{\"version\":2,"));
+        std::fs::remove_dir_all(root).unwrap();
+    }
+    #[test]
+    fn reply_blank_space_moves_without_interpreting_or_trimming_quote_bytes() {
+        let quote="On synthetic date, synthetic sender wrote:\n> **literal** [x](unsupported:target)\n> - list\n> 1. item\n> \\escape 🦊\n[quoted content truncated]";
+        let source = format!("\n\n{quote}");
+        assert_eq!(
+            ReplyPlacement::Above.initial_reply_body(&source),
+            Some(source.clone())
+        );
+        let below = ReplyPlacement::Below.initial_reply_body(&source).unwrap();
+        assert_eq!(below, format!("{quote}\n\n"));
+        assert_eq!(below.len(), source.len());
+        assert!(ReplyPlacement::Below
+            .initial_reply_body("unrecognized builder output")
+            .is_none());
+    }
+    #[test]
+    fn placement_schema_rejects_unknown_duplicate_and_noncanonical_values() {
+        for value in ["", "Above", "bottom", "below "] {
+            assert!(ReplyPlacement::parse(value).is_none());
+        }
+        let value = CompositionPreferences {
+            default_body_format: BodyFormat::Formatted,
+            reply_placement: ReplyPlacement::Below,
+        };
+        assert_eq!(
+            CompositionPreferences::parse_record(&value.record()).unwrap(),
+            value
+        );
+        let valid = String::from_utf8(value.record()).unwrap();
+        for invalid in [
+            valid.replace("below", "bottom"),
+            valid.replace(
+                "\"reply_placement\":\"below\"",
+                "\"reply_placement\":\"below\",\"reply_placement\":\"above\"",
+            ),
+            valid.replace("version\":2", "version\":3"),
+            valid.trim_end().into(),
+        ] {
+            assert!(CompositionPreferences::parse_record(invalid.as_bytes()).is_err());
+        }
     }
 }

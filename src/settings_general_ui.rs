@@ -41,13 +41,17 @@ pub(crate) fn render_general_page(
         Some(value) => format!("<form id=\"general-composition-form\" method=\"post\" action=\"/settings/composition\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><div class=\"general-field\"><label for=\"general-default-format\">Default format</label><select id=\"general-default-format\" name=\"default_body_format\">{}</select></div></form>", escape_html(model.csrf_token), select_options(value.default_body_format.as_str(), &[("plain", "Plain text"), ("formatted", "Formatted text")])),
         None => format!("{}<p class=\"general-help\">Saved composition preferences are unavailable.</p>", unavailable_select("general-default-format", "Default format", "Unavailable")),
     };
+    let placement_control = match composition {
+        Some(value) => format!("<div class=\"general-field\"><label for=\"general-reply-placement\">Reply placement</label><select id=\"general-reply-placement\" name=\"reply_placement\" form=\"general-composition-form\">{}</select></div>", select_options(value.reply_placement.as_str(), &[("above", "Above quoted text"), ("below", "Below quoted text")])),
+        None => unavailable_select("general-reply-placement", "Reply placement", "Unavailable"),
+    };
     let composition = format!(concat!(
         "<section class=\"general-card\" aria-labelledby=\"general-composition-title\"><h2 id=\"general-composition-title\">Composition Defaults</h2>{}{}{}{}{}",
-        "<div class=\"general-card-actions general-composition-actions\">{}<details><summary>About default format</summary><p class=\"general-help\">Default applies to new blank messages. Replies and forwards use Plain text to preserve quoted message text; existing drafts keep their saved format. Other composition preferences are unavailable.</p></details></div></section>"
+        "<div class=\"general-card-actions general-composition-actions\">{}<details><summary>About composition defaults</summary><p class=\"general-help\">Format applies to new blank messages. Replies and forwards use Plain text to preserve quoted message text. Reply placement applies to new replies and reply-all; move the cursor to the blank reply space before typing. Saved drafts remain unchanged. Signature and protected delivery preferences are unavailable.</p></details></div></section>"
     ), format_control,
-        unavailable_select("general-signature", "Signature", "Unavailable"), unavailable_select("general-reply-placement", "Reply placement", "Unavailable"),
+        unavailable_select("general-signature", "Signature", "Unavailable"), placement_control,
         unavailable_select("general-signing", "OpenPGP signing", "Unavailable"), unavailable_select("general-encryption", "Encryption", "Unavailable"),
-        if composition.is_some() { "<button type=\"submit\" form=\"general-composition-form\">Save default format</button>" } else { "" });
+        if composition.is_some() { "<button type=\"submit\" form=\"general-composition-form\">Save composition defaults</button>" } else { "" });
 
     let privacy = concat!(
         "<section class=\"general-card\" aria-labelledby=\"general-privacy-title\"><h2 id=\"general-privacy-title\">Privacy &amp; Security</h2><ul class=\"general-status-list\">",
