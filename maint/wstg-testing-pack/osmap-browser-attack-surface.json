@@ -10,7 +10,7 @@
     {"method": "GET", "path": "/mailbox/shortcut", "query_fields": ["kind"], "form_fields": [], "wstg_test_ids": ["OSMAP-WSTG-ATHZ-001", "OSMAP-WSTG-BUSL-005"]},
     {"method": "GET", "path": "/mailbox", "query_fields": ["name", "moved_to", "moved_count", "sort", "dir", "q", "scope", "filter", "attachment", "after", "before", "page", "selected_mailbox", "selected_uid", "select"], "form_fields": [], "wstg_test_ids": ["OSMAP-WSTG-INPV-001", "OSMAP-WSTG-INPV-003", "OSMAP-WSTG-INPV-005"]},
     {"method": "GET", "path": "/search", "query_fields": ["q", "mailbox", "scope", "field", "sort", "dir", "filter", "attachment", "after", "before", "page", "selected_mailbox", "selected_uid", "select"], "form_fields": [], "wstg_test_ids": ["OSMAP-WSTG-INPV-002", "OSMAP-WSTG-INPV-003", "OSMAP-WSTG-INPV-005"]},
-    {"method": "GET", "path": "/message", "query_fields": ["mailbox", "uid"], "form_fields": [], "wstg_test_ids": ["OSMAP-WSTG-ATHZ-001", "OSMAP-WSTG-INPV-001"]},
+    {"method": "GET", "path": "/message", "query_fields": ["mailbox", "uid", "view", "mailbox_guid", "message_guid", "return_to"], "form_fields": [], "wstg_test_ids": ["OSMAP-WSTG-ATHZ-001", "OSMAP-WSTG-INPV-001"]},
     {"method": "GET", "path": "/attachment", "query_fields": ["mailbox", "uid", "part"], "form_fields": [], "wstg_test_ids": ["OSMAP-WSTG-ATHZ-001", "OSMAP-WSTG-INPV-001"]},
     {"method": "GET", "path": "/compose", "query_fields": ["sent", "mode", "mailbox", "uid", "mailbox_guid", "message_guid"], "form_fields": [], "wstg_test_ids": ["OSMAP-WSTG-BUSL-003", "OSMAP-WSTG-INPV-005"]},
     {"method": "GET", "path": "/contacts", "query_fields": ["edit", "delete", "revision"], "form_fields": [], "wstg_test_ids": ["OSMAP-WSTG-ATHZ-001", "OSMAP-WSTG-INPV-002"]},

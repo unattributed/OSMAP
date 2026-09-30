@@ -245,7 +245,7 @@ fn ux_synthetic_route_baselines() {
         ),
         ("sessions", "/sessions", true, 200),
         ("not-found", "/not-a-route", false, 404),
-        ("invalid-search", "/search", true, 400),
+        ("invalid-search", "/search?field=invalid", true, 400),
         (
             "reader-unavailable",
             "/message?mailbox=INBOX&uid=900",

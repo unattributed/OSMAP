@@ -9,7 +9,11 @@ pub fn mail_return_after_move(value: &str, source: &str) -> Option<String> {
     let safe = safe_mail_return(value)?;
     let (path, query) = safe.split_once('?')?;
     if path == "/message" {
-        return Some(format!("/mailbox?name={}", url_encode(source)));
+        let fields = parse_urlencoded_form(query.as_bytes(), 16, 2048).ok()?;
+        return fields
+            .get("return_to")
+            .and_then(|back| mail_return_after_move(back, source))
+            .or_else(|| Some(format!("/mailbox?name={}", url_encode(source))));
     }
     let mut fields = parse_urlencoded_form(query.as_bytes(), 16, 2048).ok()?;
     for key in ["select", "selected_mailbox", "selected_uid"] {
@@ -93,7 +97,27 @@ pub fn safe_mail_return(value: &str) -> Option<String> {
             if uid == 0 {
                 return None;
             }
-            &["mailbox", "uid"]
+            match (fields.get("mailbox_guid"), fields.get("message_guid")) {
+                (None, None) => {}
+                (Some(mailbox), Some(message)) => {
+                    crate::message_metadata::MessageVersion::new(mailbox.clone(), message.clone())
+                        .ok()?;
+                }
+                _ => return None,
+            }
+            if let Some(back) = fields.get("return_to") {
+                if !(back.starts_with("/mailbox?") || back.starts_with("/search?")) {
+                    return None;
+                }
+                safe_mail_return(back)?;
+            }
+            &[
+                "mailbox",
+                "uid",
+                "mailbox_guid",
+                "message_guid",
+                "return_to",
+            ]
         }
         _ => return None,
     };
@@ -150,5 +174,33 @@ mod tests {
         ] {
             assert_eq!(safe_mail_return(value), None, "{value}");
         }
+    }
+}
+
+#[cfg(test)]
+#[test]
+fn reader_return_keeps_versions_and_one_bounded_list_context() {
+    let back = "/mailbox?name=INBOX&filter=unread&selected_uid=9&selected_mailbox=INBOX";
+    let reader = format!(
+        "/message?mailbox=INBOX&uid=9&mailbox_guid={}&message_guid=stored&return_to={}",
+        "a".repeat(32),
+        url_encode(back)
+    );
+    let safe = safe_mail_return(&reader).unwrap();
+    assert!(safe.contains("message_guid=stored"));
+    assert!(safe.contains("return_to="));
+    let moved = mail_return_after_move(&safe, "INBOX").unwrap();
+    assert!(moved.contains("filter=unread"));
+    assert!(!moved.contains("selected_uid"));
+    for nested in [
+        reader.as_str(),
+        "https://foreign.test/path",
+        "/message?mailbox=INBOX&uid=9",
+    ] {
+        assert!(safe_mail_return(&format!(
+            "/message?mailbox=INBOX&uid=9&return_to={}",
+            url_encode(nested)
+        ))
+        .is_none());
     }
 }

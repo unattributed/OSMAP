@@ -108,11 +108,54 @@ fn welcome_data_counts_actual_saved_drafts_when_inbox_worker_is_busy() {
     let result = home(&app, "WelcomeData/rows");
     let html = body_text(&result);
     assert_eq!(result.response.status_code, 200);
-    assert!(html.contains("Saved drafts: 1") && html.contains("Inbox summaries are unavailable"));
+    assert!(
+        html.contains("Saved drafts: 1")
+            && html.contains("Inbox summaries are unavailable")
+            && html.contains("Sent · loaded messages: Unknown")
+    );
     assert!(!result
         .audit_events
         .iter()
         .any(|event| event.action == "welcome_fixture_summary_list"));
+    assert!(app.gateway.submitted.lock().unwrap().is_empty());
+    assert!(app.gateway.message_flags.lock().unwrap().is_empty());
+}
+
+#[test]
+fn welcome_sent_loaded_count_is_owned_and_independent() {
+    let app = app();
+    for (marker, expected) in [
+        ("rows", "8"),
+        ("empty", "0"),
+        ("wrong-owner", "Unknown"),
+        ("wrong-mailbox", "Unknown"),
+        ("wrong-row", "Unknown"),
+        ("duplicate", "Unknown"),
+        ("zero", "Unknown"),
+        ("failure", "Unknown"),
+    ] {
+        let result = home(&app, &format!("WelcomeSent/{marker}"));
+        let html = body_text(&result);
+        assert_eq!(result.response.status_code, 200);
+        assert!(
+            html.contains(&format!("Sent · loaded messages: {expected}")),
+            "{marker}"
+        );
+        assert!(html.contains("Saved drafts: 0") && html.contains("Unread · loaded Inbox: 1"));
+        assert_eq!(
+            result
+                .audit_events
+                .iter()
+                .filter(|e| e.action == "welcome_fixture_summary_list")
+                .count(),
+            1
+        );
+    }
+    let missing = body_text(&home(&app, "WelcomeMissing"));
+    assert!(
+        missing.contains("Sent · loaded messages")
+            && !missing.contains("class=\"welcome-metric\" href=\"/mailbox?name=Sent\"")
+    );
     assert!(app.gateway.submitted.lock().unwrap().is_empty());
     assert!(app.gateway.message_flags.lock().unwrap().is_empty());
 }

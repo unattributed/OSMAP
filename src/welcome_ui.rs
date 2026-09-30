@@ -7,6 +7,7 @@ pub(crate) fn render_mailboxes_page(
     mailboxes: &[MailboxEntry],
     summaries: Option<&[MessageSummary]>,
     draft_count: Option<usize>,
+    sent_count: Option<usize>,
     activity: &crate::http::BrowserSessionListDecision,
 ) -> TrustedHtml {
     let has = |name: &str| mailboxes.iter().any(|mailbox| mailbox.name == name);
@@ -31,7 +32,12 @@ pub(crate) fn render_mailboxes_page(
             unread,
         ),
         ("Saved drafts", "drafts", Some("/drafts"), draft_count),
-        ("Sent", "sent", sent.then_some("/mailbox?name=Sent"), None),
+        (
+            "Sent · loaded messages",
+            "sent",
+            sent.then_some("/mailbox?name=Sent"),
+            sent_count,
+        ),
         (
             "Flagged · loaded Inbox",
             "folders",

@@ -1945,3 +1945,49 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   this is not whole-page, epic, release or production qualification. Search,
   standalone neighbour navigation and a loaded Sent metric are isolated proposals
   for the next checkpoint. No GitHub synchronization or deployment.
+
+
+### Search, loaded Sent count and standalone navigation — 2026-09-30
+
+- Signed `15656d50c7051f6eed46e55c064305ee74fc0c06` passed isolated obsd1
+  qualification in S04 `native-h`: archive SHA-256
+  `3c8ac78c825bb706ddfe260769eafba4aff8f83bd47ef2ed233653e521e95046`,
+  log SHA-256 `ebaf8bab310cbaa45d939191cc544006088edb6128f79ed7fa786c258b3f4712`.
+  The standard checkout and services remained unchanged; no deployment occurred.
+- Search follows PAGE-09 query-card/tab/table geometry (approximately y177,
+  y319 and y365 at 1600 pixels). Authenticated blank queries open a native form
+  without querying the backend; malformed fields still refuse. Message rows
+  show owned title/sender, bounded preview when available, folder and received
+  time. Clear filters keeps keywords, query field and folder scope. Documents,
+  People, combined-category counts and protection filters remain unavailable.
+  Parent Edge/Firefox each passed eight final captures and five native checks,
+  with no external requests, script requests, non-login POSTs or measured
+  contrast/overflow failures: S04 `search-final-{edge,firefox}`.
+- Welcome separately counts the owned loaded Sent summary set. The label states
+  that scope; it is not a period total, delivery count or storage quota. Missing,
+  invalid or busy Sent data yields Unknown while Inbox/draft facts remain usable.
+  Parent `welcome-sent-integrated-{edge,firefox}` each passed 11 captures.
+- Reader Previous/Next uses one verified bounded mailbox summary set and the
+  saved Reading date order. Account/folder/UID/GUID/date uncertainty disables
+  navigation. Links bind stored versions and refuse replaced messages before
+  displaying their bodies. This explicitly does not follow search/filter result
+  order. Read/star/theme retain one validated list context; moves remove stale
+  selected-message fields. Three secondary Reader owner checks now refuse
+  foreign settings/mailbox projections while an independently owned body remains.
+- Independent review required matching one-level return restrictions in the
+  header theme handler. Parent validation also caught persisted Dark overriding
+  emulated Light captures; final workflows explicitly select and verify each
+  saved theme. Parent `reader-neighbours-final-{edge,firefox}` each passed three
+  native checks and eight actual Light/Dark/narrow/forced-colour captures.
+- Broader gates caught obsolete blank-search error fixtures, a rendering API
+  still used by external assurance tests, and header return canonicalization.
+  Error fixtures now use malformed fields, the public API remains compatible,
+  and nested context is canonicalized consistently. A test-variable TLS scanner
+  collision was removed without changing scanner policy. Earlier failure logs
+  remain under S04 `search-reader-*`.
+- Page statuses remain bounded local implementation or partial functionality.
+  No complete epic, release, production deployment or synchronization is claimed.
+- Validation: 843 library tests passed, seven opt-in fixtures ignored; complete
+  acceptance/security/V10-13, V14, strict all-target/all-feature Clippy,
+  formatting and whitespace checks passed. The signing hook repeats security
+  validation. New browser checks use only synthetic loopback accounts/data.

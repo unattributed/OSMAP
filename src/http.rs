@@ -70,7 +70,7 @@ use crate::http_support::{
 };
 use crate::http_ui::{
     render_compose_page, render_draft_list_page, render_login_page, render_mailboxes_page,
-    render_message_list_page, render_message_search_page, render_message_view_page,
+    render_message_list_page, render_message_search_page, render_message_view_page_with_neighbours,
     render_navigation_notice, render_sessions_page, ComposePageModel, DraftListPageModel,
     MailReaderContext, MessageListBulkActions, MessageListSortLinks, MessageSearchContext,
     SelectedMessagePane, SettingsPageModel,
@@ -1590,13 +1590,23 @@ mod tests {
             context: &AuthenticationContext,
             validated_session: &ValidatedSession,
         ) -> BrowserSettingsOutcome {
-            if context.user_agent == "SettingsWrongOwner" {
+            if matches!(
+                context.user_agent.as_str(),
+                "SettingsWrongOwner" | "ReaderSettingsWrongOwner"
+            ) {
                 return BrowserSettingsOutcome {
                     decision: BrowserSettingsDecision::Loaded {
                         canonical_username: "foreign-settings-owner@example.test".into(),
                         settings: BrowserVisibleSettings {
                             html_display_preference: HtmlDisplayPreference::PreferSanitizedHtml,
-                            archive_mailbox_name: Some("foreign-private-archive".into()),
+                            archive_mailbox_name: Some(
+                                if context.user_agent == "ReaderSettingsWrongOwner" {
+                                    "INBOX"
+                                } else {
+                                    "foreign-private-archive"
+                                }
+                                .into(),
+                            ),
                         },
                     },
                     audit_events: Vec::new(),
@@ -1802,12 +1812,20 @@ mod tests {
                     audit_events: vec![],
                 };
             }
-            if context.user_agent == "WelcomeWrongAccount" {
+            if matches!(
+                context.user_agent.as_str(),
+                "WelcomeWrongAccount" | "ReaderMailboxWrongOwner"
+            ) {
                 return BrowserMailboxOutcome {
                     decision: BrowserMailboxDecision::Listed {
                         canonical_username: "foreign@example.test".into(),
                         mailboxes: vec![MailboxEntry {
-                            name: "INBOX".into(),
+                            name: if context.user_agent == "ReaderMailboxWrongOwner" {
+                                "Archive/2026"
+                            } else {
+                                "INBOX"
+                            }
+                            .into(),
                         }],
                     },
                     audit_events: vec![],
@@ -1879,7 +1897,17 @@ mod tests {
                         MailboxEntry {
                             name: "Trash".to_string(),
                         },
-                    ],
+                    ]
+                    .into_iter()
+                    .chain(
+                        context
+                            .user_agent
+                            .starts_with("Welcome")
+                            .then(|| MailboxEntry {
+                                name: "Sent".into(),
+                            }),
+                    )
+                    .collect(),
                 },
                 audit_events: vec![LogEvent::new(
                     LogLevel::Info,
@@ -1896,13 +1924,15 @@ mod tests {
             validated_session: &ValidatedSession,
             mailbox_name: &str,
         ) -> BrowserMessageListOutcome {
-            if context.user_agent.starts_with("WelcomeData/") {
-                let marker = context.user_agent.strip_prefix("WelcomeData/").unwrap();
+            if (mailbox_name == "INBOX" && context.user_agent.starts_with("WelcomeData/"))
+                || (mailbox_name == "Sent" && context.user_agent.starts_with("WelcomeSent/"))
+            {
+                let marker = context.user_agent.split_once('/').unwrap().1;
                 let mut rows: Vec<_> = (1..=8)
                     .map(|uid| MessageSummary {
                         to: None,
                         metadata: None,
-                        mailbox_name: "INBOX".into(),
+                        mailbox_name: mailbox_name.into(),
                         uid,
                         flags: if uid % 2 == 0 {
                             vec!["\\Seen".into(), "\\Flagged".into()]
@@ -1917,6 +1947,9 @@ mod tests {
                     .collect();
                 if marker == "wrong-row" {
                     rows[0].mailbox_name = "Foreign".into();
+                }
+                if marker == "zero" {
+                    rows[0].uid = 0;
                 }
                 if marker == "duplicate" {
                     rows[0].uid = rows[1].uid;
@@ -1937,7 +1970,7 @@ mod tests {
                                 validated_session.record.canonical_username.clone()
                             },
                             mailbox_name: if marker == "wrong-mailbox" {
-                                "Sent".into()
+                                "Foreign".into()
                             } else {
                                 mailbox_name.into()
                             },
@@ -2060,6 +2093,17 @@ mod tests {
             query: &str,
             field: MessageSearchField,
         ) -> BrowserMessageSearchOutcome {
+            if context.user_agent == "OSMAP/SearchWrongOwner" {
+                return BrowserMessageSearchOutcome {
+                    decision: BrowserMessageSearchDecision::Listed {
+                        canonical_username: "foreign@example.test".into(),
+                        mailbox_name: Some("ForeignFolder".into()),
+                        query: "foreign-secret".into(),
+                        results: Vec::new(),
+                    },
+                    audit_events: Vec::new(),
+                };
+            }
             let mailbox_name = mailbox_name.map(str::to_string);
             if context.user_agent.starts_with("OSMAP/ManyMessages")
                 && matches!(query, "reader-fixture" | "reader-miss")
@@ -4323,7 +4367,7 @@ mod tests {
         assert_eq!(all.response.status_code, 200);
         let all_body = body_text(&all);
         assert!(all_body.contains("All field selected"));
-        assert!(all_body.contains("<strong>Field:</strong> All message text"));
+        assert!(all_body.contains("<option value=\"all\" selected>All message text</option>"));
         assert!(all_body.contains(
             "/search?scope=all&amp;q=fieldfilter&amp;field=all&amp;sort=uid&amp;dir=asc"
         ));
@@ -4379,7 +4423,7 @@ mod tests {
         assert!(body.contains("Quarterly report"));
         assert!(body.contains("Alice &lt;alice@example.com&gt;"));
         assert!(body.contains("/message?mailbox=INBOX&amp;uid=17"));
-        assert!(body.contains("<strong>Scope:</strong> INBOX"));
+        assert!(body.contains("class=\"search-scope\">INBOX"));
     }
 
     #[test]
@@ -4876,7 +4920,7 @@ mod tests {
     }
 
     #[test]
-    fn search_page_rejects_missing_query() {
+    fn search_page_missing_query_renders_native_landing_without_backend_call() {
         let response = app().handle_request(
             &request(
                 "GET",
@@ -4893,8 +4937,47 @@ mod tests {
             "127.0.0.1",
         );
 
-        assert_eq!(response.response.status_code, 400);
-        assert!(body_text(&response).contains("A search query is required."));
+        assert_eq!(response.response.status_code, 200);
+        assert!(body_text(&response).contains("Enter keywords to search your mail."));
+        assert!(body_text(&response).contains("id=\"search-query\""));
+        assert!(!format!("{:?}", response.audit_events).contains("stub_message_search"));
+    }
+
+    #[test]
+    fn search_page_rejects_wrong_owner_without_foreign_values() {
+        let response = app().handle_request(&request("GET", "/search?q=quarterly", &[
+            ("User-Agent", "OSMAP/SearchWrongOwner"),
+            ("Cookie", "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
+        ], ""), "127.0.0.1");
+        assert_eq!(response.response.status_code, 503);
+        for value in ["foreign@example.test", "ForeignFolder", "foreign-secret"] {
+            assert!(!body_text(&response).contains(value));
+        }
+        assert_eq!(
+            response
+                .audit_events
+                .iter()
+                .filter(|event| event.action == "request_budget_released")
+                .count(),
+            1
+        );
+    }
+
+    #[test]
+    fn search_page_blank_query_authenticates_and_validates_before_landing() {
+        let unauthenticated =
+            app().handle_request(&request("GET", "/search", &[], ""), "127.0.0.1");
+        assert_ne!(unauthenticated.response.status_code, 200);
+        for (path, status) in [
+            ("/search?q=+++", 200),
+            ("/search?q=&field=unsupported", 400),
+            ("/search?q=&after=invalid", 400),
+            ("/search?q=%0A", 400),
+        ] {
+            let response = app().handle_request(&request("GET", path, &[("Cookie", "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")], ""), "127.0.0.1");
+            assert_eq!(response.response.status_code, status, "{path}");
+            assert!(!format!("{:?}", response.audit_events).contains("stub_message_search"));
+        }
     }
 
     #[test]
@@ -4965,7 +5048,7 @@ mod tests {
 
         assert_eq!(response.response.status_code, 200);
         let body = body_text(&response);
-        assert!(body.contains("<strong>Scope:</strong> All mailboxes"));
+        assert!(body.contains("class=\"search-scope\">All mailboxes"));
         assert!(body.contains("name=\"scope\" value=\"all\" checked"));
         assert!(body.contains("/message?mailbox=INBOX&amp;uid=17"));
         assert!(body.contains("/message?mailbox=Archive%2F2026&amp;uid=23"));
@@ -4998,7 +5081,7 @@ mod tests {
             crate::mailbox::DEFAULT_MAX_SEARCH_RESULTS,
         )));
         assert!(body.contains(&format!(
-            "<strong>Results:</strong> {}",
+            "Messages ({})",
             crate::mailbox::DEFAULT_MAX_SEARCH_RESULTS
         )));
         assert!(body.contains("Result 249"));

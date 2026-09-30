@@ -192,11 +192,17 @@ where
     ) -> Option<String> {
         let archive_mailbox_name = match self.gateway.load_settings(context, validated_session) {
             BrowserSettingsOutcome {
-                decision: BrowserSettingsDecision::Loaded { settings, .. },
+                decision:
+                    BrowserSettingsDecision::Loaded {
+                        canonical_username,
+                        settings,
+                    },
                 audit_events: settings_audit_events,
             } => {
                 audit_events.extend(settings_audit_events);
-                settings.archive_mailbox_name
+                (canonical_username == validated_session.record.canonical_username)
+                    .then_some(settings.archive_mailbox_name)
+                    .flatten()
             }
             BrowserSettingsOutcome {
                 decision: BrowserSettingsDecision::Denied { .. },
@@ -211,7 +217,13 @@ where
         audit_events.extend(mailbox_outcome.audit_events);
 
         match mailbox_outcome.decision {
-            BrowserMailboxDecision::Listed { mailboxes, .. } => {
+            BrowserMailboxDecision::Listed {
+                canonical_username,
+                mailboxes,
+            } => {
+                if canonical_username != validated_session.record.canonical_username {
+                    return None;
+                }
                 if mailbox_name_exists(&mailboxes, &archive_mailbox_name) {
                     Some(archive_mailbox_name)
                 } else {
@@ -271,7 +283,7 @@ where
                         audit_events,
                     };
                 }
-                let (recent, draft_count) =
+                let (recent, draft_count, sent_count) =
                     self.welcome_data(context, &validated_session, &mailboxes, &mut audit_events);
                 let activity = self.gateway.list_sessions(context, &validated_session);
                 audit_events.extend(activity.audit_events);
@@ -287,6 +299,7 @@ where
                             &visible_mailboxes,
                             recent.as_deref(),
                             draft_count,
+                            sent_count,
                             &activity.decision,
                         ),
                     ),
@@ -493,24 +506,7 @@ where
         request: &HttpRequest,
         context: &AuthenticationContext,
     ) -> HandledHttpResponse {
-        let query = match request.query_params.get("q") {
-            Some(query) if !query.trim().is_empty() => query.clone(),
-            _ => {
-                return HandledHttpResponse {
-                    response: html_response(
-                        400,
-                        "Bad Request",
-                        "Invalid Search Request",
-                        "<p>A search query is required.</p>",
-                    ),
-                    audit_events: vec![build_http_warning_event(
-                        "http_search_query_rejected",
-                        "search query parameter missing",
-                        context,
-                    )],
-                };
-            }
-        };
+        let query = request.query_params.get("q").cloned().unwrap_or_default();
         let mut mailbox_name = request
             .query_params
             .get("mailbox")
@@ -556,6 +552,31 @@ where
                 }
             }
         };
+        if query.trim().is_empty() {
+            view.selection = None;
+            view.page = 1;
+            view.requested_page = 1;
+            return HandledHttpResponse {
+                response: html_response(
+                    200,
+                    "OK",
+                    "Search",
+                    render_message_search_page(
+                        &validated_session.record.canonical_username,
+                        &validated_session.record.csrf_token,
+                        mailbox_name.as_deref(),
+                        &query,
+                        &[],
+                        MessageSearchContext {
+                            view: &view,
+                            field: search_field,
+                            reader: &MailReaderContext::default(),
+                        },
+                    ),
+                ),
+                audit_events,
+            };
+        }
         let (budget_guard, budget_event) =
             match self.acquire_search_budget(context, &validated_session) {
                 Ok(result) => result,
@@ -577,6 +598,19 @@ where
         audit_events.extend(outcome.audit_events);
 
         let mut handled = match outcome.decision {
+            BrowserMessageSearchDecision::Listed {
+                canonical_username, ..
+            } if canonical_username != validated_session.record.canonical_username => {
+                HandledHttpResponse {
+                    response: html_response(
+                        503,
+                        "Service Unavailable",
+                        "Message Search Unavailable",
+                        "<p>The search results could not be verified for this account.</p>",
+                    ),
+                    audit_events,
+                }
+            }
             BrowserMessageSearchDecision::Listed {
                 canonical_username,
                 mailbox_name,
@@ -742,8 +776,27 @@ where
                 rendered,
             } if canonical_username == validated_session.record.canonical_username
                 && rendered.mailbox_name == mailbox_name
-                && rendered.uid == uid =>
+                && rendered.uid == uid
+                && crate::reader_neighbours::query_version_matches(
+                    &request.query_params,
+                    &rendered,
+                ) =>
             {
+                let preferences = self
+                    .gateway
+                    .load_reading_preferences(context, &validated_session)
+                    .ok();
+                let summaries =
+                    self.gateway
+                        .list_messages(context, &validated_session, &mailbox_name);
+                audit_events.extend(summaries.audit_events);
+                let neighbours = crate::reader_neighbours::ReaderNeighbours::derive(
+                    &canonical_username,
+                    &rendered,
+                    preferences,
+                    &summaries.decision,
+                    request.query_params.get("return_to").map(String::as_str),
+                );
                 let archive_mailbox_name = self.validated_archive_mailbox_name(
                     context,
                     &validated_session,
@@ -752,11 +805,19 @@ where
                 let visible_mailboxes =
                     match self.gateway.list_mailboxes(context, &validated_session) {
                         BrowserMailboxOutcome {
-                            decision: BrowserMailboxDecision::Listed { mailboxes, .. },
+                            decision:
+                                BrowserMailboxDecision::Listed {
+                                    canonical_username,
+                                    mailboxes,
+                                },
                             audit_events: mailbox_audit_events,
                         } => {
                             audit_events.extend(mailbox_audit_events);
-                            filter_user_visible_mailboxes(&mailboxes)
+                            if canonical_username == validated_session.record.canonical_username {
+                                filter_user_visible_mailboxes(&mailboxes)
+                            } else {
+                                Vec::new()
+                            }
                         }
                         BrowserMailboxOutcome {
                             decision: BrowserMailboxDecision::Denied { public_reason },
@@ -780,12 +841,13 @@ where
                         200,
                         "OK",
                         "Message View",
-                        render_message_view_page(
+                        render_message_view_page_with_neighbours(
                             &canonical_username,
                             &validated_session.record.csrf_token,
                             &rendered,
                             archive_mailbox_name.as_deref(),
                             &visible_mailboxes,
+                            &neighbours,
                         ),
                     ),
                     audit_events,

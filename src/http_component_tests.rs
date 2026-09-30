@@ -5,7 +5,7 @@ use super::*;
 fn fragment_errors_have_one_main_heading_and_return_navigation_in_the_active_theme() {
     for (path, status, heading) in [
         ("/missing", 404, "Not Found"),
-        ("/search", 400, "Invalid Search Request"),
+        ("/search?field=invalid", 400, "Invalid Search Request"),
         (
             "/attachment?mailbox=INBOX&uid=9&part=1.99",
             404,

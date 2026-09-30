@@ -9,7 +9,7 @@ pub(super) fn safe_return(value: &str) -> Option<String> {
         return None;
     }
     let (path, query) = value.split_once('?').unwrap_or((value, ""));
-    let fields = parse_urlencoded_form(query.as_bytes(), 16, 2048).ok()?;
+    let mut fields = parse_urlencoded_form(query.as_bytes(), 16, 2048).ok()?;
     let allowed: &[&str] = match path {
         "/settings" => &["section", "q"],
         "/sessions" | "/mailboxes" | "/contacts" => &[],
@@ -36,8 +36,11 @@ pub(super) fn safe_return(value: &str) -> Option<String> {
     {
         return None;
     }
-    if let Some(value) = fields.get("return_to") {
-        crate::mail_navigation::safe_mail_return(value)?;
+    if let Some(value) = fields.get_mut("return_to") {
+        if !(value.starts_with("/mailbox?") || value.starts_with("/search?")) {
+            return None;
+        }
+        *value = crate::mail_navigation::safe_mail_return(value)?;
     }
     // Destination GET handlers validate their own identifiers and permissions.
     // Reconstructing each query value prevents it becoming URL structure.

@@ -58,7 +58,7 @@
             "src/http/welcome_data.rs",
             "maint/ux/welcome_workflows.py",
             "S04/welcome-data-{edge,firefox}/report.json",
-            "Counts and newest five rows are explicitly scoped to the loaded owned Inbox summary set; saved-draft count is separate. Sent count remains unknown."
+            "Counts and newest five rows are explicitly scoped to the loaded owned Inbox summary set; saved-draft count is separate. Sent is separately measured from its owned bounded loaded summary set."
           ]
         },
         {
@@ -69,14 +69,19 @@
             "src/http/welcome_data.rs",
             "maint/ux/welcome_workflows.py",
             "S04/welcome-data-{edge,firefox}/report.json",
-            "Counts and newest five rows are explicitly scoped to the loaded owned Inbox summary set; saved-draft count is separate. Sent count remains unknown."
+            "Counts and newest five rows are explicitly scoped to the loaded owned Inbox summary set; saved-draft count is separate. Sent is separately measured from its owned bounded loaded summary set."
           ]
         },
         {
           "id": "R2-01-004",
           "label": "Recent Sent count",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/http/welcome_data.rs",
+            "maint/ux/welcome_workflows.py",
+            "S04/welcome-sent-integrated-{edge,firefox}/report.json",
+            "Actual loaded Sent count, not an all-time total or recent-period/delivery claim; unavailable or invalid projection is Unknown."
+          ]
         },
         {
           "id": "R2-01-005",
@@ -86,7 +91,7 @@
             "src/http/welcome_data.rs",
             "maint/ux/welcome_workflows.py",
             "S04/welcome-data-{edge,firefox}/report.json",
-            "Counts and newest five rows are explicitly scoped to the loaded owned Inbox summary set; saved-draft count is separate. Sent count remains unknown."
+            "Counts and newest five rows are explicitly scoped to the loaded owned Inbox summary set; saved-draft count is separate. Sent is separately measured from its owned bounded loaded summary set."
           ]
         },
         {
@@ -168,7 +173,7 @@
             "src/http/welcome_data.rs",
             "maint/ux/welcome_workflows.py",
             "S04/welcome-data-{edge,firefox}/report.json",
-            "Counts and newest five rows are explicitly scoped to the loaded owned Inbox summary set; saved-draft count is separate. Sent count remains unknown."
+            "Counts and newest five rows are explicitly scoped to the loaded owned Inbox summary set; saved-draft count is separate. Sent is separately measured from its owned bounded loaded summary set."
           ]
         },
         {
@@ -462,7 +467,10 @@
             "src/http_ui.rs",
             "maint/ux/standalone_reader_workflows.py",
             "S04/reader-integrated-{edge,firefox}/report.json",
-            "Standalone approved hierarchy; exact source and native PDF bytes, read/star and replies verified. Standalone Back currently uses default mailbox list; coordinated reader retains context."
+            "Standalone approved hierarchy; exact source and native PDF bytes, read/star and replies verified. Standalone Back currently uses default mailbox list; coordinated reader retains context.",
+            "src/mail_navigation.rs",
+            "S04/reader-neighbours-final-{edge,firefox}/report.json",
+            "Read/star/theme preserve one validated list return context; moves clear stale selected-message fields."
           ]
         },
         {
@@ -524,14 +532,24 @@
         {
           "id": "R2-03-008",
           "label": "Previous message",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/reader_neighbours.rs",
+            "maint/ux/reader_neighbours_workflows.py",
+            "S04/reader-neighbours-final-{edge,firefox}/report.json",
+            "Verified bounded mailbox order follows saved Reading date order; explicitly does not follow list filters/search results. Unknown metadata/order disables arrows; version-bound links refuse changed identity."
+          ]
         },
         {
           "id": "R2-03-009",
           "label": "Next message",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/reader_neighbours.rs",
+            "maint/ux/reader_neighbours_workflows.py",
+            "S04/reader-neighbours-final-{edge,firefox}/report.json",
+            "Verified bounded mailbox order follows saved Reading date order; explicitly does not follow list filters/search results. Unknown metadata/order disables arrows; version-bound links refuse changed identity."
+          ]
         },
         {
           "id": "R2-03-010",
@@ -1565,13 +1583,18 @@
         "S03-01",
         "S08-01"
       ],
-      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "visual_status": "PARTIAL_FINAL_REFERENCE_COMPARISON",
       "controls": [
         {
           "id": "R2-09-001",
           "label": "Search input",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "src/http/routes_mail.rs",
+            "maint/ux/search_workflows.py",
+            "S04/search-final-{edge,firefox}/report.json"
+          ]
         },
         {
           "id": "R2-09-002",
@@ -1582,20 +1605,38 @@
         {
           "id": "R2-09-003",
           "label": "From filter",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "src/http/routes_mail.rs",
+            "maint/ux/search_workflows.py",
+            "S04/search-final-{edge,firefox}/report.json",
+            "From is a native query-field choice, not an independent combined sender-address predicate."
+          ]
         },
         {
           "id": "R2-09-004",
           "label": "Time filter",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "src/http/routes_mail.rs",
+            "maint/ux/search_workflows.py",
+            "S04/search-final-{edge,firefox}/report.json",
+            "src/mail_list.rs",
+            "S04/date-integrated-{edge,firefox}/report.json"
+          ]
         },
         {
           "id": "R2-09-005",
           "label": "Attachment filter",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "src/http/routes_mail.rs",
+            "maint/ux/search_workflows.py",
+            "S04/search-final-{edge,firefox}/report.json"
+          ]
         },
         {
           "id": "R2-09-006",
@@ -1606,14 +1647,24 @@
         {
           "id": "R2-09-007",
           "label": "Unread filter",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "src/http/routes_mail.rs",
+            "maint/ux/search_workflows.py",
+            "S04/search-final-{edge,firefox}/report.json"
+          ]
         },
         {
           "id": "R2-09-008",
           "label": "Folder filter",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "src/http/routes_mail.rs",
+            "maint/ux/search_workflows.py",
+            "S04/search-final-{edge,firefox}/report.json"
+          ]
         },
         {
           "id": "R2-09-009",
@@ -1624,8 +1675,14 @@
         {
           "id": "R2-09-010",
           "label": "Messages category",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "src/http/routes_mail.rs",
+            "maint/ux/search_workflows.py",
+            "S04/search-final-{edge,firefox}/report.json",
+            "Messages only; Documents, People and combined All category remain unavailable."
+          ]
         },
         {
           "id": "R2-09-011",
@@ -1642,38 +1699,70 @@
         {
           "id": "R2-09-013",
           "label": "Result type",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "src/http/routes_mail.rs",
+            "maint/ux/search_workflows.py",
+            "S04/search-final-{edge,firefox}/report.json"
+          ]
         },
         {
           "id": "R2-09-014",
           "label": "Result title and bounded snippet",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "src/http/routes_mail.rs",
+            "maint/ux/search_workflows.py",
+            "S04/search-final-{edge,firefox}/report.json",
+            "Owned mail subject, sender and validated bounded preview when available; no document or people results."
+          ]
         },
         {
           "id": "R2-09-015",
           "label": "Location",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "src/http/routes_mail.rs",
+            "maint/ux/search_workflows.py",
+            "S04/search-final-{edge,firefox}/report.json"
+          ]
         },
         {
           "id": "R2-09-016",
           "label": "Modified time",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "src/http/routes_mail.rs",
+            "maint/ux/search_workflows.py",
+            "S04/search-final-{edge,firefox}/report.json",
+            "Actual received time is shown for messages, not an invented modified time."
+          ]
         },
         {
           "id": "R2-09-017",
           "label": "Open result within account",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "src/http/routes_mail.rs",
+            "maint/ux/search_workflows.py",
+            "S04/search-final-{edge,firefox}/report.json"
+          ]
         },
         {
           "id": "R2-09-018",
           "label": "Empty search and clear filters",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/http_ui.rs",
+            "src/http/routes_mail.rs",
+            "maint/ux/search_workflows.py",
+            "S04/search-final-{edge,firefox}/report.json"
+          ]
         }
       ]
     },

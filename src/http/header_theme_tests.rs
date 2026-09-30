@@ -241,11 +241,16 @@ fn header_theme_invalid_returns_never_change_record_and_valid_queries_survive() 
         assert_eq!(f.theme(target).response.status_code, 400, "{target}");
         assert_eq!(fs::read(f.appearance_record()).unwrap(), before);
     }
-    for target in ["/drafts?filter=attachments&sort=oldest&q=report","/message?mailbox=INBOX&uid=9&mailbox_guid=box&message_guid=msg&return_to=%2Fmailbox%3Fname%3DINBOX%26filter%3Dunread","/search?q=report&scope=all&filter=unread&page=2"] {
-        let expected=super::super::header_theme::safe_return(target).unwrap();
-        let response=f.theme(target); assert_eq!(response.response.status_code,303); assert_eq!(location_header(&response),expected);
-        let page=f.perform("GET",target,""); assert_eq!(page.response.status_code,200);
-        assert!(body_text(&page).contains(&format!("value=\"{}\" data-header-return",escape_html(&expected))));
+    let version = StubGateway::fixture_metadata("alice@example.com", "INBOX", 9).version;
+    let reader = format!("/message?mailbox=INBOX&uid=9&mailbox_guid={}&message_guid={}&return_to=%2Fmailbox%3Fname%3DINBOX%26filter%3Dunread", version.mailbox_guid, version.message_guid);
+    for target in ["/drafts?filter=attachments&sort=oldest&q=report", reader.as_str(), "/search?q=report&scope=all&filter=unread&page=2"] {
+        let expected = super::super::header_theme::safe_return(target).unwrap();
+        let response = f.theme(target);
+        assert_eq!(response.response.status_code, 303);
+        assert_eq!(location_header(&response), expected);
+        let page = f.perform("GET", target, "");
+        assert_eq!(page.response.status_code, 200);
+        assert!(body_text(&page).contains(&format!("value=\"{}\" data-header-return", escape_html(&expected))));
     }
 }
 
@@ -286,4 +291,29 @@ fn header_theme_settings_and_recovery_are_disabled_but_compose_posts_its_form() 
     assert!(!html.contains("data-compose-theme"));
     assert!(html.contains("Keep this page open"));
     assert!(html.contains("title=\"Compose\" aria-current=\"page\""));
+}
+
+#[test]
+fn header_reader_context_allows_only_one_nested_list() {
+    for back in [
+        "/mailbox?name=INBOX&filter=unread",
+        "/search?q=example&scope=all",
+    ] {
+        let target = format!(
+            "/message?mailbox=INBOX&uid=9&return_to={}",
+            url_encode(back)
+        );
+        assert!(super::super::header_theme::safe_return(&target).is_some());
+    }
+    for back in [
+        "/message?mailbox=INBOX&uid=9",
+        "https://foreign.test/path",
+        "/mailbox?name=INBOX&return_to=x",
+    ] {
+        let target = format!(
+            "/message?mailbox=INBOX&uid=9&return_to={}",
+            url_encode(back)
+        );
+        assert!(super::super::header_theme::safe_return(&target).is_none());
+    }
 }

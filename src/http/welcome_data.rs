@@ -7,21 +7,29 @@ impl<G: BrowserGateway> BrowserApp<G> {
         session: &ValidatedSession,
         mailboxes: &[MailboxEntry],
         audit: &mut Vec<LogEvent>,
-    ) -> (Option<Vec<MessageSummary>>, Option<usize>) {
+    ) -> (Option<Vec<MessageSummary>>, Option<usize>, Option<usize>) {
         let mut recent = None;
-        if mailboxes.iter().any(|entry| entry.name == "INBOX") {
-            match self.acquire_mailbox_budget(context, session, "welcome_inbox") {
+        let mut sent_count = None;
+        for (mailbox, operation) in [("INBOX", "welcome_inbox"), ("Sent", "welcome_sent")] {
+            if !mailboxes.iter().any(|entry| entry.name == mailbox) {
+                continue;
+            }
+            match self.acquire_mailbox_budget(context, session, operation) {
                 Ok((guard, event)) => {
                     audit.push(event);
-                    let result = self.gateway.list_messages(context, session, "INBOX");
+                    let result = self.gateway.list_messages(context, session, mailbox);
                     audit.extend(result.audit_events);
-                    recent = verified_inbox(&session.record.canonical_username, result.decision);
-                    audit.push(self.release_request_budget(
-                        guard,
-                        "welcome_inbox",
-                        context,
-                        session,
-                    ));
+                    let rows = verified_summaries(
+                        &session.record.canonical_username,
+                        mailbox,
+                        result.decision,
+                    );
+                    if mailbox == "INBOX" {
+                        recent = rows;
+                    } else {
+                        sent_count = rows.map(|rows| rows.len());
+                    }
+                    audit.push(self.release_request_budget(guard, operation, context, session));
                 }
                 Err(result) => audit.extend(result.audit_events),
             }
@@ -29,12 +37,13 @@ impl<G: BrowserGateway> BrowserApp<G> {
         let result = self.gateway.list_drafts(context, session);
         audit.extend(result.audit_events);
         let count = verified_draft_count(&session.record.canonical_username, result.decision);
-        (recent, count)
+        (recent, count, sent_count)
     }
 }
 
-fn verified_inbox(
+fn verified_summaries(
     account: &str,
+    expected_mailbox: &str,
     result: BrowserMessageListDecision,
 ) -> Option<Vec<MessageSummary>> {
     let BrowserMessageListDecision::Listed {
@@ -47,10 +56,10 @@ fn verified_inbox(
     };
     let mut ids = std::collections::BTreeSet::new();
     if canonical_username != account
-        || mailbox_name != "INBOX"
+        || mailbox_name != expected_mailbox
         || messages.len() > crate::mailbox::DEFAULT_MAX_MESSAGES
         || messages.iter().any(|row| {
-            row.mailbox_name != "INBOX"
+            row.mailbox_name != expected_mailbox
                 || row.uid == 0
                 || !ids.insert(row.uid)
                 || row.metadata.as_ref().is_some_and(|metadata| {

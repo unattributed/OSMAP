@@ -239,7 +239,12 @@ fn sent_recipient_rows_escape_headers_and_inbox_search_keep_sender() {
             assert!(!html.contains("<img src=x>"));
         } else {
             assert!(html.contains(">From</span>"));
-            assert!(html.contains("Initials from the sender header"));
+            if path.starts_with("/search") {
+                assert!(html.contains("Synthetic Sender &lt;sender@example.test&gt;"));
+                assert!(html.contains("search-result-title"));
+            } else {
+                assert!(html.contains("Initials from the sender header"));
+            }
             assert!(!html.contains("To: &lt;img"));
         }
     }
@@ -248,10 +253,7 @@ fn sent_recipient_rows_escape_headers_and_inbox_search_keep_sender() {
 #[test]
 fn received_dates_http_refuses_invalid_and_preserves_all_navigation_fields() {
     assert!(crate::http_form::parse_query_string("after=2026-03-28&after=2026-03-29", 16).is_err());
-    for query in [
-        "after=2026-02-29",
-        "before=2026-01-01&after=2026-03-28",
-    ] {
+    for query in ["after=2026-02-29", "before=2026-01-01&after=2026-03-28"] {
         assert_eq!(
             mailbox_page(&format!("/mailbox?name=INBOX&{query}"))
                 .response
@@ -276,4 +278,167 @@ fn received_dates_http_refuses_invalid_and_preserves_all_navigation_fields() {
     let result = mailbox_page("/mailbox?name=INBOX&after=2026-10-01");
     assert_eq!(result.response.status_code, 200);
     assert!(body_text(&result).contains("Showing 0–0 of 0 messages"));
+}
+
+#[test]
+fn reader_refuses_foreign_secondary_projections_but_keeps_owned_body() {
+    let app = app();
+    let session = StubGateway::validated_session();
+    for agent in ["ReaderSettingsWrongOwner", "ReaderMailboxWrongOwner"] {
+        let context = AuthenticationContext::new(
+            AuthenticationPolicy::default(),
+            "projection-test",
+            "127.0.0.1",
+            agent,
+        )
+        .unwrap();
+        assert!(app
+            .validated_archive_mailbox_name(&context, &session, &mut Vec::new())
+            .is_none());
+        let mut req = request(
+            "GET",
+            "/message?mailbox=Sent&uid=10",
+            &authenticated_headers(),
+            "",
+        );
+        req.headers.insert("user-agent".into(), agent.into());
+        let result = app.handle_request(&req, "127.0.0.1");
+        assert_eq!(result.response.status_code, 200);
+        let html = body_text(&result);
+        assert!(html.contains("id=\"reading-pane\""));
+        if agent == "ReaderMailboxWrongOwner" {
+            assert!(!html.contains("<option value=\"Archive/2026\""));
+        }
+    }
+}
+
+#[test]
+fn reader_neighbours_verify_scope_identity_order_and_refuse_ambiguous_summaries() {
+    use crate::reader_neighbours::ReaderNeighbours;
+    let gateway = StubGateway::default();
+    let session = StubGateway::validated_session();
+    let context = AuthenticationContext::new(
+        AuthenticationPolicy::default(),
+        "neighbour-test",
+        "127.0.0.1",
+        "Firefox/Test",
+    )
+    .unwrap();
+    let BrowserMessageViewDecision::Rendered { rendered, .. } = gateway
+        .view_message(&context, &session, "INBOX", 10)
+        .decision
+    else {
+        panic!("fixture")
+    };
+    let good = gateway.list_messages(&context, &session, "INBOX").decision;
+    let prefs = crate::reading_preferences::ReadingPreferences::default();
+    let html = ReaderNeighbours::derive(
+        "alice@example.com",
+        &rendered,
+        Some(prefs),
+        &good,
+        Some("/mailbox?name=INBOX&filter=unread"),
+    )
+    .html();
+    assert!(html.contains("uid=9&amp;mailbox_guid="));
+    assert!(html.contains("aria-label=\"Previous message\" disabled"));
+    assert!(html.contains("return_to=%2Fmailbox"));
+    assert!(html.contains("do not follow list filters or search results"));
+    let oldest = crate::reading_preferences::ReadingPreferences {
+        date_order: crate::reading_preferences::DateOrder::Oldest,
+        ..prefs
+    };
+    let html =
+        ReaderNeighbours::derive("alice@example.com", &rendered, Some(oldest), &good, None).html();
+    assert!(html.contains("aria-label=\"Next message\" disabled"));
+    for fault in 0..10 {
+        let mut decision = good.clone();
+        if let BrowserMessageListDecision::Listed {
+            canonical_username,
+            mailbox_name,
+            messages,
+        } = &mut decision
+        {
+            match fault {
+                0 => *canonical_username = "bob@example.com".into(),
+                1 => *mailbox_name = "Other".into(),
+                2 => messages[0].mailbox_name = "Other".into(),
+                3 => messages[0].uid = messages[1].uid,
+                4 => messages[0].uid = 0,
+                5 => messages[1].metadata.as_mut().unwrap().version.message_guid = "changed".into(),
+                6 => messages[0].metadata.as_mut().unwrap().version.mailbox_guid = "b".repeat(32),
+                7 => messages[0].metadata = None,
+                8 => messages.resize(
+                    crate::mailbox::DEFAULT_MAX_MESSAGES + 1,
+                    messages[0].clone(),
+                ),
+                _ => messages[0].date_received = "unknown".into(),
+            }
+        }
+        let html =
+            ReaderNeighbours::derive("alice@example.com", &rendered, Some(prefs), &decision, None)
+                .html();
+        assert!(html.contains("Navigation unavailable"), "fault {fault}");
+        assert!(!html.contains("href="));
+    }
+    let failed = BrowserMessageListDecision::Denied {
+        public_reason: "unavailable".into(),
+    };
+    assert!(
+        !ReaderNeighbours::derive("alice@example.com", &rendered, Some(prefs), &failed, None)
+            .html()
+            .contains("href=")
+    );
+    assert!(!ReaderNeighbours::derive(
+        "alice@example.com",
+        &rendered,
+        None,
+        &good,
+        Some("https://foreign.test")
+    )
+    .html()
+    .contains("href="));
+}
+
+#[test]
+fn reader_neighbours_route_checks_link_version_and_fetches_only_current_body() {
+    let good = request(
+        "GET",
+        "/message?mailbox=INBOX&uid=10",
+        &authenticated_headers(),
+        "",
+    );
+    let outcome = app().handle_request(&good, "127.0.0.1");
+    assert_eq!(outcome.response.status_code, 200);
+    assert!(body_text(&outcome).contains("aria-label=\"Next message\" href="));
+    assert_eq!(
+        outcome
+            .audit_events
+            .iter()
+            .filter(|e| e.action == "stub_message_view")
+            .count(),
+        1
+    );
+    assert_eq!(
+        outcome
+            .audit_events
+            .iter()
+            .filter(|e| e.action == "stub_message_list")
+            .count(),
+        1
+    );
+    for suffix in [
+        "&mailbox_guid=bad",
+        "&mailbox_guid=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa&message_guid=stale",
+    ] {
+        let req = request(
+            "GET",
+            &format!("/message?mailbox=INBOX&uid=10{suffix}"),
+            &authenticated_headers(),
+            "",
+        );
+        let outcome = app().handle_request(&req, "127.0.0.1");
+        assert_eq!(outcome.response.status_code, 503);
+        assert!(!body_text(&outcome).contains("id=\"reading-pane\""));
+    }
 }
