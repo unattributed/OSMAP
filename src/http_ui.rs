@@ -40,6 +40,7 @@ pub(crate) struct ComposePageModel<'a> {
     pub subject_value: &'a str,
     pub body_value: &'a str,
     pub draft_id: Option<&'a str>,
+    pub draft_revision: Option<u64>,
     pub draft_attachment_count: usize,
     pub source_mailbox_name: Option<&'a str>,
     pub source_uid: Option<u64>,
@@ -1489,7 +1490,7 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
         ),
         None => String::new(),
     };
-    let draft_id_field = model
+    let mut draft_id_field = model
         .draft_id
         .map(|draft_id| {
             format!(
@@ -1498,6 +1499,16 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
             )
         })
         .unwrap_or_default();
+    if let Some(revision) = model.draft_revision {
+        draft_id_field.push_str(&format!(
+            "<input type=\"hidden\" name=\"draft_revision\" value=\"{revision}\">"
+        ));
+    }
+    if model.error_message.is_some() {
+        if let Some(draft_id) = model.draft_id {
+            draft_id_field.push_str(&format!("<p class=\"notice\"><a href=\"/draft?id={}\" target=\"_blank\" rel=\"noopener\">Open saved version in a new tab</a>. Keep this tab open to preserve your unsaved text.</p>", url_encode(draft_id)));
+        }
+    }
     let draft_attachment_notice = if model.draft_attachment_count > 0 {
         format!(
             "<div class=\"notice\"><strong>Draft attachments:</strong> {} stored attachment(s) will stay send-only and are not previewed.</div>",
@@ -1651,8 +1662,17 @@ fn render_source_attachment_controls(
     attachments: &[AttachmentMetadata],
     selected_part_paths: &[String],
 ) -> String {
-    if source_mailbox_name.is_none() || source_uid.is_none() || attachments.is_empty() {
+    if source_mailbox_name.is_none() || source_uid.is_none() {
         return String::new();
+    }
+    if attachments.is_empty() {
+        if selected_part_paths.is_empty() {
+            return String::new();
+        }
+        let retained: String = selected_part_paths.iter().enumerate().map(|(index, path)| format!(
+            "<label class=\"checkbox-row\"><input type=\"checkbox\" name=\"include_original_attachment_{}\" value=\"{}\" checked>Source attachment part {}</label>",
+            index + 1, escape_html(path), escape_html(path))).collect();
+        return format!("<fieldset class=\"panel\"><legend>Retained source attachments</legend><p>Your selection is retained and will be checked again when you save or send.</p>{retained}</fieldset>");
     }
 
     let mut rows = String::new();
@@ -1745,12 +1765,13 @@ pub(crate) fn render_draft_list_page(model: &DraftListPageModel<'_>) -> TrustedH
                 "<form method=\"post\" action=\"/drafts/delete\">",
                 "<input type=\"hidden\" name=\"csrf_token\" value=\"{}\">",
                 "<input type=\"hidden\" name=\"draft_id\" value=\"{}\">",
-                "<button type=\"submit\">Delete</button>",
+                "<input type=\"hidden\" name=\"draft_revision\" value=\"{}\">",
+                "<button type=\"submit\" name=\"confirm\" value=\"1\">Delete</button>",
                 "</form></details>",
                 "</td>",
                 "</tr>"
             ),
-            escape_html(draft.recipient_preview.as_deref().unwrap_or("Undisclosed recipients")),
+            escape_html(draft.recipient_preview.as_deref().unwrap_or(if draft.recipient_count == 0 { "No recipients yet" } else { "Undisclosed recipients" })),
             escape_html(&resume_href),
             escape_html(if draft.subject.is_empty() { "(No subject)" } else { &draft.subject }),
             draft.attachment_count,
@@ -1759,6 +1780,7 @@ pub(crate) fn render_draft_list_page(model: &DraftListPageModel<'_>) -> TrustedH
             escape_html(&resume_href),
             escape_html(model.csrf_token),
             escape_html(&draft.draft_id),
+            draft.revision,
         ));
     }
     if rows.is_empty() {

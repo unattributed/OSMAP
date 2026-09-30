@@ -190,6 +190,7 @@ where
                     subject_value: &subject_value,
                     body_value: &body_value,
                     draft_id: None,
+                    draft_revision: None,
                     draft_attachment_count: 0,
                     source_mailbox_name: source_mailbox_name.as_deref(),
                     source_uid,
@@ -215,7 +216,7 @@ where
         let parsed_form = match parse_compose_form(
             &request.body,
             request.headers.get("content-type").map(String::as_str),
-            self.policy.max_form_fields.saturating_add(4),
+            self.policy.max_form_fields.saturating_add(5),
             self.policy.max_upload_body_bytes,
             ComposePolicy::default(),
         ) {
@@ -319,6 +320,15 @@ where
             .get("draft_id")
             .filter(|value| !value.trim().is_empty())
             .cloned();
+        let draft_revision = match super::routes_draft::submitted_draft_revision(&form) {
+            Ok(revision) => revision,
+            Err(()) => {
+                return HandledHttpResponse {
+                    response: invalid_compose_metadata(),
+                    audit_events,
+                }
+            }
+        };
         let mut send_attachments = attachments;
         if !original_attachment_parts.is_empty() {
             if send_attachments.len() + original_attachment_parts.len()
@@ -473,13 +483,32 @@ where
                     canonical_username,
                     draft,
                 } if canonical_username == validated_session.record.canonical_username
-                    && draft.canonical_username == canonical_username =>
+                    && draft.canonical_username == canonical_username
+                    && draft.revision == draft_revision =>
                 {
                     reply_thread = draft.request.reply_thread.clone();
                     let mut persisted = draft.request.attachments.clone();
                     persisted_draft_attachment_count = persisted.len();
                     persisted.extend(send_attachments);
                     send_attachments = persisted;
+                }
+                BrowserDraftLoadDecision::Loaded {
+                    canonical_username,
+                    draft,
+                } if canonical_username == validated_session.record.canonical_username
+                    && draft.canonical_username == canonical_username =>
+                {
+                    return HandledHttpResponse {
+                        response: self.draft_send_failure(
+                            &validated_session,
+                            &form,
+                            reply_reference.as_ref(),
+                            "draft_conflict",
+                            409,
+                            "Conflict",
+                        ),
+                        audit_events,
+                    }
                 }
                 BrowserDraftLoadDecision::Loaded { .. } => {
                     return HandledHttpResponse {
@@ -489,25 +518,26 @@ where
                 }
                 BrowserDraftLoadDecision::NotFound => {
                     return HandledHttpResponse {
-                        response: html_response(
-                            404,
-                            "Not Found",
-                            "Draft Not Found",
-                            "<p>The draft selected for sending was not found.</p>",
+                        response: self.draft_send_failure(
+                            &validated_session,
+                            &form,
+                            reply_reference.as_ref(),
+                            "draft_conflict",
+                            409,
+                            "Conflict",
                         ),
                         audit_events,
                     };
                 }
                 BrowserDraftLoadDecision::Denied { public_reason } => {
                     return HandledHttpResponse {
-                        response: html_response(
+                        response: self.draft_send_failure(
+                            &validated_session,
+                            &form,
+                            reply_reference.as_ref(),
+                            &public_reason,
                             503,
                             "Service Unavailable",
-                            "Draft Unavailable",
-                            TrustedHtml::from_template(format!(
-                                "<p>{}</p>",
-                                escape_html(public_reason_message(&public_reason))
-                            )),
                         ),
                         audit_events,
                     };
@@ -542,10 +572,10 @@ where
 
         let mut handled = match outcome.decision {
             BrowserSendDecision::Submitted => {
-                if let Some(draft_id) = draft_id.as_deref() {
+                if let (Some(draft_id), Some(revision)) = (draft_id.as_deref(), draft_revision) {
                     let delete_outcome =
                         self.gateway
-                            .delete_draft(context, &validated_session, draft_id);
+                            .delete_draft(context, &validated_session, draft_id, revision);
                     audit_events.extend(delete_outcome.audit_events);
                 }
                 HandledHttpResponse {
@@ -576,18 +606,19 @@ where
                         csrf_token: &validated_session.record.csrf_token,
                         success_message: None,
                         error_message: Some(public_reason_message(&public_reason)),
-                        context_notice: None,
+                        context_notice: Some("Nothing was sent. Re-select any new uploads before trying again; existing saved-draft attachments are unchanged."),
                         to_value: &recipients,
                         cc_value: &cc_recipients,
                         bcc_value: &bcc_recipients,
                         subject_value: &subject,
                         body_value: &body,
                         draft_id: draft_id.as_deref(),
+                        draft_revision,
                         draft_attachment_count: persisted_draft_attachment_count,
-                        source_mailbox_name: None,
-                        source_uid: None,
+                        source_mailbox_name: form.get("source_mailbox").map(String::as_str),
+                        source_uid: form.get("source_uid").and_then(|value| value.parse().ok()),
                         source_attachments: &[],
-                        selected_source_part_paths: &[],
+                        selected_source_part_paths: &original_attachment_parts,
                     }),
                 );
                 if let Some(retry_after_seconds) = retry_after_seconds {
@@ -606,6 +637,39 @@ where
             &validated_session,
         ));
         handled
+    }
+
+    fn draft_send_failure(
+        &self,
+        session: &ValidatedSession,
+        form: &BTreeMap<String, String>,
+        reply_reference: Option<&crate::reply_thread::ReplyReference>,
+        public_reason: &str,
+        status: u16,
+        reason: &'static str,
+    ) -> HttpResponse {
+        html_response(status, reason, "Compose", render_compose_page(&ComposePageModel {
+            contacts: self.contact_snapshot(session).ok().as_ref(),
+            reply_reference,
+            heading: "Compose",
+            canonical_username: &session.record.canonical_username,
+            csrf_token: &session.record.csrf_token,
+            success_message: None,
+            error_message: Some(public_reason_message(public_reason)),
+            context_notice: Some("Nothing was sent. Your text is retained. Re-select any new uploads before saving; existing saved-draft attachments are unchanged."),
+            to_value: form.get("to").map(String::as_str).unwrap_or_default(),
+            cc_value: form.get("cc").map(String::as_str).unwrap_or_default(),
+            bcc_value: form.get("bcc").map(String::as_str).unwrap_or_default(),
+            subject_value: form.get("subject").map(String::as_str).unwrap_or_default(),
+            body_value: form.get("body").map(String::as_str).unwrap_or_default(),
+            draft_id: form.get("draft_id").map(String::as_str),
+            draft_revision: super::routes_draft::submitted_draft_revision(form).ok().flatten(),
+            draft_attachment_count: 0,
+            source_mailbox_name: form.get("source_mailbox").map(String::as_str),
+            source_uid: form.get("source_uid").and_then(|value| value.parse().ok()),
+            source_attachments: &[],
+            selected_source_part_paths: &selected_original_attachment_parts(form).unwrap_or_default(),
+        }))
     }
 }
 

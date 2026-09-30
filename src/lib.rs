@@ -12,6 +12,7 @@ mod charset;
 pub mod config;
 pub mod contacts;
 pub mod draft;
+pub mod draft_content;
 pub mod error;
 pub mod html;
 pub mod http;

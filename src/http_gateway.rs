@@ -372,7 +372,8 @@ impl BrowserGateway for RuntimeBrowserGateway {
         context: &AuthenticationContext,
         validated_session: &ValidatedSession,
         draft_id: &str,
+        expected_revision: u64,
     ) -> BrowserDraftDeleteOutcome {
-        self.delete_draft_impl(context, validated_session, draft_id)
+        self.delete_draft_impl(context, validated_session, draft_id, expected_revision)
     }
 }

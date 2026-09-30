@@ -436,6 +436,9 @@ pub(crate) fn public_reason_message(reason: &str) -> &'static str {
         "invalid_mailbox" => "The selected mailbox does not exist for this account.",
         "invalid_message_reference" => "The selected message was not found in that mailbox.",
         "invalid_request" => "The submitted request was not valid.",
+        "draft_conflict" => "This draft changed in another tab or was deleted. Your changes have not overwritten the saved version. Open the saved version separately to compare your text.",
+        "draft_quota_exceeded" => "Your draft storage is full. Remove an unneeded draft, then save again. Your current text is retained here.",
+        "draft_busy" => "Another draft operation is still running. Your text is retained; try saving again shortly.",
         "invalid_second_factor" => "The supplied credentials were not accepted.",
         "too_many_attempts" => "Too many login attempts were observed. Please try again later.",
         "too_many_submissions" => {

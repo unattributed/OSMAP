@@ -135,7 +135,7 @@ fn private_options(options: &mut OpenOptions) {
     }
 }
 
-fn check_directory(path: &Path) -> io::Result<()> {
+pub(crate) fn check_directory(path: &Path) -> io::Result<()> {
     let metadata = fs::symlink_metadata(path)?;
     if !metadata.is_dir() || metadata.file_type().is_symlink() {
         return Err(invalid());
@@ -167,7 +167,7 @@ fn check_file(metadata: &fs::Metadata, max_bytes: usize) -> io::Result<()> {
     Ok(())
 }
 
-fn read_record(path: &Path, max_bytes: usize) -> io::Result<Option<Vec<u8>>> {
+pub(crate) fn read_record(path: &Path, max_bytes: usize) -> io::Result<Option<Vec<u8>>> {
     let mut options = OpenOptions::new();
     options.read(true);
     private_options(&mut options);

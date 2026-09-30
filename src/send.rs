@@ -129,6 +129,12 @@ pub struct UploadedAttachment {
 }
 
 impl UploadedAttachment {
+    pub(crate) fn validate(&self, policy: ComposePolicy) -> Result<(), ComposeError> {
+        validate_attachment_filename(policy, &self.filename)?;
+        normalize_attachment_content_type(policy, &self.content_type)?;
+        validate_attachment_body(policy, &self.body)
+    }
+
     /// Validates and stores one uploaded attachment for later submission.
     pub fn new(
         policy: ComposePolicy,
@@ -626,7 +632,7 @@ fn parse_optional_recipients(
 }
 
 /// Validates the subject line against bounded header rules.
-fn validate_subject(policy: ComposePolicy, subject: &str) -> Result<(), ComposeError> {
+pub(crate) fn validate_subject(policy: ComposePolicy, subject: &str) -> Result<(), ComposeError> {
     if subject.len() > policy.subject_max_len {
         return Err(ComposeError {
             reason: format!(
@@ -652,7 +658,7 @@ fn validate_subject(policy: ComposePolicy, subject: &str) -> Result<(), ComposeE
 }
 
 /// Validates the body while allowing ordinary text formatting characters.
-fn validate_body(policy: ComposePolicy, body: &str) -> Result<(), ComposeError> {
+pub(crate) fn validate_body(policy: ComposePolicy, body: &str) -> Result<(), ComposeError> {
     if body.len() > policy.body_max_len {
         return Err(ComposeError {
             reason: format!(
@@ -675,7 +681,7 @@ fn validate_body(policy: ComposePolicy, body: &str) -> Result<(), ComposeError> 
 }
 
 /// Validates the current uploaded attachment set as one bounded group.
-fn validate_attachment_set(
+pub(crate) fn validate_attachment_set(
     policy: ComposePolicy,
     attachments: &[UploadedAttachment],
 ) -> Result<(), ComposeError> {

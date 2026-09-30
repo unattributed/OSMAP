@@ -179,6 +179,7 @@ pub trait BrowserGateway {
         context: &AuthenticationContext,
         validated_session: &ValidatedSession,
         draft_id: &str,
+        expected_revision: u64,
     ) -> BrowserDraftDeleteOutcome;
 }
 
@@ -186,6 +187,7 @@ pub trait BrowserGateway {
 #[derive(Debug, Clone, Copy)]
 pub struct BrowserDraftSaveRequest<'a> {
     pub draft_id: Option<&'a str>,
+    pub expected_revision: Option<u64>,
     pub recipients: &'a str,
     pub cc_recipients: &'a str,
     pub bcc_recipients: &'a str,

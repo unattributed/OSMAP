@@ -1271,3 +1271,35 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   the native signed-helper fixture PASS; standard obsd1 checkout/services unchanged.
   Archive `2b8818fd8d885d41ae5d5da3f60d216b763662649fd57e8101786f54022b6032`;
   log `98123411214df03a48a4a24459227dfd73ea7cd6004f2ab98a530541d91dc687`.
+
+### S03-02A — resumable unfinished drafts and revision checks
+
+- Continue practical draft work after the signed S01/S02 layout checkpoint:
+  separate stored authoring fields from validated Send requests, preserve empty/
+  partial recipients, add explicit save/delete/send revision checks and confirmed
+  discard, enforce approved draft count/byte limits and retain legacy readability.
+  Allowed boundaries are draft model/store, existing HTTP/gateway/view models,
+  fixtures/tests and corresponding inventories. No live draft data or delivery.
+- Required proof: blank/partial and maximum-body save/restart/resume, stale tabs,
+  owner isolation, invalid Send refusal, quota/busy/storage failures and native
+  storage tests. Preserve reply metadata and attachments. Autosave, failed-upload
+  preservation and remaining authoring actions stay open until separately verified.
+- Implemented separate unfinished-draft validation, exact To/Cc/Bcc text storage,
+  v5 revision checks for Save/Send/Discard, 50 drafts/50 MiB account bounds and
+  1 MiB encoded metadata. Legacy v1-v4 records remain readable and migrate only
+  on save. Account locks refuse promptly; reads check private regular files and
+  bounded attachment sizes. Adding uploads retains previously saved uploads.
+- Conflict forms preserve posted text and offer a separate saved-version tab;
+  failed forms retain source-attachment selection and explain upload reselection.
+  Draft list no longer accepts query-string assertions that a save/delete occurred.
+- Linux: 644 library tests PASS (six existing ignored); 41 draft-focused checks,
+  strict Clippy, formatting and diff checks PASS. Edge/Firefox draft journeys each
+  PASS seven checks using real file storage and a process restart. Contact/reply
+  regressions PASS eight/five. Visual audit: 12 light/dark views and eight forced-
+  colour views PASS without overflow or audited contrast failures. Artifacts:
+  S03 run-20260930 drafts-a-*, fixtures-c, visual-c* and gates/*-c.log.
+- Full acceptance and V14 gates PASS. Native qualification follows the signed
+  checkpoint using an isolated source archive; this is not a deployment.
+- Still open: interrupted-write recovery, autosave, attachment removal/failed-
+  upload persistence, draft filters/sort/selection and stable source-message
+  attachment references. No deployment, external email or Git synchronization.

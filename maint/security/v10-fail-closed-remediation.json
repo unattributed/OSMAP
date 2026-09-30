@@ -3,20 +3,20 @@
     "by_classification": {
       "control_flow_invariant": 2,
       "panic_path_assumption": 29,
-      "production_adjacent_assumption": 762,
+      "production_adjacent_assumption": 765,
       "startup_or_global_invariant": 1,
-      "test_or_fixture_assumption": 257
+      "test_or_fixture_assumption": 312
     },
     "by_fail_closed_relevance": {
-      "high": 791,
-      "low": 257,
+      "high": 794,
+      "low": 312,
       "medium": 3
     },
-    "inventory_sha256": "1e79f1b03d74517660c8d4b5eac1cbf53840b285aef1e43e46560e23d1fed6ac",
+    "inventory_sha256": "c039c2620ae32d0c3226fd6a996600154d6883ef49faa2081a02cee36f72cf87",
     "schema_version": 1,
     "slice": "V10 Slice 4",
     "source": "maint/security/v10-rust-assumption-audit.json",
-    "total_count": 1051
+    "total_count": 1109
   },
   "explicit_non_claims": [
     "This slice does not claim production Rust paths are panic-free.",
@@ -24,20 +24,20 @@
     "This slice does not claim broad public release readiness.",
     "This slice does not change production deployment state."
   ],
-  "generated_at_utc": "2026-09-30T04:09:34Z",
+  "generated_at_utc": "2026-09-30T04:33:27Z",
   "purpose": "Targeted fail-closed remediation register for Rust assumption handling after the Slice 4 audit.",
   "refined_current": {
     "by_classification": {
       "control_flow_invariant": 1,
-      "test_or_fixture_assumption": 1050
+      "test_or_fixture_assumption": 1108
     },
     "by_fail_closed_relevance": {
-      "low": 1050,
+      "low": 1108,
       "medium": 1
     },
     "high_relevance_top_files": {},
-    "inventory_sha256": "c69393f603a60cf435fa9dddee73e99110864b7082e1378f885e1387cdd4f85e",
-    "total_count": 1051
+    "inventory_sha256": "bb6e3d51e82928167be6a360859f3ff7a2dad43ec107c0393817ea0ebb494e89",
+    "total_count": 1109
   },
   "required_followups": [
     "Use the refined high-relevance list to select the first concrete runtime code remediation.",
@@ -46,7 +46,7 @@
   ],
   "schema_version": 1,
   "selected_remediation": {
-    "classification_change_count": 969,
+    "classification_change_count": 1027,
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
@@ -56,16 +56,16 @@
   },
   "slice": "V10 Slice 5",
   "summary": {
-    "baseline_total_count": 1051,
+    "baseline_total_count": 1109,
     "classification_complete": true,
     "high_relevance_after": 0,
-    "high_relevance_before": 791,
+    "high_relevance_before": 794,
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
-    "refined_total_count": 1051,
-    "source_test_module_assumption_count": 969,
-    "test_or_fixture_after": 1050,
-    "test_or_fixture_before": 257
+    "refined_total_count": 1109,
+    "source_test_module_assumption_count": 1027,
+    "test_or_fixture_after": 1108,
+    "test_or_fixture_before": 312
   }
 }

@@ -140,14 +140,27 @@ impl RuntimeBrowserGateway {
             }
         };
 
-        let persisted_attachments = if request.attachments.is_empty() {
-            existing
-                .as_ref()
-                .map(|draft| draft.request.attachments.clone())
-                .unwrap_or_default()
-        } else {
-            request.attachments.to_vec()
-        };
+        if existing.as_ref().and_then(|draft| draft.revision) != request.expected_revision
+            || request.draft_id.is_some() != existing.is_some()
+        {
+            return BrowserDraftSaveOutcome {
+                decision: BrowserDraftSaveDecision::Denied {
+                    public_reason: "draft_conflict".into(),
+                },
+                audit_events: vec![draft_warn_event(
+                    "draft_stale_save",
+                    "stale draft save refused",
+                    context,
+                    validated_session,
+                )],
+            };
+        }
+
+        let mut persisted_attachments = existing
+            .as_ref()
+            .map(|draft| draft.request.attachments.clone())
+            .unwrap_or_default();
+        persisted_attachments.extend_from_slice(request.attachments);
 
         let mut record = match DraftRecord::new(
             DraftPolicy::default(),
@@ -183,6 +196,7 @@ impl RuntimeBrowserGateway {
         record.request.reply_thread = request.reply_thread.cloned();
         if let Some(existing) = existing {
             record.created_at = existing.created_at;
+            record.revision = existing.revision;
             record.request.reply_thread = existing.request.reply_thread;
         }
 
@@ -227,9 +241,14 @@ impl RuntimeBrowserGateway {
         context: &AuthenticationContext,
         validated_session: &ValidatedSession,
         draft_id: &str,
+        expected_revision: u64,
     ) -> BrowserDraftDeleteOutcome {
         let store = self.build_draft_store();
-        match store.delete(&validated_session.record.canonical_username, draft_id) {
+        match store.delete(
+            &validated_session.record.canonical_username,
+            draft_id,
+            expected_revision,
+        ) {
             Ok(true) => BrowserDraftDeleteOutcome {
                 decision: BrowserDraftDeleteDecision::Deleted,
                 audit_events: vec![draft_info_event(
@@ -300,8 +319,13 @@ fn draft_warn_event(
 }
 
 fn draft_public_reason(error: &crate::draft::DraftError) -> &'static str {
-    if error.reason.contains("quota")
-        || error.reason.contains("maximum")
+    if error.reason.contains("revision") {
+        "draft_conflict"
+    } else if error.reason.contains("quota") {
+        "draft_quota_exceeded"
+    } else if error.reason == "draft store busy" {
+        "draft_busy"
+    } else if error.reason.contains("maximum")
         || error.reason.contains("invalid")
         || error.reason.contains("must")
         || error.reason.contains("exceeded")
@@ -313,7 +337,9 @@ fn draft_public_reason(error: &crate::draft::DraftError) -> &'static str {
 }
 
 fn draft_error_label(error: &crate::draft::DraftError) -> &'static str {
-    if error.reason.contains("quota") {
+    if error.reason.contains("revision") {
+        "stale_revision"
+    } else if error.reason.contains("quota") {
         "quota_exceeded"
     } else if error.reason.contains("maximum") || error.reason.contains("exceeded") {
         "limit_exceeded"

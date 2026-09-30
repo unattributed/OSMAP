@@ -6,14 +6,14 @@
 
 use std::cmp::Reverse;
 use std::fs;
-use std::fs::OpenOptions;
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use sha2::{Digest, Sha256};
 
-use crate::send::{ComposePolicy, ComposeRequest, UploadedAttachment};
+use crate::draft_content::DraftContent;
+use crate::send::{ComposePolicy, UploadedAttachment};
 
 /// Maximum persisted source mailbox length.
 pub const DEFAULT_DRAFT_SOURCE_MAILBOX_MAX_LEN: usize = 255;
@@ -29,16 +29,17 @@ pub const DRAFT_ID_HEX_LEN: usize = DRAFT_ID_BYTES * 2;
 pub const DEFAULT_DRAFT_MAX_AGE_SECONDS: u64 = 30 * 24 * 60 * 60;
 
 /// Default maximum number of drafts one user may keep.
-pub const DEFAULT_MAX_DRAFTS_PER_USER: usize = 100;
+pub const DEFAULT_MAX_DRAFTS_PER_USER: usize = 50;
+
+pub const DEFAULT_DRAFT_STORAGE_MAX_BYTES: u64 = 50 * 1024 * 1024;
 
 /// Default maximum number of summaries rendered from one list operation.
 pub const DEFAULT_MAX_DRAFT_SUMMARY_ROWS: usize = 100;
 
 /// Default maximum metadata file size before parse rejection.
-pub const DEFAULT_DRAFT_METADATA_MAX_BYTES: u64 = 256 * 1024;
+pub const DEFAULT_DRAFT_METADATA_MAX_BYTES: u64 = 1024 * 1024;
 
 const DRAFT_METADATA_FILE: &str = "metadata.draft";
-const DRAFT_STORE_LOCK_FILE: &str = ".draft-store.lock";
 
 /// Policy controlling bounded draft persistence.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -48,6 +49,7 @@ pub struct DraftPolicy {
     pub max_drafts_per_user: usize,
     pub max_summary_rows: usize,
     pub metadata_max_bytes: u64,
+    pub storage_max_bytes: u64,
 }
 
 impl Default for DraftPolicy {
@@ -58,6 +60,7 @@ impl Default for DraftPolicy {
             max_drafts_per_user: DEFAULT_MAX_DRAFTS_PER_USER,
             max_summary_rows: DEFAULT_MAX_DRAFT_SUMMARY_ROWS,
             metadata_max_bytes: DEFAULT_DRAFT_METADATA_MAX_BYTES,
+            storage_max_bytes: DEFAULT_DRAFT_STORAGE_MAX_BYTES,
         }
     }
 }
@@ -76,7 +79,9 @@ pub struct DraftRecord {
     pub created_at: u64,
     pub updated_at: u64,
     pub expires_at: u64,
-    pub request: ComposeRequest,
+    /// None denotes a new draft; Some(0) denotes a legacy persisted record.
+    pub revision: Option<u64>,
+    pub request: DraftContent,
     pub source_attachments: Option<DraftSourceAttachments>,
 }
 
@@ -113,6 +118,7 @@ impl std::fmt::Debug for DraftRecord {
             .field("created_at", &self.created_at)
             .field("updated_at", &self.updated_at)
             .field("expires_at", &self.expires_at)
+            .field("revision", &self.revision)
             .field("recipient_count", &self.request.total_recipient_count())
             .field("subject_len", &self.request.subject.len())
             .field("body_len", &self.request.body.len())
@@ -135,7 +141,7 @@ impl DraftRecord {
         validate_draft_id(&input.draft_id)?;
         validate_canonical_username(&input.canonical_username)?;
 
-        let request = ComposeRequest::new_with_routing(
+        let request = DraftContent::new(
             policy.compose_policy,
             input.recipients_text,
             input.cc_text,
@@ -158,6 +164,7 @@ impl DraftRecord {
             created_at: input.now,
             updated_at: input.now,
             expires_at: input.now.saturating_add(policy.max_age_seconds),
+            revision: None,
             request,
             source_attachments,
         })
@@ -170,13 +177,16 @@ impl DraftRecord {
             created_at: self.created_at,
             updated_at: self.updated_at,
             expires_at: self.expires_at,
+            revision: self.revision.unwrap_or(0),
+            storage_bytes: serialize_draft_metadata(self).len() as u64
+                + self
+                    .request
+                    .attachments
+                    .iter()
+                    .map(|attachment| attachment.size_bytes() as u64)
+                    .sum::<u64>(),
             recipient_count: self.request.total_recipient_count(),
-            recipient_preview: self
-                .request
-                .recipients
-                .first()
-                .cloned()
-                .or_else(|| self.request.cc_recipients.first().cloned()),
+            recipient_preview: self.request.recipient_preview(),
             subject: self.request.subject.clone(),
             subject_len: self.request.subject.len(),
             body_len: self.request.body.len(),
@@ -198,6 +208,8 @@ pub struct DraftSummary {
     pub created_at: u64,
     pub updated_at: u64,
     pub expires_at: u64,
+    pub revision: u64,
+    pub storage_bytes: u64,
     pub recipient_count: usize,
     pub recipient_preview: Option<String>,
     pub subject: String,
@@ -228,7 +240,12 @@ pub trait DraftStore {
         now: u64,
     ) -> Result<Option<DraftRecord>, DraftError>;
     fn list(&self, canonical_username: &str, now: u64) -> Result<Vec<DraftSummary>, DraftError>;
-    fn delete(&self, canonical_username: &str, draft_id: &str) -> Result<bool, DraftError>;
+    fn delete(
+        &self,
+        canonical_username: &str,
+        draft_id: &str,
+        expected_revision: u64,
+    ) -> Result<bool, DraftError>;
     fn cleanup_expired(&self, canonical_username: &str, now: u64) -> Result<usize, DraftError>;
 }
 
@@ -268,48 +285,24 @@ impl FileDraftStore {
             .join(DRAFT_METADATA_FILE)
     }
 
-    fn lock_path(&self) -> PathBuf {
-        self.draft_root.join(DRAFT_STORE_LOCK_FILE)
-    }
-
-    fn acquire_exclusive_lock(&self) -> Result<DraftFileLock, DraftError> {
-        fs::create_dir_all(&self.draft_root).map_err(|error| DraftError {
-            reason: format!("failed to create draft root {:?}: {error}", self.draft_root),
-        })?;
-        set_dir_permissions(&self.draft_root)?;
-
-        let lock_path = self.lock_path();
-        let mut options = OpenOptions::new();
-        options.read(true).write(true).create(true);
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::OpenOptionsExt as _;
-            options.mode(0o600);
-        }
-        let file = options.open(&lock_path).map_err(|error| DraftError {
-            reason: format!("failed to open draft store lock {lock_path:?}: {error}"),
-        })?;
-        #[cfg(unix)]
-        crate::openbsd::advisory_file_lock_exclusive(&file).map_err(|error| DraftError {
-            reason: format!("failed to acquire draft store lock {lock_path:?}: {error}"),
-        })?;
-        #[cfg(not(unix))]
-        return Err(DraftError {
-            reason: "file-backed draft locking requires a Unix-like target".to_string(),
-        });
-
-        Ok(DraftFileLock { file })
+    fn acquire_exclusive_lock(
+        &self,
+        account: &str,
+    ) -> Result<crate::private_account_file::LockedAccountFile, DraftError> {
+        crate::private_account_file::PrivateAccountFile::new(self.draft_root.clone(), "draft-v5", 0)
+            .lock(account)
+            .map_err(|error| DraftError {
+                reason: if error.kind() == std::io::ErrorKind::WouldBlock {
+                    "draft store busy".into()
+                } else {
+                    "draft store lock unavailable".into()
+                },
+            })
     }
 
     fn ensure_owner_dir(&self, canonical_username: &str) -> Result<PathBuf, DraftError> {
         let owner_dir = self.owner_dir_for_username(canonical_username);
-        fs::create_dir_all(&owner_dir).map_err(|error| DraftError {
-            reason: format!(
-                "failed to create draft owner directory {:?}: {error}",
-                owner_dir
-            ),
-        })?;
-        set_dir_permissions(&owner_dir)?;
+        create_private_directory(&owner_dir)?;
         Ok(owner_dir)
     }
 
@@ -318,10 +311,7 @@ impl FileDraftStore {
         record: &DraftRecord,
         staging_dir: &Path,
     ) -> Result<(), DraftError> {
-        fs::create_dir(staging_dir).map_err(|error| DraftError {
-            reason: format!("failed to create draft staging directory {staging_dir:?}: {error}"),
-        })?;
-        set_dir_permissions(staging_dir)?;
+        create_private_directory(staging_dir)?;
 
         for (index, attachment) in record.request.attachments.iter().enumerate() {
             let final_path = staging_dir.join(attachment_body_file_name(index));
@@ -384,7 +374,7 @@ impl FileDraftStore {
         now: u64,
     ) -> Result<usize, DraftError> {
         let owner_dir = self.owner_dir_for_username(canonical_username);
-        if !owner_dir.exists() {
+        if !private_directory_exists(&owner_dir)? {
             return Ok(0);
         }
 
@@ -430,32 +420,39 @@ impl FileDraftStore {
         canonical_username: &str,
         metadata_path: &Path,
     ) -> Result<Option<DraftRecord>, DraftError> {
-        if !metadata_path.exists() {
+        if !private_directory_exists(&self.owner_dir_for_username(canonical_username))? {
             return Ok(None);
         }
-        let metadata = fs::metadata(metadata_path).map_err(|error| DraftError {
-            reason: format!("failed to stat draft metadata {:?}: {error}", metadata_path),
+        let directory = metadata_path.parent().ok_or_else(|| DraftError {
+            reason: "invalid draft metadata directory".into(),
         })?;
-        if metadata.len() > self.policy.metadata_max_bytes {
-            return Err(DraftError {
-                reason: "draft metadata exceeded maximum size".to_string(),
-            });
+        if !private_directory_exists(directory)? {
+            return Ok(None);
         }
-
-        let content = fs::read_to_string(metadata_path).map_err(|error| DraftError {
-            reason: format!("failed to read draft metadata {:?}: {error}", metadata_path),
+        let Some(bytes) = crate::private_account_file::read_record(
+            metadata_path,
+            self.policy.metadata_max_bytes as usize,
+        )
+        .map_err(|_| DraftError {
+            reason: "draft metadata is unsafe or exceeded maximum size".into(),
+        })?
+        else {
+            return Ok(None);
+        };
+        let content = String::from_utf8(bytes).map_err(|_| DraftError {
+            reason: "invalid draft metadata encoding".into(),
         })?;
         parse_draft_metadata(self.policy, canonical_username, metadata_path, &content)
     }
 
-    fn list_records_for_owner(
+    fn list_summaries_for_owner(
         &self,
         canonical_username: &str,
         now: u64,
-    ) -> Result<Vec<DraftRecord>, DraftError> {
+    ) -> Result<Vec<DraftSummary>, DraftError> {
         let mut records = Vec::new();
         let owner_dir = self.owner_dir_for_username(canonical_username);
-        if !owner_dir.exists() {
+        if !private_directory_exists(&owner_dir)? {
             return Ok(records);
         }
 
@@ -490,7 +487,14 @@ impl FileDraftStore {
                     remove_draft_dir(entry.path())?;
                     continue;
                 }
-                records.push(record);
+                let mut summary = record.summary();
+                summary.storage_bytes = fs::metadata(&metadata_path)
+                    .map_err(|_| DraftError {
+                        reason: "draft metadata size unavailable".into(),
+                    })?
+                    .len()
+                    + summary.total_attachment_bytes as u64;
+                records.push(summary);
             }
         }
 
@@ -503,26 +507,79 @@ impl DraftStore for FileDraftStore {
     fn save(&self, record: &DraftRecord, now: u64) -> Result<(), DraftError> {
         validate_draft_id(&record.draft_id)?;
         validate_canonical_username(&record.canonical_username)?;
-        validate_compose_request(self.policy.compose_policy, &record.request)?;
+        record
+            .request
+            .validate(self.policy.compose_policy)
+            .map_err(|error| DraftError {
+                reason: error.reason,
+            })?;
         if let Some(source) = record.source_attachments.clone() {
             validate_source_attachments(self.policy, source)?;
         }
-        let _lock = self.acquire_exclusive_lock()?;
+        let _lock = self.acquire_exclusive_lock(&record.canonical_username)?;
 
         self.cleanup_expired_unlocked(&record.canonical_username, now)?;
 
         let draft_dir =
             self.draft_dir_for_username_and_id(&record.canonical_username, &record.draft_id);
         let is_new = !draft_dir.exists();
+        let existing = self.read_record_from_metadata(
+            &record.canonical_username,
+            &self.metadata_path(&record.canonical_username, &record.draft_id),
+        )?;
+        if existing.as_ref().and_then(|current| current.revision) != record.revision
+            || is_new != record.revision.is_none()
+        {
+            return Err(DraftError {
+                reason: "draft revision is stale".into(),
+            });
+        }
+        let summaries = self.list_summaries_for_owner(&record.canonical_username, now)?;
         if is_new {
-            let existing_count = self
-                .list_records_for_owner(&record.canonical_username, now)?
-                .len();
+            let existing_count = summaries.len();
             if existing_count >= self.policy.max_drafts_per_user {
                 return Err(DraftError {
                     reason: "draft quota exceeded".to_string(),
                 });
             }
+        }
+
+        let mut updated = record.clone();
+        updated.created_at = existing
+            .as_ref()
+            .map(|saved| saved.created_at)
+            .unwrap_or(now);
+        updated.updated_at = now;
+        updated.expires_at = now.saturating_add(self.policy.max_age_seconds);
+        updated.revision =
+            Some(
+                record
+                    .revision
+                    .unwrap_or(0)
+                    .checked_add(1)
+                    .ok_or_else(|| DraftError {
+                        reason: "draft revision exhausted".into(),
+                    })?,
+            );
+        let metadata_bytes = serialize_draft_metadata(&updated).len() as u64;
+        if metadata_bytes > self.policy.metadata_max_bytes {
+            return Err(DraftError {
+                reason: "draft metadata exceeded maximum size".into(),
+            });
+        }
+        let used = summaries
+            .iter()
+            .filter(|summary| summary.draft_id != record.draft_id)
+            .try_fold(updated.summary().storage_bytes, |total, summary| {
+                total.checked_add(summary.storage_bytes)
+            })
+            .ok_or_else(|| DraftError {
+                reason: "draft storage quota exceeded".into(),
+            })?;
+        if used > self.policy.storage_max_bytes {
+            return Err(DraftError {
+                reason: "draft storage quota exceeded".into(),
+            });
         }
 
         let owner_dir = self.ensure_owner_dir(&record.canonical_username)?;
@@ -539,7 +596,7 @@ impl DraftStore for FileDraftStore {
             std::process::id(),
             transaction_id
         ));
-        if let Err(error) = self.write_staged_record(record, &staging_dir) {
+        if let Err(error) = self.write_staged_record(&updated, &staging_dir) {
             let _ = remove_draft_dir(&staging_dir);
             return Err(error);
         }
@@ -559,7 +616,7 @@ impl DraftStore for FileDraftStore {
     ) -> Result<Option<DraftRecord>, DraftError> {
         validate_canonical_username(canonical_username)?;
         validate_draft_id(draft_id)?;
-        let _lock = self.acquire_exclusive_lock()?;
+        let _lock = self.acquire_exclusive_lock(canonical_username)?;
 
         let metadata_path = self.metadata_path(canonical_username, draft_id);
         let Some(record) = self.read_record_from_metadata(canonical_username, &metadata_path)?
@@ -576,24 +633,41 @@ impl DraftStore for FileDraftStore {
 
     fn list(&self, canonical_username: &str, now: u64) -> Result<Vec<DraftSummary>, DraftError> {
         validate_canonical_username(canonical_username)?;
-        let _lock = self.acquire_exclusive_lock()?;
+        let _lock = self.acquire_exclusive_lock(canonical_username)?;
         let summaries = self
-            .list_records_for_owner(canonical_username, now)?
+            .list_summaries_for_owner(canonical_username, now)?
             .into_iter()
             .take(self.policy.max_summary_rows)
-            .map(|record| record.summary())
             .collect();
         Ok(summaries)
     }
 
-    fn delete(&self, canonical_username: &str, draft_id: &str) -> Result<bool, DraftError> {
+    fn delete(
+        &self,
+        canonical_username: &str,
+        draft_id: &str,
+        expected_revision: u64,
+    ) -> Result<bool, DraftError> {
         validate_canonical_username(canonical_username)?;
         validate_draft_id(draft_id)?;
-        let _lock = self.acquire_exclusive_lock()?;
+        let _lock = self.acquire_exclusive_lock(canonical_username)?;
 
         let draft_dir = self.draft_dir_for_username_and_id(canonical_username, draft_id);
         if !draft_dir.exists() {
             return Ok(false);
+        }
+        let current = self
+            .read_record_from_metadata(
+                canonical_username,
+                &self.metadata_path(canonical_username, draft_id),
+            )?
+            .ok_or_else(|| DraftError {
+                reason: "draft revision is stale".into(),
+            })?;
+        if current.revision != Some(expected_revision) {
+            return Err(DraftError {
+                reason: "draft revision is stale".into(),
+            });
         }
         remove_draft_dir(draft_dir)?;
         Ok(true)
@@ -601,21 +675,8 @@ impl DraftStore for FileDraftStore {
 
     fn cleanup_expired(&self, canonical_username: &str, now: u64) -> Result<usize, DraftError> {
         validate_canonical_username(canonical_username)?;
-        let _lock = self.acquire_exclusive_lock()?;
+        let _lock = self.acquire_exclusive_lock(canonical_username)?;
         self.cleanup_expired_unlocked(canonical_username, now)
-    }
-}
-
-struct DraftFileLock {
-    file: fs::File,
-}
-
-impl Drop for DraftFileLock {
-    fn drop(&mut self) {
-        #[cfg(unix)]
-        {
-            let _ = crate::openbsd::advisory_file_unlock(&self.file);
-        }
     }
 }
 
@@ -628,7 +689,7 @@ pub fn generate_draft_id() -> Result<String, DraftError> {
     Ok(hex_lower(&bytes))
 }
 
-fn validate_draft_id(draft_id: &str) -> Result<(), DraftError> {
+pub(crate) fn validate_draft_id(draft_id: &str) -> Result<(), DraftError> {
     if draft_id.len() != DRAFT_ID_HEX_LEN {
         return Err(DraftError {
             reason: format!("draft id must be exactly {DRAFT_ID_HEX_LEN} hex characters"),
@@ -657,25 +718,6 @@ fn validate_canonical_username(canonical_username: &str) -> Result<(), DraftErro
         });
     }
     Ok(())
-}
-
-fn validate_compose_request(
-    compose_policy: ComposePolicy,
-    request: &ComposeRequest,
-) -> Result<(), DraftError> {
-    ComposeRequest::new_with_routing(
-        compose_policy,
-        request.recipients.join(", "),
-        request.cc_recipients.join(", "),
-        request.bcc_recipients.join(", "),
-        request.subject.clone(),
-        request.body.clone(),
-        request.attachments.clone(),
-    )
-    .map(|_| ())
-    .map_err(|error| DraftError {
-        reason: error.reason,
-    })
 }
 
 fn validate_source_attachments(
@@ -743,7 +785,8 @@ fn validate_source_attachments(
 
 fn serialize_draft_metadata(record: &DraftRecord) -> String {
     let mut content = format!(
-        "version=4\n\
+        "version=5\n\
+revision={}\n\
 draft_id={}\n\
 canonical_username_hex={}\n\
 created_at={}\n\
@@ -755,14 +798,15 @@ bcc_hex={}\n\
 subject_hex={}\n\
 body_hex={}\n\
 attachment_count={}\n",
+        record.revision.unwrap_or(0),
         record.draft_id,
         hex_lower(record.canonical_username.as_bytes()),
         record.created_at,
         record.updated_at,
         record.expires_at,
-        hex_lower(record.request.recipients.join(", ").as_bytes()),
-        hex_lower(record.request.cc_recipients.join(", ").as_bytes()),
-        hex_lower(record.request.bcc_recipients.join(", ").as_bytes()),
+        hex_lower(record.request.recipients_text.as_bytes()),
+        hex_lower(record.request.cc_text.as_bytes()),
+        hex_lower(record.request.bcc_text.as_bytes()),
         hex_lower(record.request.subject.as_bytes()),
         hex_lower(record.request.body.as_bytes()),
         record.request.attachments.len()
@@ -816,6 +860,7 @@ fn parse_draft_metadata(
     content: &str,
 ) -> Result<Option<DraftRecord>, DraftError> {
     let mut version = None;
+    let mut revision = None;
     let mut draft_id = None;
     let mut canonical_username = None;
     let mut created_at = None;
@@ -860,6 +905,7 @@ fn parse_draft_metadata(
         }
         match key {
             "version" => version = Some(value.to_string()),
+            "revision" => revision = Some(parse_u64_field("revision", value)?),
             "draft_id" => draft_id = Some(value.to_string()),
             "canonical_username_hex" => canonical_username = Some(decode_hex_string(value)?),
             "created_at" => created_at = Some(parse_u64_field("created_at", value)?),
@@ -892,12 +938,18 @@ fn parse_draft_metadata(
             "source_attachment_count" => {
                 source_attachment_count = Some(parse_usize_field("source_attachment_count", value)?)
             }
-            _ if key.starts_with("source_attachment_") => {
-                parse_source_attachment_metadata_field(key, value, &mut source_part_paths)?
-            }
-            _ if key.starts_with("attachment_") => {
-                parse_attachment_metadata_field(key, value, &mut attachment_fields)?
-            }
+            _ if key.starts_with("source_attachment_") => parse_source_attachment_metadata_field(
+                key,
+                value,
+                &mut source_part_paths,
+                policy.compose_policy.max_attachments,
+            )?,
+            _ if key.starts_with("attachment_") => parse_attachment_metadata_field(
+                key,
+                value,
+                &mut attachment_fields,
+                policy.compose_policy.max_attachments,
+            )?,
             _ => {
                 return Err(DraftError {
                     reason: format!("unsupported draft metadata key {key}"),
@@ -911,7 +963,7 @@ fn parse_draft_metadata(
     }
     if !matches!(
         version.as_deref(),
-        Some("1") | Some("2") | Some("3") | Some("4")
+        Some("1") | Some("2") | Some("3") | Some("4") | Some("5")
     ) {
         return Err(DraftError {
             reason: "unsupported draft metadata version".to_string(),
@@ -919,9 +971,20 @@ fn parse_draft_metadata(
     }
 
     let draft_id = required_field("draft_id", draft_id)?;
+    let revision = match (version.as_deref(), revision) {
+        (Some("5"), Some(value)) if value > 0 => value,
+        (Some("1" | "2" | "3" | "4"), None) => 0,
+        _ => {
+            return Err(DraftError {
+                reason: "invalid or incompatible draft revision".into(),
+            })
+        }
+    };
     let reply_thread = match (reply_parent, reply_references, reply_shortened) {
         (None, None, None) => None,
-        (Some(parent), Some(references), Some(shortened)) if version.as_deref() == Some("4") => {
+        (Some(parent), Some(references), Some(shortened))
+            if matches!(version.as_deref(), Some("4" | "5")) =>
+        {
             Some(
                 crate::reply_thread::ReplyThread::from_stored(
                     (!parent.is_empty()).then_some(parent.as_str()),
@@ -947,16 +1010,21 @@ fn parse_draft_metadata(
     }
 
     let attachment_count = required_field("attachment_count", attachment_count)?;
-    if attachment_count > policy.compose_policy.max_attachments {
+    if attachment_count > policy.compose_policy.max_attachments
+        || attachment_fields.len() != attachment_count
+    {
         return Err(DraftError {
             reason: "draft attachment metadata exceeded maximum count".to_string(),
         });
     }
-    attachment_fields.resize_with(attachment_count, AttachmentMetadataFields::default);
-
     let draft_dir = metadata_path.parent().ok_or_else(|| DraftError {
         reason: "draft metadata path did not have a parent directory".to_string(),
     })?;
+    if draft_dir.file_name().and_then(|name| name.to_str()) != Some(draft_id.as_str()) {
+        return Err(DraftError {
+            reason: "draft metadata identity does not match its directory".into(),
+        });
+    }
     let mut attachments = Vec::new();
     for (index, fields) in attachment_fields.into_iter().enumerate() {
         let filename = required_field("attachment filename", fields.filename)?;
@@ -971,12 +1039,18 @@ fn parse_draft_metadata(
         }
 
         let body_path = draft_dir.join(body_file);
-        let body = fs::read(&body_path).map_err(|error| DraftError {
-            reason: format!(
-                "failed to read draft attachment body {:?}: {error}",
-                body_path
-            ),
-        })?;
+        if size_bytes > policy.compose_policy.attachment_max_bytes {
+            return Err(DraftError {
+                reason: "draft attachment exceeded maximum size".into(),
+            });
+        }
+        let body = crate::private_account_file::read_record(&body_path, size_bytes)
+            .map_err(|_| DraftError {
+                reason: "draft attachment is unsafe or exceeded maximum size".into(),
+            })?
+            .ok_or_else(|| DraftError {
+                reason: "draft attachment body missing".into(),
+            })?;
         if body.len() != size_bytes {
             return Err(DraftError {
                 reason: "draft attachment body size did not match metadata".to_string(),
@@ -991,7 +1065,7 @@ fn parse_draft_metadata(
         );
     }
 
-    let mut request = ComposeRequest::new_with_routing(
+    let mut request = DraftContent::new(
         policy.compose_policy,
         required_field("recipients", recipients)?,
         cc_recipients.unwrap_or_default(),
@@ -1004,6 +1078,20 @@ fn parse_draft_metadata(
         reason: error.reason,
     })?;
     request.reply_thread = reply_thread;
+    if version.as_deref() != Some("5") {
+        crate::send::ComposeRequest::new_with_routing(
+            policy.compose_policy,
+            &request.recipients_text,
+            &request.cc_text,
+            &request.bcc_text,
+            &request.subject,
+            &request.body,
+            Vec::new(),
+        )
+        .map_err(|error| DraftError {
+            reason: error.reason,
+        })?;
+    }
     let source_attachments = if version.as_deref() == Some("1") {
         None
     } else {
@@ -1042,6 +1130,7 @@ fn parse_draft_metadata(
         created_at: required_field("created_at", created_at)?,
         updated_at: required_field("updated_at", updated_at)?,
         expires_at: required_field("expires_at", expires_at)?,
+        revision: Some(revision),
         request,
         source_attachments,
     }))
@@ -1059,6 +1148,7 @@ fn parse_attachment_metadata_field(
     key: &str,
     value: &str,
     attachment_fields: &mut Vec<AttachmentMetadataFields>,
+    max_count: usize,
 ) -> Result<(), DraftError> {
     let key = key.strip_prefix("attachment_").ok_or_else(|| DraftError {
         reason: "invalid attachment metadata key".to_string(),
@@ -1069,6 +1159,11 @@ fn parse_attachment_metadata_field(
         });
     };
     let index = parse_usize_field("attachment index", index_text)?;
+    if index >= max_count || index.to_string() != index_text {
+        return Err(DraftError {
+            reason: "draft attachment index exceeded maximum or was invalid".into(),
+        });
+    }
     if attachment_fields.len() <= index {
         attachment_fields.resize_with(index + 1, AttachmentMetadataFields::default);
     }
@@ -1091,6 +1186,7 @@ fn parse_source_attachment_metadata_field(
     key: &str,
     value: &str,
     part_paths: &mut Vec<Option<String>>,
+    max_count: usize,
 ) -> Result<(), DraftError> {
     let key = key
         .strip_prefix("source_attachment_")
@@ -1108,6 +1204,11 @@ fn parse_source_attachment_metadata_field(
         });
     }
     let index = parse_usize_field("source attachment index", index_text)?;
+    if index >= max_count || index.to_string() != index_text {
+        return Err(DraftError {
+            reason: "draft source attachment index exceeded maximum or was invalid".into(),
+        });
+    }
     if part_paths.len() <= index {
         part_paths.resize(index + 1, None);
     }
@@ -1196,20 +1297,36 @@ fn set_file_permissions(path: &Path) -> Result<(), DraftError> {
     Ok(())
 }
 
-fn set_dir_permissions(path: &Path) -> Result<(), DraftError> {
+fn create_private_directory(path: &Path) -> Result<(), DraftError> {
+    let mut builder = fs::DirBuilder::new();
     #[cfg(unix)]
     {
-        use std::os::unix::fs::PermissionsExt;
-        fs::set_permissions(path, fs::Permissions::from_mode(0o700)).map_err(|error| {
-            DraftError {
-                reason: format!(
-                    "failed to set draft directory permissions {:?}: {error}",
-                    path
-                ),
-            }
-        })?;
+        use std::os::unix::fs::DirBuilderExt as _;
+        builder.mode(0o700);
     }
+    match builder.create(path) {
+        Ok(()) => (),
+        Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => (),
+        Err(_) => {
+            return Err(DraftError {
+                reason: "draft directory creation failed".into(),
+            })
+        }
+    }
+    crate::private_account_file::check_directory(path).map_err(|_| DraftError {
+        reason: "draft directory is unsafe".into(),
+    })?;
     Ok(())
+}
+
+fn private_directory_exists(path: &Path) -> Result<bool, DraftError> {
+    match crate::private_account_file::check_directory(path) {
+        Ok(()) => Ok(true),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(false),
+        Err(_) => Err(DraftError {
+            reason: "draft directory is unsafe".into(),
+        }),
+    }
 }
 
 fn hex_lower(bytes: &[u8]) -> String {
@@ -1258,6 +1375,9 @@ static NEXT_DRAFT_TEMP_FILE_ID: AtomicU64 = AtomicU64::new(0);
 #[cfg(test)]
 mod tests {
     use super::*;
+    mod preservation {
+        include!("draft_preservation_tests.rs");
+    }
 
     fn temp_dir(label: &str) -> PathBuf {
         let mut path = std::env::temp_dir();
@@ -1360,6 +1480,7 @@ mod tests {
             .unwrap(),
         );
         store.save(&draft, 100).unwrap();
+        draft.revision = Some(1);
         assert_eq!(
             store
                 .load("alice@example.com", &draft.draft_id, 100)
@@ -1372,7 +1493,12 @@ mod tests {
         let parse = |value: &str| {
             parse_draft_metadata(DraftPolicy::default(), "alice@example.com", &path, value)
         };
-        assert!(parse(&metadata.replace("version=4", "version=3")).is_err());
+        assert!(parse(
+            &metadata
+                .replace("version=5", "version=3")
+                .replace("revision=1\n", "")
+        )
+        .is_err());
         assert!(parse(&format!("{metadata}reply_shortened=0\n")).is_err());
         assert!(parse(&metadata.replace("reply_shortened=0\n", "")).is_err());
         assert!(parse(&metadata.replace("reply_shortened=0", "reply_shortened=2")).is_err());
@@ -1387,7 +1513,10 @@ mod tests {
         ))
         .is_err());
         draft.request.reply_thread = None;
-        let legacy = serialize_draft_metadata(&draft).replace("version=4", "version=3");
+        let legacy = serialize_draft_metadata(&draft)
+            .replace("version=5", "version=3")
+            .replace("revision=1\n", "");
+        draft.revision = Some(0);
         assert_eq!(parse(&legacy).unwrap().unwrap(), draft);
         assert_eq!(
             fs::read_to_string(&path).unwrap(),
@@ -1424,9 +1553,15 @@ mod tests {
             .expect("load should succeed")
             .expect("draft should exist");
 
-        assert_eq!(loaded, draft);
-        assert_eq!(loaded.request.cc_recipients, vec!["carol@example.net"]);
-        assert_eq!(loaded.request.bcc_recipients, vec!["dana@example.org"]);
+        assert_eq!(
+            loaded,
+            DraftRecord {
+                revision: Some(1),
+                ..draft
+            }
+        );
+        assert_eq!(loaded.request.cc_text, "carol@example.net");
+        assert_eq!(loaded.request.bcc_text, "dana@example.org");
         assert_eq!(loaded.request.attachments[0].body, b"attachment bytes");
     }
 
@@ -1563,7 +1698,7 @@ mod tests {
         assert!(draft_dir.exists());
 
         assert!(store
-            .delete("alice@example.com", &draft.draft_id)
+            .delete("alice@example.com", &draft.draft_id, 1)
             .expect("delete should succeed"));
         assert!(!draft_dir.exists());
     }
@@ -1616,6 +1751,10 @@ mod tests {
             .expect_err("new draft over quota should fail");
         assert!(error.reason.contains("quota"));
 
+        first = store
+            .load("alice@example.com", &first.draft_id, 101)
+            .unwrap()
+            .unwrap();
         first.updated_at = 101;
         first.request.body = "updated body".to_string();
         store
@@ -1691,7 +1830,10 @@ mod tests {
             store
                 .load("alice@example.com", &draft.draft_id, 100)
                 .expect("restored draft should load"),
-            Some(draft)
+            Some(DraftRecord {
+                revision: Some(1),
+                ..draft
+            })
         );
     }
 

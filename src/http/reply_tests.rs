@@ -234,7 +234,7 @@ fn saved_reply_keeps_its_server_owned_thread_after_source_is_unavailable() {
     let resumed = perform(&app, "GET", &location, "", "SourceUnavailable");
     assert_eq!(resumed.response.status_code, 200);
     assert!(!body_text(&resumed).contains("name=\"reply_mailbox\""));
-    let form = format!("{}&draft_id={id}", base_form());
+    let form = format!("{}&draft_id={id}&draft_revision=1", base_form());
     assert_eq!(
         perform(
             &app,
@@ -264,7 +264,7 @@ fn saved_reply_keeps_its_server_owned_thread_after_source_is_unavailable() {
             .reply_thread,
         expected
     );
-    let sent = perform(&app, "POST", "/send", &form, "SourceUnavailable");
+    let sent = perform(&app, "POST", "/send", &form.replace("draft_revision=1", "draft_revision=2"), "SourceUnavailable");
     assert_eq!(sent.response.status_code, 303);
     assert!(!sent
         .audit_events

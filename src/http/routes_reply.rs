@@ -13,6 +13,7 @@ pub(super) fn compose_metadata_valid(form: &BTreeMap<String, String>, username: 
         "subject",
         "body",
         "draft_id",
+        "draft_revision",
         "source_mailbox",
         "source_uid",
         "reply_mailbox",

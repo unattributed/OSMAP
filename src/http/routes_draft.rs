@@ -17,13 +17,6 @@ where
                 Ok(result) => result,
                 Err(response) => return response,
             };
-        let success_message = match request.query_params.get("saved").map(String::as_str) {
-            Some("1") => Some("Draft saved."),
-            _ if request.query_params.get("deleted").map(String::as_str) == Some("1") => {
-                Some("Draft deleted.")
-            }
-            _ => None,
-        };
 
         let outcome = self.gateway.list_drafts(context, &validated_session);
         audit_events.extend(outcome.audit_events);
@@ -41,7 +34,7 @@ where
                         render_draft_list_page(&DraftListPageModel {
                             canonical_username: &canonical_username,
                             csrf_token: &validated_session.record.csrf_token,
-                            success_message,
+                            success_message: None,
                             error_message: None,
                             drafts: &drafts,
                         }),
@@ -170,12 +163,13 @@ where
                             context_notice: draft.source_attachments.as_ref().map(|_| {
                                 "Only the source attachments explicitly selected when this draft was saved remain selected."
                             }),
-                            to_value: &draft.request.recipients.join(", "),
-                            cc_value: &draft.request.cc_recipients.join(", "),
-                            bcc_value: &draft.request.bcc_recipients.join(", "),
+                            to_value: &draft.request.recipients_text,
+                            cc_value: &draft.request.cc_text,
+                            bcc_value: &draft.request.bcc_text,
                             subject_value: &draft.request.subject,
                             body_value: &draft.request.body,
                             draft_id: Some(&draft.draft_id),
+                            draft_revision: draft.revision,
                             draft_attachment_count: draft.request.attachments.len(),
                             source_mailbox_name: draft
                                 .source_attachments
@@ -243,7 +237,7 @@ where
         let parsed_form = match parse_compose_form(
             &request.body,
             request.headers.get("content-type").map(String::as_str),
-            self.policy.max_form_fields.saturating_add(4),
+            self.policy.max_form_fields.saturating_add(5),
             self.policy.max_upload_body_bytes,
             ComposePolicy::default(),
         ) {
@@ -311,11 +305,12 @@ where
                     subject_value: form.get("subject").map(String::as_str).unwrap_or_default(),
                     body_value: form.get("body").map(String::as_str).unwrap_or_default(),
                     draft_id: form.get("draft_id").map(String::as_str),
+                    draft_revision: super::routes_contacts::revision(form.get("draft_revision")),
                     draft_attachment_count: 0,
-                    source_mailbox_name: None,
-                    source_uid: None,
+                    source_mailbox_name: form.get("source_mailbox").map(String::as_str),
+                    source_uid: form.get("source_uid").and_then(|value| value.parse().ok()),
                     source_attachments: &[],
-                    selected_source_part_paths: &[],
+                    selected_source_part_paths: &super::routes_compose::selected_original_attachment_parts(&form).unwrap_or_default(),
                 })),
                 audit_events,
             };
@@ -343,6 +338,15 @@ where
         let subject = form.get("subject").cloned().unwrap_or_default();
         let body = form.get("body").cloned().unwrap_or_default();
         let draft_id = form.get("draft_id").map(String::as_str);
+        let expected_revision = match submitted_draft_revision(&form) {
+            Ok(revision) => revision,
+            Err(()) => {
+                return HandledHttpResponse {
+                    response: super::routes_compose::invalid_compose_metadata(),
+                    audit_events,
+                }
+            }
+        };
         let selected_source_parts =
             match super::routes_compose::selected_original_attachment_parts(&form) {
                 Ok(parts) => parts,
@@ -444,6 +448,7 @@ where
             BrowserDraftSaveRequest {
                 reply_thread: reply_thread.as_ref(),
                 draft_id,
+                expected_revision,
                 recipients: &recipients,
                 cc_recipients: &cc_recipients,
                 bcc_recipients: &bcc_recipients,
@@ -469,7 +474,9 @@ where
                 audit_events,
             },
             BrowserDraftSaveDecision::Denied { public_reason } => {
-                let (status_code, reason_phrase) = if public_reason == "invalid_request" {
+                let (status_code, reason_phrase) = if public_reason == "draft_conflict" {
+                    (409, "Conflict")
+                } else if public_reason == "invalid_request" {
                     (400, "Bad Request")
                 } else {
                     (503, "Service Unavailable")
@@ -487,18 +494,19 @@ where
                             csrf_token: &validated_session.record.csrf_token,
                             success_message: None,
                             error_message: Some(public_reason_message(&public_reason)),
-                            context_notice: None,
+                            context_notice: Some("Nothing was saved or sent. Your text is retained. Re-select any new uploads before saving; existing saved-draft attachments are unchanged."),
                             to_value: &recipients,
                             cc_value: &cc_recipients,
                             bcc_value: &bcc_recipients,
                             subject_value: &subject,
                             body_value: &body,
                             draft_id,
+                            draft_revision: expected_revision,
                             draft_attachment_count: 0,
-                            source_mailbox_name: None,
-                            source_uid: None,
+                            source_mailbox_name: source_attachments.as_ref().map(|source| source.mailbox_name.as_str()),
+                            source_uid: source_attachments.as_ref().map(|source| source.uid),
                             source_attachments: &[],
-                            selected_source_part_paths: &[],
+                            selected_source_part_paths: source_attachments.as_ref().map(|source| source.part_paths.as_slice()).unwrap_or_default(),
                         }),
                     ),
                     audit_events,
@@ -513,6 +521,11 @@ where
         request: &HttpRequest,
         context: &AuthenticationContext,
     ) -> HandledHttpResponse {
+        let (validated_session, mut audit_events) =
+            match self.require_validated_session(request, context) {
+                Ok(result) => result,
+                Err(response) => return response,
+            };
         if !allows_urlencoded_request_body(request.headers.get("content-type").map(String::as_str))
         {
             return HandledHttpResponse {
@@ -553,11 +566,6 @@ where
             }
         };
 
-        let (validated_session, mut audit_events) =
-            match self.require_validated_session(request, context) {
-                Ok(result) => result,
-                Err(response) => return response,
-            };
         if let Some(response) = self.require_valid_csrf(
             request,
             form.get("csrf_token").map(String::as_str),
@@ -566,6 +574,21 @@ where
         ) {
             return response;
         }
+        if form.len() != 4 || form.get("confirm").map(String::as_str) != Some("1") {
+            return HandledHttpResponse {
+                response: invalid_draft_delete(),
+                audit_events,
+            };
+        }
+        let expected_revision = match submitted_draft_revision(&form) {
+            Ok(Some(revision)) => revision,
+            _ => {
+                return HandledHttpResponse {
+                    response: invalid_draft_delete(),
+                    audit_events,
+                }
+            }
+        };
         let Some(draft_id) = form.get("draft_id").map(String::as_str) else {
             return HandledHttpResponse {
                 response: html_response(
@@ -582,22 +605,30 @@ where
             };
         };
 
-        let outcome = self
-            .gateway
-            .delete_draft(context, &validated_session, draft_id);
+        let outcome =
+            self.gateway
+                .delete_draft(context, &validated_session, draft_id, expected_revision);
         audit_events.extend(outcome.audit_events);
 
         match outcome.decision {
             BrowserDraftDeleteDecision::Deleted | BrowserDraftDeleteDecision::NotFound => {
                 HandledHttpResponse {
-                    response: redirect_response(303, "See Other", "/drafts?deleted=1"),
+                    response: redirect_response(303, "See Other", "/drafts"),
                     audit_events,
                 }
             }
             BrowserDraftDeleteDecision::Denied { public_reason } => HandledHttpResponse {
                 response: html_response(
-                    503,
-                    "Service Unavailable",
+                    if public_reason == "draft_conflict" {
+                        409
+                    } else {
+                        503
+                    },
+                    if public_reason == "draft_conflict" {
+                        "Conflict"
+                    } else {
+                        "Service Unavailable"
+                    },
                     "Draft Delete Failed",
                     TrustedHtml::from_template(format!(
                         "<p>{}</p>",
@@ -608,4 +639,29 @@ where
             },
         }
     }
+}
+
+/// A revision must travel with its draft id, including legacy revision zero.
+pub(super) fn submitted_draft_revision(form: &BTreeMap<String, String>) -> Result<Option<u64>, ()> {
+    match (form.get("draft_id"), form.get("draft_revision")) {
+        (None, None) => Ok(None),
+        (Some(id), Some(revision)) if crate::draft::validate_draft_id(id).is_ok() => {
+            let parsed = revision.parse::<u64>().map_err(|_| ())?;
+            if parsed.to_string() == *revision {
+                Ok(Some(parsed))
+            } else {
+                Err(())
+            }
+        }
+        _ => Err(()),
+    }
+}
+
+fn invalid_draft_delete() -> HttpResponse {
+    html_response(
+        400,
+        "Bad Request",
+        "Invalid Draft Request",
+        "<p>Use the current draft's Delete confirmation. Nothing was deleted.</p>",
+    )
 }

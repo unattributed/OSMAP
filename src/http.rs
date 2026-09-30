@@ -828,6 +828,9 @@ mod tests {
     mod contact_tests {
         include!("http/contact_tests.rs");
     }
+    mod draft_preservation_tests {
+        include!("http/draft_preservation_tests.rs");
+    }
     mod flag_fixtures {
         include!("http/flag_fixtures.rs");
     }
@@ -854,6 +857,7 @@ mod tests {
     #[derive(Debug, Clone)]
     struct StubGateway {
         contacts_store: Option<crate::contacts::ContactStore>,
+        draft_store: Option<crate::draft::FileDraftStore>,
         drafts: Arc<Mutex<BTreeMap<String, DraftRecord>>>,
         submitted: Arc<Mutex<Vec<ComposeRequest>>>,
         message_flags: Arc<Mutex<SyntheticFlagStates>>,
@@ -866,6 +870,7 @@ mod tests {
         fn default() -> Self {
             Self {
                 contacts_store: None,
+                draft_store: None,
                 drafts: Arc::new(Mutex::new(BTreeMap::new())),
                 submitted: Arc::new(Mutex::new(Vec::new())),
                 message_flags: Arc::new(Mutex::new(BTreeMap::new())),
@@ -903,6 +908,9 @@ mod tests {
         }
 
         fn next_draft_id(&self) -> String {
+            if self.draft_store.is_some() {
+                return crate::draft::generate_draft_id().expect("synthetic draft id");
+            }
             let next = self.drafts.lock().expect("stub drafts should lock").len() + 1;
             format!("{next:032x}")
         }
@@ -2055,16 +2063,29 @@ mod tests {
             _context: &AuthenticationContext,
             validated_session: &ValidatedSession,
         ) -> BrowserDraftListOutcome {
-            let drafts = self
-                .drafts
-                .lock()
-                .expect("stub drafts should lock")
-                .values()
-                .filter(|draft| {
-                    draft.canonical_username == validated_session.record.canonical_username
-                })
-                .map(DraftRecord::summary)
-                .collect();
+            let drafts = if let Some(store) = &self.draft_store {
+                match store.list(&validated_session.record.canonical_username, 100) {
+                    Ok(drafts) => drafts,
+                    Err(error) => {
+                        return BrowserDraftListOutcome {
+                            decision: BrowserDraftListDecision::Denied {
+                                public_reason: fixture_draft_error(&error),
+                            },
+                            audit_events: vec![],
+                        }
+                    }
+                }
+            } else {
+                self.drafts
+                    .lock()
+                    .expect("stub drafts should lock")
+                    .values()
+                    .filter(|draft| {
+                        draft.canonical_username == validated_session.record.canonical_username
+                    })
+                    .map(DraftRecord::summary)
+                    .collect()
+            };
             BrowserDraftListOutcome {
                 decision: BrowserDraftListDecision::Listed {
                     canonical_username: validated_session.record.canonical_username.clone(),
@@ -2085,15 +2106,28 @@ mod tests {
             validated_session: &ValidatedSession,
             draft_id: &str,
         ) -> BrowserDraftLoadOutcome {
-            let draft = self
-                .drafts
-                .lock()
-                .expect("stub drafts should lock")
-                .get(draft_id)
-                .filter(|draft| {
-                    draft.canonical_username == validated_session.record.canonical_username
-                })
-                .cloned();
+            let draft = if let Some(store) = &self.draft_store {
+                match store.load(&validated_session.record.canonical_username, draft_id, 100) {
+                    Ok(draft) => draft,
+                    Err(error) => {
+                        return BrowserDraftLoadOutcome {
+                            decision: BrowserDraftLoadDecision::Denied {
+                                public_reason: fixture_draft_error(&error),
+                            },
+                            audit_events: vec![],
+                        }
+                    }
+                }
+            } else {
+                self.drafts
+                    .lock()
+                    .expect("stub drafts should lock")
+                    .get(draft_id)
+                    .filter(|draft| {
+                        draft.canonical_username == validated_session.record.canonical_username
+                    })
+                    .cloned()
+            };
             match draft {
                 Some(draft) => BrowserDraftLoadOutcome {
                     decision: BrowserDraftLoadDecision::Loaded {
@@ -2130,12 +2164,22 @@ mod tests {
                 .filter(|value| !value.trim().is_empty())
                 .map(str::to_string)
                 .unwrap_or_else(|| self.next_draft_id());
-            let existing = self
-                .drafts
-                .lock()
-                .expect("stub drafts should lock")
-                .get(&draft_id)
-                .cloned();
+            let mut drafts = self.drafts.lock().expect("stub drafts should lock");
+            let existing = if let Some(store) = &self.draft_store {
+                match store.load(&validated_session.record.canonical_username, &draft_id, 100) {
+                    Ok(draft) => draft,
+                    Err(error) => {
+                        return BrowserDraftSaveOutcome {
+                            decision: BrowserDraftSaveDecision::Denied {
+                                public_reason: fixture_draft_error(&error),
+                            },
+                            audit_events: vec![],
+                        }
+                    }
+                }
+            } else {
+                drafts.get(&draft_id).cloned()
+            };
             if existing.as_ref().is_some_and(|draft| {
                 draft.canonical_username != validated_session.record.canonical_username
             }) {
@@ -2146,14 +2190,21 @@ mod tests {
                     audit_events: vec![],
                 };
             }
-            let attachments = if request.attachments.is_empty() {
-                existing
-                    .as_ref()
-                    .map(|draft| draft.request.attachments.clone())
-                    .unwrap_or_default()
-            } else {
-                request.attachments.to_vec()
-            };
+            if existing.as_ref().and_then(|draft| draft.revision) != request.expected_revision
+                || request.draft_id.is_some() != existing.is_some()
+            {
+                return BrowserDraftSaveOutcome {
+                    decision: BrowserDraftSaveDecision::Denied {
+                        public_reason: "draft_conflict".into(),
+                    },
+                    audit_events: vec![],
+                };
+            }
+            let mut attachments = existing
+                .as_ref()
+                .map(|draft| draft.request.attachments.clone())
+                .unwrap_or_default();
+            attachments.extend_from_slice(request.attachments);
             let mut record = match DraftRecord::new(
                 DraftPolicy::default(),
                 DraftRecordInput {
@@ -2185,14 +2236,24 @@ mod tests {
                 }
             };
             record.request.reply_thread = request.reply_thread.cloned();
+            record.revision = request.expected_revision;
             if let Some(existing) = existing {
                 record.created_at = existing.created_at;
                 record.request.reply_thread = existing.request.reply_thread;
             }
-            self.drafts
-                .lock()
-                .expect("stub drafts should lock")
-                .insert(draft_id.clone(), record);
+            if let Some(store) = &self.draft_store {
+                if let Err(error) = store.save(&record, 100) {
+                    return BrowserDraftSaveOutcome {
+                        decision: BrowserDraftSaveDecision::Denied {
+                            public_reason: fixture_draft_error(&error),
+                        },
+                        audit_events: vec![],
+                    };
+                }
+            } else {
+                record.revision = Some(request.expected_revision.unwrap_or(0) + 1);
+                drafts.insert(draft_id.clone(), record);
+            }
             BrowserDraftSaveOutcome {
                 decision: BrowserDraftSaveDecision::Saved { draft_id },
                 audit_events: vec![LogEvent::new(
@@ -2207,21 +2268,46 @@ mod tests {
         fn delete_draft(
             &self,
             _context: &AuthenticationContext,
-            _validated_session: &ValidatedSession,
+            validated_session: &ValidatedSession,
             draft_id: &str,
+            expected_revision: u64,
         ) -> BrowserDraftDeleteOutcome {
-            let removed = self
-                .drafts
-                .lock()
-                .expect("stub drafts should lock")
-                .remove(draft_id)
-                .is_some();
-            BrowserDraftDeleteOutcome {
-                decision: if removed {
-                    BrowserDraftDeleteDecision::Deleted
-                } else {
+            if let Some(store) = &self.draft_store {
+                return BrowserDraftDeleteOutcome {
+                    decision: match store.delete(
+                        &validated_session.record.canonical_username,
+                        draft_id,
+                        expected_revision,
+                    ) {
+                        Ok(true) => BrowserDraftDeleteDecision::Deleted,
+                        Ok(false) => BrowserDraftDeleteDecision::NotFound,
+                        Err(error) => BrowserDraftDeleteDecision::Denied {
+                            public_reason: fixture_draft_error(&error),
+                        },
+                    },
+                    audit_events: vec![],
+                };
+            }
+            let mut drafts = self.drafts.lock().expect("stub drafts should lock");
+            let decision = match drafts.get(draft_id) {
+                Some(draft)
+                    if draft.canonical_username != validated_session.record.canonical_username =>
+                {
                     BrowserDraftDeleteDecision::NotFound
-                },
+                }
+                Some(draft) if draft.revision != Some(expected_revision) => {
+                    BrowserDraftDeleteDecision::Denied {
+                        public_reason: "draft_conflict".into(),
+                    }
+                }
+                Some(_) => {
+                    drafts.remove(draft_id);
+                    BrowserDraftDeleteDecision::Deleted
+                }
+                None => BrowserDraftDeleteDecision::NotFound,
+            };
+            BrowserDraftDeleteOutcome {
+                decision,
                 audit_events: vec![LogEvent::new(
                     LogLevel::Info,
                     EventCategory::Http,
@@ -2234,6 +2320,19 @@ mod tests {
 
     fn app() -> BrowserApp<StubGateway> {
         BrowserApp::new(HttpPolicy::default(), StubGateway::default())
+    }
+
+    fn fixture_draft_error(error: &crate::draft::DraftError) -> String {
+        if error.reason.contains("revision") {
+            "draft_conflict"
+        } else if error.reason.contains("quota") {
+            "draft_quota_exceeded"
+        } else if error.reason == "draft store busy" {
+            "draft_busy"
+        } else {
+            "temporarily_unavailable"
+        }
+        .into()
     }
 
     fn app_with_policy(policy: HttpPolicy) -> BrowserApp<StubGateway> {
@@ -4597,7 +4696,7 @@ mod tests {
                 "/send",
                 &authenticated_same_origin_headers(),
                 &format!(
-                    "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&draft_id={draft_id}&to=bob%40example.com&subject=Source%20Draft&body=Body&source_mailbox=INBOX&source_uid=9&include_original_attachment_1=1.2"
+                    "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&draft_id={draft_id}&draft_revision=1&to=bob%40example.com&subject=Source%20Draft&body=Body&source_mailbox=INBOX&source_uid=9&include_original_attachment_1=1.2"
                 ),
             ),
             "127.0.0.1",
@@ -4655,7 +4754,7 @@ mod tests {
                 "/drafts/delete",
                 &authenticated_same_origin_headers(),
                 &format!(
-                    "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&draft_id={draft_id}"
+                    "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&draft_id={draft_id}&draft_revision=1&confirm=1"
                 ),
             ),
             "127.0.0.1",
@@ -4690,7 +4789,7 @@ mod tests {
                 "/send",
                 &authenticated_same_origin_headers(),
                 &format!(
-                    "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&draft_id={draft_id}&to=bob%40example.com&subject=Send%20Me&body=Body"
+                    "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&draft_id={draft_id}&draft_revision=1&to=bob%40example.com&subject=Send%20Me&body=Body"
                 ),
             ),
             "127.0.0.1",
@@ -4726,7 +4825,7 @@ mod tests {
                 "/send",
                 &authenticated_same_origin_headers(),
                 &format!(
-                    "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&draft_id={draft_id}&to=locked%40example.com&subject=Retry%20Later&body=Body"
+                    "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&draft_id={draft_id}&draft_revision=1&to=locked%40example.com&subject=Retry%20Later&body=Body"
                 ),
             ),
             "127.0.0.1",
@@ -4799,7 +4898,7 @@ mod tests {
                 "/send",
                 &authenticated_same_origin_headers(),
                 &format!(
-                    "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&draft_id={draft_id}&to=bob%40example.com&subject=Attachment%20Draft&body=Body"
+                    "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&draft_id={draft_id}&draft_revision=1&to=bob%40example.com&subject=Attachment%20Draft&body=Body"
                 ),
             ),
             "127.0.0.1",

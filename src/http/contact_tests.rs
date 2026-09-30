@@ -187,11 +187,12 @@ fn selected_contact_saves_explicit_roles_and_keeps_original_thread_without_sendi
             .to_string();
         let draft = drafts.get(&id).unwrap();
         let addresses = match target {
-            "to" => &draft.request.recipients,
-            "cc" => &draft.request.cc_recipients,
-            _ => &draft.request.bcc_recipients,
+            "to" => &draft.request.recipients_text,
+            "cc" => &draft.request.cc_text,
+            _ => &draft.request.bcc_text,
         };
-        assert!(addresses.iter().any(|a| a == "desk@example.test"));
+        assert!(crate::mail_address::parse_address_list(ComposePolicy::default(), addresses)
+            .unwrap().iter().any(|a| a == "desk@example.test"));
         assert!(draft.request.reply_thread.is_some());
         assert!(app.gateway.submitted.lock().unwrap().is_empty());
         assert_eq!(
