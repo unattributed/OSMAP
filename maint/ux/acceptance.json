@@ -1,7 +1,12 @@
 {
   "schema_version": 1,
   "epic": "OSMAP-UX",
-  "plan_anchor": "74522e5f99024720a3c47a3744207ff453de5731",
+  "prior_plan_anchor": "74522e5f99024720a3c47a3744207ff453de5731",
+  "plan_revision": 2,
+  "plan_anchor": "Signed revision-2 planning commit; exact SHA recorded in docs/UX_EXECUTION_LEDGER.md after signing",
+  "approved_page_inventory": "maint/ux/approved_pages.json",
+  "approved_reference_manifest": "docs/design/osmap-ux-final-approved-20260919/SHA256SUMS",
+  "visual_acceptance_status": "PENDING_FINAL_REFERENCE_COMPARISON for every earlier case; historical functional status is preserved and does not establish final-approved visual conformity",
   "runtime_baseline": "2a6993fe7df42a57f0cbb5fe3e33e331b400fef9",
   "classification": "evidence-linked engineering progress; independent human and release acceptance remain pending",
   "common_visual_matrix": {
@@ -74,7 +79,7 @@
     },
     "UX09": {
       "positive": "Inspect the named account/key/status control using unconfigured, configured and unavailable account states; full fingerprints and capability come from actual authorised records.",
-      "negative": "No copied example fingerprint/date, guessed capability, script clipboard success, global search on account settings or cross-account public binding."
+      "negative": "No copied example fingerprint/date, guessed capability, unproven clipboard success, mail search substituted for settings search or cross-account public binding."
     },
     "UX10": {
       "positive": "Save each signing/encryption/self policy with fresh step-up, reload and enforce it against actual delivered bytes; stale policies rechecked at dispatch.",

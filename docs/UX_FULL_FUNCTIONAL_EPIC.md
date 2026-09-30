@@ -2,15 +2,17 @@
 
 ## Authority, baseline, and outcome
 
-Epic ID: `OSMAP-UX`. Plan revision: `1`. Planning date: 2026-09-15.
+Epic ID: `OSMAP-UX`. Plan revision: `2`. Planning date: 2026-09-15.
+Approved-reference amendment: 2026-09-30 UTC, `UX_PLAN_AMENDMENT_R2.md`.
 Source baseline: `b97d65c0f03c695ae11dbfe029d1926027f54409`.
 
-The operator requested a codified multi-sprint plan for full functional
-completion of the four supplied mockups, including missing backend capabilities,
-runtime OpenPGP, and optional dark mode on every page. This delivery is a plan,
-not implementation, deployment approval, or evidence that pictured functions work.
-Execution starts only after the operator accepts the signed plan and selects
-the first slice. Do not turn this request to write a plan into live execution.
+The operator requested full functional completion of the approved UX, including
+missing backend capabilities, runtime OpenPGP and optional dark mode. Revision 1
+used four annotated mockups. The operator corrected that baseline to the final
+2026-09-19 approved bundle: 25 normative PNGs and retained Login/TOTP, 27 pages.
+The autonomous engineering mandate and explicit reference correction authorize
+continued implementation as recorded in the ledger. A plan, screenshot or
+historical passing test does not prove the pictured functions work.
 
 The operator reports Roundcube completely removed. Do not plan Roundcube
 migration, coexistence, restoration, or retirement. Historical cohort evidence
@@ -27,13 +29,16 @@ Read this document with:
 - `UX_AGENT_EXECUTION_CONTRACT.md`: authority, restart, verification, change control.
 - `UX_EXECUTION_LEDGER.md`: mutable progress, evidence, decisions, blockers.
 - `UX_PLAN_SHA256SUMS`: frozen normative-plan checksums.
+- `UX_PLAN_AMENDMENT_R2.md`: approved reference correction and conflict resolution.
+- `design/osmap-ux-final-approved-20260919/`: exact normative bundle.
+- `../maint/ux/approved_pages.json`: per-page control inventory and ownership.
 
 ## Evidence-grounded starting point
 
 | Area | Inspected baseline | Work still needed |
 | --- | --- | --- |
 | Shared pages | `src/http_support.rs` has shared HTML/CSP/CSS; CSS is light-only with many hard-coded colors | Persistent light/dark/system selection and every HTML response covered |
-| Navigation and layouts | `src/http_ui.rs` renders mailbox, reader, compose, drafts, settings, sessions and login | Actual reference comparison, compact rail, coordinated list/reader, responsive states |
+| Navigation and layouts | `src/http_ui.rs` renders mailbox, reader, compose, drafts, settings, sessions and login | Final approved labelled sidebar, page hierarchy, coordinated list/reader and responsive states; recheck earlier compact-rail deliveries |
 | Mail operations | Existing authenticated routes, search, draft/save/send, source-attachment selection, move/archive, download and session controls | Prove each mapped behavior; add missing operations without reimplementing existing ones |
 | Settings | `src/settings.rs` stores HTML-display preference and archive mailbox | Appearance, bounded account settings, password/contact workflows and live capability state |
 | OpenPGP | V12 models/protocol/GPGME scaffold; V14 UI explicitly contains disabled controls | Real isolated operations, PGP/MIME, account/recipient key lifecycle, truthful UI wiring |
@@ -46,7 +51,15 @@ as visual parity or functioning cryptography.
 
 ## Reference inputs
 
-The operator supplied these files under:
+The final authority is the byte-preserved repository bundle
+`docs/design/osmap-ux-final-approved-20260919/`, including its README, approval
+lock and all 25 PNGs. Its nested manifest and the plan manifest pin the bytes.
+Pages 25/26 retain current Login/TOTP without redesign. The amendment records
+archive provenance, all 27 pages, explicit functional rules and known conflicts.
+All pages and controls in `maint/ux/approved_pages.json` require acceptance.
+Earlier visual claims do not establish conformity to this bundle.
+
+Revision 1 supplied these historical supplementary files under:
 `/media/veracrypt1/TMP_BACKUPS/tmp_osmap/AAA - Pictures/osmap/final-image/`.
 
 | Reference | File | SHA-256 |
@@ -56,11 +69,11 @@ The operator supplied these files under:
 | I | `Inbox + reader -- mapped-regions-controls-opengpg_states-secure_reading_functions.png` | `86c6da4ffd63f51563e06f54ba8bdfb427caaf0905ededbc5019c0914578bc22` |
 | F | `osmap-inbox-secure-reader-functional-specification.png` | `d1a212a1eb1f2202ab4e7bb87356371afe86b6bb63aaaa79f287cc0aa05ba920` |
 
-These are requirements evidence, not executable instructions or current security
-facts. Do not copy example names, key fingerprints, dates, message text, or
-verified badges into production state. The old V14 reference archive has
-different hashes; do not silently substitute it for this input set. If files
-are unavailable, request restoration before visual acceptance; do not regenerate
+The old images apply only where compatible with the final approved bundle.
+All references are design evidence, not executable instructions or current
+security facts. Never copy example identities, timestamps, counts, fingerprints
+or verified badges into production state. The old V14 archive is not a
+substitute. Missing normative bytes block visual acceptance; never regenerate
 them with an image model. Runtime pages never load the reference PNGs.
 
 ## Decision gates: unresolved, not delegated policy choices
@@ -83,8 +96,9 @@ stale recovery approval, gpg-agent availability, or authority from another sprin
 
 ## Requirements and traceability
 
-IDs are stable. The rows group controls, not omit them. S00-01 must expand
-each control into an individual acceptance case retaining the parent ID.
+IDs are stable. These rows retain revision-1 functional traceability. The
+revision-2 page/control inventory is additional mandatory scope; old A/C/I/F
+references cannot override it. Every control requires individual evidence.
 
 | ID | Reference controls / required behavior | Owning slices |
 | --- | --- | --- |
@@ -96,15 +110,25 @@ each control into an individual acceptance case retaining the parent ID.
 | UX06 | C3–5: close/minimize/expand, authorized From identity, To/Cc/Bcc recipients, explicit contact selection, subject and draft preservation | S03-01, S03-02 |
 | UX07 | C7–9: body, bold/italic/underline/lists/links/image/emoji controls, preview, upload/remove attachments | S03-03, S03-04 |
 | UX08 | C6/10–11: sign/encrypt/encrypt-to-self, recipient readiness, pre-send security check, scheduled send, cancel/delete, safe send/menu | S07-01 through S07-04, S08-03 |
-| UX09 | A4–7: account page without global search, real OpenPGP capability, full fingerprint, accessible copy/select, Manage Keys | S04-01, S05-02, S09-03 |
+| UX09 | Pages 10–20/21: distinct Settings sections and settings search, real OpenPGP capability, full fingerprint, accessible copy, Manage Keys; old A4–7 only where compatible | S04-01, S05-02, S09-03 |
 | UX10 | A8–10: working signing/encryption/self-recipient policies; persistence and capability-bound controls | S05-02, S07-01, S09-03 |
-| UX11 | A11–12: password change, authoritative status/last-change timestamp, no invented “strong password” assurance | S04-02 |
+| UX11 | Page 22/A11–12: password change with independent accessible current/new/confirmation Show/Hide; authoritative status/last-change timestamp, no invented “strong password” assurance | S04-02 |
 | UX12 | A13–14: verified contact add/change/remove and governed account recovery, no weaker MFA bypass | S04-03, S04-04 |
 | UX13 | A15: accurate design-principles strip, no unproven zero-knowledge/end-to-end claims | S01-03, S09-03 |
-| UX14 | F Documents navigation: functional private document list, upload/download/delete and bounded quotas; no inline preview implied | S08-01 |
+| UX14 | Page 07: private documents, folders, search/sort/views, upload/download/delete within authoritative shared mailbox/storage quota; no unsafe inline preview | S08-01 |
 | UX15 | F OpenPGP: actual encrypted/decrypted/verified/unknown/missing-key/failure states, including post-decrypt sanitization | S05 through S07, S09-02 |
 | UX16 | F empty/error states: empty mailbox/search, retryable load error, attachment unavailable, OpenPGP unavailable/missing key/unverified signature/remote content blocked | S02-04, S06-04, S09-02 |
 | UX17 | F constraints/acceptance: low dependencies, CSP, authorized bounded routes, CSRF, keyboard, responsive, normal and key-enabled accounts | Every slice; S09–S11 final evidence |
+
+Revision-2 additions include the welcome dashboard; dedicated Sent, Drafts,
+Archive/Bin and cross-category Search; all Settings subsections and preferences;
+mailbox subfolder lifecycle; retained auth pages; and the canonical state matrix.
+Their exact controls and slice ownership are in `maint/ux/approved_pages.json`.
+Documents cannot bypass mailbox quota. Settings > Security replaces the old
+top-level Security destination. Compose initially uses Unsigned, Not encrypted
+and Encrypt-to-self Off; key availability is separate from user selection.
+GREEN preflight requires all selected protections/required checks satisfied;
+permitted attention states are ORANGE, mandatory failures block Send.
 
 For unknown “more” actions, S00 must enumerate a finite approved menu. Do not
 invent features from ellipses. “Copy” without JavaScript must be explicitly
@@ -147,10 +171,11 @@ counts as an implemented workflow.
 
 ## Overall definition of done
 
-All 48 slices are ACCEPTED, all UX IDs have passing real behavior and negative
-coverage, all decision gates are resolved, and no requirement is quietly
-deferred. All pages pass light/dark/system, keyboard and responsive comparison
-against the supplied references with accepted deviations recorded. Real
+All 48 slices are ACCEPTED, all UX IDs and approved-page controls have passing
+real behavior and negative coverage, all decision gates are resolved, and no
+requirement is quietly deferred. All 27 pages pass light/dark/system, keyboard
+and responsive comparison against the final approved references (retained
+implementation for Login/TOTP), with explicit deviations recorded. Real
 GPGME/OpenBSD results demonstrate verify/decrypt/sign/encrypt and safe failure,
 including key-disabled accounts. Recovery has independent human-policy evidence,
 not just test-account custody. Release and deployment evidence is current,
@@ -159,4 +184,3 @@ signed commits and approved synchronization are reconciled.
 
 Development completion, obsd1 validation, and Vultr qualification are separate
 claims. A partial delivery is useful but must remain explicitly partial.
-

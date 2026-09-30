@@ -1,11 +1,40 @@
 # UX engineering decisions
 
-Date: 2026-09-29. Source: S00 intake against
-`2a6993fe7df42a57f0cbb5fe3e33e331b400fef9`. Frozen plan revision 1 and its
-signature-anchored hashes remain intact. These decisions implement the
+Original decisions: 2026-09-29. Source: S00 intake against
+`2a6993fe7df42a57f0cbb5fe3e33e331b400fef9`. Revision 1 is preserved in signed
+history. The following original decisions implement the
 operator's explicit autonomous engineering mandate recorded in the ledger.
 They are delegated engineering decisions, not evidence of independent human
 usability review, real-user recovery identity proof, or production acceptance.
+
+## Revision-2 precedence — 2026-09-30 UTC
+
+The operator's final-approved image correction and `UX_PLAN_AMENDMENT_R2.md`
+supersede incompatible older visual/functional choices below. In particular:
+
+- D01's narrow desktop rail is replaced by the approved labelled sidebar;
+  settings has section search. Required Show/Hide, clipboard, auto-save and
+  desktop notification controls remain open until a bounded first-party
+  interaction work order and its CSP/isolation tests are recorded. Existing
+  no-script behaviour does not qualify those controls as complete.
+- D05 navigation places Security within Settings. All 27 approved pages and
+  their controls are tracked, including independent Settings sections and
+  cross-category search. Old finite menus do not erase new pictured controls.
+- D05 Documents must consume authoritative mailbox/storage quota. The old
+  100 MiB cap is an additional upper bound, not an independent account allowance.
+  Quota authority and concurrent mail/document accounting must be qualified.
+- D05 folder operations add protected subfolder lifecycle and hierarchy.
+  Permanent deletion remains separate, confirmed and retention-policy-bound;
+  unavailable policy never permits implicit expunge. Existing reversible Bin
+  behaviour is retained and is not proof of permanent-delete capability.
+- Compose initial defaults are Unsigned, Not encrypted, Encrypt-to-self Off;
+  mandatory policy still blocks incompatible send. Example enabled settings
+  are not default policy. Recipient availability is separate; green/orange
+  preflight follows the exact bundle requirements.
+- Login and TOTP retain the current implementation; no new auth mockup.
+
+The original records below remain historical decision evidence. The amendment
+controls where they differ; security and resource bounds continue to apply.
 
 ## D01 — Native HTML interactions and explicit navigation
 

@@ -1145,3 +1145,46 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   Contacts and full S03-01 acceptance remain pending. Source attachment layout,
   draft revision/retention, formatting and send/Sent reconciliation remain later
   S03 work. No live account, external recipient, deployment or synchronization.
+
+### Revision-2 approved-reference amendment — 2026-09-30 UTC
+
+- Operator correction: "these mockup images are the approved UX design in
+  /osmap-ux-final-approved-20260919/images/", followed by "alright continue
+  working". This supplies explicit authority for the separate revision-2
+  planning amendment and continuation under the day-long engineering mandate.
+  Messages are limited to slice completion, sprint completion and epic status.
+- The previous work used the four revision-1 annotated references. No final-
+  approved-bundle visual conformity is claimed for S00–S03-01A. Functional
+  tests retain their stated scope; S01/S02 layout comparison is reopened.
+- Exact archive SHA-256:
+  `072bb9545b1ccd3be1370ee75003d5b97d297061c09eb4482e7faaf07160bdce`.
+  Outer sidecar and all 27 inner files passed integrity verification; all
+  25 PNGs were individually inspected. Exact files are retained under
+  `docs/design/osmap-ux-final-approved-20260919/`; Login/TOTP have no new PNG.
+- Scope: the three frozen plan documents, this ledger, revision-2 amendment,
+  approved reference files, page/control acceptance inventory, current status,
+  decisions and documentation index/classification. No runtime source change,
+  state migration, host mutation, deployment or synchronization in this commit.
+  Prior signed anchor `74522e5f99024720a3c47a3744207ff453de5731` verified and
+  its manifest passed before authorized revision. New anchor follows signing.
+- Source is signed S03-01A `bf20f08a77cec24420e7dedcd982260368f26a78`.
+  Unfinished agent-authored S03-01B changes to 14 named files are preserved
+  with hashes and a resume patch under S03
+  `worktree-preservation-before-reference-r2/`; worktree was clean before the
+  planning amendment. Restore only those changes after signing and preserve
+  this new ledger entry. The amendment records requirement/test/rollback impacts.
+- S03-01A exact native qualification also completed: 623 library tests, two
+  hostile-rendering tests and the signed-helper reply/header fixture passed.
+  Archive `1b0b5c06d82417e59e6a92545a754aaf3553c25e7de853c988d90ea7277a32f3`;
+  log `56be4fa370f00e967a9ebe641573e36472c081b39e738ac83fa4d9231219636b`.
+  Owned source `/home/foo/osmap-ux-s03-20260930-V6sghO6y`; standard checkout/
+  services unchanged and disposable fixture removed. This is behavioural
+  native evidence, not final-reference visual or production release acceptance.
+- Revision-2 planning validation: 27 pages and 403 unique control IDs verified;
+  the previous 110 acceptance cases remain byte-equivalent as parsed objects.
+  Both plan and nested reference manifests pass, with no runtime source diff.
+  Full `make acceptance-check` (security/V10/V11/V12/V13), `make v14-check`,
+  documentation guard and diff checks PASS. The first signing attempt correctly
+  refused two unindexed bundle Markdown files; their exact paths are now in
+  the documentation index and the unchanged guard passes. Logs remain under
+  S00 `approved-reference-reconciliation/`. No strict-release claim.

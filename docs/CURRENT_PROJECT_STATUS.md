@@ -14,6 +14,21 @@ statement as provenance rather than current release posture.
 
 ## Current source posture
 
+### Approved UX reference correction, 2026-09-30 UTC
+
+The operator explicitly identified `osmap-ux-final-approved-20260919/images/`
+as the authoritative design and instructed continued engineering. The 25 PNGs,
+README and approval lock now live byte-for-byte under `docs/design/`; outer and
+inner checksums verify. `UX_PLAN_AMENDMENT_R2.md` records revision 2, all 27
+pages (including retained Login/TOTP), changed requirements and sequencing.
+The earlier S00–S03-01A work used the four revision-1 annotated images instead.
+Its recorded functional/native tests remain valid for their stated scope;
+**those visual checks do not establish conformity to the final approved bundle**.
+S01/S02 layout comparison is reopened, and the new per-page controls remain
+pending in `maint/ux/approved_pages.json`. No complete-epic, release, deployment
+or independent human acceptance is claimed. The historical progress below is
+retained with this qualification.
+
 ### Full-functional UX engineering intake, 2026-09-29
 
 The operator requested a codified full-functional UX epic against four supplied

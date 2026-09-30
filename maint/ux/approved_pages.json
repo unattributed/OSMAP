@@ -1,0 +1,2833 @@
+{
+  "schema_version": 1,
+  "plan_revision": 2,
+  "authority": "docs/UX_PLAN_AMENDMENT_R2.md",
+  "reference_root": "docs/design/osmap-ux-final-approved-20260919/",
+  "reference_manifest": "docs/design/osmap-ux-final-approved-20260919/SHA256SUMS",
+  "implementation_baseline": "bf20f08a77cec24420e7dedcd982260368f26a78",
+  "classification": "Requirements inventory; no final-approved visual conformity or behavioural completion is asserted by enumeration.",
+  "common_controls": [
+    "Labelled sidebar and real navigation",
+    "Selected destination",
+    "OSMAP brand",
+    "Mail search or settings-scoped search",
+    "Search keyboard shortcut",
+    "Protected by Default disclosure with actual scope",
+    "Notification entry and actual unread state",
+    "Current account menu",
+    "Light/dark/system controls",
+    "Actual storage usage or unknown",
+    "Responsive keyboard and forced-colour behaviour"
+  ],
+  "common_tests": {
+    "positive": "Use the control with keyboard and pointer on real routes, verify persisted or backend outcome and compare the complete page against its exact approved reference.",
+    "negative": "Authorization, CSRF, wrong owner, stale state, malformed/oversized input, interrupted operation, unavailable backend and truthful unknown outcomes as applicable.",
+    "visual": "All controls require final-reference comparison at native dimensions and 360/768/1440, light/dark/system, 200% reflow and forced colours; an old passing test is not conformity.",
+    "security": "Existing boundaries remain mandatory; first-party enhancements require a bounded work order and reviewed CSP/isolation tests before implementation."
+  },
+  "pages": [
+    {
+      "id": "PAGE-01",
+      "title": "Main / Mailbox / Welcome",
+      "reference": "docs/design/osmap-ux-final-approved-20260919/images/01-OSMAP-new-main-welcome-page.png",
+      "retained_source": null,
+      "owning_slices": [
+        "S01-02",
+        "S04-01",
+        "S05-02",
+        "S08-04"
+      ],
+      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "controls": [
+        {
+          "id": "R2-01-001",
+          "label": "Greeting and current identity",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-01-002",
+          "label": "Unread count",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-01-003",
+          "label": "Draft count",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-01-004",
+          "label": "Recent Sent count",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-01-005",
+          "label": "Flagged count",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-01-006",
+          "label": "Actual date time and timezone",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-01-007",
+          "label": "Compose quick link",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-01-008",
+          "label": "Inbox quick link",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-01-009",
+          "label": "Documents quick link",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-01-010",
+          "label": "Archive / Bin quick link",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-01-011",
+          "label": "Settings > Security quick link",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-01-012",
+          "label": "Settings quick link",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-01-013",
+          "label": "Recent messages and View all",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-01-014",
+          "label": "Account security status",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-01-015",
+          "label": "OpenPGP capability",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-01-016",
+          "label": "Full account fingerprint and copy",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-01-017",
+          "label": "Signing policy",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-01-018",
+          "label": "Encryption policy",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-01-019",
+          "label": "Encrypt-to-self policy",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-01-020",
+          "label": "Manage Keys",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-01-021",
+          "label": "Recent activity and View all",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-01-022",
+          "label": "Quick Search",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-01-023",
+          "label": "Quick Filters",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-01-024",
+          "label": "Quick Labels",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-01-025",
+          "label": "Finite More menu",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-01-026",
+          "label": "Storage totals and category breakdown",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-01-027",
+          "label": "Manage Storage",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-01-028",
+          "label": "System service status and View details",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-01-029",
+          "label": "Backup status",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-01-030",
+          "label": "Update status",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-01-031",
+          "label": "Help",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-01-032",
+          "label": "Feedback",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "PAGE-02",
+      "title": "Inbox",
+      "reference": "docs/design/osmap-ux-final-approved-20260919/images/02-OSMAP-inbox-page.png",
+      "retained_source": null,
+      "owning_slices": [
+        "S02-01",
+        "S02-02",
+        "S02-03",
+        "S06-02"
+      ],
+      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "controls": [
+        {
+          "id": "R2-02-001",
+          "label": "Select current page",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-02-002",
+          "label": "All selection/filter menu",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-02-003",
+          "label": "Unread filter",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-02-004",
+          "label": "Folder filter",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-02-005",
+          "label": "Attachment filter",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-02-006",
+          "label": "OpenPGP filter",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-02-007",
+          "label": "Sort direction",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-02-008",
+          "label": "Sort key",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-02-009",
+          "label": "Bounded count and previous/next page",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-02-010",
+          "label": "Select row",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-02-011",
+          "label": "Star/unstar",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-02-012",
+          "label": "Sender avatar and identity",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-02-013",
+          "label": "Subject and bounded preview",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-02-014",
+          "label": "Attachment metadata",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-02-015",
+          "label": "Truthful security state",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-02-016",
+          "label": "Received date",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-02-017",
+          "label": "Finite row menu",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-02-018",
+          "label": "Open selected message preserving context",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "PAGE-03",
+      "title": "Message Reader",
+      "reference": "docs/design/osmap-ux-final-approved-20260919/images/03-OSMAP-message-reader-page.png",
+      "retained_source": null,
+      "owning_slices": [
+        "S02-02",
+        "S02-03",
+        "S02-04",
+        "S03-01",
+        "S06-04",
+        "S08-02",
+        "S08-03"
+      ],
+      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "controls": [
+        {
+          "id": "R2-03-001",
+          "label": "Back to list",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-03-002",
+          "label": "Reply toolbar",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-03-003",
+          "label": "Archive",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-03-004",
+          "label": "Bin",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-03-005",
+          "label": "Mark state",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-03-006",
+          "label": "Snooze",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-03-007",
+          "label": "Label",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-03-008",
+          "label": "Previous message",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-03-009",
+          "label": "Next message",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-03-010",
+          "label": "Finite More menu",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-03-011",
+          "label": "Subject",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-03-012",
+          "label": "Sender identity",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-03-013",
+          "label": "To and expanded header context",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-03-014",
+          "label": "Received time",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-03-015",
+          "label": "Star/unstar",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-03-016",
+          "label": "Encrypted state",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-03-017",
+          "label": "Actual decryption location/status",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-03-018",
+          "label": "Signature state",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-03-019",
+          "label": "Remote-content state",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-03-020",
+          "label": "View Source",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-03-021",
+          "label": "Post-decrypt sanitization state",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-03-022",
+          "label": "Protected body",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-03-023",
+          "label": "Attachment count",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-03-024",
+          "label": "Attachment metadata",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-03-025",
+          "label": "Isolated Download",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-03-026",
+          "label": "Reply",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-03-027",
+          "label": "Reply all",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-03-028",
+          "label": "Forward",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "PAGE-04",
+      "title": "Compose",
+      "reference": "docs/design/osmap-ux-final-approved-20260919/images/04-OSMAP-compose-page.png",
+      "retained_source": null,
+      "owning_slices": [
+        "S03-01",
+        "S03-02",
+        "S03-03",
+        "S03-04",
+        "S07-01",
+        "S07-04",
+        "S08-03"
+      ],
+      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "controls": [
+        {
+          "id": "R2-04-001",
+          "label": "Minimize with preservation",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-04-002",
+          "label": "Expand",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-04-003",
+          "label": "Finite title More menu",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-04-004",
+          "label": "Authorized From",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-04-005",
+          "label": "To entry and chips",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-04-006",
+          "label": "Remove recipient",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-04-007",
+          "label": "Show Cc",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-04-008",
+          "label": "Show Bcc",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-04-009",
+          "label": "Contacts selection",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-04-010",
+          "label": "Subject",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-04-011",
+          "label": "Sign default Unsigned",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-04-012",
+          "label": "Encrypt default Not encrypted",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-04-013",
+          "label": "Encrypt-to-self default Off",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-04-014",
+          "label": "Recipient-key availability details",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-04-015",
+          "label": "Security preflight green/orange/blocked",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-04-016",
+          "label": "Bold",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-04-017",
+          "label": "Italic",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-04-018",
+          "label": "Underline",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-04-019",
+          "label": "Bulleted list",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-04-020",
+          "label": "Numbered list",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-04-021",
+          "label": "Link",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-04-022",
+          "label": "Local image",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-04-023",
+          "label": "Attach",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-04-024",
+          "label": "Emoji",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-04-025",
+          "label": "Body authoring",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-04-026",
+          "label": "Protection attention explanation",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-04-027",
+          "label": "Attachments list and size",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-04-028",
+          "label": "Add more attachments",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-04-029",
+          "label": "Remove attachment",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-04-030",
+          "label": "Confirm Discard",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-04-031",
+          "label": "Schedule",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-04-032",
+          "label": "Finite footer More menu",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-04-033",
+          "label": "Send",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-04-034",
+          "label": "Send options",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "PAGE-05",
+      "title": "Sent",
+      "reference": "docs/design/osmap-ux-final-approved-20260919/images/05-OSMAP-sent-page.png",
+      "retained_source": null,
+      "owning_slices": [
+        "S02-01",
+        "S03-04",
+        "S07-04"
+      ],
+      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "controls": [
+        {
+          "id": "R2-05-001",
+          "label": "Selection",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-05-002",
+          "label": "All filter",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-05-003",
+          "label": "Date filter",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-05-004",
+          "label": "Previous/next and bounded count",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-05-005",
+          "label": "Star/unstar",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-05-006",
+          "label": "Recipient identity",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-05-007",
+          "label": "Subject and preview",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-05-008",
+          "label": "Attachment metadata",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-05-009",
+          "label": "Actual delivery/protection state",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-05-010",
+          "label": "Date",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-05-011",
+          "label": "Finite row menu",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-05-012",
+          "label": "Open message",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-05-013",
+          "label": "Sent-copy reconciliation state",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "PAGE-06",
+      "title": "Drafts",
+      "reference": "docs/design/osmap-ux-final-approved-20260919/images/06-OSMAP-drafts-page.png",
+      "retained_source": null,
+      "owning_slices": [
+        "S03-02",
+        "S03-04"
+      ],
+      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "controls": [
+        {
+          "id": "R2-06-001",
+          "label": "Selection",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-06-002",
+          "label": "All drafts filter",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-06-003",
+          "label": "Sort order",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-06-004",
+          "label": "New message",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-06-005",
+          "label": "Star/unstar draft",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-06-006",
+          "label": "Recipient identity",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-06-007",
+          "label": "Subject and preview",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-06-008",
+          "label": "Attachment metadata",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-06-009",
+          "label": "Draft status",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-06-010",
+          "label": "Saved time",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-06-011",
+          "label": "Finite row menu",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-06-012",
+          "label": "Resume",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-06-013",
+          "label": "Confirmed discard",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-06-014",
+          "label": "Owner isolation and stale-write conflict",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "PAGE-07",
+      "title": "Documents",
+      "reference": "docs/design/osmap-ux-final-approved-20260919/images/07-OSMAP-documents-page.png",
+      "retained_source": null,
+      "owning_slices": [
+        "S08-01"
+      ],
+      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "controls": [
+        {
+          "id": "R2-07-001",
+          "label": "Upload",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-07-002",
+          "label": "New folder",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-07-003",
+          "label": "Grid view",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-07-004",
+          "label": "List view",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-07-005",
+          "label": "Search documents",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-07-006",
+          "label": "Sort modified/name/type/size",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-07-007",
+          "label": "Selection",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-07-008",
+          "label": "Name and folder navigation",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-07-009",
+          "label": "Type",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-07-010",
+          "label": "Size",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-07-011",
+          "label": "Modified",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-07-012",
+          "label": "Owner",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-07-013",
+          "label": "Finite row menu",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-07-014",
+          "label": "Forced Download",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-07-015",
+          "label": "Bin/restore",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-07-016",
+          "label": "Confirmed Delete",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-07-017",
+          "label": "Shared mailbox/storage quota display",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-07-018",
+          "label": "Retention state",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-07-019",
+          "label": "Safety explanation",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "PAGE-08",
+      "title": "Archive / Bin",
+      "reference": "docs/design/osmap-ux-final-approved-20260919/images/08-OSMAP-archive-bin-page.png",
+      "retained_source": null,
+      "owning_slices": [
+        "S02-01",
+        "S02-03"
+      ],
+      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "controls": [
+        {
+          "id": "R2-08-001",
+          "label": "Archive tab and actual count",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-08-002",
+          "label": "Bin tab and actual count",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-08-003",
+          "label": "Selection",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-08-004",
+          "label": "Search",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-08-005",
+          "label": "Date filter",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-08-006",
+          "label": "Sort",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-08-007",
+          "label": "Bounded count and pagination",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-08-008",
+          "label": "Sender",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-08-009",
+          "label": "Subject",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-08-010",
+          "label": "Current folder",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-08-011",
+          "label": "Archive date when known",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-08-012",
+          "label": "Size",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-08-013",
+          "label": "Finite row menu",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-08-014",
+          "label": "Restore",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-08-015",
+          "label": "Move to",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-08-016",
+          "label": "Permanent Delete with confirmation",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-08-017",
+          "label": "Retention-policy refusal",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "PAGE-09",
+      "title": "Search",
+      "reference": "docs/design/osmap-ux-final-approved-20260919/images/09-OSMAP-search-page.png",
+      "retained_source": null,
+      "owning_slices": [
+        "S02-01",
+        "S03-01",
+        "S08-01"
+      ],
+      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "controls": [
+        {
+          "id": "R2-09-001",
+          "label": "Search input",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-09-002",
+          "label": "Escape shortcut",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-09-003",
+          "label": "From filter",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-09-004",
+          "label": "Time filter",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-09-005",
+          "label": "Attachment filter",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-09-006",
+          "label": "OpenPGP filter",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-09-007",
+          "label": "Unread filter",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-09-008",
+          "label": "Folder filter",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-09-009",
+          "label": "All category count",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-09-010",
+          "label": "Messages category",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-09-011",
+          "label": "Documents category",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-09-012",
+          "label": "People category",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-09-013",
+          "label": "Result type",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-09-014",
+          "label": "Result title and bounded snippet",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-09-015",
+          "label": "Location",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-09-016",
+          "label": "Modified time",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-09-017",
+          "label": "Open result within account",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-09-018",
+          "label": "Empty search and clear filters",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "PAGE-10",
+      "title": "Settings / Security",
+      "reference": "docs/design/osmap-ux-final-approved-20260919/images/10-OSMAP-settings-security-page.png",
+      "retained_source": null,
+      "owning_slices": [
+        "S04-01",
+        "S04-02",
+        "S04-03",
+        "S04-04",
+        "S05-02",
+        "S08-04"
+      ],
+      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "controls": [
+        {
+          "id": "R2-10-001",
+          "label": "Settings section selection",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-10-002",
+          "label": "Security page role",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-10-003",
+          "label": "OpenPGP actual status",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-10-004",
+          "label": "TOTP actual status and last use",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-10-005",
+          "label": "Password actual status and changed time",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-10-006",
+          "label": "Recovery-contact actual status",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-10-007",
+          "label": "Manage OpenPGP",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-10-008",
+          "label": "Manage TOTP",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-10-009",
+          "label": "Change password",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-10-010",
+          "label": "Manage recovery contact",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-10-011",
+          "label": "Manage active sessions",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-10-012",
+          "label": "Recent security events",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "PAGE-11",
+      "title": "Settings / General",
+      "reference": "docs/design/osmap-ux-final-approved-20260919/images/11-OSMAP-settings-general-page.png",
+      "retained_source": null,
+      "owning_slices": [
+        "S01-01",
+        "S03-01",
+        "S04-01",
+        "S07-01",
+        "S08-01"
+      ],
+      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "controls": [
+        {
+          "id": "R2-11-001",
+          "label": "Display name",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-11-002",
+          "label": "Authorized email identity",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-11-003",
+          "label": "Reply-to address",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-11-004",
+          "label": "Timezone",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-11-005",
+          "label": "Language",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-11-006",
+          "label": "Theme",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-11-007",
+          "label": "Density",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-11-008",
+          "label": "Reader layout",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-11-009",
+          "label": "Configure Appearance",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-11-010",
+          "label": "Default start page",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-11-011",
+          "label": "Archive folder",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-11-012",
+          "label": "Delete behaviour",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-11-013",
+          "label": "Mark-read policy",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-11-014",
+          "label": "Default compose format",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-11-015",
+          "label": "Signature preference",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-11-016",
+          "label": "Reply placement",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-11-017",
+          "label": "Signing policy",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-11-018",
+          "label": "Encryption policy",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-11-019",
+          "label": "Remote-content enforced state",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-11-020",
+          "label": "Sanitization enforced state",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-11-021",
+          "label": "CSP enforced state",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-11-022",
+          "label": "Source isolation state",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-11-023",
+          "label": "Manage keys",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-11-024",
+          "label": "Manage password",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-11-025",
+          "label": "Manage TOTP",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-11-026",
+          "label": "Manage recovery",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-11-027",
+          "label": "Mailbox usage",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-11-028",
+          "label": "Document usage within account quota",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-11-029",
+          "label": "Retention policy",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-11-030",
+          "label": "Save changes",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-11-031",
+          "label": "Reset section",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "PAGE-12",
+      "title": "Settings / Appearance",
+      "reference": "docs/design/osmap-ux-final-approved-20260919/images/12-OSMAP-settings-appearance-page.png",
+      "retained_source": null,
+      "owning_slices": [
+        "S01-01",
+        "S01-04",
+        "S04-01",
+        "S09-01"
+      ],
+      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "controls": [
+        {
+          "id": "R2-12-001",
+          "label": "Light option",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-12-002",
+          "label": "Dark option",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-12-003",
+          "label": "System option",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-12-004",
+          "label": "Selected appearance state",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-12-005",
+          "label": "Density",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-12-006",
+          "label": "Font size",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-12-007",
+          "label": "Reader layout",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-12-008",
+          "label": "Show avatars",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-12-009",
+          "label": "Message preview",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-12-010",
+          "label": "Actual selected-state preview",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-12-011",
+          "label": "Save changes",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "PAGE-13",
+      "title": "Settings / Identity",
+      "reference": "docs/design/osmap-ux-final-approved-20260919/images/13-OSMAP-settings-identity-page.png",
+      "retained_source": null,
+      "owning_slices": [
+        "S03-01",
+        "S04-01"
+      ],
+      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "controls": [
+        {
+          "id": "R2-13-001",
+          "label": "Display name",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-13-002",
+          "label": "Server-authorized email address",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-13-003",
+          "label": "Reply-to",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-13-004",
+          "label": "Signature selection",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-13-005",
+          "label": "Use for new mail",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-13-006",
+          "label": "Authorized identities list",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-13-007",
+          "label": "Primary identity",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-13-008",
+          "label": "Edit authorized identity",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-13-009",
+          "label": "Add only server-authorized identity",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-13-010",
+          "label": "No arbitrary From enforcement",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "PAGE-14",
+      "title": "Settings / Reading & Mailbox",
+      "reference": "docs/design/osmap-ux-final-approved-20260919/images/14-OSMAP-settings-reading-mailbox-page.png",
+      "retained_source": null,
+      "owning_slices": [
+        "S02-01",
+        "S02-02",
+        "S02-03",
+        "S02-04",
+        "S04-01"
+      ],
+      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "controls": [
+        {
+          "id": "R2-14-001",
+          "label": "Default start page",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-14-002",
+          "label": "Mark-read policy",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-14-003",
+          "label": "After-archive selection",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-14-004",
+          "label": "Conversation ordering",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-14-005",
+          "label": "Default content mode",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-14-006",
+          "label": "Show source shortcut",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-14-007",
+          "label": "Attachment details",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-14-008",
+          "label": "External-images policy",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-14-009",
+          "label": "Archive folder",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-14-010",
+          "label": "Bin folder",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-14-011",
+          "label": "Sent folder",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-14-012",
+          "label": "Drafts folder",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "PAGE-15",
+      "title": "Settings / Composition",
+      "reference": "docs/design/osmap-ux-final-approved-20260919/images/15-OSMAP-settings-composition-page.png",
+      "retained_source": null,
+      "owning_slices": [
+        "S03-02",
+        "S03-03",
+        "S04-01",
+        "S07-01",
+        "S08-03"
+      ],
+      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "controls": [
+        {
+          "id": "R2-15-001",
+          "label": "Message format",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-15-002",
+          "label": "Reply placement",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-15-003",
+          "label": "Include signature",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-15-004",
+          "label": "Automatic draft saving",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-15-005",
+          "label": "Auto-save interval",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-15-006",
+          "label": "Sign outgoing policy",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-15-007",
+          "label": "Encryption policy",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-15-008",
+          "label": "Encrypt-to-self policy",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-15-009",
+          "label": "Missing recipient-key policy",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-15-010",
+          "label": "Delayed-send revalidation",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-15-011",
+          "label": "No downgrade or unknown-send retry",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "PAGE-16",
+      "title": "Settings / Copies & Folders",
+      "reference": "docs/design/osmap-ux-final-approved-20260919/images/16-OSMAP-settings-copies-folders-page.png",
+      "retained_source": null,
+      "owning_slices": [
+        "S03-02",
+        "S03-04",
+        "S04-01",
+        "S08-02"
+      ],
+      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "controls": [
+        {
+          "id": "R2-16-001",
+          "label": "Save Sent preference",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-16-002",
+          "label": "Sent location",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-16-003",
+          "label": "Draft location",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-16-004",
+          "label": "Bcc privacy enforced",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-16-005",
+          "label": "Archive folder",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-16-006",
+          "label": "Bin folder",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-16-007",
+          "label": "Delete action",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-16-008",
+          "label": "Permanent-delete confirmation policy",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-16-009",
+          "label": "New subfolder",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-16-010",
+          "label": "Rename subfolder",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-16-011",
+          "label": "Move subfolder",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-16-012",
+          "label": "Delete subfolder",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-16-013",
+          "label": "Hierarchy navigation",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-16-014",
+          "label": "System-folder identification",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-16-015",
+          "label": "Selected-folder name",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-16-016",
+          "label": "Parent",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-16-017",
+          "label": "Message count",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-16-018",
+          "label": "Subfolder count",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-16-019",
+          "label": "Mailbox owner",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-16-020",
+          "label": "Protected-folder refusal",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-16-021",
+          "label": "Non-empty explicit disposition and confirmation",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "PAGE-17",
+      "title": "Settings / Notifications",
+      "reference": "docs/design/osmap-ux-final-approved-20260919/images/17-OSMAP-settings-notifications-page.png",
+      "retained_source": null,
+      "owning_slices": [
+        "S04-01",
+        "S08-04"
+      ],
+      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "controls": [
+        {
+          "id": "R2-17-001",
+          "label": "New-mail events",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-17-002",
+          "label": "Mention events",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-17-003",
+          "label": "Security events",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-17-004",
+          "label": "OpenPGP status changes",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-17-005",
+          "label": "Delivery status",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-17-006",
+          "label": "Digest preference",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-17-007",
+          "label": "Sound preference",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-17-008",
+          "label": "Explicit desktop notification permission",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-17-009",
+          "label": "Recovery/security alerts mandatory",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-17-010",
+          "label": "Factual-event explanation",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "PAGE-18",
+      "title": "Settings / Privacy & Security",
+      "reference": "docs/design/osmap-ux-final-approved-20260919/images/18-OSMAP-settings-privacy-security-page.png",
+      "retained_source": null,
+      "owning_slices": [
+        "S04-01",
+        "S09-03"
+      ],
+      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "controls": [
+        {
+          "id": "R2-18-001",
+          "label": "Images/styles/iframes policy",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-18-002",
+          "label": "External tracking state",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-18-003",
+          "label": "Per-message exceptions policy control",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-18-004",
+          "label": "HTML sanitization state",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-18-005",
+          "label": "CSP state",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-18-006",
+          "label": "Source isolation state",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-18-007",
+          "label": "Attachment isolation state",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-18-008",
+          "label": "Filename safety state",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-18-009",
+          "label": "Inline active-content state",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-18-010",
+          "label": "Protected by Default scope explanation",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "PAGE-19",
+      "title": "Settings / OpenPGP",
+      "reference": "docs/design/osmap-ux-final-approved-20260919/images/19-OSMAP-settings-openpgp-page.png",
+      "retained_source": null,
+      "owning_slices": [
+        "S04-01",
+        "S05-02",
+        "S07-01"
+      ],
+      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "controls": [
+        {
+          "id": "R2-19-001",
+          "label": "Account capability",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-19-002",
+          "label": "Full key fingerprint",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-19-003",
+          "label": "Signing policy",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-19-004",
+          "label": "Encryption policy",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-19-005",
+          "label": "Encrypt-to-self policy",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-19-006",
+          "label": "Manage Keys",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-19-007",
+          "label": "Full-fingerprint binding enforced",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-19-008",
+          "label": "Missing-key fail-closed policy",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-19-009",
+          "label": "Automatic key discovery Off",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-19-010",
+          "label": "Private-key isolation status",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "PAGE-20",
+      "title": "Settings / Authentication & Recovery",
+      "reference": "docs/design/osmap-ux-final-approved-20260919/images/20-OSMAP-settings-authentication-recovery-page.png",
+      "retained_source": null,
+      "owning_slices": [
+        "S04-01",
+        "S04-02",
+        "S04-03",
+        "S04-04"
+      ],
+      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "controls": [
+        {
+          "id": "R2-20-001",
+          "label": "Password changed-at status",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-20-002",
+          "label": "Change password",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-20-003",
+          "label": "TOTP state and last use",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-20-004",
+          "label": "Manage TOTP",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-20-005",
+          "label": "Active session count",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-20-006",
+          "label": "Manage sessions",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-20-007",
+          "label": "Recovery-contact status",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-20-008",
+          "label": "Manage contact",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-20-009",
+          "label": "Recovery boundary explanation",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "PAGE-21",
+      "title": "OpenPGP Key Management",
+      "reference": "docs/design/osmap-ux-final-approved-20260919/images/21-OSMAP-openpgp-key-management-page.png",
+      "retained_source": null,
+      "owning_slices": [
+        "S05-02"
+      ],
+      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "controls": [
+        {
+          "id": "R2-21-001",
+          "label": "Settings security breadcrumb",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-21-002",
+          "label": "Import public key",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-21-003",
+          "label": "Add binding",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-21-004",
+          "label": "Account-key configured/unavailable state",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-21-005",
+          "label": "Bound account",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-21-006",
+          "label": "Full fingerprint",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-21-007",
+          "label": "Algorithm",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-21-008",
+          "label": "Created time",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-21-009",
+          "label": "Expiry",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-21-010",
+          "label": "Capabilities",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-21-011",
+          "label": "Binding trust status",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-21-012",
+          "label": "Copy fingerprint",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-21-013",
+          "label": "Rotate binding",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-21-014",
+          "label": "Remove binding",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-21-015",
+          "label": "Recipient/contact bindings",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-21-016",
+          "label": "Ready/Missing status",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-21-017",
+          "label": "Explicit trust and no discovery explanation",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "PAGE-22",
+      "title": "Password Change",
+      "reference": "docs/design/osmap-ux-final-approved-20260919/images/22-OSMAP-password-change-page.png",
+      "retained_source": null,
+      "owning_slices": [
+        "S04-02"
+      ],
+      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "controls": [
+        {
+          "id": "R2-22-001",
+          "label": "Authentication & Recovery breadcrumb",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-22-002",
+          "label": "Current password",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-22-003",
+          "label": "Current password independent Show/Hide",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-22-004",
+          "label": "New password",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-22-005",
+          "label": "New password independent Show/Hide",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-22-006",
+          "label": "Confirm new password",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-22-007",
+          "label": "Confirmation independent Show/Hide",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-22-008",
+          "label": "Fresh reauthentication",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-22-009",
+          "label": "Cancel",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-22-010",
+          "label": "Change password",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-22-011",
+          "label": "Actual browser-session impact",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-22-012",
+          "label": "Actual mail-authentication impact",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-22-013",
+          "label": "Explicit partial-failure reconciliation",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-22-014",
+          "label": "No password logging or retained evidence",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "PAGE-23",
+      "title": "Recovery Contact",
+      "reference": "docs/design/osmap-ux-final-approved-20260919/images/23-OSMAP-recovery-contact-page.png",
+      "retained_source": null,
+      "owning_slices": [
+        "S04-03",
+        "S04-04"
+      ],
+      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "controls": [
+        {
+          "id": "R2-23-001",
+          "label": "Current verified/pending/missing contact",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-23-002",
+          "label": "Verified timestamp",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-23-003",
+          "label": "Change contact",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-23-004",
+          "label": "Remove contact",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-23-005",
+          "label": "New email",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-23-006",
+          "label": "Confirm password and step-up",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-23-007",
+          "label": "Send verification",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-23-008",
+          "label": "One-use expiry explanation",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-23-009",
+          "label": "Notify previous verified contact",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-23-010",
+          "label": "No MFA bypass boundary",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "PAGE-24",
+      "title": "Active Sessions",
+      "reference": "docs/design/osmap-ux-final-approved-20260919/images/24-OSMAP-active-sessions-page.png",
+      "retained_source": null,
+      "owning_slices": [
+        "S04-01"
+      ],
+      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "controls": [
+        {
+          "id": "R2-24-001",
+          "label": "Sign out all other sessions",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-24-002",
+          "label": "Actual device metadata",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-24-003",
+          "label": "Actual browser metadata",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-24-004",
+          "label": "Known location or unknown",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-24-005",
+          "label": "Last activity",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-24-006",
+          "label": "Current/active state",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-24-007",
+          "label": "Revoke selected session",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-24-008",
+          "label": "Browser versus IMAP/SMTP revocation scope",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "PAGE-25",
+      "title": "Login",
+      "reference": null,
+      "retained_source": "src/http_ui.rs::render_login_page at implementation_baseline",
+      "owning_slices": [
+        "S01-04",
+        "S09-03"
+      ],
+      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "controls": [
+        {
+          "id": "R2-25-001",
+          "label": "Retain current login composition and controls",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-25-002",
+          "label": "Retain actual password/TOTP validation",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-25-003",
+          "label": "Existing theme regression without redesign",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "PAGE-26",
+      "title": "TOTP Challenge",
+      "reference": null,
+      "retained_source": "src/http_ui.rs::render_login_page at implementation_baseline",
+      "owning_slices": [
+        "S01-04",
+        "S09-03"
+      ],
+      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "controls": [
+        {
+          "id": "R2-26-001",
+          "label": "Retain current TOTP input in login implementation",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-26-002",
+          "label": "Retain actual challenge/validation/error behaviour",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-26-003",
+          "label": "No invented replacement page",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        }
+      ]
+    },
+    {
+      "id": "PAGE-27",
+      "title": "Canonical State Matrix",
+      "reference": "docs/design/osmap-ux-final-approved-20260919/images/27-OSMAP-state-matrix.png",
+      "retained_source": null,
+      "owning_slices": [
+        "S02-04",
+        "S06-04",
+        "S07-01",
+        "S09-02"
+      ],
+      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "controls": [
+        {
+          "id": "R2-27-001",
+          "label": "No messages with Compose",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-27-002",
+          "label": "Failed load with read-only Retry",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-27-003",
+          "label": "Attachment unavailable",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-27-004",
+          "label": "OpenPGP unavailable with Settings",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-27-005",
+          "label": "Missing key with Manage Keys",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-27-006",
+          "label": "Unverified signature",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-27-007",
+          "label": "Remote content blocked",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        },
+        {
+          "id": "R2-27-008",
+          "label": "Empty search with Clear filters",
+          "status": "PENDING_RECONCILIATION",
+          "evidence": []
+        }
+      ]
+    }
+  ]
+}

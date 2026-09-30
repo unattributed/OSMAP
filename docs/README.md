@@ -71,6 +71,10 @@ Current public documentation map:
 - `UX_EXECUTION_LEDGER.md`
 - `UX_S00_INTAKE.md`
 - `UX_DECISIONS.md`
+- `UX_PLAN_AMENDMENT_R2.md` — final approved 25-image / 27-page reference correction
+- `design/osmap-ux-final-approved-20260919/` — byte-preserved approved bundle
+- `design/osmap-ux-final-approved-20260919/APPROVAL_LOCK_FINAL.md`
+- `design/osmap-ux-final-approved-20260919/README.md`
 - `UX_S00_ACCEPTANCE.md`
 - `TOTP_LIFECYCLE_SPRINT.md`
 - `TOTP_LIFECYCLE_OBSD1_EVIDENCE.md`

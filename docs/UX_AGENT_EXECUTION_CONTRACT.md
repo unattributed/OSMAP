@@ -1,6 +1,6 @@
 # OSMAP UX agent execution contract
 
-Normative plan revision 1. Intended for a Codex agent configured by the operator
+Normative plan revision 2. Intended for a Codex agent configured by the operator
 with the requested GPT-6 model and high reasoning. Model selection is an operator
 runtime setting, not something this document can enforce or prove. Correctness
 comes from source inspection, explicit authority, tests and review, not a model
@@ -20,6 +20,14 @@ Frozen normative files:
 - `docs/UX_FULL_FUNCTIONAL_EPIC.md`
 - `docs/UX_FULL_FUNCTIONAL_SLICES.md`
 - `docs/UX_AGENT_EXECUTION_CONTRACT.md`
+- `docs/UX_PLAN_AMENDMENT_R2.md`
+- `docs/design/osmap-ux-final-approved-20260919/` (all exact bundle files)
+
+`maint/ux/approved_pages.json` is the additional page/control inventory. Its
+statuses/evidence may progress without changing requirements; removing or
+changing a normative control requires the amendment process. Earlier A/C/I/F
+visual checks do not count as final-bundle acceptance. Never regenerate the
+approved PNGs or redesign retained Login/TOTP.
 
 Their hashes are in `docs/UX_PLAN_SHA256SUMS`. The operator-accepted signed Git
 commit containing that manifest is the trust anchor; a manifest edited together
@@ -41,6 +49,9 @@ Progress, evidence references and pending decisions belong in
    Compare the current manifest to the accepted signed version (or latest
    explicitly approved amendment). A mismatch is a blocker, never a prompt to
    regenerate hashes.
+   Also verify the nested bundle manifest from its directory. The operator's
+   explicit 2026-09-30 UTC reference correction authorizes revision 2; preserve
+   revision 1's signed history and its bounded functional evidence.
 4. Find the first non-ACCEPTED slice in the approved sequence. Confirm its
    dependencies, decision gates and operator instruction authorizing execution.
    Do not infer completion from a commit message, screenshot or previous summary.
@@ -118,6 +129,12 @@ approval to push. A separate explicit sync/push permits only the reviewed
 outgoing changes; fetch and prove local/remote equality afterward. Never force
 push, silently rebase, bypass protection or fabricate CI statuses.
 
+For the current autonomous one-day mandate, the operator explicitly superseded
+per-checkpoint stop-and-wait: record a signed verified delivery and continue.
+This does not waive independent human acceptance or authorize Git sync.
+The operator limits progress messages to slice completion, sprint completion
+and epic status. Preserve this preference through resumptions.
+
 ## State machine and resumability
 
 `NOT_STARTED -> IN_PROGRESS -> VERIFIED -> COMMITTED -> ACCEPTED`.
@@ -177,4 +194,3 @@ evidence S00's actual work is done.
 > stop for operator review before sync. Report blockers, required human actions,
 > and a concise slice completion summary. Do not infer cryptographic capability,
 > current host state, test success or operator acceptance.
-
