@@ -84,6 +84,7 @@ def main():
             assert page.locator("input[name=reply_message_guid]").count() == 0
             visit(page, "/drafts")
             assert "private@example.test" not in page.locator("main").inner_text()
+            page.locator(".draft-discard summary").click()
             page.get_by_role("link", name="Resume", exact=True).click()
             page.wait_for_load_state("networkidle")
             assert page.get_by_label("Subject", exact=True).input_value() == "Synthetic saved reply"
@@ -108,6 +109,17 @@ def main():
             assert page.locator("input[name=reply_message_guid]").count() == 0
             assert page.locator("input[name^=include_original_attachment_]:checked").count() == 0
             checks.append("forward begins with no recipients, no reply thread and no automatically selected source attachments")
+            assert page.locator("input[name=source_mailbox_guid]").count() == 1
+            assert page.locator("input[name=source_message_guid]").count() == 1
+            page.get_by_label("To", exact=True).fill("desk@example.test")
+            page.get_by_label("Body", exact=True).fill("Forward draft with one owned source attachment")
+            page.locator('input[name^=include_original_attachment_][value="1.2"]').check()
+            page.get_by_role("button", name="Save Draft", exact=True).click()
+            page.wait_for_load_state("networkidle")
+            assert "/draft?id=" in page.url
+            source_draft = page.url.removeprefix(origin)
+            assert page.locator('input[name^=include_original_attachment_][value="1.2"]').is_checked()
+            checks.append("forward saves only the explicit source attachment and both stored identity fields")
 
             other = context()
             other_page = other.new_page()
@@ -116,6 +128,37 @@ def main():
             assert other_page.get_by_label("Body", exact=True).count() == 0
             other.close()
             checks.append("a reader link from another account cannot expose quoted content or produce a reply")
+            owned.close()
+            stop_server(process, root)
+            process, origin = start_server(root, Path(__file__).resolve().parents[2], log)
+            owned = context("OSMAP/ReplyRecipients;SourceStale")
+            page = owned.new_page()
+            login(page, "alice")
+            visit(page, source_draft)
+            assert page.get_by_label("Body", exact=True).input_value() == "Forward draft with one owned source attachment"
+            for name in ["Save Draft", "Send Message"]:
+                with page.expect_navigation(wait_until="networkidle") as navigation:
+                    page.get_by_role("button", name=name, exact=True).click()
+                assert navigation.value.status == 409
+                assert page.get_by_label("Body", exact=True).input_value() == "Forward draft with one owned source attachment"
+                assert page.locator('input[name^=include_original_attachment_][value="1.2"]').is_checked()
+                assert "could not be revalidated" in page.get_by_role("alert").inner_text()
+            checks.append("after restart, a changed original refuses Save and Send while retaining draft text and attachment selection")
+            for scheme in ["light", "dark"]:
+                page.emulate_media(color_scheme=scheme)
+                for width in [360, 768, 1600]:
+                    page.set_viewport_size({"width": width, "height": 1100})
+                    page.screenshot(path=str(args.output / f"source-recovery-{scheme}-{width}.png"), full_page=True)
+                    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
+            page.locator('input[name^=include_original_attachment_][value="1.2"]').uncheck()
+            page.get_by_role("button", name="Save Draft", exact=True).click()
+            page.wait_for_load_state("networkidle")
+            assert page.url == origin + source_draft
+            assert page.locator("input[name^=include_original_attachment_]").count() == 0
+            assert page.get_by_label("Body", exact=True).input_value() == "Forward draft with one owned source attachment"
+            page.get_by_role("button", name="Send Message", exact=True).click()
+            page.wait_for_url(origin + "/compose?sent=1")
+            checks.append("clearing the unavailable source selection saves the text and allows one synthetic sink submission without that file")
             owned.close()
             assert not blocked
             report = {"passed": True, "synthetic_only": True, "engine": args.engine,

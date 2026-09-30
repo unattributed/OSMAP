@@ -46,6 +46,7 @@ pub(crate) struct ComposePageModel<'a> {
     pub removed_attachment_indices: &'a [usize],
     pub source_mailbox_name: Option<&'a str>,
     pub source_uid: Option<u64>,
+    pub source_version: Option<&'a crate::message_metadata::MessageVersion>,
     pub source_attachments: &'a [AttachmentMetadata],
     pub selected_source_part_paths: &'a [String],
     pub reply_reference: Option<&'a crate::reply_thread::ReplyReference>,
@@ -1571,7 +1572,7 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
         if model.draft_id.is_some() { "Saved Draft" } else { "New Message" },
         escape_html(model.csrf_token),
         draft_id_field,
-        render_source_attachment_hidden_fields(model.source_mailbox_name, model.source_uid),
+        render_source_attachment_hidden_fields(model.source_mailbox_name, model.source_uid, model.source_version),
         render_reply_reference(model.reply_reference), escape_html(model.canonical_username),
         escape_html(model.to_value),
         if model.cc_value.is_empty() { "" } else { " open" },
@@ -1673,15 +1674,17 @@ fn render_contact_selection(book: Option<&crate::contacts::ContactBook>) -> Stri
 fn render_source_attachment_hidden_fields(
     source_mailbox_name: Option<&str>,
     source_uid: Option<u64>,
+    source_version: Option<&crate::message_metadata::MessageVersion>,
 ) -> String {
     match (source_mailbox_name, source_uid) {
         (Some(mailbox), Some(uid)) => format!(
             concat!(
                 "<input type=\"hidden\" name=\"source_mailbox\" value=\"{}\">",
-                "<input type=\"hidden\" name=\"source_uid\" value=\"{}\">"
+                "<input type=\"hidden\" name=\"source_uid\" value=\"{}\">{}"
             ),
             escape_html(mailbox),
             uid,
+            source_version.map(|version| format!("<input type=\"hidden\" name=\"source_mailbox_guid\" value=\"{}\"><input type=\"hidden\" name=\"source_message_guid\" value=\"{}\">", escape_html(&version.mailbox_guid), escape_html(&version.message_guid))).unwrap_or_default(),
         ),
         _ => String::new(),
     }

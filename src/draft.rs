@@ -92,6 +92,7 @@ pub struct DraftRecord {
 pub struct DraftSourceAttachments {
     pub mailbox_name: String,
     pub uid: u64,
+    pub version: Option<crate::message_metadata::MessageVersion>,
     pub part_paths: Vec<String>,
 }
 
@@ -158,6 +159,7 @@ impl DraftRecord {
             .source_attachments
             .map(|source| validate_source_attachments(policy, source))
             .transpose()?;
+        validate_combined_attachment_count(policy, &request, source_attachments.as_ref())?;
 
         Ok(Self {
             draft_id: input.draft_id,
@@ -525,6 +527,11 @@ impl DraftStore for FileDraftStore {
         if let Some(source) = record.source_attachments.clone() {
             validate_source_attachments(self.policy, source)?;
         }
+        validate_combined_attachment_count(
+            self.policy,
+            &record.request,
+            record.source_attachments.as_ref(),
+        )?;
         let _lock = self.acquire_exclusive_lock(&record.canonical_username)?;
 
         self.cleanup_expired_unlocked(&record.canonical_username, now)?;
@@ -729,6 +736,21 @@ fn validate_canonical_username(canonical_username: &str) -> Result<(), DraftErro
     Ok(())
 }
 
+fn validate_combined_attachment_count(
+    policy: DraftPolicy,
+    content: &DraftContent,
+    source: Option<&DraftSourceAttachments>,
+) -> Result<(), DraftError> {
+    if content.attachments.len() + source.map_or(0, |source| source.part_paths.len())
+        > policy.compose_policy.max_attachments
+    {
+        return Err(DraftError {
+            reason: "draft attachment count exceeded maximum".into(),
+        });
+    }
+    Ok(())
+}
+
 fn validate_source_attachments(
     policy: DraftPolicy,
     source: DraftSourceAttachments,
@@ -753,6 +775,19 @@ fn validate_source_attachments(
             reason: "draft source UID must be positive".to_string(),
         });
     }
+    let version = if let Some(version) = &source.version {
+        Some(
+            crate::message_metadata::MessageVersion::new(
+                version.mailbox_guid.clone(),
+                version.message_guid.clone(),
+            )
+            .map_err(|_| DraftError {
+                reason: "draft source identity was invalid".into(),
+            })?,
+        )
+    } else {
+        None
+    };
     if source.part_paths.is_empty() {
         return Err(DraftError {
             reason: "draft source attachment selection must not be empty".to_string(),
@@ -788,13 +823,14 @@ fn validate_source_attachments(
     Ok(DraftSourceAttachments {
         mailbox_name: source.mailbox_name,
         uid: source.uid,
+        version,
         part_paths: validated,
     })
 }
 
 fn serialize_draft_metadata(record: &DraftRecord) -> String {
     let mut content = format!(
-        "version=6\n\
+        "version=7\n\
 revision={}\n\
 starred={}\n\
 draft_id={}\n\
@@ -857,6 +893,13 @@ attachment_{index}_body_file={}\n",
                 hex_lower(part_path.as_bytes())
             ));
         }
+        if let Some(version) = &source.version {
+            content.push_str(&format!(
+                "source_mailbox_guid_hex={}\nsource_message_guid_hex={}\n",
+                hex_lower(version.mailbox_guid.as_bytes()),
+                hex_lower(version.message_guid.as_bytes())
+            ));
+        }
     } else {
         content.push_str("source_attachment_count=0\n");
     }
@@ -887,6 +930,8 @@ fn parse_draft_metadata(
     let mut attachment_fields = Vec::<AttachmentMetadataFields>::new();
     let mut source_mailbox = None;
     let mut source_uid = None;
+    let mut source_mailbox_guid = None;
+    let mut source_message_guid = None;
     let mut source_attachment_count = None;
     let mut source_part_paths = Vec::<Option<String>>::new();
     let mut reply_parent = None;
@@ -958,6 +1003,8 @@ fn parse_draft_metadata(
             }
             "source_mailbox_hex" => source_mailbox = Some(decode_hex_string(value)?),
             "source_uid" => source_uid = Some(parse_u64_field("source_uid", value)?),
+            "source_mailbox_guid_hex" => source_mailbox_guid = Some(decode_hex_string(value)?),
+            "source_message_guid_hex" => source_message_guid = Some(decode_hex_string(value)?),
             "source_attachment_count" => {
                 source_attachment_count = Some(parse_usize_field("source_attachment_count", value)?)
             }
@@ -986,7 +1033,7 @@ fn parse_draft_metadata(
     }
     if !matches!(
         version.as_deref(),
-        Some("1") | Some("2") | Some("3") | Some("4") | Some("5") | Some("6")
+        Some("1") | Some("2") | Some("3") | Some("4") | Some("5") | Some("6") | Some("7")
     ) {
         return Err(DraftError {
             reason: "unsupported draft metadata version".to_string(),
@@ -995,7 +1042,7 @@ fn parse_draft_metadata(
 
     let draft_id = required_field("draft_id", draft_id)?;
     let revision = match (version.as_deref(), revision) {
-        (Some("5" | "6"), Some(value)) if value > 0 => value,
+        (Some("5" | "6" | "7"), Some(value)) if value > 0 => value,
         (Some("1" | "2" | "3" | "4"), None) => 0,
         _ => {
             return Err(DraftError {
@@ -1004,7 +1051,7 @@ fn parse_draft_metadata(
         }
     };
     let starred = match (version.as_deref(), starred) {
-        (Some("6"), Some(value)) => value,
+        (Some("6" | "7"), Some(value)) => value,
         (Some("1" | "2" | "3" | "4" | "5"), None) => false,
         _ => {
             return Err(DraftError {
@@ -1015,7 +1062,7 @@ fn parse_draft_metadata(
     let reply_thread = match (reply_parent, reply_references, reply_shortened) {
         (None, None, None) => None,
         (Some(parent), Some(references), Some(shortened))
-            if matches!(version.as_deref(), Some("4" | "5" | "6")) =>
+            if matches!(version.as_deref(), Some("4" | "5" | "6" | "7")) =>
         {
             Some(
                 crate::reply_thread::ReplyThread::from_stored(
@@ -1110,7 +1157,7 @@ fn parse_draft_metadata(
         reason: error.reason,
     })?;
     request.reply_thread = reply_thread;
-    if !matches!(version.as_deref(), Some("5" | "6")) {
+    if !matches!(version.as_deref(), Some("5" | "6" | "7")) {
         crate::send::ComposeRequest::new_with_routing(
             policy.compose_policy,
             &request.recipients_text,
@@ -1124,12 +1171,31 @@ fn parse_draft_metadata(
             reason: error.reason,
         })?;
     }
+    let source_version = match (source_mailbox_guid, source_message_guid) {
+        (None, None) => None,
+        (Some(mailbox), Some(message)) if version.as_deref() == Some("7") => Some(
+            crate::message_metadata::MessageVersion::new(mailbox, message).map_err(|_| {
+                DraftError {
+                    reason: "invalid stored source identity".into(),
+                }
+            })?,
+        ),
+        _ => {
+            return Err(DraftError {
+                reason: "incomplete or incompatible stored source identity".into(),
+            })
+        }
+    };
     let source_attachments = if version.as_deref() == Some("1") {
         None
     } else {
         let count = required_field("source_attachment_count", source_attachment_count)?;
         if count == 0 {
-            if source_mailbox.is_some() || source_uid.is_some() || !source_part_paths.is_empty() {
+            if source_mailbox.is_some()
+                || source_uid.is_some()
+                || source_version.is_some()
+                || !source_part_paths.is_empty()
+            {
                 return Err(DraftError {
                     reason: "draft source metadata was inconsistent".to_string(),
                 });
@@ -1150,12 +1216,16 @@ fn parse_draft_metadata(
                 DraftSourceAttachments {
                     mailbox_name: required_field("source mailbox", source_mailbox)?,
                     uid: required_field("source UID", source_uid)?,
+                    version: source_version,
                     part_paths,
                 },
             )?)
         }
     };
 
+    if version.as_deref() == Some("7") {
+        validate_combined_attachment_count(policy, &request, source_attachments.as_ref())?;
+    }
     Ok(Some(DraftRecord {
         draft_id,
         canonical_username,
@@ -1528,7 +1598,7 @@ mod tests {
         };
         assert!(parse(
             &metadata
-                .replace("version=6", "version=3")
+                .replace("version=7", "version=3")
                 .replace("starred=0\n", "")
                 .replace("revision=1\n", "")
         )
@@ -1548,7 +1618,7 @@ mod tests {
         .is_err());
         draft.request.reply_thread = None;
         let legacy = serialize_draft_metadata(&draft)
-            .replace("version=6", "version=3")
+            .replace("version=7", "version=3")
             .replace("starred=0\n", "")
             .replace("revision=1\n", "");
         draft.revision = Some(0);
@@ -1608,6 +1678,7 @@ mod tests {
         draft.source_attachments = Some(DraftSourceAttachments {
             mailbox_name: "INBOX".to_string(),
             uid: 9,
+            version: None,
             part_paths: vec!["1.2".to_string()],
         });
 
@@ -1642,6 +1713,7 @@ mod tests {
         duplicate.source_attachments = Some(DraftSourceAttachments {
             mailbox_name: "INBOX".to_string(),
             uid: 9,
+            version: None,
             part_paths: vec!["1.2".to_string(), "1.2".to_string()],
         });
         assert!(DraftRecord::new(DraftPolicy::default(), duplicate)
@@ -1653,6 +1725,7 @@ mod tests {
         control.source_attachments = Some(DraftSourceAttachments {
             mailbox_name: "INBOX\nJunk".to_string(),
             uid: 9,
+            version: None,
             part_paths: vec!["1.2".to_string()],
         });
         assert!(DraftRecord::new(DraftPolicy::default(), control)
@@ -1664,6 +1737,7 @@ mod tests {
         oversized.source_attachments = Some(DraftSourceAttachments {
             mailbox_name: "M".repeat(DEFAULT_DRAFT_SOURCE_MAILBOX_MAX_LEN + 1),
             uid: 9,
+            version: None,
             part_paths: vec!["1.2".to_string()],
         });
         assert!(DraftRecord::new(DraftPolicy::default(), oversized)

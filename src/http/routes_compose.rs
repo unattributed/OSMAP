@@ -36,6 +36,7 @@ where
         let mut body_value = String::new();
         let mut source_mailbox_name: Option<String> = None;
         let mut source_uid: Option<u64> = None;
+        let mut source_version = None;
         let mut source_attachments = Vec::new();
         let mut reply_reference = None;
         let expected_version = match super::routes_reply::query_version(&request.query_params) {
@@ -126,7 +127,8 @@ where
                             reply_reference = rendered.metadata.as_ref().and_then(|metadata|
                                 crate::reply_thread::ReplyReference::new(mailbox_name.clone(), uid, metadata.version.clone()).ok());
                         }
-                        if !rendered.attachments.is_empty() {
+                        if !rendered.attachments.is_empty() && rendered.metadata.is_some() {
+                            source_version = rendered.metadata.as_ref().map(|metadata| metadata.version.clone());
                             source_mailbox_name = Some(mailbox_name);
                             source_uid = Some(uid);
                             source_attachments = rendered.attachments;
@@ -195,6 +197,7 @@ where
                     removed_attachment_indices: &[],
                     source_mailbox_name: source_mailbox_name.as_deref(),
                     source_uid,
+                    source_version: source_version.as_ref(),
                     source_attachments: &source_attachments,
                     selected_source_part_paths: &[],
                 }),
@@ -217,7 +220,7 @@ where
         let parsed_form = match parse_compose_form(
             &request.body,
             request.headers.get("content-type").map(String::as_str),
-            self.policy.max_form_fields.saturating_add(5),
+            self.policy.max_form_fields.saturating_add(7),
             self.policy.max_upload_body_bytes,
             ComposePolicy::default(),
         ) {
@@ -331,147 +334,47 @@ where
             }
         };
         let mut send_attachments = attachments;
-        if !original_attachment_parts.is_empty() {
-            if send_attachments.len() + original_attachment_parts.len()
-                > ComposePolicy::default().max_attachments
-            {
+        if send_attachments.len() + original_attachment_parts.len()
+            > ComposePolicy::default().max_attachments
+        {
+            let (status, reason, public_reason) =
+                super::routes_source_attachments::SourceFailure::Count.response();
+            return HandledHttpResponse {
+                response: self.retained_compose_failure(
+                    &validated_session,
+                    &form,
+                    reply_reference.as_ref(),
+                    public_reason,
+                    status,
+                    reason,
+                ),
+                audit_events,
+            };
+        }
+        match self.resolve_source_attachments(
+            context,
+            &validated_session,
+            &form,
+            &original_attachment_parts,
+            &mut audit_events,
+            "original_attachment_send",
+        ) {
+            Ok(Some((_, attachments))) => send_attachments.extend(attachments),
+            Ok(None) => {}
+            Err(error) => {
+                let (status, reason, public_reason) = error.response();
                 return HandledHttpResponse {
-                    response: html_response(
-                        400,
-                        "Bad Request",
-                        "Invalid Compose Request",
-                        "<p>The selected attachments exceeded the compose attachment count limit.</p>",
+                    response: self.retained_compose_failure(
+                        &validated_session,
+                        &form,
+                        reply_reference.as_ref(),
+                        public_reason,
+                        status,
+                        reason,
                     ),
                     audit_events,
                 };
             }
-
-            let source_mailbox = match form.get("source_mailbox").filter(|value| !value.is_empty())
-            {
-                Some(source_mailbox) => source_mailbox.clone(),
-                None => {
-                    return HandledHttpResponse {
-                        response: html_response(
-                            400,
-                            "Bad Request",
-                            "Invalid Compose Request",
-                            "<p>The selected source attachments were missing a source mailbox.</p>",
-                        ),
-                        audit_events,
-                    };
-                }
-            };
-            let source_uid = match form.get("source_uid").and_then(|value| value.parse().ok()) {
-                Some(source_uid) => source_uid,
-                None => {
-                    return HandledHttpResponse {
-                        response: html_response(
-                            400,
-                            "Bad Request",
-                            "Invalid Compose Request",
-                            "<p>The selected source attachments were missing a valid source UID.</p>",
-                        ),
-                        audit_events,
-                    };
-                }
-            };
-
-            let (budget_guard, budget_event) = match self.acquire_mailbox_budget(
-                context,
-                &validated_session,
-                "original_attachment_send",
-            ) {
-                Ok(result) => result,
-                Err(mut response) => {
-                    audit_events.extend(response.audit_events);
-                    response.audit_events = audit_events;
-                    return response;
-                }
-            };
-            audit_events.push(budget_event);
-
-            for part_path in &original_attachment_parts {
-                let download_outcome = self.gateway.download_attachment(
-                    context,
-                    &validated_session,
-                    &source_mailbox,
-                    source_uid,
-                    part_path,
-                );
-                audit_events.extend(download_outcome.audit_events);
-                match download_outcome.decision {
-                    BrowserAttachmentDownloadDecision::Downloaded { attachment, .. } => {
-                        match UploadedAttachment::new(
-                            ComposePolicy::default(),
-                            attachment.filename,
-                            attachment.content_type,
-                            attachment.body,
-                        ) {
-                            Ok(attachment) => send_attachments.push(attachment),
-                            Err(error) => {
-                                audit_events.push(self.release_request_budget(
-                                    budget_guard,
-                                    "original_attachment_send",
-                                    context,
-                                    &validated_session,
-                                ));
-                                return HandledHttpResponse {
-                                    response: html_response(
-                                        400,
-                                        "Bad Request",
-                                        "Invalid Compose Request",
-                                        "<p>A selected source attachment exceeded the compose limits.</p>",
-                                    ),
-                                    audit_events: {
-                                        audit_events.push(
-                                            build_http_warning_event(
-                                                "http_send_original_attachment_rejected",
-                                                "original attachment rejected before send",
-                                                context,
-                                            )
-                                            .with_field("reason", error.reason),
-                                        );
-                                        audit_events
-                                    },
-                                };
-                            }
-                        }
-                    }
-                    BrowserAttachmentDownloadDecision::Denied { public_reason } => {
-                        audit_events.push(self.release_request_budget(
-                            budget_guard,
-                            "original_attachment_send",
-                            context,
-                            &validated_session,
-                        ));
-                        return HandledHttpResponse {
-                            response: html_response(
-                                503,
-                                "Service Unavailable",
-                                "Compose Unavailable",
-                                "<p>A selected source attachment could not be fetched safely.</p>",
-                            ),
-                            audit_events: {
-                                audit_events.push(
-                                    build_http_warning_event(
-                                        "http_send_original_attachment_fetch_failed",
-                                        "original attachment fetch failed before send",
-                                        context,
-                                    )
-                                    .with_field("public_reason", public_reason),
-                                );
-                                audit_events
-                            },
-                        };
-                    }
-                }
-            }
-            audit_events.push(self.release_request_budget(
-                budget_guard,
-                "original_attachment_send",
-                context,
-                &validated_session,
-            ));
         }
         let removed_attachment_indices =
             super::routes_draft::removed_attachment_indices(&form).unwrap_or_default();
@@ -498,7 +401,7 @@ where
                         Ok(attachments) => attachments,
                         Err(_) => {
                             return HandledHttpResponse {
-                                response: self.draft_send_failure(
+                                response: self.retained_compose_failure(
                                     &validated_session,
                                     &form,
                                     reply_reference.as_ref(),
@@ -522,7 +425,7 @@ where
                     && draft.draft_id == draft_id =>
                 {
                     return HandledHttpResponse {
-                        response: self.draft_send_failure(
+                        response: self.retained_compose_failure(
                             &validated_session,
                             &form,
                             reply_reference.as_ref(),
@@ -541,7 +444,7 @@ where
                 }
                 BrowserDraftLoadDecision::NotFound => {
                     return HandledHttpResponse {
-                        response: self.draft_send_failure(
+                        response: self.retained_compose_failure(
                             &validated_session,
                             &form,
                             reply_reference.as_ref(),
@@ -554,7 +457,7 @@ where
                 }
                 BrowserDraftLoadDecision::Denied { public_reason } => {
                     return HandledHttpResponse {
-                        response: self.draft_send_failure(
+                        response: self.retained_compose_failure(
                             &validated_session,
                             &form,
                             reply_reference.as_ref(),
@@ -641,6 +544,7 @@ where
                         removed_attachment_indices: &removed_attachment_indices,
                         source_mailbox_name: form.get("source_mailbox").map(String::as_str),
                         source_uid: form.get("source_uid").and_then(|value| value.parse().ok()),
+                        source_version: super::routes_source_attachments::source_version(&form).ok().flatten().as_ref(),
                         source_attachments: &[],
                         selected_source_part_paths: &original_attachment_parts,
                     }),
@@ -663,7 +567,7 @@ where
         handled
     }
 
-    fn draft_send_failure(
+    pub(super) fn retained_compose_failure(
         &self,
         session: &ValidatedSession,
         form: &BTreeMap<String, String>,
@@ -692,6 +596,7 @@ where
             removed_attachment_indices: &super::routes_draft::removed_attachment_indices(form).unwrap_or_default(),
             source_mailbox_name: form.get("source_mailbox").map(String::as_str),
             source_uid: form.get("source_uid").and_then(|value| value.parse().ok()),
+            source_version: super::routes_source_attachments::source_version(form).ok().flatten().as_ref(),
             source_attachments: &[],
             selected_source_part_paths: &selected_original_attachment_parts(form).unwrap_or_default(),
         }))

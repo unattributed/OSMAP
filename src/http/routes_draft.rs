@@ -262,47 +262,74 @@ where
                 draft,
                 canonical_username,
             } if canonical_username == validated_session.record.canonical_username
-                && draft.canonical_username == validated_session.record.canonical_username =>
+                && draft.canonical_username == validated_session.record.canonical_username
+                && draft.draft_id == draft_id =>
             {
                 let mut source_attachments = Vec::new();
+                let mut source_notice = None;
                 if let Some(source) = &draft.source_attachments {
-                    let source_outcome = self.gateway.view_message(
-                        context,
-                        &validated_session,
-                        &source.mailbox_name,
-                        source.uid,
-                    );
-                    audit_events.extend(source_outcome.audit_events);
-                    match source_outcome.decision {
-                        BrowserMessageViewDecision::Rendered { rendered, .. } => {
-                            if source.part_paths.iter().any(|selected| {
-                                !rendered
-                                    .attachments
-                                    .iter()
-                                    .any(|attachment| &attachment.part_path == selected)
-                            }) {
-                                return HandledHttpResponse {
-                                    response: html_response(
-                                        409,
-                                        "Conflict",
-                                        "Draft Source Changed",
-                                        "<p>One or more selected source attachments are no longer available. The draft was not changed or sent.</p>",
-                                    ),
-                                    audit_events,
-                                };
+                    source_notice = Some("Only the source attachments explicitly selected when this draft was saved remain selected.");
+                    if source.version.is_none() {
+                        source_notice = Some(public_reason_message("source_attachment_unverified"));
+                    } else {
+                        match self.acquire_mailbox_budget(
+                            context,
+                            &validated_session,
+                            "draft_resume_source",
+                        ) {
+                            Ok((guard, event)) => {
+                                audit_events.push(event);
+                                let source_outcome = self.gateway.view_message(
+                                    context,
+                                    &validated_session,
+                                    &source.mailbox_name,
+                                    source.uid,
+                                );
+                                audit_events.extend(source_outcome.audit_events);
+                                audit_events.push(self.release_request_budget(
+                                    guard,
+                                    "draft_resume_source",
+                                    context,
+                                    &validated_session,
+                                ));
+                                match source_outcome.decision {
+                                    BrowserMessageViewDecision::Rendered {
+                                        canonical_username,
+                                        rendered,
+                                    } if canonical_username
+                                        == validated_session.record.canonical_username
+                                        && rendered.mailbox_name == source.mailbox_name
+                                        && rendered.uid == source.uid
+                                        && rendered
+                                            .metadata
+                                            .as_ref()
+                                            .map(|metadata| &metadata.version)
+                                            == source.version.as_ref()
+                                        && source.part_paths.iter().all(|selected| {
+                                            rendered
+                                                .attachments
+                                                .iter()
+                                                .any(|attachment| &attachment.part_path == selected)
+                                        }) =>
+                                    {
+                                        source_attachments = rendered.attachments
+                                    }
+                                    BrowserMessageViewDecision::Rendered { .. } => {
+                                        source_notice =
+                                            Some(public_reason_message("source_attachment_changed"))
+                                    }
+                                    BrowserMessageViewDecision::Denied { .. } => {
+                                        source_notice = Some(public_reason_message(
+                                            "source_attachment_unavailable",
+                                        ))
+                                    }
+                                }
                             }
-                            source_attachments = rendered.attachments;
-                        }
-                        BrowserMessageViewDecision::Denied { .. } => {
-                            return HandledHttpResponse {
-                                response: html_response(
-                                    503,
-                                    "Service Unavailable",
-                                    "Draft Source Unavailable",
-                                    "<p>The source message for this draft could not be revalidated safely. The draft was not changed or sent.</p>",
-                                ),
-                                audit_events,
-                            };
+                            Err(response) => {
+                                audit_events.extend(response.audit_events);
+                                source_notice =
+                                    Some(public_reason_message("source_attachment_unavailable"));
+                            }
                         }
                     }
                 }
@@ -319,9 +346,7 @@ where
                             csrf_token: &validated_session.record.csrf_token,
                             success_message: None,
                             error_message: None,
-                            context_notice: draft.source_attachments.as_ref().map(|_| {
-                                "Only the source attachments explicitly selected when this draft was saved remain selected."
-                            }),
+                            context_notice: source_notice,
                             to_value: &draft.request.recipients_text,
                             cc_value: &draft.request.cc_text,
                             bcc_value: &draft.request.bcc_text,
@@ -335,10 +360,11 @@ where
                                 .source_attachments
                                 .as_ref()
                                 .map(|source| source.mailbox_name.as_str()),
-                            source_uid: draft
+                            source_uid: draft.source_attachments.as_ref().map(|source| source.uid),
+                            source_version: draft
                                 .source_attachments
                                 .as_ref()
-                                .map(|source| source.uid),
+                                .and_then(|source| source.version.as_ref()),
                             source_attachments: &source_attachments,
                             selected_source_part_paths: draft
                                 .source_attachments
@@ -397,7 +423,7 @@ where
         let parsed_form = match parse_compose_form(
             &request.body,
             request.headers.get("content-type").map(String::as_str),
-            self.policy.max_form_fields.saturating_add(5),
+            self.policy.max_form_fields.saturating_add(7),
             self.policy.max_upload_body_bytes,
             ComposePolicy::default(),
         ) {
@@ -470,6 +496,7 @@ where
                     removed_attachment_indices: &removed_attachment_indices(&form).unwrap_or_default(),
                     source_mailbox_name: form.get("source_mailbox").map(String::as_str),
                     source_uid: form.get("source_uid").and_then(|value| value.parse().ok()),
+                    source_version: super::routes_source_attachments::source_version(&form).ok().flatten().as_ref(),
                     source_attachments: &[],
                     selected_source_part_paths: &super::routes_compose::selected_original_attachment_parts(&form).unwrap_or_default(),
                 })),
@@ -528,79 +555,28 @@ where
                     };
                 }
             };
-        let source_attachments = if selected_source_parts.is_empty() {
-            None
-        } else {
-            let Some(source_mailbox) = form
-                .get("source_mailbox")
-                .filter(|mailbox| !mailbox.is_empty())
-                .cloned()
-            else {
+        let source_attachments = match self.resolve_source_attachments(
+            context,
+            &validated_session,
+            &form,
+            &selected_source_parts,
+            &mut audit_events,
+            "original_attachment_save",
+        ) {
+            Ok(value) => value.map(|(reference, _)| reference),
+            Err(error) => {
+                let (status, reason, public_reason) = error.response();
                 return HandledHttpResponse {
-                    response: html_response(
-                        400,
-                        "Bad Request",
-                        "Invalid Draft Request",
-                        "<p>The selected source attachments were missing a source mailbox.</p>",
+                    response: self.retained_compose_failure(
+                        &validated_session,
+                        &form,
+                        reply_reference.as_ref(),
+                        public_reason,
+                        status,
+                        reason,
                     ),
                     audit_events,
                 };
-            };
-            let Some(source_uid) = form
-                .get("source_uid")
-                .and_then(|uid| uid.parse::<u64>().ok())
-            else {
-                return HandledHttpResponse {
-                    response: html_response(
-                        400,
-                        "Bad Request",
-                        "Invalid Draft Request",
-                        "<p>The selected source attachments were missing a valid source UID.</p>",
-                    ),
-                    audit_events,
-                };
-            };
-            let source_outcome =
-                self.gateway
-                    .view_message(context, &validated_session, &source_mailbox, source_uid);
-            audit_events.extend(source_outcome.audit_events);
-            match source_outcome.decision {
-                BrowserMessageViewDecision::Rendered { rendered, .. }
-                    if selected_source_parts.iter().all(|selected| {
-                        rendered
-                            .attachments
-                            .iter()
-                            .any(|attachment| &attachment.part_path == selected)
-                    }) =>
-                {
-                    Some(DraftSourceAttachments {
-                        mailbox_name: source_mailbox,
-                        uid: source_uid,
-                        part_paths: selected_source_parts,
-                    })
-                }
-                BrowserMessageViewDecision::Rendered { .. } => {
-                    return HandledHttpResponse {
-                        response: html_response(
-                            409,
-                            "Conflict",
-                            "Draft Source Changed",
-                            "<p>One or more selected source attachments could not be revalidated. The draft was not saved.</p>",
-                        ),
-                        audit_events,
-                    };
-                }
-                BrowserMessageViewDecision::Denied { .. } => {
-                    return HandledHttpResponse {
-                        response: html_response(
-                            503,
-                            "Service Unavailable",
-                            "Draft Source Unavailable",
-                            "<p>The source message could not be revalidated safely. The draft was not saved.</p>",
-                        ),
-                        audit_events,
-                    };
-                }
             }
         };
         let outcome = self.gateway.save_draft(
@@ -668,6 +644,7 @@ where
                             removed_attachment_indices: &removed_attachment_indices(&form).unwrap_or_default(),
                             source_mailbox_name: source_attachments.as_ref().map(|source| source.mailbox_name.as_str()),
                             source_uid: source_attachments.as_ref().map(|source| source.uid),
+                            source_version: source_attachments.as_ref().and_then(|source| source.version.as_ref()),
                             source_attachments: &[],
                             selected_source_part_paths: source_attachments.as_ref().map(|source| source.part_paths.as_slice()).unwrap_or_default(),
                         }),

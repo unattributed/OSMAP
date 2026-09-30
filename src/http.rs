@@ -23,6 +23,7 @@ mod routes_mail;
 mod routes_moves;
 mod routes_reply;
 mod routes_settings;
+mod routes_source_attachments;
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -831,6 +832,9 @@ mod tests {
     }
     mod draft_preservation_tests {
         include!("http/draft_preservation_tests.rs");
+    }
+    mod source_attachment_tests {
+        include!("http/source_attachment_tests.rs");
     }
     mod flag_fixtures {
         include!("http/flag_fixtures.rs");
@@ -4739,7 +4743,7 @@ mod tests {
                 concat!(
                     "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210",
                     "&to=bob%40example.com&subject=Source%20Draft&body=Body",
-                    "&source_mailbox=INBOX&source_uid=9",
+                    "&source_mailbox=INBOX&source_uid=9&source_mailbox_guid=bdb0b520cd1ca1698f6409144e01c408&source_message_guid=synthetic-bdb0b520-9",
                     "&include_original_attachment_1=1.2"
                 ),
             ),
@@ -4749,7 +4753,7 @@ mod tests {
         assert!(save_response
             .audit_events
             .iter()
-            .any(|event| event.action == "stub_message_view"));
+            .any(|event| event.action == "stub_source_read"));
 
         let location = location_header(&save_response);
         let draft_id = location.trim_start_matches("/draft?id=");
@@ -4771,7 +4775,7 @@ mod tests {
                 "/send",
                 &authenticated_same_origin_headers(),
                 &format!(
-                    "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&draft_id={draft_id}&draft_revision=1&to=bob%40example.com&subject=Source%20Draft&body=Body&source_mailbox=INBOX&source_uid=9&include_original_attachment_1=1.2"
+                    "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210&draft_id={draft_id}&draft_revision=1&to=bob%40example.com&subject=Source%20Draft&body=Body&source_mailbox=INBOX&source_uid=9&source_mailbox_guid=bdb0b520cd1ca1698f6409144e01c408&source_message_guid=synthetic-bdb0b520-9&include_original_attachment_1=1.2"
                 ),
             ),
             "127.0.0.1",
@@ -4780,7 +4784,7 @@ mod tests {
         assert!(send_response
             .audit_events
             .iter()
-            .any(|event| event.action == "stub_attachment_download"));
+            .any(|event| event.action == "stub_source_read"));
     }
 
     #[test]
@@ -4793,7 +4797,7 @@ mod tests {
                 concat!(
                     "csrf_token=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210",
                     "&to=bob%40example.com&subject=Stale&body=Body",
-                    "&source_mailbox=INBOX&source_uid=9",
+                    "&source_mailbox=INBOX&source_uid=9&source_mailbox_guid=bdb0b520cd1ca1698f6409144e01c408&source_message_guid=synthetic-bdb0b520-9",
                     "&include_original_attachment_1=1.99"
                 ),
             ),
@@ -5155,6 +5159,12 @@ mod tests {
             "Content-Disposition: form-data; name=\"source_uid\"\r\n\r\n",
             "9\r\n",
             "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"source_mailbox_guid\"\r\n\r\n",
+            "bdb0b520cd1ca1698f6409144e01c408\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"source_message_guid\"\r\n\r\n",
+            "synthetic-bdb0b520-9\r\n",
+            "--test-boundary\r\n",
             "Content-Disposition: form-data; name=\"include_original_attachment_1\"\r\n\r\n",
             "1.2\r\n",
             "--test-boundary--\r\n",
@@ -5182,7 +5192,7 @@ mod tests {
         assert!(response
             .audit_events
             .iter()
-            .any(|event| event.action == "stub_attachment_download"));
+            .any(|event| event.action == "stub_source_read"));
     }
 
     #[test]
@@ -5206,6 +5216,12 @@ mod tests {
             "--test-boundary\r\n",
             "Content-Disposition: form-data; name=\"source_uid\"\r\n\r\n",
             "9\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"source_mailbox_guid\"\r\n\r\n",
+            "bdb0b520cd1ca1698f6409144e01c408\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"source_message_guid\"\r\n\r\n",
+            "synthetic-bdb0b520-9\r\n",
             "--test-boundary\r\n",
             "Content-Disposition: form-data; name=\"include_original_attachment_1\"\r\n\r\n",
             "1.2\r\n",
@@ -5263,6 +5279,12 @@ mod tests {
             "Content-Disposition: form-data; name=\"source_uid\"\r\n\r\n",
             "9\r\n",
             "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"source_mailbox_guid\"\r\n\r\n",
+            "bdb0b520cd1ca1698f6409144e01c408\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"source_message_guid\"\r\n\r\n",
+            "synthetic-bdb0b520-9\r\n",
+            "--test-boundary\r\n",
             "Content-Disposition: form-data; name=\"include_original_attachment_1\"\r\n\r\n",
             "1.2\r\n",
             "--test-boundary--\r\n",
@@ -5316,6 +5338,12 @@ mod tests {
             "Content-Disposition: form-data; name=\"source_uid\"\r\n\r\n",
             "9\r\n",
             "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"source_mailbox_guid\"\r\n\r\n",
+            "bdb0b520cd1ca1698f6409144e01c408\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"source_message_guid\"\r\n\r\n",
+            "synthetic-bdb0b520-9\r\n",
+            "--test-boundary\r\n",
             "Content-Disposition: form-data; name=\"include_original_attachment_1\"\r\n\r\n",
             "1.99\r\n",
             "--test-boundary--\r\n",
@@ -5339,12 +5367,12 @@ mod tests {
             "127.0.0.1",
         );
 
-        assert_eq!(response.response.status_code, 503);
-        assert!(body_text(&response).contains("could not be fetched safely"));
+        assert_eq!(response.response.status_code, 409);
+        assert!(body_text(&response).contains("could not be revalidated"));
         assert!(response
             .audit_events
             .iter()
-            .any(|event| event.action == "http_send_original_attachment_fetch_failed"));
+            .any(|event| event.action == "stub_source_read"));
         assert!(!response
             .audit_events
             .iter()
@@ -5372,6 +5400,12 @@ mod tests {
             "--test-boundary\r\n",
             "Content-Disposition: form-data; name=\"source_uid\"\r\n\r\n",
             "9\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"source_mailbox_guid\"\r\n\r\n",
+            "bdb0b520cd1ca1698f6409144e01c408\r\n",
+            "--test-boundary\r\n",
+            "Content-Disposition: form-data; name=\"source_message_guid\"\r\n\r\n",
+            "synthetic-bdb0b520-9\r\n",
             "--test-boundary\r\n",
             "Content-Disposition: form-data; name=\"include_original_attachment_1\"\r\n\r\n",
             "1.2\r\n",

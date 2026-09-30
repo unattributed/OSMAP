@@ -1349,3 +1349,27 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   and the native signed-helper fixture. Standard obsd1 state unchanged. Archive
   `c32c8cc88c698561d33b2e0edcaccce86ab42488903fab10146c4cb91e95878c`;
   log `7a63ae8e0d211163d45f9504407f3ad82779ad7be4ec82773999af098fe582c6`.
+
+### S03-02D — recoverable, stable source attachments
+
+- Bind selected original attachments to stored mailbox/message identity. Save
+  and Send validate an owned snapshot; Send decodes that same snapshot. A missing,
+  changed or legacy unverified source must leave draft text editable and allow
+  explicit removal of those selections. Preserve v1-v6 readability; prove stale,
+  foreign and unavailable cases, restart, source removal and browser recovery.
+- Implemented draft metadata v7 with paired stored source identities and legacy
+  v1-v6 readability. Save and Send check account/session, mailbox, UID and identity;
+  attachments are decoded from the same checked snapshot. Resume retains text
+  even when a source is missing, changed or unverified; clearing its selections
+  allows editing and saving without fetching it. Source files share the 3-file cap.
+- Validation: 662 library tests PASS (six existing ignored), strict Clippy,
+  formatting/diff, full acceptance and V14 PASS. Edge and Firefox each PASS eight
+  reply/source journeys, including real draft restart and changed-source recovery;
+  thirteen draft regressions PASS. Eighteen normal and eight forced-colour views
+  PASS without overflow or audited contrast failures; desktop/narrow recovery
+  inspected. Evidence: S03 run-20260930 source-d-verified-*,
+  source-d-draft-regression, fixtures-f, visual-f* and gates/*-f.log.
+- S03-02C native qualification PASS: 657 library tests, two hostile-content tests
+  and the native signed-helper fixture; standard obsd1 state unchanged. Archive
+  `976df717c2cc52bd84722df810115202f55ceec24222aa60831600dedb178144`;
+  log `28ff81b0ced765743990eba167669433e3108c4182e2b73b14611d5f4f431d01`.

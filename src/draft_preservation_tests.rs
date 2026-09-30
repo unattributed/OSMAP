@@ -67,6 +67,52 @@ fn storage_quota_counts_metadata_and_attachments_and_preserves_failed_update() {
     fs::remove_dir_all(directory).unwrap();
 }
 
+#[test]
+fn source_identity_round_trips_rejects_partial_metadata_and_preserves_legacy_references() {
+    let directory = temp_dir("osmap-draft-source-identity");
+    let store = FileDraftStore::new(&directory, DraftPolicy::default());
+    let mut draft = record(&draft_id(39), "alice@example.com", 100);
+    draft.source_attachments = Some(DraftSourceAttachments {
+        mailbox_name: "INBOX".into(), uid: 9,
+        version: Some(crate::message_metadata::MessageVersion::new("a".repeat(32), "native-message-9".into()).unwrap()),
+        part_paths: vec!["1.2".into()],
+    });
+    store.save(&draft, 100).unwrap();
+    let path = store.metadata_path("alice@example.com", &draft.draft_id);
+    let current = fs::read_to_string(&path).unwrap();
+    assert!(current.starts_with("version=7\n"));
+    assert_eq!(store.load("alice@example.com", &draft.draft_id, 100).unwrap().unwrap().source_attachments, draft.source_attachments);
+    let without_message = current.lines().filter(|line| !line.starts_with("source_message_guid_hex=")).collect::<Vec<_>>().join("\n") + "\n";
+    for invalid in [without_message.clone(), current.replace("version=7", "version=6"), current.replace("source_message_guid_hex=", "source_message_guid_hex=00")] {
+        fs::write(&path, &invalid).unwrap();
+        assert!(store.load("alice@example.com", &draft.draft_id, 100).is_err());
+        assert_eq!(fs::read_to_string(&path).unwrap(), invalid);
+    }
+    let legacy = without_message.lines().filter(|line| !line.starts_with("source_mailbox_guid_hex=")).collect::<Vec<_>>().join("\n").replace("version=7", "version=6") + "\n";
+    fs::write(&path, &legacy).unwrap();
+    let loaded = store.load("alice@example.com", &draft.draft_id, 100).unwrap().unwrap();
+    assert!(loaded.source_attachments.as_ref().unwrap().version.is_none());
+    assert_eq!(loaded.source_attachments.as_ref().unwrap().part_paths, ["1.2"]);
+    assert_eq!(fs::read_to_string(&path).unwrap(), legacy, "reading does not bind a legacy UID to a current message");
+    store.save(&loaded, 101).unwrap();
+    assert!(store.load("alice@example.com", &draft.draft_id, 101).unwrap().unwrap().source_attachments.unwrap().version.is_none());
+    fs::remove_dir_all(directory).unwrap();
+}
+
+#[test]
+fn saved_and_source_attachment_counts_share_the_same_bound() {
+    let directory = temp_dir("osmap-draft-source-count");
+    let store = FileDraftStore::new(&directory, DraftPolicy::default());
+    let mut draft = record(&draft_id(40), "alice@example.com", 100);
+    draft.request.attachments = (0..3).map(|_| attachment(b"public synthetic attachment")).collect();
+    draft.source_attachments = Some(DraftSourceAttachments { mailbox_name: "INBOX".into(), uid: 9, version: None, part_paths: vec!["1.2".into()] });
+    assert!(store.save(&draft, 100).is_err());
+    draft.request.attachments.pop();
+    store.save(&draft, 100).unwrap();
+    assert_eq!(store.load("alice@example.com", &draft.draft_id, 100).unwrap().unwrap().summary().attachment_count, 3);
+    fs::remove_dir_all(directory).unwrap();
+}
+
 #[cfg(unix)]
 #[test]
 fn draft_lock_is_nonblocking_and_scoped_to_one_account() {
@@ -91,7 +137,7 @@ fn legacy_record_migrates_only_after_a_revision_zero_save() {
     let path = store.metadata_path("alice@example.com", &draft.draft_id);
     let current = fs::read_to_string(&path).unwrap();
     for version in ["1", "2", "3", "4"] {
-        let legacy = current.replace("version=6", &format!("version={version}")).replace("revision=1\n", "").replace("starred=0\n", "");
+        let legacy = current.replace("version=7", &format!("version={version}")).replace("revision=1\n", "").replace("starred=0\n", "");
         fs::write(&path, &legacy).unwrap();
         let mut loaded = store.load("alice@example.com", &draft.draft_id, 100).unwrap().unwrap();
         assert_eq!(loaded.revision, Some(0));
@@ -102,7 +148,7 @@ fn legacy_record_migrates_only_after_a_revision_zero_save() {
         assert_eq!(saved.revision, Some(1));
         assert!(saved.request.recipients_text.is_empty());
     }
-    let v5 = fs::read_to_string(&path).unwrap().replace("version=6", "version=5").replace("starred=0\n", "");
+    let v5 = fs::read_to_string(&path).unwrap().replace("version=7", "version=5").replace("starred=0\n", "");
     fs::write(&path, &v5).unwrap();
     let mut restored = store.load("alice@example.com", &draft.draft_id, 101).unwrap().unwrap();
     assert!(restored.request.recipients_text.is_empty());

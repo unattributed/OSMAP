@@ -203,7 +203,7 @@ fn quota_failure_preserves_form_and_original_draft() {
     let (app, root, store) = fixture(DraftPolicy { storage_max_bytes: 1500, ..DraftPolicy::default() });
     let id = save_new(&app, "to=desk%40example.test&body=Original");
     let body = "Unfinished notes ".repeat(80);
-    let failed = perform(&app, "/drafts/save", &format!("draft_id={id}&draft_revision=1&to=desk%40example.test&body={}&source_mailbox=INBOX&source_uid=9&include_original_attachment_1=1.2", url_encode(&body)));
+    let failed = perform(&app, "/drafts/save", &format!("draft_id={id}&draft_revision=1&to=desk%40example.test&body={}&source_mailbox=INBOX&source_uid=9&source_mailbox_guid=bdb0b520cd1ca1698f6409144e01c408&source_message_guid=synthetic-bdb0b520-9&include_original_attachment_1=1.2", url_encode(&body)));
     assert_eq!(failed.response.status_code, 503);
     let html = String::from_utf8(failed.response.body).unwrap();
     assert!(html.contains("draft storage is full"));
