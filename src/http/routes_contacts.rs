@@ -36,8 +36,9 @@ impl<G: BrowserGateway> BrowserApp<G> {
         match form.get("compose_action").map(String::as_str) {
             None
             | Some(
-                "minimize" | "preview" | "format-bold" | "format-italic" | "format-underline"
-                | "format-bullets" | "format-numbers" | "format-link" | "format-emoji",
+                "minimize" | "preview" | "preflight" | "format-bold" | "format-italic"
+                | "format-underline" | "format-bullets" | "format-numbers" | "format-link"
+                | "format-emoji",
             ) => return Ok(()),
             Some("add-contact") => {}
             _ => return Err(ContactError::Invalid),

@@ -368,3 +368,46 @@ fn partial_list_selection_formats_complete_lines_without_joining_neighbours() {
         assert!(rendered.html.ends_with("<div>after</div>"));
     }
 }
+
+#[test]
+fn pre_send_check_saves_exact_draft_and_never_submits_even_when_format_is_invalid() {
+    for (body, expected) in [
+        ("**Public check**", "pass composition checks"),
+        (
+            "[Public check](javascript:invalid)",
+            "Edit this draft before sending",
+        ),
+    ] {
+        let fixture = Fixture::new();
+        let result = fixture.post(
+            "/drafts/save",
+            &[
+                ("body", body),
+                ("body_format", "formatted"),
+                ("compose_action", "preflight"),
+            ],
+            true,
+        );
+        assert_eq!(result.response.status_code, 303);
+        assert!(location_header(&result).ends_with("&preflight=1"));
+        let preview = fixture.resumed(&result);
+        assert!(preview.contains("Pre-send check"));
+        assert!(preview.contains("No message was sent."));
+        assert!(preview.contains(expected));
+        let drafts = fixture.store.list("alice@example.com", 100).unwrap();
+        assert_eq!(drafts.len(), 1);
+        let draft = fixture
+            .store
+            .load("alice@example.com", &drafts[0].draft_id, 100)
+            .unwrap()
+            .unwrap();
+        assert_eq!(draft.request.body, body);
+        assert_eq!(draft.request.body_format, BodyFormat::Formatted);
+        assert_eq!(
+            draft.request.attachments[0].body,
+            b"Synthetic retained file"
+        );
+        assert_eq!(draft.revision, Some(1));
+        assert!(fixture.app.gateway.submitted.lock().unwrap().is_empty());
+    }
+}

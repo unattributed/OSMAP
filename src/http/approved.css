@@ -469,7 +469,9 @@ body:has(.app-rail) {
   .topbar .auth-status { flex-direction: row; }
 }
 @media(forced-colors:active) {
-  .rail-link[aria-current=page] { background: Highlight; color: HighlightText; }
+  .rail-link[aria-current=page] { forced-color-adjust: none; background: Highlight; color: HighlightText; border-color: Highlight; }
+  .rail-link[aria-current=page] .rail-label,
+  .rail-link[aria-current=page] .shell-icon { forced-color-adjust: none; color: inherit; background: transparent; }
   .account-avatar, .brand-mark { border: 1px solid ButtonText; }
   .compose-expand-state:focus-visible + label { outline-color: Highlight; }
 }

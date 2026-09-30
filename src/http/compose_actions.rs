@@ -164,18 +164,23 @@ pub(crate) fn formatting_controls(model: &ComposePageModel<'_>) -> String {
         ("bullets", "Bulleted list", "• list"),
         ("numbers", "Numbered list", "1. list"),
         ("link", "Insert link", "↗ link"),
-        ("emoji", "Insert emoji", "☺"),
     ] {
         buttons.push_str(&format!("<button type=\"submit\"{disabled} formaction=\"/drafts/save\" name=\"compose_action\" value=\"format-{action}\" aria-label=\"{label}\" title=\"{label}: format selected text, or the whole message, and save draft\">{caption}</button>"));
     }
+    let attach = if disabled.is_empty() {
+        "<a class=\"compose-toolbar-attach\" href=\"#compose-attachment\" aria-label=\"Attach local files\" title=\"Select local files to attach\">📎 attach</a>"
+    } else {
+        "<span class=\"compose-toolbar-attach\" aria-disabled=\"true\" title=\"Compare the stored version before adding attachments\">📎 attach</span>"
+    };
     let options = "<details class=\"compose-format-options\" name=\"compose-authoring\"><summary>Formatting options</summary><div><p>Formatting buttons save this draft. Select message text to format it; without a selection, the whole message is used. Lists apply to complete selected lines. Emoji appends 🙂. Source notation stays editable.</p><label for=\"format-url\">Link address</label><input id=\"format-url\" name=\"format_url\" type=\"text\" placeholder=\"https://example.com\"><label for=\"format-label\">Link label (optional)</label><input id=\"format-label\" name=\"format_label\" type=\"text\"><p>Enter the link address, select text or supply a label, then choose Insert link. Preview shows the outgoing alternatives.</p></div></details>";
     format!(concat!(
         "<div class=\"compose-editor-toolbar\"><div class=\"compose-format-tools\" role=\"group\" aria-label=\"Text formatting\">{buttons}",
         "<details class=\"compose-image-action\" name=\"compose-authoring\"><summary aria-label=\"Attach local image\">▧ image</summary><div><label for=\"compose-image\">Local image</label><input id=\"compose-image\" type=\"file\" name=\"image_attachment\" accept=\"image/png,image/jpeg,image/gif\"><p class=\"muted\">PNG, JPEG or GIF, up to 5 MiB. Sent as an attachment.</p><button type=\"submit\"{disabled} formaction=\"/drafts/save\">Save image attachment</button></div></details>",
+        "{attach}<button type=\"submit\"{disabled} formaction=\"/drafts/save\" name=\"compose_action\" value=\"format-emoji\" aria-label=\"Insert emoji\" title=\"Append an emoji and save draft\">☺</button>",
         "<label class=\"sr-only\" for=\"compose-body-format\">Message format</label><select id=\"compose-body-format\" name=\"body_format\"><option value=\"plain\"{plain}>Plain text</option><option value=\"formatted\"{formatted}>Formatted source</option></select>",
         "<button type=\"submit\"{disabled} formaction=\"/drafts/save\" name=\"compose_action\" value=\"preview\">Preview</button>{options}</div><span class=\"compose-inline-policy\">Attention: unsigned, not encrypted.</span></div>",
         "<input type=\"hidden\" name=\"format_start\" value=\"\"><input type=\"hidden\" name=\"format_end\" value=\"\">",
-    ), buttons = buttons, disabled = disabled, options = options,
+    ), buttons = buttons, disabled = disabled, options = options, attach = attach,
     plain = if model.body_format == BodyFormat::Plain { " selected" } else { "" },
     formatted = if model.body_format == BodyFormat::Formatted { " selected" } else { "" })
 }
@@ -191,7 +196,7 @@ pub(crate) fn preview(model: &ComposePageModel<'_>) -> String {
             Err(error) => format!("<p class=\"notice notice-error\" role=\"alert\">Draft saved. Preview and sending are blocked: {}. Edit the source and preview again.</p>", escape_html(&error.to_string())),
         }
     };
-    format!("<section class=\"compose-preview\" aria-label=\"Message preview\"><h2>Message preview</h2>{content}<p class=\"muted\">This draft is saved. Preview sends no mail.</p></section>")
+    format!("<section class=\"compose-preview\" aria-label=\"Message preview\"><h2>Message preview</h2>{content}<p class=\"muted\">This preview shows the saved draft. After editing, preview again. Preview sends no mail.</p></section>")
 }
 
 /// Return the visible disclosure and its separate form, avoiding nested forms.

@@ -356,6 +356,8 @@ where
                             body_format: draft.request.body_format,
                             preview: request.query_params.get("preview").map(String::as_str)
                                 == Some("1"),
+                            preflight: request.query_params.get("preflight").map(String::as_str)
+                                == Some("1"),
                             draft_id: Some(&draft.draft_id),
                             draft_revision: draft.revision,
                             draft_attachments: &draft.request.attachments,
@@ -496,6 +498,7 @@ where
                     body_value: form.get("body").map(String::as_str).unwrap_or_default(),
                     body_format: super::compose_actions::body_format(&form).unwrap_or_default(),
                     preview: false,
+                    preflight: false,
                     draft_id: form.get("draft_id").map(String::as_str),
                     draft_revision: super::routes_contacts::revision(form.get("draft_revision")),
                     draft_attachments: &[],
@@ -658,6 +661,10 @@ where
                                 |action| action == "preview" || action.starts_with("format-")
                             ) {
                                 "&preview=1"
+                            } else if form.get("compose_action").map(String::as_str)
+                                == Some("preflight")
+                            {
+                                "&preflight=1"
                             } else {
                                 ""
                             }
@@ -695,6 +702,7 @@ where
                             body_value: &body,
                             body_format: super::compose_actions::body_format(&form).unwrap_or_default(),
                             preview: false,
+                    preflight: false,
                             draft_id,
                             draft_revision: expected_revision,
                             draft_attachments: &[],

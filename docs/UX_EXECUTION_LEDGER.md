@@ -1464,3 +1464,65 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   refinements; focused regressions passed afterward. The signed checkpoint's
   pre-commit security gate must pass on the final source. Native qualification
   and later page completion are separate claims.
+
+- Signed delivery `d3abe6791e67a6f1f4de978539f857654621bf6c` verified with
+  Shopkeeper; final pre-commit security and V10–V14 follow-up gates passed.
+  Native obsd1 qualification also passed from the sealed `native-h` snapshot;
+  standard checkout/services remained unchanged. Archive SHA-256
+  `d28d8a500a187b4e091b98f142abedcaf07631d15227c38bd1fc6c037e4d7e7d`;
+  log `277673e328fd6563685a5952aaef3f094255d29e51e005c417d9315234a3663c`.
+  No Git synchronization or deployment occurred.
+
+### Next approved visual corrections — compose menus and PAGE-24
+
+- Continue the operator-authorized parallel UX work: composer agent owns the
+  Attach shortcut, footer More and Send options helpers (5,000-token limit);
+  layout agent owns isolated Sessions markup/CSS matching approved page 24
+  (6,000); reviewer owns bounded native browser proof (4,000). Parent owns
+  integration, saved-draft pre-send checks, visual comparison and corrections.
+  Each handoff names exact files. No new runtime dependency or host mutation.
+- Reuse existing session revocation and draft services. No fake location,
+  security capability or delivery result. Pre-send check must send no mail;
+  save failure must retain entered text and never report checks completed.
+  Sessions fixture limitations must be corrected or explicitly reported.
+  Runtime OpenPGP and scheduling remain separate, incomplete capabilities.
+
+### Composer delivery menus and Sessions presentation — reviewed checkpoint
+
+- Attach now opens the same cumulative local-file selection; footer More and
+  split Send expose native actions. Pre-send check saves the exact draft first,
+  validates its saved content and never submits mail. Preview/check panels
+  identify unsaved edits, including undo back to the saved version.
+- PAGE-24 now follows the approved Active Sessions card/table/scope hierarchy,
+  with current session first, real UTC activity, reported browser and Unknown
+  location. Revocation remains authenticated, account-scoped and CSRF-bound.
+- Edge and Firefox each passed five delivery workflow groups and eight Sessions
+  checks. The browser fixture now uses the real SessionService/FileSessionStore:
+  revoked contexts actually lose access and a different account remains valid.
+  Parent HTTP assertions prove valid/invalid pre-send checks submit zero messages.
+- Independent source review accepted the bounded changes. Parent inspected
+  approved references, desktop/narrow/light/dark/forced-colour renders; six
+  final Sessions captures pass overflow/contrast checks. Inspection found and
+  corrected invisible selected-navigation text in Chromium light forced colours;
+  both system palettes were recaptured and inspected. Evidence: S03
+  `orchestration-r1/delivery-{edge,firefox}` and S04 `sessions-{edge,firefox}`,
+  `sessions-final-captures`, `forced-final-captures`.
+- First broad run rejected explanatory product wording as a helper reference
+  in a coarse existing source gate. The wording was clarified; no gate was
+  weakened and no helper access was introduced. Final gates are recorded below.
+  Shared header/sidebar omissions, scheduling and runtime crypto remain open.
+- Full acceptance, V14, strict Clippy, formatting and diff checks passed on the
+  corrected source. Signing's required pre-commit security check follows.
+
+### Next bounded construction — approved Appearance page
+
+- Parent-authorized S04-01/S01 correction: exact PAGE-12 layout with working
+  theme, density, font size, reader layout, avatars and message-preview settings.
+  Storage agent allowance 8,000 tokens; layout/CSS 7,000; browser proof 4,000.
+  Drafts are initially isolated under task-specific /tmp paths while the current
+  checkpoint is signed; parent integrates, reviews, verifies and corrects.
+- Allowed source: appearance store/model, bounded settings/display route,
+  gateway/login preference propagation, common presentation attributes/CSS,
+  settings renderer and synthetic tests. Preserve security settings and retained
+  authentication layout; presentation cookies grant no authority. No dependency,
+  live account, Git synchronization or service deployment changes.

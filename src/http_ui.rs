@@ -26,6 +26,10 @@ const DEFAULT_RENDERED_ATTACHMENT_METADATA_MAX: usize = DEFAULT_MIME_PARTS_MAX;
 /// Defense-in-depth cap for mailbox links rendered by one route.
 const DEFAULT_RENDERED_MAILBOXES_MAX: usize = DEFAULT_MAX_MAILBOXES;
 
+#[path = "http/sessions_ui.rs"]
+mod sessions_ui;
+pub(crate) use sessions_ui::render_sessions_page;
+
 /// Small view model for the current server-rendered compose page.
 pub(crate) struct ComposePageModel<'a> {
     pub contacts: Option<&'a crate::contacts::ContactBook>,
@@ -42,6 +46,7 @@ pub(crate) struct ComposePageModel<'a> {
     pub body_value: &'a str,
     pub body_format: crate::compose_format::BodyFormat,
     pub preview: bool,
+    pub preflight: bool,
     pub draft_id: Option<&'a str>,
     pub draft_revision: Option<u64>,
     pub draft_attachments: &'a [crate::send::UploadedAttachment],
@@ -1387,94 +1392,6 @@ fn render_reader_fragment(
     )
 }
 
-/// Renders the browser-visible session-management page.
-pub(crate) fn render_sessions_page(
-    canonical_username: &str,
-    current_session_id: &str,
-    csrf_token: &str,
-    session_lifetime_seconds: u64,
-    session_idle_timeout_seconds: u64,
-    sessions: &[BrowserVisibleSession],
-    success_message: Option<&str>,
-) -> TrustedHtml {
-    let success_banner = match success_message {
-        Some(success_message) => format!(
-            "<p><strong>Update complete:</strong> {}</p>",
-            escape_html(success_message)
-        ),
-        None => String::new(),
-    };
-
-    let mut rows = String::new();
-    for session in sessions {
-        let state = if session.revoked_at.is_some() {
-            "revoked"
-        } else if session.session_id == current_session_id {
-            "current"
-        } else {
-            "active"
-        };
-        let action = if session.revoked_at.is_some() {
-            "<span class=\"muted\">Already revoked</span>".to_string()
-        } else {
-            format!(
-                "<form method=\"post\" action=\"/sessions/revoke\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"session_id\" value=\"{}\"><button type=\"submit\">{}</button></form>",
-                escape_html(csrf_token),
-                escape_html(&session.session_id),
-                if session.session_id == current_session_id {
-                    "Revoke This Session"
-                } else {
-                    "Revoke"
-                }
-            )
-        };
-        let revoked_at = session
-            .revoked_at
-            .map(|value| value.to_string())
-            .unwrap_or_else(|| "-".to_string());
-
-        rows.push_str(&format!(
-            "<tr><td><code>{}</code></td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td><td>{}</td></tr>",
-            escape_html(&session.session_id),
-            escape_html(state),
-            escape_html(&session.device_label),
-            session.issued_at,
-            session.last_seen_at,
-            session.expires_at,
-            escape_html(&revoked_at),
-            escape_html(&session.remote_addr),
-            escape_html(&session.user_agent),
-            action,
-        ));
-    }
-
-    let controls = format!(
-        "<section class=\"panel\"><h2>Session Controls</h2><p><strong>Idle timeout:</strong> {} seconds. <strong>Absolute lifetime:</strong> {} seconds.</p><div class=\"toolbar\"><form method=\"post\" action=\"/sessions/revoke\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"scope\" value=\"others\"><button type=\"submit\">Revoke Other Sessions</button></form><form method=\"post\" action=\"/sessions/revoke\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"scope\" value=\"all\"><button type=\"submit\">Revoke All Sessions</button></form></div></section>",
-        session_idle_timeout_seconds,
-        session_lifetime_seconds,
-        escape_html(csrf_token),
-        escape_html(csrf_token),
-    );
-
-    TrustedHtml::from_template(format!(
-        concat!(
-            "{}",
-            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
-            "<section class=\"content-pane\">",
-            "<h1>Sessions</h1>",
-            "<p class=\"muted\">Concurrent browser sessions are allowed. Use the device label, remote address, and last-seen time to identify sessions before revoking one, other sessions, or all sessions.</p>",
-            "{}{}",
-            "<div class=\"table-wrap\" role=\"region\" aria-label=\"Browser sessions\" tabindex=\"0\"><table><thead><tr><th>Session ID</th><th>Status</th><th>Device</th><th>Issued</th><th>Last Seen</th><th>Expires</th><th>Revoked</th><th>Remote Address</th><th>User Agent</th><th>Action</th></tr></thead><tbody>{}</tbody></table></div>",
-            "</section>",
-            "</main>"
-        ),
-        app_header(canonical_username, csrf_token, "sessions"),
-        success_banner,
-        controls,
-        rows,
-    ))
-}
-
 /// Renders the compose page for the current user and CSRF-bound session.
 pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
     let confirmation_required = model.draft_id.is_some() && model.draft_revision.is_none();
@@ -1585,11 +1502,11 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
             "<details class=\"compose-bcc\"{}><summary>+ Bcc</summary><label for=\"compose-bcc\">Bcc</label><input id=\"compose-bcc\" type=\"text\" name=\"bcc\" value=\"{}\" autocomplete=\"off\"></details>{}</div>",
             "<div class=\"compose-field compose-subject-field\"><label for=\"compose-subject\">Subject</label><input id=\"compose-subject\" type=\"text\" name=\"subject\" value=\"{}\"></div>",
             "{}",
-            "{formatting_controls}<label class=\"sr-only\" for=\"compose-body\">Body</label><textarea id=\"compose-body\" name=\"body\" placeholder=\"Write your message…\">{}</textarea>{preview}",
+            "{formatting_controls}<label class=\"sr-only\" for=\"compose-body\">Body</label><textarea id=\"compose-body\" name=\"body\" placeholder=\"Write your message…\">{}</textarea>{preview}{preflight}",
             "<section class=\"compose-attachments\" aria-labelledby=\"compose-attachments-heading\"><h2 id=\"compose-attachments-heading\">Attachments</h2>{}{}<label for=\"compose-attachment\">Add attachments</label><input id=\"compose-attachment\" type=\"file\" name=\"attachment\" multiple><details class=\"compose-attachment-help\"><summary>Attachment help</summary><p>Up to 3 attachments, 10 MiB each and 30 MiB total, including saved and selected source files. Local images have a 5 MiB limit. Select Remove, then Save Draft or Send Message to apply removal. Other saved files stay attached.</p></details></section>",
             "<div class=\"compose-save-bar\"><p id=\"compose-save-status\" role=\"status\" aria-live=\"polite\" data-state=\"{save_state}\">{save_status}</p><span class=\"muted\">Automatic saving is not available.</span></div>",
-            "<div class=\"compose-footer\"><div class=\"compose-footer-actions\">{discard_control}<button id=\"compose-save\" type=\"submit\"{disabled} formaction=\"/drafts/save\" aria-keyshortcuts=\"Control+S Meta+S\">Save Draft</button><button type=\"button\" disabled aria-describedby=\"compose-schedule-status\">Schedule</button><span id=\"compose-schedule-status\" class=\"muted\">Scheduling unavailable</span></div>",
-            "<button class=\"primary-button\" type=\"submit\"{disabled} aria-label=\"Send Message\">Send</button>",
+            "<div class=\"compose-footer\"><div class=\"compose-footer-actions\">{discard_control}<button id=\"compose-save\" type=\"submit\"{disabled} formaction=\"/drafts/save\" aria-keyshortcuts=\"Control+S Meta+S\">Save Draft</button><button type=\"button\" disabled aria-describedby=\"compose-schedule-status\">Schedule</button><span id=\"compose-schedule-status\" class=\"muted\">Scheduling unavailable</span>{footer_more}</div>",
+            "{send_controls}",
             "</div>",
             "</form>{discard_form}",
             "</section>",
@@ -1623,6 +1540,9 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
         discard_form = discard_form,
         formatting_controls = crate::http::compose_actions::formatting_controls(model),
         preview = crate::http::compose_actions::preview(model),
+        preflight = crate::http::compose_preflight::render(model),
+        footer_more = crate::http::compose_delivery_ui::footer_more(model),
+        send_controls = crate::http::compose_delivery_ui::send_controls(model),
         sender_initial = escape_html(&model.canonical_username.chars().next().unwrap_or('?').to_uppercase().to_string()),
     ))
 }

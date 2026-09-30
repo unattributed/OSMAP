@@ -6,7 +6,9 @@
 //! auth, session, mailbox, and rendering layers.
 
 pub(crate) mod compose_actions;
+pub(crate) mod compose_delivery_ui;
 mod compose_enhancement;
+pub(crate) mod compose_preflight;
 #[path = "http_browser.rs"]
 mod http_browser;
 #[path = "http_gateway.rs"]
@@ -801,6 +803,9 @@ mod tests {
     mod compose_enhancement_tests {
         include!("http/compose_enhancement_tests.rs");
     }
+    mod fixture_sessions {
+        include!("http/fixture_sessions.rs");
+    }
     mod compose_format_tests {
         include!("http/compose_format_tests.rs");
     }
@@ -878,6 +883,7 @@ mod tests {
         message_moves: Arc<Mutex<SyntheticMessageMoves>>,
         appearance_store: Option<AppearanceStore>,
         browser_fixture_accounts: bool,
+        fixture_sessions: Option<fixture_sessions::FixtureSessions>,
     }
 
     impl Default for StubGateway {
@@ -892,6 +898,7 @@ mod tests {
                 message_moves: Arc::new(Mutex::new(SyntheticMessageMoves::default())),
                 appearance_store: None,
                 browser_fixture_accounts: false,
+                fixture_sessions: None,
             }
         }
     }
@@ -967,7 +974,7 @@ mod tests {
         }
         fn login(
             &self,
-            _context: &AuthenticationContext,
+            context: &AuthenticationContext,
             username: &str,
             password: &str,
             totp_code: &str,
@@ -1002,6 +1009,14 @@ mod tests {
                 };
             }
 
+            if let Some(sessions) = &self.fixture_sessions {
+                let appearance = self
+                    .appearance_store
+                    .as_ref()
+                    .map(|store| store.load(username).expect("synthetic preference store"))
+                    .unwrap_or_default();
+                return sessions.login(context, username, appearance);
+            }
             BrowserLoginOutcome {
                 decision: BrowserLoginDecision::Authenticated {
                     canonical_username: username.to_string(),
@@ -1028,9 +1043,12 @@ mod tests {
 
         fn validate_session(
             &self,
-            _context: &AuthenticationContext,
+            context: &AuthenticationContext,
             presented_token: &str,
         ) -> BrowserSessionValidationOutcome {
+            if let Some(sessions) = &self.fixture_sessions {
+                return sessions.validate(context, presented_token);
+            }
             let bob = self.browser_fixture_accounts
                 && presented_token
                     == "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
@@ -1070,9 +1088,12 @@ mod tests {
 
         fn logout(
             &self,
-            _context: &AuthenticationContext,
-            _presented_token: &str,
+            context: &AuthenticationContext,
+            presented_token: &str,
         ) -> BrowserLogoutOutcome {
+            if let Some(sessions) = &self.fixture_sessions {
+                return sessions.logout(context, presented_token);
+            }
             BrowserLogoutOutcome {
                 session_was_revoked: true,
                 audit_events: vec![LogEvent::new(
@@ -1086,9 +1107,12 @@ mod tests {
 
         fn list_sessions(
             &self,
-            _context: &AuthenticationContext,
+            context: &AuthenticationContext,
             validated_session: &ValidatedSession,
         ) -> BrowserSessionListOutcome {
+            if let Some(sessions) = &self.fixture_sessions {
+                return sessions.list(context, validated_session);
+            }
             BrowserSessionListOutcome {
                 decision: BrowserSessionListDecision::Listed {
                     canonical_username: validated_session.record.canonical_username.clone(),
@@ -1132,10 +1156,13 @@ mod tests {
 
         fn revoke_session(
             &self,
-            _context: &AuthenticationContext,
+            context: &AuthenticationContext,
             validated_session: &ValidatedSession,
             session_id: &str,
         ) -> BrowserSessionRevokeOutcome {
+            if let Some(sessions) = &self.fixture_sessions {
+                return sessions.revoke(context, validated_session, session_id);
+            }
             if session_id == validated_session.record.session_id {
                 BrowserSessionRevokeOutcome {
                     decision: BrowserSessionRevokeDecision::Revoked {
@@ -1181,10 +1208,13 @@ mod tests {
 
         fn revoke_sessions(
             &self,
-            _context: &AuthenticationContext,
-            _validated_session: &ValidatedSession,
+            context: &AuthenticationContext,
+            validated_session: &ValidatedSession,
             scope: BrowserSessionRevokeScope,
         ) -> BrowserSessionRevokeOutcome {
+            if let Some(sessions) = &self.fixture_sessions {
+                return sessions.revoke_many(context, validated_session, scope);
+            }
             match scope {
                 BrowserSessionRevokeScope::OtherSessions => BrowserSessionRevokeOutcome {
                     decision: BrowserSessionRevokeDecision::RevokedMany {
@@ -5061,13 +5091,13 @@ mod tests {
 
         assert_eq!(response.response.status_code, 200);
         let body = body_text(&response);
-        assert!(body.contains("<h1>Sessions</h1>"));
+        assert!(body.contains("<h1>Active Sessions</h1>"));
         assert!(body.contains("Concurrent browser sessions are allowed."));
-        assert!(body.contains("<th>Device</th>"));
+        assert!(body.contains("<th scope=\"col\">Device</th>"));
         assert!(body.contains(">Firefox<"));
         assert!(body.contains("203.0.113.9"));
         assert!(body.contains("Revoke This Session"));
-        assert!(body.contains("Revoke Other Sessions"));
+        assert!(body.contains("Sign out all other sessions"));
         assert!(body.contains("Revoke All Sessions"));
         assert!(body.contains("Idle timeout:</strong> 1800 seconds"));
     }

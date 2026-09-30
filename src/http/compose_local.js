@@ -37,6 +37,17 @@
       initialState === "saved" ? "Saved draft." : "Not saved yet.";
     if (status.textContent !== message) status.textContent = message;
     status.dataset.state = blocked ? "unconfirmed" : changed ? "unsaved" : initialState;
+    form.querySelectorAll(".compose-preview").forEach((panel) => {
+      panel.dataset.stale = String(changed);
+      let hint = panel.querySelector(".compose-stale-preview");
+      if (!hint) {
+        hint = document.createElement("p");
+        hint.className = "compose-stale-preview";
+        hint.textContent = "This preview or check shows the saved draft. Save and preview or check again after editing.";
+        panel.append(hint);
+      }
+      hint.hidden = !changed;
+    });
     if (changed && !beforeUnloadAttached) {
       window.addEventListener("beforeunload", warnBeforeLeaving);
       beforeUnloadAttached = true;
@@ -228,6 +239,12 @@
   const label = form.querySelector('label[for="compose-attachment"]');
   if (label) label.hidden = true;
   add.addEventListener("click", () => picker.click());
+  const attachShortcut = form.querySelector('a.compose-toolbar-attach[href="#compose-attachment"]');
+  if (attachShortcut) attachShortcut.addEventListener("click", (event) => {
+    if (event.button !== 0 || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) return;
+    event.preventDefault();
+    picker.click();
+  });
 
   const stored = () => [...form.querySelectorAll(".saved-attachment[data-bytes]")]
     .filter((row) => !row.querySelector("input").checked);

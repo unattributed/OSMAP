@@ -1,0 +1,100 @@
+/* Compose-only native delivery menus and attachment shortcut. */
+.compose-format-tools .compose-toolbar-attach {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.6rem;
+  padding: .1rem .3rem;
+  border-radius: .2rem;
+  color: var(--ink);
+  font-size: .875rem;
+  text-decoration: none;
+}
+.compose-format-tools .compose-toolbar-attach:hover { background: var(--selected); }
+.compose-format-tools .compose-toolbar-attach[aria-disabled=true] { color: var(--muted); }
+.compose-footer-more, .compose-send-options { position: relative; }
+.compose-footer-more > summary, .compose-send-options > summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.55rem;
+  padding: .5rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: .45rem;
+  cursor: pointer;
+  list-style: none;
+  font-size: .875rem;
+  font-weight: 700;
+}
+.compose-footer-more > summary::-webkit-details-marker,
+.compose-send-options > summary::-webkit-details-marker { display: none; }
+.compose-footer-more > summary:hover { background: var(--selected); }
+.compose-footer .compose-send-controls {
+  display: flex;
+  flex: 0 0 15.25rem;
+  min-width: 0;
+  align-items: stretch;
+}
+.compose-footer .compose-send-controls > .primary-button {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+  margin: 0;
+  border-radius: .45rem 0 0 .45rem;
+}
+.compose-send-options > summary {
+  height: 100%;
+  min-width: 2.6rem;
+  padding: .5rem .65rem;
+  border-color: var(--accent);
+  border-left-color: var(--on-accent);
+  border-radius: 0 .45rem .45rem 0;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.compose-send-options > summary:hover { background: var(--accent-strong); }
+.compose-delivery-menu {
+  position: absolute;
+  bottom: calc(100% + .4rem);
+  left: 0;
+  z-index: 25;
+  width: min(16rem, calc(100vw - 5rem));
+  max-height: 60vh;
+  overflow: auto;
+  padding: .5rem;
+  border: 1px solid var(--line);
+  border-radius: .6rem;
+  background: var(--panel);
+  color: var(--ink);
+  box-shadow: 0 .25rem .8rem var(--shadow);
+}
+.compose-send-options > .compose-delivery-menu { left: auto; right: 0; }
+.compose-footer .compose-delivery-menu > button,
+.compose-footer .compose-delivery-menu > a {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  margin: .2rem 0;
+  padding: .5rem;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.compose-delivery-menu > p { margin: .35rem .5rem; font-size: .8rem; }
+.compose-toolbar-attach:focus-visible,
+.compose-footer-more > summary:focus-visible,
+.compose-send-options > summary:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+@media (max-width: 600px) {
+  .compose-footer .compose-send-controls { flex: 1 1 100%; }
+  .compose-footer-more { position: static; }
+  .compose-footer-actions { position: relative; }
+  .compose-footer-more > .compose-delivery-menu { left: 0; }
+}
+@media (forced-colors: active) {
+  .compose-send-options > summary { border-color: ButtonText; }
+  .compose-toolbar-attach:focus-visible,
+  .compose-footer-more > summary:focus-visible,
+  .compose-send-options > summary:focus-visible { outline-color: Highlight; }
+}

@@ -1,0 +1,62 @@
+/* PAGE-24: styles are confined to the authenticated sessions view. */
+.sessions-page .page-intro { margin-bottom: .8rem; }
+.sessions-page .page-intro p { margin: .25rem 0 0; line-height: 1.4rem; }
+.sessions-card { padding: 1rem; border-radius: .85rem; box-shadow: 0 1px 3px var(--shadow); }
+.sessions-card-header { display: flex; align-items: center; justify-content: space-between; gap: .8rem; margin-bottom: .7rem; }
+.sessions-card-header h2 { margin: 0; font-size: 1.15rem; text-transform: none; }
+.sessions-page .session-revoke-form { margin: 0; }
+.sessions-page .session-revoke-form button { width: auto; min-height: 2.2rem; padding: .4rem .75rem; color: var(--danger); border-color: var(--danger-line); background: var(--panel); font-size: .8rem; }
+.sessions-page .sessions-table { table-layout: fixed; border: 0; border-radius: .65rem; overflow: hidden; }
+.sessions-device-col { width: 20%; }
+.sessions-browser-col { width: 13%; }
+.sessions-location-col { width: 30%; }
+.sessions-activity-col { width: 12%; }
+.sessions-status-col { width: 12%; }
+.sessions-action-col { width: 13%; }
+.sessions-table th { padding: .65rem; color: var(--muted); font-size: .75rem; text-transform: none; letter-spacing: normal; }
+.sessions-table td { height: 3.65rem; padding: .6rem .65rem; vertical-align: middle; overflow-wrap: anywhere; }
+.sessions-table tbody tr:last-child td { border-bottom: 0; }
+.session-device-note, .session-clock { display: block; margin-top: .15rem; color: var(--muted); font-size: .75rem; }
+.session-status { display: inline-block; padding: .3rem .55rem; border: 1px solid transparent; border-radius: 1rem; font-size: .75rem; font-weight: 700; }
+.session-status-current { color: var(--ok-ink); background: var(--ok-bg); }
+.session-status-active { color: var(--link); background: var(--selected); }
+.session-status-revoked { color: var(--muted); background: var(--panel-soft); }
+.sessions-scope-note { margin: 1rem 0; padding: .7rem .75rem; border: 1px solid var(--line); border-radius: .6rem; background: var(--panel-soft); line-height: 1.5; }
+.sessions-details { color: var(--muted); font-size: .85rem; }
+.sessions-details > summary { cursor: pointer; width: fit-content; padding: .4rem 0; }
+.sessions-details-body { margin-top: .65rem; padding: 1rem; border: 1px solid var(--line); border-radius: .7rem; background: var(--panel); color: var(--ink); }
+.sessions-details-body > p:first-child { margin-top: 0; }
+.session-inspection { padding: 1rem 0; border-top: 1px solid var(--line); }
+.session-inspection h3, .sessions-revoke-all h3 { margin: 0 0 .65rem; font-size: 1rem; }
+.session-inspection dl { display: grid; grid-template-columns: 8rem minmax(0, 1fr); gap: .5rem .75rem; margin: 0 0 .75rem; }
+.session-inspection dt { font-weight: 700; }
+.session-inspection dd { margin: 0; overflow-wrap: anywhere; }
+.session-inspection code { white-space: normal; overflow-wrap: anywhere; }
+.sessions-revoke-all { padding-top: 1rem; border-top: 1px solid var(--line); }
+.sessions-empty { color: var(--muted); }
+@media (max-width: 56rem) {
+  .sessions-location-col { width: 17%; }
+  .sessions-activity-col { width: 20%; }
+  .sessions-action-col { width: 19%; }
+}
+@media (max-width: 40rem) {
+  .sessions-card { padding: .8rem; }
+  .sessions-card-header { align-items: flex-start; flex-direction: column; gap: .65rem; }
+  .sessions-card-header .session-revoke-form, .sessions-card-header .session-revoke-form button { width: 100%; }
+  .sessions-table, .sessions-table tbody, .sessions-table tr { display: block; }
+  .sessions-table colgroup { display: none; }
+  .sessions-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+  .sessions-table tr { padding: .7rem 0; border-top: 1px solid var(--line); }
+  .sessions-table td { display: grid; grid-template-columns: 5.2rem minmax(0,1fr); align-items: center; gap: .4rem .6rem; height: auto; min-height: 2rem; padding: .35rem 0; border: 0; }
+  .sessions-table td::before { content: attr(data-label); color: var(--muted); font-size: .75rem; font-weight: 700; }
+  .sessions-table .session-device-note { grid-column: 2; margin-top: -.25rem; }
+  .sessions-table .session-status { justify-self: start; }
+  .sessions-table .session-action:empty { display: none; }
+  .sessions-table .sessions-empty { display: block; }
+  .sessions-table .sessions-empty::before { content: none; }
+  .session-inspection dl { grid-template-columns: 1fr; gap: .25rem; }
+  .session-inspection dd { margin-bottom: .5rem; }
+}
+@media (forced-colors: active) {
+  .sessions-page .session-status { border-color: CanvasText; }
+}

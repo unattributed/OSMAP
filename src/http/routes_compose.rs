@@ -193,6 +193,7 @@ where
                     body_value: &body_value,
                     body_format: crate::compose_format::BodyFormat::Plain,
                     preview: false,
+                    preflight: false,
                     draft_id: None,
                     draft_revision: None,
                     draft_attachments: &[],
@@ -554,6 +555,7 @@ where
                         body_value: &body,
                         body_format: super::compose_actions::body_format(&form).unwrap_or_default(),
                         preview: false,
+                    preflight: false,
                         draft_id: draft_id.as_deref(),
                         draft_revision,
                         draft_attachments: &persisted_draft_attachments,
@@ -651,6 +653,7 @@ where
                 body_value: form.get("body").map(String::as_str).unwrap_or_default(),
                 body_format: super::compose_actions::body_format(form).unwrap_or_default(),
                 preview: false,
+                preflight: false,
                 draft_id: form.get("draft_id").map(String::as_str),
                 draft_revision: super::routes_draft::submitted_draft_revision(form)
                     .ok()

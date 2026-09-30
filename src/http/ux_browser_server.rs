@@ -28,6 +28,7 @@ fn ux_synthetic_browser_server() {
         draft_store: Some(crate::draft::FileDraftStore::new(root.join("drafts"), DraftPolicy::default())),
         appearance_store: Some(AppearanceStore::new(root.join("settings"))),
         browser_fixture_accounts: true,
+        fixture_sessions: Some(fixture_sessions::FixtureSessions::new(root.join("sessions"))),
         ..StubGateway::default()
     };
     let app = BrowserApp::new(policy, gateway);
