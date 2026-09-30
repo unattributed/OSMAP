@@ -134,7 +134,8 @@ fn app_header(canonical_username: &str, csrf_token: &str, current: &str) -> Stri
         "<a class=\"brand\" href=\"/mailboxes\" aria-label=\"OSMAP mailboxes\"><span class=\"brand-mark\" aria-hidden=\"true\"><span class=\"ui-icon brand-icon\">{}</span></span><span>OSMAP</span></a>",
         "<div class=\"status-row auth-status\" aria-label=\"Session status and identity\">",
         "<span class=\"status-pill badge-ok shell-session-chip\">2FA session</span>",
-        "<details class=\"account-menu\"><summary class=\"identity-chip\"><span class=\"account-name\" title=\"{}\">{}</span>{}</summary>",
+        "<details class=\"protection-menu\" name=\"toolbar-menu\"><summary>Protected rendering</summary><div class=\"account-menu-panel\"><p>Remote images and active content are blocked. These protections do not encrypt a message or verify its sender.</p></div></details>",
+        "<details class=\"account-menu\" name=\"toolbar-menu\"><summary class=\"identity-chip\"><span class=\"account-name\" title=\"{}\">{}</span>{}</summary>",
         "<div class=\"account-menu-panel\"><p class=\"muted\">Signed in as <strong>{}</strong></p><a href=\"/settings\">Account settings</a><a href=\"/settings#appearance-title\">Appearance</a><a href=\"/sessions\">Manage sessions</a>{}</div>",
         "</details></div></header>"
     ), shell_icon("menu"), links, shell_icon("shield"), escape_html(canonical_username),
@@ -249,14 +250,14 @@ pub(crate) fn render_mailboxes_page(
             "<div class=\"mail-shell\">",
             "{}",
             "<section class=\"content-pane\" aria-labelledby=\"mailboxes-title\">",
-            "<div class=\"section-header\"><div><h1 id=\"mailboxes-title\" class=\"section-title\">Mailboxes</h1><p class=\"muted\">Choose a visible mailbox, compose a message, or run a bounded backend search.</p></div>",
-            "<div class=\"badge-list\"><span class=\"badge badge-ok\">2FA active</span><span class=\"badge\">mail access bounded by helper policy</span></div></div>",
+            "<div class=\"section-header\"><div><h1 id=\"mailboxes-title\" class=\"section-title\">Mailboxes</h1><p class=\"muted\">Choose a mailbox or search your messages.</p></div>",
+            "<div class=\"badge-list\"><span class=\"badge badge-ok\">2FA active</span><span class=\"badge\">Account mailboxes</span></div></div>",
             "<form class=\"search-row\" method=\"get\" action=\"/search\">",
             "<label for=\"mailbox-global-search\">Search all mailboxes<input id=\"mailbox-global-search\" type=\"text\" name=\"q\" autocomplete=\"off\"></label>",
             "{}",
             "<button type=\"submit\">Search</button>",
             "</form>",
-            "<div class=\"notice\"><strong>Security posture:</strong> Remote content is not loaded by the browser, message rendering remains server-side, and state-changing actions stay CSRF-bound.</div>",
+            "<div class=\"notice\"><strong>Security posture:</strong> Remote images and active content are blocked. Downloads open only when you choose them.</div>",
             "</section>",
             "</div>",
             "</main>"
@@ -485,7 +486,7 @@ pub(crate) fn render_message_list_page(
         ));
     }
     if messages.is_empty() {
-        rows.push_str("<tr class=\"message-empty-row\"><td colspan=\"9\"><div class=\"message-empty-state\"><strong>No messages shown.</strong><br><span class=\"muted\">This mailbox has no visible messages for the current bounded query.</span></div></td></tr>");
+        rows.push_str("<tr class=\"message-empty-row\"><td colspan=\"9\"><div class=\"message-empty-state\"><strong>No messages shown.</strong><br><span class=\"muted\">New messages will appear here.</span></div></td></tr>");
     }
 
     let bulk_move_form = if bulk_actions_available && !messages.is_empty() {
@@ -541,8 +542,8 @@ pub(crate) fn render_message_list_page(
             "{}",
             "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
             "<section class=\"content-pane\" aria-labelledby=\"mailbox-title\">",
-            "<div class=\"section-header\"><div><h1 id=\"mailbox-title\" class=\"section-title\">Mailbox: {}</h1><p class=\"muted\">Signed in as <strong>{}</strong>. Message data remains fetched through the reviewed mailbox route.</p></div>",
-            "<div class=\"badge-list message-list-summary\" aria-label=\"Message list status\"><span class=\"badge badge-ok\">2FA active</span><span class=\"badge\">Remote content blocked</span><span class=\"badge\">sorting/search preserved</span><span class=\"badge\">bulk actions CSRF-bound</span></div></div>",
+            "<div class=\"section-header\"><div><h1 id=\"mailbox-title\" class=\"section-title\">Mailbox: {}</h1><p class=\"muted\">Signed in as <strong>{}</strong>. </p></div>",
+            "<div class=\"badge-list message-list-summary\" aria-label=\"Message list status\"><span class=\"badge\">Remote content blocked</span></div></div>",
             "{}{}",
             "<form class=\"search-row\" method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><label for=\"mailbox-search\">Search query<input id=\"mailbox-search\" type=\"text\" name=\"q\" autocomplete=\"off\"></label>{}<button type=\"submit\">Search</button><label><input type=\"checkbox\" name=\"scope\" value=\"all\"> Search all mailboxes</label></form>",
             "<div class=\"toolbar\" aria-label=\"Mailbox actions\">{}{}</div>",
@@ -654,7 +655,7 @@ pub(crate) fn render_message_search_page(
             "<section class=\"content-pane\">",
             "<p>{}<a href=\"/mailboxes\">All mailboxes</a></p>",
             "<h1>Search Results</h1>",
-            "<p class=\"muted\">This bounded retrieval slice keeps Dovecot authoritative for the query while letting the browser search one mailbox or all visible mailboxes without turning OSMAP into a broad search product.</p>",
+            "<p class=\"muted\">Search within a mailbox or across all your mailboxes.</p>",
             "{}",
             "<form class=\"search-row\" method=\"get\" action=\"/search\">{}<label for=\"search-query\">Search query<input id=\"search-query\" type=\"text\" name=\"q\" value=\"{}\" autocomplete=\"off\"></label>{}<button type=\"submit\">Search</button><label><input type=\"checkbox\" name=\"scope\" value=\"all\"{}> Search all mailboxes</label></form>",
             "<p><strong>Scope:</strong> {}<br><strong>Field:</strong> {}<br><strong>Query:</strong> {}<br><strong>Results:</strong> {}</p>",
@@ -712,9 +713,7 @@ pub fn render_message_view_page(
         .count();
     let mut attachments = String::new();
     if rendered.attachments.is_empty() {
-        attachments.push_str(
-            "<li class=\"attachment-item\">No attachment metadata surfaced for this message.</li>",
-        );
+        attachments.push_str("<li class=\"attachment-item\">No attachments.</li>");
     } else {
         for attachment in &displayed_attachments {
             let download_href = format!(
@@ -755,7 +754,7 @@ pub fn render_message_view_page(
 
     let archive_form = match archive_mailbox_name {
         Some(archive_mailbox_name) if archive_mailbox_name != rendered.mailbox_name => format!(
-            "<section class=\"panel\"><h2>Archive Message</h2><p class=\"muted\">This shortcut reuses the bounded move path with your configured archive mailbox.</p><form method=\"post\" action=\"/message/move\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"uid\" value=\"{}\"><input type=\"hidden\" name=\"destination_mailbox\" value=\"{}\"><button type=\"submit\">Archive Message</button></form></section>",
+            "<section class=\"panel\"><h2>Archive Message</h2><p class=\"muted\">Move this message to your archive mailbox.</p><form method=\"post\" action=\"/message/move\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"uid\" value=\"{}\"><input type=\"hidden\" name=\"destination_mailbox\" value=\"{}\"><button type=\"submit\">Archive Message</button></form></section>",
             escape_html(csrf_token),
             escape_html(&rendered.mailbox_name),
             rendered.uid,
@@ -769,7 +768,7 @@ pub fn render_message_view_page(
         .any(|mailbox| mailbox.name == "Trash" && mailbox.name != rendered.mailbox_name);
     let delete_form = if trash_mailbox_available {
         format!(
-            "<section class=\"panel\"><h2>Delete Message</h2><p class=\"muted\">This delete control stays inside the current bounded mailbox-move slice by moving the message into <strong>Trash</strong>.</p><form method=\"post\" action=\"/message/move\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"uid\" value=\"{}\"><input type=\"hidden\" name=\"destination_mailbox\" value=\"Trash\"><button type=\"submit\">Delete to Trash</button></form></section>",
+            "<section class=\"panel\"><h2>Delete Message</h2><p class=\"muted\">Move this message to <strong>Trash</strong>.</p><form method=\"post\" action=\"/message/move\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"uid\" value=\"{}\"><input type=\"hidden\" name=\"destination_mailbox\" value=\"Trash\"><button type=\"submit\">Delete to Trash</button></form></section>",
             escape_html(csrf_token),
             escape_html(&rendered.mailbox_name),
             rendered.uid,
@@ -790,10 +789,10 @@ pub fn render_message_view_page(
         .collect::<Vec<_>>()
         .join("");
     let move_form = if move_destination_options.is_empty() {
-        "<section class=\"panel\"><h2>Move Message</h2><p class=\"muted\">No alternate visible mailbox destinations are currently available for this bounded move action.</p></section>".to_string()
+        "<section class=\"panel\"><h2>Move Message</h2><p class=\"muted\">No other mailbox is currently available.</p></section>".to_string()
     } else {
         format!(
-            "<section class=\"panel\"><h2>Move Message</h2><p class=\"muted\">This first folder-organization slice still keeps the general move path narrow: one message into one existing visible mailbox per request.</p><form method=\"post\" action=\"/message/move\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"uid\" value=\"{}\"><label>Destination Mailbox<select name=\"destination_mailbox\">{}</select></label><button type=\"submit\">Move Message</button></form></section>",
+            "<section class=\"panel\"><h2>Move Message</h2><p class=\"muted\">Choose an existing destination mailbox.</p><form method=\"post\" action=\"/message/move\"><input type=\"hidden\" name=\"csrf_token\" value=\"{}\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\"><input type=\"hidden\" name=\"uid\" value=\"{}\"><label>Destination Mailbox<select name=\"destination_mailbox\">{}</select></label><button type=\"submit\">Move Message</button></form></section>",
             escape_html(csrf_token),
             escape_html(&rendered.mailbox_name),
             rendered.uid,
@@ -835,30 +834,29 @@ pub fn render_message_view_page(
     };
     let protected_reader_strip = format!(
         concat!(
-            "<section class=\"protected-trust-strip\" aria-label=\"Protected by Default reader trust strip\">",
+            "<details class=\"protected-trust-strip\" aria-label=\"Protected by Default reader trust strip\"><summary><strong>Protected by Default</strong><span>Remote content blocked</span></summary>",
             "<div><strong>Protected by Default</strong><p>Verified signatures do not make content safe. Rendered and future decrypted content must still pass protected rendering.</p></div>",
             "<div class=\"trust-strip-badges\" aria-label=\"Reader protection states\">",
             "<span class=\"badge badge-ok\">Remote content blocked</span>",
             "<span class=\"badge\">{} rendering</span>",
-            "<span class=\"badge\">Source view escaped</span>",
-            "</div></section>"
+            "<span class=\"badge\">Source view unavailable</span>",
+            "</div></details>"
         ),
         escape_html(rendered.rendering_mode.as_str()),
     );
     let openpgp_reader_states = concat!(
-        "<section class=\"openpgp-reader-states\" aria-label=\"OpenPGP reader states\" data-openpgp-reader-states=\"ui-only\">",
+        "<details class=\"openpgp-reader-states\" aria-label=\"OpenPGP reader states\" data-openpgp-reader-states=\"ui-only\"><summary><strong>OpenPGP unavailable</strong><span>Signature not verified</span></summary>",
         "<div><strong>OpenPGP reader state</strong><p>No account OpenPGP capability is configured for this reader session. No decrypt, verify, key discovery, private-key access, or passphrase handling was attempted.</p></div>",
-        "<dl class=\"openpgp-state-list\"><dt>Encrypted</dt><dd>not assessed</dd><dt>Decrypted locally</dt><dd>not produced</dd><dt>Signature</dt><dd>not verified</dd><dt>Signer</dt><dd>unknown until configured evidence exists</dd><dt>Missing key</dt><dd>not actionable in this UI-only slice</dd></dl>",
+        "<dl class=\"openpgp-state-list\"><dt>Encrypted</dt><dd>not assessed</dd><dt>Decrypted on mail host</dt><dd>not produced</dd><dt>Signature</dt><dd>not verified</dd><dt>Signer</dt><dd>unknown until configured evidence exists</dd><dt>Missing key</dt><dd>not actionable in this UI-only slice</dd></dl>",
         "<p class=\"muted openpgp-boundary-note\">Verified signatures do not make content safe. Future decrypted content must still pass Protected by Default rendering.</p>",
-        "</section>"
+        "</details>"
     );
     TrustedHtml::from_template(format!(
         concat!(
             "{}",
             "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
-            "<div class=\"mail-shell mail-shell-three\">",
-            "{}",
-            "{}",
+            "<div class=\"reader-status\">{}{}</div>",
+            "<div class=\"mail-shell mail-shell-three reader-layout\">",
             "{}",
             "<section class=\"message-summary-pane\" aria-labelledby=\"message-title\">",
             "<p><a href=\"/mailbox?name={}\">Back to mailbox</a></p>",
@@ -873,15 +871,15 @@ pub fn render_message_view_page(
             "<h2 id=\"reading-title\">Reading Pane</h2>",
             "{}{}",
             "<section class=\"panel\"><h2>Attachments</h2><ul class=\"attachment-list\">{}</ul></section>",
-            "<section class=\"body-panel\"><h2>Body</h2><div class=\"reader-section-heading\" data-protected-body-panel=\"true\"><span class=\"badge badge-ok\">Protected rendering</span></div><p class=\"muted reader-boundary-note\">Message content is rendered through the protected server-side pipeline. Source and body controls remain explicit, escaped, authorized, and bounded.</p>{}</section>",
+            "<section class=\"body-panel\"><h2>Body</h2><div class=\"reader-section-heading\" data-protected-body-panel=\"true\"><span class=\"badge badge-ok\">Protected rendering</span></div><p class=\"muted reader-boundary-note\">Message content is displayed with active content and remote images removed.</p>{}</section>",
             "</article>",
             "</div>",
             "</main>"
         ),
         app_header(canonical_username, csrf_token, mailbox_nav_section(&rendered.mailbox_name, archive_mailbox_name)),
-        folder_pane(user_visible_mailboxes, Some(&rendered.mailbox_name)),
         protected_reader_strip,
         openpgp_reader_states,
+        folder_pane(user_visible_mailboxes, Some(&rendered.mailbox_name)),
         escape_html(&url_encode(&rendered.mailbox_name)),
         escape_html(rendered.subject.as_deref().unwrap_or("<none>")),
         escape_html(rendered.from.as_deref().unwrap_or("<none>")),
@@ -1048,17 +1046,17 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
         model.selected_source_part_paths,
     );
     let openpgp_compose_controls = concat!(
-        "<section class=\"openpgp-compose-controls panel\" aria-label=\"OpenPGP compose controls\" data-openpgp-compose-controls=\"ui-only\">",
+        "<details class=\"openpgp-compose-controls panel\" aria-label=\"OpenPGP compose controls\" data-openpgp-compose-controls=\"ui-only\"><summary><strong>OpenPGP unavailable</strong><span>This message will be sent without OpenPGP protection.</span></summary>",
         "<h2>OpenPGP compose controls</h2>",
-        "<p>No account OpenPGP capability is configured for compose in this UI-only slice. No encrypt, sign, key lookup, private-key access, passphrase handling, or message mutation was attempted.</p>",
+        "<p>No account OpenPGP capability is configured for compose. No encrypt, sign, key lookup, private-key access, passphrase handling, or message mutation was attempted.</p>",
         "<fieldset class=\"openpgp-compose-option-list\" disabled aria-describedby=\"openpgp-compose-boundary\">",
         "<legend>Future account-controlled actions</legend>",
         "<label for=\"openpgp-compose-encrypt\"><input id=\"openpgp-compose-encrypt\" type=\"checkbox\" disabled>Encrypt when configured</label>",
         "<label for=\"openpgp-compose-sign\"><input id=\"openpgp-compose-sign\" type=\"checkbox\" disabled>Sign when configured</label>",
         "<label for=\"openpgp-compose-recipients\"><input id=\"openpgp-compose-recipients\" type=\"checkbox\" disabled>Require configured recipient keys</label>",
         "</fieldset>",
-        "<p id=\"openpgp-compose-boundary\" class=\"muted openpgp-compose-boundary-note\">Controls are presentation only and remain locked until account capability, recipient-key, and policy evidence exists. Send Message and Save Draft remain unchanged plaintext submission paths in this slice.</p>",
-        "</section>"
+        "<p id=\"openpgp-compose-boundary\" class=\"muted openpgp-compose-boundary-note\">Signing and encryption controls are unavailable. Send Message and Save Draft use unencrypted message content.</p>",
+        "</details>"
     );
 
     TrustedHtml::from_template(format!(
@@ -1067,7 +1065,7 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
             "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
             "<section class=\"content-pane\">",
             "<h1>{}</h1>",
-            "<p class=\"muted\">This send slice uses the local submission surface, keeps the browser body plain-text-first, and accepts bounded new file uploads or explicitly selected source-message attachments.</p>",
+            "<p class=\"muted\">Write your message and add any attachments before sending.</p>",
             "{}{}{}{}",
             "<form method=\"post\" action=\"/send\" enctype=\"multipart/form-data\">",
             "<input type=\"hidden\" name=\"csrf_token\" value=\"{}\">",
@@ -1246,12 +1244,12 @@ pub(crate) fn render_draft_list_page(model: &DraftListPageModel<'_>) -> TrustedH
             "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
             "<section class=\"content-pane\">",
             "<h1>Drafts</h1>{}{}",
-            "<p class=\"muted\">Saved drafts are bounded server-side compose state. Stored attachments remain send-only and are not previewed.</p>",
+            "<p class=\"muted\">Continue a saved message or start a new one. Draft attachments are included when you send.</p>",
             "<p><a class=\"primary-button\" href=\"/compose\">New Message</a></p>",
-            "<table>",
+            "<div class=\"table-wrap\" role=\"region\" aria-label=\"Saved drafts\" tabindex=\"0\"><table>",
             "<thead><tr><th>Action</th><th>Updated</th><th>Recipients</th><th>Body Bytes</th><th>Attachments</th><th>Delete</th></tr></thead>",
             "<tbody>{}</tbody>",
-            "</table>",
+            "</table></div>",
             "</section>",
             "</main>"
         ),
@@ -1293,18 +1291,18 @@ pub(crate) fn render_settings_page(model: &SettingsPageModel<'_>) -> TrustedHtml
     let account_security_panel = concat!(
         r#"<section class="panel account-security-panel" aria-labelledby="account-security-title">"#,
         r#"<h2 id="account-security-title">Account Security</h2>"#,
-        r#"<p class="muted">OpenPGP account controls are shown here as UI-only placeholders until a later evidenced slice wires configured-account policy into runtime behavior.</p>"#,
+        r#"<p class="muted">Signing and encryption are currently unavailable for this account.</p>"#,
         r#"<div class="openpgp-account-security" aria-label="OpenPGP account controls" data-openpgp-account-controls="ui-only">"#,
-        r#"<div class="badge-list openpgp-account-badges" aria-label="OpenPGP account status"><span class="badge badge-warn">OpenPGP not configured</span><span class="badge">UI-only controls</span><span class="badge">Protected by Default preserved</span></div>"#,
-        r#"<dl class="openpgp-state-list"><dt>Account capability</dt><dd>not configured</dd><dt>Signing policy</dt><dd>not active</dd><dt>Encryption policy</dt><dd>not active</dd><dt>Private key access</dt><dd>not attempted</dd><dt>Passphrase handling</dt><dd>not present</dd></dl>"#,
+        r#"<div class="badge-list openpgp-account-badges" aria-label="OpenPGP account status"><span class="badge badge-warn">OpenPGP not configured</span><span class="badge">Protected rendering</span></div>"#,
+        r#"<details class="security-disclosure"><summary>Details and unavailable controls</summary><dl class="openpgp-state-list"><dt>Account capability</dt><dd>not configured</dd><dt>Signing policy</dt><dd>not active</dd><dt>Encryption policy</dt><dd>not active</dd><dt>Private key access</dt><dd>not attempted</dd><dt>Passphrase handling</dt><dd>not present</dd></dl>"#,
         r#"<fieldset class="openpgp-account-control-set" disabled>"#,
         r#"<legend>Future configured-account controls</legend>"#,
         r#"<label for="openpgp-account-enable"><input id="openpgp-account-enable" type="checkbox" disabled> Enable OpenPGP for this account</label>"#,
         r#"<label for="openpgp-account-require-sign"><input id="openpgp-account-require-sign" type="checkbox" disabled> Require signing when configured</label>"#,
         r#"<label for="openpgp-account-require-encrypt"><input id="openpgp-account-require-encrypt" type="checkbox" disabled> Require encryption when configured</label>"#,
         r#"</fieldset>"#,
-        r#"<p class="muted openpgp-account-boundary-note">These controls are placeholders for a later evidenced slice. They submit no OpenPGP form fields and do not activate cryptographic behavior.</p>"#,
-        r#"</div>"#,
+        r#"<p class="muted openpgp-account-boundary-note">These controls remain unavailable. They submit no OpenPGP form fields and do not activate signing or encryption.</p>"#,
+        r#"</details></div>"#,
         r#"</section>"#,
     );
 
@@ -1327,11 +1325,10 @@ pub(crate) fn render_settings_page(model: &SettingsPageModel<'_>) -> TrustedHtml
         concat!(
             "{}",
             "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
-            "<section class=\"content-pane\">",
-            "<h1>Settings</h1>{}{}{}",
-            "<p class=\"muted\">This settings slice stays intentionally small. It controls HTML display preference and one optional archive mailbox shortcut without turning OSMAP into a broad preference UI.</p>",
+            "<section class=\"content-pane settings-pane\">",
+            "<div class=\"page-intro\"><h1>Settings</h1><p>Manage your account appearance and mail preferences.</p></div>{}{}{}",
             "{}",
-            "<form method=\"post\" action=\"/settings\" class=\"action-stack\">",
+            "<div class=\"preferences-form-wrap\"><form method=\"post\" action=\"/settings\" class=\"action-stack\">",
             "<input type=\"hidden\" name=\"csrf_token\" value=\"{}\">",
             "<fieldset class=\"panel\">",
             "<legend>HTML Message Display</legend>",
@@ -1345,15 +1342,16 @@ pub(crate) fn render_settings_page(model: &SettingsPageModel<'_>) -> TrustedHtml
             "<p class=\"muted\">Leave this blank to keep only the manual move flow.</p>",
             "</fieldset>",
             "<div><button type=\"submit\">Save Settings</button></div>",
-            "</form>",
+            "</form></div>",
+            "<footer class=\"principles-strip\" aria-label=\"Design principles\"><p><strong>Simple by design. Protected by default.</strong></p><div class=\"principles-list\"><span>No browser scripts</span><span>Remote content blocked</span><span>Explicit downloads</span><span>Protected session cookies</span></div></footer>",
             "</section>",
             "</main>"
         ),
         app_header(model.canonical_username, model.csrf_token, "settings"),
         success_banner,
         error_banner,
-        appearance_panel,
         account_security_panel,
+        appearance_panel,
         escape_html(model.csrf_token),
         prefer_sanitized_html_checked,
         prefer_plain_text_checked,

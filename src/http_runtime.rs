@@ -162,7 +162,7 @@ where
                     404,
                     "Not Found",
                     "Not Found",
-                    "<p>The requested path does not exist in the current OSMAP browser slice.</p>",
+                    "<p>This page could not be found.</p>",
                 ),
                 audit_events: vec![build_http_warning_event(
                     "http_route_not_found",

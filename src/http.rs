@@ -797,6 +797,9 @@ mod tests {
     mod shell_tests {
         include!("http/shell_tests.rs");
     }
+    mod component_tests {
+        include!("http_component_tests.rs");
+    }
     use crate::auth::RequiredSecondFactor;
     use crate::mailbox::MessageView;
     use crate::mime::{AttachmentDisposition, MimeBodySource};

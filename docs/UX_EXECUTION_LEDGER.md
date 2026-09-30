@@ -341,3 +341,59 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   frozen-plan hashes pass. First failed gate and browser logs are retained.
   No renderer/CSP weakening, state migration, native-host/release claim or
   deployment. Signed checkpoint follows before S01-03.
+
+### S01-02 delivery / S01-03 work order — 2026-09-29
+
+- S01-02 signed delivery `8161dd8`, Shopkeeper signature verified, clean
+  worktree. Continue delegated engineering; no synchronization/deployment.
+- S01-03: IN_PROGRESS; base `8161dd8`. Allowed: shared UI/CSS/HTML response
+  helper, HTTP route copy/imports/test modules, fixture/browser harness,
+  V14 exact-copy gates where misleading labels change, generated V10 registers,
+  ledger/current status/limitations and control acceptance evidence.
+- Deliver compact native protection/unavailable-state disclosures, useful
+  error headings and return navigation, user-facing copy, shared settings
+  cards/forms, truthful principles strip and no search on Settings. Preserve
+  unavailable OpenPGP controls without submitted fields or cryptographic claims.
+- Correct legacy false source availability and ambiguous decryption-location
+  labels; update those exact-string gates while retaining CSP, sanitization,
+  field/route prohibitions and negative controls. Historical V14 documents
+  remain historical. Remove development-slice commentary from normal flows.
+- Reflow reader state panels outside the three-pane grid and contain the
+  drafts table. Full coordinated selection/list behavior remains S02. Verify
+  no duplicate main/title, escaped content, truthful capability/crypto labels,
+  small-screen reader/draft containment and native disclosure interaction.
+- Existing S01 evidence root; no new dependencies, persistence, backend
+  capabilities or host changes. Source rollback only. Run common gates,
+  focused browser checks and mandatory signed pre-commit security gate.
+
+### S01-03 test-location refinement — 2026-09-29
+
+- The V12 integration inventory treats every `.rs` below `src/http/` as a
+  browser handler and rejects even the word OpenPGP. New UI assertion tests
+  were therefore misclassified as helper integration. Collocate these tests
+  with the top-level HTTP/UI modules as `src/http_component_tests.rs`, included
+  only from the existing `#[cfg(test)]` module. They only assert rendered labels
+  and error landmarks; no helper call or runtime module was added. The V12
+  gate and its runtime prohibitions remain unchanged.
+
+### S01-03 verification — 2026-09-30 UTC
+
+- Shared fragment errors now have one main landmark, escaped title, heading
+  and return action. Settings cards, compact unavailable-feature disclosures
+  and truthful protection labels replace developer commentary. Native account
+  and protection menus are mutually exclusive. Reader metadata panels sit
+  above the three-column content grid; draft tables scroll inside their region.
+- Library tests: 561 passed, four existing ignored, no failures. V4 hostile
+  assurance: two passed. Strict clippy, formatting, V10, V14, diff and frozen
+  plan hashes pass. Full `make acceptance-check` rerun passes after the
+  documented test-location correction; the initial failure log is retained.
+- Browser evidence: 48 selected-route screenshots across light/dark OS schemes
+  and 360/768/1440 widths, plus 12 keyboard menu cases, all pass with no page
+  overflow. Inspected desktop settings/reader and narrow settings/reader.
+  A final mobile header adjustment was checked in four normal/long-identity
+  settings captures and four keyboard cases, again without overflow.
+- Evidence: S01 `components/screenshots-rerun`, `components/final-mobile` and
+  `gates/s01-03-*`. Full route/theme audit, independent human accessibility
+  acceptance and native-host qualification remain pending. No deployment.
+- S01-03: IMPLEMENTED_VERIFIED_LOCAL; mandatory signed pre-commit checkpoint
+  follows. Continue S01-04 under delegated engineering authority.

@@ -84,6 +84,7 @@ def main():
                             assert page.locator(":focus").get_attribute("class") == "skip-link"
                             page.keyboard.press("Enter")
                             assert page.locator(":focus").get_attribute("id") == "main-content"
+                            page.evaluate("window.scrollTo(0, 0)")
                             toggle = page.locator(".rail-disclosure summary")
                             toggle.focus()
                             page.keyboard.press("Enter")
@@ -94,12 +95,18 @@ def main():
                             page.screenshot(path=str(expanded), full_page=True)
                             page.keyboard.press("Enter")
                             assert page.locator(".rail-disclosure").get_attribute("open") is None
+                            if page.locator(".protection-menu").count():
+                                page.locator(".protection-menu summary").focus()
+                                page.keyboard.press("Enter")
+                                assert page.locator(".protection-menu").get_attribute("open") is not None
                             menu = page.locator(".account-menu summary")
                             menu.focus()
                             page.keyboard.press("Enter")
+                            if page.locator(".protection-menu").count():
+                                assert page.locator(".protection-menu").get_attribute("open") is None
                             assert page.locator(".account-menu-panel .logout-button").is_visible()
                             assert page.locator(".account-menu-panel a[href='/sessions']").is_visible()
-                            bounds = page.locator(".account-menu-panel").bounding_box()
+                            bounds = page.locator(".account-menu .account-menu-panel").bounding_box()
                             assert bounds and bounds["x"] >= 0 and bounds["x"] + bounds["width"] <= width + 1
                             account = args.output / f"{item['name']}-account-menu-{scheme}-{width}.png"
                             page.screenshot(path=str(account), full_page=True)

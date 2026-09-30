@@ -26,7 +26,7 @@ reject_pattern() {
 require_pattern "src/http_ui.rs" "data-openpgp-account-controls=\"ui-only\"" "UI-only account OpenPGP control marker"
 require_pattern "src/http_ui.rs" "Account Security" "account security heading"
 require_pattern "src/http_ui.rs" "OpenPGP not configured" "not-configured OpenPGP account state"
-require_pattern "src/http_ui.rs" "Protected by Default preserved" "protected rendering boundary label"
+require_pattern "src/http_ui.rs" "Protected rendering" "protected rendering boundary label"
 require_pattern "src/http_ui.rs" "They submit no OpenPGP form fields" "no submitted OpenPGP field boundary"
 require_pattern "src/http_ui.rs" "action=\\\"/settings\\\" class=\\\"action-stack\\\"" "existing settings form source marker"
 require_pattern "src/http_ui.rs" "name=\\\"html_display_preference\\\"" "existing HTML display preference field"

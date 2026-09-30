@@ -53,7 +53,7 @@ require_pattern "src/http_ui.rs" "No encrypt, sign, key lookup, private-key acce
 require_pattern "src/http_ui.rs" "Encrypt when configured" "future encrypt control label"
 require_pattern "src/http_ui.rs" "Sign when configured" "future sign control label"
 require_pattern "src/http_ui.rs" "Require configured recipient keys" "recipient-key control label"
-require_pattern "src/http_ui.rs" "Send Message and Save Draft remain unchanged plaintext submission paths" "plaintext submission boundary"
+require_pattern "src/http_ui.rs" "Send Message and Save Draft use unencrypted message content" "plaintext submission boundary"
 require_pattern "src/http_ui.rs" 'action=\"/send\" enctype=\"multipart/form-data\"' "existing send form"
 require_pattern "src/http_ui.rs" "Send Message" "existing send button"
 require_pattern "src/http_ui.rs" 'formaction=\"/drafts/save\"' "existing save-draft button"

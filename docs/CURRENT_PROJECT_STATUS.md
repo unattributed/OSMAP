@@ -25,13 +25,15 @@ authorizes engineering across the epic on parrot-2TB and obsd1. The signed
 plan anchor and all original reference hashes verify. S00-01/02/03 have signed
 source deliveries; S00-04 is delivered as `85e1701`. S01-01 implements
 persistent light/dark/system preferences and has passed local gate verification.
-S01-02 adds the native icon rail, account menu and validated archive shortcut;
-shared component cleanup and the full responsive audit follow in S01-03/04.
+S01-02 adds the native icon rail, account menu and validated archive shortcut.
+S01-03 adds compact disclosures, clearer errors, settings cards, truthful
+capability labels and reader/draft reflow; local acceptance gates pass.
+The full responsive, theme and workflow audit continues in S01-04.
 D01–D06 are recorded
 as delegated engineering decisions in `UX_DECISIONS.md`. Independent human
 identity/accessibility and final release acceptance remain separate.
 See `UX_AGENT_EXECUTION_CONTRACT.md` and `UX_EXECUTION_LEDGER.md`.
-This engineering intake adds no runtime capability or deployment qualification.
+These local UI deliveries do not establish native-host or deployment qualification.
 The operator reports Roundcube completely removed; the UX epic does not include
 Roundcube migration, coexistence or restoration.
 
