@@ -6,6 +6,7 @@ pub(crate) fn render_copies_page(
     mailboxes: Option<&[MailboxEntry]>,
     chosen: Option<&str>,
     counts: Option<(usize, usize)>,
+    status: Option<&crate::mailbox_status::MailboxStatus>,
 ) -> TrustedHtml {
     let entries = mailboxes.unwrap_or(&[]);
     let has = |name: &str| entries.iter().any(|v| v.name == name);
@@ -66,11 +67,16 @@ pub(crate) fn render_copies_page(
         |(all, unread)| (all.to_string(), unread.to_string()),
     );
     let scope = if counts.is_some() {
-        "Counts cover loaded summaries (up to 2,000), before filters or snooze. Folder total unknown."
+        "Loaded unread covers up to 2,000 summaries before filters or snooze. Virtual size is not disk use or quota."
     } else {
         "Verified summary counts are unavailable. Opening this folder remains separate from selecting it."
     };
-    let selected = chosen.map_or_else(|| "<p>No available folder to inspect.</p>".to_owned(), |name| format!("<h3>{}</h3><dl><dt>Loaded messages</dt><dd data-folder-messages>{messages}</dd><dt>Loaded unread</dt><dd data-folder-unread>{unread}</dd><dt>Mailbox owner</dt><dd>{}</dd></dl><p class=\"copies-count-scope\">{scope}</p><a class=\"button-link\" href=\"/mailbox?name={}\">Open folder</a>", escape_html(name), escape_html(model.canonical_username), url_encode(name)));
+    let total = status.map_or_else(|| "Unknown".into(), |v| v.messages().to_string());
+    let size = status.map_or_else(
+        || "Unknown".into(),
+        |v| format!("{} bytes", v.virtual_bytes()),
+    );
+    let selected = chosen.map_or_else(|| "<p>No available folder to inspect.</p>".to_owned(), |name| format!("<h3>{}</h3><dl><dt>Total messages</dt><dd data-folder-total>{total}</dd><dt>Virtual message size</dt><dd data-folder-vsize>{size}</dd><dt>Loaded unread</dt><dd><span data-folder-unread>{unread}</span> of <span data-folder-messages>{messages}</span> loaded</dd><dt>Mailbox owner</dt><dd>{}</dd></dl><p class=\"copies-count-scope\">{scope}</p><a class=\"button-link\" href=\"/mailbox?name={}\">Open folder</a>", escape_html(name), escape_html(model.canonical_username), url_encode(name)));
     let notices = [
         (model.success_message, "status"),
         (model.error_message, "alert"),

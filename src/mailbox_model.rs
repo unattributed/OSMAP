@@ -973,6 +973,14 @@ pub struct MailboxBackendError {
 
 /// A backend capable of listing mailboxes for a canonical user.
 pub trait MailboxBackend {
+    fn mailbox_status(
+        &self,
+        _canonical_username: &str,
+        _mailbox: &str,
+    ) -> Result<crate::mailbox_status::MailboxStatus, MailboxBackendError> {
+        Err(crate::mailbox_status::unavailable())
+    }
+
     fn list_mailboxes(
         &self,
         canonical_username: &str,

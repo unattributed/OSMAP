@@ -232,6 +232,9 @@ fn isolated_openbsd_json_and_signed_flag_helper() {
     ] {
         assert_eq!(executor.run_with_stdin("/usr/local/bin/doveadm", &save, message).expect("save synthetic mail").status_code, 0);
     }
+    let status = super::status_tests::status_through_helper(&root, DoveadmMailboxListBackend::new(MailboxListingPolicy::default(),executor.clone(),"/usr/local/bin/doveadm"),"INBOX").expect("exact native status through signed helper");
+    assert_eq!(status.messages(),4);
+    assert!(status.virtual_bytes()>0);
     let list = DoveadmMessageListBackend::new(
         MessageListPolicy::default(),
         executor.clone(),

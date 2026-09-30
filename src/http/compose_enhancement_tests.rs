@@ -32,7 +32,7 @@ fn composer_hash_allowance_never_reaches_reader_auth_or_other_pages() {
         .headers
         .iter()
         .any(|(name, value)| name == "Content-Security-Policy" && value == &csp()));
-    assert!(!csp().contains("connect-src"));
+    assert!(csp().contains("connect-src 'self'"));
     assert!(!csp().contains("script-src 'self'"));
 }
 

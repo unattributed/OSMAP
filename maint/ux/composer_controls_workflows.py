@@ -93,7 +93,10 @@ def main():
             response = visit(page, "/compose")
             digest = base64.b64encode(hashlib.sha256((repo / "src/http/compose_local.js").read_bytes()).digest()).decode()
             assert "script-src 'sha256-" + digest + "'" in response.headers["content-security-policy"]
-            assert "connect-src" not in response.headers["content-security-policy"]
+            assert response.headers["content-security-policy"] == (
+                "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'; "
+                "connect-src 'self'; script-src 'sha256-" + digest + "'; script-src-attr 'none'"
+            )
             expect(page.locator("#compose-form")).to_have_attribute("data-local-controls", "ready")
             expect(page.locator("#compose-save-status")).to_have_text("Not saved yet.")
             page.get_by_label("Body", exact=True).fill("Public synthetic composer notes")

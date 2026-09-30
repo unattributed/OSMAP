@@ -2180,3 +2180,49 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   No whole-page acceptance, runtime OpenPGP, production deployment or GitHub
   synchronization is claimed. Autosave and authoritative folder status remain
   isolated next-batch proposals outside this checkpoint.
+
+### Automatic draft saving and authoritative folder status — 2026-09-30
+
+- Signed `16ef4561dd29b5051dd6fe10445141cca9e35e49` passed isolated obsd1
+  qualification in S04 `native-l`: library, hostile-content and disposable
+  signed-helper checks passed. Archive SHA-256
+  `3b3af4c6f4a8b54e038a3c285aefa5b1f641557c35ef603f513a79484a46b786`;
+  qualification log `45b78defcd0ca53f543e2c2c9b7b119bda37ab24ec9f0084cd10f32e964e775a`.
+  Standard checkout/services remained unchanged. The loopback QA preview of
+  that checkpoint passed nine actual page checks; Alice is the public fixture.
+- PAGE15 now saves an independent private CAS auto-save preference: default
+  Off, finite 30/60/120-second intervals. Compose-only automatic saving reuses
+  native draft intent/CAS authority, verifies the persisted owner/ID/revision
+  and content before a finite JSON confirmation, and never sends mail. One
+  request may be in flight; edits made during it remain visible and dirty.
+  Pending files/source attachments require manual saving. Unknown/conflicted
+  outcomes retain local text and pause without replay, with explicit stored-state
+  review. Unsupported APIs and disabled scripting preserve native Save.
+- Independent review rejected the first client for three concrete defects:
+  unrelated Header Search suppressed dirty navigation warnings; an automatic
+  save incorrectly cleared stale preview notices; absent AbortController could
+  lock native controls. Corrected v2 passed both parent
+  `autosave-review-integrated-{edge,firefox}` four-check workflows. The ordinary
+  `autosave-integrated-*` runs each passed five captures and delayed-save,
+  concurrent-edit, conflict, uncertain-result and manual-fallback workflows.
+  Actual background-tab suppression remains unqualified: automation reported
+  the background tab visible in both engines. That limitation is retained.
+- Compose CSP now allows only same-origin connections alongside its exact
+  script hash. The reviewed source gate permits exactly two literal autosave
+  requests and one capability probe; twelve valid-hash negative controls reject
+  broader requests, altered options, aliases, unsafe sinks and CSP drift.
+  Reader/authentication script policy is unchanged. Existing native composer
+  workflows passed all fifteen checks in both browsers after integration.
+- PAGE16 obtains exact-folder total messages and virtual message size through
+  a new finite grant-bound mailbox-status helper operation. Canonical owner,
+  exact mailbox, single JSON row, GUID/numeric bounds, a 4 KiB response cap and
+  existing helper admission/deadlines are enforced. Pattern selectors refuse;
+  unavailable or mismatched ownership shows Unknown. Loaded unread remains a
+  separately labelled bounded snapshot; virtual bytes are not quota/disk use.
+  Parent `folder-status-integrated-{edge,firefox}` passed eight captures each.
+  Native qualification of this new operation follows the signed export.
+- Production check, relevant store/HTTP/helper tests, parent visual inspection,
+  full acceptance/security/V10–13 (888 library tests, seven explicit ignores),
+  both hostile-content tests, strict all-target/all-feature Clippy and V14 passed.
+  Evidence uses S04 `autosave-status-*`. Whole-page/epic acceptance remains open;
+  no production deployment or GitHub synchronization occurred.

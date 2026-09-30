@@ -3,11 +3,11 @@ use super::*;
 
 pub(super) const SCRIPT: &str = include_str!("compose_local.js");
 // The source gate verifies this digest against the exact included bytes.
-pub(super) const SCRIPT_HASH: &str = "sha256-CkC5ZjzrC37w89ahALULvOrTHEqnSvTdxnXwRXvRUDo=";
+pub(super) const SCRIPT_HASH: &str = "sha256-kZwK7n1+ifwttQvzzcnEyEJz/mU5k1xxmTJOqgzVEv8=";
 
 pub(super) fn csp() -> String {
     format!(
-        "{}; script-src '{}'; script-src-attr 'none'",
+        "{}; connect-src 'self'; script-src '{}'; script-src-attr 'none'",
         crate::http_support::browser_csp(),
         SCRIPT_HASH
     )

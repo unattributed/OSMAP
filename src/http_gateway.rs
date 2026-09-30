@@ -138,6 +138,26 @@ impl RuntimeBrowserGateway {
 }
 
 impl BrowserGateway for RuntimeBrowserGateway {
+    fn load_autosave(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::autosave::Preference, crate::autosave::Error> {
+        crate::autosave::Store::new(&self.settings_dir).load(&session.record.canonical_username)
+    }
+    fn save_autosave(
+        &self,
+        session: &ValidatedSession,
+        revision: u64,
+        enabled: bool,
+        interval: u16,
+    ) -> Result<crate::autosave::Preference, crate::autosave::Error> {
+        crate::autosave::Store::new(&self.settings_dir).save(
+            &session.record.canonical_username,
+            revision,
+            enabled,
+            interval,
+        )
+    }
     fn load_signature(
         &self,
         session: &ValidatedSession,
@@ -581,6 +601,40 @@ impl BrowserGateway for RuntimeBrowserGateway {
         )
     }
 
+    fn mailbox_status(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        folder: &str,
+    ) -> BrowserMailboxStatusOutcome {
+        let status = crate::mailbox::MailboxBackend::mailbox_status(
+            &self.build_mailbox_list_backend(),
+            &session.record.canonical_username,
+            folder,
+        )
+        .ok();
+        let event = LogEvent::new(
+            if status.is_some() {
+                LogLevel::Info
+            } else {
+                LogLevel::Warn
+            },
+            crate::logging::EventCategory::Mailbox,
+            "mailbox_status_read",
+            "folder status lookup completed",
+        )
+        .with_field("request_id", context.request_id.clone())
+        .with_field(
+            "canonical_username",
+            session.record.canonical_username.clone(),
+        )
+        .with_field("available", status.is_some().to_string());
+        BrowserMailboxStatusOutcome {
+            canonical_username: session.record.canonical_username.clone(),
+            status,
+            audit_events: vec![event],
+        }
+    }
     fn list_mailboxes(
         &self,
         context: &AuthenticationContext,

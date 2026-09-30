@@ -265,9 +265,9 @@ fn copies_selection_uses_one_owned_summary_read_and_retains_archive() {
         assert_eq!(result.audit_events.iter().filter(|v| v.action == "welcome_fixture_summary_list").count(), 1);
         let body = body_text(&result);
         let expected = match marker { "valid" => "8", "empty" => "0", _ => "Unknown" };
-        assert!(body.contains(&format!("data-folder-messages>{expected}</dd>")), "{marker}");
+        assert!(body.contains(&format!("data-folder-messages>{expected}</span>")), "{marker}");
         assert!(body.contains("folder=INBOX\" aria-current=\"true\""));
-        assert!(body.contains("Counts cover loaded summaries") || body.contains("Verified summary counts are unavailable"));
+        assert!(body.contains("Loaded unread covers") || body.contains("Verified summary counts are unavailable"));
         assert_eq!(store.load("alice@example.com").unwrap(), before);
     }
     for query in ["section=copies&folder=Foreign", "section=copies&folder=", "section=copies&folder=%0aINBOX", "section=general&folder=INBOX", "section=copies&q=x&folder=INBOX"] {
@@ -276,4 +276,16 @@ fn copies_selection_uses_one_owned_summary_read_and_retains_archive() {
     assert!(super::super::header_theme::safe_return("/settings?section=copies&folder=INBOX.Projects").unwrap().contains("folder=INBOX.Projects"));
     assert!(super::super::header_theme::safe_return("/settings?section=general&folder=INBOX").is_none());
     fs::remove_dir_all(root).unwrap();
+}
+#[test]
+fn mailbox_status_page_keeps_total_and_loaded_unread_separate() {
+ let app=BrowserApp::new(HttpPolicy::default(),StubGateway::default());
+ for (ua,expected) in [("WelcomeData/valid","42"),("StatusWrongOwner","Unknown"),("StatusUnavailable","Unknown")] {
+  let mut req=request("GET","/settings?section=copies&folder=INBOX",&authenticated_same_origin_headers(),"");req.headers.insert("user-agent".into(),ua.into());
+  let response=app.handle_request(&req,"127.0.0.1");assert_eq!(response.response.status_code,200);let body=body_text(&response);
+  assert!(body.contains(&format!("data-folder-total>{expected}</dd>")));
+  assert!(body.contains("Virtual size is not disk use or quota"));
+  if expected=="42" {assert!(body.contains("data-folder-vsize>8192 bytes</dd>"));assert!(body.contains("data-folder-unread>4</span>"));assert!(body.contains("data-folder-messages>8</span>"));}
+  assert_eq!(response.audit_events.iter().filter(|v|v.action=="status_fixture").count(),1);
+ }
 }

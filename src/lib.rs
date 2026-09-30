@@ -7,6 +7,7 @@
 pub mod appearance;
 pub mod attachment;
 pub mod auth;
+pub mod autosave;
 pub mod bootstrap;
 mod charset;
 pub mod compose_format;
@@ -32,6 +33,7 @@ pub mod mail_list;
 pub mod mail_navigation;
 pub mod mailbox;
 pub mod mailbox_helper;
+pub mod mailbox_status;
 pub mod message_metadata;
 pub mod mime;
 pub mod openbsd;

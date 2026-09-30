@@ -187,6 +187,13 @@ where
             (HttpMethod::Post, "/notifications/read") => {
                 self.handle_notification_read(request, &context)
             }
+            (HttpMethod::Get, "/drafts/autosave/config") => {
+                self.handle_autosave_config(request, &context)
+            }
+            (HttpMethod::Post, "/drafts/autosave") => self.handle_draft_save(request, &context),
+            (HttpMethod::Post, "/settings/autosave") => {
+                self.handle_autosave_settings(request, &context)
+            }
             (HttpMethod::Post, "/settings/signature") => {
                 self.handle_signature_update(request, &context)
             }

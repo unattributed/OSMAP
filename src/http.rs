@@ -19,6 +19,7 @@ mod http_runtime;
 mod notification_badge;
 mod routes_appearance;
 mod routes_auth;
+mod routes_autosave;
 mod routes_compose;
 mod routes_composition_preferences;
 mod routes_contacts;
@@ -801,16 +802,16 @@ pub use self::http_browser::{
     BrowserDraftLoadOutcome, BrowserDraftSaveDecision, BrowserDraftSaveOutcome,
     BrowserDraftSaveRequest, BrowserDraftState, BrowserDraftStorageUsage, BrowserGateway,
     BrowserLoginDecision, BrowserLoginOutcome, BrowserLogoutOutcome, BrowserMailboxDecision,
-    BrowserMailboxOutcome, BrowserMessageFlagFailure, BrowserMessageFlagOutcome,
-    BrowserMessageListDecision, BrowserMessageListOutcome, BrowserMessageMoveDecision,
-    BrowserMessageMoveOutcome, BrowserMessageSearchDecision, BrowserMessageSearchOutcome,
-    BrowserMessageViewDecision, BrowserMessageViewOutcome, BrowserSendDecision, BrowserSendOutcome,
-    BrowserSendRecoveryDecision, BrowserSendRecoverySnapshot, BrowserSendRequest,
-    BrowserSessionDecision, BrowserSessionListDecision, BrowserSessionListOutcome,
-    BrowserSessionRevokeDecision, BrowserSessionRevokeOutcome, BrowserSessionRevokeScope,
-    BrowserSessionValidationOutcome, BrowserSettingsDecision, BrowserSettingsOutcome,
-    BrowserSettingsUpdateDecision, BrowserSettingsUpdateOutcome, BrowserVisibleSession,
-    BrowserVisibleSettings,
+    BrowserMailboxOutcome, BrowserMailboxStatusOutcome, BrowserMessageFlagFailure,
+    BrowserMessageFlagOutcome, BrowserMessageListDecision, BrowserMessageListOutcome,
+    BrowserMessageMoveDecision, BrowserMessageMoveOutcome, BrowserMessageSearchDecision,
+    BrowserMessageSearchOutcome, BrowserMessageViewDecision, BrowserMessageViewOutcome,
+    BrowserSendDecision, BrowserSendOutcome, BrowserSendRecoveryDecision,
+    BrowserSendRecoverySnapshot, BrowserSendRequest, BrowserSessionDecision,
+    BrowserSessionListDecision, BrowserSessionListOutcome, BrowserSessionRevokeDecision,
+    BrowserSessionRevokeOutcome, BrowserSessionRevokeScope, BrowserSessionValidationOutcome,
+    BrowserSettingsDecision, BrowserSettingsOutcome, BrowserSettingsUpdateDecision,
+    BrowserSettingsUpdateOutcome, BrowserVisibleSession, BrowserVisibleSettings,
 };
 pub use self::http_gateway::RuntimeBrowserGateway;
 pub use self::http_runtime::run_http_server;
@@ -894,6 +895,9 @@ mod tests {
     mod reply_tests {
         include!("http/reply_tests.rs");
     }
+    mod autosave_tests {
+        include!("http/autosave_tests.rs");
+    }
     mod signature_tests {
         include!("http/signature_tests.rs");
     }
@@ -942,6 +946,7 @@ mod tests {
         recovery_now: Option<u64>,
         labels_store: Option<crate::labels::LabelStore>,
         signature_store: Option<crate::signature::SignatureStore>,
+        autosave_store: Option<crate::autosave::Store>,
         contacts_store: Option<crate::contacts::ContactStore>,
         draft_store: Option<crate::draft::FileDraftStore>,
         fail_draft_delete: Option<String>,
@@ -967,6 +972,7 @@ mod tests {
             Self {
                 labels_store: None,
                 signature_store: None,
+                autosave_store: None,
                 contacts_store: None,
                 draft_store: None,
                 send_journal: fixture_send_journal(),
@@ -1030,6 +1036,32 @@ mod tests {
     }
 
     impl BrowserGateway for StubGateway {
+        fn load_autosave(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<crate::autosave::Preference, crate::autosave::Error> {
+            self.autosave_store
+                .as_ref()
+                .ok_or(crate::autosave::Error::Unavailable)?
+                .load(&session.record.canonical_username)
+        }
+        fn save_autosave(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+            enabled: bool,
+            interval: u16,
+        ) -> Result<crate::autosave::Preference, crate::autosave::Error> {
+            self.autosave_store
+                .as_ref()
+                .ok_or(crate::autosave::Error::Unavailable)?
+                .save(
+                    &session.record.canonical_username,
+                    revision,
+                    enabled,
+                    interval,
+                )
+        }
         fn load_signature(
             &self,
             session: &ValidatedSession,
@@ -1995,6 +2027,32 @@ mod tests {
             }
         }
 
+        fn mailbox_status(
+            &self,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+            folder: &str,
+        ) -> BrowserMailboxStatusOutcome {
+            let native=crate::auth::CommandExecution {status_code:0,stdout:format!("[{{\"mailbox\":{},\"guid\":\"1234567890abcdef1234567890abcdef\",\"messages\":\"42\",\"vsize\":\"8192\"}}]",serde_json::to_string(folder).unwrap()),stderr:String::new()};
+            BrowserMailboxStatusOutcome {
+                canonical_username: if context.user_agent.contains("StatusWrongOwner") {
+                    "other@example.test".into()
+                } else {
+                    session.record.canonical_username.clone()
+                },
+                status: if context.user_agent.contains("StatusUnavailable") {
+                    None
+                } else {
+                    crate::mailbox_status::parse_native(folder, &native).ok()
+                },
+                audit_events: vec![LogEvent::new(
+                    LogLevel::Info,
+                    EventCategory::Mailbox,
+                    "status_fixture",
+                    "one status lookup",
+                )],
+            }
+        }
         fn list_mailboxes(
             &self,
             context: &AuthenticationContext,
@@ -3501,7 +3559,10 @@ mod tests {
     }
     fn add_native_compose_intent(app: &BrowserApp<StubGateway>, req: &mut HttpRequest) {
         assert_eq!(req.method, HttpMethod::Post);
-        assert!(matches!(req.path.as_str(), "/send" | "/drafts/save"));
+        assert!(matches!(
+            req.path.as_str(),
+            "/send" | "/drafts/save" | "/drafts/autosave"
+        ));
         let kind = req.headers.get("content-type").cloned();
         let Ok(parsed) = parse_compose_form(
             &req.body,

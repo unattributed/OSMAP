@@ -20,7 +20,7 @@ with tempfile.TemporaryDirectory() as t,(out/'server.log').open('w') as log,sync
  try:
   page.goto(origin+'/settings?section=copies');page.screenshot(path=str(out/'baseline.png'),full_page=True)
   if final:
-   row=page.locator('.copies-tree a').filter(has_text='INBOX').first;row.focus();page.keyboard.press('Enter');page.wait_for_url('**/settings?section=copies&folder=INBOX');expect(page.locator('.copies-tree [aria-current=true]')).to_have_text('INBOX');expect(page.locator('[data-folder-messages]')).to_have_text('8');expect(page.locator('[data-folder-unread]')).to_have_text('4');assert page.locator('#copies-archive').input_value()==''
+   row=page.locator('.copies-tree a').filter(has_text='INBOX').first;row.focus();page.keyboard.press('Enter');page.wait_for_url('**/settings?section=copies&folder=INBOX');expect(page.locator('.copies-tree [aria-current=true]')).to_have_text('INBOX');expect(page.locator('[data-folder-messages]')).to_have_text('8');expect(page.locator('[data-folder-unread]')).to_have_text('4');assert page.locator('#copies-archive').input_value()=='';expect(page.locator('[data-folder-total]')).to_have_text('42');expect(page.locator('[data-folder-vsize]')).to_have_text('8192 bytes')
    for scheme in ['light','dark']:
     for width in [1600,360]:
      for forced in ['none','active']:

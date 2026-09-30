@@ -60,6 +60,37 @@ impl<E> MailboxBackend for DoveadmMailboxListBackend<E>
 where
     E: CommandExecutor,
 {
+    fn mailbox_status(
+        &self,
+        canonical_username: &str,
+        mailbox: &str,
+    ) -> Result<crate::mailbox_status::MailboxStatus, MailboxBackendError> {
+        crate::mailbox_status::validate_account(canonical_username)?;
+        crate::mailbox_status::validate_name(mailbox)?;
+        let mut args = vec!["-o".into(), "stats_writer_socket_path=".into()];
+        append_doveadm_auth_socket_override(&mut args, self.userdb_socket_path.as_ref());
+        args.extend([
+            "-f".into(),
+            "json".into(),
+            "mailbox".into(),
+            "status".into(),
+            "-u".into(),
+            canonical_username.into(),
+            "guid messages vsize".into(),
+            mailbox.into(),
+        ]);
+        let execution = self
+            .command_executor
+            .run_with_stdin_bytes_timeout_and_output_limit(
+                self.doveadm_path.to_string_lossy().as_ref(),
+                &args,
+                b"",
+                Duration::from_secs(DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS),
+                4096,
+            )
+            .map_err(|_| crate::mailbox_status::unavailable())?;
+        crate::mailbox_status::parse_native(mailbox, &execution)
+    }
     fn list_mailboxes(
         &self,
         canonical_username: &str,

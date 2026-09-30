@@ -17,6 +17,22 @@ pub enum BrowserSendRecoveryDecision {
 }
 
 pub trait BrowserGateway {
+    fn load_autosave(
+        &self,
+        _session: &ValidatedSession,
+    ) -> Result<crate::autosave::Preference, crate::autosave::Error> {
+        Err(crate::autosave::Error::Unavailable)
+    }
+    fn save_autosave(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+        _enabled: bool,
+        _interval: u16,
+    ) -> Result<crate::autosave::Preference, crate::autosave::Error> {
+        Err(crate::autosave::Error::Unavailable)
+    }
+
     fn load_signature(
         &self,
         _session: &ValidatedSession,
@@ -368,6 +384,18 @@ pub trait BrowserGateway {
         archive_mailbox_name: Option<&str>,
     ) -> BrowserSettingsUpdateOutcome;
 
+    fn mailbox_status(
+        &self,
+        _context: &AuthenticationContext,
+        session: &ValidatedSession,
+        _folder: &str,
+    ) -> BrowserMailboxStatusOutcome {
+        BrowserMailboxStatusOutcome {
+            canonical_username: session.record.canonical_username.clone(),
+            status: None,
+            audit_events: vec![],
+        }
+    }
     fn list_mailboxes(
         &self,
         context: &AuthenticationContext,
@@ -999,4 +1027,11 @@ pub enum BrowserDraftDeleteDecision {
     Deleted,
     NotFound,
     Denied { public_reason: String },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BrowserMailboxStatusOutcome {
+    pub canonical_username: String,
+    pub status: Option<crate::mailbox_status::MailboxStatus>,
+    pub audit_events: Vec<LogEvent>,
 }

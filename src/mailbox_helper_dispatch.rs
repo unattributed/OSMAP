@@ -43,6 +43,22 @@ where
     MFB: MessageFlagBackend,
 {
     match request {
+        MailboxHelperRequest::MailboxStatus {
+            canonical_username,
+            mailbox_name,
+            ..
+        } => match backends
+            .mailbox_backend
+            .mailbox_status(canonical_username, mailbox_name)
+        {
+            Ok(status) if status.validate(mailbox_name).is_ok() => {
+                MailboxHelperResponse::MailboxStatusOk { status }
+            }
+            _ => MailboxHelperResponse::Error {
+                backend: "mailbox-status".into(),
+                reason: "exact folder status is unavailable".into(),
+            },
+        },
         MailboxHelperRequest::MessageFlag {
             canonical_username,
             request,
@@ -447,6 +463,7 @@ pub(super) fn log_helper_response(
 fn helper_operation_label(request: &MailboxHelperRequest) -> &'static str {
     match request {
         MailboxHelperRequest::MessageFlag { .. } => "message_flag",
+        MailboxHelperRequest::MailboxStatus { .. } => "mailbox_status",
         MailboxHelperRequest::MailboxList { .. } => "mailbox_list",
         MailboxHelperRequest::MessageList { .. } => "message_list",
         MailboxHelperRequest::MessageSearch { .. } => "message_search",

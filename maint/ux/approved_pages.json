@@ -2654,14 +2654,32 @@
         {
           "id": "R2-15-004",
           "label": "Automatic draft saving",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/autosave.rs",
+            "src/http/routes_autosave.rs",
+            "src/http/compose_local.js",
+            "maint/ux/autosave_workflows.py",
+            "maint/ux/autosave_review_workflows.py",
+            "S04/autosave-integrated-{edge,firefox}/report.json",
+            "S04/autosave-review-integrated-{edge,firefox}/report.json",
+            "Opt-in 30/60/120-second confirmed saving, one flight, newer edits retained, stale/unknown pauses without retry. Native fallback verified. Actual hidden-tab suppression remains unqualified in both automated engines."
+          ]
         },
         {
           "id": "R2-15-005",
           "label": "Auto-save interval",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/autosave.rs",
+            "src/http/routes_autosave.rs",
+            "src/http/compose_local.js",
+            "maint/ux/autosave_workflows.py",
+            "maint/ux/autosave_review_workflows.py",
+            "S04/autosave-integrated-{edge,firefox}/report.json",
+            "S04/autosave-review-integrated-{edge,firefox}/report.json",
+            "Opt-in 30/60/120-second confirmed saving, one flight, newer edits retained, stale/unknown pauses without retry. Native fallback verified. Actual hidden-tab suppression remains unqualified in both automated engines."
+          ]
         },
         {
           "id": "R2-15-006",
@@ -2849,7 +2867,11 @@
             "src/http/routes_settings.rs",
             "maint/ux/folder_details_workflows.py",
             "S04/folder-details-final-{edge,firefox}/report.json",
-            "Folder selection remains within Settings; counts cover verified loaded summaries, not total mailbox size or inferred hierarchy."
+            "Folder selection remains within Settings; counts cover verified loaded summaries, not total mailbox size or inferred hierarchy.",
+            "src/mailbox_status.rs",
+            "src/mailbox_helper_status_tests.rs",
+            "S04/folder-status-integrated-{edge,firefox}/report.json",
+            "Separate authoritative total and virtual message size, plus bounded loaded unread. Virtual size is not quota or disk use. Native helper qualification follows signed export."
           ]
         },
         {

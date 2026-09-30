@@ -496,6 +496,59 @@ where
             return response;
         }
 
+        if request.path == "/drafts/autosave" {
+            let allowed = [
+                "csrf_token",
+                "send_intent",
+                "from",
+                "to",
+                "cc",
+                "bcc",
+                "subject",
+                "body",
+                "body_format",
+                "draft_id",
+                "draft_revision",
+                "reply_mailbox",
+                "reply_uid",
+                "reply_mailbox_guid",
+                "reply_message_guid",
+            ];
+            if form.keys().any(|k| !allowed.contains(&k.as_str()))
+                || !parsed_form.attachments.is_empty()
+                || parsed_form.upload_error.is_some()
+                || !self
+                    .gateway
+                    .load_autosave(&validated_session)
+                    .is_ok_and(|v| v.enabled)
+            {
+                return HandledHttpResponse {
+                    response: super::routes_autosave::json(
+                        409,
+                        serde_json::json!({"version":1,"state":"paused"}),
+                    ),
+                    audit_events,
+                };
+            }
+        }
+
+        if request.path == "/drafts/autosave" {
+            if let Some(id) = form.get("draft_id") {
+                let existing = self.gateway.load_draft(context, &validated_session, id);
+                audit_events.extend(existing.audit_events);
+                if !matches!(existing.decision,BrowserDraftLoadDecision::Loaded{canonical_username,draft} if canonical_username==validated_session.record.canonical_username && draft.canonical_username==canonical_username && draft.draft_id==*id && draft.source_attachments.is_none())
+                {
+                    return HandledHttpResponse {
+                        response: super::routes_autosave::json(
+                            409,
+                            serde_json::json!({"version":1,"state":"paused"}),
+                        ),
+                        audit_events,
+                    };
+                }
+            }
+        }
+
         if let Some(response) =
             self.intent_guard_response(context, &validated_session, &form, &parsed_form.attachments)
         {
@@ -708,6 +761,19 @@ where
                         503,
                         "Service Unavailable",
                     ),
+                    audit_events,
+                }
+            }
+            BrowserDraftSaveDecision::Saved { draft_id } if request.path == "/drafts/autosave" => {
+                let response = self.autosave_confirmation(
+                    context,
+                    &validated_session,
+                    &draft_id,
+                    &form,
+                    &mut audit_events,
+                );
+                HandledHttpResponse {
+                    response,
                     audit_events,
                 }
             }

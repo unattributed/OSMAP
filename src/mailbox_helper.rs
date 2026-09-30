@@ -638,6 +638,10 @@ fn remove_stale_socket_if_needed(socket_path: &Path) -> Result<(), String> {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(unix)]
+    mod status_tests {
+        include!("mailbox_helper_status_tests.rs");
+    }
     mod flag_tests {
         include!("mailbox_helper_flag_tests.rs");
     }

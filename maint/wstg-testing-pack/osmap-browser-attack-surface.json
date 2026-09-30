@@ -747,6 +747,56 @@
         "OSMAP-WSTG-INPV-003",
         "OSMAP-WSTG-BUSL-005"
       ]
+    },
+    {
+      "method": "GET",
+      "path": "/drafts/autosave/config",
+      "query_fields": [],
+      "form_fields": [],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-ATHZ-001"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/drafts/autosave",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "send_intent",
+        "from",
+        "to",
+        "cc",
+        "bcc",
+        "subject",
+        "body",
+        "body_format",
+        "draft_id",
+        "draft_revision",
+        "reply_mailbox",
+        "reply_uid",
+        "reply_mailbox_guid",
+        "reply_message_guid"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-INPV-004"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/settings/autosave",
+      "query_fields": [],
+      "form_fields": [
+        "csrf_token",
+        "revision",
+        "enabled",
+        "interval"
+      ],
+      "wstg_test_ids": [
+        "OSMAP-WSTG-BUSL-002",
+        "OSMAP-WSTG-INPV-004"
+      ]
     }
   ]
 }

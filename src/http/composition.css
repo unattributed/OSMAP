@@ -28,3 +28,5 @@
   .composition-unavailable-state, .composition-toggle > span { color: GrayText; }
   .settings-composition-page :is(input,select,button,summary):focus-visible { outline-color: Highlight; }
 }
+
+.settings-composition-page #composition-autosave:enabled { cursor:pointer; }

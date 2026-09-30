@@ -69,20 +69,63 @@ import base64
 import hashlib
 import re
 
-# R2 / S03-01C: one exact, local-only composer script. Every other route
-# retains browser_csp(); this exception permits no network or storage API.
+# R2 / S03-02: exact compose-only hash plus two literal first-party saves.
 script = Path("src/http/compose_local.js").read_bytes()
 boundary = Path("src/http/compose_enhancement.rs").read_text()
-expected = "sha256-" + base64.b64encode(hashlib.sha256(script).digest()).decode()
-assert re.search(r'const SCRIPT_HASH: &str =\s*"([^"]+)";', boundary).group(1) == expected, "composer script hash drift"
-assert 'include_str!("compose_local.js")' in boundary, "composer source boundary drift"
-assert "script-src '{}'; script-src-attr 'none'" in boundary, "composer CSP drift"
-for forbidden in ["unsafe-eval", "strict-dynamic", "connect-src", "script-src 'self'", "script-src 'unsafe-inline'"]:
-    assert forbidden not in boundary, "broad composer CSP allowance"
-for forbidden in ["innerHTML", "outerHTML", "insertAdjacentHTML", "document.write", "eval(", "Function(", "fetch(",
-                  "XMLHttpRequest", "WebSocket", "sendBeacon", "localStorage", "sessionStorage", "indexedDB",
-                  "document.cookie", "import(", "import ", "Worker(", "serviceWorker", "</script"]:
-    assert forbidden not in script.decode(), f"unexpected composer API: {forbidden}"
+
+def validate_compose(script, boundary):
+    expected = "sha256-" + base64.b64encode(hashlib.sha256(script).digest()).decode()
+    assert re.search(r'const SCRIPT_HASH: &str =\s*"([^"]+)";', boundary).group(1) == expected, "composer script hash drift"
+    assert 'include_str!("compose_local.js")' in boundary, "composer source boundary drift"
+    assert '"{}; connect-src \'self\'; script-src \'{}\'; script-src-attr \'none\'"' in boundary, "composer CSP drift"
+    assert boundary.count("connect-src") == 1, "extra connection directive"
+    for forbidden in ["unsafe-eval", "strict-dynamic", "script-src 'self'", "script-src 'unsafe-inline'"]:
+        assert forbidden not in boundary, "broad composer CSP allowance"
+    text = script.decode()
+    for forbidden in ["innerHTML", "outerHTML", "insertAdjacentHTML", "setHTMLUnsafe", "createContextualFragment", "parseFromString", "srcdoc", "document.write", "eval(", "Function(",
+                      "XMLHttpRequest", "WebSocket", "EventSource", "WebTransport", "RTCPeerConnection", "sendBeacon", "localStorage", "sessionStorage", "indexedDB",
+                      "document.cookie", "import(", "import ", "Worker(", "serviceWorker", "</script"]:
+        assert forbidden not in text, f"unexpected composer API: {forbidden}"
+    # A capability test grants no alias or call authority. Exactly one probe.
+    probe = 'typeof fetch === "function"'
+    assert text.count(probe) == 1, "missing or altered exact fetch capability probe"
+    text = text.replace(probe, "")
+    calls = [
+        'fetch("/drafts/autosave", { method: "POST", body: fields, credentials: "same-origin", mode: "same-origin", redirect: "error", cache: "no-store", signal: controller.signal })',
+        'fetch("/drafts/autosave/config", { credentials: "same-origin", mode: "same-origin", redirect: "error", cache: "no-store" })',
+    ]
+    for call in calls:
+        pattern = r"\s+".join(re.escape(part) for part in call.split())
+        text, count = re.subn(pattern, "", text)
+        assert count == 1, "missing or altered exact autosave request"
+    assert not re.search(r"\bfetch\b", text), "additional or dynamic fetch API"
+
+validate_compose(script, boundary)
+# Negative controls run through the same validator with a valid replacement hash,
+# so rejection proves the source boundary rather than merely hash mismatch.
+mutations = [
+    (script.replace(b'typeof fetch === "function"', b'fetch("/third", {})'), boundary),
+    (script.replace(b'typeof fetch === "function"', b'(alias = fetch)'), boundary),
+    (script + b'\nconst alias = fetch;', boundary),
+    (script + b'\ntypeof fetch === "function";', boundary),
+    (script + b'\nfetch("/third", {});', boundary),
+    (script.replace(b'"/drafts/autosave/config"', b'destination'), boundary),
+    (script, boundary.replace("connect-src 'self'", "connect-src https://example.invalid")),
+    (script + b'\nnode.innerHTML = returned;', boundary),
+    (script.replace(b'credentials: "same-origin"', b'credentials: "include"'), boundary),
+    (script.replace(b'mode: "same-origin"', b'mode: "cors"'), boundary),
+    (script.replace(b'redirect: "error"', b'redirect: "follow"'), boundary),
+    (script.replace(b'cache: "no-store"', b'cache: "default"'), boundary),
+]
+for altered, policy in mutations:
+    digest = "sha256-" + base64.b64encode(hashlib.sha256(altered).digest()).decode()
+    policy = re.sub(r'(const SCRIPT_HASH: &str =\s*")[^"]+(";)', lambda m: m[1] + digest + m[2], policy)
+    try:
+        validate_compose(altered, policy)
+    except AssertionError:
+        continue
+    raise AssertionError("negative composer source control unexpectedly accepted")
+print(f"composer source/CSP negative controls passed: {len(mutations)}")
 allowed_callers = {"src/http/routes_compose.rs", "src/http/routes_draft.rs"}
 for path in Path("src").rglob("*.rs"):
     production = path.read_text().split("\n#[cfg(test)]", 1)[0]

@@ -235,7 +235,10 @@ where
                             return HandledHttpResponse { response: html_response(400, "Bad Request", "Folder Unavailable", "<p>Select a folder from Copies &amp; Folders.</p>"), audit_events };
                         }
                         let counts = chosen.and_then(|name| self.folder_counts(context, &validated_session, name, &mut audit_events));
-                        crate::http_ui::render_copies_page(&model, mailboxes.as_deref(), chosen, counts)
+                        {
+                            let status=chosen.and_then(|folder| self.folder_status(context,&validated_session,folder,&mut audit_events));
+                            crate::http_ui::render_copies_page(&model, mailboxes.as_deref(), chosen, counts,status.as_ref())
+                        }
                     } else if section == "appearance" {
                         crate::http_ui::render_appearance_page(&model, &presentation)
                     } else if section == "composition" {
@@ -243,6 +246,7 @@ where
                             &model,
                             self.gateway.load_composition_preferences(context, &validated_session).ok(),
                             self.gateway.load_signature(&validated_session).ok().as_ref(),
+                            self.gateway.load_autosave(&validated_session).ok().as_ref(),
                         )
                     } else if section == "general" {
                         crate::http_ui::render_general_page(
@@ -654,6 +658,31 @@ fn verified_folder_counts(
 }
 
 impl<G: BrowserGateway> BrowserApp<G> {
+    fn folder_status(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        folder: &str,
+        audit: &mut Vec<LogEvent>,
+    ) -> Option<crate::mailbox_status::MailboxStatus> {
+        crate::mailbox_status::validate_name(folder).ok()?;
+        let (guard, event) =
+            match self.acquire_mailbox_budget(context, session, "settings_folder_status") {
+                Ok(v) => v,
+                Err(r) => {
+                    audit.extend(r.audit_events);
+                    return None;
+                }
+            };
+        audit.push(event);
+        let outcome = self.gateway.mailbox_status(context, session, folder);
+        audit.extend(outcome.audit_events);
+        audit.push(self.release_request_budget(guard, "settings_folder_status", context, session));
+        if outcome.canonical_username != session.record.canonical_username {
+            return None;
+        }
+        outcome.status.filter(|v| v.validate(folder).is_ok())
+    }
     fn folder_counts(
         &self,
         context: &AuthenticationContext,

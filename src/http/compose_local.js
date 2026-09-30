@@ -10,22 +10,25 @@
   const heading = document.getElementById("compose-attachments-heading");
   if (!status || !save || !upload || !heading) return;
 
-  const initialState = form.dataset.saveState;
-  const blocked = initialState === "unconfirmed";
-  const inheritedChanges = initialState === "unsaved" || blocked;
+  let initialState = form.dataset.saveState;
+  let blocked = initialState === "unconfirmed";
+  let inheritedChanges = initialState === "unsaved" || blocked;
   const watched = [...form.querySelectorAll(
     'input[name="to"], input[name="cc"], input[name="bcc"], input[name="subject"], textarea[name="body"], select[name="body_format"], input[name^="remove_saved_attachment_"], input[name^="include_original_attachment_"]'
   )];
   const value = (field) => field.type === "checkbox" ? field.checked : field.value;
   const baseline = watched.map(value);
+  const previewBaseline = [...baseline];
+  const previewInheritedChanges = inheritedChanges;
   let submitting = false;
+  let autoFlight = false;
   let pending = [...upload.files];
   const pendingImages = () => imageUpload ? [...imageUpload.files] : [];
   let beforeUnloadAttached = false;
   const dirty = () => inheritedChanges || upload.files.length > 0 || pendingImages().length > 0 ||
     watched.some((field, index) => value(field) !== baseline[index]);
   const warnBeforeLeaving = (event) => {
-    if (!submitting && dirty()) {
+    if (!submitting && (dirty() || autoFlight)) {
       event.preventDefault();
       event.returnValue = "";
     }
@@ -37,21 +40,23 @@
       initialState === "saved" ? "Saved draft." : "Not saved yet.";
     if (status.textContent !== message) status.textContent = message;
     status.dataset.state = blocked ? "unconfirmed" : changed ? "unsaved" : initialState;
+    const previewChanged = previewInheritedChanges || upload.files.length > 0 || pendingImages().length > 0 ||
+      watched.some((field, index) => value(field) !== previewBaseline[index]);
     form.querySelectorAll(".compose-preview").forEach((panel) => {
-      panel.dataset.stale = String(changed);
+      panel.dataset.stale = String(previewChanged);
       let hint = panel.querySelector(".compose-stale-preview");
       if (!hint) {
         hint = document.createElement("p");
         hint.className = "compose-stale-preview";
-        hint.textContent = "This preview or check shows the saved draft. Save and preview or check again after editing.";
+        hint.textContent = "This preview or check has not been refreshed. Save and preview or check again after editing.";
         panel.append(hint);
       }
-      hint.hidden = !changed;
+      hint.hidden = !previewChanged;
     });
-    if (changed && !beforeUnloadAttached) {
+    if ((changed || autoFlight) && !beforeUnloadAttached) {
       window.addEventListener("beforeunload", warnBeforeLeaving);
       beforeUnloadAttached = true;
-    } else if (!changed && beforeUnloadAttached) {
+    } else if (!changed && !autoFlight && beforeUnloadAttached) {
       window.removeEventListener("beforeunload", warnBeforeLeaving);
       beforeUnloadAttached = false;
     }
@@ -90,6 +95,117 @@
     if (!event.defaultPrevented) submitting = true;
   });
   updateState();
+
+  // Automatic saving is opt-in and never uses a returned document as authority.
+  const autoStatus = document.getElementById("compose-auto-status");
+  let autoEnabled = false, autoInterval = 30000, autoPaused = blocked;
+  let autoTimer;
+  const authorButtons = () => [...document.querySelectorAll('button[type="submit"]')]
+    .filter((button) => button.form === form || button.form?.id === "compose-discard-form");
+  const lockedButtons = new Map();
+  const lockAuthoring = () => authorButtons().forEach((button) => {
+    if (!lockedButtons.has(button)) lockedButtons.set(button, button.disabled);
+    button.disabled = true;
+  });
+  const unlockAuthoring = () => { lockedButtons.forEach((disabled, button) => { button.disabled = disabled; }); lockedButtons.clear(); };
+  const announceAuto = (text) => { if (autoStatus) autoStatus.textContent = text; };
+  const pauseAuto = () => {
+    autoPaused = true; blocked = true; submitting = false; lockAuthoring(); updateState();
+    announceAuto("Auto-save paused: the server outcome is not confirmed. Keep this tab open and compare the stored version; no automatic retry will occur. ");
+    const link = document.createElement("a");
+    const id = form.elements.namedItem("draft_id")?.value;
+    const intent = form.elements.namedItem("send_intent")?.value;
+    link.href = id ? `/draft?id=${encodeURIComponent(id)}` : `/compose?receipt=${encodeURIComponent(intent || "")}`;
+    link.target = "_blank"; link.rel = "noopener noreferrer";
+    link.textContent = "Review saved state in a new tab"; autoStatus?.append(link);
+  };
+  document.addEventListener("submit", (event) => {
+    if (autoFlight || (autoPaused && (event.target === form || event.target.id === "compose-discard-form"))) {
+      event.preventDefault(); event.stopImmediatePropagation(); submitting = false;
+      if (autoFlight) announceAuto("Auto-save in progress. Wait before saving, sending, formatting or leaving this page.");
+    } else if (event.target === form || event.target.id === "compose-discard-form") { clearTimeout(autoTimer); submitting = true; announceAuto("Auto-save stopped for the manual action. If it is cancelled, use Save Draft or reload to resume auto-save."); }
+  }, true);
+  document.addEventListener("click", (event) => {
+    if (autoFlight && event.target.closest("a[href]")) {
+      event.preventDefault(); event.stopImmediatePropagation();
+      announceAuto("Auto-save in progress. Wait before leaving this page.");
+    }
+  }, true);
+  const hidden = (name, value) => {
+    let field = form.elements.namedItem(name);
+    if (!field) { field = document.createElement("input"); field.type = "hidden"; field.name = name; form.append(field); }
+    field.value = String(value);
+  };
+  const jsonReply = async (response) => {
+    if (response.status !== 200 || response.redirected || response.headers.get("content-type") !== "application/json") throw new Error("unconfirmed");
+    const reader = response.body.getReader(); let text = "", bytes = 0; const decoder = new TextDecoder();
+    for (;;) { const { done, value } = await reader.read(); if (done) break; bytes += value.length;
+      if (bytes > 4096) { await reader.cancel(); throw new Error("unconfirmed"); } text += decoder.decode(value, { stream: true }); }
+    text += decoder.decode(); return JSON.parse(text);
+  };
+  const saveAutomatically = async () => {
+    if (!autoEnabled || autoPaused || autoFlight || submitting || document.visibilityState !== "visible" || !dirty()) return;
+    if (upload.files.length || pendingImages().length ||
+        form.querySelector('input[name^="remove_saved_attachment_"]:checked, input[name^="include_original_attachment_"]:checked, input[name="source_mailbox"]') ||
+        form.querySelector('select[name="contact_id"]')?.value) {
+      announceAuto("Auto-save waiting: use Save Draft for pending files, source attachments or a selected contact."); return;
+    }
+    const savedValues = watched.map(value);
+    const expectedId = form.elements.namedItem("draft_id")?.value || "";
+    const previousRevision = form.elements.namedItem("draft_revision")?.value || "0";
+    const fields = new URLSearchParams();
+    const allowed = ["csrf_token", "send_intent", "from", "to", "cc", "bcc", "subject", "body", "body_format", "draft_id", "draft_revision", "reply_mailbox", "reply_uid", "reply_mailbox_guid", "reply_message_guid"];
+    for (const name of allowed) { const field = form.elements.namedItem(name); if (field) fields.set(name, field.value); }
+    let controller;
+    try { controller = new AbortController(); } catch {
+      autoEnabled = false; announceAuto("Auto-save is unsupported in this browser. Use Save Draft to keep changes."); return;
+    }
+    autoFlight = true; lockAuthoring(); announceAuto("Saving draft automatically…");
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    try {
+      const result = await jsonReply(await fetch("/drafts/autosave", { method: "POST", body: fields,
+        credentials: "same-origin", mode: "same-origin", redirect: "error", cache: "no-store", signal: controller.signal }));
+      if (result.version !== 1 || result.state !== "saved" || typeof result.draft_id !== "string" ||
+          !/^[a-f0-9]{32}$/.test(result.draft_id) || (expectedId && expectedId !== result.draft_id) ||
+          !Number.isSafeInteger(result.revision) || result.revision !== Number(previousRevision) + 1 ||
+          typeof result.send_intent !== "string" || !/^[1-9][0-9]*\.[a-f0-9]{32}$/.test(result.send_intent) ||
+          typeof result.display_name !== "string" || !(result.reply_to === null || typeof result.reply_to === "string")) throw new Error("unconfirmed");
+      hidden("draft_id", result.draft_id); hidden("draft_revision", result.revision); hidden("send_intent", result.send_intent);
+      for (const name of allowed.filter((name) => name.startsWith("reply_"))) form.elements.namedItem(name)?.remove();
+      history.replaceState(null, "", `/draft?id=${encodeURIComponent(result.draft_id)}`);
+      const draftHeading = form.querySelector(".compose-card-header h2"); if (draftHeading) draftHeading.textContent = "Saved Draft";
+      baseline.splice(0, baseline.length, ...savedValues); inheritedChanges = false; initialState = "saved";
+      const account = form.elements.namedItem("from").value;
+      const sender = form.querySelector(".compose-sender-chip");
+      if (sender) sender.textContent = result.display_name ? `${result.display_name} <${account}>` : account;
+      const policy = document.getElementById("sender-policy");
+      if (policy) policy.textContent = `This draft has captured its sender identity. Reply-to: ${result.reply_to || account}. Saved drafts keep this identity after profile changes.`;
+      const discard = document.getElementById("compose-discard-form");
+      if (discard) { const selected = discard.querySelector('input[name^="selected_"]'); if (selected) selected.value = String(result.revision); }
+      else {
+        const unsaved = form.querySelector('a[data-confirm-discard="true"]');
+        if (unsaved) { unsaved.removeAttribute("data-confirm-discard"); unsaved.href = `/draft?id=${encodeURIComponent(result.draft_id)}`; unsaved.target = "_blank"; unsaved.rel = "noopener noreferrer"; unsaved.textContent = "Open saved draft to review discard"; unsaved.previousElementSibling.textContent = "This message is now saved. Review its stored version before discarding it."; }
+      }
+      unlockAuthoring(); updateState();
+      announceAuto(dirty() ? "Earlier edits saved. Newer changes remain unsaved." : "Auto-save confirmed.");
+    } catch { pauseAuto(); }
+    finally { clearTimeout(timeout); autoFlight = false; updateState(); }
+  };
+  const scheduleAuto = () => { autoTimer = setTimeout(async () => { await saveAutomatically(); if (!autoPaused && !submitting) scheduleAuto(); }, autoInterval); };
+  const autoSupported = typeof fetch === "function" && typeof URLSearchParams === "function" &&
+    typeof AbortController === "function" && typeof TextDecoder === "function" &&
+    typeof ReadableStream === "function" && typeof Response === "function" &&
+    "body" in Response.prototype && "getReader" in ReadableStream.prototype;
+  if (autoStatus && !autoSupported) announceAuto("Auto-save is unsupported in this browser. Use Save Draft to keep changes.");
+  if (autoStatus && !blocked && autoSupported) {
+    fetch("/drafts/autosave/config", { credentials: "same-origin", mode: "same-origin", redirect: "error", cache: "no-store" })
+      .then(jsonReply).then((config) => {
+        if (config.version !== 1 || typeof config.enabled !== "boolean" || ![30,60,120].includes(config.interval)) throw new Error("invalid preference");
+        autoEnabled = config.enabled; autoInterval = config.interval * 1000;
+        announceAuto(autoEnabled ? `Auto-save enabled: ${config.interval} seconds while this page is visible.` : "Auto-save is off. Use Save Draft to keep changes.");
+        if (autoEnabled) scheduleAuto();
+      }).catch(() => announceAuto("Auto-save preference unavailable. Use Save Draft to keep changes."));
+  }
 
   const make = (tag, className, text) => {
     const element = document.createElement(tag);
