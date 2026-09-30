@@ -1630,7 +1630,7 @@
       "fail_closed_relevance": "low",
       "file": "src/http/flag_fixtures.rs",
       "kind": "expect_call",
-      "line": 14
+      "line": 21
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1638,7 +1638,7 @@
       "fail_closed_relevance": "low",
       "file": "src/http/flag_fixtures.rs",
       "kind": "expect_call",
-      "line": 27
+      "line": 34
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -1646,7 +1646,7 @@
       "fail_closed_relevance": "low",
       "file": "src/http/flag_fixtures.rs",
       "kind": "expect_call",
-      "line": 75
+      "line": 82
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -2038,7 +2038,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_support.rs",
       "kind": "expect_call",
-      "line": 513
+      "line": 516
     },
     {
       "classification": "production_adjacent_assumption",
@@ -2046,7 +2046,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_ui.rs",
       "kind": "expect_call",
-      "line": 1603
+      "line": 1659
     },
     {
       "classification": "production_adjacent_assumption",
@@ -2054,7 +2054,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_ui.rs",
       "kind": "expect_call",
-      "line": 1605
+      "line": 1661
     },
     {
       "classification": "production_adjacent_assumption",
@@ -2078,7 +2078,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mail_list.rs",
       "kind": "expect_call",
-      "line": 219
+      "line": 234
     },
     {
       "classification": "production_adjacent_assumption",
@@ -2086,7 +2086,15 @@
       "fail_closed_relevance": "high",
       "file": "src/mail_list.rs",
       "kind": "expect_call",
-      "line": 231
+      "line": 295
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/mail_list.rs",
+      "kind": "expect_call",
+      "line": 307
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3494,7 +3502,15 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_flag_tests.rs",
       "kind": "expect_call",
-      "line": 133
+      "line": 134
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/mailbox_helper_flag_tests.rs",
+      "kind": "unreachable_macro",
+      "line": 145
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -3502,7 +3518,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_flag_tests.rs",
       "kind": "expect_call",
-      "line": 176
+      "line": 147
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -3510,7 +3526,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_flag_tests.rs",
       "kind": "expect_call",
-      "line": 177
+      "line": 193
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -3518,7 +3534,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_flag_tests.rs",
       "kind": "expect_call",
-      "line": 178
+      "line": 194
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -3526,7 +3542,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_flag_tests.rs",
       "kind": "expect_call",
-      "line": 185
+      "line": 195
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -3534,7 +3550,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_flag_tests.rs",
       "kind": "expect_call",
-      "line": 187
+      "line": 202
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -3542,7 +3558,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_flag_tests.rs",
       "kind": "expect_call",
-      "line": 189
+      "line": 204
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -3550,7 +3566,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_flag_tests.rs",
       "kind": "expect_call",
-      "line": 196
+      "line": 206
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -3558,7 +3574,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_flag_tests.rs",
       "kind": "expect_call",
-      "line": 208
+      "line": 213
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -3566,7 +3582,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_flag_tests.rs",
       "kind": "expect_call",
-      "line": 209
+      "line": 225
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -3574,7 +3590,15 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_flag_tests.rs",
       "kind": "expect_call",
-      "line": 210
+      "line": 226
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/mailbox_helper_flag_tests.rs",
+      "kind": "expect_call",
+      "line": 227
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -3606,7 +3630,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_flag_tests.rs",
       "kind": "expect_call",
-      "line": 111
+      "line": 224
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -3614,7 +3638,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_flag_tests.rs",
       "kind": "expect_call",
-      "line": 128
+      "line": 226
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -3622,7 +3646,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_flag_tests.rs",
       "kind": "expect_call",
-      "line": 134
+      "line": 236
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -3630,7 +3654,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_flag_tests.rs",
       "kind": "expect_call",
-      "line": 135
+      "line": 242
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -3638,7 +3662,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_flag_tests.rs",
       "kind": "expect_call",
-      "line": 140
+      "line": 258
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -3646,7 +3670,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_flag_tests.rs",
       "kind": "expect_call",
-      "line": 145
+      "line": 284
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -3654,7 +3678,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_flag_tests.rs",
       "kind": "expect_call",
-      "line": 147
+      "line": 298
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -3726,7 +3750,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_flag_tests.rs",
       "kind": "expect_call",
-      "line": 198
+      "line": 203
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -3734,7 +3758,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_flag_tests.rs",
       "kind": "expect_call",
-      "line": 206
+      "line": 211
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -3742,7 +3766,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_flag_tests.rs",
       "kind": "expect_call",
-      "line": 219
+      "line": 111
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -3750,7 +3774,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_flag_tests.rs",
       "kind": "expect_call",
-      "line": 221
+      "line": 128
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -3758,7 +3782,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_flag_tests.rs",
       "kind": "expect_call",
-      "line": 231
+      "line": 134
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -3766,7 +3790,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_flag_tests.rs",
       "kind": "expect_call",
-      "line": 237
+      "line": 135
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -3774,7 +3798,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_flag_tests.rs",
       "kind": "expect_call",
-      "line": 253
+      "line": 140
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -3782,7 +3806,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_flag_tests.rs",
       "kind": "expect_call",
-      "line": 279
+      "line": 145
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -3790,7 +3814,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_flag_tests.rs",
       "kind": "expect_call",
-      "line": 293
+      "line": 147
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -3798,7 +3822,7 @@
       "fail_closed_relevance": "low",
       "file": "src/mailbox_helper_native_flag_tests.rs",
       "kind": "expect_call",
-      "line": 296
+      "line": 301
     },
     {
       "classification": "control_flow_invariant",
@@ -3806,7 +3830,7 @@
       "fail_closed_relevance": "medium",
       "file": "src/mailbox_helper_protocol.rs",
       "kind": "unreachable_macro",
-      "line": 1807
+      "line": 1828
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3814,7 +3838,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_json.rs",
       "kind": "expect_call",
-      "line": 253
+      "line": 256
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3822,7 +3846,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_json.rs",
       "kind": "expect_call",
-      "line": 271
+      "line": 274
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3830,7 +3854,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_json.rs",
       "kind": "expect_call",
-      "line": 298
+      "line": 310
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3838,7 +3862,23 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_json.rs",
       "kind": "expect_call",
-      "line": 309
+      "line": 332
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/mailbox_json.rs",
+      "kind": "expect_call",
+      "line": 343
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/message_metadata.rs",
+      "kind": "expect_call",
+      "line": 448
     },
     {
       "classification": "production_adjacent_assumption",
@@ -6897,7 +6937,7 @@
       "line": 521
     }
   ],
-  "generated_at_utc": "2026-09-30T01:21:07Z",
+  "generated_at_utc": "2026-09-30T01:37:53Z",
   "non_claims": [
     "This audit does not claim that all Rust assumptions are safe.",
     "This audit does not claim that production request paths are panic-free.",
@@ -6937,27 +6977,27 @@
     "by_classification": {
       "control_flow_invariant": 2,
       "panic_path_assumption": 29,
-      "production_adjacent_assumption": 679,
+      "production_adjacent_assumption": 682,
       "startup_or_global_invariant": 1,
-      "test_or_fixture_assumption": 151
+      "test_or_fixture_assumption": 153
     },
     "by_fail_closed_relevance": {
-      "high": 708,
-      "low": 151,
+      "high": 711,
+      "low": 153,
       "medium": 3
     },
     "by_kind": {
-      "expect_call": 816,
+      "expect_call": 820,
       "panic_macro": 35,
-      "unreachable_macro": 3,
+      "unreachable_macro": 4,
       "unwrap_call": 8
     },
     "classification_complete": true,
-    "inventory_sha256": "c5a03815e7b5952123646d9fe2840e20abaebaa5a9d94e708d9c5ce1fe70d3ef",
+    "inventory_sha256": "5ec5075bbbaf8777cba9c0c69049bba06f33c572fbad7a2cbd866c8756888c7f",
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
     "slice0_carried_forward_rust_assumption_count": 712,
-    "total_count": 862
+    "total_count": 867
   }
 }

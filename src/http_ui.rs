@@ -8,7 +8,9 @@ use crate::draft::DraftSummary;
 use crate::html::TrustedHtml;
 use crate::http::BrowserVisibleSession;
 use crate::http_support::{escape_html, url_encode};
-use crate::mail_list::{has_flag, ListViewState, MessageFilter};
+use crate::mail_list::{
+    has_flag, sender_initials, BulkSelection, ListViewState, MessageFilter, MAX_BULK_SELECTION,
+};
 use crate::mailbox::{
     MailboxEntry, MessageSearchField, MessageSearchResult, MessageSort, MessageSortColumn,
     MessageSortDirection, MessageSummary, DEFAULT_MAX_MAILBOXES,
@@ -127,6 +129,15 @@ fn app_header(canonical_username: &str, csrf_token: &str, current: &str) -> Stri
             if name == current { " aria-current=\"page\"" } else { "" },
             shell_icon(icon), label));
     }
+    let search_menu = if current == "settings" {
+        ""
+    } else {
+        concat!(
+        "<details class=\"global-search-menu\" name=\"toolbar-menu\"><summary accesskey=\"s\" title=\"Search and shortcuts; browser access key S\">Search</summary>",
+        "<div class=\"account-menu-panel global-search-panel\"><form role=\"search\" method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"scope\" value=\"all\"><label for=\"global-mail-query\">Search all mail<input id=\"global-mail-query\" name=\"q\" type=\"search\" maxlength=\"256\" autocomplete=\"off\" required></label><button type=\"submit\">Search mail</button></form>",
+        "<nav aria-label=\"Mail shortcuts\"><h2>Shortcuts</h2><a href=\"/compose\">Compose a message</a><a href=\"/mailbox?name=INBOX\">Open Inbox</a><a href=\"/mailbox?name=Sent\">Open Sent</a><a href=\"/mailbox/shortcut?kind=archive\">Open Archive</a><a href=\"/drafts\">Open Drafts</a><a href=\"/mailboxes\">Browse mailboxes</a><a href=\"/settings\">Open account settings</a></nav></div></details>"
+    )
+    };
     format!(concat!(
         "<a class=\"skip-link\" href=\"#main-content\">Skip to content</a>",
         "<aside class=\"app-rail\" aria-label=\"Application navigation\">",
@@ -134,13 +145,14 @@ fn app_header(canonical_username: &str, csrf_token: &str, current: &str) -> Stri
         "<nav class=\"rail-links\" aria-label=\"Primary navigation\">{}</nav></aside>",
         "<header class=\"topbar\" role=\"banner\" aria-label=\"Authenticated OSMAP shell\">",
         "<a class=\"brand\" href=\"/mailboxes\" aria-label=\"OSMAP mailboxes\"><span class=\"brand-mark\" aria-hidden=\"true\"><span class=\"ui-icon brand-icon\">{}</span></span><span>OSMAP</span></a>",
+        "{}",
         "<div class=\"status-row auth-status\" aria-label=\"Session status and identity\">",
         "<span class=\"status-pill badge-ok shell-session-chip\">2FA session</span>",
         "<details class=\"protection-menu\" name=\"toolbar-menu\"><summary>Protected rendering</summary><div class=\"account-menu-panel\"><p>Remote images and active content are blocked. These protections do not encrypt a message or verify its sender.</p></div></details>",
         "<details class=\"account-menu\" name=\"toolbar-menu\"><summary class=\"identity-chip\"><span class=\"account-name\" title=\"{}\">{}</span>{}</summary>",
         "<div class=\"account-menu-panel\"><p class=\"muted\">Signed in as <strong>{}</strong></p><a href=\"/settings\">Account settings</a><a href=\"/settings#appearance-title\">Appearance</a><a href=\"/sessions\">Manage sessions</a>{}</div>",
         "</details></div></header>"
-    ), shell_icon("menu"), links, shell_icon("shield"), escape_html(canonical_username),
+    ), shell_icon("menu"), links, shell_icon("shield"), search_menu, escape_html(canonical_username),
         escape_html(canonical_username), shell_icon("chevron"), escape_html(canonical_username), logout_form(csrf_token))
 }
 
@@ -576,21 +588,23 @@ fn render_message_card(
     format!(
         concat!(
             "<li class=\"message-row message-card{}\" data-selected=\"{}\">",
-            "<div class=\"message-card-main\"><span class=\"message-sender\" title=\"{}\">{}</span>",
+            "<div class=\"message-card-main\"><span class=\"message-avatar\" aria-hidden=\"true\" title=\"Initials from the sender header\">{}</span><span class=\"message-sender\" title=\"{}\" dir=\"auto\">{}</span>",
             "<span class=\"message-date\">{}</span>",
-            "<a class=\"message-subject-link\" href=\"{}\"{}>{}</a></div>",
+            "<a class=\"message-subject-link\" href=\"{}\"{} dir=\"auto\">{}</a><span class=\"message-body-preview\" dir=\"auto\">{}</span></div>",
             "<div class=\"message-card-footer message-preview-meta\"><span class=\"message-mailbox\">{}</span>{}",
             "<details class=\"message-more\"><summary aria-label=\"More for message #{} in {}\">More</summary>",
             "<div class=\"message-more-content\"><p class=\"muted\">Message #{} · {} bytes</p><p><strong>From:</strong> {}</p><p><strong>Subject:</strong> {}</p>{}</div></details></div></li>"
         ),
         if has_flag(message.flags, "\\Seen") { "" } else { " message-unread" },
         selected,
+        escape_html(&sender_initials(message.sender)),
         escape_html(message.sender.unwrap_or("Sender unavailable")),
         escape_html(message.sender.unwrap_or("Sender unavailable")),
         escape_html(message.received),
         escape_html(href),
         if selected { " aria-current=\"true\"" } else { "" },
         escape_html(message.subject.unwrap_or("(No subject)")),
+        escape_html(message.metadata.and_then(|metadata| metadata.preview.as_deref()).filter(|preview| crate::message_metadata::valid_message_preview(preview)).unwrap_or("No preview available")),
         escape_html(message.mailbox),
         render_message_state_controls(csrf, message.mailbox, message.uid, message.flags, message.metadata, return_to),
         message.uid, escape_html(message.mailbox), message.uid, message.size,
@@ -605,6 +619,46 @@ fn render_sort_control_group(links: &str, view: &ListViewState) -> String {
         view.sort.column.label(),
         sort_direction_label(view.sort.direction),
     )
+}
+
+fn render_bulk_selection_menu(
+    base: &str,
+    view: &ListViewState,
+    move_available: bool,
+    archive_available: bool,
+) -> String {
+    if view.total_results == 0 || (!move_available && !archive_available) {
+        return String::new();
+    }
+    let visible = view.last_result() - view.first_result() + 1;
+    let count = visible.min(MAX_BULK_SELECTION);
+    let base = list_navigation_href(base, view, view.page);
+    let mut links = String::new();
+    for (action, available) in [("move", move_available), ("archive", archive_available)] {
+        if !available {
+            continue;
+        }
+        let label = if visible <= MAX_BULK_SELECTION {
+            format!("Select all {count} on this page for {action}")
+        } else {
+            format!("Select first {count} on this page for {action}")
+        };
+        links.push_str(&format!(
+            "<a href=\"{}\">{}</a>",
+            escape_html(&format!("{base}&select={action}")),
+            label
+        ));
+    }
+    links.push_str(&format!(
+        "<a href=\"{}\">Clear selection</a>",
+        escape_html(&base)
+    ));
+    let selected = match view.bulk_selection {
+        BulkSelection::Move if move_available => format!("{count} selected for move."),
+        BulkSelection::Archive if archive_available => format!("{count} selected for archive."),
+        _ => "No automatic selection.".into(),
+    };
+    format!("<details class=\"bulk-selection-menu\"><summary>Select messages</summary><nav aria-label=\"Select messages on this page\">{links}</nav><p class=\"muted\">Actions accept at most {MAX_BULK_SELECTION} messages. A selection applies only to the current page. {selected}</p></details>")
 }
 
 fn sort_direction_label(direction: MessageSortDirection) -> &'static str {
@@ -644,7 +698,7 @@ pub(crate) fn render_message_list_page(
         .archive_mailbox_name
         .is_some_and(|archive_mailbox_name| archive_mailbox_name != mailbox_name);
     let bulk_actions_available = !bulk_actions.move_destinations.is_empty();
-    for message in messages {
+    for (index, message) in messages.iter().enumerate() {
         let message_href = format!(
             "/message?mailbox={}&uid={}",
             url_encode(mailbox_name),
@@ -667,16 +721,17 @@ pub(crate) fn render_message_list_page(
         };
         let selection_cells = match (bulk_actions_available, archive_actions_available) {
             (true, true) => format!(
-                "<label class=\"bulk-row-choice\"><input form=\"bulk-move-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\" aria-label=\"Select message #{} for bulk move\">Move selection</label><label class=\"bulk-row-choice\"><input form=\"bulk-archive-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\" aria-label=\"Select message #{} for bulk archive\">Archive selection</label>",
-                message.uid, message.uid, message.uid, message.uid, message.uid, message.uid
+                "<label class=\"bulk-row-choice\"><input form=\"bulk-move-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\" aria-label=\"Select message #{} for bulk move\"{}>Move selection</label><label class=\"bulk-row-choice\"><input form=\"bulk-archive-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\" aria-label=\"Select message #{} for bulk archive\"{}>Archive selection</label>",
+                message.uid, message.uid, message.uid, if sort_links.view.is_bulk_selected(BulkSelection::Move, index) { " checked" } else { "" },
+                message.uid, message.uid, message.uid, if sort_links.view.is_bulk_selected(BulkSelection::Archive, index) { " checked" } else { "" },
             ),
             (true, false) => format!(
-                "<label class=\"bulk-row-choice\"><input form=\"bulk-move-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\" aria-label=\"Select message #{} for bulk move\">Move selection</label>",
-                message.uid, message.uid, message.uid
+                "<label class=\"bulk-row-choice\"><input form=\"bulk-move-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\" aria-label=\"Select message #{} for bulk move\"{}>Move selection</label>",
+                message.uid, message.uid, message.uid, if sort_links.view.is_bulk_selected(BulkSelection::Move, index) { " checked" } else { "" },
             ),
             (false, true) => format!(
-                "<label class=\"bulk-row-choice\"><input form=\"bulk-archive-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\" aria-label=\"Select message #{} for bulk archive\">Archive selection</label>",
-                message.uid, message.uid, message.uid
+                "<label class=\"bulk-row-choice\"><input form=\"bulk-archive-form\" type=\"checkbox\" name=\"uid_{}\" value=\"{}\" aria-label=\"Select message #{} for bulk archive\"{}>Archive selection</label>",
+                message.uid, message.uid, message.uid, if sort_links.view.is_bulk_selected(BulkSelection::Archive, index) { " checked" } else { "" },
             ),
             (false, false) => String::new(),
         };
@@ -759,7 +814,7 @@ pub(crate) fn render_message_list_page(
             "<div class=\"section-header\"><h1 id=\"mailbox-title\" class=\"section-title message-list-summary\">Mailbox: {}</h1></div>",
             "{}",
             "<form class=\"search-row compact-search\" method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\">{}<label for=\"mailbox-search\">Search query<input id=\"mailbox-search\" type=\"text\" name=\"q\" value=\"{}\" autocomplete=\"off\"></label><button type=\"submit\">Search</button><details class=\"search-options\"><summary>Search options</summary><div>{}<label><input type=\"checkbox\" name=\"scope\" value=\"all\"> Search all mailboxes</label></div></details></form>",
-            "<details class=\"bulk-actions\"><summary>Bulk actions</summary>{}<p class=\"muted\">Open More on a message to select it for move or archive.</p><div class=\"toolbar\" aria-label=\"Mailbox actions\">{}{}</div></details>",
+            "{}<details class=\"bulk-actions\"><summary>Bulk actions</summary>{}<p class=\"muted\">Open More on a message to select it for move or archive.</p><div class=\"toolbar\" aria-label=\"Mailbox actions\">{}{}</div></details>",
             "{}",
             "{}<ul role=\"list\" class=\"message-cards\" aria-label=\"Mailbox message list\">{}</ul>",
             "</section>",
@@ -772,6 +827,7 @@ pub(crate) fn render_message_list_page(
         list_form_state(sort_links.view),
         escape_html(sort_links.search_query.unwrap_or("")),
         render_search_field_select(MessageSearchField::All),
+        render_bulk_selection_menu(&navigation_base, sort_links.view, bulk_actions_available, archive_actions_available),
         archive_notice,
         bulk_move_form,
         bulk_archive_form,

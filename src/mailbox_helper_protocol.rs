@@ -8,7 +8,10 @@ use std::collections::BTreeMap;
 
 use crate::mailbox::{MessageFlagRequest, MessageFlagResult};
 use crate::message_metadata::MessageFlag;
-use crate::message_metadata::{MessageMetadata, MessageVersion, MAX_MESSAGE_GUID_BYTES};
+use crate::message_metadata::{
+    valid_message_preview, MessageMetadata, MessageVersion, MAX_MESSAGE_GUID_BYTES,
+    MAX_MESSAGE_PREVIEW_BYTES,
+};
 use hmac::{Hmac, Mac};
 use sha2::{Digest, Sha256};
 
@@ -977,6 +980,7 @@ pub(super) fn parse_response(
             | "message_mailbox_guid"
             | "message_guid_b64"
             | "message_attachment_count"
+            | "message_preview_b64"
             | "message_body_text_b64" => {
                 if current_message_fields
                     .insert(key.to_string(), value.to_string())
@@ -1290,7 +1294,7 @@ fn encode_message_metadata(metadata: Option<&MessageMetadata>) -> String {
     let Some(metadata) = metadata else {
         return String::new();
     };
-    format!(
+    let mut encoded = format!(
         "message_mailbox_guid={}\nmessage_guid_b64={}\nmessage_attachment_count={}\n",
         metadata.version.mailbox_guid,
         encode_base64(metadata.version.message_guid.as_bytes()),
@@ -1298,7 +1302,14 @@ fn encode_message_metadata(metadata: Option<&MessageMetadata>) -> String {
             .attachment_count
             .map(|count| count.to_string())
             .unwrap_or_else(|| "unknown".into())
-    )
+    );
+    if let Some(preview) = &metadata.preview {
+        encoded.push_str(&format!(
+            "message_preview_b64={}\n",
+            encode_base64(preview.as_bytes())
+        ));
+    }
+    encoded
 }
 
 fn parse_message_metadata(
@@ -1307,7 +1318,8 @@ fn parse_message_metadata(
     let mailbox_guid = fields.get("message_mailbox_guid");
     let message_guid = fields.get("message_guid_b64");
     let count = fields.get("message_attachment_count");
-    if mailbox_guid.is_none() && message_guid.is_none() && count.is_none() {
+    let preview = fields.get("message_preview_b64");
+    if mailbox_guid.is_none() && message_guid.is_none() && count.is_none() && preview.is_none() {
         // Old helper responses can still be read, but cannot authorize flag writes.
         return Ok(None);
     }
@@ -1334,6 +1346,15 @@ fn parse_message_metadata(
     Ok(Some(MessageMetadata {
         version,
         attachment_count,
+        preview: preview
+            .map(|value| -> Result<String, String> {
+                let text = decode_base64_text(value, MAX_MESSAGE_PREVIEW_BYTES, "message preview")?;
+                if !valid_message_preview(&text) {
+                    return Err("helper message preview was invalid or outside its bound".into());
+                }
+                Ok(text)
+            })
+            .transpose()?,
     }))
 }
 

@@ -9,6 +9,40 @@ use crate::mailbox::{
 };
 
 pub const MESSAGE_PAGE_SIZE: usize = 50;
+pub const MAX_BULK_SELECTION: usize = 10;
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum BulkSelection {
+    #[default]
+    None,
+    Move,
+    Archive,
+}
+
+/// Decorative initials from the untrusted displayed header, never identity proof.
+pub fn sender_initials(sender: Option<&str>) -> String {
+    let sender = sender.unwrap_or("").trim();
+    let name = sender.split('<').next().unwrap_or("").trim();
+    let name = if name.is_empty() {
+        sender.trim_start_matches('<')
+    } else {
+        name
+    };
+    let name = name.split('@').next().unwrap_or("");
+    let initials: String = name
+        .split(|ch: char| !ch.is_alphanumeric())
+        .filter(|word| !word.is_empty())
+        .take(2)
+        .filter_map(|word| word.chars().next())
+        .flat_map(char::to_uppercase)
+        .take(2)
+        .collect();
+    if initials.is_empty() {
+        "?".into()
+    } else {
+        initials
+    }
+}
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum MessageFilter {
@@ -56,6 +90,7 @@ pub struct ListSelection {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ListViewState {
+    pub bulk_selection: BulkSelection,
     pub sort: MessageSort,
     pub filter: MessageFilter,
     pub requested_page: usize,
@@ -68,6 +103,12 @@ pub struct ListViewState {
 
 impl ListViewState {
     pub fn from_query(query: &BTreeMap<String, String>) -> Result<Self, &'static str> {
+        let bulk_selection = match query.get("select").map(String::as_str) {
+            None | Some("none") => BulkSelection::None,
+            Some("move") => BulkSelection::Move,
+            Some("archive") => BulkSelection::Archive,
+            Some(_) => return Err("Choose a supported message selection."),
+        };
         if query.get("q").is_some_and(|value| {
             value.len() > crate::mailbox::DEFAULT_SEARCH_QUERY_MAX_LEN
                 || value.chars().any(char::is_control)
@@ -109,6 +150,7 @@ impl ListViewState {
             _ => return Err("The selected message requires both its mailbox and UID."),
         };
         Ok(Self {
+            bulk_selection,
             sort: MessageSort::from_query_values(
                 query.get("sort").map(String::as_str),
                 query.get("dir").map(String::as_str),
@@ -174,11 +216,45 @@ impl ListViewState {
             .as_ref()
             .is_some_and(|value| value.mailbox == mailbox && value.uid == uid)
     }
+
+    pub fn is_bulk_selected(&self, action: BulkSelection, visible_index: usize) -> bool {
+        action != BulkSelection::None
+            && self.bulk_selection == action
+            && visible_index < MAX_BULK_SELECTION
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn selection_menu_is_closed_and_bounded_to_the_current_page() {
+        let view = ListViewState::from_query(&BTreeMap::from([("select".into(), "move".into())]))
+            .expect("selection");
+        assert_eq!(
+            (0..50)
+                .filter(|index| view.is_bulk_selected(BulkSelection::Move, *index))
+                .count(),
+            MAX_BULK_SELECTION
+        );
+        assert!(!view.is_bulk_selected(BulkSelection::Archive, 0));
+        assert!(ListViewState::from_query(&BTreeMap::from([(
+            "select".into(),
+            "arbitrary".into()
+        )]))
+        .is_err());
+        assert_eq!(
+            sender_initials(Some("Alice Johnson <alice@example.test>")),
+            "AJ"
+        );
+        assert_eq!(sender_initials(Some("<john.smith@example.test>")), "JS");
+        assert_eq!(sender_initials(Some("Élodie Roy")), "ÉR");
+        assert_eq!(sender_initials(None), "?");
+        assert!(sender_initials(Some("<b>Untrusted</b>"))
+            .chars()
+            .all(char::is_alphanumeric));
+    }
 
     fn row(uid: u64, flags: &[&str]) -> MessageSummary {
         MessageSummary {

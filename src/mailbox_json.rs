@@ -5,11 +5,11 @@ use serde::Deserialize;
 
 use super::mailbox_parse::{normalize_header_summary_value, validate_bounded_string};
 use super::*;
-use crate::message_metadata::{attachment_count, MessageMetadata, MessageVersion};
+use crate::message_metadata::{attachment_count, message_preview, MessageMetadata, MessageVersion};
 
-pub(super) const SUMMARY_FIELDS: &str = "uid flags date.received size.virtual mailbox mailbox-guid guid hdr.subject hdr.from imap.bodystructure";
+pub(super) const SUMMARY_FIELDS: &str = "uid flags date.received size.virtual mailbox mailbox-guid guid hdr.subject hdr.from imap.bodystructure body.preview";
 pub(super) const VIEW_FIELDS: &str =
-    "uid flags date.received size.virtual mailbox mailbox-guid guid hdr body imap.bodystructure";
+    "uid flags date.received size.virtual mailbox mailbox-guid guid hdr body imap.bodystructure body.preview";
 const BACKEND: &str = "message-json-parser";
 
 #[derive(Deserialize)]
@@ -33,6 +33,8 @@ struct FetchRow {
     body: Option<String>,
     #[serde(rename = "imap.bodystructure")]
     bodystructure: Option<String>,
+    #[serde(rename = "body.preview")]
+    preview: Option<String>,
 }
 
 fn error(reason: &str) -> MailboxBackendError {
@@ -109,6 +111,7 @@ impl FetchRow {
         let metadata = MessageMetadata {
             version: MessageVersion::new(self.mailbox_guid.clone(), self.guid.clone())?,
             attachment_count: self.bodystructure.as_deref().and_then(attachment_count),
+            preview: message_preview(self.preview.as_deref(), self.bodystructure.as_deref()),
         };
         Ok((
             u64::from(uid),
@@ -282,6 +285,37 @@ mod tests {
                 .and_then(|value| value.attachment_count),
             Some(0)
         );
+    }
+
+    #[test]
+    fn native_preview_is_optional_bounded_and_suppressed_for_encryption() {
+        for (preview, structure, expected) in [
+            (
+                Some("Public\n preview"),
+                "\"text\" \"plain\" NIL NIL NIL \"7bit\" 12 1",
+                Some("Public preview"),
+            ),
+            (None, "\"text\" \"plain\" NIL NIL NIL \"7bit\" 12 1", None),
+            (
+                Some("private"),
+                "\"application\" \"pgp-encrypted\" NIL NIL NIL \"7bit\" 12",
+                None,
+            ),
+            (Some("private"), "invalid", None),
+        ] {
+            let mut fixture = row();
+            fixture["imap.bodystructure"] = structure.into();
+            fixture["body.preview"] = preview.into();
+            let parsed = parse_json_summaries(MessageListPolicy::default(), &execution(fixture))
+                .expect("native response");
+            assert_eq!(
+                parsed[0]
+                    .metadata
+                    .as_ref()
+                    .and_then(|metadata| metadata.preview.as_deref()),
+                expected
+            );
+        }
     }
 
     #[test]

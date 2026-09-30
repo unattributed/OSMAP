@@ -191,6 +191,11 @@ fn isolated_openbsd_json_and_signed_flag_helper() {
         .list_messages(FIXTURE_ACCOUNT, &query)
         .expect("native structured list");
     assert_eq!(initial.len(), 2);
+    assert!(initial.iter().all(|message| message
+        .metadata
+        .as_ref()
+        .and_then(|metadata| metadata.preview.as_deref())
+        == Some("Public synthetic body.")));
     assert_eq!(
         initial[0]
             .metadata

@@ -762,3 +762,56 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   current-page selection bounds and helper/native metadata interoperability.
   S02-02 coordinated reader work follows these S02-01 checks, rather than
   treating a partial control inventory as slice completion.
+
+### Exact checkpoint C native result — 2026-09-30
+
+- C signed as `b39542c3a7a2336380509c76df655064cb7b92a9`; Shopkeeper
+  verified; clean delivery; twelve ahead/zero behind recorded origin/main.
+  Archive SHA-256 `3fe72b7d93d230e0168094f51293750875d63d6402f5bafa5f59f6f31ab759aa`.
+  Native owned source: `/home/foo/osmap-ux-s02-20260930-dOvDJkan`.
+- Native library 588 passed/six ignored; hostile rendering two passed. The
+  explicitly invoked isolated signed-helper test now passes, including actual
+  Dovecot JSON identity/attachment data, Seen/Flagged add/remove, duplicates,
+  stale GUID/UID refusal, neighbour-message isolation and restored flags. The
+  disposable test tree was removed. Standard checkout and services unchanged.
+  Qualification log SHA-256
+  `10ecb31b45d51499a4de7c724653758051b46071cf111d43e3d92a561dba9e20`.
+
+### S02-01 checkpoint D — remaining list controls verified locally
+
+- Native `body.preview` joins the existing bounded structured fetch, with no
+  per-row body fetch. A read-only probe on the retained synthetic standalone
+  Maildir returned actual snippets and unchanged flags. Tagged Dovecot source
+  and probe evidence are under S02 `native-preview/`. Production mailbox,
+  SQL authority and daemon configuration were not used.
+- Preview is optional, escaped, whitespace-normalized and bounded to 160
+  Unicode scalar values/640 bytes. Invalid/over-limit BODYSTRUCTURE, encrypted
+  MIME including nested messages, and PGP armour suppress it. Strict helper
+  metadata rejects oversized/control-bearing previews; older read responses
+  remain readable with unknown preview. No decryption or sender trust inferred.
+- Decorative sender initials derive only from the displayed header. Native
+  selection menus select all current-page rows when at most ten, otherwise
+  explicitly the first ten, for one existing action. Clear/page changes remove
+  selection; GET does not mutate mail. Existing CSRF-bound POST limits remain.
+- Global Search opens a native form and seven finite navigation shortcuts,
+  with browser access key S and keyboard disclosure. It shares the mutually
+  exclusive toolbar menu group and is absent on Settings. No command interpreter,
+  script, new resource origin or new route was added.
+- Library 593 passed/zero failed/six ignored; strict all-target clippy passes.
+  Nine list/navigation browser journeys and six state-control journeys pass.
+  82 viewport captures cover system/saved themes, responsive layouts, simulated
+  200% reflow, forced colours and Firefox; 88 additional shell captures verify
+  keyboard menus and bounded panels. DOM audits cover the full page. No detected
+  overflow/contrast failures; all 170 image hashes verified. Desktop list,
+  narrow hostile-text state and narrow open search menu visually inspected.
+- Evidence: `checkpoint-d-summary.json`, SHA-256
+  `cf8b1f814fd7dac290df769e5770d1772d560bacfd7f21a2cbfed2dac6338f8a`.
+  Initial compile/assertion/fixture-name failures are retained alongside passing
+  corrected runs. Exact D native qualification follows a signed clean source
+  checkpoint using the unchanged native work order and a new owned directory.
+  S02-01 retains the existing 2,000-list/250-search backend result caps; this is
+  not full backend pagination or large-mailbox performance qualification.
+  Independent human/final visual and release acceptance remain pending.
+- Full `make acceptance-check`, V14, formatting, diff and frozen-plan checks
+  PASS for D. Existing generated V10 assumption inventories/hashes refreshed
+  from the final Rust source. No validation rule or original plan was weakened.

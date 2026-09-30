@@ -125,6 +125,50 @@ def main():
             assert page.locator("form form").count() == 0
             assert page.get_by_role("list", name="Mailbox message list", exact=True).get_by_role("listitem").count() == 50
             checks.append("keyboard disclosures expose the existing selections and preserve their distinct native form associations")
+            visit("/mailbox?name=INBOX&page=2")
+            for action in ["move", "archive"]:
+                page.locator(".bulk-selection-menu summary").click()
+                click(f"Select first 10 on this page for {action}")
+                selected = page.locator(f'input[form="bulk-{action}-form"]:checked')
+                assert selected.evaluate_all("es => es.map(e => e.value)") == [str(uid) for uid in range(75, 65, -1)]
+                other = "archive" if action == "move" else "move"
+                assert page.locator(f'input[form="bulk-{other}-form"]:checked').count() == 0
+                state(page="2", select=action)
+            page.locator(".bulk-selection-menu summary").click()
+            click("Clear selection")
+            assert page.locator('input[type="checkbox"]:checked').count() == 0
+            page.locator(".bulk-selection-menu summary").click()
+            click("Select first 10 on this page for move")
+            click("Next page")
+            assert page.locator('input[type="checkbox"]:checked').count() == 0
+            checks.append("select menu checks only ten current-page rows for one action; clear and page changes remove selection")
+            visit("/mailbox?name=INBOX")
+            previews = page.locator(".message-body-preview").all_text_contents()
+            assert previews[0].startswith("<b>Untrusted synthetic preview</b>")
+            assert previews[1] == "No preview available"
+            assert page.locator(".message-body-preview b").count() == 0
+            assert page.locator('.message-avatar[aria-hidden="true"]').count() == 50
+            checks.append("untrusted preview markup stays text; unavailable previews and decorative initials are explicit")
+            menu = page.locator(".global-search-menu summary")
+            menu.focus()
+            page.keyboard.press("Enter")
+            assert page.get_by_label("Search all mail", exact=True).is_visible()
+            assert page.get_by_role("navigation", name="Mail shortcuts", exact=True).get_by_role("link").count() == 7
+            page.locator(".account-menu summary").click()
+            assert page.locator(".global-search-menu").get_attribute("open") is None
+            menu.click()
+            assert page.locator(".account-menu").get_attribute("open") is None
+            page.get_by_label("Search all mail", exact=True).fill("searchsort")
+            page.get_by_role("button", name="Search mail", exact=True).click()
+            page.wait_for_load_state("networkidle")
+            state(q="searchsort", scope="all")
+            assert len(subjects()) == 3
+            page.locator(".global-search-menu summary").click()
+            click("Open Inbox")
+            state(name="INBOX")
+            visit("/settings")
+            assert page.locator(".global-search-menu").count() == 0
+            checks.append("keyboard global search submits literal search with all-mail scope; finite shortcuts and mutually exclusive menus work")
             assert not blocked, "fixture attempted outside requests"
             report = {"synthetic": True, "authentication": "test fixture; not live Dovecot/TOTP",
                       "mail": "deterministic in-memory gateway; no mailbox mutation",

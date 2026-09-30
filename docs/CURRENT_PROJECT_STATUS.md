@@ -44,17 +44,21 @@ actions. 588 library tests, six state-control and six navigation journeys pass.
 checkpoint B source passed native library and hostile-rendering tests; its
 disposable mail test required corrections for the intentionally cleared command
 environment and OpenBSD directory group inheritance. Corrected exact-source
-native helper qualification and S02-02 coordinated list/reader work follow.
-S02-01 remains in progress for corrected native qualification and the remaining
-control inventory: bounded body previews, sender initials, the selection menu
-and the finite search/shortcut menu.
+native helper qualification now passes on exact checkpoint C: 588 library
+tests, two hostile-rendering checks and the isolated signed-helper native test.
+Checkpoint D adds actual bounded text previews, decorative sender initials,
+the bounded current-page selection menu and native global search/shortcuts.
+593 local library tests, nine navigation and six state-control journeys pass;
+82 theme/reflow/forced-colour/Firefox captures and 88 shell captures verify the
+shared-header change. Exact D native qualification follows its signed source
+checkpoint before S02-02 coordinated list/reader implementation.
 Independent human accessibility acceptance
 and deployment remain separate.
 D01–D06 are recorded
 as delegated engineering decisions in `UX_DECISIONS.md`. Independent human
 identity/accessibility and final release acceptance remain separate.
 See `UX_AGENT_EXECUTION_CONTRACT.md` and `UX_EXECUTION_LEDGER.md`.
-Native qualification is limited to the exact S01 snapshot and checks above;
+Native qualification is limited to the exact S01 and S02 snapshots/checks above;
 no UX deployment or full live-mail workflow qualification is claimed.
 The operator reports Roundcube completely removed; the UX epic does not include
 Roundcube migration, coexistence or restoration.

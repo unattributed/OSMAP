@@ -484,8 +484,12 @@
       ],
       "baseline_observation": "`/search`, scoped/all-mailbox search; no topbar search",
       "test_design": "UX03",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S02-01 checkpoints A through D",
+        "/home/foo/Downloads/osmap-ux-s02/run-20260930/checkpoint-d-summary.json"
+      ],
+      "engineering_note": "Native topbar search and scoped main search; Settings intentionally omits the global menu. Independent human and release acceptance remain pending."
     },
     {
       "id": "UX03-002",
@@ -496,8 +500,12 @@
       ],
       "baseline_observation": "Absent; finite navigation menu under D01/D05 needed",
       "test_design": "UX03",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S02-01 checkpoints A through D",
+        "/home/foo/Downloads/osmap-ux-s02/run-20260930/checkpoint-d-summary.json"
+      ],
+      "engineering_note": "Seven finite existing-route shortcuts and native browser access key S; no command interpreter. Independent human and release acceptance remain pending."
     },
     {
       "id": "UX01-009",
@@ -959,8 +967,12 @@
       ],
       "baseline_observation": "Per-message bulk checkbox exists",
       "test_design": "UX03",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S02-01 checkpoints A through D",
+        "/home/foo/Downloads/osmap-ux-s02/run-20260930/checkpoint-d-summary.json"
+      ],
+      "engineering_note": "Existing native row checkboxes preserve separate action forms; stronger move reconciliation remains S02-03. Independent human and release acceptance remain pending."
     },
     {
       "id": "UX03-004",
@@ -971,8 +983,12 @@
       ],
       "baseline_observation": "No select-all/none server affordance",
       "test_design": "UX03",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S02-01 checkpoints A through D",
+        "/home/foo/Downloads/osmap-ux-s02/run-20260930/checkpoint-d-summary.json"
+      ],
+      "engineering_note": "Current-page selection explicitly selects at most ten, clears, and resets on page change; no mailbox mutation on GET. Independent human and release acceptance remain pending."
     },
     {
       "id": "UX03-005",
@@ -983,8 +999,12 @@
       ],
       "baseline_observation": "Flags displayed but filter absent",
       "test_design": "UX03",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S02-01 checkpoints A through D",
+        "/home/foo/Downloads/osmap-ux-s02/run-20260930/checkpoint-d-summary.json"
+      ],
+      "engineering_note": "Actual Seen flags drive unread filtering; stable 50-row windows within the 2000-list/250-search caps. Independent human and release acceptance remain pending."
     },
     {
       "id": "UX03-006",
@@ -995,8 +1015,12 @@
       ],
       "baseline_observation": "Allowlisted server sort links exist",
       "test_design": "UX03",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S02-01 checkpoints A through D",
+        "/home/foo/Downloads/osmap-ux-s02/run-20260930/checkpoint-d-summary.json"
+      ],
+      "engineering_note": "Stable allowlisted sorting, deterministic identity tie-breaks and preserved query/filter/page state. Independent human and release acceptance remain pending."
     },
     {
       "id": "UX03-007",
@@ -1007,8 +1031,12 @@
       ],
       "baseline_observation": "Sender text only; safe initials needed",
       "test_design": "UX03",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S02-01 checkpoints A through D",
+        "/home/foo/Downloads/osmap-ux-s02/run-20260930/checkpoint-d-summary.json"
+      ],
+      "engineering_note": "Decorative safe initials derived from the untrusted sender header; no verified avatar identity. Independent human and release acceptance remain pending."
     },
     {
       "id": "UX03-008",
@@ -1019,8 +1047,12 @@
       ],
       "baseline_observation": "Existing table fields; compact row needed",
       "test_design": "UX03",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S02-01 checkpoints A through D",
+        "/home/foo/Downloads/osmap-ux-s02/run-20260930/checkpoint-d-summary.json"
+      ],
+      "engineering_note": "Escaped compact sender/subject/date fields with bounded previews and full headers in native More. Independent human and release acceptance remain pending."
     },
     {
       "id": "UX03-009",
@@ -1031,8 +1063,12 @@
       ],
       "baseline_observation": "Metadata only; no bounded preview body",
       "test_design": "UX03",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S02-01 checkpoints A through D",
+        "/home/foo/Downloads/osmap-ux-s02/run-20260930/checkpoint-d-summary.json"
+      ],
+      "engineering_note": "Actual bounded native snippet; unknown/encrypted/invalid structures suppress previews. Exact D native qualification pending. Independent human and release acceptance remain pending."
     },
     {
       "id": "UX03-010",
@@ -1079,8 +1115,12 @@
       ],
       "baseline_observation": "Flags read, no flag mutation helper/route",
       "test_design": "UX04",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S02-01 checkpoints A through D",
+        "/home/foo/Downloads/osmap-ux-s02/run-20260930/checkpoint-d-summary.json"
+      ],
+      "engineering_note": "Explicit identity-bound Seen desired state via signed helper; exact C native synthetic qualification passed. Independent human and release acceptance remain pending."
     },
     {
       "id": "UX04-006",
@@ -1140,8 +1180,12 @@
       ],
       "baseline_observation": "No flag mutation",
       "test_design": "UX03",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S02-01 checkpoints A through D",
+        "/home/foo/Downloads/osmap-ux-s02/run-20260930/checkpoint-d-summary.json"
+      ],
+      "engineering_note": "Explicit identity-bound Flagged desired state via signed helper; exact C native synthetic qualification passed. Independent human and release acceptance remain pending."
     },
     {
       "id": "UX15-001",
@@ -1308,8 +1352,12 @@
       ],
       "baseline_observation": "List metadata does not include attachment presence",
       "test_design": "UX03",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S02-01 checkpoints A through D",
+        "/home/foo/Downloads/osmap-ux-s02/run-20260930/checkpoint-d-summary.json"
+      ],
+      "engineering_note": "Actual bounded attachment count/presence with accessible text indicator; final pictured icon fidelity remains S09. Independent human and release acceptance remain pending."
     },
     {
       "id": "UX03-013",
@@ -1336,8 +1384,12 @@
       ],
       "baseline_observation": "Flags are displayed; interactive change missing",
       "test_design": "UX03",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S02-01 checkpoints A through D",
+        "/home/foo/Downloads/osmap-ux-s02/run-20260930/checkpoint-d-summary.json"
+      ],
+      "engineering_note": "Current backend flags drive visible read/star state and native controls; account/stale/CSRF checks pass. Independent human and release acceptance remain pending."
     },
     {
       "id": "UX16-001",

@@ -10,6 +10,13 @@ impl StubGateway {
             Sha256::digest(format!("synthetic/{username}/{mailbox}").as_bytes())
         );
         MessageMetadata {
+            preview: if uid == 124 {
+                None
+            } else if uid == 125 {
+                Some(format!("<b>Untrusted synthetic preview</b> {}", "é".repeat(100)))
+            } else {
+                Some(format!("Public synthetic preview for message {uid}."))
+            },
             version: MessageVersion::new(hash[..32].into(), format!("synthetic-message-{uid}"))
                 .expect("synthetic version"),
             attachment_count: Some(usize::from(uid % 5 == 0)),

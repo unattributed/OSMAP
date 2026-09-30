@@ -88,8 +88,8 @@
     "audit_script": "maint/security/osmap-v10-rust-assumption-audit.py",
     "audit_script_present": true,
     "classification_complete": true,
-    "current_scanner_count": 862,
-    "inventory_sha256": "c5a03815e7b5952123646d9fe2840e20abaebaa5a9d94e708d9c5ce1fe70d3ef",
+    "current_scanner_count": 867,
+    "inventory_sha256": "5ec5075bbbaf8777cba9c0c69049bba06f33c572fbad7a2cbd866c8756888c7f",
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
@@ -127,7 +127,7 @@
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
-    "refined_inventory_sha256": "3bac8323f3b1dd0d5d628ed1d2b6c0ba7aa62155f457fc4f2e1ace147afd35b9",
+    "refined_inventory_sha256": "aac608cb16bb7a024f829023a8f461d79c65bf12316ceb2d8d2f1ee3ccb38552",
     "remediation_document": "docs/V10_TARGETED_FAIL_CLOSED_REMEDIATION.md",
     "remediation_document_present": true,
     "remediation_register": "maint/security/v10-fail-closed-remediation.json",
@@ -135,6 +135,6 @@
     "remediation_script": "maint/security/osmap-v10-fail-closed-remediation.py",
     "remediation_script_present": true,
     "selected_target": "src_test_module_assumption_reclassification",
-    "source_test_module_assumption_count": 785
+    "source_test_module_assumption_count": 790
   }
 }

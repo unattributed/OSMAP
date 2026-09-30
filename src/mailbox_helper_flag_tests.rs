@@ -82,6 +82,7 @@ fn flag_grant_binds_every_identity_and_mutation_field() {
 #[test]
 fn metadata_survives_read_responses_and_partial_identity_fails() {
     let metadata = MessageMetadata {
+        preview: Some("Public synthetic preview".into()),
         version: flag_request().version,
         attachment_count: Some(2),
     };
@@ -131,6 +132,22 @@ fn metadata_survives_read_responses_and_partial_identity_fails() {
     for response in responses {
         let encoded = encode_response(&response);
         assert_eq!(parse(&encoded).expect("round trip"), response);
+        for preview in [
+            "x".repeat(161),
+            "private\ncontrol".into(),
+            "-----BEGIN PGP MESSAGE-----".into(),
+        ] {
+            let mut malformed_response = response.clone();
+            let metadata = match &mut malformed_response {
+                MailboxHelperResponse::MessageListOk { messages, .. } => &mut messages[0].metadata,
+                MailboxHelperResponse::MessageSearchOk { results, .. } => &mut results[0].metadata,
+                MailboxHelperResponse::MessageViewOk { message } => &mut message.metadata,
+                _ => unreachable!(),
+            };
+            metadata.as_mut().expect("fixture metadata").preview = Some(preview);
+            let malformed = encode_response(&malformed_response);
+            assert!(parse(&malformed).is_err());
+        }
         let partial = encoded
             .lines()
             .filter(|line| !line.starts_with("message_mailbox_guid="))

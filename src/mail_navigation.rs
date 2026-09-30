@@ -28,6 +28,7 @@ pub fn safe_mail_return(value: &str) -> Option<String> {
                 "scope",
                 "selected_mailbox",
                 "selected_uid",
+                "select",
             ]
         }
         "/search" => {
@@ -54,6 +55,7 @@ pub fn safe_mail_return(value: &str) -> Option<String> {
                 "page",
                 "selected_mailbox",
                 "selected_uid",
+                "select",
             ]
         }
         "/message" => {

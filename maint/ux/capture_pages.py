@@ -136,6 +136,22 @@ def main():
                                                   "account_menu_within_viewport": True,
                                                   "screenshots": {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
                                                                   for p in [expanded, account]}})
+                        if args.shell_checks and page.locator(".global-search-menu").count():
+                            search = page.locator(".global-search-menu summary")
+                            search.focus()
+                            page.keyboard.press("Enter")
+                            assert page.get_by_label("Search all mail", exact=True).is_visible()
+                            bounds = page.locator(".global-search-panel").bounding_box()
+                            assert bounds and bounds["x"] >= 0 and bounds["x"] + bounds["width"] <= width + 1
+                            opened = args.output / f"{item['name']}-search-menu-{scheme}-{width}.png"
+                            page.screenshot(path=str(opened), full_page=not args.viewport_only)
+                            page.locator(".account-menu summary").click()
+                            assert page.locator(".global-search-menu").get_attribute("open") is None
+                            page.locator(".account-menu summary").click()
+                            shell_results.append({"fixture": item["name"], "scheme": scheme, "width": width,
+                                                  "global_search_keyboard": True, "global_search_within_viewport": True,
+                                                  "exclusive_menus": True,
+                                                  "screenshots": {opened.name: hashlib.sha256(opened.read_bytes()).hexdigest()}})
                         if item["name"] == "source":
                             for summary in page.locator("summary").all():
                                 if "source" in summary.inner_text().lower():

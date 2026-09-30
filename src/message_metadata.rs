@@ -7,6 +7,8 @@ use crate::mailbox::MailboxBackendError;
 
 pub const MAX_MESSAGE_GUID_BYTES: usize = 256;
 pub const MAX_BODYSTRUCTURE_BYTES: usize = 16 * 1024;
+pub const MAX_MESSAGE_PREVIEW_CHARS: usize = 160;
+pub const MAX_MESSAGE_PREVIEW_BYTES: usize = MAX_MESSAGE_PREVIEW_CHARS * 4;
 const MAX_STRUCTURE_DEPTH: usize = 16;
 const MAX_STRUCTURE_NODES: usize = 1024;
 
@@ -41,6 +43,8 @@ pub struct MessageMetadata {
     pub version: MessageVersion,
     /// None means unsupported/invalid/over-limit BODYSTRUCTURE, never zero.
     pub attachment_count: Option<usize>,
+    /// Bounded native text snippet; absent for unknown or protected content.
+    pub preview: Option<String>,
 }
 
 /// Read/star operations accept an explicit desired state, never a blind toggle.
@@ -324,7 +328,7 @@ fn count_parts(node: &Node) -> Option<usize> {
     Some(usize::from(attachment))
 }
 
-pub fn attachment_count(bodystructure: &str) -> Option<usize> {
+fn parse_structure(bodystructure: &str) -> Option<Node> {
     if bodystructure.is_empty() || bodystructure.len() > MAX_BODYSTRUCTURE_BYTES {
         return None;
     }
@@ -348,12 +352,120 @@ pub fn attachment_count(bodystructure: &str) -> Option<usize> {
     } else {
         Node::List(values)
     };
-    count_parts(&root)
+    Some(root)
+}
+
+pub fn attachment_count(bodystructure: &str) -> Option<usize> {
+    count_parts(&parse_structure(bodystructure)?)
+}
+
+fn encrypted_part(node: &Node) -> bool {
+    let Node::List(parts) = node else {
+        return true;
+    };
+    if matches!(parts.first(), Some(Node::List(_))) {
+        let mut children = parts
+            .iter()
+            .take_while(|part| matches!(part, Node::List(_)));
+        let count = children.clone().count();
+        return parts
+            .get(count)
+            .and_then(Node::value)
+            .is_some_and(|subtype| subtype.eq_ignore_ascii_case("encrypted"))
+            || children.any(encrypted_part);
+    }
+    if parts
+        .first()
+        .and_then(Node::value)
+        .is_some_and(|kind| kind.eq_ignore_ascii_case("message"))
+        && parts
+            .get(1)
+            .and_then(Node::value)
+            .is_some_and(|subtype| subtype.eq_ignore_ascii_case("rfc822"))
+    {
+        return parts.get(8).is_none_or(encrypted_part);
+    }
+    parts
+        .first()
+        .and_then(Node::value)
+        .is_some_and(|kind| kind.eq_ignore_ascii_case("application"))
+        && parts.get(1).and_then(Node::value).is_some_and(|subtype| {
+            ["pgp-encrypted", "pkcs7-mime", "x-pkcs7-mime"]
+                .iter()
+                .any(|value| subtype.eq_ignore_ascii_case(value))
+        })
+}
+
+pub fn valid_message_preview(value: &str) -> bool {
+    !value.trim().is_empty()
+        && value.len() <= MAX_MESSAGE_PREVIEW_BYTES
+        && value.chars().count() <= MAX_MESSAGE_PREVIEW_CHARS
+        && !value.chars().any(char::is_control)
+        && !value.contains("-----BEGIN PGP")
+}
+
+/// Native Dovecot computes the snippet without a per-row body fetch. It is
+/// always untrusted text; the UI must escape it and must not infer sender trust.
+pub fn message_preview(preview: Option<&str>, bodystructure: Option<&str>) -> Option<String> {
+    let raw = preview?;
+    if raw.len() > 4096 || raw.chars().any(|ch| ch.is_control() && !ch.is_whitespace()) {
+        return None;
+    }
+    let structure = parse_structure(bodystructure?)?;
+    count_parts(&structure)?;
+    if encrypted_part(&structure) || raw.contains("-----BEGIN PGP") {
+        return None;
+    }
+    let normalized = raw.split_whitespace().collect::<Vec<_>>().join(" ");
+    let value = if normalized.chars().count() > MAX_MESSAGE_PREVIEW_CHARS {
+        let mut value: String = normalized
+            .chars()
+            .take(MAX_MESSAGE_PREVIEW_CHARS - 1)
+            .collect();
+        value.push('…');
+        value
+    } else {
+        normalized
+    };
+    valid_message_preview(&value).then_some(value)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn previews_are_bounded_text_and_protected_content_stays_unknown() {
+        let text = r#"("text" "plain" NIL NIL NIL "7bit" 12 1 NIL NIL NIL NIL)"#;
+        assert_eq!(
+            message_preview(Some("Public\n synthetic\tpreview"), Some(text)),
+            Some("Public synthetic preview".into())
+        );
+        assert_eq!(
+            message_preview(Some("<b>Untrusted</b>"), Some(text)),
+            Some("<b>Untrusted</b>".into())
+        );
+        let long = message_preview(Some(&"é".repeat(200)), Some(text)).expect("bounded preview");
+        assert_eq!(long.chars().count(), MAX_MESSAGE_PREVIEW_CHARS);
+        assert!(long.ends_with('…'));
+        for value in [
+            "",
+            "\0private",
+            "-----BEGIN PGP MESSAGE-----",
+            "-----BEGIN PGP SIGNED MESSAGE-----",
+        ] {
+            assert_eq!(message_preview(Some(value), Some(text)), None);
+        }
+        assert_eq!(
+            message_preview(
+                Some("untrusted"),
+                Some(&format!("({text} \"encrypted\" NIL NIL NIL NIL)"))
+            ),
+            None
+        );
+        assert_eq!(message_preview(Some("untrusted"), Some("invalid")), None);
+        assert_eq!(message_preview(Some(&"x".repeat(4097)), Some(text)), None);
+    }
 
     #[test]
     fn stored_identity_is_bounded_and_message_guid_is_not_assumed_hex() {

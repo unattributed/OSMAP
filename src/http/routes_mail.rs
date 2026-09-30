@@ -24,7 +24,7 @@ fn mailbox_name_exists(mailboxes: &[MailboxEntry], mailbox_name: &str) -> bool {
     mailboxes.iter().any(|mailbox| mailbox.name == mailbox_name)
 }
 
-const MAX_BULK_ARCHIVE_MESSAGES: usize = 10;
+const MAX_BULK_ARCHIVE_MESSAGES: usize = crate::mail_list::MAX_BULK_SELECTION;
 
 fn list_view_state(request: &HttpRequest) -> Result<ListViewState, HttpResponse> {
     ListViewState::from_query(&request.query_params).map_err(|message| {
