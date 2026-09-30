@@ -1328,3 +1328,24 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   drafts-b-contact-edge, visual-d-final*, fixtures-d and gates/*-d.log.
 - Attachment removal, interrupted-write recovery, autosave and stable source
   references remain open. No whole-page, authenticated WSTG or release claim.
+
+### S03-02C — saved attachment controls
+
+- Show bounded saved-file cards with names/sizes and explicit removal selection
+  in the approved composer. Save/Send apply removals only to the owned expected
+  revision; retain other files, typed text and pending selections on refusal.
+  Validate removal, replacement, stale/foreign forms, restart and both browsers.
+- Implemented saved-file cards, per-file removal selection, revision-bound
+  Save/Send removal and replacement uploads; failed forms retain pending removal
+  without borrowing filenames from a newer draft. Existing files stay untouched
+  after refusal. The composer displays actual file sizes and attachment limits.
+- Validation: 657 library tests PASS (six existing ignored), including runtime
+  storage, stale/foreign/tampered forms, quota refusal and accepted local fixture
+  submission. Edge and Firefox each PASS thirteen workflows with two restarts;
+  twelve normal and eight forced-colour views have no overflow/contrast failures.
+  Full acceptance, V14, strict Clippy, formatting and diff checks PASS. Evidence:
+  S03 run-20260930 attachments-c-*, fixtures-e, visual-e* and gates/*-e.log.
+- S03-02B native qualification PASS: 652 library tests, two hostile-content tests
+  and the native signed-helper fixture. Standard obsd1 state unchanged. Archive
+  `c32c8cc88c698561d33b2e0edcaccce86ab42488903fab10146c4cb91e95878c`;
+  log `7a63ae8e0d211163d45f9504407f3ad82779ad7be4ec82773999af098fe582c6`.

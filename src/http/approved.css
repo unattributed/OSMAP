@@ -126,6 +126,14 @@ body:has(.app-rail) {
 .compose-attachments { margin: .8rem 0 1rem; padding: 1rem; border: 1px solid var(--line); border-radius: .7rem; }
 .compose-attachments h2 { font-size: 1.15rem; margin: 0 0 .75rem; text-transform: none; }
 .compose-attachments input[type=file] { max-width: none; margin: .4rem 0 0; border-color: var(--line); }
+.saved-attachment-list { list-style: none; padding: 0; margin: .7rem 0 1rem; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; }
+.saved-attachment { display: flex; align-items: center; justify-content: space-between; gap: .8rem; min-width: 0; padding: .7rem .8rem; border: 1px solid var(--line); border-radius: .55rem; }
+.saved-attachment > div { min-width: 0; }
+.saved-attachment strong { display: block; overflow-wrap: anywhere; }
+.saved-attachment .muted { display: block; font-size: .85rem; margin-top: .15rem; }
+.saved-attachment-remove { display: flex; flex-shrink: 0; align-items: center; gap: .4rem; padding: .45rem 0; margin: 0; font-size: .85rem; }
+.saved-attachment-remove input { width: auto; margin: 0; }
+.saved-attachment:has(input:checked) { border-style: dashed; }
 .compose-footer { display: flex; justify-content: space-between; align-items: center; gap: .7rem; }
 .compose-footer .primary-button { min-width: 11rem; }
 .compose-footer button { font-size: .875rem; }
@@ -322,6 +330,7 @@ body:has(.app-rail) {
   .compose-recipient-tools { margin-left: 0; }
   .compose-card textarea { min-height: 16rem; }
   .compose-attachments { padding: .7rem; }
+  .saved-attachment-list { grid-template-columns: 1fr; }
   .compose-footer { flex-wrap: wrap; }
   .compose-footer button, .compose-footer .primary-button { flex: 1; min-width: 0; }
   .contact-list li { flex-wrap: wrap; }

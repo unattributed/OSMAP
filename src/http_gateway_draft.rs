@@ -207,10 +207,28 @@ impl RuntimeBrowserGateway {
             };
         }
 
-        let mut persisted_attachments = existing
-            .as_ref()
-            .map(|draft| draft.request.attachments.clone())
-            .unwrap_or_default();
+        let mut persisted_attachments = match crate::draft_content::retain_saved_attachments(
+            existing
+                .as_ref()
+                .map(|draft| draft.request.attachments.as_slice())
+                .unwrap_or_default(),
+            request.removed_attachment_indices,
+        ) {
+            Ok(attachments) => attachments,
+            Err(_) => {
+                return BrowserDraftSaveOutcome {
+                    decision: BrowserDraftSaveDecision::Denied {
+                        public_reason: "invalid_request".into(),
+                    },
+                    audit_events: vec![draft_warn_event(
+                        "draft_attachment_selection_refused",
+                        "saved attachment selection refused",
+                        context,
+                        validated_session,
+                    )],
+                }
+            }
+        };
         persisted_attachments.extend_from_slice(request.attachments);
 
         let mut record = match DraftRecord::new(

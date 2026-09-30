@@ -1,6 +1,26 @@
 //! Draft route handlers for the bounded browser runtime.
 
 use super::*;
+
+pub(super) fn removed_attachment_indices(
+    form: &BTreeMap<String, String>,
+) -> Result<Vec<usize>, ()> {
+    let mut removed = Vec::new();
+    for (name, value) in form {
+        if let Some(suffix) = name.strip_prefix("remove_saved_attachment_") {
+            let index = suffix.parse::<usize>().map_err(|_| ())?;
+            if index >= ComposePolicy::default().max_attachments
+                || index.to_string() != suffix
+                || value != "1"
+                || form.get("draft_id").is_none_or(|id| id.is_empty())
+            {
+                return Err(());
+            }
+            removed.push(index);
+        }
+    }
+    Ok(removed)
+}
 use crate::draft_list::DraftListView;
 
 impl<G> BrowserApp<G>
@@ -309,7 +329,8 @@ where
                             body_value: &draft.request.body,
                             draft_id: Some(&draft.draft_id),
                             draft_revision: draft.revision,
-                            draft_attachment_count: draft.request.attachments.len(),
+                            draft_attachments: &draft.request.attachments,
+                            removed_attachment_indices: &[],
                             source_mailbox_name: draft
                                 .source_attachments
                                 .as_ref()
@@ -445,7 +466,8 @@ where
                     body_value: form.get("body").map(String::as_str).unwrap_or_default(),
                     draft_id: form.get("draft_id").map(String::as_str),
                     draft_revision: super::routes_contacts::revision(form.get("draft_revision")),
-                    draft_attachment_count: 0,
+                    draft_attachments: &[],
+                    removed_attachment_indices: &removed_attachment_indices(&form).unwrap_or_default(),
                     source_mailbox_name: form.get("source_mailbox").map(String::as_str),
                     source_uid: form.get("source_uid").and_then(|value| value.parse().ok()),
                     source_attachments: &[],
@@ -594,6 +616,7 @@ where
                 subject: &subject,
                 body: &body,
                 attachments: &parsed_form.attachments,
+                removed_attachment_indices: &removed_attachment_indices(&form).unwrap_or_default(),
                 source_attachments: source_attachments.as_ref(),
             },
         );
@@ -641,7 +664,8 @@ where
                             body_value: &body,
                             draft_id,
                             draft_revision: expected_revision,
-                            draft_attachment_count: 0,
+                            draft_attachments: &[],
+                            removed_attachment_indices: &removed_attachment_indices(&form).unwrap_or_default(),
                             source_mailbox_name: source_attachments.as_ref().map(|source| source.mailbox_name.as_str()),
                             source_uid: source_attachments.as_ref().map(|source| source.uid),
                             source_attachments: &[],

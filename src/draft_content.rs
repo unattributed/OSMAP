@@ -2,6 +2,29 @@
 //! Partial addresses are retained as text. Submission must validate them again.
 use crate::send::{ComposeError, ComposePolicy, UploadedAttachment};
 
+/// Apply explicit removal to the already revision-checked saved attachment set.
+/// Indices are local to that version; missing, duplicate or unknown indices refuse.
+pub(crate) fn retain_saved_attachments(
+    attachments: &[UploadedAttachment],
+    removed: &[usize],
+) -> Result<Vec<UploadedAttachment>, ComposeError> {
+    if removed
+        .iter()
+        .enumerate()
+        .any(|(position, index)| *index >= attachments.len() || removed[..position].contains(index))
+    {
+        return Err(ComposeError {
+            reason: "saved attachment selection was invalid".into(),
+        });
+    }
+    Ok(attachments
+        .iter()
+        .enumerate()
+        .filter(|(index, _)| !removed.contains(index))
+        .map(|(_, attachment)| attachment.clone())
+        .collect())
+}
+
 #[derive(Clone, PartialEq, Eq)]
 pub struct DraftContent {
     pub recipients_text: String,

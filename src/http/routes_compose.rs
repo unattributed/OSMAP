@@ -191,7 +191,8 @@ where
                     body_value: &body_value,
                     draft_id: None,
                     draft_revision: None,
-                    draft_attachment_count: 0,
+                    draft_attachments: &[],
+                    removed_attachment_indices: &[],
                     source_mailbox_name: source_mailbox_name.as_deref(),
                     source_uid,
                     source_attachments: &source_attachments,
@@ -472,7 +473,9 @@ where
                 &validated_session,
             ));
         }
-        let mut persisted_draft_attachment_count = 0;
+        let removed_attachment_indices =
+            super::routes_draft::removed_attachment_indices(&form).unwrap_or_default();
+        let mut persisted_draft_attachments = Vec::new();
         if let Some(draft_id) = draft_id.as_deref() {
             let draft_outcome = self
                 .gateway
@@ -484,11 +487,30 @@ where
                     draft,
                 } if canonical_username == validated_session.record.canonical_username
                     && draft.canonical_username == canonical_username
+                    && draft.draft_id == draft_id
                     && draft.revision == draft_revision =>
                 {
                     reply_thread = draft.request.reply_thread.clone();
-                    let mut persisted = draft.request.attachments.clone();
-                    persisted_draft_attachment_count = persisted.len();
+                    let mut persisted = match crate::draft_content::retain_saved_attachments(
+                        &draft.request.attachments,
+                        &removed_attachment_indices,
+                    ) {
+                        Ok(attachments) => attachments,
+                        Err(_) => {
+                            return HandledHttpResponse {
+                                response: self.draft_send_failure(
+                                    &validated_session,
+                                    &form,
+                                    reply_reference.as_ref(),
+                                    "invalid_request",
+                                    400,
+                                    "Bad Request",
+                                ),
+                                audit_events,
+                            }
+                        }
+                    };
+                    persisted_draft_attachments = draft.request.attachments.clone();
                     persisted.extend(send_attachments);
                     send_attachments = persisted;
                 }
@@ -496,7 +518,8 @@ where
                     canonical_username,
                     draft,
                 } if canonical_username == validated_session.record.canonical_username
-                    && draft.canonical_username == canonical_username =>
+                    && draft.canonical_username == canonical_username
+                    && draft.draft_id == draft_id =>
                 {
                     return HandledHttpResponse {
                         response: self.draft_send_failure(
@@ -614,7 +637,8 @@ where
                         body_value: &body,
                         draft_id: draft_id.as_deref(),
                         draft_revision,
-                        draft_attachment_count: persisted_draft_attachment_count,
+                        draft_attachments: &persisted_draft_attachments,
+                        removed_attachment_indices: &removed_attachment_indices,
                         source_mailbox_name: form.get("source_mailbox").map(String::as_str),
                         source_uid: form.get("source_uid").and_then(|value| value.parse().ok()),
                         source_attachments: &[],
@@ -664,7 +688,8 @@ where
             body_value: form.get("body").map(String::as_str).unwrap_or_default(),
             draft_id: form.get("draft_id").map(String::as_str),
             draft_revision: super::routes_draft::submitted_draft_revision(form).ok().flatten(),
-            draft_attachment_count: 0,
+            draft_attachments: &[],
+            removed_attachment_indices: &super::routes_draft::removed_attachment_indices(form).unwrap_or_default(),
             source_mailbox_name: form.get("source_mailbox").map(String::as_str),
             source_uid: form.get("source_uid").and_then(|value| value.parse().ok()),
             source_attachments: &[],

@@ -2203,10 +2203,23 @@ mod tests {
                     audit_events: vec![],
                 };
             }
-            let mut attachments = existing
-                .as_ref()
-                .map(|draft| draft.request.attachments.clone())
-                .unwrap_or_default();
+            let mut attachments = match crate::draft_content::retain_saved_attachments(
+                existing
+                    .as_ref()
+                    .map(|draft| draft.request.attachments.as_slice())
+                    .unwrap_or_default(),
+                request.removed_attachment_indices,
+            ) {
+                Ok(attachments) => attachments,
+                Err(_) => {
+                    return BrowserDraftSaveOutcome {
+                        decision: BrowserDraftSaveDecision::Denied {
+                            public_reason: "invalid_request".into(),
+                        },
+                        audit_events: vec![],
+                    }
+                }
+            };
             attachments.extend_from_slice(request.attachments);
             let mut record = match DraftRecord::new(
                 DraftPolicy::default(),

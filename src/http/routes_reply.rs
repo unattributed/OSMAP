@@ -4,6 +4,9 @@ use crate::message_metadata::MessageVersion;
 use crate::reply_thread::{ReplyReference, ReplyThread};
 
 pub(super) fn compose_metadata_valid(form: &BTreeMap<String, String>, username: &str) -> bool {
+    if super::routes_draft::removed_attachment_indices(form).is_err() {
+        return false;
+    }
     let allowed = [
         "csrf_token",
         "from",
@@ -27,6 +30,7 @@ pub(super) fn compose_metadata_valid(form: &BTreeMap<String, String>, username: 
     ];
     form.iter().all(|(name, value)| {
         (allowed.contains(&name.as_str())
+            || name.starts_with("remove_saved_attachment_")
             || name
                 .strip_prefix("include_original_attachment_")
                 .is_some_and(|suffix| {

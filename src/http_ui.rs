@@ -42,7 +42,8 @@ pub(crate) struct ComposePageModel<'a> {
     pub body_value: &'a str,
     pub draft_id: Option<&'a str>,
     pub draft_revision: Option<u64>,
-    pub draft_attachment_count: usize,
+    pub draft_attachments: &'a [crate::send::UploadedAttachment],
+    pub removed_attachment_indices: &'a [usize],
     pub source_mailbox_name: Option<&'a str>,
     pub source_uid: Option<u64>,
     pub source_attachments: &'a [AttachmentMetadata],
@@ -1513,14 +1514,7 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
             draft_id_field.push_str(&format!("<p class=\"notice\"><a href=\"/draft?id={}\" target=\"_blank\" rel=\"noopener\">Open saved version in a new tab</a>. Keep this tab open to preserve your unsaved text.</p>", url_encode(draft_id)));
         }
     }
-    let draft_attachment_notice = if model.draft_attachment_count > 0 {
-        format!(
-            "<div class=\"notice\"><strong>Draft attachments:</strong> {} stored attachment(s) will stay send-only and are not previewed.</div>",
-            model.draft_attachment_count
-        )
-    } else {
-        String::new()
-    };
+    let draft_attachment_notice = render_saved_attachment_controls(model);
     let source_attachment_controls = render_source_attachment_controls(
         model.source_mailbox_name,
         model.source_uid,
@@ -1561,7 +1555,7 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
             "<div class=\"compose-field\"><label for=\"compose-subject\">Subject</label><input id=\"compose-subject\" type=\"text\" name=\"subject\" value=\"{}\"></div>",
             "{}",
             "<label class=\"compose-editor-label\" for=\"compose-body\">Body</label><textarea id=\"compose-body\" name=\"body\" placeholder=\"Write your message…\">{}</textarea>",
-            "<section class=\"compose-attachments\" aria-labelledby=\"compose-attachments-heading\"><h2 id=\"compose-attachments-heading\">Attachments</h2>{}{}<label for=\"compose-attachment\">Add attachments</label><input id=\"compose-attachment\" type=\"file\" name=\"attachment\" multiple></section>",
+            "<section class=\"compose-attachments\" aria-labelledby=\"compose-attachments-heading\"><h2 id=\"compose-attachments-heading\">Attachments</h2>{}{}<label for=\"compose-attachment\">Add attachments</label><input id=\"compose-attachment\" type=\"file\" name=\"attachment\" multiple><p class=\"muted field-help\">Up to 3 attachments, 10 MiB each and 30 MiB total, including saved and selected source files.</p></section>",
             "<div class=\"compose-footer\"><button type=\"submit\" formaction=\"/drafts/save\">Save Draft</button>",
             "<button class=\"primary-button\" type=\"submit\">Send Message</button>",
             "</div>",
@@ -1591,6 +1585,39 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
         draft_attachment_notice,
         source_attachment_controls,
     ))
+}
+
+fn format_draft_bytes(bytes: u64) -> String {
+    if bytes < 1024 {
+        format!("{bytes} B")
+    } else if bytes < 1024 * 1024 {
+        format!("{:.1} KiB", bytes as f64 / 1024.0)
+    } else {
+        format!("{:.1} MiB", bytes as f64 / (1024.0 * 1024.0))
+    }
+}
+
+fn render_saved_attachment_controls(model: &ComposePageModel<'_>) -> String {
+    if model.draft_attachments.is_empty() && model.removed_attachment_indices.is_empty() {
+        return String::new();
+    }
+    let mut rows = String::new();
+    for (index, attachment) in model.draft_attachments.iter().enumerate() {
+        rows.push_str(&format!("<li class=\"saved-attachment\"><div><strong dir=\"auto\">📄 {}</strong><span class=\"muted\">{} · saved file</span></div><label class=\"saved-attachment-remove\"><input type=\"checkbox\" name=\"remove_saved_attachment_{index}\" value=\"1\" aria-label=\"Remove {}\"{}><span>Remove</span></label></li>", escape_html(&attachment.filename), format_draft_bytes(attachment.body.len() as u64), escape_html(&attachment.filename), if model.removed_attachment_indices.contains(&index) { " checked" } else { "" }));
+    }
+    // A failed stale form must not borrow attachment names from a newer revision.
+    // Retain its explicit indices, still bound to the submitted draft revision.
+    if model.draft_attachments.is_empty() {
+        for index in model.removed_attachment_indices {
+            rows.push_str(&format!("<li class=\"saved-attachment\"><label class=\"checkbox-row\"><input type=\"checkbox\" name=\"remove_saved_attachment_{index}\" value=\"1\" checked>Remove saved file {}</label></li>", index + 1));
+        }
+    }
+    let count = if model.draft_attachments.is_empty() {
+        "Your pending removal selection is retained.".into()
+    } else {
+        format!("{} stored attachment(s).", model.draft_attachments.len())
+    };
+    format!("<div class=\"saved-attachments\"><p class=\"muted\">{count} Select Remove, then Save Draft or Send Message to apply. Other saved files stay attached.</p><ul class=\"saved-attachment-list\">{rows}</ul></div>")
 }
 
 fn render_reply_reference(reference: Option<&crate::reply_thread::ReplyReference>) -> String {

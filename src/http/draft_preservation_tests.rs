@@ -18,6 +18,129 @@ fn save_new(app: &BrowserApp<StubGateway>, fields: &str) -> String {
     location_header(&saved).trim_start_matches("/draft?id=").into()
 }
 
+fn saved_files(app: &BrowserApp<StubGateway>, store: &crate::draft::FileDraftStore) -> String {
+    let id = save_new(app, "to=desk%40example.test&body=Public%20attachment%20notes");
+    let mut draft = store.load("alice@example.com", &id, 100).unwrap().unwrap();
+    draft.request.attachments = ["first.txt", "second.txt"].into_iter().map(|name|
+        UploadedAttachment::new(ComposePolicy::default(), name, "text/plain", name.as_bytes().to_vec()).unwrap()).collect();
+    store.save(&draft, 100).unwrap();
+    id
+}
+
+#[test]
+fn saved_attachment_removal_keeps_other_files_and_text_and_can_be_cancelled() {
+    let (app, root, store) = fixture(DraftPolicy::default());
+    let id = saved_files(&app, &store);
+    let page = app.handle_request(&request("GET", &format!("/draft?id={id}"), &authenticated_headers(), ""), "127.0.0.1");
+    let html = String::from_utf8(page.response.body).unwrap();
+    assert!(html.contains("aria-label=\"Remove first.txt\""));
+    assert!(html.contains("aria-label=\"Remove second.txt\""));
+    assert!(html.contains("Select Remove, then Save Draft or Send Message to apply"));
+    // Merely displaying or unchecking a removal does not remove a stored file.
+    assert_eq!(store.load("alice@example.com", &id, 100).unwrap().unwrap().request.attachments.len(), 2);
+    let saved = perform(&app, "/drafts/save", &format!("draft_id={id}&draft_revision=2&body=Updated%20notes&remove_saved_attachment_0=1"));
+    assert_eq!(saved.response.status_code, 303);
+    let reloaded = crate::draft::FileDraftStore::new(&root, DraftPolicy::default()).load("alice@example.com", &id, 100).unwrap().unwrap();
+    assert_eq!(reloaded.request.body, "Updated notes");
+    assert_eq!(reloaded.request.attachments.len(), 1);
+    assert_eq!(reloaded.request.attachments[0].filename, "second.txt");
+    assert_eq!(reloaded.request.attachments[0].body, b"second.txt");
+    assert_eq!(perform(&app, "/drafts/save", &format!("draft_id={id}&draft_revision=3&body=Kept")).response.status_code, 303);
+    assert_eq!(store.load("alice@example.com", &id, 100).unwrap().unwrap().request.attachments.len(), 1);
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn saved_attachment_removal_is_checked_before_send_and_failure_retains_selection() {
+    let (app, root, store) = fixture(DraftPolicy::default());
+    let id = saved_files(&app, &store);
+    let invalid = perform(&app, "/send", &format!("draft_id={id}&draft_revision=2&to=unfinished%40&body=Unsent%20notes&remove_saved_attachment_0=1"));
+    assert_eq!(invalid.response.status_code, 400);
+    let html = String::from_utf8(invalid.response.body).unwrap();
+    assert!(html.contains("Unsent notes"));
+    assert!(html.contains("aria-label=\"Remove first.txt\" checked"));
+    assert_eq!(store.load("alice@example.com", &id, 100).unwrap().unwrap().request.attachments.len(), 2);
+    let sent = perform(&app, "/send", &format!("draft_id={id}&draft_revision=2&to=desk%40example.test&body=Ready&remove_saved_attachment_0=1"));
+    assert_eq!(sent.response.status_code, 303);
+    let sent = app.gateway.submitted.lock().unwrap();
+    assert_eq!(sent.len(), 1);
+    assert_eq!(sent[0].attachments.len(), 1);
+    assert_eq!(sent[0].attachments[0].body, b"second.txt");
+    assert!(store.load("alice@example.com", &id, 100).unwrap().is_none());
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn saved_attachment_removal_refuses_stale_foreign_and_tampered_forms() {
+    let (app, root, store) = fixture(DraftPolicy::default());
+    let id = saved_files(&app, &store);
+    for path in ["/drafts/save", "/send"] {
+        for selection in ["remove_saved_attachment_2=1", "remove_saved_attachment_3=1", "remove_saved_attachment_00=1", "remove_saved_attachment_0=0", "remove_saved_attachment_bad=1", "remove_saved_attachment_18446744073709551616=1"] {
+            let denied = perform(&app, path, &format!("draft_id={id}&draft_revision=2&to=desk%40example.test&{selection}"));
+            assert_eq!(denied.response.status_code, 400, "{path} {selection}");
+        }
+        assert_eq!(perform(&app, path, "to=desk%40example.test&remove_saved_attachment_0=1").response.status_code, 400);
+        let stale = perform(&app, path, &format!("draft_id={id}&draft_revision=1&to=desk%40example.test&body=Unchanged%20pending%20text&remove_saved_attachment_0=1"));
+        assert_eq!(stale.response.status_code, 409);
+        let html = String::from_utf8(stale.response.body).unwrap();
+        assert!(html.contains("Unchanged pending text"));
+        assert!(html.contains("name=\"remove_saved_attachment_0\" value=\"1\" checked"));
+    }
+    let mut headers = authenticated_same_origin_headers().to_vec();
+    for (name, value) in &mut headers {
+        if name.eq_ignore_ascii_case("cookie") { *value = "osmap_session=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"; }
+    }
+    let form = format!("csrf_token={}&draft_id={id}&draft_revision=2&remove_saved_attachment_0=1", "c".repeat(64));
+    let denied = app.handle_request(&request("POST", "/drafts/save", &headers, &form), "127.0.0.1");
+    assert_eq!(denied.response.status_code, 409);
+    let draft = store.load("alice@example.com", &id, 100).unwrap().unwrap();
+    assert_eq!(draft.revision, Some(2));
+    assert_eq!(draft.request.attachments.len(), 2);
+    assert!(app.gateway.submitted.lock().unwrap().is_empty());
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn runtime_saved_attachment_removal_replacement_and_revision_checks_use_the_private_store() {
+    let root = std::env::temp_dir().join(format!("osmap-attachment-runtime-{}", crate::draft::generate_draft_id().unwrap()));
+    let gateway = RuntimeBrowserGateway::for_test(&root);
+    let session = StubGateway::validated_session();
+    let context = AuthenticationContext::new(AuthenticationPolicy::default(), "attachment-fixture", "127.0.0.1", "OSMAP/UX").unwrap();
+    let files = ["first.txt", "second.txt"].into_iter().map(|name|
+        UploadedAttachment::new(ComposePolicy::default(), name, "text/plain", name.as_bytes().to_vec()).unwrap()).collect::<Vec<_>>();
+    let input = BrowserDraftSaveRequest { draft_id: None, expected_revision: None, recipients: "", cc_recipients: "", bcc_recipients: "", subject: "", body: "Stored draft", attachments: &files, removed_attachment_indices: &[], source_attachments: None, reply_thread: None };
+    let first = gateway.save_draft(&context, &session, input);
+    let BrowserDraftSaveDecision::Saved { draft_id } = first.decision else { panic!("initial save"); };
+    let replacement = [UploadedAttachment::new(ComposePolicy::default(), "third.txt", "text/plain", b"replacement".to_vec()).unwrap()];
+    let input = BrowserDraftSaveRequest { draft_id: Some(&draft_id), expected_revision: Some(1), attachments: &replacement, removed_attachment_indices: &[0], ..input };
+    assert!(matches!(gateway.save_draft(&context, &session, input).decision, BrowserDraftSaveDecision::Saved { .. }));
+    assert!(matches!(gateway.save_draft(&context, &session, input).decision, BrowserDraftSaveDecision::Denied { public_reason } if public_reason == "draft_conflict"));
+    let BrowserDraftLoadDecision::Loaded { draft, .. } = gateway.load_draft(&context, &session, &draft_id).decision else { panic!("saved draft"); };
+    assert_eq!(draft.request.attachments.iter().map(|file| file.filename.as_str()).collect::<Vec<_>>(), ["second.txt", "third.txt"]);
+    assert_eq!(draft.request.body, "Stored draft");
+    assert!(matches!(gateway.save_draft(&context, &session, BrowserDraftSaveRequest { expected_revision: Some(2), removed_attachment_indices: &[0,0], ..input }).decision, BrowserDraftSaveDecision::Denied { public_reason } if public_reason == "invalid_request"));
+    fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn saved_attachment_quota_failure_preserves_removal_selection_and_original_files() {
+    let (app, root, store) = fixture(DraftPolicy { storage_max_bytes: 1500, ..DraftPolicy::default() });
+    let id = saved_files(&app, &store);
+    let body = "Unfinished attachment notes ".repeat(90);
+    let failed = perform(&app, "/drafts/save", &format!("draft_id={id}&draft_revision=2&body={}&remove_saved_attachment_0=1&remove_saved_attachment_1=1", url_encode(&body)));
+    assert_eq!(failed.response.status_code, 503);
+    let html = String::from_utf8(failed.response.body).unwrap();
+    assert!(html.contains(&body));
+    assert!(html.contains("name=\"remove_saved_attachment_0\" value=\"1\" checked"));
+    assert!(html.contains("name=\"remove_saved_attachment_1\" value=\"1\" checked"));
+    let draft = store.load("alice@example.com", &id, 100).unwrap().unwrap();
+    assert_eq!(draft.revision, Some(2));
+    assert_eq!(draft.request.attachments.len(), 2);
+    assert_eq!(perform(&app, "/drafts/save", &format!("draft_id={id}&draft_revision=2&body=Shorter%20notes&remove_saved_attachment_0=1&remove_saved_attachment_1=1")).response.status_code, 303);
+    assert!(store.load("alice@example.com", &id, 100).unwrap().unwrap().request.attachments.is_empty());
+    fs::remove_dir_all(root).unwrap();
+}
+
 #[test]
 fn blank_and_partial_drafts_are_saveable_but_not_sendable() {
     let (app, root, store) = fixture(DraftPolicy::default());

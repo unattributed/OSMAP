@@ -79,6 +79,8 @@ def main():
             upload(page, "second.txt")
             click(page, "Save Draft")
             assert "2 stored attachment" in page.locator(".compose-attachments").inner_text()
+            assert page.get_by_label("Remove first.txt", exact=True).is_visible()
+            assert page.get_by_label("Remove second.txt", exact=True).is_visible()
             checks.append("blank and partial-address drafts save; two successive uploads retain both files")
 
             older = owned.new_page()
@@ -88,11 +90,13 @@ def main():
             page.get_by_label("Body", exact=True).fill("Newer saved version")
             click(page, "Save Draft")
             older.get_by_label("Body", exact=True).fill("Older tab unsaved text")
+            older.get_by_label("Remove first.txt", exact=True).check()
             upload(older, "unsaved-third.txt")
             click(older, "Save Draft", 409)
             assert older.get_by_label("Body", exact=True).input_value() == "Older tab unsaved text"
             assert "changed in another tab" in older.get_by_role("alert").inner_text()
             assert "Re-select any new uploads" in older.locator("main").inner_text()
+            assert older.get_by_label("Remove saved file 1", exact=True).is_checked()
             with older.expect_popup() as popup:
                 older.get_by_role("link", name="Open saved version in a new tab", exact=True).click()
             latest = popup.value
@@ -140,12 +144,31 @@ def main():
             assert page.get_by_label("Body", exact=True).input_value() == "Newer saved version"
             assert page.get_by_label("To", exact=True).input_value() == ""
             assert "2 stored attachment" in page.locator(".compose-attachments").inner_text()
+            removal = page.get_by_label("Remove first.txt", exact=True)
+            removal.focus()
+            removal.press("Space")
+            assert removal.is_checked()
             click(page, "Send Message", 400)
             assert page.get_by_label("Body", exact=True).input_value() == "Newer saved version"
+            assert page.get_by_label("Remove first.txt", exact=True).is_checked()
+            assert page.get_by_label("Remove second.txt", exact=True).is_visible()
+            upload(page, "replacement.txt")
+            click(page, "Save Draft")
+            assert page.get_by_label("Remove first.txt", exact=True).count() == 0
+            assert page.get_by_label("Remove second.txt", exact=True).is_visible()
+            assert page.get_by_label("Remove replacement.txt", exact=True).is_visible()
+            assert page.get_by_label("Body", exact=True).input_value() == "Newer saved version"
+            checks.append("keyboard removal survives refused Send; Save removes only that saved file and adds the replacement without losing text")
+            for scheme in ["light", "dark"]:
+                page.emulate_media(color_scheme=scheme)
+                for width in [360, 768, 1600]:
+                    page.set_viewport_size({"width": width, "height": 1100})
+                    page.screenshot(path=str(args.output / f"saved-attachments-{scheme}-{width}.png"), full_page=True)
+                    assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
             visit(page, "/drafts")
             assert page.locator(".draft-list tbody tr").count() == 1
             page.screenshot(path=str(args.output / "drafts-restarted-light-1600.png"), full_page=True)
-            checks.append("process restart retains draft text and both files; incomplete Send refuses without deleting it")
+            checks.append("process restart retains draft text and saved files; incomplete Send refuses without deleting it")
             visit(page, "/compose")
             page.get_by_label("Subject", exact=True).fill("Alpha review")
             page.get_by_label("Body", exact=True).fill("Second draft after restart")
@@ -200,6 +223,11 @@ def main():
             owned = context()
             page = owned.new_page()
             login(page, "alice")
+            visit(page, saved_path)
+            assert page.get_by_label("Remove first.txt", exact=True).count() == 0
+            assert page.get_by_label("Remove second.txt", exact=True).is_visible()
+            assert page.get_by_label("Remove replacement.txt", exact=True).is_visible()
+            checks.append("attachment removal and replacement persist across a second process restart")
             visit(page, "/drafts?filter=starred&sort=subject&q=")
             assert page.locator(".draft-subject>a").all_text_contents() == ["Alpha review"]
             assert page.get_by_role("button", name="Unstar draft", exact=True).get_attribute("aria-pressed") == "true"

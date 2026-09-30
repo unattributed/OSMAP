@@ -203,6 +203,7 @@ pub struct BrowserDraftSaveRequest<'a> {
     pub subject: &'a str,
     pub body: &'a str,
     pub attachments: &'a [UploadedAttachment],
+    pub removed_attachment_indices: &'a [usize],
     pub source_attachments: Option<&'a DraftSourceAttachments>,
     pub reply_thread: Option<&'a crate::reply_thread::ReplyThread>,
 }

@@ -168,6 +168,7 @@ fn ux_synthetic_route_baselines() {
             200,
         ),
         ("compose", "/compose", true, 200),
+        ("compose-saved-attachments", "/draft?id=00000000000000000000000000000001", true, 200),
         (
             "reply-all",
             "/compose?mode=reply-all&mailbox=INBOX&uid=9",
@@ -326,7 +327,7 @@ fn ux_synthetic_route_baselines() {
                 .insert("host".to_string(), "unaccepted.example.test".to_string());
         }
         let fixture_app = app();
-        if matches!(name, "drafts-populated" | "drafts-filtered-empty" | "drafts-review") {
+        if matches!(name, "drafts-populated" | "drafts-filtered-empty" | "drafts-review" | "compose-saved-attachments") {
             let mut drafts = fixture_app.gateway.drafts.lock().unwrap();
             for (index, subject) in ["Project notes", "Security outline", "Meeting notes", "Vendor assessment", "Policy draft", "Quarterly update", "Personal notes", "Release checklist"].iter().enumerate() {
                 let id = format!("{:032x}", index + 1);
@@ -338,6 +339,9 @@ fn ux_synthetic_route_baselines() {
                     source_attachments: None,
                 }).unwrap();
                 draft.revision = Some(1);
+                if name == "compose-saved-attachments" && index == 0 {
+                    draft.request.attachments = ["Project_review_notes.txt", "Risk_assessment.pdf"].into_iter().map(|filename| UploadedAttachment::new(ComposePolicy::default(), filename, "application/octet-stream", b"public synthetic fixture".to_vec()).unwrap()).collect();
+                }
                 draft.starred = index == 1;
                 drafts.insert(id, draft);
             }
