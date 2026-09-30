@@ -32,18 +32,29 @@ where
             BrowserDraftListDecision::Listed {
                 canonical_username,
                 drafts,
-            } => HandledHttpResponse {
+            } if canonical_username == validated_session.record.canonical_username => {
+                HandledHttpResponse {
+                    response: html_response(
+                        200,
+                        "OK",
+                        "Drafts",
+                        render_draft_list_page(&DraftListPageModel {
+                            canonical_username: &canonical_username,
+                            csrf_token: &validated_session.record.csrf_token,
+                            success_message,
+                            error_message: None,
+                            drafts: &drafts,
+                        }),
+                    ),
+                    audit_events,
+                }
+            }
+            BrowserDraftListDecision::Listed { .. } => HandledHttpResponse {
                 response: html_response(
-                    200,
-                    "OK",
-                    "Drafts",
-                    render_draft_list_page(&DraftListPageModel {
-                        canonical_username: &canonical_username,
-                        csrf_token: &validated_session.record.csrf_token,
-                        success_message,
-                        error_message: None,
-                        drafts: &drafts,
-                    }),
+                    503,
+                    "Service Unavailable",
+                    "Drafts Unavailable",
+                    "<p>Your drafts could not be loaded safely. Reload the page to try again.</p>",
                 ),
                 audit_events,
             },
@@ -95,7 +106,12 @@ where
         audit_events.extend(outcome.audit_events);
 
         match outcome.decision {
-            BrowserDraftLoadDecision::Loaded { draft, .. } => {
+            BrowserDraftLoadDecision::Loaded {
+                draft,
+                canonical_username,
+            } if canonical_username == validated_session.record.canonical_username
+                && draft.canonical_username == validated_session.record.canonical_username =>
+            {
                 let mut source_attachments = Vec::new();
                 if let Some(source) = &draft.source_attachments {
                     let source_outcome = self.gateway.view_message(
@@ -144,6 +160,7 @@ where
                         "OK",
                         "Resume Draft",
                         render_compose_page(&ComposePageModel {
+                            contacts: self.contact_snapshot(&validated_session).ok().as_ref(),
                             reply_reference: None,
                             heading: "Resume Draft",
                             canonical_username: &validated_session.record.canonical_username,
@@ -179,6 +196,15 @@ where
                     audit_events,
                 }
             }
+            BrowserDraftLoadDecision::Loaded { .. } => HandledHttpResponse {
+                response: html_response(
+                    503,
+                    "Service Unavailable",
+                    "Draft Unavailable",
+                    "<p>This draft could not be loaded safely. Return to Drafts and try again.</p>",
+                ),
+                audit_events,
+            },
             BrowserDraftLoadDecision::NotFound => HandledHttpResponse {
                 response: html_response(
                     404,
@@ -217,7 +243,7 @@ where
         let parsed_form = match parse_compose_form(
             &request.body,
             request.headers.get("content-type").map(String::as_str),
-            self.policy.max_form_fields,
+            self.policy.max_form_fields.saturating_add(4),
             self.policy.max_upload_body_bytes,
             ComposePolicy::default(),
         ) {
@@ -239,7 +265,7 @@ where
                 };
             }
         };
-        let form = parsed_form.fields;
+        let mut form = parsed_form.fields;
 
         if let Some(response) = self.require_valid_csrf(
             request,
@@ -250,7 +276,6 @@ where
             return response;
         }
 
-        let recipients = form.get("to").cloned().unwrap_or_default();
         if !super::routes_reply::compose_metadata_valid(
             &form,
             &validated_session.record.canonical_username,
@@ -269,6 +294,33 @@ where
                 }
             }
         };
+        if let Err(error) = self.add_selected_contact(&validated_session, &mut form) {
+            return HandledHttpResponse {
+                response: html_response(409, "Conflict", "Choose a Contact", render_compose_page(&ComposePageModel {
+                    contacts: self.contact_snapshot(&validated_session).ok().as_ref(),
+                    reply_reference: reply_reference.as_ref(),
+                    heading: "Compose",
+                    canonical_username: &validated_session.record.canonical_username,
+                    csrf_token: &validated_session.record.csrf_token,
+                    success_message: None,
+                    error_message: Some(error.message()),
+                    context_notice: Some("Nothing was saved or sent. Your text is retained. Re-select any new uploads before saving; existing saved-draft attachments are unchanged."),
+                    to_value: form.get("to").map(String::as_str).unwrap_or_default(),
+                    cc_value: form.get("cc").map(String::as_str).unwrap_or_default(),
+                    bcc_value: form.get("bcc").map(String::as_str).unwrap_or_default(),
+                    subject_value: form.get("subject").map(String::as_str).unwrap_or_default(),
+                    body_value: form.get("body").map(String::as_str).unwrap_or_default(),
+                    draft_id: form.get("draft_id").map(String::as_str),
+                    draft_attachment_count: 0,
+                    source_mailbox_name: None,
+                    source_uid: None,
+                    source_attachments: &[],
+                    selected_source_part_paths: &[],
+                })),
+                audit_events,
+            };
+        }
+        let recipients = form.get("to").cloned().unwrap_or_default();
         let reply_thread = match reply_reference.as_ref() {
             Some(reference) => match self.resolve_reply_thread(
                 context,
@@ -408,7 +460,11 @@ where
                 response: redirect_response(
                     303,
                     "See Other",
-                    &format!("/draft?id={}", url_encode(&draft_id)),
+                    &if form.get("compose_action").map(String::as_str) == Some("minimize") {
+                        "/drafts".into()
+                    } else {
+                        format!("/draft?id={}", url_encode(&draft_id))
+                    },
                 ),
                 audit_events,
             },
@@ -424,6 +480,7 @@ where
                         reason_phrase,
                         "Compose",
                         render_compose_page(&ComposePageModel {
+                            contacts: self.contact_snapshot(&validated_session).ok().as_ref(),
                             reply_reference: reply_reference.as_ref(),
                             heading: "Compose",
                             canonical_username: &validated_session.record.canonical_username,

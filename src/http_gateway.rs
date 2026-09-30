@@ -138,6 +138,27 @@ impl RuntimeBrowserGateway {
 }
 
 impl BrowserGateway for RuntimeBrowserGateway {
+    fn load_contacts(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::contacts::ContactBook, crate::contacts::ContactError> {
+        crate::contacts::ContactStore::new(self.settings_dir.join("contacts-v1"))
+            .load(&session.record.canonical_username)
+    }
+
+    fn change_contact(
+        &self,
+        session: &ValidatedSession,
+        expected_revision: u64,
+        change: crate::contacts::ContactChange,
+    ) -> Result<crate::contacts::ContactBook, crate::contacts::ContactError> {
+        crate::contacts::ContactStore::new(self.settings_dir.join("contacts-v1")).change(
+            &session.record.canonical_username,
+            expected_revision,
+            change,
+        )
+    }
+
     fn set_message_flag(
         &self,
         context: &AuthenticationContext,

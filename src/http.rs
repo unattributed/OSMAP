@@ -14,6 +14,7 @@ mod http_runtime;
 mod routes_appearance;
 mod routes_auth;
 mod routes_compose;
+mod routes_contacts;
 mod routes_content;
 mod routes_draft;
 mod routes_flags;
@@ -824,6 +825,9 @@ mod tests {
     mod reply_tests {
         include!("http/reply_tests.rs");
     }
+    mod contact_tests {
+        include!("http/contact_tests.rs");
+    }
     mod flag_fixtures {
         include!("http/flag_fixtures.rs");
     }
@@ -849,6 +853,7 @@ mod tests {
 
     #[derive(Debug, Clone)]
     struct StubGateway {
+        contacts_store: Option<crate::contacts::ContactStore>,
         drafts: Arc<Mutex<BTreeMap<String, DraftRecord>>>,
         submitted: Arc<Mutex<Vec<ComposeRequest>>>,
         message_flags: Arc<Mutex<SyntheticFlagStates>>,
@@ -860,6 +865,7 @@ mod tests {
     impl Default for StubGateway {
         fn default() -> Self {
             Self {
+                contacts_store: None,
                 drafts: Arc::new(Mutex::new(BTreeMap::new())),
                 submitted: Arc::new(Mutex::new(Vec::new())),
                 message_flags: Arc::new(Mutex::new(BTreeMap::new())),
@@ -903,6 +909,31 @@ mod tests {
     }
 
     impl BrowserGateway for StubGateway {
+        fn load_contacts(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<crate::contacts::ContactBook, crate::contacts::ContactError> {
+            self.contacts_store
+                .as_ref()
+                .map(|store| store.load(&session.record.canonical_username))
+                .unwrap_or_else(|| {
+                    Ok(crate::contacts::ContactBook::empty(
+                        &session.record.canonical_username,
+                    ))
+                })
+        }
+        fn change_contact(
+            &self,
+            session: &ValidatedSession,
+            revision: u64,
+            change: crate::contacts::ContactChange,
+        ) -> Result<crate::contacts::ContactBook, crate::contacts::ContactError> {
+            self.contacts_store
+                .as_ref()
+                .ok_or(crate::contacts::ContactError::Unavailable)?
+                .change(&session.record.canonical_username, revision, change)
+        }
+
         fn set_message_flag(
             &self,
             context: &AuthenticationContext,
@@ -4505,9 +4536,21 @@ mod tests {
         assert_eq!(list_response.response.status_code, 200);
         let list_body = body_text(&list_response);
         assert!(list_body.contains("Resume"));
-        assert!(list_body.contains("Body Bytes"));
+        assert!(list_body.contains("Draft Subject"));
+        assert!(list_body.contains("Recipient"));
+        assert!(!list_body.contains("Body Bytes"));
         assert!(!list_body.contains("Private draft body"));
-        assert!(!list_body.contains("Draft Subject"));
+        assert!(!list_body.contains("dana@example.org"));
+        let summaries = app
+            .gateway
+            .drafts
+            .lock()
+            .unwrap()
+            .values()
+            .map(DraftRecord::summary)
+            .collect::<Vec<_>>();
+        let debug = format!("{summaries:?}");
+        assert!(!debug.contains("Draft Subject") && !debug.contains("bob@example.com"));
     }
 
     #[test]

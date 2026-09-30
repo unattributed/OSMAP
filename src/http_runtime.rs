@@ -141,6 +141,13 @@ where
             (HttpMethod::Get, "/message") => self.handle_message_view(request, &context),
             (HttpMethod::Get, "/attachment") => self.handle_attachment_download(request, &context),
             (HttpMethod::Get, "/compose") => self.handle_compose_form(request, &context),
+            (HttpMethod::Get, "/contacts") => self.handle_contacts(request, &context),
+            (HttpMethod::Post, "/contacts/save") => {
+                self.handle_contact_change(request, &context, false)
+            }
+            (HttpMethod::Post, "/contacts/delete") => {
+                self.handle_contact_change(request, &context, true)
+            }
             (HttpMethod::Get, "/drafts") => self.handle_draft_list(request, &context),
             (HttpMethod::Get, "/draft") => self.handle_draft_resume(request, &context),
             (HttpMethod::Get, "/sessions") => self.handle_sessions_page(request, &context),

@@ -171,6 +171,13 @@ impl DraftRecord {
             updated_at: self.updated_at,
             expires_at: self.expires_at,
             recipient_count: self.request.total_recipient_count(),
+            recipient_preview: self
+                .request
+                .recipients
+                .first()
+                .cloned()
+                .or_else(|| self.request.cc_recipients.first().cloned()),
+            subject: self.request.subject.clone(),
             subject_len: self.request.subject.len(),
             body_len: self.request.body.len(),
             attachment_count: self.request.attachments.len(),
@@ -184,18 +191,31 @@ impl DraftRecord {
     }
 }
 
-/// Redacted draft list projection.
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// Owner-only draft list projection. Bcc and body text are never included.
+#[derive(Clone, PartialEq, Eq)]
 pub struct DraftSummary {
     pub draft_id: String,
     pub created_at: u64,
     pub updated_at: u64,
     pub expires_at: u64,
     pub recipient_count: usize,
+    pub recipient_preview: Option<String>,
+    pub subject: String,
     pub subject_len: usize,
     pub body_len: usize,
     pub attachment_count: usize,
     pub total_attachment_bytes: usize,
+}
+
+impl std::fmt::Debug for DraftSummary {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("DraftSummary")
+            .field("updated_at", &self.updated_at)
+            .field("recipient_count", &self.recipient_count)
+            .field("subject_len", &self.subject_len)
+            .field("attachment_count", &self.attachment_count)
+            .finish_non_exhaustive()
+    }
 }
 
 /// Draft storage operations needed by the later browser route slice.

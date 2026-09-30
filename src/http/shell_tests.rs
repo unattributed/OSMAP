@@ -6,7 +6,7 @@ fn shell_has_real_named_navigation_and_main_follows_the_header() {
         ("/settings", "Settings"),
         ("/compose", "Compose"),
         ("/drafts", "Drafts"),
-        ("/sessions", "Sessions"),
+        ("/sessions", "Settings"),
         ("/mailbox?name=INBOX", "Inbox"),
         ("/message?mailbox=INBOX&uid=9", "Inbox"),
     ] {

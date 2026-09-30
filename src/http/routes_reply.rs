@@ -19,6 +19,10 @@ pub(super) fn compose_metadata_valid(form: &BTreeMap<String, String>, username: 
         "reply_uid",
         "reply_mailbox_guid",
         "reply_message_guid",
+        "contact_id",
+        "contact_revision",
+        "contact_target",
+        "compose_action",
     ];
     form.iter().all(|(name, value)| {
         (allowed.contains(&name.as_str())

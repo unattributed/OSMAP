@@ -31,6 +31,16 @@ pub(crate) fn advisory_file_lock_exclusive(file: &fs::File) -> io::Result<()> {
     Ok(())
 }
 
+/// Acquires a nonblocking exclusive lock; a busy account returns immediately.
+#[cfg(unix)]
+pub(crate) fn try_advisory_file_lock_exclusive(file: &fs::File) -> io::Result<()> {
+    let result = unsafe { libc::flock(file.as_raw_fd(), libc::LOCK_EX | libc::LOCK_NB) };
+    if result == -1 {
+        return Err(io::Error::last_os_error());
+    }
+    Ok(())
+}
+
 /// Releases an advisory lock previously acquired on an open file.
 #[cfg(unix)]
 pub(crate) fn advisory_file_unlock(file: &fs::File) -> io::Result<()> {

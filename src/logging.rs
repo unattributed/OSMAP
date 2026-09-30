@@ -185,7 +185,7 @@ fn render_text_line(timestamp: u64, event: &LogEvent) -> String {
     line
 }
 
-fn format_unix_timestamp_utc(timestamp: u64) -> String {
+pub(crate) fn format_unix_timestamp_utc(timestamp: u64) -> String {
     const SECONDS_PER_DAY: u64 = 86_400;
 
     let days = (timestamp / SECONDS_PER_DAY) as i128;

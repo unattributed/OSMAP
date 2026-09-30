@@ -103,17 +103,20 @@ def main():
                             assert page.locator(":focus").get_attribute("id") == "main-content"
                             page.evaluate("window.scrollTo(0, 0)")
                             toggle = page.locator(".rail-disclosure summary")
-                            toggle.focus()
-                            page.keyboard.press("Enter")
-                            assert page.locator(".rail-disclosure").get_attribute("open") is not None
-                            focus = toggle.evaluate("e => ({style:getComputedStyle(e).outlineStyle,width:parseFloat(getComputedStyle(e).outlineWidth)})")
-                            assert focus["style"] != "none" and focus["width"] >= 2
+                            focus = None
+                            if toggle.is_visible():
+                                toggle.focus()
+                                page.keyboard.press("Enter")
+                                assert page.locator(".rail-disclosure").get_attribute("open") is not None
+                                focus = toggle.evaluate("e => ({style:getComputedStyle(e).outlineStyle,width:parseFloat(getComputedStyle(e).outlineWidth)})")
+                                assert focus["style"] != "none" and focus["width"] >= 2
                             assert page.locator(".rail-label").first.is_visible()
                             assert page.locator(".rail-links a[aria-current=page]").get_attribute("aria-label") == "Settings"
                             expanded = args.output / f"{item['name']}-expanded-{scheme}-{width}.png"
                             page.screenshot(path=str(expanded), full_page=True)
-                            page.keyboard.press("Enter")
-                            assert page.locator(".rail-disclosure").get_attribute("open") is None
+                            if toggle.is_visible():
+                                page.keyboard.press("Enter")
+                                assert page.locator(".rail-disclosure").get_attribute("open") is None
                             if page.locator(".protection-menu").count():
                                 page.locator(".protection-menu summary").focus()
                                 page.keyboard.press("Enter")
@@ -136,7 +139,7 @@ def main():
                                                   "account_menu_within_viewport": True,
                                                   "screenshots": {p.name: hashlib.sha256(p.read_bytes()).hexdigest()
                                                                   for p in [expanded, account]}})
-                        if args.shell_checks and page.locator(".global-search-menu").count():
+                        if args.shell_checks and page.locator(".global-search-menu summary").is_visible():
                             search = page.locator(".global-search-menu summary")
                             search.focus()
                             page.keyboard.press("Enter")
@@ -178,6 +181,7 @@ def main():
                             background: getComputedStyle(document.body).backgroundColor,
                             foreground: getComputedStyle(document.body).color,
                             appearance: document.documentElement.dataset.appearance,
+                            authenticated_shell: !!document.querySelector('.app-rail'),
                             forced_colors_active: matchMedia('(forced-colors:active)').matches,
                             system_dark: matchMedia('(prefers-color-scheme:dark)').matches,
                             device_pixel_ratio: window.devicePixelRatio,
@@ -214,7 +218,8 @@ def main():
                 if metrics["system_dark"] != (result["scheme"] == "dark"):
                     reasons.append("system scheme emulation mismatch")
                 effective = result["scheme"] if result["expected_appearance"] == "system" else result["expected_appearance"]
-                expected_background = "rgb(13, 21, 38)" if effective == "dark" else "rgb(245, 247, 251)"
+                expected_background = "rgb(13, 21, 38)" if effective == "dark" else (
+                    "rgb(245, 248, 254)" if metrics["authenticated_shell"] else "rgb(245, 247, 251)")
                 if args.forced_colors == "none" and metrics["background"] != expected_background:
                     reasons.append("appearance colour mismatch")
                 if result["contrast"] and (result["contrast"]["failures"] or result["contrast"]["ui_failures"]):

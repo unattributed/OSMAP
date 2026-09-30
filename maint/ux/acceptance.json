@@ -3,7 +3,7 @@
   "epic": "OSMAP-UX",
   "prior_plan_anchor": "74522e5f99024720a3c47a3744207ff453de5731",
   "plan_revision": 2,
-  "plan_anchor": "Signed revision-2 planning commit; exact SHA recorded in docs/UX_EXECUTION_LEDGER.md after signing",
+  "plan_anchor": "6b3ce8fff27ca3dabf87039d54098bd9967a2e42",
   "approved_page_inventory": "maint/ux/approved_pages.json",
   "approved_reference_manifest": "docs/design/osmap-ux-final-approved-20260919/SHA256SUMS",
   "visual_acceptance_status": "PENDING_FINAL_REFERENCE_COMPARISON for every earlier case; historical functional status is preserved and does not establish final-approved visual conformity",

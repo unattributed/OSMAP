@@ -176,6 +176,7 @@ where
                 "OK",
                 compose_heading,
                 render_compose_page(&ComposePageModel {
+                    contacts: self.contact_snapshot(&validated_session).ok().as_ref(),
                     reply_reference: reply_reference.as_ref(),
                     heading: compose_heading,
                     canonical_username: &validated_session.record.canonical_username,
@@ -214,7 +215,7 @@ where
         let parsed_form = match parse_compose_form(
             &request.body,
             request.headers.get("content-type").map(String::as_str),
-            self.policy.max_form_fields,
+            self.policy.max_form_fields.saturating_add(4),
             self.policy.max_upload_body_bytes,
             ComposePolicy::default(),
         ) {
@@ -251,10 +252,12 @@ where
         }
 
         let recipients = form.get("to").cloned().unwrap_or_default();
-        if !super::routes_reply::compose_metadata_valid(
-            &form,
-            &validated_session.record.canonical_username,
-        ) {
+        if form.contains_key("compose_action")
+            || !super::routes_reply::compose_metadata_valid(
+                &form,
+                &validated_session.record.canonical_username,
+            )
+        {
             return HandledHttpResponse {
                 response: invalid_compose_metadata(),
                 audit_events,
@@ -566,6 +569,7 @@ where
                     reason_phrase,
                     "Compose",
                     render_compose_page(&ComposePageModel {
+                        contacts: self.contact_snapshot(&validated_session).ok().as_ref(),
                         reply_reference: reply_reference.as_ref(),
                         heading: "Compose",
                         canonical_username: &validated_session.record.canonical_username,

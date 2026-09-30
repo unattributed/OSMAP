@@ -1146,6 +1146,28 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   draft revision/retention, formatting and send/Sent reconciliation remain later
   S03 work. No live account, external recipient, deployment or synchronization.
 
+### S03-01 checkpoint B work order — account-private contacts
+
+- Signed A `bf20f08a77cec24420e7dedcd982260368f26a78` has a good Shopkeeper
+  signature and clean checkpoint. Exact source archive
+  `1b0b5c06d82417e59e6a92545a754aaf3553c25e7de853c988d90ea7277a32f3`
+  is qualifying in owned `/home/foo/osmap-ux-s03-20260930-V6sghO6y` on obsd1;
+  no standard checkout or live service mutation.
+- Continue S03-01 under D05: at most 200 account-private contacts, display names
+  at most 100 bytes, conservative bounded address validation, explicit selection
+  into To/Cc/Bcc, no harvesting or trust inference. Mutations require session,
+  CSRF, same-origin, account ownership and serialized revision checks. Use a
+  versioned owner-only store below the existing settings state boundary;
+  fail closed for malformed, stale, busy, symlinked or unsafe state.
+- Allowed files: bounded account-file storage, contacts model/store, reviewed
+  OpenBSD nonblocking lock wrapper, gateway/routes/UI/fixtures, acceptance and
+  assurance inventories, tests and this ledger. Contact selection explicitly
+  saves the composed draft so uploaded files and reply context can survive the
+  server round trip. Full draft concurrency/retention remains S03-02. Qualify
+  owner isolation, stale writes, quota/validation failures, keyboard/reflow,
+  restart persistence and native storage before claiming delivery. No live
+  contact data, external notices, address verification or message delivery.
+
 ### Revision-2 approved-reference amendment — 2026-09-30 UTC
 
 - Operator correction: "these mockup images are the approved UX design in
@@ -1188,3 +1210,37 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   refused two unindexed bundle Markdown files; their exact paths are now in
   the documentation index and the unchanged guard passes. Logs remain under
   S00 `approved-reference-reconciliation/`. No strict-release claim.
+
+### Revision-2 delivery and practical UX continuation
+
+- Accepted engineering anchor: `6b3ce8fff27ca3dabf87039d54098bd9967a2e42`,
+  verified Shopkeeper signature; clean checkpoint, 18 ahead/0 behind recorded
+  origin/main. No synchronization. Native nginx edge check remains unavailable
+  locally; no release claim. Preserved S03-01B files restored with exact hashes.
+- Latest operator direction allocates at most 10% to governance and 90% to UX.
+  Continue contact interaction and approved compose/shared-shell implementation,
+  focused behaviour/browser tests and required signing gates; no further plan
+  expansion. Source boundary includes existing S03 files and shared UI/CSS/tests.
+
+### S03-01B — contacts and practical composer checkpoint — 2026-09-30 UTC
+
+- Implemented explicit private contact create/edit/remove and To/Cc/Bcc selection,
+  bounded to 200 entries with owner isolation, revision checks, nonblocking locks,
+  atomic private storage and constant error/audit messages. Selection saves the
+  draft with existing text, reply context and uploads; it cannot submit mail.
+- Shared shell now follows the final labelled sidebar/header proportions and
+  persistent search. Compose has horizontal fields, Cc/Bcc disclosures, keyboard
+  Expand/Restore and save-on-Minimize. Draft rows show escaped subjects, recipient
+  summaries, attachment counts and readable UTC dates; never Bcc or message bodies.
+  Login/TOTP styling remains unchanged. Final visual parity remains incomplete.
+- Linux: 632 library tests PASS, six existing ignored fixtures; strict all-target/
+  all-feature Clippy, formatting, diff, full acceptance and V14 gates PASS.
+  Edge/Firefox contact journeys each PASS eight checks; Edge reply, appearance and
+  list regression journeys PASS 5/6/9 checks. All browser traffic is loopback-only.
+  Visual audit: 42 light/dark captures at 360/768/1600, zero overflow/text/UI contrast
+  failures; 12 forced-colour captures PASS. Artifacts: S03 run-20260930 browser-b-*,
+  visual-b*, fixtures-b and gates/*-b.log. Native qualification follows signing.
+- Known remaining work: incomplete draft saves, draft concurrency/retention,
+  attachment removal and preserved failed uploads, authoring tools, protection
+  controls and full approved page comparisons. No runtime crypto, live contact
+  data, external delivery, deployment or Git synchronization claimed.

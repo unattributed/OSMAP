@@ -27,6 +27,7 @@ const DEFAULT_RENDERED_MAILBOXES_MAX: usize = DEFAULT_MAX_MAILBOXES;
 
 /// Small view model for the current server-rendered compose page.
 pub(crate) struct ComposePageModel<'a> {
+    pub contacts: Option<&'a crate::contacts::ContactBook>,
     pub heading: &'a str,
     pub canonical_username: &'a str,
     pub csrf_token: &'a str,
@@ -122,6 +123,7 @@ fn shell_icon(name: &str) -> String {
         "settings" => "<path d=\"m10 3-.5 3-2 1-3-.7-2 3 2.3 2v2l-2.3 2 2 3 3-.7 2 1 .5 3h4l.5-3 2-1 3 .7 2-3-2.3-2v-2l2.3-2-2-3-3 .7-2-1L14 3z\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/>",
         "folders" => "<path d=\"M3 5h7l2 3h9v13H3zM3 5V3h7l2 2h9v3\"/>",
         "menu" => "<path d=\"M4 6h16M4 12h16M4 18h16\"/>",
+        "search" => "<circle cx=\"10\" cy=\"10\" r=\"7\"/><path d=\"m15 15 6 6\"/>",
         _ => "<path d=\"m7 10 5 5 5-5\"/>",
     };
     format!("<svg class=\"shell-icon\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\" focusable=\"false\">{path}</svg>")
@@ -130,10 +132,11 @@ fn shell_icon(name: &str) -> String {
 pub(crate) fn app_header(canonical_username: &str, csrf_token: &str, current: &str) -> String {
     let mut links = String::new();
     for (name, label, href, icon) in [
+        ("mailboxes", "Mailbox", "/mailboxes", "folders"),
         ("compose", "Compose", "/compose", "compose"),
         ("inbox", "Inbox", "/mailbox?name=INBOX", "inbox"),
-        ("sent", "Sent", "/mailbox?name=Sent", "sent"),
         ("drafts", "Drafts", "/drafts", "drafts"),
+        ("sent", "Sent", "/mailbox?name=Sent", "sent"),
         (
             "archive",
             "Archive",
@@ -141,24 +144,24 @@ pub(crate) fn app_header(canonical_username: &str, csrf_token: &str, current: &s
             "archive",
         ),
         ("bin", "Bin", "/mailbox?name=Trash", "bin"),
-        ("mailboxes", "All mailboxes", "/mailboxes", "folders"),
-        ("sessions", "Sessions", "/sessions", "shield"),
         ("settings", "Settings", "/settings", "settings"),
+        ("search", "Search", "/search", "search"),
     ] {
         links.push_str(&format!(
             "<a class=\"rail-link{}\" href=\"{}\" aria-label=\"{}\" title=\"{}\"{}>{}<span class=\"rail-label\">{}</span></a>",
             if name == "compose" { " rail-compose" } else { "" },
             escape_html(href), label, label,
-            if name == current { " aria-current=\"page\"" } else { "" },
+            if name == current || name == "settings" && current == "sessions" { " aria-current=\"page\"" } else { "" },
             shell_icon(icon), label));
     }
     let search_menu = if current == "settings" {
         ""
     } else {
         concat!(
-        "<details class=\"global-search-menu\" name=\"toolbar-menu\"><summary accesskey=\"s\" title=\"Search and shortcuts; browser access key S\">Search</summary>",
-        "<div class=\"account-menu-panel global-search-panel\"><form role=\"search\" method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"scope\" value=\"all\"><label for=\"global-mail-query\">Search all mail<input id=\"global-mail-query\" name=\"q\" type=\"search\" maxlength=\"256\" autocomplete=\"off\" required></label><button type=\"submit\">Search mail</button></form>",
-        "<nav aria-label=\"Mail shortcuts\"><h2>Shortcuts</h2><a href=\"/compose\">Compose a message</a><a href=\"/mailbox?name=INBOX\">Open Inbox</a><a href=\"/mailbox?name=Sent\">Open Sent</a><a href=\"/mailbox/shortcut?kind=archive\">Open Archive</a><a href=\"/drafts\">Open Drafts</a><a href=\"/mailboxes\">Browse mailboxes</a><a href=\"/settings\">Open account settings</a></nav></div></details>"
+        "<div class=\"header-search\"><form role=\"search\" method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"scope\" value=\"all\"><label class=\"sr-only\" for=\"global-mail-query\">Search all mail</label><input id=\"global-mail-query\" name=\"q\" type=\"search\" placeholder=\"Search mail…\" maxlength=\"256\" autocomplete=\"off\" accesskey=\"s\" required><button type=\"submit\" aria-label=\"Search mail\">Search</button></form>",
+        "<details class=\"global-search-menu\" name=\"toolbar-menu\"><summary title=\"Mail shortcuts\">Shortcuts</summary>",
+        "<div class=\"account-menu-panel global-search-panel\">",
+        "<nav aria-label=\"Mail shortcuts\"><h2>Shortcuts</h2><a href=\"/compose\">Compose a message</a><a href=\"/mailbox?name=INBOX\">Open Inbox</a><a href=\"/mailbox?name=Sent\">Open Sent</a><a href=\"/mailbox/shortcut?kind=archive\">Open Archive</a><a href=\"/drafts\">Open Drafts</a><a href=\"/mailboxes\">Browse mailboxes</a><a href=\"/settings\">Open account settings</a></nav></div></details></div>"
     )
     };
     format!(concat!(
@@ -170,12 +173,11 @@ pub(crate) fn app_header(canonical_username: &str, csrf_token: &str, current: &s
         "<a class=\"brand\" href=\"/mailboxes\" aria-label=\"OSMAP mailboxes\"><span class=\"brand-mark\" aria-hidden=\"true\"><span class=\"ui-icon brand-icon\">{}</span></span><span>OSMAP</span></a>",
         "{}",
         "<div class=\"status-row auth-status\" aria-label=\"Session status and identity\">",
-        "<span class=\"status-pill badge-ok shell-session-chip\">2FA session</span>",
-        "<details class=\"protection-menu\" name=\"toolbar-menu\"><summary>Protected rendering</summary><div class=\"account-menu-panel\"><p>Remote images and active content are blocked. These protections do not encrypt a message or verify its sender.</p></div></details>",
-        "<details class=\"account-menu\" name=\"toolbar-menu\"><summary class=\"identity-chip\"><span class=\"account-name\" title=\"{}\">{}</span>{}</summary>",
-        "<div class=\"account-menu-panel\"><p class=\"muted\">Signed in as <strong>{}</strong></p><a href=\"/settings\">Account settings</a><a href=\"/settings#appearance-title\">Appearance</a><a href=\"/sessions\">Manage sessions</a>{}</div>",
+        "<details class=\"protection-menu\" name=\"toolbar-menu\"><summary>Protected by Default</summary><div class=\"account-menu-panel\"><p>Remote images and active content are blocked. These protections do not encrypt a message or verify its sender.</p><p class=\"shell-session-chip\">Your browser session was authenticated with two factors.</p></div></details>",
+        "<details class=\"account-menu\" name=\"toolbar-menu\"><summary class=\"identity-chip\"><span class=\"account-avatar\" aria-hidden=\"true\">{}</span><span class=\"account-name\" title=\"{}\">{}</span>{}</summary>",
+        "<div class=\"account-menu-panel\"><p class=\"muted\">Signed in as <strong>{}</strong></p><a href=\"/settings\">Account settings</a><a href=\"/settings#appearance-title\">Appearance</a><a href=\"/contacts\">Contacts</a><a href=\"/sessions\">Manage sessions</a>{}</div>",
         "</details></div></header>"
-    ), shell_icon("menu"), links, shell_icon("shield"), search_menu, escape_html(canonical_username),
+    ), shell_icon("menu"), links, shell_icon("shield"), search_menu, escape_html(&sender_initials(Some(canonical_username))), escape_html(canonical_username),
         escape_html(canonical_username), shell_icon("chevron"), escape_html(canonical_username), logout_form(csrf_token))
 }
 
@@ -1471,26 +1473,27 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
     TrustedHtml::from_template(format!(
         concat!(
             "{}",
-            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
-            "<section class=\"content-pane\">",
-            "<h1>{}</h1>",
-            "<p class=\"muted\">Write your message and add any attachments before sending.</p>",
-            "{}{}{}{}",
-            "<form method=\"post\" action=\"/send\" enctype=\"multipart/form-data\">",
+            "<main id=\"main-content\" class=\"page-shell compose-shell\" tabindex=\"-1\">",
+            "<div class=\"page-intro\"><h1>{}</h1><p>Create mail with drafts, attachments and delivery controls.</p></div>",
+            "{}{}{}",
+            "<section class=\"content-pane compose-card\">",
+            "<form id=\"compose-form\" method=\"post\" action=\"/send\" enctype=\"multipart/form-data\">",
+            "<div class=\"compose-card-header\"><h2>{}</h2><div class=\"compose-window-actions\"><button type=\"submit\" formaction=\"/drafts/save\" name=\"compose_action\" value=\"minimize\" title=\"Save this draft and return to Drafts\">− Minimize</button><input class=\"sr-only compose-expand-state\" id=\"compose-expanded\" type=\"checkbox\"><label class=\"button-link\" for=\"compose-expanded\"><span class=\"expand-text\">↗ Expand</span><span class=\"collapse-text\">↙ Restore</span></label></div></div>",
             "<input type=\"hidden\" name=\"csrf_token\" value=\"{}\">",
             "{}",
             "{}",
             "{}",
+            "<div class=\"compose-field\"><label for=\"compose-from\">From</label><div><input id=\"compose-from\" name=\"from\" value=\"{}\" readonly aria-describedby=\"sender-policy\"><p id=\"sender-policy\" class=\"muted field-help\">Your authorized sender identity.</p></div></div>",
+            "<div class=\"compose-field\"><label for=\"compose-to\">To</label><input id=\"compose-to\" type=\"text\" name=\"to\" value=\"{}\" autocomplete=\"off\"></div>",
+            "<div class=\"compose-recipient-tools\"><details class=\"compose-cc\"{}><summary>+ Cc</summary><label for=\"compose-cc\">Cc</label><input id=\"compose-cc\" type=\"text\" name=\"cc\" value=\"{}\" autocomplete=\"off\"></details>",
+            "<details class=\"compose-bcc\"{}><summary>+ Bcc</summary><label for=\"compose-bcc\">Bcc</label><input id=\"compose-bcc\" type=\"text\" name=\"bcc\" value=\"{}\" autocomplete=\"off\"></details>{}</div>",
+            "<div class=\"compose-field\"><label for=\"compose-subject\">Subject</label><input id=\"compose-subject\" type=\"text\" name=\"subject\" value=\"{}\"></div>",
             "{}",
-            "{}<label for=\"compose-from\">From<input id=\"compose-from\" name=\"from\" value=\"{}\" readonly aria-describedby=\"sender-policy\"></label><p id=\"sender-policy\" class=\"muted\">This account is the available sender identity.</p>",
-            "<label for=\"compose-to\">To<input id=\"compose-to\" type=\"text\" name=\"to\" value=\"{}\" autocomplete=\"off\"></label>",
-            "<label for=\"compose-cc\">Cc<input id=\"compose-cc\" type=\"text\" name=\"cc\" value=\"{}\" autocomplete=\"off\"></label>",
-            "<label for=\"compose-bcc\">Bcc<input id=\"compose-bcc\" type=\"text\" name=\"bcc\" value=\"{}\" autocomplete=\"off\"></label>",
-            "<label for=\"compose-subject\">Subject<input id=\"compose-subject\" type=\"text\" name=\"subject\" value=\"{}\"></label>",
-            "<label for=\"compose-body\">Body</label><textarea id=\"compose-body\" name=\"body\">{}</textarea>",
-            "<label for=\"compose-attachment\">Attachments<input id=\"compose-attachment\" type=\"file\" name=\"attachment\" multiple></label>",
+            "<label class=\"compose-editor-label\" for=\"compose-body\">Body</label><textarea id=\"compose-body\" name=\"body\" placeholder=\"Write your message…\">{}</textarea>",
+            "<section class=\"compose-attachments\" aria-labelledby=\"compose-attachments-heading\"><h2 id=\"compose-attachments-heading\">Attachments</h2>{}{}<label for=\"compose-attachment\">Add attachments</label><input id=\"compose-attachment\" type=\"file\" name=\"attachment\" multiple></section>",
+            "<div class=\"compose-footer\"><button type=\"submit\" formaction=\"/drafts/save\">Save Draft</button>",
             "<button class=\"primary-button\" type=\"submit\">Send Message</button>",
-            "<button type=\"submit\" formaction=\"/drafts/save\">Save Draft</button>",
+            "</div>",
             "</form>",
             "</section>",
             "</main>"
@@ -1500,18 +1503,22 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
         success_banner,
         error_banner,
         context_banner,
-        draft_attachment_notice,
+        if model.draft_id.is_some() { "Saved Draft" } else { "New Message" },
         escape_html(model.csrf_token),
         draft_id_field,
         render_source_attachment_hidden_fields(model.source_mailbox_name, model.source_uid),
-        source_attachment_controls,
-        openpgp_compose_controls,
         render_reply_reference(model.reply_reference), escape_html(model.canonical_username),
         escape_html(model.to_value),
+        if model.cc_value.is_empty() { "" } else { " open" },
         escape_html(model.cc_value),
+        if model.bcc_value.is_empty() { "" } else { " open" },
         escape_html(model.bcc_value),
+        render_contact_selection(model.contacts),
         escape_html(model.subject_value),
+        openpgp_compose_controls,
         escape_html(model.body_value),
+        draft_attachment_notice,
+        source_attachment_controls,
     ))
 }
 
@@ -1532,6 +1539,37 @@ fn render_reply_reference(reference: Option<&crate::reply_thread::ReplyReference
             )
         })
         .unwrap_or_default()
+}
+
+fn render_contact_selection(book: Option<&crate::contacts::ContactBook>) -> String {
+    let manage =
+        "<a href=\"/contacts\" target=\"_blank\" rel=\"noopener\">Manage contacts in a new tab</a>";
+    let Some(book) = book else {
+        return format!("<p class=\"muted\">Contacts are unavailable. {manage}</p>");
+    };
+    if book.contacts.is_empty() {
+        return format!("<p class=\"muted\">No saved contacts. {manage}</p>");
+    }
+    let options: String = book
+        .contacts
+        .iter()
+        .map(|contact| {
+            format!(
+                "<option value=\"{}\">{} &lt;{}&gt;</option>",
+                escape_html(&contact.id),
+                escape_html(&contact.display_name),
+                escape_html(&contact.address)
+            )
+        })
+        .collect();
+    format!(concat!(
+        "<details class=\"compose-contacts panel\"><summary>Choose a contact</summary>",
+        "<p>Adding a contact saves this message as a draft, including selected uploads.</p>",
+        "<input type=\"hidden\" name=\"contact_revision\" value=\"{}\">",
+        "<label for=\"compose-contact\">Saved contact</label><select id=\"compose-contact\" name=\"contact_id\"><option value=\"\">Choose a saved contact</option>{}</select>",
+        "<label for=\"compose-contact-target\">Add contact to</label><select id=\"compose-contact-target\" name=\"contact_target\"><option value=\"to\">To</option><option value=\"cc\">Cc</option><option value=\"bcc\">Bcc</option></select>",
+        "<button type=\"submit\" formaction=\"/drafts/save\" name=\"compose_action\" value=\"add-contact\">Add contact and save draft</button><p>{}</p></details>"
+    ), book.revision, options, manage)
 }
 
 fn render_source_attachment_hidden_fields(
@@ -1641,25 +1679,28 @@ pub(crate) fn render_draft_list_page(model: &DraftListPageModel<'_>) -> TrustedH
         rows.push_str(&format!(
             concat!(
                 "<tr>",
-                "<td><a href=\"{}\">Resume</a></td>",
+                "<td class=\"draft-recipient\" dir=\"auto\">{}</td>",
+                "<td class=\"draft-subject\"><a href=\"{}\" dir=\"auto\">{}</a><span class=\"muted\">Draft saved, continue editing.</span></td>",
                 "<td>{}</td>",
-                "<td>{}</td>",
-                "<td>{}</td>",
-                "<td>{}</td>",
+                "<td><span class=\"badge\">Draft</span></td>",
+                "<td><time datetime=\"{}\">{}</time></td>",
                 "<td>",
+                "<a class=\"draft-resume\" href=\"{}\">Resume</a><details class=\"draft-discard\"><summary>Discard</summary><p>Discard this saved draft?</p>",
                 "<form method=\"post\" action=\"/drafts/delete\">",
                 "<input type=\"hidden\" name=\"csrf_token\" value=\"{}\">",
                 "<input type=\"hidden\" name=\"draft_id\" value=\"{}\">",
                 "<button type=\"submit\">Delete</button>",
-                "</form>",
+                "</form></details>",
                 "</td>",
                 "</tr>"
             ),
+            escape_html(draft.recipient_preview.as_deref().unwrap_or("Undisclosed recipients")),
             escape_html(&resume_href),
-            draft.updated_at,
-            draft.recipient_count,
-            draft.body_len,
+            escape_html(if draft.subject.is_empty() { "(No subject)" } else { &draft.subject }),
             draft.attachment_count,
+            crate::logging::format_unix_timestamp_utc(draft.updated_at),
+            crate::logging::format_unix_timestamp_utc(draft.updated_at).replace('T', " ").replace('Z', " UTC"),
+            escape_html(&resume_href),
             escape_html(model.csrf_token),
             escape_html(&draft.draft_id),
         ));
@@ -1672,20 +1713,18 @@ pub(crate) fn render_draft_list_page(model: &DraftListPageModel<'_>) -> TrustedH
         concat!(
             "{}",
             "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
-            "<section class=\"content-pane\">",
-            "<h1>Drafts</h1>{}{}",
-            "<p class=\"muted\">Continue a saved message or start a new one. Draft attachments are included when you send.</p>",
-            "<p><a class=\"primary-button\" href=\"/compose\">New Message</a></p>",
-            "<div class=\"table-wrap\" role=\"region\" aria-label=\"Saved drafts\" tabindex=\"0\"><table>",
-            "<thead><tr><th>Action</th><th>Updated</th><th>Recipients</th><th>Body Bytes</th><th>Attachments</th><th>Delete</th></tr></thead>",
+            "<div class=\"page-intro\"><h1>Drafts</h1><p>Resume, organize and safely discard saved messages.</p></div>{}{}",
+            "<div class=\"draft-list-toolbar\"><span>Saved drafts ({})</span><a class=\"button-link primary-button\" href=\"/compose\">+ New Message</a></div>",
+            "<div class=\"table-wrap draft-list\" role=\"region\" aria-label=\"Saved drafts\" tabindex=\"0\"><table>",
+            "<thead><tr><th>Recipient</th><th>Subject</th><th>Attachment</th><th>Status</th><th>Saved</th><th>Actions</th></tr></thead>",
             "<tbody>{}</tbody>",
             "</table></div>",
-            "</section>",
             "</main>"
         ),
         app_header(model.canonical_username, model.csrf_token, "drafts"),
         success_banner,
         error_banner,
+        model.drafts.len(),
         rows,
     ))
 }

@@ -145,6 +145,7 @@ def main():
             assert page.locator(".message-body-preview b").count() == 0
             assert page.locator('.message-avatar[aria-hidden="true"]').count() == 50
             checks.append("untrusted preview markup stays text; unavailable previews and decorative initials are explicit")
+            assert page.get_by_label("Search all mail", exact=True).is_visible()
             menu = page.locator(".global-search-menu summary")
             menu.focus()
             page.keyboard.press("Enter")
@@ -164,7 +165,7 @@ def main():
             state(name="INBOX")
             visit("/settings")
             assert page.locator(".global-search-menu").count() == 0
-            checks.append("keyboard global search submits literal search with all-mail scope; finite shortcuts and mutually exclusive menus work")
+            checks.append("persistent global search submits literal search with all-mail scope; keyboard shortcuts disclosure and mutually exclusive menus work")
             assert not blocked, "fixture attempted outside requests"
             report = {"synthetic": True, "authentication": "test fixture; not live Dovecot/TOTP",
                       "mail": "deterministic in-memory gateway; no mailbox mutation",

@@ -73,6 +73,7 @@ def main():
             assert page.locator("input[name=in_reply_to], input[name=references]").count() == 0
             checks.append("keyboard reply-all opens identity-bound compose with canonical sender, Reply-To, deduplicated To/Cc, self excluded and empty Bcc")
 
+            page.locator(".compose-bcc summary").click()
             page.get_by_label("Bcc", exact=True).fill("private@example.test")
             page.get_by_label("Subject", exact=True).fill("Synthetic saved reply")
             page.get_by_role("button", name="Save Draft", exact=True).click()

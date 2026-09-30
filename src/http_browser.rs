@@ -2,6 +2,17 @@ use super::*;
 
 /// A runtime-facing gateway for browser operations.
 pub trait BrowserGateway {
+    fn load_contacts(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::contacts::ContactBook, crate::contacts::ContactError>;
+    fn change_contact(
+        &self,
+        session: &ValidatedSession,
+        expected_revision: u64,
+        change: crate::contacts::ContactChange,
+    ) -> Result<crate::contacts::ContactBook, crate::contacts::ContactError>;
+
     fn set_message_flag(
         &self,
         _context: &AuthenticationContext,
