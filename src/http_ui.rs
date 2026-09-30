@@ -44,6 +44,7 @@ pub(crate) struct ComposePageModel<'a> {
     pub source_uid: Option<u64>,
     pub source_attachments: &'a [AttachmentMetadata],
     pub selected_source_part_paths: &'a [String],
+    pub reply_reference: Option<&'a crate::reply_thread::ReplyReference>,
 }
 
 /// Small view model for the draft list page.
@@ -1249,6 +1250,24 @@ fn render_reader_fragment(
         "<a href=\"{}\">View source</a>", escape_html(&format!("/message?mailbox={}&uid={}&view=source&mailbox_guid={}&message_guid={}&return_to={}",
             url_encode(&rendered.mailbox_name), rendered.uid, url_encode(&metadata.version.mailbox_guid), url_encode(&metadata.version.message_guid), url_encode(return_to)))))
         .unwrap_or_else(|| "<span class=\"muted\">Source view unavailable</span>".into());
+    let compose_link = |mode: &str, label: &str| {
+        let mut href = format!(
+            "/compose?mode={mode}&mailbox={}&uid={}",
+            url_encode(&rendered.mailbox_name),
+            rendered.uid
+        );
+        if let Some(metadata) = &rendered.metadata {
+            href.push_str(&format!(
+                "&mailbox_guid={}&message_guid={}",
+                url_encode(&metadata.version.mailbox_guid),
+                url_encode(&metadata.version.message_guid)
+            ));
+        }
+        format!(
+            "<a class=\"button-link\" href=\"{}\">{label}</a>",
+            escape_html(&href)
+        )
+    };
     let protected_reader_strip = format!(
         concat!(
             "<details class=\"protected-trust-strip\" aria-label=\"Protected by Default reader trust strip\"><summary><strong>Protected by Default</strong><span>Remote content blocked</span></summary>",
@@ -1273,7 +1292,7 @@ fn render_reader_fragment(
             "<article id=\"reading-pane\" class=\"reading-pane protected-reading-pane\" tabindex=\"-1\" aria-labelledby=\"message-title\" data-reader-mode=\"Protected Reader\">",
             "<nav class=\"reader-navigation toolbar\" aria-label=\"Reader navigation\"><a href=\"{}\">Back to list</a>{}</nav>",
             "<header class=\"message-heading\"><p class=\"muted\">{} · {}</p><h2 id=\"message-title\" dir=\"auto\">{}</h2><p class=\"message-from\" dir=\"auto\">From: {}</p></header>",
-            "<div class=\"toolbar reader-primary-actions\" aria-label=\"Message actions\"><a class=\"button-link\" href=\"/compose?mode=reply&mailbox={}&uid={}\">Reply</a><a class=\"button-link\" href=\"/compose?mode=forward&mailbox={}&uid={}\">Forward</a>{}</div>",
+            "<div class=\"toolbar reader-primary-actions\" aria-label=\"Message actions\">{}{}{}{}</div>",
             "<details class=\"reader-more-actions\"><summary>Move, archive, bin or restore</summary><div class=\"action-stack\">{}</div></details>",
             "<div class=\"reader-status\">{}{}</div>",
             "<span id=\"reading-title\" class=\"sr-only\">Reading Pane</span>",
@@ -1287,8 +1306,7 @@ fn render_reader_fragment(
         escape_html(&rendered.mailbox_name), escape_html(&rendered.date_received),
         escape_html(rendered.subject.as_deref().unwrap_or("(No subject)")),
         escape_html(rendered.from.as_deref().unwrap_or("Sender unavailable")),
-        escape_html(&url_encode(&rendered.mailbox_name)), rendered.uid,
-        escape_html(&url_encode(&rendered.mailbox_name)), rendered.uid,
+        compose_link("reply", "Reply"), compose_link("reply-all", "Reply all"), compose_link("forward", "Forward"),
         render_message_state_controls(csrf_token, &rendered.mailbox_name, rendered.uid, &rendered.flags, rendered.metadata.as_ref(), return_to),
         move_form,
         protected_reader_strip, openpgp_reader_states,
@@ -1464,11 +1482,12 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
             "{}",
             "{}",
             "{}",
+            "{}<label for=\"compose-from\">From<input id=\"compose-from\" name=\"from\" value=\"{}\" readonly aria-describedby=\"sender-policy\"></label><p id=\"sender-policy\" class=\"muted\">This account is the available sender identity.</p>",
             "<label for=\"compose-to\">To<input id=\"compose-to\" type=\"text\" name=\"to\" value=\"{}\" autocomplete=\"off\"></label>",
             "<label for=\"compose-cc\">Cc<input id=\"compose-cc\" type=\"text\" name=\"cc\" value=\"{}\" autocomplete=\"off\"></label>",
             "<label for=\"compose-bcc\">Bcc<input id=\"compose-bcc\" type=\"text\" name=\"bcc\" value=\"{}\" autocomplete=\"off\"></label>",
             "<label for=\"compose-subject\">Subject<input id=\"compose-subject\" type=\"text\" name=\"subject\" value=\"{}\"></label>",
-            "<label for=\"compose-body\">Body<textarea id=\"compose-body\" name=\"body\">{}</textarea></label>",
+            "<label for=\"compose-body\">Body</label><textarea id=\"compose-body\" name=\"body\">{}</textarea>",
             "<label for=\"compose-attachment\">Attachments<input id=\"compose-attachment\" type=\"file\" name=\"attachment\" multiple></label>",
             "<button class=\"primary-button\" type=\"submit\">Send Message</button>",
             "<button type=\"submit\" formaction=\"/drafts/save\">Save Draft</button>",
@@ -1487,12 +1506,32 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
         render_source_attachment_hidden_fields(model.source_mailbox_name, model.source_uid),
         source_attachment_controls,
         openpgp_compose_controls,
+        render_reply_reference(model.reply_reference), escape_html(model.canonical_username),
         escape_html(model.to_value),
         escape_html(model.cc_value),
         escape_html(model.bcc_value),
         escape_html(model.subject_value),
         escape_html(model.body_value),
     ))
+}
+
+fn render_reply_reference(reference: Option<&crate::reply_thread::ReplyReference>) -> String {
+    reference
+        .map(|reference| {
+            format!(
+                concat!(
+                    "<input type=\"hidden\" name=\"reply_mailbox\" value=\"{}\">",
+                    "<input type=\"hidden\" name=\"reply_uid\" value=\"{}\">",
+                    "<input type=\"hidden\" name=\"reply_mailbox_guid\" value=\"{}\">",
+                    "<input type=\"hidden\" name=\"reply_message_guid\" value=\"{}\">"
+                ),
+                escape_html(&reference.mailbox_name),
+                reference.uid,
+                escape_html(&reference.version.mailbox_guid),
+                escape_html(&reference.version.message_guid)
+            )
+        })
+        .unwrap_or_default()
 }
 
 fn render_source_attachment_hidden_fields(
@@ -1769,6 +1808,7 @@ mod v7_rendering_regression_tests {
             from: Some("Example Sender <sender@example.invalid>".to_string()),
             to: Some("Reader <reader@example.invalid>".into()),
             cc: None,
+            reply_metadata: None,
             date_received: "2026-06-20 00:00:00 +0000".to_string(),
             mime_top_level_content_type: "multipart/alternative".to_string(),
             body_source: MimeBodySource::MultipartHtmlSanitized,

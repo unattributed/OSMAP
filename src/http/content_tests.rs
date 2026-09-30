@@ -24,7 +24,7 @@ pub(super) fn fixture_source(
         let mut message = MessageView {
             metadata, mailbox_name: request.mailbox_name.clone(), uid: request.uid,
             flags: vec![], date_received: "2026-09-30 00:00:00 +0000".into(), size_virtual: 512,
-            header_block: "Subject: Synthetic <source> & reader\nFrom: public@example.test\nMIME-Version: 1.0\nContent-Type: multipart/mixed; boundary=synthetic-content".into(),
+            header_block: format!("Subject: Synthetic <source> & reader\n{}MIME-Version: 1.0\nContent-Type: multipart/mixed; boundary=synthetic-content", super::reply_tests::source_headers(context, session, request.uid)),
             body_text: "--synthetic-content\r\nContent-Type: text/html; charset=utf-8\r\n\r\n<p>Synthetic source for this session.</p><script>inert-source-marker</script><img src=\"https://example.test/blocked\">\r\n--synthetic-content\r\nContent-Type: application/pdf\r\nContent-Disposition: attachment; filename=\"report.pdf\"\r\nContent-Transfer-Encoding: base64\r\n\r\nJVBERi1zdHViJQ==\r\n--synthetic-content--\r\n".into(),
         };
         if ua.contains("SourceStale") {

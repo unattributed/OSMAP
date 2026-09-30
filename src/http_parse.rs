@@ -282,19 +282,20 @@ pub(crate) fn compose_source_from_request(
         (Some(mode), Some(mailbox), Some(uid)) => {
             let intent = match mode {
                 "reply" => ComposeIntent::Reply,
+                "reply-all" => ComposeIntent::ReplyAll,
                 "forward" => ComposeIntent::Forward,
                 _ => {
-                    return Err("compose mode must be reply or forward".to_string());
+                    return Err("compose mode must be reply, reply-all or forward".to_string());
                 }
             };
-            let uid = uid
-                .parse::<u64>()
+            let parsed_uid = uid
+                .parse::<u32>()
                 .map_err(|_| "compose source uid must be a positive integer".to_string())?;
-            if uid == 0 {
-                return Err("compose source uid must be greater than zero".to_string());
+            if parsed_uid == 0 || parsed_uid.to_string() != uid {
+                return Err("compose source uid must be a canonical positive integer".to_string());
             }
 
-            Ok(Some((intent, mailbox, uid)))
+            Ok(Some((intent, mailbox, u64::from(parsed_uid))))
         }
         _ => Err("compose source requires mode, mailbox, and uid together".to_string()),
     }

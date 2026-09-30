@@ -1064,3 +1064,84 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   `d2f8e7196989fe49c28527884b6a0d4d2e04d36ceaf0caafd7587b0a5a83e5a4`.
   S02 acceptance rows are IMPLEMENTED_VERIFIED_LOCAL, not independent human
   acceptance. No live account, external recipient, deployment or synchronization.
+
+### S02-04 delivery / S03-01 work order — 2026-09-30
+
+- Signed G `61bfb092b0da75eb98b1b1867accf603c2d57732` passed exact native
+  qualification on obsd1: 611 library tests, two hostile-rendering tests and
+  the signed-helper source/attachment/flags/move fixture. Source archive
+  `c63483faa682928dd9242884be9569dba238a1c1a7dc4771ea0f9e63882e660a`;
+  log `6f8975d626ce16d11d4fc6306a3d117cd8ffd9ee4416075ac7e6ee640c2df083`.
+  Owned source `/home/foo/osmap-ux-s02-20260930-6zRLWnWI`; fixture removed and
+  standard checkout/services unchanged. S02 engineering delivered. Human,
+  live-mail release and deployment acceptance remain pending.
+- S03-01 IN_PROGRESS under D01/D05/D06. Allowed: compose/reader addressing,
+  current canonical sender allowlist, Reply-To/reply-all/dedup/self-exclusion,
+  original-header-bound threading, existing draft serialization needed to
+  retain that context, account-private contacts/address selection, submission
+  header construction, route/helper boundaries, bounded tests and evidence.
+  Checkpoint A addresses identities/replies/threading first; contacts and full
+  S03-01 acceptance follow. Never accept arbitrary From impersonation or raw
+  client-supplied threading headers as original-message authority. Preserve
+  legacy draft readability; new metadata is explicitly versioned and bounded.
+  Do not silently convert failed/unknown submission or failed Sent storage into
+  success. Dedicated concurrency/formatting/upload/send reconciliation work
+  remains S03-02/03/04. No real recipients, private mail or external delivery.
+- S03 evidence root: `/home/foo/Downloads/osmap-ux-s03/run-20260930`, owner
+  private. Qualification uses local sinks and new isolated native fixtures;
+  no standard checkout sync or production deployment. RFC 5322 sections 3.6.2
+  and 3.6.4 are the addressing/threading reference; conservative unsupported
+  syntax must be explicit rather than guessed.
+
+### S03-01 checkpoint A — identities, reply addressing and threading
+
+- The compose form shows the authenticated canonical account as its sole
+  permitted From identity. Forged sender/unknown header fields are refused
+  before saving or submitting. Authenticated send/save now check the session
+  before multipart parsing, then enforce the existing CSRF/origin boundary.
+  Reader Reply/Reply all/Forward links carry current stored identities;
+  mismatched account/mailbox/UID/version refuses before quoting content.
+- A shared bounded parser accepts bare addresses and display names, including
+  quoted commas. Controls, malformed/ambiguous syntax and unsupported groups,
+  comments, quoted local parts, domain literals or SMTPUTF8 addresses refuse.
+  Sixteen entered addresses across To/Cc/Bcc remain the cap. Stable envelope
+  deduplication folds domain case only, preserves local-part case and retains
+  To/Cc roles. Reply-To takes precedence over From. Reply all excludes the
+  canonical sender, removes duplicate To/Cc targets and never imports Bcc.
+  Oversized or unsupported originals require manual recipient selection.
+- New reply references bind mailbox, canonical u32 UID and both stored GUIDs.
+  Save/send re-read through the configured source gateway and verify account,
+  session, mailbox, UID, GUIDs and header bound before deriving thread headers.
+  Client-supplied In-Reply-To/References are never accepted. Thread headers are
+  generated from validated ID atoms and emitted in plain and multipart output.
+  Message-ID is capped at 254 bytes, threading input at 4096 bytes and history
+  at 20 references, retaining root and recent ancestry. Invalid threading is
+  omitted with compose context; forward has no reply thread. Legacy metadata
+  absence cannot supply the current-identity thread reference path.
+- Draft metadata v4 preserves validated server-owned thread context across
+  save/resume/send, even after the original is unavailable. Readers retain
+  v1-v3 compatibility; duplicate, incomplete, injected and downgraded new fields
+  refuse. Editing a saved draft cannot replace its original reply reference.
+  Existing draft concurrency/quota and send-outcome work remains S03-02/04.
+  Sendmail arguments now terminate options before envelope recipients. Public
+  OpenSMTPD source supports that interface; no actual MTA delivery is claimed.
+- 623 library tests (six opt-in tests ignored), strict all-target/all-feature
+  Clippy, common acceptance, V14, formatting/diff and frozen-plan checks PASS.
+  Five synthetic reply journeys pass in each of Edge and Firefox, including
+  save/resume/Bcc privacy, quoted display-name submission to a local sink and
+  cross-account reader-link refusal. 54 image hashes verify across light/dark,
+  responsive, forced colours, simulated 200% reflow and Firefox; zero recorded
+  overflow/contrast/outside-request failures. Narrow dark reply-all and wide
+  light compose were visually reviewed. Body labels now exclude quoted textarea
+  content; browser validation caught and verified that correction.
+- The static WSTG evidence collector follows the extracted address/threading
+  modules and requires their current guards; a negative test proves missing
+  address validation fails. It no longer claims all display names are invalid.
+  This refresh preserves the evidence gate rather than grandfathering a removed
+  marker. Native fixture extension checks real stored Reply-To/To/Cc/threading
+  through signed helper IPC; exact execution follows signing.
+- Evidence: `checkpoint-a-summary.json`, SHA-256
+  `564cded31ab54e8c1e4f3f685795f8f626b31c49110fff80a6a791b9aecbffa1`.
+  Contacts and full S03-01 acceptance remain pending. Source attachment layout,
+  draft revision/retention, formatting and send/Sent reconciliation remain later
+  S03 work. No live account, external recipient, deployment or synchronization.

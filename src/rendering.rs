@@ -108,6 +108,7 @@ pub struct RenderedMessageView {
     pub from: Option<String>,
     pub to: Option<String>,
     pub cc: Option<String>,
+    pub reply_metadata: Option<crate::reply_thread::ReplyMetadata>,
     pub date_received: String,
     pub mime_top_level_content_type: String,
     pub body_source: MimeBodySource,
@@ -198,6 +199,10 @@ impl PlainTextMessageRenderer {
             uid: message.uid,
             subject,
             from,
+            reply_metadata: crate::reply_thread::ReplyMetadata::from_original(
+                &message.header_block,
+            )
+            .ok(),
             to: extract_header_value(
                 &unfolded_headers,
                 "To",

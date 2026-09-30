@@ -723,7 +723,7 @@ fn validate_source_attachments(
 
 fn serialize_draft_metadata(record: &DraftRecord) -> String {
     let mut content = format!(
-        "version=3\n\
+        "version=4\n\
 draft_id={}\n\
 canonical_username_hex={}\n\
 created_at={}\n\
@@ -748,6 +748,14 @@ attachment_count={}\n",
         record.request.attachments.len()
     );
 
+    if let Some(thread) = &record.request.reply_thread {
+        content.push_str(&format!(
+            "reply_parent_hex={}\nreply_references_hex={}\nreply_shortened={}\n",
+            hex_lower(thread.in_reply_to().unwrap_or_default().as_bytes()),
+            hex_lower(thread.references().as_bytes()),
+            u8::from(thread.shortened())
+        ));
+    }
     for (index, attachment) in record.request.attachments.iter().enumerate() {
         content.push_str(&format!(
             "attachment_{index}_filename_hex={}\n\
@@ -804,6 +812,10 @@ fn parse_draft_metadata(
     let mut source_uid = None;
     let mut source_attachment_count = None;
     let mut source_part_paths = Vec::<Option<String>>::new();
+    let mut reply_parent = None;
+    let mut reply_references = None;
+    let mut reply_shortened = None;
+    let mut seen_fields = std::collections::BTreeSet::new();
 
     for raw_line in content.lines() {
         let line = raw_line.trim();
@@ -816,6 +828,16 @@ fn parse_draft_metadata(
             });
         };
 
+        let canonical_key = if key == "recipients_hex" {
+            "to_hex"
+        } else {
+            key
+        };
+        if !seen_fields.insert(canonical_key) {
+            return Err(DraftError {
+                reason: "duplicate draft metadata field".into(),
+            });
+        }
         match key {
             "version" => version = Some(value.to_string()),
             "draft_id" => draft_id = Some(value.to_string()),
@@ -829,6 +851,19 @@ fn parse_draft_metadata(
             "bcc_hex" => bcc_recipients = Some(decode_hex_string(value)?),
             "subject_hex" => subject = Some(decode_hex_string(value)?),
             "body_hex" => body = Some(decode_hex_string(value)?),
+            "reply_parent_hex" => reply_parent = Some(decode_hex_string(value)?),
+            "reply_references_hex" => reply_references = Some(decode_hex_string(value)?),
+            "reply_shortened" => {
+                reply_shortened = Some(match value {
+                    "0" => false,
+                    "1" => true,
+                    _ => {
+                        return Err(DraftError {
+                            reason: "invalid reply shortening metadata".into(),
+                        })
+                    }
+                })
+            }
             "attachment_count" => {
                 attachment_count = Some(parse_usize_field("attachment_count", value)?)
             }
@@ -854,13 +889,36 @@ fn parse_draft_metadata(
     if draft_id.is_none() {
         return Ok(None);
     }
-    if !matches!(version.as_deref(), Some("1") | Some("2") | Some("3")) {
+    if !matches!(
+        version.as_deref(),
+        Some("1") | Some("2") | Some("3") | Some("4")
+    ) {
         return Err(DraftError {
             reason: "unsupported draft metadata version".to_string(),
         });
     }
 
     let draft_id = required_field("draft_id", draft_id)?;
+    let reply_thread = match (reply_parent, reply_references, reply_shortened) {
+        (None, None, None) => None,
+        (Some(parent), Some(references), Some(shortened)) if version.as_deref() == Some("4") => {
+            Some(
+                crate::reply_thread::ReplyThread::from_stored(
+                    (!parent.is_empty()).then_some(parent.as_str()),
+                    &references,
+                    shortened,
+                )
+                .map_err(|_| DraftError {
+                    reason: "invalid stored reply metadata".into(),
+                })?,
+            )
+        }
+        _ => {
+            return Err(DraftError {
+                reason: "incomplete or incompatible stored reply metadata".into(),
+            })
+        }
+    };
     validate_draft_id(&draft_id)?;
     let canonical_username = required_field("canonical_username", canonical_username)?;
     validate_canonical_username(&canonical_username)?;
@@ -913,7 +971,7 @@ fn parse_draft_metadata(
         );
     }
 
-    let request = ComposeRequest::new_with_routing(
+    let mut request = ComposeRequest::new_with_routing(
         policy.compose_policy,
         required_field("recipients", recipients)?,
         cc_recipients.unwrap_or_default(),
@@ -925,6 +983,7 @@ fn parse_draft_metadata(
     .map_err(|error| DraftError {
         reason: error.reason,
     })?;
+    request.reply_thread = reply_thread;
     let source_attachments = if version.as_deref() == Some("1") {
         None
     } else {
@@ -1267,6 +1326,55 @@ mod tests {
         .expect_err("compose subject validation should reject newlines");
 
         assert!(error.reason.contains("subject"));
+    }
+
+    #[test]
+    fn draft_reply_metadata_survives_storage_and_refuses_corrupt_or_downgraded_fields() {
+        let dir = temp_dir("osmap-draft-reply-thread");
+        let store = FileDraftStore::new(&dir, DraftPolicy::default());
+        let mut draft = record(&draft_id(28), "alice@example.com", 100);
+        draft.request.reply_thread = Some(
+            crate::reply_thread::ReplyThread::from_original(
+                "Message-ID: <parent@example.test>\nReferences: <root@example.test>\n",
+            )
+            .unwrap(),
+        );
+        store.save(&draft, 100).unwrap();
+        assert_eq!(
+            store
+                .load("alice@example.com", &draft.draft_id, 100)
+                .unwrap()
+                .unwrap(),
+            draft
+        );
+        let path = store.metadata_path("alice@example.com", &draft.draft_id);
+        let metadata = fs::read_to_string(&path).unwrap();
+        let parse = |value: &str| {
+            parse_draft_metadata(DraftPolicy::default(), "alice@example.com", &path, value)
+        };
+        assert!(parse(&metadata.replace("version=4", "version=3")).is_err());
+        assert!(parse(&format!("{metadata}reply_shortened=0\n")).is_err());
+        assert!(parse(&metadata.replace("reply_shortened=0\n", "")).is_err());
+        assert!(parse(&metadata.replace("reply_shortened=0", "reply_shortened=2")).is_err());
+        assert!(parse(&metadata.replace(
+            &hex_lower(b"<parent@example.test>"),
+            &hex_lower(b"<parent@example.test>\r\nBcc: hidden@example.test")
+        ))
+        .is_err());
+        assert!(parse(&format!(
+            "{metadata}recipients_hex={}\n",
+            hex_lower(b"changed@example.test")
+        ))
+        .is_err());
+        draft.request.reply_thread = None;
+        let legacy = serialize_draft_metadata(&draft).replace("version=4", "version=3");
+        assert_eq!(parse(&legacy).unwrap().unwrap(), draft);
+        assert_eq!(
+            fs::read_to_string(&path).unwrap(),
+            metadata,
+            "invalid reads never alter the saved draft"
+        );
+        fs::remove_dir_all(dir).unwrap();
     }
 
     #[test]

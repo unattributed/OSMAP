@@ -182,6 +182,7 @@ pub struct BrowserDraftSaveRequest<'a> {
     pub body: &'a str,
     pub attachments: &'a [UploadedAttachment],
     pub source_attachments: Option<&'a DraftSourceAttachments>,
+    pub reply_thread: Option<&'a crate::reply_thread::ReplyThread>,
 }
 
 /// Send fields parsed by the browser route layer.
@@ -193,6 +194,7 @@ pub struct BrowserSendRequest<'a> {
     pub subject: &'a str,
     pub body: &'a str,
     pub attachments: &'a [UploadedAttachment],
+    pub reply_thread: Option<&'a crate::reply_thread::ReplyThread>,
 }
 
 /// The result of a browser login attempt.

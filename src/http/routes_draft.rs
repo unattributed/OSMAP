@@ -144,6 +144,7 @@ where
                         "OK",
                         "Resume Draft",
                         render_compose_page(&ComposePageModel {
+                            reply_reference: None,
                             heading: "Resume Draft",
                             canonical_username: &validated_session.record.canonical_username,
                             csrf_token: &validated_session.record.csrf_token,
@@ -208,6 +209,11 @@ where
         request: &HttpRequest,
         context: &AuthenticationContext,
     ) -> HandledHttpResponse {
+        let (validated_session, mut audit_events) =
+            match self.require_validated_session(request, context) {
+                Ok(result) => result,
+                Err(response) => return response,
+            };
         let parsed_form = match parse_compose_form(
             &request.body,
             request.headers.get("content-type").map(String::as_str),
@@ -235,11 +241,6 @@ where
         };
         let form = parsed_form.fields;
 
-        let (validated_session, mut audit_events) =
-            match self.require_validated_session(request, context) {
-                Ok(result) => result,
-                Err(response) => return response,
-            };
         if let Some(response) = self.require_valid_csrf(
             request,
             form.get("csrf_token").map(String::as_str),
@@ -250,6 +251,41 @@ where
         }
 
         let recipients = form.get("to").cloned().unwrap_or_default();
+        if !super::routes_reply::compose_metadata_valid(
+            &form,
+            &validated_session.record.canonical_username,
+        ) {
+            return HandledHttpResponse {
+                response: super::routes_compose::invalid_compose_metadata(),
+                audit_events,
+            };
+        }
+        let reply_reference = match super::routes_reply::reply_reference(&form) {
+            Ok(reference) => reference,
+            Err(_) => {
+                return HandledHttpResponse {
+                    response: super::routes_compose::invalid_compose_metadata(),
+                    audit_events,
+                }
+            }
+        };
+        let reply_thread = match reply_reference.as_ref() {
+            Some(reference) => match self.resolve_reply_thread(
+                context,
+                &validated_session,
+                reference,
+                &mut audit_events,
+            ) {
+                Ok(thread) => thread,
+                Err(response) => {
+                    return HandledHttpResponse {
+                        response,
+                        audit_events,
+                    }
+                }
+            },
+            None => None,
+        };
         let cc_recipients = form.get("cc").cloned().unwrap_or_default();
         let bcc_recipients = form.get("bcc").cloned().unwrap_or_default();
         let subject = form.get("subject").cloned().unwrap_or_default();
@@ -354,6 +390,7 @@ where
             context,
             &validated_session,
             BrowserDraftSaveRequest {
+                reply_thread: reply_thread.as_ref(),
                 draft_id,
                 recipients: &recipients,
                 cc_recipients: &cc_recipients,
@@ -387,6 +424,7 @@ where
                         reason_phrase,
                         "Compose",
                         render_compose_page(&ComposePageModel {
+                            reply_reference: reply_reference.as_ref(),
                             heading: "Compose",
                             canonical_username: &validated_session.record.canonical_username,
                             csrf_token: &validated_session.record.csrf_token,

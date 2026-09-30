@@ -707,7 +707,7 @@ impl RuntimeBrowserGateway {
     ) -> BrowserSendOutcome {
         let throttle_service = self.build_submission_throttle_service();
         let mut audit_events = Vec::new();
-        let request = match ComposeRequest::new_with_routing(
+        let mut request = match ComposeRequest::new_with_routing(
             ComposePolicy::default(),
             send_request.recipients,
             send_request.cc_recipients,
@@ -735,6 +735,7 @@ impl RuntimeBrowserGateway {
             }
         };
 
+        request.reply_thread = send_request.reply_thread.cloned();
         match throttle_service.check(context, &validated_session.record.canonical_username) {
             Ok(check) => {
                 audit_events.extend(check.audit_events);

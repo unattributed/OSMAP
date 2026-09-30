@@ -180,8 +180,10 @@ impl RuntimeBrowserGateway {
                 };
             }
         };
+        record.request.reply_thread = request.reply_thread.cloned();
         if let Some(existing) = existing {
             record.created_at = existing.created_at;
+            record.request.reply_thread = existing.request.reply_thread;
         }
 
         match store.save(&record, now) {

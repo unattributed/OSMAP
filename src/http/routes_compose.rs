@@ -30,13 +30,28 @@ where
         let mut compose_heading = "Compose";
         let mut context_notice: Option<String> = None;
         let mut to_value = String::new();
-        let cc_value = String::new();
+        let mut cc_value = String::new();
         let bcc_value = String::new();
         let mut subject_value = String::new();
         let mut body_value = String::new();
         let mut source_mailbox_name: Option<String> = None;
         let mut source_uid: Option<u64> = None;
         let mut source_attachments = Vec::new();
+        let mut reply_reference = None;
+        let expected_version = match super::routes_reply::query_version(&request.query_params) {
+            Ok(value) => value,
+            Err(_) => {
+                return HandledHttpResponse {
+                    response: html_response(
+                        400,
+                        "Bad Request",
+                        "Invalid Compose Request",
+                        "<p>Open a current reply or forward link from the reader.</p>",
+                    ),
+                    audit_events,
+                }
+            }
+        };
 
         match compose_source_from_request(request) {
             Ok(Some((intent, mailbox_name, uid))) => {
@@ -66,11 +81,14 @@ where
                 ));
 
                 match outcome.decision {
-                    BrowserMessageViewDecision::Rendered { rendered, .. } => {
-                        let draft = match ComposeDraft::from_rendered_message(
+                    BrowserMessageViewDecision::Rendered { canonical_username, rendered }
+                        if canonical_username == validated_session.record.canonical_username && rendered.mailbox_name == mailbox_name && rendered.uid == uid
+                            && expected_version.as_ref().is_none_or(|expected| rendered.metadata.as_ref().is_some_and(|metadata| &metadata.version == expected)) => {
+                        let draft = match ComposeDraft::for_sender(
                             ComposePolicy::default(),
                             intent,
                             &rendered,
+                            &validated_session.record.canonical_username,
                         ) {
                             Ok(draft) => draft,
                             Err(error) => {
@@ -96,18 +114,27 @@ where
 
                         compose_heading = match draft.intent {
                             ComposeIntent::Reply => "Reply",
+                            ComposeIntent::ReplyAll => "Reply all",
                             ComposeIntent::Forward => "Forward",
                         };
                         context_notice = draft.context_notice;
                         to_value = draft.to;
+                        cc_value = draft.cc;
                         subject_value = draft.subject;
                         body_value = draft.body;
+                        if intent != ComposeIntent::Forward {
+                            reply_reference = rendered.metadata.as_ref().and_then(|metadata|
+                                crate::reply_thread::ReplyReference::new(mailbox_name.clone(), uid, metadata.version.clone()).ok());
+                        }
                         if !rendered.attachments.is_empty() {
                             source_mailbox_name = Some(mailbox_name);
                             source_uid = Some(uid);
                             source_attachments = rendered.attachments;
                         }
                     }
+                    BrowserMessageViewDecision::Rendered { .. } => return HandledHttpResponse {
+                        response: html_response(409, "Conflict", "Compose Source Changed", "<p>The original message changed. Open a fresh reply or forward from the reader.</p>"), audit_events,
+                    },
                     BrowserMessageViewDecision::Denied { public_reason } => {
                         return HandledHttpResponse {
                             response: html_response(
@@ -149,6 +176,7 @@ where
                 "OK",
                 compose_heading,
                 render_compose_page(&ComposePageModel {
+                    reply_reference: reply_reference.as_ref(),
                     heading: compose_heading,
                     canonical_username: &validated_session.record.canonical_username,
                     csrf_token: &validated_session.record.csrf_token,
@@ -178,6 +206,11 @@ where
         request: &HttpRequest,
         context: &AuthenticationContext,
     ) -> HandledHttpResponse {
+        let (validated_session, mut audit_events) =
+            match self.require_validated_session(request, context) {
+                Ok(result) => result,
+                Err(response) => return response,
+            };
         let parsed_form = match parse_compose_form(
             &request.body,
             request.headers.get("content-type").map(String::as_str),
@@ -208,11 +241,6 @@ where
         let form = parsed_form.fields;
         let attachments = parsed_form.attachments;
 
-        let (validated_session, mut audit_events) =
-            match self.require_validated_session(request, context) {
-                Ok(result) => result,
-                Err(response) => return response,
-            };
         if let Some(response) = self.require_valid_csrf(
             request,
             form.get("csrf_token").map(String::as_str),
@@ -223,6 +251,41 @@ where
         }
 
         let recipients = form.get("to").cloned().unwrap_or_default();
+        if !super::routes_reply::compose_metadata_valid(
+            &form,
+            &validated_session.record.canonical_username,
+        ) {
+            return HandledHttpResponse {
+                response: invalid_compose_metadata(),
+                audit_events,
+            };
+        }
+        let reply_reference = match super::routes_reply::reply_reference(&form) {
+            Ok(reference) => reference,
+            Err(_) => {
+                return HandledHttpResponse {
+                    response: invalid_compose_metadata(),
+                    audit_events,
+                }
+            }
+        };
+        let mut reply_thread = match reply_reference.as_ref() {
+            Some(reference) => match self.resolve_reply_thread(
+                context,
+                &validated_session,
+                reference,
+                &mut audit_events,
+            ) {
+                Ok(thread) => thread,
+                Err(response) => {
+                    return HandledHttpResponse {
+                        response,
+                        audit_events,
+                    }
+                }
+            },
+            None => None,
+        };
         let cc_recipients = form.get("cc").cloned().unwrap_or_default();
         let bcc_recipients = form.get("bcc").cloned().unwrap_or_default();
         let subject = form.get("subject").cloned().unwrap_or_default();
@@ -403,11 +466,23 @@ where
                 .load_draft(context, &validated_session, draft_id);
             audit_events.extend(draft_outcome.audit_events);
             match draft_outcome.decision {
-                BrowserDraftLoadDecision::Loaded { draft, .. } => {
+                BrowserDraftLoadDecision::Loaded {
+                    canonical_username,
+                    draft,
+                } if canonical_username == validated_session.record.canonical_username
+                    && draft.canonical_username == canonical_username =>
+                {
+                    reply_thread = draft.request.reply_thread.clone();
                     let mut persisted = draft.request.attachments.clone();
                     persisted_draft_attachment_count = persisted.len();
                     persisted.extend(send_attachments);
                     send_attachments = persisted;
+                }
+                BrowserDraftLoadDecision::Loaded { .. } => {
+                    return HandledHttpResponse {
+                        response: invalid_compose_metadata(),
+                        audit_events,
+                    }
                 }
                 BrowserDraftLoadDecision::NotFound => {
                     return HandledHttpResponse {
@@ -451,6 +526,7 @@ where
             context,
             &validated_session,
             BrowserSendRequest {
+                reply_thread: reply_thread.as_ref(),
                 recipients: &recipients,
                 cc_recipients: &cc_recipients,
                 bcc_recipients: &bcc_recipients,
@@ -490,6 +566,7 @@ where
                     reason_phrase,
                     "Compose",
                     render_compose_page(&ComposePageModel {
+                        reply_reference: reply_reference.as_ref(),
                         heading: "Compose",
                         canonical_username: &validated_session.record.canonical_username,
                         csrf_token: &validated_session.record.csrf_token,
@@ -526,6 +603,10 @@ where
         ));
         handled
     }
+}
+
+pub(super) fn invalid_compose_metadata() -> HttpResponse {
+    html_response(400, "Bad Request", "Invalid Compose Request", "<p>The sender or original-message metadata was not valid. Use the current compose form; no message was submitted or draft saved.</p>")
 }
 
 fn compose_form_parse_failure_body(reason: &str) -> String {

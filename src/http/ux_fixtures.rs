@@ -56,14 +56,49 @@ fn ux_synthetic_route_baselines() {
         ),
         ("inbox-many", "/mailbox?name=INBOX", true, 200),
         ("inbox-long-headers", "/mailbox?name=INBOX", true, 200),
-        ("inbox-long-reader", "/mailbox?name=INBOX&selected_mailbox=INBOX&selected_uid=125", true, 200),
-        ("reader-off-page", "/mailbox?name=INBOX&selected_mailbox=INBOX&selected_uid=7", true, 200),
-        ("reader-filter-miss", "/mailbox?name=INBOX&filter=unread&selected_mailbox=INBOX&selected_uid=8", true, 200),
-        ("reader-stale-selection", "/mailbox?name=INBOX&selected_mailbox=INBOX&selected_uid=125", true, 200),
-        ("search-reader", "/search?q=reader-fixture&scope=all&selected_mailbox=Sent&selected_uid=125&page=3", true, 200),
+        (
+            "inbox-long-reader",
+            "/mailbox?name=INBOX&selected_mailbox=INBOX&selected_uid=125",
+            true,
+            200,
+        ),
+        (
+            "reader-off-page",
+            "/mailbox?name=INBOX&selected_mailbox=INBOX&selected_uid=7",
+            true,
+            200,
+        ),
+        (
+            "reader-filter-miss",
+            "/mailbox?name=INBOX&filter=unread&selected_mailbox=INBOX&selected_uid=8",
+            true,
+            200,
+        ),
+        (
+            "reader-stale-selection",
+            "/mailbox?name=INBOX&selected_mailbox=INBOX&selected_uid=125",
+            true,
+            200,
+        ),
+        (
+            "search-reader",
+            "/search?q=reader-fixture&scope=all&selected_mailbox=Sent&selected_uid=125&page=3",
+            true,
+            200,
+        ),
         ("inbox-page-two", "/mailbox?name=INBOX&page=2", true, 200),
-        ("inbox-bulk-selection", "/mailbox?name=INBOX&select=move", true, 200),
-        ("bin-reader", "/mailbox?name=Trash&selected_mailbox=Trash&selected_uid=125", true, 200),
+        (
+            "inbox-bulk-selection",
+            "/mailbox?name=INBOX&select=move",
+            true,
+            200,
+        ),
+        (
+            "bin-reader",
+            "/mailbox?name=Trash&selected_mailbox=Trash&selected_uid=125",
+            true,
+            200,
+        ),
         ("reader-legacy", "/message?mailbox=INBOX&uid=9", true, 200),
         ("move-partial", "/messages/move", true, 503),
         ("move-stale", "/message/move", true, 409),
@@ -96,10 +131,30 @@ fn ux_synthetic_route_baselines() {
             404,
         ),
         ("reader", "/message?mailbox=INBOX&uid=9", true, 200),
-        ("reader-unavailable", "/message?mailbox=INBOX&uid=900", true, 503),
-        ("source-long", "/message?mailbox=INBOX&uid=9&view=source", true, 200),
-        ("source-unavailable", "/message?mailbox=INBOX&uid=9&view=source", true, 503),
-        ("source-not-found", "/message?mailbox=INBOX&uid=999&view=source", true, 404),
+        (
+            "reader-unavailable",
+            "/message?mailbox=INBOX&uid=900",
+            true,
+            503,
+        ),
+        (
+            "source-long",
+            "/message?mailbox=INBOX&uid=9&view=source",
+            true,
+            200,
+        ),
+        (
+            "source-unavailable",
+            "/message?mailbox=INBOX&uid=9&view=source",
+            true,
+            503,
+        ),
+        (
+            "source-not-found",
+            "/message?mailbox=INBOX&uid=999&view=source",
+            true,
+            404,
+        ),
         (
             "reader-state-controls",
             "/message?mailbox=INBOX&uid=10",
@@ -113,6 +168,18 @@ fn ux_synthetic_route_baselines() {
             200,
         ),
         ("compose", "/compose", true, 200),
+        (
+            "reply-all",
+            "/compose?mode=reply-all&mailbox=INBOX&uid=9",
+            true,
+            200,
+        ),
+        (
+            "forward",
+            "/compose?mode=forward&mailbox=INBOX&uid=9",
+            true,
+            200,
+        ),
         (
             "reply",
             "/compose?mode=reply&mailbox=INBOX&uid=9",
@@ -168,36 +235,69 @@ fn ux_synthetic_route_baselines() {
         }
         if matches!(
             name,
-            "inbox-many" | "inbox-page-two" | "inbox-selected" | "reader-state-controls" | "reader-off-page" | "reader-filter-miss" | "search-reader" | "inbox-bulk-selection" | "bin-reader"
+            "inbox-many"
+                | "inbox-page-two"
+                | "inbox-selected"
+                | "reader-state-controls"
+                | "reader-off-page"
+                | "reader-filter-miss"
+                | "search-reader"
+                | "inbox-bulk-selection"
+                | "bin-reader"
         ) {
             headers[0] = ("User-Agent", "OSMAP/ManyMessages");
         }
         match name {
+            "reply-all" => headers[0] = ("User-Agent", "OSMAP/ReplyRecipients"),
             "reader-legacy" => headers[0] = ("User-Agent", "OSMAP/LegacyMetadata"),
             "source-long" => headers[0] = ("User-Agent", "OSMAP/SourceLong"),
             "source-unavailable" => headers[0] = ("User-Agent", "OSMAP/SourceUnavailable"),
             "move-partial" => headers[0] = ("User-Agent", "OSMAP/ManyMessages;MoveUnknown"),
             "move-stale" | "move-invalid" => headers[0] = ("User-Agent", "OSMAP/ManyMessages"),
-            "reader-stale-selection" => headers[0] = ("User-Agent", "OSMAP/ManyMessages;ReaderStale"),
-            "inbox-long-headers" | "inbox-long-reader" => headers[0] = ("User-Agent", "OSMAP/ManyMessages;LongHeaders"),
+            "reader-stale-selection" => {
+                headers[0] = ("User-Agent", "OSMAP/ManyMessages;ReaderStale")
+            }
+            "inbox-long-headers" | "inbox-long-reader" => {
+                headers[0] = ("User-Agent", "OSMAP/ManyMessages;LongHeaders")
+            }
             "settings-long-identity" => headers[0] = ("User-Agent", "OSMAP/LongIdentity"),
             "archive-unconfigured" => headers[0] = ("User-Agent", "OSMAP/NoArchiveTest"),
             "archive-missing" => headers[0] = ("User-Agent", "OSMAP/InvalidArchiveTest"),
             "archive-unavailable" => headers[0] = ("User-Agent", "OSMAP/SettingsUnavailable"),
             _ => {}
         }
-        let method = if name == "login-error" || name.starts_with("move-") { "POST" } else { "GET" };
+        let method = if name == "login-error" || name.starts_with("move-") {
+            "POST"
+        } else {
+            "GET"
+        };
         let body = if name.starts_with("move-") {
             headers.push(("Origin", "https://localhost"));
-            let selection = if name == "move-partial" { "uid_9=9&uid_10=10&uid_11=11" } else { "uid=9" };
-            let mut body = move_form(&format!("csrf_token={}&mailbox=INBOX&{selection}", StubGateway::validated_session().record.csrf_token), "bin");
+            let selection = if name == "move-partial" {
+                "uid_9=9&uid_10=10&uid_11=11"
+            } else {
+                "uid=9"
+            };
+            let mut body = move_form(
+                &format!(
+                    "csrf_token={}&mailbox=INBOX&{selection}",
+                    StubGateway::validated_session().record.csrf_token
+                ),
+                "bin",
+            );
             if name == "move-stale" {
-                let original = StubGateway::fixture_metadata("alice@example.com", "INBOX", 9).version.message_guid;
+                let original = StubGateway::fixture_metadata("alice@example.com", "INBOX", 9)
+                    .version
+                    .message_guid;
                 body = body.replace(&url_encode(&original), "absent-synthetic-message");
             }
-            if name == "move-invalid" { body.push_str("&unexpected=1"); }
+            if name == "move-invalid" {
+                body.push_str("&unexpected=1");
+            }
             body
-        } else { String::new() };
+        } else {
+            String::new()
+        };
         let mut fixture_request = request(method, path, &headers, &body);
         fixture_request
             .headers

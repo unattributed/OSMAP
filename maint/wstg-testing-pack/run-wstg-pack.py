@@ -3360,6 +3360,9 @@ class Runner:
     def write_webmail_input_validation_static_evidence(self) -> bool:
         files = [
             REPO_ROOT / "src" / "send.rs",
+            REPO_ROOT / "src" / "mail_address.rs",
+            REPO_ROOT / "src" / "reply_thread.rs",
+            REPO_ROOT / "src" / "http" / "routes_reply.rs",
             REPO_ROOT / "src" / "http_form.rs",
             REPO_ROOT / "src" / "attachment.rs",
             REPO_ROOT / "src" / "mailbox.rs",
@@ -3369,7 +3372,11 @@ class Runner:
         ]
         text = "\n".join(path.read_text(encoding="utf-8", errors="replace") for path in files if path.exists())
         markers = [
-            "recipient contained control or whitespace characters",
+            "recipient contained control characters",
+            "recipient used unsupported or ambiguous mailbox syntax",
+            "invalid reply stored identity",
+            "invalid_or_duplicate_metadata_never_creates_injected_headers",
+            "envelope_recipients_are_unique_while_to_cc_intent_and_bcc_privacy_remain",
             "subject must not contain line breaks",
             "attachment filename contained control characters",
             "attachment filename must not contain path separators",
@@ -3384,12 +3391,15 @@ class Runner:
             "strips_scriptable_attributes_forms_remote_fetch_surfaces_and_comments",
             "OSMAP-WSTG-INPV-004",
         ]
-        missing = [marker for marker in markers if marker.lower() not in text.lower()]
+        missing = [str(path.relative_to(REPO_ROOT)) for path in files if not path.is_file()]
+        missing.extend(marker for marker in markers if marker.lower() not in text.lower())
         self.write_text_evidence(
             "webmail_input_validation_static.txt",
             summarize_static_files(files, missing)
             + "\nCovered boundaries:\n"
-            + "- recipient, display-name-shaped recipient, and subject header injection are rejected before submission\n"
+            + "- bounded bare/display-name recipients are parsed; ambiguous syntax and recipient/subject header injection are rejected before submission\n"
+            + "- reply headers derive from the authenticated stored original or an account-owned versioned draft; arbitrary client threading fields are refused\n"
+            + "- envelope recipients are deduplicated and visible To/Cc roles retained; Bcc remains envelope-only\n"
             + "- body text may contain ordinary line breaks but remains stdin data, not command arguments\n"
             + "- attachment filenames reject control characters and path separators\n"
             + "- unsafe attachment content types normalize to application/octet-stream\n"

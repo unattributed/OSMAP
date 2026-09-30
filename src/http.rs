@@ -19,6 +19,7 @@ mod routes_draft;
 mod routes_flags;
 mod routes_mail;
 mod routes_moves;
+mod routes_reply;
 mod routes_settings;
 
 use std::collections::BTreeMap;
@@ -820,6 +821,9 @@ mod tests {
     mod content_tests {
         include!("http/content_tests.rs");
     }
+    mod reply_tests {
+        include!("http/reply_tests.rs");
+    }
     mod flag_fixtures {
         include!("http/flag_fixtures.rs");
     }
@@ -846,6 +850,7 @@ mod tests {
     #[derive(Debug, Clone)]
     struct StubGateway {
         drafts: Arc<Mutex<BTreeMap<String, DraftRecord>>>,
+        submitted: Arc<Mutex<Vec<ComposeRequest>>>,
         message_flags: Arc<Mutex<SyntheticFlagStates>>,
         message_moves: Arc<Mutex<SyntheticMessageMoves>>,
         appearance_store: Option<AppearanceStore>,
@@ -856,6 +861,7 @@ mod tests {
         fn default() -> Self {
             Self {
                 drafts: Arc::new(Mutex::new(BTreeMap::new())),
+                submitted: Arc::new(Mutex::new(Vec::new())),
                 message_flags: Arc::new(Mutex::new(BTreeMap::new())),
                 message_moves: Arc::new(Mutex::new(SyntheticMessageMoves::default())),
                 appearance_store: None,
@@ -1826,6 +1832,10 @@ mod tests {
                         metadata,
                         to: Some(validated_session.record.canonical_username.clone()),
                         cc: None,
+                        reply_metadata: crate::reply_thread::ReplyMetadata::from_original(
+                            &reply_tests::source_headers(context, validated_session, uid),
+                        )
+                        .ok(),
                         flags: self.fixture_message_flags(
                             &validated_session.record.canonical_username,
                             mailbox_name,
@@ -1895,13 +1905,15 @@ mod tests {
             _validated_session: &ValidatedSession,
             request: BrowserSendRequest<'_>,
         ) -> BrowserSendOutcome {
-            let recipient_count = request
-                .recipients
-                .split(',')
-                .chain(request.cc_recipients.split(','))
-                .chain(request.bcc_recipients.split(','))
-                .filter(|recipient| !recipient.trim().is_empty())
-                .count();
+            let parsed = ComposeRequest::new_with_routing(
+                ComposePolicy::default(),
+                request.recipients,
+                request.cc_recipients,
+                request.bcc_recipients,
+                request.subject,
+                request.body,
+                request.attachments.to_vec(),
+            );
             if request.recipients == "locked@example.com" {
                 BrowserSendOutcome {
                     decision: BrowserSendDecision::Denied {
@@ -1915,7 +1927,12 @@ mod tests {
                         "stub submission throttled",
                     )],
                 }
-            } else if recipient_count > 0 && request.attachments.len() <= 1 {
+            } else if let Ok(mut compose) = parsed {
+                compose.reply_thread = request.reply_thread.cloned();
+                self.submitted
+                    .lock()
+                    .expect("synthetic submissions should lock")
+                    .push(compose);
                 BrowserSendOutcome {
                     decision: BrowserSendDecision::Submitted,
                     audit_events: vec![LogEvent::new(
@@ -2088,6 +2105,16 @@ mod tests {
                 .expect("stub drafts should lock")
                 .get(&draft_id)
                 .cloned();
+            if existing.as_ref().is_some_and(|draft| {
+                draft.canonical_username != validated_session.record.canonical_username
+            }) {
+                return BrowserDraftSaveOutcome {
+                    decision: BrowserDraftSaveDecision::Denied {
+                        public_reason: "invalid_request".into(),
+                    },
+                    audit_events: vec![],
+                };
+            }
             let attachments = if request.attachments.is_empty() {
                 existing
                     .as_ref()
@@ -2126,8 +2153,10 @@ mod tests {
                     }
                 }
             };
+            record.request.reply_thread = request.reply_thread.cloned();
             if let Some(existing) = existing {
                 record.created_at = existing.created_at;
+                record.request.reply_thread = existing.request.reply_thread;
             }
             self.drafts
                 .lock()
@@ -2784,6 +2813,7 @@ mod tests {
             &context,
             &validated_session,
             BrowserSendRequest {
+                reply_thread: None,
                 recipients: "bob@example.com",
                 cc_recipients: "",
                 bcc_recipients: "",

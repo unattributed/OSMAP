@@ -81,7 +81,16 @@ states. 611 library tests and five source/download journeys in each of Edge
 and Firefox pass. Source represents stored headers and MIME body text, not a
 byte-exact original wire export. Existing source/download size limits remain.
 Common acceptance, V14, strict Clippy and 108 visual captures pass locally.
-Exact checkpoint G native qualification follows its signed source delivery.
+Exact signed G `61bfb09` passed native qualification on obsd1: 611 library
+tests, two hostile-rendering checks and the isolated signed-helper source,
+attachment, flags and reversible move test. S02 engineering is delivered.
+S03-01 checkpoint A adds a canonical sender allowlist, bounded bare/display-name
+address parsing, envelope deduplication, Reply-To-aware reply-all with self
+exclusion, checked original-message threading and versioned draft persistence
+for that thread. 623 library tests, strict Clippy, common acceptance and V14
+pass. Five reply journeys pass in each of Edge/Firefox; 54 visual, contrast,
+forced-colour and simulated-reflow captures verify. Exact signed-source native
+qualification follows; contacts and full S03-01 acceptance remain in progress.
 Independent human accessibility acceptance
 and deployment remain separate.
 D01–D06 are recorded

@@ -226,7 +226,7 @@ fn isolated_openbsd_json_and_signed_flag_helper() {
     let save = vec!["save".into(), "-m".into(), "INBOX".into()];
     for message in [
         "From: Synthetic sender <sender@example.test>\r\nTo: fixture@example.test\r\nSubject: Plain fixture\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=utf-8\r\n\r\nPublic synthetic body.\r\n",
-        "From: Synthetic sender <sender@example.test>\r\nTo: fixture@example.test\r\nSubject: Attachment fixture\r\nMIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary=fixture\r\n\r\n--fixture\r\nContent-Type: text/plain\r\n\r\nPublic synthetic body.\r\n--fixture\r\nContent-Type: application/octet-stream; name=fixture.txt\r\nContent-Disposition: attachment; filename=fixture.txt\r\nContent-Transfer-Encoding: base64\r\n\r\nU3ludGhldGljIGZpeHR1cmUu\r\n--fixture--\r\n",
+        "From: Synthetic sender <sender@example.test>\r\nReply-To: \"Reply, Desk\" <desk@example.test>\r\nTo: fixture@example.test, other@example.test\r\nCc: copied@example.test\r\nMessage-ID: <native-parent@example.test>\r\nReferences: <native-root@example.test>\r\nSubject: Attachment fixture\r\nMIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary=fixture\r\n\r\n--fixture\r\nContent-Type: text/plain\r\n\r\nPublic synthetic body.\r\n--fixture\r\nContent-Type: application/octet-stream; name=fixture.txt\r\nContent-Disposition: attachment; filename=fixture.txt\r\nContent-Transfer-Encoding: base64\r\n\r\nU3ludGhldGljIGZpeHR1cmUu\r\n--fixture--\r\n",
     ] {
         assert_eq!(executor.run_with_stdin("/usr/local/bin/doveadm", &save, message).expect("save synthetic mail").status_code, 0);
     }
@@ -288,6 +288,20 @@ fn isolated_openbsd_json_and_signed_flag_helper() {
     .expect("attachment from checked native source");
     assert_eq!(attachment.body, b"Synthetic fixture.");
     assert_eq!(attachment.filename, "fixture.txt");
+    let reply = crate::reply_thread::ReplyMetadata::from_original(&source.header_block)
+        .expect("native original reply metadata");
+    assert_eq!(reply.reply_targets(), ["desk@example.test"]);
+    let (to, cc) = reply
+        .reply_all_targets("fixture@example.test")
+        .expect("native reply-all targets");
+    assert_eq!(to, ["desk@example.test", "other@example.test"]);
+    assert_eq!(cc, ["copied@example.test"]);
+    let thread = reply.thread.expect("native thread");
+    assert_eq!(thread.in_reply_to(), Some("<native-parent@example.test>"));
+    assert_eq!(
+        thread.references(),
+        "<native-root@example.test> <native-parent@example.test>"
+    );
     assert_eq!(
         list.list_messages(FIXTURE_ACCOUNT, &query)
             .expect("flags after source read"),

@@ -93,6 +93,7 @@ impl Default for ComposePolicy {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ComposeIntent {
     Reply,
+    ReplyAll,
     Forward,
 }
 
@@ -101,6 +102,7 @@ impl ComposeIntent {
     pub fn as_str(self) -> &'static str {
         match self {
             Self::Reply => "reply",
+            Self::ReplyAll => "reply-all",
             Self::Forward => "forward",
         }
     }
@@ -111,6 +113,8 @@ impl ComposeIntent {
 pub struct ComposeDraft {
     pub intent: ComposeIntent,
     pub to: String,
+    pub cc: String,
+    pub reply_thread: Option<crate::reply_thread::ReplyThread>,
     pub subject: String,
     pub body: String,
     pub context_notice: Option<String>,
@@ -160,6 +164,7 @@ pub struct ComposeRequest {
     pub subject: String,
     pub body: String,
     pub attachments: Vec<UploadedAttachment>,
+    pub reply_thread: Option<crate::reply_thread::ReplyThread>,
 }
 
 struct RecipientFields {
@@ -219,21 +224,23 @@ impl ComposeRequest {
             subject,
             body,
             attachments,
+            reply_thread: None,
         })
     }
 
     /// Returns every envelope recipient, including BCC.
     pub fn all_recipients(&self) -> Vec<String> {
-        let mut recipients = Vec::with_capacity(self.total_recipient_count());
-        recipients.extend(self.recipients.iter().cloned());
-        recipients.extend(self.cc_recipients.iter().cloned());
-        recipients.extend(self.bcc_recipients.iter().cloned());
-        recipients
+        crate::mail_address::deduplicate(
+            self.recipients
+                .iter()
+                .chain(&self.cc_recipients)
+                .chain(&self.bcc_recipients),
+        )
     }
 
     /// Returns the total recipient count across To, CC, and BCC.
     pub fn total_recipient_count(&self) -> usize {
-        self.recipients.len() + self.cc_recipients.len() + self.bcc_recipients.len()
+        self.all_recipients().len()
     }
 }
 
@@ -244,20 +251,78 @@ impl ComposeDraft {
         intent: ComposeIntent,
         rendered: &RenderedMessageView,
     ) -> Result<Self, ComposeError> {
+        Self::build_from_rendered(policy, intent, rendered, None)
+    }
+
+    pub fn for_sender(
+        policy: ComposePolicy,
+        intent: ComposeIntent,
+        rendered: &RenderedMessageView,
+        sender: &str,
+    ) -> Result<Self, ComposeError> {
+        Self::build_from_rendered(policy, intent, rendered, Some(sender))
+    }
+
+    fn build_from_rendered(
+        policy: ComposePolicy,
+        intent: ComposeIntent,
+        rendered: &RenderedMessageView,
+        sender: Option<&str>,
+    ) -> Result<Self, ComposeError> {
         let attachment_notice = build_attachment_notice(policy, intent, &rendered.attachments)?;
 
-        let (to, subject, body, note) = match intent {
-            ComposeIntent::Reply => {
+        let (mut to, subject, body, mut note) = match intent {
+            ComposeIntent::Reply | ComposeIntent::ReplyAll => {
                 build_reply_draft(policy, rendered, attachment_notice.as_deref())?
             }
             ComposeIntent::Forward => {
                 build_forward_draft(policy, rendered, attachment_notice.as_deref())?
             }
         };
+        let mut cc = String::new();
+        if intent == ComposeIntent::ReplyAll {
+            let sender = sender.ok_or_else(|| ComposeError {
+                reason: "reply-all requires a validated sender identity".into(),
+            })?;
+            if let Some(metadata) = &rendered.reply_metadata {
+                match metadata.reply_all_targets(sender) {
+                    Ok((targets, copied)) => {
+                        to = targets.join(", ");
+                        cc = copied.join(", ");
+                    }
+                    Err(reason) => {
+                        to.clear();
+                        note = Some(reason.into());
+                    }
+                }
+            }
+        }
+        let reply_thread = if intent == ComposeIntent::Forward {
+            None
+        } else {
+            rendered
+                .reply_metadata
+                .as_ref()
+                .and_then(|metadata| metadata.thread.clone())
+        };
+        if intent != ComposeIntent::Forward && reply_thread.is_none() && note.is_none() {
+            note = Some("Original threading headers are unsupported. This reply will start without thread headers.".into());
+        }
+        if reply_thread
+            .as_ref()
+            .is_some_and(|thread| thread.shortened())
+            && note.is_none()
+        {
+            note = Some(
+                "Long thread history was shortened to its root and most recent messages.".into(),
+            );
+        }
 
         Ok(Self {
             intent,
             to,
+            cc,
+            reply_thread,
             subject,
             body,
             context_notice: note.or(attachment_notice),
@@ -547,67 +612,17 @@ fn parse_optional_recipients(
     recipients_text: &str,
     total_count: &mut usize,
 ) -> Result<Vec<String>, ComposeError> {
-    let mut recipients = Vec::new();
-
-    for raw_recipient in recipients_text.split(',') {
-        let recipient = raw_recipient.trim();
-        if recipient.is_empty() {
-            continue;
-        }
-
-        if *total_count >= policy.max_recipients {
-            return Err(ComposeError {
-                reason: format!(
-                    "recipient count exceeded maximum of {}",
-                    policy.max_recipients
-                ),
-            });
-        }
-
-        validate_recipient(policy, recipient)?;
-        recipients.push(recipient.to_string());
-        *total_count += 1;
-    }
-
-    Ok(recipients)
-}
-
-/// Validates one recipient address for the first narrow send slice.
-fn validate_recipient(policy: ComposePolicy, recipient: &str) -> Result<(), ComposeError> {
-    if recipient.len() > policy.recipient_max_len {
+    let recipients = crate::mail_address::parse_address_list(policy, recipients_text)?;
+    *total_count = total_count.saturating_add(recipients.len());
+    if *total_count > policy.max_recipients {
         return Err(ComposeError {
             reason: format!(
-                "recipient exceeded maximum length of {} bytes",
-                policy.recipient_max_len
+                "recipient count exceeded maximum of {}",
+                policy.max_recipients
             ),
         });
     }
-
-    if recipient.chars().any(char::is_control) || recipient.contains(char::is_whitespace) {
-        return Err(ComposeError {
-            reason: "recipient contained control or whitespace characters".to_string(),
-        });
-    }
-
-    let mut parts = recipient.split('@');
-    let local = parts.next().unwrap_or_default();
-    let domain = parts.next().unwrap_or_default();
-    if local.is_empty() || domain.is_empty() || parts.next().is_some() {
-        return Err(ComposeError {
-            reason: "recipient must be a simple addr-spec style mailbox".to_string(),
-        });
-    }
-
-    if !local.chars().all(is_allowed_email_local_char)
-        || !domain.chars().all(is_allowed_email_domain_char)
-        || !domain.contains('.')
-    {
-        return Err(ComposeError {
-            reason: "recipient contained unsupported mailbox characters".to_string(),
-        });
-    }
-
-    Ok(())
+    Ok(crate::mail_address::deduplicate(&recipients))
 }
 
 /// Validates the subject line against bounded header rules.
@@ -778,7 +793,11 @@ fn build_reply_draft(
     rendered: &RenderedMessageView,
     attachment_notice: Option<&str>,
 ) -> Result<(String, String, String, Option<String>), ComposeError> {
-    let reply_target = extract_reply_recipient(policy, rendered.from.as_deref())?;
+    let reply_target = rendered
+        .reply_metadata
+        .as_ref()
+        .map(|metadata| metadata.reply_targets().join(", "))
+        .unwrap_or_default();
     let subject = prefixed_subject(policy, rendered.subject.as_deref(), "Re: ")?;
 
     let mut body_lines = vec![String::new(), String::new()];
@@ -798,7 +817,7 @@ fn build_reply_draft(
     let context_notice = if reply_target.is_empty() {
         Some(bounded_notice(
             policy,
-            "Original From header could not be converted into a simple reply target; fill the recipient manually.",
+            "Original reply addresses could not be selected safely; fill the recipients manually.",
         )?)
     } else {
         None
@@ -861,7 +880,7 @@ fn build_attachment_notice(
     }
 
     let notice = match intent {
-        ComposeIntent::Reply => format!(
+        ComposeIntent::Reply | ComposeIntent::ReplyAll => format!(
             "Original message included {} attachment(s); source attachments are not selected automatically.",
             attachments.len()
         ),
@@ -955,30 +974,6 @@ fn prefixed_subject(
     Ok(prefixed)
 }
 
-/// Extracts a conservative simple reply target from the rendered `From` value.
-fn extract_reply_recipient(
-    policy: ComposePolicy,
-    from_header: Option<&str>,
-) -> Result<String, ComposeError> {
-    let Some(from_header) = from_header.map(str::trim) else {
-        return Ok(String::new());
-    };
-
-    if let Some((_, address_and_rest)) = from_header.rsplit_once('<') {
-        if let Some((address, _)) = address_and_rest.split_once('>') {
-            let address = address.trim();
-            validate_recipient(policy, address)?;
-            return Ok(address.to_string());
-        }
-    }
-
-    if validate_recipient(policy, from_header).is_ok() {
-        return Ok(from_header.to_string());
-    }
-
-    Ok(String::new())
-}
-
 /// Quotes one plain-text body block for reply composition.
 fn quote_plain_text(body_text: &str) -> Vec<String> {
     if body_text.is_empty() {
@@ -1019,9 +1014,10 @@ fn build_plain_text_submission_message(
 ) -> String {
     let body = normalize_body_line_endings(&request.body);
     format!(
-        "From: {canonical_username}\r\nTo: {}\r\n{}Subject: {}\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n{}",
+        "From: {canonical_username}\r\nTo: {}\r\n{}{}Subject: {}\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: 8bit\r\n\r\n{}",
         header_recipients(&request.recipients),
         cc_header(request),
+        request.reply_thread.as_ref().map(|thread| thread.header_lines()).unwrap_or_default(),
         request.subject,
         body,
     )
@@ -1035,9 +1031,10 @@ fn build_multipart_submission_message(
     let boundary = build_multipart_boundary(canonical_username, request);
     let mut output = String::new();
     output.push_str(&format!(
-        "From: {canonical_username}\r\nTo: {}\r\n{}Subject: {}\r\nMIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary=\"{}\"\r\n\r\n",
+        "From: {canonical_username}\r\nTo: {}\r\n{}{}Subject: {}\r\nMIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary=\"{}\"\r\n\r\n",
         header_recipients(&request.recipients),
         cc_header(request),
+        request.reply_thread.as_ref().map(|thread| thread.header_lines()).unwrap_or_default(),
         request.subject,
         boundary,
     ));
@@ -1067,6 +1064,7 @@ fn sendmail_args(canonical_username: &str, request: &ComposeRequest) -> Vec<Stri
         "-oi".to_string(),
         "-f".to_string(),
         canonical_username.to_string(),
+        "--".to_string(),
     ];
     args.extend(request.all_recipients());
     args
@@ -1188,38 +1186,6 @@ fn hex_encode(bytes: &[u8]) -> String {
         output.push(HEX[(byte & 0x0f) as usize] as char);
     }
     output
-}
-
-/// Allowed characters for the local part in the current narrow mailbox parser.
-fn is_allowed_email_local_char(ch: char) -> bool {
-    ch.is_ascii_alphanumeric()
-        || matches!(
-            ch,
-            '!' | '#'
-                | '$'
-                | '%'
-                | '&'
-                | '\''
-                | '*'
-                | '+'
-                | '-'
-                | '/'
-                | '='
-                | '?'
-                | '^'
-                | '_'
-                | '`'
-                | '{'
-                | '|'
-                | '}'
-                | '~'
-                | '.'
-        )
-}
-
-/// Allowed characters for the domain part in the current narrow mailbox parser.
-fn is_allowed_email_domain_char(ch: char) -> bool {
-    ch.is_ascii_alphanumeric() || matches!(ch, '-' | '.')
 }
 
 /// Allowed characters for the current narrow uploaded-attachment file names.
@@ -1352,6 +1318,7 @@ mod tests {
             from: Some("Alice Example <alice@example.com>".to_string()),
             to: Some("Bob <bob@example.com>".into()),
             cc: None,
+            reply_metadata: crate::reply_thread::ReplyMetadata::from_original("From: Alice Example <alice@example.com>\nTo: Bob <bob@example.com>\nMessage-ID: <parent@example.com>\n").ok(),
             date_received: "2026-03-27 12:00:00 +0000".to_string(),
             mime_top_level_content_type: "multipart/mixed".to_string(),
             body_source: MimeBodySource::MultipartPlainTextPart,
@@ -1421,18 +1388,52 @@ mod tests {
     fn rejects_invalid_recipient_shapes() {
         let error = ComposeRequest::new(
             ComposePolicy::default(),
-            "Bob Example <bob@example.com>",
+            "Bob Example <bob@example.com> unexpected-suffix",
             "Test",
             "Hello",
         )
-        .expect_err("display-name recipients are intentionally rejected");
+        .expect_err("ambiguous display-name recipient must be rejected");
 
         assert_eq!(
             error,
             ComposeError {
-                reason: "recipient contained control or whitespace characters".to_string(),
+                reason: "recipient used ambiguous mailbox syntax".to_string(),
             }
         );
+    }
+
+    #[test]
+    fn envelope_recipients_are_unique_while_to_cc_intent_and_bcc_privacy_remain() {
+        let request = ComposeRequest::new_with_routing(
+            ComposePolicy::default(),
+            "\"Bob, Example\" <bob@example.test>, bob@EXAMPLE.test",
+            "bob@example.test, carol@example.test",
+            "carol@example.test, private@example.test",
+            "Bounded recipients",
+            "Synthetic body",
+            Vec::new(),
+        )
+        .unwrap();
+        assert_eq!(request.recipients, ["bob@example.test"]);
+        assert_eq!(
+            request.cc_recipients,
+            ["bob@example.test", "carol@example.test"]
+        );
+        assert_eq!(
+            request.all_recipients(),
+            [
+                "bob@example.test",
+                "carol@example.test",
+                "private@example.test"
+            ]
+        );
+        assert_eq!(request.total_recipient_count(), 3);
+        let wire =
+            String::from_utf8(build_submission_message("alice@example.test", &request)).unwrap();
+        assert!(
+            wire.contains("To: bob@example.test\r\nCc: bob@example.test, carol@example.test\r\n")
+        );
+        assert!(!wire.contains("private@example.test") && !wire.contains("Bcc:"));
     }
 
     #[test]
@@ -1638,6 +1639,7 @@ mod tests {
                 "-oi".to_string(),
                 "-f".to_string(),
                 "alice@example.com".to_string(),
+                "--".to_string(),
                 "bob@example.com".to_string(),
             ]
         );
@@ -1685,6 +1687,7 @@ mod tests {
                 "-oi".to_string(),
                 "-f".to_string(),
                 "alice@example.com".to_string(),
+                "--".to_string(),
                 "bob@example.com".to_string(),
                 "carol@example.net".to_string(),
                 "dana@example.org".to_string(),
@@ -1766,6 +1769,7 @@ mod tests {
                 "-oi".to_string(),
                 "-f".to_string(),
                 sender.to_string(),
+                "--".to_string(),
                 "bob@example.com".to_string(),
             ]
         );

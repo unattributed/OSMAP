@@ -285,6 +285,23 @@ class RunnerBehaviorTests(unittest.TestCase):
         )
         self.assertTrue(runner.write_webmail_input_validation_static_evidence())
 
+    def test_webmail_static_evidence_requires_the_current_address_parser(self) -> None:
+        runner = WSTG.Runner(
+            config("https://example.test", "example.test", self.root),
+            self.mapping,
+            self.root / "webmail-static-missing-parser",
+        )
+        original = Path.read_text
+
+        def without_address_guards(path, *args, **kwargs):
+            content = original(path, *args, **kwargs)
+            if path.name == "mail_address.rs":
+                return content.replace("recipient contained control characters", "guard removed")
+            return content
+
+        with mock.patch.object(Path, "read_text", without_address_guards):
+            self.assertFalse(runner.write_webmail_input_validation_static_evidence())
+
     def test_nonzero_ssh_exit_is_explicitly_incomplete(self) -> None:
         runner = WSTG.Runner(
             config("https://example.test", "example.test", self.root),
