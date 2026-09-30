@@ -60,6 +60,28 @@ pub(crate) struct MessageListSortLinks<'a> {
     pub view: &'a ListViewState,
     pub search_query: Option<&'a str>,
     pub search_scope: Option<&'a str>,
+    pub reader: &'a MailReaderContext,
+}
+
+#[derive(Default)]
+pub(crate) enum SelectedMessagePane {
+    #[default]
+    Unselected,
+    Unavailable(&'static str),
+    Ready(Box<RenderedMessageView>),
+}
+
+#[derive(Default)]
+pub(crate) struct MailReaderContext {
+    pub pane: SelectedMessagePane,
+    pub archive_mailbox_name: Option<String>,
+    pub mailboxes: Vec<MailboxEntry>,
+}
+
+pub(crate) struct MessageSearchContext<'a> {
+    pub view: &'a ListViewState,
+    pub field: MessageSearchField,
+    pub reader: &'a MailReaderContext,
 }
 
 /// Small view model for bounded selected-message mailbox actions.
@@ -435,7 +457,45 @@ fn list_navigation_href(base: &str, view: &ListViewState, page: usize) -> String
 }
 
 fn list_form_state(view: &ListViewState) -> String {
-    format!("<input type=\"hidden\" name=\"filter\" value=\"{}\"><input type=\"hidden\" name=\"sort\" value=\"{}\"><input type=\"hidden\" name=\"dir\" value=\"{}\">", view.filter.value(), view.sort.column.query_value(), view.sort.direction.query_value())
+    let mut fields = format!("<input type=\"hidden\" name=\"filter\" value=\"{}\"><input type=\"hidden\" name=\"sort\" value=\"{}\"><input type=\"hidden\" name=\"dir\" value=\"{}\">", view.filter.value(), view.sort.column.query_value(), view.sort.direction.query_value());
+    if let Some(selected) = &view.selection {
+        fields.push_str(&format!("<input type=\"hidden\" name=\"selected_mailbox\" value=\"{}\"><input type=\"hidden\" name=\"selected_uid\" value=\"{}\">", escape_html(&selected.mailbox), selected.uid));
+    }
+    fields
+}
+
+fn selected_message_href(base: &str, view: &ListViewState, mailbox: &str, uid: u64) -> String {
+    let mut selected = view.clone();
+    selected.selection = Some(crate::mail_list::ListSelection {
+        mailbox: mailbox.into(),
+        uid,
+    });
+    format!(
+        "{}#reading-pane",
+        list_navigation_href(base, &selected, view.page)
+    )
+}
+
+fn render_coordinated_reader(
+    base: &str,
+    view: &ListViewState,
+    csrf: &str,
+    reader: &MailReaderContext,
+) -> String {
+    let mut cleared = view.clone();
+    cleared.selection = None;
+    let back = list_navigation_href(base, &cleared, view.page);
+    match &reader.pane {
+        SelectedMessagePane::Unselected => "<article class=\"reading-pane reader-empty\" aria-label=\"Reading pane\"><h2>Choose a message</h2><p class=\"muted\">Open a subject to read it alongside this list.</p></article>".into(),
+        SelectedMessagePane::Unavailable(message) => format!("<article id=\"reading-pane\" class=\"reading-pane\" tabindex=\"-1\" aria-labelledby=\"reading-unavailable\"><a href=\"{}\">Back to list</a><h2 id=\"reading-unavailable\">Message unavailable</h2><p role=\"status\">{}</p></article>", escape_html(&back), escape_html(message)),
+        SelectedMessagePane::Ready(rendered) => {
+            let locate = match view.selection_page {
+                Some(page) if page != view.page => format!("<p class=\"reader-locate\"><a href=\"{}\">Locate selected message on page {page}</a></p>", escape_html(&list_navigation_href(base, view, page))),
+                _ => String::new(),
+            };
+            format!("<div class=\"reader-column\">{locate}{}</div>", render_reader_fragment(csrf, rendered, reader.archive_mailbox_name.as_deref(), &reader.mailboxes, &back, &list_navigation_href(base, view, view.page)))
+        }
+    }
 }
 
 fn render_list_navigation(base: &str, view: &ListViewState) -> String {
@@ -447,9 +507,6 @@ fn render_list_navigation(base: &str, view: &ListViewState) -> String {
     ] {
         let mut target = view.clone();
         target.filter = filter;
-        if filter != view.filter {
-            target.selection = None;
-        }
         filters.push_str(&format!(
             "<a class=\"filter-link\" href=\"{}\"{}>{}</a>",
             escape_html(&list_navigation_href(base, &target, 1)),
@@ -699,11 +756,15 @@ pub(crate) fn render_message_list_page(
         .is_some_and(|archive_mailbox_name| archive_mailbox_name != mailbox_name);
     let bulk_actions_available = !bulk_actions.move_destinations.is_empty();
     for (index, message) in messages.iter().enumerate() {
-        let message_href = format!(
-            "/message?mailbox={}&uid={}",
-            url_encode(mailbox_name),
-            message.uid
-        );
+        let message_href = if message.metadata.is_some() {
+            selected_message_href(&navigation_base, sort_links.view, mailbox_name, message.uid)
+        } else {
+            format!(
+                "/message?mailbox={}&uid={}",
+                url_encode(mailbox_name),
+                message.uid
+            )
+        };
         let archive_action = if let Some(archive_mailbox_name) = bulk_actions.archive_mailbox_name {
             if archive_mailbox_name != mailbox_name {
                 format!(
@@ -809,18 +870,19 @@ pub(crate) fn render_message_list_page(
     TrustedHtml::from_template(format!(
         concat!(
             "{}",
-            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
-            "<section class=\"content-pane\" aria-labelledby=\"mailbox-title\">",
-            "<div class=\"section-header\"><h1 id=\"mailbox-title\" class=\"section-title message-list-summary\">Mailbox: {}</h1></div>",
+            "<main id=\"main-content\" class=\"page-shell coordinated-mail{}\" tabindex=\"-1\"><h1 class=\"sr-only\">Mail</h1>",
+            "<section class=\"content-pane coordinated-list\" aria-labelledby=\"mailbox-title\">",
+            "<div class=\"section-header\"><h2 id=\"mailbox-title\" class=\"section-title message-list-summary\">Mailbox: {}</h2></div>",
             "{}",
             "<form class=\"search-row compact-search\" method=\"get\" action=\"/search\"><input type=\"hidden\" name=\"mailbox\" value=\"{}\">{}<label for=\"mailbox-search\">Search query<input id=\"mailbox-search\" type=\"text\" name=\"q\" value=\"{}\" autocomplete=\"off\"></label><button type=\"submit\">Search</button><details class=\"search-options\"><summary>Search options</summary><div>{}<label><input type=\"checkbox\" name=\"scope\" value=\"all\"> Search all mailboxes</label></div></details></form>",
             "{}<details class=\"bulk-actions\"><summary>Bulk actions</summary>{}<p class=\"muted\">Open More on a message to select it for move or archive.</p><div class=\"toolbar\" aria-label=\"Mailbox actions\">{}{}</div></details>",
             "{}",
             "{}<ul role=\"list\" class=\"message-cards\" aria-label=\"Mailbox message list\">{}</ul>",
-            "</section>",
+            "</section>{}",
             "</main>"
         ),
         app_header(canonical_username, csrf_token, mailbox_nav_section(mailbox_name, bulk_actions.archive_mailbox_name)),
+        if sort_links.view.selection.is_some() { " has-selection" } else { "" },
         escape_html(mailbox_name),
         success_banner,
         escape_html(mailbox_name),
@@ -834,6 +896,7 @@ pub(crate) fn render_message_list_page(
         render_list_navigation(&navigation_base, sort_links.view),
         sort_headers,
         rows,
+        render_coordinated_reader(&navigation_base, sort_links.view, csrf_token, sort_links.reader),
     ))
 }
 
@@ -844,9 +907,10 @@ pub(crate) fn render_message_search_page(
     mailbox_name: Option<&str>,
     query: &str,
     results: &[MessageSearchResult],
-    view: &ListViewState,
-    search_field: MessageSearchField,
+    context: MessageSearchContext<'_>,
 ) -> TrustedHtml {
+    let view = context.view;
+    let search_field = context.field;
     let back_link = match mailbox_name {
         Some(mailbox_name) => format!(
             "<a href=\"/mailbox?name={}\">Back to mailbox</a> | ",
@@ -882,11 +946,15 @@ pub(crate) fn render_message_search_page(
         rows.push_str("<li class=\"message-empty-state\">No messages matched this search.</li>");
     } else {
         for result in results {
-            let message_href = format!(
-                "/message?mailbox={}&uid={}",
-                url_encode(&result.mailbox_name),
-                result.uid
-            );
+            let message_href = if result.metadata.is_some() {
+                selected_message_href(&navigation_base, view, &result.mailbox_name, result.uid)
+            } else {
+                format!(
+                    "/message?mailbox={}&uid={}",
+                    url_encode(&result.mailbox_name),
+                    result.uid
+                )
+            };
             rows.push_str(&render_message_card(
                 MessageCard {
                     mailbox: &result.mailbox_name,
@@ -910,18 +978,19 @@ pub(crate) fn render_message_search_page(
     TrustedHtml::from_template(format!(
         concat!(
             "{}",
-            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
-            "<section class=\"content-pane\">",
+            "<main id=\"main-content\" class=\"page-shell coordinated-mail{}\" tabindex=\"-1\"><h1 class=\"sr-only\">Search mail</h1>",
+            "<section class=\"content-pane coordinated-list\">",
             "<p>{}<a href=\"/mailboxes\">All mailboxes</a></p>",
-            "<h1 class=\"section-title\">Search Results</h1>",
+            "<h2 class=\"section-title\">Search Results</h2>",
             "<form class=\"search-row compact-search\" method=\"get\" action=\"/search\">{}{}<label for=\"search-query\">Search query<input id=\"search-query\" type=\"text\" name=\"q\" value=\"{}\" autocomplete=\"off\"></label><button type=\"submit\">Search</button><details class=\"search-options\"><summary>Search options</summary><div>{}<label><input type=\"checkbox\" name=\"scope\" value=\"all\"{}> Search all mailboxes</label></div></details></form>",
             "<p class=\"search-context\"><span><strong>Scope:</strong> {}</span><span><strong>Field:</strong> {}</span><span><strong>Query:</strong> {}</span><span><strong>Results:</strong> {}</span></p>",
             "{}",
             "{}<ul role=\"list\" class=\"message-cards\" aria-label=\"Search results\">{}</ul>",
-            "</section>",
+            "</section>{}",
             "</main>"
         ),
         app_header(canonical_username, csrf_token, "mailboxes"),
+        if view.selection.is_some() { " has-selection" } else { "" },
         back_link,
         mailbox_hidden_input,
         list_form_state(view),
@@ -935,6 +1004,7 @@ pub(crate) fn render_message_search_page(
         render_list_navigation(&navigation_base, view),
         sort_headers,
         rows,
+        render_coordinated_reader(&navigation_base, view, csrf_token, context.reader),
     ))
 }
 
@@ -946,6 +1016,26 @@ pub fn render_message_view_page(
     archive_mailbox_name: Option<&str>,
     user_visible_mailboxes: &[MailboxEntry],
 ) -> TrustedHtml {
+    let back = format!("/mailbox?name={}", url_encode(&rendered.mailbox_name));
+    let current = format!(
+        "/message?mailbox={}&uid={}",
+        url_encode(&rendered.mailbox_name),
+        rendered.uid
+    );
+    TrustedHtml::from_template(format!(
+        "{}<main id=\"main-content\" class=\"page-shell standalone-reader\" tabindex=\"-1\"><h1 class=\"sr-only\">Message view</h1>{}</main>",
+        app_header(canonical_username, csrf_token, mailbox_nav_section(&rendered.mailbox_name, archive_mailbox_name)),
+        render_reader_fragment(csrf_token, rendered, archive_mailbox_name, user_visible_mailboxes, &back, &current)))
+}
+
+fn render_reader_fragment(
+    csrf_token: &str,
+    rendered: &RenderedMessageView,
+    archive_mailbox_name: Option<&str>,
+    user_visible_mailboxes: &[MailboxEntry],
+    back_href: &str,
+    return_to: &str,
+) -> String {
     let displayed_attachments = rendered
         .attachments
         .iter()
@@ -1110,65 +1200,36 @@ pub fn render_message_view_page(
         "<p class=\"muted openpgp-boundary-note\">Verified signatures do not make content safe. Future decrypted content must still pass Protected by Default rendering.</p>",
         "</details>"
     );
-    TrustedHtml::from_template(format!(
+    format!(
         concat!(
-            "{}",
-            "<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\">",
+            "<article id=\"reading-pane\" class=\"reading-pane protected-reading-pane\" tabindex=\"-1\" aria-labelledby=\"message-title\" data-reader-mode=\"Protected Reader\">",
+            "<nav class=\"reader-navigation\" aria-label=\"Reader navigation\"><a href=\"{}\">Back to list</a></nav>",
+            "<header class=\"message-heading\"><p class=\"muted\">{} · {}</p><h2 id=\"message-title\" dir=\"auto\">{}</h2><p class=\"message-from\" dir=\"auto\">From: {}</p></header>",
+            "<div class=\"toolbar reader-primary-actions\" aria-label=\"Message actions\"><a class=\"button-link\" href=\"/compose?mode=reply&mailbox={}&uid={}\">Reply</a><a class=\"button-link\" href=\"/compose?mode=forward&mailbox={}&uid={}\">Forward</a>{}</div>",
+            "<details class=\"reader-more-actions\"><summary>Move, archive or delete</summary><div class=\"action-stack\">{}{}{}</div></details>",
             "<div class=\"reader-status\">{}{}</div>",
-            "<div class=\"mail-shell mail-shell-three reader-layout\">",
-            "{}",
-            "<section class=\"message-summary-pane\" aria-labelledby=\"message-title\">",
-            "<p><a href=\"/mailbox?name={}\">Back to mailbox</a></p>",
-            "<h1 id=\"message-title\" class=\"section-title\">{}</h1>",
-            "<p class=\"muted\">from {}</p>",
-            "<div class=\"badge-list reader-badge-list\" aria-label=\"Reader status\"><span class=\"badge badge-ok\">2FA session</span><span class=\"badge badge-ok\">Protected by Default</span>{}<span class=\"badge\">{}</span></div>",
-            "<dl class=\"message-meta reader-meta\"><dt>Mailbox</dt><dd>{}</dd><dt>UID</dt><dd>{}</dd><dt>Received</dt><dd>{}</dd><dt>MIME Type</dt><dd>{}</dd><dt>Body Source</dt><dd>{}</dd><dt>Rendering Mode</dt><dd>{}</dd><dt>HTML Present</dt><dd>{}</dd><dt>Protection</dt><dd>Protected by Default</dd><dt>Remote Content</dt><dd>{}</dd></dl>",
-            "<div class=\"toolbar\" aria-label=\"Message actions\"><a class=\"button-link\" href=\"/compose?mode=reply&mailbox={}&uid={}\">Reply</a><a class=\"button-link\" href=\"/compose?mode=forward&mailbox={}&uid={}\">Forward</a></div>",
-            "{}<div class=\"action-stack\">{}{}{}</div>",
-            "</section>",
-            "<article class=\"reading-pane protected-reading-pane\" aria-labelledby=\"reading-title\" data-reader-mode=\"Protected Reader\">",
-            "<h2 id=\"reading-title\">Reading Pane</h2>",
-            "{}{}",
-            "<section class=\"panel\"><h2>Attachments</h2><ul class=\"attachment-list\">{}</ul></section>",
+            "<span id=\"reading-title\" class=\"sr-only\">Reading Pane</span>",
             "<section class=\"body-panel\"><h2>Body</h2><div class=\"reader-section-heading\" data-protected-body-panel=\"true\"><span class=\"badge badge-ok\">Protected rendering</span></div><p class=\"muted reader-boundary-note\">Message content is displayed with active content and remote images removed.</p>{}</section>",
-            "</article>",
-            "</div>",
-            "</main>"
+            "<section class=\"panel reader-attachments\"><h2>Attachments</h2><ul class=\"attachment-list\">{}</ul></section>",
+            "<details class=\"reader-details\"><summary>Message details</summary>{}{}{}<dl class=\"message-meta reader-meta\"><dt>Subject</dt><dd dir=\"auto\">{}</dd><dt>From</dt><dd dir=\"auto\">{}</dd><dt>Mailbox</dt><dd>{}</dd><dt>UID</dt><dd>{}</dd><dt>Received</dt><dd>{}</dd><dt>MIME Type</dt><dd>{}</dd><dt>Body Source</dt><dd>{}</dd><dt>Rendering Mode</dt><dd>{}</dd><dt>HTML Present</dt><dd>{}</dd><dt>Protection</dt><dd>Protected by Default</dd><dt>Remote Content</dt><dd>{}</dd></dl></details>",
+            "</article>"
         ),
-        app_header(canonical_username, csrf_token, mailbox_nav_section(&rendered.mailbox_name, archive_mailbox_name)),
-        protected_reader_strip,
-        openpgp_reader_states,
-        folder_pane(user_visible_mailboxes, Some(&rendered.mailbox_name)),
-        escape_html(&url_encode(&rendered.mailbox_name)),
-        escape_html(rendered.subject.as_deref().unwrap_or("<none>")),
-        escape_html(rendered.from.as_deref().unwrap_or("<none>")),
-        html_state_badge,
-        if rendered.contains_html_body {
-            "remote content blocked"
-        } else {
-            "safe text render"
-        },
-        escape_html(&rendered.mailbox_name),
-        rendered.uid,
-        escape_html(&rendered.date_received),
-        escape_html(&rendered.mime_top_level_content_type),
-        escape_html(rendered.body_source.as_str()),
-        escape_html(rendered.rendering_mode.as_str()),
-        if rendered.contains_html_body { "yes" } else { "no" },
-        remote_content_state,
-        escape_html(&url_encode(&rendered.mailbox_name)),
-        rendered.uid,
-        escape_html(&url_encode(&rendered.mailbox_name)),
-        rendered.uid,
-        render_message_state_controls(csrf_token, &rendered.mailbox_name, rendered.uid, &rendered.flags, rendered.metadata.as_ref(), &format!("/message?mailbox={}&uid={}", url_encode(&rendered.mailbox_name), rendered.uid)),
-        archive_form,
-        delete_form,
-        move_form,
-        rendering_notice,
-        inline_image_notice,
-        attachments,
-        rendered.body_html,
-    ))
+        escape_html(back_href),
+        escape_html(&rendered.mailbox_name), escape_html(&rendered.date_received),
+        escape_html(rendered.subject.as_deref().unwrap_or("(No subject)")),
+        escape_html(rendered.from.as_deref().unwrap_or("Sender unavailable")),
+        escape_html(&url_encode(&rendered.mailbox_name)), rendered.uid,
+        escape_html(&url_encode(&rendered.mailbox_name)), rendered.uid,
+        render_message_state_controls(csrf_token, &rendered.mailbox_name, rendered.uid, &rendered.flags, rendered.metadata.as_ref(), return_to),
+        archive_form, delete_form, move_form,
+        protected_reader_strip, openpgp_reader_states,
+        rendered.body_html, attachments,
+        html_state_badge, rendering_notice, inline_image_notice,
+        escape_html(rendered.subject.as_deref().unwrap_or("(No subject)")), escape_html(rendered.from.as_deref().unwrap_or("Sender unavailable")),
+        escape_html(&rendered.mailbox_name), rendered.uid, escape_html(&rendered.date_received),
+        escape_html(&rendered.mime_top_level_content_type), escape_html(rendered.body_source.as_str()),
+        escape_html(rendered.rendering_mode.as_str()), if rendered.contains_html_body { "yes" } else { "no" }, remote_content_state,
+    )
 }
 
 /// Renders the browser-visible session-management page.
@@ -1673,7 +1734,7 @@ mod v7_rendering_regression_tests {
         assert!(page.contains("Rendering Mode</dt><dd>sanitized_html</dd>"));
         assert!(page.contains("HTML Present</dt><dd>yes</dd>"));
         assert!(page.contains("HTML present"));
-        assert!(page.contains("remote content blocked"));
+        assert!(page.contains("Remote content blocked"));
         assert!(page.contains("<strong>Sanitized HTML:</strong>"));
         assert!(page.contains("Remote content blocked by policy"));
         assert!(page.contains("Safe rendered body"));

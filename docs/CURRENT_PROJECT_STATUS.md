@@ -50,8 +50,15 @@ Checkpoint D adds actual bounded text previews, decorative sender initials,
 the bounded current-page selection menu and native global search/shortcuts.
 593 local library tests, nine navigation and six state-control journeys pass;
 82 theme/reflow/forced-colour/Firefox captures and 88 shell captures verify the
-shared-header change. Exact D native qualification follows its signed source
-checkpoint before S02-02 coordinated list/reader implementation.
+shared-header change. Exact D native qualification passes on signed `a86e40e`:
+593 library tests, two hostile-rendering checks and the isolated signed-helper
+test with actual native previews. S02-01 engineering is delivered within its
+recorded result and action limits.
+S02-02 now coordinates list/search and reader with fresh stored-identity checks,
+preserved query/filter/sort/page context, off-page locate links and body-first
+narrow views. 596 library tests, six reader journeys in each of Edge/Firefox,
+nine list journeys, six state-control journeys and 86 final visual checks pass.
+Exact E native qualification follows the next signed clean checkpoint.
 Independent human accessibility acceptance
 and deployment remain separate.
 D01–D06 are recorded

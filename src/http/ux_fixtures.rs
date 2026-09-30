@@ -56,6 +56,11 @@ fn ux_synthetic_route_baselines() {
         ),
         ("inbox-many", "/mailbox?name=INBOX", true, 200),
         ("inbox-long-headers", "/mailbox?name=INBOX", true, 200),
+        ("inbox-long-reader", "/mailbox?name=INBOX&selected_mailbox=INBOX&selected_uid=125", true, 200),
+        ("reader-off-page", "/mailbox?name=INBOX&selected_mailbox=INBOX&selected_uid=7", true, 200),
+        ("reader-filter-miss", "/mailbox?name=INBOX&filter=unread&selected_mailbox=INBOX&selected_uid=8", true, 200),
+        ("reader-stale-selection", "/mailbox?name=INBOX&selected_mailbox=INBOX&selected_uid=125", true, 200),
+        ("search-reader", "/search?q=reader-fixture&scope=all&selected_mailbox=Sent&selected_uid=125&page=3", true, 200),
         ("inbox-page-two", "/mailbox?name=INBOX&page=2", true, 200),
         (
             "inbox-selected",
@@ -153,12 +158,13 @@ fn ux_synthetic_route_baselines() {
         }
         if matches!(
             name,
-            "inbox-many" | "inbox-page-two" | "inbox-selected" | "reader-state-controls"
+            "inbox-many" | "inbox-page-two" | "inbox-selected" | "reader-state-controls" | "reader-off-page" | "reader-filter-miss" | "search-reader"
         ) {
             headers[0] = ("User-Agent", "OSMAP/ManyMessages");
         }
         match name {
-            "inbox-long-headers" => headers[0] = ("User-Agent", "OSMAP/ManyMessages;LongHeaders"),
+            "reader-stale-selection" => headers[0] = ("User-Agent", "OSMAP/ManyMessages;ReaderStale"),
+            "inbox-long-headers" | "inbox-long-reader" => headers[0] = ("User-Agent", "OSMAP/ManyMessages;LongHeaders"),
             "settings-long-identity" => headers[0] = ("User-Agent", "OSMAP/LongIdentity"),
             "archive-unconfigured" => headers[0] = ("User-Agent", "OSMAP/NoArchiveTest"),
             "archive-missing" => headers[0] = ("User-Agent", "OSMAP/InvalidArchiveTest"),

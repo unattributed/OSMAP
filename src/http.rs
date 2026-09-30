@@ -53,7 +53,8 @@ use crate::http_ui::{
     render_compose_page, render_draft_list_page, render_login_page, render_mailboxes_page,
     render_message_list_page, render_message_search_page, render_message_view_page,
     render_navigation_notice, render_sessions_page, render_settings_page, ComposePageModel,
-    DraftListPageModel, MessageListBulkActions, MessageListSortLinks, SettingsPageModel,
+    DraftListPageModel, MailReaderContext, MessageListBulkActions, MessageListSortLinks,
+    MessageSearchContext, SelectedMessagePane, SettingsPageModel,
 };
 use crate::logging::LogEvent;
 #[cfg(test)]
@@ -1407,13 +1408,55 @@ mod tests {
 
         fn search_messages(
             &self,
-            _context: &AuthenticationContext,
+            context: &AuthenticationContext,
             validated_session: &ValidatedSession,
             mailbox_name: Option<&str>,
             query: &str,
             field: MessageSearchField,
         ) -> BrowserMessageSearchOutcome {
             let mailbox_name = mailbox_name.map(str::to_string);
+            if context.user_agent.starts_with("OSMAP/ManyMessages")
+                && matches!(query, "reader-fixture" | "reader-miss")
+            {
+                let mut results = Vec::new();
+                if query == "reader-fixture" {
+                    let names = mailbox_name
+                        .as_deref()
+                        .map(|name| vec![name])
+                        .unwrap_or_else(|| vec!["INBOX", "Sent"]);
+                    for name in names {
+                        for uid in 1..=125 {
+                            results.push(MessageSearchResult {
+                                metadata: Some(Self::fixture_metadata(
+                                    &validated_session.record.canonical_username,
+                                    name,
+                                    uid,
+                                )),
+                                mailbox_name: name.into(),
+                                uid,
+                                flags: self.fixture_message_flags(
+                                    &validated_session.record.canonical_username,
+                                    name,
+                                    uid,
+                                ),
+                                date_received: "2026-09-30 00:00:00 +0000".into(),
+                                size_virtual: 1024,
+                                subject: Some(format!("Message {uid:03}")),
+                                from: Some("Synthetic Sender <sender@example.test>".into()),
+                            });
+                        }
+                    }
+                }
+                return BrowserMessageSearchOutcome {
+                    decision: BrowserMessageSearchDecision::Listed {
+                        canonical_username: validated_session.record.canonical_username.clone(),
+                        mailbox_name,
+                        query: query.into(),
+                        results,
+                    },
+                    audit_events: Vec::new(),
+                };
+            }
             if query == "ux-empty-fixture" {
                 return BrowserMessageSearchOutcome {
                     decision: BrowserMessageSearchDecision::Listed {
@@ -1605,7 +1648,7 @@ mod tests {
             mailbox_name: &str,
             uid: u64,
         ) -> BrowserMessageViewOutcome {
-            if uid == 900 {
+            if uid == 900 || context.user_agent.contains("ReaderUnavailable") {
                 return BrowserMessageViewOutcome {
                     decision: BrowserMessageViewDecision::Denied {
                         public_reason: "temporarily_unavailable".to_string(),
@@ -1674,35 +1717,78 @@ mod tests {
                 ]
             };
 
+            let many = context.user_agent.starts_with("OSMAP/ManyMessages");
+            let body_text = if many {
+                format!(
+                    "Synthetic message {uid} in {mailbox_name} for {}.",
+                    validated_session.record.canonical_username
+                )
+            } else {
+                "Hello world".into()
+            };
+            let mut metadata = many.then(|| {
+                Self::fixture_metadata(
+                    &validated_session.record.canonical_username,
+                    mailbox_name,
+                    uid,
+                )
+            });
+            if context.user_agent.contains("ReaderStale") {
+                if let Some(metadata) = &mut metadata {
+                    metadata.version.message_guid = "changed-synthetic-message".into();
+                }
+            }
             BrowserMessageViewOutcome {
                 decision: BrowserMessageViewDecision::Rendered {
-                    canonical_username: validated_session.record.canonical_username.clone(),
+                    canonical_username: if context.user_agent.contains("ReaderWrongAccount") {
+                        "other@example.test".into()
+                    } else {
+                        validated_session.record.canonical_username.clone()
+                    },
                     rendered: Box::new(RenderedMessageView {
-                        metadata: context
-                            .user_agent
-                            .starts_with("OSMAP/ManyMessages")
-                            .then(|| {
-                                Self::fixture_metadata(
-                                    &validated_session.record.canonical_username,
-                                    mailbox_name,
-                                    uid,
-                                )
-                            }),
+                        metadata,
                         flags: self.fixture_message_flags(
                             &validated_session.record.canonical_username,
                             mailbox_name,
                             uid,
                         ),
-                        mailbox_name: mailbox_name.to_string(),
-                        uid,
-                        subject: Some("Example".to_string()),
-                        from: Some("Alice <alice@example.com>".to_string()),
-                        date_received: "2026-03-27 11:00:00 +0000".to_string(),
+                        mailbox_name: if context.user_agent.contains("ReaderWrongMailbox") {
+                            "Other".into()
+                        } else {
+                            mailbox_name.to_string()
+                        },
+                        uid: if context.user_agent.contains("ReaderWrongUid") {
+                            uid + 1
+                        } else {
+                            uid
+                        },
+                        subject: Some(
+                            if many && context.user_agent.contains("LongHeaders") && uid == 125 {
+                                format!("<b>Synthetic header</b> {}", "W".repeat(256))
+                            } else if many {
+                                format!("Message {uid:03}")
+                            } else {
+                                "Example".into()
+                            },
+                        ),
+                        from: Some(if many {
+                            "Synthetic Sender <sender@example.test>".into()
+                        } else {
+                            "Alice <alice@example.com>".into()
+                        }),
+                        date_received: if many {
+                            "2026-09-30 00:00:00 +0000".into()
+                        } else {
+                            "2026-03-27 11:00:00 +0000".into()
+                        },
                         mime_top_level_content_type: "multipart/mixed".to_string(),
                         body_source: MimeBodySource::MultipartPlainTextPart,
-                        contains_html_body: true,
-                        body_html: TrustedHtml::from_template("<pre>Hello world</pre>".to_string()),
-                        body_text_for_compose: "Hello world".to_string(),
+                        contains_html_body: !many,
+                        body_html: TrustedHtml::from_template(format!(
+                            "<pre>{}</pre>",
+                            escape_html(&body_text)
+                        )),
+                        body_text_for_compose: body_text,
                         attachments,
                         rendering_mode: RenderingMode::PlainTextPreformatted,
                     }),
@@ -3106,7 +3192,8 @@ mod tests {
 
         assert_eq!(response.response.status_code, 200);
         let body = body_text(&response);
-        assert!(body.contains("<h1 class=\"section-title\">Search Results</h1>"));
+        assert!(body.contains("<h2 class=\"section-title\">Search Results</h2>"));
+        assert_eq!(body.matches("<h1").count(), 1);
         assert!(body.contains("Quarterly report"));
         assert!(body.contains("Alice &lt;alice@example.com&gt;"));
         assert!(body.contains("/message?mailbox=INBOX&amp;uid=17"));
@@ -3788,7 +3875,14 @@ mod tests {
         assert_eq!(response.response.status_code, 200);
         let body = body_text(&response);
         assert!(body.contains("multipart/mixed"));
-        assert!(body.contains("mail-shell mail-shell-three"));
+        assert!(body.contains("standalone-reader"));
+        assert!(
+            body.find("<section class=\"body-panel\">")
+                .expect("body panel")
+                < body
+                    .find("<section class=\"panel reader-attachments\">")
+                    .expect("attachments")
+        );
         assert!(body.contains("Reading Pane"));
         assert!(body.contains("Remote content blocked by policy"));
         assert!(body.contains("report.pdf"));

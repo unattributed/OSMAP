@@ -30,6 +30,59 @@ fn mailbox_page(path: &str) -> HandledHttpResponse {
 }
 
 #[test]
+fn coordinated_reader_binds_fresh_filtered_identity_and_releases_its_budget() {
+    let app = app_with_policy(HttpPolicy { mailbox_worker_budget: 1, ..HttpPolicy::default() });
+    let path = "/mailbox?name=INBOX&selected_mailbox=INBOX&selected_uid=7&filter=starred";
+    let mut req = request("GET", path, &authenticated_headers(), "");
+    req.headers.insert("user-agent".into(), "OSMAP/ManyMessages".into());
+    let response = app.handle_request(&req, "127.0.0.1");
+    assert_eq!(response.response.status_code, 200);
+    let body = body_text(&response);
+    assert!(body.contains("Synthetic message 7 in INBOX for alice@example.com."));
+    assert!(body.contains("data-selected=\"true\""));
+    assert_eq!(body.matches("<main ").count(), 1);
+    assert_eq!(app.request_budgets.mailbox_workers.active_count(), 0);
+    for fault in ["ReaderStale", "ReaderWrongAccount", "ReaderWrongMailbox", "ReaderWrongUid", "ReaderUnavailable"] {
+        req.headers.insert("user-agent".into(), format!("OSMAP/ManyMessages;{fault}"));
+        let response = app.handle_request(&req, "127.0.0.1");
+        let body = body_text(&response);
+        assert!(body.contains("Message unavailable"), "{fault}");
+        assert!(!body.contains("<pre>Synthetic message"), "{fault}");
+        assert_eq!(app.request_budgets.mailbox_workers.active_count(), 0);
+    }
+    req.headers.insert("user-agent".into(), "OSMAP/ManyMessages".into());
+    let occupied = app.request_budgets.mailbox_workers.try_acquire().expect("test budget");
+    let response = app.handle_request(&req, "127.0.0.1");
+    assert!(body_text(&response).contains("The reading pane is busy"));
+    assert!(!body_text(&response).contains("<pre>Synthetic message"));
+    drop(occupied);
+    assert_eq!(app.request_budgets.mailbox_workers.active_count(), 0);
+    req.headers.remove("cookie");
+    let response = app.handle_request(&req, "127.0.0.1");
+    assert_eq!(response.response.status_code, 303);
+    assert!(!body_text(&response).contains("<pre>Synthetic message"));
+}
+
+#[test]
+fn coordinated_reader_excludes_other_folders_and_filter_misses_but_keeps_off_page_selection() {
+    for path in [
+        "/mailbox?name=Sent&selected_mailbox=INBOX&selected_uid=7",
+        "/mailbox?name=INBOX&selected_mailbox=INBOX&selected_uid=8&filter=unread",
+        "/mailbox?name=INBOX&selected_mailbox=INBOX&selected_uid=126",
+    ] {
+        let response = mailbox_page(path);
+        let body = body_text(&response);
+        assert!(body.contains("no longer in these results"));
+        assert!(!body.contains("<pre>Synthetic message"));
+        assert!(!response.audit_events.iter().any(|event| event.action == "stub_message_view"));
+    }
+    let body = body_text(&mailbox_page("/mailbox?name=INBOX&selected_mailbox=INBOX&selected_uid=7"));
+    assert!(body.contains("Synthetic message 7 in INBOX for alice@example.com."));
+    assert!(body.contains("Locate selected message on page 3"));
+    assert!(!body.contains("data-selected=\"true\""));
+}
+
+#[test]
 fn native_list_filters_and_page_links_preserve_sort() {
     let response = mailbox_page("/mailbox?name=INBOX&page=2&filter=unread&sort=subject&dir=asc");
     assert_eq!(response.response.status_code, 200);

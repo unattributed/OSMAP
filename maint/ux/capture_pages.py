@@ -157,7 +157,7 @@ def main():
                                 if "source" in summary.inner_text().lower():
                                     summary.click()
                         if args.expand_details:
-                            closed = page.locator("main details:not([open]) > summary")
+                            closed = page.locator("main details:not([open]) > summary:visible")
                             for _ in range(closed.count()):
                                 closed.first.click()
                         table_checks = []

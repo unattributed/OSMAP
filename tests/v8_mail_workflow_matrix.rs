@@ -284,13 +284,13 @@ fn v8_mail_workflow_matrix_verifies_body_selection_and_labels() {
 
         if case.expected_html_present {
             assert!(
-                page_html.contains("remote content blocked"),
+                page_html.contains("Remote content blocked"),
                 "{} page did not surface remote-content status",
                 case.fixture_name
             );
         } else {
             assert!(
-                page_html.contains("safe text render"),
+                page_html.contains("Plain text message"),
                 "{} page did not surface safe text status",
                 case.fixture_name
             );
@@ -331,7 +331,7 @@ fn v8_mail_workflow_matrix_preserves_prefer_plain_text_behavior() {
 
     let page_html = message_page_html(&rendered);
     assert_body_source_and_rendering_labels(&rendered, &page_html);
-    assert!(page_html.contains("remote content blocked"));
+    assert!(page_html.contains("Remote content blocked"));
     assert!(!page_html.contains("Sanitized HTML:"));
 }
 
@@ -393,5 +393,5 @@ fn v8_mail_workflow_matrix_malformed_mime_falls_back_safely() {
 
     let page_html = message_page_html(&rendered);
     assert_body_source_and_rendering_labels(&rendered, &page_html);
-    assert!(page_html.contains("safe text render"));
+    assert!(page_html.contains("Plain text message"));
 }

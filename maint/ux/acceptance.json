@@ -1068,7 +1068,7 @@
         "docs/UX_EXECUTION_LEDGER.md S02-01 checkpoints A through D",
         "/home/foo/Downloads/osmap-ux-s02/run-20260930/checkpoint-d-summary.json"
       ],
-      "engineering_note": "Actual bounded native snippet; unknown/encrypted/invalid structures suppress previews. Exact D native qualification pending. Independent human and release acceptance remain pending."
+      "engineering_note": "Actual bounded native snippet; unknown/encrypted/invalid structures suppress previews. Exact signed D native synthetic qualification passed. Independent human and release acceptance remain pending."
     },
     {
       "id": "UX03-010",
@@ -1079,8 +1079,12 @@
       ],
       "baseline_observation": "Reader page separately fetched; selected list not coordinated",
       "test_design": "UX03",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "IMPLEMENTED_VERIFIED_LOCAL",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S02-02 checkpoint E",
+        "/home/foo/Downloads/osmap-ux-s02/run-20260930/checkpoint-e-summary.json"
+      ],
+      "engineering_note": "Fresh result/version-bound reader, stable selection and native query/history/back navigation verified in Edge and Firefox. Independent human and release acceptance remain pending."
     },
     {
       "id": "UX04-003",
@@ -1156,8 +1160,12 @@
       ],
       "baseline_observation": "Basic mailbox link; finite controls and context needed",
       "test_design": "UX04",
-      "status": "NOT_YET_ACCEPTED",
-      "evidence": []
+      "status": "PARTIALLY_IMPLEMENTED",
+      "evidence": [
+        "docs/UX_EXECUTION_LEDGER.md S02-02 checkpoint E",
+        "/home/foo/Downloads/osmap-ux-s02/run-20260930/checkpoint-e-summary.json"
+      ],
+      "engineering_note": "Native reader security/metadata/action disclosures and context-preserving Back verified; additional labels/more actions remain S08-02. Independent human and release acceptance remain pending."
     },
     {
       "id": "UX05-001",

@@ -1,5 +1,6 @@
 //! Bounded, presentation-only mailbox navigation and result windows.
 
+use crate::message_metadata::MessageVersion;
 use std::collections::BTreeMap;
 
 use crate::mailbox::{
@@ -99,6 +100,9 @@ pub struct ListViewState {
     pub backend_limit: usize,
     pub backend_truncated: bool,
     pub selection: Option<ListSelection>,
+    /// Derived from this request's filtered backend results, never URL authority.
+    pub selection_page: Option<usize>,
+    pub selected_version: Option<MessageVersion>,
 }
 
 impl ListViewState {
@@ -138,13 +142,13 @@ impl ListViewState {
                 MailboxEntry::new(MailboxListingPolicy::default(), mailbox)
                     .map_err(|_| "The selected mailbox is invalid.")?;
                 let uid = uid
-                    .parse::<u64>()
+                    .parse::<u32>()
                     .ok()
                     .filter(|uid| *uid > 0)
                     .ok_or("The selected message is invalid.")?;
                 Some(ListSelection {
                     mailbox: mailbox.clone(),
-                    uid,
+                    uid: u64::from(uid),
                 })
             }
             _ => return Err("The selected message requires both its mailbox and UID."),
@@ -166,6 +170,8 @@ impl ListViewState {
             backend_limit: DEFAULT_MAX_MESSAGES,
             backend_truncated: false,
             selection,
+            selection_page: None,
+            selected_version: None,
         })
     }
 
@@ -175,6 +181,17 @@ impl ListViewState {
         messages.truncate(self.backend_limit);
         messages.retain(|message| self.filter.matches(&message.flags));
         sort_message_summaries(messages, Some(self.sort));
+        let selected = messages
+            .iter()
+            .enumerate()
+            .find(|(_, message)| self.is_selected(&message.mailbox_name, message.uid));
+        self.selection_page = selected.map(|(index, _)| index / MESSAGE_PAGE_SIZE + 1);
+        self.selected_version = selected.and_then(|(_, message)| {
+            message
+                .metadata
+                .as_ref()
+                .map(|metadata| metadata.version.clone())
+        });
         self.window(messages);
     }
 
@@ -184,6 +201,17 @@ impl ListViewState {
         results.truncate(self.backend_limit);
         results.retain(|message| self.filter.matches(&message.flags));
         sort_message_search_results(results, Some(self.sort));
+        let selected = results
+            .iter()
+            .enumerate()
+            .find(|(_, message)| self.is_selected(&message.mailbox_name, message.uid));
+        self.selection_page = selected.map(|(index, _)| index / MESSAGE_PAGE_SIZE + 1);
+        self.selected_version = selected.and_then(|(_, message)| {
+            message
+                .metadata
+                .as_ref()
+                .map(|metadata| metadata.version.clone())
+        });
         self.window(results);
     }
 
@@ -299,6 +327,34 @@ mod tests {
         assert!(state.is_selected("INBOX", 2));
         assert!(!state.is_selected("Sent", 2));
         assert!(MessageFilter::Starred.matches(&["\\flagged".into()]));
+    }
+
+    #[test]
+    fn selected_identity_is_derived_before_paging_and_removed_when_results_change() {
+        let mut state = ListViewState::from_query(&BTreeMap::from([
+            ("selected_mailbox".into(), "INBOX".into()),
+            ("selected_uid".into(), "1".into()),
+        ]))
+        .expect("selection");
+        let version = MessageVersion::new("a".repeat(32), "synthetic-1".into()).expect("version");
+        let mut rows = (1..=120).map(|uid| row(uid, &[])).collect::<Vec<_>>();
+        rows[0].metadata = Some(crate::message_metadata::MessageMetadata {
+            version: version.clone(),
+            attachment_count: Some(0),
+            preview: None,
+        });
+        state.apply_messages(&mut rows);
+        assert_eq!(state.selection_page, Some(3));
+        assert_eq!(state.selected_version, Some(version));
+        assert!(!rows.iter().any(|row| row.uid == 1));
+        state.apply_messages(&mut vec![row(2, &[])]);
+        assert_eq!(state.selection_page, None);
+        assert_eq!(state.selected_version, None);
+        assert!(ListViewState::from_query(&BTreeMap::from([
+            ("selected_mailbox".into(), "INBOX".into()),
+            ("selected_uid".into(), "4294967296".into()),
+        ]))
+        .is_err());
     }
 
     #[test]

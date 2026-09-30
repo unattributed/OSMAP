@@ -41,6 +41,56 @@ impl<G> BrowserApp<G>
 where
     G: BrowserGateway,
 {
+    /// The URL chooses a candidate, not authority. Bind this response to the
+    /// fresh filtered list identity before exposing the rendered message body.
+    fn selected_message_pane(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        view: &ListViewState,
+        audit: &mut Vec<LogEvent>,
+    ) -> SelectedMessagePane {
+        let Some(selection) = &view.selection else {
+            return SelectedMessagePane::Unselected;
+        };
+        if view.selection_page.is_none() {
+            return SelectedMessagePane::Unavailable("The selected message is no longer in these results. Choose another message or clear the selection.");
+        }
+        let Some(version) = &view.selected_version else {
+            return SelectedMessagePane::Unavailable("The selected message has no current stored identity. Refresh the list or open the standalone message view.");
+        };
+        let (guard, event) = match self.acquire_mailbox_budget(context, session, "selected_message")
+        {
+            Ok(value) => value,
+            Err(response) => {
+                audit.extend(response.audit_events);
+                return SelectedMessagePane::Unavailable(
+                    "The reading pane is busy. Refresh this page to try again.",
+                );
+            }
+        };
+        audit.push(event);
+        let outcome =
+            self.gateway
+                .view_message(context, session, &selection.mailbox, selection.uid);
+        audit.extend(outcome.audit_events);
+        audit.push(self.release_request_budget(guard, "selected_message", context, session));
+        match outcome.decision {
+            BrowserMessageViewDecision::Rendered { canonical_username, rendered }
+                if canonical_username == session.record.canonical_username
+                    && rendered.mailbox_name == selection.mailbox
+                    && rendered.uid == selection.uid
+                    && rendered.metadata.as_ref().is_some_and(|metadata| &metadata.version == version) => {
+                SelectedMessagePane::Ready(rendered)
+            }
+            BrowserMessageViewDecision::Rendered { .. } => {
+                audit.push(build_http_warning_event("selected_message_identity_changed", "selected message no longer matched the current list identity", context));
+                SelectedMessagePane::Unavailable("The selected message changed while opening it. Refresh the list before opening it again.")
+            }
+            BrowserMessageViewDecision::Denied { .. } => SelectedMessagePane::Unavailable("The selected message could not be opened. Refresh this page or choose another message."),
+        }
+    }
+
     /// Resolves an account's configured archive target; never invents a folder.
     pub(super) fn handle_mailbox_shortcut(
         &self,
@@ -299,6 +349,19 @@ where
                     archive_mailbox_name.as_deref(),
                 );
                 view.apply_messages(&mut messages);
+                let reader = MailReaderContext {
+                    pane: self.selected_message_pane(
+                        context,
+                        &validated_session,
+                        &view,
+                        &mut audit_events,
+                    ),
+                    archive_mailbox_name: archive_mailbox_name.clone(),
+                    mailboxes: bulk_move_destinations
+                        .iter()
+                        .map(|name| MailboxEntry { name: name.clone() })
+                        .collect(),
+                };
                 let search_query = request
                     .query_params
                     .get("q")
@@ -329,6 +392,7 @@ where
                                 view: &view,
                                 search_query,
                                 search_scope,
+                                reader: &reader,
                             },
                         ),
                     ),
@@ -1102,6 +1166,34 @@ where
                 mut results,
             } => {
                 view.apply_search(&mut results);
+                let pane = self.selected_message_pane(
+                    context,
+                    &validated_session,
+                    &view,
+                    &mut audit_events,
+                );
+                let mut reader = MailReaderContext {
+                    pane,
+                    ..MailReaderContext::default()
+                };
+                if let SelectedMessagePane::Ready(rendered) = &reader.pane {
+                    reader.archive_mailbox_name = self.validated_archive_mailbox_name(
+                        context,
+                        &validated_session,
+                        &mut audit_events,
+                    );
+                    reader.mailboxes = self
+                        .bulk_move_destinations(
+                            context,
+                            &validated_session,
+                            &mut audit_events,
+                            &rendered.mailbox_name,
+                            reader.archive_mailbox_name.as_deref(),
+                        )
+                        .into_iter()
+                        .map(|name| MailboxEntry { name })
+                        .collect();
+                }
 
                 HandledHttpResponse {
                     response: html_response(
@@ -1114,8 +1206,11 @@ where
                             mailbox_name.as_deref(),
                             &query,
                             &results,
-                            &view,
-                            search_field,
+                            MessageSearchContext {
+                                view: &view,
+                                field: search_field,
+                                reader: &reader,
+                            },
                         ),
                     ),
                     audit_events,

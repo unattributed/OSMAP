@@ -815,3 +815,87 @@ with later outcomes. Correct errors using a new entry referencing the old one.
 - Full `make acceptance-check`, V14, formatting, diff and frozen-plan checks
   PASS for D. Existing generated V10 assumption inventories/hashes refreshed
   from the final Rust source. No validation rule or original plan was weakened.
+
+### S02-01 delivery / S02-02 work order — 2026-09-30
+
+- D signed as `a86e40e11b02ee4161d143c13d88dfdb87585f50`, Shopkeeper
+  verified; clean checkpoint; thirteen ahead/zero behind recorded origin/main.
+  Exact source archive SHA-256
+  `d873547d83b090a196f9838ac8bb730246c84ee146188b5187a9b4a70bf8350f`;
+  native source `/home/foo/osmap-ux-s02-20260930-VjsBr4EF`.
+- Exact D native library 593 passed/six ignored; hostile rendering two passed;
+  isolated signed-helper test passed, including actual native preview metadata.
+  Test mailbox flags restored and disposable fixture tree removed. Standard
+  checkout/services unchanged. Detailed result/log hashes are retained under
+  S02 `native-d/`. S02-01 engineering is delivered within its explicit result,
+  preview and action limits; final pictured icon fidelity and independent human
+  acceptance remain S09. No deployment, synchronization or live-account claim.
+- S02-02 IN_PROGRESS under D01. Allowed: list/navigation models, mail route
+  handlers, shared UI/CSS, synthetic route/browser fixtures and tests, current
+  status/acceptance/ledger and generated source evidence. Reuse the existing
+  authorized message renderer and read helper; no new mutation or crypto path.
+- Coordinate mailbox/search lists with a selected reading pane. Preserve
+  compatible query/filter/sort/page context in bounded URLs and history.
+  Resolve selection from the current authenticated filtered result set before
+  paging; compare fresh stored message identity before displaying its body.
+  Off-page selection may remain visible with a locate link; absent/stale or
+  mismatched account/folder identity shows a clear unavailable state, not a
+  previous body. Folder/account navigation starts with current account state.
+- Keep one main landmark and native keyboard controls. Desktop shows list and
+  reader together; narrow selected views prioritize the body and provide Back
+  to list. Move technical metadata/secondary actions into disclosures, preserve
+  existing forms/renderer protections and put the body before attachments.
+  Existing standalone message URLs remain functional. No script/dependency.
+- Proof: current-result identity binding, stale/mismatch/no-session refusal,
+  released request budgets, compatible filters/sorts/pages, history/reload,
+  fresh account/folder switch, mobile/keyboard order and body visibility;
+  theme/reflow/forced-colour/Firefox and hostile-rendering regression. Local
+  and exact native source checks precede the next signed slice delivery.
+
+### S02-02 checkpoint E — coordinated reader verified locally
+
+- Mailbox/search responses now combine the current bounded list and selected
+  reader. Selection resolves against the filtered result set before paging and
+  requires fresh account, mailbox, UID and both stored GUIDs to agree with the
+  fetched message. Missing, excluded, changed or mismatched identity never
+  exposes the body. Legacy rows without identity keep their standalone links.
+- Sort/filter/page links and search forms preserve compatible selection. An
+  off-page reader has a locate link; Back to list clears only selection while
+  retaining query/scope/field/sort/filter/page. Folder navigation clears it.
+  Full navigation and per-request authorization remain D01; no script or
+  browser-side content cache was introduced. Selected reads acquire/release the
+  existing nonblocking mailbox budget, including denial paths.
+- Desktop shows list and reader together. Narrow selected views prioritize the
+  reader and hide list controls from focus order. A shared safe reader fragment
+  also serves existing standalone message URLs. Body precedes attachments;
+  secondary moves and technical metadata use native disclosures. Long subject
+  and sender headings are visually bounded with full escaped text in Message
+  details. Existing renderer, body preference, downloads and forms are retained.
+- Library 596 passed/zero failed/six ignored; strict all-target clippy passes.
+  Six reader journeys pass in each of Edge and Firefox, covering keyboard
+  focus, filtering/sorting, off-page selection, query changes, identical UIDs
+  across folders, Back/reload, account switching through history and narrow
+  keyboard return. Nine list and six state-control journeys also pass.
+- Final visual evidence: 86 captures, including eight full-page expanded-control
+  captures, across light/dark/system, saved preferences, responsive widths,
+  simulated 200% reflow, forced colours and Firefox. No detected overflow or
+  computed contrast failures; all image hashes checked. Final desktop, narrow
+  dark search reader and narrow long-subject state visually inspected.
+- Initial narrow toolbar overflow was caused by inherited column-direction
+  flex styling and corrected with explicit reader action layout. The expanded
+  harness now operates on visible disclosures, respecting the narrow hidden
+  list. Old V8 UI-copy assertions were updated to the current explicit
+  `Plain text message` and `Remote content blocked` labels; all body-selection,
+  sanitization, malformed MIME and preference assertions remain intact. Initial
+  failures and superseded captures are retained separately from the final set.
+- Evidence: S02 `checkpoint-e-summary.json`, SHA-256
+  `35fff5b20b2153688ab2621f844927301ce198570293c4954dc9aa0a3e152951`.
+  Exact D native log SHA-256 is
+  `9d45ead089fa7b3832e782fdc861d33faeb49cece7274ec92a991429648e9103`.
+  The previous work-order wording about native checks before signing is clarified:
+  local checks precede the signed checkpoint; native qualification uses that
+  clean signed exact source archive and follows signing, as for C/D. E native
+  qualification remains pending. Human acceptance and deployment remain separate.
+- Final common acceptance, V14, formatting, diff and frozen-plan checks PASS.
+  Existing V10 inventories/hashes were refreshed from the final Rust source;
+  the earlier common-gate attempts are superseded by the final passing run.
