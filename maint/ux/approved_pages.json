@@ -257,8 +257,16 @@
         {
           "id": "R2-01-024",
           "label": "Quick Labels",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/labels.rs",
+            "src/labels_ui.rs",
+            "src/http/routes_labels.rs",
+            "src/http/label_tests.rs",
+            "maint/ux/labels_workflows.py",
+            "S04/labels-integrated-{edge,firefox}/report.json"
+          ],
+          "engineering_note": "Native private label management and verified single-message assignment; CAS, account isolation, restart persistence and confirmed-move continuity qualified locally. Bulk label assignment and final whole-page approval remain pending."
         },
         {
           "id": "R2-01-025",
@@ -526,8 +534,16 @@
         {
           "id": "R2-03-007",
           "label": "Label",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/labels.rs",
+            "src/labels_ui.rs",
+            "src/http/routes_labels.rs",
+            "src/http/label_tests.rs",
+            "maint/ux/labels_workflows.py",
+            "S04/labels-integrated-{edge,firefox}/report.json"
+          ],
+          "engineering_note": "Native private label management and verified single-message assignment; CAS, account isolation, restart persistence and confirmed-move continuity qualified locally. Bulk label assignment and final whole-page approval remain pending."
         },
         {
           "id": "R2-03-008",
@@ -2773,7 +2789,7 @@
         "S04-01",
         "S08-04"
       ],
-      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "visual_status": "PARTIAL_FINAL_REFERENCE_COMPARISON",
       "controls": [
         {
           "id": "R2-17-001",
@@ -2790,8 +2806,15 @@
         {
           "id": "R2-17-003",
           "label": "Security events",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/notifications.rs",
+            "src/notifications_ui.rs",
+            "src/settings_notifications_ui.rs",
+            "maint/ux/notifications_workflows.py",
+            "S04/notifications-notifications-integrated-{edge,firefox}/report.json",
+            "Only recorded successful browser starts and settings revocations; logout, expiry, recovery/key/password/policy/job events and external delivery remain unavailable. Store failure does not undo or misreport a successful session action."
+          ]
         },
         {
           "id": "R2-17-004",
@@ -2826,14 +2849,28 @@
         {
           "id": "R2-17-009",
           "label": "Recovery/security alerts mandatory",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/notifications.rs",
+            "src/notifications_ui.rs",
+            "src/settings_notifications_ui.rs",
+            "maint/ux/notifications_workflows.py",
+            "S04/notifications-notifications-integrated-{edge,firefox}/report.json",
+            "Only recorded successful browser starts and settings revocations; logout, expiry, recovery/key/password/policy/job events and external delivery remain unavailable. Store failure does not undo or misreport a successful session action."
+          ]
         },
         {
           "id": "R2-17-010",
           "label": "Factual-event explanation",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/notifications.rs",
+            "src/notifications_ui.rs",
+            "src/settings_notifications_ui.rs",
+            "maint/ux/notifications_workflows.py",
+            "S04/notifications-notifications-integrated-{edge,firefox}/report.json",
+            "Only recorded successful browser starts and settings revocations; logout, expiry, recovery/key/password/policy/job events and external delivery remain unavailable. Store failure does not undo or misreport a successful session action."
+          ]
         }
       ]
     },

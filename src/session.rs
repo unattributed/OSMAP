@@ -131,6 +131,7 @@ pub struct ValidatedSession {
 /// Describes the outcome of revoking a session.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RevokedSession {
+    pub newly_revoked: bool,
     pub record: SessionRecord,
     pub audit_event: LogEvent,
 }
@@ -580,10 +581,12 @@ where
         };
 
         let now = self.time_provider.unix_timestamp();
+        let newly_revoked = record.revoked_at.is_none();
         record.revoked_at = Some(now);
         self.session_store.save_unlocked(&record)?;
 
         Ok(RevokedSession {
+            newly_revoked,
             audit_event: LogEvent::new(
                 crate::config::LogLevel::Info,
                 EventCategory::Session,
@@ -1907,5 +1910,42 @@ mod tests {
         assert_eq!(issued.record.factor, RequiredSecondFactor::Totp);
         assert_eq!(issued.record.issued_at, 59);
         assert_eq!(issued.record.expires_at, 3659);
+    }
+    #[test]
+    fn notification_revocation_transition_is_reported_once_under_store_lock() {
+        let root = temp_dir("notification-revoke-once");
+        let service = SessionService::new(
+            FileSessionStore::new(&root),
+            FixedTimeProvider::new(100),
+            StaticRandomSource {
+                bytes: vec![0xaa; SESSION_TOKEN_BYTES],
+            },
+            3600,
+            DEFAULT_SESSION_IDLE_TIMEOUT_SECONDS,
+        );
+        let issued = service
+            .issue(
+                &test_context(),
+                "alice@example.com",
+                RequiredSecondFactor::Totp,
+            )
+            .unwrap();
+        assert!(
+            service
+                .revoke(&test_context(), &issued.record.session_id)
+                .unwrap()
+                .newly_revoked
+        );
+        assert!(
+            !service
+                .revoke(&test_context(), &issued.record.session_id)
+                .unwrap()
+                .newly_revoked
+        );
+        assert!(service
+            .revoke_all_for_user(&test_context(), "alice@example.com")
+            .unwrap()
+            .is_empty());
+        fs::remove_dir_all(root).unwrap();
     }
 }

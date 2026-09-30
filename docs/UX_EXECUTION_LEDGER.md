@@ -1991,3 +1991,47 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   acceptance/security/V10-13, V14, strict all-target/all-feature Clippy,
   formatting and whitespace checks passed. The signing hook repeats security
   validation. New browser checks use only synthetic loopback accounts/data.
+
+### Notifications, private labels and practical QA preview — 2026-09-30
+
+- Signed `5db4b978406a9dd0197756d6111211d03544eb5a` passed isolated obsd1
+  qualification in S04 `native-i`: archive SHA-256
+  `52ce8f06f39072518f09937a796c516802dff55a60b7cdb40d4b1a6cf3ff2b5a`,
+  log SHA-256 `8e8024da7bd5c0331126697c0974d145509a9f29ded8268b10b2619a41410b52`.
+  Standard checkout and services remained unchanged; no deployment occurred.
+- Notifications records actual successful browser sign-ins and new explicit
+  session revocations in private, revision-checked storage (200 events/90 days).
+  Native inbox/read/unread forms preserve account isolation and refuse stale
+  revisions. Notification write uncertainty does not undo authentication or
+  revocation. PAGE-17 uses the approved two-card geometry; unsupported delivery
+  channels and event families remain unavailable. The header bell opens the
+  inbox; its unread badge is a separate pending implementation.
+- Labels provides native create/rename/confirmed-delete and verified current
+  message attach/detach. Limits: 32 labels, eight/message and a conservative
+  2,000 assigned identities/account. Identity binds the native mailbox/message
+  GUIDs and UID; this does not claim IMAP UIDVALIDITY support. Confirmed moves
+  reconcile labels only to one freshly verified destination identity under the
+  same mail-action budget. Unconfirmed label continuity never invites replay of
+  an already completed move. Bulk assignment and folder management remain open.
+- Independent review and parent validation corrected a production-only import,
+  test-module placement, unknown assignment display and the new Reader action
+  row spacing. Unknown or stale message identity disables changes and displays
+  assignment uncertainty instead of a false zero. Parent HTTP regression covers
+  that presentation alongside unchanged persisted assignments.
+- Parent Edge/Firefox each passed 16 Notifications and 16 Labels workflow
+  captures with native owner/CAS/restart/corrupt-store and move coverage where
+  applicable. Root visually inspected desktop/mobile Labels and compared Reader
+  against PAGE-03. Final toolbar captures repeat both engines after correction.
+  Welcome retains its distinct approved sidebar spacing; other pages use their
+  compact approved navigation. S04 evidence: `notifications-notifications-integrated-*`,
+  `labels-integrated-*`, `labels-toolbar-final-*` and
+  `shell_navigation-notifications-integrated-*`.
+- `maint/ux/preview.py` starts a disposable loopback preview with synthetic
+  Alice/Bob accounts, actual routes/forms/private stores and no mail transport.
+  Its explicit opt-in duration is 1–480 minutes; ordinary browser fixtures retain
+  their short bounds. Preview cleanup was exercised. The operator accepted the
+  Alice account; real-account QA preparation was cancelled without remote writes.
+- Production library check, 861 library tests, acceptance/security/V10–13,
+  strict all-target/all-feature Clippy and V14 passed. Earlier failure logs are
+  retained. This is bounded local implementation, not whole-page approval,
+  release qualification, production deployment or GitHub synchronization.

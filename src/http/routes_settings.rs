@@ -76,6 +76,7 @@ where
                 | "security"
                 | "authentication"
                 | "identity"
+                | "notifications"
         ) {
             return HandledHttpResponse {
                 response: html_response(
@@ -83,6 +84,20 @@ where
                     "Bad Request",
                     "Unknown Settings Section",
                     "<p>Choose a section from Settings.</p>",
+                ),
+                audit_events,
+            };
+        }
+        if section == "notifications" {
+            return HandledHttpResponse {
+                response: html_response(
+                    200,
+                    "OK",
+                    "Notification Settings",
+                    crate::http_ui::render_notifications_page(
+                        &validated_session.record.canonical_username,
+                        &validated_session.record.csrf_token,
+                    ),
                 ),
                 audit_events,
             };

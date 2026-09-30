@@ -40,7 +40,10 @@ impl FixtureSessions {
                 decision: BrowserLoginDecision::Authenticated {
                     canonical_username: issued.record.canonical_username,
                     appearance,
-                    presentation: AppearanceSettings { theme: appearance, ..AppearanceSettings::default() },
+                    presentation: AppearanceSettings {
+                        theme: appearance,
+                        ..AppearanceSettings::default()
+                    },
                     reading: crate::reading_preferences::ReadingPreferences::default(),
                     session_token: issued.token,
                 },
@@ -153,6 +156,7 @@ impl FixtureSessions {
         match service.revoke(context, target) {
             Ok(revoked) => BrowserSessionRevokeOutcome {
                 decision: BrowserSessionRevokeDecision::Revoked {
+                    newly_revoked: revoked.newly_revoked,
                     revoked_current_session: revoked.record.session_id == session.record.session_id,
                     revoked_session_id: revoked.record.session_id,
                 },

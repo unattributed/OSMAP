@@ -471,6 +471,7 @@ impl RuntimeBrowserGateway {
         match self.build_session_service().revoke(context, session_id) {
             Ok(revoked_session) => BrowserSessionRevokeOutcome {
                 decision: BrowserSessionRevokeDecision::Revoked {
+                    newly_revoked: revoked_session.newly_revoked,
                     revoked_session_id: revoked_session.record.session_id.clone(),
                     revoked_current_session: revoked_session.record.session_id
                         == validated_session.record.session_id,

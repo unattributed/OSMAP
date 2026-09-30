@@ -1,5 +1,8 @@
 //! Native Settings presentation, separate from browser route handlers.
 use super::*;
+#[path = "settings_notifications_ui.rs"]
+mod settings_notifications_ui;
+pub(crate) use settings_notifications_ui::render_notifications_page;
 #[path = "settings_identity_ui.rs"]
 mod settings_identity_ui;
 pub(crate) use settings_identity_ui::{render_identity_page, IdentityPageModel};
@@ -120,7 +123,7 @@ fn settings_navigation(current_section: &str) -> String {
         ("Reading & Mailbox", Some("reading")),
         ("Composition", Some("composition")),
         ("Copies & Folders", Some("copies")),
-        ("Notifications", None),
+        ("Notifications", Some("notifications")),
         ("Privacy & Security", Some("privacy")),
         ("OpenPGP", None),
         ("Authentication & Recovery", Some("authentication")),

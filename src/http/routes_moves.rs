@@ -209,7 +209,11 @@ impl<G: BrowserGateway> BrowserApp<G> {
         // Resolve both folders against this session before the first mutation.
         let listing = self.gateway.list_mailboxes(context, &session);
         audit_events.extend(listing.audit_events);
-        let BrowserMailboxDecision::Listed { mailboxes, .. } = listing.decision else {
+        let BrowserMailboxDecision::Listed {
+            canonical_username,
+            mailboxes,
+        } = listing.decision
+        else {
             return notice(
                 503,
                 "Service Unavailable",
@@ -218,13 +222,24 @@ impl<G: BrowserGateway> BrowserApp<G> {
                 audit_events,
             );
         };
+        if canonical_username != session.record.canonical_username {
+            return invalid(audit_events);
+        }
         if !mailboxes.iter().any(|m| &m.name == source)
             || !mailboxes.iter().any(|m| m.name == destination)
         {
             return invalid(audit_events);
         }
         let total = selected.len();
+        let mut label_uncertain = false;
         for (confirmed, selected) in selected.iter().enumerate() {
+            let pending = if std::time::Instant::now() >= deadline {
+                Err(crate::labels::LabelError::Unavailable)
+            } else if self.gateway.labels_available() {
+                self.labels_before_move(context, &session, selected, &mut audit_events)
+            } else {
+                Ok(None)
+            };
             let outcome = if std::time::Instant::now() >= deadline {
                 BrowserMessageMoveOutcome {
                     decision: BrowserMessageMoveDecision::Denied {
@@ -244,7 +259,17 @@ impl<G: BrowserGateway> BrowserApp<G> {
                     uid,
                 } if source_mailbox_name == *source
                     && destination_mailbox_name == destination
-                    && uid == selected.uid => {}
+                    && uid == selected.uid =>
+                {
+                    label_uncertain |= !self.labels_after_move(
+                        context,
+                        &session,
+                        selected,
+                        pending,
+                        deadline,
+                        &mut audit_events,
+                    );
+                }
                 decision => {
                     let (public_reason, retry_after_seconds) = match decision {
                         BrowserMessageMoveDecision::Denied {
@@ -262,11 +287,16 @@ impl<G: BrowserGateway> BrowserApp<G> {
                         "message_move_deadline" => (503, "Service Unavailable", "The action time limit was reached. The current message and remaining selection were not attempted.", 0),
                         _ => (503, "Service Unavailable", "The current move may have completed, but its result could not be confirmed. Check both mailboxes before choosing another action.", 1),
                     };
+                    let detail = if label_uncertain {
+                        format!("{detail} Label continuity for earlier confirmed moves could not be confirmed. Do not repeat those mail moves.")
+                    } else {
+                        detail.to_owned()
+                    };
                     let remaining = total - confirmed - 1;
                     let mut response = html_response(status, reason, "Move Stopped", TrustedHtml::from_template(format!(
                         "{}<main id=\"main-content\" class=\"page-shell\" tabindex=\"-1\"><section class=\"panel\"><h1>Move stopped</h1><p>{}</p><p>{confirmed} confirmed moved; {uncertain} uncertain; {remaining} remaining messages were not attempted.</p><p><a class=\"button-link\" href=\"{}\">Refresh message list</a> <a class=\"button-link\" href=\"/mailbox?name={}\">Check destination</a></p></section></main>",
                         crate::http_ui::app_header(&session.record.canonical_username, &session.record.csrf_token, "mailboxes"),
-                        escape_html(detail), escape_html(&return_to), url_encode(&destination))));
+                        escape_html(&detail), escape_html(&return_to), url_encode(&destination))));
                     if let Some(seconds) = retry_after_seconds {
                         response = response.with_header("Retry-After", seconds.to_string());
                     }
@@ -279,6 +309,9 @@ impl<G: BrowserGateway> BrowserApp<G> {
             }
         }
         drop(guard);
+        if label_uncertain {
+            return notice(200,"OK","Messages Moved","All selected mail moves were confirmed. Label continuity could not be confirmed; labels may remain attached to old identities. Do not repeat the mail move to repair labels.",audit_events);
+        }
         HandledHttpResponse {
             response: redirect_response(303, "See Other", &return_to),
             audit_events,

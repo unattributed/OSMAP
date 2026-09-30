@@ -31,11 +31,11 @@ body:has(.app-rail) {
 .app-rail {
   top: var(--topbar-height);
   width: var(--rail-width);
-  padding: 1.1rem .75rem;
+  padding: .85rem .75rem;
   gap: .45rem;
 }
 .rail-disclosure { display: none; }
-.rail-links { gap: .3rem; }
+.rail-links { gap: .25rem; }
 .rail-link, .rail-disclosure[open]~.rail-links .rail-link {
   justify-content: flex-start;
   gap: .9rem;
@@ -43,12 +43,23 @@ body:has(.app-rail) {
   padding: .55rem .8rem;
   color: var(--ink);
   font-size: .875rem;
+  line-height: 1.2;
   border-radius: .6rem;
 }
 .rail-link[aria-disabled=true], .rail-disclosure[open]~.rail-links .rail-link[aria-disabled=true] { color: var(--muted); cursor: default; }
 .rail-label { display: block; }
 .rail-link .shell-icon { width: 1.1rem; height: 1.1rem; }
 .rail-compose { margin-bottom: 0; background: transparent; color: var(--ink); }
+@media(min-width:68rem) {
+  body:has(.topbar-welcome) .app-rail { padding:.75rem 1.125rem; }
+  body:has(.topbar-welcome) .rail-links { gap:.1875rem; }
+  body:has(.topbar-welcome) .rail-link { min-height:3rem; padding:.6rem .9rem; font-size:1rem; font-weight:500; gap:1.15rem; border-radius:.4rem; }
+  body:has(.topbar-welcome) .rail-link .shell-icon { width:1.5rem; height:1.5rem; }
+  body:has(.topbar-welcome) .rail-link:first-child { margin-bottom:.5rem; }
+  body:has(.topbar-welcome) .rail-compose { margin-bottom:1rem; }
+  body:has(.topbar-welcome) .rail-link:last-child { position:relative; margin-top:1.875rem; }
+  body:has(.topbar-welcome) .rail-link:last-child::before { content:""; position:absolute; top:-1rem; left:.375rem; right:.375rem; border-top:1px solid var(--line); }
+}
 .rail-link[aria-current=page], .rail-compose[aria-current=page], .rail-disclosure[open]~.rail-links .rail-link[aria-current=page] {
   background: var(--accent);
   border-color: var(--accent);

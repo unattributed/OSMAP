@@ -27,8 +27,10 @@ mod routes_draft;
 mod routes_draft_selection;
 mod routes_flags;
 mod routes_identity_preferences;
+mod routes_labels;
 mod routes_mail;
 mod routes_moves;
+mod routes_notifications;
 mod routes_reading_preferences;
 mod routes_reply;
 #[path = "http/routes_send_receipt.rs"]
@@ -835,6 +837,9 @@ mod tests {
     mod security_settings_tests {
         include!("http/security_settings_tests.rs");
     }
+    mod notification_tests {
+        include!("http/notification_tests.rs");
+    }
     mod identity_preference_tests {
         include!("http/identity_preference_tests.rs");
     }
@@ -881,6 +886,9 @@ mod tests {
     mod reply_tests {
         include!("http/reply_tests.rs");
     }
+    mod label_tests {
+        include!("http/label_tests.rs");
+    }
     mod contact_tests {
         include!("http/contact_tests.rs");
     }
@@ -918,6 +926,7 @@ mod tests {
         send_journal: crate::send_journal::SendJournal,
         recovery_root: PathBuf,
         recovery_now: Option<u64>,
+        labels_store: Option<crate::labels::LabelStore>,
         contacts_store: Option<crate::contacts::ContactStore>,
         draft_store: Option<crate::draft::FileDraftStore>,
         fail_draft_delete: Option<String>,
@@ -927,6 +936,7 @@ mod tests {
         message_moves: Arc<Mutex<SyntheticMessageMoves>>,
         appearance_store: Option<AppearanceStore>,
         settings_store: Option<crate::settings::FileUserSettingsStore>,
+        notification_store: Option<crate::notifications::NotificationStore>,
         identity_preferences_store: Option<crate::identity_preferences::IdentityPreferencesStore>,
         composition_preferences_store:
             Option<crate::composition_preferences::CompositionPreferencesStore>,
@@ -938,6 +948,7 @@ mod tests {
     impl Default for StubGateway {
         fn default() -> Self {
             Self {
+                labels_store: None,
                 contacts_store: None,
                 draft_store: None,
                 send_journal: fixture_send_journal(),
@@ -954,6 +965,7 @@ mod tests {
                 appearance_store: None,
                 settings_store: None,
                 identity_preferences_store: None,
+                notification_store: None,
                 composition_preferences_store: None,
                 reading_preferences_store: None,
                 browser_fixture_accounts: false,
@@ -1085,6 +1097,41 @@ mod tests {
             Ok(drafts.remove(id).is_some())
         }
 
+        fn labels_available(&self) -> bool {
+            self.labels_store.is_some()
+        }
+        fn load_labels(
+            &self,
+            s: &ValidatedSession,
+        ) -> Result<crate::labels::LabelRecord, crate::labels::LabelError> {
+            self.labels_store
+                .as_ref()
+                .ok_or(crate::labels::LabelError::Unavailable)?
+                .load(&s.record.canonical_username)
+        }
+        fn change_labels(
+            &self,
+            s: &ValidatedSession,
+            r: u64,
+            c: crate::labels::LabelChange<'_>,
+        ) -> Result<crate::labels::LabelRecord, crate::labels::LabelError> {
+            self.labels_store
+                .as_ref()
+                .ok_or(crate::labels::LabelError::Unavailable)?
+                .change(&s.record.canonical_username, r, c)
+        }
+        fn reconcile_labels(
+            &self,
+            s: &ValidatedSession,
+            r: u64,
+            a: &crate::labels::MessageIdentity,
+            b: &crate::labels::MessageIdentity,
+        ) -> Result<crate::labels::LabelRecord, crate::labels::LabelError> {
+            self.labels_store
+                .as_ref()
+                .ok_or(crate::labels::LabelError::Unavailable)?
+                .reconcile_confirmed_move(&s.record.canonical_username, r, a, b)
+        }
         fn load_contacts(
             &self,
             session: &ValidatedSession,
@@ -1348,6 +1395,7 @@ mod tests {
             if session_id == validated_session.record.session_id {
                 BrowserSessionRevokeOutcome {
                     decision: BrowserSessionRevokeDecision::Revoked {
+                        newly_revoked: true,
                         revoked_session_id: session_id.to_string(),
                         revoked_current_session: true,
                     },
@@ -1363,6 +1411,7 @@ mod tests {
             {
                 BrowserSessionRevokeOutcome {
                     decision: BrowserSessionRevokeDecision::Revoked {
+                        newly_revoked: true,
                         revoked_session_id: session_id.to_string(),
                         revoked_current_session: false,
                     },
@@ -1518,6 +1567,51 @@ mod tests {
                 .save(&session.record.canonical_username, value)
         }
 
+        fn record_session_notification(
+            &self,
+            account: &str,
+            kind: crate::notifications::NotificationKind,
+        ) -> Result<(), crate::notifications::NotificationError> {
+            self.notification_store.as_ref().map_or(Ok(()), |store| {
+                store.record(
+                    account,
+                    kind,
+                    crate::totp::TimeProvider::unix_timestamp(&crate::totp::SystemTimeProvider),
+                )
+            })
+        }
+        fn notification_inbox(
+            &self,
+            session: &ValidatedSession,
+        ) -> Result<crate::notifications::NotificationInbox, crate::notifications::NotificationError>
+        {
+            self.notification_store
+                .as_ref()
+                .ok_or(crate::notifications::NotificationError::Unavailable)?
+                .load(
+                    &session.record.canonical_username,
+                    crate::totp::TimeProvider::unix_timestamp(&crate::totp::SystemTimeProvider),
+                )
+        }
+        fn set_notification_read(
+            &self,
+            session: &ValidatedSession,
+            id: &str,
+            revision: u64,
+            read: bool,
+        ) -> Result<crate::notifications::NotificationInbox, crate::notifications::NotificationError>
+        {
+            self.notification_store
+                .as_ref()
+                .ok_or(crate::notifications::NotificationError::Unavailable)?
+                .set_read(
+                    &session.record.canonical_username,
+                    id,
+                    revision,
+                    read,
+                    crate::totp::TimeProvider::unix_timestamp(&crate::totp::SystemTimeProvider),
+                )
+        }
         fn load_identity_preferences(
             &self,
             _context: &AuthenticationContext,

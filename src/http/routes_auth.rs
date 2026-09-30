@@ -87,13 +87,21 @@ where
 
         match outcome.decision {
             BrowserLoginDecision::Authenticated {
+                canonical_username,
                 session_token,
                 appearance,
                 presentation,
                 reading,
                 ..
-            } => HandledHttpResponse {
-                response: redirect_response(303, "See Other", reading.start_page.path())
+            } => {
+                let recorded = self.record_session_notice(
+                    context,
+                    &canonical_username,
+                    crate::notifications::NotificationKind::SessionIssued,
+                    &mut audit_events,
+                );
+                HandledHttpResponse {
+                response: (if recorded {redirect_response(303, "See Other", reading.start_page.path())} else {html_response(200,"OK","Signed In",TrustedHtml::from_template(format!("<main id=\"main-content\" class=\"page-shell standalone-notice\"><section class=\"panel\"><h1>Signed in</h1><p>Your session is active. Notification recording could not be confirmed; this does not undo sign-in.</p><p><a href=\"{}\">Continue</a></p></section></main>",escape_html(reading.start_page.path()))))})
                     .with_header(
                         "Set-Cookie",
                         build_session_cookie(
@@ -115,7 +123,8 @@ where
                         reading.cookie(self.policy.secure_session_cookie),
                     ),
                 audit_events,
-            },
+            }
+            }
             BrowserLoginDecision::Denied { public_reason } => HandledHttpResponse {
                 response: html_response(
                     401,
@@ -327,6 +336,18 @@ where
 
         audit_events.extend(outcome.audit_events);
 
+        let has_new_revocation = match &outcome.decision {
+            BrowserSessionRevokeDecision::Revoked { newly_revoked, .. } => *newly_revoked,
+            BrowserSessionRevokeDecision::RevokedMany { revoked_count, .. } => *revoked_count > 0,
+            _ => false,
+        };
+        let recorded = !has_new_revocation
+            || self.record_session_notice(
+                context,
+                &validated_session.record.canonical_username,
+                crate::notifications::NotificationKind::SessionRevoked,
+                &mut audit_events,
+            );
         match outcome.decision {
             BrowserSessionRevokeDecision::Revoked {
                 revoked_current_session,
@@ -345,6 +366,9 @@ where
                         "/sessions?revoked=1"
                     },
                 );
+                if !recorded {
+                    response=html_response(200,"OK","Session Revocation Complete",TrustedHtml::from_template(format!("<main id=\"main-content\" class=\"page-shell standalone-notice\"><section class=\"panel\"><h1>Session revocation complete</h1><p>The session action succeeded. Notification recording could not be confirmed.</p><p><a href=\"{}\">Continue</a></p></section></main>",if revoked_current_session {"/login"}else{"/sessions"})));
+                }
                 if revoked_current_session {
                     response = response.with_header(
                         "Set-Cookie",

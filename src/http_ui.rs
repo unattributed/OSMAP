@@ -3,6 +3,10 @@
 //! Keeping these rendering helpers separate from routing reduces the amount of
 //! browser-facing template code inside the request parser and route logic.
 
+#[path = "notifications_ui.rs"]
+mod notifications_ui;
+pub(crate) use notifications_ui::render_notification_inbox;
+
 #[path = "settings_ui.rs"]
 mod settings_ui;
 use crate::draft::DraftSummary;
@@ -23,8 +27,8 @@ use crate::mime::{AttachmentMetadata, DEFAULT_MIME_PARTS_MAX};
 use crate::rendering::{HtmlDisplayPreference, RenderedMessageView};
 pub(crate) use settings_ui::{
     render_appearance_page, render_composition_page, render_copies_page, render_general_page,
-    render_identity_page, render_privacy_page, render_reading_page, render_security_page,
-    IdentityPageModel,
+    render_identity_page, render_notifications_page, render_privacy_page, render_reading_page,
+    render_security_page, IdentityPageModel,
 };
 
 /// Defense-in-depth cap for attachment metadata rows rendered by one route.
@@ -141,6 +145,7 @@ fn shell_icon(name: &str) -> String {
     let path = match name {
         "approved-brand" => "<path d=\"M12 2 21 6v6c0 5-4 8.2-9 10-5-1.8-9-5-9-10V6z\"/><path d=\"m12 5 6 2.6V12c0 3.3-2.5 5.7-6 7.2C8.5 17.7 6 15.3 6 12V7.6z\"/><path d=\"m12 8 1.1 2.9L16 12l-2.9 1.1L12 16l-1.1-2.9L8 12l2.9-1.1z\"/>",
         "brand" => "<path d=\"m12 3 8 9-8 9-8-9z\"/><path d=\"m12 6 5.4 6-5.4 6-5.4-6z\"/>",
+        "bell" => "<path d=\"M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4\"/>",
         "light" => "<circle cx=\"12\" cy=\"12\" r=\"4\"/><path d=\"M12 1v3m0 16v3M1 12h3m16 0h3M4 4l2 2m12 12 2 2M4 20l2-2M18 6l2-2\"/>",
         "dark" => "<path d=\"M16 3a9 9 0 1 0 0 18 10 10 0 0 1 0-18z\"/>",
         "shield" => "<path d=\"M12 3 4 6v6c0 5 8 9 8 9s8-4 8-9V6z\"/><path d=\"m8 12 3 3 5-6\"/>",
@@ -164,7 +169,8 @@ fn header_theme_controls(csrf: &str, current: &str) -> String {
     let disabled = current == "compose-result"
         || current == "settings"
         || (current.starts_with("settings-") && current != "settings-search")
-        || current == "contacts";
+        || current == "contacts"
+        || current == "labels";
     let explanation = if current == "compose-result" {
         "Theme switching is unavailable here. Keep this result page open to retain the text from this submission attempt."
     } else if compose {
@@ -270,11 +276,12 @@ pub(crate) fn app_header(canonical_username: &str, csrf_token: &str, current: &s
         "{}",
         "<div class=\"status-row auth-status\" aria-label=\"Session status and identity\">",
         "<details class=\"protection-menu\" name=\"toolbar-menu\"><summary>Protected by Default</summary><div class=\"account-menu-panel\"><p>Remote images and active content are blocked. These protections do not encrypt a message or verify its sender.</p><p class=\"shell-session-chip\">Your browser session was authenticated with two factors.</p></div></details>",
+        "<a class=\"header-notifications\" href=\"/notifications\" aria-label=\"Notifications\" title=\"Notifications\">{notification_icon}</a>",
         "<details class=\"account-menu\" name=\"toolbar-menu\"><summary class=\"identity-chip\"><span class=\"account-avatar\" aria-hidden=\"true\">{}</span><span class=\"account-name\" title=\"{}\">{}</span>{}</summary>",
         "<div class=\"account-menu-panel\"><p class=\"muted\">Signed in as <strong>{}</strong></p><a href=\"/settings\">Account settings</a><a href=\"/settings?section=appearance\">Appearance</a><a href=\"/contacts\">Contacts</a><a href=\"/sessions\">Manage sessions</a>{}</div>",
         "</details>{theme_controls}</div></header>{clock}"
     ), shell_icon("menu"), links, brand_mark, search_menu, escape_html(&sender_initials(Some(canonical_username))), escape_html(canonical_username),
-        escape_html(canonical_username), shell_icon("chevron"), escape_html(canonical_username), logout_form(csrf_token), theme_controls = theme_controls, clock = clock, brand_copy = brand_copy, brand_variant = if welcome { " topbar-welcome" } else { "" })
+        escape_html(canonical_username), shell_icon("chevron"), escape_html(canonical_username), logout_form(csrf_token), theme_controls = theme_controls, clock = clock, brand_copy = brand_copy, notification_icon = shell_icon("bell"), brand_variant = if welcome { " topbar-welcome" } else { "" })
 }
 
 fn request_clock(timestamp: u64) -> String {
@@ -356,6 +363,11 @@ pub(crate) fn render_settings_search_page(account: &str, csrf: &str, query: &str
             "Security",
             "security authentication password totp sessions protection",
             "/settings?section=security",
+        ),
+        (
+            "Notifications",
+            "notifications session events in-app notices read unread",
+            "/settings?section=notifications",
         ),
         (
             "Authentication & Recovery",
@@ -1546,6 +1558,7 @@ fn render_reader_fragment(
 ) -> String {
     let standalone = neighbours.is_some();
     let navigation = neighbours.map(|value| value.html()).unwrap_or_default();
+    let label_control = rendered.metadata.as_ref().map(|metadata| format!("<details class=\"reader-labels\"><summary>Labels</summary><div><p>Manage private labels for this message. Its current identity is checked before changes.</p><a class=\"button-link secondary\" href=\"/labels?mailbox={}&amp;uid={}&amp;mailbox_guid={}&amp;message_guid={}\">Edit message labels</a></div></details>", escape_html(&url_encode(&rendered.mailbox_name)), rendered.uid, escape_html(&url_encode(&metadata.version.mailbox_guid)), escape_html(&url_encode(&metadata.version.message_guid)))).unwrap_or_else(|| "<span class=\"muted\" aria-disabled=\"true\">Labels unavailable</span>".into());
     let displayed_attachments = rendered
         .attachments
         .iter()
@@ -1703,7 +1716,7 @@ fn render_reader_fragment(
     format!(
         concat!(
             "<article id=\"reading-pane\" class=\"reading-pane protected-reading-pane\" tabindex=\"-1\" aria-labelledby=\"message-title\" data-reader-mode=\"Protected Reader\">",
-            "<div class=\"reader-toolbar\"><nav class=\"reader-navigation toolbar\" aria-label=\"Reader navigation\"><a href=\"{}\">Back to list</a>{}</nav><div class=\"reader-quick-actions\">{}</div>",
+            "<div class=\"reader-toolbar\"><nav class=\"reader-navigation toolbar\" aria-label=\"Reader navigation\"><a href=\"{}\">Back to list</a>{}</nav><div class=\"reader-quick-actions\">{}{label_control}</div>",
             "{navigation}<details class=\"reader-more-actions\"><summary>Move, archive, bin or restore</summary><div class=\"action-stack\">{}</div></details></div>",
             "<header class=\"message-heading\"><div class=\"reader-message-top\"><h2 id=\"message-title\" dir=\"auto\">{}</h2><p class=\"muted reader-date\">{} · {}</p></div><div class=\"reader-message-person\"><span class=\"message-avatar\" aria-hidden=\"true\">{}</span><div><p class=\"message-from\" dir=\"auto\">From: {}</p><p class=\"muted reader-to\" dir=\"auto\">To: {}</p></div></div></header>",
             "<div class=\"reader-status\">{}{}{}</div>",
@@ -1733,6 +1746,7 @@ fn render_reader_fragment(
         escape_html(&rendered.mime_top_level_content_type), escape_html(rendered.body_source.as_str()),
         escape_html(rendered.rendering_mode.as_str()), if rendered.contains_html_body { "yes" } else { "no" }, remote_content_state,
         navigation = navigation,
+        label_control = label_control,
     )
 }
 

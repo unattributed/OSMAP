@@ -205,6 +205,38 @@ impl BrowserGateway for RuntimeBrowserGateway {
         .map_err(|_| "send_attempt_paused".into())
     }
 
+    fn labels_available(&self) -> bool {
+        true
+    }
+    fn load_labels(
+        &self,
+        s: &ValidatedSession,
+    ) -> Result<crate::labels::LabelRecord, crate::labels::LabelError> {
+        crate::labels::LabelStore::new(self.settings_dir.join("labels-v1"))
+            .load(&s.record.canonical_username)
+    }
+    fn change_labels(
+        &self,
+        s: &ValidatedSession,
+        r: u64,
+        c: crate::labels::LabelChange<'_>,
+    ) -> Result<crate::labels::LabelRecord, crate::labels::LabelError> {
+        crate::labels::LabelStore::new(self.settings_dir.join("labels-v1")).change(
+            &s.record.canonical_username,
+            r,
+            c,
+        )
+    }
+    fn reconcile_labels(
+        &self,
+        s: &ValidatedSession,
+        r: u64,
+        a: &crate::labels::MessageIdentity,
+        b: &crate::labels::MessageIdentity,
+    ) -> Result<crate::labels::LabelRecord, crate::labels::LabelError> {
+        crate::labels::LabelStore::new(self.settings_dir.join("labels-v1"))
+            .reconcile_confirmed_move(&s.record.canonical_username, r, a, b)
+    }
     fn load_contacts(
         &self,
         session: &ValidatedSession,
@@ -235,6 +267,43 @@ impl BrowserGateway for RuntimeBrowserGateway {
         self.set_message_flag_impl(context, validated_session, request)
     }
 
+    fn record_session_notification(
+        &self,
+        account: &str,
+        kind: crate::notifications::NotificationKind,
+    ) -> Result<(), crate::notifications::NotificationError> {
+        crate::notifications::NotificationStore::new(&self.settings_dir).record(
+            account,
+            kind,
+            crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
+        )
+    }
+    fn notification_inbox(
+        &self,
+        session: &ValidatedSession,
+    ) -> Result<crate::notifications::NotificationInbox, crate::notifications::NotificationError>
+    {
+        crate::notifications::NotificationStore::new(&self.settings_dir).load(
+            &session.record.canonical_username,
+            crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
+        )
+    }
+    fn set_notification_read(
+        &self,
+        session: &ValidatedSession,
+        id: &str,
+        revision: u64,
+        read: bool,
+    ) -> Result<crate::notifications::NotificationInbox, crate::notifications::NotificationError>
+    {
+        crate::notifications::NotificationStore::new(&self.settings_dir).set_read(
+            &session.record.canonical_username,
+            id,
+            revision,
+            read,
+            crate::totp::TimeProvider::unix_timestamp(&SystemTimeProvider),
+        )
+    }
     fn login(
         &self,
         context: &AuthenticationContext,

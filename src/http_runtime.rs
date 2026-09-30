@@ -146,6 +146,8 @@ where
             (HttpMethod::Get, "/message") => self.handle_message_view(request, &context),
             (HttpMethod::Get, "/attachment") => self.handle_attachment_download(request, &context),
             (HttpMethod::Get, "/compose") => self.handle_compose_form(request, &context),
+            (HttpMethod::Get, "/labels") => self.handle_labels(request, &context, false),
+            (HttpMethod::Post, "/labels/change") => self.handle_labels(request, &context, true),
             (HttpMethod::Get, "/contacts") => self.handle_contacts(request, &context),
             (HttpMethod::Post, "/contacts/save") => {
                 self.handle_contact_change(request, &context, false)
@@ -169,6 +171,10 @@ where
             (HttpMethod::Post, "/sessions/revoke") => self.handle_session_revoke(request, &context),
             (HttpMethod::Post, "/settings/appearance") => {
                 self.handle_appearance_update(request, &context)
+            }
+            (HttpMethod::Get, "/notifications") => self.handle_notifications(request, &context),
+            (HttpMethod::Post, "/notifications/read") => {
+                self.handle_notification_read(request, &context)
             }
             (HttpMethod::Post, "/settings/identity") => {
                 self.handle_identity_preferences_update(request, &context)

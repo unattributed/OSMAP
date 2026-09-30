@@ -42,6 +42,32 @@ pub trait BrowserGateway {
         intent: &str,
     ) -> Result<bool, String>;
 
+    fn labels_available(&self) -> bool {
+        false
+    }
+    fn load_labels(
+        &self,
+        _session: &ValidatedSession,
+    ) -> Result<crate::labels::LabelRecord, crate::labels::LabelError> {
+        Err(crate::labels::LabelError::Unavailable)
+    }
+    fn change_labels(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+        _change: crate::labels::LabelChange<'_>,
+    ) -> Result<crate::labels::LabelRecord, crate::labels::LabelError> {
+        Err(crate::labels::LabelError::Unavailable)
+    }
+    fn reconcile_labels(
+        &self,
+        _session: &ValidatedSession,
+        _revision: u64,
+        _source: &crate::labels::MessageIdentity,
+        _destination: &crate::labels::MessageIdentity,
+    ) -> Result<crate::labels::LabelRecord, crate::labels::LabelError> {
+        Err(crate::labels::LabelError::Unavailable)
+    }
     fn load_contacts(
         &self,
         session: &ValidatedSession,
@@ -63,6 +89,31 @@ pub trait BrowserGateway {
             result: Err(BrowserMessageFlagFailure::Unavailable),
             audit_events: Vec::new(),
         }
+    }
+
+    fn record_session_notification(
+        &self,
+        _account: &str,
+        _kind: crate::notifications::NotificationKind,
+    ) -> Result<(), crate::notifications::NotificationError> {
+        Err(crate::notifications::NotificationError::Unavailable)
+    }
+    fn notification_inbox(
+        &self,
+        _session: &ValidatedSession,
+    ) -> Result<crate::notifications::NotificationInbox, crate::notifications::NotificationError>
+    {
+        Err(crate::notifications::NotificationError::Unavailable)
+    }
+    fn set_notification_read(
+        &self,
+        _session: &ValidatedSession,
+        _id: &str,
+        _revision: u64,
+        _read: bool,
+    ) -> Result<crate::notifications::NotificationInbox, crate::notifications::NotificationError>
+    {
+        Err(crate::notifications::NotificationError::Unavailable)
     }
 
     fn login(
@@ -527,6 +578,7 @@ pub struct BrowserSessionRevokeOutcome {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum BrowserSessionRevokeDecision {
     Revoked {
+        newly_revoked: bool,
         revoked_session_id: String,
         revoked_current_session: bool,
     },
