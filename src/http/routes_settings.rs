@@ -88,6 +88,7 @@ where
                 | "authentication"
                 | "identity"
                 | "notifications"
+                | "openpgp"
         ) {
             return HandledHttpResponse {
                 response: html_response(
@@ -117,6 +118,24 @@ where
                 audit_events,
             };
         }
+        if section == "openpgp" {
+            let inventory =
+                self.public_inventory_view(context, &validated_session, &mut audit_events);
+            return HandledHttpResponse {
+                response: html_response(
+                    200,
+                    "OK",
+                    "OpenPGP Settings",
+                    crate::http_ui::render_openpgp_settings(
+                        &validated_session.record.canonical_username,
+                        &validated_session.record.csrf_token,
+                        &inventory,
+                    ),
+                ),
+                audit_events,
+            };
+        }
+
         if section == "notifications" {
             return HandledHttpResponse {
                 response: html_response(
@@ -744,6 +763,58 @@ impl<G: BrowserGateway> BrowserApp<G> {
             session,
         ));
         verified_folder_counts(&session.record.canonical_username, folder, outcome.decision)
+    }
+}
+
+impl<G: BrowserGateway> BrowserApp<G> {
+    fn public_inventory_view(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        audit: &mut Vec<LogEvent>,
+    ) -> crate::http_ui::key_inventory_ui::PublicInventoryView {
+        let outcome = self.gateway.public_key_inventory(context, session);
+        audit.extend(outcome.audit_events);
+        crate::http_ui::key_inventory_ui::map_public_inventory(
+            &session.record.canonical_username,
+            &outcome.canonical_username,
+            outcome.inventory.as_ref(),
+        )
+    }
+    pub(super) fn handle_key_inventory_page(
+        &self,
+        request: &HttpRequest,
+        context: &AuthenticationContext,
+    ) -> HandledHttpResponse {
+        let (session, mut audit_events) = match self.require_validated_session(request, context) {
+            Ok(v) => v,
+            Err(r) => return r,
+        };
+        if !request.query_params.is_empty() {
+            return HandledHttpResponse {
+                response: html_response(
+                    400,
+                    "Bad Request",
+                    "Invalid key inventory request",
+                    "<p>Open Key Management from OpenPGP Settings.</p>",
+                ),
+                audit_events,
+            };
+        }
+        let inventory = self.public_inventory_view(context, &session, &mut audit_events);
+        HandledHttpResponse {
+            response: html_response(
+                200,
+                "OK",
+                "OpenPGP Key Management",
+                crate::http_ui::key_inventory_ui::render_key_inventory(
+                    &session.record.canonical_username,
+                    &session.record.csrf_token,
+                    &inventory,
+                ),
+            ),
+            audit_events,
+        }
     }
 }
 

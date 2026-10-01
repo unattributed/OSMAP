@@ -61,6 +61,21 @@ def skip_for_prohibited_patterns(path: str) -> bool:
     return path in skip_exact or path in allow_pattern_files or any(path.startswith(prefix) for prefix in skip_prefixes)
 
 
+def pattern_source(rel: str, label: str, text: str) -> str:
+    if label != "NULL cipher" or not rel.endswith((".c", ".h")):
+        return text
+    # A C pointer constant is not a cipher. Keep literals/comments and offsets
+    # intact so cipher names and every other prohibited pattern remain checked.
+    tokens = r'"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'|/\*[\s\S]*?\*/|//[^\n]*|\bNULL\b'
+    return re.sub(tokens, lambda m: " " * len(m[0]) if m[0] == "NULL" else m[0], text)
+
+
+assert "NULL" not in pattern_source("fixture.c", "NULL cipher", "unveil(NULL, NULL);")
+assert '"NULL"' in pattern_source("fixture.c", "NULL cipher", 'tls_config_set_ciphers(c, "NULL");')
+assert "NULL" in pattern_source("fixture.py", "NULL cipher", "NULL")
+assert "RC4" in pattern_source("fixture.c", "RC4", 'tls_config_set_ciphers(c, "RC4");')
+
+
 for rel in tracked:
     path = repo / rel
     try:
@@ -70,7 +85,7 @@ for rel in tracked:
 
     if not skip_for_prohibited_patterns(rel):
         for label, pattern in prohibited:
-            for match in pattern.finditer(text):
+            for match in pattern.finditer(pattern_source(rel, label, text)):
                 line = text.count("\n", 0, match.start()) + 1
                 failures.append(f"{rel}:{line}: prohibited TLS pattern: {label}")
 

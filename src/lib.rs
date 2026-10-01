@@ -69,3 +69,9 @@ pub mod folder_create;
 mod folder_create_backend;
 pub mod folder_metadata;
 mod folder_metadata_backend;
+pub mod openpgp_inventory;
+#[cfg(unix)]
+mod openpgp_inventory_process;
+pub mod openpgp_inventory_protocol;
+#[cfg(unix)]
+pub mod openpgp_inventory_runtime;

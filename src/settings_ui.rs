@@ -1,5 +1,8 @@
 //! Native Settings presentation, separate from browser route handlers.
 use super::*;
+#[path = "settings_openpgp_ui.rs"]
+mod settings_openpgp_ui;
+pub(crate) use settings_openpgp_ui::render_openpgp_settings;
 #[path = "settings_notifications_ui.rs"]
 mod settings_notifications_ui;
 pub(crate) use settings_notifications_ui::render_notifications_page;
@@ -118,6 +121,7 @@ fn select_options(selected: &str, options: &[(&str, &str)]) -> String {
 fn settings_navigation(current_section: &str) -> String {
     let mut result =
         String::from("<nav class=\"settings-navigation\" aria-label=\"Settings sections\"><ul>");
+    let mut unavailable = false;
     for (label, section) in [
         ("General", Some("general")),
         ("Appearance", Some("appearance")),
@@ -127,7 +131,7 @@ fn settings_navigation(current_section: &str) -> String {
         ("Copies & Folders", Some("copies")),
         ("Notifications", Some("notifications")),
         ("Privacy & Security", Some("privacy")),
-        ("OpenPGP", None),
+        ("OpenPGP", Some("openpgp")),
         ("Authentication & Recovery", Some("authentication")),
     ] {
         if label == "OpenPGP" && current_section == "security" {
@@ -144,9 +148,14 @@ fn settings_navigation(current_section: &str) -> String {
                 escape_html(label)
             ));
         } else {
+            unavailable = true;
             result.push_str(&format!("<li><span class=\"settings-section-unavailable\" aria-disabled=\"true\" aria-describedby=\"settings-unavailable-note\">{}</span></li>", escape_html(label)));
         }
     }
-    result.push_str("</ul><p class=\"settings-navigation-note\" id=\"settings-unavailable-note\">Additional sections are unavailable.</p></nav>");
+    result.push_str("</ul>");
+    if unavailable {
+        result.push_str("<p class=\"settings-navigation-note\" id=\"settings-unavailable-note\">Additional sections are unavailable.</p>");
+    }
+    result.push_str("</nav>");
     result
 }

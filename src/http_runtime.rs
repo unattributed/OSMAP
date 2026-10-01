@@ -176,6 +176,9 @@ where
                 self.handle_folder_create(request, &context)
             }
             (HttpMethod::Get, "/settings") => self.handle_settings_page(request, &context),
+            (HttpMethod::Get, "/settings/keys") => {
+                self.handle_key_inventory_page(request, &context)
+            }
             (HttpMethod::Post, "/message/move") => self.handle_message_move(request, &context),
             (HttpMethod::Post, "/message/flag") => self.handle_message_flag(request, &context),
             (HttpMethod::Post, "/messages/move") => self.handle_bulk_move(request, &context),

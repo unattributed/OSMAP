@@ -422,6 +422,17 @@ pub trait BrowserGateway {
             audit_events: vec![],
         }
     }
+    fn public_key_inventory(
+        &self,
+        _context: &AuthenticationContext,
+        session: &ValidatedSession,
+    ) -> BrowserPublicInventoryOutcome {
+        BrowserPublicInventoryOutcome {
+            canonical_username: session.record.canonical_username.clone(),
+            inventory: None,
+            audit_events: vec![],
+        }
+    }
     fn folder_metadata(
         &self,
         _context: &AuthenticationContext,
@@ -1089,6 +1100,12 @@ pub struct BrowserMailboxStatusOutcome {
 pub struct BrowserFolderMetadataOutcome {
     pub canonical_username: String,
     pub snapshot: Option<crate::folder_metadata::FolderSnapshot>,
+    pub audit_events: Vec<LogEvent>,
+}
+
+pub struct BrowserPublicInventoryOutcome {
+    pub canonical_username: String,
+    pub inventory: Option<crate::openpgp_inventory::Inventory>,
     pub audit_events: Vec<LogEvent>,
 }
 

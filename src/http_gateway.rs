@@ -16,6 +16,7 @@ mod http_mailbox_backends;
 /// The concrete runtime gateway built from the existing OSMAP services.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RuntimeBrowserGateway {
+    public_inventory_client: Option<crate::openpgp_inventory_runtime::Client>,
     authentication_policy: AuthenticationPolicy,
     totp_policy: TotpPolicy,
     login_throttle_policy: LoginThrottlePolicy,
@@ -46,6 +47,14 @@ impl RuntimeBrowserGateway {
     /// Builds the runtime gateway from validated configuration.
     pub fn from_config(config: &AppConfig) -> Self {
         Self {
+            public_inventory_client: config.openpgp_inventory.as_ref().and_then(|c| {
+                crate::openpgp_inventory_runtime::Client::from_operator_files(
+                    &c.socket,
+                    &c.key_file,
+                    c.helper_uid,
+                )
+                .ok()
+            }),
             authentication_policy: AuthenticationPolicy::default(),
             totp_policy: TotpPolicy {
                 allowed_skew_steps: config.totp_allowed_skew_steps,
@@ -94,6 +103,7 @@ impl RuntimeBrowserGateway {
     #[cfg(test)]
     pub(crate) fn for_test(temp_root: &std::path::Path) -> Self {
         Self {
+            public_inventory_client: None,
             authentication_policy: AuthenticationPolicy::default(),
             totp_policy: TotpPolicy::default(),
             login_throttle_policy: LoginThrottlePolicy {
@@ -138,6 +148,35 @@ impl RuntimeBrowserGateway {
 }
 
 impl BrowserGateway for RuntimeBrowserGateway {
+    fn public_key_inventory(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+    ) -> BrowserPublicInventoryOutcome {
+        let inventory = self
+            .public_inventory_client
+            .as_ref()
+            .and_then(|client| client.read(&session.record.canonical_username).ok());
+        let audit_events = if inventory
+            .as_ref()
+            .and_then(crate::openpgp_inventory::Inventory::keys)
+            .is_none()
+        {
+            vec![build_http_warning_event(
+                "public_inventory_unavailable",
+                "public key inventory unavailable",
+                context,
+            )]
+        } else {
+            vec![]
+        };
+        BrowserPublicInventoryOutcome {
+            canonical_username: session.record.canonical_username.clone(),
+            inventory,
+            audit_events,
+        }
+    }
+
     fn load_after_archive(
         &self,
         s: &ValidatedSession,
@@ -855,5 +894,44 @@ impl BrowserGateway for RuntimeBrowserGateway {
             expected_revision,
             starred,
         )
+    }
+}
+
+#[cfg(test)]
+mod public_inventory_gateway_tests {
+    use super::*;
+    #[test]
+    fn runtime_inventory_defaults_to_disabled() {
+        let config = AppConfig::from_env_map(&std::collections::BTreeMap::new()).unwrap();
+        let gateway = RuntimeBrowserGateway::from_config(&config);
+        assert!(gateway.public_inventory_client.is_none());
+        assert_eq!(gateway, gateway.clone());
+        let context = AuthenticationContext::new(
+            AuthenticationPolicy::default(),
+            "inventory-test",
+            "127.0.0.1",
+            "Test",
+        )
+        .unwrap();
+        let session = ValidatedSession {
+            record: crate::session::SessionRecord {
+                session_id: "synthetic".into(),
+                csrf_token: "synthetic".into(),
+                canonical_username: "alice@example.com".into(),
+                issued_at: 1,
+                expires_at: 100,
+                last_seen_at: 1,
+                revoked_at: None,
+                remote_addr: "127.0.0.1".into(),
+                user_agent: "Test".into(),
+                factor: RequiredSecondFactor::Totp,
+            },
+            audit_event: LogEvent::new(LogLevel::Info, EventCategory::Session, "test", "test"),
+        };
+        let result = gateway.public_key_inventory(&context, &session);
+        assert_eq!(result.canonical_username, "alice@example.com");
+        assert!(result.inventory.is_none());
+        assert_eq!(result.audit_events.len(), 1);
+        assert!(!format!("{:?}", result.audit_events).contains("alice@example.com"));
     }
 }

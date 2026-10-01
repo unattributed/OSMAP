@@ -14,6 +14,22 @@ statement as provenance rather than current release posture.
 
 ## Current source posture
 
+### Public inventory engineering checkpoint, 2026-10-01
+
+Resumed the preserved work after signed checkpoint `f70d74c`. OpenPGP Settings
+and Key Management now expose authenticated read-only inventory presentation,
+full public fingerprints and public metadata, with distinct unavailable/empty
+states and account-owner checks. Signing/encryption policies, account/recipient
+bindings and all key mutations remain unavailable. The candidate service stays
+disabled pending full service isolation and release qualification. Native
+candidate inventory, confinement, size-limit and signed-client tests passed on
+obsd1, along with the previously pending folder metadata/create fixtures.
+See the latest
+`UX_EXECUTION_LEDGER.md` entry for actual validation and signed-delivery state;
+this is partial S04/S05 engineering, not completion of those slices or the epic.
+No deployment, remote synchronization or strict-release qualification is claimed.
+
+
 ### Approved UX reference correction, 2026-09-30 UTC
 
 The operator explicitly identified `osmap-ux-final-approved-20260919/images/`

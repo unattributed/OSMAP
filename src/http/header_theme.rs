@@ -12,7 +12,7 @@ pub(super) fn safe_return(value: &str) -> Option<String> {
     let mut fields = parse_urlencoded_form(query.as_bytes(), 16, 2048).ok()?;
     let allowed: &[&str] = match path {
         "/settings" => &["section", "q", "folder"],
-        "/sessions" | "/mailboxes" | "/contacts" | "/snoozed" => &[],
+        "/settings/keys" | "/sessions" | "/mailboxes" | "/contacts" | "/snoozed" => &[],
         "/drafts" => {
             crate::draft_list::DraftListView::parse(&fields).ok()?;
             fields.remove("select");
@@ -42,6 +42,26 @@ pub(super) fn safe_return(value: &str) -> Option<String> {
             return None;
         }
         *value = crate::mail_navigation::safe_mail_return(value)?;
+    }
+    if path == "/settings"
+        && fields.get("section").is_some_and(|v| {
+            !matches!(
+                v.as_str(),
+                "general"
+                    | "appearance"
+                    | "identity"
+                    | "reading"
+                    | "composition"
+                    | "copies"
+                    | "notifications"
+                    | "privacy"
+                    | "security"
+                    | "authentication"
+                    | "openpgp"
+            )
+        })
+    {
+        return None;
     }
     if let Some(folder) = fields.get("folder") {
         if path != "/settings"
@@ -124,4 +144,21 @@ pub(super) fn apply_context(response: &mut HttpResponse, request: &HttpRequest) 
         }
     }
     response.body = rendered.into_bytes();
+}
+
+#[cfg(test)]
+mod openpgp_return_tests {
+    use super::*;
+    #[test]
+    fn finite_openpgp_theme_return() {
+        assert_eq!(safe_return("/settings/keys"), Some("/settings/keys".into()));
+        assert!(safe_return("/settings/keys?account=other").is_none());
+        assert_eq!(
+            safe_return("/settings?section=openpgp"),
+            Some("/settings?section=openpgp".into())
+        );
+        assert!(safe_return("/settings?section=openpgp&folder=INBOX").is_none());
+        assert!(safe_return("/settings?section=unknown").is_none());
+        assert!(safe_return("https://invalid.test/settings?section=openpgp").is_none());
+    }
 }

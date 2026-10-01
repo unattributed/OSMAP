@@ -3214,13 +3214,20 @@
         "S05-02",
         "S07-01"
       ],
-      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "visual_status": "PARTIAL_FINAL_REFERENCE_COMPARISON",
       "controls": [
         {
           "id": "R2-19-001",
           "label": "Account capability",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/key_inventory_ui.rs",
+            "src/settings_openpgp_ui.rs",
+            "src/http_inventory_tests.rs",
+            "S05/resume-20261001/keys-{edge-final,firefox}/report.json",
+            "S05/resume-20261001/settings-{edge-final,firefox}/report.json",
+            "Read-only public metadata and explicit unavailable account binding/policy. Synthetic local evidence only; production service disabled. No trust, key mutation, private-key or crypto readiness qualification."
+          ]
         },
         {
           "id": "R2-19-002",
@@ -3249,8 +3256,15 @@
         {
           "id": "R2-19-006",
           "label": "Manage Keys",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/key_inventory_ui.rs",
+            "src/settings_openpgp_ui.rs",
+            "src/http_inventory_tests.rs",
+            "S05/resume-20261001/keys-{edge-final,firefox}/report.json",
+            "S05/resume-20261001/settings-{edge-final,firefox}/report.json",
+            "Read-only public metadata and explicit unavailable account binding/policy. Synthetic local evidence only; production service disabled. No trust, key mutation, private-key or crypto readiness qualification."
+          ]
         },
         {
           "id": "R2-19-007",
@@ -3373,13 +3387,20 @@
       "owning_slices": [
         "S05-02"
       ],
-      "visual_status": "PENDING_FINAL_REFERENCE_COMPARISON",
+      "visual_status": "PARTIAL_FINAL_REFERENCE_COMPARISON",
       "controls": [
         {
           "id": "R2-21-001",
           "label": "Settings security breadcrumb",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "IMPLEMENTED_VERIFIED_LOCAL",
+          "evidence": [
+            "src/key_inventory_ui.rs",
+            "src/settings_openpgp_ui.rs",
+            "src/http_inventory_tests.rs",
+            "S05/resume-20261001/keys-{edge-final,firefox}/report.json",
+            "S05/resume-20261001/settings-{edge-final,firefox}/report.json",
+            "Read-only public metadata and explicit unavailable account binding/policy. Synthetic local evidence only; production service disabled. No trust, key mutation, private-key or crypto readiness qualification."
+          ]
         },
         {
           "id": "R2-21-002",
@@ -3396,8 +3417,15 @@
         {
           "id": "R2-21-004",
           "label": "Account-key configured/unavailable state",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/key_inventory_ui.rs",
+            "src/settings_openpgp_ui.rs",
+            "src/http_inventory_tests.rs",
+            "S05/resume-20261001/keys-{edge-final,firefox}/report.json",
+            "S05/resume-20261001/settings-{edge-final,firefox}/report.json",
+            "Read-only public metadata and explicit unavailable account binding/policy. Synthetic local evidence only; production service disabled. No trust, key mutation, private-key or crypto readiness qualification."
+          ]
         },
         {
           "id": "R2-21-005",
@@ -3408,32 +3436,67 @@
         {
           "id": "R2-21-006",
           "label": "Full fingerprint",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/key_inventory_ui.rs",
+            "src/settings_openpgp_ui.rs",
+            "src/http_inventory_tests.rs",
+            "S05/resume-20261001/keys-{edge-final,firefox}/report.json",
+            "S05/resume-20261001/settings-{edge-final,firefox}/report.json",
+            "Read-only public metadata and explicit unavailable account binding/policy. Synthetic local evidence only; production service disabled. No trust, key mutation, private-key or crypto readiness qualification."
+          ]
         },
         {
           "id": "R2-21-007",
           "label": "Algorithm",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/key_inventory_ui.rs",
+            "src/settings_openpgp_ui.rs",
+            "src/http_inventory_tests.rs",
+            "S05/resume-20261001/keys-{edge-final,firefox}/report.json",
+            "S05/resume-20261001/settings-{edge-final,firefox}/report.json",
+            "Read-only public metadata and explicit unavailable account binding/policy. Synthetic local evidence only; production service disabled. No trust, key mutation, private-key or crypto readiness qualification."
+          ]
         },
         {
           "id": "R2-21-008",
           "label": "Created time",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/key_inventory_ui.rs",
+            "src/settings_openpgp_ui.rs",
+            "src/http_inventory_tests.rs",
+            "S05/resume-20261001/keys-{edge-final,firefox}/report.json",
+            "S05/resume-20261001/settings-{edge-final,firefox}/report.json",
+            "Read-only public metadata and explicit unavailable account binding/policy. Synthetic local evidence only; production service disabled. No trust, key mutation, private-key or crypto readiness qualification."
+          ]
         },
         {
           "id": "R2-21-009",
           "label": "Expiry",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/key_inventory_ui.rs",
+            "src/settings_openpgp_ui.rs",
+            "src/http_inventory_tests.rs",
+            "S05/resume-20261001/keys-{edge-final,firefox}/report.json",
+            "S05/resume-20261001/settings-{edge-final,firefox}/report.json",
+            "Read-only public metadata and explicit unavailable account binding/policy. Synthetic local evidence only; production service disabled. No trust, key mutation, private-key or crypto readiness qualification."
+          ]
         },
         {
           "id": "R2-21-010",
           "label": "Capabilities",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/key_inventory_ui.rs",
+            "src/settings_openpgp_ui.rs",
+            "src/http_inventory_tests.rs",
+            "S05/resume-20261001/keys-{edge-final,firefox}/report.json",
+            "S05/resume-20261001/settings-{edge-final,firefox}/report.json",
+            "Read-only public metadata and explicit unavailable account binding/policy. Synthetic local evidence only; production service disabled. No trust, key mutation, private-key or crypto readiness qualification."
+          ]
         },
         {
           "id": "R2-21-011",
@@ -3474,8 +3537,15 @@
         {
           "id": "R2-21-017",
           "label": "Explicit trust and no discovery explanation",
-          "status": "PENDING_RECONCILIATION",
-          "evidence": []
+          "status": "PARTIAL_FUNCTIONAL",
+          "evidence": [
+            "src/key_inventory_ui.rs",
+            "src/settings_openpgp_ui.rs",
+            "src/http_inventory_tests.rs",
+            "S05/resume-20261001/keys-{edge-final,firefox}/report.json",
+            "S05/resume-20261001/settings-{edge-final,firefox}/report.json",
+            "Read-only public metadata and explicit unavailable account binding/policy. Synthetic local evidence only; production service disabled. No trust, key mutation, private-key or crypto readiness qualification."
+          ]
         }
       ]
     },

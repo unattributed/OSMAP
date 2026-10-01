@@ -2370,3 +2370,112 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   Archive test's direct corruption-fixture lock. Its setup now waits at most
   500 ms, matching production lock acquisition; CAS, corruption and preservation
   assertions are unchanged. The failed hook and focused rerun are retained.
+
+### Resumed public inventory checkpoint — 2026-10-01 — VERIFIED
+
+- Operator explicitly said "Resume here" after selecting review, correction,
+  validation and a signed local checkpoint for the preserved OpenPGP work.
+  Base: `f70d74cd3c6937f23b2e9f17036b395f1855865e` on
+  `feat/ux-completion-20260929` in `/home/foo/Workspace/OSMAP`.
+  Signed revision-2 anchor `6b3ce8fff27ca3dabf87039d54098bd9967a2e42`,
+  its unchanged manifest and nested reference manifest verified on resume.
+- Bounded S04-01/S05-01/02 engineering checkpoint: reconcile the preserved
+  read-only public inventory transport, disabled runtime candidate and PAGE19/21
+  presentation. This does not advance unfinished predecessor slices to ACCEPTED.
+  Public metadata is not account binding, recipient trust or crypto readiness.
+- Allowlist: existing dirty inventory configuration/gateway/routes/UI/platform
+  files; new `src/openpgp_inventory*.rs`, inventory binary, key/settings renderers,
+  their CSS/fixtures, `maint/openpgp-runtime/` and two inventory browser workflows;
+  focused tests, current acceptance/route/generated assurance inventories,
+  decision/limitations evidence and this ledger. Preserve unrelated changes.
+  No new dependencies, private-key access, key mutations or crypto operations.
+  Keep `NATIVE_CONFINEMENT_QUALIFIED` false. Native acceptance remains pending.
+- Evidence root: `/home/foo/Downloads/osmap-ux-s05/resume-20261001/`, under the
+  owner-private S05 root. Initial tracked diff and untracked source hashes are
+  retained there. Disposable fixture state stays in temporary directories.
+- Validate parser/account/replay/deadline/refusal boundaries, actual authenticated
+  routes and unavailable versus verified-empty presentation; inspect PAGE19/21
+  light/dark/narrow/forced-colour renders in Edge and Firefox. Run formatting,
+  strict Clippy, security/acceptance/V10/V12/V13/V14 and whitespace checks.
+  Record failures and optional skips without weakening gates.
+- Live authority for this checkpoint: NONE. No host contact, deployment,
+  synchronization, mail delivery or persistent production state migration.
+  Rollback is source/binary rollback with inventory configuration absent;
+  production activation is deliberately refused. Preserve existing QA previews.
+  Finish with an explicitly signed, verified local commit, then stop for review.
+
+- Authority update: the operator subsequently required validation, verification
+  and substantiation on obsd1 and provided the explicit noninteractive SSH
+  identity `/home/foo/.ssh/id_ed25519` for `foo@192.168.1.44`, stating end-to-end
+  ownership. During this continuation, qualify a signed source export in a new
+  owner-private directory on verified `obsd1.blackbagsecurity.com`; use only
+  disposable synthetic public-key homes and standalone two-account Maildirs.
+  Run native inventory/confinement/limits/signed-client fixtures and the pending
+  metadata/create helper fixtures. Reuse the idle existing native build cache.
+  Preserve the standard `~/OSMAP` checkout and running services, capture their
+  before/after state, remove fixture state automatically, retain only sanitized
+  logs and source hashes under the S05 root. This supersedes NONE above for
+  these isolated native tests only; no deployment or Git synchronization.
+- Local verification complete: `make acceptance-check` passed (925 library
+  tests, ten explicit ignores, two hostile-content tests; security/V10–V13
+  included). Final strict Clippy and V14 passed. The first local gate found a
+  fixture-directory ownership assumption under the gate TMPDIR; fixture setup
+  now uses private children of canonical `/tmp`, preserving production checks.
+  Cargo's original binary remains the explicit default with no dependency change.
+- PAGE19/21 browser workflows passed in Edge and Firefox: twelve captures each
+  across 1600/768/360, light/dark and forced colours, keyboard navigation, theme
+  round-trip and zero external requests. Empty, foreign-account and unavailable
+  inventory controls passed. Compared actual PAGE19/21 against the approved
+  references; corrected stale unavailable-navigation copy and singular key text.
+  Evidence: `settings-{edge-final,firefox}` and `keys-{edge-final,firefox}` under
+  the resume root. Source/route controls keep runtime calls out of HTTP handlers;
+  shared V12 presentation exceptions have negative runtime-call controls.
+- Preparing the signed source export for the explicitly authorized native tests.
+  No slice acceptance, release qualification or deployed cryptography is claimed.
+- The signing hook's tracked-file scan caught a TLS guard false positive in the
+  newly staged C worker: pointer constant `NULL` was treated as a cipher name.
+  The guard now distinguishes C pointer tokens from string/comment contents;
+  cipher strings and all other prohibited patterns remain checked, with inline
+  positive/negative controls. The first signing attempt created no commit.
+- Final pre-commit security gate passed. GPG then refused with `No pinentry`;
+  no commit was created. Operator interaction to unlock the existing Shopkeeper
+  agent is pending. Native validation proceeds against an exact staged-tree
+  archive identified by tree SHA and SHA-256, with signed parent provenance;
+  final signed delivery must preserve the tested implementation bytes. This is
+  a source snapshot, not an unsigned commit or a deployed checkout.
+- Native verification passed on `obsd1.blackbagsecurity.com` / `192.168.1.44`,
+  OpenBSD 7.9, Cargo 1.94.1, as nonroot UID/GID 1000. Assessed source tree:
+  `752aacf348c09e95a198dbb9694d725438355866`; archive SHA-256:
+  `a04cbed9474a1938240d8efdc32752c55787cdccf805e8b73a0ab3360815aa5c`.
+  After the operator unlocked the agent, the exact archive received a verified
+  detached Shopkeeper signature. The final commit preserves these implementation
+  bytes; subsequent changes are status/limitations/ledger evidence only.
+- Native commands: `cargo test --offline --lib` (925 passed, 11 explicit ignores),
+  `cargo test --offline --test v4_hostile_assurance` (2 passed), and filtered
+  `cargo test --offline --lib isolated_openbsd_ -- --ignored --nocapture
+  --test-threads=1` (3 passed: metadata, creation and existing flag/move chain).
+  The three `maint/openpgp-runtime/native_{test,limits_test,runtime_test}.py`
+  programs passed. The runtime script explicitly executed its otherwise ignored
+  native signed-service/client test. Four native-only ignores were thus run
+  explicitly; browser/child fixtures and credential-backed live tests retain
+  their separately documented invocation/skip boundaries.
+- Native evidence proves distinct synthetic public homes, verified empty,
+  malformed/truncated/missing-home and bad-engine refusals, parent/child denial
+  of unrelated config and other account homes, rejection of nine subkeys and
+  33 primaries, and the 64 KiB metadata bound (60,200 accepted; 68,680 refused).
+  Signed client/dispatcher/worker passed for two accounts plus empty, unknown
+  and foreign-key controls. Public-home manifests were unchanged; fixture
+  agents and private scratch were removed by the test harnesses.
+- Native log SHA-256:
+  `be07c07997c08fd1be2efa35d4f3ed5acbaf7ba7575708380e68a4af646f4f8c`.
+  Retained `native-source.json`, `native-result.json`, `native-qualification.log`,
+  signed archive and portable sidecar under the existing resume root.
+  `host-before.txt` and `host-after.txt` are byte-identical: standard checkout
+  remains clean at `2a6993fe7df42a57f0cbb5fe3e33e331b400fef9`; both standard
+  OSMAP services remain healthy. Isolated source directory is
+  `/home/foo/osmap-ux-s05-20261001.fm3kndLP/source`.
+- This closes the bounded engineering validation checkpoint, including the
+  previously pending metadata/create native tests. S04/S05 and the full epic
+  remain open. Production service startup, separate service principals, bindings,
+  key lifecycle and message cryptography are not qualified by these fixtures.
+  `NATIVE_CONFINEMENT_QUALIFIED` remains false. No deployment, push or sync.

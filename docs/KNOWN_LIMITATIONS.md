@@ -2,6 +2,23 @@
 
 ## Full-functional UX epic execution boundary
 
+The October 1 public-inventory checkpoint adds read-only PAGE19/PAGE21 routes,
+strict bounded metadata and an authenticated local transport candidate.
+Inventory availability, including verified empty inventory, never establishes
+account binding, recipient trust, private-key availability or cryptographic
+readiness. Import, binding, rotation, removal, policy changes and message crypto
+remain unavailable. The production service explicitly refuses activation while
+`NATIVE_CONFINEMENT_QUALIFIED` is false; configuration cannot override it.
+Native candidate worker confinement, inventory limits and signed-client tests
+passed on obsd1 on October 1 against the recorded source-tree archive. These
+same-user disposable fixtures do not qualify production service startup,
+separate service principals or the full release assurance profile. Replay
+protection lasts for the service process
+lifetime; service restart loses the ten-second replay window. Cleanup uncertainty
+stops future worker admission. The standard host checkout and services were
+preserved; native source/build scratch was isolated. No deployment is included.
+
+
 The operator-requested `UX_FULL_FUNCTIONAL_EPIC.md` is a plan, not a
 functional-completion claim. S00 engineering intake is complete as of
 2026-09-29; S01 adds account-persisted light/dark/system appearance, the native

@@ -299,6 +299,18 @@ confirm health. Keep obsd1 evidence explicitly separate from Vultr production.
 
 ## Threat and migration map
 
+October 1 public-inventory checkpoint: the separately versioned protocol carries
+only authenticated canonical-account requests and bounded public metadata.
+It does not invoke the historical V12 crypto scaffold or enable mail cryptography.
+The V12 HTTP source checks retain their prohibition on crypto/runtime helper
+references, with exact reviewed presentation-literal/symbol exceptions shared
+by `maint/security/openpgp_http_boundary.py`. Its negative controls reject old
+helper invocation, inventory runtime/process access, unreviewed files and nested
+file-name substitutions. Synthetic parser access is limited to its test fixture.
+Command construction stays in `src/auth.rs`; process tests use a Rust child
+fixture without shell execution. Native production activation remains disabled.
+
+
 | Threat / authority | Required control and negative evidence |
 | --- | --- |
 | Unauthenticated/cross-account caller | Existing canonical session and grant boundary on every route/helper; wrong-account IDs denied before body/key access |

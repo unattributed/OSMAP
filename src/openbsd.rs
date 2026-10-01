@@ -18,6 +18,144 @@ use std::path::{Path, PathBuf};
 use crate::config::{AppConfig, LogLevel, OpenbsdConfinementMode};
 use crate::logging::{EventCategory, LogEvent, Logger};
 
+/// Disable and verify helper core dumps before loading authentication material.
+#[cfg(unix)]
+pub(crate) fn disable_core_dumps() -> io::Result<()> {
+    let limit = libc::rlimit {
+        rlim_cur: 0,
+        rlim_max: 0,
+    };
+    if unsafe { libc::setrlimit(libc::RLIMIT_CORE, &limit) } < 0 {
+        return Err(io::Error::last_os_error());
+    }
+    let mut actual = libc::rlimit {
+        rlim_cur: 1,
+        rlim_max: 1,
+    };
+    if unsafe { libc::getrlimit(libc::RLIMIT_CORE, &mut actual) } < 0 {
+        return Err(io::Error::last_os_error());
+    }
+    if actual.rlim_cur != 0 || actual.rlim_max != 0 {
+        return Err(io::ErrorKind::PermissionDenied.into());
+    }
+    Ok(())
+}
+
+/// Nonblocking pipe drains keep worker output under the same absolute deadline.
+#[cfg(unix)]
+pub(crate) fn set_descriptor_nonblocking(fd: i32) -> io::Result<()> {
+    if fd < 0 {
+        return Err(io::Error::from(io::ErrorKind::InvalidInput));
+    }
+    let flags = unsafe { libc::fcntl(fd, libc::F_GETFL) };
+    if flags < 0 || unsafe { libc::fcntl(fd, libc::F_SETFL, flags | libc::O_NONBLOCK) } < 0 {
+        return Err(io::Error::last_os_error());
+    }
+    Ok(())
+}
+/// Only a child started as its own process-group leader may be passed here.
+#[cfg(unix)]
+pub(crate) fn kill_process_group(child_pid: u32) -> io::Result<()> {
+    let pid = i32::try_from(child_pid).map_err(|_| io::Error::from(io::ErrorKind::InvalidInput))?;
+    if pid <= 1 {
+        return Err(io::Error::from(io::ErrorKind::InvalidInput));
+    }
+    if unsafe { libc::kill(-pid, libc::SIGKILL) } < 0 {
+        return Err(io::Error::last_os_error());
+    }
+    Ok(())
+}
+
+/// Deadline-bound local connect; avoids blocking on a full Unix listener backlog.
+#[cfg(unix)]
+pub(crate) fn connect_unix_before(
+    path: &Path,
+    deadline: std::time::Instant,
+) -> io::Result<UnixStream> {
+    use std::os::fd::{FromRawFd, OwnedFd};
+    use std::os::unix::ffi::OsStrExt;
+    let bytes = path.as_os_str().as_bytes();
+    let mut address: libc::sockaddr_un = unsafe { std::mem::zeroed() };
+    if bytes.is_empty() || bytes.len() >= address.sun_path.len() || bytes.contains(&0) {
+        return Err(io::ErrorKind::InvalidInput.into());
+    }
+    address.sun_family = libc::AF_UNIX as _;
+    #[cfg(target_os = "openbsd")]
+    {
+        address.sun_len = std::mem::size_of::<libc::sockaddr_un>() as u8;
+    }
+    for (dest, source) in address.sun_path.iter_mut().zip(bytes) {
+        *dest = *source as _;
+    }
+    let raw = unsafe {
+        libc::socket(
+            libc::AF_UNIX,
+            libc::SOCK_STREAM | libc::SOCK_CLOEXEC | libc::SOCK_NONBLOCK,
+            0,
+        )
+    };
+    if raw < 0 {
+        return Err(io::Error::last_os_error());
+    }
+    let fd = unsafe { OwnedFd::from_raw_fd(raw) };
+    let result = unsafe {
+        libc::connect(
+            raw,
+            (&address as *const libc::sockaddr_un).cast(),
+            std::mem::size_of::<libc::sockaddr_un>() as _,
+        )
+    };
+    if result < 0 {
+        let error = io::Error::last_os_error();
+        if error.raw_os_error() != Some(libc::EINPROGRESS) {
+            return Err(error);
+        }
+        loop {
+            let left = deadline
+                .checked_duration_since(std::time::Instant::now())
+                .ok_or(io::ErrorKind::TimedOut)?;
+            let mut poll = libc::pollfd {
+                fd: raw,
+                events: libc::POLLOUT,
+                revents: 0,
+            };
+            let timeout = left.as_millis().clamp(1, i32::MAX as u128) as i32;
+            let result = unsafe { libc::poll(&mut poll, 1, timeout) };
+            if result == 0 {
+                return Err(io::ErrorKind::TimedOut.into());
+            }
+            if result < 0 {
+                let e = io::Error::last_os_error();
+                if e.kind() == io::ErrorKind::Interrupted {
+                    continue;
+                }
+                return Err(e);
+            }
+            let mut error: libc::c_int = 0;
+            let mut len = std::mem::size_of_val(&error) as libc::socklen_t;
+            if unsafe {
+                libc::getsockopt(
+                    raw,
+                    libc::SOL_SOCKET,
+                    libc::SO_ERROR,
+                    (&mut error as *mut libc::c_int).cast(),
+                    &mut len,
+                )
+            } < 0
+            {
+                return Err(io::Error::last_os_error());
+            }
+            if error != 0 {
+                return Err(io::Error::from_raw_os_error(error));
+            }
+            break;
+        }
+    }
+    let stream = UnixStream::from(fd);
+    stream.set_nonblocking(false)?;
+    Ok(stream)
+}
+
 /// Acquires a blocking advisory exclusive lock on an already-open file.
 ///
 /// The unsafe system-call boundary stays in this reviewed platform module so
@@ -628,6 +766,7 @@ mod tests {
 
     fn config_fixture(mode: OpenbsdConfinementMode) -> AppConfig {
         AppConfig {
+            openpgp_inventory: None,
             run_mode: AppRunMode::Serve,
             environment: RuntimeEnvironment::Production,
             listen_addr: "127.0.0.1:8080".to_string(),

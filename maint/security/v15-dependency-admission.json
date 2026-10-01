@@ -1,7 +1,7 @@
 {
   "cargo_baseline": {
     "cargo_lock_sha256": "83af34469de7f7c8c4d6f02dbf9b1289fbf8b7881ee7f24bfd6748f378de266e",
-    "cargo_toml_sha256": "f8dc01188aa4815033c8405ffab5050a404972312dbbd7f99cae481b1938418f",
+    "cargo_toml_sha256": "a669f0c4b32ebc22a480a94aa0f5f9efb8c9d1d4fbfcaceec551b611d2d62b09",
     "locked_package_count": 82
   },
   "dependencies": [

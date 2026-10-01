@@ -814,19 +814,26 @@ pub use self::http_browser::{
     BrowserMailboxStatusOutcome, BrowserMessageFlagFailure, BrowserMessageFlagOutcome,
     BrowserMessageListDecision, BrowserMessageListOutcome, BrowserMessageMoveDecision,
     BrowserMessageMoveOutcome, BrowserMessageSearchDecision, BrowserMessageSearchOutcome,
-    BrowserMessageViewDecision, BrowserMessageViewOutcome, BrowserSendDecision, BrowserSendOutcome,
-    BrowserSendRecoveryDecision, BrowserSendRecoverySnapshot, BrowserSendRequest,
-    BrowserSessionDecision, BrowserSessionListDecision, BrowserSessionListOutcome,
-    BrowserSessionRevokeDecision, BrowserSessionRevokeOutcome, BrowserSessionRevokeScope,
-    BrowserSessionValidationOutcome, BrowserSettingsDecision, BrowserSettingsOutcome,
-    BrowserSettingsUpdateDecision, BrowserSettingsUpdateOutcome, BrowserVisibleSession,
-    BrowserVisibleSettings,
+    BrowserMessageViewDecision, BrowserMessageViewOutcome, BrowserPublicInventoryOutcome,
+    BrowserSendDecision, BrowserSendOutcome, BrowserSendRecoveryDecision,
+    BrowserSendRecoverySnapshot, BrowserSendRequest, BrowserSessionDecision,
+    BrowserSessionListDecision, BrowserSessionListOutcome, BrowserSessionRevokeDecision,
+    BrowserSessionRevokeOutcome, BrowserSessionRevokeScope, BrowserSessionValidationOutcome,
+    BrowserSettingsDecision, BrowserSettingsOutcome, BrowserSettingsUpdateDecision,
+    BrowserSettingsUpdateOutcome, BrowserVisibleSession, BrowserVisibleSettings,
 };
 pub use self::http_gateway::RuntimeBrowserGateway;
 pub use self::http_runtime::run_http_server;
 
 #[cfg(test)]
 mod tests {
+    mod inventory_route_tests {
+        include!("http_inventory_tests.rs");
+    }
+    mod key_inventory_fixture {
+        use super::*;
+        include!("http/key_inventory_fixture.rs");
+    }
     mod folder_create_fixture {
         include!("http/folder_create_fixture.rs");
     }
@@ -2141,6 +2148,13 @@ mod tests {
                 outcome,
                 audit_events: vec![],
             }
+        }
+        fn public_key_inventory(
+            &self,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+        ) -> BrowserPublicInventoryOutcome {
+            key_inventory_fixture::outcome(&context.user_agent, &session.record.canonical_username)
         }
         fn folder_metadata(
             &self,

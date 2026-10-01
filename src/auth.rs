@@ -45,6 +45,38 @@ pub const DEFAULT_EXTERNAL_COMMAND_OUTPUT_MAX_BYTES: usize = 4 * 1024 * 1024;
 /// Minimal bounded environment supplied to external commands.
 const SAFE_COMMAND_PATH: &str = "/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin";
 
+/// Construct only the operator-mapped public inventory worker invocation.
+/// Its caller validates both paths; browser requests cannot supply either path.
+#[cfg(unix)]
+pub(crate) fn public_inventory_command(
+    worker: &std::path::Path,
+    home: &std::path::Path,
+) -> Command {
+    let mut command = Command::new(worker);
+    command
+        .arg(home)
+        .env_clear()
+        .env("PATH", SAFE_COMMAND_PATH)
+        .env("LC_ALL", "C")
+        .env("GNUPGHOME", home)
+        .current_dir(home);
+    command
+}
+
+#[cfg(all(test, unix))]
+pub(crate) fn inventory_fixture_command(mode: &str) -> Command {
+    let mut command = Command::new(std::env::current_exe().unwrap());
+    command
+        .args([
+            "--exact",
+            "openpgp_inventory_process::tests::worker_fixture",
+            "--ignored",
+            "--nocapture",
+        ])
+        .env("OSMAP_INVENTORY_PROCESS_FIXTURE", mode);
+    command
+}
+
 /// Defines the bounds and mandatory second-factor policy for browser auth.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AuthenticationPolicy {

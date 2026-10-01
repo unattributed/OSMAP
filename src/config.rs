@@ -32,6 +32,7 @@ pub const DEFAULT_AUTH_BACKEND_TIMEOUT_SECONDS: u64 = 20;
 /// output because it excludes secret-bearing fields.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AppConfig {
+    pub openpgp_inventory: Option<OpenPgpInventoryConfig>,
     pub run_mode: AppRunMode,
     pub environment: RuntimeEnvironment,
     pub listen_addr: String,
@@ -233,6 +234,38 @@ impl OpenbsdConfinementMode {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OpenPgpInventoryConfig {
+    pub socket: PathBuf,
+    pub key_file: PathBuf,
+    pub helper_uid: u32,
+}
+fn parse_openpgp_inventory(
+    env: &BTreeMap<String, String>,
+) -> Result<Option<OpenPgpInventoryConfig>, BootstrapError> {
+    let socket = parse_optional_absolute_optional_path(env, "OSMAP_OPENPGP_INVENTORY_SOCKET")?;
+    let key_file = parse_optional_absolute_optional_path(env, "OSMAP_OPENPGP_INVENTORY_KEY_FILE")?;
+    let uid = env.get("OSMAP_OPENPGP_INVENTORY_HELPER_UID");
+    let error = || BootstrapError::InvalidConfig {
+        field: "OSMAP_OPENPGP_INVENTORY_HELPER_UID",
+        reason:
+            "inventory socket, key file and explicit decimal helper UID must be configured together"
+                .into(),
+    };
+    match (socket, key_file, uid) {
+        (None, None, None) => Ok(None),
+        (Some(socket), Some(key_file), Some(uid))
+            if !uid.is_empty() && uid.len() <= 10 && uid.bytes().all(|b| b.is_ascii_digit()) =>
+        {
+            Ok(Some(OpenPgpInventoryConfig {
+                socket,
+                key_file,
+                helper_uid: uid.parse().map_err(|_| error())?,
+            }))
+        }
+        _ => Err(error()),
+    }
+}
 impl AppConfig {
     /// Loads configuration from the current process environment.
     pub fn from_process_env() -> Result<Self, BootstrapError> {
@@ -671,6 +704,7 @@ impl AppConfig {
         )?;
 
         Ok(Self {
+            openpgp_inventory: parse_openpgp_inventory(env_map)?,
             run_mode,
             environment,
             listen_addr,
@@ -1958,5 +1992,54 @@ mod tests {
                 expected: "disabled, log-only, or enforce",
             }
         );
+    }
+}
+
+#[cfg(test)]
+mod inventory_config_tests {
+    use super::*;
+    #[test]
+    fn inventory_config_is_explicit_optional_and_bounded() {
+        let empty = BTreeMap::new();
+        assert!(AppConfig::from_env_map(&empty)
+            .unwrap()
+            .openpgp_inventory
+            .is_none());
+        let good = BTreeMap::from([
+            (
+                "OSMAP_OPENPGP_INVENTORY_SOCKET".into(),
+                "/run/osmap/public.sock".into(),
+            ),
+            (
+                "OSMAP_OPENPGP_INVENTORY_KEY_FILE".into(),
+                "/etc/osmap/public.key".into(),
+            ),
+            ("OSMAP_OPENPGP_INVENTORY_HELPER_UID".into(), "1002".into()),
+        ]);
+        assert_eq!(
+            AppConfig::from_env_map(&good)
+                .unwrap()
+                .openpgp_inventory
+                .unwrap()
+                .helper_uid,
+            1002
+        );
+        for key in good.keys() {
+            let mut bad = good.clone();
+            bad.remove(key);
+            assert!(AppConfig::from_env_map(&bad).is_err());
+        }
+        for (key, value) in [
+            ("OSMAP_OPENPGP_INVENTORY_SOCKET", "relative"),
+            ("OSMAP_OPENPGP_INVENTORY_KEY_FILE", "relative"),
+            ("OSMAP_OPENPGP_INVENTORY_HELPER_UID", ""),
+            ("OSMAP_OPENPGP_INVENTORY_HELPER_UID", "-1"),
+            ("OSMAP_OPENPGP_INVENTORY_HELPER_UID", "4294967296"),
+            ("OSMAP_OPENPGP_INVENTORY_HELPER_UID", "+1"),
+        ] {
+            let mut bad = good.clone();
+            bad.insert(key.into(), value.into());
+            assert!(AppConfig::from_env_map(&bad).is_err());
+        }
     }
 }

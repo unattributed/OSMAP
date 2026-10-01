@@ -1246,6 +1246,7 @@ mod tests {
         fs::set_permissions(&grant_key_path, fs::Permissions::from_mode(0o600))
             .expect("grant key permissions should be restricted");
         let config = AppConfig {
+            openpgp_inventory: None,
             run_mode: AppRunMode::MailboxHelper,
             environment: crate::config::RuntimeEnvironment::Development,
             listen_addr: "127.0.0.1:8080".to_string(),
@@ -1324,6 +1325,7 @@ mod tests {
             .uid();
         let mismatched_uid = actual_uid.saturating_add(1);
         let config = AppConfig {
+            openpgp_inventory: None,
             run_mode: AppRunMode::MailboxHelper,
             environment: crate::config::RuntimeEnvironment::Development,
             listen_addr: "127.0.0.1:8080".to_string(),

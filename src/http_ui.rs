@@ -5,6 +5,8 @@
 
 #[path = "folder_create_ui.rs"]
 mod folder_create_ui;
+#[path = "key_inventory_ui.rs"]
+pub(crate) mod key_inventory_ui;
 pub(crate) use folder_create_ui::render_folder_create;
 
 #[path = "snooze_ui.rs"]
@@ -32,6 +34,7 @@ use crate::mailbox::{
 use crate::message_metadata::{MessageFlag, MessageMetadata};
 use crate::mime::{AttachmentMetadata, DEFAULT_MIME_PARTS_MAX};
 use crate::rendering::{HtmlDisplayPreference, RenderedMessageView};
+pub(crate) use settings_ui::render_openpgp_settings;
 pub(crate) use settings_ui::{
     render_appearance_page, render_composition_page_with_signature, render_copies_page,
     render_general_page, render_identity_page, render_identity_page_with_signature,
@@ -194,7 +197,8 @@ fn header_theme_controls(csrf: &str, current: &str) -> String {
     let compose = current == "compose";
     let disabled = current == "compose-result"
         || current == "settings"
-        || (current.starts_with("settings-") && current != "settings-search")
+        || (current.starts_with("settings-")
+            && !matches!(current, "settings-search" | "settings-openpgp"))
         || current == "contacts"
         || current == "labels"
         || current == "snooze";
@@ -390,6 +394,11 @@ pub(crate) fn render_settings_search_page(account: &str, csrf: &str, query: &str
             "Security",
             "security authentication password totp sessions protection",
             "/settings?section=security",
+        ),
+        (
+            "OpenPGP public inventory",
+            "openpgp keys public inventory fingerprint",
+            "/settings?section=openpgp",
         ),
         (
             "Notifications",
