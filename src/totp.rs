@@ -50,9 +50,17 @@ impl Default for TotpPolicy {
 }
 
 /// Carries the raw shared secret bytes for TOTP verification.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct TotpSecret {
     pub secret_bytes: Vec<u8>,
+}
+
+impl std::fmt::Debug for TotpSecret {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TotpSecret")
+            .field("secret_bytes", &"[REDACTED]")
+            .finish()
+    }
 }
 
 /// A source of current Unix time for TOTP verification.
@@ -625,6 +633,16 @@ mod tests {
     use crate::auth::RequiredSecondFactor;
     use std::collections::BTreeMap;
     use std::fs;
+
+    #[test]
+    fn redacts_totp_secret_in_debug_output() {
+        let secret = TotpSecret {
+            secret_bytes: b"test-secret-material".to_vec(),
+        };
+        let debug_output = format!("{secret:?}");
+        assert!(debug_output.contains("REDACTED"));
+        assert!(!debug_output.contains("test-secret-material"));
+    }
 
     #[derive(Debug, Clone, Copy)]
     struct FixedTimeProvider {

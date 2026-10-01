@@ -144,6 +144,7 @@ where
         ) {
             return response;
         }
+
         if form.len() != 7
             || form.keys().any(|key| {
                 !matches!(
@@ -371,7 +372,9 @@ where
                         200,
                         "OK",
                         "Resume Draft",
-                        render_compose_page(&ComposePageModel {
+                        self.render_protected_compose_page(&validated_session, ComposePageModel {
+                            protection: draft.request.protection,
+                            openpgp: None,
                     sender_identity: Some(&draft.request.sender_identity),
                             send_intent: &send_intent,
                             contacts: self.contact_snapshot(&validated_session).ok().as_ref(),
@@ -463,7 +466,7 @@ where
         let parsed_form = match parse_compose_form(
             &request.body,
             request.headers.get("content-type").map(String::as_str),
-            self.policy.max_form_fields.saturating_add(13),
+            self.policy.max_form_fields.saturating_add(17),
             self.policy.max_upload_body_bytes,
             ComposePolicy::default(),
         ) {
@@ -496,6 +499,31 @@ where
             return response;
         }
 
+        let protection = match super::compose_protection::intent_from_form(&form) {
+            Ok(intent) => intent,
+            Err(message) if request.path == "/drafts/autosave" => {
+                let _ = message;
+                return HandledHttpResponse {
+                    response: super::routes_autosave::json(
+                        409,
+                        serde_json::json!({"version":1,"state":"paused"}),
+                    ),
+                    audit_events,
+                };
+            }
+            Err(message) => {
+                return HandledHttpResponse {
+                    response: self.retained_compose_input_error(
+                        &validated_session,
+                        &form,
+                        None,
+                        message,
+                    ),
+                    audit_events,
+                }
+            }
+        };
+
         if request.path == "/drafts/autosave" {
             let allowed = [
                 "csrf_token",
@@ -507,6 +535,10 @@ where
                 "subject",
                 "body",
                 "body_format",
+                "pgp_sign",
+                "pgp_encrypt",
+                "pgp_self",
+                "pgp_binding_revision",
                 "draft_id",
                 "draft_revision",
                 "reply_mailbox",
@@ -585,7 +617,9 @@ where
         };
         if let Err(error) = contact_result {
             return HandledHttpResponse {
-                response: super::compose_enhancement::response(409, "Conflict", "Choose a Contact", render_compose_page(&ComposePageModel {
+                response: super::compose_enhancement::response(409, "Conflict", "Choose a Contact", self.render_protected_compose_page(&validated_session, ComposePageModel {
+                    protection: super::compose_protection::retained_intent_from_form(&form),
+                    openpgp: None,
                     sender_identity: None,
                         send_intent: form.get("send_intent").map(String::as_str).unwrap_or_default(),
                     contacts: self.contact_snapshot(&validated_session).ok().as_ref(),
@@ -727,6 +761,7 @@ where
             context,
             &validated_session,
             BrowserDraftSaveRequest {
+                protection,
                 send_intent: form
                     .get("send_intent")
                     .map(String::as_str)
@@ -872,7 +907,9 @@ where
                         status_code,
                         reason_phrase,
                         "Compose",
-                        render_compose_page(&ComposePageModel {
+                        self.render_protected_compose_page(&validated_session, ComposePageModel {
+                            protection: super::compose_protection::retained_intent_from_form(&form),
+                            openpgp: None,
                     sender_identity: None,
                         send_intent: form.get("send_intent").map(String::as_str).unwrap_or_default(),
                             contacts: self.contact_snapshot(&validated_session).ok().as_ref(),

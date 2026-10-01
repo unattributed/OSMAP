@@ -77,6 +77,40 @@ pub(crate) fn inventory_fixture_command(mode: &str) -> Command {
     command
 }
 
+/// Only operator-validated worker, engine and account home paths enter here.
+/// Operation bytes are sent over stdin, never in command arguments.
+#[cfg(unix)]
+pub(crate) fn crypto_worker_command(
+    worker: &std::path::Path,
+    engine: &std::path::Path,
+    home: &std::path::Path,
+) -> Command {
+    let mut command = Command::new(worker);
+    command
+        .arg(home)
+        .arg(engine)
+        .env_clear()
+        .env("PATH", SAFE_COMMAND_PATH)
+        .env("LC_ALL", "C")
+        .env("GNUPGHOME", home)
+        .current_dir(home);
+    command
+}
+
+#[cfg(all(test, unix))]
+pub(crate) fn crypto_fixture_command(mode: &str) -> Command {
+    let mut command = Command::new(std::env::current_exe().unwrap());
+    command
+        .args([
+            "--exact",
+            "openpgp_crypto_process::tests::worker_fixture",
+            "--ignored",
+            "--nocapture",
+        ])
+        .env("OSMAP_CRYPTO_PROCESS_FIXTURE", mode);
+    command
+}
+
 /// Defines the bounds and mandatory second-factor policy for browser auth.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AuthenticationPolicy {
@@ -198,9 +232,17 @@ impl AuthenticationContext {
 }
 
 /// Carries a bounded second-factor code after validation.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct SecondFactorInput {
     code: String,
+}
+
+impl std::fmt::Debug for SecondFactorInput {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("SecondFactorInput")
+            .field("code", &"[REDACTED]")
+            .finish()
+    }
 }
 
 impl SecondFactorInput {
@@ -1198,10 +1240,9 @@ fn parse_doveadm_auth_test_output(
 
     Err(PrimaryAuthBackendError {
         backend: "doveadm-auth-test",
-        reason: format!(
-            "unexpected doveadm result status={} output={:?}",
-            execution.status_code, combined_output
-        ),
+        // Backend text is untrusted and can contain private auth diagnostics.
+        // Audit only the numeric status, never stdout or stderr bytes.
+        reason: format!("unexpected doveadm result status={}", execution.status_code),
     })
 }
 
@@ -1367,6 +1408,27 @@ mod tests {
 
         assert!(debug_output.contains("<redacted>"));
         assert!(!debug_output.contains("correct horse battery staple"));
+    }
+
+    #[test]
+    fn redacts_second_factor_in_debug_output() {
+        let input = SecondFactorInput::new(AuthenticationPolicy::default(), "123456").unwrap();
+        let debug_output = format!("{input:?}");
+        assert!(debug_output.contains("REDACTED"));
+        assert!(!debug_output.contains("123456"));
+    }
+
+    #[test]
+    fn unexpected_doveadm_output_is_not_copied_into_audit_reason() {
+        let execution = CommandExecution {
+            status_code: 75,
+            stdout: "private-auth-field-marker".into(),
+            stderr: "private-diagnostic-marker".into(),
+        };
+        let error = parse_doveadm_auth_test_output("alice@example.com", &execution).unwrap_err();
+        assert_eq!(error.reason, "unexpected doveadm result status=75");
+        assert!(!error.reason.contains("private-auth-field-marker"));
+        assert!(!error.reason.contains("private-diagnostic-marker"));
     }
 
     #[test]

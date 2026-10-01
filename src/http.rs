@@ -9,6 +9,8 @@ pub(crate) mod compose_actions;
 pub(crate) mod compose_delivery_ui;
 mod compose_enhancement;
 pub(crate) mod compose_preflight;
+pub(crate) mod compose_protection;
+pub use compose_protection::ComposeProtectionView;
 #[path = "http/folder_tree.rs"]
 mod folder_tree;
 mod header_theme;
@@ -32,6 +34,8 @@ mod routes_draft;
 mod routes_draft_selection;
 mod routes_flags;
 mod routes_identity_preferences;
+#[path = "http/routes_keys.rs"]
+mod routes_keys;
 mod routes_label_selection;
 mod routes_labels;
 mod routes_mail;
@@ -93,6 +97,7 @@ use crate::http_ui::{
 use crate::logging::LogEvent;
 #[cfg(test)]
 use crate::logging::{EventCategory, Logger};
+use crate::mailbox::MessageView;
 use crate::mailbox::{
     DoveadmMailboxListBackend, DoveadmMessageAppendBackend, DoveadmMessageListBackend,
     DoveadmMessageMoveBackend, DoveadmMessageSearchBackend, DoveadmMessageViewBackend,
@@ -104,19 +109,19 @@ use crate::mailbox::{
     MessageViewPolicy, MessageViewRequest, MessageViewService,
 };
 use crate::mailbox_helper::{
-    MailboxHelperAttachmentDownloadBackend, MailboxHelperMailboxListBackend,
-    MailboxHelperMessageAppendBackend, MailboxHelperMessageListBackend,
-    MailboxHelperMessageMoveBackend, MailboxHelperMessageSearchBackend,
-    MailboxHelperMessageViewBackend, MailboxHelperPolicy,
+    MailboxHelperMailboxListBackend, MailboxHelperMessageAppendBackend,
+    MailboxHelperMessageListBackend, MailboxHelperMessageMoveBackend,
+    MailboxHelperMessageSearchBackend, MailboxHelperMessageViewBackend, MailboxHelperPolicy,
 };
 use crate::rendering::{
     HtmlDisplayPreference, PlainTextMessageRenderer, RenderedMessageView, RenderingPolicy,
 };
+#[cfg(test)]
+use crate::send::build_submission_message;
 use crate::send::{
-    build_submission_message, ComposeDraft, ComposeIntent, ComposePolicy, ComposeRequest,
-    SendmailSubmissionBackend, SubmissionDecision, SubmissionOutcome,
-    SubmissionPublicFailureReason, SubmissionService, UploadedAttachment,
-    DEFAULT_ATTACHMENT_MAX_BYTES, DEFAULT_TOTAL_ATTACHMENT_MAX_BYTES,
+    ComposeDraft, ComposeIntent, ComposePolicy, ComposeRequest, SendmailSubmissionBackend,
+    SubmissionDecision, SubmissionOutcome, SubmissionPublicFailureReason, SubmissionService,
+    UploadedAttachment, DEFAULT_ATTACHMENT_MAX_BYTES, DEFAULT_TOTAL_ATTACHMENT_MAX_BYTES,
 };
 use crate::session::{
     FileSessionStore, SessionService, SessionToken, SystemRandomSource, ValidatedSession,
@@ -916,6 +921,12 @@ mod tests {
     }
     mod content_tests {
         include!("http/content_tests.rs");
+    }
+    mod protected_route_tests {
+        include!("http/protected_route_tests.rs");
+    }
+    mod key_management_route_tests {
+        include!("http/key_management_route_tests.rs");
     }
     mod reply_tests {
         include!("http/reply_tests.rs");
@@ -2149,6 +2160,26 @@ mod tests {
                 audit_events: vec![],
             }
         }
+        fn key_management(
+            &self,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+        ) -> crate::key_management::StateOutcome {
+            let inventory = key_inventory_fixture::outcome(
+                &context.user_agent,
+                &session.record.canonical_username,
+            );
+            crate::key_management::StateOutcome {
+                state: crate::key_management::State {
+                    canonical_username: inventory.canonical_username,
+                    inventory: inventory.inventory,
+                    bindings: None,
+                    binding_changes_available: false,
+                    public_key_changes_available: false,
+                },
+                audit_events: vec![],
+            }
+        }
         fn public_key_inventory(
             &self,
             context: &AuthenticationContext,
@@ -3027,6 +3058,7 @@ mod tests {
                         validated_session.record.canonical_username.clone()
                     },
                     rendered: Box::new(RenderedMessageView {
+                        openpgp: None,
                         metadata,
                         to: Some(validated_session.record.canonical_username.clone()),
                         cc: None,
@@ -3227,7 +3259,18 @@ mod tests {
             session: &ValidatedSession,
             request: &MessageViewRequest,
         ) -> crate::mailbox::MessageViewOutcome {
-            content_tests::fixture_source(self, context, session, request)
+            protected_route_tests::source_fixture(context, session, request)
+                .unwrap_or_else(|| content_tests::fixture_source(self, context, session, request))
+        }
+
+        fn download_stored_attachment(
+            &self,
+            context: &AuthenticationContext,
+            session: &ValidatedSession,
+            message: &MessageView,
+            part: &str,
+        ) -> BrowserAttachmentDownloadOutcome {
+            protected_route_tests::stored_attachment_fixture(context, session, message, part)
         }
 
         fn download_attachment(
@@ -4472,6 +4515,7 @@ mod tests {
             &context,
             &validated_session,
             BrowserSendRequest {
+                protection: crate::send::ProtectionIntent::default(),
                 send_intent: &crate::send_journal::mint_intent(gateway.send_clock()).unwrap(),
                 draft_id: None,
                 draft_revision: None,

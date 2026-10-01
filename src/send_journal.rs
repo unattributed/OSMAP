@@ -297,6 +297,26 @@ pub(crate) fn snapshot_digest(account: &str, request: &ComposeRequest) -> String
             request.sender_identity.reply_to().unwrap_or("").as_bytes(),
         );
     }
+    // Preserve existing ordinary-attempt hashes while binding every explicit
+    // protection/revision selection into new protected attempts.
+    if request.protection != crate::send::ProtectionIntent::default() {
+        field(&mut hash, b"openpgp-intent-v1");
+        field(
+            &mut hash,
+            &[
+                u8::from(request.protection.sign),
+                u8::from(request.protection.encrypt),
+                u8::from(request.protection.encrypt_to_self),
+            ],
+        );
+        match request.protection.binding_revision {
+            Some(revision) => {
+                field(&mut hash, &[1]);
+                field(&mut hash, &revision.to_be_bytes());
+            }
+            None => field(&mut hash, &[0]),
+        }
+    }
     hex(&hash.finalize())
 }
 

@@ -4,12 +4,14 @@ use crate::notifications::{NotificationKind, NotificationStore};
 fn notification_native_owner_csrf_cas_and_corrupt_refusal() {
     let root = temp_dir("notification-route");
     let store = NotificationStore::new(root.join("inbox"));
-    let now = crate::totp::TimeProvider::unix_timestamp(&crate::totp::SystemTimeProvider);
+    // Routes use the current request clock. Read subsequent state at the current
+    // time too, even when the route crosses a wall-clock second boundary.
+    let now = || crate::totp::TimeProvider::unix_timestamp(&crate::totp::SystemTimeProvider);
     store
-        .record("alice@example.com", NotificationKind::SessionIssued, now)
+        .record("alice@example.com", NotificationKind::SessionIssued, now())
         .unwrap();
     store
-        .record("bob@example.com", NotificationKind::SessionIssued, now)
+        .record("bob@example.com", NotificationKind::SessionIssued, now())
         .unwrap();
     let app = BrowserApp::new(
         HttpPolicy::default(),
@@ -18,7 +20,7 @@ fn notification_native_owner_csrf_cas_and_corrupt_refusal() {
             ..StubGateway::default()
         },
     );
-    let inbox = store.load("alice@example.com", now).unwrap();
+    let inbox = store.load("alice@example.com", now()).unwrap();
     let id = &inbox.events[0].event_id;
     let csrf = StubGateway::validated_session().record.csrf_token;
     let body = format!(
@@ -45,10 +47,10 @@ fn notification_native_owner_csrf_cas_and_corrupt_refusal() {
         400
     );
     assert_eq!(post(&body).response.status_code, 303);
-    assert!(store.load("alice@example.com", now).unwrap().events[0].read);
+    assert!(store.load("alice@example.com", now()).unwrap().events[0].read);
     assert_eq!(post(&body).response.status_code, 409);
-    let foreign = store.load("bob@example.com", now).unwrap();
-    let current = store.load("alice@example.com", now).unwrap();
+    let foreign = store.load("bob@example.com", now()).unwrap();
+    let current = store.load("alice@example.com", now()).unwrap();
     assert_eq!(
         post(&format!(
             "csrf_token={csrf}&event_id={}&revision={}&read=1",
@@ -58,7 +60,7 @@ fn notification_native_owner_csrf_cas_and_corrupt_refusal() {
         .status_code,
         400
     );
-    assert!(!store.load("bob@example.com", now).unwrap().events[0].read);
+    assert!(!store.load("bob@example.com", now()).unwrap().events[0].read);
     let path = fs::read_dir(root.join("inbox"))
         .unwrap()
         .map(|entry| entry.unwrap().path())

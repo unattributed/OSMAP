@@ -295,6 +295,7 @@ mod tests {
     fn startup_report_is_operator_readable() {
         let config = AppConfig {
             openpgp_inventory: None,
+            openpgp_crypto: None,
             run_mode: AppRunMode::Bootstrap,
             environment: RuntimeEnvironment::Development,
             listen_addr: "127.0.0.1:8080".to_string(),

@@ -36,6 +36,7 @@ pub struct DraftContent {
     pub body_format: crate::compose_format::BodyFormat,
     pub attachments: Vec<UploadedAttachment>,
     pub reply_thread: Option<crate::reply_thread::ReplyThread>,
+    pub protection: crate::send::ProtectionIntent,
 }
 
 impl std::fmt::Debug for DraftContent {
@@ -68,6 +69,7 @@ impl DraftContent {
             body_format: crate::compose_format::BodyFormat::Plain,
             attachments,
             reply_thread: None,
+            protection: crate::send::ProtectionIntent::default(),
         };
         value.validate(policy)?;
         Ok(value)

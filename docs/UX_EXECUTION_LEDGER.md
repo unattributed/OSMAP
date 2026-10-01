@@ -2479,3 +2479,324 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   remain open. Production service startup, separate service principals, bindings,
   key lifecycle and message cryptography are not qualified by these fixtures.
   `NATIVE_CONFINEMENT_QUALIFIED` remains false. No deployment, push or sync.
+
+### Development platform activation — 2026-10-01 — IN_PROGRESS
+
+- Operator explicitly requested a real Proton-to-OSMAP test, authorized making
+  obsd1 ready, and clarified that obsd1 is the development platform rather than
+  a narrowly routed production-recipient test. Deploy the signed `edfb2f0`
+  implementation there and enable local development mail for
+  `obsd1.blackbagsecurity.com`, with `osmap-test` as the initial account.
+  Production Thunderbird delivery remains on its existing host. This instruction
+  supersedes earlier isolated-fixture-only authority for obsd1; no Git push.
+- Reuse the already verified native source/build, verify implementation parity,
+  retain the old binary/configuration for rollback, provision real Dovecot and
+  TOTP authentication, and verify real local SMTP delivery plus browser workflows.
+  Secrets stay in private runtime storage; evidence under
+  `/home/foo/Downloads/osmap-ux-s11/real-mail-20261001/` contains no credentials.
+- This is a usable development deployment, not full S11 or epic acceptance.
+  Existing unfinished OpenPGP and other features remain explicitly unfinished.
+  Keep the approved design and authentication/confinement controls intact.
+- Current UX deployed on obsd1; both application services, Dovecot and nginx
+  are healthy. Original binary/configuration are in
+  `/var/backups/osmap-dev-20261001/`. The production host was not changed.
+- Fixed a real deployment defect: the browser and all-folder search hid the
+  top-level `Archive` mailbox despite Dovecot returning it. Both now include it
+  only through the existing authenticated account listing; shared/foreign
+  namespaces remain excluded. Two focused tests passed on Linux and OpenBSD.
+- Live Edge browser checks passed with real Dovecot password/TOTP auth, SMTP
+  delivery, message reading, saved draft with attachment, one submission, Sent
+  storage, delivered attachment byte equality, Archive move, cross-folder
+  search and restore to Inbox. Desktop and narrow captures are under the S11
+  root. Harness selector mistakes and a reused TOTP were corrected without
+  relaxing application controls or repeating a submitted message.
+- `make acceptance-check` passed, including 927 library tests, ten documented
+  ignores and two hostile-content tests; separate V14 and strict all-target,
+  all-feature Clippy passed. Fixed a test-only notification clock race discovered
+  by the first gate: post-route reads must use current time, not stale setup
+  time. Production clock-rollback rejection remains intact. Existing generated
+  assurance indexes were refreshed for the changed source lines.
+- Operator clarified that all deployment/testing stays on obsd1 and selected
+  their existing primary mailbox as first recipient, then sender, for the Proton
+  encrypted round trip. Operator confirmed `login_successful=yes` in their own
+  browser. The auxiliary osmap-test account was used only for platform checks.
+  The operator's workstation mail-key fingerprint was identified; only public
+  key metadata was inspected.
+- Encrypted round trip remains NOT READY: runtime decryption/signing/encryption
+  and reader/composer integration are unfinished. No private key was exported,
+  no encrypted-mail success was claimed, and native crypto qualification remains
+  false. The completed Archive fix awaits Shopkeeper signing-agent unlock:
+  noninteractive signing returned `FAILURE sign 67108949` (No pinentry).
+
+### Agent-team resumption — 2026-10-01 — IN_PROGRESS
+
+- Operator explicitly resumed development, requested subagents, delegated full
+  engineering authority, and requested maintained decision records and only
+  slice/sprint/epic completion messages. This supersedes the paused state and
+  earlier prohibition on parallel agents. Existing requirements remain intact.
+- Base: `edfb2f03466976390bd4aaaa6d6ab8d985334852`; seven staged files from the
+  interrupted Archive checkpoint are preserved. The interrupted commit created
+  no new commit and its processes are gone. No mail submission is repeated.
+- Accepted plan: `6b3ce8fff27ca3dabf87039d54098bd9967a2e42`, verified Shopkeeper
+  signature; current plan manifest equals that anchor, all plan and nested
+  reference checksums pass. No frozen requirement or reference is changed.
+- Work order: complete concrete S05 runtime and S06-01 MIME engineering
+  dependencies for the selected encrypted round trip. Backend agent owns new
+  `src/openpgp_crypto*.rs` primitive/process files and
+  `maint/openpgp-runtime/crypto*`; MIME agent owns `src/pgp_mime.rs` and narrowly
+  required `src/mime.rs` integration. Lead owns authenticated crypto protocol/
+  service/client, module/command integration and existing ledger/decision records.
+  Reviewer independently reviews these diffs and preserved Archive changes.
+- Operation bounds remain 16 MiB input/output, 64 KiB metadata, 50 recipients,
+  one worker/account, two total and ten seconds. No command/path/private key/
+  passphrase fields enter browser-to-helper transport. Offline GPGME remains
+  authoritative; no direct-handler GPG fallback or silent plaintext downgrade.
+- Qualification: focused positive/negative tests first, one coordinated set of
+  existing developer/acceptance/V10/V12 gates; native build and disposable-key
+  operations on obsd1. Evidence uses existing S05/S06 sprint roots. New source
+  remains disabled in the live web runtime until review and native proof.
+- Live authority remains obsd1 only. Preserve running development mail and
+  rollback files; real mailbox private-key provisioning remains operator-owned.
+  Disposable native keys are generated in private scratch and cleaned there.
+  No production host, Git push, real-key export or repeated SMTP test.
+- Decisions are recorded in `docs/DECISION_LOG.md`, including exact v4
+  Ed25519/CV25519 compatibility needed by the selected counterpart. No schema
+  migration occurs in this runtime/MIME checkpoint. Rollback is source revert
+  and retaining disabled service activation until native review is complete.
+- A slice is not accepted by a worker's assertion, a screenshot, or a standalone
+  CLI result. Review actual code and integrated native results before completion
+  reporting or requesting the operator's real encrypted-mail acceptance test.
+
+### Runtime and MIME native checkpoint — 2026-10-01 — VERIFIED engineering
+
+- Implemented real GPGME sign/verify/encrypt/decrypt, bounded duplex worker
+  transport, authenticated account/fingerprint dispatch and client, exact-byte
+  PGP/MIME classification and outbound signed/encrypted framing. Original
+  ciphertext is retained; no private key or passphrase is a request field.
+- Native obsd1 C operations and two Rust integration tests passed: authenticated
+  service/client -> worker -> authenticated response, and sign -> MIME -> verify
+  -> encrypt -> decrypt -> verify -> existing MIME/sanitization/attachments.
+  Eighteen positive/negative native checks passed, including RSA and exact
+  Ed25519/CV25519, strong hashes, wrong account/binding, expired/revoked/unsupported
+  keys, locked/absent agents, weak/ambiguous selection, ciphertext/tag tamper and
+  truncation without plaintext release, and worker/engine-child denial of
+  unrelated/private-key/other-account files. Temporary agents and key homes were
+  removed; only sanitized statuses and public source hashes were retained.
+- Evidence: `osmap-ux-s05/agent-20261001/native-crypto.log`,
+  `native-crypto-parity.json`, `native-crypto-source.sha256` under Downloads.
+  Source parity was checked against the exact native-tested C sources. Native
+  Rust test compilation passed in the isolated source directory
+  `/home/foo/osmap-ux-crypto-20261001-source`; the standard host checkout and live
+  OSMAP services were not changed by these tests.
+- Independent review found and closed weak-subkey selection, MIME delimiter
+  whitespace and diagnostic-content exposure issues. The reviewer separately
+  tested 2,500 parser mutations/truncations without panic or content exposure.
+  Account/nonce/body authentication, replay/expiry, limits and web core disabling
+  were reviewed. No source blocker remains for this disabled checkpoint.
+- Same-principal fixtures do not qualify service deployment, separate principals,
+  real private-key custody, full key-management UX or protected HTTP/send/Sent
+  integration. Both native activation flags remain false. S05–S07 remain open.
+- Continuing actual inbound processing/sanitization and account/recipient
+  bindings, policies and send preflight under the delegated engineering mandate.
+  Additional owned files: `src/protected_message*.rs`, `src/openpgp_bindings*.rs`
+  and exact public-curve metadata in the inventory model/worker. Existing
+  small account-file persistence is reused with version, revision and ownership
+  checks; no automatic migration or plaintext persistence.
+- Signing preflight now passes after the operator warmed their workstation agent.
+  Final source gates, verified signed delivery and separate native service
+  qualification are still required before a deployed capability claim.
+
+### Separate-principal component qualification — 2026-10-01 — VERIFIED
+
+- Backend agent completed the actual crypto and inventory service qualification
+  on obsd1, using temporary helper/web/unauthorized UIDs and disposable keys.
+  Both production Service::serve implementations and authenticated Clients
+  passed positive and same-grant/wrong-UID negative controls.
+- Thirteen native controls passed. Core dumps were disabled, swap encryption
+  was enabled, inherited worker descriptors were closed, private-file access was
+  denied, and native deadline/duplex/output-limit/descendant cases passed. All
+  temporary agents, services, principals and scratch were removed.
+- The reviewer reconciled candidate deviations against signed base archive
+  f4d51d0a815cb8d48c0fd5c265402ba270f5b5e81baa04bebec909aba32985a2,
+  source/function parity, and retained cleanup results. The provisional source
+  flags were the documented candidate activation difference.
+- Root enabled both NATIVE_CONFINEMENT_QUALIFIED constants based on this evidence.
+  This supersedes the false component gates above. Full S05 acceptance still
+  requires the public key-management/binding UI and provisioning SOP. Full
+  S06/S07 acceptance still requires integrated HTTP, final submission/Sent and
+  controlled real-mail proofs. No epic completion or external mail claim.
+- The focused account-binding group passed all twelve tests, covering policy
+  combinations, exact subkey/curve eligibility, revision/isolation/concurrency,
+  malformed/overquota/foreign records and explicit blocked plans.
+- Root connected the reader and current attachment route to the processing
+  pipeline, added truthful result states and corrected four independently
+  reviewed integration defects: nested-envelope bypass, legacy-download bypass,
+  missing response-identity checks and missing Unix pledge for helper-only
+  OpenPGP configurations. Common regression gates and the signed checkpoint
+  remain pending below.
+
+### Protected reader and delivery source checkpoint — 2026-10-01 — VERIFIED local
+
+- The browser route source now classifies full bounded MIME before
+  rendering or downloading. Protected content flows through the authenticated
+  crypto Client and account-owned bindings; refusals clear body, quote and
+  attachment exposure. Explicit reply/forward source copying uses the same
+  protected-aware downloader, with exact account/mailbox/UID/part checks.
+- Compose controls carry finite Sign/Encrypt/Self intent and a pinned binding
+  revision. Public-key readiness is shown as a snapshot; final recipients and
+  policy are reevaluated before SMTP. Drafts, journal/recovery, SMTP and Sent
+  preserve selected protection and exact prepared bytes without plaintext
+  fallback. PAGE19 now projects actual public binding/policy state but does not
+  claim private-key readiness from inventory.
+- Focused local regression: `cargo test --lib protected_` 48 passed, one native
+  fixture ignored for its obsd1 harness; `cargo test --lib openpgp_bindings` 12
+  passed; independent protected-route 7/7 and prior source-attachment 3/3.
+  Strict all-target Clippy passed after the requested boolean simplification.
+  The native C profile harness on obsd1 passed 21 assertions and two exact Rust
+  service/MIME tests, including weak-primary refusal. These results do not yet
+  qualify a browser-to-Proton exchange.
+- Public-only helper preparation on obsd1 succeeded for Duncan and Proton
+  fingerprints with services disabled. Existing web binary, env and process
+  stayed unchanged. External Proton inbound for `blackbagsecurity.com` still
+  prefers MX 10 on the primary mail host; obsd1 is MX 20. Exact inbound path,
+  private-key provisioning, complete key-management mutations, broad gates and
+  signed checkpoint remain open.
+
+### Account binding and protected-delivery assurance checkpoint — 2026-10-01 — VERIFIED local/native
+
+- PAGE21 now renders the approved two-card account/recipient hierarchy from
+  authenticated, account-owned public inventory and revisioned bindings. The
+  browser can set or clear account and recipient bindings, change signing and
+  encryption policy, and atomically clear all stale bindings. Every mutation
+  requires the current mailbox password, a fresh replay-protected TOTP result,
+  session/CSRF checks and a revision-checked write. Public certificate import
+  and removal remain disabled until the native administrator and serialized
+  binding/inventory transaction qualify; S05-02 is **not** accepted.
+- Ten focused key-management tests passed after registration, including real
+  password/TOTP replay, stale revision, unavailable inventory, atomic cleanup,
+  PAGE21 configured/unavailable rendering and HTTP session/CSRF/unknown-field
+  refusal. Full source suite reached 1,024 passing library tests, with three
+  fixture/gate regressions then corrected: new route inventory expectations,
+  attachment retrieval audit event shape and historical recovery-index size.
+  The latter now omits default protection metadata from serialized legacy
+  entries while preserving explicit selected intent. Common acceptance is being
+  rerun after the V12 HTTP isolation gate was adapted to the authorized UX
+  runtime and the new key mutation route added to the WSTG attack inventory.
+- The approved PAGE04 default labels now read Unsigned / Not encrypted / self
+  Off. V14 component/closeout checks passed. V12 checks pass with their
+  substantive no-direct-helper-in-browser boundary retained. Neither is a
+  live OpenPGP acceptance claim.
+- Obsd1 exact native outbound fixture passed once with disposable keys: actual
+  signed/encrypted MIME, recipient and self decryption, independent exact-entity
+  signature verification, tamper/wrong-key/self-off refusals, attachment and
+  Unicode content checks. Retained sanitized native log, build log and source
+  parity are under the S05 sprint root. This is worker/PGP-MIME proof; browser
+  submission, actual SMTP/Sent and the selected external correspondent still
+  require separate integrated/live evidence.
+
+### S07-04 controlled gateway-to-wire native proof — 2026-10-01 — VERIFIED bounded
+
+- On obsd1, the exact source-snapshot test ran through the real authenticated
+  crypto and inventory Services/Clients, `RuntimeBrowserGateway`, send journal,
+  production sendmail and doveadm append backend process adapters, a loopback
+  SMTP sink and controlled Sent file. One ignored native test was selected and
+  passed; it was not a zero-test invocation. The worker and test source hashes
+  matched the reviewed local candidate, and the native binary SHA-256 is
+  recorded in `osmap-ux-s05/gateway-20261001/native-gateway.log`.
+- The fixture independently decrypted the transmitted bytes as recipient and
+  self, verified the signed entity, checked the authored Unicode body and
+  binary attachment, and proved exact SMTP/Sent byte equality. Replay did not
+  dispatch twice; stale binding revision and a stopped crypto helper did not
+  submit, append, consume the intent or fall back to plaintext. Disposable
+  agents and scratch were cleaned; the actual web service was unchanged.
+- This satisfies the controlled native transport/parity checkpoint only. The
+  Sent adapter stored to a disposable file, not Dovecot; no actual browser,
+  external provider, private mailbox key or Proton/production-route acceptance
+  is claimed. S07-04 and the full S07 sprint remain open until live qualification
+  and signed source review.
+
+### S05-02 helper-store and S05–S07 source review checkpoint — 2026-10-01 — VERIFIED bounded
+
+- The helper-only `PublicAdminStore` now stages bounded public import/removal
+  against the actual account keybox, checks a keybox hash CAS, refuses native
+  secret-key deletion and secret-material import, and leaves trustdb/private
+  material unchanged. Its API is not wired to browser mutation. Direct secret
+  provisioning in the obsd1 SOP requires all relevant helpers stopped; the
+  workstation Shopkeeper signing cache is not an obsd1 mailbox-key cache.
+- The selected ignored native store transaction on obsd1 passed **one test,
+  zero failures** with disposable identities. It proved public correspondent
+  remove/import, stale CAS and secret-input refusals, retained private/trustdb
+  equality and final keybox revision. Evidence:
+  `/home/foo/Downloads/osmap-ux-s05/agent-20261001/native-public-admin-store.log`;
+  native test binary SHA-256
+  `32a97abfcbea93b155df1b66911d2e878a03ed181009235693ce6d1e574be89d`.
+  No live service or real key was changed.
+- Independent review found and resolved two enabled-path defects: final
+  protected-send revision checking now holds the binding writer lock through
+  SMTP dispatch, and unexpected doveadm stdout/stderr is excluded from auth
+  audit reasons. The reviewer rechecked lock order and found no remaining
+  blocking finding in the examined S05–S07 source. The exact test-only native
+  fixture exclusions in the CWE gate require verified `cfg(test)` registration;
+  production source stays scanned.
+- Final-source `make acceptance-check` passed, including `make security-check`:
+  1,036 library tests passed, 18 native/live tests explicitly ignored by that
+  local run; V10, V12, V13 and developer security gates passed. Separate
+  `make v10-check`, `make v12-check`, `make v14-check`, strict Clippy and focused
+  auth marker regression passed. Retained sanitized gate logs are under
+  `/home/foo/Downloads/osmap-ux-s05/gates-20261001/`; acceptance log SHA-256
+  `b8d790900f83b886938dec0b6b3a633445b7a131914813992ced79a5460c2510`.
+  The WSTG release skip-policy negative checks in that log intentionally emit
+  FAIL rows and are not live authenticated WSTG evidence.
+- Frozen plan manifest and accepted signed anchor still verify. Public-admin
+  browser RPC, operator mailbox private-key provisioning, live Dovecot/SMTP
+  path, Proton exchange, human UX acceptance and strict release qualification
+  remain open. No signed source delivery or Git synchronization is claimed by
+  this entry; a final-source controlled gateway rerun is pending separately.
+
+### S07-04 final-source native rerun — 2026-10-01 — VERIFIED bounded
+
+- Repeated the exact selected gateway test on obsd1 after the final
+  binding-lock and auth-output fixes. All 347 transferred source files matched
+  the local snapshot before build and the local/remote final parity checks
+  passed. The selected native gateway test passed once, zero failures; its
+  native binary SHA-256 is
+  `32a97abfcbea93b155df1b66911d2e878a03ed181009235693ce6d1e574be89d`.
+  Source manifest SHA-256 is
+  `36c354cf27f46ca86398e96f59bdf295beee68dc20657cc16a69cef541b83a96`.
+- Controlled SMTP/Sent exact-byte parity, recipient/self decryption, signature
+  verification, authored body/attachment, replay, stale-revision and
+  helper-down fail-closed assertions all passed. Evidence and portable source
+  archive are owner-private at
+  `/home/foo/Downloads/osmap-ux-s05/gateway-20261001/final-rerun/`;
+  `native-final-result.json` SHA-256 is
+  `316cd63ffa4d84df81c4847e657e204dda804332b02424d72466206c58890f16`.
+  Disposable agents and scratch were cleaned. This is still a source-snapshot
+  native test, not actual web-service deployment, Dovecot append, Proton mail
+  exchange or external recipient acceptance. Those remain open.
+
+### Exact staged-source gate and native refresh — 2026-10-01 — VERIFIED bounded
+
+- After staging newly added native fixtures, the TLS policy guard detected a
+  literal C null-pointer token in a test-only Python-generated probe. Replaced
+  eight pointer constants with equivalent `0` and kept the TLS guard intact.
+  `make security-check` and `make acceptance-check` then passed against the
+  exact staged candidate; 1,036 library tests passed and 18 native/live tests
+  were explicitly ignored by those local runs. The retained staged acceptance
+  log at `/home/foo/Downloads/osmap-ux-s05/gates-20261001/staged-acceptance-check.log`
+  has SHA-256
+  `8e7203f50e5bafe98b1efab6d7d8f9133d501fc482e83140252a0d4edf748291`.
+- Repeated native validation on obsd1 against all 347 exact Git-index and
+  working-tree source files. The gateway test passed once; the changed crypto
+  fixture passed 21 native assertions, including its compiled confinement
+  probe, and two selected authenticated Rust Service/Client and PGP/MIME tests
+  each passed. No test silently selected zero cases. Source manifest SHA-256:
+  `df5dcc5ad219672d0640c057f9691f6c81f3f7ad95471ce3ae104516984e35e3`;
+  native test binary SHA-256:
+  `32a97abfcbea93b155df1b66911d2e878a03ed181009235693ce6d1e574be89d`.
+  Exact parity, logs and a portable source archive are retained under
+  `/home/foo/Downloads/osmap-ux-s05/gateway-20261001/final-rerun/staged-refresh/`;
+  its result JSON SHA-256 is
+  `a5827aa4882a88e6d99acedada45c1634fcd696f54000054b630affb80651e08`.
+- No real key, live web service or provider mail changed. This supersedes the
+  earlier source-snapshot evidence only for exact staged-source parity; it does
+  not upgrade the controlled fixture into a live mailbox or browser exchange.

@@ -279,40 +279,45 @@ where
                 200,
                 "OK",
                 compose_heading,
-                render_compose_page(&ComposePageModel {
-                    sender_identity: self
-                        .gateway
-                        .load_identity_preferences(context, &validated_session)
-                        .ok()
-                        .as_ref()
-                        .map(|profile| &profile.preferences),
-                    send_intent: &send_intent,
-                    contacts: self.contact_snapshot(&validated_session).ok().as_ref(),
-                    reply_reference: reply_reference.as_ref(),
-                    heading: compose_heading,
-                    canonical_username: &validated_session.record.canonical_username,
-                    csrf_token: &validated_session.record.csrf_token,
-                    success_message,
-                    error_message: None,
-                    context_notice: context_notice.as_deref(),
-                    to_value: &to_value,
-                    cc_value: &cc_value,
-                    bcc_value: &bcc_value,
-                    subject_value: &subject_value,
-                    body_value: &body_value,
-                    body_format,
-                    preview: false,
-                    preflight: false,
-                    draft_id: None,
-                    draft_revision: None,
-                    draft_attachments: &[],
-                    removed_attachment_indices: &[],
-                    source_mailbox_name: source_mailbox_name.as_deref(),
-                    source_uid,
-                    source_version: source_version.as_ref(),
-                    source_attachments: &source_attachments,
-                    selected_source_part_paths: &[],
-                }),
+                self.render_protected_compose_page(
+                    &validated_session,
+                    ComposePageModel {
+                        protection: crate::send::ProtectionIntent::default(),
+                        openpgp: None,
+                        sender_identity: self
+                            .gateway
+                            .load_identity_preferences(context, &validated_session)
+                            .ok()
+                            .as_ref()
+                            .map(|profile| &profile.preferences),
+                        send_intent: &send_intent,
+                        contacts: self.contact_snapshot(&validated_session).ok().as_ref(),
+                        reply_reference: reply_reference.as_ref(),
+                        heading: compose_heading,
+                        canonical_username: &validated_session.record.canonical_username,
+                        csrf_token: &validated_session.record.csrf_token,
+                        success_message,
+                        error_message: None,
+                        context_notice: context_notice.as_deref(),
+                        to_value: &to_value,
+                        cc_value: &cc_value,
+                        bcc_value: &bcc_value,
+                        subject_value: &subject_value,
+                        body_value: &body_value,
+                        body_format,
+                        preview: false,
+                        preflight: false,
+                        draft_id: None,
+                        draft_revision: None,
+                        draft_attachments: &[],
+                        removed_attachment_indices: &[],
+                        source_mailbox_name: source_mailbox_name.as_deref(),
+                        source_uid,
+                        source_version: source_version.as_ref(),
+                        source_attachments: &source_attachments,
+                        selected_source_part_paths: &[],
+                    },
+                ),
             ),
             audit_events,
         }
@@ -332,7 +337,7 @@ where
         let parsed_form = match parse_compose_form(
             &request.body,
             request.headers.get("content-type").map(String::as_str),
-            self.policy.max_form_fields.saturating_add(13),
+            self.policy.max_form_fields.saturating_add(17),
             self.policy.max_upload_body_bytes,
             ComposePolicy::default(),
         ) {
@@ -367,6 +372,21 @@ where
         ) {
             return response;
         }
+
+        let protection = match super::compose_protection::intent_from_form(&form) {
+            Ok(intent) => intent,
+            Err(message) => {
+                return HandledHttpResponse {
+                    response: self.retained_compose_input_error(
+                        &validated_session,
+                        &form,
+                        None,
+                        message,
+                    ),
+                    audit_events,
+                }
+            }
+        };
 
         if let Some(response) =
             self.intent_guard_response(context, &validated_session, &form, &attachments)
@@ -616,6 +636,7 @@ where
             context,
             &validated_session,
             BrowserSendRequest {
+                protection,
                 send_intent: form
                     .get("send_intent")
                     .map(String::as_str)
@@ -730,7 +751,9 @@ where
                     status_code,
                     reason_phrase,
                     "Compose",
-                    render_compose_page(&ComposePageModel {
+                    self.render_protected_compose_page(&validated_session, ComposePageModel {
+                        protection: super::compose_protection::retained_intent_from_form(&form),
+                        openpgp: None,
                     sender_identity: None,
                         send_intent: form.get("send_intent").map(String::as_str).unwrap_or_default(),
                         contacts: self.contact_snapshot(&validated_session).ok().as_ref(),
@@ -826,7 +849,9 @@ where
             status,
             reason,
             "Compose",
-            render_compose_page(&ComposePageModel {
+            self.render_protected_compose_page(session, ComposePageModel {
+                protection: super::compose_protection::retained_intent_from_form(form),
+                openpgp: None,
                 sender_identity: None,
                 send_intent: form
                     .get("send_intent")

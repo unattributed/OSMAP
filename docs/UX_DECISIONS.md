@@ -164,6 +164,19 @@ OpenBSD. Installed libraries and compilation alone do not enable capability.
 Rollback disables the runtime feature, restores the prior binary/configuration
 and leaves private key stores preserved; it never substitutes a different key.
 
+### D03 interoperability extension — 2026-10-01
+
+The operator selected an existing v4 Ed25519/CV25519 counterpart and explicitly
+delegated engineering decisions for completing that round trip. Support these
+exact existing curves through GPGME/GnuPG in addition to RSA at least 3072 bits;
+the initial RSA key-generation default stays unchanged. Preserve strong hashes,
+AES-256 integrity protection, full fingerprint/account/recipient bindings,
+offline operation and error-on-Pinentry. Qualify both profiles with actual
+disposable native operations and negative tests before enabling runtime crypto.
+This does not claim full v6 support or change private-key custody. The execution
+and test result are recorded in the ledger; the decision is also indexed in
+`DECISION_LOG.md`.
+
 ## D04 — Authoritative identity changes and governed recovery
 
 Decision: Dovecot remains authentication authority and its configured SQL account

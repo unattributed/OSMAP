@@ -100,6 +100,7 @@ impl HtmlDisplayPreference {
 /// A browser-safe rendered message projection.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RenderedMessageView {
+    pub openpgp: Option<crate::openpgp_reader_ui::ReaderState>,
     pub metadata: Option<crate::message_metadata::MessageMetadata>,
     pub flags: Vec<String>,
     pub mailbox_name: String,
@@ -193,6 +194,7 @@ impl PlainTextMessageRenderer {
         };
 
         let rendered = RenderedMessageView {
+            openpgp: None,
             metadata: message.metadata.clone(),
             flags: message.flags.clone(),
             mailbox_name: message.mailbox_name.clone(),

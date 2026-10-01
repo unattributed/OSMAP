@@ -108,15 +108,30 @@ impl<G: BrowserGateway> BrowserApp<G> {
             };
             let mut attachments = Vec::new();
             for part in parts {
-                let outcome = AttachmentDownloadService::new(AttachmentDownloadPolicy::default())
-                    .download_for_validated_session(context, session, &message, part);
-                audit.push(outcome.audit_event);
+                let outcome = self
+                    .gateway
+                    .download_stored_attachment(context, session, &message, part);
+                audit.extend(outcome.audit_events);
                 let attachment = match outcome.decision {
-                    AttachmentDownloadDecision::Downloaded { attachment, .. } => attachment,
-                    AttachmentDownloadDecision::Denied {
-                        public_reason: AttachmentDownloadPublicFailureReason::NotFound,
-                    } => return Err(SourceFailure::Changed),
-                    AttachmentDownloadDecision::Denied { .. } => {
+                    BrowserAttachmentDownloadDecision::Downloaded {
+                        canonical_username,
+                        attachment,
+                    } if canonical_username == session.record.canonical_username
+                        && attachment.mailbox_name == message.mailbox_name
+                        && attachment.uid == message.uid
+                        && attachment.part_path == *part =>
+                    {
+                        attachment
+                    }
+                    BrowserAttachmentDownloadDecision::Downloaded { .. } => {
+                        return Err(SourceFailure::Changed)
+                    }
+                    BrowserAttachmentDownloadDecision::Denied { public_reason }
+                        if public_reason == "not_found" =>
+                    {
+                        return Err(SourceFailure::Changed)
+                    }
+                    BrowserAttachmentDownloadDecision::Denied { .. } => {
                         return Err(SourceFailure::Unavailable)
                     }
                 };

@@ -28,6 +28,7 @@ pub mod http_support;
 pub mod http_ui;
 pub mod identity;
 pub mod identity_preferences;
+pub mod key_management;
 pub mod logging;
 pub mod mail_address;
 pub mod mail_list;
@@ -69,9 +70,25 @@ pub mod folder_create;
 mod folder_create_backend;
 pub mod folder_metadata;
 mod folder_metadata_backend;
+pub mod openpgp_bindings;
+pub mod openpgp_crypto;
+#[cfg(unix)]
+mod openpgp_crypto_process;
+pub mod openpgp_crypto_protocol;
+#[cfg(unix)]
+pub mod openpgp_crypto_runtime;
 pub mod openpgp_inventory;
 #[cfg(unix)]
 mod openpgp_inventory_process;
 pub mod openpgp_inventory_protocol;
 #[cfg(unix)]
 pub mod openpgp_inventory_runtime;
+#[cfg(unix)]
+pub mod openpgp_public_admin;
+pub mod pgp_mime;
+pub mod protected_message;
+
+pub mod openpgp_reader_ui;
+pub mod protected_message_gateway;
+
+pub mod protected_submission;

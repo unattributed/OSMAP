@@ -145,17 +145,20 @@ impl<G: BrowserGateway> BrowserApp<G> {
                     // Extract from this single checked snapshot. No second fetch between
                     // identity verification and decoding; same bounded MIME service as before.
                     let result =
-                        AttachmentDownloadService::new(AttachmentDownloadPolicy::default())
-                            .download_for_validated_session(context, &session, &message, part);
-                    audit_events.push(result.audit_event);
+                        self.gateway.download_stored_attachment(context, &session, &message, part);
+                    audit_events.extend(result.audit_events);
                     match result.decision {
-                        AttachmentDownloadDecision::Downloaded { attachment, .. } => {
+                        BrowserAttachmentDownloadDecision::Downloaded { canonical_username, attachment }
+                            if canonical_username == session.record.canonical_username
+                            && attachment.mailbox_name == message.mailbox_name
+                            && attachment.uid == message.uid && attachment.part_path == *part => {
                             Ok(attachment_download_response(&attachment))
                         }
-                        AttachmentDownloadDecision::Denied { public_reason } => {
-                            Err(match public_reason {
-                                AttachmentDownloadPublicFailureReason::NotFound => (404, "Not Found", "Attachment not found", "This attachment is no longer available. Return to the reader to refresh its attachment list.", false),
-                                AttachmentDownloadPublicFailureReason::InvalidRequest => (400, "Bad Request", "Invalid attachment", "Open a download link from the message attachment list.", false),
+                        BrowserAttachmentDownloadDecision::Downloaded { .. } => Err((503, "Service Unavailable", "Attachment unavailable", "The returned attachment could not be matched to this message. Return to the reader.", false)),
+                        BrowserAttachmentDownloadDecision::Denied { public_reason } => {
+                            Err(match public_reason.as_str() {
+                                "not_found" => (404, "Not Found", "Attachment not found", "This attachment is no longer available. Return to the reader to refresh its attachment list.", false),
+                                "invalid_request" => (400, "Bad Request", "Invalid attachment", "Open a download link from the message attachment list.", false),
                                 _ => (503, "Service Unavailable", "Attachment unavailable", "The attachment could not be decoded within the supported size and format limits. You can safely retry this read or return to the message.", true),
                             })
                         }

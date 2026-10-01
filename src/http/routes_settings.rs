@@ -121,6 +121,13 @@ where
         if section == "openpgp" {
             let inventory =
                 self.public_inventory_view(context, &validated_session, &mut audit_events);
+            let capability = self.gateway.compose_protection(
+                &validated_session,
+                "",
+                "",
+                "",
+                crate::send::ProtectionIntent::default(),
+            );
             return HandledHttpResponse {
                 response: html_response(
                     200,
@@ -130,6 +137,7 @@ where
                         &validated_session.record.canonical_username,
                         &validated_session.record.csrf_token,
                         &inventory,
+                        capability.as_ref(),
                     ),
                 ),
                 audit_events,
@@ -780,41 +788,6 @@ impl<G: BrowserGateway> BrowserApp<G> {
             &outcome.canonical_username,
             outcome.inventory.as_ref(),
         )
-    }
-    pub(super) fn handle_key_inventory_page(
-        &self,
-        request: &HttpRequest,
-        context: &AuthenticationContext,
-    ) -> HandledHttpResponse {
-        let (session, mut audit_events) = match self.require_validated_session(request, context) {
-            Ok(v) => v,
-            Err(r) => return r,
-        };
-        if !request.query_params.is_empty() {
-            return HandledHttpResponse {
-                response: html_response(
-                    400,
-                    "Bad Request",
-                    "Invalid key inventory request",
-                    "<p>Open Key Management from OpenPGP Settings.</p>",
-                ),
-                audit_events,
-            };
-        }
-        let inventory = self.public_inventory_view(context, &session, &mut audit_events);
-        HandledHttpResponse {
-            response: html_response(
-                200,
-                "OK",
-                "OpenPGP Key Management",
-                crate::http_ui::key_inventory_ui::render_key_inventory(
-                    &session.record.canonical_username,
-                    &session.record.csrf_token,
-                    &inventory,
-                ),
-            ),
-            audit_events,
-        }
     }
 }
 

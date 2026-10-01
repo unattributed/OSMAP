@@ -8,8 +8,10 @@ use super::*;
 use crate::mail_list::ListViewState;
 
 pub(super) fn mailbox_is_user_visible(mailbox_name: &str) -> bool {
-    matches!(mailbox_name, "INBOX" | "Drafts" | "Junk" | "Sent" | "Trash")
-        || mailbox_name.starts_with("INBOX.")
+    matches!(
+        mailbox_name,
+        "INBOX" | "Archive" | "Drafts" | "Junk" | "Sent" | "Trash"
+    ) || mailbox_name.starts_with("INBOX.")
 }
 
 pub(super) fn filter_user_visible_mailboxes(mailboxes: &[MailboxEntry]) -> Vec<MailboxEntry> {
@@ -1092,5 +1094,27 @@ where
             &validated_session,
         ));
         handled
+    }
+}
+
+#[cfg(test)]
+mod visibility_tests {
+    use super::*;
+
+    #[test]
+    fn archive_folder_is_offered_only_when_returned_for_the_account() {
+        let entry = |name: &str| MailboxEntry { name: name.into() };
+        let listed = filter_user_visible_mailboxes(&[
+            entry("INBOX"),
+            entry("Archive"),
+            entry("Shared/Other"),
+        ]);
+        assert_eq!(
+            listed.iter().map(|m| m.name.as_str()).collect::<Vec<_>>(),
+            vec!["INBOX", "Archive"]
+        );
+        assert!(!filter_user_visible_mailboxes(&[entry("INBOX")])
+            .iter()
+            .any(|m| m.name == "Archive"));
     }
 }

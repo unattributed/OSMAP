@@ -52,6 +52,11 @@ struct Entry {
     created: u64,
     expires: u64,
     confirmed: bool,
+    #[serde(default, skip_serializing_if = "is_default_protection")]
+    protection: crate::send::ProtectionIntent,
+}
+fn is_default_protection(value: &crate::send::ProtectionIntent) -> bool {
+    *value == crate::send::ProtectionIntent::default()
 }
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub(crate) enum CapturePoint {
@@ -325,6 +330,7 @@ impl SendRecovery {
         record.request.sender_identity = request.sender_identity.clone();
         record.request.body_format = request.body_format;
         record.request.reply_thread = request.reply_thread.clone();
+        record.request.protection = request.protection;
         if restore(&record)? != *request {
             return Err(RecoveryError::Invalid);
         }
@@ -350,6 +356,7 @@ impl SendRecovery {
             created: now,
             expires: record.expires_at,
             confirmed: false,
+            protection: request.protection,
         });
         hook(CapturePoint::BeforeIndex)?;
         Self::write(&lock, &index)?;
@@ -365,6 +372,9 @@ impl SendRecovery {
             .map_err(|_| RecoveryError::Unavailable)?
             .ok_or(RecoveryError::Unconfirmed)?;
         let prepared = restore(&saved)?;
+        if prepared.protection != entry.protection {
+            return Err(RecoveryError::Changed);
+        }
         if prepared != *request || snapshot_digest(account, &prepared) != entry.digest {
             return Err(RecoveryError::Changed);
         }
@@ -414,6 +424,9 @@ impl SendRecovery {
             return Err(RecoveryError::Invalid);
         }
         let request = restore(&record)?;
+        if request.protection != entry.protection {
+            return Err(RecoveryError::Changed);
+        }
         if snapshot_digest(account, &request) != entry.digest {
             return Err(RecoveryError::Changed);
         }
@@ -466,6 +479,7 @@ fn restore(record: &DraftRecord) -> Result<ComposeRequest, RecoveryError> {
     .map_err(|_| RecoveryError::Invalid)?;
     request.reply_thread = content.reply_thread.clone();
     request.sender_identity = content.sender_identity.clone();
+    request.protection = content.protection;
     Ok(request)
 }
 #[cfg(test)]
@@ -600,6 +614,65 @@ mod tests {
         );
     }
     #[test]
+    fn protected_attempt_recovery_preserves_intent_and_refuses_changed_replay() {
+        let f = Fixture::new();
+        let token = crate::send_journal::mint_intent(100).unwrap();
+        let mut request = request();
+        request.protection = crate::send::ProtectionIntent {
+            sign: true,
+            encrypt: true,
+            encrypt_to_self: true,
+            binding_revision: Some(7),
+        };
+        let calls = std::cell::Cell::new(0);
+        dispatch(&f, &token, &request, None, &calls);
+        dispatch(&f, &token, &request, None, &calls);
+        assert_eq!(calls.get(), 1);
+        let RecoveryRead::Available(snapshot) =
+            f.recovery.lookup(&f.journal, ACCOUNT, &token, 101).unwrap()
+        else {
+            panic!("protected immutable snapshot")
+        };
+        assert_eq!(snapshot.request.protection, request.protection);
+        for changed in [
+            {
+                let mut value = request.clone();
+                value.protection.sign = false;
+                value
+            },
+            {
+                let mut value = request.clone();
+                value.protection.encrypt = false;
+                value
+            },
+            {
+                let mut value = request.clone();
+                value.protection.encrypt_to_self = false;
+                value
+            },
+            {
+                let mut value = request.clone();
+                value.protection.binding_revision = Some(8);
+                value
+            },
+        ] {
+            assert_ne!(
+                snapshot_digest(ACCOUNT, &request),
+                snapshot_digest(ACCOUNT, &changed)
+            );
+            assert_eq!(
+                f.journal.execute_prepared(
+                    ACCOUNT,
+                    &token,
+                    101,
+                    |_| Ok::<_, ()>(changed),
+                    |_| panic!("changed intent must never redispatch")
+                ),
+                Err(crate::send_journal::JournalError::ChangedSnapshot)
+            );
+        }
+    }
+    #[test]
     fn publication_faults_and_interrupted_reservation_never_invoke_backend() {
         for point in [
             CapturePoint::BeforeIndex,
@@ -732,6 +805,7 @@ mod tests {
                 created: 1,
                 expires: 1 + crate::draft::DEFAULT_DRAFT_MAX_AGE_SECONDS,
                 confirmed: true,
+                protection: crate::send::ProtectionIntent::default(),
             })
             .collect();
         {

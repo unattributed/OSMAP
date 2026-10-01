@@ -1,6 +1,37 @@
 use super::*;
 use std::sync::atomic::{AtomicUsize, Ordering};
 const EMPTY: &[u8] = br#"{"version":1,"ok":true,"protocol":"openpgp","gpgme_version":"2.0.1","engine_version":"2.5.18","keys":[]}"#;
+#[test]
+#[ignore = "requires isolated OpenBSD helper/web service principals"]
+fn native_inventory_principal_client() {
+    assert_eq!(std::env::consts::OS, "openbsd");
+    let setting = |name| std::env::var(name).expect("native principal fixture setting");
+    let socket = PathBuf::from(setting("OSMAP_CRYPTO_PRINCIPAL_INVENTORY_SOCKET"));
+    let key = PathBuf::from(setting("OSMAP_CRYPTO_PRINCIPAL_KEY"));
+    let uid = setting("OSMAP_CRYPTO_PRINCIPAL_HELPER_UID")
+        .parse()
+        .unwrap();
+    let client = Client::from_operator_files(&socket, &key, uid).unwrap();
+    if setting("OSMAP_CRYPTO_PRINCIPAL_MODE") == "peer_denied" {
+        assert!(client.read("alice").is_err());
+        return;
+    }
+    let inventory = client.read("alice").unwrap();
+    let expected = [
+        setting("OSMAP_CRYPTO_PRINCIPAL_ALICE_FP"),
+        setting("OSMAP_CRYPTO_PRINCIPAL_BOB_FP"),
+    ];
+    let keys = inventory.keys().expect("available authenticated inventory");
+    assert_eq!(keys.len(), 2);
+    for key in keys {
+        assert!(expected.contains(&key.primary.fingerprint));
+        assert_eq!(key.primary.curve.as_deref(), Some("ed25519"));
+        assert_eq!(key.subkeys.len(), 1);
+        assert_eq!(key.subkeys[0].curve.as_deref(), Some("cv25519"));
+    }
+    assert!(Client::from_operator_files(&socket, &key, uid.saturating_add(1)).is_err());
+    assert!(client.read("unmapped").is_err());
+}
 fn service() -> Service {
     Service {
         config: Config {

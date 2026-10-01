@@ -177,7 +177,10 @@ where
             }
             (HttpMethod::Get, "/settings") => self.handle_settings_page(request, &context),
             (HttpMethod::Get, "/settings/keys") => {
-                self.handle_key_inventory_page(request, &context)
+                self.handle_key_management_page(request, &context)
+            }
+            (HttpMethod::Post, "/settings/keys/change") => {
+                self.handle_key_management_change(request, &context)
             }
             (HttpMethod::Post, "/message/move") => self.handle_message_move(request, &context),
             (HttpMethod::Post, "/message/flag") => self.handle_message_flag(request, &context),
@@ -291,6 +294,9 @@ fn rejected_host_response(
 
 /// Runs the current bounded-concurrency HTTP server for the browser slice.
 pub fn run_http_server(config: &AppConfig, logger: &Logger) -> Result<(), String> {
+    #[cfg(unix)]
+    crate::openbsd::disable_core_dumps()
+        .map_err(|_| "http runtime cannot disable core dumps".to_string())?;
     if config.run_mode != AppRunMode::Serve {
         return Ok(());
     }

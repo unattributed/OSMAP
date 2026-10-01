@@ -352,6 +352,7 @@ impl RuntimeBrowserGateway {
             },
         };
         record.request.body_format = request.body_format;
+        record.request.protection = request.protection;
         record.request.reply_thread = request.reply_thread.cloned();
         if let Some(existing) = existing {
             record.created_at = existing.created_at;

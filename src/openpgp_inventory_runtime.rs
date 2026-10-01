@@ -16,14 +16,14 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 const FRAME_LIMIT: usize = MAX_METADATA * 2 + 4096;
 const ENGINE: &str = "/usr/local/bin/gpg";
 // Deliberate release gate. A configuration value cannot bypass native qualification.
-pub const NATIVE_CONFINEMENT_QUALIFIED: bool = false;
-fn now() -> Result<u64, Error> {
+pub const NATIVE_CONFINEMENT_QUALIFIED: bool = true;
+pub(crate) fn now() -> Result<u64, Error> {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .map(|v| v.as_secs())
         .map_err(|_| Error::Clock)
 }
-fn remaining(deadline: Instant) -> Result<Duration, Error> {
+pub(crate) fn remaining(deadline: Instant) -> Result<Duration, Error> {
     deadline
         .checked_duration_since(Instant::now())
         .filter(|d| !d.is_zero())
@@ -42,7 +42,7 @@ fn protected_ancestors(path: &Path, owner: u32) -> Result<(), Error> {
     }
     Ok(())
 }
-fn exact_path(path: &Path, owner: u32) -> Result<(), Error> {
+pub(crate) fn exact_path(path: &Path, owner: u32) -> Result<(), Error> {
     protected_ancestors(path, owner)?;
     if !path.is_absolute()
         || path.as_os_str().len() > 4096
@@ -52,7 +52,7 @@ fn exact_path(path: &Path, owner: u32) -> Result<(), Error> {
     }
     Ok(())
 }
-fn private_dir(path: &Path, owner: u32, shared: bool) -> Result<(), Error> {
+pub(crate) fn private_dir(path: &Path, owner: u32, shared: bool) -> Result<(), Error> {
     exact_path(path, owner)?;
     let m = fs::symlink_metadata(path).map_err(|_| Error::Unavailable)?;
     if !m.is_dir() || m.uid() != owner || m.mode() & (if shared { 0o027 } else { 0o077 }) != 0 {
@@ -60,7 +60,7 @@ fn private_dir(path: &Path, owner: u32, shared: bool) -> Result<(), Error> {
     }
     Ok(())
 }
-fn file(path: &Path, owner: u32, executable: bool, max: u64) -> Result<File, Error> {
+pub(crate) fn file(path: &Path, owner: u32, executable: bool, max: u64) -> Result<File, Error> {
     exact_path(path, owner)?;
     let f = OpenOptions::new()
         .read(true)
@@ -78,7 +78,7 @@ fn file(path: &Path, owner: u32, executable: bool, max: u64) -> Result<File, Err
     }
     Ok(f)
 }
-fn secret(path: &Path) -> Result<Vec<u8>, Error> {
+pub(crate) fn secret(path: &Path) -> Result<Vec<u8>, Error> {
     let mut b = Vec::new();
     file(path, crate::openbsd::effective_uid(), false, 1024)?
         .take(1025)
@@ -312,6 +312,7 @@ impl Client {
         key_file: &Path,
         expected_helper_uid: u32,
     ) -> Result<Self, Error> {
+        crate::openbsd::disable_core_dumps().map_err(|_| Error::Unavailable)?;
         validate_socket(socket, expected_helper_uid)?;
         Ok(Self(Arc::new(ClientState {
             socket: socket.into(),
@@ -342,7 +343,7 @@ impl Client {
             .response(&request, &response, &self.0.key, now()?)
     }
 }
-fn validate_socket(path: &Path, owner: u32) -> Result<(), Error> {
+pub(crate) fn validate_socket(path: &Path, owner: u32) -> Result<(), Error> {
     exact_path(path, owner)?;
     private_dir(path.parent().ok_or(Error::Invalid)?, owner, true)?;
     let m = fs::symlink_metadata(path).map_err(|_| Error::Unavailable)?;

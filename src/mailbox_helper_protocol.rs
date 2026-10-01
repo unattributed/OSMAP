@@ -113,7 +113,7 @@ impl MailboxHelperGrant {
 
 /// Supported helper responses for the first mailbox-read slice.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub(super) enum MailboxHelperResponse {
+pub(crate) enum MailboxHelperResponse {
     FolderCreateOk {
         request: crate::folder_create::CreateFolderRequest,
         outcome: crate::folder_create::Outcome,
@@ -767,7 +767,7 @@ fn parse_grant_fields(fields: &BTreeMap<String, String>) -> Result<MailboxHelper
     })
 }
 
-pub(super) fn encode_response(response: &MailboxHelperResponse) -> String {
+pub(crate) fn encode_response(response: &MailboxHelperResponse) -> String {
     match response {
         MailboxHelperResponse::FolderCreateOk {request,outcome}=>format!("status=ok\noperation=folder_create\ncreate_request_b64={}\ncreate_outcome_b64={}\n",encode_base64(serde_json::to_string(request).unwrap_or_default().as_bytes()),encode_base64(serde_json::to_string(outcome).unwrap_or_default().as_bytes())),
         MailboxHelperResponse::FolderMetadataOk {snapshot} => format!("status=ok\noperation=folder_metadata\ncanonical_username_b64={}\ntranscript_b64={}\n",encode_base64(snapshot.account().as_bytes()),encode_base64(snapshot.transcript())),

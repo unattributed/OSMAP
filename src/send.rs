@@ -116,6 +116,7 @@ pub struct ComposeDraft {
     pub to: String,
     pub cc: String,
     pub reply_thread: Option<crate::reply_thread::ReplyThread>,
+    pub protection: ProtectionIntent,
     pub subject: String,
     pub body: String,
     pub context_notice: Option<String>,
@@ -162,6 +163,27 @@ impl UploadedAttachment {
     }
 }
 
+/// Explicit authored delivery selections and the observed trusted-store
+/// revision. These are intent, never browser-provided key authority.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ProtectionIntent {
+    pub sign: bool,
+    pub encrypt: bool,
+    pub encrypt_to_self: bool,
+    pub binding_revision: Option<u64>,
+}
+
+impl ProtectionIntent {
+    pub fn selections(self) -> crate::openpgp_bindings::Selections {
+        crate::openpgp_bindings::Selections {
+            sign: self.sign,
+            encrypt: self.encrypt,
+            encrypt_to_self: self.encrypt_to_self,
+        }
+    }
+}
+
 /// A bounded compose request for the current outbound message slice.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ComposeRequest {
@@ -174,6 +196,7 @@ pub struct ComposeRequest {
     pub body_format: BodyFormat,
     pub attachments: Vec<UploadedAttachment>,
     pub reply_thread: Option<crate::reply_thread::ReplyThread>,
+    pub protection: ProtectionIntent,
 }
 
 struct RecipientFields {
@@ -236,6 +259,7 @@ impl ComposeRequest {
             body_format: BodyFormat::Plain,
             attachments,
             reply_thread: None,
+            protection: ProtectionIntent::default(),
         })
     }
 
@@ -344,6 +368,7 @@ impl ComposeDraft {
             to,
             cc,
             reply_thread,
+            protection: ProtectionIntent::default(),
             subject,
             body,
             context_notice: note.or(attachment_notice),
@@ -428,6 +453,32 @@ pub trait SubmissionBackend {
         canonical_username: &str,
         request: &ComposeRequest,
     ) -> Result<(), SubmissionBackendError>;
+
+    /// Backends must explicitly support protected wire bytes. The compatibility
+    /// default can handle only an ordinary, account/request-bound message.
+    fn submit_prepared_message(
+        &self,
+        canonical_username: &str,
+        request: &ComposeRequest,
+        prepared: &crate::protected_submission::PreparedSubmission,
+    ) -> Result<(), SubmissionBackendError> {
+        let account = crate::identity::CanonicalUsername::parse(canonical_username)
+            .map_err(|_| prepared_submission_error())?;
+        prepared
+            .validate_for(&account, request)
+            .map_err(|_| prepared_submission_error())?;
+        if prepared.protection() != crate::protected_submission::SubmissionProtection::Ordinary {
+            return Err(prepared_submission_error());
+        }
+        self.submit_message(canonical_username, request)
+    }
+}
+
+fn prepared_submission_error() -> SubmissionBackendError {
+    SubmissionBackendError {
+        backend: "prepared-submission",
+        reason: "prepared message unavailable or identity mismatch".into(),
+    }
 }
 
 /// Submits composed messages through the local `sendmail` compatibility surface.
@@ -469,6 +520,12 @@ where
         canonical_username: &str,
         request: &ComposeRequest,
     ) -> Result<(), SubmissionBackendError> {
+        if request.protection.sign
+            || request.protection.encrypt
+            || request.protection.encrypt_to_self
+        {
+            return Err(prepared_submission_error());
+        }
         let mailbox_identity =
             MailboxIdentity::parse(canonical_username.to_string()).map_err(|error| {
                 SubmissionBackendError {
@@ -507,6 +564,32 @@ where
 
         Ok(())
     }
+
+    fn submit_prepared_message(
+        &self,
+        canonical_username: &str,
+        request: &ComposeRequest,
+        prepared: &crate::protected_submission::PreparedSubmission,
+    ) -> Result<(), SubmissionBackendError> {
+        let account = crate::identity::CanonicalUsername::parse(canonical_username)
+            .map_err(|_| prepared_submission_error())?;
+        prepared
+            .validate_for(&account, request)
+            .map_err(|_| prepared_submission_error())?;
+        let execution = self
+            .command_executor
+            .run_with_stdin_bytes_timeout(
+                self.sendmail_path.to_string_lossy().as_ref(),
+                &sendmail_args(account.as_str(), request),
+                prepared.as_bytes(),
+                Duration::from_secs(self.command_timeout_secs),
+            )
+            .map_err(|_| prepared_submission_error())?;
+        if execution.status_code != 0 {
+            return Err(prepared_submission_error());
+        }
+        Ok(())
+    }
 }
 
 /// Submits composed messages for an already validated browser session.
@@ -530,10 +613,65 @@ where
         validated_session: &ValidatedSession,
         request: &ComposeRequest,
     ) -> SubmissionOutcome {
-        match self
-            .backend
-            .submit_message(&validated_session.record.canonical_username, request)
+        if request.protection.sign
+            || request.protection.encrypt
+            || request.protection.encrypt_to_self
         {
+            return Self::prepared_denied(context, validated_session);
+        }
+        let result = self
+            .backend
+            .submit_message(&validated_session.record.canonical_username, request);
+        Self::submission_outcome(context, validated_session, request, result)
+    }
+
+    pub fn submit_prepared_for_validated_session(
+        &self,
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        request: &ComposeRequest,
+        prepared: &crate::protected_submission::PreparedSubmission,
+    ) -> SubmissionOutcome {
+        let Ok(account) =
+            crate::identity::CanonicalUsername::parse(&validated_session.record.canonical_username)
+        else {
+            return Self::prepared_denied(context, validated_session);
+        };
+        if prepared.validate_for(&account, request).is_err() {
+            return Self::prepared_denied(context, validated_session);
+        }
+        let result = self
+            .backend
+            .submit_prepared_message(account.as_str(), request, prepared);
+        Self::submission_outcome(context, validated_session, request, result)
+    }
+
+    fn prepared_denied(
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+    ) -> SubmissionOutcome {
+        SubmissionOutcome {
+            decision: SubmissionDecision::Denied {
+                public_reason: SubmissionPublicFailureReason::InvalidRequest,
+            },
+            audit_event: LogEvent::new(
+                LogLevel::Warn,
+                EventCategory::Submission,
+                "prepared_submission_denied",
+                "prepared submission account or request was invalid",
+            )
+            .with_field("canonical_username", &session.record.canonical_username)
+            .with_field("request_id", &context.request_id),
+        }
+    }
+
+    fn submission_outcome(
+        context: &AuthenticationContext,
+        validated_session: &ValidatedSession,
+        request: &ComposeRequest,
+        result: Result<(), SubmissionBackendError>,
+    ) -> SubmissionOutcome {
+        match result {
             Ok(()) => SubmissionOutcome {
                 decision: SubmissionDecision::Submitted {
                     canonical_username: validated_session.record.canonical_username.clone(),
@@ -1267,7 +1405,7 @@ fn escape_mime_parameter_value(value: &str) -> String {
 }
 
 /// Encodes one attachment body as MIME base64 wrapped at 76 characters.
-fn base64_encode_wrapped(bytes: &[u8]) -> String {
+pub(crate) fn base64_encode_wrapped(bytes: &[u8]) -> String {
     const BASE64: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     let mut output = String::new();
     let mut line_len = 0;
@@ -1331,6 +1469,9 @@ fn is_allowed_content_type_token_char(ch: char) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    mod protected_tests {
+        include!("send_protected_tests.rs");
+    }
     use crate::auth::{AuthenticationPolicy, CommandExecution, CommandExecutionError};
     use crate::config::LogFormat;
     use crate::logging::Logger;
@@ -1443,7 +1584,7 @@ mod tests {
 
     fn rendered_message_fixture() -> RenderedMessageView {
         RenderedMessageView {
-            metadata: None,
+            openpgp: None,            metadata: None,
             flags: Vec::new(),
             mailbox_name: "INBOX".to_string(),
             uid: 42,

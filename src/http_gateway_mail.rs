@@ -1,5 +1,4 @@
 use super::*;
-use crate::logging::audit_session_ref;
 use crate::totp::TimeProvider;
 
 use crate::config::LogLevel;
@@ -8,8 +7,10 @@ use crate::mailbox::validate_message_search_query;
 use std::time::{Duration, Instant};
 
 fn mailbox_is_browser_visible(mailbox_name: &str) -> bool {
-    matches!(mailbox_name, "INBOX" | "Drafts" | "Junk" | "Sent" | "Trash")
-        || mailbox_name.starts_with("INBOX.")
+    matches!(
+        mailbox_name,
+        "INBOX" | "Archive" | "Drafts" | "Junk" | "Sent" | "Trash"
+    ) || mailbox_name.starts_with("INBOX.")
 }
 
 fn mailbox_list_contains(mailboxes: &[MailboxEntry], mailbox_name: &str) -> bool {
@@ -18,18 +19,27 @@ fn mailbox_list_contains(mailboxes: &[MailboxEntry], mailbox_name: &str) -> bool
 
 // Called only after submission acceptance. An append error cannot establish
 // whether the backend stored the copy, and must never cause another dispatch.
-fn store_sent_copy(
+fn store_prepared_sent_copy(
     context: &AuthenticationContext,
     canonical_username: &str,
     request: &ComposeRequest,
+    prepared: &crate::protected_submission::PreparedSubmission,
     backend: &impl MessageAppendBackend,
 ) -> (bool, LogEvent) {
-    let append_result = build_submission_message(canonical_username, request)
-        .map_err(|error| crate::mailbox::MailboxBackendError {
+    let append_result = crate::identity::CanonicalUsername::parse(canonical_username)
+        .map_err(|_| crate::mailbox::MailboxBackendError {
             backend: "sent-copy-formatter",
-            reason: error.reason,
+            reason: "invalid prepared account".into(),
         })
-        .and_then(|raw_message| MessageAppendRequest::new("Sent", raw_message))
+        .and_then(|account| {
+            prepared.validate_for(&account, request).map_err(|_| {
+                crate::mailbox::MailboxBackendError {
+                    backend: "sent-copy-formatter",
+                    reason: "prepared identity mismatch".into(),
+                }
+            })
+        })
+        .and_then(|()| MessageAppendRequest::new("Sent", prepared.as_bytes().to_vec()))
         .and_then(|append_request| {
             backend.append_message(canonical_username, &append_request)?;
             Ok(append_request.message.len())
@@ -63,6 +73,43 @@ fn store_sent_copy(
             .with_field("mailbox_name", "Sent")
             .with_field("request_id", context.request_id.clone()),
     )
+}
+
+#[cfg(test)]
+fn store_sent_copy(
+    context: &AuthenticationContext,
+    canonical_username: &str,
+    request: &ComposeRequest,
+    backend: &impl MessageAppendBackend,
+) -> (bool, LogEvent) {
+    let account = crate::identity::CanonicalUsername::parse(canonical_username).unwrap();
+    let prepared = crate::protected_submission::prepare(
+        &crate::protected_submission::UnavailableCrypto,
+        &account,
+        request,
+        &crate::openpgp_bindings::OperationPlan {
+            signer_fingerprint: None,
+            recipient_fingerprints: Vec::new(),
+            encrypt_to_self: false,
+        },
+    );
+    match prepared {
+        Ok(prepared) => {
+            store_prepared_sent_copy(context, canonical_username, request, &prepared, backend)
+        }
+        Err(_) => (
+            false,
+            LogEvent::new(
+                LogLevel::Warn,
+                EventCategory::Submission,
+                "sent_copy_store_failed",
+                "outbound message accepted for submission; Sent copy storage not confirmed",
+            )
+            .with_field("backend", "sent-copy-formatter")
+            .with_field("canonical_username", canonical_username)
+            .with_field("request_id", &context.request_id),
+        ),
+    }
 }
 
 pub(super) fn journal_send_decision(
@@ -169,11 +216,6 @@ impl RuntimeBrowserGateway {
                         .min(crate::auth::DEFAULT_EXTERNAL_COMMAND_TIMEOUT_SECS),
                 ),
         )
-    }
-
-    /// Builds the current attachment-download service from the MIME policy.
-    pub(super) fn build_attachment_download_service(&self) -> AttachmentDownloadService {
-        AttachmentDownloadService::new(AttachmentDownloadPolicy::default())
     }
 
     /// Records a non-fatal throttle-store failure so operators can diagnose
@@ -545,6 +587,25 @@ impl RuntimeBrowserGateway {
         let message_outcome = MessageViewService::new(self.build_message_view_backend())
             .fetch_for_validated_session(context, validated_session, &request);
         let mut audit_events = vec![message_outcome.audit_event.clone()];
+        if let MessageViewDecision::Retrieved {
+            canonical_username,
+            session_id,
+            message,
+        } = &message_outcome.decision
+        {
+            if canonical_username != &validated_session.record.canonical_username
+                || session_id != &validated_session.record.session_id
+                || message.mailbox_name != request.mailbox_name
+                || message.uid != request.uid
+            {
+                return BrowserMessageViewOutcome {
+                    decision: BrowserMessageViewDecision::Denied {
+                        public_reason: "temporarily_unavailable".into(),
+                    },
+                    audit_events,
+                };
+            }
+        }
 
         match message_outcome.decision {
             MessageViewDecision::Retrieved {
@@ -570,6 +631,54 @@ impl RuntimeBrowserGateway {
                         HtmlDisplayPreference::PreferPlainText
                     }
                 };
+
+                let policy = self.render_policy_for_html_preference(html_display_preference);
+                if super::http_gateway_protected::has_protection_envelope(&message) {
+                    let rendered = match self.render_protected_snapshot(
+                        context,
+                        validated_session,
+                        &message,
+                        policy,
+                    ) {
+                        Ok(rendered) => rendered,
+                        Err(error) => {
+                            audit_events.push(build_http_warning_event(
+                                "protected_message_refused",
+                                "protected content was not released",
+                                context,
+                            ));
+                            // Keep only the outer envelope and a refusal notice. Neither
+                            // ciphertext parts nor partial plaintext become attachments
+                            // or automatic reply/forward content on a failed operation.
+                            let Ok(mut fallback) = PlainTextMessageRenderer::new(policy)
+                                .render_for_validated_session(context, validated_session, &message)
+                            else {
+                                return BrowserMessageViewOutcome {
+                                    decision: BrowserMessageViewDecision::Denied {
+                                        public_reason: "temporarily_unavailable".into(),
+                                    },
+                                    audit_events,
+                                };
+                            };
+                            fallback.rendered.body_html = TrustedHtml::from_template(format!(
+                                "<p>{}</p>",
+                                escape_html(crate::openpgp_reader_ui::refusal_description(error))
+                            ));
+                            fallback.rendered.body_text_for_compose.clear();
+                            fallback.rendered.attachments.clear();
+                            fallback.rendered.openpgp =
+                                Some(crate::openpgp_reader_ui::ReaderState::Refused(error));
+                            fallback.rendered
+                        }
+                    };
+                    return BrowserMessageViewOutcome {
+                        decision: BrowserMessageViewDecision::Rendered {
+                            canonical_username,
+                            rendered: Box::new(rendered),
+                        },
+                        audit_events,
+                    };
+                }
 
                 match PlainTextMessageRenderer::new(
                     self.render_policy_for_html_preference(html_display_preference),
@@ -641,141 +750,48 @@ impl RuntimeBrowserGateway {
             }
         };
 
-        if let Some(socket_path) = &self.mailbox_helper_socket_path {
-            let Some(grant_key_path) = self.mailbox_helper_grant_key_path.as_deref() else {
-                return BrowserAttachmentDownloadOutcome {
-                    decision: BrowserAttachmentDownloadDecision::Denied {
-                        public_reason:
-                            AttachmentDownloadPublicFailureReason::TemporarilyUnavailable
-                                .as_str()
-                                .to_string(),
-                    },
-                    audit_events: vec![build_http_warning_event(
-                        "attachment_download_failed",
-                        "attachment helper runtime configuration is incomplete",
-                        context,
-                    )
-                    .with_field(
-                        "canonical_username",
-                        validated_session.record.canonical_username.clone(),
-                    )
-                    .with_field(
-                        "session_ref",
-                        audit_session_ref(&validated_session.record.session_id),
-                    )
-                    .with_field("mailbox_name", request.mailbox_name.clone())
-                    .with_field("uid", request.uid.to_string())
-                    .with_field("part_path", part_path.to_string())
-                    .with_field("public_reason", "temporarily_unavailable")
-                    .with_field("reason", "mailbox_helper_grant_key_path_missing")],
-                };
-            };
-            let helper_backend = MailboxHelperAttachmentDownloadBackend::new(
-                socket_path,
-                grant_key_path,
-                self.expensive_route_helper_policy(),
-            );
-            let canonical_username = validated_session.record.canonical_username.clone();
-
-            return match helper_backend.download_attachment(
-                &canonical_username,
-                &request.mailbox_name,
-                request.uid,
-                part_path,
-            ) {
-                Ok(attachment) => BrowserAttachmentDownloadOutcome {
-                    decision: BrowserAttachmentDownloadDecision::Downloaded {
-                        canonical_username,
-                        attachment: attachment.clone(),
-                    },
-                    audit_events: vec![build_http_info_event(
-                        "attachment_downloaded",
-                        "attachment download completed through mailbox helper",
-                        context,
-                    )
-                    .with_field(
-                        "canonical_username",
-                        validated_session.record.canonical_username.clone(),
-                    )
-                    .with_field(
-                        "session_ref",
-                        audit_session_ref(&validated_session.record.session_id),
-                    )
-                    .with_field("mailbox_name", attachment.mailbox_name.clone())
-                    .with_field("uid", attachment.uid.to_string())
-                    .with_field("part_path", attachment.part_path.clone())
-                    .with_field("download_bytes", attachment.body.len().to_string())
-                    .with_field("content_type", attachment.content_type.clone())],
-                },
-                Err(error) => BrowserAttachmentDownloadOutcome {
-                    decision: BrowserAttachmentDownloadDecision::Denied {
-                        public_reason: error.public_reason().as_str().to_string(),
-                    },
-                    audit_events: vec![build_http_warning_event(
-                        "attachment_download_failed",
-                        "attachment download failed through mailbox helper",
-                        context,
-                    )
-                    .with_field(
-                        "canonical_username",
-                        validated_session.record.canonical_username.clone(),
-                    )
-                    .with_field(
-                        "session_ref",
-                        audit_session_ref(&validated_session.record.session_id),
-                    )
-                    .with_field("mailbox_name", request.mailbox_name.clone())
-                    .with_field("uid", request.uid.to_string())
-                    .with_field("part_path", part_path.to_string())
-                    .with_field("public_reason", error.public_reason().as_str())
-                    .with_field("reason", error.reason)],
-                },
-            };
-        }
-
-        let message_outcome = MessageViewService::new(self.build_message_view_backend())
+        // Legacy links carry no stable GUID. Fetch exactly once through the
+        // configured mailbox boundary, and refuse protected legacy selectors.
+        let outcome = MessageViewService::new(self.build_message_view_backend())
             .fetch_for_validated_session(context, validated_session, &request);
-        let mut audit_events = vec![message_outcome.audit_event.clone()];
-
-        match message_outcome.decision {
+        let mut audit_events = vec![outcome.audit_event];
+        match outcome.decision {
             MessageViewDecision::Retrieved {
                 canonical_username,
+                session_id,
                 message,
-                ..
-            } => {
-                let attachment_outcome = self
-                    .build_attachment_download_service()
-                    .download_for_validated_session(
-                        context,
-                        validated_session,
-                        &message,
-                        part_path,
-                    );
-                audit_events.push(attachment_outcome.audit_event.clone());
-
-                match attachment_outcome.decision {
-                    AttachmentDownloadDecision::Downloaded { attachment, .. } => {
-                        BrowserAttachmentDownloadOutcome {
-                            decision: BrowserAttachmentDownloadDecision::Downloaded {
-                                canonical_username,
-                                attachment,
-                            },
-                            audit_events,
-                        }
-                    }
-                    AttachmentDownloadDecision::Denied { public_reason } => {
-                        BrowserAttachmentDownloadOutcome {
-                            decision: BrowserAttachmentDownloadDecision::Denied {
-                                public_reason: public_reason.as_str().to_string(),
-                            },
-                            audit_events,
-                        }
-                    }
+            } if canonical_username == validated_session.record.canonical_username
+                && session_id == validated_session.record.session_id
+                && message.mailbox_name == request.mailbox_name
+                && message.uid == request.uid =>
+            {
+                if super::http_gateway_protected::has_protection_envelope(&message) {
+                    return BrowserAttachmentDownloadOutcome {
+                        decision: BrowserAttachmentDownloadDecision::Denied {
+                            public_reason: "invalid_request".into(),
+                        },
+                        audit_events,
+                    };
                 }
+                let mut result = self.download_stored_attachment(
+                    context,
+                    validated_session,
+                    &message,
+                    part_path,
+                );
+                audit_events.append(&mut result.audit_events);
+                result.audit_events = audit_events;
+                result
             }
             MessageViewDecision::Denied { public_reason } => BrowserAttachmentDownloadOutcome {
                 decision: BrowserAttachmentDownloadDecision::Denied {
-                    public_reason: public_reason.as_str().to_string(),
+                    public_reason: public_reason.as_str().into(),
+                },
+                audit_events,
+            },
+            _ => BrowserAttachmentDownloadOutcome {
+                decision: BrowserAttachmentDownloadDecision::Denied {
+                    public_reason: "temporarily_unavailable".into(),
                 },
                 audit_events,
             },
@@ -815,6 +831,7 @@ impl RuntimeBrowserGateway {
         let journal = crate::send_journal::SendJournal::new(self.settings_dir.join("send-journal"));
         let mut preparation_events = Vec::new();
         let mut dispatch_events = Vec::new();
+        let prepared_wire = std::cell::RefCell::new(None);
         let result = journal.execute_prepared(
             account,
             send_request.send_intent,
@@ -890,6 +907,11 @@ impl RuntimeBrowserGateway {
                     .lookup(&journal, account, send_request.send_intent, now)
                     {
                         Ok(crate::send_recovery::RecoveryRead::Available(snapshot)) => {
+                            if snapshot.request.protection != send_request.protection {
+                                return Err(BrowserSendDecision::Unconfirmed {
+                                    public_reason: "send_attempt_paused".into(),
+                                });
+                            }
                             snapshot.request.sender_identity.clone()
                         }
                         _ => {
@@ -908,6 +930,7 @@ impl RuntimeBrowserGateway {
                         .preferences
                 };
                 request.reply_thread = send_request.reply_thread.cloned();
+                request.protection = send_request.protection;
                 // Replay skips current throttle state. For fresh attempts the check
                 // and its NotDispatched disposition are protected by the journal lock.
                 if !consumed {
@@ -933,6 +956,13 @@ impl RuntimeBrowserGateway {
                             ),
                         ),
                     }
+                    let prepared = self
+                        .prepare_outbound_request(account, &request, now)
+                        .map_err(|reason| BrowserSendDecision::Denied {
+                            public_reason: reason.into(),
+                            retry_after_seconds: None,
+                        })?;
+                    *prepared_wire.borrow_mut() = Some(prepared);
                 }
                 Ok(request)
             },
@@ -960,8 +990,27 @@ impl RuntimeBrowserGateway {
                         };
                     }
                 };
-                let outcome =
-                    submission.submit_for_validated_session(context, validated_session, &request);
+                let Some((prepared, binding_revision)) = prepared_wire.borrow_mut().take() else {
+                    return crate::send_journal::AttemptOutcome::Unconfirmed;
+                };
+                // Serialize the final revision check and SMTP dispatch with
+                // PAGE21 policy/binding writers. The journal lock is acquired
+                // first by both fresh and replayed attempts; no writer can
+                // change required protection between this check and dispatch.
+                let outcome = match crate::openpgp_bindings::BindingStore::new(
+                    self.settings_dir.join("openpgp-bindings"),
+                )
+                .with_locked_revision(account, binding_revision, |_| {
+                    Ok(submission.submit_prepared_for_validated_session(
+                        context,
+                        validated_session,
+                        &request,
+                        &prepared,
+                    ))
+                }) {
+                    Ok(outcome) => outcome,
+                    Err(_) => return crate::send_journal::AttemptOutcome::Unconfirmed,
+                };
                 let SubmissionOutcome {
                     decision,
                     audit_event,
@@ -970,10 +1019,11 @@ impl RuntimeBrowserGateway {
 
                 match decision {
                     SubmissionDecision::Submitted { .. } => {
-                        let (sent_copy_stored, sent_copy_event) = store_sent_copy(
+                        let (sent_copy_stored, sent_copy_event) = store_prepared_sent_copy(
                             context,
                             &validated_session.record.canonical_username,
                             &request,
+                            &prepared,
                             append,
                         );
                         dispatch_events.push(sent_copy_event);
@@ -1011,6 +1061,64 @@ impl RuntimeBrowserGateway {
             decision,
             audit_events: preparation_events,
         }
+    }
+
+    fn prepare_outbound_request(
+        &self,
+        account: &str,
+        request: &ComposeRequest,
+        now: u64,
+    ) -> Result<(crate::protected_submission::PreparedSubmission, u64), &'static str> {
+        let account =
+            crate::identity::CanonicalUsername::parse(account).map_err(|_| "invalid_request")?;
+        let record =
+            crate::openpgp_bindings::BindingStore::new(self.settings_dir.join("openpgp-bindings"))
+                .load(account.as_str())
+                .map_err(|_| "openpgp_binding_unavailable")?;
+        let inventory = self
+            .public_inventory_client
+            .as_ref()
+            .and_then(|client| client.read(account.as_str()).ok());
+        let result = match &self.crypto_client {
+            Some(client) => crate::protected_submission::prepare_for_delivery(
+                client,
+                &account,
+                request,
+                &record,
+                inventory.as_ref(),
+                now,
+            ),
+            None => crate::protected_submission::prepare_for_delivery(
+                &crate::protected_submission::UnavailableCrypto,
+                &account,
+                request,
+                &record,
+                inventory.as_ref(),
+                now,
+            ),
+        };
+        result
+            .map(|prepared| (prepared, record.revision))
+            .map_err(|error| match error {
+                crate::protected_submission::SubmissionError::StaleBinding => {
+                    "openpgp_binding_changed"
+                }
+                crate::protected_submission::SubmissionError::ProtectionBlocked => {
+                    "openpgp_protection_blocked"
+                }
+                crate::protected_submission::SubmissionError::InventoryUnavailable => {
+                    "openpgp_inventory_unavailable"
+                }
+                crate::protected_submission::SubmissionError::Crypto(
+                    crate::protected_message::CryptoFailure::Engine(
+                        crate::openpgp_crypto::Error::Locked,
+                    ),
+                ) => "openpgp_key_locked",
+                crate::protected_submission::SubmissionError::SizeLimit => {
+                    "openpgp_message_too_large"
+                }
+                _ => "openpgp_submission_unavailable",
+            })
     }
 
     pub(super) fn move_message_impl(
@@ -1124,9 +1232,24 @@ impl RuntimeBrowserGateway {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn archive_folder_participates_in_account_mailbox_search() {
+        assert!(mailbox_is_browser_visible("Archive"));
+        assert!(!mailbox_is_browser_visible("Shared/Other"));
+        assert!(!mailbox_is_browser_visible("OtherAccount/Archive"));
+    }
     mod journal_integration {
         use super::*;
         include!("http/send_gateway_journal_tests.rs");
+    }
+    mod protected_send {
+        use super::*;
+        include!("http/protected_send_gateway_tests.rs");
+    }
+    mod protected_send_native {
+        use super::*;
+        include!("http/protected_send_gateway_native_tests.rs");
     }
 
     #[derive(Default)]
@@ -1340,9 +1463,10 @@ mod tests {
             }
         );
         assert!(outcome.audit_events.iter().any(|event| {
-            event.action == "attachment_download_failed"
+            event.action == "message_view_failed"
                 && event.fields.iter().any(|field| {
-                    field.key == "reason" && field.value == "mailbox_helper_grant_key_path_missing"
+                    field.key == "backend_reason"
+                        && field.value == "mailbox helper socket configured without grant key path"
                 })
         }));
         let source = gateway.read_message_source(

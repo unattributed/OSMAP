@@ -19,6 +19,9 @@ pub struct KeyMaterial {
     pub fingerprint: String,
     pub algorithm: u32,
     pub bits: u32,
+    /// Authenticated engine-reported curve; absence does not qualify ECC use.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub curve: Option<String>,
     pub created: u64,
     pub expires: u64,
     pub revoked: bool,
@@ -101,6 +104,13 @@ impl Inventory {
                                 1 | 2 | 3 | 8 | 16 | 17 | 18 | 20 | 301 | 302 | 303
                             )
                             || k.bits == 0
+                            || k.curve.as_ref().is_some_and(|curve| {
+                                curve.is_empty()
+                                    || curve.len() > 32
+                                    || !curve
+                                        .bytes()
+                                        .all(|b| b.is_ascii_alphanumeric() || b"-_.".contains(&b))
+                            })
                             || k.bits > 65536
                             || k.created > 253402300799
                             || k.expires > 253402300799
@@ -164,6 +174,8 @@ mod tests {
         time["keys"][0]["primary"]["expires"] = serde_json::json!(2);
         assert!(Inventory::parse(&serde_json::to_vec(&time).unwrap()).is_err());
         for (field, value) in [
+            ("curve", serde_json::json!("bad curve")),
+            ("curve", serde_json::json!("A".repeat(33))),
             ("fingerprint", serde_json::json!("a".repeat(40))),
             ("algorithm", serde_json::json!(999)),
             ("created", serde_json::json!(u64::MAX)),

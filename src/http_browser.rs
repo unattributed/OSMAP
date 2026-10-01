@@ -17,6 +17,27 @@ pub enum BrowserSendRecoveryDecision {
 }
 
 pub trait BrowserGateway {
+    fn key_management(
+        &self,
+        _context: &AuthenticationContext,
+        session: &ValidatedSession,
+    ) -> crate::key_management::StateOutcome {
+        crate::key_management::StateOutcome {
+            state: crate::key_management::State::unavailable(&session.record.canonical_username),
+            audit_events: vec![],
+        }
+    }
+    fn change_keys(
+        &self,
+        _context: &AuthenticationContext,
+        _session: &ValidatedSession,
+        _request: crate::key_management::MutationRequest<'_>,
+    ) -> crate::key_management::MutationOutcome {
+        crate::key_management::MutationOutcome {
+            result: Err(crate::key_management::Error::Unavailable),
+            audit_events: vec![],
+        }
+    }
     fn load_after_archive(
         &self,
         _session: &ValidatedSession,
@@ -422,6 +443,17 @@ pub trait BrowserGateway {
             audit_events: vec![],
         }
     }
+    fn compose_protection(
+        &self,
+        _session: &ValidatedSession,
+        _to: &str,
+        _cc: &str,
+        _bcc: &str,
+        _intent: crate::send::ProtectionIntent,
+    ) -> Option<crate::http::ComposeProtectionView> {
+        None
+    }
+
     fn public_key_inventory(
         &self,
         _context: &AuthenticationContext,
@@ -495,6 +527,54 @@ pub trait BrowserGateway {
         part_path: &str,
     ) -> BrowserAttachmentDownloadOutcome;
 
+    /// Decode a freshly fetched, already ownership-checked stored snapshot.
+    /// A runtime override processes protected content through its authenticated
+    /// crypto client; the default refuses protected envelopes.
+    fn download_stored_attachment(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        message: &MessageView,
+        part: &str,
+    ) -> BrowserAttachmentDownloadOutcome {
+        let result =
+            if super::http_gateway::http_gateway_protected::has_protection_envelope(message) {
+                None
+            } else {
+                Some(
+                    AttachmentDownloadService::new(AttachmentDownloadPolicy::default())
+                        .download_for_validated_session(context, session, message, part),
+                )
+            };
+        let mut audit_events = vec![];
+        let decision = if let Some(outcome) = result {
+            audit_events.push(outcome.audit_event);
+            match outcome.decision {
+                AttachmentDownloadDecision::Downloaded {
+                    canonical_username,
+                    attachment,
+                    ..
+                } => BrowserAttachmentDownloadDecision::Downloaded {
+                    canonical_username,
+                    attachment,
+                },
+                AttachmentDownloadDecision::Denied { public_reason } => {
+                    BrowserAttachmentDownloadDecision::Denied {
+                        public_reason: public_reason.as_str().into(),
+                    }
+                }
+            }
+        } else {
+            BrowserAttachmentDownloadDecision::Denied {
+                public_reason: "temporarily_unavailable".into(),
+            }
+        };
+        BrowserAttachmentDownloadOutcome {
+            decision,
+            audit_events,
+        }
+    }
+
     /// Read bounded stored text through the configured mailbox boundary.
     /// Callers must check account, mailbox, UID and any expected version.
     fn read_message_source(
@@ -559,6 +639,7 @@ pub trait BrowserGateway {
 /// Draft save fields parsed by the browser route layer.
 #[derive(Debug, Clone, Copy)]
 pub struct BrowserDraftSaveRequest<'a> {
+    pub protection: crate::send::ProtectionIntent,
     pub send_intent: &'a str,
     pub draft_id: Option<&'a str>,
     pub expected_revision: Option<u64>,
@@ -577,6 +658,7 @@ pub struct BrowserDraftSaveRequest<'a> {
 /// Send fields parsed by the browser route layer.
 #[derive(Debug, Clone, Copy)]
 pub struct BrowserSendRequest<'a> {
+    pub protection: crate::send::ProtectionIntent,
     pub send_intent: &'a str,
     pub draft_id: Option<&'a str>,
     pub draft_revision: Option<u64>,

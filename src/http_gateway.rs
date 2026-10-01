@@ -6,8 +6,12 @@ mod http_gateway_auth;
 mod http_gateway_draft;
 #[path = "http_gateway_flags.rs"]
 mod http_gateway_flags;
+#[path = "http_gateway_keys.rs"]
+mod http_gateway_keys;
 #[path = "http_gateway_mail.rs"]
 mod http_gateway_mail;
+#[path = "http_gateway_protected.rs"]
+pub(super) mod http_gateway_protected;
 #[path = "http_gateway_settings.rs"]
 mod http_gateway_settings;
 #[path = "http_mailbox_backends.rs"]
@@ -16,7 +20,8 @@ mod http_mailbox_backends;
 /// The concrete runtime gateway built from the existing OSMAP services.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RuntimeBrowserGateway {
-    public_inventory_client: Option<crate::openpgp_inventory_runtime::Client>,
+    pub(crate) public_inventory_client: Option<crate::openpgp_inventory_runtime::Client>,
+    pub(crate) crypto_client: Option<crate::openpgp_crypto_runtime::Client>,
     authentication_policy: AuthenticationPolicy,
     totp_policy: TotpPolicy,
     login_throttle_policy: LoginThrottlePolicy,
@@ -27,7 +32,7 @@ pub struct RuntimeBrowserGateway {
     expensive_request_timeout_secs: u64,
     auth_backend_timeout_secs: u64,
     session_dir: PathBuf,
-    settings_dir: PathBuf,
+    pub(crate) settings_dir: PathBuf,
     draft_dir: PathBuf,
     login_throttle_dir: PathBuf,
     submission_throttle_dir: PathBuf,
@@ -47,6 +52,17 @@ impl RuntimeBrowserGateway {
     /// Builds the runtime gateway from validated configuration.
     pub fn from_config(config: &AppConfig) -> Self {
         Self {
+            crypto_client: config.openpgp_crypto.as_ref().and_then(|c| {
+                if !crate::openpgp_crypto_runtime::NATIVE_CONFINEMENT_QUALIFIED {
+                    return None;
+                }
+                crate::openpgp_crypto_runtime::Client::from_operator_files(
+                    &c.socket,
+                    &c.key_file,
+                    c.helper_uid,
+                )
+                .ok()
+            }),
             public_inventory_client: config.openpgp_inventory.as_ref().and_then(|c| {
                 crate::openpgp_inventory_runtime::Client::from_operator_files(
                     &c.socket,
@@ -104,6 +120,7 @@ impl RuntimeBrowserGateway {
     pub(crate) fn for_test(temp_root: &std::path::Path) -> Self {
         Self {
             public_inventory_client: None,
+            crypto_client: None,
             authentication_policy: AuthenticationPolicy::default(),
             totp_policy: TotpPolicy::default(),
             login_throttle_policy: LoginThrottlePolicy {
@@ -148,6 +165,32 @@ impl RuntimeBrowserGateway {
 }
 
 impl BrowserGateway for RuntimeBrowserGateway {
+    fn key_management(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+    ) -> crate::key_management::StateOutcome {
+        self.key_management_state(context, session)
+    }
+    fn change_keys(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        request: crate::key_management::MutationRequest<'_>,
+    ) -> crate::key_management::MutationOutcome {
+        self.change_keys_impl(context, session, request)
+    }
+    fn compose_protection(
+        &self,
+        session: &ValidatedSession,
+        to: &str,
+        cc: &str,
+        bcc: &str,
+        intent: crate::send::ProtectionIntent,
+    ) -> Option<crate::http::ComposeProtectionView> {
+        self.compose_protection_view(session, to, cc, bcc, intent)
+    }
+
     fn public_key_inventory(
         &self,
         context: &AuthenticationContext,
@@ -810,6 +853,59 @@ impl BrowserGateway for RuntimeBrowserGateway {
         part_path: &str,
     ) -> BrowserAttachmentDownloadOutcome {
         self.download_attachment_impl(context, validated_session, mailbox_name, uid, part_path)
+    }
+
+    fn download_stored_attachment(
+        &self,
+        context: &AuthenticationContext,
+        session: &ValidatedSession,
+        message: &MessageView,
+        part: &str,
+    ) -> BrowserAttachmentDownloadOutcome {
+        if !http_gateway_protected::has_protection_envelope(message) {
+            let result = AttachmentDownloadService::new(AttachmentDownloadPolicy::default())
+                .download_for_validated_session(context, session, message, part);
+            return BrowserAttachmentDownloadOutcome {
+                decision: match result.decision {
+                    AttachmentDownloadDecision::Downloaded {
+                        canonical_username,
+                        attachment,
+                        ..
+                    } => BrowserAttachmentDownloadDecision::Downloaded {
+                        canonical_username,
+                        attachment,
+                    },
+                    AttachmentDownloadDecision::Denied { public_reason } => {
+                        BrowserAttachmentDownloadDecision::Denied {
+                            public_reason: public_reason.as_str().into(),
+                        }
+                    }
+                },
+                audit_events: vec![result.audit_event],
+            };
+        }
+        let result = self.protected_attachment_snapshot(context, session, message, part);
+        BrowserAttachmentDownloadOutcome {
+            decision: match result {
+                Ok(attachment) => BrowserAttachmentDownloadDecision::Downloaded {
+                    canonical_username: session.record.canonical_username.clone(),
+                    attachment,
+                },
+                Err(crate::protected_message::ProtectedError::Attachment(reason)) => {
+                    BrowserAttachmentDownloadDecision::Denied {
+                        public_reason: reason.as_str().into(),
+                    }
+                }
+                Err(_) => BrowserAttachmentDownloadDecision::Denied {
+                    public_reason: "temporarily_unavailable".into(),
+                },
+            },
+            audit_events: vec![build_http_info_event(
+                "protected_attachment_processed",
+                "protected attachment request completed",
+                context,
+            )],
+        }
     }
 
     fn read_message_source(

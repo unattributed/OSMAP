@@ -17,6 +17,19 @@ from pathlib import Path
 
 TOP25_VERSION = "MITRE CWE Top 25 2025"
 
+# These files are compiled exclusively through cfg(test) modules. Verify the
+# registration before excluding their native-fixture process calls.
+TEST_ONLY_RUST_PATHS = {
+    "src/openpgp_public_admin_tests.rs": (
+        "src/openpgp_public_admin.rs",
+        '#[cfg(test)]\n#[path = "openpgp_public_admin_tests.rs"]\nmod tests;',
+    ),
+    "src/http/protected_send_gateway_native_tests.rs": (
+        "src/http_gateway_mail.rs",
+        'include!("http/protected_send_gateway_native_tests.rs");',
+    ),
+}
+
 
 @dataclass(frozen=True)
 class Finding:
@@ -156,6 +169,14 @@ def scan_rust(root: Path) -> list[Finding]:
     findings: list[Finding] = []
     for path in sorted(src_dir.rglob("*.rs")):
         rel = repo_relative(path, root)
+        if rel in TEST_ONLY_RUST_PATHS:
+            parent, marker = TEST_ONLY_RUST_PATHS[rel]
+            parent_source = (root / parent).read_text(encoding="utf-8", errors="replace")
+            if marker in parent_source and (
+                rel != "src/http/protected_send_gateway_native_tests.rs"
+                or "#[cfg(test)]\nmod tests {" in parent_source
+            ):
+                continue
         for line_number, line in production_rust_lines(path):
             for rule in PRODUCTION_RULES:
                 if rel in rule.allow_paths:

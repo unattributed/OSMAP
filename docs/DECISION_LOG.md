@@ -7144,3 +7144,151 @@ factor. Do not bypass enrollment or fabricate a signed recovery attestation to
 finish the sprint. Human-operated enrollment, approved controlled mutation,
 external recovery controls, cleanup, and acceptance remain pending. Record
 these limits in `TOTP_LIFECYCLE_OBSD1_EVIDENCE.md` and keep Slice 04 open.
+### Resume the UX epic with assigned coding agents — 2026-10-01
+
+The operator resumed development, explicitly requested subagents, delegated full
+engineering authority and requested completion messages for slices, sprints and
+the epic. The lead agent coordinates two coding agents and an independent
+reviewer. File ownership separates the runtime crypto engine, PGP/MIME handling
+and integration. Existing signed plan requirements remain intact; their
+implementation can proceed in parallel under this explicit instruction.
+
+Build missing functionality before asking the operator to test it. Login and
+ordinary mail checks do not establish encrypted mail capability. Use obsd1 for
+native verification and development deployment. No production-host change or
+Git publication is authorized by this continuation. Keep decisions here and
+progress in the existing UX ledger rather than adding a new management system.
+
+### Support the selected counterpart's existing OpenPGP curves — 2026-10-01
+
+The initial RSA generation default does not meet the operator's selected
+existing Ed25519 signing/CV25519 encryption counterpart. Extend the runtime
+interoperability profile to those exact existing v4 key curves through installed
+GPGME/GnuPG, with disposable native sign/verify/encrypt/decrypt tests before
+qualification. Keep RSA generation at 3072 bits or stronger, SHA-256/SHA-512,
+AES-256 integrity protection, exact fingerprint bindings, offline operation and
+error-on-Pinentry. Do not claim general v6 support or substitute keys. This
+engineering choice implements the operator's selected real workflow; it does
+not waive confinement, interoperability or UX acceptance requirements.
+
+### Accept authenticated AES-256 integrity modes from the installed engine
+
+Native operations on obsd1 showed that its GnuPG emits OCB AEAD encryption for
+the disposable modern keys. Accept AES-256 with either the existing MDC mode or
+OCB AEAD mode 2 only when GPGME decryption succeeds, the legacy-without-integrity
+flag is false and the actual decryption fingerprint is authorized. Status alone
+does not establish success. Refuse missing integrity, other ciphers/modes,
+truncated or corrupted authentication tags and partial results. Native negative
+tests and independent review substantiate this predicate; general v6 support
+and a completed external mail round trip are not claimed.
+
+### Keep workstation signing distinct from host mailbox custody
+
+The operator's daily key warm-up applies to parrot-2TB. It enables signed commits
+and source packages there. An obsd1 mailbox agent must be provisioned and unlocked
+separately outside the web application. Do not transfer the Shopkeeper key,
+forward its agent for mail, export a real mailbox key autonomously or request a
+passphrase in chat. Continue building with disposable native mail keys while
+preparing the later operator-controlled mailbox provisioning step.
+
+### Qualify isolated OpenBSD crypto and public inventory components — 2026-10-01
+
+Set both native confinement component constants true after actual obsd1
+qualification, not compilation alone. The retained signed-base candidate used
+production Service::serve and authenticated Clients under three disposable
+UIDs. All thirteen controls passed, including unauthorized peer rejection with
+the same grant, web/private-file isolation, inherited descriptor closure,
+small-pipe readiness, deadlines, output limits and descendant cleanup. The
+independent reviewer reconciled source parity and documented candidate changes.
+Current source keeps the qualified configuration, path, peer, account and exact
+fingerprint checks. Qualification covers OpenBSD 7.9 and the installed engine
+profile; it does not qualify the entire UX, real mailbox custody or external
+mail delivery. No real private keys or existing services changed during proof.
+Evidence: Downloads/osmap-ux-s05/agent-20261001/native-principal-qualification.log,
+native-principal-overlay.json/.diff and native-principal-parity.json.
+
+### Connect protected reading through one owned message snapshot
+
+Reader and attachment dispatch use bounded protection-aware MIME classification,
+including nested or malformed envelopes. Protected reads use the authenticated
+client, account-owned bindings and transient sanitizer pipeline. A failed
+operation clears body quoting and attachments; ciphertext wrapper parts cannot
+bypass processing through legacy URLs. Source remains the stored encrypted
+representation. New attachment links bind stable GUIDs and returned account,
+mailbox, UID and part. Unix-only helper configuration also receives the required
+OpenBSD promise and socket/grant unveil rules. These changes preserve the
+approved reader layout while replacing unavailable statuses with factual typed
+operation/identity states when configured.
+
+### Bind protected sends to the exact prepared bytes and selected policy — 2026-10-01
+
+The browser may request Sign, Encrypt and Encrypt to self, but the server derives
+the actual operation plan from the authenticated account, current full-fingerprint
+bindings, fresh public inventory, final recipient set and pinned binding
+revision. It prepares one RFC 3156 message before submission and uses those same
+bytes for SMTP and Sent; the send journal and replay digest include the selected
+protection intent. Missing or changed keys, policy, helper readiness or private
+unlock refuse delivery rather than substituting plaintext. Draft schemas 11/12
+preserve the intent and revision; older ordinary drafts remain readable.
+
+Reader, legacy download and reply/forward source-attachment paths now share the
+protected-aware owned snapshot. This closes a part-number collision in which an
+inner decrypted attachment could otherwise select an outer ciphertext wrapper.
+The UI labels public-key eligibility as a page-load snapshot and checks final
+recipients again on Send. Private-key readiness is claimed only by a completed
+operation. Encrypted Bcc remains blocked until its privacy boundary is qualified.
+
+### Use exact GPGME key metadata and primary profile checks — 2026-10-01
+
+The installed GPGME inventory reports CV25519 ECDH as algorithm 302, not the
+OpenPGP packet algorithm number 18. Binding eligibility now accepts the exact
+qualified GPGME 302 and rejects 18 in this inventory schema. The native worker
+also validates the primary key's algorithm/strength/curve before selecting
+otherwise capable signing or encryption subkeys. A weak primary plus strong
+subkeys must fail; native positive and negative controls passed on obsd1.
+
+### Keep the development mail-flow claim bounded to obsd1 — 2026-10-01
+
+Public DNS currently prefers `mail.blackbagsecurity.com` as MX 10 and obsd1 as
+MX 20. An ordinary Proton-to-primary-mailbox message therefore
+reaches the primary mail host first, not the development mailbox. Obsd1's local
+relay transport can be changed for mail that actually reaches it, but that alone
+cannot redirect external senders. Continue obsd1-only source deployment and
+outbound testing; do not claim the requested inbound Proton round trip until a
+real incoming path is established and observed. The public-only helper homes,
+socket and grants were prepared on obsd1 with rc services disabled and the live
+web process unchanged.
+
+### Preserve direct-helper isolation as UX routes become functional — 2026-10-01
+
+The V12 scaffold gate originally rejected every OpenPGP reference under browser
+handlers, which conflicts with the approved epic's working compose, reader and
+key-management routes. Keep its substantive boundary: handlers may parse finite
+intent and call the authenticated gateway, but may not launch processes or call
+native helper clients directly. The gate now scans production handlers for
+those direct-authority patterns while permitting UI labels and high-level
+binding types. Its positive/negative controls and the complete V12 gate pass.
+The PAGE21 mutation route is included in the WSTG attack-surface inventory.
+This changes the historical scaffold's enforcement scope, not the requirement
+for native confinement, fresh authorization or live crypto qualification.
+
+### Serialize final protected-send dispatch with binding policy — 2026-10-01
+
+The final binding revision check and SMTP submission share the account's
+`BindingStore` lock. A policy or fingerprint change committed during crypto
+preparation now causes the reserved attempt to pause; a concurrent change
+cannot commit between the final check and dispatch. The send journal lock is
+acquired first, and both lock paths fail closed when busy. Sent-copy storage
+follows dispatch without holding the binding lock. An independent source
+review found no remaining blocking lock-order or policy-at-dispatch race in
+this path; the native controlled gateway proof and broad regression gates are
+recorded separately in the UX ledger.
+
+### Keep auth diagnostics and native fixtures outside production logs and scans — 2026-10-01
+
+Unexpected `doveadm auth test` output is untrusted. The audit reason now records
+only its numeric exit status, so backend stdout/stderr cannot carry private
+diagnostics into the event. A sensitive-marker regression covers this case.
+The CWE guard excludes only two verified test-only Rust fixture files from its
+production process-execution scan; production source, including the helper
+boundary, remains scanned. The shell gate uses the same exact file exclusions.

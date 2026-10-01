@@ -33,6 +33,7 @@ pub const DEFAULT_AUTH_BACKEND_TIMEOUT_SECONDS: u64 = 20;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AppConfig {
     pub openpgp_inventory: Option<OpenPgpInventoryConfig>,
+    pub openpgp_crypto: Option<OpenPgpCryptoConfig>,
     pub run_mode: AppRunMode,
     pub environment: RuntimeEnvironment,
     pub listen_addr: String,
@@ -258,6 +259,35 @@ fn parse_openpgp_inventory(
             if !uid.is_empty() && uid.len() <= 10 && uid.bytes().all(|b| b.is_ascii_digit()) =>
         {
             Ok(Some(OpenPgpInventoryConfig {
+                socket,
+                key_file,
+                helper_uid: uid.parse().map_err(|_| error())?,
+            }))
+        }
+        _ => Err(error()),
+    }
+}
+/// Crypto and public inventory share the same bounded local client settings.
+/// Account homes, fingerprints and key custody stay in helper configuration.
+pub type OpenPgpCryptoConfig = OpenPgpInventoryConfig;
+fn parse_openpgp_crypto(
+    env: &BTreeMap<String, String>,
+) -> Result<Option<OpenPgpCryptoConfig>, BootstrapError> {
+    let socket = parse_optional_absolute_optional_path(env, "OSMAP_OPENPGP_CRYPTO_SOCKET")?;
+    let key_file = parse_optional_absolute_optional_path(env, "OSMAP_OPENPGP_CRYPTO_KEY_FILE")?;
+    let uid = env.get("OSMAP_OPENPGP_CRYPTO_HELPER_UID");
+    let error = || BootstrapError::InvalidConfig {
+        field: "OSMAP_OPENPGP_CRYPTO_HELPER_UID",
+        reason:
+            "crypto socket, key file and explicit decimal helper UID must be configured together"
+                .into(),
+    };
+    match (socket, key_file, uid) {
+        (None, None, None) => Ok(None),
+        (Some(socket), Some(key_file), Some(uid))
+            if !uid.is_empty() && uid.len() <= 10 && uid.bytes().all(|b| b.is_ascii_digit()) =>
+        {
+            Ok(Some(OpenPgpCryptoConfig {
                 socket,
                 key_file,
                 helper_uid: uid.parse().map_err(|_| error())?,
@@ -705,6 +735,7 @@ impl AppConfig {
 
         Ok(Self {
             openpgp_inventory: parse_openpgp_inventory(env_map)?,
+            openpgp_crypto: parse_openpgp_crypto(env_map)?,
             run_mode,
             environment,
             listen_addr,

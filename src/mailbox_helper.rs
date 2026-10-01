@@ -30,7 +30,7 @@ pub use self::mailbox_helper_flags::MailboxHelperMessageFlagBackend;
 #[path = "mailbox_helper_dispatch.rs"]
 mod mailbox_helper_dispatch;
 #[path = "mailbox_helper_protocol.rs"]
-mod mailbox_helper_protocol;
+pub(crate) mod mailbox_helper_protocol;
 
 pub use self::mailbox_helper_client::{
     MailboxHelperAttachmentDownloadBackend, MailboxHelperMailboxListBackend,
@@ -1247,6 +1247,7 @@ mod tests {
             .expect("grant key permissions should be restricted");
         let config = AppConfig {
             openpgp_inventory: None,
+            openpgp_crypto: None,
             run_mode: AppRunMode::MailboxHelper,
             environment: crate::config::RuntimeEnvironment::Development,
             listen_addr: "127.0.0.1:8080".to_string(),
@@ -1326,6 +1327,7 @@ mod tests {
         let mismatched_uid = actual_uid.saturating_add(1);
         let config = AppConfig {
             openpgp_inventory: None,
+            openpgp_crypto: None,
             run_mode: AppRunMode::MailboxHelper,
             environment: crate::config::RuntimeEnvironment::Development,
             listen_addr: "127.0.0.1:8080".to_string(),

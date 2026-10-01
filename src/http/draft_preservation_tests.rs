@@ -286,6 +286,7 @@ fn runtime_saved_attachment_removal_replacement_and_revision_checks_use_the_priv
         })
         .collect::<Vec<_>>();
     let input = BrowserDraftSaveRequest {
+            protection: crate::send::ProtectionIntent::default(),
         send_intent: &crate::send_journal::mint_intent(gateway.send_clock()).unwrap(),
         draft_id: None,
         expected_revision: None,

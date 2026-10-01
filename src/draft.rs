@@ -801,9 +801,17 @@ attachment_count={}\n",
         if record.request.sender_identity
             == crate::identity_preferences::IdentityPreferences::default()
         {
-            9
+            if record.request.protection == crate::send::ProtectionIntent::default() {
+                9
+            } else {
+                11
+            }
         } else {
-            10
+            if record.request.protection == crate::send::ProtectionIntent::default() {
+                10
+            } else {
+                12
+            }
         },
         record.revision.unwrap_or(0),
         u8::from(record.starred),
@@ -820,6 +828,20 @@ attachment_count={}\n",
         record.request.body_format.as_str(),
         record.request.attachments.len()
     );
+
+    if record.request.protection != crate::send::ProtectionIntent::default() {
+        let intent = record.request.protection;
+        content.push_str(&format!(
+            "pgp_sign={}\npgp_encrypt={}\npgp_self={}\npgp_binding_revision={}\n",
+            u8::from(intent.sign),
+            u8::from(intent.encrypt),
+            u8::from(intent.encrypt_to_self),
+            intent
+                .binding_revision
+                .map(|revision| revision.to_string())
+                .unwrap_or_else(|| "none".into())
+        ));
+    }
 
     if record.request.sender_identity != crate::identity_preferences::IdentityPreferences::default()
     {
@@ -904,6 +926,10 @@ fn parse_draft_metadata(
     let mut subject = None;
     let mut body = None;
     let mut body_format = None;
+    let mut pgp_sign = None;
+    let mut pgp_encrypt = None;
+    let mut pgp_self = None;
+    let mut pgp_binding_revision = None;
     let mut identity_name = None;
     let mut identity_reply_to = None;
     let mut attachment_count = None;
@@ -941,6 +967,35 @@ fn parse_draft_metadata(
             });
         }
         match key {
+            "pgp_sign" | "pgp_encrypt" | "pgp_self" => {
+                let value = match value {
+                    "0" => false,
+                    "1" => true,
+                    _ => {
+                        return Err(DraftError {
+                            reason: "invalid stored protection selection".into(),
+                        })
+                    }
+                };
+                match key {
+                    "pgp_sign" => pgp_sign = Some(value),
+                    "pgp_encrypt" => pgp_encrypt = Some(value),
+                    _ => pgp_self = Some(value),
+                }
+            }
+            "pgp_binding_revision" => {
+                pgp_binding_revision = Some(if value == "none" {
+                    None
+                } else {
+                    let revision = parse_u64_field("pgp_binding_revision", value)?;
+                    if revision.to_string() != value {
+                        return Err(DraftError {
+                            reason: "invalid protection revision".into(),
+                        });
+                    }
+                    Some(revision)
+                });
+            }
             "version" => version = Some(value.to_string()),
             "revision" => revision = Some(parse_u64_field("revision", value)?),
             "starred" => {
@@ -1032,6 +1087,8 @@ fn parse_draft_metadata(
             | Some("8")
             | Some("9")
             | Some("10")
+            | Some("11")
+            | Some("12")
     ) {
         return Err(DraftError {
             reason: "unsupported draft metadata version".to_string(),
@@ -1040,7 +1097,7 @@ fn parse_draft_metadata(
 
     let draft_id = required_field("draft_id", draft_id)?;
     let revision = match (version.as_deref(), revision) {
-        (Some("5" | "6" | "7" | "8" | "9" | "10"), Some(value)) if value > 0 => value,
+        (Some("5" | "6" | "7" | "8" | "9" | "10" | "11" | "12"), Some(value)) if value > 0 => value,
         (Some("1" | "2" | "3" | "4"), None) => 0,
         _ => {
             return Err(DraftError {
@@ -1049,7 +1106,7 @@ fn parse_draft_metadata(
         }
     };
     let starred = match (version.as_deref(), starred) {
-        (Some("6" | "7" | "8" | "9" | "10"), Some(value)) => value,
+        (Some("6" | "7" | "8" | "9" | "10" | "11" | "12"), Some(value)) => value,
         (Some("1" | "2" | "3" | "4" | "5"), None) => false,
         _ => {
             return Err(DraftError {
@@ -1058,7 +1115,7 @@ fn parse_draft_metadata(
         }
     };
     let body_format = match (version.as_deref(), body_format) {
-        (Some("9" | "10"), Some(value)) => value,
+        (Some("9" | "10" | "11" | "12"), Some(value)) => value,
         (Some("1" | "2" | "3" | "4" | "5" | "6" | "7" | "8"), None) => {
             crate::compose_format::BodyFormat::Plain
         }
@@ -1069,14 +1126,14 @@ fn parse_draft_metadata(
         }
     };
     let sender_identity = match (version.as_deref(), identity_name, identity_reply_to) {
-        (Some("10"), Some(name), Some(reply)) => {
+        (Some("10" | "12"), Some(name), Some(reply)) => {
             crate::identity_preferences::IdentityPreferences::new(&name, Some(&reply)).map_err(
                 |_| DraftError {
                     reason: "invalid stored sender presentation".into(),
                 },
             )?
         }
-        (Some("1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"), None, None) => {
+        (Some("1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "11"), None, None) => {
             crate::identity_preferences::IdentityPreferences::default()
         }
         _ => {
@@ -1090,7 +1147,7 @@ fn parse_draft_metadata(
         (Some(parent), Some(references), Some(shortened))
             if matches!(
                 version.as_deref(),
-                Some("4" | "5" | "6" | "7" | "8" | "9" | "10")
+                Some("4" | "5" | "6" | "7" | "8" | "9" | "10" | "11" | "12")
             ) =>
         {
             Some(
@@ -1146,7 +1203,7 @@ fn parse_draft_metadata(
         let size_bytes = required_field("attachment size", fields.size_bytes)?;
         let body_file = required_field("attachment body file", fields.body_file)?;
         let expected_body_file = attachment_body_file_name(index);
-        if if matches!(version.as_deref(), Some("8" | "9" | "10")) {
+        if if matches!(version.as_deref(), Some("8" | "9" | "10" | "11" | "12")) {
             !atomic::is_blob_name(&body_file)
         } else {
             body_file != expected_body_file
@@ -1174,7 +1231,7 @@ fn parse_draft_metadata(
                 reason: "draft attachment body size did not match metadata".to_string(),
             });
         }
-        if matches!(version.as_deref(), Some("8" | "9" | "10"))
+        if matches!(version.as_deref(), Some("8" | "9" | "10" | "11" | "12"))
             && atomic::blob_name(&body) != body_file
         {
             return Err(DraftError {
@@ -1205,7 +1262,42 @@ fn parse_draft_metadata(
     request.reply_thread = reply_thread;
     request.body_format = body_format;
     request.sender_identity = sender_identity;
-    if !matches!(version.as_deref(), Some("5" | "6" | "7" | "8" | "9" | "10")) {
+    request.protection = match (
+        version.as_deref(),
+        pgp_sign,
+        pgp_encrypt,
+        pgp_self,
+        pgp_binding_revision,
+    ) {
+        (
+            Some("11" | "12"),
+            Some(sign),
+            Some(encrypt),
+            Some(encrypt_to_self),
+            Some(binding_revision),
+        ) => crate::send::ProtectionIntent {
+            sign,
+            encrypt,
+            encrypt_to_self,
+            binding_revision,
+        },
+        (
+            Some("1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "10"),
+            None,
+            None,
+            None,
+            None,
+        ) => crate::send::ProtectionIntent::default(),
+        _ => {
+            return Err(DraftError {
+                reason: "missing or incompatible stored protection selection".into(),
+            })
+        }
+    };
+    if !matches!(
+        version.as_deref(),
+        Some("5" | "6" | "7" | "8" | "9" | "10" | "11" | "12")
+    ) {
         crate::send::ComposeRequest::new_with_routing(
             policy.compose_policy,
             &request.recipients_text,
@@ -1222,7 +1314,10 @@ fn parse_draft_metadata(
     let source_version = match (source_mailbox_guid, source_message_guid) {
         (None, None) => None,
         (Some(mailbox), Some(message))
-            if matches!(version.as_deref(), Some("7" | "8" | "9" | "10")) =>
+            if matches!(
+                version.as_deref(),
+                Some("7" | "8" | "9" | "10" | "11" | "12")
+            ) =>
         {
             Some(
                 crate::message_metadata::MessageVersion::new(mailbox, message).map_err(|_| {
@@ -1275,7 +1370,10 @@ fn parse_draft_metadata(
         }
     };
 
-    if matches!(version.as_deref(), Some("7" | "8" | "9" | "10")) {
+    if matches!(
+        version.as_deref(),
+        Some("7" | "8" | "9" | "10" | "11" | "12")
+    ) {
         validate_combined_attachment_count(policy, &request, source_attachments.as_ref())?;
     }
     Ok(Some(DraftRecord {
@@ -1530,6 +1628,9 @@ static NEXT_DRAFT_TEMP_FILE_ID: AtomicU64 = AtomicU64::new(0);
 #[cfg(test)]
 mod tests {
     use super::*;
+    mod protection_tests {
+        include!("draft_protection_tests.rs");
+    }
     mod preservation {
         include!("draft_preservation_tests.rs");
     }

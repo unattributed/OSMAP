@@ -57,6 +57,8 @@ pub(crate) use sessions_ui::render_sessions_page;
 
 /// Small view model for the current server-rendered compose page.
 pub(crate) struct ComposePageModel<'a> {
+    pub protection: crate::send::ProtectionIntent,
+    pub openpgp: Option<crate::http::ComposeProtectionView>,
     pub sender_identity: Option<&'a crate::identity_preferences::IdentityPreferences>,
     pub send_intent: &'a str,
     pub contacts: Option<&'a crate::contacts::ContactBook>,
@@ -1825,13 +1827,13 @@ fn render_reader_fragment(
         ),
         escape_html(rendered.rendering_mode.as_str()),
     );
-    let openpgp_reader_states = concat!(
+    let openpgp_reader_states = rendered.openpgp.as_ref().map(crate::openpgp_reader_ui::render).unwrap_or_else(|| concat!(
         "<details class=\"openpgp-reader-states\" aria-label=\"OpenPGP reader states\" data-openpgp-reader-states=\"ui-only\"><summary><strong>OpenPGP unavailable</strong><span>Signature not verified</span></summary>",
         "<div><strong>OpenPGP reader state</strong><p>No account OpenPGP capability is configured for this reader session. No decrypt, verify, key discovery, private-key access, or passphrase handling was attempted.</p></div>",
         "<dl class=\"openpgp-state-list\"><dt>Encrypted</dt><dd>not assessed</dd><dt>Decrypted on mail host</dt><dd>not produced</dd><dt>Signature</dt><dd>not verified</dd><dt>Signer</dt><dd>unknown until configured evidence exists</dd><dt>Missing key</dt><dd>not actionable in this UI-only slice</dd></dl>",
         "<p class=\"muted openpgp-boundary-note\">Verified signatures do not make content safe. Future decrypted content must still pass Protected by Default rendering.</p>",
         "</details>"
-    );
+    ).to_string());
     let toolbar = if let Some(neighbours) = neighbours {
         reader_toolbar::render(
             csrf_token,
@@ -1885,6 +1887,51 @@ fn render_reader_fragment(
 }
 
 /// Renders the compose page for the current user and CSRF-bound session.
+fn render_live_openpgp_compose_controls(model: &ComposePageModel<'_>) -> String {
+    let checked = |selected| if selected { " checked" } else { "" };
+    let revision = model
+        .protection
+        .binding_revision
+        .or_else(|| model.openpgp.as_ref().and_then(|view| view.revision));
+    let revision_field = revision
+        .map(|value| {
+            format!("<input type=\"hidden\" name=\"pgp_binding_revision\" value=\"{value}\">")
+        })
+        .unwrap_or_default();
+    let status = match model.openpgp.as_ref().and_then(|view| view.preflight.as_ref()) {
+        Some(preflight) => {
+            let state = if model.protection.sign || model.protection.encrypt {
+                crate::http::compose_protection::selection_text(preflight.state)
+            } else {
+                "No protection selected"
+            };
+            let recipients = preflight.recipients.iter().map(|recipient| {
+                let readiness = match recipient.state {
+                    crate::openpgp_bindings::KeyStatus::Ready => "Public key eligible",
+                    crate::openpgp_bindings::KeyStatus::MissingBinding => "No approved key binding",
+                    crate::openpgp_bindings::KeyStatus::InventoryUnavailable => "Key inventory unavailable",
+                    crate::openpgp_bindings::KeyStatus::MissingKey => "Bound key missing",
+                    crate::openpgp_bindings::KeyStatus::Revoked => "Key revoked",
+                    crate::openpgp_bindings::KeyStatus::Expired => "Key expired",
+                    crate::openpgp_bindings::KeyStatus::Invalid => "Key invalid",
+                    crate::openpgp_bindings::KeyStatus::Unsupported => "Key unsupported",
+                    crate::openpgp_bindings::KeyStatus::WrongUsage => "Key cannot encrypt",
+                    crate::openpgp_bindings::KeyStatus::Ambiguous => "Key ambiguous",
+                };
+                format!("<li><span>{}</span>: {readiness}</li>", escape_html(&recipient.address))
+            }).collect::<String>();
+            format!("<strong>{state}</strong><p>Public-key status for the addresses shown when this page loaded. Send Message checks the final addresses again. Signing and encryption are confirmed only when delivery completes; a failed check sends nothing.</p><ul>{recipients}</ul>")
+        }
+        None => "<strong>Unavailable</strong><p>OpenPGP key status could not be checked. A selected protected send will pause without sending plaintext.</p>".to_string(),
+    };
+    format!(
+        "<section class=\"openpgp-compose-controls compose-policy-row\" aria-label=\"OpenPGP compose controls\" data-openpgp-compose-controls=\"server-enforced\">{revision_field}<details name=\"compose-policy\"><summary><span>Sign</span><strong>{}</strong></summary><div class=\"compose-policy-detail\"><label><input type=\"checkbox\" name=\"pgp_sign\"{}/> Sign on send</label></div></details><details name=\"compose-policy\"><summary><span>Encrypt</span><strong>{}</strong></summary><div class=\"compose-policy-detail\"><label><input type=\"checkbox\" name=\"pgp_encrypt\"{}/> Encrypt on send</label></div></details><details name=\"compose-policy\"><summary><span>Encrypt to self</span><strong>{}</strong></summary><div class=\"compose-policy-detail\"><label><input type=\"checkbox\" name=\"pgp_self\"{}/> Include my approved key</label></div></details><details name=\"compose-policy\" open><summary><span>Recipient key status</span><strong>Page-load snapshot</strong></summary><div class=\"compose-policy-detail\">{status}</div></details></section>",
+        if model.protection.sign { "Requested" } else { "Unsigned" }, checked(model.protection.sign),
+        if model.protection.encrypt { "Requested" } else { "Not encrypted" }, checked(model.protection.encrypt),
+        if model.protection.encrypt_to_self { "Requested" } else { "Off" }, checked(model.protection.encrypt_to_self),
+    )
+}
+
 pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
     let confirmation_required = model.draft_id.is_some() && model.draft_revision.is_none();
     let (save_state, save_status) = if confirmation_required {
@@ -1984,7 +2031,14 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
         model.source_attachments,
         model.selected_source_part_paths,
     );
-    let openpgp_compose_controls = concat!(
+    let openpgp_compose_controls = if model.openpgp.is_some()
+        || model.protection.sign
+        || model.protection.encrypt
+        || model.protection.encrypt_to_self
+    {
+        render_live_openpgp_compose_controls(model)
+    } else {
+        concat!(
         "<section class=\"openpgp-compose-controls compose-policy-row\" aria-label=\"OpenPGP compose controls\" data-openpgp-compose-controls=\"ui-only\">",
         "<details name=\"compose-policy\"><summary><span>Sign</span><strong>Unsigned</strong></summary><div class=\"compose-policy-detail\"><p>Signing is unavailable for this account.</p></div></details>",
         "<details name=\"compose-policy\"><summary><span>Encrypt</span><strong>Not encrypted</strong></summary><div class=\"compose-policy-detail\"><p>Encryption is unavailable for this account.</p></div></details>",
@@ -1992,7 +2046,8 @@ pub(crate) fn render_compose_page(model: &ComposePageModel<'_>) -> TrustedHtml {
         "<details name=\"compose-policy\"><summary><span>Recipient key status</span><strong>Unavailable</strong></summary><div class=\"compose-policy-detail\"><p>Recipient keys have not been checked. OpenPGP is unavailable for this account.</p></div></details>",
         "<details name=\"compose-policy\" class=\"compose-policy-attention\"><summary><span>Security pre-flight</span><strong>Attention</strong></summary><div class=\"compose-policy-detail\"><p>This message will be sent without OpenPGP protection.</p><p class=\"openpgp-compose-boundary-note\">Send Message and Save Draft use unencrypted message content.</p></div></details>",
         "</section>"
-    );
+        ).to_string()
+    };
 
     TrustedHtml::from_template(format!(
         concat!(
@@ -2429,6 +2484,7 @@ mod v7_rendering_regression_tests {
     #[test]
     fn ui_message_view_surfaces_truthful_rendering_labels() {
         let rendered = RenderedMessageView {
+            openpgp: None,
             metadata: None,
             flags: Vec::new(),
             mailbox_name: "INBOX".to_string(),

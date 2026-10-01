@@ -53,6 +53,48 @@ pub(crate) fn set_descriptor_nonblocking(fd: i32) -> io::Result<()> {
     }
     Ok(())
 }
+/// Wait for duplex worker pipes without imposing a sleep on ready small pipes.
+/// The outer loop retains its absolute operation and cleanup deadlines.
+#[cfg(unix)]
+pub(crate) fn wait_worker_pipes(
+    input: Option<i32>,
+    output: Option<i32>,
+    error: Option<i32>,
+    deadline: std::time::Instant,
+) -> io::Result<()> {
+    let remaining = deadline
+        .checked_duration_since(std::time::Instant::now())
+        .ok_or(io::ErrorKind::TimedOut)?;
+    let mut pipes = Vec::with_capacity(3);
+    for (fd, events) in [
+        (input, libc::POLLOUT),
+        (output, libc::POLLIN),
+        (error, libc::POLLIN),
+    ] {
+        if let Some(fd) = fd {
+            if fd < 0 {
+                return Err(io::ErrorKind::InvalidInput.into());
+            }
+            pipes.push(libc::pollfd {
+                fd,
+                events,
+                revents: 0,
+            });
+        }
+    }
+    let wait = remaining.as_millis().min(2) as i32;
+    let result = unsafe { libc::poll(pipes.as_mut_ptr(), pipes.len() as libc::nfds_t, wait) };
+    if result < 0 {
+        let error = io::Error::last_os_error();
+        if error.kind() != io::ErrorKind::Interrupted {
+            return Err(error);
+        }
+    }
+    if pipes.iter().any(|p| p.revents & libc::POLLNVAL != 0) {
+        return Err(io::ErrorKind::InvalidInput.into());
+    }
+    Ok(())
+}
 /// Only a child started as its own process-group leader may be passed here.
 #[cfg(unix)]
 pub(crate) fn kill_process_group(child_pid: u32) -> io::Result<()> {
@@ -315,13 +357,34 @@ impl OpenbsdConfinementPlan {
                     add_parent_dir_rules(&mut rules, grant_key_path);
                 }
 
+                // Web access stops at authenticated helper sockets and its own
+                // grants. Mailbox key homes are never part of the web unveil view.
+                for client in [
+                    config.openpgp_inventory.as_ref(),
+                    config.openpgp_crypto.as_ref(),
+                ]
+                .into_iter()
+                .flatten()
+                {
+                    add_rule(&mut rules, &client.socket, "rw");
+                    add_parent_dir_rules(&mut rules, &client.socket);
+                    add_rule(&mut rules, &client.key_file, "r");
+                    add_parent_dir_rules(&mut rules, &client.key_file);
+                }
+
                 Self {
-                    promises_before_lock: if config.mailbox_helper_socket_path.is_some() {
+                    promises_before_lock: if config.mailbox_helper_socket_path.is_some()
+                        || config.openpgp_inventory.is_some()
+                        || config.openpgp_crypto.is_some()
+                    {
                         OPENBSD_SERVE_WITH_HELPER_PROMISES_BEFORE_LOCK
                     } else {
                         OPENBSD_SERVE_PROMISES_BEFORE_LOCK
                     },
-                    promises_after_lock: if config.mailbox_helper_socket_path.is_some() {
+                    promises_after_lock: if config.mailbox_helper_socket_path.is_some()
+                        || config.openpgp_inventory.is_some()
+                        || config.openpgp_crypto.is_some()
+                    {
                         OPENBSD_SERVE_WITH_HELPER_PROMISES_AFTER_LOCK
                     } else {
                         OPENBSD_SERVE_PROMISES_AFTER_LOCK
@@ -767,6 +830,7 @@ mod tests {
     fn config_fixture(mode: OpenbsdConfinementMode) -> AppConfig {
         AppConfig {
             openpgp_inventory: None,
+            openpgp_crypto: None,
             run_mode: AppRunMode::Serve,
             environment: RuntimeEnvironment::Production,
             listen_addr: "127.0.0.1:8080".to_string(),
