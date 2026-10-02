@@ -23,6 +23,14 @@ pub struct RuntimeBrowserGateway {
     pub(crate) public_inventory_client: Option<crate::openpgp_inventory_runtime::Client>,
     pub(crate) crypto_client: Option<crate::openpgp_crypto_runtime::Client>,
     pub(crate) public_admin_client: Option<crate::openpgp_public_admin_runtime::Client>,
+    inventory_recovery:
+        std::sync::Arc<std::sync::OnceLock<crate::openpgp_inventory_runtime::Client>>,
+    crypto_recovery: std::sync::Arc<std::sync::OnceLock<crate::openpgp_crypto_runtime::Client>>,
+    admin_recovery:
+        std::sync::Arc<std::sync::OnceLock<crate::openpgp_public_admin_runtime::Client>>,
+    inventory_config: Option<crate::config::OpenPgpInventoryConfig>,
+    crypto_config: Option<crate::config::OpenPgpCryptoConfig>,
+    admin_config: Option<crate::config::OpenPgpAdminConfig>,
     authentication_policy: AuthenticationPolicy,
     totp_policy: TotpPolicy,
     login_throttle_policy: LoginThrottlePolicy,
@@ -80,6 +88,12 @@ impl RuntimeBrowserGateway {
                 )
                 .ok()
             }),
+            inventory_recovery: std::sync::Arc::new(std::sync::OnceLock::new()),
+            crypto_recovery: std::sync::Arc::new(std::sync::OnceLock::new()),
+            admin_recovery: std::sync::Arc::new(std::sync::OnceLock::new()),
+            inventory_config: config.openpgp_inventory.clone(),
+            crypto_config: config.openpgp_crypto.clone(),
+            admin_config: config.openpgp_public_admin.clone(),
             authentication_policy: AuthenticationPolicy::default(),
             totp_policy: TotpPolicy {
                 allowed_skew_steps: config.totp_allowed_skew_steps,
@@ -125,12 +139,123 @@ impl RuntimeBrowserGateway {
         }
     }
 
+    // A helper may start after the web service. Failures remain retryable;
+    // success is cached across gateway clones so the client's response verifier
+    // preserves its replay and clock high-water state.
+    pub(crate) fn inventory_client(&self) -> Option<crate::openpgp_inventory_runtime::Client> {
+        if let Some(client) = &self.public_inventory_client {
+            return Some(client.clone());
+        }
+        if let Some(client) = self.inventory_recovery.get() {
+            return Some(client.clone());
+        }
+        let c = self.inventory_config.as_ref()?;
+        let client = crate::openpgp_inventory_runtime::Client::from_operator_files(
+            &c.socket,
+            &c.key_file,
+            c.helper_uid,
+        )
+        .ok()?;
+        let _ = self.inventory_recovery.set(client);
+        self.inventory_recovery.get().cloned()
+    }
+
+    pub(crate) fn crypto_client(&self) -> Option<crate::openpgp_crypto_runtime::Client> {
+        if let Some(client) = &self.crypto_client {
+            return Some(client.clone());
+        }
+        if let Some(client) = self.crypto_recovery.get() {
+            return Some(client.clone());
+        }
+        if !crate::openpgp_crypto_runtime::NATIVE_CONFINEMENT_QUALIFIED {
+            return None;
+        }
+        let c = self.crypto_config.as_ref()?;
+        let client = crate::openpgp_crypto_runtime::Client::from_operator_files(
+            &c.socket,
+            &c.key_file,
+            c.helper_uid,
+        )
+        .ok()?;
+        let _ = self.crypto_recovery.set(client);
+        self.crypto_recovery.get().cloned()
+    }
+
+    pub(crate) fn admin_client(&self) -> Option<crate::openpgp_public_admin_runtime::Client> {
+        if let Some(client) = &self.public_admin_client {
+            return Some(client.clone());
+        }
+        if let Some(client) = self.admin_recovery.get() {
+            return Some(client.clone());
+        }
+        let c = self.admin_config.as_ref()?;
+        let client = crate::openpgp_public_admin_runtime::Client::from_operator_files(
+            &c.socket,
+            &c.key_file,
+            c.helper_uid,
+        )
+        .ok()?;
+        let _ = self.admin_recovery.set(client);
+        self.admin_recovery.get().cloned()
+    }
+
+    /// Construction checks the local socket and grant; it does not prove an
+    /// authenticated RPC or that a helper is accepting requests.
+    pub(crate) fn helper_client_status_events(&self) -> [LogEvent; 3] {
+        let status = |configured: bool, constructed: bool, helper: &'static str| {
+            LogEvent::new(
+                if configured && !constructed {
+                    LogLevel::Warn
+                } else {
+                    LogLevel::Info
+                },
+                crate::logging::EventCategory::Bootstrap,
+                "openpgp_helper_client_status",
+                "OpenPGP helper client construction checked",
+            )
+            .with_field("helper", helper)
+            .with_field(
+                "status",
+                if !configured {
+                    "not_configured"
+                } else if constructed {
+                    "client_constructed"
+                } else {
+                    "configured_client_unavailable"
+                },
+            )
+        };
+        [
+            status(
+                self.inventory_config.is_some(),
+                self.public_inventory_client.is_some(),
+                "public_inventory",
+            ),
+            status(
+                self.admin_config.is_some(),
+                self.public_admin_client.is_some(),
+                "public_admin",
+            ),
+            status(
+                self.crypto_config.is_some(),
+                self.crypto_client.is_some(),
+                "crypto",
+            ),
+        ]
+    }
+
     #[cfg(test)]
     pub(crate) fn for_test(temp_root: &std::path::Path) -> Self {
         Self {
             public_inventory_client: None,
             crypto_client: None,
             public_admin_client: None,
+            inventory_recovery: std::sync::Arc::new(std::sync::OnceLock::new()),
+            crypto_recovery: std::sync::Arc::new(std::sync::OnceLock::new()),
+            admin_recovery: std::sync::Arc::new(std::sync::OnceLock::new()),
+            inventory_config: None,
+            crypto_config: None,
+            admin_config: None,
             authentication_policy: AuthenticationPolicy::default(),
             totp_policy: TotpPolicy::default(),
             login_throttle_policy: LoginThrottlePolicy {
@@ -207,7 +332,7 @@ impl BrowserGateway for RuntimeBrowserGateway {
         session: &ValidatedSession,
     ) -> BrowserPublicInventoryOutcome {
         let inventory = self
-            .public_inventory_client
+            .inventory_client()
             .as_ref()
             .and_then(|client| client.read(&session.record.canonical_username).ok());
         let audit_events = if inventory
@@ -1010,7 +1135,9 @@ mod public_inventory_gateway_tests {
     fn runtime_inventory_defaults_to_disabled() {
         let config = AppConfig::from_env_map(&std::collections::BTreeMap::new()).unwrap();
         let gateway = RuntimeBrowserGateway::from_config(&config);
-        assert!(gateway.public_inventory_client.is_none());
+        assert!(gateway.inventory_client().is_none());
+        assert!(gateway.admin_client().is_none());
+        assert!(gateway.crypto_client().is_none());
         assert_eq!(gateway, gateway.clone());
         let context = AuthenticationContext::new(
             AuthenticationPolicy::default(),
@@ -1039,5 +1166,98 @@ mod public_inventory_gateway_tests {
         assert!(result.inventory.is_none());
         assert_eq!(result.audit_events.len(), 1);
         assert!(!format!("{:?}", result.audit_events).contains("alice@example.com"));
+    }
+
+    #[test]
+    fn configured_helpers_recover_after_socket_appears_without_rebuilding_gateway() {
+        use std::os::unix::fs::PermissionsExt;
+        use std::os::unix::net::UnixListener;
+
+        // The security gate exports TMPDIR=/tmp/osmap-tmp, which may be
+        // group-writable. Client path validation intentionally rejects that
+        // ancestor, so this protected fixture uses the canonical sticky /tmp.
+        let root = std::fs::canonicalize("/tmp").unwrap().join(format!(
+            "osmap-gateway-helper-retry-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir(&root).unwrap();
+        std::fs::set_permissions(&root, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let socket = root.join("helper.sock");
+        let grant = root.join("grant");
+        std::fs::write(&grant, [17_u8; 32]).unwrap();
+        std::fs::set_permissions(&grant, std::fs::Permissions::from_mode(0o600)).unwrap();
+        let binding = crate::config::OpenPgpInventoryConfig {
+            socket: socket.clone(),
+            key_file: grant.clone(),
+            helper_uid: crate::openbsd::effective_uid(),
+        };
+        let mut gateway = RuntimeBrowserGateway::for_test(&root);
+        gateway.inventory_config = Some(binding.clone());
+        gateway.admin_config = Some(binding.clone());
+        gateway.crypto_config = Some(binding);
+
+        assert!(gateway.inventory_client().is_none());
+        assert!(gateway.admin_client().is_none());
+        assert!(gateway.crypto_client().is_none());
+        let unavailable = gateway.helper_client_status_events();
+        assert!(unavailable.iter().all(|event| {
+            event.action == "openpgp_helper_client_status"
+                && event.level == LogLevel::Warn
+                && event.fields.iter().any(|field| {
+                    field.key == "status" && field.value == "configured_client_unavailable"
+                })
+        }));
+        let logged = format!("{unavailable:?}");
+        assert!(!logged.contains(root.to_str().unwrap()));
+        assert!(!logged.contains("grant"));
+
+        let listener = UnixListener::bind(&socket).unwrap();
+        std::fs::set_permissions(&socket, std::fs::Permissions::from_mode(0o600)).unwrap();
+        let uid = crate::openbsd::effective_uid();
+        assert!(
+            gateway.inventory_client().is_some(),
+            "configured inventory client failed after socket appeared: {:?}",
+            crate::openpgp_inventory_runtime::Client::from_operator_files(&socket, &grant, uid)
+                .err()
+        );
+        assert!(
+            gateway.admin_client().is_some(),
+            "configured admin client failed after socket appeared: {:?}",
+            crate::openpgp_public_admin_runtime::Client::from_operator_files(&socket, &grant, uid)
+                .err()
+        );
+        assert!(
+            gateway.crypto_client().is_some(),
+            "configured crypto client failed after socket appeared: {:?}",
+            crate::openpgp_crypto_runtime::Client::from_operator_files(&socket, &grant, uid).err()
+        );
+        let cloned_gateway = gateway.clone();
+        assert!(cloned_gateway.inventory_client().is_some());
+        assert!(cloned_gateway.admin_client().is_some());
+        assert!(cloned_gateway.crypto_client().is_some());
+        assert!(std::ptr::eq(
+            gateway.inventory_recovery.get().unwrap(),
+            cloned_gateway.inventory_recovery.get().unwrap()
+        ));
+        assert!(std::ptr::eq(
+            gateway.admin_recovery.get().unwrap(),
+            cloned_gateway.admin_recovery.get().unwrap()
+        ));
+        assert!(std::ptr::eq(
+            gateway.crypto_recovery.get().unwrap(),
+            cloned_gateway.crypto_recovery.get().unwrap()
+        ));
+        drop(listener);
+        std::fs::remove_file(&socket).unwrap();
+        // Construction success remains cached, but each RPC still validates
+        // the live socket and fails closed if the helper stops.
+        assert!(gateway.inventory_client().is_some());
+        assert!(gateway.admin_client().is_some());
+        assert!(gateway.crypto_client().is_some());
+        std::fs::remove_dir_all(root).unwrap();
     }
 }

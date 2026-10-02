@@ -2,21 +2,20 @@
 
 ## Full-functional UX epic execution boundary
 
-The October 1 public-inventory checkpoint adds read-only PAGE19/PAGE21 routes,
-strict bounded metadata and an authenticated local transport candidate.
-Inventory availability, including verified empty inventory, never establishes
-account binding, recipient trust, private-key availability or cryptographic
-readiness. Import, binding, rotation, removal, policy changes and message crypto
-remain unavailable. The production service explicitly refuses activation while
-`NATIVE_CONFINEMENT_QUALIFIED` is false; configuration cannot override it.
-Native candidate worker confinement, inventory limits and signed-client tests
-passed on obsd1 on October 1 against the recorded source-tree archive. These
-same-user disposable fixtures do not qualify production service startup,
-separate service principals or the full release assurance profile. Replay
-protection lasts for the service process
-lifetime; service restart loses the ten-second replay window. Cleanup uncertainty
-stops future worker admission. The standard host checkout and services were
-preserved; native source/build scratch was isolated. No deployment is included.
+The October 1 obsd1 development deployment has native-qualified public
+inventory and administration helpers. PAGE21 exposes authenticated public-key
+inspection, import/removal, binding and policy controls. Their browser mutations
+still require human acceptance; the deployed read-only confined client probe
+does not establish that acceptance. Import alone never establishes account
+binding or recipient trust. The Duncan mailbox private key has not been
+provisioned to its isolated helper home, and the crypto service is stopped.
+Signing, decryption and a Proton encrypted round trip are therefore not live
+qualified. The OpenBSD native fixture and controlled gateway-to-wire proofs
+establish bounded source behavior, not the full release assurance profile or
+human UAT. The `NATIVE_CONFINEMENT_QUALIFIED` source constant records the
+native helper qualification; it does not imply this deployment has private-key
+readiness. See `UX_EXECUTION_LEDGER.md` for the exact assessed commit and host
+evidence.
 
 
 The operator-requested `UX_FULL_FUNCTIONAL_EPIC.md` is a plan, not a

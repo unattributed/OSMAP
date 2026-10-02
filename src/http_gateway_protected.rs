@@ -29,7 +29,7 @@ impl RuntimeBrowserGateway {
                 .load(account.as_str())
                 .map_err(|_| ProtectedError::Unavailable)?;
         let inventory = self
-            .public_inventory_client
+            .inventory_client()
             .as_ref()
             .and_then(|client| client.read(account.as_str()).ok());
         inbound_bindings(
@@ -48,13 +48,10 @@ impl RuntimeBrowserGateway {
         message: &MessageView,
         policy: RenderingPolicy,
     ) -> Result<RenderedMessageView, ProtectedError> {
-        let client = self
-            .crypto_client
-            .as_ref()
-            .ok_or(ProtectedError::Unavailable)?;
+        let client = self.crypto_client().ok_or(ProtectedError::Unavailable)?;
         let source = assemble_source(message)?;
         let bindings = self.protected_bindings(session, message)?;
-        let processed = Processor::new(client.clone(), policy)
+        let processed = Processor::new(client, policy)
             .process(context, session, message, &source, &bindings)?;
         let mut rendered = processed.rendered;
         rendered.openpgp = Some(crate::openpgp_reader_ui::ReaderState::Assessed(
@@ -70,13 +67,10 @@ impl RuntimeBrowserGateway {
         message: &MessageView,
         part: &str,
     ) -> Result<DownloadedAttachment, ProtectedError> {
-        let client = self
-            .crypto_client
-            .as_ref()
-            .ok_or(ProtectedError::Unavailable)?;
+        let client = self.crypto_client().ok_or(ProtectedError::Unavailable)?;
         let source = assemble_source(message)?;
         let bindings = self.protected_bindings(session, message)?;
-        let processed = Processor::new(client.clone(), self.render_policy)
+        let processed = Processor::new(client, self.render_policy)
             .process(context, session, message, &source, &bindings)?;
         let version = &message
             .metadata

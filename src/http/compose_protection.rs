@@ -85,7 +85,7 @@ impl RuntimeBrowserGateway {
         bcc: &str,
         intent: ProtectionIntent,
     ) -> Option<ComposeProtectionView> {
-        self.crypto_client.as_ref()?;
+        self.crypto_client()?;
         let account = &session.record.canonical_username;
         let record =
             crate::openpgp_bindings::BindingStore::new(self.settings_dir.join("openpgp-bindings"))
@@ -93,7 +93,7 @@ impl RuntimeBrowserGateway {
                 .ok()?;
         let revision = Some(record.revision);
         let inventory = self
-            .public_inventory_client
+            .inventory_client()
             .as_ref()
             .and_then(|client| client.read(account).ok());
         let parse =

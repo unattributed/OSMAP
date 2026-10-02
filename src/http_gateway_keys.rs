@@ -74,11 +74,12 @@ impl RuntimeBrowserGateway {
     ) -> StateOutcome {
         let mut state = State::unavailable(&session.record.canonical_username);
         if let Ok(account) = CanonicalUsername::parse(&session.record.canonical_username) {
+            let admin = self.admin_client();
+            let inventory = self.inventory_client();
             state.bindings = BindingStore::new(self.settings_dir.join("openpgp-bindings"))
                 .load(account.as_str())
                 .ok();
-            if let Some(snapshot) = self
-                .public_admin_client
+            if let Some(snapshot) = admin
                 .as_ref()
                 .and_then(|c| c.snapshot(account.as_str()).ok())
                 .filter(|s| s.inventory.keys().is_some())
@@ -86,8 +87,7 @@ impl RuntimeBrowserGateway {
                 state.inventory = Some(snapshot.inventory);
                 state.public_inventory_revision = Some(snapshot.revision);
             } else {
-                state.inventory = self
-                    .public_inventory_client
+                state.inventory = inventory
                     .as_ref()
                     .and_then(|c| c.read(account.as_str()).ok())
                     .filter(|i| i.keys().is_some());
@@ -95,7 +95,7 @@ impl RuntimeBrowserGateway {
             state.binding_changes_available = state.bindings.is_some() && state.inventory.is_some();
             state.public_key_changes_available = state.binding_changes_available
                 && state.public_inventory_revision.is_some()
-                && self.public_admin_client.is_some();
+                && admin.is_some();
         }
         StateOutcome {
             state,
@@ -112,9 +112,11 @@ impl RuntimeBrowserGateway {
         let result = (|| {
             let account = CanonicalUsername::parse(&session.record.canonical_username)
                 .map_err(|_| Error::Invalid)?;
+            let inventory = self.inventory_client();
+            let admin = self.admin_client();
             let backend = KeyBackend {
-                inventory: self.public_inventory_client.as_ref(),
-                admin: self.public_admin_client.as_ref(),
+                inventory: inventory.as_ref(),
+                admin: admin.as_ref(),
             };
             let throttle = self.build_login_throttle_service();
             let check = throttle

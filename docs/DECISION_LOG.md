@@ -7378,3 +7378,39 @@ status and a Sent link, without claiming recipient delivery or reading the
 retained snapshot for display. Partial and uncertain outcomes keep explicit
 recovery access; journaling and duplicate-send prevention remain unchanged.
 Successful-attempt retention is a separate privacy/product review item.
+
+### Recover configured OpenPGP clients after late helper startup — 2026-10-02
+
+The web gateway previously attempted each configured helper client only at
+startup and discarded a constructor failure. Starting a helper later therefore
+left its browser capability unavailable until web restart. Retain the validated
+client configuration and retry after a failed construction. Cache the first
+successful client across gateway clones so authenticated response replay and
+clock state are not reset on each request. An absent helper still fails closed;
+startup logs distinguish client construction from an authenticated helper RPC
+and include no grant path or content. Native source gates and the confined
+obsd1 client boundary remain necessary before a browser readiness claim.
+
+### Bound the isolated mailbox agent cache at unlock — 2026-10-02
+
+The previous terminal launcher reused an existing agent socket without knowing
+its passphrase-cache settings. Before mailbox-key warming, require all three
+OpenPGP helpers stopped, stop any existing account agent, and start a fresh
+helper-owned agent with default and maximum cache TTL of 300 seconds, no
+external cache and no account configuration overrides. Refuse a failed stop,
+stale socket or failed startup rather than continue under an unknown policy.
+This affects the mailbox agent only, never the workstation Shopkeeper signing
+agent. A disposable native obsd1 test confirmed actual process flags and
+replacement; no real mailbox key was imported or unlocked.
+
+### Run public-only crypto on the development host without claiming mail UAT — 2026-10-02
+
+The qualified crypto helper can perform public-key encryption and verification
+without an account secret key; sign/decrypt require the isolated mailbox key
+and its bounded agent. Start `osmap_crypto` temporarily on obsd1 for a confined,
+authenticated public-only probe, leaving automatic service enablement and
+private-key claims unchanged. At 07:31 UTC all four OSMAP services checked OK,
+the crypto socket existed, and Duncan's private-key directory was absent.
+Normal Proton mail to the selected Duncan mailbox still prefers production MX
+10 over obsd1 MX 20. No direct inbound Proton round trip is claimed from
+service health or source fixture tests.

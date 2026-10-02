@@ -3010,3 +3010,39 @@ with later outcomes. Correct errors using a new entry referencing the old one.
 - The full epic, private-key custody/crypto service and Proton encrypted
   round trip remain open. The Security settings page must continue to label
   unavailable capabilities honestly until their own slices pass.
+
+### S05 late-helper recovery and bounded mailbox-agent cache — 2026-10-02 — VERIFIED source/native, live private path OPEN
+
+- The web gateway now retains configured helper triples and retries a failed
+  public inventory, public administration or crypto client construction on a
+  later request. It caches the first success across gateway clones, preserving
+  each authenticated response verifier's replay/clock state. Startup audit
+  events report only sanitized client-construction status; construction is not
+  an authenticated RPC or key-readiness claim. A socket-absent/appearing
+  fixture covers all three clients and the security gate's group-writable
+  `TMPDIR` case without weakening path checks.
+- The terminal-only mailbox unlock launcher now requires all OpenPGP helpers
+  stopped and replaces an existing account agent with a fresh agent whose
+  default and maximum passphrase-cache TTL are both 300 seconds. It disables
+  external caching and refuses stop/start uncertainty. Five local tests passed;
+  six tests passed on obsd1 with a disposable pre-existing agent, including
+  actual process flags, changed PID and cleaned scratch. Sanitized native
+  evidence is under `/home/foo/Downloads/osmap-ux-s05/agent-20261001/`; the
+  passing log SHA-256 is
+  `7869125ecbe64ef3e7459866d2710b85ec3ec45354a53d1ec91876cf64b6ca11`.
+  No real mailbox key was imported or unlocked.
+- `RUST_TEST_THREADS=8 make acceptance-check` passed from this source after
+  refreshing the generated V10 assumption registers and claims boundary. The
+  retained acceptance log SHA-256 is
+  `6070504df1bd1e793f0dcf761ed33beb7c0aa625706a98162fef1fa45506795a`.
+  The prior gate attempts failed on the new fixture's placement beneath a
+  group-writable `TMPDIR`, stale V10 generated counts, and publication hygiene;
+  each was corrected without weakening the underlying guards.
+- On obsd1 at 07:31 UTC, `osmap_serve`, `osmap_public_inventory`,
+  `osmap_public_admin` and manually started `osmap_crypto` each checked OK;
+  the crypto socket existed. The crypto service is not enabled at boot.
+  Duncan's isolated account home still had no private-key directory. This is
+  service preparation only: no authenticated public-only crypto RPC, PAGE21
+  human mutation, sign/decrypt, SMTP, Sent-copy or Proton encrypted round trip
+  is claimed by this checkpoint. The signed source commit, GitHub sync, host
+  web deployment and actual browser UAT remain separate gates.

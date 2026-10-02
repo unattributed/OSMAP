@@ -305,10 +305,11 @@ pub fn run_http_server(config: &AppConfig, logger: &Logger) -> Result<(), String
 
     let listener = TcpListener::bind(&config.listen_addr)
         .map_err(|error| format!("failed to bind {}: {error}", config.listen_addr))?;
-    let app = Arc::new(BrowserApp::new(
-        HttpPolicy::from_config(config),
-        RuntimeBrowserGateway::from_config(config),
-    ));
+    let gateway = RuntimeBrowserGateway::from_config(config);
+    for event in gateway.helper_client_status_events() {
+        logger.emit(&event);
+    }
+    let app = Arc::new(BrowserApp::new(HttpPolicy::from_config(config), gateway));
     let active_connections = Arc::new(AtomicUsize::new(0));
     let peak_connections = Arc::new(AtomicUsize::new(0));
     let consecutive_response_write_failures = Arc::new(AtomicUsize::new(0));

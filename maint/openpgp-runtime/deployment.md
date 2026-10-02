@@ -165,6 +165,12 @@ prompts run, then restores its original owner/group/mode in `finally`. It warms
 the exact signing key and verifies decryption with a disposable self-encrypted
 challenge. No passphrase is read by the launcher or sent to Codex. Signing and
 decryption can require separate pinentry prompts because their keygrips differ.
+All OpenPGP helpers must be stopped while the launcher replaces the mailbox
+agent. It stops any existing account agent and starts a new one with both
+default and maximum passphrase-cache lifetime set to 300 seconds, with external
+Pinentry caching disabled. Existing agent sockets are never accepted as proof
+of this policy. Restart the helpers after successful warming; after cache
+expiry, operations fail closed and the operator repeats the terminal unlock.
 
 ## Coordinated activation and rollback
 

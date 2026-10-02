@@ -1076,10 +1076,10 @@ impl RuntimeBrowserGateway {
                 .load(account.as_str())
                 .map_err(|_| "openpgp_binding_unavailable")?;
         let inventory = self
-            .public_inventory_client
+            .inventory_client()
             .as_ref()
             .and_then(|client| client.read(account.as_str()).ok());
-        let result = match &self.crypto_client {
+        let result = match &self.crypto_client() {
             Some(client) => crate::protected_submission::prepare_for_delivery(
                 client,
                 &account,
