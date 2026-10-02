@@ -59,14 +59,23 @@ fn durable_ui_exact_source_bytes_restart_and_missing_or_corrupt_outcome() {
         let result = get(&reopened, &url);
         assert_eq!(result.response.status_code, 200);
         let html = body_text(&result);
-        for text in [
-            escape_html(SOURCE).to_string(),
-            "hidden@example.test".into(),
-            "Exact subject 🦊".into(),
-            "Exact prepared attempt".into(),
-            "1970-01-31 00:01:40 UTC".into(),
-        ] {
-            assert!(html.contains(&text));
+        if state == "present" {
+            assert!(html.contains("Message submitted"));
+            assert!(html.contains("href=\"/mailbox?name=Sent\""));
+            assert!(!html.contains(escape_html(SOURCE).as_str()));
+            assert!(!html.contains("Exact prepared attempt"));
+            assert!(!html.contains("recovery_attachment="));
+        } else {
+            for text in [
+                escape_html(SOURCE).to_string(),
+                "hidden@example.test".into(),
+                "Exact subject 🦊".into(),
+                "Exact prepared attempt".into(),
+                "1970-01-31 00:01:40 UTC".into(),
+                "<summary>View recovery details</summary>".into(),
+            ] {
+                assert!(html.contains(&text));
+            }
         }
         assert!(
             !html.contains("action=\"/send\"")
@@ -188,11 +197,8 @@ fn recovery_expired_missing_and_tampered_snapshots_never_return_bytes() {
         assert_eq!(body_result.response.status_code, result.response.status_code);
         assert_ne!(body_result.response.body, SOURCE.as_bytes());
         let html = body_text(&get(&app, &url));
-        assert!(html.contains(match state {
-            "expired" => "Attempt recovery expired",
-            "missing" => "Attempt recovery missing",
-            _ => "Attempt recovery unavailable",
-        }));
+        assert!(html.contains("Message submitted"));
+        assert!(!html.contains("Attempt recovery"));
         assert!(!html.contains("id=\"attempt-body\""));
         assert_eq!(app.gateway.submitted.lock().unwrap().len(), 1);
     }

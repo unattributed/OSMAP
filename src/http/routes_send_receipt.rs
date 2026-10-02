@@ -8,6 +8,22 @@ impl<G: BrowserGateway> BrowserApp<G> {
     ) -> HttpResponse {
         let decision = self.gateway.send_receipt(session, intent);
         let (mut status, title, message, recovery) = receipt_copy(&decision);
+        if matches!(
+            decision,
+            Ok(Some(BrowserSendDecision::Submitted {
+                sent_copy_stored: true,
+                receipt_persisted: true,
+            }))
+        ) {
+            return receipt_page(
+                session,
+                status,
+                title,
+                &message,
+                "<p><a href=\"/mailbox?name=Sent\">Open Sent</a></p>",
+                false,
+            );
+        }
         let recovery = match recovery {
             Some(id) => match self.gateway.load_draft(context, session, &id).decision {
                 BrowserDraftLoadDecision::Loaded { draft, canonical_username } if canonical_username == session.record.canonical_username && draft.canonical_username == session.record.canonical_username && draft.draft_id == id => saved_version(&draft),
@@ -21,13 +37,10 @@ impl<G: BrowserGateway> BrowserApp<G> {
             status = 200;
         }
         let attempt = attempt_recovery(&snapshot, intent);
-        receipt_page(
-            session,
-            status,
-            title,
-            &message,
-            &format!("{attempt}{recovery}"),
-        )
+        let recovery = format!(
+            "<details><summary>View recovery details</summary>{attempt}{recovery}</details>"
+        );
+        receipt_page(session, status, title, &message, &recovery, true)
     }
     pub(super) fn recovery_body_response(
         &self,
@@ -84,7 +97,7 @@ impl<G: BrowserGateway> BrowserApp<G> {
         if crate::send_journal::receipt_intent_valid(intent) {
             recovery.push_str(&format!("<p><a href=\"/compose?receipt={}\" target=\"_blank\" rel=\"noopener noreferrer\">View this attempt’s receipt and retained source (opens in a new tab)</a>. The saved version above may differ from the prepared attempt. This link does not submit a message.</p>", escape_html(&url_encode(intent))));
         }
-        receipt_page(session, status, title, &message, &recovery)
+        receipt_page(session, status, title, &message, &recovery, true)
     }
 
     pub(super) fn intent_guard_response(
@@ -125,7 +138,8 @@ fn receipt_copy(
 ) -> (u16, &'static str, String, Option<String>) {
     match decision {
         Ok(Some(BrowserSendDecision::RecoveryRefused { capacity })) => (200, "Submission was not invoked", if *capacity { "The combined draft and attempt-recovery limit was reached. Submission was not invoked; this intent remains paused. Do not retry automatically." } else { "Attempt recovery was not confirmed. Submission was not invoked; this intent remains paused. Do not retry automatically." }.into(), None),
-            Ok(Some(BrowserSendDecision::Submitted { sent_copy_stored, receipt_persisted })) => (200, "Message accepted for submission", format!("Submission acceptance is known. Delivery is not confirmed. {} {} Do not send again to repair Sent or draft cleanup. The outcome record and retained message snapshot are separate. Any verified source and downloadable files are shown below with their retention details.", if *sent_copy_stored { "A copy was stored in Sent." } else { "Sent-copy storage could not be confirmed; the copy may be missing or already present." }, if *receipt_persisted { "The outcome record was saved." } else { "Saving the outcome record could not be confirmed." }), None),
+            Ok(Some(BrowserSendDecision::Submitted { sent_copy_stored: true, receipt_persisted: true })) => (200, "Message submitted", "The mail server accepted your message. A copy was saved in Sent. Delivery to the recipient is not yet confirmed.".into(), None),
+            Ok(Some(BrowserSendDecision::Submitted { sent_copy_stored, receipt_persisted })) => (200, "Message accepted for submission", format!("Submission acceptance is known. Delivery is not confirmed. {} {} Do not send again to repair Sent or draft cleanup. The outcome record and retained message snapshot are separate. Open recovery details only if needed to reconcile this attempt.", if *sent_copy_stored { "A copy was stored in Sent." } else { "Sent-copy storage could not be confirmed; the copy may be missing or already present." }, if *receipt_persisted { "The outcome record was saved." } else { "Saving the outcome record could not be confirmed." }), None),
             Ok(Some(BrowserSendDecision::DraftSaved { draft_id, save_confirmed })) => (200, "Saved draft handoff", format!("This original form was retired into a draft. {} The resulting draft may have been sent separately; this receipt does not establish its later submission status.", if *save_confirmed { "The draft save was confirmed." } else { "The draft save could not be confirmed." }), Some(draft_id.clone())),
             Ok(Some(BrowserSendDecision::Unconfirmed { .. })) => (200, "Submission could not be confirmed", "Submission may have occurred. Ask the mail operator to reconcile this attempt; do not send again. Any verified attempt snapshot is shown separately below. Its availability or expiry does not establish the submission outcome.".into(), None),
             Ok(None) => (404, "Receipt not found", "No receipt was found for this account and intent. This is not proof that no submission occurred.".into(), None),
@@ -138,9 +152,15 @@ fn receipt_page(
     title: &str,
     message: &str,
     recovery: &str,
+    show_drafts_link: bool,
 ) -> HttpResponse {
+    let footer = if show_drafts_link {
+        "<p>This receipt is read-only. <a href=\"/drafts\">Open Drafts</a></p>"
+    } else {
+        ""
+    };
     html_response(status, if status == 200 { "OK" } else if status == 404 { "Not Found" } else { "Service Unavailable" }, title,
-        TrustedHtml::from_template(format!("{}<main id=\"main-content\" class=\"page-shell submission-result-page\"><section class=\"panel\"><h1>{}</h1><p role=\"status\">{}</p>{}<p>This receipt is read-only. <a href=\"/drafts\">Open Drafts</a></p></section></main>", crate::http_ui::app_header(&session.record.canonical_username, &session.record.csrf_token, "compose-result"), escape_html(title), escape_html(message), recovery)))
+        TrustedHtml::from_template(format!("{}<main id=\"main-content\" class=\"page-shell submission-result-page\"><section class=\"panel\"><h1>{}</h1><p role=\"status\">{}</p>{}{footer}</section></main>", crate::http_ui::app_header(&session.record.canonical_username, &session.record.csrf_token, "compose-result"), escape_html(title), escape_html(message), recovery)))
 }
 fn sender_presentation(identity: &crate::identity_preferences::IdentityPreferences) -> String {
     format!("<section class=\"retained-sender\" aria-label=\"Captured sender presentation\"><h3>Captured sender presentation</h3><p>Display name: <span data-sender-name>{}</span></p><p>Reply-to: <span data-sender-reply>{}</span></p><p>The canonical account address remains the authorized sender. These values come from this retained version, not the current profile.</p></section>", escape_html(if identity.display_name().is_empty() { "None (canonical address only)" } else { identity.display_name() }), escape_html(identity.reply_to().unwrap_or("Canonical account address")))

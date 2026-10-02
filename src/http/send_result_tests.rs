@@ -100,8 +100,14 @@ fn submission_receipts_distinguish_acceptance_copy_and_uncertain_dispatch() {
                 ),
                 "127.0.0.1",
             );
-            assert!(body_text(&result).contains("accepted for submission"));
-            assert!(body_text(&result).contains("Delivery is not confirmed"));
+            let html = body_text(&result);
+            assert!(html.contains("Message submitted"));
+            assert!(html.contains("Delivery to the recipient is not yet confirmed"));
+            assert!(html.contains("href=\"/mailbox?name=Sent\""));
+            assert!(!html.contains("This receipt is read-only"));
+            assert!(!html.contains(escape_html(source).as_str()));
+            assert!(!html.contains("Exact prepared attempt"));
+            assert!(!html.contains("recovery_attachment="));
         }
     }
 }

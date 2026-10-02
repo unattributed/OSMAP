@@ -31,6 +31,12 @@ pub(crate) fn remaining(deadline: Instant) -> Result<Duration, Error> {
 }
 fn protected_ancestors(path: &Path, owner: u32) -> Result<(), Error> {
     for ancestor in path.ancestors().skip(1) {
+        // The filesystem root is an OS-owned trust anchor. Under OpenBSD
+        // unveil, specific descendants remain visible but metadata for `/`
+        // itself is hidden; requiring its stat would disable every client.
+        if ancestor == Path::new("/") {
+            break;
+        }
         let m = fs::symlink_metadata(ancestor).map_err(|_| Error::Unavailable)?;
         let sticky_root = m.uid() == 0 && m.mode() & 0o1000 != 0;
         if !m.is_dir()

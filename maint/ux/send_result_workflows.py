@@ -81,7 +81,10 @@ def main():
                 assert len(sends) == 1
                 if marker == "Normal":
                     assert page.url.startswith(origin + "/compose?receipt=")
-                    expect(page.locator("main")).to_contain_text("Submission acceptance is known. Delivery is not confirmed. A copy was stored in Sent.")
+                    expect(page.get_by_role("heading", name="Message submitted", exact=True)).to_be_visible()
+                    expect(page.locator("main")).to_contain_text("Delivery to the recipient is not yet confirmed")
+                    expect(page.get_by_role("link", name="Open Sent", exact=True)).to_have_attribute("href", "/mailbox?name=Sent")
+                    assert "Exact prepared attempt" not in page.locator("main").inner_text()
                     assert not metadata.exists()
                     checks.append("normal accepted submission redirects once to truthful success and removes original saved draft")
                 else:
@@ -116,6 +119,7 @@ def main():
                         saved.get_by_role("link", name="View this attempt’s receipt and retained source (opens in a new tab)", exact=True).click()
                     recovered = recovered_popup.value
                     recovered.wait_for_load_state("networkidle")
+                    recovered.get_by_text("View recovery details", exact=True).click()
                     expect(recovered.get_by_label("Attempt body source", exact=True)).to_have_value(normalized)
                     expect(recovered.locator("[data-attempt-attachment]")).to_have_count(2)
                     assert recovered.locator("main form, input[name=send_intent], script").count() == 0
@@ -134,35 +138,39 @@ def main():
                     assert len(sends) == 1
                     checks.append(marker + ": exact escaped attempted source and two-file metadata; no send form/script; truthful uncertain state and recovery distinction; comparison opens original one-file draft as read-only metadata and exact source without another send")
                 if marker == "Normal":
-                    receipt = page
+                    assert page.locator("main textarea, [data-attempt-attachment]").count() == 0
+                    assert "View recovery details" not in page.locator("main").inner_text()
+                    assert len(sends) == 1
+                    checks.append("normal confirmation shows no prepared source, Bcc, or attachment downloads")
                 else:
                     with page.expect_popup() as popup:
                         page.get_by_role("link", name="Check this attempt’s receipt (opens in a new tab)", exact=True).click()
                     receipt = popup.value
                     receipt.wait_for_load_state("networkidle")
-                expect(receipt.get_by_label("Attempt body source", exact=True)).to_have_value(normalized)
-                with receipt.expect_download() as body_download:
-                    receipt.get_by_role("link", name="Download body source", exact=True).click()
-                assert body_download.value.suggested_filename == "attempt-body.txt"
-                assert Path(body_download.value.path()).read_bytes() == normalized.replace("\n", "\r\n").encode("utf-8")
-                expect(receipt.get_by_label("Attempt Bcc", exact=True)).to_have_value("hidden@example.test")
-                expect(receipt.locator("[data-attempt-attachment]")).to_have_count(2)
-                assert "does not prove that submission was invoked, accepted, or delivered" in receipt.locator("main").inner_text()
-                assert "UTC" in receipt.locator("main").inner_text()
-                assert receipt.locator("main textarea:not([readonly]), main form, input[name=send_intent]").count() == 0
-                for name, content in [("saved.txt", b"first"), ("attempt.txt", b"second-new")]:
-                    with receipt.expect_download() as download:
-                        receipt.get_by_role("link", name="Download " + name, exact=True).click()
-                    downloaded = download.value
-                    assert downloaded.suggested_filename == name
-                    assert Path(downloaded.path()).read_bytes() == content
-                for width, forced in [(1600, "none"), (360, "none"), (360, "active")]:
-                    receipt.set_viewport_size(dict(width=width, height=1100))
-                    receipt.emulate_media(forced_colors=forced)
-                    assert receipt.evaluate("document.documentElement.scrollWidth <= innerWidth")
-                    receipt.screenshot(path=str(args.output / f"attempt-{marker}-{width}-{forced}.png"), full_page=True)
-                assert len(sends) == 1
-                checks.append(marker + ": exact durable attempted Unicode source and Bcc, two native downloads match bytes; receipt/download GETs never dispatch")
+                    receipt.get_by_text("View recovery details", exact=True).click()
+                    expect(receipt.get_by_label("Attempt body source", exact=True)).to_have_value(normalized)
+                    with receipt.expect_download() as body_download:
+                        receipt.get_by_role("link", name="Download body source", exact=True).click()
+                    assert body_download.value.suggested_filename == "attempt-body.txt"
+                    assert Path(body_download.value.path()).read_bytes() == normalized.replace("\n", "\r\n").encode("utf-8")
+                    expect(receipt.get_by_label("Attempt Bcc", exact=True)).to_have_value("hidden@example.test")
+                    expect(receipt.locator("[data-attempt-attachment]")).to_have_count(2)
+                    assert "does not prove that submission was invoked, accepted, or delivered" in receipt.locator("main").inner_text()
+                    assert "UTC" in receipt.locator("main").inner_text()
+                    assert receipt.locator("main textarea:not([readonly]), main form, input[name=send_intent]").count() == 0
+                    for name, content in [("saved.txt", b"first"), ("attempt.txt", b"second-new")]:
+                        with receipt.expect_download() as download:
+                            receipt.get_by_role("link", name="Download " + name, exact=True).click()
+                        downloaded = download.value
+                        assert downloaded.suggested_filename == name
+                        assert Path(downloaded.path()).read_bytes() == content
+                    for width, forced in [(1600, "none"), (360, "none"), (360, "active")]:
+                        receipt.set_viewport_size(dict(width=width, height=1100))
+                        receipt.emulate_media(forced_colors=forced)
+                        assert receipt.evaluate("document.documentElement.scrollWidth <= innerWidth")
+                        receipt.screenshot(path=str(args.output / f"attempt-{marker}-{width}-{forced}.png"), full_page=True)
+                    assert len(sends) == 1
+                    checks.append(marker + ": explicit recovery disclosure reveals exact durable attempted source and Bcc; downloads match bytes; GETs never dispatch")
                 context.close()
             assert not external
             report["result"] = "PASS"

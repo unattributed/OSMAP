@@ -2942,3 +2942,42 @@ with later outcomes. Correct errors using a new entry referencing the old one.
 - The final source candidate, including the OpenBSD `rc.d` repair, passed
   `RUST_TEST_THREADS=8 make acceptance-check`; retained log SHA-256 is
   `24fbfb9cee1d55426b7f45abbd6a14230b55195cb732dd8ed0d1e6ef45908930`.
+
+### Operator PAGE21 and send-feedback failure — 2026-10-01 — CORRECTION IN PROGRESS
+
+- The operator's signed-in obsd1 PAGE21 screenshot disproved the practical
+  key-management readiness inference above: public import/removal remained
+  unavailable. The activation check exercised process health, TLS login and an
+  unauthenticated redirect, not an authenticated key-management read. S05-02
+  remains open; no browser mutation or encrypted Proton round trip has passed.
+- Read-only native diagnosis on obsd1, using the exact signed `a03467d` source
+  as the `_osmap` principal, found both public-admin snapshot and inventory
+  read returning two keys before confinement. With the real serve configuration
+  and enforced `unveil`, both client constructors returned `Unavailable`:
+  `symlink_metadata("/")` returned `ENOENT` inside their shared ancestor
+  validation. No helper RPC or account mutation was needed to reproduce it.
+  A narrow source correction skips the OS-owned filesystem root but checks all
+  ancestors below it. The same read-only confined probe then returned two
+  keys from each helper; no grants, key material or message content were
+  printed or retained.
+- The normal confirmed-send route redirected to a technical recovery page
+  containing the prepared attempt and attachment-download links. The approved
+  PAGE-04 Compose reference does not show this as the success experience.
+  Local correction shows a concise accepted status and Sent link when both
+  Sent-copy storage and receipt persistence are confirmed. It keeps uncertain
+  outcomes explicit, with no automatic resend. The operator's screenshot
+  establishes SMTP acceptance and a Sent copy, not Proton delivery or OpenPGP
+  encryption. No live message was sent during this diagnosis.
+- This failure was a validation-target error: native helper fixture, synthetic
+  browser assertions and process checks passed independently, but no test
+  crossed the confined web principal into the authenticated PAGE21 flow.
+  Future obsd1 activation must exercise that boundary and the common signed-in
+  send result before a control is offered for operator acceptance. The broader
+  Security/OpenPGP settings and full S05–S07 encryption journey remain open.
+- The corrected source passed `RUST_TEST_THREADS=8 make acceptance-check`,
+  including the developer security gate, V10, V12 and V13 checks. Focused
+  receipt Rust tests and the six-check synthetic Edge send workflow passed;
+  the accepted-send case dispatched once, showed no prepared source, Bcc or
+  attachment links, and the uncertain case retained read-only recovery.
+  Source signing, GitHub synchronization and the corrected obsd1 web binary
+  remain separate follow-up gates.

@@ -7353,3 +7353,28 @@ The crypto service remains stopped because the mailbox private key is not
 provisioned. This exposes authenticated public-key inspection, import/removal
 and binding controls for human browser testing without claiming signing,
 decryption, live Proton exchange or release qualification.
+
+### Correct the obsd1 PAGE21 readiness failure — 2026-10-01
+
+The first live readiness claim was too broad. Service status, TLS login and an
+unauthenticated redirect passed, but the signed-in key-management page showed
+disabled controls. A read-only probe as `_osmap` proved both public clients
+worked before OpenBSD confinement and failed to initialize after it. Their
+shared path validator tried to stat `/`, which `unveil` hides when only narrow
+helper paths are exposed. Treat `/` as the operating-system trust anchor and
+continue validating every ancestor below it; do not unveil the entire root.
+The runtime currently converts client-initialization failures into unavailable
+page state, so host readiness now requires a confined web-principal snapshot
+and inventory read, followed by an authenticated page check. Do not equate
+healthy helper processes with working browser controls.
+
+### Keep successful send confirmation simple — 2026-10-01
+
+The normal accepted-send path displayed a retained technical recovery record,
+including prepared message fields and attachment links. That record supports
+uncertain-outcome reconciliation but is not the approved routine Compose
+experience. A fully confirmed submission now presents only a concise accepted
+status and a Sent link, without claiming recipient delivery or reading the
+retained snapshot for display. Partial and uncertain outcomes keep explicit
+recovery access; journaling and duplicate-send prevention remain unchanged.
+Successful-attempt retention is a separate privacy/product review item.
