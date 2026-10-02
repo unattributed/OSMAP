@@ -3116,3 +3116,92 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   for development. Production preparation, authenticated browser access and
   all OpenPGP/SMTP round-trip claims remain pending; the existing mail plane
   and EPR bridge are to be preserved.
+
+### Authoritative backend for the obsd1 UX — 2026-10-02 — work order IN_PROGRESS
+
+- The operator superseded the preceding browser-host choice: OSMAP remains on
+  `obsd1.blackbagsecurity.com` and pulls live authoritative account data from
+  `mail.blackbagsecurity.com`. Complete this connection before the OpenPGP UAT
+  blocker. Explicit authority covers the necessary backend preparation on the
+  mail host; its public web routes are not part of this implementation.
+- Reuse the existing signed mailbox-helper protocol on the authoritative host,
+  keeping account-bound HMAC grants, peer-UID admission, parser bounds and
+  confinement. Bridge its socket and dedicated Dovecot password-auth socket to
+  owner-restricted Unix sockets on obsd1 through fixed-command SSH capabilities.
+  Obsd1 retains the browser, existing TOTP factors and isolated OpenPGP helpers.
+  All mailbox reads, mutations and Sent appends must use the same remote helper;
+  absence of the bridge must refuse instead of falling back to stale local mail.
+- Allowlist: `maint/mail-backend/` relay, tests and deployment notes; current
+  decision/limitations/workflow evidence and this ledger. Runtime preparation:
+  dedicated bridge principals, two protected SSH capabilities, authoritative
+  helper service and Dovecot auth listener, obsd1 bridge service and web env.
+  Preserve production nginx/EPR/PostfixAdmin and the existing mail stores.
+  Local sendmail continues through obsd1's established authenticated relay.
+- Verify half-close, duplex auth, peer refusal, exact capability separation,
+  byte/time/concurrency bounds and native OpenBSD transport. Compare only
+  authoritative folder/count metadata in retained evidence; do not retain mail
+  content, passwords, TOTP factors, grants, session data or private keys.
+  Evidence root: `/home/foo/Downloads/osmap-ux-s05/authoritative-backend-20261002/`.
+  Rollback restores obsd1's prior web env and stops the bridge, restoring the
+  prior Dovecot overlay if no longer used; preserve protected state and mail.
+  Source checks and host metadata alone do not qualify browser or Proton UAT.
+
+### Authoritative backend continuation — 2026-10-02 — VERIFIED live slice, sprint UAT OPEN
+
+- Implemented `maint/mail-backend/relay.py`, focused tests and two OpenBSD
+  services. Dedicated `_osmapbridge` relays authenticate native web UID 1001,
+  use separate forced-command SSH keys/control sockets, pinned Toronto host
+  keys, four connections per service and explicit byte/deadline bounds. The
+  current Rust helper and its original account-bound grants run as `vmail`
+  beside authoritative Dovecot. No handler-level remote shell or mailbox
+  fallback was introduced. Production Dovecot, Postfix and nginx remained OK;
+  no production public frontend or EPR route was changed.
+- Obsd1 web now uses `/var/lib/osmap-bridge/run/auth.sock` and `mailbox.sock`.
+  Both relays and the Toronto helper are boot enabled; obsd1 relay ordering is
+  before web without reordering other services. The paired old web environment
+  and prior Toronto Dovecot overlay are retained in host-private backup roots.
+  The existing obsd1 SMTP path and local TOTP/OpenPGP custody remain in use.
+- Live HMAC metadata reads as `_osmap` returned 39 folders, Sent 410 and INBOX
+  0, matching fresh Toronto reads rather than old obsd1's 27/259/0. A disposable
+  synthetic session exercised the **confined running web**: `/mailboxes` and
+  Sent both returned 200, rendered all 39 folders and 50 real Sent summary rows,
+  including UIDs absent from the old local store. No returned mail content or
+  session material was retained. This deliberately bypassed password/TOTP for
+  post-authentication testing and is not a human login/UAT claim.
+- Controlled obsd1 mailbox-relay stop made both running-web routes return 503.
+  Restart recovered 200 and authoritative data without a web restart. Both
+  relay sockets immediately closed a real wrong-UID connection. A native
+  `doveadm auth test` through the auth relay reached Toronto and refused a
+  synthetic nonexistent identity without a transport failure. These checks
+  substantiate transport/authentication and caller-authorization boundaries
+  (WSTG-ATHN-01 and WSTG-ATHZ-02); real credential-backed browser coverage remains
+  separate.
+- One uniquely identified synthetic message exercised real remote folder
+  creation, the exact Sent append helper operation, scoped search, view, star
+  update, move and destination search: all passed. It sent no external mail.
+  Toronto cleanup removed only that message and its now-empty disposable
+  folder, confirming original 39-folder/410-Sent/0-INBOX counts afterward.
+  The owner-only transient cleanup manifest was removed.
+- Validation: eight focused tests passed across local and native OpenBSD root
+  and unprivileged runs, including real cross-UID `getpeereid`; each environment
+  skipped only tests requiring the other privilege/platform. Native service
+  lifecycle exposed and corrected an anchored `pexp` mismatch; final service
+  start/check/stop/restart passed. `RUST_TEST_THREADS=4 make acceptance-check`
+  (security, V10/V11/V12/V13), `make v14-check`, Python compilation, native ksh
+  syntax, unchanged signed-plan hashes and `git diff --check` passed. No strict
+  release-profile or human UAT completion claim is made.
+- Retained sanitized evidence and reproducible probes are under
+  `/home/foo/Downloads/osmap-ux-s05/authoritative-backend-20261002/`. Deployed
+  relay SHA-256 is `c7eada6e8fa991accb8a1c2cb282d0e21a0a34a1f7180caa3e8e422615e4de0a`.
+  The existing Rust binary/source boundary is unchanged from the prior signed
+  delivery; source commit/signature/synchronization follow this verified work.
+- The OpenPGP unblock handoff is now ready at
+  `/home/foo/Downloads/osmap-ux-s05/unlock-and-validate.sh`. Terminal Pinentry
+  is installed; a root-owned native runner at
+  `/usr/local/libexec/osmap/post-unlock-crypto` passed authenticated inspect and
+  exact seven-module source parity. It automatically verifies real sign/verify,
+  tamper refusal, self encrypt/decrypt and Proton public encryption immediately
+  after human unlock, then revision-checks Duncan's account binding only on
+  success. Actual private operations, binding mutation and external encrypted
+  delivery have **not** run. The remaining human action is the mailbox-key
+  passphrase in native terminal Pinentry, never in chat or automation inputs.

@@ -1,0 +1,16 @@
+#!/bin/ksh
+# OSMAP development web -> authoritative mailbox helper on Toronto.
+# Install at /etc/rc.d/osmap_mailbox_relay.
+
+daemon="/usr/local/bin/python3"
+script="/usr/local/libexec/osmap/mail-backend/relay.py"
+daemon_user="_osmapbridge"
+daemon_flags="${script} --purpose mailbox --listen /var/lib/osmap-bridge/run/mailbox.sock --identity /var/lib/osmap-bridge/keys/mailbox --known-hosts /var/lib/osmap-bridge/known_hosts --control-path /var/lib/osmap-bridge/control/mailbox-ssh.sock --remote-host 216.128.179.75 --trusted-uid 1001"
+rc_bg=YES
+rc_reload=NO
+
+. /etc/rc.d/rc.subr
+
+# rc.subr uses pgrep -xf: the expression must cover the complete argument list.
+pexp="/usr/local/bin/python3 ${script} --purpose mailbox --listen .*"
+rc_cmd "$1"

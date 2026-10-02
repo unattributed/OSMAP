@@ -7,9 +7,11 @@ inventory and administration helpers. PAGE21 exposes authenticated public-key
 inspection, import/removal, binding and policy controls. Their browser mutations
 still require human acceptance; the deployed read-only confined client probe
 does not establish that acceptance. Import alone never establishes account
-binding or recipient trust. The Duncan mailbox private key has not been
-provisioned to its isolated helper home. The crypto service is running on
-obsd1 for public-only probing but is not enabled at boot. Signing, decryption
+binding or recipient trust. The Duncan mailbox private key was imported into
+its isolated obsd1 helper home; its real terminal unlock failed in curses
+Pinentry. The deployed launcher now uses terminal Pinentry, but a real unlock
+and account binding remain pending. The crypto service is running on
+obsd1 but is not enabled at boot. Signing, decryption
 and a Proton encrypted round trip are therefore not live
 qualified. The OpenBSD native fixture and controlled gateway-to-wire proofs
 establish bounded source behavior, not the full release assurance profile or
@@ -17,6 +19,16 @@ human UAT. The `NATIVE_CONFINEMENT_QUALIFIED` source constant records the
 native helper qualification; it does not imply this deployment has private-key
 readiness. See `UX_EXECUTION_LEDGER.md` for the exact assessed commit and host
 evidence.
+
+The authoritative-backend continuation keeps the browser on obsd1 and bridges
+password authentication and the account-bound Rust mailbox helper to Toronto.
+This deployment preserves obsd1 TOTP/OpenPGP custody and its existing outbound
+SMTP relay. It does not put a public OSMAP frontend on Toronto, supply mailbox
+passwords, or qualify encrypted Proton delivery. Live native checks established
+authoritative reads in the confined web and synthetic remote append/search/view/
+flag/move/folder operations. The HTTP check used a disposable synthetic session;
+real password/TOTP browser login and private-key journeys remain open. Loss of the
+configured remote helper must refuse rather than use obsd1's stale local store.
 
 
 The operator-requested `UX_FULL_FUNCTIONAL_EPIC.md` is a plan, not a

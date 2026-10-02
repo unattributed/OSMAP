@@ -7442,3 +7442,20 @@ reversible OSMAP deployment on Toronto with its local Dovecot/Postfix backend.
 Do not label the incomplete obsd1 mailbox as authoritative or treat deployment
 as full OpenPGP or sprint UAT qualification. Preserve existing mail services,
 PostfixAdmin access and the EPR HTTPS bridge while adding OSMAP.
+
+### Keep the development UX on obsd1 with the authoritative remote backend — 2026-10-02
+
+The operator superseded the preceding frontend-host decision and requested
+live authoritative mail data from Toronto in the existing obsd1 UX. Keep web,
+TOTP and isolated OpenPGP operations on obsd1. Run the existing confined Rust
+mailbox helper beside production Dovecot, carrying its account-bound grants
+unchanged over a dedicated SSH capability. A second capability carries Dovecot
+password authentication. Each remote key forces one exact socket connector;
+each local relay uses a separate key and SSH control socket, authenticates the
+web process with native peer credentials, and bounds bytes, time and concurrency.
+The bridge-owned listener directory denies web writes, preventing socket
+replacement. Pin the already verified Toronto host keys. Configure every
+mailbox read, mutation and Sent append to the remote helper with no local
+fallback. Preserve the established obsd1 SMTP relay and production web/mail
+routes. This decision reconnects the authoritative data plane; it does not
+qualify a browser login, private-key operation or encrypted Proton round trip.

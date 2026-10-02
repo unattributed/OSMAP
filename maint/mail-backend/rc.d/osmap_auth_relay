@@ -1,0 +1,16 @@
+#!/bin/ksh
+# OSMAP development web -> authoritative Dovecot auth on Toronto.
+# Install at /etc/rc.d/osmap_auth_relay.
+
+daemon="/usr/local/bin/python3"
+script="/usr/local/libexec/osmap/mail-backend/relay.py"
+daemon_user="_osmapbridge"
+daemon_flags="${script} --purpose auth --listen /var/lib/osmap-bridge/run/auth.sock --identity /var/lib/osmap-bridge/keys/auth --known-hosts /var/lib/osmap-bridge/known_hosts --control-path /var/lib/osmap-bridge/control/auth-ssh.sock --remote-host 216.128.179.75 --trusted-uid 1001"
+rc_bg=YES
+rc_reload=NO
+
+. /etc/rc.d/rc.subr
+
+# rc.subr uses pgrep -xf: the expression must cover the complete argument list.
+pexp="/usr/local/bin/python3 ${script} --purpose auth --listen .*"
+rc_cmd "$1"
