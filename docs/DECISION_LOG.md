@@ -7459,3 +7459,14 @@ mailbox read, mutation and Sent append to the remote helper with no local
 fallback. Preserve the established obsd1 SMTP relay and production web/mail
 routes. This decision reconnects the authoritative data plane; it does not
 qualify a browser login, private-key operation or encrypted Proton round trip.
+
+### Confirm Duncan's account binding after actual isolated-helper proof — 2026-10-02
+
+The operator completed the repaired obsd1 terminal unlock and the authenticated
+native runner passed actual Duncan signing/verification, tamper refusal,
+self-encryption/decryption and public encryption to the selected Proton key.
+The existing conditional update therefore confirmed Duncan's own binding at
+revision 2, preserving the recipient binding and optional policy. Independent
+inspect confirmed the saved state. This opens the real protected-mail browser
+UAT checkpoint; external receipt, signature verification in Proton, readable
+encrypted Sent storage and full UX acceptance still require their own results.

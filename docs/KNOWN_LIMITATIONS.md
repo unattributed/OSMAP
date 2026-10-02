@@ -8,12 +8,14 @@ inspection, import/removal, binding and policy controls. Their browser mutations
 still require human acceptance; the deployed read-only confined client probe
 does not establish that acceptance. Import alone never establishes account
 binding or recipient trust. The Duncan mailbox private key was imported into
-its isolated obsd1 helper home; its real terminal unlock failed in curses
-Pinentry. The deployed launcher now uses terminal Pinentry, but a real unlock
-and account binding remain pending. The crypto service is running on
-obsd1 but is not enabled at boot. Signing, decryption
-and a Proton encrypted round trip are therefore not live
-qualified. The OpenBSD native fixture and controlled gateway-to-wire proofs
+its isolated obsd1 helper home. The repaired terminal Pinentry handoff has now
+passed real-account signing/verification, tamper refusal, self-encryption/
+decryption and Proton public-key encryption through the authenticated native
+helper. Duncan's account binding is present at revision 2. A real encrypted
+Proton delivery round trip and browser acceptance remain unqualified. The
+isolated agent cache remains bounded at 300 seconds. The crypto service is
+running on obsd1; automatic startup is tracked separately in the ledger.
+The OpenBSD native fixture and controlled gateway-to-wire proofs
 establish bounded source behavior, not the full release assurance profile or
 human UAT. The `NATIVE_CONFINEMENT_QUALIFIED` source constant records the
 native helper qualification; it does not imply this deployment has private-key
@@ -27,7 +29,8 @@ SMTP relay. It does not put a public OSMAP frontend on Toronto, supply mailbox
 passwords, or qualify encrypted Proton delivery. Live native checks established
 authoritative reads in the confined web and synthetic remote append/search/view/
 flag/move/folder operations. The HTTP check used a disposable synthetic session;
-real password/TOTP browser login and private-key journeys remain open. Loss of the
+real password/TOTP browser login and the protected external-mail journey remain
+open. Loss of the
 configured remote helper must refuse rather than use obsd1's stale local store.
 
 

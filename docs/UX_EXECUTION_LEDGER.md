@@ -3205,3 +3205,24 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   success. Actual private operations, binding mutation and external encrypted
   delivery have **not** run. The remaining human action is the mailbox-key
   passphrase in native terminal Pinentry, never in chat or automation inputs.
+
+### Duncan live private-key checkpoint — 2026-10-02 — VERIFIED native; external UAT OPEN
+
+- The operator executed the reviewed `unlock-and-validate.sh` in the MATE
+  terminal. TTY Pinentry succeeded, the isolated signing/decryption agent warmed,
+  and all three OpenPGP helpers were restored. The native authenticated runner
+  reported PASS for exact-account signing/verification, tampered-signature
+  refusal, self-encryption/decryption byte parity and encryption to the selected
+  Proton public certificate. No external message was sent by that runner.
+- Only after those checks passed, the revision-checked account binding update
+  succeeded: revision 1 became revision 2 and `own_account_binding_ready=true`.
+  A subsequent independent authenticated inspect confirmed revision 2 with the
+  account binding present. Existing recipient bindings and optional policy were
+  preserved. The workstation daily-key warm-up and logging repair are separate
+  from this actual obsd1 private-operation qualification.
+- Operator output is bounded evidence of the native key/helper journey, not
+  recipient delivery, browser acceptance or the entire UX epic. Human UAT must
+  still exercise real password/TOTP login, key/compose controls, protected
+  Proton-to-Duncan reading and Duncan-to-Proton signing/encryption with an
+  authoritative Sent copy. The isolated agent cache remains bounded at 300
+  seconds; the same reviewed handoff can warm it again without key re-export.
