@@ -2981,3 +2981,32 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   attachment links, and the uncertain case retained read-only recovery.
   Source signing, GitHub synchronization and the corrected obsd1 web binary
   remain separate follow-up gates.
+
+### Confined-client and send-result repair deployed to obsd1 — 2026-10-01 — VERIFIED bounded
+
+- Corrected source commit `ab405ce95ba57d7826e8a639156d5746756d4ec3`
+  passed `git verify-commit`, the full local acceptance command and the normal
+  pre-commit/pre-push security hooks. GitHub
+  `origin/feat/ux-completion-20260929` and local HEAD matched after fetch;
+  the worktree was clean before this evidence update.
+- A clean archive of that signed commit was built natively on
+  `obsd1.blackbagsecurity.com` (`192.168.1.44`). The two changed production
+  Rust source hashes and source-archive hash matched the workstation copies.
+  The web binary changed from SHA-256
+  `b40b24d4491350ffdf1e2d471f24cad9933129e4a44f036585cdcbf88542df86`
+  to `42817c5951b0ba9200c8e91e99cdaa53cd4aba5df98cb767670b0d66d4bee1b7`.
+  The previous executable is retained for rollback at
+  `/var/backups/osmap-ux-s05-repair-ab405ce/osmap-before-repair`; the helper
+  binaries, account key homes, mail queue and web environment were unchanged.
+- On the running host, `osmap_serve`, `osmap_public_inventory` and
+  `osmap_public_admin` each report OK. TLS `/login` returned HTTP 200;
+  unauthenticated `/settings/keys` returned HTTP 303. A read-only probe using
+  the real serve configuration, `_osmap` identity and enforced confinement
+  returned a two-key public-admin snapshot and a two-key inventory read for
+  Duncan's account after the replacement. It printed no grants, certificate
+  material or message content. These are host/client and synthetic-browser
+  proofs; an authenticated human PAGE21 mutation and live successful-send
+  rendering still require operator acceptance. No new mail was submitted.
+- The full epic, private-key custody/crypto service and Proton encrypted
+  round trip remain open. The Security settings page must continue to label
+  unavailable capabilities honestly until their own slices pass.
