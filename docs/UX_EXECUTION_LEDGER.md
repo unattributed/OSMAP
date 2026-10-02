@@ -3226,3 +3226,117 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   Proton-to-Duncan reading and Duncan-to-Proton signing/encryption with an
   authoritative Sent copy. The isolated agent cache remains bounded at 300
   seconds; the same reviewed handoff can warm it again without key re-export.
+
+### S05 browser interaction correction — 2026-10-02 — IN_PROGRESS; human UAT FAILED
+
+- The operator reports that sending, OpenPGP selection and public-key import/
+  removal cannot be used. Their PAGE21 screenshot shows configured account and
+  recipient metadata but closed action panels. The native private-key checkpoint
+  above remains valid; it does not qualify browser workflows or sprint completion.
+- Reclassify the independent GET-only readiness result as returned-page evidence,
+  not interaction acceptance. The screenshot-time send audit records zero submitted
+  recipients and an HTTP 400 before cryptography or SMTP; it does not determine
+  whether a recipient was omitted or lost in the client.
+- Work order: preserve the frozen plan, existing key authority and mail isolation.
+  Allow PAGE19/PAGE21/Compose renderers, key-panel navigation, compose enhancement
+  and CSP hash, focused synthetic browser/router fixtures and these progress docs.
+  Fix actionable navigation, key selection and draft protection persistence; test
+  actual clicks, recipient entry and save/reopen. No real key/policy deletion or
+  unrelated mailbox mutation is part of this repair.
+- Deliver one sprint-scoped UAT record with case ID, exact actions, expected and
+  actual results, evidence and unresolved failures. Required browser operations
+  must pass before claiming sprint readiness. Real Proton receipt/decryption,
+  signature verification and encrypted Sent readability remain unpassed.
+
+### PAGE04/PAGE19/PAGE21 functional repair restart — 2026-10-02 — IN_PROGRESS
+
+- The operator explicitly restarted development and assigned coordinated agents.
+  Dedicated Scrum lead `/root/scrum_lead` owns requirement/result reconciliation;
+  the operator retains human acceptance. Base is signed/synced
+  `beb374f46181556569b172e8f7dac2a9aacbc515`; preserve the 14 modified files from
+  the halted correction. The signed revision-2 anchor and frozen manifest verify;
+  no normative requirements or approved designs are amended by this restart.
+- Finite work order: fix recipient entry/submission and ordinary Send (S03-01/04),
+  usable public-key import/binding/removal and Settings policy entry points
+  (S05-02), and selectable/persisted sign/encrypt/self controls (S07-01/04).
+  Required backend gaps belong to this work; rendered enabled controls alone do
+  not satisfy it. Root owns integration, required checks, signing/sync and native
+  deployment; key agent owns key workflow repairs; independent agent owns Compose
+  interaction verification and fixtures. Keep file ownership explicit.
+- Allowed source boundaries remain the existing HTTP/key/Compose renderers,
+  enhancement/CSP, route/preflight models and focused fixtures already identified
+  in the preceding work order. Add backend corrections only where necessary to
+  those named workflows, with the dependency and test recorded. Preserve account
+  isolation, step-up checks, full-fingerprint bindings and no plaintext fallback.
+  Public lifecycle proof uses disposable public certificates/bindings; never
+  delete or rotate the working Duncan/Proton identities to demonstrate a button.
+- Initial state: operator browser Send, PGP interaction and public-key lifecycle
+  results are FAILED. Native Duncan sign/verify/tamper/self-decrypt proof remains
+  PASS only for its earlier assessed checkpoint. The latest correction acceptance
+  command failed formatting; the new source is neither committed nor deployed.
+  Root must resolve those engineering failures before recommending UAT readiness.
+- One actual result record is
+  `/home/foo/Downloads/osmap-ux-s05/interaction-repair-20261002/UAT.md`.
+  It separates browser/router fixtures, native/backend proof, deployed independent
+  results and operator UAT. Cases begin NOT RUN for the candidate; historic user
+  failures are preserved. Record actual outcomes, assessed source/runtime and
+  evidence before any PASS. External Proton receipt/verification and encrypted
+  Sent readability remain NOT RUN until demonstrated.
+- Sequence: reproduce -> repair UI/backend -> focused regressions -> required
+  final gates -> signed/synced candidate -> matching obsd1 deployment -> independent
+  real-route/backend verification -> actionable operator UAT. Reuse proven
+  components; rerun tests only for changed behavior, mandatory delivery checks or
+  unresolved failures. Record source-only, deployed, UAT-ready and accepted states
+  separately; this repair checkpoint cannot close all S05-S07 or the epic.
+
+### Functional repair engineering candidate — 2026-10-02 — VERIFIED local; delivery/live OPEN
+
+- Root corrected formatting and the draft-action enhancement marker dependency in
+  `src/http/compose_actions.rs`. The focused browser workflow
+  `maint/ux/key_management_interaction_workflows.py` and refreshed existing V10
+  generated registers (`v10-claims-boundary.json`, `v10-fail-closed-remediation.json`,
+  `v10-rust-assumption-audit.json`) join the allowed work order. They reconcile four
+  added route assertions; no normative-plan change or new general governance is
+  introduced. Final acceptance/security/V10-V13 passed: 1,061 library tests,
+  zero failures and 19 explicit native/live ignores. Root's final V14 passed.
+- Key workflow browser proof: Chromium and Firefox each passed six actual
+  no-JavaScript interaction cases, covering Settings-to-key selection/policy,
+  import/recipient/removal panel access, and credential clearing after refusal.
+  Thirteen focused key-management tests passed. The browser fixture deliberately
+  returns 503 for mutations: this qualifies navigation and truthful refusal,
+  **not** successful live import/remove, fresh-password/TOTP authentication or
+  helper-store persistence. Evidence is under
+  `/home/foo/Downloads/osmap-ux-s05/key-interaction-20261002/`, including
+  `completion.json` and both browser `report.json` files.
+- Compose interaction/draft fixtures on Chromium/Firefox passed direct selection,
+  submitted native form values, recipient retention and Save/reopen of all PGP
+  choices with JavaScript enabled/disabled; the Chromium run additionally covered
+  PGP-only autosave and empty-recipient refusal without delivery. Evidence is
+  `authoritative-backend-20261002/compose-openpgp-{interaction-browser,native-draft-workflows}.json`
+  under the same S05 root. These use fixture gateways, not authoritative SMTP or
+  external Proton delivery. Wider completed checks are not inferred from them.
+- The public-admin reconciliation confirms unchanged exact hashes for six native
+  protocol/runtime/C worker files and prior actual client import/remove CAS,
+  replay, private-key rejection and principal isolation proof. It reuses that
+  valid backend evidence rather than rerunning unchanged services; the candidate's
+  authenticated browser-to-helper mutation remains open. See
+  `key-interaction-20261002/backend-evidence-reconciliation.json`.
+- Root reports all 254 Rust source hashes match the native r2 candidate build.
+  Candidate binary SHA-256 is
+  `7cca63aefbad709f093d01e84112571e30f5bf550654ce38a87a077dcdc5c49c`;
+  it is built, not yet activated at this checkpoint. Source manifests/patch,
+  gate logs and the actionable UAT record are retained under
+  `interaction-repair-20261002/`. Required native route proof is recorded
+  separately when it actually completes, not converted from the 19 local ignores.
+- Public-only operator fixture is `uat-public-key.asc`, exact test address
+  `osmap-ux-uat-20261002@example.invalid`, full primary fingerprint
+  `E2EE5D59F71DFBFDC209877EB455AAB36695093E`, expiring 2026-11-01 19:50:12 UTC.
+  Certificate SHA-256:
+  `cfbf2d0b19690b136543c4782fcbce09e19e2a532846d13194772472e23e0331`.
+  Its metadata records no private export, scratch cleanup and no real-key changes;
+  this supersedes the earlier one-day fixture. Do not send mail to example.invalid.
+- Scrum recommendation: the local repair is eligible for signed engineering
+  delivery after staged-diff review and mandatory commit checks. Commit/sync,
+  native activation, independent deployed mail/backend checks and operator UAT
+  remain PENDING. Full sprint acceptance and Proton round-trip qualification are
+  not recommended or claimed.

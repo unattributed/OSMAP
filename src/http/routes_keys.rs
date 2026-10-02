@@ -109,7 +109,12 @@ impl<G: BrowserGateway> BrowserApp<G> {
             Ok(v) => v,
             Err(r) => return r,
         };
-        if !request.query_params.is_empty() {
+        let panel = request.query_params.get("panel").map(String::as_str);
+        if request.query_params.keys().any(|key| key != "panel")
+            || panel.is_some_and(|value| {
+                !["account", "policy", "recipient", "import", "inventory"].contains(&value)
+            })
+        {
             return HandledHttpResponse {
                 response: html_response(
                     400,
@@ -127,11 +132,12 @@ impl<G: BrowserGateway> BrowserApp<G> {
                 200,
                 "OK",
                 "OpenPGP Key Management",
-                crate::http_ui::key_inventory_ui::render_key_management(
+                crate::http_ui::key_inventory_ui::render_key_management_panel(
                     &session.record.canonical_username,
                     &session.record.csrf_token,
                     &outcome.state,
                     None,
+                    panel,
                 ),
             ),
             audit_events,
@@ -230,11 +236,18 @@ impl<G: BrowserGateway> BrowserApp<G> {
                         status,
                         reason,
                         "Key Change Not Saved",
-                        crate::http_ui::key_inventory_ui::render_key_management(
+                        crate::http_ui::key_inventory_ui::render_key_management_panel(
                             &session.record.canonical_username,
                             &session.record.csrf_token,
                             &state.state,
                             Some(e.message()),
+                            Some(match form.get("key_action").map(String::as_str) {
+                                Some("set_account" | "clear_account") => "account",
+                                Some("set_policy" | "clear_all_bindings") => "policy",
+                                Some("import_public") => "import",
+                                Some("remove_public") => "inventory",
+                                _ => "recipient",
+                            }),
                         ),
                     ),
                     audit_events,

@@ -1009,6 +1009,7 @@ mod tests {
             Option<crate::composition_preferences::CompositionPreferencesStore>,
         reading_preferences_store: Option<crate::reading_preferences::ReadingPreferencesStore>,
         browser_fixture_accounts: bool,
+        browser_fixture_openpgp: bool,
         preview_mailbox_tree: bool,
         fixture_sessions: Option<fixture_sessions::FixtureSessions>,
     }
@@ -1043,6 +1044,7 @@ mod tests {
                 composition_preferences_store: None,
                 reading_preferences_store: None,
                 browser_fixture_accounts: false,
+                browser_fixture_openpgp: false,
                 preview_mailbox_tree: false,
                 fixture_sessions: None,
             }
@@ -1098,6 +1100,24 @@ mod tests {
     }
 
     impl BrowserGateway for StubGateway {
+        fn compose_protection(
+            &self,
+            _session: &ValidatedSession,
+            _to: &str,
+            _cc: &str,
+            _bcc: &str,
+            _intent: crate::send::ProtectionIntent,
+        ) -> Option<ComposeProtectionView> {
+            self.browser_fixture_openpgp
+                .then_some(ComposeProtectionView {
+                    runtime_configured: false,
+                    revision: Some(2),
+                    preflight: None,
+                    account_binding: None,
+                    policy: crate::openpgp_bindings::ProtectionPolicy::default(),
+                    recipient_binding_count: 0,
+                })
+        }
         fn load_after_archive(
             &self,
             s: &ValidatedSession,
@@ -2169,14 +2189,20 @@ mod tests {
                 &context.user_agent,
                 &session.record.canonical_username,
             );
+            let interactive = context.user_agent == "KeyInventoryInteractive";
             crate::key_management::StateOutcome {
                 state: crate::key_management::State {
                     canonical_username: inventory.canonical_username,
                     inventory: inventory.inventory,
-                    bindings: None,
-                    binding_changes_available: false,
-                    public_key_changes_available: false,
-                    public_inventory_revision: None,
+                    bindings: interactive.then(|| {
+                        crate::openpgp_bindings::BindingRecord::empty(
+                            &session.record.canonical_username,
+                        )
+                        .unwrap()
+                    }),
+                    binding_changes_available: interactive,
+                    public_key_changes_available: interactive,
+                    public_inventory_revision: interactive.then(|| "a".repeat(64)),
                 },
                 audit_events: vec![],
             }
@@ -3605,6 +3631,7 @@ mod tests {
                 crate::identity_preferences::IdentityPreferences::default()
             };
             record.request.body_format = request.body_format;
+            record.request.protection = request.protection;
             record.request.reply_thread = request.reply_thread.cloned();
             record.revision = request.expected_revision;
             if let Some(existing) = existing {

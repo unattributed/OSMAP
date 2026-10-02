@@ -346,7 +346,24 @@ fn key_management_post_reaches_gateway_only_after_session_csrf_and_strict_fields
 }
 
 #[test]
-fn compose_unselected_live_protection_labels_match_approved_unsigned_unencrypted_defaults() {
+fn key_management_panel_navigation_opens_forms_without_mutating_state() {
+    let calls = Arc::new(AtomicUsize::new(0));
+    let app = BrowserApp::new(HttpPolicy::default(), KeyChangeSpy { inner: StubGateway::default(), calls: calls.clone() });
+    let headers = [("User-Agent", "Firefox/Test"), ("Cookie", "osmap_session=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")];
+    for (panel, id) in [("account", "account-binding"), ("policy", "protection-policy"), ("recipient", "recipient-binding"), ("import", "public-import"), ("inventory", "public-inventory")] {
+        let response = app.handle_request(&request("GET", &format!("/settings/keys?panel={panel}"), &headers, ""), "127.0.0.1");
+        assert_eq!(response.response.status_code, 200);
+        assert!(body_text(&response).contains(&format!("<details id=\"{id}\" open>")));
+    }
+    for query in ["panel=invalid", "panel=import&extra=1", "panel="] {
+        let response = app.handle_request(&request("GET", &format!("/settings/keys?{query}"), &headers, ""), "127.0.0.1");
+        assert_eq!(response.response.status_code, 400);
+    }
+    assert_eq!(calls.load(Ordering::SeqCst), 0);
+}
+
+#[test]
+fn compose_live_protection_controls_are_direct_and_preserve_selection() {
     let mut model = crate::http_ui::ComposePageModel {
         protection: crate::send::ProtectionIntent::default(),
         openpgp: Some(ComposeProtectionView {
@@ -388,16 +405,16 @@ fn compose_unselected_live_protection_labels_match_approved_unsigned_unencrypted
     let body = crate::http_ui::render_compose_page(&model)
         .as_str()
         .to_owned();
-    assert!(body.contains("<span>Sign</span><strong>Unsigned</strong>"));
-    assert!(body.contains("<span>Encrypt</span><strong>Not encrypted</strong>"));
-    assert!(body.contains("<span>Encrypt to self</span><strong>Off</strong>"));
+    assert!(body.contains("<label class=\"compose-protection-choice\"><span>Sign</span>"));
+    assert!(body.contains("<label class=\"compose-protection-choice\"><span>Encrypt</span>"));
+    assert!(body.contains("<label class=\"compose-protection-choice\"><span>Encrypt to self</span>"));
+    assert!(!body.contains("<details name=\"compose-policy\">"));
     assert!(!body.contains("name=\"pgp_sign\" checked"));
     assert!(!body.contains("name=\"pgp_encrypt\" checked"));
     model.protection.sign = true;
     let body = crate::http_ui::render_compose_page(&model)
         .as_str()
         .to_owned();
-    assert!(body.contains("<span>Sign</span><strong>Requested</strong>"));
     assert!(body.contains("name=\"pgp_sign\" checked"));
     assert!(!body.contains("<span>Sign</span><strong>Signed</strong>"));
 }

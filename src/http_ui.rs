@@ -1925,10 +1925,10 @@ fn render_live_openpgp_compose_controls(model: &ComposePageModel<'_>) -> String 
         None => "<strong>Unavailable</strong><p>OpenPGP key status could not be checked. A selected protected send will pause without sending plaintext.</p>".to_string(),
     };
     format!(
-        "<section class=\"openpgp-compose-controls compose-policy-row\" aria-label=\"OpenPGP compose controls\" data-openpgp-compose-controls=\"server-enforced\">{revision_field}<details name=\"compose-policy\"><summary><span>Sign</span><strong>{}</strong></summary><div class=\"compose-policy-detail\"><label><input type=\"checkbox\" name=\"pgp_sign\"{}/> Sign on send</label></div></details><details name=\"compose-policy\"><summary><span>Encrypt</span><strong>{}</strong></summary><div class=\"compose-policy-detail\"><label><input type=\"checkbox\" name=\"pgp_encrypt\"{}/> Encrypt on send</label></div></details><details name=\"compose-policy\"><summary><span>Encrypt to self</span><strong>{}</strong></summary><div class=\"compose-policy-detail\"><label><input type=\"checkbox\" name=\"pgp_self\"{}/> Include my approved key</label></div></details><details name=\"compose-policy\" open><summary><span>Recipient key status</span><strong>Page-load snapshot</strong></summary><div class=\"compose-policy-detail\">{status}</div></details></section>",
-        if model.protection.sign { "Requested" } else { "Unsigned" }, checked(model.protection.sign),
-        if model.protection.encrypt { "Requested" } else { "Not encrypted" }, checked(model.protection.encrypt),
-        if model.protection.encrypt_to_self { "Requested" } else { "Off" }, checked(model.protection.encrypt_to_self),
+        "<section class=\"openpgp-compose-controls compose-policy-row\" aria-label=\"OpenPGP compose controls\" data-openpgp-compose-controls=\"server-enforced\">{revision_field}<label class=\"compose-protection-choice\"><span>Sign</span><span class=\"compose-choice-toggle\"><input type=\"checkbox\" name=\"pgp_sign\"{}/> Sign on send</span></label><label class=\"compose-protection-choice\"><span>Encrypt</span><span class=\"compose-choice-toggle\"><input type=\"checkbox\" name=\"pgp_encrypt\"{}/> Encrypt on send</span></label><label class=\"compose-protection-choice\"><span>Encrypt to self</span><span class=\"compose-choice-toggle\"><input type=\"checkbox\" name=\"pgp_self\"{}/> Include my approved key</span></label><details class=\"compose-key-status\"><summary><span>Recipient key status</span><strong>Check recipients</strong></summary><div class=\"compose-policy-detail\">{status}</div></details><div class=\"compose-key-management\"><span>Approved keys</span><a href=\"/settings/keys\" target=\"_blank\" rel=\"noopener noreferrer\">Manage keys</a></div></section>",
+        checked(model.protection.sign),
+        checked(model.protection.encrypt),
+        checked(model.protection.encrypt_to_self),
     )
 }
 

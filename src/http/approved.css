@@ -216,6 +216,14 @@ body:has(.app-rail) {
 .compose-policy-detail { position: absolute; left: 0; top: calc(100% + .4rem); z-index: 22; width: 18rem; padding: .8rem; border: 1px solid var(--line); border-radius: .6rem; background: var(--panel); box-shadow: 0 4px 12px var(--shadow); }
 .compose-policy-row > details:last-child .compose-policy-detail { left: auto; right: 0; }
 .compose-policy-row .compose-policy-detail p { color: var(--ink); font-size: .85rem; }
+.compose-policy-row[data-openpgp-compose-controls="server-enforced"] { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.compose-policy-row > .compose-protection-choice, .compose-policy-row > .compose-key-management { min-width: 0; min-height: 3.3rem; display: flex; flex-direction: column; justify-content: center; gap: .2rem; padding: .45rem .7rem; margin: 0; border: 1px solid var(--line); border-radius: .6rem; background: var(--panel); color: var(--ink); }
+.compose-policy-row > .compose-protection-choice { cursor: pointer; }
+.compose-policy-row > .compose-protection-choice:has(input:checked) { border-color: var(--ok-line); background: var(--ok-bg); }
+.compose-protection-choice > span:first-child, .compose-key-management > span { color: var(--muted); font-size: .75rem; font-weight: 400; }
+.compose-choice-toggle { display: flex; align-items: center; gap: .4rem; font-size: .85rem; font-weight: 650; line-height: 1.2; }
+.compose-choice-toggle input[type="checkbox"] { width: auto; min-width: 1rem; margin: 0; flex: 0 0 auto; }
+.compose-policy-row > .compose-key-management a { font-size: .85rem; font-weight: 650; overflow-wrap: anywhere; }
 .compose-editor-toolbar { display: flex; justify-content: space-between; align-items: center; gap: .7rem; min-height: 2.4rem; margin-bottom: .75rem; padding: .2rem .7rem; border: 1px solid var(--line); border-radius: .65rem; font-size: .85rem; }
 .compose-format-tools { display: flex; position: relative; align-items: center; flex-wrap: wrap; gap: .15rem; }
 .compose-card .compose-format-tools button { min-height: 1.6rem; width: auto; padding: .1rem .2rem; border: 0; border-radius: .2rem; background: transparent; font-size: .875rem; }
@@ -259,6 +267,9 @@ body:has(.app-rail) {
   .compose-attachment-help { position: relative; top: auto; right: auto; margin-top: .5rem; }
   .compose-attachment-help > p { position: static; width: auto; }
   .compose-policy-row { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .compose-policy-row[data-openpgp-compose-controls="server-enforced"] { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .compose-policy-row > .compose-key-status { grid-column: 1 / -1; }
+  .compose-policy-row > .compose-key-management { grid-column: 1 / -1; }
   .compose-card .compose-policy-row { margin: .7rem 0; padding: .45rem; }
   .compose-policy-row > details:last-child, .compose-policy-row > details[open] { grid-column: 1 / -1; }
   .compose-policy-detail { position: static; width: auto; box-shadow: none; border-width: 1px 0 0; }

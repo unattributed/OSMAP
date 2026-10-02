@@ -14,7 +14,7 @@
   let blocked = initialState === "unconfirmed";
   let inheritedChanges = initialState === "unsaved" || blocked;
   const watched = [...form.querySelectorAll(
-    'input[name="to"], input[name="cc"], input[name="bcc"], input[name="subject"], textarea[name="body"], select[name="body_format"], input[name^="remove_saved_attachment_"], input[name^="include_original_attachment_"]'
+    'input[name="to"], input[name="cc"], input[name="bcc"], input[name="subject"], textarea[name="body"], select[name="body_format"], input[name="pgp_sign"], input[name="pgp_encrypt"], input[name="pgp_self"], input[name^="remove_saved_attachment_"], input[name^="include_original_attachment_"]'
   )];
   const value = (field) => field.type === "checkbox" ? field.checked : field.value;
   const baseline = watched.map(value);
@@ -154,8 +154,11 @@
     const expectedId = form.elements.namedItem("draft_id")?.value || "";
     const previousRevision = form.elements.namedItem("draft_revision")?.value || "0";
     const fields = new URLSearchParams();
-    const allowed = ["csrf_token", "send_intent", "from", "to", "cc", "bcc", "subject", "body", "body_format", "draft_id", "draft_revision", "reply_mailbox", "reply_uid", "reply_mailbox_guid", "reply_message_guid"];
-    for (const name of allowed) { const field = form.elements.namedItem(name); if (field) fields.set(name, field.value); }
+    const allowed = ["csrf_token", "send_intent", "from", "to", "cc", "bcc", "subject", "body", "body_format", "pgp_sign", "pgp_encrypt", "pgp_self", "pgp_binding_revision", "draft_id", "draft_revision", "reply_mailbox", "reply_uid", "reply_mailbox_guid", "reply_message_guid"];
+    for (const name of allowed) {
+      const field = form.elements.namedItem(name);
+      if (field && (field.type !== "checkbox" || field.checked)) fields.set(name, field.value);
+    }
     let controller;
     try { controller = new AbortController(); } catch {
       autoEnabled = false; announceAuto("Auto-save is unsupported in this browser. Use Save Draft to keep changes."); return;

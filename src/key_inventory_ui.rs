@@ -294,6 +294,49 @@ fn binding_form(
 fn fingerprint_input(name: &str, label: &str, value: &str, required: bool) -> String {
     format!("<label>{}<input name=\"{}\" value=\"{}\" maxlength=\"40\" pattern=\"[A-Fa-f0-9]{{40}}\" autocomplete=\"off\" spellcheck=\"false\"{}></label>",escape_html(label),escape_html(name),escape_html(value),if required{" required"}else{""})
 }
+fn inventoried_key_select(
+    name: &str,
+    label: &str,
+    selected: &str,
+    fingerprints: impl Iterator<Item = String>,
+    required: bool,
+) -> String {
+    let choices = fingerprints.collect::<std::collections::BTreeSet<_>>();
+    let mut options = format!(
+        "<option value=\"\"{}>{}</option>",
+        if selected.is_empty() { " selected" } else { "" },
+        if required {
+            "Choose an imported public key"
+        } else {
+            "No signing key selected"
+        },
+    );
+    if !selected.is_empty() && !choices.contains(selected) {
+        options.push_str(&format!(
+            "<option value=\"{}\" selected>Current binding: {} (unavailable)</option>",
+            escape_html(selected),
+            escape_html(selected)
+        ));
+    }
+    for fingerprint in choices {
+        options.push_str(&format!(
+            "<option value=\"{}\"{}>{}</option>",
+            escape_html(&fingerprint),
+            if fingerprint == selected {
+                " selected"
+            } else {
+                ""
+            },
+            escape_html(&fingerprint)
+        ));
+    }
+    format!(
+        "<label>{}<select name=\"{}\"{}>{options}</select></label>",
+        escape_html(label),
+        escape_html(name),
+        if required { " required" } else { "" }
+    )
+}
 fn key_status(status: crate::openpgp_bindings::KeyStatus) -> &'static str {
     use crate::openpgp_bindings::KeyStatus::*;
     match status {
@@ -310,12 +353,24 @@ fn key_status(status: crate::openpgp_bindings::KeyStatus) -> &'static str {
     }
 }
 /// PAGE21 actual trusted binding state. Public presence never creates a binding.
+#[cfg(test)]
 pub(crate) fn render_key_management(
     account: &str,
     csrf: &str,
     state: &crate::key_management::State,
     error: Option<&str>,
 ) -> TrustedHtml {
+    render_key_management_panel(account, csrf, state, error, None)
+}
+
+pub(crate) fn render_key_management_panel(
+    account: &str,
+    csrf: &str,
+    state: &crate::key_management::State,
+    error: Option<&str>,
+    panel: Option<&str>,
+) -> TrustedHtml {
+    let opened = |name| if panel == Some(name) { " open" } else { "" };
     let owned = state.canonical_username == account;
     let record = owned
         .then_some(state.bindings.as_ref())
@@ -347,7 +402,35 @@ pub(crate) fn render_key_management(
         .unwrap_or_default();
     let revision = record.map(|r| r.revision).unwrap_or(0);
     let bound = record.and_then(|r| r.account_binding.as_ref());
-    let account_fields=format!("{}{}<label>Decrypt primary fingerprints (comma separated)<input name=\"decrypt_fingerprints\" value=\"{}\" autocomplete=\"off\" spellcheck=\"false\" maxlength=\"327\"></label>",fingerprint_input("primary_fingerprint","Full account primary fingerprint",bound.map(|b|b.primary_fingerprint.as_str()).unwrap_or(""),true),fingerprint_input("signing_fingerprint","Full signing primary or subkey fingerprint (optional)",bound.and_then(|b|b.signing_fingerprint.as_deref()).unwrap_or(""),false),escape_html(&bound.map(|b|b.decrypt_primary_fingerprints.join(",")).unwrap_or_default()));
+    let keys: &[PublicKeyView] = match &inventory {
+        PublicInventoryView::Verified { keys, .. } => keys,
+        _ => &[],
+    };
+    let usable =
+        |key: &PublicKeyMaterialView| !key.revoked && !key.expired && !key.disabled && !key.invalid;
+    let primary = inventoried_key_select(
+        "primary_fingerprint",
+        "Full account primary fingerprint",
+        bound.map(|b| b.primary_fingerprint.as_str()).unwrap_or(""),
+        keys.iter()
+            .filter(|key| usable(&key.primary))
+            .map(|key| key.primary.fingerprint.clone()),
+        true,
+    );
+    let signing = inventoried_key_select(
+        "signing_fingerprint",
+        "Full signing primary or subkey fingerprint (optional)",
+        bound
+            .and_then(|b| b.signing_fingerprint.as_deref())
+            .unwrap_or(""),
+        keys.iter()
+            .filter(|key| usable(&key.primary))
+            .flat_map(|key| std::iter::once(&key.primary).chain(key.subkeys.iter()))
+            .filter(|key| usable(key) && key.can_sign)
+            .map(|key| key.fingerprint.clone()),
+        false,
+    );
+    let account_fields=format!("{primary}{signing}<label>Decrypt primary fingerprints (comma separated)<input name=\"decrypt_fingerprints\" value=\"{}\" autocomplete=\"off\" spellcheck=\"false\" maxlength=\"327\"></label><p>Choose from imported public keys, then confirm the full fingerprints before saving. This does not import or unlock a private key.</p>",escape_html(&bound.map(|b|b.decrypt_primary_fingerprints.join(",")).unwrap_or_default()));
     let account_form = binding_form(
         csrf,
         revision,
@@ -407,7 +490,7 @@ pub(crate) fn render_key_management(
         format!("<div class=\"key-account-state\"><strong>{}</strong><span>{}</span></div><dl><dt>Full fingerprint</dt><dd>Unavailable</dd><dt>Algorithm</dt><dd>Unknown</dd><dt>Created</dt><dd>Unknown</dd><dt>Expires</dt><dd>Unknown</dd><dt>Binding status</dt><dd>Unconfirmed</dd></dl>",if record.is_some(){"Not configured"}else{"Account binding unavailable"},escape_html(account))
     };
     let account_actions = if bound.is_some() {
-        format!("<div class=\"key-management-actions\"><a href=\"#account-fingerprint\">Select fingerprint</a></div><details><summary>Remove binding</summary>{clear}</details>")
+        format!("<div class=\"key-management-actions\"><a href=\"/settings/keys?panel=account#account-binding\">Change account key</a><a href=\"#account-fingerprint\">Select fingerprint</a><a href=\"/settings/keys?panel=inventory#public-inventory\">Manage imported keys</a></div><details><summary>Remove binding</summary>{clear}</details>")
     } else {
         String::new()
     };
@@ -485,12 +568,12 @@ pub(crate) fn render_key_management(
         })
         .unwrap_or_default();
     let import_link = if public_ready {
-        "<a class=\"button-link\" href=\"#public-import\">Import public key</a>"
+        "<a class=\"button-link\" href=\"/settings/keys?panel=import#public-import\">Import public key</a>"
     } else {
         "<button disabled>Import public key</button>"
     };
     let binding_link = if ready {
-        "<a class=\"button-link\" href=\"#recipient-binding\">+ Add binding</a>"
+        "<a class=\"button-link\" href=\"/settings/keys?panel=recipient#recipient-binding\">+ Add binding</a>"
     } else {
         "<button disabled>+ Add binding</button>"
     };
@@ -500,7 +583,7 @@ pub(crate) fn render_key_management(
     } else {
         "Public certificate import and removal are unavailable. Existing binding changes are available when the verified inventory is present."
     };
-    TrustedHtml::from_template(format!(concat!("{header}<main id=\"main-content\" class=\"page-shell key-management-page\" tabindex=\"-1\"><div class=\"page-intro\"><h1>OpenPGP Key Management</h1><p>Manage public keys, account bindings and key policy.</p>{notice}</div><div class=\"key-management-toolbar\"><p><a href=\"/settings?section=security\">Security</a> / <a href=\"/settings?section=openpgp\">OpenPGP</a> / Keys</p>{toolbar_actions}</div><p class=\"sr-only\" role=\"status\">{state_label} · Binding revision {revision}</p><div class=\"key-management-grid\"><section class=\"key-management-card\"><h2>Primary Account Key</h2>{overview}{account_actions}<details><summary>{account_action}</summary>{account_form}</details><details><summary>Protection policy</summary>{policy_form}</details><details><summary>Recover from unavailable or expired bindings</summary>{cleanup}</details></section><section class=\"key-management-card\"><h2>Recipient / Contact Keys</h2>{recipients}<details id=\"recipient-binding\"><summary>Add or replace a recipient binding</summary>{recipient_form}</details><p class=\"key-inventory-notice\">Confirm full fingerprints through a trusted channel. OSMAP does not automatically trust keys discovered by email address. Each saved change requires your current mailbox password and a fresh authenticator code.</p><details id=\"public-import\"><summary>Import public key</summary>{import_form}</details><details><summary>Public key inventory</summary>{rows}</details><p>{public_state}</p></section></div></main>"),notice=notice,revision=revision,account_form=account_form,account_actions=account_actions,policy_form=policy_form,cleanup=cleanup,recipients=recipients,recipient_form=recipient_form,rows=rows,overview=overview,account_action=if bound.is_some(){"Rotate binding"}else{"Add account binding"},header=app_header(account,csrf,"security"),state_label=if ready{"Verified public inventory and confirmed binding store"}else{"Binding changes unavailable"},toolbar_actions=toolbar_actions,import_form=import_form,public_state=public_state))
+    TrustedHtml::from_template(format!(concat!("{header}<main id=\"main-content\" class=\"page-shell key-management-page\" tabindex=\"-1\"><div class=\"page-intro\"><h1>OpenPGP Key Management</h1><p>Manage public keys, account bindings and key policy.</p>{notice}</div><div class=\"key-management-toolbar\"><p><a href=\"/settings?section=security\">Security</a> / <a href=\"/settings?section=openpgp\">OpenPGP</a> / Keys</p>{toolbar_actions}</div><p class=\"sr-only\" role=\"status\">{state_label} · Binding revision {revision}</p><div class=\"key-management-grid\"><section class=\"key-management-card\"><h2>Primary Account Key</h2>{overview}{account_actions}<details id=\"account-binding\"{account_open}><summary>{account_action}</summary>{account_form}</details><details id=\"protection-policy\"{policy_open}><summary>Protection policy</summary>{policy_form}</details><details><summary>Recover from unavailable or expired bindings</summary>{cleanup}</details></section><section class=\"key-management-card\"><h2>Recipient / Contact Keys</h2>{recipients}<details id=\"recipient-binding\"{recipient_open}><summary>Add or replace a recipient binding</summary>{recipient_form}</details><p class=\"key-inventory-notice\">Confirm full fingerprints through a trusted channel. OSMAP does not automatically trust keys discovered by email address. Each saved change requires your current mailbox password and a fresh authenticator code.</p><details id=\"public-import\"{import_open}><summary>Import public key</summary>{import_form}</details><details id=\"public-inventory\"{inventory_open}><summary>Public key inventory</summary>{rows}</details><p>{public_state}</p></section></div></main>"),account_open=opened("account"),policy_open=opened("policy"),recipient_open=opened("recipient"),import_open=opened("import"),inventory_open=opened("inventory"),notice=notice,revision=revision,account_form=account_form,account_actions=account_actions,policy_form=policy_form,cleanup=cleanup,recipients=recipients,recipient_form=recipient_form,rows=rows,overview=overview,account_action=if bound.is_some(){"Rotate binding"}else{"Add account binding"},header=app_header(account,csrf,"security"),state_label=if ready{"Verified public inventory and confirmed binding store"}else{"Binding changes unavailable"},toolbar_actions=toolbar_actions,import_form=import_form,public_state=public_state))
 }
 
 #[cfg(test)]
@@ -533,8 +616,8 @@ mod binding_page_tests {
         assert!(body.contains("RSA · 3072 bits"));
         assert!(body.contains("Does not expire"));
         assert!(body.contains("Confirmed account binding"));
-        assert!(body.contains("<details><summary>Rotate binding</summary>"));
-        assert!(body.contains("<details><summary>Protection policy</summary>"));
+        assert!(body.contains("id=\"account-binding\"><summary>Rotate binding</summary>"));
+        assert!(body.contains("id=\"protection-policy\"><summary>Protection policy</summary>"));
         assert!(body.contains("<button disabled>Import public key</button>"));
         assert!(body.contains("id=\"account-fingerprint\""));
         state.public_key_changes_available = true;
@@ -542,7 +625,22 @@ mod binding_page_tests {
         let enabled = render_key_management(account, "test", &state, None)
             .as_str()
             .to_owned();
-        assert!(enabled.contains("class=\"button-link\" href=\"#public-import\""));
+        assert!(enabled.contains("href=\"/settings/keys?panel=import#public-import\""));
+        assert!(enabled.contains("name=\"primary_fingerprint\" required><option"));
+        assert!(enabled.contains(&format!("value=\"{}\" selected", "A".repeat(40))));
+        for (panel, id) in [
+            ("account", "account-binding"),
+            ("policy", "protection-policy"),
+            ("recipient", "recipient-binding"),
+            ("import", "public-import"),
+            ("inventory", "public-inventory"),
+        ] {
+            let opened = render_key_management_panel(account, "test", &state, None, Some(panel))
+                .as_str()
+                .to_owned();
+            assert!(opened.contains(&format!("<details id=\"{id}\" open>")));
+            assert_eq!(opened.matches(" open>").count(), 1);
+        }
         assert!(enabled.contains("name=\"certificate\""));
         assert!(enabled.contains("name=\"public_inventory_revision\" value=\"aaaaaaaa"));
         assert!(enabled.contains("<summary>Remove public certificate</summary>"));

@@ -3,7 +3,7 @@ use super::*;
 
 pub(super) const SCRIPT: &str = include_str!("compose_local.js");
 // The source gate verifies this digest against the exact included bytes.
-pub(super) const SCRIPT_HASH: &str = "sha256-kZwK7n1+ifwttQvzzcnEyEJz/mU5k1xxmTJOqgzVEv8=";
+pub(super) const SCRIPT_HASH: &str = "sha256-kh8tYa8AQwqxy9l64g1sCx8epjT43a/Wj5pR91Smywc=";
 
 pub(super) fn csp() -> String {
     format!(

@@ -74,6 +74,7 @@ fn ux_synthetic_browser_server() {
             root.join("settings"),
         )),
         browser_fixture_accounts: true,
+        browser_fixture_openpgp: std::env::var("OSMAP_UX_FIXTURE_OPENPGP").ok().as_deref() == Some("1"),
         preview_mailbox_tree: preview_minutes.is_some(),
         fixture_sessions: Some(fixture_sessions::FixtureSessions::new(
             root.join("sessions"),

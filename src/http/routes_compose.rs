@@ -740,6 +740,15 @@ where
                 public_reason,
                 retry_after_seconds,
             } => {
+                let input_error = if public_reason == "invalid_request"
+                    && recipients.trim().is_empty()
+                    && cc_recipients.trim().is_empty()
+                    && bcc_recipients.trim().is_empty()
+                {
+                    "Add at least one recipient in To, Cc or Bcc before sending. Nothing was sent."
+                } else {
+                    public_reason_message(&public_reason)
+                };
                 let (status_code, reason_phrase) = if public_reason == "invalid_request" {
                     (400, "Bad Request")
                 } else if public_reason == TOO_MANY_SUBMISSIONS_PUBLIC_REASON {
@@ -762,7 +771,7 @@ where
                         canonical_username: &validated_session.record.canonical_username,
                         csrf_token: &validated_session.record.csrf_token,
                         success_message: None,
-                        error_message: Some(public_reason_message(&public_reason)),
+                        error_message: Some(input_error),
                         context_notice: Some("Nothing was sent. Re-select any new uploads before trying again; existing saved-draft attachments are unchanged."),
                         to_value: &recipients,
                         cc_value: &cc_recipients,

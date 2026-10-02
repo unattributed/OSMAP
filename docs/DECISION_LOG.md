@@ -7470,3 +7470,44 @@ revision 2, preserving the recipient binding and optional policy. Independent
 inspect confirmed the saved state. This opens the real protected-mail browser
 UAT checkpoint; external receipt, signature verification in Proton, readable
 encrypted Sent storage and full UX acceptance still require their own results.
+
+### Reopen browser acceptance after operator interaction failures — 2026-10-02
+
+The operator's inability to send, select message protection or manage public keys
+supersedes the GET-only readiness impression. Returned enabled inputs are evidence
+of rendered controls, not a usable workflow. Correct closed-panel toolbar targets,
+policy navigation and protection persistence, and exercise actual browser actions.
+Record UAT cases and results separately from native helper qualification. Preserve
+the latter's bounded positive results while keeping the sprint open until required
+user journeys work. Error wording alone is not remediation or acceptance evidence.
+
+### Use a dedicated Scrum lead to enforce functional delivery — 2026-10-02
+
+The operator explicitly restarted engineering with coordinated subagents. A
+dedicated Scrum lead reconciles the approved requirements, actual test results,
+source/runtime identity and unresolved failures, independently of implementer
+assertions. Begin with the reported ordinary Send, PGP selection and public-key
+lifecycle failures on PAGE04/PAGE19/PAGE21. Required backend implementation and
+tests are part of their delivery; helper availability and returned HTML are not
+substitutes for working browser actions and persisted/delivered outcomes.
+
+Keep one concrete result record under the existing S05 sprint root, reuse the
+existing ledger and decision log, and preserve the frozen plan. No additional
+general approval scheme or broad planning phase is introduced. The Scrum lead
+can withhold a completion recommendation; only the operator supplies human
+acceptance. Signing/sync, binary deployment, UAT readiness and sprint acceptance
+remain distinct states. Workstation/native unlock prerequisites and recipient
+delivery evidence must be stated rather than concealed behind a completion claim.
+
+### Reuse valid backend proof while testing the repaired interaction path — 2026-10-02
+
+The repaired key/Compose browser journeys now have focused interaction results,
+and required local gates pass after formatting and enhancement wiring corrections.
+Key mutation fixtures deliberately refuse with 503; successful panel navigation
+cannot be promoted to live import/remove acceptance. Six unchanged native
+public-admin source hashes support reuse of the earlier actual helper CRUD and
+isolation evidence, while fresh authenticated browser-to-helper persistence
+remains a separate open check. Native binary activation and real HTTP
+SMTP/authoritative-Sent outcomes follow the signed engineering delivery. Neither
+fixture success nor an accepted SMTP submission establishes Proton receipt,
+signature verification, decrypted Sent readability or human acceptance.
