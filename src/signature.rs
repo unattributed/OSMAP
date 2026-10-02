@@ -227,6 +227,26 @@ pub fn initial_body(
 mod tests {
     use super::*;
     use crate::compose_format::BodyFormat;
+
+    fn write_fixture(store: &SignatureStore, account: &str, bytes: &[u8]) {
+        let start = Instant::now();
+        loop {
+            match store.file.lock(account) {
+                Ok(lock) => {
+                    lock.write(bytes).unwrap();
+                    return;
+                }
+                Err(error)
+                    if error.kind() == io::ErrorKind::WouldBlock
+                        && start.elapsed() < Duration::from_millis(500) =>
+                {
+                    std::thread::sleep(Duration::from_millis(5));
+                }
+                Err(error) => panic!("signature fixture lock for {account}: {error}"),
+            }
+        }
+    }
+
     #[test]
     fn signature_store_bounds_cas_owner_and_corrupt_refusal() {
         let root = std::env::temp_dir().join(format!(
@@ -285,7 +305,7 @@ mod tests {
             .unwrap();
         assert_eq!(r.text, text);
         assert_eq!(r.revision, 2);
-        s.file.lock("bob").unwrap().write(&bytes).unwrap();
+        write_fixture(&s, "bob", &bytes);
         assert_eq!(s.load("bob"), Err(SignatureError::Corrupt));
         for bad in [
             b"{".to_vec(),
@@ -294,7 +314,7 @@ mod tests {
                 .replace("\"version\":1", "\"version\":2")
                 .into_bytes(),
         ] {
-            s.file.lock("alice").unwrap().write(&bad).unwrap();
+            write_fixture(&s, "alice", &bad);
             assert_eq!(s.load("alice"), Err(SignatureError::Corrupt));
             assert!(s
                 .change(

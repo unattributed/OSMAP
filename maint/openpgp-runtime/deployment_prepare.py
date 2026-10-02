@@ -182,7 +182,9 @@ def main():
             wrapper = ROOT / "bin" / (service + "-run.ksh")
             content = '#!/bin/ksh\nset -eu\nulimit -c 0\nsocket="' + str(ROOT / "run" / (label + ".sock")) + '"\n[ ! -e "$socket" ] || exit 1\n"' + str(ROOT / "bin" / binary) + '" "' + str(config_root / (label + ".json")) + '" "' + str(config_root / (label + ".key")) + '" &\nchild=$!\ncleanup() { kill "$child" 2>/dev/null || true; wait "$child" 2>/dev/null || true; [ ! -S "$socket" ] || rm -f "$socket"; }\ntrap cleanup EXIT HUP INT TERM\nwait "$child"\n'
             write(wrapper, content, helper.pw_uid, gid, 0o700)
-            rc = '#!/bin/ksh\ndaemon="' + str(wrapper) + '"\ndaemon_user="' + HELPER + '"\nrc_bg=YES\nrc_reload=NO\n. /etc/rc.d/rc.subr\nrc_cmd "$1"\n'
+            # The script runs under ksh.  rc.subr's default pexp is the
+            # wrapper path alone, which cannot match its process arguments.
+            rc = '#!/bin/ksh\ndaemon="' + str(wrapper) + '"\ndaemon_user="' + HELPER + '"\nrc_bg=YES\nrc_reload=NO\n. /etc/rc.d/rc.subr\npexp="/bin/ksh ' + str(wrapper) + '"\nrc_cmd "$1"\n'
             write(pathlib.Path("/etc/rc.d", service), rc, 0, 0, 0o555)
             run(["/usr/sbin/rcctl", "disable", service])
         receipt = {"version": 1, "target": HOST, "helper_uid": helper.pw_uid, "web_uid": web.pw_uid, "socket_group": GROUP, "previous_web_group_ids": previous_groups, "binary_sha256": hashes, "public_fingerprints": [DUNCAN, PROTON], "services_enabled": False, "live_web_binary_and_environment_modified": False, "private_keys_provisioned": False}

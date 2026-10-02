@@ -2853,3 +2853,92 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   is not installed or enabled. Operator mailbox private-key provisioning,
   actual browser/Dovecot/SMTP deployment, the Proton↔Duncan exchange and human
   acceptance remain open. No strict release qualification is claimed.
+
+### UX branch synchronization and collaboration SOP — 2026-10-01 — IN_PROGRESS
+
+- The operator requested immediate GitHub synchronization of every verified,
+  signed development commit and contextual commit messages for collaborating
+  developers. `AGENTS.md` now records that standing authority. The frozen UX
+  plan and accepted design remain unchanged; source sync is not obsd1 deployment
+  or human acceptance.
+- The first attempted push of signed S05-02 commit `a03467d` was refused by the
+  existing pre-push developer gate: one parallel send-journal capacity test saw
+  a transient fail-closed `StoreUnavailable` rather than the capacity result.
+  No hook was bypassed and the remote branch remained at `ab4c11f`. The test
+  now checks unchanged bytes after that transient result, retries only twice,
+  and still requires `Capacity`; persistent store refusal remains a failure.
+  Exact I/O cause was not reproduced. Focused and full parallel library tests
+  passed after the change. Complete gate, signed commit and push verification
+  are pending in this ledger entry.
+- Read-only obsd1 inspection found the site live, with the running web binary
+  predating `a03467d`, no OpenPGP client environment, inventory/crypto services
+  stopped and public-admin service absent. PAGE21 public import/removal is not
+  yet a practical live browser test. A commit-pinned native build, additive
+  helper preparation, coordinated web activation, rollback copy and browser
+  check are needed; the existing public-only account homes are preserved.
+
+### Signed-sync gate repair and exact deployment-binary qualification — 2026-10-01 — VERIFIED bounded
+
+- `make acceptance-check` passed after refreshing the generated V10
+  assumption and claims hashes for test-only send-journal and signature-fixture
+  lock contention changes. Both allow only bounded retry of transient
+  `WouldBlock`/storage refusal while persistent failure still fails. The
+  developer security gate, V10, V12, V13 and their included controls passed;
+  retained log SHA-256 is
+  `045786514f7979e3d97c8026c1db552a9d9b447a1de010d82f42269594ad63e3`.
+  No hook or test was bypassed.
+- A clean archive of signed `a03467d` was built on obsd1. The public-admin
+  principal fixture now accepts paired, digest-pinned prebuilt C workers so
+  the **exact** binaries selected for service installation can be qualified.
+  Its native run passed all eight existing import/remove, peer, replay, secret
+  guard and cleanup checks. Inventory worker SHA-256 is
+  `42eccfa209e163d3c8e09cde45877fbb26fb47ae51f073f84797239010cb429c`;
+  crypto engine SHA-256 is
+  `e1a33e0efcf472156c8ca40ecca5ece948686acdc1e16584f1fb3c562fc1c869`;
+  native log SHA-256 is
+  `a14588525b477bbcfdacf21f916c442f6cb867f44c81fca72a0e0c98575dde69`.
+  Live web, mailbox keys and mail remained unchanged during this fixture.
+- GitHub synchronization and the practical obsd1 browser path remain separate
+  next actions; neither is inferred from the native fixture.
+
+### S05-02 public-key management activated on obsd1 — 2026-10-01 — VERIFIED live boundary
+
+- Assessed signed source: `a03467da04c32f3b9d2a8a55d4b5c0398e7824d3`.
+  A clean commit archive was built natively on verified
+  `obsd1.blackbagsecurity.com` (`192.168.1.44`). The exact admin-only
+  inventory/crypto worker binaries were requalified in the disposable
+  distinct-principal fixture before installation; its eight checks passed.
+  Additive admin preparation created only the new public-admin grant, service,
+  worker copies and replay state, preserving existing account key homes and
+  inventory/crypto workers.
+- First activation exposed an OpenBSD `rc.d` process-expression mismatch:
+  the inventory wrapper and socket existed, but `rcctl check` failed and
+  `stop` could not identify it. The wrapper was terminated with socket cleanup;
+  the live web remained unchanged. Generated inventory, admin and crypto
+  service scripts now set the actual `/bin/ksh` wrapper `pexp`. Backed-up
+  obsd1 scripts were repaired, and public inventory/admin each passed
+  start/check/stop plus process/socket cleanup before activation.
+- Coordinated activation then passed. Live `/usr/local/bin/osmap` SHA-256 is
+  `b40b24d4491350ffdf1e2d471f24cad9933129e4a44f036585cdcbf88542df86`;
+  the web environment contains nine complete OpenPGP client entries.
+  `osmap_serve`, `osmap_public_inventory` and `osmap_public_admin` report OK;
+  the two public services are enabled for restart. TLS validation of
+  `https://obsd1.blackbagsecurity.com/login` passed with HTTP 200, and an
+  unauthenticated PAGE21 request redirects to login with HTTP 303. Activation
+  log SHA-256 is
+  `ce1a0c3efd80d499b360c80fc9417f0507c8c6364f7655b0cfe0393c9d9e8e6f`.
+  The prior web binary/environment and prior rc scripts are retained under
+  `/var/backups/osmap-ux-s05-a03467d-20261001` for rollback.
+- This live check proves web availability and service supervision, not an
+  authenticated human browser mutation. The operator can now use their normal
+  browser and credentials at **Settings → OpenPGP → Manage Keys**. A disposable
+  seven-day public-only certificate for import is retained at
+  `/home/foo/Downloads/osmap-ux-s05/deploy-20261001/page21-demo-public.asc`,
+  primary fingerprint `2AFAC54286DEFE4EBFD779DAAD4943E35AB60D02`;
+  its disposable private source was removed. Each mutation requires fresh
+  mailbox password and TOTP. No private mailbox key was provisioned, the
+  crypto service remains stopped, and no Proton mail was sent. Full S05/UX
+  acceptance and the encrypted round trip remain open.
+- The final source candidate, including the OpenBSD `rc.d` repair, passed
+  `RUST_TEST_THREADS=8 make acceptance-check`; retained log SHA-256 is
+  `24fbfb9cee1d55426b7f45abbd6a14230b55195cb732dd8ed0d1e6ef45908930`.

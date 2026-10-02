@@ -15,6 +15,7 @@ import resource
 import shutil
 import signal
 import socket
+import stat
 import subprocess
 import tempfile
 import time
@@ -24,10 +25,31 @@ def main():
     parser = argparse.ArgumentParser()
     for name in ("source", "test-binary", "admin-helper"):
         parser.add_argument("--" + name, required=True, type=pathlib.Path)
+    for name in ("inventory-worker", "crypto-engine"):
+        parser.add_argument("--" + name, type=pathlib.Path)
+        parser.add_argument("--" + name + "-sha256")
     args = parser.parse_args()
     assert os.geteuid() == 0 and socket.gethostname() == "obsd1.blackbagsecurity.com"
-    for path in vars(args).values():
+    for path in (args.source, args.test_binary, args.admin_helper):
         assert path.is_absolute() and path.resolve() == path and path.exists()
+    supplied = (args.inventory_worker, args.crypto_engine,
+                args.inventory_worker_sha256, args.crypto_engine_sha256)
+    assert all(value is None for value in supplied) or all(value is not None for value in supplied), \
+        "prebuilt workers require both binaries and both expected SHA-256 digests"
+    prebuilt = all(value is not None for value in supplied)
+    if prebuilt:
+        for path, expected in ((args.inventory_worker, args.inventory_worker_sha256),
+                               (args.crypto_engine, args.crypto_engine_sha256)):
+            assert path.is_absolute() and path.resolve() == path, "prebuilt worker must use a canonical absolute path"
+            info = path.stat(follow_symlinks=False)
+            assert stat.S_ISREG(info.st_mode) and 0 < info.st_size <= 64 * 1024 * 1024, \
+                "prebuilt worker must be a bounded regular file"
+            assert info.st_mode & 0o111 and not info.st_mode & 0o022, \
+                "prebuilt worker must be executable and not group/world writable"
+            assert len(expected) == 64 and all(char in "0123456789abcdef" for char in expected), \
+                "prebuilt worker requires a lowercase SHA-256 digest"
+            assert hashlib.sha256(path.read_bytes()).hexdigest() == expected, \
+                "prebuilt worker does not match its expected SHA-256 digest"
     os.umask(0o077)
     resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
     root = pathlib.Path(tempfile.mkdtemp(prefix="osmap-admin-principal-"))
@@ -139,9 +161,21 @@ def main():
         for label, source, libs in [("inventory", "inventory.c", ["-L/usr/local/lib", "-lgpgme", "-lgpg-error"]),
                                     ("engine", "crypto_engine.c", [])]:
             destination = helper_root / label
-            ok(["/usr/bin/cc", "-std=c99", "-Wall", "-Wextra", "-Werror", "-I/usr/local/include",
-                args.source / "maint/openpgp-runtime" / source] + libs + ["-o", destination])
+            if prebuilt:
+                supplied_path = args.inventory_worker if label == "inventory" else args.crypto_engine
+                expected_hash = args.inventory_worker_sha256 if label == "inventory" else args.crypto_engine_sha256
+                shutil.copyfile(supplied_path, destination)
+                assert hashlib.sha256(destination.read_bytes()).hexdigest() == expected_hash, \
+                    "copied prebuilt worker differs from qualified SHA-256 digest"
+            else:
+                ok(["/usr/bin/cc", "-std=c99", "-Wall", "-Wextra", "-Werror", "-I/usr/local/include",
+                    args.source / "maint/openpgp-runtime" / source] + libs + ["-o", destination])
             binaries[label] = owned(destination, helper, 0o700)
+        worker_hashes = {label: hashlib.sha256(path.read_bytes()).hexdigest()
+                         for label, path in binaries.items()}
+        print(json.dumps({"qualified_inventory_worker_sha256": worker_hashes["inventory"],
+                          "qualified_crypto_engine_sha256": worker_hashes["engine"],
+                          "prebuilt_workers": prebuilt}, sort_keys=True), flush=True)
         fingerprints = {}
         for account in ("alice", "bob"):
             home = helper_root / account
@@ -230,7 +264,10 @@ def main():
         shutil.rmtree(root)
         assert not root.exists()
         checks["temporary_services_agents_principals_and_scratch_removed"] = True
-    print(json.dumps({"public_admin_native_principal": "PASS", "checks": checks}, sort_keys=True), flush=True)
+    print(json.dumps({"public_admin_native_principal": "PASS", "checks": checks,
+                      "qualified_inventory_worker_sha256": worker_hashes["inventory"],
+                      "qualified_crypto_engine_sha256": worker_hashes["engine"],
+                      "prebuilt_workers": prebuilt}, sort_keys=True), flush=True)
 
 
 if __name__ == "__main__":

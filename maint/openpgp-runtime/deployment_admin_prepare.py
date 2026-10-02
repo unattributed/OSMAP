@@ -144,7 +144,9 @@ def main():
         'trap cleanup EXIT HUP INT TERM\nwait "$child"\n'
     )
     exclusive(wrapper, wrapper_text.encode(), helper.pw_uid, group.gr_gid, 0o700)
-    rc_text = f'#!/bin/ksh\ndaemon="{wrapper}"\ndaemon_user="{HELPER}"\nrc_bg=YES\nrc_reload=NO\n. /etc/rc.d/rc.subr\nrc_cmd "$1"\n'
+    # rc.subr defaults pexp to the wrapper path alone.  The running script's
+    # full process arguments include the ksh interpreter.
+    rc_text = f'#!/bin/ksh\ndaemon="{wrapper}"\ndaemon_user="{HELPER}"\nrc_bg=YES\nrc_reload=NO\n. /etc/rc.d/rc.subr\npexp="/bin/ksh {wrapper}"\nrc_cmd "$1"\n'
     exclusive(rc, rc_text.encode(), 0, 0, 0o555)
     subprocess.run(["/usr/sbin/rcctl", "disable", SERVICE], check=True, timeout=10)
     addition = (

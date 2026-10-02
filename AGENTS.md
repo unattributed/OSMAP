@@ -29,7 +29,10 @@ operator's explicit instructions.
 - Preserve unrelated local or remote worktree changes unless the operator
   explicitly asks to remove them.
 - For completed development changes, finish with a signed Git commit, verify
-  the signature, and stop for operator review before any push or synchronization.
+  the signature, and immediately synchronize the current branch to GitHub after
+  required checks pass. The operator explicitly authorized this workflow on
+  2026-10-01. A Git push is source synchronization, not host deployment or
+  operator acceptance.
 
 ## Git and signing workflow
 
@@ -40,15 +43,23 @@ key:
 
     F55E404E91A0753701F91B01A7228D3FB5084B34
 
-Use an explicitly signed commit and a concise lowercase commit message:
+Use an explicitly signed commit with a concise lowercase subject and a short
+body that gives collaborating developers useful context: what behavior changed,
+why it changed, and the relevant validation or remaining limit. Never put
+secrets, protected mail content, or unverified completion claims in the body.
+For example:
 
-    git commit --gpg-sign=F55E404E91A0753701F91B01A7228D3FB5084B34 -m "<lowercase commit message>"
+    git commit --gpg-sign=F55E404E91A0753701F91B01A7228D3FB5084B34 \
+      -m "<lowercase subject>" -m "<context for collaborators>"
 
 Do not create unsigned commits.
 
-Do not automatically push, pull, synchronize, force push, rewrite published
-history, amend existing commits, or resolve branch divergence. Remote writes
-require explicit operator approval.
+Synchronize each verified signed commit to the current GitHub branch promptly
+after its checks pass. The operator's 2026-10-01 instruction is standing
+authorization for these ordinary pushes. Do not automatically pull, force push,
+rewrite published history, amend existing commits, or resolve branch divergence.
+If the remote diverges or a push gate fails, investigate and fix the issue;
+never bypass checks or force the update.
 
 Do not create or switch branches unless the task requires it or the operator
 explicitly approves it.
@@ -67,8 +78,9 @@ superseded the manual clipboard/Proton Pass checkpoint on 2026-09-14.
 - Use the agent's existing credential cache. Noninteractive signing may use
   `gpg --batch --pinentry-mode error`; if the agent cannot sign, report the
   concrete failure rather than creating an unsigned commit or bypassing checks.
-- This removes only the manual signing checkpoint. Signature verification and
-  operator review before any push or synchronization remain mandatory.
+- This removes the manual signing checkpoint. Verify the signature before the
+  authorized push; operator review and UX acceptance still follow the synced
+  commit rather than blocking ordinary source synchronization.
 
 After each commit, verify:
 
@@ -76,19 +88,17 @@ After each commit, verify:
     git status --short --branch
     git show --show-signature --stat --oneline HEAD
 
-Then stop and report the commit SHA, signature result, changed files, working
-tree state, and ahead/behind state. The operator must be able to inspect the
-outgoing commit in VSCodium before approving synchronization.
+Then push the current branch to GitHub and report the commit SHA, signature
+result, changed files, working-tree state, and ahead/behind state. The operator
+can inspect the synchronized commit in GitHub or VSCodium; human acceptance
+remains a separate decision.
 
-Only an explicit instruction such as "push", "sync", or "push this commit"
-authorizes a remote write.
-
-After an approved push, refresh `origin` and prove local/remote SHA equality
+After each push, refresh `origin` and prove local/remote SHA equality
 before reporting synchronization as successful:
 
     git fetch --prune origin
     git rev-parse HEAD
-    git rev-parse origin/main
+    git rev-parse "origin/$(git branch --show-current)"
     git status --short --branch
 
 ## Validation

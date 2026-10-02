@@ -1099,16 +1099,20 @@ mod tests {
         let bytes = serde_json::to_vec(&record).unwrap();
         assert!(bytes.len() < MAX_BYTES);
         fixture(&store, &bytes);
-        assert_eq!(
-            store.execute(
-                ACCOUNT,
-                &intent(100, MAX_ATTEMPTS as u128),
-                100,
-                &request(),
-                || panic!("full")
-            ),
-            Err(JournalError::Capacity)
-        );
+        // A transient file-store refusal is fail-closed, but does not exercise
+        // the capacity decision. Prove it left the fixture untouched, then
+        // require the capacity path on a bounded fresh attempt.
+        let full_intent = intent(100, MAX_ATTEMPTS as u128);
+        for attempt in 0..3 {
+            let result = store.execute(ACCOUNT, &full_intent, 100, &request(), || panic!("full"));
+            if result == Err(JournalError::StoreUnavailable) && attempt < 2 {
+                assert_eq!(record_bytes(&store), bytes);
+                std::thread::sleep(std::time::Duration::from_millis(10));
+                continue;
+            }
+            assert_eq!(result, Err(JournalError::Capacity));
+            break;
+        }
         assert_eq!(record_bytes(&store), bytes);
         assert!(
             store

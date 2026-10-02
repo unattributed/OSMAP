@@ -7321,3 +7321,35 @@ guard, peer denial, restart replay and cleanup checks. That fixture did not
 change the running web process, real account keys or mail services. PAGE21
 visual geometry and responsive/forced-colour checks continue to use the
 approved design reference; helper absence remains an honest disabled state.
+
+### Synchronize verified signed development commits to GitHub promptly — 2026-10-01
+
+The operator explicitly changed the collaboration workflow: each completed
+development commit is signed, carries useful context for other developers in
+its message, and is pushed to the current GitHub branch immediately after
+verification and required checks. The prior review-before-sync checkpoint no
+longer delays ordinary pushes. A failed hook is fixed rather than bypassed;
+branch divergence is never force-resolved. Source synchronization does not
+assert live deployment, release qualification, or UX acceptance.
+
+### Make OpenBSD helper services observable and stop correctly — 2026-10-01
+
+During the obsd1 PAGE21 activation, `rcctl -f start` launched the inventory
+wrapper and created its socket, but `rcctl check` falsely reported failure and
+`rcctl stop` left the wrapper running. OpenBSD `rc.subr` derived `pexp` from the
+script path while the process command line begins with `/bin/ksh`. Set `pexp`
+after sourcing `rc.subr` for the inventory, crypto and public-admin generated
+services. The repaired obsd1 scripts passed start, check, stop and exact
+process/socket cleanup; the initial orphan was terminated through its wrapper
+and cleaned. No web binary was changed during that failed activation attempt.
+
+### Activate public-only PAGE21 on obsd1 — 2026-10-01
+
+Deploy the native build from signed `a03467d` to the operator-selected
+development host after exact prebuilt-worker principal qualification. Preserve
+the prior web binary/environment for rollback, enable the inventory and
+public-admin services, and configure all three web client triples together.
+The crypto service remains stopped because the mailbox private key is not
+provisioned. This exposes authenticated public-key inspection, import/removal
+and binding controls for human browser testing without claiming signing,
+decryption, live Proton exchange or release qualification.
