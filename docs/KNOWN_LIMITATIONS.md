@@ -8,8 +8,9 @@ inspection, import/removal, binding and policy controls. Their browser mutations
 still require human acceptance; the deployed read-only confined client probe
 does not establish that acceptance. Import alone never establishes account
 binding or recipient trust. The Duncan mailbox private key has not been
-provisioned to its isolated helper home, and the crypto service is stopped.
-Signing, decryption and a Proton encrypted round trip are therefore not live
+provisioned to its isolated helper home. The crypto service is running on
+obsd1 for public-only probing but is not enabled at boot. Signing, decryption
+and a Proton encrypted round trip are therefore not live
 qualified. The OpenBSD native fixture and controlled gateway-to-wire proofs
 establish bounded source behavior, not the full release assurance profile or
 human UAT. The `NATIVE_CONFINEMENT_QUALIFIED` source constant records the

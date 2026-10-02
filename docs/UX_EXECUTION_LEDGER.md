@@ -3046,3 +3046,49 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   human mutation, sign/decrypt, SMTP, Sent-copy or Proton encrypted round trip
   is claimed by this checkpoint. The signed source commit, GitHub sync, host
   web deployment and actual browser UAT remain separate gates.
+
+### S05 public-only helper deployment and exact Proton binding — 2026-10-02 — VERIFIED bounded
+
+- Signed source commit `efb8a88d344d902df3c829666e40d6796b93354f`
+  passed `git verify-commit`, the full local acceptance gate, and normal
+  pre-commit/pre-push security hooks. `origin/feat/ux-completion-20260929`
+  equalled local HEAD after fetch, with a clean worktree. The clean source
+  archive SHA-256 was
+  `95a45bcd404522c79c5c34a27d72f93952cd5d3148cb175922727b5cf8aad9e3`;
+  obsd1 verified that hash before extracting and building offline.
+- Obsd1's web binary changed from SHA-256
+  `42817c5951b0ba9200c8e91e99cdaa53cd4aba5df98cb767670b0d66d4bee1b7`
+  to `9a03f1b5956c691530927aeed248258f203ad80cedefcc28515dc4361521b00e`.
+  The prior executable is retained at
+  `/var/backups/osmap-ux-s05-efb8a88/osmap-before`. The installed mailbox
+  unlock launcher matches its source SHA-256
+  `553e96d146a76d36df559f9bd32ff1610bad0c94bc7ae95459594f861f3d2d89`.
+  At 07:44 UTC, web, public inventory, public administration and crypto
+  services each checked OK. TLS login returned HTTP 200 and unauthenticated
+  PAGE21 returned HTTP 303 with certificate verification success. Startup
+  events reported all three helper clients constructed, without claiming an
+  authenticated RPC from those events alone.
+- A disposable probe running as `_osmap` with locked OpenBSD `unveil` paths
+  completed an authenticated crypto `Client::execute` operation for the exact
+  approved Proton public primary under Duncan's account. Public encryption
+  returned 330 ciphertext bytes; no ciphertext was retained, submitted, or
+  added to Sent. The same probe's signing request returned the expected typed
+  refusal with no mailbox private key. The temporary probe executable was
+  removed. This verifies the live public-only helper boundary, not protected
+  browser compose or delivery.
+- The trusted operator CLI persisted revision 1 of Duncan's recipient-only
+  binding for the approved Proton primary, preserving optional signing and
+  encryption policy. The account signing/decryption binding remains absent
+  until matching private custody is established, avoiding a premature
+  account-key readiness indication. The one-use pending input was removed;
+  its source preparation record remains. No browser step-up or PAGE21 human
+  acceptance is claimed by the CLI mutation.
+- A terminal handoff at
+  `/home/foo/Downloads/osmap-ux-s05/provision-duncan-mailbox-key.sh` provides
+  an SSH-stdin-only private-key import and a real Pinentry unlock without
+  logging or retaining secret material. It passed Bash syntax and ShellCheck
+  but has **not** been executed. The key transfer, bounded-agent unlock,
+  live sign/decrypt, authenticated browser journey, SMTP/Sent and inbound
+  Proton exchange remain open. Normal external delivery to the selected
+  mailbox still prefers production MX 10; obsd1-only work cannot claim that
+  direct inbound route without an additional delivery decision.
