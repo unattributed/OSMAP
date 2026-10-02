@@ -160,8 +160,10 @@ an HTTP request. Complete the interactive mailbox unlock in the operator's SSH t
 doas /usr/local/bin/python3 /absolute/reviewed/deployment_unlock.py
 ```
 
-The launcher grants only that terminal to the helper while real pinentry-curses
-prompts run, then restores its original owner/group/mode in `finally`. It warms
+The launcher grants only that terminal to the helper while real pinentry-tty
+prompts run, then restores its original owner/group/mode in `finally`. The
+plain terminal Pinentry also works when an SSH terminal has tiny dimensions or
+no `TERM` value. It warms
 the exact signing key and verifies decryption with a disposable self-encrypted
 challenge. No passphrase is read by the launcher or sent to Codex. Signing and
 decryption can require separate pinentry prompts because their keygrips differ.

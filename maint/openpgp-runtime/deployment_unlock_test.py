@@ -7,9 +7,14 @@ an agent in disposable scratch and checks the running process configuration.
 import importlib.util
 import os
 import pathlib
+import pty
+import fcntl
+import select
 import socket
+import struct
 import subprocess
 import tempfile
+import termios
 import time
 import unittest
 from unittest.mock import patch
@@ -66,6 +71,7 @@ class AgentPolicyTests(unittest.TestCase):
                 self.assertEqual(agent[agent.index(option) + 1], "300")
             self.assertIn("--no-allow-external-cache", agent)
             self.assertIn("--no-options", agent)
+            self.assertEqual(agent[agent.index("--pinentry-program") + 1], "/usr/local/bin/pinentry-tty")
 
     def test_failed_agent_stop_or_start_never_reuses_existing_policy(self):
         with tempfile.TemporaryDirectory(prefix="osmap-unlock-policy-") as directory:
@@ -128,6 +134,7 @@ class AgentPolicyTests(unittest.TestCase):
                 self.assertIn("--default-cache-ttl 300", command)
                 self.assertIn("--max-cache-ttl 300", command)
                 self.assertIn("--no-allow-external-cache", command)
+                self.assertIn("--pinentry-program /usr/local/bin/pinentry-tty", command)
                 self.assertEqual(list((home / "private-keys-v1.d").glob("*.key")), [])
             finally:
                 subprocess.run(["/usr/local/bin/gpgconf", "--homedir", directory, "--kill", "gpg-agent"],
@@ -136,6 +143,51 @@ class AgentPolicyTests(unittest.TestCase):
                 while (home / "S.gpg-agent").exists() and time.monotonic() < until:
                     time.sleep(0.02)
                 self.assertFalse((home / "S.gpg-agent").exists())
+
+    @unittest.skipUnless(os.environ.get("OSMAP_UNLOCK_NATIVE") == "1", "requires disposable obsd1 native tty Pinentry")
+    def test_native_tty_pinentry_accepts_tiny_terminal_without_term_or_echo(self):
+        self.assertEqual(socket.gethostname(), "obsd1.blackbagsecurity.com")
+        master, slave = pty.openpty()
+        process = None
+        # Public fixture data, never an actual passphrase or private-key input.
+        fixture_input = b"synthetic-public-fixture"
+        try:
+            fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", 1, 1, 0, 0))
+            name = os.ttyname(slave)
+            process = subprocess.Popen([unlock.PINENTRY_PROGRAM], stdin=subprocess.PIPE,
+                                       stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                       env={"PATH": "/usr/local/bin:/usr/bin:/bin", "LC_ALL": "C"},
+                                       start_new_session=True)
+            protocol = ("OPTION ttyname=" + name + "\nSETDESC Disposable terminal fixture\n"
+                        "SETPROMPT Fixture:\nGETPIN\nBYE\n").encode()
+            process.stdin.write(protocol)
+            process.stdin.flush()
+            screen = bytearray()
+            until = time.monotonic() + 5
+            while b"Fixture:" not in screen and time.monotonic() < until:
+                ready, _, _ = select.select([master], [], [], 0.1)
+                if ready:
+                    screen.extend(os.read(master, 4096))
+                    self.assertLess(len(screen), 8192, "bounded terminal fixture output")
+                if process.poll() is not None:
+                    break
+            self.assertIn(b"Fixture:", screen, "tiny tty prompt did not appear")
+            self.assertFalse(termios.tcgetattr(slave)[3] & termios.ECHO, "terminal echo must be disabled before entry")
+            os.write(master, fixture_input + b"\n")
+            output, _ = process.communicate(timeout=5)
+            self.assertEqual(process.returncode, 0)
+            self.assertTrue(b"D " + fixture_input + b"\n" in output, "synthetic fixture was not accepted")
+            self.assertFalse(b"ERR " in output, "tty Pinentry returned a protocol error")
+            while select.select([master], [], [], 0)[0]:
+                screen.extend(os.read(master, 4096))
+                self.assertLess(len(screen), 8192, "bounded terminal fixture output")
+            self.assertNotIn(fixture_input, screen, "input must not echo on the terminal")
+        finally:
+            if process is not None and process.poll() is None:
+                process.kill()
+                process.wait(timeout=5)
+            os.close(master)
+            os.close(slave)
 
 
 if __name__ == "__main__":

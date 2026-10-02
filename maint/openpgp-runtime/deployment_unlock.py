@@ -19,6 +19,7 @@ HOME = pathlib.Path("/var/lib/osmap-gpg/accounts/duncan")
 PRIMARY = "E401B0FDCA3A712DE8E15BB23DAB198EA2E96BBE"
 SIGNER = "83A5689C7C52CE43DB88C8A5322909FC05BF68BB"
 CACHE_SECONDS = 300
+PINENTRY_PROGRAM = "/usr/local/bin/pinentry-tty"
 
 
 def require_stopped_helpers(env, run=subprocess.run):
@@ -42,7 +43,10 @@ def restart_bounded_agent(home, env, demote, run=subprocess.run):
         assert time.monotonic() < until, "mailbox agent socket did not close"
         time.sleep(0.02)
     agent = run(["/usr/local/bin/gpg-agent", "--no-options", "--homedir", str(home),
-                 "--pinentry-program", "/usr/local/bin/pinentry-curses",
+                 # Plain tty Pinentry does not depend on TERM/terminfo or the
+                 # SSH terminal's screen dimensions. It still reads the secret
+                 # directly from GPG_TTY, outside this launcher/web process.
+                 "--pinentry-program", PINENTRY_PROGRAM,
                  "--default-cache-ttl", str(CACHE_SECONDS),
                  "--max-cache-ttl", str(CACHE_SECONDS), "--no-allow-external-cache", "--daemon"],
                 stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,

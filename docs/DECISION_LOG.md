@@ -7414,3 +7414,31 @@ the crypto socket existed, and Duncan's private-key directory was absent.
 Normal Proton mail to the selected Duncan mailbox still prefers production MX
 10 over obsd1 MX 20. No direct inbound Proton round trip is claimed from
 service health or source fixture tests.
+
+### Use terminal Pinentry for the obsd1 mailbox-key unlock — 2026-10-02
+
+The operator's first key-provisioning attempt supplied no valid OpenPGP data.
+The second imported Duncan's secret key into the isolated obsd1 account home,
+but the unlock failed with `Screen or window too small` because the launcher
+selected curses Pinentry over an SSH terminal with unsuitable dimensions. The
+OpenPGP helpers were restored and confirmed healthy. Select the installed
+`pinentry-tty` for the launcher, retaining direct terminal entry, agent-only
+passphrase custody, exact 300-second cache bounds and post-run terminal
+restoration. A native 1-by-1-terminal test with `TERM` absent qualifies this
+interaction without using a real key. Import success is not sign/decrypt
+qualification; a human terminal unlock remains necessary.
+
+### Restore OSMAP beside the authoritative mailbox on Toronto — 2026-10-02
+
+The operator clarified that Duncan must see the account data held by
+`mail.blackbagsecurity.com` and selected deployment of the current UX on that
+host, retaining obsd1 for development validation. The September Toronto mail
+migration deliberately set `OSMAP=DISABLED`; the current Toronto host has no
+OSMAP runtime, while obsd1's running webmail uses its separate local Dovecot
+store. Both actual Inboxes were empty at read-only inspection, but folder and
+Sent counts diverge. A hostname change alone cannot make local `doveadm`,
+authentication and Sent writes use the authoritative store. Prepare a fresh,
+reversible OSMAP deployment on Toronto with its local Dovecot/Postfix backend.
+Do not label the incomplete obsd1 mailbox as authoritative or treat deployment
+as full OpenPGP or sprint UAT qualification. Preserve existing mail services,
+PostfixAdmin access and the EPR HTTPS bridge while adding OSMAP.

@@ -3092,3 +3092,27 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   Proton exchange remain open. Normal external delivery to the selected
   mailbox still prefers production MX 10; obsd1-only work cannot claim that
   direct inbound route without an additional delivery decision.
+
+### Duncan key handoff and authoritative-mailbox correction — 2026-10-02 — IN_PROGRESS
+
+- The operator ran the S05 terminal handoff twice. The first SSH import received
+  no valid OpenPGP data. The second imported the Duncan secret key into obsd1's
+  isolated account home, but terminal unlock stopped at `Screen or window too
+  small` in curses Pinentry. Read-only host verification confirmed the key is
+  present and `osmap_serve`, `osmap_mailbox_helper`, public inventory, public
+  administration and crypto services are healthy. No signing, decryption or
+  encrypted mail round trip is claimed.
+- The unlock launcher now selects the installed plain terminal Pinentry. Native
+  obsd1 disposable qualification passed 7 tests, including a 1-by-1 PTY with
+  `TERM` absent, synthetic input and disabled terminal echo. The owner-private
+  handoff script now restores stopped helpers on failure and passed Bash syntax
+  and ShellCheck. A real terminal unlock is still pending.
+- Read-only host comparison established the architecture gap behind the empty
+  obsd1 mailbox: its local Dovecot store has 25 folders and 259 Sent messages;
+  the authoritative Toronto mailbox has 39 folders and 406 Sent messages. Both
+  Inboxes currently have zero messages. The Toronto migration intentionally
+  disabled OSMAP there, leaving no current runtime. The operator selected
+  deploying the current UX on `mail.blackbagsecurity.com` and retaining obsd1
+  for development. Production preparation, authenticated browser access and
+  all OpenPGP/SMTP round-trip claims remain pending; the existing mail plane
+  and EPR bridge are to be preserved.
