@@ -33,9 +33,9 @@ impl Error {
             Self::Invalid => "Review the full fingerprints, address and current revision.",
             Self::Authentication => "Fresh password and authenticator verification failed. No change was made.",
             Self::Throttled => "Wait before trying fresh verification again. No change was made.",
-            Self::Stale => "The key bindings changed. Reload this page before changing them.",
+            Self::Stale => "The key inventory or bindings changed. Reload this page before changing them.",
             Self::InvalidKey => "The selected public key is missing, expired, revoked, ambiguous or unsupported.",
-            Self::KeyInUse => "Remove this key’s account and recipient bindings before removing its public certificate.",
+            Self::KeyInUse => "Remove this key’s account and recipient bindings before changing its public certificate.",
             Self::Unconfirmed => "The change could not be confirmed. Reload and inspect the current state before retrying.",
         }
     }
@@ -47,6 +47,9 @@ pub struct State {
     pub bindings: Option<BindingRecord>,
     pub binding_changes_available: bool,
     pub public_key_changes_available: bool,
+    /// Revision of the same native public-keybox snapshot shown on this page.
+    /// Public import/removal must compare it inside the helper transaction.
+    pub public_inventory_revision: Option<String>,
 }
 impl State {
     pub fn unavailable(account: &str) -> Self {
@@ -56,6 +59,7 @@ impl State {
             bindings: None,
             binding_changes_available: false,
             public_key_changes_available: false,
+            public_inventory_revision: None,
         }
     }
 }
@@ -95,6 +99,7 @@ pub enum Action<'a> {
 pub struct MutationRequest<'a> {
     pub action: Action<'a>,
     pub expected_revision: u64,
+    pub expected_public_revision: Option<&'a str>,
     pub password: &'a str,
     pub totp: &'a str,
 }
@@ -190,6 +195,23 @@ pub fn verify_fresh<P: PrimaryCredentialBackend, F: SecondFactorVerifier>(
 
 pub trait PublicKeyBackend {
     fn read(&self, account: &str) -> Result<Inventory, Error>;
+    fn import_public(
+        &self,
+        _account: &str,
+        _expected_public_revision: &str,
+        _primary_fingerprint: &str,
+        _certificate: &[u8],
+    ) -> Result<(), Error> {
+        Err(Error::Unavailable)
+    }
+    fn remove_public(
+        &self,
+        _account: &str,
+        _expected_public_revision: &str,
+        _primary_fingerprint: &str,
+    ) -> Result<(), Error> {
+        Err(Error::Unavailable)
+    }
 }
 
 pub fn mutate<B: PublicKeyBackend>(
@@ -212,13 +234,51 @@ pub fn mutate<B: PublicKeyBackend>(
         return Err(Error::Authentication);
     }
     let account = auth.account.as_str();
+    // Public keybox writes use a second, page-load CAS token and hold the same
+    // account lock as binding writers through the native helper RPC. The helper
+    // independently CAS-checks the actual keybox and confirms its result.
+    match &request.action {
+        Action::ImportPublic {
+            certificate,
+            expected_primary_fingerprint,
+        } => {
+            validate_public_certificate(certificate, expected_primary_fingerprint)?;
+            let public_revision = public_revision(request.expected_public_revision)?;
+            return store
+                .with_locked_revision(account, request.expected_revision, |record| {
+                    Ok(if key_in_use(record, expected_primary_fingerprint) {
+                        Err(Error::KeyInUse)
+                    } else {
+                        backend.import_public(
+                            account,
+                            public_revision,
+                            expected_primary_fingerprint,
+                            certificate,
+                        )
+                    })
+                })
+                .map_err(binding_error)?;
+        }
+        Action::RemovePublic {
+            primary_fingerprint,
+        } => {
+            fingerprint(primary_fingerprint)?;
+            let public_revision = public_revision(request.expected_public_revision)?;
+            return store
+                .with_locked_revision(account, request.expected_revision, |record| {
+                    Ok(if key_in_use(record, primary_fingerprint) {
+                        Err(Error::KeyInUse)
+                    } else {
+                        backend.remove_public(account, public_revision, primary_fingerprint)
+                    })
+                })
+                .map_err(binding_error)?;
+        }
+        _ => {}
+    }
     let old = store.load(account).map_err(binding_error)?;
     if old.revision != request.expected_revision {
         return Err(Error::Stale);
-    }
-    let inventory = backend.read(account)?;
-    if inventory.keys().is_none() {
-        return Err(Error::Unavailable);
     }
     let mut update = Update {
         account_binding: old.account_binding.clone(),
@@ -226,24 +286,7 @@ pub fn mutate<B: PublicKeyBackend>(
         policy: old.policy,
     };
     match &request.action {
-        Action::ImportPublic {
-            certificate,
-            expected_primary_fingerprint,
-        } => {
-            validate_public_certificate(certificate, expected_primary_fingerprint)?;
-            // A qualified public-admin protocol must serialize the binding
-            // in-use check and inventory mutation before enabling this action.
-            return Err(Error::Unavailable);
-        }
-        Action::RemovePublic {
-            primary_fingerprint,
-        } => {
-            fingerprint(primary_fingerprint)?;
-            if key_in_use(&old, primary_fingerprint) {
-                return Err(Error::KeyInUse);
-            }
-            return Err(Error::Unavailable);
-        }
+        Action::ImportPublic { .. } | Action::RemovePublic { .. } => unreachable!(),
         Action::SetAccount {
             primary_fingerprint,
             signing_fingerprint,
@@ -312,7 +355,19 @@ pub fn mutate<B: PublicKeyBackend>(
         }
     }
     store
-        .replace_operator(account, request.expected_revision, update, &inventory, now)
+        .replace_operator_with_inventory(
+            account,
+            request.expected_revision,
+            update,
+            || {
+                backend.read(account).map_err(|error| match error {
+                    Error::Stale => BindingError::Stale,
+                    Error::Unconfirmed => BindingError::Unconfirmed,
+                    _ => BindingError::Unavailable,
+                })
+            },
+            now,
+        )
         .map_err(binding_error)?;
     Ok(())
 }
@@ -321,6 +376,17 @@ fn fingerprint(value: &str) -> Result<(), Error> {
     crate::openpgp_crypto::full_fingerprint(value)
         .then_some(())
         .ok_or(Error::Invalid)
+}
+fn public_revision(value: Option<&str>) -> Result<&str, Error> {
+    let value = value.ok_or(Error::Invalid)?;
+    if value.len() != 64
+        || !value
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+    {
+        return Err(Error::Invalid);
+    }
+    Ok(value)
 }
 pub fn validate_public_certificate(bytes: &[u8], expected: &str) -> Result<(), Error> {
     fingerprint(expected)?;
@@ -344,6 +410,7 @@ pub fn validate_public_certificate(bytes: &[u8], expected: &str) -> Result<(), E
 fn key_in_use(record: &BindingRecord, primary: &str) -> bool {
     record.account_binding.as_ref().is_some_and(|b| {
         b.primary_fingerprint == primary
+            || b.signing_fingerprint.as_deref() == Some(primary)
             || b.decrypt_primary_fingerprints
                 .iter()
                 .any(|fp| fp == primary)

@@ -134,8 +134,16 @@ fn request(action: Action<'_>, revision: u64) -> MutationRequest<'_> {
     MutationRequest {
         action,
         expected_revision: revision,
+        expected_public_revision: None,
         password: "fixture-password",
         totp: "123456",
+    }
+}
+const PUBLIC_REVISION: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+fn public_request(action: Action<'_>, revision: u64) -> MutationRequest<'_> {
+    MutationRequest {
+        expected_public_revision: Some(PUBLIC_REVISION),
+        ..request(action, revision)
     }
 }
 
@@ -370,7 +378,7 @@ fn key_management_public_writes_unavailable_and_invalid_key_never_committed() {
             proof(&c, &s),
             &c,
             &s,
-            &request(
+            &public_request(
                 Action::ImportPublic {
                     certificate: public,
                     expected_primary_fingerprint: &fp
@@ -388,7 +396,7 @@ fn key_management_public_writes_unavailable_and_invalid_key_never_committed() {
             proof(&c, &s),
             &c,
             &s,
-            &request(
+            &public_request(
                 Action::RemovePublic {
                     primary_fingerprint: &fp
                 },
@@ -407,6 +415,111 @@ fn key_management_public_writes_unavailable_and_invalid_key_never_committed() {
         validate_public_certificate(&vec![b'A'; MAX_PUBLIC_CERTIFICATE + 1], &fp),
         Err(Error::Invalid)
     );
+}
+struct PublicWriteSpy {
+    inventory: Inventory,
+    calls: Cell<usize>,
+}
+impl PublicKeyBackend for PublicWriteSpy {
+    fn read(&self, account: &str) -> Result<Inventory, Error> {
+        assert_eq!(account, "alice@example.test");
+        Ok(self.inventory.clone())
+    }
+    fn import_public(
+        &self,
+        account: &str,
+        revision: &str,
+        primary: &str,
+        _certificate: &[u8],
+    ) -> Result<(), Error> {
+        assert_eq!(account, "alice@example.test");
+        assert_eq!(revision, PUBLIC_REVISION);
+        assert_eq!(primary, "B".repeat(40));
+        self.calls.set(self.calls.get() + 1);
+        Ok(())
+    }
+    fn remove_public(&self, account: &str, revision: &str, primary: &str) -> Result<(), Error> {
+        assert_eq!(account, "alice@example.test");
+        assert_eq!(revision, PUBLIC_REVISION);
+        assert_eq!(primary, "B".repeat(40));
+        self.calls.set(self.calls.get() + 1);
+        Ok(())
+    }
+}
+#[test]
+fn bound_signing_fingerprint_blocks_public_reimport_and_removal_before_rpc() {
+    let root = Scratch::new();
+    let store = BindingStore::new(root.0.join("bindings"));
+    let material = |fingerprint: String| serde_json::json!({"fingerprint":fingerprint,"algorithm":1,"bits":3072,"created":1,"expires":0,"revoked":false,"expired":false,"disabled":false,"invalid":false,"can_encrypt":true,"can_sign":true,"can_certify":true,"can_authenticate":false});
+    let inventory = Inventory::parse(
+        &serde_json::to_vec(&serde_json::json!({"version":1,"ok":true,"protocol":"openpgp","gpgme_version":"2.0.1","engine_version":"2.4.8","keys":[{"primary":material("A".repeat(40)),"subkeys":[material("B".repeat(40))]}]})).unwrap(),
+    )
+    .unwrap();
+    let backend = PublicWriteSpy {
+        inventory,
+        calls: Cell::new(0),
+    };
+    let c = context();
+    let s = session();
+    let account_primary = "A".repeat(40);
+    let signing = "B".repeat(40);
+    assert_eq!(
+        mutate(
+            &backend,
+            &store,
+            proof(&c, &s),
+            &c,
+            &s,
+            &request(
+                Action::SetAccount {
+                    primary_fingerprint: &account_primary,
+                    signing_fingerprint: Some(&signing),
+                    decrypt_fingerprints: "",
+                },
+                0,
+            ),
+            59,
+        ),
+        Ok(())
+    );
+    let cert = b"-----BEGIN PGP PUBLIC KEY BLOCK-----\nfixture\n-----END PGP PUBLIC KEY BLOCK-----";
+    assert_eq!(
+        mutate(
+            &backend,
+            &store,
+            proof(&c, &s),
+            &c,
+            &s,
+            &public_request(
+                Action::ImportPublic {
+                    certificate: cert,
+                    expected_primary_fingerprint: &signing,
+                },
+                1,
+            ),
+            59,
+        ),
+        Err(Error::KeyInUse)
+    );
+    assert_eq!(
+        mutate(
+            &backend,
+            &store,
+            proof(&c, &s),
+            &c,
+            &s,
+            &public_request(
+                Action::RemovePublic {
+                    primary_fingerprint: &signing,
+                },
+                1,
+            ),
+            59,
+        ),
+        Err(Error::KeyInUse)
+    );
+    assert_eq!(backend.calls.get(), 0);
+    assert_eq!(store.load("alice@example.test").unwrap().revision, 1);
 }
 #[derive(Clone, Copy)]
 struct FixedTime;

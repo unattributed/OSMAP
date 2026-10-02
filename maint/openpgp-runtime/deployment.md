@@ -51,6 +51,35 @@ Public material alone does not make signing/decryption operational. The crypto
 worker uses a pre-existing account agent and refuses unattended prompts or
 agent autostart. Recipient discovery is not automatic trust.
 
+## Prepare the PAGE21 public-key administration service
+
+Once the reviewed `osmap_public_admin_helper` binary has passed the authenticated
+RPC and native confinement tests, add it to the existing obsd1 custody setup:
+
+```sh
+doas /usr/local/bin/python3 deployment_admin_prepare.py --prepare \
+  --binary /absolute/reviewed/native/target/debug/osmap_public_admin_helper \
+  --inventory-worker /absolute/reviewed/native/qualified-inventory-worker \
+  --crypto-engine /absolute/reviewed/native/qualified-crypto-engine \
+  --inventory-worker-sha256 QUALIFIED_INVENTORY_WORKER_SHA256 \
+  --crypto-engine-sha256 QUALIFIED_CRYPTO_ENGINE_SHA256
+```
+
+The additive script reads the already approved account mappings, creates a
+separate service grant and owner-private replay state, and installs a disabled
+`osmap_public_admin` rc service. It appends the complete public-admin client
+triple to the pending web environment; it does not restart webmail or alter
+account key homes. Supply the actual hashes from the same obsd1 native
+qualification that exercised public import, removal and the secret-key guard;
+preparation installs separate admin-only copies and preserves the previously
+prepared inventory/crypto workers. Its receipt records only binary hashes and
+state booleans.
+The helper authenticates the web peer and each bounded request before touching
+the actual public keybox. Browser import/remove additionally requires fresh
+password/TOTP, session and CSRF validation, an unchanged binding revision and
+an unchanged keybox hash. A bound key must first be explicitly unbound; an
+import alone never establishes account or recipient trust.
+
 ## Apply operator-approved public bindings after the gated build
 
 After the reviewed helper binaries and binding CLI are installed, start the
@@ -108,6 +137,8 @@ operator import launcher may instead hold that exact account lock throughout.
 
 ```sh
 doas rcctl stop osmap_crypto osmap_public_inventory
+# If the public administration service has been installed:
+doas rcctl stop osmap_public_admin
 # Stop the public administration service too, if installed, and verify all
 # relevant helper processes have exited before continuing.
 ```
@@ -145,11 +176,11 @@ membership. The pending environment is
 secret values. The environment entries must be added together as complete
 socket/key-file/helper-UID triples.
 
-For service rollback, stop and disable only the two new services:
+For service rollback, stop and disable the prepared OpenPGP services:
 
 ```sh
-doas rcctl stop osmap_crypto osmap_public_inventory
-doas rcctl disable osmap_crypto osmap_public_inventory
+doas rcctl stop osmap_crypto osmap_public_inventory osmap_public_admin
+doas rcctl disable osmap_crypto osmap_public_inventory osmap_public_admin
 ```
 
 The installed wrappers remove their own sockets after stopping. If a hard crash

@@ -7292,3 +7292,32 @@ diagnostics into the event. A sensitive-marker regression covers this case.
 The CWE guard excludes only two verified test-only Rust fixture files from its
 production process-execution scan; production source, including the helper
 boundary, remains scanned. The shell gate uses the same exact file exclusions.
+
+### Enable public-key administration through a separate authenticated helper — 2026-10-01
+
+PAGE21 may import or remove a bounded public certificate only after the real
+session, CSRF, mailbox-password and replay-protected TOTP checks. The web
+process never receives a helper account home, native command, private key or
+passphrase. A separate Unix helper authenticates the peer and a versioned HMAC
+request, limits certificate and frame size, maps the canonical account from
+operator configuration, consumes mutation nonces durably before dispatch and
+checks the actual public-keybox SHA-256 revision. Lost or invalid mutation
+acknowledgements are unconfirmed and are not retried automatically.
+
+Public import does not establish account or recipient trust. Import and removal
+refuse a fingerprint in any current account, signing, decryption or recipient
+binding. Both operations hold the binding-account lock through the helper RPC;
+binding changes obtain the native inventory under that same lock. This closes
+the prepared-send/public-key-update and binding-create/public-key-removal
+races without exposing native custody to the browser. Direct operator secret
+imports remain a stopped-services operation because they do not share this
+application lock.
+
+The admin service uses separately installed, hash-pinned C worker and engine
+copies, preserving the existing inventory and crypto service binaries. The
+admin native qualification flag is enabled only after the distinct-principal
+obsd1 fixture passed actual Service/Client import, removal, CAS, private-key
+guard, peer denial, restart replay and cleanup checks. That fixture did not
+change the running web process, real account keys or mail services. PAGE21
+visual geometry and responsive/forced-colour checks continue to use the
+approved design reference; helper absence remains an honest disabled state.

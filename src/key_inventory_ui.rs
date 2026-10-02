@@ -330,6 +330,21 @@ pub(crate) fn render_key_management(
         && state.binding_changes_available
         && record.is_some()
         && matches!(inventory, PublicInventoryView::Verified { .. });
+    let public_revision = state.public_inventory_revision.as_deref().filter(|value| {
+        value.len() == 64
+            && value
+                .bytes()
+                .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+    });
+    let public_ready = ready && state.public_key_changes_available && public_revision.is_some();
+    let public_revision_field = public_revision
+        .map(|value| {
+            format!(
+                "<input type=\"hidden\" name=\"public_inventory_revision\" value=\"{}\">",
+                value
+            )
+        })
+        .unwrap_or_default();
     let revision = record.map(|r| r.revision).unwrap_or(0);
     let bound = record.and_then(|r| r.account_binding.as_ref());
     let account_fields=format!("{}{}<label>Decrypt primary fingerprints (comma separated)<input name=\"decrypt_fingerprints\" value=\"{}\" autocomplete=\"off\" spellcheck=\"false\" maxlength=\"327\"></label>",fingerprint_input("primary_fingerprint","Full account primary fingerprint",bound.map(|b|b.primary_fingerprint.as_str()).unwrap_or(""),true),fingerprint_input("signing_fingerprint","Full signing primary or subkey fingerprint (optional)",bound.and_then(|b|b.signing_fingerprint.as_deref()).unwrap_or(""),false),escape_html(&bound.map(|b|b.decrypt_primary_fingerprints.join(",")).unwrap_or_default()));
@@ -433,6 +448,15 @@ pub(crate) fn render_key_management(
         "Save protection policy",
         ready,
     );
+    let import_fields = format!("{public_revision_field}<label>OpenPGP public certificate (ASCII armoured)<textarea name=\"certificate\" maxlength=\"65536\" spellcheck=\"false\" autocomplete=\"off\" required></textarea></label>{}<p>Import stores public material only. Confirm the full primary fingerprint through a trusted channel, then create a separate account or recipient binding.</p>", fingerprint_input("expected_primary_fingerprint", "Expected full primary fingerprint", "", true));
+    let import_form = binding_form(
+        csrf,
+        revision,
+        "import_public",
+        &import_fields,
+        "Import public certificate",
+        public_ready,
+    );
     let mut rows = String::new();
     match inventory {
         PublicInventoryView::Unavailable => {
@@ -447,9 +471,8 @@ pub(crate) fn render_key_management(
                 for sub in key.subkeys.iter().take(32) {
                     rows.push_str(&format!("<h3>Public subkey</h3>{}", material(sub)));
                 }
-                rows.push_str(
-                    "<button disabled>Remove public certificate</button></div></details>",
-                );
+                let remove_fields = format!("{public_revision_field}<input type=\"hidden\" name=\"primary_fingerprint\" value=\"{}\"><p>Remove account and recipient bindings first. The server checks binding and private-key use again before removal.</p>", escape_html(&key.primary.fingerprint));
+                rows.push_str(&format!("<details><summary>Remove public certificate</summary>{}</details></div></details>", binding_form(csrf, revision, "remove_public", &remove_fields, "Remove public certificate", public_ready)));
             }
         }
     }
@@ -461,7 +484,23 @@ pub(crate) fn render_key_management(
             )
         })
         .unwrap_or_default();
-    TrustedHtml::from_template(format!(concat!("{header}<main id=\"main-content\" class=\"page-shell key-management-page\" tabindex=\"-1\"><div class=\"page-intro\"><h1>OpenPGP Key Management</h1><p>Manage public keys, account bindings and key policy.</p>{notice}</div><div class=\"key-management-toolbar\"><p><a href=\"/settings?section=security\">Security</a> / <a href=\"/settings?section=openpgp\">OpenPGP</a> / Keys</p><button disabled>Import public key</button></div><p role=\"status\">{state_label} · Binding revision {revision}</p><div class=\"key-management-grid\"><section class=\"key-management-card\"><h2>Primary Account Key</h2>{overview}{account_actions}<details><summary>{account_action}</summary>{account_form}</details><details><summary>Protection policy</summary>{policy_form}</details><details><summary>Recover from unavailable or expired bindings</summary>{cleanup}</details></section><section class=\"key-management-card\"><h2>Recipient / Contact Keys</h2>{recipients}<details id=\"recipient-binding\"><summary>Add or replace a recipient binding</summary>{recipient_form}</details><p class=\"key-inventory-notice\">Confirm full fingerprints through a trusted channel. OSMAP does not automatically trust keys discovered by email address. Each saved change requires your current mailbox password and a fresh authenticator code.</p><details><summary>Public key inventory</summary>{rows}</details><p>Public certificate import and removal are unavailable while the native public-key writer is being completed. Existing binding changes are available when the verified inventory is present.</p></section></div></main>"),notice=notice,revision=revision,account_form=account_form,account_actions=account_actions,policy_form=policy_form,cleanup=cleanup,recipients=recipients,recipient_form=recipient_form,rows=rows,overview=overview,account_action=if bound.is_some(){"Rotate binding"}else{"Add account binding"},header=app_header(account,csrf,"security"),state_label=if ready{"Verified public inventory and confirmed binding store"}else{"Binding changes unavailable"}))
+    let import_link = if public_ready {
+        "<a class=\"button-link\" href=\"#public-import\">Import public key</a>"
+    } else {
+        "<button disabled>Import public key</button>"
+    };
+    let binding_link = if ready {
+        "<a class=\"button-link\" href=\"#recipient-binding\">+ Add binding</a>"
+    } else {
+        "<button disabled>+ Add binding</button>"
+    };
+    let toolbar_actions = format!("<div>{import_link}{binding_link}</div>");
+    let public_state = if public_ready {
+        "Public certificate import and removal are available with fresh verification. Import alone does not establish trust."
+    } else {
+        "Public certificate import and removal are unavailable. Existing binding changes are available when the verified inventory is present."
+    };
+    TrustedHtml::from_template(format!(concat!("{header}<main id=\"main-content\" class=\"page-shell key-management-page\" tabindex=\"-1\"><div class=\"page-intro\"><h1>OpenPGP Key Management</h1><p>Manage public keys, account bindings and key policy.</p>{notice}</div><div class=\"key-management-toolbar\"><p><a href=\"/settings?section=security\">Security</a> / <a href=\"/settings?section=openpgp\">OpenPGP</a> / Keys</p>{toolbar_actions}</div><p class=\"sr-only\" role=\"status\">{state_label} · Binding revision {revision}</p><div class=\"key-management-grid\"><section class=\"key-management-card\"><h2>Primary Account Key</h2>{overview}{account_actions}<details><summary>{account_action}</summary>{account_form}</details><details><summary>Protection policy</summary>{policy_form}</details><details><summary>Recover from unavailable or expired bindings</summary>{cleanup}</details></section><section class=\"key-management-card\"><h2>Recipient / Contact Keys</h2>{recipients}<details id=\"recipient-binding\"><summary>Add or replace a recipient binding</summary>{recipient_form}</details><p class=\"key-inventory-notice\">Confirm full fingerprints through a trusted channel. OSMAP does not automatically trust keys discovered by email address. Each saved change requires your current mailbox password and a fresh authenticator code.</p><details id=\"public-import\"><summary>Import public key</summary>{import_form}</details><details><summary>Public key inventory</summary>{rows}</details><p>{public_state}</p></section></div></main>"),notice=notice,revision=revision,account_form=account_form,account_actions=account_actions,policy_form=policy_form,cleanup=cleanup,recipients=recipients,recipient_form=recipient_form,rows=rows,overview=overview,account_action=if bound.is_some(){"Rotate binding"}else{"Add account binding"},header=app_header(account,csrf,"security"),state_label=if ready{"Verified public inventory and confirmed binding store"}else{"Binding changes unavailable"},toolbar_actions=toolbar_actions,import_form=import_form,public_state=public_state))
 }
 
 #[cfg(test)]
@@ -479,12 +518,13 @@ mod binding_page_tests {
         });
         bindings.revision = 1;
         let inventory=crate::openpgp_inventory::Inventory::parse(&serde_json::to_vec(&serde_json::json!({"version":1,"ok":true,"protocol":"openpgp","gpgme_version":"2.0.1","engine_version":"2.4.8","keys":[{"primary":{"fingerprint":fp,"algorithm":1,"bits":3072,"created":1704067200u64,"expires":0,"revoked":false,"expired":false,"disabled":false,"invalid":false,"can_encrypt":true,"can_sign":true,"can_certify":true,"can_authenticate":false},"subkeys":[]}]})).unwrap()).unwrap();
-        let state = crate::key_management::State {
+        let mut state = crate::key_management::State {
             canonical_username: account.into(),
             inventory: Some(inventory),
             bindings: Some(bindings),
             binding_changes_available: true,
             public_key_changes_available: false,
+            public_inventory_revision: None,
         };
         let page = render_key_management(account, "test", &state, None);
         let body = page.as_str();
@@ -497,6 +537,16 @@ mod binding_page_tests {
         assert!(body.contains("<details><summary>Protection policy</summary>"));
         assert!(body.contains("<button disabled>Import public key</button>"));
         assert!(body.contains("id=\"account-fingerprint\""));
+        state.public_key_changes_available = true;
+        state.public_inventory_revision = Some("a".repeat(64));
+        let enabled = render_key_management(account, "test", &state, None)
+            .as_str()
+            .to_owned();
+        assert!(enabled.contains("class=\"button-link\" href=\"#public-import\""));
+        assert!(enabled.contains("name=\"certificate\""));
+        assert!(enabled.contains("name=\"public_inventory_revision\" value=\"aaaaaaaa"));
+        assert!(enabled.contains("<summary>Remove public certificate</summary>"));
+        assert!(!enabled.contains("<button disabled>Import public key</button>"));
         let body = render_key_management(
             account,
             "test",

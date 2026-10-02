@@ -362,6 +362,7 @@ impl OpenbsdConfinementPlan {
                 for client in [
                     config.openpgp_inventory.as_ref(),
                     config.openpgp_crypto.as_ref(),
+                    config.openpgp_public_admin.as_ref(),
                 ]
                 .into_iter()
                 .flatten()
@@ -376,6 +377,7 @@ impl OpenbsdConfinementPlan {
                     promises_before_lock: if config.mailbox_helper_socket_path.is_some()
                         || config.openpgp_inventory.is_some()
                         || config.openpgp_crypto.is_some()
+                        || config.openpgp_public_admin.is_some()
                     {
                         OPENBSD_SERVE_WITH_HELPER_PROMISES_BEFORE_LOCK
                     } else {
@@ -384,6 +386,7 @@ impl OpenbsdConfinementPlan {
                     promises_after_lock: if config.mailbox_helper_socket_path.is_some()
                         || config.openpgp_inventory.is_some()
                         || config.openpgp_crypto.is_some()
+                        || config.openpgp_public_admin.is_some()
                     {
                         OPENBSD_SERVE_WITH_HELPER_PROMISES_AFTER_LOCK
                     } else {
@@ -831,6 +834,7 @@ mod tests {
         AppConfig {
             openpgp_inventory: None,
             openpgp_crypto: None,
+            openpgp_public_admin: None,
             run_mode: AppRunMode::Serve,
             environment: RuntimeEnvironment::Production,
             listen_addr: "127.0.0.1:8080".to_string(),
@@ -1022,6 +1026,31 @@ mod tests {
             rule.path == Path::new("/var/lib/osmap/secrets/mailbox-helper-grant.key")
                 && rule.permissions == "r"
         }));
+    }
+
+    #[test]
+    fn public_admin_client_unveils_only_socket_and_grant() {
+        let mut config = config_fixture(OpenbsdConfinementMode::LogOnly);
+        config.openpgp_public_admin = Some(crate::config::OpenPgpAdminConfig {
+            socket: PathBuf::from("/var/lib/osmap-gpg/run/public-admin.sock"),
+            key_file: PathBuf::from("/var/lib/osmap/secrets/openpgp-public-admin.key"),
+            helper_uid: 1234,
+        });
+        let plan = OpenbsdConfinementPlan::from_config(&config);
+        assert_eq!(
+            plan.promises_after_lock,
+            OPENBSD_SERVE_WITH_HELPER_PROMISES_AFTER_LOCK
+        );
+        assert!(plan.unveil_rules.iter().any(|rule| rule.path
+            == config.openpgp_public_admin.as_ref().unwrap().socket
+            && rule.permissions.contains('w')));
+        assert!(plan.unveil_rules.iter().any(|rule| rule.path
+            == config.openpgp_public_admin.as_ref().unwrap().key_file
+            && rule.permissions == "r"));
+        assert!(!plan
+            .unveil_rules
+            .iter()
+            .any(|rule| rule.path == Path::new("/var/lib/osmap-gpg/accounts")));
     }
 
     #[test]

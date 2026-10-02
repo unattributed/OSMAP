@@ -20,6 +20,7 @@
         "csrf_token",
         "key_action",
         "binding_revision",
+        "public_inventory_revision",
         "current_password",
         "totp_code",
         "primary_fingerprint",

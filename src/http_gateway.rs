@@ -22,6 +22,7 @@ mod http_mailbox_backends;
 pub struct RuntimeBrowserGateway {
     pub(crate) public_inventory_client: Option<crate::openpgp_inventory_runtime::Client>,
     pub(crate) crypto_client: Option<crate::openpgp_crypto_runtime::Client>,
+    pub(crate) public_admin_client: Option<crate::openpgp_public_admin_runtime::Client>,
     authentication_policy: AuthenticationPolicy,
     totp_policy: TotpPolicy,
     login_throttle_policy: LoginThrottlePolicy,
@@ -52,6 +53,14 @@ impl RuntimeBrowserGateway {
     /// Builds the runtime gateway from validated configuration.
     pub fn from_config(config: &AppConfig) -> Self {
         Self {
+            public_admin_client: config.openpgp_public_admin.as_ref().and_then(|c| {
+                crate::openpgp_public_admin_runtime::Client::from_operator_files(
+                    &c.socket,
+                    &c.key_file,
+                    c.helper_uid,
+                )
+                .ok()
+            }),
             crypto_client: config.openpgp_crypto.as_ref().and_then(|c| {
                 if !crate::openpgp_crypto_runtime::NATIVE_CONFINEMENT_QUALIFIED {
                     return None;
@@ -121,6 +130,7 @@ impl RuntimeBrowserGateway {
         Self {
             public_inventory_client: None,
             crypto_client: None,
+            public_admin_client: None,
             authentication_policy: AuthenticationPolicy::default(),
             totp_policy: TotpPolicy::default(),
             login_throttle_policy: LoginThrottlePolicy {

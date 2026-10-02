@@ -1248,6 +1248,7 @@ mod tests {
         let config = AppConfig {
             openpgp_inventory: None,
             openpgp_crypto: None,
+            openpgp_public_admin: None,
             run_mode: AppRunMode::MailboxHelper,
             environment: crate::config::RuntimeEnvironment::Development,
             listen_addr: "127.0.0.1:8080".to_string(),
@@ -1328,6 +1329,7 @@ mod tests {
         let config = AppConfig {
             openpgp_inventory: None,
             openpgp_crypto: None,
+            openpgp_public_admin: None,
             run_mode: AppRunMode::MailboxHelper,
             environment: crate::config::RuntimeEnvironment::Development,
             listen_addr: "127.0.0.1:8080".to_string(),

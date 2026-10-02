@@ -2176,6 +2176,7 @@ mod tests {
                     bindings: None,
                     binding_changes_available: false,
                     public_key_changes_available: false,
+                    public_inventory_revision: None,
                 },
                 audit_events: vec![],
             }

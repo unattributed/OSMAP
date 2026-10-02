@@ -595,6 +595,33 @@ fn public_admin_closure_holds_same_revision_lock_as_binding_changes() {
     fs::remove_dir_all(root).unwrap();
 }
 #[test]
+fn binding_inventory_is_read_under_same_lock_as_public_admin_mutation() {
+    let root = scratch();
+    let store = BindingStore::new(&root);
+    let inv = inventory(&raw_inventory());
+    let captured = store.clone();
+    let saved = store
+        .replace_operator_with_inventory(
+            "alice@example.test",
+            0,
+            update(),
+            || {
+                assert_eq!(
+                    captured
+                        .with_locked_revision("alice@example.test", 0, |_| Ok(()))
+                        .unwrap_err(),
+                    BindingError::Busy
+                );
+                Ok(inv.clone())
+            },
+            100,
+        )
+        .unwrap();
+    assert_eq!(saved.revision, 1);
+    assert_eq!(store.load("alice@example.test").unwrap().revision, 1);
+    fs::remove_dir_all(root).unwrap();
+}
+#[test]
 fn foreign_account_bad_address_and_receiver_count_do_not_create_plan() {
     let inv = inventory(&raw_inventory());
     let recipients = vec!["receiver@example.test".into()];

@@ -12,7 +12,9 @@ fn requirement(value: &str) -> Result<Requirement, Error> {
         _ => Err(Error::Invalid),
     }
 }
-fn action<'a>(form: &'a BTreeMap<String, String>) -> Result<(Action<'a>, u64), Error> {
+fn action<'a>(
+    form: &'a BTreeMap<String, String>,
+) -> Result<(Action<'a>, u64, Option<&'a str>), Error> {
     let value = |key: &str| form.get(key).map(String::as_str).unwrap_or("");
     let name = value("key_action");
     let specific: &[&str] = match name {
@@ -25,8 +27,12 @@ fn action<'a>(form: &'a BTreeMap<String, String>) -> Result<(Action<'a>, u64), E
         "set_recipient" => &["address", "primary_fingerprint", "encryption"],
         "remove_recipient" => &["address"],
         "set_policy" => &["signing", "encryption"],
-        "import_public" => &["certificate", "expected_primary_fingerprint"],
-        "remove_public" => &["primary_fingerprint"],
+        "import_public" => &[
+            "certificate",
+            "expected_primary_fingerprint",
+            "public_inventory_revision",
+        ],
+        "remove_public" => &["primary_fingerprint", "public_inventory_revision"],
         _ => return Err(Error::Invalid),
     };
     if form.keys().any(|k| {
@@ -48,6 +54,19 @@ fn action<'a>(form: &'a BTreeMap<String, String>) -> Result<(Action<'a>, u64), E
         .ok()
         .filter(|n| n.to_string() == raw)
         .ok_or(Error::Invalid)?;
+    let public_revision = if matches!(name, "import_public" | "remove_public") {
+        let value = value("public_inventory_revision");
+        if value.len() != 64
+            || !value
+                .bytes()
+                .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+        {
+            return Err(Error::Invalid);
+        }
+        Some(value)
+    } else {
+        None
+    };
     let action = match name {
         "set_account" => Action::SetAccount {
             primary_fingerprint: value("primary_fingerprint"),
@@ -78,7 +97,7 @@ fn action<'a>(form: &'a BTreeMap<String, String>) -> Result<(Action<'a>, u64), E
         },
         _ => return Err(Error::Invalid),
     };
-    Ok((action, revision))
+    Ok((action, revision, public_revision))
 }
 impl<G: BrowserGateway> BrowserApp<G> {
     pub(super) fn handle_key_management_page(
@@ -172,13 +191,14 @@ impl<G: BrowserGateway> BrowserApp<G> {
         }
         let result = match action(form) {
             Err(e) => Err(e),
-            Ok((action, expected_revision)) => {
+            Ok((action, expected_revision, expected_public_revision)) => {
                 let outcome = self.gateway.change_keys(
                     context,
                     &session,
                     MutationRequest {
                         action,
                         expected_revision,
+                        expected_public_revision,
                         password: form
                             .get("current_password")
                             .map(String::as_str)
@@ -253,5 +273,19 @@ mod tests {
         assert!(action(&f).is_ok());
         f.insert("encryption".into(), "on".into());
         assert!(action(&f).is_err());
+    }
+    #[test]
+    fn public_mutation_requires_canonical_page_load_inventory_revision() {
+        for name in ["import_public", "remove_public"] {
+            let mut f = form(name);
+            assert_eq!(action(&f).err(), Some(Error::Invalid));
+            f.insert("public_inventory_revision".into(), "A".repeat(64));
+            assert_eq!(action(&f).err(), Some(Error::Invalid));
+            f.insert("public_inventory_revision".into(), "a".repeat(64));
+            assert!(action(&f).is_ok());
+        }
+        let mut f = form("clear_account");
+        f.insert("public_inventory_revision".into(), "a".repeat(64));
+        assert_eq!(action(&f).err(), Some(Error::Invalid));
     }
 }

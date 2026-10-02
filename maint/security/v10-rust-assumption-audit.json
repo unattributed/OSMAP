@@ -886,7 +886,7 @@
       "fail_closed_relevance": "high",
       "file": "src/bootstrap.rs",
       "kind": "expect_call",
-      "line": 326
+      "line": 327
     },
     {
       "classification": "production_adjacent_assumption",
@@ -1382,7 +1382,7 @@
       "fail_closed_relevance": "high",
       "file": "src/config.rs",
       "kind": "expect_call",
-      "line": 1073
+      "line": 1103
     },
     {
       "classification": "production_adjacent_assumption",
@@ -1390,7 +1390,7 @@
       "fail_closed_relevance": "high",
       "file": "src/config.rs",
       "kind": "expect_call",
-      "line": 1290
+      "line": 1320
     },
     {
       "classification": "production_adjacent_assumption",
@@ -1398,7 +1398,7 @@
       "fail_closed_relevance": "high",
       "file": "src/config.rs",
       "kind": "expect_call",
-      "line": 1794
+      "line": 1824
     },
     {
       "classification": "production_adjacent_assumption",
@@ -1406,7 +1406,7 @@
       "fail_closed_relevance": "high",
       "file": "src/config.rs",
       "kind": "expect_call",
-      "line": 1928
+      "line": 1958
     },
     {
       "classification": "production_adjacent_assumption",
@@ -1414,7 +1414,7 @@
       "fail_closed_relevance": "high",
       "file": "src/config.rs",
       "kind": "expect_call",
-      "line": 1999
+      "line": 2029
     },
     {
       "classification": "production_adjacent_assumption",
@@ -1422,7 +1422,7 @@
       "fail_closed_relevance": "high",
       "file": "src/config.rs",
       "kind": "unwrap_call",
-      "line": 2036
+      "line": 2066
     },
     {
       "classification": "production_adjacent_assumption",
@@ -1430,7 +1430,7 @@
       "fail_closed_relevance": "high",
       "file": "src/config.rs",
       "kind": "unwrap_call",
-      "line": 2052
+      "line": 2082
     },
     {
       "classification": "production_adjacent_assumption",
@@ -1438,7 +1438,31 @@
       "fail_closed_relevance": "high",
       "file": "src/config.rs",
       "kind": "unwrap_call",
-      "line": 2054
+      "line": 2084
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/config.rs",
+      "kind": "unwrap_call",
+      "line": 2111
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/config.rs",
+      "kind": "unwrap_call",
+      "line": 2130
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/config.rs",
+      "kind": "unwrap_call",
+      "line": 2132
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3758,7 +3782,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 2207
+      "line": 2208
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3766,7 +3790,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 2211
+      "line": 2212
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3774,7 +3798,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 2241
+      "line": 2242
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3782,7 +3806,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 2247
+      "line": 2248
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3790,7 +3814,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 2312
+      "line": 2313
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3798,7 +3822,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 2347
+      "line": 2348
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3806,7 +3830,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 2468
+      "line": 2469
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3814,7 +3838,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 2959
+      "line": 2960
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3822,7 +3846,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 3188
+      "line": 3189
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3830,7 +3854,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 3235
+      "line": 3236
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3838,7 +3862,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 3382
+      "line": 3383
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3846,7 +3870,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 3447
+      "line": 3448
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3854,7 +3878,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 3500
+      "line": 3501
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3862,7 +3886,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 3684
+      "line": 3685
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3870,7 +3894,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 3721
+      "line": 3722
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3878,7 +3902,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 3885
+      "line": 3886
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3886,7 +3910,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 3895
+      "line": 3896
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3894,7 +3918,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 3897
+      "line": 3898
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3902,7 +3926,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 3933
+      "line": 3934
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3910,7 +3934,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 3958
+      "line": 3959
     },
     {
       "classification": "panic_path_assumption",
@@ -3918,7 +3942,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "panic_macro",
-      "line": 3975
+      "line": 3976
     },
     {
       "classification": "panic_path_assumption",
@@ -3926,7 +3950,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "panic_macro",
-      "line": 3978
+      "line": 3979
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3934,7 +3958,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 3992
+      "line": 3993
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3942,7 +3966,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 4043
+      "line": 4044
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3950,7 +3974,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 4063
+      "line": 4064
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3958,7 +3982,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 4081
+      "line": 4082
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3966,7 +3990,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 4102
+      "line": 4103
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3974,7 +3998,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 4328
+      "line": 4329
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3982,7 +4006,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 4339
+      "line": 4340
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3990,7 +4014,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 4411
+      "line": 4412
     },
     {
       "classification": "production_adjacent_assumption",
@@ -3998,7 +4022,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 4413
+      "line": 4414
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4006,7 +4030,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 4431
+      "line": 4432
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4014,7 +4038,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 4446
+      "line": 4447
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4022,7 +4046,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 4471
+      "line": 4472
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4030,7 +4054,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 4489
+      "line": 4490
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4038,7 +4062,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 4519
+      "line": 4520
     },
     {
       "classification": "panic_path_assumption",
@@ -4046,7 +4070,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "panic_macro",
-      "line": 4540
+      "line": 4541
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4054,7 +4078,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 4557
+      "line": 4558
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4062,7 +4086,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 4575
+      "line": 4576
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4070,7 +4094,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 4609
+      "line": 4610
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4078,7 +4102,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 4611
+      "line": 4612
     },
     {
       "classification": "panic_path_assumption",
@@ -4086,7 +4110,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "panic_macro",
-      "line": 4621
+      "line": 4622
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4094,7 +4118,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 5002
+      "line": 5003
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4102,7 +4126,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 5057
+      "line": 5058
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4110,7 +4134,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 5106
+      "line": 5107
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4118,7 +4142,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 5155
+      "line": 5156
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4126,7 +4150,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 5204
+      "line": 5205
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4134,7 +4158,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 5253
+      "line": 5254
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4142,7 +4166,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 5301
+      "line": 5302
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4150,7 +4174,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 5350
+      "line": 5351
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4158,7 +4182,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 5404
+      "line": 5405
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4166,7 +4190,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 5457
+      "line": 5458
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4174,7 +4198,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 5708
+      "line": 5709
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4182,7 +4206,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 5711
+      "line": 5712
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4190,23 +4214,23 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 5778
-    },
-    {
-      "classification": "panic_path_assumption",
-      "disposition": "requires_path_review_before_broader_release_claims",
-      "fail_closed_relevance": "high",
-      "file": "src/http.rs",
-      "kind": "panic_macro",
       "line": 5779
     },
     {
+      "classification": "panic_path_assumption",
+      "disposition": "requires_path_review_before_broader_release_claims",
+      "fail_closed_relevance": "high",
+      "file": "src/http.rs",
+      "kind": "panic_macro",
+      "line": 5780
+    },
+    {
       "classification": "production_adjacent_assumption",
       "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "unwrap_call",
-      "line": 6270
+      "line": 6271
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4214,7 +4238,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 7806
+      "line": 7807
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4222,7 +4246,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8011
+      "line": 8012
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4230,7 +4254,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8025
+      "line": 8026
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4238,15 +4262,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8036
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/http.rs",
-      "kind": "expect_call",
-      "line": 8044
+      "line": 8037
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4262,7 +4278,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8047
+      "line": 8046
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4270,7 +4286,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8051
+      "line": 8048
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4278,7 +4294,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8055
+      "line": 8052
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4294,7 +4310,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8062
+      "line": 8057
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4310,7 +4326,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8065
+      "line": 8064
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4318,7 +4334,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8075
+      "line": 8066
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4326,7 +4342,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8078
+      "line": 8076
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4334,7 +4350,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8081
+      "line": 8079
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4342,7 +4358,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8083
+      "line": 8082
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4350,7 +4366,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8105
+      "line": 8084
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4358,7 +4374,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8131
+      "line": 8106
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4366,7 +4382,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8140
+      "line": 8132
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4382,7 +4398,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8143
+      "line": 8142
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4390,7 +4406,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8153
+      "line": 8144
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4398,7 +4414,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8156
+      "line": 8154
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4406,7 +4422,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8159
+      "line": 8157
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4414,7 +4430,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8161
+      "line": 8160
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4422,7 +4438,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8176
+      "line": 8162
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4430,7 +4446,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8184
+      "line": 8177
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4446,7 +4462,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8187
+      "line": 8186
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4454,7 +4470,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8193
+      "line": 8188
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4462,7 +4478,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8196
+      "line": 8194
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4470,7 +4486,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8200
+      "line": 8197
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4478,7 +4494,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8202
+      "line": 8201
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4486,7 +4502,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8208
+      "line": 8203
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4502,7 +4518,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8211
+      "line": 8210
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4510,7 +4526,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8217
+      "line": 8212
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4518,7 +4534,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8220
+      "line": 8218
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4526,7 +4542,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8223
+      "line": 8221
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4534,7 +4550,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8227
+      "line": 8224
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4542,7 +4558,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8229
+      "line": 8228
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4550,7 +4566,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8409
+      "line": 8230
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4582,7 +4598,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8465
+      "line": 8413
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4609,12 +4625,20 @@
       "line": 8468
     },
     {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/http.rs",
+      "kind": "expect_call",
+      "line": 8469
+    },
+    {
       "classification": "panic_path_assumption",
       "disposition": "requires_path_review_before_broader_release_claims",
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "panic_macro",
-      "line": 8480
+      "line": 8481
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4622,7 +4646,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8482
+      "line": 8483
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4630,7 +4654,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8558
+      "line": 8559
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4638,7 +4662,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8567
+      "line": 8568
     },
     {
       "classification": "production_adjacent_assumption",
@@ -4646,7 +4670,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http.rs",
       "kind": "expect_call",
-      "line": 8592
+      "line": 8593
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -10638,7 +10662,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_gateway.rs",
       "kind": "unwrap_call",
-      "line": 1001
+      "line": 1011
     },
     {
       "classification": "production_adjacent_assumption",
@@ -10646,7 +10670,7 @@
       "fail_closed_relevance": "high",
       "file": "src/http_gateway.rs",
       "kind": "unwrap_call",
-      "line": 1011
+      "line": 1021
     },
     {
       "classification": "production_adjacent_assumption",
@@ -11382,7 +11406,7 @@
       "fail_closed_relevance": "high",
       "file": "src/key_inventory_ui.rs",
       "kind": "unwrap_call",
-      "line": 474
+      "line": 513
     },
     {
       "classification": "production_adjacent_assumption",
@@ -11390,7 +11414,15 @@
       "fail_closed_relevance": "high",
       "file": "src/key_inventory_ui.rs",
       "kind": "unwrap_call",
-      "line": 481
+      "line": 520
+    },
+    {
+      "classification": "control_flow_invariant",
+      "disposition": "review_for_explicit_error_path_if_user_reachable",
+      "fail_closed_relevance": "medium",
+      "file": "src/key_management.rs",
+      "kind": "unreachable_macro",
+      "line": 289
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -11446,7 +11478,7 @@
       "fail_closed_relevance": "low",
       "file": "src/key_management_tests.rs",
       "kind": "unwrap_call",
-      "line": 210
+      "line": 218
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -11454,7 +11486,7 @@
       "fail_closed_relevance": "low",
       "file": "src/key_management_tests.rs",
       "kind": "unwrap_call",
-      "line": 212
+      "line": 220
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -11462,7 +11494,7 @@
       "fail_closed_relevance": "low",
       "file": "src/key_management_tests.rs",
       "kind": "unwrap_call",
-      "line": 306
+      "line": 314
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -11470,7 +11502,7 @@
       "fail_closed_relevance": "low",
       "file": "src/key_management_tests.rs",
       "kind": "unwrap_call",
-      "line": 332
+      "line": 340
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -11478,7 +11510,7 @@
       "fail_closed_relevance": "low",
       "file": "src/key_management_tests.rs",
       "kind": "unwrap_call",
-      "line": 401
+      "line": 409
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -11486,7 +11518,7 @@
       "fail_closed_relevance": "low",
       "file": "src/key_management_tests.rs",
       "kind": "unwrap_call",
-      "line": 423
+      "line": 455
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -11494,7 +11526,7 @@
       "fail_closed_relevance": "low",
       "file": "src/key_management_tests.rs",
       "kind": "unwrap_call",
-      "line": 424
+      "line": 457
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -11502,7 +11534,7 @@
       "fail_closed_relevance": "low",
       "file": "src/key_management_tests.rs",
       "kind": "unwrap_call",
-      "line": 427
+      "line": 522
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -11510,7 +11542,7 @@
       "fail_closed_relevance": "low",
       "file": "src/key_management_tests.rs",
       "kind": "unwrap_call",
-      "line": 428
+      "line": 536
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -11518,7 +11550,31 @@
       "fail_closed_relevance": "low",
       "file": "src/key_management_tests.rs",
       "kind": "unwrap_call",
-      "line": 563
+      "line": 537
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/key_management_tests.rs",
+      "kind": "unwrap_call",
+      "line": 540
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/key_management_tests.rs",
+      "kind": "unwrap_call",
+      "line": 541
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/key_management_tests.rs",
+      "kind": "unwrap_call",
+      "line": 676
     },
     {
       "classification": "production_adjacent_assumption",
@@ -12942,7 +12998,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 1273
+      "line": 1274
     },
     {
       "classification": "production_adjacent_assumption",
@@ -12950,7 +13006,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 1300
+      "line": 1301
     },
     {
       "classification": "production_adjacent_assumption",
@@ -12958,15 +13014,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 1303
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/mailbox_helper.rs",
-      "kind": "expect_call",
-      "line": 1307
+      "line": 1304
     },
     {
       "classification": "production_adjacent_assumption",
@@ -12982,7 +13030,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 1318
+      "line": 1309
     },
     {
       "classification": "production_adjacent_assumption",
@@ -12990,7 +13038,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 1321
+      "line": 1319
     },
     {
       "classification": "production_adjacent_assumption",
@@ -12998,7 +13046,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 1323
+      "line": 1322
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13006,7 +13054,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 1325
+      "line": 1324
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13014,7 +13062,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 1353
+      "line": 1326
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13022,7 +13070,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 1388
+      "line": 1355
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13030,7 +13078,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 1389
+      "line": 1390
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13038,7 +13086,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 1412
+      "line": 1391
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13046,7 +13094,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 1431
+      "line": 1414
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13054,7 +13102,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 1473
+      "line": 1433
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13062,7 +13110,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 1503
+      "line": 1475
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13070,7 +13118,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 1553
+      "line": 1505
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13078,7 +13126,15 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 1578
+      "line": 1555
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/mailbox_helper.rs",
+      "kind": "expect_call",
+      "line": 1580
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13086,7 +13142,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "unwrap_call",
-      "line": 1593
+      "line": 1595
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13094,15 +13150,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 1603
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/mailbox_helper.rs",
-      "kind": "expect_call",
-      "line": 1640
+      "line": 1605
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13118,7 +13166,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 1688
+      "line": 1644
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13126,7 +13174,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 1714
+      "line": 1690
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13134,7 +13182,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 1772
+      "line": 1716
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13142,7 +13190,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 1776
+      "line": 1774
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13158,7 +13206,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 1831
+      "line": 1780
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13166,7 +13214,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 1835
+      "line": 1833
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13182,7 +13230,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 1860
+      "line": 1839
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13190,7 +13238,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 1868
+      "line": 1862
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13198,7 +13246,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 1909
+      "line": 1870
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13206,7 +13254,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 1913
+      "line": 1911
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13222,7 +13270,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 1954
+      "line": 1917
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13230,7 +13278,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 1958
+      "line": 1956
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13246,7 +13294,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 1988
+      "line": 1962
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13254,7 +13302,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 1996
+      "line": 1990
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13262,7 +13310,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 2052
+      "line": 1998
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13278,15 +13326,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 2092
-    },
-    {
-      "classification": "production_adjacent_assumption",
-      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
-      "fail_closed_relevance": "high",
-      "file": "src/mailbox_helper.rs",
-      "kind": "unwrap_call",
-      "line": 2129
+      "line": 2056
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13294,6 +13334,14 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
+      "line": 2094
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/mailbox_helper.rs",
+      "kind": "unwrap_call",
       "line": 2131
     },
     {
@@ -13302,7 +13350,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 2135
+      "line": 2133
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13318,7 +13366,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 2167
+      "line": 2139
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13326,7 +13374,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 2171
+      "line": 2169
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13342,7 +13390,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 2213
+      "line": 2175
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13358,7 +13406,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 2243
+      "line": 2217
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13366,7 +13414,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 2244
+      "line": 2245
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13374,7 +13422,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 2248
+      "line": 2246
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13382,7 +13430,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 2268
+      "line": 2250
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13390,7 +13438,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 2277
+      "line": 2270
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13406,7 +13454,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 2290
+      "line": 2281
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13414,7 +13462,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "expect_call",
-      "line": 2293
+      "line": 2292
     },
     {
       "classification": "production_adjacent_assumption",
@@ -13433,12 +13481,12 @@
       "line": 2297
     },
     {
-      "classification": "panic_path_assumption",
-      "disposition": "requires_path_review_before_broader_release_claims",
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
-      "kind": "panic_macro",
-      "line": 2312
+      "kind": "expect_call",
+      "line": 2299
     },
     {
       "classification": "panic_path_assumption",
@@ -13446,7 +13494,7 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "panic_macro",
-      "line": 2316
+      "line": 2314
     },
     {
       "classification": "panic_path_assumption",
@@ -13454,7 +13502,15 @@
       "fail_closed_relevance": "high",
       "file": "src/mailbox_helper.rs",
       "kind": "panic_macro",
-      "line": 2333
+      "line": 2318
+    },
+    {
+      "classification": "panic_path_assumption",
+      "disposition": "requires_path_review_before_broader_release_claims",
+      "fail_closed_relevance": "high",
+      "file": "src/mailbox_helper.rs",
+      "kind": "panic_macro",
+      "line": 2335
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -15926,7 +15982,23 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 856
+      "line": 860
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openbsd.rs",
+      "kind": "unwrap_call",
+      "line": 1045
+    },
+    {
+      "classification": "production_adjacent_assumption",
+      "disposition": "convert_to_explicit_error_or_fail_closed_response_in_later_slice",
+      "fail_closed_relevance": "high",
+      "file": "src/openbsd.rs",
+      "kind": "unwrap_call",
+      "line": 1048
     },
     {
       "classification": "production_adjacent_assumption",
@@ -15934,7 +16006,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 1144
+      "line": 1173
     },
     {
       "classification": "production_adjacent_assumption",
@@ -15942,7 +16014,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 1147
+      "line": 1176
     },
     {
       "classification": "production_adjacent_assumption",
@@ -15950,7 +16022,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 1148
+      "line": 1177
     },
     {
       "classification": "production_adjacent_assumption",
@@ -15958,7 +16030,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 1149
+      "line": 1178
     },
     {
       "classification": "production_adjacent_assumption",
@@ -15966,7 +16038,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 1150
+      "line": 1179
     },
     {
       "classification": "production_adjacent_assumption",
@@ -15974,7 +16046,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 1153
+      "line": 1182
     },
     {
       "classification": "production_adjacent_assumption",
@@ -15982,7 +16054,7 @@
       "fail_closed_relevance": "high",
       "file": "src/openbsd.rs",
       "kind": "expect_call",
-      "line": 1163
+      "line": 1192
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -16319,6 +16391,30 @@
       "file": "src/openpgp_bindings_tests.rs",
       "kind": "unwrap_call",
       "line": 595
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_bindings_tests.rs",
+      "kind": "unwrap_call",
+      "line": 619
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_bindings_tests.rs",
+      "kind": "unwrap_call",
+      "line": 621
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_bindings_tests.rs",
+      "kind": "unwrap_call",
+      "line": 622
     },
     {
       "classification": "production_adjacent_assumption",
@@ -17943,6 +18039,1134 @@
       "file": "src/openpgp_inventory_runtime_tests.rs",
       "kind": "unwrap_call",
       "line": 297
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_protocol_tests.rs",
+      "kind": "unwrap_call",
+      "line": 18
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_protocol_tests.rs",
+      "kind": "unwrap_call",
+      "line": 22
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_protocol_tests.rs",
+      "kind": "unwrap_call",
+      "line": 31
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_protocol_tests.rs",
+      "kind": "unwrap_call",
+      "line": 32
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_protocol_tests.rs",
+      "kind": "unwrap_call",
+      "line": 36
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_protocol_tests.rs",
+      "kind": "unwrap_call",
+      "line": 39
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_protocol_tests.rs",
+      "kind": "unwrap_call",
+      "line": 40
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_protocol_tests.rs",
+      "kind": "unwrap_call",
+      "line": 48
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_protocol_tests.rs",
+      "kind": "unwrap_call",
+      "line": 52
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_protocol_tests.rs",
+      "kind": "unwrap_call",
+      "line": 76
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_protocol_tests.rs",
+      "kind": "unwrap_call",
+      "line": 83
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_protocol_tests.rs",
+      "kind": "unwrap_call",
+      "line": 89
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_protocol_tests.rs",
+      "kind": "unwrap_call",
+      "line": 97
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_protocol_tests.rs",
+      "kind": "unwrap_call",
+      "line": 99
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_protocol_tests.rs",
+      "kind": "unwrap_call",
+      "line": 103
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_protocol_tests.rs",
+      "kind": "unwrap_call",
+      "line": 105
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_protocol_tests.rs",
+      "kind": "unwrap_call",
+      "line": 113
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_protocol_tests.rs",
+      "kind": "unwrap_call",
+      "line": 120
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_protocol_tests.rs",
+      "kind": "unwrap_call",
+      "line": 125
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_protocol_tests.rs",
+      "kind": "unwrap_call",
+      "line": 128
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_protocol_tests.rs",
+      "kind": "unwrap_call",
+      "line": 133
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_protocol_tests.rs",
+      "kind": "unwrap_call",
+      "line": 137
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_protocol_tests.rs",
+      "kind": "unwrap_call",
+      "line": 140
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_protocol_tests.rs",
+      "kind": "unwrap_call",
+      "line": 145
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_protocol_tests.rs",
+      "kind": "unwrap_call",
+      "line": 166
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_protocol_tests.rs",
+      "kind": "unwrap_call",
+      "line": 167
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_protocol_tests.rs",
+      "kind": "unwrap_call",
+      "line": 168
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 16
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 21
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 25
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 28
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 29
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 41
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 53
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 63
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 66
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 67
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 72
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 77
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 82
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 100
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 111
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 113
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 119
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 121
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 122
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 126
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "panic_macro",
+      "line": 126
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 135
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "panic_macro",
+      "line": 136
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 138
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 141
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 142
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 149
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 151
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "panic_macro",
+      "line": 152
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 154
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 157
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 158
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 167
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 168
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 169
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "panic_macro",
+      "line": 171
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 175
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 177
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "panic_macro",
+      "line": 177
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 183
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 185
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "panic_macro",
+      "line": 186
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 188
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 191
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 192
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 217
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 219
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 225
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 233
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 240
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 242
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 245
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 257
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 258
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 262
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 263
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 275
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 277
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 281
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 291
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 292
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 294
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 295
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 300
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 302
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 303
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 304
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 307
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 318
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 337
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 345
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 347
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "expect_call",
+      "line": 357
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 361
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 362
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 368
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 370
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 372
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 373
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 374
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 376
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 379
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 380
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 383
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 384
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 392
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 394
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 401
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 404
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 405
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 406
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 408
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 411
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 412
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 414
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 415
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 416
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 426
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 427
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 436
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 437
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 438
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 440
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 445
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 447
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 448
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 455
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 461
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 469
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 474
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 475
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 485
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 486
+    },
+    {
+      "classification": "test_or_fixture_assumption",
+      "disposition": "accepted_test_or_fixture_assumption",
+      "fail_closed_relevance": "low",
+      "file": "src/openpgp_public_admin_runtime_tests.rs",
+      "kind": "unwrap_call",
+      "line": 487
     },
     {
       "classification": "test_or_fixture_assumption",
@@ -25265,7 +26489,7 @@
       "line": 521
     }
   ],
-  "generated_at_utc": "2026-10-01T16:01:51Z",
+  "generated_at_utc": "2026-10-02T01:16:37Z",
   "non_claims": [
     "This audit does not claim that all Rust assumptions are safe.",
     "This audit does not claim that production request paths are panic-free.",
@@ -25303,29 +26527,29 @@
   "slice": "V10 Slice 4",
   "summary": {
     "by_classification": {
-      "control_flow_invariant": 3,
+      "control_flow_invariant": 4,
       "panic_path_assumption": 68,
-      "production_adjacent_assumption": 1567,
+      "production_adjacent_assumption": 1572,
       "startup_or_global_invariant": 8,
-      "test_or_fixture_assumption": 1512
+      "test_or_fixture_assumption": 1659
     },
     "by_fail_closed_relevance": {
-      "high": 1635,
-      "low": 1512,
-      "medium": 11
+      "high": 1640,
+      "low": 1659,
+      "medium": 12
     },
     "by_kind": {
-      "expect_call": 894,
-      "panic_macro": 134,
-      "unreachable_macro": 8,
-      "unwrap_call": 2122
+      "expect_call": 895,
+      "panic_macro": 140,
+      "unreachable_macro": 9,
+      "unwrap_call": 2267
     },
     "classification_complete": true,
-    "inventory_sha256": "26d78b33a8626c4dccf1ece82e704f3a685010bb751289162ac0fa56ce971ab2",
+    "inventory_sha256": "cf81d7b66d6560854030dbf89ef011a72907ceecefd61146d4c3383ce92aa8ee",
     "live_host_state_changed": false,
     "product_behavior_changed": false,
     "production_state_changed": false,
     "slice0_carried_forward_rust_assumption_count": 712,
-    "total_count": 3158
+    "total_count": 3311
   }
 }

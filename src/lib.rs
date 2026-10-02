@@ -85,6 +85,10 @@ pub mod openpgp_inventory_protocol;
 pub mod openpgp_inventory_runtime;
 #[cfg(unix)]
 pub mod openpgp_public_admin;
+#[cfg(unix)]
+pub mod openpgp_public_admin_protocol;
+#[cfg(unix)]
+pub mod openpgp_public_admin_runtime;
 pub mod pgp_mime;
 pub mod protected_message;
 

@@ -34,6 +34,7 @@ pub const DEFAULT_AUTH_BACKEND_TIMEOUT_SECONDS: u64 = 20;
 pub struct AppConfig {
     pub openpgp_inventory: Option<OpenPgpInventoryConfig>,
     pub openpgp_crypto: Option<OpenPgpCryptoConfig>,
+    pub openpgp_public_admin: Option<OpenPgpAdminConfig>,
     pub run_mode: AppRunMode,
     pub environment: RuntimeEnvironment,
     pub listen_addr: String,
@@ -270,6 +271,7 @@ fn parse_openpgp_inventory(
 /// Crypto and public inventory share the same bounded local client settings.
 /// Account homes, fingerprints and key custody stay in helper configuration.
 pub type OpenPgpCryptoConfig = OpenPgpInventoryConfig;
+pub type OpenPgpAdminConfig = OpenPgpInventoryConfig;
 fn parse_openpgp_crypto(
     env: &BTreeMap<String, String>,
 ) -> Result<Option<OpenPgpCryptoConfig>, BootstrapError> {
@@ -288,6 +290,33 @@ fn parse_openpgp_crypto(
             if !uid.is_empty() && uid.len() <= 10 && uid.bytes().all(|b| b.is_ascii_digit()) =>
         {
             Ok(Some(OpenPgpCryptoConfig {
+                socket,
+                key_file,
+                helper_uid: uid.parse().map_err(|_| error())?,
+            }))
+        }
+        _ => Err(error()),
+    }
+}
+fn parse_openpgp_public_admin(
+    env: &BTreeMap<String, String>,
+) -> Result<Option<OpenPgpAdminConfig>, BootstrapError> {
+    let socket = parse_optional_absolute_optional_path(env, "OSMAP_OPENPGP_PUBLIC_ADMIN_SOCKET")?;
+    let key_file =
+        parse_optional_absolute_optional_path(env, "OSMAP_OPENPGP_PUBLIC_ADMIN_KEY_FILE")?;
+    let uid = env.get("OSMAP_OPENPGP_PUBLIC_ADMIN_HELPER_UID");
+    let error = || {
+        BootstrapError::InvalidConfig {
+        field: "OSMAP_OPENPGP_PUBLIC_ADMIN_HELPER_UID",
+        reason: "public administration socket, key file and explicit decimal helper UID must be configured together".into(),
+    }
+    };
+    match (socket, key_file, uid) {
+        (None, None, None) => Ok(None),
+        (Some(socket), Some(key_file), Some(uid))
+            if !uid.is_empty() && uid.len() <= 10 && uid.bytes().all(|b| b.is_ascii_digit()) =>
+        {
+            Ok(Some(OpenPgpAdminConfig {
                 socket,
                 key_file,
                 helper_uid: uid.parse().map_err(|_| error())?,
@@ -736,6 +765,7 @@ impl AppConfig {
         Ok(Self {
             openpgp_inventory: parse_openpgp_inventory(env_map)?,
             openpgp_crypto: parse_openpgp_crypto(env_map)?,
+            openpgp_public_admin: parse_openpgp_public_admin(env_map)?,
             run_mode,
             environment,
             listen_addr,
@@ -2067,6 +2097,54 @@ mod inventory_config_tests {
             ("OSMAP_OPENPGP_INVENTORY_HELPER_UID", "-1"),
             ("OSMAP_OPENPGP_INVENTORY_HELPER_UID", "4294967296"),
             ("OSMAP_OPENPGP_INVENTORY_HELPER_UID", "+1"),
+        ] {
+            let mut bad = good.clone();
+            bad.insert(key.into(), value.into());
+            assert!(AppConfig::from_env_map(&bad).is_err());
+        }
+    }
+
+    #[test]
+    fn public_admin_config_requires_a_complete_local_helper_binding() {
+        let empty = BTreeMap::new();
+        assert!(AppConfig::from_env_map(&empty)
+            .unwrap()
+            .openpgp_public_admin
+            .is_none());
+        let good = BTreeMap::from([
+            (
+                "OSMAP_OPENPGP_PUBLIC_ADMIN_SOCKET".into(),
+                "/run/osmap/public-admin.sock".into(),
+            ),
+            (
+                "OSMAP_OPENPGP_PUBLIC_ADMIN_KEY_FILE".into(),
+                "/etc/osmap/public-admin.key".into(),
+            ),
+            (
+                "OSMAP_OPENPGP_PUBLIC_ADMIN_HELPER_UID".into(),
+                "1002".into(),
+            ),
+        ]);
+        assert_eq!(
+            AppConfig::from_env_map(&good)
+                .unwrap()
+                .openpgp_public_admin
+                .unwrap()
+                .helper_uid,
+            1002
+        );
+        for key in good.keys() {
+            let mut bad = good.clone();
+            bad.remove(key);
+            assert!(AppConfig::from_env_map(&bad).is_err());
+        }
+        for (key, value) in [
+            ("OSMAP_OPENPGP_PUBLIC_ADMIN_SOCKET", "relative"),
+            ("OSMAP_OPENPGP_PUBLIC_ADMIN_KEY_FILE", "relative"),
+            ("OSMAP_OPENPGP_PUBLIC_ADMIN_HELPER_UID", ""),
+            ("OSMAP_OPENPGP_PUBLIC_ADMIN_HELPER_UID", "-1"),
+            ("OSMAP_OPENPGP_PUBLIC_ADMIN_HELPER_UID", "4294967296"),
+            ("OSMAP_OPENPGP_PUBLIC_ADMIN_HELPER_UID", "+1"),
         ] {
             let mut bad = good.clone();
             bad.insert(key.into(), value.into());

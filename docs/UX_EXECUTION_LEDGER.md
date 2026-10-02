@@ -2800,3 +2800,56 @@ with later outcomes. Correct errors using a new entry referencing the old one.
 - No real key, live web service or provider mail changed. This supersedes the
   earlier source-snapshot evidence only for exact staged-source parity; it does
   not upgrade the controlled fixture into a live mailbox or browser exchange.
+
+### S05-02 authenticated public administration implementation — 2026-10-01 — VERIFIED bounded
+
+- PAGE21 now uses a separate authenticated public-admin helper for account
+  keybox snapshots, bounded public-certificate import and removal. The page
+  requires a distinct actual-keybox SHA-256 revision for public mutations;
+  session, CSRF, fresh mailbox password, replay-protected TOTP and binding
+  revision checks remain mandatory. Public import does not create trust or
+  private-key readiness. Import/removal of any bound fingerprint is refused.
+  Binding changes read native inventory while holding the same account lock,
+  so neither direction validates against a concurrently changed keybox.
+- The versioned helper protocol authenticates the exact operation, canonical
+  account, nonce, time window, full fingerprint, keybox revision and certificate
+  bytes. It authenticates the Unix peer before reading, persists mutation replay
+  state before dispatch, rejects wall-clock rollback and treats uncertain
+  mutation acknowledgement as unconfirmed without retry. Separate admin-only
+  worker/engine copies are specified in the additive obsd1 preparation script;
+  the existing inventory/crypto binaries are preserved.
+- Local acceptance passed on the exact candidate: 1,054 library tests passed,
+  zero failed, 19 ignored native/live cases; `make acceptance-check` includes
+  the developer `make security-check` and V10. `make v14-check`, strict
+  all-target Clippy, formatting and diff checks passed. The refreshed V10
+  assumption register has 3,311 entries and zero refined high-relevance
+  entries. Acceptance log SHA-256 is
+  `b23b2a79089599b959ca357dd99273ce904d12708c4ac4ee2fbbb92b2cd58573`.
+- On **obsd1.blackbagsecurity.com** at `192.168.1.44`, all 280 selected
+  qualified source files matched local hashes before build. The selected
+  ignored native Service/Client principal test passed with three disposable
+  helper/web/unauthorized identities, actual public import/removal and CAS,
+  private-primary and secret-input refusal, same-HMAC wrong-peer denial,
+  cross-account/DAC isolation and replay refusal after helper restart. All
+  disposable principals, agents, processes and scratch were removed; trustdb
+  and private-key files remained byte-identical. Qualified source manifest
+  SHA-256: `463e99fbafdcfaaef72b381c376cd9274f63bb571f1a9b19a6618315191238c2`;
+  native log SHA-256:
+  `3b1fd47745d748a317ef54d0169a91dfc465b3aaeacc306a231d44da09fc6456`;
+  qualification JSON SHA-256:
+  `5e256dad5b2f923ae9594155dda42843121912f2d816c5aeaae8390eef2b9425`.
+  This qualifies the admin runtime gate in source; it is not a live mailbox or
+  web-service deployment.
+- The approved PAGE21 layout was rechecked in the real synthetic browser at
+  light/dark, 360/768/1600 pixels and forced-colour states. Twelve screenshots,
+  expanded-key keyboard/fingerprint checks, zero external browser requests,
+  contrast and no-horizontal-overflow checks passed. The first card begins at
+  y=221.78 pixels with 362-pixel height at 1600 pixels, preserving its approved
+  geometry. Browser report SHA-256:
+  `2ce59e3df68db4e18e1afce73ecd0cd15a4d7c5bd64029b6fb60772c0f566011`.
+- Retained sanitized evidence and portable source archives are under
+  `/home/foo/Downloads/osmap-ux-s05/admin-20261001/`. The running obsd1 web
+  service, real account keys and mail flow were unchanged; the admin service
+  is not installed or enabled. Operator mailbox private-key provisioning,
+  actual browser/Dovecot/SMTP deployment, the Proton↔Duncan exchange and human
+  acceptance remain open. No strict release qualification is claimed.

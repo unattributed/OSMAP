@@ -255,7 +255,8 @@ impl PublicAdminStore {
             return Err(AdminError::Stale);
         }
         // Re-check the actual secret capability immediately before a removal
-        // commit. Trusted custody imports must use this same helper account lock.
+        // commit. Operator custody imports require all helpers/admin services stopped
+        // as specified in the deployment SOP; direct GPG does not hold this lock.
         if certificate.is_none() {
             self.worker_inventory(home, Some(("guard-removal", fingerprint)), &[], deadline)?;
         }

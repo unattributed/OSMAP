@@ -325,6 +325,24 @@ fn key_management_post_reaches_gateway_only_after_session_csrf_and_strict_fields
     assert_eq!(valid.response.status_code, 503);
     assert_eq!(calls.load(Ordering::SeqCst), 1);
     assert!(!body_text(&valid).contains("fixture-password"));
+    let import = body.replace("key_action=clear_account", "key_action=import_public");
+    let missing_revision = app.handle_request(
+        &request("POST", "/settings/keys/change", &headers, &import),
+        "127.0.0.1",
+    );
+    assert_eq!(missing_revision.response.status_code, 400);
+    assert_eq!(calls.load(Ordering::SeqCst), 1);
+    let import = format!(
+        "{import}&public_inventory_revision={}&expected_primary_fingerprint={}&certificate=fixture",
+        "a".repeat(64),
+        "A".repeat(40)
+    );
+    let accepted_form = app.handle_request(
+        &request("POST", "/settings/keys/change", &headers, &import),
+        "127.0.0.1",
+    );
+    assert_eq!(accepted_form.response.status_code, 503);
+    assert_eq!(calls.load(Ordering::SeqCst), 2);
 }
 
 #[test]

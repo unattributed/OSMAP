@@ -272,11 +272,35 @@ impl BindingStore {
         inventory: &Inventory,
         now: u64,
     ) -> Result<BindingRecord, BindingError> {
+        self.replace_operator_with_inventory(
+            account,
+            expected_revision,
+            update,
+            || Ok(inventory.clone()),
+            now,
+        )
+    }
+    /// Hold the account binding lock while obtaining the live public snapshot
+    /// and validating the replacement. Public-admin mutations take this same
+    /// lock before their native helper RPC, so neither direction can validate
+    /// against keybox bytes that changed before the binding write.
+    pub(crate) fn replace_operator_with_inventory(
+        &self,
+        account: &str,
+        expected_revision: u64,
+        update: Update,
+        inventory: impl FnOnce() -> Result<Inventory, BindingError>,
+        now: u64,
+    ) -> Result<BindingRecord, BindingError> {
         CanonicalUsername::parse(account).map_err(|_| BindingError::Invalid)?;
         let locked = self.file.lock(account)?;
         let old = decode(account, locked.read()?)?;
         if old.revision != expected_revision {
             return Err(BindingError::Stale);
+        }
+        let inventory = inventory()?;
+        if inventory.keys().is_none() {
+            return Err(BindingError::Unavailable);
         }
         let mut record = BindingRecord {
             version: 1,
@@ -294,19 +318,19 @@ impl BindingStore {
             return Err(BindingError::Invalid);
         }
         if let Some(binding) = &record.account_binding {
-            let key = primary(inventory, &binding.primary_fingerprint)
+            let key = primary(&inventory, &binding.primary_fingerprint)
                 .map_err(|_| BindingError::InvalidKey)?;
             material(&key.primary, now).map_err(|_| BindingError::InvalidKey)?;
             if let Some(signing) = &binding.signing_fingerprint {
-                signer(inventory, &binding.primary_fingerprint, signing, now)
+                signer(&inventory, &binding.primary_fingerprint, signing, now)
                     .map_err(|_| BindingError::InvalidKey)?;
             }
             for fingerprint in &binding.decrypt_primary_fingerprints {
-                encryption(inventory, fingerprint, now).map_err(|_| BindingError::InvalidKey)?;
+                encryption(&inventory, fingerprint, now).map_err(|_| BindingError::InvalidKey)?;
             }
         }
         for binding in &record.recipient_bindings {
-            encryption(inventory, &binding.primary_fingerprint, now)
+            encryption(&inventory, &binding.primary_fingerprint, now)
                 .map_err(|_| BindingError::InvalidKey)?;
         }
         // Persist in a stable order independent of arbitrary form order.
