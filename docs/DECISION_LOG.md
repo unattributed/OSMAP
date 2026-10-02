@@ -7511,3 +7511,20 @@ remains a separate open check. Native binary activation and real HTTP
 SMTP/authoritative-Sent outcomes follow the signed engineering delivery. Neither
 fixture success nor an accepted SMTP submission establishes Proton receipt,
 signature verification, decrypted Sent readability or human acceptance.
+
+### Deliver the verified interaction repair with explicit operator cases — 2026-10-02
+
+Signed and synchronized source `360df3216510a520a78962867fad64c5e17a8838` is now
+active on obsd1 with native source/binary identity verified. Independent deployed
+checks exercised open key forms, persisted protected draft selections, one real
+ordinary submission, authoritative Sent storage and the concise success receipt.
+The temporary post-authentication probe did not test real login or fresh key
+mutation authentication. Keep those limits in the delivered UAT record.
+
+The repair can be handed to the operator for the defined ordinary-send and
+key/protection interaction cases. It cannot close the full sprint or claim a
+Proton encrypted round trip. Fresh-authenticated public-key import/bind/remove,
+actual recipient receipt, signature verification and inbound/encrypted-Sent
+reading require observed outcomes. Retain the existing lock-test scheduling
+failure alongside its focused and full bounded-concurrency passes; do not alter
+production locks or bypass delivery hooks to conceal it.

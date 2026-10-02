@@ -3340,3 +3340,51 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   native activation, independent deployed mail/backend checks and operator UAT
   remain PENDING. Full sprint acceptance and Proton round-trip qualification are
   not recommended or claimed.
+
+### Interaction repair deployed and independently exercised — 2026-10-02 — scoped UAT AVAILABLE
+
+- Engineering delivery is `360df3216510a520a78962867fad64c5e17a8838`, verified
+  with the Shopkeeper signature and promptly pushed to
+  `origin/feat/ux-completion-20260929`. A subsequent fetch proved local/remote SHA
+  equality and a clean checkout. All 254 source-manifest entries and ten changed
+  production files match the tested native candidate.
+- Native obsd1 focused key-management checks passed: 12 tests, zero failures.
+  The installed web binary is
+  `7cca63aefbad709f093d01e84112571e30f5bf550654ce38a87a077dcdc5c49c`;
+  the sole running web process maps to that binary. HTTPS login returned 200
+  through both the direct LAN address and normal DNS route with certificate
+  verification. Web-only activation preserved the previous binary for rollback;
+  helper binaries, backend environment and authoritative mailbox routing were
+  unchanged.
+- Independent native post-authentication integration passed all four account,
+  policy, import and recipient panel routes (200, open and enabled forms).
+  An actual draft save returned 303; reopen returned 200 and preserved recipient,
+  subject, body and all three sign/encrypt/self choices. Its disposable draft was
+  deleted with a confirmed 303. These checks used a temporary 120-second session
+  that bypassed password/TOTP and was removed; they do not qualify real login or
+  fresh-authenticated key mutations.
+- Exactly one ordinary Duncan-to-Proton submission was performed, marker
+  `S05-20261002-P1`: POST returned 303, its read-only receipt confirmed acceptance
+  and Sent storage, and the authoritative Sent list contained the unique marker.
+  The normal success receipt was concise with no expanded recovery details.
+  Actual receipt in Proton remains UNVERIFIED; SMTP acceptance is not delivery.
+- The first pre-push gate failed an existing nonblocking binding-lock test with
+  `Busy` instead of `InvalidKey`. The focused rerun passed; the complete normal
+  gate then passed with `RUST_TEST_THREADS=4`, as used for acceptance. A read-only
+  review identified possible transient fork inheritance, consistent with related
+  tests, but did not trace the exact child. Preserve both results; production
+  locking was not weakened and no hook was bypassed.
+- Sanitized engineering identity, independent reported-result checkpoint and
+  original/bounded push logs are retained in the existing
+  `/home/foo/Downloads/osmap-ux-s05/interaction-repair-20261002/` root. Preliminary
+  draft-probe Origin/header and textarea-newline parser failures were harness
+  corrections, not promoted to product passes; the final draft result passed.
+- Scoped handoff: the deployed interaction repair is available for the operator
+  to validate ordinary sending, key management and saved protection selections
+  using the eleven defined cases in `UAT.md`. Cases 03–07 require actual operator
+  outcomes, including fresh password/TOTP for every key mutation. Public-key
+  lifecycle persistence through the operator's browser, external protected mail,
+  readable encrypted Sent, inbound decryption and full sprint/epic acceptance
+  remain open. The dedicated Scrum lead's scoped recommendation does not accept
+  these unperformed cases. Optional missing-key deployed refusal is still pending
+  at this checkpoint.
