@@ -3489,3 +3489,165 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   those and the mapper's native activation are PENDING at this checkpoint.
   Private unlock remains unanswered, so actual protected web send/self-decrypted
   signature/Sent and provider human UAT remain OPEN. No sprint is accepted.
+
+### Typed-reason delivery and practical encrypted-mail UAT — 2026-10-02 — VERIFIED dependency; protected-send acceptance OPEN
+
+- Root signed, verified and promptly synchronized engineering source
+  `12699ff5529ff24eff60858be84cee28ab273e96`; fetched local/origin branch equality
+  and a clean checkout were confirmed. Native archive/source manifest verifies
+  all 256 entries; build and both focused native tests passed. Preserve the first
+  wrong exact test path that ran zero cases as refused proof, not a test PASS.
+- Root activated binary SHA-256
+  `60a2ee80c3921dfc335ea9bb92e9c2b6c4cd516a8531c279371883290b330e13`.
+  Sole PID 84844 mapped to the installed text inode 130047 (50,551,184 bytes),
+  all seven web/helper/relay service checks passed, and public HTTPS login200 had
+  TLS verification result 0. Rollback retains the prior `7cca63ae...` binary at
+  `/var/backups/osmap-ux-s05-protected-error-12699ff-20261003/osmap-before`.
+  The first activation preflight refused before mutation because its harness
+  response ceiling was too small; only that harness ceiling was corrected.
+  Production resource controls, helper configuration and keys were unchanged.
+- Actual deployed marker `S05-20261003-M2` established specific unbound-recipient
+  preflight, then one protected POST503 with the new actionable explanation and
+  retained selections. No accepted receipt or authoritative Sent marker existed;
+  its own draft and temporary 120-second session were cleaned. This qualifies
+  the explanation/refusal dependency, not successful cryptography or external
+  delivery. Evidence is `protected-error-{native-result,activation-result}.json`
+  and `protected-error-live-refusal.log` in the existing repair root.
+- Read-only public metadata at 2026-10-02 20:47:54 America/Toronto records the
+  operator's current binding revision 4: Duncan primary `E401B0FD...A2E96BBE`,
+  signing subkey `83A5689C...05BF68BB`, signing Required/encryption Optional;
+  Proton primary `C384498B...7540D006`, encryption subkey `78E92C41...C5B0E649`,
+  recipient encryption required and public key Ready. This supersedes older
+  revision2/3 metadata only; it is not a private unlock or human mutation proof.
+  Preserve operator state. Evidence: `live-openpgp-public-state-20261003.json`.
+- Operator screenshots show empty To while a saved-contact selector has a value;
+  they do not establish whether Add was executed or a recipient was lost.
+  Practical current UAT explicitly adds `lvnv1966@protonmail.ch` to To, selects
+  sign/encrypt/self, then Send dropdown -> Pre-send check. This action saves the
+  draft and refreshes public readiness only; it neither signs nor sends.
+  After reviewing readiness, perform the reviewed native unlock immediately
+  before actual Send, then independently verify Proton receipt/signature and
+  self-decrypted authoritative Sent. No working certificate reimport/removal or
+  policy downgrade is necessary for this configured pair.
+- The eleven-case UAT record preserves earlier source360 ordinary-send/draft
+  evidence and tags these new denial results source12699ff. Current required
+  protection means the earlier plaintext case must not reset Duncan/Proton policy.
+  Human fresh-auth key lifecycle, protected actual send/read and provider results
+  remain NOT RUN. The protected-send one-shot guard is absent; native unlock is
+  unanswered and no protected external message has been submitted. Neither this
+  supporting dependency nor the updated handoff accepts the sprint or epic.
+
+### S07-01/S07-04 explicit stale-binding recovery — 2026-10-02 — IN_PROGRESS; operator UAT-08 FAILED
+
+- The operator followed the encrypted-send guidance and reported repeated
+  `openpgp_binding_changed` refusals (screenshots 00:49/00:50 UTC on October 3,
+  20:49/20:50 America/Toronto on October 2). This is an actual human UAT-08
+  failure, not NOT RUN. Root accepts responsibility for guidance that did not
+  recover the stale draft. No successful protected submission is established.
+- Root and independent source review confirmed a real recovery loop: draft GET
+  preserves its old binding revision, the hidden field prefers it, and explicit
+  Pre-send check saves that same revision. Backend denial correctly stays fail
+  closed. The typed-message dependency remains delivered; it did not repair this
+  functional loop. Protected-send UAT is not ready for another success claim.
+- Finite allowed source: `src/http/routes_draft.rs`, relevant existing
+  `src/http/compose_protection.rs`/`src/http/compose_preflight.rs` and associated
+  UI only if necessary, focused HTTP route tests, and a test-only adjustable
+  StubGateway in `src/http.rs`. Root may refresh existing generated assertion
+  inventories when required. Source agent waits for this work order before edits.
+- ONLY explicit Pre-send check may fetch the current session-bound public view
+  for the exact recipients and protection choices and adopt its coherent current
+  revision during the existing draft-save CAS. Preserve all body/subject/recipient
+  fields, attachments and sign/encrypt/self choices; returned draft review shows
+  the current key state. Ordinary save, autosave and reopen must not silently
+  rebase. An unavailable/incoherent public view must retain the request without
+  rewriting its binding revision or claiming a refreshed review.
+- Pre-send check performs no send, private crypto or key/binding mutation. Actual
+  Send still revalidates current revision, keys/policy and private availability;
+  a subsequent policy/key change must block again. Do not inspect or mutate
+  unrelated user drafts, retain private content in evidence or downgrade policy.
+- Operator reports the recovery process is overly obtuse. Root explicitly adds
+  `src/http_ui.rs` to this finite allowlist for a visible conditional native
+  **Review current keys** submit action when saved-intent revision differs from
+  the authenticated fresh public view. Use the existing explicit preflight form
+  action, then show the reviewed fingerprint summary. Do not require discovery
+  of a hidden Send-options menu, automatically retarget trust, or add JavaScript,
+  CSP expansion, private crypto or a new policy authority. This is part of the
+  functional explicit-recovery repair; a visible button alone does not pass it.
+- Root adds `src/http_support.rs` and its message-table expectation to this
+  allowlist solely to replace stale-binding guidance to reopen Compose with the
+  visible **Review current keys** action. Keep the typed reason and denial
+  unchanged; public advice must point to the actual explicit recovery. Source
+  recovery is frozen with three focused tests and independent review clear,
+  but native controlled recovery and operator protected delivery remain open.
+- Focused proof: revision2 -> revision4 explicit recovery persisted through reopen,
+  unchanged content/attachments/protection, unavailable view preserves old state,
+  ordinary save/autosave/reopen cannot rebase, and later change reblocks Send.
+  Root integrates required checks and matching native delivery. Actual protected
+  submission/self-decrypted signature/Sent still requires the unanswered native
+  unlock and observed outcomes; provider/human key CRUD remain open.
+
+### Operator protected-send follow-up — 2026-10-02 — UAT-08 FAILED, private key Locked
+
+- The operator deleted their old draft, selected Inbox Forward again and made a
+  new protected Send attempt. The actual response is now `openpgp_key_locked`.
+  That attempt passed the stale/public-binding gate and reached the locked-key
+  refusal; it is still a pre-dispatch protected-send failure, not delivery or a
+  completed encrypted journey. Preserve it alongside the earlier stale-loop FAIL.
+- Root directed the operator to the reviewed native `unlock-and-validate.sh`,
+  followed by one user-controlled Send with sign/encrypt/self selected within
+  the current approximately five-minute host-agent cache. Do not automatically
+  run an agent Send in parallel or retry an ambiguous attempt. The old prepared
+  revision2 agent probe is obsolete and remains unexecuted; operator state and
+  real drafts are not rewritten by coordination. Public recipient readiness
+  does not establish private-key availability.
+- Visible-review source permission was already recorded above: `src/http_ui.rs`
+  is allowed. Source agent was directly reminded to finish that change without
+  another approval wait. Focused source results do not establish native recovery
+  or erase either operator failure. No final UAT-ready or sprint claim is made.
+
+### Explicit review recovery source checkpoint — 2026-10-02 — focused VERIFIED; final gates/native RUNNING
+
+- Frozen source includes the visible native Review current keys action and
+  explicit draft-CAS recovery. Three focused HTTP cases passed:
+  `explicit_pre_send_check_rebinds_only_reviewed_draft_and_keeps_content_files_and_choices`,
+  `unavailable_or_inconsistent_public_snapshot_never_rebases_saved_draft`, and
+  `explicit_review_updates_pinned_revision_without_choosing_protection_for_user`.
+  Their new focused module `src/http/stale_binding_recovery_tests.rs` is within
+  the approved HTTP-test boundary. Independent source review and V14 passed.
+- Preserve the first acceptance failure for a test-only Clippy
+  obfuscated-if-else expression and root's normal correction. The second attempt
+  reached exact audit inventory digest drift after that fixture-line change;
+  root refreshed both mandatory existing inventories and pinned digest fields
+  against final source. No assertion or production security boundary was removed.
+  Logs remain `stale-recovery-acceptance.log` and
+  `stale-recovery-acceptance-final.log` in the existing repair root.
+- Final acceptance is RUNNING at this checkpoint. Native builder is compiling
+  the frozen final archive with 257 source/Cargo manifest entries, SHA-256
+  `8f84ec104fde155d0352078de8ccc2edf0d01cadd64d3a394d292b67814008b0`.
+  No native PASS, activation, signed delivery or operator recovery success is
+  claimed. Root will append actual final outcomes before the engineering commit.
+- Earlier human stale-loop and private-Locked failures remain recorded. Actual
+  protected send, self-readable verified Sent and provider receipt still require
+  their own results. Freeze these progress docs for root integration; do not
+  substitute a visible control or a focused test for working native recovery.
+
+### Explicit stale-binding recovery source gate — 2026-10-02 — VERIFIED source; native delivery pending
+
+- Final `make acceptance-check` exited 0 after the recorded fixture lint and
+  generated-inventory corrections. The library suite passed 1066 tests with
+  zero failures and 19 ignored cases; ignored cases do not establish coverage.
+  Required security/V10/V11/V12/V13 gates passed; `make v14-check`, formatting,
+  independent review and three focused recovery tests passed. Existing generated
+  inventories match this final source; no gate or production policy was weakened.
+- Final working native archive `stale-recovery-source-final.tar` has SHA-256
+  `8f84ec104fde155d0352078de8ccc2edf0d01cadd64d3a394d292b67814008b0`;
+  all 257 source/Cargo entries match the frozen working source byte-for-byte.
+  Native binary build passed. Native focused-test compilation initially lacked
+  public compile-time fixtures in this source-only archive; supplement only
+  unchanged tracked fixtures, record their checksum/provenance, and require real
+  nonzero focused results before deployment. No native-test PASS is inferred from
+  a build or an empty test selection. Activation/live recovery remain pending.
+- The operator is logging off OSMAP. Continue engineering without submitting an
+  agent message; actual protected delivery, decryptable Sent and Proton receipt
+  remain open after the reported Locked refusal. Neither this source checkpoint
+  nor a synthetic authenticated recovery test accepts the full sprint.

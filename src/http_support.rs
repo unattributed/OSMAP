@@ -484,7 +484,7 @@ pub(crate) fn public_reason_message(reason: &str) -> &'static str {
         "draft_quota_exceeded" => "Your draft storage is full. Remove an unneeded draft, then save again. Your current text is retained here.",
         "draft_busy" => "Another draft operation is still running. Your text is retained; try saving again shortly.",
         "openpgp_binding_unavailable" => "OpenPGP account bindings could not be checked. Nothing was sent. Open Settings > OpenPGP > Manage keys; if the problem continues, contact the mail operator.",
-        "openpgp_binding_changed" => "OpenPGP key bindings changed since this compose page opened. Nothing was sent. Keep this text, reopen Compose, review the current recipient keys and restore your protection choices before sending.",
+        "openpgp_binding_changed" => "OpenPGP key bindings changed since this compose page opened. Nothing was sent. Choose Review current keys to save this message and review the current fingerprints, then check your protection choices before sending.",
         "openpgp_protection_blocked" => "Current OpenPGP key or policy checks block the selected protection. Nothing was sent. Review recipient addresses, approved keys and policy in OpenPGP Key Management.",
         "openpgp_inventory_unavailable" => "The OpenPGP public-key inventory is unavailable. Nothing was sent. Contact the mail operator and submit only after key status is restored.",
         "openpgp_key_locked" => "A private OpenPGP key required for this message is locked. Nothing was sent. Keep this text and ask the mail operator to unlock the required key through the mail host's native key agent before sending.",
@@ -573,7 +573,7 @@ mod tests {
             (
                 "openpgp_binding_changed",
                 "bindings changed",
-                "Keep this text, reopen Compose",
+                "Review current keys",
             ),
             (
                 "openpgp_protection_blocked",

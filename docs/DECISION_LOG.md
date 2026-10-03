@@ -7565,3 +7565,65 @@ of bypassing or weakening that gate. Record the final rerun only when its actual
 exit is known. These checks support pre-dispatch explanation and preservation;
 the unanswered native unlock and actual protected-send/self-readable-Sent outcome
 remain the primary unfinished work, and no sprint completion follows from copy.
+
+### Hand off encrypted mail against current operator policy and exact deployment — 2026-10-02
+
+The signed/synced typed-reason dependency is active as source `12699ff` with native
+build, focused tests, exact running identity and an actionable live refusal
+verified. Retain the earlier source360 mail/draft proof at its assessed source;
+do not relabel it a new protected-send pass. Public metadata now records operator
+revision4 with required signing and required Proton-recipient encryption. Preserve
+that state rather than weakening policy to repeat the earlier plaintext test.
+
+The immediate encrypted UAT explicitly adds the actual To recipient, selects
+sign/encrypt/self and uses Send options -> Pre-send check to refresh the saved
+draft's public readiness. Native private-key unlock precedes actual sending;
+Proton and self-readable Sent outcomes remain unperformed. Screenshot inference
+about an empty To and selected contact is separate from read-only verified key
+metadata. No working-key import/removal is required just to send between the
+configured pair, and no human fresh-auth or provider acceptance is fabricated.
+
+### Repair the explicit binding-review recovery loop rather than its explanation — 2026-10-02
+
+The operator attempted the guided protected send and repeatedly received stale
+binding refusal. Source diagnosis confirms Pre-send check preserved the old
+revision, so merely reopening/rechecking could not recover the saved draft.
+Treat this as actual failed UAT-08 and implement the missing explicit recovery:
+only the user's Pre-send check adopts a coherent current session-bound public
+snapshot for the unchanged recipients and selected protections through draft CAS.
+Preserve content/attachments; ordinary save/reopen does not silently retarget
+trust, unavailable public state does not rewrite intent, and Send rechecks again.
+There is no preflight send/crypto/key mutation or policy relaxation. The prior
+typed error dependency stays a bounded delivered result, not functional success
+for this blocked journey. Protected-send completion remains open.
+
+### Make explicit stale-key review visible without silently changing trust — 2026-10-02
+
+The operator found the recovery process overly obtuse after following incorrect
+guidance. For a stale saved binding intent, expose one visible native Review
+current keys action using the same explicit preflight/CAS recovery, followed by
+the current fingerprint summary. Preserve deliberate review without making the
+user discover a hidden menu. No automatic key retarget, JavaScript/CSP change or
+private operation is added. Actual controlled native recovery, not the button's
+presence, establishes whether this repair works.
+
+### Keep locked-key operator failure separate from recovered binding state — 2026-10-02
+
+After the operator created a fresh Forward attempt, the actual protected Send
+refusal changed from stale binding to private key Locked. Record this as continued
+failed UAT-08 with a narrower confirmed dependency, not successful encryption.
+Use the reviewed native unlock followed by the operator's one Send; do not run an
+agent submission alongside it or execute the obsolete revision2 probe. Preserve
+the prior recovery-loop failure and require observed recipient/Sent outcomes
+before reporting encrypted functionality complete.
+
+### Preserve recovery gate failures and wait for actual native outcomes — 2026-10-02
+
+Explicit current-key review now has three focused HTTP tests and a clear
+independent source review, but initial mandatory checks caught a test-only Clippy
+expression and then exact assertion-inventory digest drift after its correction.
+Retain both failures and refresh generated evidence against the frozen final
+source; do not count a failing or still-running gate as passed. Native build and
+controlled recovery proof remain separate from local interaction assertions.
+Keep both actual operator Send failures and the unperformed protected delivery
+outcomes open until superseding evidence exists.

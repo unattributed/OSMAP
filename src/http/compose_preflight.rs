@@ -36,6 +36,12 @@ pub(crate) fn render(model: &ComposePageModel<'_>) -> String {
     let requested = |value| if value { "Requested" } else { "Not requested" };
     let key_snapshot = match model.openpgp.as_ref() {
         Some(view) if view.runtime_configured => match view.preflight.as_ref() {
+            Some(preflight)
+                if view.revision != Some(preflight.revision)
+                    || model.protection.binding_revision.is_some_and(|saved| Some(saved) != view.revision) =>
+            {
+                "This draft uses an older or inconsistent OpenPGP binding snapshot. Use Pre-send check again to review and save the current public keys before sending."
+            }
             Some(preflight) => match preflight.state {
                 crate::openpgp_bindings::PreflightState::Blocked =>
                     "Blocked by the current public-key or protection-policy checks.",
@@ -52,14 +58,50 @@ pub(crate) fn render(model: &ComposePageModel<'_>) -> String {
         },
         _ => "OpenPGP capability could not be established on this page. A protected send must pass current capability checks before submission.",
     };
+    let public_keys = model
+        .openpgp
+        .as_ref()
+        .filter(|view| view.runtime_configured)
+        .map(|view| {
+            let revision = view
+                .revision
+                .map(|value| value.to_string())
+                .unwrap_or_else(|| "Unavailable".into());
+            let mut details = format!(
+                "<dt>Current public binding revision</dt><dd>{}</dd>",
+                escape_html(&revision)
+            );
+            if let Some(plan) = view.preflight.as_ref().and_then(|preflight| {
+                (view.revision == Some(preflight.revision)).then_some(preflight.plan.as_ref()).flatten()
+            }) {
+                if let Some(signer) = plan.signer_fingerprint.as_deref() {
+                    details.push_str(&format!(
+                        "<dt>Selected signing fingerprint</dt><dd>{}</dd>",
+                        escape_html(signer)
+                    ));
+                }
+                if !plan.recipient_fingerprints.is_empty() {
+                    let fingerprints = plan
+                        .recipient_fingerprints
+                        .iter()
+                        .map(|fingerprint| format!("<li>{}</li>", escape_html(fingerprint)))
+                        .collect::<String>();
+                    details.push_str(&format!(
+                        "<dt>Planned encryption fingerprints (including self when selected)</dt><dd><ul>{fingerprints}</ul></dd>"
+                    ));
+                }
+            }
+            details
+        })
+        .unwrap_or_default();
     format!(concat!(
         "<section class=\"compose-preview compose-preflight\" aria-label=\"Pre-send check\"><h2>Pre-send check</h2>",
         "<p>This check shows the saved draft. After editing, check again. No message was sent.</p>{summary}{source}",
-        "<dl class=\"message-meta\"><dt>Signing</dt><dd>{signing}</dd><dt>Encryption</dt><dd>{encryption}</dd><dt>Encrypt to self</dt><dd>{self_encryption}</dd><dt>Public-key snapshot</dt><dd>{key_snapshot}</dd></dl>",
+        "<dl class=\"message-meta\"><dt>Signing</dt><dd>{signing}</dd><dt>Encryption</dt><dd>{encryption}</dd><dt>Encrypt to self</dt><dd>{self_encryption}</dd><dt>Public-key snapshot</dt><dd>{key_snapshot}</dd>{public_keys}</dl>",
         "<p class=\"muted\">This check does not sign, encrypt or send the message. Public-key results are a snapshot. Sending rechecks the current keys, account, draft and attachments.</p></section>"
     ), summary = summary, source = source, signing = requested(model.protection.sign),
        encryption = requested(model.protection.encrypt), self_encryption = requested(model.protection.encrypt_to_self),
-       key_snapshot = key_snapshot)
+       key_snapshot = key_snapshot, public_keys = public_keys)
 }
 
 #[cfg(test)]

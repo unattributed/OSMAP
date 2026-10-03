@@ -1889,6 +1889,21 @@ fn render_reader_fragment(
 /// Renders the compose page for the current user and CSRF-bound session.
 fn render_live_openpgp_compose_controls(model: &ComposePageModel<'_>) -> String {
     let checked = |selected| if selected { " checked" } else { "" };
+    let stale_binding = model
+        .protection
+        .binding_revision
+        .zip(model.openpgp.as_ref().and_then(|view| view.revision))
+        .is_some_and(|(saved, current)| saved != current);
+    let review_action = if stale_binding {
+        let disabled = if model.draft_id.is_some() && model.draft_revision.is_none() {
+            " disabled"
+        } else {
+            ""
+        };
+        format!("<button type=\"submit\"{disabled} formaction=\"/drafts/save\" name=\"compose_action\" value=\"preflight\">Review current keys</button>")
+    } else {
+        String::new()
+    };
     let revision = model
         .protection
         .binding_revision
@@ -1900,7 +1915,9 @@ fn render_live_openpgp_compose_controls(model: &ComposePageModel<'_>) -> String 
         .unwrap_or_default();
     let status = match model.openpgp.as_ref().and_then(|view| view.preflight.as_ref()) {
         Some(preflight) => {
-            let state = if model.protection.sign || model.protection.encrypt {
+            let state = if stale_binding {
+                "Keys changed — review required"
+            } else if model.protection.sign || model.protection.encrypt {
                 crate::http::compose_protection::selection_text(preflight.state)
             } else {
                 "No protection selected"
@@ -1925,7 +1942,7 @@ fn render_live_openpgp_compose_controls(model: &ComposePageModel<'_>) -> String 
         None => "<strong>Unavailable</strong><p>OpenPGP key status could not be checked. A selected protected send will pause without sending plaintext.</p>".to_string(),
     };
     format!(
-        "<section class=\"openpgp-compose-controls compose-policy-row\" aria-label=\"OpenPGP compose controls\" data-openpgp-compose-controls=\"server-enforced\">{revision_field}<label class=\"compose-protection-choice\"><span>Sign</span><span class=\"compose-choice-toggle\"><input type=\"checkbox\" name=\"pgp_sign\"{}/> Sign on send</span></label><label class=\"compose-protection-choice\"><span>Encrypt</span><span class=\"compose-choice-toggle\"><input type=\"checkbox\" name=\"pgp_encrypt\"{}/> Encrypt on send</span></label><label class=\"compose-protection-choice\"><span>Encrypt to self</span><span class=\"compose-choice-toggle\"><input type=\"checkbox\" name=\"pgp_self\"{}/> Include my approved key</span></label><details class=\"compose-key-status\"><summary><span>Recipient key status</span><strong>Check recipients</strong></summary><div class=\"compose-policy-detail\">{status}</div></details><div class=\"compose-key-management\"><span>Approved keys</span><a href=\"/settings/keys\" target=\"_blank\" rel=\"noopener noreferrer\">Manage keys</a></div></section>",
+        "<section class=\"openpgp-compose-controls compose-policy-row\" aria-label=\"OpenPGP compose controls\" data-openpgp-compose-controls=\"server-enforced\">{revision_field}<label class=\"compose-protection-choice\"><span>Sign</span><span class=\"compose-choice-toggle\"><input type=\"checkbox\" name=\"pgp_sign\"{}/> Sign on send</span></label><label class=\"compose-protection-choice\"><span>Encrypt</span><span class=\"compose-choice-toggle\"><input type=\"checkbox\" name=\"pgp_encrypt\"{}/> Encrypt on send</span></label><label class=\"compose-protection-choice\"><span>Encrypt to self</span><span class=\"compose-choice-toggle\"><input type=\"checkbox\" name=\"pgp_self\"{}/> Include my approved key</span></label><details class=\"compose-key-status\"><summary><span>Recipient key status</span><strong>Check recipients</strong></summary><div class=\"compose-policy-detail\">{status}</div></details><div class=\"compose-key-management\"><span>Approved keys</span>{review_action}<a href=\"/settings/keys\" target=\"_blank\" rel=\"noopener noreferrer\">Manage keys</a></div></section>",
         checked(model.protection.sign),
         checked(model.protection.encrypt),
         checked(model.protection.encrypt_to_self),

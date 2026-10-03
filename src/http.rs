@@ -956,6 +956,9 @@ mod tests {
     mod draft_preservation_tests {
         include!("http/draft_preservation_tests.rs");
     }
+    mod stale_binding_recovery_tests {
+        include!("http/stale_binding_recovery_tests.rs");
+    }
     mod source_attachment_tests {
         include!("http/source_attachment_tests.rs");
     }
@@ -981,6 +984,13 @@ mod tests {
     use std::time::Duration;
 
     type SyntheticFlagStates = BTreeMap<(String, String, u64), Vec<String>>;
+
+    #[derive(Debug, Clone)]
+    struct FixtureOpenPgpSnapshot {
+        revision: u64,
+        preflight_revision: Option<u64>,
+        available: bool,
+    }
 
     #[derive(Debug, Clone)]
     struct StubGateway {
@@ -1011,6 +1021,7 @@ mod tests {
         browser_fixture_accounts: bool,
         browser_fixture_openpgp: bool,
         browser_fixture_openpgp_denials: bool,
+        fixture_openpgp_snapshot: Option<Arc<Mutex<FixtureOpenPgpSnapshot>>>,
         preview_mailbox_tree: bool,
         fixture_sessions: Option<fixture_sessions::FixtureSessions>,
     }
@@ -1047,6 +1058,7 @@ mod tests {
                 browser_fixture_accounts: false,
                 browser_fixture_openpgp: false,
                 browser_fixture_openpgp_denials: false,
+                fixture_openpgp_snapshot: None,
                 preview_mailbox_tree: false,
                 fixture_sessions: None,
             }
@@ -1105,11 +1117,51 @@ mod tests {
         fn compose_protection(
             &self,
             _session: &ValidatedSession,
-            _to: &str,
+            to: &str,
             _cc: &str,
             _bcc: &str,
-            _intent: crate::send::ProtectionIntent,
+            intent: crate::send::ProtectionIntent,
         ) -> Option<ComposeProtectionView> {
+            if let Some(snapshot) = &self.fixture_openpgp_snapshot {
+                let snapshot = snapshot.lock().unwrap();
+                if !snapshot.available {
+                    return None;
+                }
+                return Some(ComposeProtectionView {
+                    runtime_configured: true,
+                    revision: Some(snapshot.revision),
+                    preflight: snapshot.preflight_revision.map(|revision| {
+                        crate::openpgp_bindings::Preflight {
+                            revision,
+                            state: if intent.sign && intent.encrypt {
+                                crate::openpgp_bindings::PreflightState::Green
+                            } else {
+                                crate::openpgp_bindings::PreflightState::Orange
+                            },
+                            signing: crate::openpgp_bindings::KeyStatus::Ready,
+                            self_encryption: crate::openpgp_bindings::KeyStatus::Ready,
+                            recipients: vec![crate::openpgp_bindings::RecipientReadiness {
+                                address: to.into(),
+                                state: crate::openpgp_bindings::KeyStatus::Ready,
+                                requirement: crate::openpgp_bindings::Requirement::Optional,
+                            }],
+                            reasons: Vec::new(),
+                            plan: Some(crate::openpgp_bindings::OperationPlan {
+                                signer_fingerprint: intent.sign.then(|| "A".repeat(40)),
+                                recipient_fingerprints: if intent.encrypt {
+                                    vec!["B".repeat(40)]
+                                } else {
+                                    Vec::new()
+                                },
+                                encrypt_to_self: intent.encrypt_to_self,
+                            }),
+                        }
+                    }),
+                    account_binding: None,
+                    policy: crate::openpgp_bindings::ProtectionPolicy::default(),
+                    recipient_binding_count: 1,
+                });
+            }
             self.browser_fixture_openpgp
                 .then_some(ComposeProtectionView {
                     runtime_configured: false,
@@ -3164,6 +3216,17 @@ mod tests {
             _validated_session: &ValidatedSession,
             request: BrowserSendRequest<'_>,
         ) -> BrowserSendOutcome {
+            if let Some(snapshot) = &self.fixture_openpgp_snapshot {
+                if request.protection.binding_revision != Some(snapshot.lock().unwrap().revision) {
+                    return BrowserSendOutcome {
+                        decision: BrowserSendDecision::Denied {
+                            public_reason: "openpgp_binding_changed".into(),
+                            retry_after_seconds: None,
+                        },
+                        audit_events: vec![],
+                    };
+                }
+            }
             if self.browser_fixture_openpgp_denials {
                 let reason = match request.recipients {
                     "pgp-locked@example.test" => Some("openpgp_key_locked"),

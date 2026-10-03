@@ -499,7 +499,7 @@ where
             return response;
         }
 
-        let protection = match super::compose_protection::intent_from_form(&form) {
+        let mut protection = match super::compose_protection::intent_from_form(&form) {
             Ok(intent) => intent,
             Err(message) if request.path == "/drafts/autosave" => {
                 let _ = message;
@@ -757,6 +757,67 @@ where
                 };
             }
         };
+        // Pre-send check is an explicit review of the current public binding
+        // snapshot. Only this action may replace a saved draft's pinned revision;
+        // ordinary saves, autosaves and resumed drafts keep their original pin.
+        // Send performs its own locked-revision check after this draft save.
+        if form.get("compose_action").map(String::as_str) == Some("preflight")
+            && (protection.sign || protection.encrypt || protection.binding_revision.is_some())
+        {
+            let current = self.gateway.compose_protection(
+                &validated_session,
+                &recipients,
+                &cc_recipients,
+                &bcc_recipients,
+                protection,
+            );
+            match current {
+                Some(view) if view.runtime_configured => {
+                    match (view.revision, view.preflight.as_ref()) {
+                        (Some(revision), Some(preflight)) if preflight.revision == revision => {
+                            protection.binding_revision = Some(revision);
+                        }
+                        (Some(_), Some(_)) => {
+                            return HandledHttpResponse {
+                                response: self.retained_compose_failure(
+                                    &validated_session,
+                                    &form,
+                                    reply_reference.as_ref(),
+                                    "openpgp_binding_changed",
+                                    409,
+                                    "Conflict",
+                                ),
+                                audit_events,
+                            };
+                        }
+                        _ => {
+                            return HandledHttpResponse {
+                                response: self.retained_compose_input_error(
+                                    &validated_session,
+                                    &form,
+                                    reply_reference.as_ref(),
+                                    "Current OpenPGP key status could not be checked for these recipients. Check the addresses and retry Pre-send check; the saved draft was not updated.",
+                                ),
+                                audit_events,
+                            };
+                        }
+                    }
+                }
+                _ => {
+                    return HandledHttpResponse {
+                        response: self.retained_compose_failure(
+                            &validated_session,
+                            &form,
+                            reply_reference.as_ref(),
+                            "openpgp_inventory_unavailable",
+                            503,
+                            "Service Unavailable",
+                        ),
+                        audit_events,
+                    };
+                }
+            }
+        }
         let outcome = self.gateway.save_draft(
             context,
             &validated_session,
