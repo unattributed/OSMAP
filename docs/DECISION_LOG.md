@@ -8241,3 +8241,28 @@ Tests change only cfg(test) code: the rebuilt production binary remains exactly
 the installed c4471 candidate, so do not restart a healthy unchanged service
 just to attach test evidence. Sign/sync the test source and retain source pins.
 Do not claim original wire bytes, human UAT or Send from this proof.
+
+### 2026-10-03 — Ordinary compose context must not depend on private crypto availability
+
+Reproduce the startup/client-construction countercase through actual Compose
+rendering and exact Runtime preparation before changing code. Preserve the
+trusted account binding revision and policy even when crypto is unavailable;
+report crypto availability separately. This permits ordinary canonical-self
+preparation under Optional policy without granting protected-send readiness.
+Retain stale-revision serialization, malformed/foreign-store refusals and account
+or recipient Required protection. Never silently disable Proton's Required
+policy to turn a refused plaintext attempt into success. No live agent Send or
+old revision2 probe; human Send remains unresolved. Require independent review,
+matching OpenBSD proof, current gates, signed immediate sync and web-only matching
+installation before publishing the scoped UAT. No causal attribution to earlier
+operator Send failures without actual evidence.
+
+The first aggregate gate rejects the new operator-binding fixture inside the
+production browser module. Separate cfg(test) cases using the repository's
+existing _tests.rs convention; do not weaken or bypass the authority gate.
+Independent review also admits a newly reachable Settings status defect: a
+configured account binding must not be described as absent merely because the
+private-operation client is unavailable. Reproduce that exact public-inventory/
+binding/runtime combination, preserve the fingerprint and Required policy, and
+report unavailable capability. Freeze290 inputs and requalify the changed final
+candidate; earlier successful289 native hashes are historical only.

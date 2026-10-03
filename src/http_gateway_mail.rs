@@ -1057,6 +1057,16 @@ impl RuntimeBrowserGateway {
         }
     }
 
+    #[cfg(test)]
+    pub(crate) fn test_prepare_outbound_request(
+        &self,
+        account: &str,
+        request: &ComposeRequest,
+        now: u64,
+    ) -> Result<(crate::protected_submission::PreparedSubmission, u64), &'static str> {
+        self.prepare_outbound_request(account, request, now)
+    }
+
     fn prepare_outbound_request(
         &self,
         account: &str,

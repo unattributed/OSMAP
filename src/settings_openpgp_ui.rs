@@ -29,7 +29,10 @@ pub(crate) fn render_openpgp_settings(
     });
     let status = if configured {
         format!("<strong>OpenPGP configured</strong><span>{} public keys reported. Private-key readiness is checked when an operation runs.</span>", public_keys.unwrap_or(0))
-    } else if capability.is_some() && inventory_verified {
+    } else if capability
+        .is_some_and(|view| view.runtime_configured && view.account_binding.is_none())
+        && inventory_verified
+    {
         "<strong>Account binding needed</strong><span>Public keys are present, but no account key is approved for this identity.</span>".to_string()
     } else {
         "<strong>OpenPGP unavailable</strong><span>Runtime capability or verified public inventory could not be established.</span>".to_string()
@@ -74,6 +77,64 @@ mod tests {
     use super::*;
     use crate::http::ComposeProtectionView;
     use crate::openpgp_bindings::{AccountBinding, ProtectionPolicy, Requirement};
+
+    #[test]
+    fn openpgp_settings_runtime_unavailable_keeps_existing_binding_and_policy_truthful() {
+        let account = "alice@example.test";
+        let fingerprint = "A".repeat(40);
+        let inventory = crate::openpgp_inventory::Inventory::parse(
+            &serde_json::to_vec(&serde_json::json!({
+                "version":1,"ok":true,"protocol":"openpgp",
+                "gpgme_version":"2.0.1","engine_version":"2.5.18",
+                "keys":[{"primary":{"fingerprint":fingerprint,"algorithm":1,
+                "bits":3072,"created":0,"expires":0,"revoked":false,
+                "expired":false,"disabled":false,"invalid":false,
+                "can_sign":true,"can_encrypt":true,"can_certify":true,
+                "can_authenticate":false},"subkeys":[]}]
+            }))
+            .unwrap(),
+        )
+        .unwrap();
+        let view = crate::http_ui::key_inventory_ui::map_public_inventory(
+            account,
+            account,
+            Some(&inventory),
+        );
+        let mut capability = ComposeProtectionView {
+            runtime_configured: false,
+            revision: Some(2),
+            preflight: None,
+            account_binding: Some(AccountBinding {
+                primary_fingerprint: fingerprint.clone(),
+                signing_fingerprint: Some(fingerprint.clone()),
+                decrypt_primary_fingerprints: vec![fingerprint.clone()],
+            }),
+            policy: ProtectionPolicy {
+                signing: Requirement::Optional,
+                encryption: Requirement::Required,
+            },
+            recipient_binding_count: 1,
+        };
+        let page = render_openpgp_settings(account, "fixture", &view, Some(&capability));
+        let html = page.as_str();
+        assert!(html.contains("OpenPGP unavailable"));
+        assert!(!html.contains("Account binding needed"));
+        assert!(!html.contains("no account key is approved"));
+        assert!(!html.contains("OpenPGP configured"));
+        assert!(html.contains(&format!(
+            "id=\"account-key\" readonly value=\"{fingerprint}\""
+        )));
+        assert!(html.contains("id=\"signing-setting\" readonly value=\"Optional\""));
+        assert!(html.contains("id=\"encryption-setting\" readonly value=\"Required\""));
+        capability.account_binding = None;
+        let missing_runtime = render_openpgp_settings(account, "fixture", &view, Some(&capability));
+        assert!(missing_runtime.as_str().contains("OpenPGP unavailable"));
+        assert!(!missing_runtime.as_str().contains("Account binding needed"));
+        capability.runtime_configured = true;
+        let missing_binding = render_openpgp_settings(account, "fixture", &view, Some(&capability));
+        assert!(missing_binding.as_str().contains("Account binding needed"));
+        assert!(!missing_binding.as_str().contains("OpenPGP configured"));
+    }
 
     #[test]
     fn openpgp_settings_saved_values_link_to_real_account_policy_and_compose_workflows() {

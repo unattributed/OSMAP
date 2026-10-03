@@ -5197,3 +5197,81 @@ with later outcomes. Correct errors using a new entry referencing the old one.
 - Human source/download/presentation UAT remains NOT RUN. Scoped existing UAT
   supplies normal-browser steps; no agent Send or operator mutation occurred.
   Whole S02 and reported Send/provider/crypto acceptance remain OPEN.
+
+### S02-04 native Source/Download signed delivery confirmation — 2026-10-03
+
+- d88a3fe25646c5db485af854016e4ac70621c4a2 verifies Shopkeeper signature,
+  passes normal commit/push hooks, syncs the existing UX branch and fetch proves
+  exact local/remote equality0/0. All289 native inputs match signed Git blobs.
+  The production application remains exactly installed5287f9d/c4471; test-only
+  additions need no reinstall. Human Source/Download/reader acceptance and whole
+  S02 remain OPEN; no mail submission or operator mutation occurred.
+
+### S03-01/S03-04 ordinary compose binding-context repair — 2026-10-03
+
+- An actual backend dependency gap is reproduced: compose_protection_view exits
+  before reading the authoritative BindingRecord when the private-operation
+  client cannot construct. Fresh Compose therefore omits its nonzero binding
+  revision; ordinary runtime preparation refuses it as binding changed. This
+  specific countercase is not asserted to explain the operator's current Send
+  failures; Required Proton encryption is a separate preserved constraint.
+- Two compiled RED cases use actual authenticated BrowserApp GET, rendered form
+  revision and the exact RuntimeBrowserGateway.prepare_outbound_request through
+  a cfg(test)-only delegating wrapper. Both fail solely missing current revision.
+  Repair projects trusted revision/policy independent of crypto construction and
+  reports runtime_configured accurately. Current GREEN3/3 includes unchanged
+  finite form parsing, editable persisted protection defaults, ordinary canonical
+  self preparation, selected crypto inventory refusal, stale revision refusal,
+  required account signing and required recipient encryption enforcement.
+- Independent review verifies the actual wrapper/checkbox parsing, existing
+  corrupt/foreign binding fail-closed coverage and unchanged final dispatch lock.
+  No production blocker identified. No SMTP/private crypto/submission occurs in
+  this fixture. Do not infer actual current Send, provider receipt, private key
+  readiness or human UAT from preparation alone.
+- Stable artifact root /home/foo/Downloads/osmap-ux-s03/revalidation-20261003/
+  ordinary-prepare/. Matching native289 inputs and current security/acceptance
+  gates are being executed; signing, prompt synchronization, matching web-only
+  installation and installed GET projection remain pending at this checkpoint.
+  Existing S02 obligations and all human Send outcomes remain OPEN.
+
+### S03 ordinary context final boundary/status countercases — 2026-10-03
+
+- First matching native candidate289 passed3 Compose preparation cases,12
+  persisted-reading HTTP cases and one disposable real reader integration;
+  standard host metadata/scratch cleanup unchanged. Its source/app proof is
+  retained as attempt1, not reused to qualify the changed final source.
+- Aggregate gate correctly catches test fixture replace_operator in the inline
+  production browser-module file. Move the three cfg(test) cases to the normal
+  compose_protection_tests.rs module; retain the existing unchanged authority
+  gate and runtime wrapper. Direct private/native authority remains forbidden
+  in production browser routes. Compile input count increases289 to290.
+- Independent review finds a newly reachable PAGE19 truth defect: verified public
+  inventory and existing approved account binding with runtime_configured=false
+  incorrectly says no approved key. A compiled renderer RED reproduces it. Fix
+  reserves binding-needed for available runtime plus absent binding; unavailable
+  runtime retains actual fingerprint/policies and reports unavailable. Three
+  PAGE19 and three actual Compose-to-Runtime cases pass; no authority changes.
+- Current final source is frozen for native290 qualification and aggregate
+  acceptance/security/v14 rerun, v10 refreshed4165/refinedhigh0. Historical
+  attempt1 reader cases remain historical; finalnative runs the two changed
+  three-case groups plus matching application build. Signed/current deployment
+  and actual installed projection are pending; no live mail submitted.
+
+### S03 ordinary context final qualified engineering checkpoint — 2026-10-03
+
+- Final matching290 inputs verified; native3 actual Compose-to-Runtime and3
+  PAGE19 cases PASS, with no SMTP/private operation. Test
+  5f52778211985e2980d50daed483c79a400c619743a989fc777f9d93df35535f; application
+  3254ed064e4b20fcb569ef1a795c3e0584b98fb1e5ba0791b5dddc7392521fc0.
+  Historical attempt1's reader baseline is explicitly not a final-source claim.
+- Current acceptance/security/v14 PASS1215lib/22ignored; v10 refreshed4165/
+  refinedhigh0, no gate relaxation. Final independent four-file source review
+  finds no blocker. Deployment artifact review catches incorrect origin/main
+  assumption before any execution; require the actual existing UX branch and
+  fetched origin/feat/ux-completion-20260929 equality instead.
+- Scoped UAT.md gives ordinary self fresh Compose and saved/reopened draft cases,
+  each with actual submission plus authoritative Sent/Inbox observations. Proton
+  Required all-Off refusal and separate encrypt-only/public versus private
+  signing/decryption boundaries remain explicit. Signing, prompt sync, matching
+  obsd1 web-only installation and installed GET form projection remain pending
+  at commit checkpoint. Human UAT/Send/provider outcomes remain OPEN.

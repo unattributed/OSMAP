@@ -85,7 +85,9 @@ impl RuntimeBrowserGateway {
         bcc: &str,
         intent: ProtectionIntent,
     ) -> Option<ComposeProtectionView> {
-        self.crypto_client()?;
+        // Binding policy and revision remain authoritative even when the
+        // private-operation client is unavailable; ordinary mail still needs them.
+        let runtime_configured = self.crypto_client().is_some();
         let account = &session.record.canonical_username;
         let record =
             crate::openpgp_bindings::BindingStore::new(self.settings_dir.join("openpgp-bindings"))
@@ -130,7 +132,7 @@ impl RuntimeBrowserGateway {
             _ => None,
         };
         Some(ComposeProtectionView {
-            runtime_configured: true,
+            runtime_configured,
             revision,
             preflight,
             account_binding: record.account_binding.clone(),
@@ -166,32 +168,5 @@ pub(crate) fn selection_text(state: PreflightState) -> &'static str {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn selected_protection_requires_exact_finite_form_and_version() {
-        let mut fields = BTreeMap::new();
-        fields.insert("pgp_sign".to_string(), "on".to_string());
-        assert!(intent_from_form(&fields).is_err());
-        fields.insert("pgp_binding_revision".to_string(), "7".to_string());
-        let intent = intent_from_form(&fields).unwrap();
-        assert!(intent.sign);
-        assert_eq!(intent.binding_revision, Some(7));
-        fields.insert("pgp_sign".to_string(), "false".to_string());
-        assert!(intent_from_form(&fields).is_err());
-        fields.remove("pgp_sign");
-        fields.insert("pgp_self".to_string(), "on".to_string());
-        assert!(intent_from_form(&fields).is_err());
-        fields.insert("pgp_encrypt".to_string(), "on".to_string());
-        assert!(intent_from_form(&fields).is_ok());
-        fields.insert(
-            "pgp_binding_revision".to_string(),
-            "18446744073709551616".to_string(),
-        );
-        assert!(intent_from_form(&fields).is_err());
-        let retained = retained_intent_from_form(&fields);
-        assert!(retained.encrypt && retained.encrypt_to_self);
-        assert_eq!(retained.binding_revision, None);
-    }
-}
+#[path = "compose_protection_tests.rs"]
+mod tests;
