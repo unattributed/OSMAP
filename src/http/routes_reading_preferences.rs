@@ -157,27 +157,39 @@ impl<G: BrowserGateway> BrowserApp<G> {
     }
 }
 
-/// Finite display hints only. Stored preferences, not this cookie, select login
-/// destinations. Downloaded/source content is never modified by presentation.
-pub(super) fn apply_presentation(response: &mut HttpResponse, cookie: Option<&str>) {
-    if !response
-        .headers
-        .iter()
-        .any(|(k, v)| k.eq_ignore_ascii_case("Content-Type") && v == "text/html; charset=utf-8")
-        || response
-            .headers
-            .iter()
-            .any(|(k, _)| k.eq_ignore_ascii_case("Content-Disposition"))
-    {
-        return;
+impl<G: BrowserGateway> BrowserApp<G> {
+    /// Projects current persisted display preferences for the route's account.
+    /// The request scope holds only the session and context already validated by
+    /// the route; a preference cookie cannot select another account or override
+    /// saved values. Reading after the handler avoids a pre-save snapshot.
+    pub(super) fn apply_reading_presentation(
+        &self,
+        response: &mut HttpResponse,
+        request: &HttpRequest,
+    ) {
+        if presentation_html(response).is_none() {
+            return;
+        }
+        let preferences = {
+            let context = request.notification_context.borrow();
+            match (&context.session, &context.authentication_context) {
+                (Some(session), Some(authentication_context)) => self
+                    .gateway
+                    .load_reading_preferences(authentication_context, session)
+                    .unwrap_or_default(),
+                _ => ReadingPreferences::default(),
+            }
+        };
+        apply_presentation(response, preferences);
     }
-    let Ok(html) = std::str::from_utf8(&response.body) else {
+}
+
+/// Display defaults do not authorize source access or attachment downloads.
+/// Unavailable account preferences use finite defaults, never cookie hints.
+pub(super) fn apply_presentation(response: &mut HttpResponse, preferences: ReadingPreferences) {
+    let Some(html) = presentation_html(response) else {
         return;
     };
-    if !html.starts_with("<!doctype html><html lang=\"en\" data-appearance=\"") {
-        return;
-    }
-    let preferences = ReadingPreferences::from_cookie_header(cookie);
     response.body = html
         .replacen(
             "<body>",
@@ -188,4 +200,27 @@ pub(super) fn apply_presentation(response: &mut HttpResponse, cookie: Option<&st
             1,
         )
         .into_bytes();
+}
+
+/// Only application HTML may receive display attributes. Downloaded and raw
+/// content bytes bypass both preference loading and projection.
+fn presentation_html(response: &HttpResponse) -> Option<&str> {
+    if !response
+        .headers
+        .iter()
+        .any(|(k, v)| k.eq_ignore_ascii_case("Content-Type") && v == "text/html; charset=utf-8")
+        || response
+            .headers
+            .iter()
+            .any(|(k, _)| k.eq_ignore_ascii_case("Content-Disposition"))
+    {
+        return None;
+    }
+    let Ok(html) = std::str::from_utf8(&response.body) else {
+        return None;
+    };
+    if !html.starts_with("<!doctype html><html lang=\"en\" data-appearance=\"") {
+        return None;
+    }
+    Some(html)
 }

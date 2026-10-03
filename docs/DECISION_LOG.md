@@ -8206,3 +8206,24 @@ selection. Use current saved reader context for active Bin and treat old Trash
 as ordinary mail; explicit legacy wrappers retain default Trash. Match the
 revised native candidate and responsive native-form association proof before
 signed delivery. Do not reuse the preceding candidate's successful hashes.
+
+### 2026-10-03 — Persisted reader display choices override stale cookie hints
+
+Reopen the accepted R2-14-006/007 seam within S02-04 with three actual
+authenticated save/reader regressions. Settings reads the account record, but
+reader body display attributes incorrectly follow osmap_reading; old or absent
+cookies therefore disagree with successful saves. Repair the runtime presenter
+to reuse only the route-validated session/context, read current account choices
+after the handler, and ignore cookies for these two attributes. Retain bounded
+application-HTML eligibility and raw/download bypass. Store errors use existing
+finite display defaults; they do not silently repair state or establish saved
+preferences. Failed Settings loads continue to report unavailable.
+
+Independently test current choices across mixed values, absent/malformed/duplicate
+and foreign hints, reused Alice/Bob/invalid request scope, corrupt state without
+write, identical escaped source content and decoded attachment bytes. Native
+proof must use disposable account settings, actual helper/runtime readers and
+restore original fixture preferences before other checks. No operator preference,
+mail flag, key, policy or Send mutation is authorized by the installed GET probe.
+Human UAT and whole S02 remain open. Do not equate cookie independence, source
+access or successful builds with remediation of the reported Send failures.

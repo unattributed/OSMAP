@@ -5085,3 +5085,65 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   keyboard Tab reaches the native save button. This is layout/association,
   separate from native persistence/moves and human visual acceptance.
   Frozen plan manifest still equals accepted R2 anchor6b3ce8f; all32files PASS.
+
+### S02-03 configured reversible Bin delivery confirmation — 2026-10-03
+
+- Actual signed source e2ecd0f81a51a6e2d51099b3e48fa86950f91f67 passes
+  normal commit/push security hooks, verified Shopkeeper signature, prompt push,
+  fetched origin branch SHA equality and0/0. Working tree was clean at delivery.
+- Web-only activation on obsd1 installs the matching final native application
+  7f118ce09ace889c684a3d9192c97ba0a8e2a4242866f12871bef91d3e2be2f3.
+  Exact old binary retained in root-private rollback; helpers/configuration/keys/
+  bindings/operator preferences unchanged. Do not infer authoritative mail
+  helper deployment or Send acceptance from this web-only activation.
+- Installed browser GET-only PASS actual enabled Reading/Copies native Bin
+  selectors/save buttons, current saved revision/value parity, keyboard native
+  association, fit1440/360, configured shortcut and active Bin. Zero POST, Send,
+  flag/preference writes or outside requests; owned session cleanup PASS.
+  Evidence bin-folder/installed-readonly/ and bin-folder-deployment/.
+- Scoped actionable bin-folder/UAT.md is ready for human reversible alternate
+  folder/save/reload/Bin/Restore/original-setting restoration. Human outcomes
+  NOT RUN; permanent deletion/retention, whole S02 and all human Send remain OPEN.
+
+### S02-04 saved reader presentation remediation admitted — 2026-10-03
+
+- The next accepted R2-14-006/007 seam is source/attachment presentation: Settings
+  reads account persisted choices while response attributes use osmap_reading
+  cookies. Independent QA prepared actual authenticated save/reader regression
+  tests; developer prepared a bounded four-file candidate, neither claims
+  execution from a paper patch. Root admits RED tests before production repair.
+
+- Executed genuine RED: all three new authenticated persisted-reader tests
+  fail against cookie-only attributes. Apply four production-file repair using
+  only route-validated session/context and a latest post-handler store read.
+  Preserve raw/download bypass, existing finite display defaults on store error
+  and saved Settings refusal; no stale-cookie fallback or write from GET.
+- Historical cookie-only test now saves the requested false/false through real
+  CSRF POST before inspecting an inverse true/true cookie; source authorization
+  and attachment bytes stay tested. Independent QA adds corrupt bytes/default
+  refusal, reused Alice/Bob/invalid request scope with stale seeded context, and
+  exact escaped source/decoded PDF invariance across persisted choices.
+  Final focused33 PASS; reviewer finds no production or native-fixture blocker.
+- Disposable native Runtime/Dovecot/helper proof saves false/true and true/false
+  via actual settings POST, reloads private account store and standalone/
+  coordinated/Settings readers with inverse cookies. Controlled body/public.txt,
+  all Alice Inbox/Sent and Bob flags/preferences stay unchanged; restore original
+  fixture reading state before conversation checks. Original reader no-move
+  mode and separate restricted Bin/Restore integration retain their guards.
+- Matching native final289 compile inputs,12 reading HTTP cases and both isolated
+  integrations PASS; cleanup/standard host fingerprints unchanged. Test
+  af8bc2de4562d206729025f5112cba351286f7c47924a41d16ddba3944fbfbf6;
+  applicationc4471aff60bfb161c8a46700a4edb5ca63e0cd0f94c11c6bd52bed348864ca4a.
+  Current aggregate acceptance/security/v14 PASS1212lib/22ignored, v10
+  refreshed4135/refinedhigh0; gates and scenario/release claims unchanged.
+- External scope/artifact root reading-presentation/ and conversation-order/
+  native-reading-presentation-final*. Installed GET probe's initial anchor-only
+  plan cannot handle existing OnOpen native buttons; review catches this before
+  execution. Inspect that button's own finite form/GUID/return target and follow
+  GET only, never submit/change Mark read. Zero detail controls explicitly
+  supply no populated attachment-visibility evidence. Matching signed commit,
+  prompt push and web-only installation remain pending at this checkpoint.
+- Actionable reading-presentation/UAT.md uses exact two approved switches and
+  Save reading preferences, both mixed combinations, older normal session,
+  already-read source/attachment records and restore originals. All human cases
+  NOT RUN, full S02 and reported Send failures remain OPEN.

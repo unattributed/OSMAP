@@ -5,6 +5,7 @@ use crate::notifications::{NotificationInbox, MAX_EVENTS};
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub(crate) struct RenderContext {
     pub session: Option<ValidatedSession>,
+    pub authentication_context: Option<AuthenticationContext>,
     pub count: Option<Option<usize>>,
 }
 

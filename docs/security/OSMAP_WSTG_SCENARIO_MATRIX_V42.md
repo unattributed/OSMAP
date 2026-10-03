@@ -93,3 +93,13 @@ synthetic record to Deleted and back, preserving GUID/flags, neighbours and a
 second account; it performs no append, expunge, SMTP or cryptography. Actual
 results and signed deployment pins belong in the UX ledger. This does not close
 whole WSTG scenarios, human UAT, strict release or permanent-deletion authority.
+
+The saved reader-presentation repair adds no route or download permission.
+Existing account/session authority selects current persisted source/attachment
+display preferences; stale cookie hints do not override them. ATHZ/SESS checks
+cover account isolation and response-scope reset, while BUSL/INPV component
+regressions preserve corrupt state, finite presentation defaults, identical
+escaped source text and decoded attachment bytes. Native disposable mixed-value
+saves/readers restore fixture state; installed validation is GET-only. Current
+executed proof and deployed binary pins belong in the ledger. These component
+checks do not close entire WSTG scenarios, strict release, human UAT or Send.

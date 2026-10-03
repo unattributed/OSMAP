@@ -77,10 +77,7 @@ where
             request.headers.get("cookie").map(String::as_str),
         );
         super::header_theme::apply_context(&mut handled.response, request);
-        super::routes_reading_preferences::apply_presentation(
-            &mut handled.response,
-            request.headers.get("cookie").map(String::as_str),
-        );
+        self.apply_reading_presentation(&mut handled.response, request);
         handled
     }
 

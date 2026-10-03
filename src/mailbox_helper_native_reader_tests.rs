@@ -456,6 +456,24 @@ fn get(
 ) -> HandledHttpResponse {
     http(app, Some(session), "GET", path, &BTreeMap::new())
 }
+// Fixed public stale hints only; sessions remain actual issued fixture sessions.
+fn get_with_reading_cookie(
+    app: &BrowserApp<RuntimeBrowserGateway>,
+    session: &IssuedSession,
+    path: &str,
+    reading_cookie: &str,
+) -> HandledHttpResponse {
+    assert!(matches!(
+        reading_cookie,
+        "osmap_reading=v1.mailbox.newest.1.0" | "osmap_reading=v1.mailbox.newest.0.1"
+    ));
+    let wire = format!(
+        "GET {path} HTTP/1.1\r\nHost: localhost\r\nUser-Agent: OSMAP/native-reader\r\nCookie: osmap_session={}; {reading_cookie}\r\n\r\n",
+        session.token.as_str()
+    );
+    let request = parse_http_request(&wire, app.policy()).expect("native reading fixture request");
+    app.handle_request(&request, "127.0.0.1")
+}
 fn text(response: &HandledHttpResponse) -> &str {
     std::str::from_utf8(&response.response.body).unwrap()
 }
@@ -988,6 +1006,70 @@ fn isolated_openbsd_coordinated_reader_signed_helper() {
     let reading_store = crate::reading_preferences::ReadingPreferencesStore::new(
         &app_config.state_layout.settings_dir,
     );
+    // Actual persisted independent switches override the inverse stale cookie
+    // in native runtime readers/settings. Only this disposable account is saved.
+    let presentation_before = reading_store.load(ALICE).unwrap();
+    let bob_presentation_before = reading_store.load(BOB).unwrap();
+    let presentation_row = by_subject(1);
+    let presentation_identity = &presentation_row.metadata.as_ref().unwrap().version;
+    let standalone_presentation = format!(
+        "/message?mailbox=INBOX&uid={}", presentation_row.uid
+    );
+    let coordinated_presentation = format!(
+        "/mailbox?name=INBOX&sort=subject&dir=asc&selected_mailbox=INBOX&selected_uid={}&selected_mailbox_guid={}&selected_message_guid={}",
+        presentation_row.uid, encode(&presentation_identity.mailbox_guid),
+        encode(&presentation_identity.message_guid)
+    );
+    for (source, details, hint) in [
+        (false, true, "osmap_reading=v1.mailbox.newest.1.0"),
+        (true, false, "osmap_reading=v1.mailbox.newest.0.1"),
+    ] {
+        let mut form = BTreeMap::from([
+            ("csrf_token".into(), alice.record.csrf_token.clone()),
+            ("start_page".into(), presentation_before.start_page.as_str().into()),
+            ("date_order".into(), presentation_before.date_order.as_str().into()),
+        ]);
+        if source { form.insert("show_source_shortcut".into(), "1".into()); }
+        if details { form.insert("attachment_details".into(), "1".into()); }
+        assert_eq!(http(&app, Some(&alice), "POST", "/settings/reading", &form).response.status_code, 303);
+        let persisted = crate::reading_preferences::ReadingPreferencesStore::new(
+            &app_config.state_layout.settings_dir,
+        ).load(ALICE).unwrap();
+        assert_eq!(persisted.show_source_shortcut, source);
+        assert_eq!(persisted.attachment_details, details);
+        assert_eq!(persisted.start_page, presentation_before.start_page);
+        assert_eq!(persisted.date_order, presentation_before.date_order);
+        for path in [standalone_presentation.as_str(), coordinated_presentation.as_str(), "/settings?section=reading"] {
+            let page = get_with_reading_cookie(&app, &alice, path, hint);
+            assert_eq!(page.response.status_code, 200);
+            assert!(text(&page).contains(&format!(
+                "<body data-reading-source=\"{source}\" data-reading-attachment-details=\"{details}\">"
+            )));
+            if path != "/settings?section=reading" {
+                assert!(text(&page).contains("ALICE_READER_ONLY_001"));
+                assert!(text(&page).contains("public.txt"));
+            }
+        }
+        let bob_page = get_with_reading_cookie(&app, &bob, "/settings?section=reading", hint);
+        assert_eq!(bob_page.response.status_code, 200);
+        assert!(text(&bob_page).contains(&format!(
+            "<body data-reading-source=\"{}\" data-reading-attachment-details=\"{}\">",
+            bob_presentation_before.show_source_shortcut, bob_presentation_before.attachment_details
+        )));
+        assert_eq!(reading_store.load(BOB).unwrap(), bob_presentation_before);
+        assert_eq!(persisted_flags(&native_list.list_messages(ALICE, &query).unwrap()), persisted_flags(&initial));
+        assert_eq!(persisted_flags(&native_list.list_messages(BOB, &query).unwrap()), persisted_flags(&foreign));
+        assert_eq!(persisted_flags(&native_list.list_messages(ALICE, &sent_query).unwrap()), persisted_flags(&initial_sent));
+    }
+    let mut restore_presentation = BTreeMap::from([
+        ("csrf_token".into(), alice.record.csrf_token.clone()),
+        ("start_page".into(), presentation_before.start_page.as_str().into()),
+        ("date_order".into(), presentation_before.date_order.as_str().into()),
+    ]);
+    if presentation_before.show_source_shortcut { restore_presentation.insert("show_source_shortcut".into(), "1".into()); }
+    if presentation_before.attachment_details { restore_presentation.insert("attachment_details".into(), "1".into()); }
+    assert_eq!(http(&app, Some(&alice), "POST", "/settings/reading", &restore_presentation).response.status_code, 303);
+    assert_eq!(reading_store.load(ALICE).unwrap(), presentation_before);
     let save_reading = |order: &str| {
         BTreeMap::from([
             ("csrf_token".into(), alice.record.csrf_token.clone()),
@@ -1884,6 +1966,7 @@ fn isolated_openbsd_coordinated_reader_signed_helper() {
     drop(fixture);
     assert!(!root.exists());
     assert_eq!(before, standard_metadata());
+    println!("native_saved_reading_presentation_cookie_independent_account_isolated=PASS");
     println!("native_sent_guid_recipient_star_unstar_restore=PASS bcc_not_in_sent_list=PASS same_uid_inbox_and_foreign_account_unchanged=PASS");
     println!("native_reader_cases=PASS rows53_two_accounts=PASS classification_only=PASS page50_selected_back_search=PASS filtered_previous_next_crosspage_search_origin=PASS stale_navigation_guid_refusal=PASS native_csrf_read_star_filtered_membership_reload=PASS native_manual_onopen_seen_unread_reconciliation=PASS opening_stale_foreign_guid_refusal=PASS native_conversation_headers_saved_order_reader_next_explicit_precedence=PASS conversation_excluded_parent_stale_guid_refusal=PASS attachment_without_and_actual_unknown_count={unknown_attachment_records} foreign_neighbour_stale_refusal=PASS budget_reuse=PASS no_move_append_or_crypto_configuration=PASS scratch_cleanup=PASS standard_host_metadata_unchanged=PASS");
 }
