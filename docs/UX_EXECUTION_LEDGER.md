@@ -3651,3 +3651,45 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   agent message; actual protected delivery, decryptable Sent and Proton receipt
   remain open after the reported Locked refusal. Neither this source checkpoint
   nor a synthetic authenticated recovery test accepts the full sprint.
+
+### S07 explicit stale-binding recovery delivery — 2026-10-02 — ENGINEERING SLICE COMPLETE; protected-mail UAT OPEN
+
+- Source `0038811926cbd7eef3fa3feff91879a16c43e5b9` is Shopkeeper-signed,
+  signature-verified and promptly pushed through normal commit/push gates. Fetch
+  proved exact local/origin branch equality, clean source and ahead/behind 0/0.
+  Independent native parity verifies 257 source/Cargo files and 47 unchanged
+  public test fixtures against that signed commit. Offline native build and five
+  focused tests passed (three recovery, one public mapper, one typed denial).
+  Preserve the initial missing-fixture compile refusal and its repaired fixture
+  supplement; do not treat that initial build failure as a test execution.
+- Root activated only the web binary on obsd1. Installed SHA-256
+  `89b9ab0bc470571484c9a88970504490f1b8ca71d22a8fb8b44a78b99f7c4205`
+  matches sole PID39624 text inode130057, 50,601,280 bytes. Independent checks
+  passed all seven services and public HTTPS login200/TLS verification0. Prior
+  binary `60a2ee80...b330e13` remains verified at
+  `/var/backups/osmap-ux-s05-stale-recovery-0038811-20261003/osmap-before`.
+  Helpers, key-agent lifetime, current policies and working bindings were not
+  changed. Native source checkout and unrelated work were preserved.
+- Independent actual draft-only recovery ran once, marker
+  `recovery-20261003-001`: ordinary create/save/reopen preserved old pin3 against
+  current4; visible Review current keys was enabled inside the compose form.
+  Explicit preflight returned303 and saved pin4 while preserving harmless text,
+  recipient, all protection choices and the stored attachment. Fresh review
+  action disappeared, public revision remained4 and recipient keys were eligible.
+  No Send or private crypto was invoked. Own draft and disposable session cleanup
+  both passed. This used a synthetic post-auth session bypassing password/TOTP;
+  it establishes deployed engineering recovery, not human authentication/UAT.
+- Retained repair-root evidence: `stale-recovery-native-result.json`,
+  `stale-recovery-signed-byte-parity.json`, `stale-recovery-activation-result.json`,
+  `stale-recovery-independent-live-result.json`, `stale-recovery-delivery.json`
+  and `stale-recovery-live.log` (SHA-256
+  `759b800132b933897f992db8afe21414c9f158763728fecbd66ba2021f02cc26`).
+  The actionable UAT record separates recovery from encrypted delivery and holds
+  plaintext cases under the current required signing/recipient-encryption policy.
+- Operator UAT-08 remains FAILED from the recorded stale loop and subsequent
+  private-key Locked refusal. After signing in again, explicitly address Proton,
+  select sign/encrypt/self, review current keys, run the native unlock immediately
+  before one operator Send, then verify actual Proton decryption/signature and
+  readable encrypted authoritative Sent. No agent Send runs alongside the user.
+  Proton return/inbound reading and fresh-auth key CRUD remain unaccepted. This
+  recovery slice is complete; the sprint and epic are not accepted.

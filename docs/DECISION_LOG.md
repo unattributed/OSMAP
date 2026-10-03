@@ -7627,3 +7627,14 @@ source; do not count a failing or still-running gate as passed. Native build and
 controlled recovery proof remain separate from local interaction assertions.
 Keep both actual operator Send failures and the unperformed protected delivery
 outcomes open until superseding evidence exists.
+
+### Close the deployed recovery slice without claiming protected delivery — 2026-10-02
+
+Signed/synced source0038811 now runs as independently verified binary89b9ab0b on
+obsd1. Actual controlled stale-draft recovery updated pin3 to4 with content, flags
+and attachment preserved, ordinary saves unchanged and both disposable objects
+cleaned. Accept this bounded engineering slice. Keep the operator's Locked Send
+failure and protected Proton/Sent/return outcomes open. Review current keys is
+an explicit public snapshot review; native unlocking and actual cryptography
+remain separate. Do not weaken current required protection to repeat plaintext
+UAT, automatically retarget keys, or submit a duplicate agent message.
