@@ -7940,3 +7940,14 @@ Signed/self-protected use still requires the native account agent. No actual
 provider/human Send outcome is inferred from synthetic acceptance; reported
 operator failures remain open. Restore practical UAT through the deployed
 journey rather than declaring completion from builds or process health.
+
+### 2026-10-03 — End Appearance lock ownership at guard release
+
+Actual Linux and OpenBSD duplicate-descriptor regressions demonstrate that
+Appearance's bare-File lock can outlive logical ownership. Use a private guard
+with explicit unlock-on-drop; retain bounded waits, account isolation, private
+files and atomic merging. Verify the same countercase and actual store/browser
+workflow. Preserve approved effective colours and the exact fixed Compose CSP
+exception; base CSS or a different display harness does not establish rendered
+behaviour. Keep failed tests and superseded review interpretations; do not alter
+approved design to satisfy an incorrect test expectation.

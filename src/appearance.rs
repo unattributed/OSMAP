@@ -218,6 +218,19 @@ pub struct AppearanceStore {
     fail_before_publish: bool,
 }
 
+// Closing one descriptor does not release a flock while a fork/dup retains
+// the same open file description. End lock ownership with the logical guard.
+struct AppearanceLock(File);
+
+impl Drop for AppearanceLock {
+    fn drop(&mut self) {
+        #[cfg(unix)]
+        {
+            let _ = crate::openbsd::advisory_file_unlock(&self.0);
+        }
+    }
+}
+
 impl AppearanceStore {
     pub fn new(directory: impl Into<PathBuf>) -> Self {
         Self {
@@ -274,7 +287,7 @@ impl AppearanceStore {
         self.replace_record(canonical_username, settings)
     }
 
-    fn lock(&self, canonical_username: &str) -> io::Result<File> {
+    fn lock(&self, canonical_username: &str) -> io::Result<AppearanceLock> {
         let mut builder = fs::DirBuilder::new();
         builder.recursive(true);
         #[cfg(unix)]
@@ -310,7 +323,7 @@ impl AppearanceStore {
             let deadline = Instant::now() + LOCK_WAIT;
             loop {
                 match crate::openbsd::try_advisory_file_lock_exclusive(&file) {
-                    Ok(()) => return Ok(file),
+                    Ok(()) => return Ok(AppearanceLock(file)),
                     Err(error)
                         if error.kind() == io::ErrorKind::WouldBlock
                             && Instant::now() < deadline =>
@@ -803,6 +816,47 @@ mod tests {
         );
         assert_eq!(fs::read_dir(&root).unwrap().count(), 3);
         fs::remove_dir_all(root).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn dropping_appearance_guard_unlocks_despite_inherited_open_file_description() {
+        struct Scratch(PathBuf);
+        impl Drop for Scratch {
+            fn drop(&mut self) {
+                let _ = fs::remove_dir_all(&self.0);
+            }
+        }
+        let root = Scratch(scratch());
+        let store = AppearanceStore::new(&root.0);
+        let account = "alice@example.test";
+        let held = store.lock(account).unwrap();
+        // dup and fork retain the same open file description. Keeping a
+        // duplicate alive reproduces descriptor inheritance deterministically,
+        // without forking the threaded test process or changing the lock wait.
+        let inherited = held.0.try_clone().unwrap();
+        assert_eq!(
+            store.lock(account).err().unwrap().kind(),
+            io::ErrorKind::WouldBlock
+        );
+        drop(held);
+        let next = store
+            .lock(account)
+            .expect("appearance guard drop must release its lock despite the old duplicate");
+        assert_eq!(
+            store.lock(account).err().unwrap().kind(),
+            io::ErrorKind::WouldBlock
+        );
+        drop(inherited);
+        assert_eq!(
+            store.lock(account).err().unwrap().kind(),
+            io::ErrorKind::WouldBlock
+        );
+        drop(next);
+        store
+            .save(account, AppearancePreference::Light)
+            .expect("appearance save after lock release");
+        assert_eq!(store.load(account).unwrap(), AppearancePreference::Light);
     }
 
     #[cfg(unix)]

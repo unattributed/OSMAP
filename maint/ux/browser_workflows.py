@@ -6,6 +6,8 @@ uses the real file store. This starts no runtime gateway and sends no email.
 No browser storage, session token, CSRF value or filled login form is retained.
 """
 import argparse
+import base64
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -73,10 +75,27 @@ def main():
         context.route("**/*", constrain)
         page = context.new_page()
 
+        # This exception is pinned to the accepted fixed Compose source. It
+        # permits neither remote scripts nor scripts on any other visited page.
+        trusted_script = (repo / "src/http/compose_local.js").read_bytes()
+        trusted_hash = "sha256-" + base64.b64encode(hashlib.sha256(trusted_script).digest()).decode("ascii")
+        assert trusted_hash == "sha256-kh8tYa8AQwqxy9l64g1sCx8epjT43a/Wj5pR91Smywc=", "Compose source hash changed"
+        base_csp = "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'"
+
         def visit(path):
             result = page.goto(origin + path, wait_until="networkidle")
             assert result and result.ok, path
-            assert page.locator("script").count() == 0
+            csp = result.all_headers().get("content-security-policy")
+            if path == "/compose":
+                assert page.locator("script").count() == 1, "Compose requires exactly its fixed script"
+                script = page.locator("script#osmap-compose-local")
+                assert script.count() == 1, "Unexpected Compose script identity"
+                assert script.evaluate("element => [...element.attributes].map(attribute => [attribute.name, attribute.value])") == [["id", "osmap-compose-local"]], "Unexpected script attribute or external source"
+                assert script.text_content() == trusted_script.decode("utf-8"), "Compose script source differs"
+                assert csp == base_csp + f"; connect-src 'self'; script-src '{trusted_hash}'; script-src-attr 'none'", "Unexpected Compose CSP allowance"
+            else:
+                assert page.locator("script").count() == 0, "Script outside Compose"
+                assert csp == base_csp, "Non-Compose CSP changed"
 
         def appearance(value):
             assert page.locator("html").get_attribute("data-appearance") == value
@@ -98,7 +117,8 @@ def main():
         try:
             login("alice", "system")
             visit("/settings?section=appearance")
-            page.get_by_label("Dark", exact=True).check()
+            page.locator("label.settings-theme-dark").click()
+            assert page.get_by_label("Dark", exact=True).is_checked()
             page.get_by_role("button", name="Save changes", exact=True).click()
             page.wait_for_url(origin + "/settings?section=appearance&appearance_updated=1")
             appearance("dark")
@@ -123,7 +143,10 @@ def main():
             page.emulate_media(color_scheme="light")
             assert page.evaluate("getComputedStyle(document.body).backgroundColor") == "rgb(245, 248, 254)"
             checks.append("system appearance follows OS change without a reload")
-            page.get_by_label("Light", exact=True).check()
+            light = page.get_by_label("Light", exact=True)
+            light.focus()
+            light.press("Space")
+            assert light.is_checked()
             page.get_by_role("button", name="Save changes", exact=True).click()
             page.wait_for_url(origin + "/settings?section=appearance&appearance_updated=1")
             appearance("light")

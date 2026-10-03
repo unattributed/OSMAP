@@ -4252,3 +4252,75 @@ with later outcomes. Correct errors using a new entry referencing the old one.
   Dovecot append, Proton receipt/signature, encrypted return, password/TOTP proof
   or human UAT acceptance. Operator controls the next external Send. All current
   operator failures remain OPEN until the actual browser/mail journey passes.
+
+### Protected-Send repair signed delivery and installed review — 2026-10-03
+
+- Signed source `ad2698010d9b318d6459881da6c35791972af6e9` verified and normally
+  pushed to `origin/feat/ux-completion-20260929`; fresh fetch showed equal SHAs,
+  ahead/behind 0/0 and clean worktree. Required normal commit/push hooks passed.
+- All 258 native input hashes match that exact signed source. Web-only activation
+  on obsd1 installed binary
+  `a72fec053b9f8fa503f69321f6645955a3b9de9029d7e92dccb2e4056f3422e7`, with
+  reversible backup `/var/backups/osmap-ux-s07-policy-send-ad26980-20261003/osmap-before`.
+  Helpers/configuration/keys/revision5 policies were preserved.
+- Matching installed HTTP checks used a synthetic 120-second Duncan post-auth
+  session and only an owned harmless temporary draft. All-Off Proton preflight
+  visibly exposed Encryption required and preserved unchecked choices. Updating
+  that same draft to EncryptOnly preserved exact text, showed recipient public
+  eligibility, kept Sign/self off and revision5. Attention is the intentional
+  unsigned EncryptOnly state, not a failed policy check or private readiness claim.
+  Owned draft/session cleanup passed; installed before/after hashes matched.
+  No Send/private crypto/key/policy mutation occurred; password/TOTP was bypassed.
+- Independent engineering review matched source, controlled native deliveries,
+  UI evidence and limits. Native source did not prove provider delivery. Concise
+  actionable operator scenarios/results are at
+  `/home/foo/Downloads/osmap-ux-s07/revalidation-20261003/UAT.md`. Every current
+  actual Send, readable authoritative encrypted Sent, Proton signature/receipt,
+  encrypted return and human key-lifecycle outcome remains OPEN. This delivered
+  remediation does not close S07, the full sprint or the epic.
+
+### S01-01 actual Appearance lock remediation and workflow execution — 2026-10-03
+
+- Ordered Appearance revalidation identified a real backend lock-lifetime gap,
+  separately from S00's generic account-file guard. Retaining a duplicated open
+  file description caused guard-drop reacquisition to remain WouldBlock. The
+  same unchanged-production regression reproduced RED on Linux and OpenBSD.
+- Implemented private AppearanceLock(File) with explicit advisory unlock on
+  logical Drop, preserving 500ms bounded waits, account-specific lock paths,
+  private ownership/modes, atomic replacement and full/theme-write merging.
+  Identical regression assertions now prove reacquisition despite the old
+  duplicate, closing the old duplicate cannot release the new guard, and a
+  final Light save/read-back succeeds. Frozen appearance source:
+  `1e6c53387df8e6440fbdf0b9a641171c9d2f4d393dcba485c5b8108a8b85c8ef`.
+- Focused Linux Appearance/store/HTTP suite passed 24/0 with one child helper
+  intentionally ignored by the direct runner and invoked by a passing parent.
+  Actual native store group passed 13/0/1 child-helper-ignored, including bounded
+  cross-process/account-scope and concurrent legacy/full/theme writes. Native
+  test binary `aefe554ba39654b2ee6ea4373265efc200f1f0b55af0b0124a248268650e6f39`.
+- Corrected the existing browser harness's obsolete blanket no-script assertion
+  to enforce exactly the accepted fixed Compose source/hash/attributes/CSP while
+  retaining zero scripts on other visited pages and outside-origin blocking.
+  Replaced clipped-radio click assumptions with the actual visible Dark label
+  card and Light focus/Space interaction, asserting checked state before saving.
+  No forced click, DOM-state injection, product JavaScript/CSP/style change.
+- Actual browser execution passed all six existing real-AppearanceStore journeys:
+  native save/navigation/reload, logout continuity, account choice over stale
+  cookie, System media changes, independent Alice/Bob choices, and a real server
+  stop/start over the same owned store restoring both accounts. Zero outside
+  requests and clean fixture shutdown. Authentication remained synthetic; this
+  supplies no current live Dovecot/TOTP or human acceptance.
+- Failed harness runs are retained. An initial proposal to use the base CSS
+  RGB245/247/251 was disproved by effective authenticated approved.css; original
+  RGB245/248/254 is preserved. A PM gap claim arose from the separate display
+  harness and was retracted after inspecting the actual assigned harness, which
+  already exercised logout/cookie precedence/restart. No duplicate work added.
+- Evidence is under `/home/foo/Downloads/osmap-ux-s01/revalidation-20261003/`,
+  appearance-lock-{red-linux,red-native,green-native}.log, focused checks and
+  theme-browser-final/workflows.json. Harness source
+  `805d1da9b503a5cca8e04cec9d5f17efc9e74597074101a68a31f7d0c267a2c6`.
+- Final fmt/clippy and V10/V14 gates passed. Independent guard/native/browser
+  review passed; a retained-probe partial-write cleanup defect was corrected
+  before execution. All 258 native inputs were verified and the actual native
+  application built as `e19504c84a4fe44e3163630af3fec826ed4118d09cccde748184036bac9861af`.
+  Signed synchronization and matching web activation remain pending;
+  native/source results do not yet establish installed or human acceptance.
